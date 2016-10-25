@@ -11,13 +11,34 @@ export function setAccessToken(token) {
 // Utility method to fetch the absolute commit id for a branch
 const resolveRevOnce = new Map();
 function _resolveRev(dispatch, state, repo, rev) {
+	const resolvedRep = state.resolvedRev.content[keyFor(repo)];
 	const resolvedRev = state.resolvedRev.content[keyFor(repo, rev)];
-	if (resolvedRev) return Promise.resolve(resolvedRev);
+
+	// If we have a successful fetch, return that data since rev won't change w.r.t time
+	if (resolvedRev && resolvedRep && resolvedRep.respCode === 200) return Promise.resolve(resolvedRev);
+
+	// If a fetch is in flight, return that same promise
 	if (resolveRevOnce.has(keyFor(repo, rev))) return resolveRevOnce.get(keyFor(repo, rev));
 
+	// Createa a new fetch request
 	const revPromise = fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
-		.then((json) => { dispatch({type: types.RESOLVED_REV, repo, rev, json}); return json; })
-		.catch((err) => { dispatch({type: types.RESOLVED_REV, repo, rev, err}); throw err; });
+		.then((resp) => {
+			resolveRevOnce.delete(keyFor(repo, rev));
+
+			return resp.json()
+				.then((json) => {
+					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: json});
+					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
+					return xhrResponse;
+				})
+				.catch((err) => {
+					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: null});
+					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
+					return xhrResponse;
+				});
+		})
+		.catch(() => {});
+
 	resolveRevOnce.set(keyFor(repo, rev), revPromise);
 	return revPromise;
 }
@@ -26,15 +47,29 @@ function _resolveRev(dispatch, state, repo, rev) {
 export function getAnnotations(repo, rev, path) {
 	return function (dispatch, getState) {
 		const state = getState();
-		return _resolveRev(dispatch, state, repo, rev).then((json) => {
-			rev = json.CommitID;
-			if (state.annotations.content[keyFor(repo, rev, path)]) return Promise.resolve(); // nothing to do; already have annotations
+		return _resolveRev(dispatch, state, repo, rev).then((xhrResponse) => {
+			const resolvedRepoRev = xhrResponse.body.CommitID;
+
+			if (state.annotations.content[keyFor(repo, resolvedRepoRev, path)]) return Promise.resolve(); // nothing to do; already have annotations
 
 			// TODO: Remove NoSrclibAnns when srclib has been purged
-			return fetch(`https://sourcegraph.com/.api/repos/${repo}@${rev}/-/tree/${path}?ContentsAsString=false&NoSrclibAnns=true`)
-				.then((json) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, json}))
-				.catch((err) => dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev, path, err}));
-		}).catch((err) => {}); // no error handling
+			return fetch(`https://sourcegraph.com/.api/repos/${repo}@${resolvedRepoRev}/-/tree/${path}?ContentsAsString=false&NoSrclibAnns=true`)
+				.then((resp) => {
+					return resp.json()
+						.then((json) => {
+							const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: json});
+							dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRepoRev, path, xhrResponse});
+							return xhrResponse;
+						})
+						.catch((err) => {
+							const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: null});
+							dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRepoRev, path, xhrResponse});
+							return xhrResponse;
+						});
+				})
+				.catch((err) => {});
+		})
+		.catch((err) => {}); // no error handling
 	}
 }
 

@@ -9,7 +9,7 @@ import * as utils from "../utils";
 import {keyFor} from "../reducers/helpers";
 import EventLogger from "../analytics/EventLogger";
 
-let buildsCache = {};
+const isCloning = new Map();
 
 @connect(
 	(state) => ({
@@ -41,6 +41,7 @@ export default class BlobAnnotator extends Component {
 		this._clickRefresh = this._clickRefresh.bind(this);
 		this.onClickAuthPriv = this.onClickAuthPriv.bind(this);
 		this.onClickFileView = this.onClickFileView.bind(this);
+		this.refreshWhenVCSCloned = this.refreshWhenVCSCloned.bind(this);
 
 		this.state = utils.parseURL();
 		this.state.path = props.path;
@@ -353,35 +354,58 @@ export default class BlobAnnotator extends Component {
 		return `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${selectedLineNumber}`;
 	}
 
+	refreshWhenVCSCloned() {
+		this.state.actions.getAnnotations(this.state.repoURI, this.state.rev, this.state.path);
+	}
+
+
 	render() {
-		if (this.isPrivateRepo() &&
-			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
-			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired !== 'undefined')) {
+		if (typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== "undefined") {
+			if (this.isPrivateRepo() && this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === true) {
+				// Not signed in or not auth'd for private repos
+				this.state.selfElement.removeAttribute("disabled");
+				this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
+				this.state.selfElement.onclick = this.onClickAuthPriv;
 
-			// Not signed in or not auth'd for private repos
-			this.state.selfElement.removeAttribute("disabled");
-			this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
-			this.state.selfElement.onclick = this.onClickAuthPriv;
-
-			return <span><a href={`https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
-		} else {
-			if (utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
-				this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
-				this.state.selfElement.onclick = this.onClickFileView;
-
-				return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
-			} else {
-				// TODO: Only set style to disabled and log the click event for statistics on unsupported languages?
+				return <span><a href={`https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
+			} else if (this.state.resolvedRev.content[keyFor(this.state.repoURI)].cloneInProgress === true) {
+				// Cloning the repo
 				this.state.selfElement.setAttribute("disabled", true);
+				this.state.selfElement.setAttribute("aria-label", `Sourcegraph is analyzing ${this.state.repoURI.split("github.com/")[1]}`);
 
-				if (utils.upcomingExtensions.includes(utils.getPathExtension(this.state.path))) {
-					this.state.selfElement.setAttribute("aria-label", "Language support coming soon!");
-				} else {
-					this.state.selfElement.setAttribute("aria-label", "File not supported");
+				if (isCloning.has(this.state.repoURI) === false) {
+					isCloning.set(this.state.repoURI, true);
+					this.state.refreshInterval = setInterval(this.refreshWhenVCSCloned, 5000);
 				}
 
-				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
+				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Loading...</span>;
+			} else {
+				if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
+					this.state.selfElement.setAttribute("disabled", true);
+					if (!utils.upcomingExtensions.includes(utils.getPathExtension(this.state.path))) {
+						this.state.selfElement.setAttribute("aria-label", "File not supported");
+					} else {
+						this.state.selfElement.setAttribute("aria-label", "Language support coming soon!");
+					}
+
+					return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
+				} else {
+					this.state.selfElement.removeAttribute("disabled");
+					this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
+					this.state.selfElement.onclick = this.onClickFileView;
+
+					if (isCloning.has(this.state.repoURI) === true) {
+						isCloning.delete(this.state.repoURI);
+						if (this.state.refreshInterval)
+							clearInterval(this.state.refreshInterval);
+					}
+
+					return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
+				}
 			}
+		} else {
+			// Default case when we don't have any annotation data
+			return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
 		}
 	}
 }

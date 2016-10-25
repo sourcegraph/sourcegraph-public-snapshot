@@ -36,14 +36,6 @@ const combineHeaders = function (a, b) {
 	return a;
 }
 
-const checkStatus = function(resp) {
-	if (resp.status >= 200 && resp.status <= 299) return resp;
-	return resp.text().then((body) => {
-		throw {...(new Error(resp.statusText)),
-			response: {status: resp.status, url: resp.url},
-		};
-	});
-}
 
 export default function(url, init) {
 	if (typeof url !== "string") throw new Error("url must be a string (complex requests are not yet supported)");
@@ -54,9 +46,7 @@ export default function(url, init) {
 		...defaults,
 		...init,
 		headers: combineHeaders(defaults ? defaults.headers : null, init && init.headers ? init.headers : null),
-	})
-		.then(checkStatus)
-		.then((resp) => resp.json());
+	});
 }
 
 

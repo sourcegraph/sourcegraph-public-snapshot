@@ -14,32 +14,23 @@ const accessToken = function(state = null, action) {
 const resolvedRev = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.RESOLVED_REV:
-		if (!state.content[keyFor(action.repo, action.rev)]) {
-			if (!action.json) {
-				// Assume any error is because the user is not
-				// signed in or hasn't auth'd us. We know the
-				// repo does exist because the user is viewing
-				// it on GitHub.
-				if (action.err) {
-					return {
-						...state,
-						content: {
-							...state.content,
-							[keyFor(action.repo)]: {authRequired: true},
-						}
-					};
-				}
-				return state; // no meaningful update; avoid re-rendering components
-			}
-
+		if (!state.content[keyFor(action.repo, action.rev)] || action.xhrResponse.status === 200) {
 			return {
 				...state,
 				content: {
 					...state.content,
-					[keyFor(action.repo, action.rev)]: action.json ? action.json : null,
+					[keyFor(action.repo)]: {
+						respCode: action.xhrResponse.status,
+						authRequired: action.xhrResponse.status === 404,
+						cloneInProgress: action.xhrResponse.status === 202,
+					},
+					[keyFor(action.repo, action.rev)]: action.xhrResponse.status === 200 ? action.xhrResponse.body : null,
 				}
 			};
 		}
+		// Fall through
+		// As a result, we serve the result of the last
+		// successful request (one that returned HTTP 200).
 	default:
 		return state; // no update needed; avoid re-rending components
 	}
@@ -48,15 +39,18 @@ const resolvedRev = function(state = {content: {}}, action) {
 const annotations = function(state = {content: {}}, action) {
 	switch (action.type) {
 	case ActionTypes.FETCHED_ANNOTATIONS:
-		if (!action.json && !state.content[keyFor(action.repo, action.rev, action.path)]) return state; // no update needed; avoid re-rending components
-
-		return {
-			...state,
-			content: {
-				...state.content,
-				[keyFor(action.repo, action.rev, action.path)]: action.json ? action.json : null,
-			}
-		};
+		if (!state.content[keyFor(action.repo, action.rev, action.path)] || action.xhrResponse.status === 200) {
+			return {
+				...state,
+				content: {
+					...state.content,
+					[keyFor(action.repo, action.rev, action.path)]: action.xhrResponse.status === 200 ? action.xhrResponse.body : null,
+				}
+			};
+		}
+		// Fall through
+		// As a result, we serve the result of the last
+		// successful request (one that returned HTTP 200).
 	default:
 		return state;
 	}

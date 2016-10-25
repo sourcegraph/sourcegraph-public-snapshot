@@ -6,11 +6,13 @@ export class EventLogger {
 
         if (global.window && global.window.chrome && chrome) {
             chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
-                if (identity.userId) {
-                    chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
-                }
-                if (identity.deviceId) {
-                    chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
+                if (identity) {
+                    if (identity.userId) {
+                        chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
+                    }
+                    if (identity.deviceId) {
+                        chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
+                    }
                 }
             });
         }
@@ -18,8 +20,12 @@ export class EventLogger {
 
     updatePropsForUser(identity) {
         if (identity) {
-            chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
-            chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
+            if (identity.userId) {
+                chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
+            }
+            if (identity.deviceId) {
+                chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
+            }
             if (identity.gaClientId) {
                 chrome.runtime.sendMessage({ type: "setTrackerGAClientId", payload: identity.gaClientId});
             }

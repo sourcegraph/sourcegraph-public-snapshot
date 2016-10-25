@@ -445,22 +445,26 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		];
 
 		return fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", {method: "POST", body: JSON.stringify(body)})
-			.then((json) => {
-				const respUri = json[1].result[0].uri.split("git://")[1];
-				const prt0Uri = respUri.split("?");
-				const prt1Uri = prt0Uri[1].split("#");
+			.then((resp) => {
+				return resp.json()
+					.then((json) => {
+						const respUri = json[1].result[0].uri.split("git://")[1];
+						const prt0Uri = respUri.split("?");
+						const prt1Uri = prt0Uri[1].split("#");
 
-				const repoUri = prt0Uri[0];
-				const frevUri = prt1Uri[0] || "master";
-				const pathUri = prt1Uri[1];
-				const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
+						const repoUri = prt0Uri[0];
+						const frevUri = prt1Uri[0] || "master";
+						const pathUri = prt1Uri[1];
+						const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
 
-				jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`] = {
-					defUrl: `https://${repoUri}/blob/${frevUri}/${pathUri}${lineUri ? "#L" + lineUri : "" }`,
-					defCurPage: path === pathUri,
-				};
+						jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`] = {
+							defUrl: `https://${repoUri}/blob/${frevUri}/${pathUri}${lineUri ? "#L" + lineUri : "" }`,
+							defCurPage: path === pathUri,
+						};
 
-				cb(jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
+						cb(jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
+					})
+					.catch((err) => {});
 			})
 			.catch((err) => {});
 	}
@@ -502,16 +506,20 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		];
 
 		return fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
-			.then((json) => {
-				const keyCache = `${path}@${repoRevSpec.rev}:${line}@${col}`;
-				try {
-					popoverCache[keyCache] = `<div><div class=${styles.popoverTitle}>${json[1].result.contents[0].value}</div></div>`;
-				} catch(err) {
-					popoverCache[keyCache] = null;
-				} finally {
-					cb(popoverCache[keyCache]);
-				}
+			.then((resp) => {
+				return resp.json()
+					.then((json) => {
+						const keyCache = `${path}@${repoRevSpec.rev}:${line}@${col}`;
+						try {
+							popoverCache[keyCache] = `<div><div class=${styles.popoverTitle}>${json[1].result.contents[0].value}</div></div>`;
+						} catch(err) {
+							popoverCache[keyCache] = null;
+						} finally {
+							cb(popoverCache[keyCache]);
+						}
+					})
+					.catch((err) => {cb(null);});
 			})
-			.catch((err) => {cb(null)});
+			.catch((err) => {cb(null);});
 	}
 }
