@@ -41,10 +41,8 @@ function normalisePosition(model: IReadOnlyModel, position: IPosition): IPositio
 function cacheKey(model: IReadOnlyModel, position: IPosition): string {
 	return `${model.uri.toString(true)}:${position.lineNumber}:${position.column}`;
 }
-const hoverCache = new Map<string, any>();
-const hoverFlights = new Map<string, Thenable<Hover>>(); // "single-flight" on word boundaries
-const defCache = new Map<string, any>();
-const defFlights = new Map<string, Thenable<Definition | null>>(); // "single-flight" on word boundaries
+const hoverCache = new Map<string, Thenable<Hover>>(); // "single-flight" and caching on word boundaries
+const defCache = new Map<string, Thenable<Definition | null>>(); // "single-flight" and caching on word boundaries
 
 // HACK: don't show "Right-click to view references" on primitive types; if done properly, this
 // should be determined by a type property on the hover response.
@@ -225,13 +223,9 @@ export class Editor implements IDisposable {
 	provideDefinition(model: IReadOnlyModel, origPosition: Position, token: CancellationToken): Thenable<Definition | null> {
 		const position = normalisePosition(model, origPosition);
 		const key = cacheKey(model, position);
-		const cacheHit = defCache.get(key);
-		if (cacheHit) {
-			return Promise.resolve(cacheHit);
-		}
-		const inFlight = defFlights.get(key);
-		if (inFlight) {
-			return inFlight;
+		const cached = defCache.get(key);
+		if (cached) {
+			return cached;
 		}
 
 		const flight = lsp.send(model, "textDocument/definition", {
@@ -256,12 +250,10 @@ export class Editor implements IDisposable {
 				const translatedLocs: Location[] = locs
 					.filter((loc) => Object.keys(loc).length !== 0)
 					.map(lsp.toMonacoLocation);
-				defCache.set(key, translatedLocs);
-				defFlights.delete(key);
 				return translatedLocs;
 			});
 
-		defFlights.set(key, flight);
+		defCache.set(key, flight);
 
 		return flight;
 	}
@@ -270,17 +262,14 @@ export class Editor implements IDisposable {
 		const position = normalisePosition(model, origPosition);
 		const word = model.getWordAtPosition(position);
 		const key = cacheKey(model, position);
-		const cacheHit = hoverCache.get(key);
-		if (cacheHit) {
-			// Make sure tokens that don't identifier class but do have hover info get a pointer cursor.
-			if (cacheHit.contents.length > 0) {
-				this.setTokenCursor(word);
-			}
-			return Promise.resolve(cacheHit);
-		}
-		const inFlight = hoverFlights.get(key);
-		if (inFlight) {
-			return inFlight;
+		const cached = hoverCache.get(key);
+		if (cached) {
+			return cached.then(hover => {
+				if (hover.contents) {
+					this.setTokenCursor(word);
+				}
+				return hover;
+			});
 		}
 
 		const flight = lsp.send(model, "textDocument/hover", {
@@ -341,13 +330,11 @@ export class Editor implements IDisposable {
 					contents: contents,
 					range,
 				};
-				hoverCache.set(key, hover);
-				hoverFlights.delete(key);
 				this.setTokenCursor(word);
 				return hover;
 			});
 
-		hoverFlights.set(key, flight);
+		hoverCache.set(key, flight);
 
 		return flight;
 	}
@@ -381,6 +368,10 @@ export class Editor implements IDisposable {
 	}
 
 	private setTokenCursor(word: IWordAtPosition): void {
+		// model.getWordAtPosition can return null.
+		if (!word) {
+			return;
+		}
 		const el = (this._elementUnderMouse as any);
 		// Make sure the mouse is still under the target word.
 		if (el.textContent === word.word) {
