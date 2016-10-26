@@ -26,12 +26,20 @@ import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 
-function cacheKey(model: IReadOnlyModel, position: IPosition): string | null {
+function normalisePosition(model: IReadOnlyModel, position: IPosition): IPosition {
 	const word = model.getWordAtPosition(position);
 	if (!word) {
-		return null;
+		return position;
 	}
-	return `${model.uri.toString(true)}:${position.lineNumber}:${word.startColumn}:${word.endColumn}`;
+	// We always hover/j2d on the middle of a word. This is so multiple requests for the same word
+	// result in a lookup on the same position.
+	return {
+		lineNumber: position.lineNumber,
+		column: (word.startColumn + word.endColumn) / 2,
+	};
+}
+function cacheKey(model: IReadOnlyModel, position: IPosition): string {
+	return `${model.uri.toString(true)}:${position.lineNumber}:${position.column}`;
 }
 const hoverCache = new Map<string, any>();
 const hoverFlights = new Map<string, Thenable<Hover>>(); // "single-flight" on word boundaries
@@ -214,17 +222,16 @@ export class Editor implements IDisposable {
 		return this._editorService.onDidOpenEditor(listener);
 	}
 
-	provideDefinition(model: IReadOnlyModel, position: Position, token: CancellationToken): Thenable<Definition | null> {
+	provideDefinition(model: IReadOnlyModel, origPosition: Position, token: CancellationToken): Thenable<Definition | null> {
+		const position = normalisePosition(model, origPosition);
 		const key = cacheKey(model, position);
-		if (key) {
-			const cacheHit = defCache.get(key);
-			if (cacheHit) {
-				return Promise.resolve(cacheHit);
-			}
-			const inFlight = defFlights.get(key);
-			if (inFlight) {
-				return inFlight;
-			}
+		const cacheHit = defCache.get(key);
+		if (cacheHit) {
+			return Promise.resolve(cacheHit);
+		}
+		const inFlight = defFlights.get(key);
+		if (inFlight) {
+			return inFlight;
 		}
 
 		const flight = lsp.send(model, "textDocument/definition", {
@@ -249,36 +256,31 @@ export class Editor implements IDisposable {
 				const translatedLocs: Location[] = locs
 					.filter((loc) => Object.keys(loc).length !== 0)
 					.map(lsp.toMonacoLocation);
-				if (key) {
-					defCache.set(key, translatedLocs);
-					defFlights.delete(key);
-				}
+				defCache.set(key, translatedLocs);
+				defFlights.delete(key);
 				return translatedLocs;
 			});
 
-		if (key) {
-			defFlights.set(key, flight);
-		}
+		defFlights.set(key, flight);
 
 		return flight;
 	}
 
-	provideHover(model: IReadOnlyModel, position: Position): Thenable<Hover> {
+	provideHover(model: IReadOnlyModel, origPosition: Position): Thenable<Hover> {
+		const position = normalisePosition(model, origPosition);
 		const word = model.getWordAtPosition(position);
 		const key = cacheKey(model, position);
-		if (key) {
-			const cacheHit = hoverCache.get(key);
-			if (cacheHit) {
-				// Make sure tokens that don't identifier class but do have hover info get a pointer cursor.
-				if (cacheHit.contents.length > 0) {
-					this.setTokenCursor(word);
-				}
-				return Promise.resolve(cacheHit);
+		const cacheHit = hoverCache.get(key);
+		if (cacheHit) {
+			// Make sure tokens that don't identifier class but do have hover info get a pointer cursor.
+			if (cacheHit.contents.length > 0) {
+				this.setTokenCursor(word);
 			}
-			const inFlight = hoverFlights.get(key);
-			if (inFlight) {
-				return inFlight;
-			}
+			return Promise.resolve(cacheHit);
+		}
+		const inFlight = hoverFlights.get(key);
+		if (inFlight) {
+			return inFlight;
 		}
 
 		const flight = lsp.send(model, "textDocument/hover", {
@@ -339,17 +341,13 @@ export class Editor implements IDisposable {
 					contents: contents,
 					range,
 				};
-				if (key) {
-					hoverCache.set(key, hover);
-					hoverFlights.delete(key);
-				}
+				hoverCache.set(key, hover);
+				hoverFlights.delete(key);
 				this.setTokenCursor(word);
 				return hover;
 			});
 
-		if (key) {
-			hoverFlights.set(key, flight);
-		}
+		hoverFlights.set(key, flight);
 
 		return flight;
 	}
