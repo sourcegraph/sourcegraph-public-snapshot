@@ -1,6 +1,7 @@
 package ctags
 
 import (
+	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -8,14 +9,9 @@ import (
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/ctxvfs"
-	"golang.org/x/net/context"
 )
 
-func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination string) error {
-	filter := func(f os.FileInfo) bool {
-		return isSupportedFile(f.Name())
-	}
-
+func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination, mode string) error {
 	par := parallel.NewRun(10)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "copy files from VFS to disk")
@@ -30,7 +26,7 @@ func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination stri
 		case fi.Name() == ".git" && fi.Mode().IsDir():
 			w.SkipDir()
 		case fi.Mode().IsRegular():
-			if filter == nil || filter(fi) {
+			if isSupportedFile(mode, fi.Name()) {
 				par.Acquire()
 				go func() {
 					defer par.Release()
@@ -46,6 +42,7 @@ func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination stri
 						par.Error(err)
 						return
 					}
+					defer in.Close()
 
 					out, err := os.Create(outfile)
 					if err != nil {
@@ -56,7 +53,6 @@ func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination stri
 
 					if _, err := io.Copy(out, in); err != nil {
 						par.Error(err)
-						return
 					}
 				}()
 			}

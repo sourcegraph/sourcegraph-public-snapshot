@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -25,11 +26,6 @@ func vslog(out ...string) {
 }
 
 var emptyArray = make([]string, 0)
-
-type InitParams struct {
-	RootPath         string
-	OriginalRootPath string
-}
 
 // Handler handlers LSP requests for one repository
 type Handler struct {
@@ -44,6 +40,9 @@ type Handler struct {
 	// save it so that we don't have to parse the ctags file each time, and so
 	// we don't have to store as much state on disk.
 	tags []parser.Tag
+
+	// mode is the language that we care about for this connection.
+	mode string
 }
 
 var ErrMustInit = errors.New("initialize must be called before other methods")
@@ -72,7 +71,11 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 	switch req.Method {
 	case "initialize":
-		// Asynchronously download and process the repository.
+		var params lspext.InitializeParams
+		json.Unmarshal(*req.Params, &params)
+		h.mode = params.Mode
+
+		// Start downloading and analyzing the tags asynchronously.
 		go h.getTags(ctx)
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{

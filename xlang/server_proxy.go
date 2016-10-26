@@ -239,6 +239,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	return c.conn.Call(ctx, "initialize", lspext.InitializeParams{
 		InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
 		OriginalRootPath: c.id.rootPath.String(),
+		Mode:             c.id.mode,
 	}, nil, addTraceMeta(ctx))
 }
 

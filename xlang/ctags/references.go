@@ -13,7 +13,7 @@ import (
 func (h *Handler) handleReferences(ctx context.Context, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	// Filter for interesting files.
 	var filter = func(info os.FileInfo) bool {
-		return isSupportedFile(info.Name())
+		return isSupportedFile(h.mode, info.Name())
 	}
 
 	files, err := ctxvfs.ReadAllFiles(ctx, h.fs, "", filter)

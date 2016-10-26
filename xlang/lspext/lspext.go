@@ -40,6 +40,11 @@ type InitializeParams struct {
 	// The Go lang/build server uses this to infer the import path
 	// root (and directory structure) to use for a workspace.
 	OriginalRootPath string `json:"originalRootPath"`
+
+	// Mode is the name of the language. It is used to determine the correct
+	// language server to route a request to, and to inform a language server
+	// what languages it should contribute.
+	Mode string `json:"mode"`
 }
 
 // WalkURIFields walks the LSP params/result object for fields

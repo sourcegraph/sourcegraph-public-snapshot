@@ -29,6 +29,7 @@ func setupHandler() (*Handler, context.Context) {
 	fs := ctxvfs.Map(map[string][]byte{"hello.rb": rubyFile})
 	h := Handler{}
 	h.fs = fs
+	h.mode = "ruby"
 	return &h, ctx
 }
 

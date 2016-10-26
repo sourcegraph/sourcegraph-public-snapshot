@@ -21,7 +21,7 @@ func (h *Handler) getTags(ctx context.Context) ([]parser.Tag, error) {
 	h.tagsMu.Lock()
 	defer h.tagsMu.Unlock()
 	if h.tags == nil {
-		tags, err := generateTags(ctx, h.fs)
+		tags, err := generateTags(ctx, h.fs, h.mode)
 		if err != nil {
 			return nil, err
 		}
@@ -33,7 +33,7 @@ func (h *Handler) getTags(ctx context.Context) ([]parser.Tag, error) {
 var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor", "dist", ".git"}
 
 // generateTags runs ctags and parses the output.
-func generateTags(ctx context.Context, fs ctxvfs.FileSystem) ([]parser.Tag, error) {
+func generateTags(ctx context.Context, fs ctxvfs.FileSystem, mode string) ([]parser.Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "run ctags")
 	defer span.Finish()
 
@@ -46,18 +46,20 @@ func generateTags(ctx context.Context, fs ctxvfs.FileSystem) ([]parser.Tag, erro
 	}
 	defer os.RemoveAll(filesDir)
 
-	err = copyRepoArchive(ctx, fs, filesDir)
+	err = copyRepoArchive(ctx, fs, filesDir, mode)
 	if err != nil {
 		return nil, err
 	}
 
 	args := []string{"-f", "-", "--fields=*", "--excmd=pattern", "--languages=Ruby,C,C++"}
-	args = append(args, "-R", filesDir)
 	excludeArgs := make([]string, 0, len(ignoreFiles))
 	for _, ignoreFile := range ignoreFiles {
 		excludeArgs = append(excludeArgs, fmt.Sprintf("--exclude=%s", ignoreFile))
 	}
 	args = append(args, excludeArgs...)
+
+	// filesDir must come after exclude arguments
+	args = append(args, "-R", filesDir)
 	cmd := exec.Command("ctags", args...)
 
 	// Pipe out the ouput of ctags directly into the ctags parser

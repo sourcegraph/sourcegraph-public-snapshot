@@ -692,7 +692,9 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	want := []testRequest{
 		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
-			OriginalRootPath: "test://test?v"}},
+			OriginalRootPath: "test://test?v",
+			Mode:             "test",
+		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile"},
 			Position:     lsp.Position{Line: 1, Character: 2}}},
@@ -744,7 +746,9 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 		{"exit", nil},
 		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
-			OriginalRootPath: "test://test?v"}},
+			OriginalRootPath: "test://test?v",
+			Mode:             "test",
+		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile3"},
 			Position:     lsp.Position{Line: 5, Character: 6}}},

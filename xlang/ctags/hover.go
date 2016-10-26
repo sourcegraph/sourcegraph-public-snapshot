@@ -1,7 +1,6 @@
 package ctags
 
 import (
-	"fmt"
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
@@ -9,8 +8,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"golang.org/x/net/context"
 )
-
-var ErrNotFound = fmt.Errorf("definition not found")
 
 func (h *Handler) handleHover(ctx context.Context, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
 	tags, err := h.getTags(ctx)
@@ -25,7 +22,7 @@ func (h *Handler) handleHover(ctx context.Context, params lsp.TextDocumentPositi
 
 	tag := compareTags(word, tags)
 	if tag == nil {
-		return nil, ErrNotFound
+		return nil, nil
 	}
 
 	start := lsp.Position{Line: params.Position.Line, Character: wordStart}

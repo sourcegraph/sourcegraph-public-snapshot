@@ -2,9 +2,14 @@ package ctags
 
 import "path/filepath"
 
-func isSupportedFile(filenameORURI string) bool {
-	if ext := filepath.Ext(filenameORURI); ext == ".c" || ext == ".h" || ext == ".rb" {
-		return true
+func isSupportedFile(mode, filename string) bool {
+	ext := filepath.Ext(filename)
+	switch mode {
+	case "c":
+		return ext == ".c" || ext == ".h"
+	case "ruby":
+		return ext == ".rb"
+	default:
+		return false
 	}
-	return false
 }
