@@ -94,8 +94,13 @@ class RepoStoreClass extends Store<any> {
 		this.symbols = deepFreeze({
 			content: {},
 			list(repo, rev, query) {
-				const langResults = map(modes, mode =>
-					this.content[keyForSymbols(mode, repo, rev, query)]);
+				const langResults = map(modes, mode => {
+					if (mode === "typescript" || mode === "javascript") {
+						// TODO replace once typescript langserver can handle symbols
+						return [];
+					}
+					return this.content[keyForSymbols(mode, repo, rev, query)];
+				});
 				const results = flatten(filter(langResults));
 				const loading = some(langResults, r => r === undefined);
 
