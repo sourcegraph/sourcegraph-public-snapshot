@@ -118,10 +118,10 @@ func (*Server) makeGitPassHelper(user, pass string) (gitPassHelperDir string, er
 	// strings in shell scripts, so we opt to `cat` this non-executable credentials file instead.
 	credentialsFile := filepath.Join(tempDir, "credentials-content")
 	{
-		content := fmt.Sprintf("password=%s\n", pass)
-		if user != "" {
-			content += fmt.Sprintf("username=%s\n", user)
-		}
+		// Always provide username and password via git credential helper.
+		// Do this even if some of the values are blank strings.
+		// Otherwise, git will fallback to asking via other means.
+		content := fmt.Sprintf("username=%s\npassword=%s\n", user, pass)
 
 		err := util.WriteFileWithPermissions(credentialsFile, []byte(content), 0600)
 		if err != nil {
