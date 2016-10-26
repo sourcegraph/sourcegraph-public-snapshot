@@ -1,6 +1,8 @@
 // gitserver is the gitserver server.
 package main // import "sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver"
 
+//docker:install git openssh-client
+
 import (
 	"fmt"
 	"io"
