@@ -25,10 +25,10 @@ export function defaultFetch(url: string | Request, init?: RequestInit): Promise
 		method: (init && init.method) || "GET",
 		headers: (init && init.headers) ? combineHeaders(defaultHeaders, new Headers(init.headers)) : defaultHeaders,
 		body: init && init.body,
-		mode: init && init.mode,
-		redirect: init && init.redirect,
+		mode: (init && init.mode) || "cors",
+		redirect: (init && init.redirect) || "follow",
 		credentials: (init && init.credentials) || "same-origin",
-		cache: init && init.cache,
+		cache: (init && init.cache) || "default",
 	});
 }
 
