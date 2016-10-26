@@ -35,7 +35,7 @@ function normalisePosition(model: IReadOnlyModel, position: IPosition): IPositio
 	// result in a lookup on the same position.
 	return {
 		lineNumber: position.lineNumber,
-		column: (word.startColumn + word.endColumn) / 2,
+		column: Math.floor((word.startColumn + word.endColumn) / 2),
 	};
 }
 function cacheKey(model: IReadOnlyModel, position: IPosition): string {
