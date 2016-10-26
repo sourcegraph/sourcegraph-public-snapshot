@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -36,7 +38,8 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 	language := "go"
 
 	// Lookup the symbol's information by performing textDocument/definition
-	// and then looking through workspace/symbol results for the definition.
+	// and then looking through LSP textDocument/documentSymbol results for
+	// the definition.
 	rootPath := "git://" + repo.URI + "?" + repoRev.CommitID
 	var locations []lsp.Location
 	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/definition", lsp.TextDocumentPositionParams{
@@ -55,18 +58,20 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 	withoutFile := *uri
 	withoutFile.Fragment = ""
 	var symbols []lsp.SymbolInformation
-	err = xlang.OneShotClientRequest(r.Context(), language, withoutFile.String(), "workspace/symbol", lsp.WorkspaceSymbolParams{
-		// TODO(slimsag): before merge, performance for golang/go here is not
-		// good. Allow specifying file URIs as a query filter. Sucks a bit that
-		// textDocument/definition won't give us the Name/ContainerName that we
-		// need!
-		Query: "", // all symbols
+	err = xlang.OneShotClientRequest(r.Context(), language, withoutFile.String(), "textDocument/documentSymbol", lsp.DocumentSymbolParams{
+		TextDocument: lsp.TextDocumentIdentifier{
+			URI: uri.String(),
+		},
 	}, &symbols)
+	if err != nil {
+		return errors.Wrap(err, "LSP textDocument/documentSymbol")
+	}
 
 	// Find the matching symbol.
 	var symbol *lsp.SymbolInformation
 	for _, sym := range symbols {
 		if sym.Location.URI != locations[0].URI {
+			log15.Warn("LSP textDocument/documentSymbol returned symbols outside the queried file")
 			continue
 		}
 		if sym.Location.Range.Start.Line != locations[0].Range.Start.Line {
