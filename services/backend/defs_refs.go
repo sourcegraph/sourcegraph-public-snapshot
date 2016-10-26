@@ -1,17 +1,24 @@
 package backend
 
 import (
+	"context"
+	"net/url"
 	"path"
 	"time"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"context"
+	"github.com/sourcegraph/sourcegraph-go/pkg/lsp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/srclib/graph"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -126,7 +133,146 @@ func (s *defs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions) (res 
 func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (res *sourcegraph.RefLocations, err error) {
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()
-	return localstore.GlobalRefs.RefLocations(ctx, op)
+
+	// Query repo-local references.
+	localRefs, err := s.localRefLocations(ctx, op)
+	if err != nil {
+		return nil, errors.Wrap(err, "localRefLocations")
+	}
+
+	// Query global references.
+	op.Sources -= 1 // localRefs provides us one.
+	refLocs, err := localstore.GlobalRefs.RefLocations(ctx, op)
+	if err != nil {
+		return nil, errors.Wrap(err, "localstore.GlobalRefs.RefLocations")
+	}
+
+	// Combine the results.
+	refLocs.TotalSources++
+	refLocs.SourceRefs = append([]*sourcegraph.SourceRef{localRefs}, refLocs.SourceRefs...)
+	return refLocs, nil
+}
+
+// localRefLocations returns reference locations for op.Source only, i.e.
+// references located inside a repository (op.Source) to a definition (op.Name, op.ContainerName)
+// that is also located inside the same repository (op.Source).
+func (s *defs) localRefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (res *sourcegraph.SourceRef, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "localRefLocations")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	// Resolve the commit ID of op.Source's default branch.
+	repo, err := Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: op.Source, Remote: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "Repos.Resolve")
+	}
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.Repo})
+	if err != nil {
+		return nil, errors.Wrap(err, "Repos.ResolveRev")
+	}
+
+	// In order to invoke textDocument/references, we need to resolve (op.Name, op.ContainerName)
+	// into a concrete location. Query the workspace's symbols to do this.
+	language := "go" // TODO: Go specific
+	rootPath := "git://" + op.Source + "?" + rev.CommitID
+	var symbols []lsp.SymbolInformation
+	err = xlang.OneShotClientRequest(ctx, language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+		Query: op.Name,
+		Limit: 100,
+	}, &symbols)
+	if err != nil {
+		return nil, errors.Wrap(err, "LSP workspace/symbol")
+	}
+
+	// Find the matching symbol.
+	var symbol *lsp.SymbolInformation
+	for _, sym := range symbols {
+		if sym.Name != op.Name || sym.ContainerName != op.ContainerName {
+			continue
+		}
+		withoutFile, err := url.Parse(sym.Location.URI)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing symbol location URI")
+		}
+		withoutFile.Fragment = ""
+		if withoutFile.String() != rootPath {
+			continue
+		}
+		symbol = &sym
+		break
+	}
+	if symbol == nil {
+		log15.Warn("RefLocations: no symbol info matching top def from global references", "trace", traceutil.SpanURL(opentracing.SpanFromContext(ctx)))
+		return nil, errors.New("RefLocations: no symbol info matching top def from global references")
+	}
+
+	// Invoke textDocument/references in order to find references to the symbol.
+	var refs []lsp.Location
+	err = xlang.OneShotClientRequest(ctx, language, rootPath, "textDocument/references", lsp.ReferenceParams{
+		Context: lsp.ReferenceContext{
+			IncludeDeclaration: false,
+		},
+		TextDocumentPositionParams: lsp.TextDocumentPositionParams{
+			TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
+			Position:     symbol.Location.Range.Start,
+		},
+	}, &refs)
+	if err != nil {
+		return nil, errors.Wrap(err, "LSP textDocument/references")
+	}
+
+	// Formulate a proper *sourcegraph.SourceRef response by de-duplicating the
+	// references by accumulating their positions via the fileRefsMap.
+	var (
+		fileRefsMap = make(map[string]*sourcegraph.FileRef)
+		fileRefs    []*sourcegraph.FileRef
+		refsCount   int
+	)
+	for i, ref := range refs {
+		refsCount++
+		if i > op.Files {
+			break
+		}
+		if r, ok := fileRefsMap[ref.URI]; ok {
+			r.Positions = append(r.Positions, ref.Range)
+			continue
+		}
+
+		uri, err := url.Parse(ref.URI)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing reference URI")
+		}
+		r := &sourcegraph.FileRef{
+			Scheme:    uri.Scheme,
+			Source:    uri.Host + uri.Path,
+			Version:   uri.RawQuery,
+			File:      uri.Fragment,
+			Positions: []lsp.Range{ref.Range},
+			Score:     0,
+		}
+		fileRefsMap[ref.URI] = r
+		fileRefs = append(fileRefs, r)
+	}
+
+	sourceURI, err := url.Parse(symbol.Location.URI)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing symbol location URI")
+	}
+
+	return &sourcegraph.SourceRef{
+		Scheme:   sourceURI.Scheme,
+		Source:   sourceURI.Host + sourceURI.Path,
+		Version:  sourceURI.RawQuery,
+		Files:    len(fileRefs),
+		Refs:     refsCount,
+		Score:    0,
+		FileRefs: fileRefs,
+	}, nil
 }
 
 var indexDuration = prometheus.NewGauge(prometheus.GaugeOpts{
