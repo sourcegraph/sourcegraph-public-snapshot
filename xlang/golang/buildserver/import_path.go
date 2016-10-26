@@ -29,7 +29,7 @@ func resolveImportPath(client *http.Client, importPath string) (*directory, erro
 	if d, err := resolveStaticImportPath(importPath); err == nil {
 		return d, nil
 	} else if err != nil && err != errNoMatch {
-		return d, nil
+		return nil, err
 	}
 	return resolveDynamicImportPath(client, importPath)
 }

@@ -15,33 +15,6 @@ import (
 	"testing"
 )
 
-func TestResolveStaticImportPath(t *testing.T) {
-	tests := []struct {
-		importPath string
-		dir        *directory
-	}{
-		{"fmt", &directory{
-			importPath:  "fmt",
-			projectRoot: "",
-			cloneURL:    "https://github.com/golang/go",
-			repoPrefix:  "src",
-			vcs:         "git",
-			rev:         runtime.Version(),
-		}},
-	}
-
-	for _, tt := range tests {
-		dir, err := resolveStaticImportPath(tt.importPath)
-		if err != nil {
-			t.Errorf("%s: %s", tt.importPath, err)
-			continue
-		}
-		if !reflect.DeepEqual(dir, tt.dir) {
-			t.Errorf("resolveStaticImportPath(%q) =\n     %+v,\nwant %+v", tt.importPath, dir, tt.dir)
-		}
-	}
-}
-
 type testTransport map[string]string
 
 func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -58,11 +31,58 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
-func TestResolveDynamicImportPath(t *testing.T) {
+func TestResolveImportPath(t *testing.T) {
 	tests := []struct {
 		importPath string
 		dir        *directory
 	}{
+		// static
+		{"fmt", &directory{
+			importPath:  "fmt",
+			projectRoot: "",
+			cloneURL:    "https://github.com/golang/go",
+			repoPrefix:  "src",
+			vcs:         "git",
+			rev:         runtime.Version(),
+		}},
+		{"github.com/foo/bar", &directory{
+			importPath:   "github.com/foo/bar",
+			resolvedPath: "github.com/foo/bar.git",
+			projectRoot:  "github.com/foo/bar",
+			cloneURL:     "https://github.com/foo/bar",
+			vcs:          "git",
+		}},
+		{"github.com/foo/bar/baz", &directory{
+			importPath:   "github.com/foo/bar/baz",
+			resolvedPath: "github.com/foo/bar/baz.git",
+			projectRoot:  "github.com/foo/bar",
+			cloneURL:     "https://github.com/foo/bar",
+			vcs:          "git",
+		}},
+		{"github.com/foo/bar/baz/bam", &directory{
+			importPath:   "github.com/foo/bar/baz/bam",
+			resolvedPath: "github.com/foo/bar/baz/bam.git",
+			projectRoot:  "github.com/foo/bar",
+			cloneURL:     "https://github.com/foo/bar",
+			vcs:          "git",
+		}},
+		{"golang.org/x/foo", &directory{
+			importPath:   "github.com/golang/foo",
+			resolvedPath: "github.com/golang/foo.git",
+			projectRoot:  "golang.org/x/foo",
+			cloneURL:     "https://github.com/golang/foo",
+			vcs:          "git",
+		}},
+		{"golang.org/x/foo/bar", &directory{
+			importPath:   "github.com/golang/foo/bar",
+			resolvedPath: "github.com/golang/foo/bar.git",
+			projectRoot:  "golang.org/x/foo",
+			cloneURL:     "https://github.com/golang/foo",
+			vcs:          "git",
+		}},
+		{"github.com/foo", nil},
+
+		// dynamic (see client setup below)
 		{"alice.org/pkg", &directory{
 			importPath:   "alice.org/pkg",
 			projectRoot:  "alice.org/pkg",
@@ -109,6 +129,8 @@ func TestResolveDynamicImportPath(t *testing.T) {
 			resolvedPath: "vcs.net/bob/pkg.git/sub",
 			vcs:          "git",
 		}},
+
+		{"golang.org/x", nil},
 	}
 
 	pages := map[string]string{
@@ -148,22 +170,22 @@ func TestResolveDynamicImportPath(t *testing.T) {
 	client := &http.Client{Transport: testTransport(pages)}
 
 	for _, tt := range tests {
-		dir, err := resolveDynamicImportPath(client, tt.importPath)
+		dir, err := resolveImportPath(client, tt.importPath)
 
 		if tt.dir == nil {
 			if err == nil {
-				t.Errorf("resolveDynamicImportPath(client, %q) did not return expected error", tt.importPath)
+				t.Errorf("resolveImportPath(client, %q) did not return expected error", tt.importPath)
 			}
 			continue
 		}
 
 		if err != nil {
-			t.Errorf("resolveDynamicImportPath(client, %q) return unexpected error: %v", tt.importPath, err)
+			t.Errorf("resolveImportPath(client, %q) return unexpected error: %v", tt.importPath, err)
 			continue
 		}
 
 		if !reflect.DeepEqual(dir, tt.dir) {
-			t.Errorf("resolveDynamicImportPath(client, %q) =\n     %+v,\nwant %+v", tt.importPath, dir, tt.dir)
+			t.Errorf("resolveImportPath(client, %q) =\n     %+v,\nwant %+v", tt.importPath, dir, tt.dir)
 		}
 	}
 }
