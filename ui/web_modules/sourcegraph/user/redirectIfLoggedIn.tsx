@@ -1,5 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
+import {History} from "history";
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {context} from "sourcegraph/app/context";

@@ -36,7 +36,7 @@ export function defaultFetch(url: string | Request, init?: RequestInit): Promise
 //   fetch(...).then(checkStatus) ...
 export function checkStatus(resp: Response): Promise<Response> | Response {
 	if (resp.status >= 200 && resp.status <= 299) { return resp; }
-	return resp.text().then((body) => {
+	return resp.text().then<Response>((body) => {
 		if (typeof document === "undefined") {
 			// Don't log in the browser because the devtools network inspector
 			// makes it easy enough to see failed HTTP requests.

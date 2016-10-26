@@ -25,6 +25,7 @@ import { Definition, Hover, Location, ReferenceContext } from "vs/editor/common/
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
+import { IEditor } from "vs/platform/editor/common/editor";
 
 function normalisePosition(model: IReadOnlyModel, position: IPosition): IPosition {
 	const word = model.getWordAtPosition(position);
@@ -195,8 +196,8 @@ export class Editor implements IDisposable {
 		gotoContrib.dispose();
 	}
 
-	setInput(uri: URI, range?: IRange): Promise<void> {
-		return new Promise((resolve, reject) => {
+	setInput(uri: URI, range?: IRange): Promise<IEditor> {
+		return new Promise<IEditor>((resolve, reject) => {
 			this._editorService.openEditor({
 				resource: uri,
 				options: range ? { selection: range } : undefined,

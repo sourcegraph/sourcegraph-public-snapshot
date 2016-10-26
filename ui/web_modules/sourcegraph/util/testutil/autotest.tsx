@@ -23,8 +23,8 @@ export function autotest(expected, filename, component, context?) {
 	}
 
 	let renderer = TestUtils.createRenderer();
-	let dispatchedToStores;
-	let dispatchedToBackends;
+	let dispatchedToStores: any[] = [];
+	let dispatchedToBackends: any[] = [];
 	dispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
 		dispatchedToBackends = Dispatcher.Backends.catchDispatched(() => {
 			mockTimeout(() => {
@@ -67,8 +67,8 @@ export function autotest(expected, filename, component, context?) {
 				if (k.substr(0, 2) === "on") {
 					let defaultPrevented: boolean | undefined = noJSON;
 					let propagationStopped: boolean | undefined = noJSON;
-					let funcDispatchedToStores;
-					let funcDispatchedToBackends;
+					let funcDispatchedToStores: any[] = [];
+					let funcDispatchedToBackends: any[] = [];
 					funcDispatchedToStores = Dispatcher.Stores.catchDispatched(() => {
 						funcDispatchedToBackends = Dispatcher.Backends.catchDispatched(() => {
 							mockTimeout(() => {

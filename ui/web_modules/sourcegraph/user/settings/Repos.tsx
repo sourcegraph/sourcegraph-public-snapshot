@@ -116,7 +116,7 @@ export class Repos extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		let filteredRepos;
+		let filteredRepos: Repo[] = [];
 		if (this.props.repos) {
 			filteredRepos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
 		}

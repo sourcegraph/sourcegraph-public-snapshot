@@ -1,3 +1,4 @@
+import {History} from "history";
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Component} from "sourcegraph/Component";

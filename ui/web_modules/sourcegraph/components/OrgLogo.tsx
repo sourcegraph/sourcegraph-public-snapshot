@@ -7,8 +7,7 @@ interface Props {
 	size: "tiny" | "small" | "medium" | "large";
 }
 export function OrgLogo({size, img, style}: Props): JSX.Element {
-	let imgSize;
-
+	let imgSize: string;
 	switch (size) {
 		case "tiny":
 			imgSize = "1.58rem";
@@ -22,6 +21,8 @@ export function OrgLogo({size, img, style}: Props): JSX.Element {
 		case "large":
 			imgSize = "4rem";
 			break;
+		default:
+			throw new Error("invalid size");
 	}
 
 	return <div style={Object.assign({}, style, sx)}>
