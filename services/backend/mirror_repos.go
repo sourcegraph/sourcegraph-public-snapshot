@@ -53,6 +53,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		if err == nil {
 			// Set the auth token to be used in repo VCS operations.
 			remoteOpts.HTTPS = &vcs.HTTPSConfig{
+				User: "x-oauth-token", // User is unused by GitHub, but provide a non-empty value to satisfy git.
 				Pass: extToken.Token,
 			}
 
