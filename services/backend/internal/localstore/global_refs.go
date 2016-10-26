@@ -119,7 +119,8 @@ func (*dbGlobalRefSource) CreateTable() string {
 		id serial primary key NOT NULL,
 		source text NOT NULL,
 		UNIQUE(source)
-	);`
+	);
+	CREATE INDEX global_ref_source_source ON global_ref_source USING btree (source);`
 }
 
 func (*dbGlobalRefSource) DropTable() string {
@@ -134,7 +135,8 @@ func (*dbGlobalRefVersion) CreateTable() string {
 		id serial primary key NOT NULL,
 		version text NOT NULL,
 		UNIQUE(version)
-	);`
+	);
+	CREATE INDEX global_ref_version_version ON global_ref_version USING btree (version);`
 }
 
 func (*dbGlobalRefVersion) DropTable() string {
@@ -149,7 +151,8 @@ func (*dbGlobalRefFile) CreateTable() string {
 		id serial primary key NOT NULL,
 		file text NOT NULL,
 		UNIQUE(file)
-	);`
+	);
+	CREATE INDEX global_ref_file_file ON global_ref_file USING btree (file);`
 }
 
 func (*dbGlobalRefFile) DropTable() string {
@@ -164,7 +167,8 @@ func (*dbGlobalRefName) CreateTable() string {
 		id serial primary key NOT NULL,
 		name text NOT NULL,
 		UNIQUE(name)
-	);`
+	);
+	CREATE INDEX global_ref_name_name ON global_ref_name USING btree (name);`
 }
 
 func (*dbGlobalRefName) DropTable() string {
@@ -179,7 +183,8 @@ func (*dbGlobalRefContainer) CreateTable() string {
 		id serial primary key NOT NULL,
 		container text NOT NULL,
 		UNIQUE(container)
-	);`
+	);
+	CREATE INDEX global_ref_container_container ON global_ref_container USING btree (container);`
 }
 
 func (*dbGlobalRefContainer) DropTable() string {
@@ -225,7 +230,17 @@ func (*dbGlobalRefBySource) CreateTable() string {
 		-- sources higher values (like the Go stdlib).
 		score smallint NOT NULL,
 		UNIQUE(def_name, def_container, def_scheme, def_source, def_version, def_file, scheme, source, version)
-	);`
+	);
+	CREATE INDEX global_ref_by_source_def_name ON global_ref_by_source USING btree (def_name);
+	CREATE INDEX global_ref_by_source_def_container ON global_ref_by_source USING btree (def_container);
+	CREATE INDEX global_ref_by_source_def_scheme ON global_ref_by_source USING btree (def_scheme);
+	CREATE INDEX global_ref_by_source_def_source ON global_ref_by_source USING btree (def_source);
+	CREATE INDEX global_ref_by_source_def_version ON global_ref_by_source USING btree (def_version);
+	CREATE INDEX global_ref_by_source_scheme ON global_ref_by_source USING btree (scheme);
+	CREATE INDEX global_ref_by_source_source ON global_ref_by_source USING btree (source);
+	CREATE INDEX global_ref_by_source_version ON global_ref_by_source USING btree (version);
+	CREATE INDEX global_ref_by_source_refs ON global_ref_by_source USING btree (refs);
+	CREATE INDEX global_ref_by_source_score ON global_ref_by_source USING btree (score);`
 }
 
 func (*dbGlobalRefBySource) DropTable() string {
@@ -276,7 +291,17 @@ func (*dbGlobalRefByFile) CreateTable() string {
 		-- sources higher values (like the Go stdlib).
 		score smallint NOT NULL,
 		UNIQUE(def_name, def_container, def_scheme, def_source, def_version, def_file, scheme, source, version, file)
-	);`
+	);
+	CREATE INDEX global_ref_by_file_def_name ON global_ref_by_file USING btree (def_name);
+	CREATE INDEX global_ref_by_file_def_container ON global_ref_by_file USING btree (def_container);
+	CREATE INDEX global_ref_by_file_def_scheme ON global_ref_by_file USING btree (def_scheme);
+	CREATE INDEX global_ref_by_file_def_source ON global_ref_by_file USING btree (def_source);
+	CREATE INDEX global_ref_by_file_def_version ON global_ref_by_file USING btree (def_version);
+	CREATE INDEX global_ref_by_file_scheme ON global_ref_by_file USING btree (scheme);
+	CREATE INDEX global_ref_by_file_source ON global_ref_by_file USING btree (source);
+	CREATE INDEX global_ref_by_file_version ON global_ref_by_file USING btree (version);
+	CREATE INDEX global_ref_by_file_score ON global_ref_by_file USING btree (score);
+	`
 }
 
 func (*dbGlobalRefByFile) DropTable() string {
