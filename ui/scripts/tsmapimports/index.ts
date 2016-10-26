@@ -54,7 +54,7 @@ export function transform(sourceFile: ts.SourceFile, map: Candidates): string {
 	// First pass to remove comments (otherwise the positions are
 	// incorrect for some reason).
 	(ts as any).formatting.formatDocument(sourceFile, ruleProvider, defaultOptions);
-	sourceFile = ts.createSourceFile(sourceFile.fileName, sourceFile.getText(), ts.ScriptTarget.ES6, true);
+	sourceFile = ts.createSourceFile(sourceFile.fileName, sourceFile.getText(), ts.ScriptTarget.ES2017, true);
 
 	function span(node: ts.Node): ts.TextSpan {
 		return ts.createTextSpanFromBounds(node.getStart(sourceFile, true), node.getEnd());
@@ -163,7 +163,7 @@ export function transform(sourceFile: ts.SourceFile, map: Candidates): string {
 
 	const allRepl = replacements2.concat(replacements);
 	const newSrc = applyEdits(sourceFile.getText(), allRepl);
-	const newSrcFile = ts.createSourceFile(sourceFile.fileName, newSrc, ts.ScriptTarget.ES6, true);
+	const newSrcFile = ts.createSourceFile(sourceFile.fileName, newSrc, ts.ScriptTarget.ES2017, true);
 	(ts as any).formatting.formatDocument(newSrcFile, ruleProvider, defaultOptions);
 	return newSrcFile.getText();
 }
@@ -172,7 +172,7 @@ if ((process as any).argv.length > 2) {
 	const mapping = JSON.parse(readFileSync((process as any).argv[2], "utf-8"));
 	const fileNames = (process as any).argv.slice(3);
 	fileNames.forEach(fileName => {
-		let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES6, true);
+		let sourceFile = ts.createSourceFile(fileName, readFileSync(fileName).toString(), ts.ScriptTarget.ES2017, true);
 		const newSource = transform(sourceFile, mapping);
 		if (fileName === "-" || fileName === "/dev/stdin") {
 			// tslint:disable: no-console
@@ -253,7 +253,7 @@ if ((process as any).env.TEST) {
 	};
 	Object.keys(cases).forEach(label => {
 		const c = cases[label];
-		const f = ts.createSourceFile(`${label.replace(/ /g, "-")}.ts`, c.source, ts.ScriptTarget.ES6, true);
+		const f = ts.createSourceFile(`${label.replace(/ /g, "-")}.ts`, c.source, ts.ScriptTarget.ES2017, true);
 		const out = transform(f, c.map);
 		// tslint:disable no-console
 		if (c.want === out) {

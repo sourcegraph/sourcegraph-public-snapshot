@@ -76,9 +76,10 @@
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
-    "test": "npm run lint && npm run test-unit",
+    "test": "npm run lint && npm run test-unit && npm run test-tsmapimports",
     "lint": "./lint.sh",
     "test-unit": "env NODE_ENV=test ./node_modules/.bin/mocha-webpack 'web_modules/**/*_test.tsx' && rm -r ./.tmp",
+    "test-tsmapimports": "cd scripts/tsmapimports; PATH=$PATH:../../node_modules/.bin npm test",
     "dep": "npm rebuild fsevents",
     "generate": "./generate.sh",
     "overwrite-autotest": "for f in `find ./web_modules -name '*.json.actual'`; do mv \"$f\" \"${f%.actual}\"; done"
