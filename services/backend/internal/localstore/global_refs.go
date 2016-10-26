@@ -343,7 +343,7 @@ func (g *globalRefs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions)
 		-- Omit references to unnamed symbols. I.e., when a source references
 		-- another source in an unnamed way (a Go import statement, JS require,
 		-- etc) since these do not match our expectation of 'top defs'.
-		AND global_ref_name.name != ''
+		WHERE global_ref_name.name != ''
 		AND def_name in (
 			SELECT def_name FROM global_ref_by_source WHERE def_source IN (
 					SELECT id FROM global_ref_source WHERE source=$1
