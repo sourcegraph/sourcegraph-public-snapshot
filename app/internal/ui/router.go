@@ -11,11 +11,12 @@ const (
 	routeLangsIndex = "page.index.langs"
 	routeReposIndex = "page.index.repos"
 
-	routeBlob        = "page.blob"
-	routeDefLanding  = "page.def.landing"
-	routeRepo        = "page.repo"
-	routeRepoLanding = "page.repo.landing"
-	routeTree        = "page.tree"
+	routeBlob          = "page.blob"
+	routeDefLanding    = "page.def.landing"
+	oldRouteDefLanding = "page.def.landing.old"
+	routeRepo          = "page.repo"
+	routeRepoLanding   = "page.repo.landing"
+	routeTree          = "page.tree"
 
 	routeJobs     = "page.jobs"
 	routeHomePage = "page.home"
@@ -79,6 +80,7 @@ func newRouter() *mux.Router {
 	// Def
 	repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name(routeDefRedirectToDefLanding)
 	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeDefLanding)
+	repoRev.Path("/land/" + routevar.Def).Methods("GET").Name(oldRouteDefLanding)
 
 	return m
 }

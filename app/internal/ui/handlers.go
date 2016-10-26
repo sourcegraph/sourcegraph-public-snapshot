@@ -25,6 +25,27 @@ func init() {
 	router.Get(routeJobs).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://boards.greenhouse.io/sourcegraph", http.StatusFound)
 	}))
+
+	// Redirect from old /land/ def landing URLs to new /info/ URLs
+	router.Get(oldRouteDefLanding).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		infoURL, err := router.Get(routeDefLanding).URL(
+			"Repo", vars["Repo"], "Path", vars["Path"], "Rev", vars["Rev"], "UnitType", vars["UnitType"], "Unit", vars["Unit"])
+		if err != nil {
+			repoURL, err := router.Get(routeRepo).URL("Repo", vars["Repo"], "Rev", vars["Rev"])
+			if err != nil {
+				// Last recourse is redirect to homepage
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+			// Redirect to repo page if info page URL could not be constructed
+			http.Redirect(w, r, repoURL.String(), http.StatusFound)
+			return
+		}
+		// Redirect to /info/ page
+		http.Redirect(w, r, infoURL.String(), http.StatusMovedPermanently)
+	}))
+
 	router.Get(routeReposIndex).Handler(httptrace.TraceRoute(internal.Handler(serveRepoIndex)))
 	router.Get(routeLangsIndex).Handler(httptrace.TraceRoute(internal.Handler(serveRepoIndex)))
 	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
