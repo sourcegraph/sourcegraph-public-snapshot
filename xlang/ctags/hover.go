@@ -30,7 +30,7 @@ func (h *Handler) handleHover(ctx context.Context, params lsp.TextDocumentPositi
 	if tag.Signature != "" {
 		info = tag.Kind + tag.Signature
 	} else {
-		info = tag.DefLinePrefix
+		info = strings.TrimSpace(tag.DefLinePrefix)
 	}
 	hoverInfo := &lsp.Hover{
 		Contents: []lsp.MarkedString{
