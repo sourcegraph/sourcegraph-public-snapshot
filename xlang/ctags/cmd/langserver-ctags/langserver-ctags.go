@@ -1,5 +1,8 @@
 package main
 
+//docker:install alpine-sdk autoconf automake
+//docker:run git clone https://github.com/universal-ctags/ctags && cd ctags && ./autogen.sh && ./configure LDFLAGS="-static" && make install && cd .. && rm -rf ctags
+
 import (
 	"context"
 	"flag"
