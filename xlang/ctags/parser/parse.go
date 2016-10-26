@@ -34,6 +34,9 @@ type Tag struct {
 
 	// Signature is the static type of the identifier
 	Signature string
+
+	// Language is the language of the identifier
+	Language string
 }
 
 type TagsParser struct {
@@ -106,6 +109,7 @@ func (p *TagsParser) parseLine(line string) error {
 		DefLinePrefix: findCmdToDefLinePrefix(findCmd),
 		Kind:          fields["kind"],
 		Signature:     fields["signature"],
+		Language:      fields["language"],
 		LineNumber:    lineno,
 	})
 	return nil

@@ -2,6 +2,7 @@ package ctags
 
 import (
 	"fmt"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
 
@@ -28,17 +29,17 @@ func (h *Handler) handleHover(ctx context.Context, params lsp.TextDocumentPositi
 	}
 
 	start := lsp.Position{Line: params.Position.Line, Character: wordStart}
-	var typeInfo string
+	var info string
 	if tag.Signature != "" {
-		typeInfo = tag.Kind + tag.Signature
+		info = tag.Kind + tag.Signature
 	} else {
-		typeInfo = tag.Kind
+		info = tag.DefLinePrefix
 	}
 	hoverInfo := &lsp.Hover{
 		Contents: []lsp.MarkedString{
 			lsp.MarkedString{
-				Language: "Markdown",
-				Value:    "Type: " + typeInfo,
+				Language: strings.ToLower(tag.Language),
+				Value:    info,
 			},
 		},
 		Range: lsp.Range{

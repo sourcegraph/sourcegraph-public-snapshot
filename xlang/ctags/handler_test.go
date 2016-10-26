@@ -189,6 +189,6 @@ func TestHover(t *testing.T) {
 	}
 
 	assert(len(hover.Contents) == 1)
-	assert(hover.Contents[0] == lsp.MarkedString{Language: "Markdown", Value: "Type: method"})
+	assert(hover.Contents[0] == lsp.MarkedString{Language: "ruby", Value: "def foo(name)"})
 	assert(hover.Range == defLoc.Range)
 }
