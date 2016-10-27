@@ -102,7 +102,7 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
-		return verifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI)
+		return verifyActorHasGitHubRepoAccess(ctx, actor, repoURI)
 
 	default:
 		// Unless something above explicitly grants access, by default, access is denied.
@@ -125,9 +125,9 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 // TODO: move to a security model that is more robust, readable, has
 // better separation when dealing with multiple configurations, actor
 // types, resource types and actions.
-func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
-	if repo == 0 || repoURI == "" {
-		panic("both repo and repoURI must be set")
+func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
+	if repoURI == "" {
+		panic("repoURI must be set")
 	}
 	if !strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
 		panic(fmt.Errorf(`verifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
