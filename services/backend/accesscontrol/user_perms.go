@@ -95,6 +95,10 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 		return true
 	}
 
+	if verifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
+		return true
+	}
+
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
@@ -127,10 +131,6 @@ func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, meth
 	}
 	if !strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
 		panic(fmt.Errorf(`verifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
-	}
-
-	if verifyScopeHasAccess(ctx, actor.Scope, method, repo) {
-		return true
 	}
 
 	if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
