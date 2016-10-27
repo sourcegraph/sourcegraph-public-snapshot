@@ -19,20 +19,43 @@ interface Props {
 	location: Location;
 }
 
-export class OrgPanel extends React.Component<Props, {}> {
+interface State {
+	selectedMember: OrgMember | null;
+	sentInvites: Array<String>;
+}
+
+export class OrgPanel extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
 	context: { router: InjectedRouter };
 
+	constructor(props: Props) {
+		super(props);
+		this.state = {
+			selectedMember: null,
+			sentInvites: [],
+		};
+	}
+
+	componentWillUpdate(nextProps: Props, nextState: State): void {
+		if (this.props.members !== nextProps.members) {
+			nextState.sentInvites = [];
+		}
+	}
+
 	_invitedUser(member: OrgMember): void {
 		if (member.Email != null && context.user != null && this.props.org.Login) {
 			Dispatcher.Backends.dispatch(new OrgActions.SubmitOrgInvitation(member.Login || "", member.Email, this.props.org.Login, String(this.props.org.ID)));
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_SUCCESS, "InviteUser", {org_name: this.props.org.Login, num_invites: 1});
+			this._updateSentInvites([member]);
 		} else {
 			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_TOGGLE, "ToggleManualInviteModal", {org_name: this.props.org.Login});
 			setLocationModalState(this.context.router, this.props.location, "orgInvite", true);
+			this.setState(Object.assign({}, this.state, {
+				selectedMember: member,
+			}));
 		}
 	}
 
@@ -46,7 +69,20 @@ export class OrgPanel extends React.Component<Props, {}> {
 			}
 
 			setLocationModalState(this.context.router, this.props.location, "orgInvite", false);
+			this._updateSentInvites(invites.map(invite => {
+				return invite["member"];
+			}));
 		}
+	}
+
+	_updateSentInvites(members: OrgMember[]): void {
+		let invites = this.state.sentInvites;
+		let sentInvites = invites.concat(members.map(member => {
+			return member.Login;
+		}));
+		this.setState(Object.assign({}, this.state, {
+			sentInvites: sentInvites,
+		}));
 	}
 
 	_orgMembersList(members: OrgMember[]): JSX.Element | null {
@@ -56,7 +92,7 @@ export class OrgPanel extends React.Component<Props, {}> {
 			</div>;
 		}
 
-		return <OrgMembersTable inviteClicked={this._invitedUser.bind(this)} members={members} />;
+		return <OrgMembersTable sentInvites={this.state.sentInvites} inviteClicked={this._invitedUser.bind(this)} members={members} />;
 	}
 
 	render(): JSX.Element | null {
@@ -67,13 +103,8 @@ export class OrgPanel extends React.Component<Props, {}> {
 				<span><Loader/></span>
 			</div>;
 		}
-
-		let inviteMembers = members.filter((member: OrgMember): boolean => {
-			return member.CanInvite === true;
-		});
-
 		return <div>
-				<OrgInviteModal onInvite={this._onInviteUser.bind(this)} members={inviteMembers} location={this.props.location}/>
+				<OrgInviteModal onInvite={this._onInviteUser.bind(this)} member={this.state.selectedMember || null} org={this.props.org} location={this.props.location}/>
 				<div style={{padding: whitespace[4]}}>{this._orgMembersList(members)}</div>
 			</div>;
 	}

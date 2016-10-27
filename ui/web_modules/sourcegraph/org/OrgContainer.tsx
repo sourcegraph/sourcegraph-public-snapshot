@@ -2,7 +2,7 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import {Org, OrgMember} from "sourcegraph/api";
 import {context} from "sourcegraph/app/context";
-import {GitHubAuthButton, GridCol, GridRow, Heading, Panel, TabItem, Tabs} from "sourcegraph/components";
+import {GitHubAuthButton, GridCol, GridRow, Heading, TabItem, Tabs} from "sourcegraph/components";
 import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
 import {Container} from "sourcegraph/Container";
@@ -83,7 +83,7 @@ export class OrgContainer extends Container<Props, State> {
 		let msgHeader;
 		let msgBody;
 
-		if (context.hasPrivateGitHubToken()) {
+		if (context.hasOrganizationGitHubToken()) {
 			msgHeader = <span>It looks like you're not a part of any orgs</span>;
 			msgBody = <span>
 				If this doesn't seem right, try <a target="_blank" href="https://github.com/settings/connections/applications/8ac4b6c4d2e7b0721d68">verifying permissions</a> on GitHub.
@@ -100,7 +100,7 @@ export class OrgContainer extends Container<Props, State> {
 			</div>;
 		}
 
-		return <Panel
+		return <div
 			style={{marginTop: whitespace[5], padding: whitespace[5], textAlign: "center", maxWidth: 500, marginLeft: "auto", marginRight: "auto"}}>
 			<Heading level={5}>
 				{msgHeader}
@@ -108,7 +108,7 @@ export class OrgContainer extends Container<Props, State> {
 			<div style={{color: colors.coolGray3()}}>
 				{msgBody}
 			</div>
-		</Panel>;
+		</div>;
 	}
 
 	_onSelectOrg(org: Org): void {
@@ -121,13 +121,11 @@ export class OrgContainer extends Container<Props, State> {
 	render(): JSX.Element {
 		let mainPanel;
 		if (!this.state.selectedOrg) {
-			mainPanel = <div style={{marginTop: whitespace[4], paddingTop: whitespace[3]}}>
-				Choose an Org to the left to get started.
+			mainPanel = <div style={{marginTop: whitespace[4], paddingTop: whitespace[3], paddingBottom: whitespace[3]}}>
+				Select an organization to view and invite members.
 			</div>;
 		} else if (this.state.selectedOrg) {
 			mainPanel = <OrgPanel location={this.props.location} org={this.state.selectedOrg} members={this.state.members} />;
-		} else {
-			mainPanel = <div style={{marginTop: whitespace[4], paddingTop: whitespace[3]}}> Choose an Org to the left to get started.</div>;
 		}
 
 		return (

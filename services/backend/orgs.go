@@ -91,9 +91,10 @@ func (s *orgs) ListOrgMembers(ctx context.Context, org *sourcegraph.OrgListOptio
 	// Disable inviting for members on Sourcegraph and fetch full GitHub info for public email on non-registered Sourcegraph users
 	for _, member := range members {
 		orgMember := toOrgMember(member)
-		if _, ok := rUsers[strconv.Itoa(*member.ID)]; ok {
+		if rUser, ok := rUsers[strconv.Itoa(*member.ID)]; ok {
 			orgMember.SourcegraphUser = true
 			orgMember.CanInvite = false
+			orgMember.Email = rUser.Email
 		} else {
 			orgInvite, _ := store.UserInvites.GetByURI(ctx, *member.Login+org.OrgID)
 			if orgInvite == nil || time.Now().Unix()-orgInvite.SentAt.Unix() > 259200 {

@@ -7,32 +7,13 @@ import {whitespace} from "sourcegraph/components/utils/whitespace";
 interface Props {
 	members: OrgMember[];
 	inviteClicked: (member: OrgMember) => void;
+	sentInvites: Array<String>;
 }
 
-interface State {
-	sentInvites: Array<string>;
-}
-
-export class OrgMembersTable extends React.Component<Props, State> {
-
-	constructor() {
-		super();
-		this.state = {
-			sentInvites: [],
-		};
-	}
-
+export class OrgMembersTable extends React.Component<Props, {}> {
 	_inviteSelected(member: OrgMember): void {
-		if (this.state.sentInvites.indexOf(member.Login) === -1) {
+		if (this.props.sentInvites.indexOf(member.Login) === -1) {
 			this.props.inviteClicked(member);
-
-			if (member.Email) {
-				let invites = this.state.sentInvites.slice();
-				invites.push(member.Login);
-				this.setState({
-					sentInvites: invites,
-				});
-			}
 		}
 	}
 
@@ -79,7 +60,7 @@ export class OrgMembersTable extends React.Component<Props, State> {
 								<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} />
 							</td>
 							<td style={Object.assign({}, rowBorderSx, {textAlign: "center"})} width="20%">
-								{!member.SourcegraphUser && (member.Invite ? <div style={{fontStyle: "italic"}}>Invite sent</div> : <Button color="blue" disabled={!(member.CanInvite || !member.Invite)} onClick={(e) => {this._inviteSelected(member);}}>Invite</Button>)}
+								{!member.SourcegraphUser && (member.Invite || (this.props.sentInvites.indexOf(member.Login) > -1) ? <div style={{fontStyle: "italic"}}>Invite sent</div> : <Button color="blue" disabled={!(member.CanInvite || !member.Invite)} onClick={(e) => {this._inviteSelected(member);}}>Invite</Button>)}
 								{member.SourcegraphUser && <div style={{fontStyle: "italic"}}>Member</div>}
 							</td>
 						</tr>
