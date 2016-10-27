@@ -267,7 +267,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// is a language analysis request.
 		for _, uri := range urisInRequest {
 			h.fetchAndSendDepsOnce(uri).Do(func() {
-				if err := h.fetchTransitiveDepsOfFilepath(ctx, uri); err != nil {
+				if err := h.fetchTransitiveDepsOfFile(ctx, uri); err != nil {
 					log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
 				}
 			})
@@ -280,7 +280,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				if path.Ext(w.Path()) == ".go" {
 					d := path.Dir(w.Path())
 					h.fetchAndSendDepsOnce(d).Do(func() {
-						if err := h.fetchTransitiveDepsOfFilepath(ctx, d); err != nil {
+						if err := h.fetchTransitiveDepsOfFile(ctx, d); err != nil {
 							log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
 						}
 					})
