@@ -4,14 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
 	"strings"
 )
-
-func vslog(out ...string) {
-	os.Stderr.WriteString(strings.Join(out, "") + "\n")
-}
 
 // Tag is a Go representation of a line in a tags file. Read man 1 ctags for a
 // description of these fields.

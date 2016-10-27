@@ -1,10 +1,9 @@
 package ctags
 
 import (
+	"context"
 	"testing"
 	"time"
-
-	"context"
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -24,23 +23,22 @@ var defLoc = lsp.Location{
 	},
 }
 
-func setupHandler() (*Handler, context.Context) {
-	ctx := context.Background()
-	fs := ctxvfs.Map(map[string][]byte{"hello.rb": rubyFile})
-	h := Handler{}
-	h.fs = fs
-	h.mode = "ruby"
-	return &h, ctx
+func newConnection() context.Context {
+	ctx := InitCtx(context.Background())
+	info := ctxInfo(ctx)
+	info.fs = ctxvfs.Map(map[string][]byte{"hello.rb": rubyFile})
+	info.mode = "ruby"
+	return ctx
 }
 
 func TestSymbols(t *testing.T) {
-	h, ctx := setupHandler()
+	ctx := newConnection()
 
 	params := lsp.WorkspaceSymbolParams{
 		Query: "foo",
 		Limit: 7,
 	}
-	syms, err := h.handleSymbol(ctx, params)
+	syms, err := handleSymbol(ctx, params)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +57,7 @@ func TestSymbols(t *testing.T) {
 }
 
 func TestDefinition(t *testing.T) {
-	h, ctx := setupHandler()
+	ctx := newConnection()
 	type test struct {
 		col    int
 		result []lsp.Location
@@ -71,7 +69,7 @@ func TestDefinition(t *testing.T) {
 	}
 	time.Sleep(100 * time.Millisecond)
 	for _, test := range tests {
-		locs := defAtPoint(t, test.col, h, ctx)
+		locs := defAtPoint(t, test.col, ctx)
 		if len(locs) > 1 {
 			t.Error("too many results")
 		}
@@ -88,14 +86,14 @@ func TestDefinition(t *testing.T) {
 	}
 }
 
-func defAtPoint(t *testing.T, col int, h *Handler, ctx context.Context) []lsp.Location {
+func defAtPoint(t *testing.T, col int, ctx context.Context) []lsp.Location {
 	params := lsp.TextDocumentPositionParams{
 		Position: lsp.Position{Line: 4, Character: col},
 		TextDocument: lsp.TextDocumentIdentifier{
 			URI: "hello.rb",
 		},
 	}
-	locs, _ := h.handleDefinition(ctx, params)
+	locs, _ := handleDefinition(ctx, params)
 	return locs
 }
 
@@ -117,7 +115,7 @@ func TestWordAtPoint(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	h, ctx := setupHandler()
+	ctx := newConnection()
 	params := lsp.ReferenceParams{
 		TextDocumentPositionParams: lsp.TextDocumentPositionParams{
 			Position: lsp.Position{
@@ -129,7 +127,7 @@ func TestReferences(t *testing.T) {
 			},
 		},
 	}
-	refs, err := h.handleReferences(ctx, params)
+	refs, err := handleReferences(ctx, params)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +167,7 @@ func TestReferences(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	h, ctx := setupHandler()
+	ctx := newConnection()
 	params := lsp.TextDocumentPositionParams{
 		Position: lsp.Position{
 			Line:      1,
@@ -179,7 +177,7 @@ func TestHover(t *testing.T) {
 			URI: "file:///hello.rb",
 		},
 	}
-	hover, err := h.handleHover(ctx, params)
+	hover, err := handleHover(ctx, params)
 	if err != nil {
 		t.Fatal(err)
 	}

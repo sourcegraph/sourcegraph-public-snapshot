@@ -7,8 +7,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
 )
 
@@ -34,7 +34,7 @@ var nameToSymbolKind = map[string]lsp.SymbolKind{
 	"func":        lsp.SKFunction,
 }
 
-func (h *Handler) handleSymbol(ctx context.Context, params lsp.WorkspaceSymbolParams) (symbols []lsp.SymbolInformation, err error) {
+func handleSymbol(ctx context.Context, params lsp.WorkspaceSymbolParams) (symbols []lsp.SymbolInformation, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ctags.handleSymbol")
 	if params.Query != "" {
 		span.SetTag("query", params.Query)
@@ -48,7 +48,7 @@ func (h *Handler) handleSymbol(ctx context.Context, params lsp.WorkspaceSymbolPa
 		span.Finish()
 	}()
 
-	tags, err := h.getTags(ctx)
+	tags, err := getTags(ctx)
 	if err != nil {
 		return nil, err
 	}

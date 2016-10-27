@@ -10,18 +10,19 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
-func (h *Handler) handleReferences(ctx context.Context, params lsp.ReferenceParams) ([]lsp.Location, error) {
+func handleReferences(ctx context.Context, params lsp.ReferenceParams) ([]lsp.Location, error) {
+	info := ctxInfo(ctx)
 	// Filter for interesting files.
-	var filter = func(info os.FileInfo) bool {
-		return isSupportedFile(h.mode, info.Name())
+	var filter = func(fileInfo os.FileInfo) bool {
+		return isSupportedFile(info.mode, fileInfo.Name())
 	}
 
-	files, err := ctxvfs.ReadAllFiles(ctx, h.fs, "", filter)
+	files, err := ctxvfs.ReadAllFiles(ctx, info.fs, "", filter)
 	if err != nil {
 		return nil, err
 	}
 
-	word, _, err := wordAtPosition(ctx, h.fs, params.TextDocumentPositionParams)
+	word, _, err := wordAtPosition(ctx, params.TextDocumentPositionParams)
 	if err != nil {
 		return nil, err
 	}

@@ -1,21 +1,21 @@
 package ctags
 
 import (
+	"context"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
-
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"golang.org/x/net/context"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
 )
 
-func (h *Handler) handleHover(ctx context.Context, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
-	tags, err := h.getTags(ctx)
+func handleHover(ctx context.Context, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
+	tags, err := getTags(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	word, wordStart, err := wordAtPosition(ctx, h.fs, params)
+	word, wordStart, err := wordAtPosition(ctx, params)
 	if err != nil {
 		return nil, err
 	}

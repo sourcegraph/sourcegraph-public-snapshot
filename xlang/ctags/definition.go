@@ -3,21 +3,20 @@ package ctags
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
-func (h *Handler) handleDefinition(ctx context.Context, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
-	tags, err := h.getTags(ctx)
+func handleDefinition(ctx context.Context, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
+	tags, err := getTags(ctx)
 	if err != nil {
 		return nil, err
 	}
-	word, _, err := wordAtPosition(ctx, h.fs, params)
+	word, _, err := wordAtPosition(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -39,10 +38,11 @@ func (h *Handler) handleDefinition(ctx context.Context, params lsp.TextDocumentP
 	return locations, nil
 }
 
-var ErrBadRequest = fmt.Errorf("invalid position argument")
+var ErrBadRequest = errors.New("invalid position argument")
 
 // wordAtPosition finds the word and start character of the word at the given position.
-func wordAtPosition(ctx context.Context, fs ctxvfs.FileSystem, params lsp.TextDocumentPositionParams) (string, int, error) {
+func wordAtPosition(ctx context.Context, params lsp.TextDocumentPositionParams) (string, int, error) {
+	fs := ctxInfo(ctx).fs
 	path := strings.TrimPrefix(params.TextDocument.URI, "file://")
 	rsk, err := fs.Open(ctx, path)
 	if err != nil {

@@ -11,58 +11,58 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 )
 
-func copyRepoArchive(ctx context.Context, fs ctxvfs.FileSystem, destination, mode string) error {
+func copyRepoArchive(ctx context.Context, destination string) error {
 	par := parallel.NewRun(10)
+	info := ctxInfo(ctx)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "copy files from VFS to disk")
-	w := ctxvfs.Walk(ctx, "/", fs)
+	w := ctxvfs.Walk(ctx, "/", info.fs)
 	for w.Step() {
 		if err := w.Err(); err != nil {
 			return err
 		}
-		fiPath := w.Path()
 		fi := w.Stat()
-		switch {
-		case fi.Name() == ".git" && fi.Mode().IsDir():
+		if fi.Name() == ".git" && fi.Mode().IsDir() {
 			w.SkipDir()
-		case fi.Mode().IsRegular():
-			if isSupportedFile(mode, fi.Name()) {
-				par.Acquire()
-				go func() {
-					defer par.Release()
-
-					outfile := filepath.Join(destination, fiPath)
-					if err := os.MkdirAll(filepath.Dir(outfile), os.ModePerm); err != nil {
-						par.Error(err)
-						return
-					}
-
-					in, err := fs.Open(ctx, fiPath)
-					if err != nil {
-						par.Error(err)
-						return
-					}
-					defer in.Close()
-
-					out, err := os.Create(outfile)
-					if err != nil {
-						par.Error(err)
-						return
-					}
-					defer out.Close()
-
-					if _, err := io.Copy(out, in); err != nil {
-						par.Error(err)
-					}
-				}()
-			}
+			continue
 		}
+		if !fi.Mode().IsRegular() || !isSupportedFile(info.mode, fi.Name()) {
+			continue
+		}
+		par.Acquire()
+		go copyFile(ctx, destination, w.Path(), par)
 	}
 	err := par.Wait()
 	span.Finish()
+	return err
+}
+
+func copyFile(ctx context.Context, destination, path string, par *parallel.Run) {
+	var err error
+	defer func() {
+		if err != nil {
+			par.Error(err)
+		}
+		par.Release()
+	}()
+
+	outfile := filepath.Join(destination, path)
+	err = os.MkdirAll(filepath.Dir(outfile), os.ModePerm)
 	if err != nil {
-		return err
+		return
 	}
 
-	return nil
+	in, err := ctxInfo(ctx).fs.Open(ctx, path)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+
+	out, err := os.Create(outfile)
+	if err != nil {
+		return
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
 }

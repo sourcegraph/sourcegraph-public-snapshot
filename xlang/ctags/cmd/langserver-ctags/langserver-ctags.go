@@ -59,30 +59,31 @@ func run() error {
 		}))
 	}
 
-	newHandler := func() jsonrpc2.Handler {
-		return jsonrpc2.HandlerWithError((&ctags.Handler{}).Handle)
-	}
+	handler := jsonrpc2.HandlerWithError(ctags.Handle)
 
+	ctx := context.Background()
 	switch *mode {
 	case "tcp":
-		lis, err := net.Listen("tcp", *addr)
+		ls, err := net.Listen("tcp", *addr)
 		if err != nil {
 			return err
 		}
-		defer lis.Close()
+		defer ls.Close()
 		log.Println("listening on", *addr)
 		// We do not use jsonrpc2.Serve since we want to store state per connection
 		for {
-			conn, err := lis.Accept()
+			conn, err := ls.Accept()
 			if err != nil {
 				return err
 			}
-			jsonrpc2.NewConn(context.Background(), conn, newHandler())
+			ctx = ctags.InitCtx(ctx)
+			jsonrpc2.NewConn(ctx, conn, handler)
 		}
 
 	case "stdio":
 		log.Println("reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, newHandler(), jsonrpc2.LogMessages(logger)).DisconnectNotify()
+		ctx = ctags.InitCtx(ctx)
+		<-jsonrpc2.NewConn(ctx, stdrwc{}, handler, jsonrpc2.LogMessages(logger)).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 

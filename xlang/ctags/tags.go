@@ -2,6 +2,7 @@ package ctags
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,31 +10,32 @@ import (
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/ctxvfs"
-	"golang.org/x/net/context"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/ctags/parser"
 )
 
-func (h *Handler) getTags(ctx context.Context) ([]parser.Tag, error) {
+func getTags(ctx context.Context) ([]parser.Tag, error) {
 	// If we are already running generateTags, we definitely don't want to run
 	// it again. If we aren't running it, this mutex will be very fast.
-	h.tagsMu.Lock()
-	defer h.tagsMu.Unlock()
-	if h.tags == nil {
-		tags, err := generateTags(ctx, h.fs, h.mode)
+	info := ctxInfo(ctx)
+	info.tagsMu.Lock()
+	defer info.tagsMu.Unlock()
+
+	if info.tags == nil {
+		tags, err := generateTags(ctx)
 		if err != nil {
 			return nil, err
 		}
-		h.tags = tags
+		info.tags = tags
 	}
-	return h.tags, nil
+	return info.tags, nil
 }
 
 var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor", "dist", ".git"}
 
 // generateTags runs ctags and parses the output.
-func generateTags(ctx context.Context, fs ctxvfs.FileSystem, mode string) ([]parser.Tag, error) {
+func generateTags(ctx context.Context) ([]parser.Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "run ctags")
 	defer span.Finish()
 
@@ -46,7 +48,7 @@ func generateTags(ctx context.Context, fs ctxvfs.FileSystem, mode string) ([]par
 	}
 	defer os.RemoveAll(filesDir)
 
-	err = copyRepoArchive(ctx, fs, filesDir, mode)
+	err = copyRepoArchive(ctx, filesDir)
 	if err != nil {
 		return nil, err
 	}
