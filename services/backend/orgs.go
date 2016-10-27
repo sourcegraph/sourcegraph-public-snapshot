@@ -109,6 +109,7 @@ func (s *orgs) ListOrgMembers(ctx context.Context, org *sourcegraph.OrgListOptio
 			} else {
 				orgMember.CanInvite = false
 				orgMember.Invite = orgInvite
+				orgMember.Email = orgInvite.UserEmail
 			}
 		}
 
