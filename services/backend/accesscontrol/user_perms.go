@@ -7,9 +7,12 @@ import (
 	"strings"
 
 	gogithub "github.com/sourcegraph/go-github/github"
+	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/google"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -104,6 +107,10 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 		// Perform GitHub repository authorization check by delegating to GitHub API.
 		return verifyActorHasGitHubRepoAccess(ctx, actor, repoURI)
 
+	case strings.HasPrefix(strings.ToLower(repoURI), "source.developers.google.com/p/"):
+		// Perform GCP repository authorization check by delegating to GCP API.
+		return verifyActorHasGCPRepoAccess(ctx, actor, repoURI)
+
 	default:
 		// Unless something above explicitly grants access, by default, access is denied.
 		// This is a safer default.
@@ -134,6 +141,40 @@ func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, repo
 	}
 
 	if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
+		return true
+	}
+
+	return false
+}
+
+// verifyActorHasGCPRepoAccess checks if the given actor is authorized to access
+// the given GCP mirrored repository.
+func verifyActorHasGCPRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
+	if !actor.GoogleConnected {
+		return false
+	}
+
+	googleRefreshToken, err := auth.FetchGoogleRefreshToken(ctx, actor.UID)
+	if err != nil {
+		return false
+	}
+	client := google.Default.Client(ctx, &oauth2.Token{
+		RefreshToken: googleRefreshToken.Token,
+	})
+	s, err := source.New(client)
+	if err != nil {
+		return false
+	}
+
+	// Parse "source.developers.google.com/p/projectID/r/repoName" repoURI format.
+	els := strings.SplitN(repoURI, "/", 6)
+	if len(els) != 5 { // It's expected to have exactly 5 elements.
+		return false
+	}
+	projectID := els[2] // projectID is at index 2.
+	repoName := els[4]  // repoName is at index 4.
+
+	if _, err := s.Projects.Repos.Get(projectID, repoName).Do(); err == nil {
 		return true
 	}
 
