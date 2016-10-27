@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	pathpkg "path"
 	"path/filepath"
 	"regexp"
@@ -14,12 +15,16 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	gogithub "github.com/sourcegraph/go-github/github"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/cloudresourcemanager/v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/google"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
@@ -83,11 +88,37 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	if opt.RemoteOnly {
-		repos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: opt.Type})
+		var anySuccess bool
+		var errs []error
+
+		// Fetch accessible GitHub repositories.
+		ghRepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: opt.Type})
 		if err != nil {
-			return nil, err
+			ghRepos = nil
+			errs = append(errs, err)
+		} else {
+			anySuccess = true
 		}
-		return &sourcegraph.RepoList{Repos: repos}, nil
+
+		// Fetch accessible GCP repositories.
+		gcpRepos, err := s.listAccessibleGCPRepos(ctx, opt)
+		if err != nil {
+			gcpRepos = nil
+			errs = append(errs, err)
+		} else {
+			anySuccess = true
+		}
+
+		if !anySuccess {
+			// Nothing succeeded.
+			return nil, errs[0]
+		} else {
+			// Partial success. Print messages as warnings.
+			for _, err := range errs {
+				log15.Warn("failed to fetch some remote repositories", "error", err)
+			}
+		}
+		return &sourcegraph.RepoList{Repos: append(ghRepos, gcpRepos...)}, nil
 	}
 
 	repos, err := localstore.Repos.List(ctx, &localstore.RepoListOp{
@@ -141,6 +172,73 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	return &sourcegraph.RepoList{Repos: repos}, nil
+}
+
+// listAccessibleGCPRepos fetches remote GCP repos accessible to current user.
+// Access checks are done on Google's end, since repos are listed with the
+// current user's Google credentials. Returned results are safe to show to
+// current user. It's safe to call even if the user doesn't have a Google account,
+// an empty set is then returned.
+func (s *repos) listAccessibleGCPRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+	actor := authpkg.ActorFromContext(ctx)
+	if !actor.GoogleConnected {
+		return nil, nil
+	}
+
+	googleRefreshToken, err := authpkg.FetchGoogleRefreshToken(ctx, actor.UID)
+	if err != nil {
+		return nil, err
+	}
+	client := google.Default.Client(ctx, &oauth2.Token{
+		RefreshToken: googleRefreshToken.Token,
+	})
+	projects, err := listGCPProjects(client)
+	if err != nil {
+		return nil, err
+	}
+	gcpRepos, err := listGCPRepos(client, projects)
+	if err != nil {
+		return nil, err
+	}
+	var repos []*sourcegraph.Repo
+	for _, r := range gcpRepos {
+		repos = append(repos, &sourcegraph.Repo{
+			URI:   "source.developers.google.com/p/" + r.ProjectId + "/r/" + r.Name,
+			Owner: r.ProjectId,
+			Name:  r.Name,
+		})
+	}
+	return repos, nil
+}
+
+// listGCPProjects returns a list of GCP projects using client.
+func listGCPProjects(client *http.Client) ([]*cloudresourcemanager.Project, error) {
+	s, err := cloudresourcemanager.New(client)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.Projects.List().Do()
+	if err != nil {
+		return nil, err
+	}
+	return resp.Projects, nil
+}
+
+// listGCPRepos returns a list of all GCP repos that belong to projects using client.
+func listGCPRepos(client *http.Client, projects []*cloudresourcemanager.Project) ([]*source.Repo, error) {
+	s, err := source.New(client)
+	if err != nil {
+		return nil, err
+	}
+	var repos []*source.Repo
+	for _, p := range projects {
+		resp, err := s.Projects.Repos.List(p.ProjectId).Do()
+		if err != nil {
+			return repos, err
+		}
+		repos = append(repos, resp.Repos...)
+	}
+	return repos, nil
 }
 
 //  ListDeps lists dependencies for a given list of repo URIs.
