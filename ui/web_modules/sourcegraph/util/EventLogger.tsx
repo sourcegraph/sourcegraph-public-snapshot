@@ -314,12 +314,20 @@ class EventLoggerClass {
 				if (action.isUserRepos) {
 					if (action.data.Repos) {
 						let languages: Array<string> = [];
+						let repos: Array<string> = [];
+						let repoOwners: Array<string> = [];
+						let repoNames: Array<string> = [];
 						for (let repo of action.data.Repos) {
 								languages.push(repo["Language"]);
+								repoNames.push(repo["Name"]);
+								repoOwners.push(repo["Owner"]);
+								repos.push(` ${repo["Owner"]}/${repo["Name"]}`);
 						}
 
 						this.setUserProperty("authed_languages_github", this._dedupedArray(languages));
 						this.setUserProperty("num_repos_github", action.data.Repos.length);
+						this.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_FETCH, "AuthedLanguagesGitHubFetched", {"fetched_languages_github": this._dedupedArray(languages)});
+						this.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_FETCH, "AuthedReposGitHubFetched", {"fetched_repo_names_github": this._dedupedArray(repoNames), "fetched_repo_owners_github": this._dedupedArray(repoOwners), "fetched_repos_github": this._dedupedArray(repos)});
 					}
 				}
 				break;
@@ -340,6 +348,20 @@ class EventLoggerClass {
 					}
 					this.setIntercomProperty("authed_orgs_github", orgNames);
 					this.setUserProperty("authed_orgs_github", orgNames);
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_FETCH, "AuthedOrgsGitHubFetched", {"fetched_orgs_github": orgNames});
+				}
+				break;
+			case OrgActions.OrgMembersFetched:
+				if (action.data && action.orgName) {
+					let orgName: string = action.orgName;
+					let orgMemberNames: string[] = [];
+					let orgMemberEmails: string[] = [];
+					for (let member of action.data) {
+						orgMemberNames.push(member.Login);
+						orgMemberEmails.push(member.Email || "");
+					}
+
+					this.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_FETCH, "AuthedOrgMembersGitHubFetched", {"fetched_org_github": orgName, "fetched_org_member_names_github": orgMemberNames, "fetched_org_member_emails_github": orgMemberEmails});
 				}
 				break;
 			default:
