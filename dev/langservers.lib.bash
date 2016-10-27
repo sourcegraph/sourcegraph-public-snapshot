@@ -1,33 +1,40 @@
-# This file prepares and sets the LANGSERVER_<lang> env vars for the
-# development lang servers.
-#
-# If a lang server should be available to all dev servers, then add
-# installation and configuration steps here. Any existing
-# LANGSERVER_<lang> env var MUST take precedence (if set, do not
-# overwrite it).
+LS_ROOT="${HOME}/.sourcegraph/lang"
 
-export LANGSERVER_GO=${LANGSERVER_GO-:builtin:}
+# Prepare and set the LANGSERVER_<lang> env vars for development lang
+# servers in ~/.sourcegraph/lang and the builtin Go lang server.
+detect_dev_langservers() {
+	# Go (builtin)
+	export LANGSERVER_GO=${LANGSERVER_GO-:builtin:}
 
-# TypeScript and JavaScript
-#
-# Install and use the TypeScript/JavaScript lang server (which are the
-# same server) if yarn is installed (which is a good indicator of
-# whether they care about TypeScript/JavaScript at all).
-#
-# To use your own javascript-typescript-langserver, just symlink
-# $JSTS_LS_DIR to it.
-if type yarn > /dev/null 2>&1 && ([[ -z "${LANGSERVER_TYPESCRIPT-}" ]] || [[ -z "${LANGSERVER_JAVASCRIPT-}" ]]); then
-	JSTS_LS_DIR="${HOME}/.sourcegraph/lang/javascript-typescript-langserver"
-	if [[ ! -d "$JSTS_LS_DIR" ]]; then
-		mkdir -p "$JSTS_LS_DIR"/..
-		git clone --quiet https://github.com/sourcegraph/javascript-typescript-langserver.git "$JSTS_LS_DIR"
+	# JavaScript/TypeScript
+	JSTS_LS_DIR="${LS_ROOT}/javascript-typescript-langserver"
+	if [[ -d "$JSTS_LS_DIR" ]]; then
+		echo '# Using javascript-typescript-langserver in '"$JSTS_LS_DIR"' (run `dev/install-langserver.sh javascript-typescript-langserver` to update)'
+		export LANGSERVER_TYPESCRIPT=${LANGSERVER_TYPESCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
+		export LANGSERVER_JAVASCRIPT=${LANGSERVER_JAVASCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
+	else
+		echo '# To add JavaScript/TypeScript language support, run `dev/install-langserver.sh javascript-typescript-langserver` or symlink '"$JSTS_LS_DIR"' to a local clone of javascript-typescript-langserver.'
 	fi
-	if [[ ! -d "$JSTS_LS_DIR"/node_modules ]]; then
-		(cd "$JSTS_LS_DIR" && yarn install)
+}
+
+install_langserver() {
+	set -x
+	LS_NAME=$1
+	LS_DIR="${LS_ROOT}/${LS_NAME}"
+	if [[ ! -d "$LS_DIR" ]]; then
+		mkdir -p "$LS_DIR"/..
+		git clone --quiet https://github.com/sourcegraph/"$LS_NAME".git "$LS_DIR"
+	else
+		(cd "$LS_DIR" && git pull)
 	fi
-	if [[ ! -d "$JSTS_LS_DIR"/build ]]; then
-		(cd "$JSTS_LS_DIR" && node_modules/.bin/tsc)
-	fi
-	export LANGSERVER_TYPESCRIPT=${LANGSERVER_TYPESCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
-	export LANGSERVER_JAVASCRIPT=${LANGSERVER_JAVASCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
-fi
+
+	case "$LS_NAME" in
+		javascript-typescript-langserver)
+			(cd "$LS_DIR" && yarn install && node_modules/.bin/tsc)
+			;;
+		*)
+			echo '# Do not know how to install '"$LS_NAME"'. See dev/langservers.lib.bash for a list of known language servers that can be installed using this method.'
+			exit 1
+			;;
+	esac
+}

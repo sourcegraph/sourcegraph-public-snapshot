@@ -18,6 +18,7 @@ curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &)
 export DEBUG=t
 
 . dev/langservers.lib.bash
+detect_dev_langservers
 
 type ulimit > /dev/null && ulimit -n 10000
 exec "$PWD"/vendor/bin/rego \
