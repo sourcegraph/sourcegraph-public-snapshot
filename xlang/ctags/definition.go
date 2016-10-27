@@ -29,6 +29,13 @@ func (h *Handler) handleDefinition(ctx context.Context, params lsp.TextDocumentP
 			}
 		}
 	}
+	if len(locations) > 1 {
+		for _, loc := range locations {
+			if loc.URI == params.TextDocument.URI {
+				return []lsp.Location{loc}, nil
+			}
+		}
+	}
 	return locations, nil
 }
 
