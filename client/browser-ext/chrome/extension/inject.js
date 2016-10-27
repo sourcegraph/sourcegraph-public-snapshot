@@ -11,7 +11,7 @@ import {SourcegraphIcon} from "../../app/components/Icons";
 import BlobAnnotator from "../../app/components/BlobAnnotator";
 import createStore from "../../app/store/configureStore";
 
-import {parseURL, isGitHubURL, isSourcegraphURL, readableGitHubView, getGitHubRoute, getLinesOfCode} from "../../app/utils";
+import {parseURL, isGitHubURL, isSourcegraphURL, readableGitHubRoute, getGitHubRoute, getLinesOfCode} from "../../app/utils";
 
 let store = createStore({});
 const isTooBigThreshold = 5000;
