@@ -258,7 +258,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			HoverProvider:      true,
 		}, nil
 
-	case "textDocument/definition", "textDocument/hover", "textDocument/references", "workspace/symbol", "workspace/reference":
+	case "textDocument/definition", "textDocument/hover", "textDocument/references", "textDocument/documentSymbol", "workspace/symbol", "workspace/reference":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
 		}
