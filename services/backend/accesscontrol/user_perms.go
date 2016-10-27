@@ -368,10 +368,6 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method st
 // operations, that check is not repeated here, but be careful
 // about refactoring that check.
 func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string, repo int32) bool {
-	if skip(ctx) {
-		return true
-	}
-
 	if scopes == nil {
 		return false
 	}
