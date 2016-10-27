@@ -70,6 +70,24 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 
 			// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
 			ctx = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, &authpkg.Actor{UID: asUserUID, GitHubToken: extToken.Token}))
+
+		case strings.HasPrefix(strings.ToLower(repo.URI), "source.developers.google.com/p/"):
+			extToken, err := authpkg.FetchGoogleToken(ctx, asUserUID)
+			if err != nil {
+				log15.Warn("refreshing vcs with user, but problem fetching google token", "error", err)
+				break
+			}
+			username, err := authpkg.FetchGoogleUsername(ctx, asUserUID)
+			if err != nil {
+				log15.Warn("refreshing vcs with user, but problem fetching google username", "error", err)
+				break
+			}
+
+			// Set the auth token to be used in repo VCS operations.
+			remoteOpts.HTTPS = &vcs.HTTPSConfig{
+				User: username,
+				Pass: extToken.Token,
+			}
 		}
 	}
 
