@@ -6,9 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"runtime"
-	"strings"
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -20,10 +18,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
-
-func vslog(out ...string) {
-	os.Stderr.WriteString(strings.Join(out, "\n") + "\n")
-}
 
 var emptyArray = make([]string, 0)
 
@@ -57,12 +51,17 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			vslog(string(buf))
 			log.Printf("panic serving %v: %v\n%s", req.Method, r, buf)
-			return
 		}
 	}()
+	response, err := h.HandleRequest(ctx, conn, req)
+	if err != nil {
+		log.Println(err)
+	}
+	return response, err
+}
 
+func (h *Handler) HandleRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 	operationName := "LS Serve: " + req.Method
 	span, ctx := opentracing.StartSpanFromContext(ctx, operationName)
 	defer span.Finish()
@@ -94,13 +93,11 @@ func (h *Handler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 	case "workspace/symbol":
 		var params lsp.WorkspaceSymbolParams
-		if err = json.Unmarshal(*req.Params, &params); err != nil {
-			vslog(err.Error())
-			return
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
 		}
 		s, err := h.handleSymbol(ctx, params)
 		if err != nil {
-			vslog(err.Error())
 			return nil, err
 		}
 		if s == nil {

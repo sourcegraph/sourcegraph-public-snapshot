@@ -3,6 +3,7 @@ package jsonrpc2
 import (
 	"context"
 	"log"
+	"reflect"
 )
 
 // HandlerWithError implements Handler by calling the func for each
@@ -21,7 +22,7 @@ func (h HandlerWithError) Handle(ctx context.Context, conn *Conn, req *Request) 
 
 	resp := &Response{ID: req.ID}
 	if err == nil {
-		if result == nil {
+		if isNilValue(result) {
 			result = struct{}{}
 		}
 		err = resp.SetResult(result)
@@ -39,4 +40,18 @@ func (h HandlerWithError) Handle(ctx context.Context, conn *Conn, req *Request) 
 			log.Printf("jsonrpc2 handler: sending response %d: %s", resp.ID, err)
 		}
 	}
+}
+
+// isNilValue tests if an interface is empty, because an empty interface does
+// not encode any information, we can't encode it in JSON so that the proxy
+// knows it's a response, not a request.
+func isNilValue(resp interface{}) bool {
+	if resp == nil {
+		return true
+	}
+	kind := reflect.TypeOf(resp).Kind()
+	value := reflect.ValueOf(resp)
+	nilPtr := kind == reflect.Ptr && value.IsNil()
+	nilSlice := kind == reflect.Slice && value.IsNil()
+	return nilPtr || nilSlice
 }
