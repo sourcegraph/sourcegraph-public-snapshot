@@ -415,10 +415,6 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				for (let key in this.props.location.query) {
 					if (key !== "_event") {
 						eventProperties[this.camelCaseToUnderscore(key)] = this.props.location.query[key];
-						if (context.user) {
-							// Fetch orgs for analytics and tracking only after explicit tracking events.
-							Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
-						}
 					}
 				}
 

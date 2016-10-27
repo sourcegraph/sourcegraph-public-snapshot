@@ -7,7 +7,9 @@ import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Close, Flag} from "sourcegraph/components/symbols/Zondicons";
 import {colors, typography, whitespace} from "sourcegraph/components/utils";
 import {fontStack} from "sourcegraph/components/utils/typography";
+import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Location} from "sourcegraph/Location";
+import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
@@ -119,6 +121,11 @@ export class TourOverlay extends React.Component<Props, State>  {
 			visibleMarks: visibleMarks,
 			viewedAnnotations: [],
 		};
+
+		// Fetch orgs for analytics and GTM at start of onboarding flow.
+		if (context.user && context.hasOrganizationGitHubToken()) {
+			Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
+		}
 	}
 
 	componentDidMount(): void {
