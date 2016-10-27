@@ -1,11 +1,10 @@
 package accesscontrol
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"context"
 
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -130,7 +129,7 @@ func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, meth
 		panic(fmt.Errorf(`verifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
 	}
 
-	if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+	if verifyScopeHasAccess(ctx, actor.Scope, method, repo) {
 		return true
 	}
 
@@ -311,7 +310,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	// (because it makes modifying authorization logic more error-prone.)
 
 	if !actor.IsAuthenticated() {
-		if VerifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
+		if verifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
 			return nil
 		}
 		return legacyerr.Errorf(legacyerr.Unauthenticated, "write operation (%s) denied: not authenticated", method)
@@ -347,7 +346,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if !actor.IsAuthenticated() {
-		if VerifyScopeHasAccess(ctx, actor.Scope, method, 0) {
+		if verifyScopeHasAccess(ctx, actor.Scope, method, 0) {
 			return nil
 		}
 		return legacyerr.Errorf(legacyerr.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
@@ -368,7 +367,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method st
 // context. To avoid additional latency from expensive public key
 // operations, that check is not repeated here, but be careful
 // about refactoring that check.
-func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string, repo int32) bool {
+func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string, repo int32) bool {
 	if skip(ctx) {
 		return true
 	}
