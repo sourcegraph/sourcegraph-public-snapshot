@@ -88,35 +88,15 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	if opt.RemoteOnly {
-		var anySuccess bool
-		var errs []error
-
-		// Fetch accessible GitHub repositories.
 		ghRepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: opt.Type})
 		if err != nil {
+			log15.Warn("failed to fetch some remote repositories", "source", "GitHub", "error", err)
 			ghRepos = nil
-			errs = append(errs, err)
-		} else {
-			anySuccess = true
 		}
-
-		// Fetch accessible GCP repositories.
-		gcpRepos, err := s.listAccessibleGCPRepos(ctx, opt)
+		gcpRepos, err := s.listAccessibleGCPRepos(ctx)
 		if err != nil {
+			log15.Warn("failed to fetch some remote repositories", "source", "GCP", "error", err)
 			gcpRepos = nil
-			errs = append(errs, err)
-		} else {
-			anySuccess = true
-		}
-
-		if !anySuccess {
-			// Nothing succeeded.
-			return nil, errs[0]
-		} else {
-			// Partial success. Print messages as warnings.
-			for _, err := range errs {
-				log15.Warn("failed to fetch some remote repositories", "error", err)
-			}
 		}
 		return &sourcegraph.RepoList{Repos: append(ghRepos, gcpRepos...)}, nil
 	}
@@ -179,7 +159,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 // current user's Google credentials. Returned results are safe to show to
 // current user. It's safe to call even if the user doesn't have a Google account,
 // an empty set is then returned.
-func (s *repos) listAccessibleGCPRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*sourcegraph.Repo, error) {
+func (s *repos) listAccessibleGCPRepos(ctx context.Context) ([]*sourcegraph.Repo, error) {
 	actor := authpkg.ActorFromContext(ctx)
 	if !actor.GoogleConnected {
 		return nil, nil
