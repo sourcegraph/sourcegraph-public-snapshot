@@ -201,6 +201,16 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 		}
 		return h.handleTextDocumentReferences(ctx, conn, req, params)
 
+	case "textDocument/documentSymbol":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params lsp.DocumentSymbolParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		return h.handleTextDocumentSymbol(ctx, conn, req, params)
+
 	case "workspace/symbol":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
@@ -209,7 +219,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		return h.handleSymbol(ctx, conn, req, params)
+		return h.handleWorkspaceSymbol(ctx, conn, req, params)
 
 	case "workspace/reference":
 		if req.Params == nil {

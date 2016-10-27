@@ -9,8 +9,8 @@ import (
 	"go/token"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -27,29 +27,35 @@ import (
 type query struct {
 	kind   lsp.SymbolKind
 	filter filterType
+	file   string
 	tokens []string
 }
 
 // parseQuery parses a user's raw query string and returns a
 // structured representation of the query.
-func parseQuery(q string) query {
-	var qu query
-	toks := tokenizer.Split(strings.ToLower(q), -1)
-	index := 0
-	for _, tok := range toks {
-		if tok == "" {
+func parseQuery(q string) (qu query) {
+	// All queries are case insensitive.
+	q = strings.ToLower(q)
+
+	// Split the query into space-delimited fields.
+	for _, field := range strings.Fields(q) {
+		// Check if the field is a filter like `is:exported`.
+		if field == "is:exported" {
+			qu.filter = filterExported
 			continue
 		}
-		index++
-		if kind, isKeyword := keywords[tok]; isKeyword {
-			qu.kind = kind
-			continue
+
+		// Each field is split into tokens, delimited by periods or slashes.
+		tokens := strings.FieldsFunc(field, func(c rune) bool {
+			return c == '.' || c == '/'
+		})
+		for _, tok := range tokens {
+			if kind, isKeyword := keywords[tok]; isKeyword {
+				qu.kind = kind
+				continue
+			}
+			qu.tokens = append(qu.tokens, tok)
 		}
-		if filter, isFilter := parseFilter(tok); isFilter {
-			qu.filter = filter
-			continue
-		}
-		qu.tokens = append(qu.tokens, tok)
 	}
 	return qu
 }
@@ -59,21 +65,6 @@ type filterType string
 const (
 	filterExported filterType = "exported"
 )
-
-var filters = map[string]filterType{
-	string(filterExported): filterExported,
-}
-
-// parseFilter parses a search query filter token, e.g. "is:exported".
-// Only "is:<filter>" tokens are currently supported.
-func parseFilter(s string) (filterType, bool) {
-	if !strings.HasPrefix(s, "is:") {
-		return "", false
-	}
-	s = strings.TrimPrefix(s, "is:")
-	filter, ok := filters[s]
-	return filter, ok
-}
 
 // keywords are keyword tokens that will be interpreted as symbol kind
 // filters in the search query.
@@ -86,9 +77,6 @@ var keywords = map[string]lsp.SymbolKind{
 	"var":     lsp.SKVariable,
 	"const":   lsp.SKConstant,
 }
-
-// tokenizer is a regexp for tokenizing a raw user query string.
-var tokenizer = regexp.MustCompile(`[\.\s\/]+`)
 
 // resultSorter is a utility struct for collecting, filtering, and
 // sorting symbol results.
@@ -162,6 +150,10 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 		// is:exported excludes vendor symbols always.
 		return 0
 	}
+	if q.file != "" && filename != q.file {
+		// We're restricing results to a single file, and this isn't it.
+		return 0
+	}
 	if len(q.tokens) == 0 { // early return if empty query
 		if isVendor {
 			return 1 // lower score for vendor symbols
@@ -220,10 +212,21 @@ func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos t
 	}
 }
 
+// handleTextDocumentSymbol handles `textDocument/documentSymbol` requests for
+// the Go language server.
+func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.DocumentSymbolParams) ([]lsp.SymbolInformation, error) {
+	f := strings.TrimPrefix(params.TextDocument.URI, "file://")
+	return h.handleSymbol(ctx, conn, req, query{file: f}, 0)
+}
+
 // handleSymbol handles `workspace/symbol` requests for the Go
 // language server.
-func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	results := resultSorter{query: parseQuery(params.Query), results: make([]scoredSymbol, 0)}
+func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+	return h.handleSymbol(ctx, conn, req, parseQuery(params.Query), params.Limit)
+}
+
+func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, query query, limit int) ([]lsp.SymbolInformation, error) {
+	results := resultSorter{query: query, results: make([]scoredSymbol, 0)}
 	{
 		fs := token.NewFileSet()
 		rootPath := h.FilePath(h.init.RootPath)
@@ -250,8 +253,8 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 		_ = par.Wait()
 	}
 	sort.Sort(&results)
-	if len(results.results) > params.Limit && params.Limit > 0 {
-		results.results = results.results[:params.Limit]
+	if len(results.results) > limit && limit > 0 {
+		results.results = results.results[:limit]
 	}
 
 	return results.Results(), nil
@@ -286,6 +289,12 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 			if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
 				log.Printf("skipping possible package %s: %s", pkg, err)
 			}
+			return
+		}
+
+		// If we're restricting results to a single file, ensure the package dir
+		// matches the file dir to avoid doing unnecessary work.
+		if results.query.file != "" && !strings.HasPrefix(buildPkg.Dir, path.Dir(results.query.file)) {
 			return
 		}
 
