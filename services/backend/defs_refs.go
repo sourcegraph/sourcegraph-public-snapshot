@@ -298,6 +298,18 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
 	defer done()
 
+	// Refuse to index private repositories. For the time being, we do not. We
+	// must decide on an approach, and there are serious implications to both
+	// approaches.
+	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
+	if err != nil {
+		return err
+	}
+	if repo.Private {
+		log15.Warn("Refusing to index private repository", "repo", repo.URI)
+		return nil
+	}
+
 	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {
 		return err
