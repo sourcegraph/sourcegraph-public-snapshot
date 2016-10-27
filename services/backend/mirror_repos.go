@@ -45,12 +45,23 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		asUserUID = op.AsUser.UID
 	}
 
+	repo, err := localstore.Repos.Get(ctx, op.Repo)
+	if err != nil {
+		log15.Error("RefreshVCS: failed to get repo", "error", err, "repo", op.Repo)
+		return err
+	}
+
 	// Use the auth token for asUserUID if it can be successfully looked up (it may fail if that user doesn't have one),
 	// otherwise proceed without their credentials. It will work for public repos.
 	remoteOpts := vcs.RemoteOpts{}
 	if asUserUID != "" {
-		extToken, err := authpkg.FetchGitHubToken(ctx, asUserUID)
-		if err == nil {
+		switch {
+		case strings.HasPrefix(strings.ToLower(repo.URI), "github.com/"):
+			extToken, err := authpkg.FetchGitHubToken(ctx, asUserUID)
+			if err != nil {
+				break
+			}
+
 			// Set the auth token to be used in repo VCS operations.
 			remoteOpts.HTTPS = &vcs.HTTPSConfig{
 				User: "x-oauth-token", // User is unused by GitHub, but provide a non-empty value to satisfy git.
@@ -60,12 +71,6 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 			// Set a GitHub client authed as the user in the context, to be used to make GitHub API calls.
 			ctx = github.NewContextWithAuthedClient(authpkg.WithActor(ctx, &authpkg.Actor{UID: asUserUID, GitHubToken: extToken.Token}))
 		}
-	}
-
-	repo, err := localstore.Repos.Get(ctx, op.Repo)
-	if err != nil {
-		log15.Error("RefreshVCS: failed to get repo", "error", err, "repo", op.Repo)
-		return err
 	}
 
 	vcsRepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
