@@ -3,7 +3,6 @@ package ctags
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -32,8 +31,6 @@ func getTags(ctx context.Context) ([]parser.Tag, error) {
 	return info.tags, nil
 }
 
-var ignoreFiles = []string{".srclib-cache", "node_modules", "vendor", "dist", ".git"}
-
 // generateTags runs ctags and parses the output.
 func generateTags(ctx context.Context) ([]parser.Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "run ctags")
@@ -53,16 +50,7 @@ func generateTags(ctx context.Context) ([]parser.Tag, error) {
 		return nil, err
 	}
 
-	args := []string{"-f", "-", "--fields=*", "--excmd=pattern", "--languages=Ruby,C,C++"}
-	excludeArgs := make([]string, 0, len(ignoreFiles))
-	for _, ignoreFile := range ignoreFiles {
-		excludeArgs = append(excludeArgs, fmt.Sprintf("--exclude=%s", ignoreFile))
-	}
-	args = append(args, excludeArgs...)
-
-	// filesDir must come after exclude arguments
-	args = append(args, "-R", filesDir)
-	cmd := exec.Command("ctags", args...)
+	cmd := exec.Command("ctags", "-f", "-", "--fields=*", "--excmd=pattern", "-R", filesDir)
 
 	// Pipe out the ouput of ctags directly into the ctags parser
 	rc, err := cmd.StdoutPipe()

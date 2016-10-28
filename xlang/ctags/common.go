@@ -17,6 +17,16 @@ func isSupportedFile(mode, filename string) bool {
 		return ext == ".c" || ext == ".h"
 	case "ruby":
 		return ext == ".rb"
+	case "java":
+		return ext == ".java"
+	case "csharp":
+		return ext == ".cs"
+	case "cpp":
+		return ext == ".cxx" || ext == ".h" || ext == ".cpp" || ext == ".ext"
+	case "php":
+		return ext == ".php"
+	case "lua":
+		return ext == ".lua"
 	default:
 		return false
 	}

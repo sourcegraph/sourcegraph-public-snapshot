@@ -22,7 +22,7 @@ func copyRepoArchive(ctx context.Context, destination string) error {
 			return err
 		}
 		fi := w.Stat()
-		if fi.Name() == ".git" && fi.Mode().IsDir() {
+		if boringDir(fi) {
 			w.SkipDir()
 			continue
 		}
@@ -65,4 +65,16 @@ func copyFile(ctx context.Context, destination, path string, par *parallel.Run) 
 	defer out.Close()
 
 	_, err = io.Copy(out, in)
+}
+
+func boringDir(fi os.FileInfo) bool {
+	if !fi.Mode().IsDir() {
+		return false
+	}
+	switch fi.Name() {
+	case ".git", "node_modules", "vendor", "dist", ".srclib-cache":
+		return true
+	default:
+		return false
+	}
 }
