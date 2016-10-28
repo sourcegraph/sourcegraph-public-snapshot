@@ -130,9 +130,13 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	if err != nil || len(data) < 5 {
 		// Fallback to legacy / srclib data.
 		legacyRepoLandingCounter.Inc()
-		data, err = queryLegacyRepoLandingData(r, repo)
-		if err != nil {
-			return err
+		legacyData, legacyErr := queryLegacyRepoLandingData(r, repo)
+		if legacyErr != nil && err != nil {
+			// Only return an error if both systems error'd out.
+			return fmt.Errorf("multiple errors: queryRepoLandingData=%v queryLegacyRepoLandingData=%v", err, legacyErr)
+		}
+		if legacyData != nil {
+			data = legacyData
 		}
 	}
 
@@ -336,9 +340,13 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// data.
 	if err != nil || len(data.RefLocs.SourceRefs) < 3 {
 		legacyDefLandingCounter.Inc()
-		data, err = queryLegacyDefLandingData(r, repo)
-		if err != nil {
-			return err
+		legacyData, legacyErr := queryLegacyDefLandingData(r, repo)
+		if legacyErr != nil && err != nil {
+			// Only return an error if both systems error'd out.
+			return fmt.Errorf("multiple errors: queryRepoLandingData=%v queryLegacyRepoLandingData=%v", err, legacyErr)
+		}
+		if legacyData != nil {
+			data = legacyData
 		}
 	}
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
