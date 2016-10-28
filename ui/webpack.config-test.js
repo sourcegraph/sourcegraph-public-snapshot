@@ -30,7 +30,7 @@ module.exports = {
 					}),
 				],
 			},
-			{test: /\.json$/, exclude: /node_modules/, loader: "json-loader"},
+			{test: /\.json$/, loader: "json-loader"},
 			{test: /\.svg$/, loader: "null"},
 			{test: /\.css$/, loader: "null"},
 		],
