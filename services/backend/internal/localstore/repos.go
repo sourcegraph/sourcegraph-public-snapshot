@@ -602,6 +602,11 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 			return 0, legacyerr.Errorf(legacyerr.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
 		}
 		// Anyone can create GitHub mirrors.
+	} else if strings.HasPrefix(newRepo.URI, "source.developers.google.com/p/") {
+		if !newRepo.Mirror {
+			return 0, legacyerr.Errorf(legacyerr.InvalidArgument, "cannot create hosted repo with URI prefix: 'source.developers.google.com/p/'")
+		}
+		// Anyone can create GCP mirrors.
 	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
 		return 0, err
 	}

@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	googleoauth2 "google.golang.org/api/oauth2/v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/google"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 )
 
@@ -22,12 +21,7 @@ func FetchGoogleToken(ctx context.Context, uid string) (*sourcegraph.ExternalTok
 		return nil, err
 	}
 
-	config := oauth2.Config{
-		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		Endpoint:     google.Endpoint,
-	}
-	token, err := config.TokenSource(ctx, &oauth2.Token{
+	token, err := google.Default.TokenSource(ctx, &oauth2.Token{
 		RefreshToken: refreshToken.Token,
 	}).Token()
 	if err != nil {

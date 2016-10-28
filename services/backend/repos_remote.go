@@ -55,6 +55,10 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 			return &sourcegraph.RepoResolution{
 				RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
 			}, nil
+		case strings.HasPrefix(op.Path, "source.developers.google.com/p/"):
+			return &sourcegraph.RepoResolution{
+				RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
+			}, nil
 		}
 	}
 

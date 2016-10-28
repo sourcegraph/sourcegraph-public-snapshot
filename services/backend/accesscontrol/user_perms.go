@@ -1,16 +1,18 @@
 package accesscontrol
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"context"
-
 	gogithub "github.com/sourcegraph/go-github/github"
+	"golang.org/x/oauth2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/google"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -96,10 +98,18 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 		return true
 	}
 
+	if verifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
+		return true
+	}
+
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
-		return verifyActorHasGitHubRepoAccess(ctx, actor, method, repoID, repoURI)
+		return verifyActorHasGitHubRepoAccess(ctx, actor, repoURI)
+
+	case strings.HasPrefix(strings.ToLower(repoURI), "source.developers.google.com/p/"):
+		// Perform GCP repository authorization check by delegating to GCP API.
+		return verifyActorHasGCPRepoAccess(ctx, actor, repoURI)
 
 	default:
 		// Unless something above explicitly grants access, by default, access is denied.
@@ -122,19 +132,49 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 // TODO: move to a security model that is more robust, readable, has
 // better separation when dealing with multiple configurations, actor
 // types, resource types and actions.
-func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, method string, repo int32, repoURI string) bool {
-	if repo == 0 || repoURI == "" {
-		panic("both repo and repoURI must be set")
+func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
+	if repoURI == "" {
+		panic("repoURI must be set")
 	}
 	if !strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
 		panic(fmt.Errorf(`verifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
 	}
 
-	if VerifyScopeHasAccess(ctx, actor.Scope, method, repo) {
+	if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
 		return true
 	}
 
-	if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
+	return false
+}
+
+// verifyActorHasGCPRepoAccess checks if the given actor is authorized to access
+// the given GCP mirrored repository.
+func verifyActorHasGCPRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
+	if !actor.GoogleConnected {
+		return false
+	}
+
+	googleRefreshToken, err := auth.FetchGoogleRefreshToken(ctx, actor.UID)
+	if err != nil {
+		return false
+	}
+	client := google.Default.Client(ctx, &oauth2.Token{
+		RefreshToken: googleRefreshToken.Token,
+	})
+	s, err := source.New(client)
+	if err != nil {
+		return false
+	}
+
+	// Parse "source.developers.google.com/p/projectID/r/repoName" repoURI format.
+	els := strings.SplitN(repoURI, "/", 6)
+	if len(els) != 5 { // It's expected to have exactly 5 elements.
+		return false
+	}
+	projectID := els[2] // projectID is at index 2.
+	repoName := els[4]  // repoName is at index 4.
+
+	if _, err := s.Projects.Repos.Get(projectID, repoName).Do(); err == nil {
 		return true
 	}
 
@@ -311,7 +351,7 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	// (because it makes modifying authorization logic more error-prone.)
 
 	if !actor.IsAuthenticated() {
-		if VerifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
+		if verifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
 			return nil
 		}
 		return legacyerr.Errorf(legacyerr.Unauthenticated, "write operation (%s) denied: not authenticated", method)
@@ -347,7 +387,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if !actor.IsAuthenticated() {
-		if VerifyScopeHasAccess(ctx, actor.Scope, method, 0) {
+		if verifyScopeHasAccess(ctx, actor.Scope, method, 0) {
 			return nil
 		}
 		return legacyerr.Errorf(legacyerr.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
@@ -368,11 +408,7 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method st
 // context. To avoid additional latency from expensive public key
 // operations, that check is not repeated here, but be careful
 // about refactoring that check.
-func VerifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string, repo int32) bool {
-	if skip(ctx) {
-		return true
-	}
-
+func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string, repo int32) bool {
 	if scopes == nil {
 		return false
 	}
