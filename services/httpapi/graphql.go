@@ -19,7 +19,7 @@ func serveGraphQL(w http.ResponseWriter, r *http.Request) (err error) {
 		Variables map[string]interface{}
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return nil
 	}
 
