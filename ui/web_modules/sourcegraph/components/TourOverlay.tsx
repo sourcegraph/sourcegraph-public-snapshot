@@ -40,6 +40,11 @@ interface Coachmark {
 
 const parentElementCssString = `display: inline-block; white-space: normal; cursor: auto; font-family: ${fontStack.sansSerif};`;
 
+// Coachmark element by ID. By omitting the language and
+// ending the classname with a space allows us to render
+// coachmarks on any language.
+const coachmarkLanguageIdentifier = "token identifier ";
+
 const closeSx = {
 	cursor: "pointer",
 	float: "right",
@@ -156,13 +161,13 @@ export class TourOverlay extends React.Component<Props, State>  {
 	_tryForRenderedTokenIdentifier(): void {
 		// "token identifier go"" is subject to change based on the language. For now, since we are hardcoding the endpoint we can assume this will always be true.
 		// however since we will move to make this onboarding more dynamic we will need this to be more robust by either exploring a VSCode widget or more generic DOM injection.
-		let tokenElements = document.getElementsByClassName("token identifier go");
+		let tokenElements = document.getElementsByClassName(coachmarkLanguageIdentifier);
 		if (!tokenElements || tokenElements.length <= 0) {
 			// Correctly time the rendering of the tokens with the response from the async file response.
 			// This results in no delay and not prematurely trying to render on a token (which wouldn't exist)
 			window.requestAnimationFrame(this._tryForRenderedTokenIdentifier.bind(this));
 		} else if ((window as any).ed) {
-			let x = document.getElementsByClassName("token identifier go");
+			let x = document.getElementsByClassName(coachmarkLanguageIdentifier);
 			if (x.length > 2) {
 				// Grab a random element that has been indexed and provides "code intelligence".
 				// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
@@ -259,7 +264,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				// First grab all elements based on the same class. Then loop over each "token identifier" element and find it's parent's parent.
 				// Compare the line number with the original line number and element. If they are the same check if the coachmark is currently rendered.
 				// If the element has not been rendered yet create it and add it to the DOM. If it does exist overwrite the refParentElementId container so it is not lost during scroll.
-				let tokenIdentifier = document.getElementsByClassName("token identifier go");
+				let tokenIdentifier = document.getElementsByClassName(coachmarkLanguageIdentifier);
 				for (let i = 0; i < tokenIdentifier.length; i++) {
 					let element = tokenIdentifier[i];
 					let grandparentElement = this._getGrandparentForElement(element);
