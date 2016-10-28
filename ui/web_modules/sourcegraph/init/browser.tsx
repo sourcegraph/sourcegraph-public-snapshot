@@ -20,9 +20,9 @@ import "sourcegraph/init/Sentry";
 // See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
 import "autotrack/lib/plugins/url-change-tracker";
 
-Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {}));
-
 context.reset(global.window.__sourcegraphJSContext);
+
+Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {headers: context.context.xhrHeaders}));
 
 declare var __webpack_public_path__: any;
 __webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // tslint-disable-line no-undef
