@@ -7,6 +7,7 @@ import (
 	"reflect"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
@@ -86,6 +87,8 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 	if status < 200 || status >= 400 {
 		var spanURL string
 		if span := opentracing.SpanFromContext(req.Context()); span != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err)
 			spanURL = traceutil.SpanURL(span)
 		}
 		log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "error_id", errorID, "trace", spanURL)
