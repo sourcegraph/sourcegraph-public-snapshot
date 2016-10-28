@@ -36,6 +36,8 @@ const (
 	Orgs             = "orgs"
 	OrgMembers       = "org-members"
 	OrgInvites       = "org-invites"
+
+	GraphQL = "graphql"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -81,6 +83,8 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
+
+	base.Path("/graphql").Methods("GET", "POST").Name(GraphQL)
 
 	return base
 }
