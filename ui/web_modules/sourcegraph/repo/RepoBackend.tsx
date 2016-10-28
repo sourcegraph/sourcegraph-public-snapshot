@@ -192,10 +192,6 @@ export const RepoBackend = {
 				return;
 			}
 			modes.forEach(mode => {
-				// TODO enable workspace/symbol for TS/JS once it doesn't block other operations https://github.com/sourcegraph/sourcegraph/issues/1972
-				if (mode === "javascript" || mode === "typescript") {
-					return;
-				}
 				lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
 						let result;
