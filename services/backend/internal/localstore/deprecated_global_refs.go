@@ -57,6 +57,20 @@ func init() {
 // deprecatedGlobalRefs is a DB-backed implementation of the GlobalRefs
 type deprecatedGlobalRefs struct{}
 
+// DeprecatedTotalRefs returns the number of repos referencing the specified repo.
+func (g *deprecatedGlobalRefs) DeprecatedTotalRefs(ctx context.Context, repoURI string) (int, error) {
+	// Fetch an arbitrary def key for the repo.
+	defKeyID, err := graphDBH(ctx).SelectInt("SELECT id FROM def_keys WHERE repo=$1 LIMIT 1", repoURI)
+	if err != nil {
+		return 0, err
+	} else if defKeyID == 0 {
+		return 0, nil
+	}
+
+	totalRepos, err := g.getRefStats(ctx, defKeyID)
+	return int(totalRepos), err
+}
+
 // Get returns the names and ref counts of all repos and files within those repos
 // that refer the given def.
 func (g *deprecatedGlobalRefs) DeprecatedGet(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefLocationsOp) (*sourcegraph.DeprecatedRefLocationsList, error) {

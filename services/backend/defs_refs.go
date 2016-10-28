@@ -124,6 +124,18 @@ func (s *defs) DeprecatedListRefLocations(ctx context.Context, op *sourcegraph.D
 	return localstore.DeprecatedGlobalRefs.DeprecatedGet(ctx, op)
 }
 
+func (s *defs) DeprecatedTotalRefs(ctx context.Context, repoURI string) (res int, err error) {
+	ctx, done := trace(ctx, "Defs", "DeprecatedTotalRefs", repoURI, &err)
+	defer done()
+	return localstore.DeprecatedGlobalRefs.DeprecatedTotalRefs(ctx, repoURI)
+}
+
+func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
+	ctx, done := trace(ctx, "Defs", "TotalRefs", source, &err)
+	defer done()
+	return localstore.GlobalRefs.TotalRefs(ctx, source)
+}
+
 func (s *defs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions) (res *sourcegraph.TopDefs, err error) {
 	ctx, done := trace(ctx, "Defs", "TopDefs", op, &err)
 	defer done()

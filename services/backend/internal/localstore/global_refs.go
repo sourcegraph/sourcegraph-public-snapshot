@@ -339,6 +339,15 @@ func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit stri
 	return nil
 }
 
+func (g *globalRefs) TotalRefs(ctx context.Context, source string) (int, error) {
+	row := globalGraphDBH.Db.QueryRow(`SELECT count(DISTINCT source)
+		FROM global_ref_by_source
+		WHERE def_source IN (SELECT id FROM global_ref_source WHERE source=$1);
+	`, source)
+	var totalSources int
+	return totalSources, row.Scan(&totalSources)
+}
+
 func (g *globalRefs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions) (*sourcegraph.TopDefs, error) {
 	// There is one row entry for every source referencing a def. i.e. there
 	// will be multiple rows for the same (def_name, def_container) pair: one
@@ -446,8 +455,8 @@ func (g *globalRefs) queryTotalReposReferencing(db *sql.DB, op sourcegraph.RefLo
 		AND def_name IN (SELECT id FROM global_ref_name WHERE name=$2)
 		AND def_container IN (SELECT id FROM global_ref_container WHERE container=$3);
 	`, op.Source, op.Name, op.ContainerName)
-	var totalRepos int
-	return totalRepos, row.Scan(&totalRepos)
+	var totalSources int
+	return totalSources, row.Scan(&totalSources)
 }
 
 func (g *globalRefs) queryRefsBySource(db *sql.DB, op sourcegraph.RefLocationsOptions) ([]*sourcegraph.SourceRef, error) {
