@@ -11,6 +11,7 @@
     "lib": ["es2016", "dom"],
     "types": ["mocha", "lodash"],
     "jsx": "react",
+    "relaySchema": "../api/schema.json",
     "sourceMap": true,
     "strictNullChecks": true,
     "experimentalDecorators": true,

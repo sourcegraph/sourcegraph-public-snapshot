@@ -3,6 +3,7 @@
 import "core-js/shim";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import * as Relay from "react-relay";
 import "sourcegraph/util/actionLogger";
 import {Router, browserHistory as history, match, applyRouterMiddleware} from "react-router";
 import {useScroll} from "react-router-scroll";
@@ -18,6 +19,8 @@ import "sourcegraph/init/Sentry";
 // REQUIRED. Enables HTML history API (pushState) tracking in Google Analytics.
 // See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
 import "autotrack/lib/plugins/url-change-tracker";
+
+Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {}));
 
 context.reset(global.window.__sourcegraphJSContext);
 

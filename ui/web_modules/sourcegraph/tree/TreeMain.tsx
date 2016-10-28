@@ -45,9 +45,7 @@ export class TreeMain extends React.Component<Props, {}> {
 						repo={this.props.repo}
 						rev={this.props.rev}
 						commitID={this.props.commitID}
-						path={path}
-						location={this.props.location}
-						route={this.props.route}/>
+						path={path} />
 				</GridCol>
 			</div>
 		);
