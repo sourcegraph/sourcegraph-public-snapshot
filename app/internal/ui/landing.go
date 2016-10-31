@@ -132,11 +132,14 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
 	}
 
-	data, err := queryRepoLandingData(r, repo)
-	if err != nil {
-		// Just log, so we fallback to legacy in the event of catastrophic failure.
-		log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-	}
+	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
+	var data []defDescr
+	err = errors.New("xlang repo landing disabled")
+	//data, err := queryRepoLandingData(r, repo)
+	//if err != nil {
+	//	// Just log, so we fallback to legacy in the event of catastrophic failure.
+	//	log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+	//}
 
 	// If the new system failed for some reason OR if we don't have 5 top
 	// definitions, then fallback to the legacy srclib data.
@@ -363,11 +366,15 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
 
-	data, err := queryDefLandingData(r, repo, repoRev)
-	if err != nil {
-		// Just log, so we fallback to legacy in the event of catastrophic failure.
-		log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-	}
+	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
+	var data *defLandingData
+	err = errors.New("xlang def landing disabled")
+	_ = repoRev
+	//data, err := queryDefLandingData(r, repo, repoRev)
+	//if err != nil {
+	//	// Just log, so we fallback to legacy in the event of catastrophic failure.
+	//	log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+	//}
 
 	// If the new system failed for some reason OR if we don't have 3 sources
 	// referencing this page's definition, then fallback to the legacy srclib
