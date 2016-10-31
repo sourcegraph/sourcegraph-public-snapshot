@@ -17,7 +17,7 @@ interface Props {
 	path: string;
 }
 
-class TreeListComponent extends React.Component<Props & {root: any}, {}> {
+class TreeListComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
 	render(): JSX.Element | null {
 		const tree = this.props.root.repository.commit.tree;
 		if (tree === null) {

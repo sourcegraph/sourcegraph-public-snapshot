@@ -29,4 +29,4 @@ fi
 # check for TypeScript errors before tslint
 ./node_modules/.bin/tsc
 
-find ./web_modules -name '*.ts' -or -name '*.tsx' | xargs ./node_modules/.bin/tslint
+find ./web_modules -name '*.ts' -or -name '*.tsx' | grep -v '.gen.d.ts' | xargs ./node_modules/.bin/tslint
