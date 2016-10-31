@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function GitHubAuthButton(props: Props): JSX.Element {
-	const scopes = props.scopes || "read:org,user:email";
+	const scopes = props.scopes || "read:org,repo,user:email";
 
 	return (
 		<AuthButton
