@@ -5,13 +5,16 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"sort"
 	"strings"
+	"sync"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"github.com/jaytaylor/html2text"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -45,7 +48,17 @@ type defDescr struct {
 	// (across all sources/repos) and the number of sources (repos) that
 	// reference the definition.
 	FileCount, SourcesCount int
+
+	// sortIndex is a private field use for sorting the concurrently retrieved
+	// descriptions.
+	sortIndex int
 }
+
+type sortedDefDescr []defDescr
+
+func (s sortedDefDescr) Len() int           { return len(s) }
+func (s sortedDefDescr) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s sortedDefDescr) Less(i, j int) bool { return s[i].sortIndex < s[j].sortIndex }
 
 func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 	lang := mux.Vars(r)["Lang"]
@@ -174,82 +187,103 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, 
 		return nil, errors.Wrap(err, "Defs.TopDefs")
 	}
 
-	var desc []defDescr
-	for _, d := range topDefs.SourceDefs {
-		// Lookup the definition based on the source / definition (Name, ContainerName)
-		// pair.
-		rootPath := "git://" + repo.URI + "?" + repo.DefaultBranch
-		var symbols []lsp.SymbolInformation
-		err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
-			Query: d.DefName,
-			Limit: 100,
-		}, &symbols)
-		if err != nil {
-			return nil, errors.Wrap(err, "LSP workspace/symbol")
-		}
+	run := parallel.NewRun(32)
+	var (
+		descMu sync.RWMutex
+		desc   []defDescr
+	)
+	for i, d := range topDefs.SourceDefs {
+		d := d
+		sortIndex := i
+		run.Acquire()
+		go func() {
+			defer run.Release()
 
-		// Find the matching symbol.
-		var symbol *lsp.SymbolInformation
-		for _, sym := range symbols {
-			if sym.Name != d.DefName || sym.ContainerName != d.DefContainerName {
-				continue
-			}
-			withoutFile, err := url.Parse(sym.Location.URI)
+			// Lookup the definition based on the source / definition (Name, ContainerName)
+			// pair.
+			rootPath := "git://" + repo.URI + "?" + repo.DefaultBranch
+			var symbols []lsp.SymbolInformation
+			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+				Query: d.DefName,
+				Limit: 100,
+			}, &symbols)
 			if err != nil {
-				return nil, errors.Wrap(err, "parsing symbol location URI")
+				run.Error(errors.Wrap(err, "LSP workspace/symbol"))
+				return
 			}
-			withoutFile.Fragment = ""
-			if withoutFile.String() != rootPath {
-				continue
-			}
-			symbol = &sym
-			break
-		}
-		if symbol == nil {
-			log15.Warn("queryRepoLandingData: no symbol info matching top def from global references", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-			continue
-		}
 
-		// Determine the definition title.
-		var hover lsp.Hover
-		err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
-			TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
-			Position: lsp.Position{
-				Line:      symbol.Location.Range.Start.Line,
-				Character: symbol.Location.Range.Start.Character,
-			},
-		}, &hover)
-		if len(hover.Contents) == 0 {
-			log15.Warn("queryRepoLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-			continue
-		}
-
-		hoverTitle := hover.Contents[0].Value
-		var hoverDesc string
-		for _, s := range hover.Contents {
-			if s.Language == "markdown" {
-				hoverDesc = s.Value
+			// Find the matching symbol.
+			var symbol *lsp.SymbolInformation
+			for _, sym := range symbols {
+				if sym.Name != d.DefName || sym.ContainerName != d.DefContainerName {
+					continue
+				}
+				withoutFile, err := url.Parse(sym.Location.URI)
+				if err != nil {
+					run.Error(errors.Wrap(err, "parsing symbol location URI"))
+					return
+				}
+				withoutFile.Fragment = ""
+				if withoutFile.String() != rootPath {
+					continue
+				}
+				symbol = &sym
 				break
 			}
-		}
-		if hoverDesc == "" {
-			log15.Warn("queryRepoLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-			continue
-		}
+			if symbol == nil {
+				log15.Warn("queryRepoLandingData: no symbol info matching top def from global references", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				return
+			}
 
-		u, err := approuter.Rel.URLToLegacyDefLanding(*symbol)
-		if err != nil {
-			return nil, err
-		}
-		desc = append(desc, defDescr{
-			Title:        hoverTitle,
-			DocText:      hoverDesc,
-			RefCount:     d.Refs,
-			FileCount:    d.Files,
-			SourcesCount: d.Sources,
-			URL:          u,
-		})
+			// Determine the definition title.
+			var hover lsp.Hover
+			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
+				TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
+				Position: lsp.Position{
+					Line:      symbol.Location.Range.Start.Line,
+					Character: symbol.Location.Range.Start.Character,
+				},
+			}, &hover)
+			if len(hover.Contents) == 0 {
+				log15.Warn("queryRepoLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				return
+			}
+
+			hoverTitle := hover.Contents[0].Value
+			var hoverDesc string
+			for _, s := range hover.Contents {
+				if s.Language == "markdown" {
+					hoverDesc = s.Value
+					break
+				}
+			}
+			if hoverDesc == "" {
+				log15.Warn("queryRepoLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				return
+			}
+
+			u, err := approuter.Rel.URLToLegacyDefLanding(*symbol)
+			if err != nil {
+				run.Error(err)
+				return
+			}
+			descMu.Lock()
+			defer descMu.Unlock()
+			desc = append(desc, defDescr{
+				Title:        hoverTitle,
+				DocText:      hoverDesc,
+				RefCount:     d.Refs,
+				FileCount:    d.Files,
+				SourcesCount: d.Sources,
+				URL:          u,
+				sortIndex:    sortIndex,
+			})
+		}()
 	}
+	if err := run.Wait(); err != nil {
+		return nil, err
+	}
+	sort.Sort(sortedDefDescr(desc))
 	return desc, nil
 }
 
