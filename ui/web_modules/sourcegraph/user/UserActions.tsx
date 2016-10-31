@@ -1,3 +1,5 @@
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+
 export type Action =
 	SubmitBetaSubscription |
 	BetaSubscriptionCompleted
@@ -9,7 +11,6 @@ export class SubmitBetaSubscription {
 	languages: string[];
 	editors: string[];
 	message: string;
-	// eventName purposefully left out
 
 	constructor(email: string, firstName: string, lastName: string, languages: string[], editors: string[], message: string) {
 		this.email = email;
@@ -23,10 +24,10 @@ export class SubmitBetaSubscription {
 
 export class BetaSubscriptionCompleted {
 	resp: any;
-	eventName: string;
+	eventObject: AnalyticsConstants.LoggableEvent;
 
 	constructor(resp: any) {
 		this.resp = resp;
-		this.eventName = "BetaSubscriptionCompleted";
+		this.eventObject = AnalyticsConstants.Events.BetaSubscription_Completed;
 	}
 }

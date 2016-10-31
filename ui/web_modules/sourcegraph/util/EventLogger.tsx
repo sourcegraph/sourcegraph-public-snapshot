@@ -38,7 +38,7 @@ class EventLoggerClass {
 
 	_logDesktopEventForCategory(event: any): void {
 		if (event && event.detail && event.detail.eventCategory && event.detail.eventAction && event.detail.eventLabel) {
-			this.logEventForCategory(event.detail.eventCategory, event.detail.eventAction, event.detail.eventLabel, event.detail.eventProperties);
+			this._logEventForCategoryComponents(event.detail.eventCategory, event.detail.eventAction, event.detail.eventLabel, event.detail.eventProperties);
 		}
 	}
 
@@ -160,6 +160,8 @@ class EventLoggerClass {
 	}
 
 	logout(): void {
+		AnalyticsConstants.Events.Logout_Clicked.logEvent();
+
 		// Prevent the next user who logs in (e.g., on a public terminal) from
 		// seeing the previous user's Intercom messages.
 		if (this._intercom) { this._intercom("shutdown"); }
@@ -240,10 +242,14 @@ class EventLoggerClass {
 	}
 
 	// Default tracking call to all of our analytics servies.
-	// Required fields: eventCategory, eventAction, eventLabel
+	// By default, should only be called by AnalyticsConstants.LoggableEvent.logEvent()
+	// Required fields: event
 	// Optional fields: eventProperties
-	// Example Call: logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SUCCESS, "SignupCompletion", AnalyticsConstants.PAGE_HOME, {signup_channel: GitHub})
-	logEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
+	logEventForCategory(event: any, eventProperties?: any): void {
+		this._logEventForCategoryComponents(event.category, event.action, event.label, eventProperties);
+	}
+
+	_logEventForCategoryComponents(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
 		if (context.userAgentIsBot || !eventLabel) {
 			return;
 		}
@@ -272,22 +278,22 @@ class EventLoggerClass {
 	// Tracking call for event level calls that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.
 	// An example of this would be the event that gets fired following a view event on a Repo that 404s. We fire a view event and then a 404 event.
 	// By adding a non-interactive flag to the 404 event the page will correctly calculate bounce rate even with the additional event fired.
-	logNonInteractionEventForCategory(eventCategory: string, eventAction: string, eventLabel: string, eventProperties?: any): void {
-		if (context.userAgentIsBot || !eventLabel) {
+	logNonInteractionEventForCategory(eventObject: AnalyticsConstants.NonInteractionLoggableEvent, eventProperties?: any): void {
+		if (context.userAgentIsBot || !eventObject.label) {
 			return;
 		}
 
-		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction, nonInteraction: true}));
+		this._logToConsole(eventObject.action, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action, nonInteraction: true}));
 
 		if (this._telligent) {
-			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
+			this._telligent("track", eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action}));
 		}
 
 		global.window.ga("send", {
 			hitType: "event",
-			eventCategory: eventCategory || "",
-			eventAction: eventAction || "",
-			eventLabel: eventLabel,
+			eventCategory: eventObject.category || "",
+			eventAction: eventObject.action || "",
+			eventLabel: eventObject.label,
 			nonInteraction: true,
 		});
 	}
@@ -326,15 +332,14 @@ class EventLoggerClass {
 
 						this.setUserProperty("authed_languages_github", this._dedupedArray(languages));
 						this.setUserProperty("num_repos_github", action.data.Repos.length);
-						this.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_FETCH, "AuthedLanguagesGitHubFetched", {"fetched_languages_github": this._dedupedArray(languages)});
-						this.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_FETCH, "AuthedReposGitHubFetched", {"fetched_repo_names_github": this._dedupedArray(repoNames), "fetched_repo_owners_github": this._dedupedArray(repoOwners), "fetched_repos_github": this._dedupedArray(repos)});
+						AnalyticsConstants.Events.RepositoryAuthedLanguagesGitHub_Fetched.logEvent({"fetched_languages_github": this._dedupedArray(languages)});
+						AnalyticsConstants.Events.RepositoryAuthedReposGitHub_Fetched.logEvent({"fetched_repo_names_github": this._dedupedArray(repoNames), "fetched_repo_owners_github": this._dedupedArray(repoOwners), "fetched_repos_github": this._dedupedArray(repos)});
 					}
 				}
 				break;
-
 			case UserActions.BetaSubscriptionCompleted:
-				if (action.eventName) {
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_ENGAGEMENT, AnalyticsConstants.ACTION_SUCCESS, action.eventName);
+				if (action.eventObject) {
+					action.eventObject.logEvent();
 				}
 				break;
 			case OrgActions.OrgsFetched:
@@ -348,7 +353,7 @@ class EventLoggerClass {
 					}
 					this.setIntercomProperty("authed_orgs_github", orgNames);
 					this.setUserProperty("authed_orgs_github", orgNames);
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_FETCH, "AuthedOrgsGitHubFetched", {"fetched_orgs_github": orgNames});
+					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({"fetched_orgs_github": orgNames});
 				}
 				break;
 			case OrgActions.OrgMembersFetched:
@@ -360,15 +365,16 @@ class EventLoggerClass {
 						orgMemberNames.push(member.Login);
 						orgMemberEmails.push(member.Email || "");
 					}
-
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_FETCH, "AuthedOrgMembersGitHubFetched", {"fetched_org_github": orgName, "fetched_org_member_names_github": orgMemberNames, "fetched_org_member_emails_github": orgMemberEmails});
+					AnalyticsConstants.Events.AuthedOrgMembersGitHub_Fetched.logEvent({"fetched_org_github": orgName, "fetched_org_member_names_github": orgMemberNames, "fetched_org_member_emails_github": orgMemberEmails});
 				}
 				break;
 			default:
 				// All dispatched actions to stores will automatically be tracked by the eventName
 				// of the action (if set). Override this behavior by including another case above.
-				if (action.eventName) {
-					this.logEventForCategory(AnalyticsConstants.CATEGORY_UNKNOWN, AnalyticsConstants.ACTION_FETCH, action.eventName);
+				if (action.eventObject) {
+					action.eventObject.logEvent();
+				} else  if (action.eventName) {
+					this._logEventForCategoryComponents(AnalyticsConstants.EventCategories.Unknown, AnalyticsConstants.EventActions.Fetch, action.eventName);
 				}
 				break;
 		}
@@ -442,15 +448,26 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 
 				if (this.props.location.query["_githubAuthed"]) {
 					EventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_SIGNUP, eventName, eventProperties);
+					if (eventName === "SignupCompleted") {
+						AnalyticsConstants.Events.Signup_Completed.logEvent(eventProperties);
+					} else if (eventName === "CompletedGitHubOAuth2Flow") {
+						AnalyticsConstants.Events.OAuth2FlowGitHub_Completed.logEvent(eventProperties);
+					}
+				} else if (this.props.location.query["_invited_by_user"]) {
+					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
+					AnalyticsConstants.Events.OrgEmailInvite_Clicked.logEvent(eventProperties);
+				} else if (this.props.location.query["_def_info_def"]) {
+					if (eventName === "DefInfoViewDefLinkClicked") {
+						AnalyticsConstants.Events.DefInfoDefLink_Clicked.logEvent(eventProperties);
+					} else if (eventName === "DefInfoViewFileLinkClicked") {
+						AnalyticsConstants.Events.DefInfoFileLink_Clicked.logEvent(eventProperties);
+					} else if (eventName === "DefInfoRefLinkClicked") {
+						AnalyticsConstants.Events.DefInfoRefLink_Clicked.logEvent(eventProperties);
+					}
 				} else {
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_EXTERNAL, AnalyticsConstants.ACTION_REDIRECT, eventName, eventProperties);
+					EventLogger._logEventForCategoryComponents(AnalyticsConstants.EventCategories.External, AnalyticsConstants.EventActions.Redirect, eventName, eventProperties);
 				}
 
-				if (this.props.location.query["_invited_by_user"]) {
-					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
-					EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_SUCCESS, eventName, eventProperties);
-				}
 				if (this.props.location.query["_org_invite"]) {
 					EventLogger.setUserProperty("org_invite", this.props.location.query["_org_invite"]);
 				}
@@ -461,11 +478,15 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				delete this.props.location.query["_githubAuthed"];
 				delete this.props.location.query["_org_invite"];
 				delete this.props.location.query["_invited_by_user"];
+				delete this.props.location.query["_def_info_def"];
+				delete this.props.location.query["_repo"];
+				delete this.props.location.query["_rev"];
+				delete this.props.location.query["_path"];
 
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
 				const locWithoutEvent = Object.assign({}, this.props.location, {
-					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined }), // eslint-disable-line no-undefined
+					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined }), // eslint-disable-line no-undefined
 					state: Object.assign({}, this.props.location.state, { _onboarding: this.props.location.query["_onboarding"] }),
 				});
 

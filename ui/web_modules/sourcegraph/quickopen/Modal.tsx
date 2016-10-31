@@ -3,7 +3,6 @@ import * as React from "react";
 import {ModalComp} from "sourcegraph/components/Modal";
 import {Container} from "sourcegraph/quickopen/Container";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Node {
 	nodeName: string;
@@ -19,7 +18,7 @@ export type Props = {
 	repo: string | null,
 	rev: string | null,
 	onDismiss: () => void,
-	activateSearch: () => void,
+	activateSearch: (eventProps?: any) => void,
 	showModal: boolean,
 }
 
@@ -29,6 +28,10 @@ export class QuickOpenModal extends React.Component<Props, null> {
 		super();
 		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
 		this.dismissModal = this.dismissModal.bind(this);
+	}
+
+	static logQuickOpenModalInitiatedEvent(eventProps?: any): void {
+		AnalyticsConstants.Events.Quickopen_Initiated.logEvent(eventProps);
 	}
 
 	componentWillMount(): void {
@@ -52,9 +55,6 @@ export class QuickOpenModal extends React.Component<Props, null> {
 	}
 
 	searchModalShortcuts(event: KeyboardEvent & Event): void {
-		if (event.keyCode === 27) { // Escape.
-			this.dismissModal(false);
-		}
 		if (event.target.nodeName === "INPUT" || isNonMonacoTextArea(event.target) || event.metaKey || event.ctrlKey) {
 			return;
 		}
@@ -62,15 +62,14 @@ export class QuickOpenModal extends React.Component<Props, null> {
 			if (!this.props.showModal) {
 				this.dismissModal(false);
 			}
-			this.props.activateSearch();
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_TOGGLE, "QuickOpenInitiated", this._getEventProps());
+			this.props.activateSearch(this._getEventProps());
 		}
 		event.preventDefault();
 	}
 
 	dismissModal(shouldLog: boolean): void {
 		if (shouldLog) {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_QUICK_OPEN, AnalyticsConstants.ACTION_TOGGLE, "QuickOpenDismissed", this._getEventProps());
+			AnalyticsConstants.Events.Quickopen_Dismissed.logEvent(this._getEventProps());
 		}
 		this.props.onDismiss();
 	}
@@ -79,6 +78,7 @@ export class QuickOpenModal extends React.Component<Props, null> {
 		if (!this.props.showModal) {
 			return <div />;
 		}
+
 		const r = this.props.repo ? {URI: this.props.repo, rev: this.props.rev} : null;
 		return <ModalComp onDismiss={() => this.dismissModal(true)}>
 			<Container

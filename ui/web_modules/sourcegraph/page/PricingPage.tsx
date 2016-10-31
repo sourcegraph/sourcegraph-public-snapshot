@@ -9,7 +9,6 @@ import {CheckIcon} from "sourcegraph/components/Icons";
 import Helmet from "react-helmet";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {context} from "sourcegraph/app/context";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 export function PricingPage(props: {}) {
 	return (
@@ -30,7 +29,7 @@ export function PricingPage(props: {}) {
 								<p>for individuals and teams, for public and private code</p>
 							</Panel>
 							{!context.user && <Link to="/join"
-								onClick={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
+								onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up</Button>
 							</Link>}
 							{context.user && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon className={styles.icon} /> Your current plan</Button>}
@@ -57,7 +56,7 @@ export function PricingPage(props: {}) {
 								<p>for large teams and <br/>enterprises</p>
 							</Panel>
 							<Link to="/contact"
-								onClick={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_PRICING, AnalyticsConstants.ACTION_CLICK, "ClickPricingCTA", {plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
+								onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({plan: "enterprise", page_name: AnalyticsConstants.PAGE_PRICING})}>
 								<Button block={true} className={styles.plan_cta || ""} color="blue">Contact us</Button>
 							</Link>
 						</div>

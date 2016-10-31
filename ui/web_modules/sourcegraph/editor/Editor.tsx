@@ -4,7 +4,6 @@ import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorServ
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { EventLogger } from "sourcegraph/util/EventLogger";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 
 import "sourcegraph/editor/FindExternalReferencesAction";
@@ -138,6 +137,16 @@ export class Editor implements IDisposable {
 			if (ignoreToken || peekWidget || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
 				(this._editor as any)._contextViewService.hideContextView();
 			}
+
+			const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
+			AnalyticsConstants.Events.CodeContextMenu_Initiated.logEvent({
+					repo: repo,
+					rev: rev || "",
+					path: path,
+					language: this._editor.getModel().getModeId(),
+				}
+			);
+
 		});
 
 		this._editor.onMouseMove(e => {
@@ -239,14 +248,6 @@ export class Editor implements IDisposable {
 					return null;
 				}
 
-				const {repo, rev, path} = URIUtils.repoParams(model.uri);
-				EventLogger.logEventForCategory(
-					AnalyticsConstants.CATEGORY_DEF,
-					AnalyticsConstants.ACTION_CLICK,
-					"BlobTokenClicked",
-					{ srcRepo: repo, srcRev: rev || "", srcPath: path, language: model.getModeId() }
-				);
-
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 				const translatedLocs: Location[] = locs
 					.filter((loc) => Object.keys(loc).length !== 0)
@@ -283,11 +284,7 @@ export class Editor implements IDisposable {
 				}
 
 				const {repo, rev, path} = URIUtils.repoParams(model.uri);
-				EventLogger.logEventForCategory(
-					AnalyticsConstants.CATEGORY_DEF,
-					AnalyticsConstants.ACTION_HOVER,
-					"Hovering",
-					{
+				AnalyticsConstants.Events.CodeToken_Hovered.logEvent({
 						repo: repo,
 						rev: rev || "",
 						path: path,
@@ -353,12 +350,7 @@ export class Editor implements IDisposable {
 				}
 
 				const {repo, rev, path} = URIUtils.repoParams(model.uri);
-				EventLogger.logEventForCategory(
-					AnalyticsConstants.CATEGORY_REFERENCES,
-					AnalyticsConstants.ACTION_CLICK,
-					"ClickedViewReferences",
-					{ repo, rev: rev || "", path }
-				);
+				AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 				locs.forEach((l) => {

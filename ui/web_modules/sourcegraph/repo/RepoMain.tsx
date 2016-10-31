@@ -13,7 +13,6 @@ import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Header} from "sourcegraph/components/Header";
 
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
@@ -92,11 +91,11 @@ export class RepoMain extends React.Component<Props, State> {
 			let msg;
 			let showGitHubCTA = false;
 			if (err.response && err.response.status === 401) {
-				EventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
+				AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
 				msg = context.user ? `Connect GitHub to add repositories` : `Sign in to add repositories.`;
 				showGitHubCTA = Boolean(context.user && !context.hasPrivateGitHubToken());
 			} else if (err.response && err.response.status === 404) {
-				EventLogger.logNonInteractionEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_ERROR, "ViewRepoMainError", {repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
+				AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 				msg = `Repository not found.`;
 			} else {
 				msg = `Repository is not available.`;

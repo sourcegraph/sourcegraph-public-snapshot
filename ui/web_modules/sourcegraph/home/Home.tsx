@@ -13,6 +13,7 @@ import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
 import {FeatureCarousel} from "sourcegraph/home/FeatureCarousel";
 import {Nav} from "sourcegraph/home/Nav";
 import {Location} from "sourcegraph/Location";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface HomeProps { location: Location; }
 
@@ -65,7 +66,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					)}>Read code on the web with the power of an IDE</Heading>
 
 					<p style={{textAlign: "center"}}>
-						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location}>
+						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({page_name: location.pathname, location_on_page: "Header"})}>
 							<Button color="orange" style={{
 								margin: whitespace[3],
 								paddingLeft: whitespace[3],
@@ -120,7 +121,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					}}>
 						TypeScript, JavaScript, Java, Python, Ruby, Scala, C, PHP, C++, and more coming soon...
 					</p>
-					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location}>
+					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD})}>
 						<strong>
 							Join the beta list
 							<ChevronRight color={colors.blueText()} width={7} style={{marginLeft: 4}} />
@@ -205,7 +206,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						Free for public and personal private code
 					</Heading>
 
-					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location}>
+					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({page_name: location.pathname, location_on_page: "Footer"})}>
 						<Button color="orange" style={{
 							marginTop: whitespace[4],
 							paddingLeft: whitespace[4],

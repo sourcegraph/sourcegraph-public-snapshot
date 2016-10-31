@@ -52,6 +52,7 @@ export const rel = {
 export const abs = {
 	about: rel.about,
 	contact: rel.contact,
+	docs: rel.docs,
 	security: rel.security,
 	pricing: rel.pricing,
 	terms: rel.terms,

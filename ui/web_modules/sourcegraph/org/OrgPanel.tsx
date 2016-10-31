@@ -11,7 +11,6 @@ import * as OrgActions from "sourcegraph/org/OrgActions";
 import {OrgInviteModal} from "sourcegraph/org/OrgInviteModal";
 import {OrgMembersTable} from "sourcegraph/org/OrgMembersTable";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	org: Org;
@@ -48,10 +47,10 @@ export class OrgPanel extends React.Component<Props, State> {
 	_invitedUser(member: OrgMember): void {
 		if (member.Email != null && context.user != null && this.props.org.Login) {
 			Dispatcher.Backends.dispatch(new OrgActions.SubmitOrgInvitation(member.Login || "", member.Email, this.props.org.Login, String(this.props.org.ID)));
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_SUCCESS, "InviteUser", {org_name: this.props.org.Login, num_invites: 1});
+			AnalyticsConstants.Events.OrgUser_Invited.logEvent({org_name: this.props.org.Login, num_invites: 1});
 			this._updateSentInvites([member]);
 		} else {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_TOGGLE, "ToggleManualInviteModal", {org_name: this.props.org.Login});
+			AnalyticsConstants.Events.OrgManualInviteModal_Initiated.logEvent({org_name: this.props.org.Login});
 			setLocationModalState(this.context.router, this.props.location, "orgInvite", true);
 			this.setState(Object.assign({}, this.state, {
 				selectedMember: member,
@@ -61,7 +60,7 @@ export class OrgPanel extends React.Component<Props, State> {
 
 	_onInviteUser(invites: Array<Object>): void {
 		if (this.props.org && this.props.org.Login && context.user) {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_SUCCESS, "InviteUser", {org_name: this.props.org.Login, num_invites: invites.length});
+			AnalyticsConstants.Events.OrgUser_Invited.logEvent({org_name: this.props.org.Login, num_invites: invites.length});
 			for (let i = 0; i < invites.length; i++) {
 				let invite = invites[i];
 				let member = invite["member"];

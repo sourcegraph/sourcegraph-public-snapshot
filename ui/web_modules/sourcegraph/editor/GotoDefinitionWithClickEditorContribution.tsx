@@ -1,5 +1,4 @@
 // tslint:disable typedef ordered-imports
-import {EventLogger} from "sourcegraph/util/EventLogger";
 import {URIUtils} from "sourcegraph/core/uri";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import * as debounce from "lodash/debounce";
@@ -200,11 +199,7 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		const model = this.editor.getModel();
 		if (model) {
 			const src = URIUtils.repoParams(model.uri);
-			EventLogger.logEventForCategory(
-				AnalyticsConstants.CATEGORY_DEF,
-				AnalyticsConstants.ACTION_CLICK,
-				"BlobTokenClicked",
-				{
+			AnalyticsConstants.Events.CodeToken_Clicked.logEvent({
 					srcRepo: src.repo, srcRev: src.rev || "", srcPath: src.path,
 					language: model.getModeId(),
 				}

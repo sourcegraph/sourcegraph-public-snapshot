@@ -129,7 +129,7 @@ export const RepoBackend = {
 					Dispatcher.Stores.dispatch(new RepoActions.RepoCreated(action.repo, data));
 					if (!data.Error) {
 						const eventProps = { language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private) };
-						EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_SUCCESS, "AddRepo", eventProps);
+						AnalyticsConstants.Events.Repository_Added.logEvent(eventProps);
 						EventLogger.logIntercomEvent("add-repo", eventProps);
 						if (action.refreshVCS) {
 							RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, { method: "POST" })

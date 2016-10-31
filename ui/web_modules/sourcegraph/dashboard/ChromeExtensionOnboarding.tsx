@@ -32,7 +32,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	}
 
 	_successHandler() {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionInstalled", {page_name: "ChromeExtensionOnboarding"});
+		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({page_name: "ChromeExtensionOnboarding"});
 		EventLogger.setUserProperty("installed_chrome_extension", "true");
 		// Syncs the our site analytics tracking with the chrome extension tracker.
 		EventLogger.updateTrackerWithIdentificationProps();
@@ -40,24 +40,24 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	}
 
 	_failHandler(msg) {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_ERROR, "ChromeExtensionInstallFailed", {page_name: "ChromeExtensionOnboarding"});
+		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({page_name: "ChromeExtensionOnboarding"});
 		EventLogger.setUserProperty("installed_chrome_extension", "false");
 	}
 
 	_installChromeExtensionClicked() {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
+		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({page_name: "ChromeExtensionOnboarding"});
 
 		if (!!global.chrome) {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionInstallStarted", {page_name: "ChromeExtensionOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({page_name: "ChromeExtensionOnboarding"});
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "ChromeExtensionStoreRedirect", {page_name: "ChromeExtensionOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({page_name: "ChromeExtensionOnboarding"});
 			window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");
 		}
 	}
 
 	_skipClicked() {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipChromeExtensionCTAClicked", {page_name: "ChromeExtensionOnboarding"});
+		AnalyticsConstants.Events.ChromeExtensionSkipCTA_Clicked.logEvent({page_name: "ChromeExtensionOnboarding"});
 		this._continueOnboarding();
 	}
 
@@ -74,7 +74,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 		if (isMobile || !isChrome) {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_ERROR, "BrowserDoesNotSupportChromeExtension", {page_name: "ChromeExtensionOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionUnsupportedBrowser_Failed.logEvent({page_name: "ChromeExtensionOnboarding"});
 			return false;
 		}
 

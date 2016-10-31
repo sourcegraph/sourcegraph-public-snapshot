@@ -13,7 +13,6 @@ import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {Dashboard} from "sourcegraph/dashboard/Dashboard";
 import {context} from "sourcegraph/app/context";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location?: any;
@@ -52,10 +51,10 @@ export class OnboardingContainer extends Container<Props, State> {
 
 		// TODO: update analytics to count only if chrome extension wasn't installed or Github not auth'd 
 		if (this.props.currentStep === "chrome") {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "ChromeExtensionStepCompleted", {page_name: "ChromeExtensionOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionStep_Completed.logEvent({page_name: "ChromeExtensionOnboarding"});
 			nextStep = Object.assign({}, this.props.location.query || null, {ob: "github"});
 		} else if (this.props.currentStep === "github") {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_SUCCESS, "GitHubStepCompleted", {page_name: "GitHubPrivateCodeOnboarding"});
+			AnalyticsConstants.Events.AuthGitHubStep_Completed.logEvent({page_name: "GitHubPrivateCodeOnboarding"});
 			nextStep = Object.assign({}, this.props.location.query || null, {ob: "search"});
 
 			// This should be right after the Github onboarding step

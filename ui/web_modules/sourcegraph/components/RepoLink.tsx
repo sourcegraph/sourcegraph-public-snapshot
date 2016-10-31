@@ -10,7 +10,6 @@ import * as classNames from "classnames";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	repo: string;
@@ -34,7 +33,7 @@ export class RepoLink extends React.Component<Props, State> {
 						title={trimmedPath}
 						key={i}
 						className={isLast ? styles.active : styles.inactive}
-						onClick={() => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_CLICK, "RepoClicked", {repoName: trimmedPath})}>
+						onClick={() => AnalyticsConstants.Events.Repository_Clicked.logEvent({repoName: trimmedPath})}>
 						{component}
 					</Link>
 			),

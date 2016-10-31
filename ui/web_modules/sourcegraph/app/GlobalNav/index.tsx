@@ -19,6 +19,7 @@ import {Location} from "sourcegraph/Location";
 import {QuickOpenModal} from "sourcegraph/quickopen/Modal";
 import {repoParam, repoPath, repoRev} from "sourcegraph/repo";
 import {Store} from "sourcegraph/Store";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	navContext?: JSX.Element;
@@ -61,7 +62,9 @@ export class GlobalNav extends Container<Props, State> {
 		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(false));
 	}
 
-	activateSearch(): void {
+	activateSearch(eventProps?: any): void {
+		AnalyticsConstants.Events.Quickopen_Initiated.logEvent(eventProps);
+
 		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(true));
 	}
 
@@ -122,10 +125,10 @@ export class GlobalNav extends Container<Props, State> {
 
 				<QuickOpenModal repo={repo} rev={rev}
 					showModal={this.state.showSearch}
-					activateSearch={this.activateSearch}
+					activateSearch={(eventProps) => this.activateSearch(eventProps)}
 					onDismiss={this.onSearchDismiss} />
 				<FlexContainer items="center" style={{paddingRight: "0.5rem"}}>
-					<a onClick={this.activateSearch}><SearchCTA width={14} /></a>
+					<a onClick={() => this.activateSearch({page_location: "SearchCTA"})}><SearchCTA width={14} /></a>
 					{context.user
 						? <UserMenu user={context.user} location={location} style={{flex: "0 0 auto", marginTop: 4}} />
 						: <SignupOrLogin user={context.user} location={location} />

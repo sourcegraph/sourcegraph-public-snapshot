@@ -3,6 +3,7 @@ import {InjectedRouter} from "react-router";
 import {EventListener} from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import {Location} from "sourcegraph/Location";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
 
 interface Props {
@@ -83,6 +84,14 @@ export function setLocationModalState(router: InjectedRouter, location: Location
 // the location state's modal property to null.
 export function dismissModal(modalName: string, location: Location, router: InjectedRouter): any {
 	return () => {
+		// Log all modal dismissal events in a consistent way. Note that any additions of new "modalName"s will require new events to be created
+		const eventObject = AnalyticsConstants.getModalDismissedEventObject(modalName);
+		if (eventObject) {
+			eventObject.logEvent();
+		} else {
+			throw new Error("No event logged on modal dismissal. Set the appropriate event type in AnalyticsConstants.tsx for modalName: \"" + modalName + "\"");
+		}
+
 		setLocationModalState(router, location, modalName, false);
 	};
 }

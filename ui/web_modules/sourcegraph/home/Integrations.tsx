@@ -7,16 +7,21 @@ import {Component} from "sourcegraph/Component";
 import {inBeta} from "sourcegraph/user";
 import * as betautil from "sourcegraph/util/betautil";
 import {context} from "sourcegraph/app/context";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class Tool {
 	name: string;
 	img: string;
 	url: string;
+	eventObject?: AnalyticsConstants.LoggableEvent;
 
-	constructor(name, img, url) {
+	constructor(name, img, url, eventObject?) {
 		this.name = name;
 		this.img = img;
 		this.url = url;
+		if (eventObject) {
+			this.eventObject = eventObject;
+		}
 	}
 }
 
@@ -29,7 +34,7 @@ let plugins = [
 ];
 
 const otherTools = [
-	new Tool("Chrome", "/img/Dashboard/google-chrome.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"),
+	new Tool("Chrome", "/img/Dashboard/google-chrome.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack", AnalyticsConstants.Events.ToolsModalDownloadCTA_Clicked),
 ];
 
 interface Props {
@@ -62,7 +67,7 @@ export class Integrations extends Component<Props, State> {
 					<Heading level={7} color="gray">Browser extensions</Heading>
 					<div className={styles.tool_list}>
 						{otherTools.map((tool, i) => (
-							<a key={i} href={tool.url} target="_blank" className={styles.tool}>
+							<a key={i} href={tool.url} target="_blank" className={styles.tool} onClick={() => {if (tool.eventObject) { tool.eventObject.logEvent(); }}}>
 								<img className={styles.img} src={`${context.assetsRoot}${tool.img}`}></img>
 								<div className={styles.caption}>{tool.name}</div>
 							</a>

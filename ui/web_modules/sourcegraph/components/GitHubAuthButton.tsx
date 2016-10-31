@@ -1,6 +1,7 @@
 import * as React from "react";
 import {AuthButton} from "sourcegraph/components/AuthButton";
 import {Location} from "sourcegraph/Location";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	scopes?: string;
@@ -25,7 +26,7 @@ export function GitHubAuthButton(props: Props): JSX.Element {
 		<AuthButton
 			provider="github"
 			iconType="github"
-			eventLabel="InitiateGitHubOAuth2Flow"
+			eventObject={AnalyticsConstants.Events.OAuth2FlowGitHub_Initiated}
 			scopes={scopes}
 			returnTo={props.returnTo}
 			color={props.color}

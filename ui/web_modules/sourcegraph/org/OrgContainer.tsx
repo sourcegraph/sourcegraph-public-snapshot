@@ -14,7 +14,6 @@ import {OrgPanel} from "sourcegraph/org/OrgPanel";
 import {OrgStore} from "sourcegraph/org/OrgStore";
 import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
 interface Props {
@@ -112,7 +111,7 @@ export class OrgContainer extends Container<Props, State> {
 	}
 
 	_onSelectOrg(org: Org): void {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ORGS, AnalyticsConstants.ACTION_CLICK, "SelectedOrg", {org_name: org.Login});
+		AnalyticsConstants.Events.Org_Selected.logEvent({org_name: org.Login});
 		this.setState(
 			Object.assign({}, this.state, {selectedOrg: org})
 		);

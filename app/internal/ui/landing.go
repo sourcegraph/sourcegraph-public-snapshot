@@ -393,6 +393,27 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
 }
 
+// withSymbolEventTracking adds symbol event tracking to the specified URL's
+// query parameters. It panics if symbol.Location.URI is unparsable.
+func withSymbolEventTracking(eventName string, u *url.URL, language string, symbol *lsp.SymbolInformation) *url.URL {
+	symURI, err := url.Parse(symbol.Location.URI)
+	if err != nil {
+		panic(err)
+	}
+
+	q := u.Query()
+	q.Set("_event", eventName)
+	q.Set("_def_language", language)
+	q.Set("_def_scheme", symURI.Scheme)
+	q.Set("_def_source", symURI.Host+symURI.Path)
+	q.Set("_def_version", symURI.RawQuery)
+	q.Set("_def_file", symURI.Fragment)
+	q.Set("_def_container", symbol.ContainerName)
+	q.Set("_def_name", symbol.Name)
+	u.RawQuery = q.Encode()
+	return u
+}
+
 func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (*defLandingData, error) {
 	defSpec := routevar.ToDefAtRev(mux.Vars(r))
 	language := "go" // TODO(slimsag): long term, add to route
@@ -445,9 +466,14 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing symbol location URI")
 	}
-	defFileURL := "/" + symURI.Host + symURI.Path + "/-/blob/" + path.Clean(symURI.Fragment)
 	defFileName := symURI.Host + path.Join(symURI.Path, symURI.Fragment)
-	viewDefURL := fmt.Sprintf("%s#L%d", defFileURL, symbol.Location.Range.Start.Line+1)
+	repoURI := symURI.Host + symURI.Path
+
+	defFileURL := approuter.Rel.URLToBlob(repoURI, "", path.Clean(symURI.Fragment), 0)
+	defFileURL = withSymbolEventTracking("DefInfoViewFileLinkClicked", defFileURL, language, symbol)
+
+	viewDefURL := approuter.Rel.URLToBlob(repoURI, "", path.Clean(symURI.Fragment), symbol.Location.Range.Start.Line+1)
+	viewDefURL = withSymbolEventTracking("DefInfoViewDefLinkClicked", viewDefURL, language, symbol)
 
 	// Create metadata titles.
 	shortTitle := strings.Join([]string{symbol.ContainerName, symbol.Name}, ".")
@@ -574,14 +600,28 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		},
 		Description:      htmlutil.Sanitize(hoverDesc),
 		RefSnippets:      refSnippets,
-		ViewDefURL:       viewDefURL,
+		ViewDefURL:       viewDefURL.String(),
 		DefName:          hoverTitle,
 		ShortDefName:     symbol.Name,
-		DefFileURL:       defFileURL,
+		DefFileURL:       defFileURL.String(),
 		DefFileName:      defFileName,
 		RefLocs:          refLocs,
 		TruncatedRefLocs: refLocs.TotalSources > len(refLocs.SourceRefs),
 	}, nil
+}
+
+func legacyWithDefEventTracking(eventName string, u *url.URL, def *sourcegraph.Def) *url.URL {
+	q := u.Query()
+	q.Set("_event", eventName)
+	q.Set("_def_language", "go") // srclib def landing pages only ever had GoPackage unit types.
+	q.Set("_def_scheme", "git")
+	q.Set("_def_source", def.Repo)
+	q.Set("_def_version", "")
+	q.Set("_def_file", def.File)
+	q.Set("_def_container", def.Unit)
+	q.Set("_def_name", def.Path)
+	u.RawQuery = q.Encode()
+	return u
 }
 
 func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (*defLandingData, error) {
@@ -627,8 +667,11 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (*defLan
 	}
 
 	// fetch definition
-	viewDefURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine)).String()
-	defFileURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0).String()
+	viewDefURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine))
+	viewDefURL = legacyWithDefEventTracking("DefInfoViewDefLinkClicked", viewDefURL, def)
+
+	defFileURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0)
+	defFileURL = legacyWithDefEventTracking("DefInfoViewFileLinkClicked", defFileURL, def)
 
 	// fetch example
 	refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
@@ -688,10 +731,10 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (*defLan
 		Meta:             *m,
 		Description:      def.DocHTML,
 		RefSnippets:      refSnippets,
-		ViewDefURL:       viewDefURL,
+		ViewDefURL:       viewDefURL.String(),
 		DefName:          def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
 		ShortDefName:     def.Name,
-		DefFileURL:       defFileURL,
+		DefFileURL:       defFileURL.String(),
 		DefFileName:      repo.URI + "/" + def.Def.File,
 		RefLocs:          refLocs.Convert(),
 		TruncatedRefLocs: refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),

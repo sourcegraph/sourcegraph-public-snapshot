@@ -4,7 +4,6 @@ import {URIUtils} from "sourcegraph/core/uri";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { makeRepoRev } from "sourcegraph/repo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
@@ -36,12 +35,7 @@ class FindExternalReferencesAction extends EditorAction {
 
 	private	_findExternalReferences(model: IReadOnlyModel, pos: IPosition): TPromise<void> {
 		const {repo, rev, path} = URIUtils.repoParams(model.uri);
-		EventLogger.logEventForCategory(
-			AnalyticsConstants.CATEGORY_REFERENCES,
-			AnalyticsConstants.ACTION_CLICK,
-			"ClickedViewExternalReferences",
-			{ repo, rev: rev || "", path }
-		);
+		AnalyticsConstants.Events.CodeExternalReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 		const line = pos.lineNumber - 1;
 		const col = pos.column - 1;

@@ -4,7 +4,6 @@ import {Heading, Hero} from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 export function DocsPage(): JSX.Element {
 	return (
@@ -17,7 +16,7 @@ export function DocsPage(): JSX.Element {
 			</Hero>
 			<div className={styles.content}>
 				<Heading level={3}>Overview</Heading>
-				<p className={styles.p}>Sourcegraph is a tool that helps developers explore and understand code. These docs describe how to use Sourcegraph in your development workflow. If you have any problems or requests, please contact <a href="#contact_us" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DOCS, AnalyticsConstants.ACTION_CLICK, "clickedContactSupportFromDocs")}>support</a>.</p>
+				<p className={styles.p}>Sourcegraph is a tool that helps developers explore and understand code. These docs describe how to use Sourcegraph in your development workflow. If you have any problems or requests, please contact <a href="#contact_us" onClick={(e) => e && AnalyticsConstants.Events.DocsContactSupportCTA_Clicked.logEvent()}>support</a>.</p>
 				<ul>
 					<li>
 						<a href="#code_intelligence">Code Intelligence</a>
@@ -116,7 +115,7 @@ export function DocsPage(): JSX.Element {
 
 				<a id="chrome_extension"></a>
 				<Heading level={3} underline="blue">Chrome Extension</Heading>
-				<p className={styles.p}>Sourcegraph's Chrome extension allows you to browse GitHub with IDE-like functionality. <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DOCS, AnalyticsConstants.ACTION_CLICK, "clickedInstallBrowserExtFromDocs")}>Install our Chrome extension.</a></p>
+				<p className={styles.p}>Sourcegraph's Chrome extension allows you to browse GitHub with IDE-like functionality. <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank" onClick={(e) => e && AnalyticsConstants.Events.DocsInstallExtensionCTA_Clicked.logEvent()}>Install our Chrome extension.</a></p>
 
 				<a id="github_hover_over_documentation"></a>
 				<Heading level={5} className={styles.h5}>Hover over Documentation</Heading>
@@ -136,7 +135,7 @@ export function DocsPage(): JSX.Element {
 
 				<a id="auth_private_repos"></a>
 				<Heading level={3} underline="blue">Sourcegraph for Your Private Code</Heading>
-				<p className={styles.p}>Want code intelligence and search for your private repositories? <a href="https://sourcegraph.com/?ob=github" target="_blank" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DOCS, AnalyticsConstants.ACTION_CLICK, "clickedAuthPrivateReposFromDocs")}>Enable Sourcegraph for your private code.</a></p>
+				<p className={styles.p}>Want code intelligence and search for your private repositories? <a href="https://sourcegraph.com/?ob=github" target="_blank" onClick={(e) => e && AnalyticsConstants.Events.DocsAuthPrivateCTA_Clicked.logEvent()}>Enable Sourcegraph for your private code.</a></p>
 
 				<br/>
 

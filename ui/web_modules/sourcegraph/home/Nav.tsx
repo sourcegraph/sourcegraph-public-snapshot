@@ -5,6 +5,7 @@ import {Button, FlexContainer, Logo} from "sourcegraph/components";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import {colors, layout, whitespace} from "sourcegraph/components/utils";
 import {Location} from "sourcegraph/Location";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	context: any;
@@ -28,13 +29,14 @@ export function Nav({context, style, location}: Props): JSX.Element {
 		<div>
 			<Link to="/about" {...merge(navItemSx, navHover, {marginLeft: 0})}>About</Link>
 			<Link to="/pricing" {...merge(navItemSx, navHover)}>Pricing</Link>
-			<a href="/jobs" {...merge(navItemSx, navHover)}>Jobs</a>
+			<a href="/jobs" {...merge(navItemSx, navHover)} onClick={() => AnalyticsConstants.Events.JobsCTA_Clicked.logEvent()}>Jobs</a>
 
 			{!(context as any).signedIn &&
 				<LocationStateToggleLink
 					href="/login"
 					modalName="login"
 					location={location}
+					onToggle={(v) => v && AnalyticsConstants.Events.LoginModal_Initiated.logEvent({page_name: location.pathname})}
 					{...merge(navItemSx, navHover)}
 				>Log in</LocationStateToggleLink>
 			}
@@ -44,6 +46,7 @@ export function Nav({context, style, location}: Props): JSX.Element {
 					href="/join"
 					modalName="join"
 					location={location}
+					onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}
 					{...media(layout.breakpoints["sm"], { display: "none"})}
 					style={{
 						paddingTop: whitespace[2],

@@ -4,8 +4,6 @@ import {LocationStateModal} from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import {Location} from "sourcegraph/Location";
 import {LoginForm} from "sourcegraph/user/Login";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location: Location;
@@ -20,8 +18,7 @@ export const Login = (props: Props): JSX.Element => {
 	};
 
 	return(
-		<LocationStateModal modalName="login" location={props.location} router={props.router}
-			onDismiss={(v) => EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_AUTH, AnalyticsConstants.ACTION_CLICK, "DismissLoginModal", {page_name: props.location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
+		<LocationStateModal modalName="login" location={props.location} router={props.router}>
 			<div className={styles.modal} style={sx}>
 				<LoginForm
 					returnTo={props.location}

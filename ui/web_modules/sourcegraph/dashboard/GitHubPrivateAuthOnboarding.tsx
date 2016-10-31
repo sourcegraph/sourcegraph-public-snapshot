@@ -12,7 +12,6 @@ import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 import {context} from "sourcegraph/app/context";
 
 interface Props {
@@ -29,7 +28,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 	};
 
 	_skipClicked() {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_ONBOARDING, AnalyticsConstants.ACTION_CLICK, "SkipGitHubPrivateAuth", {page_name: "GitHubPrivateCodeOnboarding"});
+		AnalyticsConstants.Events.PrivateAuthGitHub_Skipped.logEvent({page_name: "GitHubPrivateCodeOnboarding"});
 		this.props.completeStep();
 	}
 

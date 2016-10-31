@@ -8,7 +8,6 @@ import * as OrgActions from "sourcegraph/org/OrgActions";
 import {OrgContainer} from "sourcegraph/org/OrgContainer";
 import {UserSettingsReposMain} from "sourcegraph/user/settings/UserSettingsReposMain";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location: Location;
@@ -35,9 +34,9 @@ export class SettingsMain extends React.Component<Props, State>  {
 
 	setActivePanel(panelIndex: number, e: React.MouseEvent<{}>): void {
 		if (panelIndex === 0) {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_CLICK, "ToggleRepoView");
+			AnalyticsConstants.Events.SettingsRepoView_Toggled.logEvent();
 		} else {
-			EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_REPOSITORY, AnalyticsConstants.ACTION_CLICK, "ToggleOrgView");
+			AnalyticsConstants.Events.SettingsOrgView_Toggled.logEvent();
 		}
 		this.setState({activePanel: panelIndex});
 		e.preventDefault();

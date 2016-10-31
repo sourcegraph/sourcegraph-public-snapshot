@@ -47,12 +47,12 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	}
 
 	_toastCTAClicked(): void {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOAST, AnalyticsConstants.ACTION_CLICK, "ChromeToastCTAClicked", {toastCopy: ToastTitle});
+		AnalyticsConstants.Events.ToastChromeCTA_Clicked.logEvent({toastCopy: ToastTitle});
 		this._dismissToast();
 	}
 
 	_closeClicked(): void {
-		EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_TOAST, AnalyticsConstants.ACTION_CLOSE, "ChromeToastCloseClicked", {toastCopy: ToastTitle});
+		AnalyticsConstants.Events.ToastChrome_Closed.logEvent({toastCopy: ToastTitle});
 		this._dismissToast();
 	}
 

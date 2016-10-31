@@ -15,7 +15,6 @@ import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Location} from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location: Location;
@@ -45,7 +44,7 @@ export function Dashboard(props: Props): JSX.Element {
 					You've got everything you need to start exploring the code you depend on.
 				</p>
 				<div className={classNames(base.center)} style={{textAlign:`center`}}>
-					<a onClick={() => {Dispatcher.Backends.dispatch(new SetQuickOpenVisible(true));}}><SearchCTA width={30} content="Find a repository"/></a>
+					<a onClick={() => {AnalyticsConstants.Events.Quickopen_Initiated.logEvent({page_location: "Dashboard"}); Dispatcher.Backends.dispatch(new SetQuickOpenVisible(true));}}><SearchCTA width={30} content="Find a repository"/></a>
 				</div>
 				<div className={classNames(styles.user_actions, colors.cool_gray_8)}>
 					Jump to popular GitHub repositories, like:
@@ -56,21 +55,21 @@ export function Dashboard(props: Props): JSX.Element {
 					<div style={{maxWidth: "675px"}} className={classNames(typography.tl, base.center, styles.repos_left_padding)}>
 						<div className={classNames(colors.cool_gray_8, base.center)}>
 							<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-								<Link to="github.com/sourcegraph/checkup/-/blob/checkup.go" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_CLICK, "DashboardRepoClicked", {link_to: "github.com/sourcegraph/checkup/-/blob/checkup.go"})}>sourcegraph / checkup</Link>
+								<Link to="github.com/sourcegraph/checkup/-/blob/checkup.go" onClick={(e) => e && AnalyticsConstants.Events.DashboardRepo_Clicked.logEvent({link_to: "github.com/sourcegraph/checkup/-/blob/checkup.go"})}>sourcegraph / checkup</Link>
 								<p>Self-hosted health checks and status pages</p>
 							</div>
 							<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-								<Link to="github.com/gorilla/mux/-/blob/mux.go" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_CLICK, "DashboardRepoClicked", {link_to: "github.com/gorilla/mux/-/blob/mux.go"})}>gorilla / mux</Link>
+								<Link to="github.com/gorilla/mux/-/blob/mux.go" onClick={(e) => e && AnalyticsConstants.Events.DashboardRepo_Clicked.logEvent({link_to: "github.com/gorilla/mux/-/blob/mux.go"})}>gorilla / mux</Link>
 								<p>A powerful URL router and dispatcher for golang</p>
 							</div>
 						</div>
 						<div className={classNames(colors.cool_gray_8, base.center)}>
 							<div className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-								<Link to="github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_CLICK, "DashboardRepoClicked", {link_to: "github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go"})}>sourcegraph / thyme</Link>
+								<Link to="github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go" onClick={(e) => e && AnalyticsConstants.Events.DashboardRepo_Clicked.logEvent({link_to: "github.com/sourcegraph/thyme/-/blob/cmd/thyme/main.go"})}>sourcegraph / thyme</Link>
 								<p>Automatically track which applications you use</p>
 							</div>
 							<div  className={classNames(grid.col_6_ns, grid.col, base.pr5, base.pb3)}>
-								<Link to="github.com/golang/go/-/blob/src/net/http/request.go" onClick={(e) => e && EventLogger.logEventForCategory(AnalyticsConstants.CATEGORY_DASHBOARD, AnalyticsConstants.ACTION_CLICK, "DashboardRepoClicked", {link_to: "github.com/golang/go/-/blob/src/net/http/request.go"})}>golang / go</Link>
+								<Link to="github.com/golang/go/-/blob/src/net/http/request.go" onClick={(e) => e && AnalyticsConstants.Events.DashboardRepo_Clicked.logEvent({link_to: "github.com/golang/go/-/blob/src/net/http/request.go"})}>golang / go</Link>
 								<p>The Go programming language</p>
 							</div>
 						</div>

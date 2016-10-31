@@ -30,6 +30,7 @@ interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 // reflected in the URL. Something else will have to read the location state
 // to determine whether to show it.
 export function LocationStateToggleLink(props: Props, {router}) {
+
 	const {location, children, modalName} = props;
 	const other = Object.assign({}, props);
 	delete other.location;

@@ -1,6 +1,7 @@
 import * as React from "react";
 import {AuthButton} from "sourcegraph/components/AuthButton";
 import {Location} from "sourcegraph/Location";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	scopes?: string;
@@ -23,7 +24,7 @@ export function GoogleAuthButton(props: Props): JSX.Element {
 		<AuthButton
 			provider="google"
 			iconType="google"
-			eventLabel="InitiateGoogleOAuth2Flow"
+			eventObject={AnalyticsConstants.Events.OAuth2FlowGCP_Initiated}
 			scopes={props.scopes}
 			returnTo={props.returnTo}
 			color={props.color}
