@@ -84,12 +84,20 @@ func (r *Router) URLToLegacyDefLanding(s lsp.SymbolInformation) (string, error) 
 		return "", err
 	}
 
+	repo := uri.Host + uri.Path
 	defPath := s.Name
 	if s.ContainerName != "" {
-		defPath = s.ContainerName + "/" + s.Name
+		// If the container name is just the package name (i.e. any top-level
+		// symbol) then disregard it. This keeps compatability with srclib store
+		// which would not find the DefKey.Path otherwise. The def landing page
+		// does not need strictly need this for xlang, anyway (already supports
+		// graceful fallback for legacy URLs). Once the new URL scheme is ready,
+		// we can ditch all of this + setup redirects.
+		if s.ContainerName != repo[strings.LastIndex(repo, "/")+1:] {
+			defPath = s.ContainerName + "/" + s.Name
+		}
 	}
 
-	repo := uri.Host + uri.Path
 	unit := uri.Host + path.Join(uri.Path, path.Dir(uri.Fragment))
 	if repo == "github.com/golang/go" {
 		// Special case golang/go to emit just "encoding/json" for the path "github.com/golang/go/src/encoding/json"
