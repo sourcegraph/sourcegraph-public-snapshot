@@ -13,7 +13,6 @@ interface Props {
 	location?: any;
 	repo: string;
 	rev: string;
-	commitID?: string;
 	route?: Route;
 	routeParams: RouteParams;
 };
@@ -24,10 +23,6 @@ export class TreeMain extends React.Component<Props, {}> {
 	};
 
 	render(): JSX.Element | null {
-		if (!this.props.commitID) {
-			return null;
-		}
-
 		const path = treeParam(this.props.routeParams.splat);
 
 		return (
@@ -44,7 +39,6 @@ export class TreeMain extends React.Component<Props, {}> {
 					<TreeList
 						repo={this.props.repo}
 						rev={this.props.rev}
-						commitID={this.props.commitID}
 						path={path} />
 				</GridCol>
 			</div>

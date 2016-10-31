@@ -14,7 +14,6 @@ import "sourcegraph/tree/TreeBackend";
 interface Props {
 	repo: string;
 	rev: string;
-	commitID: string;
 	path: string;
 }
 
@@ -78,14 +77,14 @@ class TreeListComponent extends React.Component<Props & {root: any}, {}> {
 const TreeListContainer = Relay.createContainer(TreeListComponent, {
 	initialVariables: {
 		repo: "",
-		commitID: "",
+		rev: "",
 		path: "",
 	},
 	fragments: {
 		root: () => Relay.QL`
 			fragment on Root {
 				repository: repositoryByURI(uri: $repo) {
-					commit(id: $commitID) {
+					commit(rev: $rev) {
 						tree(path: $path) {
 							directories {
 								name

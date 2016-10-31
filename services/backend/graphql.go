@@ -62,8 +62,15 @@ func (r *repositoryResolver) URI() string {
 	return r.repo.URI
 }
 
-func (r *repositoryResolver) Commit(args *struct{ ID string }) *commitResolver {
-	return &commitResolver{r.repo.ID, args.ID}
+func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitResolver, error) {
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: r.repo.ID,
+		Rev:  args.Rev,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &commitResolver{r.repo.ID, rev.CommitID}, nil
 }
 
 func (r *repositoryResolver) Latest(ctx context.Context) (*commitResolver, error) {

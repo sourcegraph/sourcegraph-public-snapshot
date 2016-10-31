@@ -18,7 +18,7 @@ type Root {
 type Repository {
   id: ID!
 	uri: String!
-	commit(id: String!): Commit
+	commit(rev: String!): Commit
 	latest: Commit!
 }
 
