@@ -168,9 +168,6 @@ def test_find_external_refs(d):
         # External repository references header
         wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "%s is referenced in" % test['symbol_name'])) > 0)
 
-        # Definition header
-        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "Definition")) > 0)
-
 def test_beta_signup(d):
     wd = d.d
     username = os.getenv("USER_GITHUB")
