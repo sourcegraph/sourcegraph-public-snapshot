@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"log"
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
@@ -110,4 +111,44 @@ func (c *Client) finishWithError(span opentracing.Span, err *error) {
 		span.SetTag("err", e.Error())
 	}
 	span.Finish()
+}
+
+// OneShotClientRequest performs a one-shot LSP client request to the specified
+// method (e.g. "textDocument/definition") and stores the results in the given
+// pointer value.
+func OneShotClientRequest(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
+	// Connect to the xlang proxy.
+	c, err := NewDefaultClient()
+	if err != nil {
+		return errors.Wrap(err, "NewDefaultClient")
+	}
+	defer c.Close()
+
+	// Initialize the connection.
+	err = c.Call(ctx, "initialize", ClientProxyInitializeParams{
+		InitializeParams: lsp.InitializeParams{
+			RootPath: rootPath,
+		},
+		Mode: mode,
+	}, nil)
+	if err != nil {
+		return errors.Wrap(err, "LSP initialize")
+	}
+
+	// Perform the request.
+	err = c.Call(ctx, method, params, results)
+	if err != nil {
+		return errors.Wrap(err, "LSP "+method)
+	}
+
+	// Shutdown the connection.
+	err = c.Call(ctx, "shutdown", nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "LSP shutdown")
+	}
+	err = c.Notify(ctx, "exit", nil)
+	if err != nil {
+		return errors.Wrap(err, "LSP exit")
+	}
+	return nil
 }

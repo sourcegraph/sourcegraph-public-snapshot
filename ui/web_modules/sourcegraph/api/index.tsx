@@ -302,7 +302,6 @@ export interface DefsGetOp {
 
 export interface DefsRefreshIndexOp {
 	Repo?: number;
-	RefreshRefLocations?: boolean;
 	Force?: boolean;
 }
 
@@ -497,6 +496,9 @@ export interface FileRange {
 	EndByte?: number;
 }
 
+export interface FileRef {
+}
+
 export interface FileWithRange {
 	StartLine?: number;
 	EndLine?: number;
@@ -687,6 +689,13 @@ export interface RefKey {
 export interface RefList {
 	Refs?: any[];
 	HasMore?: boolean;
+}
+
+export interface RefLocations {
+	HasMore?: boolean;
+}
+
+export interface RefLocationsOptions {
 }
 
 export interface RefSet {
@@ -1036,6 +1045,12 @@ export interface SignatureInformation {
 	paramaters?: any[];
 }
 
+export interface SourceDef {
+}
+
+export interface SourceRef {
+}
+
 export interface SrclibDataVersion {
 	CommitID?: string;
 	CommitsBehind?: number;
@@ -1090,6 +1105,13 @@ export interface TextDocumentPositionParams {
 export interface TextEdit {
 	range: any;
 	newText: string;
+}
+
+export interface TopDefs {
+	HasMore?: boolean;
+}
+
+export interface TopDefsOptions {
 }
 
 export interface TreeEntry {

@@ -173,14 +173,13 @@ func (s *asyncWorker) refreshIndexes(ctx context.Context, op *sourcegraph.AsyncR
 	defer release()
 
 	err := Defs.RefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-		Repo:                op.Repo,
-		RefreshRefLocations: true,
-		Force:               op.Force,
+		Repo:  op.Repo,
+		Force: op.Force,
 	})
 	if err != nil {
+		log15.Crit("Defs.RefreshIndex failed", "repo", op.Repo, "source", op.Source, "error", err)
 		return legacyerr.Errorf(legacyerr.ErrCode(err), "Def.RefreshIndex failed on repo %d from source %s: %s", op.Repo, op.Source, err)
 	}
-
 	return nil
 }
 

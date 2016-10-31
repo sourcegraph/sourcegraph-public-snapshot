@@ -3,6 +3,8 @@ package httpapi
 import (
 	"net/http"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -26,10 +28,13 @@ func serveRefreshIndexes(w http.ResponseWriter, r *http.Request) error {
 
 	if opt.Blocking {
 		err = backend.Defs.RefreshIndex(r.Context(), &sourcegraph.DefsRefreshIndexOp{
-			Repo:                repo,
-			RefreshRefLocations: true,
-			Force:               true,
+			Repo:  repo,
+			Force: true,
 		})
+		if err != nil {
+			// Log the same as Async.RefreshIndexes would do in the case of failure.
+			log15.Crit("Defs.RefreshIndex failed", "repo", repo, "source", "blocking-httpapi", "error", err)
+		}
 	} else {
 		err = backend.Async.RefreshIndexes(r.Context(), &sourcegraph.AsyncRefreshIndexesOp{
 			Repo:   repo,

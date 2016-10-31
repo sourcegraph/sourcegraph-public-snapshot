@@ -53,8 +53,7 @@ func TestAsyncService_RefreshIndexes(t *testing.T) {
 
 	// LockJob
 	calledDefs := Mocks.Defs.MockRefreshIndex(t, &sourcegraph.DefsRefreshIndexOp{
-		Repo:                wantRepo,
-		RefreshRefLocations: true,
+		Repo: wantRepo,
 	})
 	err = w.do(ctx, job)
 	if err != nil {
@@ -143,8 +142,7 @@ func TestAsyncWorker_mutex(t *testing.T) {
 		case 2:
 			called2 = true
 			wantOp := &sourcegraph.DefsRefreshIndexOp{
-				Repo:                wantRepo,
-				RefreshRefLocations: true,
+				Repo: wantRepo,
 			}
 			if !reflect.DeepEqual(op, wantOp) {
 				t.Fatalf("unexpected DefsRefreshIndexOp, got %+v != %+v", op, wantOp)

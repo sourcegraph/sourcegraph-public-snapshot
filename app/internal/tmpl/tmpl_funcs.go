@@ -7,13 +7,10 @@ import (
 	htmpl "html/template"
 	"strings"
 
-	"github.com/jaytaylor/html2text"
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/snippet"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -68,25 +65,6 @@ var FuncMap = htmpl.FuncMap{
 		return short
 	},
 
-	"defDocText": func(def *sourcegraph.Def) string {
-		for _, doc := range def.Docs {
-			if doc.Format == "text/plain" {
-				return doc.Data
-			}
-		}
-		if plain, err := html2text.FromString(def.DocHTML.HTML); err == nil {
-			return plain
-		}
-		for _, doc := range def.Docs {
-			if doc.Format == "text/html" {
-				if plain, err := html2text.FromString(doc.Data); err == nil {
-					return plain
-				}
-			}
-		}
-		return ""
-	},
-
 	"publicRavenDSN": func() string { return conf.PublicRavenDSN },
 
 	"urlToTrace": func(ctx context.Context) string {
@@ -100,9 +78,7 @@ var FuncMap = htmpl.FuncMap{
 
 	"dangerouslySetHTML": func(s string) htmpl.HTML { return htmpl.HTML(s) },
 
-	"renderSnippet": snippet.Render,
-
-	"numberedNoun": func(count int32, word string) string {
+	"numberedNoun": func(count int, word string) string {
 		if count == 1 {
 			return word
 		}
@@ -148,8 +124,8 @@ var FuncMap = htmpl.FuncMap{
 		return router.Rel.URLToRepoLanding(repo).String()
 	},
 
-	"urlToBlob": func(repo, path string) string {
-		return router.Rel.URLToBlob(repo, "", path, 0).String()
+	"urlToBlob": func(repo, path string, line int) string {
+		return router.Rel.URLToBlob(repo, "", path, line).String()
 	},
 
 	"urlToSitemap": func(lang string) string {

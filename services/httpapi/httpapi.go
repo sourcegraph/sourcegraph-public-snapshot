@@ -11,11 +11,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 )
@@ -63,7 +65,8 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(serveRepoRefresh)))
 	m.Get(apirouter.RepoResolveRev).Handler(httptrace.TraceRoute(handler(serveRepoResolveRev)))
 	m.Get(apirouter.RepoTags).Handler(httptrace.TraceRoute(handler(serveRepoTags)))
-	m.Get(apirouter.RepoHoverInfo).Handler(httptrace.TraceRoute(handler(serveRepoHoverInfo)))
+	m.Get(apirouter.RepoDefLanding).Handler(httptrace.TraceRoute(handler(serveRepoDefLanding)))
+	m.Get(apirouter.RepoRefs).Handler(httptrace.TraceRoute(handler(serveRepoRefs)))
 	m.Get(apirouter.Repos).Handler(httptrace.TraceRoute(handler(serveRepos)))
 	m.Get(apirouter.AsyncRefreshIndexes).Handler(httptrace.TraceRoute(handler(serveRefreshIndexes)))
 
@@ -143,6 +146,6 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 	http.Error(w, displayErrBody, status)
 	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err)
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 	}
 }

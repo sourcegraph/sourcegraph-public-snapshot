@@ -6,11 +6,15 @@ import (
 	"net/http"
 	"reflect"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 // ErrorHandler is a func that renders a custom error page for the
@@ -81,7 +85,13 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 	}
 
 	if status < 200 || status >= 400 {
-		log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "error_id", errorID)
+		var spanURL string
+		if span := opentracing.SpanFromContext(req.Context()); span != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err)
+			spanURL = traceutil.SpanURL(span)
+		}
+		log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "error_id", errorID, "trace", spanURL)
 	}
 
 	// Handle panic during execution of error template.

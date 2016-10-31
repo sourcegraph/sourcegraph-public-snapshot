@@ -3,6 +3,8 @@ package sourcegraph
 import (
 	"time"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -850,6 +852,18 @@ type DeprecatedRefLocationsList struct {
 	TotalRepos int32 `json:"TotalRepos,omitempty"`
 }
 
+func (d *DeprecatedRefLocationsList) Convert() *RefLocations {
+	sourceRefs := make([]*SourceRef, len(d.RepoRefs))
+	for i, r := range d.RepoRefs {
+		sourceRefs[i] = r.Convert()
+	}
+	return &RefLocations{
+		SourceRefs:     sourceRefs,
+		StreamResponse: d.StreamResponse,
+		TotalSources:   int(d.TotalRepos),
+	}
+}
+
 // DeprecatedDefRepoRef identifies a repo and its files that reference a def.
 type DeprecatedDefRepoRef struct {
 	// Repo is the name of repo that references the def.
@@ -860,6 +874,14 @@ type DeprecatedDefRepoRef struct {
 	Score float32 `json:"Score,omitempty"`
 	// Files is the list of files in this repo referencing the def.
 	Files []*DeprecatedDefFileRef `json:"Files,omitempty"`
+}
+
+func (d *DeprecatedDefRepoRef) Convert() *SourceRef {
+	files := make([]*FileRef, len(d.Files))
+	for i, f := range d.Files {
+		files[i] = f.Convert()
+	}
+	return &SourceRef{Source: d.Repo, Refs: int(d.Count), Score: int16(d.Score), FileRefs: files}
 }
 
 // DeprecatedFilePosition represents a line:column in a file.
@@ -878,6 +900,132 @@ type DeprecatedDefFileRef struct {
 	Positions []*DeprecatedFilePosition `json:"Positions,omitempty"`
 	// Score is the importance score of this file for the def.
 	Score float32 `json:"Score,omitempty"`
+}
+
+func (d *DeprecatedDefFileRef) Convert() *FileRef {
+	// Use d.Count since d.Positions is not actually populated today. This at
+	// least gives us valid "N times in file X" counts.
+	positions := make([]lsp.Range, d.Count)
+	return &FileRef{File: d.Path, Positions: positions, Score: int16(d.Score)}
+}
+
+// RefLocationsOptions specifies options for querying locations that reference
+// a definition.
+type RefLocationsOptions struct {
+	// Sources is the maximum number of source (e.g. repo) references to return.
+	Sources int
+
+	// Files is the maximum number of file references per source to return.
+	Files int
+
+	// Source is the source of the definition whose references are being
+	// queried. e.g. the git repository URI ("github.com/gorilla/mux").
+	Source string
+
+	// Name and ContainerName of the definition whose references are being
+	// queried.
+	Name, ContainerName string
+}
+
+// RefLocations lists the sources and files that reference a def.
+type RefLocations struct {
+	// SourceRefs holds the sources and files referencing the def.
+	SourceRefs []*SourceRef
+	// StreamResponse specifies if more results are available.
+	StreamResponse
+	// TotalSources is the total number of sources which reference the def.
+	TotalSources int
+}
+
+// SourceRef identifies a source (e.g. a repo) and its files that reference a
+// def.
+type SourceRef struct {
+	// Scheme is the URI scheme for the source, e.g. "git"
+	Scheme string
+
+	// Source is the source that references the def (e.g. a repo URI).
+	Source string
+
+	// Version is the version of the source that references the def.
+	Version string
+
+	// Files is the number of files in the source that reference the def.
+	Files int
+
+	// Refs is the total number of references to the def in the source.
+	Refs int
+
+	// Score is the importance score of this source for the def.
+	Score int16
+
+	// FileRefs is the list of files in this source referencing the def.
+	FileRefs []*FileRef
+}
+
+// FileRef identifies a file that references a def.
+type FileRef struct {
+	// Scheme is the URI scheme for the source, e.g. "git"
+	Scheme string
+
+	// Source is the source that references the def (e.g. a repo URI).
+	Source string
+
+	// Version is the version of the source that references the def.
+	Version string
+
+	// File is the filepath that references the def.
+	File string
+
+	// Positions is the locations in the file that the def is referenced.
+	Positions []lsp.Range
+
+	// Score is the importance score of this file for the def.
+	Score int16
+}
+
+// TopDefsOptions specifies options for querying the top definitions inside a
+// source (e.g. a repo).
+type TopDefsOptions struct {
+	// Source is the source of the definition whose references are being
+	// queried. e.g. the git repository URI ("github.com/gorilla/mux").
+	Source string
+
+	// Limit is the maximum number of definitions to return.
+	Limit int
+}
+
+// TopDefs lists the top definitions inside of a source (e.g. a repo).
+type TopDefs struct {
+	// SourceDefs holds the definitions for the source.
+	SourceDefs []*SourceDef
+	// StreamResponse specifies if more results are available.
+	StreamResponse
+}
+
+// SourceDef identifies a definition inside a source (e.g. a repo) and provides
+// statistics like the number of other sources and files that reference the def.
+type SourceDef struct {
+	// DefScheme is the URI scheme for the def's source, e.g. "git"
+	DefScheme string
+
+	// DefSource is the source of the def (e.g. a repo URI).
+	DefSource string
+
+	// DefVersion is the version of the source that references the def.
+	DefVersion string
+
+	// DefName and DefContainerName of the definition whose references are
+	// being described.
+	DefName, DefContainerName string
+
+	// Sources is the number of sources that reference this def.
+	Sources int
+
+	// Files is the number of files in all sources that reference this def.
+	Files int
+
+	// Refs is the number of references to this def across all sources.
+	Refs int
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
@@ -969,9 +1117,6 @@ type DefsRefreshIndexOp struct {
 	// Repo is the repo whose graph data is to be re-indexed
 	// for global ref locations.
 	Repo int32 `json:"Repo,omitempty"`
-	// RefreshRefLocations refreshes the global ref locations index for
-	// the specified repository.
-	RefreshRefLocations bool `json:"RefreshRefLocations,omitempty"`
 	// Force ensures we reindex, even if we have already indexed the latest
 	// commit for repo
 	Force bool `json:"Force,omitempty"`
