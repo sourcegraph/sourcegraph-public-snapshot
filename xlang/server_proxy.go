@@ -42,10 +42,13 @@ func (id serverID) String() string {
 }
 
 type serverProxyConn struct {
-	proxy *Proxy         // the proxy that opened this conn
-	conn  *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the server
+	conn *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the server
 
 	id serverID
+
+	// clientBroadcast is used to forward incoming requests from servers
+	// to clients.
+	clientBroadcast func(context.Context, *jsonrpc2.Request)
 
 	// initOnce ensures we only connect and initialize once, and other
 	// goroutines wait until the 1st goroutine completes those tasks.
@@ -146,9 +149,9 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// here to be able to safely unlock it, so we don't block the entire
 		// proxy.
 		c = &serverProxyConn{
-			proxy: p,
-			id:    id,
-			last:  time.Now(),
+			id:              id,
+			last:            time.Now(),
+			clientBroadcast: p.clientBroadcastFunc(id.contextID),
 		}
 		p.servers[c] = struct{}{}
 		serverConnsGauge.Set(float64(len(p.servers)))
@@ -227,6 +230,23 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	}
 
 	return c, err
+}
+
+// clientBroadcastFunc returns a function which will broadcast a request to
+// all active clients for id.
+func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc2.Request) {
+	return func(ctx context.Context, req *jsonrpc2.Request) {
+		// TODO(sqs): some clients will have already received these
+		p.mu.Lock()
+		for cc := range p.clients {
+			// TODO(sqs): equality match omits pathPrefix
+			if cc.context == id {
+				// Ignore errors for forwarding diagnostics.
+				go cc.handleFromServer(ctx, cc.conn, req)
+			}
+		}
+		p.mu.Unlock()
+	}
 }
 
 func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
@@ -346,18 +366,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 	case "textDocument/publishDiagnostics":
 		// Forward to all clients.
-		//
-		// TODO(sqs): some clients will have already received these
-
-		c.proxy.mu.Lock()
-		for cc := range c.proxy.clients {
-			// TODO(sqs): equality match omits pathPrefix
-			if cc.context == c.id.contextID {
-				// Ignore errors for forwarding diagnostics.
-				go cc.handleFromServer(ctx, cc.conn, req)
-			}
-		}
-		c.proxy.mu.Unlock()
+		c.clientBroadcast(ctx, req)
 
 		return nil, nil
 	}
