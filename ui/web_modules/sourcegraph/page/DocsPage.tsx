@@ -43,9 +43,6 @@ export function DocsPage(): JSX.Element {
 						</ul>
 					</li>
 					<li>
-						<a href="#auth_private_repos">Sourcegraph for Your Private Code</a>
-					</li>
-					<li>
 						<a href="#languages_supported">Languages Supported</a>
 					</li>
 				</ul>
@@ -67,8 +64,8 @@ export function DocsPage(): JSX.Element {
 
 				<a id="go_to_definition"></a>
 				<Heading level={5} className={styles.h5}>Go to Definition</Heading>
-				<p className={styles.p}>Click on a symbol to jump to its definition. Alternatively, you can right click on a symbol and select “Go to Definition” to do the same thing.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/go_to_definition.png" width="100%"/></a>
+				<p className={styles.p}>Click on a symbol to jump to its definition. Alternatively, you can right click on a symbol and select “Peek Definition” to view the symbol's definition inline.</p>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/peek_definition.png" width="100%"/></a>
 				<br/>
 				<br/>
 				<br/>
@@ -138,23 +135,17 @@ export function DocsPage(): JSX.Element {
 
 				<br/>
 
-				<a id="auth_private_repos"></a>
-				<Heading level={3} underline="blue">Sourcegraph for Your Private Code</Heading>
-				<p className={styles.p}>Want code intelligence and search for your private repositories? <a href="https://sourcegraph.com/?ob=github" target="_blank" onClick={(e) => e && AnalyticsConstants.Events.DocsAuthPrivateCTA_Clicked.logEvent()}>Enable Sourcegraph for your private code.</a></p>
-
-				<br/>
-
 				<a id="languages_supported"></a>
 				<Heading level={3} underline="blue">Languages Supported</Heading>
 				<p className={styles.p}>Sourcegraph currently supports:</p>
 				<ul>
 					<li className={styles.p}>Go</li>
 				</ul>
-				<p className={styles.p}>Coming soon:</p>
+				<p className={styles.p}>In Beta:</p>
 				<ul>
 					<li className={styles.p}>TypeScript</li>
 					<li className={styles.p}>JavaScript</li>
-					<li className={styles.p}>Java</li>
+					<li className={styles.p}>C</li>
 					<li className={styles.p}><a href="https://sourcegraph.com/beta" target="_blank">Don't see your language?</a></li>
 				</ul>
 				<br/>
