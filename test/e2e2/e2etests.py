@@ -28,7 +28,7 @@ def test_repo_jump_to(d):
         Util.select_search_result_using_arrow_keys(d, result_text, exact_match=True)
         wait_for(lambda: wd.current_url == d.sg_url(url_path), text=('wd.current_url == "%s"' % d.sg_url(url_path)))
 
-def test_onboarding(d):
+def test_github_private_auth_onboarding(d):
     wd = d.d
     username = os.getenv("NEW_USER_GITHUB")
     password = os.getenv("NEW_USER_GITHUB_PASSWORD", "")
@@ -43,6 +43,37 @@ def test_onboarding(d):
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
     retry(lambda: d.find_button_by_partial_text("Continue with GitHub").click())
+
+    # Type in GitHub login creds
+    wd.find_element_by_id("login_field").send_keys(username)
+    wd.find_element_by_id("password").send_keys(password)
+    d.active_elem().send_keys(Keys.ENTER)
+
+    # Re-authorize application in case GitHub thinks we're a bot (heh heh)
+    if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
+        d.find_button_by_partial_text("Authorize application").click()
+
+    wait_for(lambda: len(d.find_tokens("Checkers")) > 0)
+    wait_for(lambda: wd.find_element_by_id("def-coachmark"))
+
+    # Log out
+    Util.log_out(d)
+
+def test_github_public_auth_onboarding(d):
+    wd = d.d
+    username = os.getenv("NEW_USER_GITHUB")
+    password = os.getenv("NEW_USER_GITHUB_PASSWORD", "")
+
+    # Delete user from Auth0 if currently exists
+    if username is None:
+        logf("[%s] skipping test_onboarding because $NEW_USER_GITHUB not set" % yellow("WARN"))
+        return
+    d.delete_user_if_exists(username)
+
+    # Go to home, click "Sign up"
+    wd.get(d.sg_url("/"))
+    retry(lambda: wd.find_element_by_link_text("Sign up").click())
+    retry(lambda: d.find_button_by_partial_text("create an account").click())
 
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
@@ -201,7 +232,8 @@ def test_first_open_jump_to_line(d):
     wait_for(lambda: len([e for e in wd.find_elements_by_css_selector(".line-numbers") if e.text == "65"]) == 1)
 
 all_tests = [
-    test_onboarding,
+    test_github_private_auth_onboarding,
+    test_github_public_auth_onboarding,
     test_login_logout,
     test_repo_jump_to,
     test_golden_workflow,
