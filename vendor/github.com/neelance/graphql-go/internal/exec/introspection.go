@@ -18,12 +18,10 @@ var schemaExec iExec
 var typeExec iExec
 
 func init() {
-	{
-		var err *errors.GraphQLError
-		metaSchema, err = schema.Parse(metaSchemaSrc)
-		if err != nil {
-			panic(err)
-		}
+	metaSchema = schema.New()
+	AddBuiltinScalars(metaSchema)
+	if err := metaSchema.Parse(metaSchemaSrc); err != nil {
+		panic(err)
 	}
 
 	{
@@ -349,9 +347,9 @@ func (r *typeResolver) InputFields() *[]*inputValueResolver {
 		return nil
 	}
 
-	l := make([]*inputValueResolver, len(t.InputFieldOrder))
-	for i, name := range t.InputFieldOrder {
-		l[i] = &inputValueResolver{t.InputFields[name]}
+	l := make([]*inputValueResolver, len(t.FieldOrder))
+	for i, name := range t.FieldOrder {
+		l[i] = &inputValueResolver{t.Fields[name]}
 	}
 	return &l
 }
@@ -380,9 +378,9 @@ func (r *fieldResolver) Description() *string {
 }
 
 func (r *fieldResolver) Args() []*inputValueResolver {
-	l := make([]*inputValueResolver, len(r.field.Args.InputFieldOrder))
-	for i, name := range r.field.Args.InputFieldOrder {
-		l[i] = &inputValueResolver{r.field.Args.InputFields[name]}
+	l := make([]*inputValueResolver, len(r.field.Args.FieldOrder))
+	for i, name := range r.field.Args.FieldOrder {
+		l[i] = &inputValueResolver{r.field.Args.Fields[name]}
 	}
 	return l
 }
@@ -400,7 +398,7 @@ func (r *fieldResolver) DeprecationReason() *string {
 }
 
 type inputValueResolver struct {
-	value *schema.InputValue
+	value *common.InputValue
 }
 
 func (r *inputValueResolver) Name() string {
@@ -465,8 +463,8 @@ func (r *directiveResolver) Args() []*inputValueResolver {
 var introspectionQuery *query.Document
 
 func init() {
-	var err *errors.GraphQLError
-	introspectionQuery, err = query.Parse(introspectionQuerySrc)
+	var err *errors.QueryError
+	introspectionQuery, err = query.Parse(introspectionQuerySrc, metaSchema.Resolve)
 	if err != nil {
 		panic(err)
 	}

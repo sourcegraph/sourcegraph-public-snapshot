@@ -1,6 +1,10 @@
 package common
 
-import "github.com/neelance/graphql-go/internal/lexer"
+import (
+	"fmt"
+
+	"github.com/neelance/graphql-go/internal/lexer"
+)
 
 type Type interface {
 	Kind() string
@@ -40,4 +44,31 @@ func parseNullType(l *lexer.Lexer) Type {
 	}
 
 	return &TypeName{Name: l.ConsumeIdent()}
+}
+
+type Resolver func(name string) Type
+
+func ResolveType(t Type, resolver Resolver) (Type, error) {
+	switch t := t.(type) {
+	case *List:
+		ofType, err := ResolveType(t.OfType, resolver)
+		if err != nil {
+			return nil, err
+		}
+		return &List{OfType: ofType}, nil
+	case *NonNull:
+		ofType, err := ResolveType(t.OfType, resolver)
+		if err != nil {
+			return nil, err
+		}
+		return &NonNull{OfType: ofType}, nil
+	case *TypeName:
+		refT := resolver(t.Name)
+		if refT == nil {
+			return nil, fmt.Errorf("type %q not found", t.Name)
+		}
+		return refT, nil
+	default:
+		panic("unreachable")
+	}
 }

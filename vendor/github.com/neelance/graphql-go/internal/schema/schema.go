@@ -19,13 +19,13 @@ type Schema struct {
 	unions          []*Union
 }
 
+func (s *Schema) Resolve(name string) common.Type {
+	return s.Types[name]
+}
+
 type NamedType interface {
 	common.Type
 	TypeName() string
-}
-
-type Scalar struct {
-	Name string
 }
 
 type Object struct {
@@ -57,19 +57,16 @@ type Enum struct {
 }
 
 type InputObject struct {
-	Name            string
-	InputFields     map[string]*InputValue
-	InputFieldOrder []string
+	Name string
+	common.InputMap
 }
 
-func (*Scalar) Kind() string      { return "SCALAR" }
 func (*Object) Kind() string      { return "OBJECT" }
 func (*Interface) Kind() string   { return "INTERFACE" }
 func (*Union) Kind() string       { return "UNION" }
 func (*Enum) Kind() string        { return "ENUM" }
 func (*InputObject) Kind() string { return "INPUT_OBJECT" }
 
-func (t *Scalar) TypeName() string      { return t.Name }
 func (t *Object) TypeName() string      { return t.Name }
 func (t *Interface) TypeName() string   { return t.Name }
 func (t *Union) TypeName() string       { return t.Name }
@@ -78,33 +75,34 @@ func (t *InputObject) TypeName() string { return t.Name }
 
 type Field struct {
 	Name string
-	Args InputObject
+	Args common.InputMap
 	Type common.Type
 }
 
-type InputValue struct {
-	Name    string
-	Type    common.Type
-	Default interface{}
+func New() *Schema {
+	return &Schema{
+		entryPointNames: make(map[string]string),
+		Types:           make(map[string]NamedType),
+	}
 }
 
-func Parse(schemaString string) (s *Schema, err *errors.GraphQLError) {
+func (s *Schema) Parse(schemaString string) error {
 	sc := &scanner.Scanner{
 		Mode: scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.ScanStrings,
 	}
 	sc.Init(strings.NewReader(schemaString))
 
 	l := lexer.New(sc)
-	err = l.CatchSyntaxError(func() {
-		s = parseSchema(l)
+	err := l.CatchSyntaxError(func() {
+		parseSchema(s, l)
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, t := range s.Types {
-		if err := resolveType(s, t); err != nil {
-			return nil, err
+		if err := resolveNamedType(s, t); err != nil {
+			return err
 		}
 	}
 
@@ -113,7 +111,7 @@ func Parse(schemaString string) (s *Schema, err *errors.GraphQLError) {
 		t, ok := s.Types[name]
 		if !ok {
 			if !ok {
-				return nil, errors.Errorf("type %q not found", name)
+				return errors.Errorf("type %q not found", name)
 			}
 		}
 		s.EntryPoints[key] = t
@@ -124,11 +122,11 @@ func Parse(schemaString string) (s *Schema, err *errors.GraphQLError) {
 		for i, intfName := range obj.interfaceNames {
 			t, ok := s.Types[intfName]
 			if !ok {
-				return nil, errors.Errorf("interface %q not found", intfName)
+				return errors.Errorf("interface %q not found", intfName)
 			}
 			intf, ok := t.(*Interface)
 			if !ok {
-				return nil, errors.Errorf("type %q is not an interface", intfName)
+				return errors.Errorf("type %q is not an interface", intfName)
 			}
 			obj.Interfaces[i] = intf
 			intf.PossibleTypes = append(intf.PossibleTypes, obj)
@@ -140,24 +138,21 @@ func Parse(schemaString string) (s *Schema, err *errors.GraphQLError) {
 		for i, name := range union.typeNames {
 			t, ok := s.Types[name]
 			if !ok {
-				return nil, errors.Errorf("object type %q not found", name)
+				return errors.Errorf("object type %q not found", name)
 			}
 			obj, ok := t.(*Object)
 			if !ok {
-				return nil, errors.Errorf("type %q is not an object", name)
+				return errors.Errorf("type %q is not an object", name)
 			}
 			union.PossibleTypes[i] = obj
 		}
 	}
 
-	return s, nil
+	return nil
 }
 
-func resolveType(s *Schema, t common.Type) *errors.GraphQLError {
-	var err *errors.GraphQLError
+func resolveNamedType(s *Schema, t NamedType) error {
 	switch t := t.(type) {
-	case *Scalar:
-		// nothing
 	case *Object:
 		for _, f := range t.Fields {
 			if err := resolveField(s, f); err != nil {
@@ -170,69 +165,35 @@ func resolveType(s *Schema, t common.Type) *errors.GraphQLError {
 				return err
 			}
 		}
-	case *Union:
-		// nothing
-	case *Enum:
-		// nothing
 	case *InputObject:
-		for _, f := range t.InputFields {
-			f.Type, err = resolveTypeName(s, f.Type)
-			if err != nil {
-				return err
-			}
-		}
-	case *common.List:
-		t.OfType, err = resolveTypeName(s, t.OfType)
-		if err != nil {
+		if err := resolveInputObject(s, &t.InputMap); err != nil {
 			return err
 		}
-	case *common.NonNull:
-		t.OfType, err = resolveTypeName(s, t.OfType)
-		if err != nil {
-			return err
-		}
-	default:
-		panic("unreachable")
 	}
 	return nil
 }
 
-func resolveField(s *Schema, f *Field) *errors.GraphQLError {
-	var err *errors.GraphQLError
-	f.Type, err = resolveTypeName(s, f.Type)
+func resolveField(s *Schema, f *Field) error {
+	t, err := common.ResolveType(f.Type, s.Resolve)
 	if err != nil {
 		return err
 	}
-	resolveType(s, &f.Args)
+	f.Type = t
+	return resolveInputObject(s, &f.Args)
+}
+
+func resolveInputObject(s *Schema, io *common.InputMap) error {
+	for _, f := range io.Fields {
+		t, err := common.ResolveType(f.Type, s.Resolve)
+		if err != nil {
+			return err
+		}
+		f.Type = t
+	}
 	return nil
 }
 
-func resolveTypeName(s *Schema, t common.Type) (common.Type, *errors.GraphQLError) {
-	if name, ok := t.(*common.TypeName); ok {
-		refT, ok := s.Types[name.Name]
-		if !ok {
-			return nil, errors.Errorf("type %q not found", name.Name)
-		}
-		return refT, nil
-	}
-	if err := resolveType(s, t); err != nil {
-		return nil, err
-	}
-	return t, nil
-}
-
-func parseSchema(l *lexer.Lexer) *Schema {
-	s := &Schema{
-		entryPointNames: make(map[string]string),
-		Types: map[string]NamedType{
-			"Int":     &Scalar{Name: "Int"},
-			"Float":   &Scalar{Name: "Float"},
-			"String":  &Scalar{Name: "String"},
-			"Boolean": &Scalar{Name: "Boolean"},
-			"ID":      &Scalar{Name: "ID"},
-		},
-	}
-
+func parseSchema(s *Schema, l *lexer.Lexer) {
 	for l.Peek() != scanner.EOF {
 		switch x := l.ConsumeIdent(); x {
 		case "schema":
@@ -265,8 +226,6 @@ func parseSchema(l *lexer.Lexer) *Schema {
 			l.SyntaxError(fmt.Sprintf(`unexpected %q, expecting "schema", "type", "enum", "interface", "union" or "input"`, x))
 		}
 	}
-
-	return s
 }
 
 func parseObjectDecl(l *lexer.Lexer) *Object {
@@ -309,15 +268,14 @@ func parseUnionDecl(l *lexer.Lexer) *Union {
 }
 
 func parseInputDecl(l *lexer.Lexer) *InputObject {
-	i := &InputObject{
-		InputFields: make(map[string]*InputValue),
-	}
+	i := &InputObject{}
+	i.Fields = make(map[string]*common.InputValue)
 	i.Name = l.ConsumeIdent()
 	l.ConsumeToken('{')
 	for l.Peek() != '}' {
-		v := parseInputValue(l)
-		i.InputFields[v.Name] = v
-		i.InputFieldOrder = append(i.InputFieldOrder, v.Name)
+		v := common.ParseInputValue(l)
+		i.Fields[v.Name] = v
+		i.FieldOrder = append(i.FieldOrder, v.Name)
 	}
 	l.ConsumeToken('}')
 	return i
@@ -341,12 +299,12 @@ func parseFields(l *lexer.Lexer) (map[string]*Field, []string) {
 		f := &Field{}
 		f.Name = l.ConsumeIdent()
 		if l.Peek() == '(' {
-			f.Args.InputFields = make(map[string]*InputValue)
+			f.Args.Fields = make(map[string]*common.InputValue)
 			l.ConsumeToken('(')
 			for l.Peek() != ')' {
-				v := parseInputValue(l)
-				f.Args.InputFields[v.Name] = v
-				f.Args.InputFieldOrder = append(f.Args.InputFieldOrder, v.Name)
+				v := common.ParseInputValue(l)
+				f.Args.Fields[v.Name] = v
+				f.Args.FieldOrder = append(f.Args.FieldOrder, v.Name)
 			}
 			l.ConsumeToken(')')
 		}
@@ -356,16 +314,4 @@ func parseFields(l *lexer.Lexer) (map[string]*Field, []string) {
 		fieldOrder = append(fieldOrder, f.Name)
 	}
 	return fields, fieldOrder
-}
-
-func parseInputValue(l *lexer.Lexer) *InputValue {
-	p := &InputValue{}
-	p.Name = l.ConsumeIdent()
-	l.ConsumeToken(':')
-	p.Type = common.ParseType(l)
-	if l.Peek() == '=' {
-		l.ConsumeToken('=')
-		p.Default = common.ParseValue(l, true).Eval(nil)
-	}
-	return p
 }

@@ -3,9 +3,12 @@ package graphql
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
-	"github.com/opentracing/opentracing-go"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+
+	"reflect"
 
 	"github.com/neelance/graphql-go/errors"
 	"github.com/neelance/graphql-go/internal/exec"
@@ -13,62 +16,73 @@ import (
 	"github.com/neelance/graphql-go/internal/schema"
 )
 
-type Schema struct {
-	exec *exec.Exec
-}
+type ID string
 
 func ParseSchema(schemaString string, resolver interface{}) (*Schema, error) {
-	s, err := schema.Parse(schemaString)
-	if err != nil {
+	b := New()
+	if err := b.Parse(schemaString); err != nil {
 		return nil, err
 	}
+	return b.ApplyResolver(resolver)
+}
 
-	e, err2 := exec.Make(s, resolver)
+type SchemaBuilder struct {
+	schema *schema.Schema
+}
+
+func New() *SchemaBuilder {
+	s := schema.New()
+	exec.AddBuiltinScalars(s)
+	exec.AddCustomScalar(s, "ID", reflect.TypeOf(ID("")), func(input interface{}) (interface{}, error) {
+		switch input := input.(type) {
+		case ID:
+			return input, nil
+		case string:
+			return ID(input), nil
+		default:
+			return nil, fmt.Errorf("wrong type")
+		}
+	})
+	return &SchemaBuilder{
+		schema: s,
+	}
+}
+
+func (b *SchemaBuilder) Parse(schemaString string) error {
+	return b.schema.Parse(schemaString)
+}
+
+func (b *SchemaBuilder) AddCustomScalar(name string, scalar *ScalarConfig) {
+	exec.AddCustomScalar(b.schema, name, scalar.ReflectType, scalar.CoerceInput)
+}
+
+func (b *SchemaBuilder) ApplyResolver(resolver interface{}) (*Schema, error) {
+	e, err2 := exec.Make(b.schema, resolver)
 	if err2 != nil {
 		return nil, err2
 	}
 	return &Schema{
-		exec: e,
+		schema: b.schema,
+		exec:   e,
 	}, nil
+}
+
+type Schema struct {
+	schema *schema.Schema
+	exec   *exec.Exec
 }
 
 type Response struct {
 	Data       interface{}            `json:"data,omitempty"`
-	Errors     []*errors.GraphQLError `json:"errors,omitempty"`
+	Errors     []*errors.QueryError   `json:"errors,omitempty"`
 	Extensions map[string]interface{} `json:"extensions,omitempty"`
 }
 
 func (s *Schema) Exec(ctx context.Context, queryString string, operationName string, variables map[string]interface{}) *Response {
-	d, err := query.Parse(queryString)
+	document, err := query.Parse(queryString, s.schema.Resolve)
 	if err != nil {
 		return &Response{
-			Errors: []*errors.GraphQLError{err},
-		}
-	}
-
-	if len(d.Operations) == 0 {
-		return &Response{
-			Errors: []*errors.GraphQLError{errors.Errorf("no operations in query document")},
-		}
-	}
-
-	var op *query.Operation
-	if operationName == "" {
-		if len(d.Operations) > 1 {
-			return &Response{
-				Errors: []*errors.GraphQLError{errors.Errorf("more than one operation in query document and no operation name given")},
-			}
-		}
-		for _, op2 := range d.Operations {
-			op = op2
-		}
-	} else {
-		var ok bool
-		op, ok = d.Operations[operationName]
-		if !ok {
-			return &Response{
-				Errors: []*errors.GraphQLError{errors.Errorf("no operation with name %q", operationName)},
-			}
+			Errors: []*errors.QueryError{err},
 		}
 	}
 
@@ -82,7 +96,7 @@ func (s *Schema) Exec(ctx context.Context, queryString string, operationName str
 	}
 	defer span.Finish()
 
-	data, errs := s.exec.Exec(subCtx, d, variables, op)
+	data, errs := exec.ExecuteRequest(subCtx, s.exec, document, operationName, variables)
 	if len(errs) != 0 {
 		ext.Error.Set(span, true)
 		span.SetTag("errorMsg", errs)
@@ -94,15 +108,20 @@ func (s *Schema) Exec(ctx context.Context, queryString string, operationName str
 }
 
 func SchemaToJSON(schemaString string) ([]byte, error) {
-	s, err := schema.Parse(schemaString)
+	b := New()
+	if err := b.Parse(schemaString); err != nil {
+		return nil, err
+	}
+
+	result, err := exec.IntrospectSchema(b.schema)
 	if err != nil {
 		return nil, err
 	}
 
-	result, err2 := exec.IntrospectSchema(s)
-	if err2 != nil {
-		return nil, err
-	}
-
 	return json.Marshal(result)
+}
+
+type ScalarConfig struct {
+	ReflectType reflect.Type
+	CoerceInput func(input interface{}) (interface{}, error)
 }

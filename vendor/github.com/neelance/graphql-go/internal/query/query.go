@@ -16,10 +16,10 @@ type Document struct {
 }
 
 type Operation struct {
-	Type      OperationType
-	Name      string
-	Variables map[string]*VariableDef
-	SelSet    *SelectionSet
+	Type   OperationType
+	Name   string
+	Vars   common.InputMap
+	SelSet *SelectionSet
 }
 
 type OperationType int
@@ -28,11 +28,6 @@ const (
 	Query OperationType = iota
 	Mutation
 )
-
-type VariableDef struct {
-	Name string
-	Type common.Type
-}
 
 type NamedFragment struct {
 	Fragment
@@ -55,14 +50,14 @@ type Selection interface {
 type Field struct {
 	Alias      string
 	Name       string
-	Arguments  map[string]common.Value
+	Arguments  map[string]interface{}
 	Directives map[string]*Directive
 	SelSet     *SelectionSet
 }
 
 type Directive struct {
 	Name      string
-	Arguments map[string]common.Value
+	Arguments map[string]interface{}
 }
 
 type FragmentSpread struct {
@@ -79,17 +74,32 @@ func (Field) isSelection()          {}
 func (FragmentSpread) isSelection() {}
 func (InlineFragment) isSelection() {}
 
-func Parse(queryString string) (doc *Document, err *errors.GraphQLError) {
+func Parse(queryString string, resolver common.Resolver) (*Document, *errors.QueryError) {
 	sc := &scanner.Scanner{
 		Mode: scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.ScanStrings,
 	}
 	sc.Init(strings.NewReader(queryString))
 
 	l := lexer.New(sc)
-	err = l.CatchSyntaxError(func() {
+	var doc *Document
+	err := l.CatchSyntaxError(func() {
 		doc = parseDocument(l)
 	})
-	return
+	if err != nil {
+		return nil, err
+	}
+
+	for _, op := range doc.Operations {
+		for _, v := range op.Vars.Fields {
+			t, err := common.ResolveType(v.Type, resolver)
+			if err != nil {
+				return nil, errors.Errorf("%s", err)
+			}
+			v.Type = t
+		}
+	}
+
+	return doc, nil
 }
 
 func parseDocument(l *lexer.Lexer) *Document {
@@ -130,10 +140,12 @@ func parseOperation(l *lexer.Lexer, opType OperationType) *Operation {
 	}
 	if l.Peek() == '(' {
 		l.ConsumeToken('(')
-		op.Variables = make(map[string]*VariableDef)
+		op.Vars.Fields = make(map[string]*common.InputValue)
 		for l.Peek() != ')' {
-			v := parseVariableDef(l)
-			op.Variables[v.Name] = v
+			l.ConsumeToken('$')
+			v := common.ParseInputValue(l)
+			op.Vars.Fields[v.Name] = v
+			op.Vars.FieldOrder = append(op.Vars.FieldOrder, v.Name)
 		}
 		l.ConsumeToken(')')
 	}
@@ -148,15 +160,6 @@ func parseFragment(l *lexer.Lexer) *NamedFragment {
 	f.On = l.ConsumeIdent()
 	f.SelSet = parseSelectionSet(l)
 	return f
-}
-
-func parseVariableDef(l *lexer.Lexer) *VariableDef {
-	v := &VariableDef{}
-	l.ConsumeToken('$')
-	v.Name = l.ConsumeIdent()
-	l.ConsumeToken(':')
-	v.Type = common.ParseType(l)
-	return v
 }
 
 func parseSelectionSet(l *lexer.Lexer) *SelectionSet {
@@ -199,8 +202,8 @@ func parseField(l *lexer.Lexer) *Field {
 	return f
 }
 
-func parseArguments(l *lexer.Lexer) map[string]common.Value {
-	args := make(map[string]common.Value)
+func parseArguments(l *lexer.Lexer) map[string]interface{} {
+	args := make(map[string]interface{})
 	l.ConsumeToken('(')
 	if l.Peek() != ')' {
 		name, value := parseArgument(l)
@@ -254,7 +257,7 @@ func parseSpread(l *lexer.Lexer) Selection {
 	return fs
 }
 
-func parseArgument(l *lexer.Lexer) (string, common.Value) {
+func parseArgument(l *lexer.Lexer) (string, interface{}) {
 	name := l.ConsumeIdent()
 	l.ConsumeToken(':')
 	value := common.ParseValue(l, false)
