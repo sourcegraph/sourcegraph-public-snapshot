@@ -74,29 +74,12 @@ export function MasterPlanPage(props: {}) {
 					maxWidth: 960,
 					padding: whitespace[4],
 				}}>
-					<Collapsible collapsed={true}>
 						<Heading level={5} className="{styles.h6}">
-							Do your development tools pass The Sourcegraph Test?
-							<span style={{color: "gray",float: "right"}}>&#9660;</span>
+							Do your development tools pass <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">The Sourcegraph Test</a>?
 						</Heading>
 						<div>
-							<p>Like the <Link to="http://www.joelonsoftware.com/articles/fog0000000043.html">The Joel Test</Link> that set the benchmark for software engineering practices, The Sourcegraph Test is an 11-question survey to answer: do you have the right software development tooling?</p>
-							<ol>
-								<li>Do you have jump-to-def in your primary language and editor?</li>
-								<li>Does your jump-to-def work across repository boundaries?</li>
-								<li>Do you have find-references in your primary language and editor?</li>
-								<li>Do you have inline error messages and diagnostics in your primary language and editor?</li>
-								<li>Do you have jump-to-def in your primary editor for all of the languages you use?</li>
-								<li>Does everyone else on your team satisfy the above 5 questions at least as well as you do?</li>
-								<li>Do you have jump-to-def and find-references in your code review tool?</li>
-								<li>Do you have jump-to-def and find-references in your code host?</li>
-								<li>Is there an automatic notification when a dependency of your project has an important update?</li>
-								<li>Do you receive and perform code reviews?</li>
-								<li>Does your code review process use any form of checklist (i.e., it’s not completely up to the discretion of the reviewer)?</li>
-							</ol>
-							<p><a href="https://twitter.com/srcgraph" target="_blank">Let us know</a> how your team did on the Quinn test!</p>
+							<p>Like &ldquo;The Joel Test,&rdquo; which set the benchmark for software engineering practices, <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">The Sourcegraph Test</a> is an 11-question survey to answer: <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">do you have the right software development tools</a>?</p>
 						</div>
-					</Collapsible>
 				</Panel>
 
 
