@@ -167,6 +167,18 @@ export function MasterPlanPage(props: {}) {
 					<li>Make this all realtime, automatically updated as you make changes in your editor</li>
 				</ol>
 
+				<Panel hoverLevel="high" hover={false} style={{
+					textAlign: "center",
+					padding: whitespace[4],
+				}}>
+					<Heading level={5} className="{styles.h6}">
+						Join the Sourcegraph code review beta
+					</Heading>
+					<div>
+						<a href="https://docs.google.com/a/sourcegraph.com/forms/d/e/1FAIpQLSf9BYHsv2P1hWt4oRY0_PkteXsb5bxQq3ZXjEJZYf2y6vajFg/viewform" target="_blank"><Button color="blue">Apply for beta access</Button></a>
+					</div>
+				</Panel>
+
 				<br/>
 				<Heading level={4} underline="purple" className={styles.h5}>Build the global code graph</Heading>
 				<p>The fundamental problem of software development is that most developers spend most of their time doing things that aren’t core to solving their actual problem. Of all the code you write, only a tiny fraction is core to your particular business or application. Likewise for the bugs you spend time fixing.</p>
