@@ -1,6 +1,7 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
+import {Link} from "react-router";
 import {Button, Input, Hero, Heading, Panel} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -92,6 +93,25 @@ export function MasterPlanPage(props: {}) {
 
 				<br/><br/>
 				<Heading level={4} underline="purple" className={styles.h5}>Make basic code intelligence ubiquitous (in every editor and language)</Heading>
+				<Panel hoverLevel="low" hover={false} className={styles.sidebox} style={{
+					margin: whitespace[4],
+					padding: whitespace[3],
+				}}>
+					<Heading level={5} className="{styles.h6}">
+						Try code intelligence on Sourcegraph
+					</Heading>
+					<div>
+						<p><Link to="/">Sourcegraph</Link> currently supports 4 languages on the web and <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank">Chrome extension</a>, with many more planned by the end of 2016.</p>
+						<ul>
+							<li>Go &mdash; <Link target="_blank" to="/github.com/gorilla/websocket/-/blob/client.go">try it</Link></li>
+							<li>TypeScript (beta) &mdash; <Link target="_blank" to="/github.com/Microsoft/vscode/-/blob/src/vs/editor/contrib/hover/browser/hoverOperation.ts#L51-52">try it</Link></li>
+							<li>JavaScript (beta) &mdash; <Link target="_blank" to="/github.com/swimlane/angular-data-table@master/-/blob/src/components/DataTableController.js#L33">try it</Link></li>
+							<li>C (beta) &mdash; <Link target="_blank" to="/github.com/jgamblin/Mirai-Source-Code/-/blob/mirai/bot/resolv.c">try it</Link></li>
+						</ul>
+						<p><Link to="/beta">Sign up for early access</Link> to other languages.</p>
+					</div>
+				</Panel>
+
 				<p>Every developer deserves to have all these features work 100% of the time:</p>
 				<ul>
 					<li>Jump to definition</li>
@@ -117,9 +137,9 @@ export function MasterPlanPage(props: {}) {
 				<ol>
 					<li>Transform the “<strong><em>m</em></strong>-times-<strong><em>n</em></strong>” language-editor tool problem into a more manageable “<strong><em>m</em></strong>-plus-<strong><em>n</em></strong>” problem by using the <a href="https://github.com/Microsoft/language-server-protocol">Language Server Protocol (LSP)</a> open standard
 						<ul>
-							<li>Create open-source LSP language servers for every language</li>
-							<li>Provide the infrastructure for language server developers to measure coverage and accuracy over a large dataset of open-source code</li>
-							<li>Create open-source LSP adapter plugins for every editor, code viewer, and code review tool</li>
+							<li>Create open-source LSP language servers for every language &mdash; <strong>in progress</strong></li>
+							<li>Provide the infrastructure for language server developers to measure coverage and accuracy over a large dataset of open-source code &mdash; <strong>in progress</strong></li>
+							<li>Create open-source LSP adapter plugins for every editor, code viewer, and code review tool &mdash; <strong>in progress</strong></li>
 						</ul>
 					</li>
 					<li>Make it easy for projects to supply the necessary configuration (if any) so that everyone gets code intelligence on the project’s code</li>
@@ -161,7 +181,7 @@ export function MasterPlanPage(props: {}) {
 				<p>Current code review tools aren’t able to provide these things because they lack code intelligence and a way to give realtime feedback on your local work-in-progress changes. The previous step (bringing basic code intelligence to everyone in all the tools they use) fixes this: it provides the underlying analysis to automatically enumerate possible impacts/defects—and the UI (in their editor and other existing tools) to collect and present this information as needed.</p>
 				<p>Here’s how we’ll bring continuous, intelligent code review (as described above) to every team:</p>
 				<ol>
-					<li>Add basic code intelligence (jump-to-def, hover, find-references, etc.) to diff views in code review tools (GitHub pull requests, etc.) &nbsp;<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack">&#x2714; DONE</a></li>
+					<li>Add basic code intelligence (jump-to-def, hover, find-references, etc.) to diff views in code review tools (GitHub pull requests, etc.) &mdash; <strong><a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack">&#x2714; done</a></strong></li>
 					<li>Apply code intelligence to provide an impact analysis checklist for every change in every code review tool</li>
 					<li>Create a way to enable quick sharing of code in your working tree</li>
 					<li>Make this all realtime, automatically updated as you make changes in your editor</li>
