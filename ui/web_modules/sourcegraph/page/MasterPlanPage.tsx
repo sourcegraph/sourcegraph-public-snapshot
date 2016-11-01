@@ -178,7 +178,7 @@ export function MasterPlanPage(props: {}) {
 						</Heading>
 						<p>Tell everyone you know, and:</p>
 						<ul>
-							<li>Follow along with weekly progress updates ______________ [Subscribe] TODO</li>
+							<li>Follow along with regular progress updates ______________ [Subscribe] TODO</li>
 							<li><Link to="/">Start using Sourcegraph</Link></li>
 						</ul>
 					</div>
