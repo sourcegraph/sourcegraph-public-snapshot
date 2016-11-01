@@ -192,6 +192,10 @@ export const RepoBackend = {
 				return;
 			}
 			modes.forEach(mode => {
+				if (mode === "javascript") {
+					// JavaScript mode returns identical symbol results as TypeScript mode; avoid the extra requests.
+					return;
+				}
 				lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
 						let result;
