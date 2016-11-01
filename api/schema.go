@@ -6,24 +6,29 @@ var Schema = `schema {
 	query: Query
 }
 
+interface Node {
+	id: ID!
+}
+
 type Query {
 	root: Root
+	node(id: ID!): Node
 }
 
 type Root {
-	repository(id: ID!): Repository
-	repositoryByURI(uri: String!): Repository
+	repository(uri: String!): Repository
 }
 
-type Repository {
+type Repository implements Node {
   id: ID!
 	uri: String!
 	commit(rev: String!): Commit
 	latest: Commit!
 }
 
-type Commit {
-	id: String!
+type Commit implements Node {
+	id: ID!
+	sha1: String!
 	tree(path: String = ""): Tree
 }
 

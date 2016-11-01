@@ -31,6 +31,7 @@ declare namespace GQL {
   interface ICommit {
     __typename: string;
     id: string;
+    sha1: string;
     tree: ITree;
   }
 
@@ -55,9 +56,23 @@ declare namespace GQL {
   /*
     description: null
   */
+  type Node = IRepository | ICommit;
+
+  /*
+    description: null
+  */
+  interface INode extends IRepository, ICommit {
+    __typename: string;
+    id: string;
+  }
+
+  /*
+    description: null
+  */
   interface IQuery {
     __typename: string;
     root: IRoot;
+    node: Node;
   }
 
   /*
@@ -77,7 +92,6 @@ declare namespace GQL {
   interface IRoot {
     __typename: string;
     repository: IRepository;
-    repositoryByURI: IRepository;
   }
 
   /*

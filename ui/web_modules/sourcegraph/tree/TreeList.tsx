@@ -83,7 +83,7 @@ const TreeListContainer = Relay.createContainer(TreeListComponent, {
 	fragments: {
 		root: () => Relay.QL`
 			fragment on Root {
-				repository: repositoryByURI(uri: $repo) {
+				repository(uri: $repo) {
 					commit(rev: $rev) {
 						tree(path: $path) {
 							directories {
