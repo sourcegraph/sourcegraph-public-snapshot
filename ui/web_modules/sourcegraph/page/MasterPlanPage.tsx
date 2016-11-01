@@ -76,11 +76,11 @@ export function MasterPlanPage(props: {}) {
 				}}>
 					<Collapsible collapsed={true}>
 						<Heading level={5} className="{styles.h6}">
-							Does <i>your</i> environment pass The Quinn Test?
+							Do your development tools pass The Sourcegraph Test?
 							<span style={{color: "gray",float: "right"}}>&#9660;</span>
 						</Heading>
 						<div>
-							<p>Like the <Link to="http://www.joelonsoftware.com/articles/fog0000000043.html">The Joel Test</Link> that helped set the standard for a quality software team, The Quinn Test is a 10-question survey to answer: does my team's environment give us the code intelligence to compete with the giants?</p>
+							<p>Like the <Link to="http://www.joelonsoftware.com/articles/fog0000000043.html">The Joel Test</Link> that set the benchmark for software engineering practices, The Sourcegraph Test is an 11-question survey to answer: do you have the right software development tooling?</p>
 							<ol>
 								<li>Do you have jump-to-def in your primary language and editor?</li>
 								<li>Does your jump-to-def work across repository boundaries?</li>
