@@ -57,9 +57,6 @@ export function AboutPage(props: {}) {
 				<Heading level={3} underline="purple" className={styles.h5}>Our purpose: the future sooner</Heading>
 				<p className={styles.p}>From lifesaving medicine to self-driving cars, the future’s most groundbreaking innovations will all rely on code, in one way or another. With so much software to write in the coming decades, we all need a better way to discover and understand code&mdash;one that will finally free us from re-doing work that’s been done 50,000 times before.</p>
 				<p className={styles.p}>At Sourcegraph, we help developers <em>bring the future sooner</em>&mdash;by turning great ideas into great software more efficiently.</p>
-
-				<Heading level={3} underline="orange" className={styles.h5}>Stickers for screenshots</Heading>
-				<p className={styles.p}>Developers love stickers, and we love understanding our users better. We'll mail you a Sourcegraph sticker free of charge if you <a href="mailto:hi@sourcegrah.com">email us a screenshot or video</a> of your full screen (including editor/IDE) while you're using Sourcegraph in your usual development workflow. In the email, be sure to tell us your mailing address so we know where to send the sticker.</p>
 			</div>
 		</div>
 	);
