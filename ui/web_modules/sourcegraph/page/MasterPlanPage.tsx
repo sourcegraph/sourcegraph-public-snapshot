@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import {Hero, Heading} from "sourcegraph/components";
+import {Hero, Heading, Panel, Collapsible} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
+import {whitespace} from "sourcegraph/components/utils";
 
 export function MasterPlanPage(props: {}) {
 	return (
@@ -65,6 +66,38 @@ export function MasterPlanPage(props: {}) {
 				<p>The end result is that anytime you look at code, you have the full power of a perfectly configured IDE.</p>
 
 				<br/>
+				<Panel hoverLevel="high" hover={false} style={{
+					margin: "auto",
+					maxWidth: 960,
+					padding: whitespace[4],
+				}}>
+					<Collapsible collapsed={true}>
+						<Heading level={5} className="{styles.h6}">
+							Does <i>your</i> environment pass The Quinn Test?
+							<span style={{color: "gray",float: "right"}}>&#9660;</span>
+						</Heading>
+						<div>
+							<p>Like the <Link to="http://www.joelonsoftware.com/articles/fog0000000043.html">The Joel Test</Link> that helped set the standard for a quality software team, The Quinn Test is a 10-question survey to answer: does my team's environment give us the code intelligence to compete with the giants?</p>
+							<ol>
+								<li>Do you have jump-to-def in your primary language and editor?</li>
+								<li>Does your jump-to-def work across repository boundaries?</li>
+								<li>Do you have find-references in your primary language and editor?</li>
+								<li>Do you have inline error messages and diagnostics in your primary language and editor?</li>
+								<li>Do you have jump-to-def in your primary editor for all of the languages you use?</li>
+								<li>Does everyone else on your team satisfy the above 5 questions at least as well as you do?</li>
+								<li>Do you have jump-to-def and find-references in your code review tool?</li>
+								<li>Do you have jump-to-def and find-references in your code host?</li>
+								<li>Is there an automatic notification when a dependency of your project has an important update?</li>
+								<li>Do you receive and perform code reviews?</li>
+								<li>Does your code review process use any form of checklist (i.e., it’s not completely up to the discretion of the reviewer)?</li>
+							</ol>
+							<p><a href="https://twitter.com/srcgraph" target="_blank">Let us know</a> how your team did on the Quinn test!</p>
+						</div>
+					</Collapsible>
+				</Panel>
+
+
+				<br/>
 				<Heading level={4} underline="purple" className={styles.h5}>Make code review continuous and more intelligent</Heading>
 				<p>Code review is supposed to improve quality and share knowledge. But few teams feel their code review process (if any) is effective, because today’s tools make code review a manual, error-prone process performed (far too often) at the very end of the development cycle.</p>
 				<p>Toyota long ago showed that high-quality production processes should be the opposite: continuous (to find defects immediately, not after the car is fully assembled) and systematic (based on checklists compiled from experience). Medicine and aviation also recognize the value of this approach. We’ll apply these principles to make code review continuous and more intelligent, so you can:</p>
@@ -80,7 +113,7 @@ export function MasterPlanPage(props: {}) {
 					<li>Quickly share code with teammates to get help or informal reviews instead of waiting until the end</li>
 					<li>Automatically and always have code reviewed by the right teammates</li>
 					<li>Easily run the modified codebase to inspect the actual product (not just the code)</li>
-				</ul>			
+				</ul>
 				<p>Current code review tools aren’t able to provide these things because they lack code intelligence and a way to give realtime feedback on your local work-in-progress changes. The previous step (bringing basic code intelligence to everyone in all the tools they use) fixes this: it provides the underlying analysis to automatically enumerate possible impacts/defects—and the UI (in their editor and other existing tools) to collect and present this information as needed.</p>
 				<p>Here’s how we’ll bring continuous, intelligent code review (as described above) to every team:</p>
 				<ol>
