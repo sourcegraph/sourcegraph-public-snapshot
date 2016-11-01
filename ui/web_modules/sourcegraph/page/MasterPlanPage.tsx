@@ -18,7 +18,7 @@ function tldr() {
 		<ol>
 			<li>Make basic code intelligence (jump-to-def, find-references, etc.) ubiquitous</li>
 			<li>Make code review continuous and more intelligent</li>
-			<li>Make this all work globally, not just within a single project, so we can increase the amount/quality of available open-source code and help you avoid reinventing the wheel</li>
+			<li>Make this all work globally, not just within a single project, to increase the amount/quality of available open-source code and help you avoid reinventing the wheel</li>
 		</ol>
 	);
 }
