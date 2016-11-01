@@ -1,14 +1,12 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Link} from "react-router";
 import {Button, Input, Hero, Heading, Panel} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 import {whitespace, layout} from "sourcegraph/components/utils";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {media} from "glamor";
 import {context} from "sourcegraph/app/context";
