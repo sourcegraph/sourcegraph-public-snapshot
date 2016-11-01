@@ -94,6 +94,14 @@
 	composes: mt6 from base;
 	composes: tc from typography;
 }
+.sidebox {
+}
+@media screen and (min-width: 48em) {
+	.sidebox {
+		float: right;
+		max-width: 40%;
+	}
+}
 
 /* Pricing */
 .plans {

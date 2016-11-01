@@ -23,6 +23,7 @@ export const h5: string;
 export const subtitle: string;
 export const icon: string;
 export const footer: string;
+export const sidebox: string;
 export const plans: string;
 export const plan: string;
 export const plan_box: string;

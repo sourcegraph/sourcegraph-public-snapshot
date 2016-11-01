@@ -2,33 +2,52 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import {Hero, Heading, Panel, Collapsible} from "sourcegraph/components";
+import {Hero, Heading, Panel} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
 import {whitespace} from "sourcegraph/components/utils";
+
+function tldr() {
+	return (
+		<ol>
+			<li>Make basic code intelligence (jump-to-def, find-references, etc.) ubiquitous</li>
+			<li>Make code review continuous and more intelligent</li>
+			<li>Make this all work globally, not just within a single project, so we can increase the amount/quality of available open-source code and help you avoid reinventing the wheel</li>
+		</ol>
+	);
+}
 
 export function MasterPlanPage(props: {}) {
 	return (
 		<div>
 			<Helmet title="Sourcegraph Master Plan" />
 			<Hero pattern="objects" color="blue" className={base.pv4}>
-				<div className={styles.container}>
+				<div className={styles.container_wide}>
 					<Heading level={2} color="white">Sourcegraph Master Plan</Heading>
 					<p className={styles.p}>What we're building and why it matters</p>
 				</div>
 			</Hero>
-			<div className={styles.content}>
+			<div className={styles.content_wide}>
+				<Panel hoverLevel="high" hover={false} className={styles.sidebox} style={{
+					margin: whitespace[4],
+					padding: whitespace[3],
+				}}>
+					<Heading level={5} className="{styles.h6}">
+						Sourcegraph Master Plan tl;dr
+					</Heading>
+					<div>
+						{tldr()}
+						<p>TODO ADD CTA</p>
+					</div>
+				</Panel>
+
 				<p>Today, Sourcegraph gives you the power of an IDE (jump-to-def, search, and find-references) when reading code on the web, either on <a href="https://sourcegraph.com">Sourcegraph.com</a>, or on GitHub with the <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack">Sourcegraph Chrome extension</a>. What most people don’t know is that our long-term vision is to make it so everyone, in every community, in every country, and in every industry—not just the ones working at the half-dozen dominant tech companies—can create products using the best technology. We believe this is the only way the world will sustain broad economic growth and build the innovations we need over the next 100 years in transportation, health care, energy, AI, communication, space travel, etc.</p>
 				<p>In 1976, just 0.2% of the world’s population had access to a computer. Apple’s vision then was to create a “bicycle for the mind” in the form of a computer, and Microsoft put a computer “on every desk and in every home.” Together, these companies succeeded in bringing computing to billions of people. But these billions of people are still using software applications built by just 0.2% of the world’s population (those who can code).</p>
 				<p>The next step is to make it so billions of people, not just 0.2% of the world population, can build software (not just use it). Amazon Web Services and others solve the distribution piece: a tiny team can reach millions of users using the same infrastructure available to the most advanced tech companies. But the process of creating software is stuck in the mainframe era: the “developer experience” of building software is still poor, duplicative, manual, and single-player—and every software project is about integrating components of variable quality developed mostly in isolation, with a high chance of failure.</p>
 				<p>At Sourcegraph, we want to fix this and eventually enable everyone to build software. For now, we’re revealing our master plan for phase 1: how we’re going to make it easier and faster for <em>today’s developers</em> to build software.</p>
 				<p>The <strong>tl;dr</strong> for phase 1 is:</p>
-				<ol>
-					<li>Make basic code intelligence (jump-to-def, find-references, etc.) ubiquitous</li>
-					<li>Make code review continuous and more intelligent</li>
-					<li>Make this all work globally, not just within a single project, so we can increase the amount/quality of available open-source code and help you avoid reinventing the wheel</li>
-				</ol>
+				{tldr()}
 				<p>When phase 1 is almost done, we’ll reveal phase 2: how we’ll work toward enabling everyone to code. If you think that’s crazy, ask yourself: now that billions of people have access to the Internet, is coding more like reading and writing (which virtually everyone does) or publishing books (which 0.1% of the population does)?</p>
 
 				<br/>
@@ -81,7 +100,6 @@ export function MasterPlanPage(props: {}) {
 							<p>Like &ldquo;The Joel Test,&rdquo; which set the benchmark for software engineering practices, <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">The Sourcegraph Test</a> is an 11-question survey to answer: <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">do you have the right software development tools</a>?</p>
 						</div>
 				</Panel>
-
 
 				<br/>
 				<Heading level={4} underline="purple" className={styles.h5}>Make code review continuous and more intelligent</Heading>
@@ -142,20 +160,29 @@ export function MasterPlanPage(props: {}) {
 
 				<p>Getting these right and building the global code graph means you’ll be able to find and use more existing, high-quality open-source components for the common parts of your application, so you can focus on solving the problems that are unique to your business or project.</p>
 
-				<br/><hr/><br/>
+				<br/><br/>
 
-				<p>So, in short, the master plan is:</p>
-				<ol>
-					<li>Make basic code intelligence (jump-to-def, find-references, etc.) ubiquitous</li>
-					<li>Make code review continuous and more intelligent</li>
-					<li>Make this all work globally, not just within a single project, so we can increase the amount/quality of available open-source code and help you avoid reinventing the wheel</li>
-				</ol>
-
-				<p>Tell everyone you know, and:</p>
-				<ul>
-					<li>Follow along with weekly progress updates ______________ [Subscribe] TODO</li>
-					<li><Link to="/">Start using Sourcegraph</Link></li>
-				</ul>
+				<Panel hoverLevel="high" hover={false} style={{
+					margin: "auto",
+					maxWidth: 960,
+					padding: whitespace[4],
+				}}>
+					<Heading level={5} className="{styles.h6}">
+						Sourcegraph Master Plan tl;dr
+					</Heading>
+					<div>
+						{tldr()}
+						<br/>
+						<Heading level={5} className="{styles.h6}">
+							Join the effort!
+						</Heading>
+						<p>Tell everyone you know, and:</p>
+						<ul>
+							<li>Follow along with weekly progress updates ______________ [Subscribe] TODO</li>
+							<li><Link to="/">Start using Sourcegraph</Link></li>
+						</ul>
+					</div>
+				</Panel>
 			</div>
 		</div>
 	);
