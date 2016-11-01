@@ -173,3 +173,13 @@
 .details_cumulative {
 	font-weight: normal;
 }
+
+/* Master Plan */
+.mailchimp_embed {
+	
+}
+.mailchimp_input {
+	display: inline-block;
+	composes: mr1 from base;
+}
+.mailchimp_button {}

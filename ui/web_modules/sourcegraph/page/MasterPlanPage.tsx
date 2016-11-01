@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import {Link} from "react-router";
-import {Hero, Heading, Panel} from "sourcegraph/components";
+import {Button, Input, Hero, Heading, Panel} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
@@ -15,6 +15,25 @@ function tldr() {
 			<li>Make code review continuous and more intelligent</li>
 			<li>Make this all work globally, not just within a single project, so we can increase the amount/quality of available open-source code and help you avoid reinventing the wheel</li>
 		</ol>
+	);
+}
+
+// emailSubscribeForm returns the email subscription form. tabIndex
+// should be an odd number that is unique among all the calls to
+// emailSubscribeForm in this file.
+function emailSubscribeForm(tabIndex: number, block: boolean) {
+	return (
+		<div>
+			<div className={styles.mailchimp_embed}>
+				<form action="//sourcegraph.us8.list-manage.com/subscribe/post?u=81d5d2fe17e49697663f46503&amp;id=32642fc470" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" className="validate" target="_blank" noValidate>
+					<div>
+						<div style={{position: "absolute", left: "-5000px"}} aria-hidden="true"><input type="text" name="b_81d5d2fe17e49697663f46503_32642fc470" tabIndex={-1} value="" /></div>
+						<Input block={block} type="email" defaultValue="" name="EMAIL" id="mce-EMAIL" placeholder="Email address" style={{marginBottom: whitespace[1]}} className={styles.mailchimp_input} tabIndex={tabIndex} />
+						<Button type="submit" block={block} id="mc-embedded-subscribe" color="blue" className={styles.mailchimp_button} tabIndex={tabIndex + 1}>Subscribe to updates</Button>
+					</div>
+				</form>
+			</div>
+		</div>
 	);
 }
 
@@ -38,7 +57,7 @@ export function MasterPlanPage(props: {}) {
 					</Heading>
 					<div>
 						{tldr()}
-						<p>TODO ADD CTA</p>
+						{emailSubscribeForm(5, true)}
 					</div>
 				</Panel>
 
@@ -178,7 +197,7 @@ export function MasterPlanPage(props: {}) {
 						</Heading>
 						<p>Tell everyone you know, and:</p>
 						<ul>
-							<li>Follow along with regular progress updates ______________ [Subscribe] TODO</li>
+							<li>{emailSubscribeForm(7, false)}</li>
 							<li><Link to="/">Start using Sourcegraph</Link></li>
 						</ul>
 					</div>
