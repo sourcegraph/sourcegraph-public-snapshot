@@ -8,6 +8,7 @@ import {EventLogger} from "sourcegraph/util/EventLogger";
 export const EventCategories = {
 	// Home pages
 	Nav: "Nav",
+	Home: "Home",
 	Dashboard: "Dashboard",
 	Pricing: "Pricing",
 	DocsPage: "DocsPage",
@@ -199,6 +200,7 @@ export const Events = {
 	ToolsModalDownloadCTA_Clicked: 			new LoggableEvent("ToolsModalDownloadCTAClicked", EventCategories.Tools, EventActions.Click),
 	PricingCTA_Clicked:                    	new LoggableEvent("ClickPricingCTA", EventCategories.Pricing, EventActions.Click),
 	DashboardRepo_Clicked:                 	new LoggableEvent("DashboardRepoClicked", EventCategories.Dashboard, EventActions.Click),
+	HomeCarousel_Clicked: 					new LoggableEvent("HomeCarouselClicked", EventCategories.Home, EventActions.Click),
 	JobsCTA_Clicked:                 		new LoggableEvent("JobsCTAClicked", EventCategories.Nav, EventActions.Click),
 
 	// Non-Interaction Events
