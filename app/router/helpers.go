@@ -85,6 +85,12 @@ func (r *Router) URLToLegacyDefLanding(s lsp.SymbolInformation) (string, error) 
 	}
 
 	repo := uri.Host + uri.Path
+	unit := uri.Host + path.Join(uri.Path, path.Dir(uri.Fragment))
+	if repo == "github.com/golang/go" {
+		// Special case golang/go to emit just "encoding/json" for the path "github.com/golang/go/src/encoding/json"
+		unit = strings.TrimPrefix(path.Dir(uri.Fragment), "src/")
+	}
+
 	defPath := s.Name
 	if s.ContainerName != "" {
 		// If the container name is just the package name (i.e. any top-level
@@ -93,15 +99,9 @@ func (r *Router) URLToLegacyDefLanding(s lsp.SymbolInformation) (string, error) 
 		// does not need strictly need this for xlang, anyway (already supports
 		// graceful fallback for legacy URLs). Once the new URL scheme is ready,
 		// we can ditch all of this + setup redirects.
-		if s.ContainerName != repo[strings.LastIndex(repo, "/")+1:] {
+		if s.ContainerName != unit[strings.LastIndex(unit, "/")+1:] {
 			defPath = s.ContainerName + "/" + s.Name
 		}
-	}
-
-	unit := uri.Host + path.Join(uri.Path, path.Dir(uri.Fragment))
-	if repo == "github.com/golang/go" {
-		// Special case golang/go to emit just "encoding/json" for the path "github.com/golang/go/src/encoding/json"
-		unit = strings.TrimPrefix(path.Dir(uri.Fragment), "src/")
 	}
 
 	return r.URLToDefLanding(graph.DefKey{
