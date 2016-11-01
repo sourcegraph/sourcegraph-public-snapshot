@@ -137,7 +137,7 @@ export function MasterPlanPage(props: {}) {
 							Do your development tools pass <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">The Sourcegraph Test</a>?
 						</Heading>
 						<div>
-							<p>Like &ldquo;The Joel Test,&rdquo; which set the benchmark for software engineering practices, <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">The Sourcegraph Test</a> is an 11-question survey to answer: <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">do you have the right software development tools</a>?</p>
+							<p>Like &ldquo;The Joel Test,&rdquo; which set the benchmark for software engineering practices, <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">The Sourcegraph Test</a> is an 12-question survey to answer: <a href="https://text.sourcegraph.com/the-sourcegraph-test-e5c281850c" target="_blank">do you have the right software development tools</a>?</p>
 						</div>
 				</Panel>
 
