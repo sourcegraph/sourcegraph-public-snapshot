@@ -110,7 +110,7 @@ export function indexAnnotations(anns) {
 	for (let i = 0; i < anns.length; i++) {
 		// From pkg/syntaxhighlight/html_annotator.go
 		const annType = anns[i].Class;
-		if (annType !== "com" || annType !== "lit" || annType !== "pun") {
+		if (annType !== "com" && annType !== "lit" && annType !== "pun" && annType !== "kwd") {
 			let ann = anns[i];
 			annsByStartByte[ann.StartByte] = ann;
 			annsByEndByte[ann.EndByte] = ann;
