@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/graphqlbackend"
 )
 
 func serveGraphQL(w http.ResponseWriter, r *http.Request) (err error) {
@@ -23,7 +23,7 @@ func serveGraphQL(w http.ResponseWriter, r *http.Request) (err error) {
 		return nil
 	}
 
-	response := backend.GraphQLSchema.Exec(r.Context(), params.Query, "", params.Variables)
+	response := graphqlbackend.GraphQLSchema.Exec(r.Context(), params.Query, "", params.Variables)
 	responseJSON, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
