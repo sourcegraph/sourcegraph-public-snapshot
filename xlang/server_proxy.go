@@ -167,9 +167,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	serverConnsGauge.Set(float64(len(p.servers)))
 	p.mu.Unlock()
 	if ok && LogServerStats {
-		c.mu.Lock()
-		stats := c.stats
-		c.mu.Unlock()
+		stats := c.Stats()
 		// Machine parseable to assist post processing
 		msg, _ := json.Marshal(struct {
 			RootPath   string
@@ -452,6 +450,13 @@ func (c *serverProxyConn) incMethodStat(method string) {
 	}
 	c.stats.Counts[method] = c.stats.Counts[method] + 1
 	c.mu.Unlock()
+}
+
+func (c *serverProxyConn) Stats() serverProxyConnStats {
+	c.mu.Lock()
+	s := c.stats
+	c.mu.Unlock()
+	return s
 }
 
 // shutdownAndExit sends LSP "shutdown" and "exit" to the LSP server

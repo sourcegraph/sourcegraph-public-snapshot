@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strings"
 
@@ -18,9 +19,10 @@ import (
 )
 
 var (
-	addr     = flag.String("addr", ":4388", "proxy server TCP listen address")
-	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
-	trace    = flag.Bool("trace", false, "print traces of JSON-RPC 2.0 requests/responses")
+	addr      = flag.String("addr", ":4388", "proxy server TCP listen address")
+	profbind  = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
+	debugbind = flag.String("debug-http", ":6061", "lsp-proxy debug http bind address")
+	trace     = flag.Bool("trace", false, "print traces of JSON-RPC 2.0 requests/responses")
 )
 
 func main() {
@@ -60,5 +62,8 @@ func run() error {
 	fmt.Fprintln(os.Stderr, "lsp-proxy: listening on", lis.Addr())
 	p := xlang.NewProxy()
 	p.Trace = *trace
+	if *debugbind != "" {
+		go http.ListenAndServe(*debugbind, &xlang.DebugHandler{Proxy: p})
+	}
 	return p.Serve(context.Background(), lis)
 }
