@@ -130,7 +130,7 @@ export class Container extends React.Component<Props, State> {
 		this.bindSearchInput = this.bindSearchInput.bind(this);
 		this.updateInput = this.updateInput.bind(this);
 		this.updateResults = throttle(this.updateResults.bind(this), 150, { leading: true, trailing: true });
-		this.fetchResults = throttle(this.fetchResults, 150, { leading: true, trailing: true });
+		this.fetchResults = debounce(this.fetchResults, 100, { leading: true, trailing: true });
 		this.state = {
 			input: "",
 			selected: { category: 0, row: 0 },
@@ -150,7 +150,7 @@ export class Container extends React.Component<Props, State> {
 		};
 		this.fetchRepoResultsWithGitHub = debounce(((query: string) => {
 			Dispatcher.Backends.dispatch(new RepoActions.WantRepos(this.repoListQueryString(query, true)));
-		}).bind(this), 2000, { leading: false, trailing: true }); // 2 second debounce
+		}).bind(this), 1000, { leading: false, trailing: true }); // 2 second debounce
 	}
 
 	componentDidMount(): void {
