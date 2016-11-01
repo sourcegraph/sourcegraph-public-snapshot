@@ -63,8 +63,8 @@ export class QuickOpenModal extends React.Component<Props, null> {
 				this.dismissModal(false);
 			}
 			this.props.activateSearch(this._getEventProps());
+			event.preventDefault();
 		}
-		event.preventDefault();
 	}
 
 	dismissModal(shouldLog: boolean): void {
