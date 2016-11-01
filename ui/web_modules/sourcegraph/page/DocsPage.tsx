@@ -64,8 +64,8 @@ export function DocsPage(): JSX.Element {
 
 				<a id="go_to_definition"></a>
 				<Heading level={5} className={styles.h5}>Go to Definition</Heading>
-				<p className={styles.p}>Click on a symbol to jump to its definition. Alternatively, you can right click on a symbol and select “Go to Definition” to do the same thing.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/go_to_definition.png" width="100%"/></a>
+				<p className={styles.p}>Click on a symbol to jump to its definition. Alternatively, you can right click on a symbol and select “Peek Definition” to view the symbol's definition inline.</p>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/peek_definition.png" width="100%"/></a>
 				<br/>
 				<br/>
 				<br/>
