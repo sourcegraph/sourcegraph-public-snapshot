@@ -43,7 +43,7 @@ export class SignupForm extends Component<Props, State> {
 				<form id="form" method="POST" action={publicCodeURL}>
 					<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
 					<p className={styles.mid_text}>
-						To use Sourcegraph on publicly accessible code <i>only</i>, <a onClick={this._submitForm.bind(this)}>create an account</a> scoped to public repositories. By continuing with GitHub, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
+						Or <a onClick={this._submitForm.bind(this)}>sign in</a> to view public code <i>only</i>. By continuing with GitHub, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
 					</p>
 				</form>
 			</div>
