@@ -56,10 +56,13 @@ export function MasterPlanPage(props: {}) {
 				<p>The current approach is broken because it’s an “<strong><em>m</em></strong>-times-<strong><em>n</em></strong>” solution: one tool for each combination of <strong><em>m</em></strong> applications (Vim, Emacs, Visual Studio, Sublime, IntelliJ, Eclipse, GitHub’s code file viewer, Codenvy, etc.) and <strong><em>n</em></strong> languages (JavaScript, C++, Java, C#, Python, etc.). This means we’d need thousands of individual tools, all maintained independently, to get complete coverage.</p>
 				<p>Here’s how to fix it and bring basic code intelligence to every developer, everywhere:</p>
 				<ol>
-					<li>Transform the “<strong><em>m</em></strong>-times-<strong><em>n</em></strong>” language-editor tool problem into a more manageable “<strong><em>m</em></strong>-plus-<strong><em>n</em></strong>” problem by using the <a href="https://github.com/Microsoft/language-server-protocol">Language Server Protocol (LSP)</a> open standard</li>
-					<li>Create LSP language servers for every language</li>
-					<li>Provide the infrastructure for language server developers to measure coverage and accuracy over a large dataset of open-source code</li>
-					<li>Create LSP adapter plugins for every editor, code viewer, and code review tool</li>
+					<li>Transform the “<strong><em>m</em></strong>-times-<strong><em>n</em></strong>” language-editor tool problem into a more manageable “<strong><em>m</em></strong>-plus-<strong><em>n</em></strong>” problem by using the <a href="https://github.com/Microsoft/language-server-protocol">Language Server Protocol (LSP)</a> open standard
+						<ul>
+							<li>Create LSP language servers for every language</li>
+							<li>Provide the infrastructure for language server developers to measure coverage and accuracy over a large dataset of open-source code</li>
+							<li>Create LSP adapter plugins for every editor, code viewer, and code review tool</li>
+						</ul>
+					</li>
 					<li>Make it easy for projects to supply the necessary configuration (if any) so that everyone gets code intelligence on the project’s code</li>
 					<li>Make it quick and easy to add/install code intelligence for any language in your tools of choice</li>
 				</ol>
