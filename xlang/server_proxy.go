@@ -57,7 +57,24 @@ type serverProxyConn struct {
 
 	mu     sync.Mutex
 	rootFS ctxvfs.FileSystem // the workspace's file system
-	last   time.Time         // max(last request sent, last response received), used to disconnect from unused servers
+	stats  serverProxyConnStats
+}
+
+// serverProxyConnStats contains statistics for a proxied connection to a server.
+type serverProxyConnStats struct {
+	// Created is the time the proxy connection was created
+	Created time.Time
+
+	// Last is max(last request sent, last response received), used to
+	// disconnect from unused servers
+	Last time.Time
+
+	// TotalCount is the total number of calls proxied to the server.
+	TotalCount int
+
+	// Counts is the total number of calls proxied to the server per
+	// LSP method.
+	Counts map[string]int
 }
 
 var (
@@ -73,11 +90,27 @@ var (
 		Name:      "cumu_lsp_server_connections",
 		Help:      "Cumulative number of connections (initialized + uninitialized) to the LSP servers (total of open + previously closed since process startup).",
 	})
+	serverConnsMethodCalls = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "lsp_server_method_calls",
+		Help:      "Total number of calls sent to a server proxy before it is shutdown.",
+		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128, 256},
+	}, []string{"mode"})
+	serverConnsAliveDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "lsp_server_alive_seconds",
+		Help:      "The number of seconds a proxied connection is kept alive.",
+		Buckets:   []float64{1, 10, 300, 2 * 300, 3 * 300, 4 * 300}, // 300 is the default MaxServerIdle
+	}, []string{"mode"})
 )
 
 func init() {
 	prometheus.MustRegister(serverConnsGauge)
 	prometheus.MustRegister(serverConnsCounter)
+	prometheus.MustRegister(serverConnsMethodCalls)
+	prometheus.MustRegister(serverConnsAliveDuration)
 }
 
 // ShutDownIdleServers shuts down servers whose last communication
@@ -91,7 +124,7 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 	p.mu.Lock()
 	for s := range p.servers {
 		s.mu.Lock()
-		idle := s.last.Before(cutoff)
+		idle := s.stats.Last.Before(cutoff)
 		s.mu.Unlock()
 		if idle {
 			wg.Add(1)
@@ -121,11 +154,38 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 	return errs.error()
 }
 
+// LogServerStats, if true, will log the statistics of a serverProxyConn when
+// it is removed.
+var LogServerStats = true
+
 func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	p.mu.Lock()
-	delete(p.servers, c)
+	_, ok := p.servers[c]
+	if ok {
+		delete(p.servers, c)
+	}
 	serverConnsGauge.Set(float64(len(p.servers)))
 	p.mu.Unlock()
+	if ok && LogServerStats {
+		c.mu.Lock()
+		stats := c.stats
+		c.mu.Unlock()
+		// Machine parseable to assist post processing
+		msg, _ := json.Marshal(struct {
+			RootPath   string
+			Mode       string
+			PathPrefix string
+			Stats      serverProxyConnStats
+		}{
+			RootPath:   c.id.rootPath.String(),
+			Mode:       c.id.mode,
+			PathPrefix: c.id.pathPrefix,
+			Stats:      stats,
+		})
+		log.Printf("tracked removed serverProxyConn: %s", msg)
+		serverConnsMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
+		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
+	}
 }
 
 // getServerConn returns an existing connection to the specified
@@ -150,8 +210,11 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// proxy.
 		c = &serverProxyConn{
 			id:              id,
-			last:            time.Now(),
 			clientBroadcast: p.clientBroadcastFunc(id.contextID),
+			stats: serverProxyConnStats{
+				Created: time.Now(),
+				Last:    time.Now(),
+			},
 		}
 		p.servers[c] = struct{}{}
 		serverConnsGauge.Set(float64(len(p.servers)))
@@ -282,6 +345,7 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, method string, para
 		return err
 	}
 	c.updateLastTime()
+	c.incMethodStat(method)
 
 	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx))
 }
@@ -376,7 +440,17 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 func (c *serverProxyConn) updateLastTime() {
 	c.mu.Lock()
-	c.last = time.Now()
+	c.stats.Last = time.Now()
+	c.mu.Unlock()
+}
+
+func (c *serverProxyConn) incMethodStat(method string) {
+	c.mu.Lock()
+	c.stats.TotalCount++
+	if c.stats.Counts == nil {
+		c.stats.Counts = make(map[string]int)
+	}
+	c.stats.Counts[method] = c.stats.Counts[method] + 1
 	c.mu.Unlock()
 }
 

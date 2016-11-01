@@ -33,11 +33,10 @@ func BenchmarkStress(b *testing.B) {
 		b.Skip("skip long integration test")
 	}
 
-	orig := xlang.LogTrackedErrors
+	defer func(b bool) { xlang.LogServerStats = b }(xlang.LogServerStats)
+	defer func(b bool) { xlang.LogTrackedErrors = b }(xlang.LogTrackedErrors)
+	xlang.LogServerStats = false
 	xlang.LogTrackedErrors = false
-	defer func() {
-		xlang.LogTrackedErrors = orig
-	}()
 
 	{
 		// Serve repository data from codeload.github.com for
