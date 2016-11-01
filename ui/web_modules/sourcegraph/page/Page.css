@@ -175,6 +175,9 @@
 }
 
 /* Master Plan */
+.button_sep {
+	composes: mv3 from base;
+}
 .mailchimp_embed {
 	
 }

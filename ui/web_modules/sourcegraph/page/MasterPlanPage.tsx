@@ -6,7 +6,12 @@ import {Button, Input, Hero, Heading, Panel} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
 import Helmet from "react-helmet";
-import {whitespace} from "sourcegraph/components/utils";
+import {whitespace, layout} from "sourcegraph/components/utils";
+import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
+import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {media} from "glamor";
+import {context} from "sourcegraph/app/context";
 
 function tldr() {
 	return (
@@ -37,6 +42,23 @@ function emailSubscribeForm(tabIndex: number, block: boolean) {
 	);
 }
 
+function signInButton(block: boolean) {
+	return (
+		<LocationStateToggleLink
+			href="/join"
+			modalName="join"
+			location={location}
+			onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({page_name: location.pathname})}
+			{...media(layout.breakpoints["sm"], { display: "none"})}
+			style={{
+				paddingTop: whitespace[2],
+				paddingBottom: whitespace[2],
+			}}
+		><Button block={block} color="purple" style={{marginTop: whitespace[1]}}>Start using Sourcegraph</Button>
+		</LocationStateToggleLink>
+	);
+}
+
 export function MasterPlanPage(props: {}) {
 	return (
 		<div>
@@ -58,6 +80,7 @@ export function MasterPlanPage(props: {}) {
 					<div>
 						{tldr()}
 						{emailSubscribeForm(5, true)}
+						{!context.user && <div><hr className={styles.button_sep} />{signInButton(true)}</div>}
 					</div>
 				</Panel>
 
@@ -191,15 +214,10 @@ export function MasterPlanPage(props: {}) {
 					</Heading>
 					<div>
 						{tldr()}
-						<br/>
-						<Heading level={5} className="{styles.h6}">
-							Join the effort!
-						</Heading>
-						<p>Tell everyone you know, and:</p>
-						<ul>
-							<li>{emailSubscribeForm(7, false)}</li>
-							<li><Link to="/">Start using Sourcegraph</Link></li>
-						</ul>
+						{!context.user && signInButton(false)}
+						<br/><br/>
+						<Heading level={5} className="{styles.h6}">Follow our progress</Heading>
+						{emailSubscribeForm(7, false)}
 					</div>
 				</Panel>
 			</div>
