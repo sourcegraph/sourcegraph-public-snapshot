@@ -38,7 +38,8 @@ export function DocsPage(): JSX.Element {
 						<a href="#chrome_extension">Chrome Extension</a>
 						<ul>
 							<li><a href="#github_hover_over_documentation">Hover over Documentation</a></li>
-							<li><a href="#github_jump_to_definition">Jump to Definition</a></li>
+							<li><a href="#github_go_to_definition">Go to Definition</a></li>
+							<li><a href="#github_keyboard_shortcuts">Keyboard Shortcuts</a></li>
 						</ul>
 					</li>
 					<li>
@@ -124,12 +125,16 @@ export function DocsPage(): JSX.Element {
 				<br/>
 				<br/>
 
-				<a id="github_jump_to_definition"></a>
-				<Heading level={5} className={styles.h5}>Jump to Definition</Heading>
-				<p className={styles.p}>Click on a symbol on GitHub to jump to its definition.</p>
+				<a id="github_go_to_definition"></a>
+				<Heading level={5} className={styles.h5}>Go to Definition</Heading>
+				<p className={styles.p}>Click on a symbol on GitHub to go to its definition.</p>
 				<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/github_jump_to_definition.png" width="100%" /></a>
 				<br/>
 				<br/>
+
+				<a id="github_keyboard_shortcuts"></a>
+				<Heading level={5} className={styles.h5}>Keyboard shortcuts</Heading>
+				<p className={styles.p}>Press `u` when viewing code on GitHub to navigate to the same code on Sourcegraph.com.</p>
 
 				<br/>
 
