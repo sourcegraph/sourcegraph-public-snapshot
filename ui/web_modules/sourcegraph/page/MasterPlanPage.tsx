@@ -15,9 +15,9 @@ import {context} from "sourcegraph/app/context";
 function tldr() {
 	return (
 		<ol>
-			<li>Make basic code intelligence (jump-to-def, find-references, etc.) ubiquitous</li>
-			<li>Make code review continuous and more intelligent</li>
-			<li>Make this all work globally, not just within a single project, to increase the amount/quality of available open-source code and help you avoid reinventing the wheel</li>
+			<li><a href="#code-intelligence">Make basic code intelligence (jump-to-def, find-references, etc.) ubiquitous</a></li>
+			<li><a href="#code-review">Make code review continuous and more intelligent</a></li>
+			<li><a href="#global-code-graph">Make this all work globally, not just within a single project, to increase the amount/quality of available open-source code and help you avoid reinventing the wheel</a></li>
 		</ol>
 	);
 }
@@ -77,6 +77,7 @@ export function MasterPlanPage(props: {}) {
 						Sourcegraph Master Plan, in short
 					</Heading>
 					<div>
+						<p>Jump to&hellip;</p>
 						{tldr()}
 						{emailSubscribeForm(5, true)}
 						{!context.user && <div><hr className={styles.button_sep} />{signInButton(true)}</div>}
