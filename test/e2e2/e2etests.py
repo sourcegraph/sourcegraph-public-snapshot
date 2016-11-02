@@ -54,7 +54,7 @@ def test_github_private_auth_onboarding(d):
         d.find_button_by_partial_text("Authorize application").click()
 
     wait_for(lambda: len(d.find_tokens("Checkers")) > 0)
-    wait_for(lambda: wd.find_element_by_id("def-coachmark"))
+    wait_for(lambda: wd.find_element_by_id("def-coachmark"), max_wait=3.0)
 
     # Log out
     Util.log_out(d)
