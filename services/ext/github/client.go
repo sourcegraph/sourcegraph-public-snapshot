@@ -18,12 +18,6 @@ var (
 		Name:      "rate_limit_remaining",
 		Help:      "Number of calls to GitHub's API remaining before hitting the rate limit.",
 	})
-	rateLimitUnsetCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "github",
-		Name:      "rate_limit_unset",
-		Help:      "Times that a response from GitHub appeared not to have rate limit headers set.",
-	})
 	abuseDetectionMechanismCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "github",
@@ -35,7 +29,6 @@ var (
 func init() {
 	rateLimitRemainingGauge.Set(5000)
 	prometheus.MustRegister(rateLimitRemainingGauge)
-	prometheus.MustRegister(rateLimitUnsetCounter)
 	prometheus.MustRegister(abuseDetectionMechanismCounter)
 }
 
@@ -88,18 +81,7 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		return err
 	}
 
-	// githubHeaderRateRemaining is GitHub's custom header for providing rate limit remaining value,
-	// passed through http.CanonicalHeaderKey.
-	const githubHeaderRateRemaining = "X-Ratelimit-Remaining"
-
-	if _, ok := resp.Response.Header[githubHeaderRateRemaining]; ok {
-		// Update rateLimitRemainingGauge only if the rate limit remaining
-		// header is included in the response.
-		rateLimitRemainingGauge.Set(float64(resp.Remaining))
-	} else {
-		log15.Debug("rate limit remaining header is unset", "error", err, "statusCode", resp.StatusCode, "op", op)
-		rateLimitUnsetCounter.Inc()
-	}
+	rateLimitRemainingGauge.Set(float64(resp.Remaining))
 
 	switch err.(type) {
 	case *github.RateLimitError:
