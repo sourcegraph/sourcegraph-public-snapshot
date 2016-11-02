@@ -137,9 +137,9 @@ export function MasterPlanPage(props: {}) {
 				<ol>
 					<li>Transform the “<strong><em>m</em></strong>-times-<strong><em>n</em></strong>” language-editor tool problem into a more manageable “<strong><em>m</em></strong>-plus-<strong><em>n</em></strong>” problem by using the <a href="https://github.com/Microsoft/language-server-protocol">Language Server Protocol (LSP)</a> open standard
 						<ul>
-							<li>Create open-source LSP language servers for every language &mdash; <strong>in progress</strong></li>
+							<li>Create open-source LSP language servers for every language &mdash; <strong><a href="http://langserver.org/" target="_blank">in progress</a></strong></li>
+							<li>Create open-source LSP adapter plugins for every editor, code viewer, and code review tool &mdash; <strong><a href="http://langserver.org/" target="_blank">in progress</a></strong></li>
 							<li>Provide the infrastructure for language server developers to measure coverage and accuracy over a large dataset of open-source code &mdash; <strong>in progress</strong></li>
-							<li>Create open-source LSP adapter plugins for every editor, code viewer, and code review tool &mdash; <strong>in progress</strong></li>
 						</ul>
 					</li>
 					<li>Make it easy for projects to supply the necessary configuration (if any) so that everyone gets code intelligence on the project’s code</li>
