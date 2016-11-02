@@ -7,7 +7,7 @@ export function isSupportedExtension(ext: string): boolean {
 }
 
 export function isSupportedMode(modeId: string): boolean {
-	return modes.includes(modeId);
+	return modes.has(modeId);
 }
 
 export function getPathExtension(path: string): string | null {

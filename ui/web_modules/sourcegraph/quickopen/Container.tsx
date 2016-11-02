@@ -15,6 +15,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 
 import { urlToBlob, urlToBlobLineCol } from "sourcegraph/blob/routes";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import { Inventory } from "sourcegraph/editor/modes";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
@@ -84,6 +85,8 @@ interface State {
 	allowScroll: boolean;
 	// Resolved repository commitID.
 	commitID: string | null;
+	// Resolved repository inventory.
+	inventory: Inventory | null;
 };
 
 export interface Category {
@@ -142,6 +145,7 @@ export class Container extends React.Component<Props, State> {
 			},
 			allowScroll: true,
 			commitID: null,
+			inventory: null,
 		};
 		this.delegate = {
 			dismiss: props.dismissModal,
@@ -247,8 +251,12 @@ export class Container extends React.Component<Props, State> {
 		this.fetchRepoResultsWithGitHub(query);
 
 		if (this.props.repo !== null && this.state.commitID) {
-			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.repo.URI, this.state.commitID, query));
 			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo.URI, this.state.commitID));
+			if (this.state.inventory) {
+				Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.state.inventory, this.props.repo.URI, this.state.commitID, query));
+			} else {
+				Dispatcher.Backends.dispatch(new RepoActions.WantInventory(this.props.repo.URI, this.state.commitID));
+			}
 		}
 	}
 
@@ -297,8 +305,12 @@ export class Container extends React.Component<Props, State> {
 		let {symbols, files, repos} = cloneDeep(this.state.results);
 		const commitID = this.state.commitID;
 
+		let inventory = null;
+
 		// Update symbols
 		if (repo && this.state.commitID) {
+			inventory = RepoStore.inventory.get(repo.URI, commitID) || null;
+
 			const updatedSymbols = RepoStore.symbols.list(repo.URI, commitID, query);
 			if (updatedSymbols.results.length > 0 || !updatedSymbols.loading) {
 				const symbolResults: Result[] = [];
@@ -375,7 +387,7 @@ export class Container extends React.Component<Props, State> {
 			sel.category = firstVisibleCategory;
 		}
 
-		this.setState(Object.assign({}, this.state, { results: results }));
+		this.setState(Object.assign({}, this.state, { results: results, inventory }));
 	}
 
 	expand(category: number): () => void {

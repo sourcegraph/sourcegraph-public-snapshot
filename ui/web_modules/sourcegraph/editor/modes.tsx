@@ -3,8 +3,21 @@
 
 import "monaco-languages/out/monaco.contribution";
 import "monaco-typescript/out/monaco.contribution";
-import { deepFreeze } from "sourcegraph/util/deepFreeze";
 
-export const modes = deepFreeze(["c", "go", "ruby", "javascript", "typescript"]);
+export const modes = new Set<string>(["c", "go", "ruby", "javascript", "typescript"]);
+export const modesToSearch = new Set<string>(["c", "go", "ruby", "typescript"]); // exclude "JavaScript"; backend is the same as TypeScript
 
-export const modesToSearch = deepFreeze(modes.filter((mode) => mode !== "javascript"));
+export interface Inventory {
+	Languages: {Name: string, TotalBytes: number, Type: string}[];
+}
+
+export function inventoryToSearchModes(inventory: Inventory): string[] {
+	const m: string[] = [];
+	inventory.Languages.forEach((language) => {
+		const mode = language.Name.toLowerCase();
+		if (modesToSearch.has(mode)) {
+			m.push(mode);
+		}
+	});
+	return m;
+}

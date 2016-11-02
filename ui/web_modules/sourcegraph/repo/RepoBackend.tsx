@@ -1,6 +1,6 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as lsp from "sourcegraph/editor/lsp";
-import { modesToSearch } from "sourcegraph/editor/modes";
+import { inventoryToSearchModes } from "sourcegraph/editor/modes";
 import { updateRepoCloning } from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
@@ -191,7 +191,7 @@ export const RepoBackend = {
 			if (symbols.results.length > 0) {
 				return;
 			}
-			modesToSearch.forEach(mode => {
+			inventoryToSearchModes(action.inventory).forEach(mode => {
 				lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
 						let result;

@@ -1,4 +1,5 @@
 import {Branch, Commit, Repo, RepoList, RepoResolution, SymbolInformation, Tag} from "sourcegraph/api";
+import {Inventory} from "sourcegraph/editor/modes";
 
 export type Action =
 	RepoCloning |
@@ -110,8 +111,6 @@ export class WantInventory {
 	}
 }
 
-export interface Inventory {}; // incomplete
-
 export class FetchedInventory {
 	repo: string;
 	commitID: string;
@@ -195,11 +194,13 @@ export class FetchedBranches {
 }
 
 export class WantSymbols {
+	inventory: Inventory;
 	repo: string;
 	rev: string;
 	query: string;
 
-	constructor(repo: string, rev: string, query: string) {
+	constructor(inventory: Inventory, repo: string, rev: string, query: string) {
+		this.inventory = inventory;
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;

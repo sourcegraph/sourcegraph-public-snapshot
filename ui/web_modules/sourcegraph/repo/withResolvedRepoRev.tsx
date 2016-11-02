@@ -113,10 +113,13 @@ export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): 
 					Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev));
 				}
 			}
-			if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.repoObj !== nextState.repoObj) {
-				if (!nextState.inventory && nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
-					Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.commitID));
-					Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(nextState.repo, nextState.commitID, ""));
+			if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.repoObj !== nextState.repoObj || prevState.inventory !== nextState.inventory) {
+				if (nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
+					if (nextState.inventory) {
+						Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(nextState.inventory, nextState.repo, nextState.commitID, ""));
+					} else {
+						Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.commitID));
+					}
 				}
 			}
 

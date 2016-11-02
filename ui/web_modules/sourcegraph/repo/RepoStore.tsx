@@ -2,7 +2,6 @@
 
 import * as filter from "lodash/filter";
 import * as flatten from "lodash/flatten";
-import * as map from "lodash/map";
 import * as some from "lodash/some";
 
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -94,9 +93,8 @@ class RepoStoreClass extends Store<any> {
 		this.symbols = deepFreeze({
 			content: {},
 			list(repo, rev, query) {
-				const langResults = map(modesToSearch, mode => {
-					return this.content[keyForSymbols(mode, repo, rev, query)];
-				});
+				const langResults = [];
+				modesToSearch.forEach((mode) => langResults.push(this.content[keyForSymbols(mode, repo, rev, query)]));
 				const results = flatten(filter(langResults));
 				const loading = some(langResults, r => r === undefined);
 
