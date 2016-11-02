@@ -186,7 +186,7 @@ def main():
         slack_cli, slack_ch, _ = slack_and_opsgenie(args)
         animal_emoji = random.choice(emoji)
         animal_name = animal_emoji.replace('_face', '')
-        slack_cli.api_call("chat.postMessage", channel=slack_ch, text=""":%s: Hi, I'm the end-to-end test %s for %s! I'll run the following tests in a loop and post errors to this channel until I die:
+        slack_cli.api_call("chat.postMessage", channel=slack_ch, text=""":%s: Hi, I'm the end-to-end test %s for %s! I'll run the following tests in a loop and post errors to this channel until I retire:
 ```
 %s
 ```
