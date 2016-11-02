@@ -6,7 +6,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 interface Props {
 	scopes?: string;
 	returnTo?: string | Location;
-
+	newUserReturnTo?: string | Location;
 	color?: string;
 	outline?: boolean;
 	block?: boolean;
@@ -29,6 +29,7 @@ export function GitHubAuthButton(props: Props): JSX.Element {
 			eventObject={AnalyticsConstants.Events.OAuth2FlowGitHub_Initiated}
 			scopes={scopes}
 			returnTo={props.returnTo}
+			newUserReturnTo={props.newUserReturnTo}
 			color={props.color}
 			outline={props.outline}
 			block={props.block}

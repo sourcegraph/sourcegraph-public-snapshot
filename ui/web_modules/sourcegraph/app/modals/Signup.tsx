@@ -12,6 +12,8 @@ interface Props {
 	shouldHide: boolean;
 }
 
+const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go";
+
 export const Signup = (props: Props): JSX.Element => {
 	const sx = {
 		maxWidth: "380px",
@@ -19,10 +21,12 @@ export const Signup = (props: Props): JSX.Element => {
 		marginRight: "auto",
 	};
 
+	let newUserPath = props.location.pathname.indexOf("/-/blob/") !== -1 ? props.location.pathname : defaultOnboardingPath;
 	return(
 		<LocationStateModal modalName="join" location={props.location} router={props.router}>
 			<div className={styles.modal} style={sx}>
 				<SignupForm
+					newUserReturnTo={newUserPath}
 					returnTo={props.shouldHide ? "/" : props.location.pathname}
 					queryObj={props.shouldHide ? {ob: "chrome"} : Object.assign({}, props.location.query)}
 					location={props.location} />

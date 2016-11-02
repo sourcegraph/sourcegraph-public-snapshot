@@ -41,7 +41,7 @@ func ServeGoogleOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	returnTo, err := returnto.URLFromRequest(r)
+	returnTo, err := returnto.URLFromRequest(r, "return-to")
 	if err != nil {
 		log15.Warn("Invalid return-to URL provided to OAuth2 flow initiation; ignoring.", "err", err)
 	}

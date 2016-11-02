@@ -14,7 +14,7 @@ interface Props {
 
 	scopes?: string;
 	returnTo?: string | Location;
-
+	newUserReturnTo?: string | Location;
 	color?: string;
 	outline?: boolean;
 	block?: boolean;
@@ -35,7 +35,7 @@ export function AuthButton(props: Props): JSX.Element {
 
 		scopes,
 		returnTo,
-
+		newUserReturnTo,
 		color = "blue",
 		outline,
 		block,
@@ -48,7 +48,8 @@ export function AuthButton(props: Props): JSX.Element {
 		children,
 	} = props;
 
-	const url = urlToOAuth(provider, scopes || null, returnTo || null);
+	const newUserURL = newUserReturnTo || returnTo;
+	const url = urlToOAuth(provider, scopes || null, returnTo || null, newUserURL || null);
 
 	const iconSx = size === "small" ? typography.size[5] : typography.size[4];
 

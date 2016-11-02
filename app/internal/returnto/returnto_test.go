@@ -29,7 +29,7 @@ func TestURLFromRequest(t *testing.T) {
 			t.Error(err)
 			continue
 		}
-		d, err := URLFromRequest(&http.Request{URL: u})
+		d, err := URLFromRequest(&http.Request{URL: u}, "return-to")
 		if (err != nil) != test.wantErr {
 			t.Errorf("%s: got err %v, want error? %v", test.url, err, test.wantErr)
 			continue

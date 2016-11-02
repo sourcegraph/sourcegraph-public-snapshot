@@ -12,7 +12,7 @@ export function urlTo(name: RouteName, params: {}): string {
 export type oauthProvider = "github" | "google";
 
 // urlToOAuth returns an OAuth initiate URL for given provider, scopes, returnTo.
-export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | Location | null): string {
+export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | Location | null, newUserReturnTo: string | Location | null): string {
 	scopes = scopes ? `scopes=${encodeURIComponent(scopes)}` : null;
 	if (returnTo && typeof returnTo !== "string") {
 		returnTo = `${returnTo.pathname}${returnTo.search}${returnTo.hash}`;
@@ -20,8 +20,16 @@ export function urlToOAuth(provider: oauthProvider, scopes: string | null, retur
 	returnTo = returnTo && returnTo.toString();
 	returnTo = returnTo ? `return-to=${encodeURIComponent(returnTo)}` : null;
 
+	if (newUserReturnTo && typeof newUserReturnTo !== "string") {
+		newUserReturnTo = `${newUserReturnTo.pathname}${newUserReturnTo.search}${newUserReturnTo.hash}`;
+	}
+	newUserReturnTo = newUserReturnTo && newUserReturnTo.toString();
+	newUserReturnTo = newUserReturnTo ? `new-user-return-to=${encodeURIComponent(newUserReturnTo)}` : null;
+
 	let q;
-	if (scopes && returnTo) {
+	if (scopes && returnTo && newUserReturnTo) {
+		q = `${scopes}&${returnTo}&${newUserReturnTo}`;
+	} else if (scopes && returnTo) {
 		q = `${scopes}&${returnTo}`;
 	} else if (scopes) {
 		q = scopes;

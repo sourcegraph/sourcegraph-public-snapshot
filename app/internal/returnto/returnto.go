@@ -31,12 +31,15 @@ import (
 // ParamName is the URL query param name for the "return-to" URL.
 const ParamName = "return-to"
 
+// NewUserReturnTo is the URL query param name for the "new-user-return-to" URL.
+const NewUserReturnTo = "new-user-return-to"
+
 // URLFromRequest determines the proper return-to URL to use from the
 // given request. It uses the URL passed in the "return-to" URL query
 // parameter. If it's empty, the URL path "/" is returned. If it is
 // invalid, an error is returned.
-func URLFromRequest(r *http.Request) (*url.URL, error) {
-	v := r.URL.Query().Get("return-to")
+func URLFromRequest(r *http.Request, paramName string) (*url.URL, error) {
+	v := r.URL.Query().Get(paramName)
 	if v == "" {
 		return &url.URL{Path: "/"}, nil
 	}
@@ -50,8 +53,8 @@ func URLFromRequest(r *http.Request) (*url.URL, error) {
 
 	// Remove any nested return-to URLs to avoid an infinite loop.
 	q := u.Query()
-	if q.Get("return-to") != "" {
-		q.Del("return-to")
+	if q.Get(paramName) != "" {
+		q.Del(paramName)
 		u.RawQuery = q.Encode()
 	}
 

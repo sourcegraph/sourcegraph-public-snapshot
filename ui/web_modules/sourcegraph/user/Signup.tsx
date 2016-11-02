@@ -17,10 +17,13 @@ interface Props {
 	// returnTo is where the user should be redirected after an OAuth login flow,
 	// either a URL path or a Location object.
 	returnTo: string | Location;
+	newUserReturnTo: string | Location;
 	queryObj: History.Query;
 }
 
 type State = any;
+
+const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go";
 
 export class SignupForm extends Component<Props, State> {
 	_submitForm(): void {
@@ -35,11 +38,16 @@ export class SignupForm extends Component<Props, State> {
 		const redirRouteObj = typeof this.props.returnTo === "string" ? {pathname: this.props.returnTo} : this.props.returnTo;
 		const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, {query: redirQueryObj});
 
-		const publicCodeURL = urlToOAuth("github", "read:org,user:email", this.props.returnTo || null);
+		const newUserRedirQueryObj = Object.assign({}, this.props.location.query, this.props.queryObj);
+		const newUserRedirRouteObj = typeof this.props.newUserReturnTo === "string" ? {pathname: this.props.newUserReturnTo} : this.props.newUserReturnTo;
+		const newUserRedirLocation = Object.assign({}, this.props.location || null, newUserRedirRouteObj, {query: newUserRedirQueryObj});
+
+		const publicCodeURL = urlToOAuth("github", "read:org,user:email", this.props.returnTo || null, newUserRedirLocation);
+
 		return (
 			<div className={styles.form}>
 				<Heading level={3} align="center" underline="orange">Welcome to Sourcegraph</Heading>
-				<GitHubAuthButton returnTo={redirLocation} tabIndex={1} key="1" block={true}>Continue with GitHub</GitHubAuthButton>
+				<GitHubAuthButton newUserReturnTo={newUserRedirLocation} returnTo={redirLocation} tabIndex={1} key="1" block={true}>Continue with GitHub</GitHubAuthButton>
 				<form id="form" method="POST" action={publicCodeURL}>
 					<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
 					<p className={styles.mid_text}>
@@ -56,7 +64,8 @@ function SignupComp(props: {location: any}): JSX.Element {
 		<div className={styles.full_page}>
 			<Helmet title="Sign Up" />
 			<SignupForm {...props}
-				returnTo="/" queryObj={{ob: "chrome"}} />
+				returnTo="/" queryObj={{ob: "chrome"}}
+				newUserReturnTo={defaultOnboardingPath}/>
 		</div>
 	);
 }

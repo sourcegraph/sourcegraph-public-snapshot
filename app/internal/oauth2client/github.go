@@ -35,7 +35,7 @@ func auth0GitHubConfigWithRedirectURL() *oauth2.Config {
 // (including a nonce state value, also stored in a cookie) and
 // redirects the client to that URL.
 func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
-	returnTo, err := returnto.URLFromRequest(r)
+	returnTo, err := returnto.URLFromRequest(r, "return-to")
 	if err != nil {
 		log15.Warn("Invalid return-to URL provided to OAuth2 flow initiation; ignoring.", "err", err)
 	}
@@ -44,6 +44,11 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	// attribution. TODO(sqs): consider doing this on the frontend in
 	// JS so we centralize usage analytics there.
 	returnTo = canonicalurl.FromURL(returnTo)
+
+	returnToNew, err := returnto.URLFromRequest(r, "new-user-return-to")
+	if err != nil {
+		log15.Warn("Invalid new-user-return-to URL provided to OAuth2 flow initiation; ignoring.", "err", err)
+	}
 
 	var scopes []string
 	if s := r.URL.Query().Get("scopes"); s == "" {
@@ -54,10 +59,10 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	return githubOAuth2Initiate(w, r, scopes, returnTo.String())
+	return githubOAuth2Initiate(w, r, scopes, returnTo.String(), returnToNew.String())
 }
 
-func githubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string) error {
+func githubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string, returnToNew string) error {
 	nonce := randstring.NewLen(32)
 	http.SetCookie(w, &http.Cookie{
 		Name:    "nonce",
@@ -66,7 +71,7 @@ func githubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 		Expires: time.Now().Add(10 * time.Minute),
 	})
 
-	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL().AuthCodeURL(nonce+":"+returnTo,
+	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL().AuthCodeURL(nonce+":"+returnTo+":"+returnToNew,
 		oauth2.SetAuthURLParam("connection", "github"),
 		oauth2.SetAuthURLParam("connection_scope", strings.Join(scopes, ",")),
 	), http.StatusSeeOther)
@@ -74,8 +79,8 @@ func githubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 }
 
 func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
-	parts := strings.SplitN(r.URL.Query().Get("state"), ":", 2)
-	if len(parts) != 2 {
+	parts := strings.SplitN(r.URL.Query().Get("state"), ":", 3)
+	if len(parts) != 3 {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("invalid OAuth2 authorize client state")}
 	}
 
@@ -88,10 +93,12 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		Path:   "/",
 		MaxAge: -1,
 	})
-	if len(parts) != 2 || nonceCookie.Value == "" || parts[0] != nonceCookie.Value {
+	if len(parts) != 3 || nonceCookie.Value == "" || parts[0] != nonceCookie.Value {
 		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state")}
 	}
+
 	returnTo := parts[1]
+	returnToNew := parts[2]
 
 	code := r.URL.Query().Get("code")
 	token, err := auth0GitHubConfigWithRedirectURL().Exchange(r.Context(), code)
@@ -149,7 +156,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	if len(scopeOfToken) < len(mergedScope) {
 		// The user has once granted us more permissions than we got with this token. Run oauth flow
 		// again to fetch token with all permissions. This should be non-interactive.
-		return githubOAuth2Initiate(w, r, mergedScope, returnTo)
+		return githubOAuth2Initiate(w, r, mergedScope, returnTo, returnToNew)
 	}
 	if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
 		// Wohoo, we got more permissions. Remember in user database.
@@ -188,29 +195,36 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return err
 	}
 
-	// First time sign up route to blob view onboarding tour.
 	if firstTime {
-		var eventProps = "tour=signup&_event=SignupCompleted&_signupChannel=GitHubOAuth&_githubAuthed=true"
-		var returnString = "/github.com/sourcegraph/checkup/-/blob/checkup.go?" + eventProps + "#L67"
-		http.Redirect(w, r, returnString, http.StatusSeeOther)
-		return nil
+		returnToNewURL, err := url.Parse(returnToNew)
+		if err != nil {
+			return err
+		}
+		q := returnToNewURL.Query()
+		q.Set("tour", "signup")
+		q.Set("_event", "SignupCompleted")
+		q.Set("_signupChannel", "GitHubOAuth")
+		q.Set("_githubAuthed", "true")
+		returnToNewURL.RawQuery = q.Encode()
+		http.Redirect(w, r, returnToNewURL.String(), http.StatusSeeOther)
+	} else {
+		// Add tracking info to return-to URL.
+		returnToURL, err := url.Parse(returnTo)
+		if err != nil {
+			return err
+		}
+		q := returnToURL.Query()
+		// Do not redirect a user while inside the onboarding flow.
+		// This is accomplished by not removing the onboarding query params.
+		if q.Get("ob") != "github" {
+			q.Del("ob")
+		}
+		q.Set("_event", "CompletedGitHubOAuth2Flow")
+		q.Set("_githubAuthed", "true")
+		returnToURL.RawQuery = q.Encode()
+		http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	}
-	// Add tracking info to return-to URL.
-	returnToURL, err := url.Parse(returnTo)
-	if err != nil {
-		return err
-	}
-	q := returnToURL.Query()
-	// Do not redirect a user while inside the onboarding flow.
-	// This is accomplished by not removing the onboarding query params.
-	if q.Get("ob") != "github" {
-		q.Del("ob")
-	}
-	q.Set("_event", "CompletedGitHubOAuth2Flow")
-	q.Set("_githubAuthed", "true")
-	returnToURL.RawQuery = q.Encode()
 
-	http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	return nil
 }
 
