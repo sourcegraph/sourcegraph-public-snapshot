@@ -1,43 +1,25 @@
-// tslint:disable typedef ordered-imports
 import {URIUtils} from "sourcegraph/core/uri";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-// tslint:disable typedef ordered-imports member-ordering
-import {IEditorService} from "vs/platform/editor/common/editor";
+import {IDisposable} from "vs/base/common/lifecycle";
+import * as platform from "vs/base/common/platform";
+import {TPromise} from "vs/base/common/winjs.base";
+import {ICodeEditor, IEditorMouseEvent, IMouseTarget} from "vs/editor/browser/editorBrowser";
 import {editorContribution} from "vs/editor/browser/editorBrowserExtensions";
 import * as editorCommon from "vs/editor/common/editorCommon";
-import {ICodeEditor, IEditorMouseEvent, IMouseTarget} from "vs/editor/browser/editorBrowser";
-import {IDisposable} from "vs/base/common/lifecycle";
-import {TPromise} from "vs/base/common/winjs.base";
-
-// IWordAtPositionWithLine lets us distinguish between two of the same
-// words at the same start column on separate lines.
-interface IWordAtPositionWithLine extends editorCommon.IWordAtPosition {
-	lineNumber: number; // The line number where the word starts.
-}
+import {DefinitionProviderRegistry} from "vs/editor/common/modes";
+import {IEditorService} from "vs/platform/editor/common/editor";
 
 @editorContribution
 export class GotoDefinitionWithClickEditorContribution implements editorCommon.IEditorContribution {
-	private static ID = "editor.contrib.gotodefinitionwithclick";
-
 	private toUnhook: IDisposable[] = [];
-	private mouseLine: number;
-	private mouseColumn: number;
 
 	constructor(
 		private editor: ICodeEditor,
 		@IEditorService private editorService: IEditorService
 	) {
 		this.editor = editor;
-
 		this.toUnhook.push(this.editor.onMouseUp((e: IEditorMouseEvent) => this.onEditorMouseUp(e)));
-		this.toUnhook.push(this.editor.onMouseMove((e) => {
-			if (!e.target.position) {
-				return;
-			}
-			this.mouseLine = e.target.position.lineNumber;
-			this.mouseColumn = e.target.position.column;
-		}));
 	}
 
 	private onEditorMouseUp(mouseEvent: IEditorMouseEvent): void {
@@ -52,11 +34,15 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	}
 
 	private isEnabled(mouseEvent: IEditorMouseEvent): boolean {
-		// TODO(sqs): assumes that this is always true: DefinitionProviderRegistry.has(this.editor.getModel());
+		// Don't use our contrib if they're pressing the goto def modifier already.
+		const trigger = platform.isMacintosh ? "metaKey" : "ctrlKey";
+
 		return this.editor.getModel() &&
 			(typeof mouseEvent.event.detail === "number" && mouseEvent.event.detail <= 1) &&
 			mouseEvent.target.type === editorCommon.MouseTargetType.CONTENT_TEXT &&
-			!mouseEvent.event.ctrlKey &&
+			!(platform.isMacintosh && mouseEvent.event.ctrlKey) &&
+			!mouseEvent.event[trigger] &&
+			DefinitionProviderRegistry.has(this.editor.getModel()) &&
 			mouseEvent.event.leftButton;
 	}
 
@@ -77,14 +63,10 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	}
 
 	public getId(): string {
-		return GotoDefinitionWithClickEditorContribution.ID;
+		return "editor.contrib.gotodefinitionwithclick";
 	}
 
 	public dispose(): void {
 		this.toUnhook.forEach(disposable => disposable.dispose());
 	}
-}
-
-export interface ITask<T> {
-	(): T;
 }

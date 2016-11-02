@@ -77,15 +77,6 @@ export class Editor implements IDisposable {
 	) {
 		HoverOperation.HOVER_TIME = 200;
 
-		// Register services for modes (languages) when new models are added.
-		const registerModeProviders = (mode: string) => {
-			if (!this._initializedModes.has(mode)) {
-				this._toDispose.push(registerHoverProvider(mode, this));
-				this._toDispose.push(registerDefinitionProvider(mode, this));
-				this._toDispose.push(registerReferenceProvider(mode, this));
-				this._initializedModes.add(mode);
-			}
-		};
 		this._toDispose.push(onDidCreateModel(model => {
 			// HACK: when the editor loads, this will fire twice:
 			// - once for the "empty" document (mode = plaintext)
@@ -98,7 +89,7 @@ export class Editor implements IDisposable {
 			// of any state of the editor mode. This way context menu items
 			// will *always* appear for files with the extensions below.
 			modes.forEach(mode => {
-				registerModeProviders(mode);
+				this.registerModeProviders(mode);
 			});
 		}));
 
@@ -197,13 +188,17 @@ export class Editor implements IDisposable {
 				}
 			}
 		}
-
-		// This default go-to-def on click contribution creates unwanted UX (e.g.
-		// jumps to definition on ctrl-click). Disable this one in favor of our
-		// own.
-		let gotoContrib = this._editor.getContribution("editor.contrib.gotodefinitionwithmouse");
-		gotoContrib.dispose();
 	}
+
+	// Register services for modes (languages) when new models are added.
+	registerModeProviders(mode: string): void {
+		if (!this._initializedModes.has(mode)) {
+			this._toDispose.push(registerHoverProvider(mode, this));
+			this._toDispose.push(registerDefinitionProvider(mode, this));
+			this._toDispose.push(registerReferenceProvider(mode, this));
+			this._initializedModes.add(mode);
+		}
+	};
 
 	setInput(uri: URI, range?: IRange): Promise<IEditor> {
 		return new Promise<IEditor>((resolve, reject) => {
