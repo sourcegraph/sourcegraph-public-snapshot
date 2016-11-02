@@ -93,7 +93,12 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		return legacyerr.Errorf(legacyerr.ResourceExhausted, "triggered GitHub abuse detection mechanism: %s: %v", op, err)
 	}
 
-	log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
+	switch resp.StatusCode {
+	case 401, 404:
+		// Pretty expected, not worth logging.
+	default:
+		log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
+	}
 
 	statusCode := errcode.HTTPToCode(resp.StatusCode)
 
