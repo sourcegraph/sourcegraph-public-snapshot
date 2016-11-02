@@ -74,7 +74,7 @@ export function MasterPlanPage(props: {}) {
 					padding: whitespace[3],
 				}}>
 					<Heading level={5} className="{styles.h6}">
-						Sourcegraph Master Plan tl;dr
+						Sourcegraph Master Plan, in short
 					</Heading>
 					<div>
 						{tldr()}
