@@ -85,8 +85,7 @@
     "test-unit": "env NODE_ENV=test ./node_modules/.bin/mocha-webpack 'web_modules/**/*_test.tsx' && rm -r ./.tmp",
     "test-tsmapimports": "cd scripts/tsmapimports; PATH=$PATH:../../node_modules/.bin npm test",
     "dep": "npm rebuild fsevents",
-    "generate": "./generate.sh",
-    "overwrite-autotest": "for f in `find ./web_modules -name '*.json.actual'`; do mv \"$f\" \"${f%.actual}\"; done"
+    "generate": "./generate.sh"
   },
   "browser": {
     "fs": false,
