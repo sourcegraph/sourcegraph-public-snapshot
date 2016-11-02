@@ -23,6 +23,7 @@ export const h5: string;
 export const subtitle: string;
 export const icon: string;
 export const footer: string;
+export const sidebox: string;
 export const plans: string;
 export const plan: string;
 export const plan_box: string;
@@ -34,4 +35,9 @@ export const plan_cta_noop: string;
 export const details: string;
 export const details_list: string;
 export const details_cumulative: string;
+export const mp_body: string;
+export const button_sep: string;
+export const mailchimp_embed: string;
+export const mailchimp_input: string;
+export const mailchimp_button: string;
 

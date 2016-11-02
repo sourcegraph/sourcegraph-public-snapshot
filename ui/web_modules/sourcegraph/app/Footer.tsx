@@ -10,6 +10,7 @@ export function Footer(): JSX.Element {
 				textAlign: "center",
 			}}>
 			<Item url="/about">About</Item>
+			<Item url="/plan">Master plan</Item>
 			<Item url="https://text.sourcegraph.com" anchor>Blog</Item>
 			<Item url="/docs">Docs</Item>
 			<Item url="/jobs" anchor>Careers</Item>

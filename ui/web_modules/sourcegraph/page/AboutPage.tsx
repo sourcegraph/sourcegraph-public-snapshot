@@ -19,47 +19,26 @@ export function AboutPage(props: {}) {
 					</div>
 			</Hero>
 			<div className={styles.content}>
-				<p className={styles.p}>Remember the last time you were <em>in flow</em> while coding? You got a ton done and felt great.</p>
-				<p className={styles.p}>But staying in flow is hard. While coding, you often waste minutes digging for examples in Q&amp;A forums, finding documentation, deciphering code, or interrupting teammates.</p>
-				<p className={styles.p}>Sourcegraph helps you find the answers you need in seconds, not minutes&mdash;so you stay in flow, get more done, and feel great.</p>
-
-				<Heading level={3} underline="blue" className={styles.h5}>What is Sourcegraph?</Heading>
-				<p className={styles.p}>Sourcegraph is a fast, global, semantic code search and cross-reference engine. You can search for any function, type, or package, and see how other developers use it, globally. It's cross-repository and massively scalable, with 2,000,000,000+ nodes in the public code index (and growing).</p>
-				<p className={styles.p}>Sourcegraph Inc. creates and operates Sourcegraph. We're based in <Link to="/contact">San Francisco</Link>, and <a href="https://sourcegraph.com/jobs" target="_blank">we're hiring</a>.</p>
-				<p className={styles.p}>In the last 24 hours, you almost certainly used a product built by developers who use Sourcegraph.</p>
-
-				{!context.user && <div className={styles.cta}>
-					<GitHubAuthButton color="purple" className={base.mr3}>
-						<strong>Sign up with GitHub</strong>
-					</GitHubAuthButton>
-				</div>}
-
-				<Heading level={4} underline="blue" className={styles.h5}>Using Sourcegraph</Heading>
-				<p className={styles.p}>Try it:</p>
-				<ul>
-					<li><a href="/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest">See where/how a function/type/package is used, across all repositories</a> — live usage examples &amp; global cross-refs</li>
-				</ul>
-				<p className={styles.p}>No installation or signup required. <em>It just works</em>, for both open-source code and your private projects (unless you do crazy stuff with your build tooling).</p>
-<p className={styles.p}>Sourcegraph is free for public and private projects. <Link to="/pricing">Paid plans</Link> are available.</p>
-
-				<Heading level={5}>Supported languages</Heading>
-<ul>
-<li>Go &mdash; <a href="/github.com/golang/go/-/info/GoPackage/net/http/-/NewRequest">try it</a></li>
-</ul>
-				<p className={styles.p}><em>Coming soon: Java, JavaScript, Python, C#, PHP, Objective-C, C/C++, Scala, Perl, TypeScript, etc.</em> <a href="mailto:support@sourcegraph.com">Email us</a> to get early beta access to these languages for your team or project.</p>
-
-				{!context.user && <div className={styles.cta}>
-					<GitHubAuthButton color="purple" className={base.mr3}>
-						<strong>Sign up with GitHub</strong>
-					</GitHubAuthButton>
-				</div>}
-
-				<Heading level={3} underline="purple" className={styles.h5}>Our purpose: the future sooner</Heading>
+				<Heading level={4} underline="purple" className={styles.h5}>Our purpose: the future sooner</Heading>
 				<p className={styles.p}>From lifesaving medicine to self-driving cars, the future’s most groundbreaking innovations will all rely on code, in one way or another. With so much software to write in the coming decades, we all need a better way to discover and understand code&mdash;one that will finally free us from re-doing work that’s been done 50,000 times before.</p>
 				<p className={styles.p}>At Sourcegraph, we help developers <em>bring the future sooner</em>&mdash;by turning great ideas into great software more efficiently.</p>
+				<p className={styles.p}>In the last 24 hours, you almost certainly used a product built by developers who use Sourcegraph. If you want to help bring it to every developer, <a href="/jobs">join our team</a>.</p>
+				<br/>
 
-				<Heading level={3} underline="orange" className={styles.h5}>Stickers for screenshots</Heading>
-				<p className={styles.p}>Developers love stickers, and we love understanding our users better. We'll mail you a Sourcegraph sticker free of charge if you <a href="mailto:hi@sourcegrah.com">email us a screenshot or video</a> of your full screen (including editor/IDE) while you're using Sourcegraph in your usual development workflow. In the email, be sure to tell us your mailing address so we know where to send the sticker.</p>
+				<Heading level={4} className={styles.h5}><Link to="/plan"><u>Sourcegraph Master Plan &raquo;</u></Link></Heading>
+				<p className={styles.p}>What we're doing and why it matters</p>
+				<br/>
+
+				<Heading level={4} className={styles.h5}><Link to="/docs"><u>Sourcegraph Documentation &raquo;</u></Link></Heading>
+				<p className={styles.p}>How to use Sourcegraph and browser/editor integrations</p>
+				<br/><br/>
+
+				{!context.user && <div className={styles.cta}>
+					<GitHubAuthButton color="purple" className={base.mr3}>
+						<strong>Sign up with GitHub</strong>
+					</GitHubAuthButton>
+				</div>}
+
 			</div>
 		</div>
 	);
