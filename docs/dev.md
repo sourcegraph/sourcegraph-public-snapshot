@@ -143,7 +143,7 @@ use the interactive visual debugger for our frontend codebase:
   - Linux: `chromium-browser --remote-debugging-port=9222`
 - Go to http://localhost:3080
 - Open the Debugger in VSCode: "View" > "Debug"
-- Launch the "(ui) http://localhost:3080/*" debug configuration
+- Launch the `(ui) http://localhost:3080/*` debug configuration
 - Set breakpoints, enjoy
 
 ## govendor
