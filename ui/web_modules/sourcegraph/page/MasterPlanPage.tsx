@@ -60,7 +60,7 @@ function signInButton(block: boolean) {
 
 export function MasterPlanPage(props: {}) {
 	return (
-		<div>
+		<div className={styles.mp_body}>
 			<Helmet title="Sourcegraph Master Plan" />
 			<Hero pattern="objects" color="blue" className={base.pv4}>
 				<div className={styles.container_wide}>
