@@ -176,6 +176,8 @@
 
 /* Master Plan */
 .mp_body p, .mp_body li {
+	line-height: 1.7;
+
 	/* system font for long body text */
 	font-family: '--apple-system', 'BlinkMacSystemFont', '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', 'helvetica', 'ubuntu', 'segoe ui', 'arial', sans-serif;
 }
