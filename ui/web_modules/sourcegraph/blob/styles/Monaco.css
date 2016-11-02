@@ -152,12 +152,6 @@
 	padding-right: 2px;
 }
 
-:global .monaco-editor .monaco-tree .monaco-tree-rows > .monaco-tree-row {
-	box-sizing: content-box;
-	padding-top: 3px;
-	padding-bottom: 3px;
-}
-
 :global .vs-dark .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) {
   background-color: c_blue_2;
   color: white;
