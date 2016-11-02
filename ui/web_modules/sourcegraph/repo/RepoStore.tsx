@@ -6,7 +6,7 @@ import * as map from "lodash/map";
 import * as some from "lodash/some";
 
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { modes } from "sourcegraph/editor/modes";
+import { modesToSearch } from "sourcegraph/editor/modes";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 import { Store } from "sourcegraph/Store";
@@ -94,7 +94,7 @@ class RepoStoreClass extends Store<any> {
 		this.symbols = deepFreeze({
 			content: {},
 			list(repo, rev, query) {
-				const langResults = map(modes, mode => {
+				const langResults = map(modesToSearch, mode => {
 					return this.content[keyForSymbols(mode, repo, rev, query)];
 				});
 				const results = flatten(filter(langResults));
