@@ -25,10 +25,6 @@ export function AboutPage(props: {}) {
 				<p className={styles.p}>In the last 24 hours, you almost certainly used a product built by developers who use Sourcegraph. If you want to help bring it to every developer, <a href="/jobs">join our team</a>.</p>
 				<br/>
 
-				<Heading level={4} className={styles.h5}><Link to="/plan"><u>Sourcegraph Master Plan &raquo;</u></Link></Heading>
-				<p className={styles.p}>What we're doing and why it matters</p>
-				<br/>
-
 				<Heading level={4} className={styles.h5}><Link to="/docs"><u>Sourcegraph Documentation &raquo;</u></Link></Heading>
 				<p className={styles.p}>How to use Sourcegraph and browser/editor integrations</p>
 				<br/><br/>
