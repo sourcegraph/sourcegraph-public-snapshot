@@ -12,6 +12,8 @@ import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 export const OriginGitHub = 0; // Origin.ServiceType enum value for GitHub origin
 
+const workspaceSymbolFlights = new Set<string>();
+
 export const RepoBackend = {
 	fetch: singleflightFetch(defaultFetch),
 
@@ -192,7 +194,13 @@ export const RepoBackend = {
 				return;
 			}
 			inventoryToSearchModes(action.inventory).forEach(mode => {
-				lsp.sendExt(`git:\/\/${action.repo}?${action.rev}`, mode, "workspace/symbol", { query: action.query, limit: 100 })
+				const url = `git:\/\/${action.repo}?${action.rev}`;
+				const flightKey = `${url}@${mode}?${action.query}`;
+				if (workspaceSymbolFlights.has(flightKey)) {
+					return;
+				}
+				workspaceSymbolFlights.add(flightKey);
+				lsp.sendExt(url, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
 						let result;
 						if (r === null || !r.result || !r.result.length) {
@@ -203,6 +211,7 @@ export const RepoBackend = {
 						Dispatcher.Stores.dispatch(
 							new RepoActions.FetchedSymbols(mode, action.repo, action.rev, action.query, result)
 						);
+						workspaceSymbolFlights.delete(flightKey);
 					});
 			});
 		}
