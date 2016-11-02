@@ -32,10 +32,6 @@ export class EventLogger {
         }
     }
 
-	_decorateEventProperties(eventProperties) {
-		return Object.assign({}, eventProperties, {path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""});
-	}
-
 	_logToConsole(eventAction, object) {
 		if (global.window && global.window.localStorage && global.window.localStorage["log_debug"]) {
 			console.debug("%cEVENT %s", "color: #aaa", eventAction, object);
@@ -48,8 +44,15 @@ export class EventLogger {
         eventProperties = eventProperties ? eventProperties : {};
         eventProperties["Platform"] = window.navigator.userAgent.indexOf("Firefox") !== -1 ? "FirefoxExtension" : "ChromeExtension";
 
-        let props = Object.assign({}, eventProperties, { eventLabel, eventCategory, eventAction });
-        const decoratedEventProps = this._decorateEventProperties(props);
+        const decoratedEventProps = Object.assign(
+            eventProperties,
+            {
+                eventLabel,
+                eventCategory,
+                eventAction,
+                path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : "",
+            },
+        );
 
         this._logToConsole(eventAction, decoratedEventProps);
         chrome.runtime.sendMessage({ type: "trackEvent", payload: decoratedEventProps});

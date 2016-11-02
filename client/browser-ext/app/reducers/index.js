@@ -44,13 +44,14 @@ const annotations = function(state = {content: {}}, action) {
 				...state,
 				content: {
 					...state.content,
-					[keyFor(action.repo, action.rev, action.path)]: action.xhrResponse.status === 200 ? action.xhrResponse.body : null,
+					[keyFor(action.repo, action.rev, action.path)]: action.xhrResponse.status === 200 ? {relRev: action.relRev, resp: action.xhrResponse.body} : null,
 				}
 			};
 		}
 		// Fall through
 		// As a result, we serve the result of the last
 		// successful request (one that returned HTTP 200).
+
 	default:
 		return state;
 	}

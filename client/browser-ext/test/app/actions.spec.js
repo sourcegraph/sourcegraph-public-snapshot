@@ -56,7 +56,7 @@ describe("actions", () => {
 				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				annotations: {content: {}},
 			}, [
-				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, xhrResponse: {body: {Annotations: []}, head: undefined, status: 200}},
+				{type: types.FETCHED_ANNOTATIONS, repo, relRev: rev, rev: resolvedRev, path, xhrResponse: {body: {Annotations: []}, head: undefined, status: 200}},
 			]);
 		});
 
@@ -67,7 +67,7 @@ describe("actions", () => {
 				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				annotations: {content: {}},
 			}, [
-				{type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRev, path, xhrResponse: {body: null, head: undefined, status: 404}},
+				{type: types.FETCHED_ANNOTATIONS, repo, relRev: rev, rev: resolvedRev, path, xhrResponse: {body: null, head: undefined, status: 404}},
 			]);
 		});
 

@@ -266,7 +266,7 @@ export function isCommentNode(node) {
 }
 
 export function isStringNode(node) {
-	return node.classList.contains("pl-s");
+	return node.classList.contains("pl-s") && node.childNodes.length === 3 && node.childNodes[0].classList.contains("pl-pds") && node.childNodes[2].classList.contains("pl-pds");
 }
 
 // convertStringNode takes a DOM node which is a plain string and returns an object containing the
@@ -453,7 +453,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 						const prt1Uri = prt0Uri[1].split("#");
 
 						const repoUri = prt0Uri[0];
-						const frevUri = prt1Uri[0] || "master";
+						const frevUri = (repoUri === repoRevSpec.repoURI ? repoRevSpec.relRev : prt1Uri[0]) || "master";
 						const pathUri = prt1Uri[1];
 						const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
 

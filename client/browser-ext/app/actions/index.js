@@ -14,7 +14,8 @@ function _resolveRev(dispatch, state, repo, rev) {
 	const resolvedRep = state.resolvedRev.content[keyFor(repo)];
 	const resolvedRev = state.resolvedRev.content[keyFor(repo, rev)];
 
-	// If we have a successful fetch, return that data since rev won't change w.r.t time
+	// If we have a successful fetch, return that data since rev
+	// won't change in a matter of a few seconds between the fetches.
 	if (resolvedRev && resolvedRep && resolvedRep.respCode === 200) return Promise.resolve(resolvedRev);
 
 	// If a fetch is in flight, return that same promise
@@ -27,15 +28,15 @@ function _resolveRev(dispatch, state, repo, rev) {
 
 			return resp.json()
 				.then((json) => {
-					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {json: json});
+					const xhrResponse = {
+						status: resp.status,
+						head: resp.headers.map,
+						json: json
+					};
 					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
 					return xhrResponse;
 				})
-				.catch((err) => {
-					const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {json: null});
-					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
-					return xhrResponse;
-				});
+				.catch((err) => {});
 		})
 		.catch(() => {});
 
@@ -57,13 +58,21 @@ export function getAnnotations(repo, rev, path) {
 				.then((resp) => {
 					return resp.json()
 						.then((json) => {
-							const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: json});
-							dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRepoRev, path, xhrResponse});
+							const xhrResponse = {
+								status: resp.status,
+								head: resp.headers.map,
+								body: json,
+							};
+							dispatch({type: types.FETCHED_ANNOTATIONS, repo, relRev: rev, rev: resolvedRepoRev, path, xhrResponse});
 							return xhrResponse;
 						})
 						.catch((err) => {
-							const xhrResponse = Object.assign({status: resp.status}, {head: resp.headers.map}, {body: null});
-							dispatch({type: types.FETCHED_ANNOTATIONS, repo, rev: resolvedRepoRev, path, xhrResponse});
+							const xhrResponse = {
+								status: resp.status,
+								head: resp.headers.map,
+								body: null,
+							};
+							dispatch({type: types.FETCHED_ANNOTATIONS, repo, relRev: rev, rev: resolvedRepoRev, path, xhrResponse});
 							return xhrResponse;
 						});
 				})
