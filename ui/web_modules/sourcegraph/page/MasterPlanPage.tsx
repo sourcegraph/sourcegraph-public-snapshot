@@ -92,7 +92,7 @@ export function MasterPlanPage(props: {}) {
 				<p>When phase 1 is almost done, we’ll reveal phase 2: how we’ll work toward enabling everyone to code. If you think that’s crazy, ask yourself: now that billions of people have access to the Internet, is coding more like reading and writing (which virtually everyone does) or publishing books (which 0.1% of the population does)?</p>
 
 				<br/><br/>
-				<Heading level={4} underline="purple" className={styles.h5}>Make basic code intelligence ubiquitous (in every editor and language)</Heading>
+				<Heading level={4} underline="purple" className={styles.h5}><a id="code-intelligence" style={{color: "inherit"}}>Make basic code intelligence ubiquitous (in every editor and language)</a></Heading>
 				<Panel hoverLevel="low" hover={false} className={styles.sidebox} style={{
 					margin: whitespace[4],
 					padding: whitespace[3],
@@ -162,7 +162,7 @@ export function MasterPlanPage(props: {}) {
 				</Panel>
 
 				<br/><br/><br/>
-				<Heading level={4} underline="purple" className={styles.h5}>Make code review continuous and more intelligent</Heading>
+				<Heading level={4} underline="purple" className={styles.h5}><a id="code-review" style={{color: "inherit"}}>Make code review continuous and more intelligent</a></Heading>
 				<p>Code review is supposed to improve quality and share knowledge. But few teams feel their code review process (if any) is effective, because today’s tools make code review a manual, error-prone process performed (far too often) at the very end of the development cycle.</p>
 				<p>Toyota long ago showed that high-quality production processes should be the opposite: continuous (to find defects immediately, not after the car is fully assembled) and systematic (based on checklists compiled from experience). Medicine and aviation also recognize the value of this approach. We’ll apply these principles to make code review continuous and more intelligent, so you can:</p>
 				<ul>
@@ -200,7 +200,7 @@ export function MasterPlanPage(props: {}) {
 				</Panel>
 
 				<br/><br/><br/>
-				<Heading level={4} underline="purple" className={styles.h5}>Build the global code graph</Heading>
+				<Heading level={4} underline="purple" className={styles.h5}><a id="global-code-graph" style={{color: "inherit"}}>Build the global code graph</a></Heading>
 				<p>The fundamental problem of software development is that most developers spend most of their time doing things that aren’t core to solving their actual problem. Of all the code you write, only a tiny fraction is core to your particular business or application. Likewise for the bugs you spend time fixing.</p>
 
 				<p>We will make it much easier to create and reuse public, open-source code by giving everyone access to the global code graph. The global code graph is the collection of all the code in the world, stored in a system that understands the dependency and call graph relationships across tens of millions of codebases. It's what powers the features in the previous steps.</p>
