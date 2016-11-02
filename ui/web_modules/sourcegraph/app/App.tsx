@@ -1,24 +1,22 @@
-// tslint:disable: typedef ordered-imports
+import "sourcegraph/components/styles/_normalize.css";
 
 import * as React from "react";
 import Helmet from "react-helmet";
 import {PlainRoute} from "react-router";
 
-import {EventListener} from "sourcegraph/Component";
-import {GlobalNav} from "sourcegraph/app/GlobalNav";
-import "sourcegraph/components/styles/_normalize.css";
-import * as styles from "sourcegraph/app/styles/App.css";
-
-import {withViewEventsLogged} from "sourcegraph/util/EventLogger";
-import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
-
-import {routes as homeRoutes} from "sourcegraph/home";
-import {routes as pageRoutes} from "sourcegraph/page";
-import {routes as styleguideRoutes} from "sourcegraph/styleguide";
-import {routes as userRoutes} from "sourcegraph/user";
-import {routes as userSettingsRoutes} from "sourcegraph/user/settings/routes";
-import {routes as repoRoutes} from "sourcegraph/repo/routes";
 import {context} from "sourcegraph/app/context";
+import {GlobalNav} from "sourcegraph/app/GlobalNav";
+import * as styles from "sourcegraph/app/styles/App.css";
+import {EventListener} from "sourcegraph/Component";
+import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
+import {withViewEventsLogged} from "sourcegraph/util/EventLogger";
+
+import {homeRoutes} from "sourcegraph/app/routes/homeRoutes";
+import {pageRoutes} from "sourcegraph/app/routes/pageRoutes";
+import {repoRoutes} from "sourcegraph/app/routes/repoRoutes";
+import {styleguideRoutes} from "sourcegraph/app/routes/styleguideRoutes";
+import {userRoutes} from "sourcegraph/app/routes/userRoutes";
+import {userSettingsRoutes} from "sourcegraph/app/routes/userSettingsRoutes";
 
 interface Props {
 	main: JSX.Element;
@@ -27,15 +25,13 @@ interface Props {
 	params?: any;
 }
 
-type State = any;
+interface State {
+	className: string;
+}
 
 export class App extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
-	};
-
-	state = {
-		className: "",
 	};
 
 	constructor(props: Props) {
@@ -50,7 +46,7 @@ export class App extends React.Component<Props, State> {
 		};
 	}
 
-	_handleSourcegraphDesktop(event) {
+	_handleSourcegraphDesktop(event: any): void {
 		(this.context as any).router.replace(event.detail);
 	}
 

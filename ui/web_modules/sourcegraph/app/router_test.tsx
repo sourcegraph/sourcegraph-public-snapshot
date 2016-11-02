@@ -1,6 +1,6 @@
 import expect from "expect.js";
 import matchRoutes from "react-router/lib/matchRoutes";
-import { routes as repoRoutes } from "sourcegraph/repo/routes";
+import { repoRoutes } from "sourcegraph/app/routes/repoRoutes";
 
 describe("repo route", () => {
 	const tests = {

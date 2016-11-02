@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
 import {rel} from "sourcegraph/app/routePatterns";
 import {StyleguideContainer} from "sourcegraph/styleguide/StyleguideContainer";
 
-export const routes: any[] = [
+export const styleguideRoutes: any[] = [
 	{
 		getComponent: (location, callback) => {
 			callback(null, {

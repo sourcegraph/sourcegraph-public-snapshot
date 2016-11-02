@@ -1,9 +1,4 @@
-import {PlainRoute} from "react-router";
 import {User} from "sourcegraph/api";
-import {rel} from "sourcegraph/app/routePatterns";
-import {AuthBrowserExtFlow} from "sourcegraph/user/AuthBrowserExt";
-import {Login} from "sourcegraph/user/Login";
-import {Signup} from "sourcegraph/user/Signup";
 
 // inBeta tells if the given user is a part of the given beta program.
 export function inBeta(u: User | null, b: string): boolean {
@@ -16,30 +11,3 @@ export interface ExternalToken {
 	host: string;
 	scope: string;
 };
-
-export const routes: PlainRoute[] = [
-	{
-		path: rel.login,
-		getComponents: (location, callback) => {
-			callback(null, {
-				main: Login,
-			});
-		},
-	},
-	{
-		path: rel.signup,
-		getComponents: (location, callback) => {
-			callback(null, {
-				main: Signup,
-			});
-		},
-	},
-	{
-		path: rel.authext,
-		getComponents: (location, callback) => {
-			callback(null, {
-				main: AuthBrowserExtFlow,
-			});
-		},
-	},
-];

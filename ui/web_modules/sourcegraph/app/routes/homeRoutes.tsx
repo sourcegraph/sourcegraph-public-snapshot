@@ -8,7 +8,7 @@ import {Home} from "sourcegraph/home/Home";
 import {IntegrationsContainer} from "sourcegraph/home/IntegrationsContainer";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 
-export const routes: any[] = [
+export const homeRoutes: any[] = [
 	{
 		getComponent: (location, callback) => {
 			callback(null, {

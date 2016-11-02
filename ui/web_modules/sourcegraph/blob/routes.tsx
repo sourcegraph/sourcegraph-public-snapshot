@@ -1,39 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
-import { abs, rel, getRouteParams } from "sourcegraph/app/routePatterns";
-import { urlTo } from "sourcegraph/util/urlTo";
+import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
 import { makeRepoRev, repoPath, repoRev } from "sourcegraph/repo";
-import { withLineColBoundToHash } from "sourcegraph/blob/withLineColBoundToHash";
-import { withResolvedRepoRev } from "sourcegraph/repo/withResolvedRepoRev";
-import { withFileBlob } from "sourcegraph/blob/withFileBlob";
-import { BlobMain } from "sourcegraph/blob/BlobMain";
-import { RepoNavContext } from "sourcegraph/blob/RepoNavContext";
-
-let _blobMainComponent: any;
-
-export const routes = [
-	{
-		path: rel.blob,
-		keepScrollPositionOnRouteChangeKey: "file",
-		getComponents: (location: Location, callback: Function) => {
-			if (!_blobMainComponent) {
-				// Create only once to avoid unnecessary remounting after each route change.
-				_blobMainComponent = withLineColBoundToHash(
-					withResolvedRepoRev(
-						withFileBlob(
-							BlobMain
-						)
-					)
-				);
-			}
-			callback(null, {
-				main: _blobMainComponent,
-				repoNavContext: RepoNavContext,
-			});
-		},
-		blobLoaderHelpers: [],
-	},
-];
+import { urlTo } from "sourcegraph/util/urlTo";
 
 // urlToBlob generates the URL to a file. To get a dir's URL, use urlToTree.
 export function urlToBlob(repo: string, rev: string | null, path: string | string[]): string {

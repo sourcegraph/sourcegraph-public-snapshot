@@ -1,6 +1,7 @@
 import expect from "expect.js";
 import {rootRoute} from "sourcegraph/app/App";
-import {routes as repoRoutes, urlWithRev} from "sourcegraph/repo/routes";
+import {repoRoutes} from "sourcegraph/app/routes/repoRoutes";
+import {urlWithRev} from "sourcegraph/repo/routes";
 
 describe("urlWithRev", () => {
 	let tests = [

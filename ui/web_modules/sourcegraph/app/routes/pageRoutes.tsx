@@ -1,29 +1,15 @@
-// tslint:disable: typedef ordered-imports
-
-import {rel, abs} from "sourcegraph/app/routePatterns";
-import * as invariant from "invariant";
+import {rel} from "sourcegraph/app/routePatterns";
 import {AboutPage} from "sourcegraph/page/AboutPage";
-import {MasterPlanPage} from "sourcegraph/page/MasterPlanPage";
 import {BetaPage} from "sourcegraph/page/BetaPage";
 import {ContactPage} from "sourcegraph/page/ContactPage";
-import {SecurityPage} from "sourcegraph/page/SecurityPage";
-import {PricingPage} from "sourcegraph/page/PricingPage";
-import {TermsPage} from "sourcegraph/page/TermsPage";
-import {PrivacyPage} from "sourcegraph/page/PrivacyPage";
 import {DocsPage} from "sourcegraph/page/DocsPage";
+import {MasterPlanPage} from "sourcegraph/page/MasterPlanPage";
+import {PricingPage} from "sourcegraph/page/PricingPage";
+import {PrivacyPage} from "sourcegraph/page/PrivacyPage";
+import {SecurityPage} from "sourcegraph/page/SecurityPage";
+import {TermsPage} from "sourcegraph/page/TermsPage";
 
-// isPage returns whether the location path refers to one of these
-// static pages.
-//
-// NOTE: All static pages should be added to the OR-expression.
-export function isPage(pathname: string): boolean {
-	invariant(pathname, "no pathname");
-	pathname = pathname.slice(1); // trim leading "/"
-	return pathname === abs.about || pathname === abs.contact || pathname === abs.security ||
-		pathname === abs.pricing || pathname === abs.terms || pathname === abs.privacy;
-}
-
-export const routes: any[] = [
+export const pageRoutes: any[] = [
 	{
 		path: rel.about,
 		getComponents: (location, callback) => {
