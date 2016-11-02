@@ -9,6 +9,7 @@ import {Location} from "sourcegraph/Location";
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {urlToOAuth} from "sourcegraph/util/urlTo";
 
 interface Props {
@@ -29,6 +30,9 @@ export class SignupForm extends Component<Props, State> {
 	_submitForm(): void {
 		let form = document.getElementById("form");
 		if (form) {
+			// Log an auth event initiated
+			AnalyticsConstants.Events.OAuth2FlowGitHub_Initiated.logEvent();
+
 			(form as HTMLFormElement).submit();
 		}
 	}
