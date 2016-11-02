@@ -3,6 +3,7 @@
 import {rel, abs} from "sourcegraph/app/routePatterns";
 import * as invariant from "invariant";
 import {AboutPage} from "sourcegraph/page/AboutPage";
+import {MasterPlanPage} from "sourcegraph/page/MasterPlanPage";
 import {BetaPage} from "sourcegraph/page/BetaPage";
 import {ContactPage} from "sourcegraph/page/ContactPage";
 import {SecurityPage} from "sourcegraph/page/SecurityPage";
@@ -29,6 +30,15 @@ export const routes: any[] = [
 			callback(null, {
 				navContext: null,
 				main: AboutPage,
+			});
+		},
+	},
+	{
+		path: rel.plan,
+		getComponents: (location, callback) => {
+			callback(null, {
+				navContext: null,
+				main: MasterPlanPage,
 			});
 		},
 	},
