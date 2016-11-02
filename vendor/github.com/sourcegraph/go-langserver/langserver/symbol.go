@@ -25,10 +25,10 @@ import (
 // query is a structured representation that is parsed from the user's
 // raw query string.
 type query struct {
-	kind   lsp.SymbolKind
-	filter filterType
-	file   string
-	tokens []string
+	kind      lsp.SymbolKind
+	filter    filterType
+	file, dir string
+	tokens    []string
 }
 
 // parseQuery parses a user's raw query string and returns a
@@ -40,6 +40,11 @@ func parseQuery(q string) (qu query) {
 	// Split the query into space-delimited fields.
 	for _, field := range strings.Fields(q) {
 		// Check if the field is a filter like `is:exported`.
+		if strings.HasPrefix(field, "dir:") {
+			qu.filter = filterDir
+			qu.dir = strings.TrimPrefix(field, "dir:")
+			continue
+		}
 		if field == "is:exported" {
 			qu.filter = filterExported
 			continue
@@ -64,6 +69,7 @@ type filterType string
 
 const (
 	filterExported filterType = "exported"
+	filterDir      filterType = "dir"
 )
 
 // keywords are keyword tokens that will be interpreted as symbol kind
@@ -151,7 +157,7 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 		return 0
 	}
 	if q.file != "" && filename != q.file {
-		// We're restricing results to a single file, and this isn't it.
+		// We're restricting results to a single file, and this isn't it.
 		return 0
 	}
 	if len(q.tokens) == 0 { // early return if empty query
@@ -222,7 +228,11 @@ func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn JSONRPC
 // handleSymbol handles `workspace/symbol` requests for the Go
 // language server.
 func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	return h.handleSymbol(ctx, conn, req, parseQuery(params.Query), params.Limit)
+	q := parseQuery(params.Query)
+	if q.filter == filterDir {
+		q.dir = path.Join(h.init.RootImportPath, q.dir)
+	}
+	return h.handleSymbol(ctx, conn, req, q, params.Limit)
 }
 
 func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, query query, limit int) ([]lsp.SymbolInformation, error) {
@@ -244,6 +254,24 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 		par := parallel.NewRun(8)
 		pkgs := buildutil.ExpandPatterns(bctx, []string{pkgPat})
 		for pkg := range pkgs {
+			// If we're restricting results to a single file or dir, ensure the
+			// package dir matches to avoid doing unnecessary work.
+			if results.query.file != "" {
+				filePkgPath := path.Dir(results.query.file)
+				if PathHasPrefix(filePkgPath, h.init.BuildContext.GOROOT) {
+					filePkgPath = PathTrimPrefix(filePkgPath, h.init.BuildContext.GOROOT)
+				} else {
+					filePkgPath = PathTrimPrefix(filePkgPath, h.init.BuildContext.GOPATH)
+				}
+				filePkgPath = PathTrimPrefix(filePkgPath, "src")
+				if !pathEqual(pkg, filePkgPath) {
+					continue
+				}
+			}
+			if results.query.filter == filterDir && !pathEqual(pkg, results.query.dir) {
+				continue
+			}
+
 			par.Acquire()
 			go func(pkg string) {
 				defer par.Release()
@@ -289,12 +317,6 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 			if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
 				log.Printf("skipping possible package %s: %s", pkg, err)
 			}
-			return
-		}
-
-		// If we're restricting results to a single file, ensure the package dir
-		// matches the file dir to avoid doing unnecessary work.
-		if results.query.file != "" && !strings.HasPrefix(buildPkg.Dir, path.Dir(results.query.file)) {
 			return
 		}
 

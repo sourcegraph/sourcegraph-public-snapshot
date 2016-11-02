@@ -22,3 +22,7 @@ func PathTrimPrefix(s, prefix string) string {
 	}
 	return strings.TrimPrefix(s, prefix)
 }
+
+func pathEqual(a, b string) bool {
+	return PathTrimPrefix(a, b) == ""
+}

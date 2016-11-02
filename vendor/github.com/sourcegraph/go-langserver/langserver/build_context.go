@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
@@ -72,6 +73,15 @@ func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSyst
 	return ctxt
 }
 
+// From: https://github.com/golang/tools/blob/b814a3b030588c115189743d7da79bce8b549ce1/go/buildutil/util.go#L84
+// dirHasPrefix tests whether the directory dir begins with prefix.
+func dirHasPrefix(dir, prefix string) bool {
+	if runtime.GOOS != "windows" {
+		return strings.HasPrefix(dir, prefix)
+	}
+	return len(dir) >= len(prefix) && strings.EqualFold(dir[:len(prefix)], prefix)
+}
+
 // ContainingPackage returns the package that contains the given
 // filename. It is like buildutil.ContainingPackage, except that:
 //
@@ -82,8 +92,11 @@ func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSyst
 // * if the file is in the xtest package (package p_test not package p),
 //   it returns build.Package only representing that xtest package
 func ContainingPackage(bctx *build.Context, filename string) (*build.Package, error) {
-	if !filepath.IsAbs(bctx.GOPATH) || strings.Contains(bctx.GOPATH, string(os.PathListSeparator)) {
-		return nil, fmt.Errorf("build context GOPATH must contain exactly 1 entry and it must be an absolute path (GOPATH=%q)", bctx.GOPATH)
+	gopaths := filepath.SplitList(bctx.GOPATH) // list will be empty with no GOPATH
+	for _, gopath := range gopaths {
+		if !filepath.IsAbs(gopath) {
+			return nil, fmt.Errorf("build context GOPATH must be an absolute path (GOPATH=%q)", gopath)
+		}
 	}
 
 	pkgDir := filename
@@ -94,7 +107,13 @@ func ContainingPackage(bctx *build.Context, filename string) (*build.Package, er
 	if PathHasPrefix(filename, bctx.GOROOT) {
 		srcDir = bctx.GOROOT // if workspace is Go stdlib
 	} else {
-		srcDir = bctx.GOPATH
+		srcDir = "" // with no GOPATH, only stdlib will work
+		for _, gopath := range gopaths {
+			if dirHasPrefix(pkgDir, gopath) {
+				srcDir = gopath
+				break
+			}
+		}
 	}
 	srcDir = path.Join(srcDir, "src") + "/"
 	importPath := strings.TrimPrefix(pkgDir, srcDir)
