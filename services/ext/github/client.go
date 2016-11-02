@@ -88,8 +88,9 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		return err
 	}
 
-	// githubHeaderRateRemaining is GitHub's custom header for providing rate limit remaining value.
-	const githubHeaderRateRemaining = "X-RateLimit-Remaining"
+	// githubHeaderRateRemaining is GitHub's custom header for providing rate limit remaining value,
+	// passed through http.CanonicalHeaderKey.
+	const githubHeaderRateRemaining = "X-Ratelimit-Remaining"
 
 	if _, ok := resp.Response.Header[githubHeaderRateRemaining]; ok {
 		// Update rateLimitRemainingGauge only if the rate limit remaining
