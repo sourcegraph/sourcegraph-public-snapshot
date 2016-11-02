@@ -3,7 +3,7 @@
 To build & update the JavaScript/TypeScript langserver:
 
 ```
-make
+./build.sh
 ```
 
 To run the JavaScript/TypeScript langserver with a Sourcegraph development server:

@@ -7,4 +7,4 @@ ADD javascript-typescript-langserver/build /build
 ADD javascript-typescript-langserver/node_modules /node_modules
 
 EXPOSE 2088
-CMD ["node", "/build/language-server.js", "-p", "2088", "--strict"]
+CMD ["node", "--max-old-space-size", "4096", "/build/language-server.js", "-p", "2088", "--strict"]
