@@ -52,8 +52,7 @@ if (production) {
 	);
 }
 
-const useHot = !production;
-if (useHot) {
+if (!production) {
 	plugins.push(
 		new webpack.HotModuleReplacementPlugin()
 	);
@@ -155,14 +154,12 @@ module.exports = {
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
 		quiet: true,
-		hot: useHot,
+		hot: !production,
 	},
 };
 
-if (useHot) {
+if (!production) {
 	module.exports.entry.unshift("webpack/hot/only-dev-server");
 	module.exports.entry.unshift("react-hot-loader/patch");
-}
-if (!production) {
 	module.exports.entry.unshift(`webpack-dev-server/client?${publicURL.format()}`);
 }
