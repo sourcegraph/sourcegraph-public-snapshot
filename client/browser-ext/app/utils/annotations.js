@@ -4,6 +4,7 @@ import styles from "../components/App.css";
 import * as utils from "./index";
 import _ from "lodash";
 import EventLogger from "../analytics/EventLogger";
+// import marked from "marked";
 
 // addAnnotations is the entry point for injecting annotations onto a blob (el).
 // An invisible marker is appended to the document to indicate that annotation
@@ -44,6 +45,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			} else {
 				codeCell = row.cells[2];
 			}
+
 			if (!codeCell) {
 				continue;
 			}
@@ -73,31 +75,37 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			codeCell = row.cells[1];
 		}
 
+		let   curLine;
+		const isTable = codeCell.tagName === "TD";
+
+		if (!isTable) {
+			curLine = codeCell;
+		} else {
+			let inner = codeCell.querySelector(".blob-code-inner");
+			if (inner) {
+				curLine = inner;
+			} else {
+				curLine = codeCell
+			}
+		}
+
 		// If the line has already been annotated,
 		// restore event handlers if necessary otherwise move to next line
 		if (el.dataset[`${line}_${repoRevSpec.rev}`]) {
 			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
-				addEventListeners(codeCell, path, repoRevSpec, line);
+				addEventListeners(curLine, path, repoRevSpec, line);
 			}
 			continue;
 		}
 		el.dataset[`${line}_${repoRevSpec.rev}`] = true;
 
-		const offset = startBytesByLine[line];
-
-		// result is the new (annotated) innerHTML of the code cell
-		const {result, bytesConsumed} = convertNode(codeCell, annsByStartByte, offset, offset, repoRevSpec);
-		// manipulate the DOM asynchronously so the page doesn't freeze while large
-		// code files are being annotated
-		let cell = codeCell;
 		setTimeout(() => {
-			const inner = cell.querySelector(".blob-code-inner");
-			if (inner) {
-				inner.innerHTML = result;
-			} else {
-				cell.innerHTML = result;
-			}
-			addEventListeners(cell, path, repoRevSpec, line);
+			const annLine = convertNode(curLine, annsByStartByte, startBytesByLine[line], startBytesByLine[line], repoRevSpec.isDelta && isTable);
+
+			curLine.innerHTML = "";
+			curLine.appendChild(annLine.resultNode);
+
+			addEventListeners(curLine, path, repoRevSpec, line);
 		});
 	}
 }
@@ -110,7 +118,7 @@ export function indexAnnotations(anns) {
 	for (let i = 0; i < anns.length; i++) {
 		// From pkg/syntaxhighlight/html_annotator.go
 		const annType = anns[i].Class;
-		if (annType !== "com" && annType !== "lit" && annType !== "pun" && annType !== "kwd") {
+		if (annType !== "com" && annType !== "lit" && annType !== "pun" && annType !== "kwd" && annType !== "str") {
 			let ann = anns[i];
 			annsByStartByte[ann.StartByte] = ann;
 			annsByEndByte[ann.EndByte] = ann;
@@ -129,38 +137,16 @@ export function indexLineStartBytes(lineStartBytes) {
 	return startBytesByLine;
 }
 
-// annGenerator returns a "match" object if an anotation is defined
-// at the byte offset. The match result contains the number of bytes
-// matched by the annotation, and a generator function which returns
-// an HTML anchor tag string .
-export function annGenerator(annsByStartByte, byte, lineStart) {
-	const match = annsByStartByte[byte];
-	if (!match) return null;
-
-	const annLen = match.EndByte - match.StartByte;
-	if (annLen <= 0) return null; // sometimes, there will be an "empty" annotation, e.g. for CommonJS modules
-
-	return {annLen, annGen: function(innerHTML) {
-		return `<span data-byteoffset=${byte + 1 - lineStart} style="cursor:pointer;">${innerHTML}</span>`;
-	}};
+// isStringNode and isCommentNode are predicate functions to
+// identify string identifier DOM elements, as per Github's code styling classes.
+export function isCommentNode(node) {
+	return node.classList.contains("pl-c");
 }
 
-// getOpeningTag returns the starting tag (with attributes) of the node
-// (assumed to be of type NodeType.ELEMENT_NODE). E.g.
-//     <span attr="foo">hello world</span>
-// would return '<span attr="foo">'.
-// This is a fairly naive implementation that may not work if we were writing a
-// full-blown HTML parser; but since we only have to parse GitHub's blob HTML
-// we can expect more regularity.
-export function getOpeningTag(node) {
-	let i;
-	let inAttribute = false;
-	const outerHTML = node.outerHTML;
-	for (i = 0; i < outerHTML.length; ++i) {
-		if (outerHTML[i] === "\"") inAttribute = !inAttribute;
-		if (outerHTML[i] === ">" && !inAttribute) break;
-	}
-	return outerHTML.substring(0, i+1);
+// isStringNode should skip any string that might have
+// have an eval statement within that must be annotated
+export function isStringNode(node) {
+	return node.classList.contains("pl-s") && node.childNodes.length === 3 && node.childNodes[0].classList.contains("pl-pds") && node.childNodes[2].classList.contains("pl-pds");
 }
 
 // convertNode takes a DOM node and returns an object containing the
@@ -168,126 +154,116 @@ export function getOpeningTag(node) {
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(node, annsByStartByte, offset, lineStart, repoRevSpec, ignoreFirstTextChar) {
-	let result, bytesConsumed, c; // c is an intermediate result
-	if (node.nodeType === Node.ELEMENT_NODE) {
-		// The logic here is to:
-		//    - convert as element node (which may be the special-cased "quoted string" node)
-		//    - ^^ gives inner html; wrap this with the node's current syntax highlighting <span>
-		//    - ^^ but don't do that if the top-level tag is the <td> element (entrypoint)
+export function convertNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
+	let wrapperNode, c; // c is an intermediate result
 
-		const isTableCell = node.tagName === "TD";
-		ignoreFirstTextChar = repoRevSpec.isDelta && isTableCell; // +, -, or whitespace preceeds all code
-		if (isTableCell) {
-			// For diff blobs, the td can have extraneous child (text) nodes of whitespace that shouldn't
-			// be annotated; select the ".blob-code-inner" element which has only the code we
-			// care to annotate. (For normal blobs, there is no .blob-code-inner).
-			const inner = node.querySelector(".blob-code-inner");
-			if (inner) node = inner;
-		}
-
-		c = isStringNode(node) || isCommentNode(node) ?
-			convertStringNode(node, annsByStartByte, offset, lineStart) :
-			convertElementNode(node, annsByStartByte, offset, lineStart, repoRevSpec, ignoreFirstTextChar);
-
-		if (!isTableCell) {
-			const openTag = getOpeningTag(node);
-			const closeTag = "</span>";
-			if (openTag.indexOf("<span") !== 0) {
-				throw new Error(`element node tag is not SPAN, got(${node.tagName}), parsed(${openTag})`);
-			}
-			result = `${openTag}${c.result}${closeTag}`;
-		} else {
-			result = c.result;
-		}
-		bytesConsumed = c.bytesConsumed;
-	} else if (node.nodeType === Node.TEXT_NODE) {
-		c = convertTextNode(node, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
-		result = c.result;
-		bytesConsumed = c.bytesConsumed;
+	if (currentNode.nodeType === Node.TEXT_NODE) {
+		c = convertTextNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
+	} else if (currentNode.nodeType === Node.ELEMENT_NODE) {
+		c = isStringNode(currentNode) || isCommentNode(currentNode) ?
+			convertStringNode(currentNode, annsByStartByte, offset, lineStart) :
+			convertElementNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
 	} else {
-		throw new Error(`unexpected node type(${node.nodeType})`);
+		throw new Error(`unexpected node type(${currentNode.nodeType})`);
 	}
 
-	return {result, bytesConsumed};
+	if (currentNode.tagName === "TD") {
+		wrapperNode = document.createDocumentFragment();
+		wrapperNode.appendChild(c.resultNode);
+	} else {
+		wrapperNode = c.resultNode;
+		if (currentNode.attributes && currentNode.attributes.length > 0) {
+			[].map.call(currentNode.attributes, (attr) => {wrapperNode.setAttribute(attr.name, attr.value)});
+		}
+	}
+
+	return {
+		resultNode: wrapperNode,
+		bytesConsumed: c.bytesConsumed,
+	};
 }
 
 // convertTextNode takes a DOM node which should be of NodeType.TEXT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
-export function convertTextNode(node, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
-	let innerHTML = [];
-	let bytesConsumed;
+export function convertTextNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
+	let nodeText;
+	let prevConsumed = 0;
+	let bytesConsumed = 0;
+	const wrapperNode = document.createElement("SPAN");
+
+	function createTextNode(nodeText, start, end, offset) {
+		const wrapNode = document.createElement("SPAN");
+		const textNode = document.createTextNode(utf8.decode(nodeText.slice(start, end).join("")));
+
+		wrapNode.dataset.byteoffset = offset;
+		wrapNode.appendChild(textNode);
+
+		return wrapNode;
+	}
 
 	// Text could contain escaped character sequences (e.g. "&gt;") or UTF-8
 	// decoded characters (e.g. "˟") which need to be properly counted in terms of bytes.
-	let nodeText = utf8.encode(_.unescape(node.wholeText)).split("");
+	nodeText = utf8.encode(_.unescape(currentNode.textContent)).split("");
+
 	if (ignoreFirstTextChar && nodeText.length > 0) {
-		innerHTML.push(nodeText[0]);
+		wrapperNode.appendChild(document.createTextNode(utf8.decode(nodeText[0])));
 		nodeText = nodeText.slice(1);
 	}
-	for (bytesConsumed = 0; bytesConsumed < nodeText.length;) {
-		const match = annGenerator(annsByStartByte, offset + bytesConsumed, lineStart);
-		if (!match) {
-			innerHTML.push(_.escape(nodeText[bytesConsumed++]));
-			continue;
-		}
 
-		innerHTML.push(match.annGen(_.escape(nodeText.slice(bytesConsumed, bytesConsumed + match.annLen).join(""))));
-		bytesConsumed += match.annLen;
+	for (bytesConsumed = 0; bytesConsumed < nodeText.length;) {
+		const match = annsByStartByte[offset + bytesConsumed];
+
+		if (match) {
+			wrapperNode.appendChild(createTextNode(nodeText, prevConsumed, bytesConsumed, offset + prevConsumed + 1 - lineStart));
+			prevConsumed = bytesConsumed;
+			bytesConsumed += (match.EndByte - match.StartByte);
+			wrapperNode.appendChild(createTextNode(nodeText, prevConsumed, bytesConsumed, offset + prevConsumed + 1 - lineStart));
+			prevConsumed = bytesConsumed;
+		} else {
+			bytesConsumed++;
+		}
 	}
 
-	return {result: utf8.decode(innerHTML.join("")), bytesConsumed};
+	if (prevConsumed < bytesConsumed) {
+		wrapperNode.appendChild(createTextNode(nodeText, prevConsumed, bytesConsumed, offset + prevConsumed + 1 - lineStart));
+	}
+
+	return {resultNode: wrapperNode, bytesConsumed};
+}
+
+// convertStringNode takes a DOM node which is a plain string and returns an object containing the
+// maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
+export function convertStringNode(currentNode, annsByStartByte, offset, lineStart) {
+	const wrapperNode = document.createElement("SPAN");
+
+	wrapperNode.dataset.byteoffset = offset + 1 - lineStart;
+	wrapperNode.appendChild(currentNode.cloneNode(true));
+
+	return {
+		resultNode: wrapperNode,
+		bytesConsumed: currentNode.textContent.length 
+	}
 }
 
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(node, annsByStartByte, offset, lineStart, repoRevSpec, ignoreFirstTextChar) {
-	let innerHTML = [];
+export function convertElementNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
 	let bytesConsumed = 0;
+	const wrapperNode = document.createElement("SPAN");
 
+	wrapperNode.dataset.byteoffset = offset + 1 - lineStart;
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
-	for (let i = 0; i < node.childNodes.length; ++i) {
-		const res = convertNode(node.childNodes[i], annsByStartByte, offset + bytesConsumed, lineStart, repoRevSpec, i === 0 && ignoreFirstTextChar);
-		innerHTML.push(res.result);
+	for (let i = 0; i < currentNode.childNodes.length; ++i) {
+		const res = convertNode(currentNode.childNodes[i], annsByStartByte, offset + bytesConsumed, lineStart, i === 0 && ignoreFirstTextChar);
+		wrapperNode.appendChild(res.resultNode);
 		bytesConsumed += res.bytesConsumed;
 	}
 
-	return {result: utf8.decode(innerHTML.join("")), bytesConsumed};
-}
-
-// isStringNode and isCommentNode are predicate functions to
-// identify string identifier DOM elements, as per Github's code styling classes.
-export function isCommentNode(node) {
-	return node.classList.contains("pl-c");
-}
-
-export function isStringNode(node) {
-	return node.classList.contains("pl-s") && node.childNodes.length === 3 && node.childNodes[0].classList.contains("pl-pds") && node.childNodes[2].classList.contains("pl-pds");
-}
-
-// convertStringNode takes a DOM node which is a plain string and returns an object containing the
-// maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertStringNode(node, annsByStartByte, offset, lineStart) {
-	function getChildNodeText(node) {
-		if (node.nodeType === Node.ELEMENT_NODE) {
-			return [].map.call(node.childNodes, getChildNodeText).join("");
-		} else if (node.nodeType === Node.TEXT_NODE) {
-			return utf8.encode(_.unescape(node.wholeText));
-		} else {
-			throw new Error(`unexpected node type(${node.nodeType})`);
-		}
-	}
-
-	const strTxt = getChildNodeText(node);
-	const annGen = function(innerHTML) {
-		return `<span data-byteoffset=${offset + 1 - lineStart} style=${isCommentNode(node) ? "" : "cursor:pointer;"}>${innerHTML}</span>`;
-	};
-
-	return {result: annGen(_.escape(strTxt)), bytesConsumed: strTxt.length};
+	return {resultNode: wrapperNode, bytesConsumed};
 }
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
@@ -300,19 +276,32 @@ let jumptodefcache = {};
 
 const HOVER_TIME = 200;
 let hoverTimeout;
+let popOverLoading;
 
 function addEventListeners(el, path, repoRevSpec, line) {
 	let activeTarget, popover;
+	if (!popOverLoading) {
+		const popOverLoadingText = document.createTextNode("Loading...");
+		const popOverLoadingSpan = document.createElement("DIV");
+
+		popOverLoading = document.createElement("DIV");
+		popOverLoadingSpan.className = styles.popoverTitle;
+		popOverLoadingSpan.appendChild(popOverLoadingText);
+		popOverLoading.appendChild(popOverLoadingSpan);
+	}
 
 	el.onclick = function(e) {
 		let t = getTarget(e.target);
-		if (!t) return;
+		if (!t || t.style.cursor !== "pointer") return;
 
 		let openInNewTab = e.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && e.metaKey) || e.button === 1;
 
 		fetchJumpURL(t.dataset.byteoffset, function(defObj) {
 			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
 			// either move to a line on the same page, or refresh the page to a new blob view.
+
+			EventLogger.logEventForCategory("Def", "Click", "JumpDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
+
 			if (defObj.defCurPage && !repoRevSpec.isDelta) {
 				location.hash = defObj.defUrl.slice(defObj.defUrl.indexOf('#'));
 			} else {
@@ -343,17 +332,17 @@ function addEventListeners(el, path, repoRevSpec, line) {
 				// show "Loading..." immediately, there will be a visible flash if
 				// the actual hover text loads quickly thereafter.
 				if (!popover) {
-					showPopover(`<div><div class=${styles.popoverTitle}>Loading...</div></div>`, true);
+					showPopover(popOverLoading, true);
 				}
 			}, 3 * HOVER_TIME);
 			const hoverShowTime = Date.now() + HOVER_TIME;
-			fetchPopoverData(activeTarget.dataset.byteoffset, function(html) {
+			fetchPopoverData(activeTarget, function(elem) {
 				// Always wait at least HOVER_TIME before showing hover, to avoid
 				// it obscuring text when you move your mouse rapidly across a code file.
 				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
 				hidePopover();
 				hoverTimeout = setTimeout(() => {
-					showPopover(html, false);
+					showPopover(elem, false);
 				}, hoverTimerRemaining);
 			});
 		}
@@ -364,18 +353,21 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		if (t && t.tagName === "SPAN" && t.dataset && t.dataset.byteoffset) return t;
 	}
 
-	function showPopover(html, isLoading) {
-		if (!popover && activeTarget && html) {
+	function showPopover(elem, isLoading) {
+		if (activeTarget && elem) {
 			// Log event only when displaying a fetched tooltip
 			if (!isLoading) {
 				EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
+				if (popover) {
+					hidePopover();
+				}
 			}
 
 			// Create and style the element
-			popover = document.createElement("div");
+			popover = document.createElement("DIV");
 			popover.classList.add(styles.popover);
 			popover.classList.add("sg-popover");
-			popover.innerHTML = html;
+			popover.appendChild(elem);
 
 			// Hide the popover initially while we add it to DOM to render and generate
 			// bounding rectangle but hide as we haven't anchored it to a position yet.
@@ -399,9 +391,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	}
 
 	function hidePopover() {
-		if (hoverTimeout) {
-			clearTimeout(hoverTimeout);
-		}
+		clearTimeout(hoverTimeout);
 		if (popover) {
 			popover.remove();
 			popover = null;
@@ -469,9 +459,9 @@ function addEventListeners(el, path, repoRevSpec, line) {
 			.catch((err) => {});
 	}
 
-	function fetchPopoverData(col, cb) {
-		if (typeof popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`] !== "undefined") {
-			return cb(popoverCache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
+	function fetchPopoverData(elem, cb) {
+		if (typeof popoverCache[`${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`] !== "undefined") {
+			return cb(popoverCache[`${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`]);
 		}
 
 		const body = [
@@ -491,7 +481,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 						uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
 					},
 					position: {
-						character: parseInt(col, 10) - 1,
+						character: parseInt(elem.dataset.byteoffset, 10) - 1,
 						line: parseInt(line, 10) - 1,
 					},
 				},
@@ -509,9 +499,32 @@ function addEventListeners(el, path, repoRevSpec, line) {
 			.then((resp) => {
 				return resp.json()
 					.then((json) => {
-						const keyCache = `${path}@${repoRevSpec.rev}:${line}@${col}`;
+						const keyCache = `${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`;
+
 						try {
-							popoverCache[keyCache] = `<div><div class=${styles.popoverTitle}>${json[1].result.contents[0].value}</div></div>`;
+							const popOverElem = document.createElement("DIV");
+							const popOverTitleElem = document.createElement("DIV");
+							const popOverTitleText = document.createTextNode(json[1].result.contents[0].value);
+							//const popOverDocString = document.createElement("DIV");
+
+							if (json[1].result.contents.length > 0) {
+								elem.style.cursor = "pointer";
+							}
+
+							popOverTitleElem.className = styles.popoverTitle;
+							popOverTitleElem.appendChild(popOverTitleText);
+
+							if (json[1].result.contents.length > 1 && json[1].result.contents[1].language === "markdown") {
+								// TODO: Parse & display markdown
+								// console.log(json[1].result.contents[1].value);
+								//popOverDocString.className = styles.popoverDocstring;
+								//popOverDocString.innerHTML = marked(json[1].result.contents[1].value, {breaks: false});
+							}
+
+							popOverElem.appendChild(popOverTitleElem);
+							//popOverElem.appendChild(popOverDocString);
+
+							popoverCache[keyCache] = popOverElem;
 						} catch(err) {
 							popoverCache[keyCache] = null;
 						} finally {

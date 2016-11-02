@@ -6,7 +6,6 @@
 	border: solid 1px #555;
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	color: rgba(213, 229, 242, 1);
-	padding: 5px 6px;
 	font-size: 12px !important;
 	line-height: 19px;
 	z-index: 100;
@@ -15,7 +14,14 @@
 	overflow: auto;
 }
 .popoverTitle {
+	padding: 5px 6px;
 	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-	white-space: pre-wrap;
 	word-wrap: break-all;
+}
+.popoverDocstring {
+	padding: 5px 6px;
+	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: rgba(204, 204, 204, 0.5);
 }

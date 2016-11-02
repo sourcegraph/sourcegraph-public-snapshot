@@ -24,7 +24,7 @@ function getFileName(info, {isDelta, path}) {
 		} else if (info.title) {
 			return info.title;
 		} else if (info.tagName === "A") {
-			return info.innerHTML.trim(); // get text and strip whitespace
+			return info.textContent.trim(); // get text and strip whitespace
 		} else {
 			return null;
 		}

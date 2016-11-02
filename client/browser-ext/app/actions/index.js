@@ -36,7 +36,15 @@ function _resolveRev(dispatch, state, repo, rev) {
 					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
 					return xhrResponse;
 				})
-				.catch((err) => {});
+				.catch((err) => {
+					const xhrResponse = {
+						status: resp.status,
+						head: resp.headers.map,
+						json: null
+					};
+					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
+					return xhrResponse;
+				});
 		})
 		.catch(() => {});
 
