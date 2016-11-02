@@ -298,7 +298,7 @@ export default class BlobAnnotator extends Component {
 	onClickAuthPriv(ev) {
 		ev.preventDefault();
 		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
-		location.href = `https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`;
+		location.href = `https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`;
 	}
 
 	onClickFileView(ev) {
@@ -367,7 +367,7 @@ export default class BlobAnnotator extends Component {
 				this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
 				this.state.selfElement.onclick = this.onClickAuthPriv;
 
-				return <span><a href={`https://sourcegraph.com/join?ob=github&rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
+				return <span><a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
 			} else if (this.state.resolvedRev.content[keyFor(this.state.repoURI)].cloneInProgress === true) {
 				// Cloning the repo
 				this.state.selfElement.setAttribute("disabled", true);

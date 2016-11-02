@@ -40,6 +40,7 @@ export const rel = {
 	settings: "settings",
 	login: "login",
 	signup: "join",
+	authext: "authext",
 
 	home: "",
 
@@ -63,6 +64,7 @@ export const abs = {
 	settings: rel.settings,
 	login: rel.login,
 	signup: rel.signup,
+	authext: "authext",
 
 	repo: rel.repo,
 	commit: `${rel.repo}/-/${rel.commit}`,
