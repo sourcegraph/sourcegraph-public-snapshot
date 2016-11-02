@@ -174,7 +174,7 @@ export function MasterPlanPage(props: {}) {
 					<li>Likewise, see your teammates’ work-in-progress changes that affect your current work</li>
 					<li>Quickly share code with teammates to get help or informal reviews instead of waiting until the end</li>
 					<li>Automatically and always have code reviewed by the right teammates</li>
-					<li>Easily run the modified codebase to inspect the actual product (not just the code)</li>
+					<li>When reviewing code, easily run the changes locally (instead of just reading the code)</li>
 				</ul>
 				<p>Current code review tools aren’t able to provide these things because they lack code intelligence and a way to give realtime feedback on your local work-in-progress changes. The previous step (bringing basic code intelligence to everyone in all the tools they use) fixes this: it provides the underlying analysis to automatically enumerate possible impacts/defects—and the UI (in their editor and other existing tools) to collect and present this information as needed.</p>
 				<p>Here’s how we’ll bring continuous, intelligent code review (as described above) to every team:</p>
