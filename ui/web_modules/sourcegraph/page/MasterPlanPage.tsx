@@ -87,7 +87,7 @@ export function MasterPlanPage(props: {}) {
 				<p>In 1976, just 0.2% of the world’s population had access to a computer. Apple’s vision then was to create a “bicycle for the mind” in the form of a computer, and Microsoft put a computer “on every desk and in every home.” Together, these companies succeeded in bringing computing to billions of people. But these billions of people are still using software applications built by just 0.2% of the world’s population (those who can code).</p>
 				<p>The next step is to make it so billions of people, not just 0.2% of the world population, can build software (not just use it). Amazon Web Services and others solve the distribution piece: a tiny team can reach millions of users using the same infrastructure available to the most advanced tech companies. But the process of creating software is stuck in the mainframe era: the “developer experience” of building software is still poor, duplicative, manual, and single-player—and every software project is about integrating components of variable quality developed mostly in isolation, with a high chance of failure.</p>
 				<p>At Sourcegraph, we want to fix this and eventually enable everyone to build software. For now, we’re revealing our master plan for phase 1: how we’re going to make it easier and faster for <em>today’s developers</em> to build software.</p>
-				<p>The <strong>tl;dr</strong> for phase 1 is:</p>
+				<p>In short, phase 1 is:</p>
 				{tldr()}
 				<p>When phase 1 is almost done, we’ll reveal phase 2: how we’ll work toward enabling everyone to code. If you think that’s crazy, ask yourself: now that billions of people have access to the Internet, is coding more like reading and writing (which virtually everyone does) or publishing books (which 0.1% of the population does)?</p>
 
@@ -237,7 +237,7 @@ export function MasterPlanPage(props: {}) {
 					padding: whitespace[4],
 				}}>
 					<Heading level={5} className="{styles.h6}">
-						Sourcegraph Master Plan tl;dr
+						Sourcegraph Master Plan, in short
 					</Heading>
 					<div>
 						{tldr()}
