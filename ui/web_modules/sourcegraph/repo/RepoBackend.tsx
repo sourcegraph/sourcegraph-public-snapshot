@@ -199,6 +199,10 @@ export const RepoBackend = {
 				if (workspaceSymbolFlights.has(flightKey)) {
 					return;
 				}
+				// HACK: do not allow empty queries for typescript.
+				if (mode === "typescript" && action.query === "") {
+					return;
+				}
 				workspaceSymbolFlights.add(flightKey);
 				lsp.sendExt(url, mode, "workspace/symbol", { query: action.query, limit: 100 })
 					.then((r) => {
