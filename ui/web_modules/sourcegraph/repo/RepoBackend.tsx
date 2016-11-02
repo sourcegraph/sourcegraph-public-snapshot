@@ -189,7 +189,7 @@ export const RepoBackend = {
 
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
-			let symbols = RepoStore.symbols.list(payload.repo, payload.rev, payload.query);
+			let symbols = RepoStore.symbols.list(payload.inventory, payload.repo, payload.rev, payload.query);
 			if (symbols.results.length > 0) {
 				return;
 			}
@@ -197,10 +197,6 @@ export const RepoBackend = {
 				const url = `git:\/\/${action.repo}?${action.rev}`;
 				const flightKey = `${url}@${mode}?${action.query}`;
 				if (workspaceSymbolFlights.has(flightKey)) {
-					return;
-				}
-				// HACK: do not allow empty queries for typescript.
-				if (mode === "typescript" && action.query === "") {
 					return;
 				}
 				workspaceSymbolFlights.add(flightKey);

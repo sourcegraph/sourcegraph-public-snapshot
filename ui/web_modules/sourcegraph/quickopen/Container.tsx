@@ -311,32 +311,34 @@ export class Container extends React.Component<Props, State> {
 		if (repo && this.state.commitID) {
 			inventory = RepoStore.inventory.get(repo.URI, commitID) || null;
 
-			const updatedSymbols = RepoStore.symbols.list(repo.URI, commitID, query);
-			if (updatedSymbols.results.length > 0 || !updatedSymbols.loading) {
-				const symbolResults: Result[] = [];
-				updatedSymbols.results.forEach(sym => {
-					let title = sym.name;
-					if (sym.containerName) {
-						title = `${sym.containerName}.${sym.name}`;
-					}
-					const kind = symbolKindName(sym.kind);
-					const {path} = URIUtils.repoParamsExt(sym.location.uri);
-					const desc = `${kind ? kind : ""} in ${path}`;
-					let idx = title.toLowerCase().indexOf(query.toLowerCase());
-					const line = sym.location.range.start.line;
-					const col = sym.location.range.start.character;
-					symbolResults.push({
-						title: title,
-						description: desc,
-						index: idx !== -1 ? idx : 0,
-						length: idx !== -1 ? query.length : 0,
-						URLPath: urlToBlobLineCol(repo.URI, repo.rev, path, line + 1, col + 1),
+			if (inventory) {
+				const updatedSymbols = RepoStore.symbols.list(inventory, repo.URI, commitID, query);
+				if (updatedSymbols.results.length > 0 || !updatedSymbols.loading) {
+					const symbolResults: Result[] = [];
+					updatedSymbols.results.forEach(sym => {
+						let title = sym.name;
+						if (sym.containerName) {
+							title = `${sym.containerName}.${sym.name}`;
+						}
+						const kind = symbolKindName(sym.kind);
+						const {path} = URIUtils.repoParamsExt(sym.location.uri);
+						const desc = `${kind ? kind : ""} in ${path}`;
+						let idx = title.toLowerCase().indexOf(query.toLowerCase());
+						const line = sym.location.range.start.line;
+						const col = sym.location.range.start.character;
+						symbolResults.push({
+							title: title,
+							description: desc,
+							index: idx !== -1 ? idx : 0,
+							length: idx !== -1 ? query.length : 0,
+							URLPath: urlToBlobLineCol(repo.URI, repo.rev, path, line + 1, col + 1),
+						});
 					});
-				});
 
-				symbols.Results = symbolResults;
+					symbols.Results = symbolResults;
+				}
+				symbols.IsLoading = updatedSymbols.loading;
 			}
-			symbols.IsLoading = updatedSymbols.loading;
 
 			// Update files
 			const commit = this.state.commitID || "";

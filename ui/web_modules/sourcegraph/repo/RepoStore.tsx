@@ -5,7 +5,7 @@ import * as flatten from "lodash/flatten";
 import * as some from "lodash/some";
 
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { modesToSearch } from "sourcegraph/editor/modes";
+import { Inventory, inventoryToSearchModes } from "sourcegraph/editor/modes";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 import { Store } from "sourcegraph/Store";
@@ -29,7 +29,7 @@ class RepoStoreClass extends Store<any> {
 	tags: any;
 	symbols: {
 		content: any;
-		list(repo: string, rev: string | null, query: string): {
+		list(inventory: Inventory, repo: string, rev: string | null, query: string): {
 			loading: boolean;
 			results: any[];
 		};
@@ -92,12 +92,11 @@ class RepoStoreClass extends Store<any> {
 		});
 		this.symbols = deepFreeze({
 			content: {},
-			list(repo, rev, query) {
+			list(inventory, repo, rev, query) {
 				const langResults = [];
-				modesToSearch.forEach((mode) => langResults.push(this.content[keyForSymbols(mode, repo, rev, query)]));
+				inventoryToSearchModes(inventory).forEach((mode) => langResults.push(this.content[keyForSymbols(mode, repo, rev, query)]));
 				const results = flatten(filter(langResults));
 				const loading = some(langResults, r => r === undefined);
-
 				return {
 					results: results,
 					loading: loading,
