@@ -54,7 +54,7 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "parsing definition URL")
 	}
 
-	// Query workspace symbols.
+	// Query document symbols.
 	withoutFile := *uri
 	withoutFile.Fragment = ""
 	var symbols []lsp.SymbolInformation
