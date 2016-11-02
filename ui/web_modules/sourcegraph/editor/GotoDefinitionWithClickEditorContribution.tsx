@@ -1,7 +1,6 @@
 // tslint:disable typedef ordered-imports
 import {URIUtils} from "sourcegraph/core/uri";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import * as debounce from "lodash/debounce";
 
 // tslint:disable typedef ordered-imports member-ordering
 import {IEditorService} from "vs/platform/editor/common/editor";
@@ -10,10 +9,6 @@ import * as editorCommon from "vs/editor/common/editorCommon";
 import {ICodeEditor, IEditorMouseEvent, IMouseTarget} from "vs/editor/browser/editorBrowser";
 import {IDisposable} from "vs/base/common/lifecycle";
 import {TPromise} from "vs/base/common/winjs.base";
-import {getDeclarationsAtPosition} from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
-import {IKeyboardEvent} from "vs/base/browser/keyboardEvent";
-import {Location} from "vs/editor/common/modes";
-import {Position} from "vs/editor/common/core/position";
 
 // IWordAtPositionWithLine lets us distinguish between two of the same
 // words at the same start column on separate lines.
@@ -26,10 +21,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	private static ID = "editor.contrib.gotodefinitionwithclick";
 
 	private toUnhook: IDisposable[] = [];
-	private decorations: string[] = [];
-	private currentWordUnderMouse: IWordAtPositionWithLine | null;
-	private lastMouseMoveEvent: IEditorMouseEvent | null;
-	private findDefinitionDebounced: (target: IMouseTarget, word: editorCommon.IWordAtPosition) => void;
 	private mouseLine: number;
 	private mouseColumn: number;
 
@@ -40,11 +31,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		this.editor = editor;
 
 		this.toUnhook.push(this.editor.onMouseUp((e: IEditorMouseEvent) => this.onEditorMouseUp(e)));
-		this.toUnhook.push(this.editor.onMouseMove((e: IEditorMouseEvent) => this.onEditorMouseMove(e)));
-
-		this.toUnhook.push(this.editor.onDidChangeCursorSelection((e) => this.onDidChangeCursorSelection(e)));
-		this.toUnhook.push(this.editor.onDidChangeModel((e) => this.resetHandler()));
-		this.toUnhook.push(this.editor.onDidChangeModelContent(() => this.resetHandler()));
 		this.toUnhook.push(this.editor.onMouseMove((e) => {
 			if (!e.target.position) {
 				return;
@@ -52,115 +38,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 			this.mouseLine = e.target.position.lineNumber;
 			this.mouseColumn = e.target.position.column;
 		}));
-		this.toUnhook.push(this.editor.onDidScrollChange((e) => {
-			if (e.scrollTopChanged || e.scrollLeftChanged) {
-				this.resetHandler();
-			}
-		}));
-
-		this.findDefinitionDebounced = debounce(this.findDefinitionDebounced_, 150, { leading: true, trailing: true });
-	}
-
-	private onDidChangeCursorSelection(e: editorCommon.ICursorSelectionChangedEvent): void {
-		if (e.selection && e.selection.startColumn !== e.selection.endColumn) {
-			this.resetHandler(); // immediately stop this feature if the user starts to select (https://github.com/Microsoft/vscode/issues/7827)
-		}
-	}
-
-	private onEditorMouseMove(mouseEvent: IEditorMouseEvent): void {
-		if (mouseEvent.target.type === editorCommon.MouseTargetType.UNKNOWN) {
-			// Occurs occasionally when mousing over syntax-highlighted tokens. Must ignore or
-			// else the decorations will erroneously be removed.
-			return;
-		}
-
-		this.startFindDefinition(mouseEvent);
-		this.lastMouseMoveEvent = mouseEvent;
-	}
-
-	private startFindDefinition(mouseEvent: IEditorMouseEvent, withKey?: IKeyboardEvent): void {
-		if (!this.isEnabled(mouseEvent)) {
-			this.currentWordUnderMouse = null;
-			this.removeDecorations();
-			return;
-		}
-
-		// Find word at mouse position
-		let position = mouseEvent.target.position;
-		const wordAtPos = position ? this.editor.getModel().getWordAtPosition(position) : null;
-		if (!wordAtPos) {
-			this.currentWordUnderMouse = null;
-			this.removeDecorations();
-			return;
-		}
-		const word = Object.assign(wordAtPos, {lineNumber: position.lineNumber});
-		if (word.endColumn === position.column) {
-			// The end column of a word is the position AFTER the last character in
-			// the word. Prevent this.currentWordUserMouse from being set while
-			// hovering over a character outside of the word.
-			return;
-		}
-
-		// Return early if word at position is still the same
-		if (this.currentWordUnderMouse && this.currentWordUnderMouse.lineNumber === word.lineNumber && this.currentWordUnderMouse.startColumn === word.startColumn && this.currentWordUnderMouse.endColumn === word.endColumn && this.currentWordUnderMouse.word === word.word) {
-			return;
-		}
-
-		this.currentWordUnderMouse = word;
-		this.findDefinitionDebounced(mouseEvent.target, word);
-	}
-
-	private findDefinitionDebounced_(target: IMouseTarget, word: editorCommon.IWordAtPosition): void {
-		this.findDefinition(target.position).then(results => {
-			if (!results || !results.length) {
-				this.removeDecorations();
-				return;
-			}
-
-			// If the mouse isn't currently over the word we just fetched, don't highlight it.
-			if (this.mouseLine !== target.position.lineNumber || this.mouseColumn < word.startColumn || word.endColumn < this.mouseColumn) {
-				return;
-			}
-			this.addDecoration(
-				{
-					startLineNumber: target.position.lineNumber,
-					startColumn: word.startColumn,
-					endLineNumber: target.position.lineNumber,
-					endColumn: word.endColumn,
-				},
-				results.length > 1 ? `Click to show the ${results.length} definitions found.` : undefined
-			);
-		});
-	}
-
-	private addDecoration(range: editorCommon.IRange, text?: string): void {
-		// TODO(john): this method has a race condition with the hover provider; if the hover
-		// tooltip is displayed first, then this decoration will override (and remove) the tooltip.
-		// This seems to be a problem with VSCode, since afaict we are using the API here correctly.
-		// see: https://github.com/sourcegraph/sourcegraph/issues/1690
-
-		// let model = this.editor.getModel();
-		// if (!model) {
-		// 	return;
-		// }
-		// this.decorations = this.editor.deltaDecorations(this.decorations, [{
-		// 	range: range,
-		// 	options: {
-		// 		inlineClassName: "goto-definition-link",
-		// 		hoverMessage: text,
-		// 	},
-		// }]);
-	}
-
-	private removeDecorations(): void {
-		if (this.decorations.length > 0) {
-			this.decorations = this.editor.deltaDecorations(this.decorations, []);
-		}
-	}
-
-	private resetHandler(): void {
-		this.lastMouseMoveEvent = null;
-		this.removeDecorations();
 	}
 
 	private onEditorMouseUp(mouseEvent: IEditorMouseEvent): void {
@@ -169,13 +46,8 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 			return;
 		}
 
-		if (mouseEvent.event.leftButton && mouseEvent.target.type === editorCommon.MouseTargetType.CONTENT_TEXT && !mouseEvent.event.ctrlKey) {
-			this.gotoDefinition(mouseEvent.target).done(() => {
-				this.removeDecorations();
-			}, (err: Error) => {
-				this.removeDecorations();
-				console.error(err);
-			});
+		if (this.isEnabled(mouseEvent)) {
+			this.gotoDefinition(mouseEvent.target);
 		}
 	}
 
@@ -183,16 +55,9 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		// TODO(sqs): assumes that this is always true: DefinitionProviderRegistry.has(this.editor.getModel());
 		return this.editor.getModel() &&
 			(typeof mouseEvent.event.detail === "number" && mouseEvent.event.detail <= 1) &&
-			mouseEvent.target.type === editorCommon.MouseTargetType.CONTENT_TEXT;
-	}
-
-	private findDefinition(position: editorCommon.IPosition): TPromise<Location[]> {
-		let model = this.editor.getModel();
-		if (!model) {
-			throw new Error("no model");
-		}
-
-		return getDeclarationsAtPosition(model, Position.lift(position));
+			mouseEvent.target.type === editorCommon.MouseTargetType.CONTENT_TEXT &&
+			!mouseEvent.event.ctrlKey &&
+			mouseEvent.event.leftButton;
 	}
 
 	private gotoDefinition(target: IMouseTarget): TPromise<any> {
@@ -216,7 +81,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	}
 
 	public dispose(): void {
-		this.decorations = this.editor.deltaDecorations(this.decorations, []);
 		this.toUnhook.forEach(disposable => disposable.dispose());
 	}
 }
