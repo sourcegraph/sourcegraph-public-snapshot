@@ -13,6 +13,10 @@ import {shouldUpdateScroll, hashLinkScroll} from "sourcegraph/app/routerScrollBe
 import {AppContainer} from "react-hot-loader";
 import Redbox from "redbox-react";
 
+// mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
+import "sourcegraph/app/routeParams";
+import "sourcegraph/Location";
+
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";
 
