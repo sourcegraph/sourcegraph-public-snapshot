@@ -124,7 +124,7 @@ export class BlobMain extends Container<Props, State> {
 					lineHash = "#L" + mouseUpLine;
 				}
 
-				history.replaceState(history.state, document.title, this.props.location.pathname + lineHash); // nice and clean
+				history.replaceState("", document.title, window.location.pathname + lineHash); // nice and clean
 			});
 		}
 	}

@@ -206,7 +206,7 @@ export class Editor implements IDisposable {
 			if (mouseDownEvent.target.element.classList.contains("line-numbers")) {
 				let mouseUpDispose = this._editor.onMouseUp(function(mouseUpEvent: IEditorMouseEvent): void {
 					if (mouseUpEvent.target.element.classList.contains("line-numbers")) {
-						if (mouseDownEvent.target.position && mouseUpEvent.target.position) {
+						if (mouseDownEvent.target.type === 3) {
 							listener(mouseDownEvent, mouseUpEvent);
 						}
 						mouseUpDispose.dispose();
