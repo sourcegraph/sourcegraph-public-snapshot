@@ -1,9 +1,8 @@
 package backend
 
 import (
-	"strings"
-
 	"context"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
@@ -24,6 +23,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 	defer done()
 
 	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.Resolve")
+
 	// First, look up locally.
 	if repo, err := localstore.Repos.GetByURI(ctx, op.Path); err == nil {
 		return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: op.Path}, nil
@@ -31,21 +31,26 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 		return nil, err
 	}
 
-	// Next, see if it's a GitHub repo.
-	if repo, err := github.ReposFromContext(ctx).Get(ctx, op.Path); err == nil {
-		// If canonical location differs, try looking up locally at canonical location.
-		if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
-			if repo, err := localstore.Repos.GetByURI(ctx, canonicalPath); err == nil {
-				return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: canonicalPath}, nil
+	// Next, check if it's a repository from a supported source that hasn't been cloned yet,
+	// or is being referenced by a non-canonical URL.
+	switch {
+	// See if it's a GitHub repo.
+	case strings.HasPrefix(strings.ToLower(op.Path), "github.com/"):
+		if repo, err := github.ReposFromContext(ctx).Get(ctx, op.Path); err == nil {
+			// If canonical location differs, try looking up locally at canonical location.
+			if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
+				if repo, err := localstore.Repos.GetByURI(ctx, canonicalPath); err == nil {
+					return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: canonicalPath}, nil
+				}
 			}
-		}
 
-		if op.Remote {
-			return &sourcegraph.RepoResolution{RemoteRepo: repo}, nil
+			if op.Remote {
+				return &sourcegraph.RepoResolution{RemoteRepo: repo}, nil
+			}
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "resolved repo not found locally: %s", op.Path)
+		} else if errcode.Code(err) != legacyerr.NotFound {
+			return nil, err
 		}
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "resolved repo not found locally: %s", op.Path)
-	} else if errcode.Code(err) != legacyerr.NotFound {
-		return nil, err
 	}
 
 	// Try some remote aliases.
