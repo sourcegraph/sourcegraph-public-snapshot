@@ -182,5 +182,5 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 	}
 
 	// Refresh global references indexes.
-	return localstore.GlobalRefs.RefreshIndex(ctx, op.Repo, rev.CommitID)
+	return localstore.GlobalRefs.RefreshIndex(ctx, repo.URI, rev.CommitID)
 }

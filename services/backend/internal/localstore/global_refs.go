@@ -329,18 +329,12 @@ func (*dbGlobalRefByFile) DropTable() string {
 type globalRefs struct{}
 
 // RefreshIndex refreshes the global refs index for the specified repository.
-func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit string) error {
-	// Determine the repo's URI.
-	repo, err := Repos.Get(ctx, repoID)
-	if err != nil {
-		return errors.Wrap(err, "Repos.Get")
-	}
-
+func (g *globalRefs) RefreshIndex(ctx context.Context, source, version string) error {
 	// TODO(slimsag): use inventory
 	languages := []dbLang{dbLangGo}
 	var errs []string
 	for _, language := range languages {
-		if err := g.refreshIndexForLanguage(ctx, language, repo.URI, commit); err != nil {
+		if err := g.refreshIndexForLanguage(ctx, language, source, version); err != nil {
 			log15.Crit("refreshing index failed", "language", language, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", language, err))
 		}
@@ -558,7 +552,7 @@ func (g *globalRefs) queryRefsByFile(db *sql.DB, source string, op sourcegraph.R
 	return refsByFile, nil
 }
 
-func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLang, repoURI, commit string) (err error) {
+func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLang, source, version string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language.String())
 	defer func() {
 		if err != nil {
@@ -570,7 +564,7 @@ func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLan
 
 	// Query all external references for the repository.
 	var refs []lspext.ReferenceInformation
-	rootPath := "git://" + repoURI + "?" + commit
+	rootPath := "git://" + source + "?" + version
 	err = xlang.OneShotClientRequest(ctx, language.String(), rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
 	if err != nil {
 		return errors.Wrap(err, "workspaceReference")
