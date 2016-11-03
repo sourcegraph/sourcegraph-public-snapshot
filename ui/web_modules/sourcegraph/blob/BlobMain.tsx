@@ -109,6 +109,23 @@ export class BlobMain extends Container<Props, State> {
 		if (this._editor) {
 			this._editorPropsChanged(null, this.props);
 			this._editor.onDidOpenEditor(e => this._onEditorOpened(e));
+			this._editor.onLineSelected((mouseDownEvent, mouseUpEvent): void => {
+				let mouseDownLine: number = mouseDownEvent.target.position.lineNumber;
+				let mouseUpLine: number = mouseUpEvent.target.position.lineNumber;
+				// If the shift key is used and there is already a line select entire range starting from prop.startLine.
+				// else if the starting line is not the same as the ending line select the range from the new starting line.
+				// otherwise select a single line if the start and end line are the same.
+				let lineHash: string;
+				if (this.props.startLine && mouseDownEvent.event.shiftKey) {
+					lineHash = "#L" + Math.min(this.props.startLine, mouseUpLine) + "-" + Math.max(this.props.startLine, mouseUpLine);
+				} else if (mouseUpLine !== mouseDownLine) {
+					lineHash = "#L" + Math.min(mouseDownLine, mouseUpLine) + "-" + Math.max(mouseDownLine, mouseUpLine);
+				} else {
+					lineHash = "#L" + mouseUpLine;
+				}
+
+				history.replaceState(history.state, document.title, this.props.location.pathname + lineHash); // nice and clean
+			});
 		}
 	}
 
@@ -116,6 +133,7 @@ export class BlobMain extends Container<Props, State> {
 		if (!this._editor) {
 			throw new Error("editor is not ready");
 		}
+
 		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.commitID !== nextProps.commitID || prevProps.path !== nextProps.path || prevProps.startLine !== nextProps.startLine || prevProps.startCol !== nextProps.startCol || prevProps.endLine !== nextProps.endLine || prevProps.endCol !== nextProps.endCol)) {
 			if (nextProps.commitID) {
 				// Use absolute commit IDs for the editor model URI.
@@ -171,6 +189,7 @@ export class BlobMain extends Container<Props, State> {
 				this._editor.setInput(uri, range).then(() => {
 					// Always decrement this value after opening the editor.
 					this._shortCircuitURLNavigationOnEditorOpened--;
+					this._setEditorHighlightForLineSelection();
 				});
 			}
 		}
@@ -193,6 +212,14 @@ export class BlobMain extends Container<Props, State> {
 	_onResize(e: Event): void {
 		if (this._editor) {
 			this._editor.layout();
+		}
+	}
+
+	_setEditorHighlightForLineSelection(): void {
+		if (this.props.startLine && this.props.startCol === null) {
+			if (this._editor) {
+				this._editor.setHighlightForLineSelection(this.props.startLine, this.props.endLine || this.props.startLine);
+			}
 		}
 	}
 

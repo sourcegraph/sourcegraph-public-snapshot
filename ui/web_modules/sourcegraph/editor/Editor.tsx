@@ -14,6 +14,7 @@ import { CancellationToken } from "vs/base/common/cancellation";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
+import {IEditorMouseEvent} from "vs/editor/browser/editorBrowser";
 import { IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { create as createStandaloneEditor, createModel, onDidCreateModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
@@ -200,6 +201,19 @@ export class Editor implements IDisposable {
 		}
 	};
 
+	onLineSelected(listener: (mouseDownEvent: IEditorMouseEvent, mouseUpEvent: IEditorMouseEvent) => void): void {
+		this._editor.onMouseDown(mouseDownEvent => {
+			if (mouseDownEvent.target.element.classList.contains("line-numbers")) {
+				let mouseUpDispose = this._editor.onMouseUp(function(mouseUpEvent: IEditorMouseEvent): void {
+					if (mouseUpEvent.target.element.classList.contains("line-numbers")) {
+						listener(mouseDownEvent, mouseUpEvent);
+						mouseUpDispose.dispose();
+					}
+				});
+			}
+		});
+	}
+
 	setInput(uri: URI, range?: IRange): Promise<IEditor> {
 		return new Promise<IEditor>((resolve, reject) => {
 			this._editorService.openEditor({
@@ -353,6 +367,10 @@ export class Editor implements IDisposable {
 				});
 				return locs.map(lsp.toMonacoLocation);
 			});
+	}
+
+	public setHighlightForLineSelection(startLine: number, endLine: number): void {
+		this._highlight(startLine, endLine < startLine ? Infinity : 0, endLine, startLine > endLine ? 0 : Infinity);
 	}
 
 	private setTokenCursor(word: IWordAtPosition): void {
