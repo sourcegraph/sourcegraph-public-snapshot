@@ -2,12 +2,16 @@ package ui
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -37,6 +41,34 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
+
+func shouldShadow(page string) bool {
+	e := os.Getenv(page + "_LANDING_SHADOW_PERCENT")
+	if e == "" {
+		return false
+	}
+	p, err := strconv.Atoi(e)
+	if err != nil {
+		log15.Crit("landing: shouldShadow parsing "+page+"_LANDING_SHADOW_PERCENT", "error", err)
+		return false
+	}
+	return rand.Uint32()%100 < uint32(p)
+}
+
+func shouldUseXlang(page string) bool {
+	e := os.Getenv(page + "_LANDING_XLANG_PERCENT")
+	if e == "" {
+		return false
+	}
+	p, err := strconv.Atoi(e)
+	if err != nil {
+		log15.Crit("landing: shouldUseXlang parsing "+page+"_LANDING_XLANG_PERCENT", "error", err)
+		return false
+	}
+	return rand.Uint32()%100 < uint32(p)
+}
+
+func init() { rand.Seed(time.Now().UnixNano()) }
 
 type defDescr struct {
 	Title    string
@@ -132,14 +164,22 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
 	}
 
-	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
 	var data []defDescr
 	err = errors.New("xlang repo landing disabled")
-	//data, err := queryRepoLandingData(r, repo)
-	//if err != nil {
-	//	// Just log, so we fallback to legacy in the event of catastrophic failure.
-	//	log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-	//}
+	if shouldUseXlang("REPO") {
+		data, err = queryRepoLandingData(r, repo)
+		if err != nil {
+			// Just log, so we fallback to legacy in the event of catastrophic failure.
+			log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		}
+	} else if shouldShadow("REPO") {
+		go func() {
+			_, err := queryRepoLandingData(r, repo)
+			if err != nil {
+				log15.Crit("queryRepoLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			}
+		}()
+	}
 
 	// If the new system failed for some reason OR if we don't have 5 top
 	// definitions, then fallback to the legacy srclib data.
@@ -369,12 +409,20 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
 	var data *defLandingData
 	err = errors.New("xlang def landing disabled")
-	_ = repoRev
-	//data, err := queryDefLandingData(r, repo, repoRev)
-	//if err != nil {
-	//	// Just log, so we fallback to legacy in the event of catastrophic failure.
-	//	log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-	//}
+	if shouldUseXlang("DEF") {
+		data, err = queryDefLandingData(r, repo, repoRev)
+		if err != nil {
+			// Just log, so we fallback to legacy in the event of catastrophic failure.
+			log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		}
+	} else if shouldShadow("DEF") {
+		go func() {
+			_, err := queryDefLandingData(r, repo, repoRev)
+			if err != nil {
+				log15.Crit("queryDefLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			}
+		}()
+	}
 
 	// If the new system failed for some reason OR if we don't have 3 sources
 	// referencing this page's definition, then fallback to the legacy srclib
