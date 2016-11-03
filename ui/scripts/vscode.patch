@@ -344,3 +344,19 @@ index ca276d1..f6b341e 100644
      _isWindows = (process.platform === 'win32');
      _isMacintosh = (process.platform === 'darwin');
      _isLinux = (process.platform === 'linux');
+diff --git a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js
+index 06e0142..200e056 100644
+--- a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js
++++ b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js
+@@ -328,7 +328,10 @@ var GotoDefinitionWithMouseEditorContribution = (function () {
+                         if (to < editorModel.getLineCount()) {
+                             source += '\n\u2026';
+                         }
+-                        var language = _this.modeService.getModeIdByFilenameOrFirstLine(editorModel.uri.fsPath);
++                        // Sourcegraph uses a nonstandard URI field, because it needs to
++                        // distinguish between repository URL and the filepath inside the
++                        // repository.
++                        var language = _this.modeService.getModeIdByFilenameOrFirstLine(editorModel.uri.fragment);
+                         hoverMessage = {
+                             language: language,
+                             value: source
