@@ -243,7 +243,7 @@ export function convertStringNode(currentNode, annsByStartByte, offset, lineStar
 
 	return {
 		resultNode: wrapperNode,
-		bytesConsumed: currentNode.textContent.length 
+		bytesConsumed: currentNode.textContent.length
 	}
 }
 

@@ -24,7 +24,15 @@ function getFileName(info, {isDelta, path}) {
 		} else if (info.title) {
 			return info.title;
 		} else if (info.tagName === "A") {
+			// TODO(john): is this path used anymore?
 			return info.textContent.trim(); // get text and strip whitespace
+		} else if (info.tagName === "DIV") {
+			const link = info.querySelector("a");
+			if (link) {
+				return link.title ? link.title : link.textContent.trim();
+			} else {
+				return null;
+			}
 		} else {
 			return null;
 		}

@@ -214,7 +214,7 @@ export default class BlobAnnotator extends Component {
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === 'undefined')) ||
 			(utils.supportedExtensions.includes(utils.getPathExtension(this.state.path)))) {
-	
+
 			const selfElementA = this.state.selfElement.getElementsByTagName("A");
 			if (selfElementA) {
 				selfElementA.href = this.getBlobUrl();
