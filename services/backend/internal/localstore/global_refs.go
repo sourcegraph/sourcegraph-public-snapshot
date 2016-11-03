@@ -558,11 +558,20 @@ func (g *globalRefs) queryRefsByFile(db *sql.DB, source string, op sourcegraph.R
 	return refsByFile, nil
 }
 
-func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLang, repoURI, commit string) error {
+func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLang, repoURI, commit string) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language.String())
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	// Query all external references for the repository.
 	var refs []lspext.ReferenceInformation
 	rootPath := "git://" + repoURI + "?" + commit
-	err := xlang.OneShotClientRequest(ctx, language.String(), rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
+	err = xlang.OneShotClientRequest(ctx, language.String(), rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
 	if err != nil {
 		return errors.Wrap(err, "workspaceReference")
 	}
