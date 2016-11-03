@@ -115,7 +115,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		Picture     string `json:"picture"`
 		Email       string `json:"email"`
 		AppMetadata struct {
-			GitHubScope []string `json:"github_scope"`
+			GitHubScope               []string `json:"github_scope"`
+			GitHubAccessTokenOverride string   `json:"github_access_token_override"`
 		} `json:"app_metadata"`
 		Identities []struct {
 			Connection string          `json:"connection"`
@@ -129,52 +130,58 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	firstTime := len(info.AppMetadata.GitHubScope) == 0
 
-	githubToken, err := auth.FetchGitHubToken(r.Context(), info.UID)
-	if err != nil {
-		return fmt.Errorf("auth.FetchGitHubToken: %v", err)
-	}
-
-	scopeOfToken := strings.Split(githubToken.Scope, ",")
-	mergedScope := mergeScopes(scopeOfToken, info.AppMetadata.GitHubScope)
-	if firstTime {
-		// try copying legacy scope
-		for _, identity := range info.Identities {
-			if identity.Connection == "github" {
-				var githubUserID int
-				err := json.Unmarshal(identity.UserID, &githubUserID)
-				if err != nil {
-					log15.Warn(`Connection is "github", but UserID type isn't int; ignoring.`, "UserID", identity.UserID, "err", err)
-					continue
-				}
-				if legacyScope := backend.LegacyGitHubScope(githubUserID); len(legacyScope) > 0 {
-					firstTime = false
-					mergedScope = mergeScopes(mergedScope, legacyScope)
-				}
-			}
-		}
-	}
-	if len(scopeOfToken) < len(mergedScope) {
-		// The user has once granted us more permissions than we got with this token. Run oauth flow
-		// again to fetch token with all permissions. This should be non-interactive.
-		return githubOAuth2Initiate(w, r, mergedScope, returnTo, returnToNew)
-	}
-	if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
-		// Wohoo, we got more permissions. Remember in user database.
-		if err := auth.SetAppMetadata(r.Context(), info.UID, "github_scope", scopeOfToken); err != nil {
-			return err
-		}
-	}
-
-	// Create actor and write session cookie.
 	actor := &auth.Actor{
 		UID:             info.UID,
 		Login:           info.Nickname,
 		Email:           info.Email,
 		AvatarURL:       info.Picture,
 		GitHubConnected: true,
-		GitHubScopes:    scopeOfToken,
-		GitHubToken:     githubToken.Token,
 	}
+
+	if info.AppMetadata.GitHubAccessTokenOverride == "" {
+		githubToken, err := auth.FetchGitHubToken(r.Context(), info.UID)
+		if err != nil {
+			return fmt.Errorf("auth.FetchGitHubToken: %v", err)
+		}
+
+		scopeOfToken := strings.Split(githubToken.Scope, ",")
+		mergedScope := mergeScopes(scopeOfToken, info.AppMetadata.GitHubScope)
+		if firstTime {
+			// try copying legacy scope
+			for _, identity := range info.Identities {
+				if identity.Connection == "github" {
+					var githubUserID int
+					err := json.Unmarshal(identity.UserID, &githubUserID)
+					if err != nil {
+						log15.Warn(`Connection is "github", but UserID type isn't int; ignoring.`, "UserID", identity.UserID, "err", err)
+						continue
+					}
+					if legacyScope := backend.LegacyGitHubScope(githubUserID); len(legacyScope) > 0 {
+						firstTime = false
+						mergedScope = mergeScopes(mergedScope, legacyScope)
+					}
+				}
+			}
+		}
+		if len(scopeOfToken) < len(mergedScope) {
+			// The user has once granted us more permissions than we got with this token. Run oauth flow
+			// again to fetch token with all permissions. This should be non-interactive.
+			return githubOAuth2Initiate(w, r, mergedScope, returnTo, returnToNew)
+		}
+		if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
+			// Wohoo, we got more permissions. Remember in user database.
+			if err := auth.SetAppMetadata(r.Context(), info.UID, "github_scope", scopeOfToken); err != nil {
+				return err
+			}
+		}
+
+		actor.GitHubScopes = scopeOfToken
+		actor.GitHubToken = githubToken.Token
+	} else {
+		actor.GitHubScopes = []string{"read:org", "repo", "user:email"}
+		actor.GitHubToken = info.AppMetadata.GitHubAccessTokenOverride
+	}
+
 	var googleConnected bool
 	for _, identity := range info.Identities {
 		if identity.Connection == "google-oauth2" {
@@ -191,6 +198,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		actor.GoogleConnected = true
 		actor.GoogleScopes = strings.Split(googleRefreshToken.Scope, ",")
 	}
+	// Write the session cookie.
 	if err := auth.StartNewSession(w, r, actor); err != nil {
 		return err
 	}
