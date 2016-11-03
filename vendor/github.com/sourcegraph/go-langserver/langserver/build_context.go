@@ -26,6 +26,10 @@ func (h *LangHandler) defaultBuildContext() *build.Context {
 			UseAllFiles: override.UseAllFiles,
 			Compiler:    override.Compiler,
 			BuildTags:   override.BuildTags,
+
+			// Enable analysis of all go version build tags that
+			// our compiler should understand.
+			ReleaseTags: build.Default.ReleaseTags,
 		}
 	}
 	return bctx

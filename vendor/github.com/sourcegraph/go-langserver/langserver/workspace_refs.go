@@ -6,7 +6,6 @@ import (
 	"go/build"
 	"go/token"
 	"log"
-	"os"
 	"runtime"
 	"sort"
 	"strconv"
@@ -36,23 +35,22 @@ func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC
 		pkgPat = h.init.RootImportPath + "/..."
 	}
 
-	var paralellism int
-	e := os.Getenv("WORKSPACE_REFERENCE_PARALLELISM")
-	if e != "" {
+	var parallelism int
+	if envWorkspaceReferenceParallelism != "" {
 		var err error
-		paralellism, err = strconv.Atoi(e)
+		parallelism, err = strconv.Atoi(envWorkspaceReferenceParallelism)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		paralellism = runtime.NumCPU() / 4 // 1/4 CPU
+		parallelism = runtime.NumCPU() / 4 // 1/4 CPU
 	}
-	if paralellism < 1 {
-		paralellism = 1
+	if parallelism < 1 {
+		parallelism = 1
 	}
 
 	results := refResultSorter{results: make([]lspext.ReferenceInformation, 0)}
-	par := parallel.NewRun(paralellism)
+	par := parallel.NewRun(parallelism)
 	pkgs := buildutil.ExpandPatterns(bctx, []string{pkgPat})
 	for pkg := range pkgs {
 		par.Acquire()
