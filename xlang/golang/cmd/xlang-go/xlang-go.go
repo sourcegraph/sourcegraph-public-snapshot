@@ -9,7 +9,6 @@ import (
 	"os"
 
 	"github.com/sourcegraph/jsonrpc2"
-	stackimpact "github.com/stackimpact/stackimpact-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 )
@@ -33,11 +32,6 @@ func main() {
 func run() error {
 	if *profbind != "" {
 		go debugserver.Start(*profbind)
-	}
-
-	if key := os.Getenv("STACKIMPACT_KEY"); key != "" {
-		agent := stackimpact.NewAgent()
-		agent.Configure(key, "xlang-go")
 	}
 
 	switch *mode {
