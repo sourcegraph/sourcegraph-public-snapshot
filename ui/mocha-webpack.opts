@@ -1,5 +1,0 @@
---webpack-config=webpack.config-test.js
---require core-js/shim
---require dom.js
---require isomorphic-fetch
---require source-map-support/register

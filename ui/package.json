@@ -82,7 +82,7 @@
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
     "test": "npm run lint && npm run test-unit && npm run test-tsmapimports",
     "lint": "./lint.sh",
-    "test-unit": "env NODE_ENV=test ./node_modules/.bin/mocha-webpack 'web_modules/**/*_test.tsx' && rm -r ./.tmp",
+    "test-unit": "node run-tests.js",
     "test-tsmapimports": "cd scripts/tsmapimports; PATH=$PATH:../../node_modules/.bin npm test",
     "dep": "npm rebuild fsevents",
     "generate": "./generate.sh"

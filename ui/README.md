@@ -14,18 +14,18 @@ Run `npm start` in this directory to recompile assets while developing the app.
 * **CSS Modules**: re-usable styles are located at `web_modules/sourcegraph/components/styles`
   while component-specific styles are localized to the component's directory.
 
-To run all the tests for the `app/script` code:
+To run all the tests for the UI code:
 
 ```
-cd sourcegraph/app
+cd sourcegraph/ui
 npm test
 ```
 
 To run a specific test:
 
 ```
-cd sourcegraph/app
-env NODE_ENV=test ./node_modules/.bin/mocha-webpack ./web_modules/path/to/The_Test.js
+cd sourcegraph/ui
+node run-tests.js ./web_modules/path/to/The_Test.js
 ```
 
 

@@ -1,6 +1,6 @@
 import expect from "expect.js";
+import "isomorphic-fetch";
 import {combineHeaders} from "sourcegraph/util/xhr";
-import "whatwg-fetch";
 
 function getHeaders(h: Headers | null): {[key: string]: string[]} | null {
 	if (!h) {
