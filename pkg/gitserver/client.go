@@ -54,7 +54,7 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 		span.Finish()
 	}()
 	req, _ := newRequest()
-	req.setSpanTags(span)
+	setSpanTags(span, req)
 
 	// Check that ctx is not expired before broadcasting over the network.
 	if err := ctx.Err(); err != nil {

@@ -14,7 +14,7 @@ type request struct {
 	Remove *removeRequest
 }
 
-// execRequest ...
+// execRequest is a request to execute a command inside a git repository.
 type execRequest struct {
 	Repo      string
 	Args      []string
@@ -38,7 +38,7 @@ type processResult struct {
 	ExitStatus int
 }
 
-// searchRequest ...
+// searchRequest is a request to search a git repository.
 type searchRequest struct {
 	Repo      string
 	Commit    vcs.CommitID
@@ -55,7 +55,7 @@ type searchReply struct {
 
 func (r *searchReply) repoFound() bool { return !r.RepoNotFound }
 
-// createRequest ...
+// createRequest is a request to create a git repository.
 type createRequest struct {
 	Repo         string
 	MirrorRemote string
@@ -69,7 +69,7 @@ type createReply struct {
 	Error           string // If non-empty, an error happened.
 }
 
-// removeRequest ...
+// removeRequest is a request to remove a git repository.
 type removeRequest struct {
 	Repo      string
 	ReplyChan chan<- *removeReply
@@ -84,7 +84,7 @@ type removeReply struct {
 func (r *removeReply) repoFound() bool { return !r.RepoNotFound }
 
 // setSpanTags sets the relevant span tags on span for this request.
-func (r *request) setSpanTags(span opentracing.Span) {
+func setSpanTags(span opentracing.Span, r *request) {
 	switch {
 	case r.Exec != nil:
 		span.SetTag("request", "Exec")
