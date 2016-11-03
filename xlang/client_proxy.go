@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"path"
 	"strings"
@@ -60,11 +61,18 @@ var (
 		Name:      "cumu_client_proxy_connections",
 		Help:      "Cumulative number of connections to the xlang client proxy (total of open + previously closed since process startup).",
 	})
+	proxyRetryCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "proxy_retries",
+		Help:      "The number of times a client retried a request to a server.",
+	}, []string{"mode"})
 )
 
 func init() {
 	prometheus.MustRegister(clientConnsGauge)
 	prometheus.MustRegister(clientConnsCounter)
+	prometheus.MustRegister(proxyRetryCounter)
 }
 
 func (p *Proxy) removeClientConn(c *clientProxyConn) {
@@ -446,8 +454,25 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 		return walkErr
 	}
 
-	id := serverID{contextID: c.context, pathPrefix: ""} // which kind of lang/build server to communicate with
-	if err := c.proxy.callServer(ctx, id, method, params, result); err != nil {
+	id := serverID{contextID: c.context, pathPrefix: ""}
+
+	// We try upto 3 times if we encounter ephemeral errors
+	backoffs := []time.Duration{0, 100 * time.Millisecond, 1 * time.Second}
+	for _, b := range backoffs {
+		if b != 0 {
+			// We are retrying. Add in jitter to our backoff sleep
+			time.Sleep(b + time.Duration(rand.Int63n(50)-25)*time.Millisecond)
+			proxyRetryCounter.WithLabelValues(id.mode).Inc()
+		}
+		err = c.proxy.callServer(ctx, id, method, params, result)
+		if err == nil {
+			break
+		}
+		if !isTemporary(err) && err != io.EOF {
+			return err
+		}
+	}
+	if err != nil {
 		return err
 	}
 
@@ -484,4 +509,11 @@ func (c *clientProxyConn) updateLastTime() {
 	c.mu.Lock()
 	c.last = time.Now()
 	c.mu.Unlock()
+}
+
+func isTemporary(err error) bool {
+	te, ok := err.(interface {
+		Temporary() bool
+	})
+	return ok && te.Temporary()
 }
