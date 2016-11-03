@@ -312,10 +312,6 @@ type globalRefs struct{}
 
 // RefreshIndex refreshes the global refs index for the specified repository.
 func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit string) error {
-	// TODO(sec urity): TODO(slimsag): before merge, properly check DB results
-	// post-query to ensure they do not include results for private repos.
-	// e.g. psuedo-code: `SELECT ... WHERE repo != private OR repo.URI in (my private repos)`
-
 	// Determine the repo's URI.
 	repo, err := Repos.Get(ctx, repoID)
 	if err != nil {
