@@ -20,6 +20,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/russross/blackfriday"
@@ -218,7 +219,17 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, error) {
+func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDescr, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryRepoLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	language := "go" // TODO(slimsag): long term, add to route
 
 	// Query information about the top definitions in the repo.
@@ -349,7 +360,17 @@ func defDocText(def *sourcegraph.Def) string {
 	return ""
 }
 
-func queryLegacyRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, error) {
+func queryLegacyRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDescr, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryLegacyRepoLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	results, err := backend.Search.Search(r.Context(), &sourcegraph.SearchOp{
 		Opt: &sourcegraph.SearchOptions{
 			Repos:        []int32{repo.ID},
@@ -462,7 +483,17 @@ func withSymbolEventTracking(eventName string, u *url.URL, language string, symb
 	return u
 }
 
-func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (*defLandingData, error) {
+func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (res *defLandingData, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryDefLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	defSpec := routevar.ToDefAtRev(mux.Vars(r))
 	language := "go" // TODO(slimsag): long term, add to route
 
@@ -478,7 +509,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
 	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
 	var symbols []lsp.SymbolInformation
-	err := xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		Query: defName,
 		Limit: 100,
 	}, &symbols)
@@ -672,7 +703,17 @@ func legacyWithDefEventTracking(eventName string, u *url.URL, def *sourcegraph.D
 	return u
 }
 
-func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (*defLandingData, error) {
+func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *defLandingData, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryLegacyDefLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	vars := mux.Vars(r)
 	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
 	if err != nil {
