@@ -351,7 +351,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 		if (activeTarget !== t) {
 			activeTarget = t;
-			clearTimeout(hoverTimeout);
+			hidePopover();
 			hoverTimeout = setTimeout(() => {
 				// Only show "Loading..." if it has been loading for a while. If we
 				// show "Loading..." immediately, there will be a visible flash if
