@@ -4,7 +4,7 @@
 	"description": "Sourcegraph browser extension for Chrome",
 	"scripts": {
 		"test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha -r ./test/setup-app test/app",
-		"test-e2e": "npm run build && cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha test/e2e",
+		"test-e2e": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha test/e2e",
 		"dev": "node scripts/dev",
 		"build": "node scripts/build",
 		"compress": "node scripts/compress",

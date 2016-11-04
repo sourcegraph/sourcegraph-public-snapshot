@@ -191,10 +191,13 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 	let nodeText;
 	let prevConsumed = 0;
 	let bytesConsumed = 0;
+	let lineOffset = offset;
 	const wrapperNode = document.createElement("SPAN");
+	wrapperNode.id = `text-node-wrapper-${lineOffset}`; // TODO(john): this is not globally unique for diff views.
 
 	function createTextNode(nodeText, start, end, offset) {
 		const wrapNode = document.createElement("SPAN");
+		wrapNode.id = `text-node-${lineOffset}-${offset}`; // TODO(john): this is not globally unique for diff views.
 		const textNode = document.createTextNode(utf8.decode(nodeText.slice(start, end).join("")));
 
 		wrapNode.dataset.byteoffset = offset;
@@ -207,6 +210,7 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 	// decoded characters (e.g. "˟") which need to be properly counted in terms of bytes.
 	nodeText = utf8.encode(_.unescape(currentNode.textContent)).split("");
 
+	// Handle special case for pull requests (+/- character on diffs).
 	if (ignoreFirstTextChar && nodeText.length > 0) {
 		wrapperNode.appendChild(document.createTextNode(utf8.decode(nodeText[0])));
 		nodeText = nodeText.slice(1);
@@ -216,8 +220,12 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 		const match = annsByStartByte[offset + bytesConsumed];
 
 		if (match) {
-			wrapperNode.appendChild(createTextNode(nodeText, prevConsumed, bytesConsumed, offset + prevConsumed + 1 - lineStart));
-			prevConsumed = bytesConsumed;
+			if (prevConsumed < bytesConsumed) {
+				// Consume the bytes that have been passed from no matches into a single text node.
+				wrapperNode.appendChild(createTextNode(nodeText, prevConsumed, bytesConsumed, offset + prevConsumed + 1 - lineStart));
+				prevConsumed = bytesConsumed;
+			}
+
 			bytesConsumed += (match.EndByte - match.StartByte);
 			wrapperNode.appendChild(createTextNode(nodeText, prevConsumed, bytesConsumed, offset + prevConsumed + 1 - lineStart));
 			prevConsumed = bytesConsumed;
@@ -509,6 +517,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 							if (json[1].result.contents.length > 0) {
 								elem.style.cursor = "pointer";
+								elem.className = `${elem.className} sg-clickable`;
 							}
 
 							popOverTitleElem.className = styles.popoverTitle;

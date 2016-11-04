@@ -25,3 +25,12 @@ export function buildWebDriver(extPath) {
 		.forBrowser("chrome")
 		.build();
 }
+
+export function flushLogs(driver) {
+	driver.manage().logs().get(logging.Type.BROWSER).then((entries) => {
+		entries.forEach((entry) => {
+			console.log('[%s] %s', entry.level.name, entry.message);
+		});
+	});
+	return true;
+}
