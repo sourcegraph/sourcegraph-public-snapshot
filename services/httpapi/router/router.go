@@ -26,7 +26,7 @@ const (
 	RepoTags            = "repo.tags"
 	RepoTreeList        = "repo.tree-list"
 	RepoDefLanding      = "repo.def-landing"
-	RepoRefs            = "repo.refs"
+	RepoShield          = "repo.shield"
 	Repos               = "repos"
 	SourcegraphDesktop  = "sourcegraph-desktop"
 	AsyncRefreshIndexes = "async.refresh-indexes"
@@ -81,7 +81,7 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repoRev.Path("/def-landing").Methods("GET").Name(RepoDefLanding)
-	repoRev.Path("/refs").Methods("GET").Name(RepoRefs)
+	repoRev.Path("/shield").Methods("GET").Name(RepoShield)
 	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)

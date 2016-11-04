@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
-func serveRepoRefs(w http.ResponseWriter, r *http.Request) error {
+func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
 	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return errors.Wrap(err, "GetRepoAndRev")
