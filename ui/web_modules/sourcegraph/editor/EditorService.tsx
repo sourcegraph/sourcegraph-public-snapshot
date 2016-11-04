@@ -58,6 +58,10 @@ export class EditorService implements IEditorService {
 			if (!model) {
 				throw new Error(`model not found: ${data.resource.toString()}`);
 			}
+			const err = model as any;
+			if (err.response && err.response.status === 404) {
+				throw new Error("404 file not found");
+			}
 
 			const codeEditor = getCodeEditor(this.editor);
 			const oldModel = codeEditor.getModel();

@@ -217,7 +217,8 @@ export class Editor implements IDisposable {
 			this._editorService.openEditor({
 				resource: uri,
 				options: range ? { selection: range } : undefined,
-			}).done(resolve);
+			})
+			.done(resolve, reject);
 		});
 	}
 
