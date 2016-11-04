@@ -67,12 +67,19 @@ var (
 		Name:      "proxy_retries",
 		Help:      "The number of times a client retried a request to a server.",
 	}, []string{"mode"})
+	proxyRetryFailedCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "proxy_retry_failed",
+		Help:      "Count of how often our transient error retries fails to get a result.",
+	}, []string{"mode"})
 )
 
 func init() {
 	prometheus.MustRegister(clientConnsGauge)
 	prometheus.MustRegister(clientConnsCounter)
 	prometheus.MustRegister(proxyRetryCounter)
+	prometheus.MustRegister(proxyRetryFailedCounter)
 }
 
 func (p *Proxy) removeClientConn(c *clientProxyConn) {
@@ -468,11 +475,12 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 		if err == nil {
 			break
 		}
-		if !isTemporary(err) && err != io.EOF {
+		if !isTemporary(err) && err != io.EOF && err != io.ErrUnexpectedEOF {
 			return err
 		}
 	}
 	if err != nil {
+		proxyRetryFailedCounter.WithLabelValues(id.mode).Inc()
 		return err
 	}
 
