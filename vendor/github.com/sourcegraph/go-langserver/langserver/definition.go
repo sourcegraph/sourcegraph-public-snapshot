@@ -40,5 +40,11 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn JSONRPC2Conn, r
 	if len(nodes) == 0 {
 		return nil, errors.New("definition not found")
 	}
-	return goRangesToLSPLocations(fset, nodes), nil
+	locs := goRangesToLSPLocations(fset, nodes)
+	for i := range locs {
+		// LSP expects a range to be of the entire body, not just of the
+		// identifier, so we pretend its just a position and not a range.
+		locs[i].Range.End = locs[i].Range.Start
+	}
+	return locs, nil
 }
