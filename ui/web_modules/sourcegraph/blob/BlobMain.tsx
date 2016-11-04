@@ -109,23 +109,7 @@ export class BlobMain extends Container<Props, State> {
 		if (this._editor) {
 			this._editorPropsChanged(null, this.props);
 			this._editor.onDidOpenEditor(e => this._onEditorOpened(e));
-			this._editor.onLineSelected((mouseDownEvent, mouseUpEvent): void => {
-				let mouseDownLine: number = mouseDownEvent.target.position.lineNumber;
-				let mouseUpLine: number = mouseUpEvent.target.position.lineNumber;
-				// If the shift key is used and there is already a line select entire range starting from prop.startLine.
-				// else if the starting line is not the same as the ending line select the range from the new starting line.
-				// otherwise select a single line if the start and end line are the same.
-				let lineHash: string;
-				if (this.props.startLine && mouseDownEvent.event.shiftKey) {
-					lineHash = "#L" + Math.min(this.props.startLine, mouseUpLine) + "-" + Math.max(this.props.startLine, mouseUpLine);
-				} else if (mouseUpLine !== mouseDownLine) {
-					lineHash = "#L" + Math.min(mouseDownLine, mouseUpLine) + "-" + Math.max(mouseDownLine, mouseUpLine);
-				} else {
-					lineHash = "#L" + mouseUpLine;
-				}
-
-				history.replaceState("", document.title, window.location.pathname + lineHash); // nice and clean
-			});
+			this._editor.onLineSelected((mouseDownEvent, mouseUpEvent): void => this._onLineSelected());
 		}
 	}
 
@@ -207,6 +191,48 @@ export class BlobMain extends Container<Props, State> {
 				this._editor.trigger("keyboard", "actions.find", {});
 			}
 		}
+	}
+
+	_onLineSelected(): void {
+		if (!this._editor || !this._editor.getSelection()) {
+			return;
+		}
+
+		let selection = this._editor.getSelection();
+		let startSelection;
+		let startColumn;
+		let endSelection;
+		let endColumn;
+		// Fix URL hash formatting to be in asc order.
+		if (selection.selectionStartLineNumber < selection.positionLineNumber) {
+			startSelection = selection.selectionStartLineNumber;
+			startColumn = selection.selectionStartColumn;
+			endSelection = selection.positionLineNumber;
+			endColumn = selection.positionColumn;
+		} else {
+			startSelection = selection.positionLineNumber;
+			startColumn = selection.positionColumn;
+			endSelection = selection.selectionStartLineNumber;
+			endColumn = selection.selectionStartColumn;
+		}
+
+		// Handle VSCode selection off by 1 case.
+		if (startSelection !== endSelection) {
+			if (selection.selectionStartColumn === 1 && selection.selectionStartLineNumber > selection.positionLineNumber) {
+				endSelection = endSelection - 1;
+			} else if (selection.endColumn === 1) {
+				endSelection = endSelection - 1;
+			}
+		}
+
+		let lineHash: string;
+		if (startSelection !== endSelection) {
+			lineHash = "#L" + startSelection + "-" + endSelection;
+		} else {
+			lineHash = "#L" + startSelection;
+		}
+
+		history.replaceState("", document.title, window.location.pathname + lineHash); // nice and clean
 	}
 
 	_onResize(e: Event): void {

@@ -202,18 +202,14 @@ export class Editor implements IDisposable {
 	};
 
 	onLineSelected(listener: (mouseDownEvent: IEditorMouseEvent, mouseUpEvent: IEditorMouseEvent) => void): void {
-		this._editor.onMouseDown(mouseDownEvent => {
-			if (mouseDownEvent.target.element.classList.contains("line-numbers")) {
-				let mouseUpDispose = this._editor.onMouseUp(function(mouseUpEvent: IEditorMouseEvent): void {
-					if (mouseUpEvent.target.element.classList.contains("line-numbers")) {
-						if (mouseDownEvent.target.type === 3) {
-							listener(mouseDownEvent, mouseUpEvent);
-						}
-						mouseUpDispose.dispose();
-					}
-				});
-			}
+		let disposeMouseDown = this._editor.onMouseDown(mouseDownEvent => {
+			let disposeMouseUp = this._editor.onMouseUp(function(mouseUpEvent: IEditorMouseEvent): void {
+				listener(mouseDownEvent, mouseUpEvent);
+				disposeMouseUp.dispose();
+			});
 		});
+
+		this._toDispose.push(disposeMouseDown);
 	}
 
 	setInput(uri: URI, range?: IRange): Promise<IEditor> {
@@ -230,6 +226,10 @@ export class Editor implements IDisposable {
 		endLine = typeof endLine === "number" ? endLine : startLine;
 		endCol = typeof endCol === "number" ? endCol : this._editor.getModel().getLineMaxColumn(endLine);
 		this._editor.setSelection(new Range(startLine, startCol, endLine, endCol));
+	}
+
+	public getSelection(): any {
+		return this._editor.getSelection();
 	}
 
 	public trigger(source: string, handlerId: string, payload: any): void {
