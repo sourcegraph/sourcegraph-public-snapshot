@@ -12,17 +12,15 @@ export function SecurityPage(props: {}, {}) {
 			<Helmet title="Security" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>
-					<Heading level={3} color="white">Sourcegraph Security</Heading>
+					<Heading level={3} color="white">Security</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>
-				<p className={styles.p}>We know the security of your code is extremely important. Our business depends on keeping your code safe. We take this commitment very seriously and work every day to continually earn your trust.</p>
+				<p className={styles.p}>Security is core to everything we do.</p>
 
-				<p className={styles.p}>Our commitment to security is strong because Sourcegraph's employees have extensive experience in building secure systems. Prior to Sourcegraph, our founders and early employees built software for highly sensitive environments, including top-5 U.S. financial institutions. Our CEO, Quinn Slack, also performed graduate-level research in the Secure Computer Systems group of the <a href="https://cs.stanford.edu/" target="_blank">Stanford Computer Science Department</a>, helping build <a href="https://en.wikipedia.org/wiki/Tcpcrypt" target="_blank">tcpcrypt</a> and submitting security-related patches to cURL, OpenSSL, GnuTLS, NSS, and Chromium.</p>
+				<p className={styles.p}>Beyond keeping your code safe, Sourcegraph will help your team <em>improve</em> the security of your own code, by disseminating knowledge and best practices about safe code usage to all of your developers.</p>
 
-				<p className={styles.p}>Beyond keeping your code safe, Sourcegraph can actually help your team <em>improve</em> the security of your own code, by disseminating knowledge and best practices about safe code usage to all of your developers.</p>
-
-				<p className={styles.p}>The security policy below details the steps we take to keep your code safe. Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> with questions and feedback.</p>
+				<p className={styles.p}>If you have specific questions or concerns, contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a>.</p>
 
 				<Heading level={3} underline="blue" className={styles.h5}>Security measures</Heading>
 
@@ -67,68 +65,17 @@ export function SecurityPage(props: {}, {}) {
 					<li>We employ static analysis safeguards to detect if any code path can access private user data while bypassing the necessary permissions checks.</li>
 				</ul>
 
-				<Heading level={4} className={styles.h}>Employee access</Heading>
+				<Heading level={4} className={styles.h}>Access Controls</Heading>
 
-				<p className={styles.p}>All access to critical internal systems (e.g., VMs, cloud storage, email) is protected by 2-factor authentication.</p>
+				<p className={styles.p}>Access to all internal systems is protected by multi-factor authentication. All application and user access logs are stored centrally and monitored.</p>
 
-				<p className={styles.p}>No Sourcegraph employee ever accesses private code unless explicitly authorized by a customer for support reasons.</p>
+				<p className={styles.p}>No employee can access user information unless explicitly authorized by the user.</p>
 
-				<p className={styles.p}>All employee computers and devices are password-protected with full-disk encryption.</p>
+				<Heading level={3} underline="blue" className={styles.h5}>Bug reports</Heading>
+				<p className={styles.p}>If you think that you have found a security issue, please email us at security@sourcegraph.com. We take all reports seriously. We provide monetary rewards for open bounties.</p>
 
-				<Heading level={3} underline="blue" className={styles.h5}>Bug bounty program</Heading>
 
-				<p className={styles.p}>Our bug bounty program is similar to ones offered by Google, Facebook, Mozilla, and GitHub, and offers a way for security researchers and engineers to report vulnerabilities in a responsible fashion and receive cash compensation for their efforts.</p>
 
-				<p className={styles.p}>If you’ve found a vulnerability, email <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a> to report it. Please refer to the rules below for more information.</p>
-
-				<Heading level={4} className={styles.h}>Rules</Heading>
-
-				<ul>
-					<li>Don’t publicly disclose a bug before it’s fixed.</li>
-					<li>Don’t attempt to access another user’s account or data, and don’t disrupt another user’s usage of the site.</li>
-					<li>Don’t perform any attack that affects the stability or integrity of our site or our data. Spam attacks and DoS attacks are not allowed.</li>
-					<li>Only technical vulnerabilities are in scope. Don’t attempt social engineering, phishing, trespassing, or physical attacks.</li>
-					<li>If in doubt, <a href="mailto:security@sourcegraph.com">email us</a>.</li>
-				</ul>
-
-				<p className={styles.p}>On our end, we:</p>
-
-				<ul>
-					<li>Won’t take legal action against you if you follow the rules.</li>
-					<li>Will respond quickly to your submission.</li>
-					<li>Will update you on the work to fix the vulnerability you reported.</li>
-					<li>Will credit you on this page, if you’d like us to.</li>
-				</ul>
-
-				<Heading level={4} className={styles.h}>Open bounties</Heading>
-
-				<p className={styles.p}>Rewards for open bounties range from $10 to $4,000 and are determined at our discretion based on a variety of factors, including but not limited to the percentage of users impacted, the likelihood of encountering the vulnerability under normal use of the site, and the severity of potential service disruption or data leakage.</p>
-
-				<ul>
-					<li>Sourcegraph.com: Sourcegraph.com is our main website. It is built in Go and uses a variety of open-source libraries, including <a href="https://srclib.org">srclib</a>.</li>
-					<li>Sourcegraph API: The Sourcegraph API is used by other applications to programatically interact with Sourcegraph. The API is rooted at <code>https://sourcegraph.com/.api</code>.</li>
-				</ul>
-
-				<Heading level={4} className={styles.h}>Bounty hunters</Heading>
-
-				<table>
-					<tbody>
-						<tr>
-							<td><a href="https://twitter.com/robin7907">Robin Puri (Deep inder Singh Puri)</a></td>
-							<td>300 points</td>
-						</tr>
-						<tr>
-							<td><a href="https://www.facebook.com/nithish.varghese">Nithish Varghese</a></td>
-							<td>200 points</td>
-						</tr>
-					</tbody>
-				</table>
-
-				<Heading level={3} underline="blue" className={styles.h5}>Contact us</Heading>
-
-				<p className={styles.p}>
-					Questions, concerns, or comments about our security policy? Contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a>.
-				</p>
 			</div>
 		</div>
 	);
