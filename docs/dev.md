@@ -13,7 +13,7 @@ development environment. Here's what you need:
 - [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
-  - recommend using Docker for Mac instead of `docker-machine`
+  - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 - A test user account on GitHub
