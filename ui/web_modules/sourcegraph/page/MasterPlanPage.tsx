@@ -15,9 +15,9 @@ import {context} from "sourcegraph/app/context";
 function tldr() {
 	return (
 		<ol>
-			<li><a href="#code-intelligence">Make basic code intelligence (jump-to-def, find-references, etc.) ubiquitous</a></li>
-			<li><a href="#code-review">Make code review continuous and more intelligent</a></li>
-			<li><a href="#global-code-graph">Make this all work globally, not just within a single project, to increase the amount/quality of available open-source code and help you avoid reinventing the wheel</a></li>
+			<li><a href="#code-intelligence">Make basic code intelligence ubiquitous</a></li>
+			<li><a href="#code-review">Make code review continuous &amp; intelligent</a></li>
+			<li><a href="#global-code-graph">Increase the amount &amp; quality of open-source code</a></li>
 		</ol>
 	);
 }
