@@ -172,6 +172,9 @@ window.addEventListener("load", () => {
 
 document.addEventListener("keydown", (e) => {
 	if (getGitHubRoute() !== "blob") return;
+	if (e.target.tagName === "INPUT" ||
+		e.target.tagName === "SELECT" ||
+		e.target.tagName === "TEXTAREA") return;
 
 	if (e.keyCode === 85) {
 		const annButtons = document.getElementsByClassName("sourcegraph-app-annotator");
