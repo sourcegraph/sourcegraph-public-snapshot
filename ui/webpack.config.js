@@ -45,9 +45,7 @@ if (production) {
 		new webpack.optimize.OccurrenceOrderPlugin(),
 		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
-			compress: {
-				warnings: false,
-			},
+			sourceMap: true,
 		})
 	);
 }
@@ -105,7 +103,6 @@ module.exports = {
 		path: `${__dirname}/assets`,
 		filename: production ? "[name].[hash].js" : "[name].js",
 		chunkFilename: "c-[chunkhash].js",
-		sourceMapFilename: "[file].map",
 	},
 	plugins: plugins,
 	module: {
