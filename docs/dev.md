@@ -9,35 +9,36 @@ Before you can develop Sourcegraph you'll need to set up a
 development environment. Here's what you need:
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [Go](https://golang.org/doc/install) (v1.5.0 or higher)
+- [Go](https://golang.org/doc/install) (v1.7.0 or higher)
 - [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
+  - recommend using Docker for Mac instead of `docker-machine`
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 - A test user account on GitHub
-  - create a test user account on GitHub whose username has the suffix `-test`
+  - this should be a separate GitHub user account for development whose username has the suffix `-test`
   - get somebody to add you to the "sourcegraphtest" GitHub organization
   - add a second profile to Chrome for your `*-test` GitHub user (https://cl.ly/3A3y1O040G3R),
-  or download [Chrome Canary](https://www.google.com/chrome/browser/canary.html) for development
+    or download [Chrome Canary](https://www.google.com/chrome/browser/canary.html) to use for development
 
-If you are new to Go, you should also [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
+If you are new to Go, [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
 
 ### Optional (but recommended)
 
 - [Visual Studio Code](https://code.visualstudio.com): this IDE comes with great out-of-the-box
-  features for Go and TypeScript codebase. Recommended extensions:
+  features for Go and TypeScript. Recommended extensions:
   - [Go](https://marketplace.visualstudio.com/items?itemName=lukehoban.Go)
   - [TSLint](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
   - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
 ## Get the code
 
-Then, clone the `sourcegraph` repository into `$GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph`
-
 ```
-go get sourcegraph.com/sourcegraph/sourcegraph
+git clone https://github.com/sourcegraph/sourcegraph $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
+cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
+go install ./cmd/src
 ```
 
 ## PostgreSQL
@@ -74,7 +75,8 @@ Then in your terminal run:
 `cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph`
 
 The Docker daemon should be running in the background, which you can test by
-running `docker ps`. If you're on OS X, you may have to run:
+running `docker ps`. If you're on OS X and using `docker-machine` instead of Docker for Mac,
+ you may have to run:
 
 ```
 docker-machine start default
