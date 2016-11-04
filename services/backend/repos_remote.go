@@ -51,16 +51,24 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 		} else if errcode.Code(err) != legacyerr.NotFound {
 			return nil, err
 		}
+
+	// See if it's a GCP repo.
+	case strings.HasPrefix(strings.ToLower(op.Path), "source.developers.google.com/p/"):
+		if op.Remote {
+			const existsForUser = true // TODO: Don't assume all GCP repos exist, check it as part of this resolve operation.
+			if existsForUser {
+				return &sourcegraph.RepoResolution{
+					RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
+				}, nil
+			}
+		}
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "resolved repo not found locally: %s", op.Path)
 	}
 
 	// Try some remote aliases.
 	if op.Remote {
 		switch {
 		case strings.HasPrefix(op.Path, "gopkg.in/"):
-			return &sourcegraph.RepoResolution{
-				RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
-			}, nil
-		case strings.HasPrefix(op.Path, "source.developers.google.com/p/"):
 			return &sourcegraph.RepoResolution{
 				RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
 			}, nil
