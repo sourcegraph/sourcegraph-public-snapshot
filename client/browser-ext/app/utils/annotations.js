@@ -56,7 +56,11 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 
 			let isAddition = codeCell.classList && codeCell.classList.contains("blob-code-addition");
 			let isDeletion = codeCell.classList && codeCell.classList.contains("blob-code-deletion");
-			if (!isAddition && !isDeletion && !repoRevSpec.isBase && !isSplitDiff) {
+			// Mark the tokens for common lines using start/end bytes from head
+			// Head is preferred over base because with the ?w=1 parameter on
+			// Github, changes that only affect whitespace are hidden by using
+			// line data from head which leads to wrong byte offsets for the tokens.
+			if (!isAddition && !isDeletion && repoRevSpec.isBase && !isSplitDiff) {
 				continue; // careful; we don't need to put head AND base on unmodified parts (but only for unified diff views)
 			}
 			if (isDeletion && !repoRevSpec.isBase) {
