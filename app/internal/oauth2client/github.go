@@ -79,26 +79,14 @@ func githubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 }
 
 func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
-	parts := strings.SplitN(r.URL.Query().Get("state"), ":", 3)
-	if len(parts) != 3 {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("invalid OAuth2 authorize client state")}
+	expectedNonceCookie := ""
+	returnTo := "/"
+	returnToNew := "/"
+	if parts := strings.SplitN(r.URL.Query().Get("state"), ":", 3); len(parts) == 3 {
+		expectedNonceCookie = parts[0]
+		returnTo = parts[1]
+		returnToNew = parts[2]
 	}
-
-	nonceCookie, err := r.Cookie("nonce")
-	if err != nil {
-		return err
-	}
-	http.SetCookie(w, &http.Cookie{
-		Name:   "nonce",
-		Path:   "/",
-		MaxAge: -1,
-	})
-	if len(parts) != 3 || nonceCookie.Value == "" || parts[0] != nonceCookie.Value {
-		return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state")}
-	}
-
-	returnTo := parts[1]
-	returnToNew := parts[2]
 
 	code := r.URL.Query().Get("code")
 	token, err := auth0GitHubConfigWithRedirectURL().Exchange(r.Context(), code)
@@ -122,10 +110,26 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 			Connection string          `json:"connection"`
 			UserID     json.RawMessage `json:"user_id"` // Defer decoding because the type is int for GitHub, but string for Google.
 		} `json:"identities"`
+		Impersonated bool `json:"impersonated"`
 	}
 	err = fetchAuth0UserInfo(r.Context(), token, &info)
 	if err != nil {
 		return err
+	}
+
+	if !info.Impersonated { // impersonation has no state parameter, so don't check nonce
+		nonceCookie, err := r.Cookie("nonce")
+		if err != nil {
+			return err
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:   "nonce",
+			Path:   "/",
+			MaxAge: -1,
+		})
+		if nonceCookie.Value == "" || expectedNonceCookie != nonceCookie.Value {
+			return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state")}
+		}
 	}
 
 	firstTime := len(info.AppMetadata.GitHubScope) == 0
