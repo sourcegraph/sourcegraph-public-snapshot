@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -25,12 +26,22 @@ func serveRepoRefs(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(deprErr, "Defs.DeprecatedTotalRefs")
 	}
 	if deprTotalRefs > totalRefs {
+		w.Header().Set("X-Sourcegraph-Datatype", "legacy") // for debugging only, can remove later.
 		totalRefs = deprTotalRefs
+	} else {
+		w.Header().Set("X-Sourcegraph-Datatype", "xlang") // for debugging only, can remove later.
+	}
+	w.Header().Set("X-Sourcegraph-Exact-Count", fmt.Sprint(totalRefs))
+
+	// Format e.g. "1,399" as "1.3k".
+	desc := fmt.Sprintf("%d projects", totalRefs)
+	if totalRefs > 1000 {
+		desc = fmt.Sprintf("%.1fk projects", float64(totalRefs)/1000.0)
 	}
 
 	return writeJSON(w, &struct {
-		TotalRefs int
+		Value string
 	}{
-		TotalRefs: totalRefs,
+		Value: desc,
 	})
 }
