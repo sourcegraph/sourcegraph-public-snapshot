@@ -6,7 +6,9 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
@@ -55,7 +57,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 	// See if it's a GCP repo.
 	case strings.HasPrefix(strings.ToLower(op.Path), "source.developers.google.com/p/"):
 		if op.Remote {
-			const existsForUser = true // TODO: Don't assume all GCP repos exist, check it as part of this resolve operation.
+			existsForUser := accesscontrol.VerifyActorHasGCPRepoAccess(ctx, auth.ActorFromContext(ctx), op.Path)
 			if existsForUser {
 				return &sourcegraph.RepoResolution{
 					RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},

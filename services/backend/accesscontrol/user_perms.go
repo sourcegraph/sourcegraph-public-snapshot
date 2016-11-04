@@ -109,7 +109,7 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 
 	case strings.HasPrefix(strings.ToLower(repoURI), "source.developers.google.com/p/"):
 		// Perform GCP repository authorization check by delegating to GCP API.
-		return verifyActorHasGCPRepoAccess(ctx, actor, repoURI)
+		return VerifyActorHasGCPRepoAccess(ctx, actor, repoURI)
 
 	default:
 		// Unless something above explicitly grants access, by default, access is denied.
@@ -147,9 +147,9 @@ func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, repo
 	return false
 }
 
-// verifyActorHasGCPRepoAccess checks if the given actor is authorized to access
+// VerifyActorHasGCPRepoAccess checks if the given actor is authorized to access
 // the given GCP mirrored repository.
-func verifyActorHasGCPRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
+func VerifyActorHasGCPRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
 	if !actor.GoogleConnected {
 		return false
 	}
