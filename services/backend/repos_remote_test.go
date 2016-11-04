@@ -78,7 +78,7 @@ func TestRepos_Resolve_GitHub_NonRemote(t *testing.T) {
 		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
 	}
 
-	if _, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r", Remote: false}); legacyerr.ErrCode(err) != legacyerr.NotFound {
+	if _, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "github.com/o/r", Remote: false}); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Errorf("got error %v, want NotFound", err)
 	}
 	if !calledReposGet {
@@ -106,7 +106,7 @@ func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
 		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
 	}
 
-	res, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r", Remote: true})
+	res, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "github.com/o/r", Remote: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +140,7 @@ func TestRepos_Resolve_GitHub_otherError(t *testing.T) {
 		return nil, legacyerr.Errorf(legacyerr.Internal, "")
 	}
 
-	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r"})
+	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "github.com/o/r"})
 	if legacyerr.ErrCode(err) != legacyerr.Internal {
 		t.Errorf("got error %v, want Internal", err)
 	}
@@ -169,7 +169,7 @@ func TestRepos_Resolve_notFound(t *testing.T) {
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 	}
 
-	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r"})
+	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "github.com/o/r"})
 	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Errorf("got error %v, want NotFound", err)
 	}
@@ -178,5 +178,34 @@ func TestRepos_Resolve_notFound(t *testing.T) {
 	}
 	if !calledGetGitHubRepo {
 		t.Error("!calledGetGitHubRepo")
+	}
+}
+
+func TestRepos_Resolve_other_notFound(t *testing.T) {
+	ctx := testContext()
+	var githubRepos githubmock.GitHubRepoGetter
+	ctx = github.WithRepos(ctx, &githubRepos)
+
+	var calledReposGet bool
+	localstore.Mocks.Repos.GetByURI = func(context.Context, string) (*sourcegraph.Repo, error) {
+		calledReposGet = true
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
+	}
+
+	var calledGetGitHubRepo bool
+	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+		calledGetGitHubRepo = true
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
+	}
+
+	_, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "r"})
+	if legacyerr.ErrCode(err) != legacyerr.NotFound {
+		t.Errorf("got error %v, want NotFound", err)
+	}
+	if !calledReposGet {
+		t.Error("!calledReposGet")
+	}
+	if calledGetGitHubRepo {
+		t.Error("githubRepos.Get was called, but shouldn't be, since repo URI doesn't have 'github.com/' prefix")
 	}
 }
