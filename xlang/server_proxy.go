@@ -413,7 +413,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		return nil, nil
 
-	case "fs/readFile", "fs/readDir", "fs/stat", "fs/lstat":
+	case "fs/readFile", "fs/readDirFiles", "fs/readDir", "fs/stat", "fs/lstat":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}

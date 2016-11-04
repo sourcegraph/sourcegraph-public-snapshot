@@ -3,6 +3,7 @@ package xlang
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/sourcegraph/ctxvfs"
@@ -28,6 +29,22 @@ func (c *serverProxyConn) handleFS(ctx context.Context, method, path string) (re
 		contents, err := ctxvfs.ReadFile(ctx, c.rootFS, path)
 		if err != nil {
 			return nil, err
+		}
+		return contents, nil
+
+	case "fs/readDirFiles":
+		dir, _ := filepath.Split(path)
+		ls, err := c.rootFS.ReadDir(ctx, dir)
+		contents := make(map[string][]byte)
+		for _, f := range ls {
+			if f.IsDir() {
+				continue
+			}
+			p := filepath.Join(dir, f.Name())
+			contents[p], err = ctxvfs.ReadFile(ctx, c.rootFS, p)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return contents, nil
 

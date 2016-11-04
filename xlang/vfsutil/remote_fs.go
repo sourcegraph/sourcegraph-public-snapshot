@@ -83,17 +83,24 @@ func (fs *RemoteProxyFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeek
 	}
 	fs.mu.Unlock()
 
-	var contents []byte
-	if err := fs.call(ctx, "fs/readFile", path, &contents); err != nil {
+	var contents map[string][]byte
+	if err := fs.call(ctx, "fs/readDirFiles", path, &contents); err != nil {
 		fs.mu.Lock()
 		c.readFileErr = err
 		fs.mu.Unlock()
 		return nil, err
 	}
 	fs.mu.Lock()
-	c.readFile = contents
+	// Precache all files in the requested path's directory to improve
+	// performance across subsequent requests.
+	for p, f := range contents {
+		c := fs.getCache(p)
+		if c.readFile == nil {
+			c.readFile = f
+		}
+	}
 	fs.mu.Unlock()
-	return nopCloser{bytes.NewReader(contents)}, nil
+	return nopCloser{bytes.NewReader(contents[path])}, nil
 }
 
 func (fs *RemoteProxyFS) Stat(ctx context.Context, path string) (fi os.FileInfo, err error) {
