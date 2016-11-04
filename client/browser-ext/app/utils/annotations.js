@@ -4,7 +4,7 @@ import styles from "../components/App.css";
 import * as utils from "./index";
 import _ from "lodash";
 import EventLogger from "../analytics/EventLogger";
-// import marked from "marked";
+import marked from "marked";
 
 // addAnnotations is the entry point for injecting annotations onto a blob (el).
 // An invisible marker is appended to the document to indicate that annotation
@@ -23,12 +23,19 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 	let cells = [];
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];
+
+		// Inline comments from single comment / review of a Pull request
 		if (row.classList && row.classList.contains("inline-comments")) continue;
 
+		// line: line number of the current line
+		// codeCell: The actual table cell that has code inside.
+		//           Each row contains multiple columns, for
+		//           line number and code (multiple in diffs).
 		let line, codeCell;
 		if (repoRevSpec.isDelta) {
 			if (isSplitDiff && row.cells.length !== 4) continue;
 
+			// metaCell contains either the line number or the blob expander for common parts in a diff
 			let metaCell;
 			if (isSplitDiff) {
 				metaCell = repoRevSpec.isBase ? row.cells[0] : row.cells[2];
@@ -79,19 +86,8 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			codeCell = row.cells[1];
 		}
 
-		let   curLine;
-		const isTable = codeCell.tagName === "TD";
-
-		if (!isTable) {
-			curLine = codeCell;
-		} else {
-			let inner = codeCell.querySelector(".blob-code-inner");
-			if (inner) {
-				curLine = inner;
-			} else {
-				curLine = codeCell
-			}
-		}
+		const isInner = codeCell.querySelector(".blob-code-inner");
+		const curLine = isInner || codeCell; // DOM node of the "line"
 
 		// If the line has already been annotated,
 		// restore event handlers if necessary otherwise move to next line
@@ -103,8 +99,9 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 		}
 		el.dataset[`${line}_${repoRevSpec.rev}`] = true;
 
+		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
-			const annLine = convertNode(curLine, annsByStartByte, startBytesByLine[line], startBytesByLine[line], repoRevSpec.isDelta && isTable);
+			const annLine = convertNode(curLine, annsByStartByte, startBytesByLine[line], startBytesByLine[line], repoRevSpec.isDelta);
 
 			curLine.innerHTML = "";
 			curLine.appendChild(annLine.resultNode);
@@ -171,6 +168,8 @@ export function convertNode(currentNode, annsByStartByte, offset, lineStart, ign
 		throw new Error(`unexpected node type(${currentNode.nodeType})`);
 	}
 
+	// If this is the top level node for code, return a documentFragment
+	// otherwise copy all the attributes of the original node.
 	if (currentNode.tagName === "TD") {
 		wrapperNode = document.createDocumentFragment();
 		wrapperNode.appendChild(c.resultNode);
@@ -287,11 +286,23 @@ let popoverCache = {};
 let jumptodefcache = {};
 
 const HOVER_TIME = 200;
+
+// DOM element for popover
+let popover;
+// target DOM element for popover
+let activeTarget;
+// timeout reference for cancelling async hide/show popover
 let hoverTimeout;
+// the "Loading..." popover
 let popOverLoading;
 
 function addEventListeners(el, path, repoRevSpec, line) {
-	let activeTarget, popover;
+	if (!popover) {
+		popover = document.createElement("DIV");
+		popover.classList.add(styles.popover);
+		popover.classList.add("sg-popover");
+	}
+
 	if (!popOverLoading) {
 		const popOverLoadingText = document.createTextNode("Loading...");
 		const popOverLoadingSpan = document.createElement("DIV");
@@ -327,8 +338,11 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	}
 
 	el.onmouseout = function(e) {
-		hidePopover();
-		activeTarget = null;
+		clearTimeout(hoverTimeout);
+		hoverTimeout = setTimeout(() => {
+			hidePopover();
+			activeTarget = null;
+		}, HOVER_TIME);
 	}
 
 	el.onmouseover = function(e) {
@@ -337,22 +351,19 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 		if (activeTarget !== t) {
 			activeTarget = t;
-
-			hidePopover();
+			clearTimeout(hoverTimeout);
 			hoverTimeout = setTimeout(() => {
 				// Only show "Loading..." if it has been loading for a while. If we
 				// show "Loading..." immediately, there will be a visible flash if
 				// the actual hover text loads quickly thereafter.
-				if (!popover) {
-					showPopover(popOverLoading, true);
-				}
+				showPopover(popOverLoading, true);
 			}, 3 * HOVER_TIME);
 			const hoverShowTime = Date.now() + HOVER_TIME;
 			fetchPopoverData(activeTarget, function(elem) {
 				// Always wait at least HOVER_TIME before showing hover, to avoid
 				// it obscuring text when you move your mouse rapidly across a code file.
 				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
-				hidePopover();
+				clearTimeout(hoverTimeout);
 				hoverTimeout = setTimeout(() => {
 					showPopover(elem, false);
 				}, hoverTimerRemaining);
@@ -370,15 +381,9 @@ function addEventListeners(el, path, repoRevSpec, line) {
 			// Log event only when displaying a fetched tooltip
 			if (!isLoading) {
 				EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
-				if (popover) {
-					hidePopover();
-				}
 			}
 
-			// Create and style the element
-			popover = document.createElement("DIV");
-			popover.classList.add(styles.popover);
-			popover.classList.add("sg-popover");
+			hidePopover();
 			popover.appendChild(elem);
 
 			// Hide the popover initially while we add it to DOM to render and generate
@@ -399,14 +404,25 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 			// Make it all visible to the user.
 			popover.style.visibility = "visible";
+
+			popover.onmouseover = function(e) {
+				clearTimeout(hoverTimeout);
+			}
+
+			popover.onmouseout = function(e) {
+				clearTimeout(hoverTimeout);
+				hoverTimeout = setTimeout(() => {
+					hidePopover();
+					activeTarget = null;
+				}, HOVER_TIME);
+			}
 		}
 	}
 
 	function hidePopover() {
 		clearTimeout(hoverTimeout);
-		if (popover) {
-			popover.remove();
-			popover = null;
+		if (popover.firstChild) {
+			popover.removeChild(popover.firstChild);
 		}
 	}
 
@@ -514,30 +530,38 @@ function addEventListeners(el, path, repoRevSpec, line) {
 						const keyCache = `${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`;
 
 						try {
+							// Wrapper element
 							const popOverElem = document.createElement("DIV");
+							// Title string
 							const popOverTitleElem = document.createElement("DIV");
 							const popOverTitleText = document.createTextNode(json[1].result.contents[0].value);
-							//const popOverDocString = document.createElement("DIV");
+							// Doc string
+							const popOverDocString = document.createElement("DIV");
 
 							if (json[1].result.contents.length > 0) {
 								elem.style.cursor = "pointer";
 								elem.className = `${elem.className} sg-clickable`;
+
+								popOverTitleElem.className = styles.popoverTitle;
+								popOverTitleElem.appendChild(popOverTitleText);
+								popOverElem.appendChild(popOverTitleElem);
+
+								if (json[1].result.contents.length > 1) {
+									let docString = json[1].result.contents[1];
+
+									if (typeof docString !== "string") {
+										docString = docString.value;
+									}
+
+									popOverDocString.innerHTML = marked(docString, {gfm: true, breaks: true, sanitize: true});
+									popOverDocString.className = styles.popoverDocstring;
+									popOverElem.appendChild(popOverDocString);
+								}
+
+								popoverCache[keyCache] = popOverElem;
+							} else {
+								popoverCache[keyCache] = null;
 							}
-
-							popOverTitleElem.className = styles.popoverTitle;
-							popOverTitleElem.appendChild(popOverTitleText);
-
-							if (json[1].result.contents.length > 1 && json[1].result.contents[1].language === "markdown") {
-								// TODO: Parse & display markdown
-								// console.log(json[1].result.contents[1].value);
-								//popOverDocString.className = styles.popoverDocstring;
-								//popOverDocString.innerHTML = marked(json[1].result.contents[1].value, {breaks: false});
-							}
-
-							popOverElem.appendChild(popOverTitleElem);
-							//popOverElem.appendChild(popOverDocString);
-
-							popoverCache[keyCache] = popOverElem;
 						} catch(err) {
 							popoverCache[keyCache] = null;
 						} finally {
