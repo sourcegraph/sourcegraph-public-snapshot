@@ -384,7 +384,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		legacyData, legacyErr := queryLegacyDefLandingData(r, repo)
 		if legacyErr != nil && err != nil {
 			// Only return an error if both systems error'd out.
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("multiple errors: queryRepoLandingData=%v queryLegacyRepoLandingData=%v", err, legacyErr)}
+			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("multiple errors: queryDefLandingData=%v queryLegacyDefLandingData=%v", err, legacyErr)}
 		}
 		if legacyData != nil {
 			data = legacyData
