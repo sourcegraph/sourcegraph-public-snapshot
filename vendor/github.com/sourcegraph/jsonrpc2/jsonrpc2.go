@@ -16,6 +16,21 @@ import (
 	"sync"
 )
 
+// JSONRPC2 describes an interface for issuing requests that speak the
+// JSON-RPC 2 protocol.  It isn't really necessary for this package
+// itself, but is useful for external users that use the interface as
+// an API boundary.
+type JSONRPC2 interface {
+	// Call issues a standard request (http://www.jsonrpc.org/specification#request_object).
+	Call(ctx context.Context, method string, params, result interface{}, opt ...CallOption) error
+
+	// Notify issues a notification request (http://www.jsonrpc.org/specification#notification).
+	Notify(ctx context.Context, method string, params interface{}, opt ...CallOption) error
+
+	// Close closes the underlying connection, if it exists.
+	Close() error
+}
+
 // Request represents a JSON-RPC request or
 // notification. See
 // http://www.jsonrpc.org/specification#request_object and
@@ -23,7 +38,7 @@ import (
 type Request struct {
 	Method string           `json:"method"`
 	Params *json.RawMessage `json:"params,omitempty"`
-	ID     uint64           `json:"id"`
+	ID     ID               `json:"id"`
 	Meta   *json.RawMessage `json:"meta,omitempty"`
 	Notif  bool             `json:"-"`
 }
@@ -37,7 +52,7 @@ func (r *Request) MarshalJSON() ([]byte, error) {
 	r2 := struct {
 		Method  string           `json:"method"`
 		Params  *json.RawMessage `json:"params,omitempty"`
-		ID      *uint64          `json:"id,omitempty"`
+		ID      *ID              `json:"id,omitempty"`
 		Meta    *json.RawMessage `json:"meta,omitempty"`
 		JSONRPC string           `json:"jsonrpc"`
 	}{
@@ -58,7 +73,7 @@ func (r *Request) UnmarshalJSON(data []byte) error {
 		Method string           `json:"method"`
 		Params *json.RawMessage `json:"params,omitempty"`
 		Meta   *json.RawMessage `json:"meta,omitempty"`
-		ID     *uint64          `json:"id"`
+		ID     *ID              `json:"id"`
 	}
 	if err := json.Unmarshal(data, &r2); err != nil {
 		return err
@@ -67,7 +82,7 @@ func (r *Request) UnmarshalJSON(data []byte) error {
 	r.Params = r2.Params
 	r.Meta = r2.Meta
 	if r2.ID == nil {
-		r.ID = 0
+		r.ID = ID{}
 		r.Notif = true
 	} else {
 		r.ID = *r2.ID
@@ -101,7 +116,7 @@ func (r *Request) SetMeta(v interface{}) error {
 // Response represents a JSON-RPC response. See
 // http://www.jsonrpc.org/specification#response_object.
 type Response struct {
-	ID     uint64           `json:"id"`
+	ID     ID               `json:"id"`
 	Result *json.RawMessage `json:"result,omitempty"`
 	Error  *Error           `json:"error,omitempty"`
 
@@ -178,6 +193,52 @@ type Handler interface {
 	Handle(context.Context, *Conn, *Request)
 }
 
+// ID represents a JSON-RPC 2.0 request ID, which may be either a
+// string or number (or null, which is unsupported).
+type ID struct {
+	// At most one of Num or Str may be nonzero. If both are zero
+	// valued, then IsNum specifies which field's value is to be used
+	// as the ID.
+	Num uint64
+	Str string
+
+	// IsString controls whether the Num or Str field's value should be
+	// used as the ID, when both are zero valued. It must always be
+	// set to true if the request ID is a string.
+	IsString bool
+}
+
+func (id ID) String() string {
+	if id.IsString {
+		return strconv.Quote(id.Str)
+	}
+	return strconv.FormatUint(id.Num, 10)
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id ID) MarshalJSON() ([]byte, error) {
+	if id.IsString {
+		return json.Marshal(id.Str)
+	}
+	return json.Marshal(id.Num)
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *ID) UnmarshalJSON(data []byte) error {
+	// Support both uint64 and string IDs.
+	var v uint64
+	if err := json.Unmarshal(data, &v); err == nil {
+		*id = ID{Num: v}
+		return nil
+	}
+	var v2 string
+	if err := json.Unmarshal(data, &v2); err != nil {
+		return err
+	}
+	*id = ID{Str: v2, IsString: true}
+	return nil
+}
+
 // Conn is a JSON-RPC client/server connection. The JSON-RPC protocol
 // is symmetric, so a Conn runs on both ends of a client-server
 // connection.
@@ -191,7 +252,7 @@ type Conn struct {
 	shutdown bool
 	closing  bool
 	seq      uint64
-	pending  map[uint64]*call
+	pending  map[ID]*call
 
 	sending sync.Mutex
 
@@ -201,6 +262,8 @@ type Conn struct {
 	onRecv func(*Request, *Response)
 	onSend func(*Request, *Response)
 }
+
+var _ JSONRPC2 = (*Conn)(nil)
 
 // ErrClosed indicates that the JSON-RPC connection is closed (or in
 // the process of closing).
@@ -218,7 +281,7 @@ func NewConn(ctx context.Context, conn io.ReadWriteCloser, h Handler, opt ...Con
 		conn:       conn,
 		w:          bufio.NewWriter(conn),
 		h:          h,
-		pending:    map[uint64]*call{},
+		pending:    map[ID]*call{},
 		disconnect: make(chan struct{}),
 	}
 	for _, opt := range opt {
@@ -256,8 +319,8 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (*call, error
 	var cc *call
 	if m.request != nil && wait {
 		cc = &call{request: m.request, seq: c.seq, done: make(chan error)}
-		c.pending[c.seq] = cc // use next seq as call ID
-		m.request.ID = c.seq
+		c.pending[ID{Num: c.seq}] = cc // use next seq as call ID
+		m.request.ID.Num = c.seq
 		c.seq++
 	}
 	c.mu.Unlock()
@@ -276,7 +339,7 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (*call, error
 		c.w.Flush()
 		if cc != nil {
 			c.mu.Lock()
-			delete(c.pending, cc.seq)
+			delete(c.pending, ID{Num: cc.seq})
 			c.mu.Unlock()
 		}
 		return nil, err
@@ -341,7 +404,7 @@ func (c *Conn) Notify(ctx context.Context, method string, params interface{}, op
 }
 
 // Reply sends a successful response with a result.
-func (c *Conn) Reply(ctx context.Context, id uint64, result interface{}) error {
+func (c *Conn) Reply(ctx context.Context, id ID, result interface{}) error {
 	resp := &Response{ID: id}
 	if err := resp.SetResult(result); err != nil {
 		return err
@@ -351,7 +414,7 @@ func (c *Conn) Reply(ctx context.Context, id uint64, result interface{}) error {
 }
 
 // ReplyWithError sends a response with an error.
-func (c *Conn) ReplyWithError(ctx context.Context, id uint64, respErr *Error) error {
+func (c *Conn) ReplyWithError(ctx context.Context, id ID, respErr *Error) error {
 	_, err := c.send(ctx, &anyMessage{response: &Response{ID: id, Error: respErr}}, false)
 	return err
 }
@@ -392,10 +455,10 @@ func (c *Conn) readMessages(ctx context.Context, r *bufio.Reader) {
 		case m.response != nil:
 			resp := m.response
 			if resp != nil {
-				seq := resp.ID
+				id := resp.ID
 				c.mu.Lock()
-				call := c.pending[seq]
-				delete(c.pending, seq)
+				call := c.pending[id]
+				delete(c.pending, id)
 				c.mu.Unlock()
 
 				if call != nil {
@@ -413,7 +476,7 @@ func (c *Conn) readMessages(ctx context.Context, r *bufio.Reader) {
 
 				switch {
 				case call == nil:
-					log.Printf("jsonrpc2: ignoring response %d with no corresponding request", seq)
+					log.Printf("jsonrpc2: ignoring response #%s with no corresponding request", id)
 
 				case resp.Error != nil:
 					call.done <- resp.Error

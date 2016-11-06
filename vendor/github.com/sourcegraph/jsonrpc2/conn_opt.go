@@ -30,7 +30,7 @@ func LogMessages(log *log.Logger) ConnOpt {
 		// request method in OnSend for responses.
 		var (
 			mu         sync.Mutex
-			reqMethods = map[uint64]string{}
+			reqMethods = map[ID]string{}
 		)
 
 		OnRecv(func(req *Request, resp *Response) {
@@ -44,7 +44,7 @@ func LogMessages(log *log.Logger) ConnOpt {
 				if req.Notif {
 					log.Printf("--> notif: %s: %s", req.Method, params)
 				} else {
-					log.Printf("--> request #%d: %s: %s", req.ID, req.Method, params)
+					log.Printf("--> request #%s: %s: %s", req.ID, req.Method, params)
 				}
 
 			case resp != nil:
@@ -57,7 +57,7 @@ func LogMessages(log *log.Logger) ConnOpt {
 				switch {
 				case resp.Result != nil:
 					result, _ := json.Marshal(resp.Result)
-					log.Printf("--> result #%d: %s: %s", resp.ID, method, result)
+					log.Printf("--> result #%s: %s: %s", resp.ID, method, result)
 				case resp.Error != nil:
 					err, _ := json.Marshal(resp.Error)
 					log.Printf("--> error #%d: %s: %s", resp.ID, method, err)
@@ -71,7 +71,7 @@ func LogMessages(log *log.Logger) ConnOpt {
 				if req.Notif {
 					log.Printf("<-- notif: %s: %s", req.Method, params)
 				} else {
-					log.Printf("<-- request #%d: %s: %s", req.ID, req.Method, params)
+					log.Printf("<-- request #%s: %s: %s", req.ID, req.Method, params)
 				}
 
 			case resp != nil:
@@ -85,10 +85,10 @@ func LogMessages(log *log.Logger) ConnOpt {
 
 				if resp.Result != nil {
 					result, _ := json.Marshal(resp.Result)
-					log.Printf("<-- result #%d: %s: %s", resp.ID, method, result)
+					log.Printf("<-- result #%s: %s: %s", resp.ID, method, result)
 				} else {
 					err, _ := json.Marshal(resp.Error)
-					log.Printf("<-- error #%d: %s: %s", resp.ID, method, err)
+					log.Printf("<-- error #%s: %s: %s", resp.ID, method, err)
 				}
 			}
 		})(c)

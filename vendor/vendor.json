@@ -664,10 +664,10 @@
 			"revisionTime": "2016-05-24T18:55:40Z"
 		},
 		{
-			"checksumSHA1": "YHt4D9SELrSJu6gO9FYdKCEbYNM=",
+			"checksumSHA1": "UwomqKT4JDbe886b1p7NaQOZVMg=",
 			"path": "github.com/sourcegraph/jsonrpc2",
-			"revision": "fe0196e385d6d450c84a87037defd0c5bda3dfb9",
-			"revisionTime": "2016-10-13T11:10:05Z"
+			"revision": "6416f80f8f28c5210789f98c04f725e624cc7317",
+			"revisionTime": "2016-11-06T15:12:05Z"
 		},
 		{
 			"path": "github.com/sourcegraph/sitemap",

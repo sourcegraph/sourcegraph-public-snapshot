@@ -43,7 +43,7 @@ func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface
 	}
 	reqs := []jsonrpc2.Request{
 		{
-			ID:     0,
+			ID:     jsonrpc2.ID{Num: 0},
 			Method: "initialize",
 			Params: mustMarshal(&xlang.ClientProxyInitializeParams{
 				InitializeParams: lsp.InitializeParams{
@@ -53,7 +53,7 @@ func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface
 			}),
 		},
 		{
-			ID:     1,
+			ID:     jsonrpc2.ID{Num: 1},
 			Method: o.Method,
 			Params: mustMarshal(&lsp.TextDocumentPositionParams{
 				TextDocument: lsp.TextDocumentIdentifier{
@@ -66,7 +66,7 @@ func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface
 			}),
 		},
 		{
-			ID:     2,
+			ID:     jsonrpc2.ID{Num: 2},
 			Method: "shutdown",
 		},
 		{

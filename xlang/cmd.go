@@ -139,9 +139,9 @@ func (c *reproCmd) Execute(args []string) error {
 	fmt.Fprintln(os.Stderr)
 
 	lspReqs := []jsonrpc2.Request{
-		{ID: 1, Method: "initialize"},
-		{ID: 2, Method: terr.Method},
-		{ID: 3, Method: "shutdown"},
+		{ID: jsonrpc2.ID{Num: 1}, Method: "initialize"},
+		{ID: jsonrpc2.ID{Num: 2}, Method: terr.Method},
+		{ID: jsonrpc2.ID{Num: 3}, Method: "shutdown"},
 		{Notif: true, Method: "exit"},
 	}
 	if err := lspReqs[0].SetParams(lsp.InitializeParams{RootPath: terr.RootPath}); err != nil {
