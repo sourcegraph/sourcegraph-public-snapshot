@@ -111,34 +111,3 @@ func TestURI_FilePath(t *testing.T) {
 		})
 	}
 }
-
-// func TestURI_HasPrefix(t *testing.T) {
-// 	tests := map[string]map[string]bool{
-// 		"s://h/h?v#a/b": {
-// 			"s://h/h?v":       true,
-// 			"s://h/h?v#":      true,
-// 			"s://h/h?v#a":     true,
-// 			"s://h/h?v#a/b":   true,
-// 			"s://h/h?v#a/b/c": false,
-// 			"s://h/h?v#a/d":   false,
-// 			"s://h/h?v#d":     false,
-// 		},
-// 	}
-// 	for a, subtest := range tests {
-// 		for b, want := range subtest {
-// 			t.Run(a+" and "+b, func(t *testing.T) {
-// 				a, err := Parse(a)
-// 				if err != nil {
-// 					t.Fatal(err)
-// 				}
-// 				b, err := Parse(b)
-// 				if err != nil {
-// 					t.Fatal(err)
-// 				}
-// 				if a.HasPrefix(b) != want {
-// 					t.Errorf("got HasPrefix %v, want %v", !want, want)
-// 				}
-// 			})
-// 		}
-// 	}
-// }

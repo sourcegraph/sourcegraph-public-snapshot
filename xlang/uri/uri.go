@@ -76,15 +76,6 @@ func (u *URI) WithFilePath(p string) *URI {
 	return &copy
 }
 
-// // HasPrefix reports whether o is a prefix of u. That is, each
-// // component of u is equal to the corresponding component of o, except
-// // that u.FilePath() can also be a path prefix of o.FilePath().
-// func (u *URI) HasPrefix(o *URI) bool {
-// 	return u.Scheme == o.Scheme && u.User == nil && o.User == nil &&
-// 		u.Host == o.Host && u.Path == o.Path && u.RawQuery == o.RawQuery &&
-// 		pathHasPrefix(u.FilePath(), o.FilePath())
-// }
-
 func cleanPath(p string) string {
 	p = path.Clean(p)
 	p = strings.TrimPrefix(p, "/")
@@ -93,11 +84,3 @@ func cleanPath(p string) string {
 	}
 	return p
 }
-
-// func pathHasPrefix(a, b string) bool {
-// 	var bs string
-// 	if b != "" {
-// 		bs = b + "/"
-// 	}
-// 	return a == b || strings.HasPrefix(a, bs)
-// }
