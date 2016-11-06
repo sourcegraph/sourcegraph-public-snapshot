@@ -8,7 +8,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"path"
 	"strings"
 	"sync"
 	"time"
@@ -356,11 +355,12 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		// notification to client.
 		var walkErr error
 		lspext.WalkURIFields(paramsObj, nil, func(uriStr string) string {
-			newURI, err := c.rewritePathFromServer(uriStr)
+			newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
 			if err != nil {
 				walkErr = err
+				return ""
 			}
-			return newURI
+			return newURI.String()
 		})
 		if walkErr != nil {
 			return nil, walkErr
@@ -376,53 +376,6 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("client handler for propagating server messages: method not found: %q", req.Method)}
 	}
-}
-
-// rewritePathFromClient updates URIs in client messages that refer to
-// repositories (e.g.,
-// "git://github.com/facebook/react.git?master#dir/file.txt" ->
-// "file:///dir/file.txt") to point to paths on the virtual file
-// system that will contain the original path's contents. It checks
-// out the remote repository to the file system if necessary.
-func (c *clientProxyConn) rewritePathFromClient(uriStr string) (string, error) {
-	uri, err := uri.Parse(uriStr)
-	if err != nil {
-		return "", err
-	}
-	if p := path.Clean(uri.FilePath()); strings.HasPrefix(p, "/") || strings.HasPrefix(p, "..") {
-		return "", fmt.Errorf("invalid file path in URI %q in LSP proxy client request (must not begin with '/', '..', or contain '.' or '..' components)", uriStr)
-	} else if uri.FilePath() != "" && p != uri.FilePath() {
-		return "", fmt.Errorf("invalid file path in URI %q (raw file path %q != cleaned file path %q)", uriStr, uri.FilePath(), p)
-	}
-	if *uri.WithFilePath("") != *c.context.rootPath.WithFilePath("") {
-		// SECURITY NOTE: This is a safety check against the user
-		// trying to specify one repository in the initialize request
-		// and refer to another repository's files in the another
-		// request. This is important, because we only perform the
-		// access check for the initialize request.
-		return "", fmt.Errorf("file path %q in LSP proxy client request must be underneath root path %q", uriStr, &c.context.rootPath)
-	}
-	return "file:///" + uri.FilePath(), nil
-}
-
-// rewritePathFromServer is the reverse of rewritePathFromClient. It
-// updates URIs in server messages that refer to the local workspace's
-// virtual file system to point back to files in the original
-// repository (e.g., "file:///dir/file.txt" ->
-// "git://github.com/facebook/react.git?master#dir/file.txt").
-func (c *clientProxyConn) rewritePathFromServer(uriStr string) (string, error) {
-	uri, err := uri.Parse(uriStr)
-	if err != nil {
-		return "", err
-	}
-	if uri.Scheme == "file" {
-		return c.context.rootPath.WithFilePath(c.context.rootPath.ResolveFilePath(uri.Path)).String(), nil
-	}
-	return uriStr, nil
-	// Another possibility is a "git://" URI that the build/lang
-	// server knew enough to produce on its own (e.g., to refer to
-	// git://github.com/golang/go for a Go stdlib definition). No need
-	// to rewrite those.
 }
 
 // callServer sends the LSP request to the server chosen based on the
@@ -451,11 +404,12 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 	// in the LSP params object.
 	var walkErr error
 	lspext.WalkURIFields(params, nil, func(uriStr string) string {
-		newURI, err := c.rewritePathFromClient(uriStr)
+		newURI, err := relWorkspaceURI(c.context.rootPath, uriStr)
 		if err != nil {
 			walkErr = err
+			return ""
 		}
-		return newURI
+		return newURI.String()
 	})
 	if walkErr != nil {
 		return walkErr
@@ -494,11 +448,12 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 		return err
 	}
 	lspext.WalkURIFields(resultObj, nil, func(uriStr string) string {
-		newURI, err := c.rewritePathFromServer(uriStr)
+		newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
 		if err != nil {
 			walkErr = err
+			return ""
 		}
-		return newURI
+		return newURI.String()
 	})
 	if walkErr != nil {
 		return walkErr
