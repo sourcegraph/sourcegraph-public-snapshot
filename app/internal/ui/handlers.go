@@ -25,6 +25,7 @@ func init() {
 	router.Get(routeJobs).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://boards.greenhouse.io/sourcegraph", http.StatusFound)
 	}))
+	router.Get(routePlan).Handler(httptrace.TraceRoute(handler(servePlan)))
 
 	// Redirect from old /land/ def landing URLs to new /info/ URLs
 	router.Get(oldRouteDefLanding).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

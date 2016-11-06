@@ -19,6 +19,7 @@ const (
 	routeTree          = "page.tree"
 
 	routeJobs     = "page.jobs"
+	routePlan     = "page.plan"
 	routeHomePage = "page.home"
 	routeTopLevel = "page.toplevel" // non-repo top-level routes
 
@@ -64,6 +65,7 @@ func newRouter() *mux.Router {
 	m.Path("/sitemap").Methods("GET").Name(routeLangsIndex)
 	m.Path("/sitemap/{Lang:.*}").Methods("GET").Name(routeReposIndex)
 	m.Path("/{Path:(?:jobs|careers)}").Methods("GET").Name(routeJobs)
+	m.Path("/plan").Methods("GET").Name(routePlan)
 	m.Path("/{Path:(?:" + strings.Join(topLevel, "|") + ")}").Methods("GET").Name(routeTopLevel)
 	m.Path("/").Methods("GET").Name(routeHomePage)
 

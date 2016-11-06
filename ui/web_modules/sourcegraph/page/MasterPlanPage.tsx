@@ -13,6 +13,7 @@ import {media} from "glamor";
 import {context} from "sourcegraph/app/context";
 
 function tldr() {
+	// NOTE: If you change this, also update master_plan.go.
 	return (
 		<ol>
 			<li><a href="#code-intelligence">Make basic code intelligence ubiquitous</a></li>
@@ -198,7 +199,7 @@ export function MasterPlanPage(props: {}) {
 				</Panel>
 
 				<br/><br/><br/>
-				<Heading level={4} underline="purple" className={styles.h5}><a id="global-code-graph" style={{color: "inherit"}}>Build the global code graph</a></Heading>
+				<Heading level={4} underline="purple" className={styles.h5}><a id="global-code-graph" style={{color: "inherit"}}>Increase the amount &amp; quality of open-source code</a></Heading>
 				<p>The fundamental problem of software development is that most developers spend most of their time doing things that aren’t core to solving their actual problem. Of all the code you write, only a tiny fraction is core to your particular business or application. Likewise for the bugs you spend time fixing.</p>
 
 				<p>We will make it much easier to create and reuse public, open-source code by giving everyone access to the global code graph. The global code graph is the collection of all the code in the world, stored in a system that understands the dependency and call graph relationships across tens of millions of codebases. It's what powers the features in the previous steps.</p>
