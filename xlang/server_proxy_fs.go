@@ -10,19 +10,26 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-var simulateFSLatency, _ = time.ParseDuration(os.Getenv("LSP_PROXY_SIMULATED_LATENCY"))
+// simulateFSLatency simulates latency to test likely performance when
+// this is deployed, if the LSP_PROXY_SIMULATED_LATENCY env var is set
+// (otherwise it's a no-op). The lsp-proxy and lang/build server pods
+// typically have a 3-6ms of effective network latency, which
+// (multiplied by many VFS requests) is significant.
+func simulateFSLatency() {
+	if s := os.Getenv("LSP_PROXY_SIMULATED_LATENCY"); s != "" {
+		d, err := time.ParseDuration(s)
+		if err != nil {
+			panic(err)
+		}
+		time.Sleep(d)
+	}
+}
 
 // handleFS handles file system-related requests from the build/lang
 // server to the server proxy. It provides a VFS to the build/lang
 // server.
 func (c *serverProxyConn) handleFS(ctx context.Context, method, path string) (result interface{}, err error) {
-	// Simulate latency to test likely performance when this is
-	// deployed. The lsp-proxy and lang/build server pods typically
-	// have a 3-6ms of effective network latency, which (multiplied by
-	// many VFS requests) is significant.
-	if simulateFSLatency > 0 {
-		time.Sleep(simulateFSLatency)
-	}
+	simulateFSLatency()
 
 	switch method {
 	case "fs/readFile":
