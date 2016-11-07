@@ -70,7 +70,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 	},
 });
 
-export const TreeMain = (props: Props) => {
+export const TreeMain = function(props: Props): JSX.Element {
 	return <Relay.RootContainer
 		Component={TreeMainContainer}
 		route={{

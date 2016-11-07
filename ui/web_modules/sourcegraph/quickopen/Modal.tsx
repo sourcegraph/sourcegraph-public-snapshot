@@ -125,7 +125,7 @@ const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {
 	},
 });
 
-export const QuickOpenModal = (props: Props) => {
+export const QuickOpenModal = function(props: Props): JSX.Element {
 	return <Relay.RootContainer
 		Component={QuickOpenModalContainer}
 		route={{
