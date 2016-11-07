@@ -14,7 +14,7 @@ export function urlToRepoRev(repo: string, rev: string | null): string {
 // urlWithRev constructs a URL that is equivalent to the current URL (whose
 // current routes and routeParams are passed in), but pointing to a new rev. Only the
 // rev is overwritten in the returned URL.
-export function urlWithRev(currentRoutes: PlainRoute[], currentRouteParams: any, newRev: string): string {
+export function urlWithRev(currentRoutes: PlainRoute[], currentRouteParams: any, newRev: string | null): string {
 	const path = currentRoutes.map(r => r.path).join("");
 	const repoRev = makeRepoRev(repoPath(repoParam(currentRouteParams.splat)), newRev);
 	const newParams = Object.assign({}, currentRouteParams, {

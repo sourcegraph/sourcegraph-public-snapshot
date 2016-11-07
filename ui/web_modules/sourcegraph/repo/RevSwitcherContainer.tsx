@@ -10,7 +10,7 @@ import {TreeStore} from "sourcegraph/tree/TreeStore";
 
 interface Props {
 	repo: string;
-	rev?: string;
+	rev: string;
 	commitID: string;
 	repoObj?: any;
 	isCloning: boolean;

@@ -7,7 +7,7 @@ import * as styles from "sourcegraph/repo/styles/Repo.css";
 
 interface Props {
 	repo: string;
-	rev?: string;
+	rev: string;
 	commitID?: string;
 	inventory?: any;
 	repoNavContext: JSX.Element;
