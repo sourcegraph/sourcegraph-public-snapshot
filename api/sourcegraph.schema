@@ -25,7 +25,7 @@ type Repository implements Node {
 type Commit implements Node {
 	id: ID!
 	sha1: String!
-	tree(path: String = ""): Tree
+	tree(path: String = "", recursive: Boolean = false): Tree
 }
 
 type Tree {

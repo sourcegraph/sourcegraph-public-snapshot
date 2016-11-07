@@ -37,6 +37,9 @@ func (r *commitResolver) SHA1() string {
 	return r.commit.CommitID
 }
 
-func (r *commitResolver) Tree(ctx context.Context, args *struct{ Path string }) (*treeResolver, error) {
-	return makeTreeResolver(ctx, r.commit, args.Path)
+func (r *commitResolver) Tree(ctx context.Context, args *struct {
+	Path      string
+	Recursive bool
+}) (*treeResolver, error) {
+	return makeTreeResolver(ctx, r.commit, args.Path, args.Recursive)
 }
