@@ -504,6 +504,8 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	)
 	if len(split) == 2 {
 		defContainerName, defName = split[0], split[1]
+	} else {
+		defContainerName = defSpec.Unit
 	}
 
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
