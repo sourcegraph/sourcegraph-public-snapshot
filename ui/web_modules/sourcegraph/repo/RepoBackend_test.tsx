@@ -35,13 +35,4 @@ describe("RepoBackend", () => {
 			RepoBackend.__onDispatch(new RepoActions.WantCreateRepo("a/b", {HTTPCloneURL: "https://a/b"}));
 		})).to.eql([new RepoActions.RepoCreated("a/b", {ID: 1})]);
 	});
-	it("should handle WantCommit", () => {
-		RepoBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-			expect(url).to.be("/.api/repos/r@v/-/commit");
-			return immediateSyncPromise({status: 200, json: () => ({ID: "c"})});
-		};
-		expect(Dispatcher.Stores.catchDispatched(() => {
-			RepoBackend.__onDispatch(new RepoActions.WantCommit("r", "v"));
-		})).to.eql([new RepoActions.FetchedCommit("r", "v", {ID: "c"} as any as Commit)]);
-	});
 });

@@ -5,8 +5,6 @@ import "sourcegraph/repo/RepoBackend";
 import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 import {Store} from "sourcegraph/Store";
-import "sourcegraph/tree/TreeBackend";
-import {TreeStore} from "sourcegraph/tree/TreeStore";
 
 interface Props {
 	repo: string;
@@ -32,7 +30,7 @@ export class RevSwitcherContainer extends Container<Props, State> {
 	}
 
 	stores(): Store<any>[] {
-		return [RepoStore, TreeStore];
+		return [RepoStore];
 	}
 
 	render(): JSX.Element | null {

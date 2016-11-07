@@ -33,20 +33,6 @@ export const RepoBackend = {
 			}
 		}
 
-		if (payload instanceof RepoActions.WantCommit) {
-			const action = payload;
-			let commit = RepoStore.commits.get(action.repo, action.rev);
-			if (commit === null) {
-				RepoBackend.fetch(`/.api/repos/${action.repo}${action.rev ? `@${action.rev}` : ""}/-/commit`)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => ({ Error: err }))
-					.then((data) => {
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedCommit(action.repo, action.rev, data));
-					});
-			}
-		}
-
 		if (payload instanceof RepoActions.WantRepo) {
 			const action = payload;
 			let repo = RepoStore.repos.get(action.repo);

@@ -8,7 +8,6 @@ import {typography} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {urlToTree} from "sourcegraph/tree/routes";
 import * as styles from "sourcegraph/tree/styles/Tree.css";
-import "sourcegraph/tree/TreeBackend";
 
 interface Props {
 	repo: string;

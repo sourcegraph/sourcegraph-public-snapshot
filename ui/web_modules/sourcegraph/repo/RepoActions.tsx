@@ -6,7 +6,6 @@ export type Action =
 	RefreshVCS |
 	WantBranches | FetchedBranches |
 	WantCreateRepo | RepoCreated |
-	WantCommit | FetchedCommit |
 	WantInventory | FetchedInventory |
 	WantRepo | FetchedRepo |
 	WantRepos | ReposFetched |
@@ -76,28 +75,6 @@ export class ResolvedRev {
 		this.repo = repo;
 		this.rev = rev;
 		this.commitID = commitID;
-	}
-}
-
-export class WantCommit {
-	repo: string;
-	rev: string;
-
-	constructor(repo: string, rev: string) {
-		this.repo = repo;
-		this.rev = rev;
-	}
-}
-
-export class FetchedCommit {
-	repo: string;
-	rev: string;
-	commit: Commit;
-
-	constructor(repo: string, rev: string, commit: Commit) {
-		this.repo = repo;
-		this.rev = rev;
-		this.commit = commit;
 	}
 }
 

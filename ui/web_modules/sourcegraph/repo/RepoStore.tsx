@@ -62,12 +62,6 @@ class RepoStoreClass extends Store<any> {
 				return this.content[keyFor(repo)] || null;
 			},
 		});
-		this.commits = deepFreeze({
-			content: {},
-			get(repo: string, rev: string) {
-				return this.content[keyFor(repo, rev)] || null;
-			},
-		});
 		this.inventory = deepFreeze({
 			content: {},
 			get(repo, commitID) {
@@ -130,14 +124,6 @@ class RepoStoreClass extends Store<any> {
 			this.resolvedRevs = deepFreeze(Object.assign({}, this.resolvedRevs, {
 				content: Object.assign({}, this.resolvedRevs.content, {
 					[keyFor(action.repo, action.rev)]: action.commitID,
-				}),
-			}));
-			this.__emitChange();
-			return;
-		} else if (action instanceof RepoActions.FetchedCommit) {
-			this.commits = deepFreeze(Object.assign({}, this.commits, {
-				content: Object.assign({}, this.commits.content, {
-					[keyFor(action.repo, action.rev)]: action.commit,
 				}),
 			}));
 			this.__emitChange();
