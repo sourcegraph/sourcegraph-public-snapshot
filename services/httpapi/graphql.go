@@ -1,11 +1,14 @@
 package httpapi
 
 import (
-	"encoding/json"
 	"net/http"
+
+	"github.com/neelance/graphql-go/relay"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/graphqlbackend"
 )
+
+var relayHandler = &relay.Handler{Schema: graphqlbackend.GraphQLSchema}
 
 func serveGraphQL(w http.ResponseWriter, r *http.Request) (err error) {
 	if r.Method == "GET" {
@@ -14,24 +17,7 @@ func serveGraphQL(w http.ResponseWriter, r *http.Request) (err error) {
 		return nil
 	}
 
-	var params struct {
-		Query     string `json:"query"`
-		Variables map[string]interface{}
-	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return nil
-	}
-
-	response := graphqlbackend.GraphQLSchema.Exec(r.Context(), params.Query, "", params.Variables)
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
-	}
-
-	w.Write(responseJSON)
-
+	relayHandler.ServeHTTP(w, r)
 	return nil
 }
 
