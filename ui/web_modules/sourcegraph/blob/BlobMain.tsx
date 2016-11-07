@@ -3,7 +3,6 @@ import * as React from "react";
 import Helmet from "react-helmet";
 import { InjectedRouter } from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
-import "sourcegraph/blob/BlobBackend";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { urlToBlob } from "sourcegraph/blob/routes";
@@ -39,10 +38,6 @@ interface Props {
 	endLine?: number;
 	endCol?: number;
 	location: Location;
-
-	// TODO(sqs): now that BlobMain no longer uses the blob directly
-	// (the EditorService fetches it), we can save on a network RTT by
-	// eliminating the WantFile dispatch.
 }
 
 interface State extends Props {

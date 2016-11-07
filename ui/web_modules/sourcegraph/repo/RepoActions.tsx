@@ -1,4 +1,4 @@
-import {Branch, Commit, Repo, RepoList, RepoResolution, SymbolInformation, Tag} from "sourcegraph/api";
+import {Branch, Repo, RepoList, RepoResolution, SymbolInformation, Tag} from "sourcegraph/api";
 import {Inventory} from "sourcegraph/editor/modes";
 
 export type Action =

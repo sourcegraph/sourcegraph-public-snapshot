@@ -1,5 +1,4 @@
 import expect from "expect.js";
-import {Commit} from "sourcegraph/api";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import {RepoBackend} from "sourcegraph/repo/RepoBackend";
