@@ -1,8 +1,6 @@
 export type Action =
 	WantCommit |
-	CommitFetched |
-	WantFileList |
-	FileListFetched;
+	CommitFetched;
 
 export class WantCommit {
 	repo: string;
@@ -27,27 +25,5 @@ export class CommitFetched {
 		this.rev = rev;
 		this.path = path;
 		this.commit = commit;
-	}
-}
-
-export class WantFileList {
-	repo: string;
-	commitID: string;
-
-	constructor(repo: string, commitID: string) {
-		this.repo = repo;
-		this.commitID = commitID;
-	}
-}
-
-export class FileListFetched {
-	repo: string;
-	commitID: string;
-	fileList: any;
-
-	constructor(repo: string, commitID: string, fileList: any) {
-		this.repo = repo;
-		this.commitID = commitID;
-		this.fileList = fileList;
 	}
 }

@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as Relay from "react-relay";
 
 import {ModalComp} from "sourcegraph/components/Modal";
 import {Container} from "sourcegraph/quickopen/Container";
@@ -23,7 +24,7 @@ export type Props = {
 }
 
 // QuickOpenModal controls when and how to show the search modal.
-export class QuickOpenModal extends React.Component<Props, null> {
+class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
 	constructor() {
 		super();
 		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
@@ -84,11 +85,11 @@ export class QuickOpenModal extends React.Component<Props, null> {
 			<Container
 				ref="searchContainer"
 				repo={r}
+				files={this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
 				dismissModal={this.dismissModal} />
 		</ModalComp>;
 	}
 }
-
 function isNonMonacoTextArea(n: Node): boolean {
 	if (n.nodeName !== "TEXTAREA") {
 		return false;
@@ -101,3 +102,40 @@ function isNonMonacoTextArea(n: Node): boolean {
 	}
 	return true;
 }
+
+const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {
+	initialVariables: {
+		repo: "",
+		rev: "",
+	},
+	fragments: {
+		root: () => Relay.QL`
+			fragment on Root {
+				repository(uri: $repo) {
+					commit(rev: $rev) {
+						tree(recursive: true) {
+							files {
+								name
+							}
+						}
+					}
+				}
+			}
+		`,
+	},
+});
+
+export const QuickOpenModal = (props: Props) => {
+	return <Relay.RootContainer
+		Component={QuickOpenModalContainer}
+		route={{
+			name: "Root",
+			queries: {
+				root: () => Relay.QL`
+					query { root }
+				`,
+			},
+			params: props,
+		}}
+	/>;
+};

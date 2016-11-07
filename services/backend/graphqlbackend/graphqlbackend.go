@@ -57,6 +57,9 @@ func (r *queryResolver) Node(ctx context.Context, args *struct{ ID graphql.ID })
 type rootResolver struct{}
 
 func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string }) (*repositoryResolver, error) {
+	if args.URI == "" {
+		return nil, nil
+	}
 	repo, err := localstore.Repos.GetByURI(ctx, args.URI)
 	if err != nil {
 		return nil, err

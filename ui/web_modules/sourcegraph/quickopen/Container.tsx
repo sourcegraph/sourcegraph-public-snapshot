@@ -18,8 +18,6 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import { Inventory } from "sourcegraph/editor/modes";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
-import * as TreeActions from "sourcegraph/tree/TreeActions";
-import { TreeStore } from "sourcegraph/tree/TreeStore";
 import "string_score";
 
 import { Hint, ResultCategories } from "sourcegraph/quickopen/Components";
@@ -60,6 +58,7 @@ interface Props {
 		URI: string;
 		rev: string | null;
 	};
+	files: GQL.IFile[];
 };
 
 interface Results {
@@ -159,7 +158,6 @@ export class Container extends React.Component<Props, State> {
 
 	componentDidMount(): void {
 		this.listeners = [
-			TreeStore.addListener(this.updateResults),
 			RepoStore.addListener(this.updateResults),
 		];
 		if (this.props.repo) {
@@ -251,7 +249,6 @@ export class Container extends React.Component<Props, State> {
 		this.fetchRepoResultsWithGitHub(query);
 
 		if (this.props.repo !== null && this.state.commitID) {
-			Dispatcher.Backends.dispatch(new TreeActions.WantFileList(this.props.repo.URI, this.state.commitID));
 			if (this.state.inventory) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.state.inventory, this.props.repo.URI, this.state.commitID, query));
 			} else {
@@ -341,22 +338,16 @@ export class Container extends React.Component<Props, State> {
 			}
 
 			// Update files
-			const commit = this.state.commitID || "";
-			const updatedFiles = TreeStore.fileLists.get(repo.URI, commit);
-			if (updatedFiles) {
-				interface Scorable {
-					score: number;
-				}
-				let fileResults: (Result & Scorable)[] = updatedFiles.Files.reduce((acc, file) => rankFile(acc, file, query.toLowerCase()), []);
-				fileResults.forEach(file => {
-					file.URLPath = urlToBlob(repo.URI, repo.rev, file.title);
-				});
-				fileResults = fileResults.sort((a, b) => b.score - a.score);
-				files.IsLoading = false;
-				files.Results = fileResults;
-			} else {
-				files.IsLoading = true;
+			interface Scorable {
+				score: number;
 			}
+			let fileResults: (Result & Scorable)[] = this.props.files.reduce((acc, file) => rankFile(acc, file.name, query.toLowerCase()), []);
+			fileResults.forEach(file => {
+				file.URLPath = urlToBlob(repo.URI, repo.rev, file.title);
+			});
+			fileResults = fileResults.sort((a, b) => b.score - a.score);
+			files.IsLoading = false;
+			files.Results = fileResults;
 		}
 
 		// Update repos. First look up if there are results that include GitHub results.

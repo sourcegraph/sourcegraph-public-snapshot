@@ -12,8 +12,6 @@ function keyFor(repo, rev, path?) {
 
 class TreeStoreClass extends Store<any> {
 	commits: any;
-	fileLists: any;
-	fileTree: any;
 
 	reset() {
 		this.commits = deepFreeze({
@@ -22,25 +20,11 @@ class TreeStoreClass extends Store<any> {
 				return this.content[keyFor(repo, rev, path)] || null;
 			},
 		});
-		this.fileLists = deepFreeze({
-			content: {},
-			get(repo, commitID) {
-				return this.content[keyFor(repo, commitID)] || null;
-			},
-		});
-		this.fileTree = deepFreeze({
-			content: {},
-			get(repo, commitID) {
-				return this.content[keyFor(repo, commitID)] || null;
-			},
-		});
 	}
 
 	toJSON(): any {
 		return {
 			commits: this.commits,
-			fileLists: this.fileLists,
-			fileTree: this.fileTree,
 		};
 	}
 
@@ -53,37 +37,6 @@ class TreeStoreClass extends Store<any> {
 				}),
 			}));
 			break;
-
-		case TreeActions.FileListFetched:
-			{
-				let fileTree = {Dirs: {}, Files: [] as (any[])};
-				if (action.fileList && action.fileList.Files) {
-					action.fileList.Files.forEach(file => {
-						const parts = file.split("/");
-						let node = fileTree;
-						parts.forEach((part, i) => {
-							let dirKey = `!${part}`; // dirKey is prefixed to avoid clash with predefined fields like "constructor"
-							if (i === parts.length - 1) {
-								node.Files.push(part);
-							} else if (!node.Dirs[dirKey]) {
-								node.Dirs[dirKey] = {Dirs: {}, Files: []};
-							}
-							node = node.Dirs[dirKey];
-						});
-					});
-				}
-				this.fileLists = deepFreeze(Object.assign({}, this.fileLists, {
-					content: Object.assign({}, this.fileLists.content, {
-						[keyFor(action.repo, action.commitID)]: action.fileList,
-					}),
-				}));
-				this.fileTree = deepFreeze(Object.assign({}, this.fileTree, {
-					content: Object.assign({}, this.fileTree.content, {
-						[keyFor(action.repo, action.commitID)]: fileTree,
-					}),
-				}));
-				break;
-			}
 
 		default:
 			return; // don't emit change

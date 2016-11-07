@@ -1,6 +1,5 @@
 import expect from "expect.js";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as TreeActions from "sourcegraph/tree/TreeActions";
 import {TreeBackend} from "sourcegraph/tree/TreeBackend";
 import {immediateSyncPromise} from "sourcegraph/util/testutil/immediateSyncPromise";
@@ -21,22 +20,5 @@ describe("TreeBackend", () => {
 		expect(Dispatcher.Stores.catchDispatched(() => {
 			TreeBackend.__onDispatch(new TreeActions.WantCommit(entry.repo, entry.rev, entry.path));
 		})).to.eql([new TreeActions.CommitFetched(entry.repo, entry.rev, entry.path, "someTreeCommit")]);
-	});
-
-	it("should handle WantFileList", () => {
-		const repo = "aRepo";
-		const commitID = "aCommitID";
-		let expectedURI = `/.api/repos/${repo}@${commitID}/-/tree-list`;
-
-		TreeBackend.fetch = function(url: string, init: RequestInit): Promise<Response> {
-			expect(url).to.be(expectedURI);
-			return immediateSyncPromise({status: 200, json: () => ({Files: ["a", "b"]})});
-		};
-		expect(Dispatcher.Stores.catchDispatched(() => {
-			TreeBackend.__onDispatch(new TreeActions.WantFileList(repo, commitID));
-		})).to.eql([
-			new RepoActions.RepoCloning(repo, false),
-			new TreeActions.FileListFetched(repo, commitID, {Files: ["a", "b"]}),
-		]);
 	});
 });
