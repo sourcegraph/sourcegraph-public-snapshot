@@ -1,6 +1,5 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import * as Relay from "react-relay";
 import {Link} from "react-router";
 import {urlToBlob} from "sourcegraph/blob/routes";
 import {Base, Header, Heading, Panel} from "sourcegraph/components";
@@ -15,12 +14,12 @@ interface Props {
 	repo: string;
 	rev: string;
 	path: string;
+	tree: GQL.ITree;
 }
 
-class TreeListComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
+export class TreeList extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
-		const tree = this.props.root.repository.commit.tree;
-		if (tree === null) {
+		if (this.props.tree === null) {
 			return <Header
 					title="Not Found"
 					subtitle="Directory not found." />;
@@ -38,7 +37,7 @@ class TreeListComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
 			);
 		}
 
-		items = items.concat(tree.directories.map((dir) =>
+		items = items.concat(this.props.tree.directories.map((dir) =>
 			<Link className={classNames(styles.list_item)}
 				to={urlToTree(this.props.repo, this.props.rev, this.props.path + "/" + dir.name)}
 				key={dir.name}>
@@ -47,7 +46,7 @@ class TreeListComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
 			</Link>
 		));
 
-		items = items.concat(tree.files.map((file) =>
+		items = items.concat(this.props.tree.files.map((file) =>
 			<Link className={classNames(styles.list_item)}
 				to={urlToBlob(this.props.repo, this.props.rev, this.props.path + "/" + file.name)}
 				key={file.name}>
@@ -73,44 +72,3 @@ class TreeListComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
 		</Panel>;
 	}
 }
-
-const TreeListContainer = Relay.createContainer(TreeListComponent, {
-	initialVariables: {
-		repo: "",
-		rev: "",
-		path: "",
-	},
-	fragments: {
-		root: () => Relay.QL`
-			fragment on Root {
-				repository(uri: $repo) {
-					commit(rev: $rev) {
-						tree(path: $path) {
-							directories {
-								name
-							}
-							files {
-								name
-							}
-						}
-					}
-				}
-			}
-		`,
-	},
-});
-
-export const TreeList = (props: Props) => {
-	return <Relay.RootContainer
-		Component={TreeListContainer}
-		route={{
-			name: "Root",
-			queries: {
-				root: () => Relay.QL`
-					query { root }
-				`,
-			},
-			params: props,
-		}}
-	/>;
-};

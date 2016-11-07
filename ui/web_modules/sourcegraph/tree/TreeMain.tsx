@@ -1,5 +1,6 @@
 import * as React from "react";
 import Helmet from "react-helmet";
+import * as Relay from "react-relay";
 import {Route} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {Base, GridCol, Panel, RepoLink} from "sourcegraph/components";
@@ -17,11 +18,7 @@ interface Props {
 	routeParams: RouteParams;
 };
 
-export class TreeMain extends React.Component<Props, {}> {
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
+export class TreeMainComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
 	render(): JSX.Element | null {
 		const path = treeParam(this.props.routeParams.splat);
 
@@ -39,9 +36,51 @@ export class TreeMain extends React.Component<Props, {}> {
 					<TreeList
 						repo={this.props.repo}
 						rev={this.props.rev}
-						path={path} />
+						path={path}
+						tree={this.props.root.repository.commit.tree} />
 				</GridCol>
 			</div>
 		);
 	}
 }
+
+const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
+	initialVariables: {
+		repo: "",
+		rev: "",
+		path: "",
+	},
+	fragments: {
+		root: () => Relay.QL`
+			fragment on Root {
+				repository(uri: $repo) {
+					commit(rev: $rev) {
+						tree(path: $path) {
+							directories {
+								name
+							}
+							files {
+								name
+							}
+						}
+					}
+				}
+			}
+		`,
+	},
+});
+
+export const TreeMain = (props: Props) => {
+	return <Relay.RootContainer
+		Component={TreeMainContainer}
+		route={{
+			name: "Root",
+			queries: {
+				root: () => Relay.QL`
+					query { root }
+				`,
+			},
+			params: props,
+		}}
+	/>;
+};
