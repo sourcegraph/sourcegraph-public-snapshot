@@ -279,6 +279,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			for w.Step() {
 				if path.Ext(w.Path()) == ".go" {
 					d := path.Dir(w.Path())
+					if langserver.IsVendorDir(d) {
+						continue
+					}
 					h.fetchAndSendDepsOnce(d).Do(func() {
 						if err := h.fetchTransitiveDepsOfFile(ctx, d); err != nil {
 							log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
