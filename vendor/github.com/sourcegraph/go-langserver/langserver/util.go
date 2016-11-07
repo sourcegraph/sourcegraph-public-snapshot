@@ -26,3 +26,8 @@ func PathTrimPrefix(s, prefix string) string {
 func pathEqual(a, b string) bool {
 	return PathTrimPrefix(a, b) == ""
 }
+
+// IsVendorDir tells if the specified directory is a vendor directory.
+func IsVendorDir(dir string) bool {
+	return strings.HasPrefix(dir, "vendor/") || strings.Contains(dir, "/vendor/")
+}

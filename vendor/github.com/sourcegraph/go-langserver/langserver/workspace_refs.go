@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"go/build"
+	"go/parser"
 	"go/token"
+	"go/types"
 	"log"
 	"runtime"
 	"sort"
@@ -13,6 +15,7 @@ import (
 	"sync"
 
 	"golang.org/x/tools/go/buildutil"
+	"golang.org/x/tools/go/loader"
 
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -49,16 +52,40 @@ func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC
 		parallelism = 1
 	}
 
+	// Perform typechecking.
+	var (
+		fset = token.NewFileSet()
+		pkgs []string
+	)
+	for pkg := range buildutil.ExpandPatterns(bctx, []string{pkgPat}) {
+		// Ignore any vendor package so we can avoid scanning it for external
+		// references, per the workspace/reference spec. This saves us a
+		// considerable amount of work.
+		bpkg, err := bctx.Import(pkg, rootPath, build.FindOnly)
+		if err != nil && !isMultiplePackageError(err) {
+			log.Printf("skipping possible package %s: %s", pkg, err)
+			continue
+		}
+		if IsVendorDir(bpkg.Dir) {
+			continue
+		}
+		pkgs = append(pkgs, pkg)
+	}
+	prog, err := h.externalRefsTypecheck(ctx, bctx, conn, fset, pkgs)
+	if err != nil {
+		return nil, err
+	}
+
+	// Collect external references.
 	results := refResultSorter{results: make([]lspext.ReferenceInformation, 0)}
 	par := parallel.NewRun(parallelism)
-	pkgs := buildutil.ExpandPatterns(bctx, []string{pkgPat})
-	for pkg := range pkgs {
+	for _, pkg := range prog.Imported {
 		par.Acquire()
-		go func(pkg string) {
+		go func(pkg *loader.PackageInfo) {
 			defer par.Release()
-			err := h.externalRefsFromPkg(ctx, bctx, conn, pkg, rootPath, &results)
+			err := h.externalRefsFromPkg(ctx, bctx, conn, fset, pkg, rootPath, &results)
 			if err != nil {
-				log.Printf("externalRefsFromPkg: %v: %v\n", pkg, err)
+				log.Printf("externalRefsFromPkg: %v: %v", pkg, err)
 			}
 		}(pkg)
 	}
@@ -77,9 +104,70 @@ func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC
 	return results.results, nil
 }
 
+func (h *LangHandler) externalRefsTypecheck(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fset *token.FileSet, pkgs []string) (prog *loader.Program, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "externalRefsTypecheck")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	// Configure the loader.
+	var typeErrs []error
+	conf := loader.Config{
+		Fset: fset,
+		TypeChecker: types.Config{
+			DisableUnusedImportCheck: true,
+			FakeImportC:              true,
+			Error: func(err error) {
+				typeErrs = append(typeErrs, err)
+			},
+		},
+		Build:       bctx,
+		AllowErrors: true,
+		ParserMode:  parser.AllErrors | parser.ParseComments, // prevent parser from bailing out
+		FindPackage: func(bctx *build.Context, importPath, fromDir string, mode build.ImportMode) (*build.Package, error) {
+			// When importing a package, ignore any
+			// MultipleGoErrors. This occurs, e.g., when you have a
+			// main.go with "// +build ignore" that imports the
+			// non-main package in the same dir.
+			bpkg, err := bctx.Import(importPath, fromDir, mode)
+			if err != nil && !isMultiplePackageError(err) {
+				return bpkg, err
+			}
+			return bpkg, nil
+		},
+	}
+	for _, path := range pkgs {
+		conf.Import(path)
+	}
+
+	// Load and typecheck the packages.
+	prog, err = conf.Load()
+	if err != nil && prog == nil {
+		return nil, err
+	}
+
+	// Publish typechecking error diagnostics.
+	diags, err := typecheckErrorDiagnostics(typeErrs)
+	if err != nil {
+		return nil, err
+	}
+	if len(diags) > 0 {
+		go func() {
+			if err := h.publishDiagnostics(ctx, conn, diags); err != nil {
+				log.Printf("warning: failed to send diagnostics: %s.", err)
+			}
+		}()
+	}
+	return prog, nil
+}
+
 // externalRefsFromPkg collects all the external references from the specified
 // package and returns the results.
-func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, pkg string, rootPath string, results *refResultSorter) (err error) {
+func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fs *token.FileSet, pkg *loader.PackageInfo, rootPath string, results *refResultSorter) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "externalRefsFromPkg")
 	defer func() {
 		if err != nil {
@@ -90,52 +178,16 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 	}()
 	span.SetTag("pkg", pkg)
 
-	// Import the package.
-	buildPkg, err := bctx.Import(pkg, rootPath, 0)
-	if err != nil {
-		if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
-			return fmt.Errorf("skipping possible package %s: %s\n", pkg, err)
-		}
-		return nil
-	}
-
-	if strings.HasPrefix(buildPkg.Dir, "vendor/") || strings.Contains(buildPkg.Dir, "/vendor/") {
-		// Per the workspace/reference docs:
-		//
-		// 	- Excluding any `URI` which is located within the workspace.
-		// 	- Excluding any `Location` which is located in vendored code (e.g.
-		// 	  `vendor/...` for Go, `node_modules/...` for JS, .tgz NPM packages, or
-		// 	  .jar files for Java).
-		//
-		// This means that we do not need to consider vendor directories at all
-		// since we do not emit references that are inside the same workspace
-		// (vendor always is) and do not emit references to things that are
-		// vendored. Thus, we can skip typechecking the entire vendor directory
-		// which saves us a a lot of work.
-		return nil
-	}
-
 	pkgInWorkspace := func(path string) bool {
 		return PathHasPrefix(path, h.init.RootImportPath)
-	}
-
-	// Perform type checking.
-	fs, prog, diags, err := h.cachedTypecheck(ctx, bctx, buildPkg)
-	if err != nil {
-		return err
-	}
-	if len(diags) > 0 {
-		if err := h.publishDiagnostics(ctx, conn, diags); err != nil {
-			return fmt.Errorf("sending diagnostics: %s", err)
-		}
 	}
 
 	// Compute external references.
 	cfg := &refs.Config{
 		FileSet:  fs,
-		Pkg:      prog.Package(pkg).Pkg,
-		PkgFiles: prog.Package(pkg).Files,
-		Info:     &prog.Package(pkg).Info,
+		Pkg:      pkg.Pkg,
+		PkgFiles: pkg.Files,
+		Info:     &pkg.Info,
 	}
 	refsErr := cfg.Refs(func(r *refs.Ref) {
 		var defName, defContainerName string
@@ -176,14 +228,10 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 		results.resultsMu.Unlock()
 	})
 	if refsErr != nil {
-		// Log the error, and flag it as one in the trace -- but do not
-		// halt execution (hopefully, it is limited to a small subset of
-		// the data, remember this is just external refs for one single
-		// package).
-		ext.Error.Set(span, true)
-		err := fmt.Errorf("externalRefsFromPkg: external refs failed: %v: %v", pkg, refsErr)
-		log.Println(err)
-		span.SetTag("err", err.Error())
+		// Trace the error, but do not consider it a true error. In many cases
+		// it is a problem with the user's code, not our external reference
+		// finding code.
+		span.SetTag("err", fmt.Sprintf("externalRefsFromPkg: external refs failed: %v: %v", pkg, refsErr))
 	}
 	return nil
 }

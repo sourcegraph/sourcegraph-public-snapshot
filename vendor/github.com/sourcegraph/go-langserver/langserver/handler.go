@@ -155,6 +155,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync:        lsp.TDSKFull,
 				DefinitionProvider:      true,
+				DocumentSymbolProvider:  true,
 				HoverProvider:           true,
 				ReferencesProvider:      true,
 				WorkspaceSymbolProvider: true,

@@ -286,20 +286,26 @@ func typecheck(fset *token.FileSet, bctx *build.Context, bpkg *build.Package) (*
 	if err != nil && prog == nil {
 		return nil, nil, err
 	}
+	diag, err := typecheckErrorDiagnostics(typeErrs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return prog, diag, nil
+}
 
+func typecheckErrorDiagnostics(errs []error) (diagnostics, error) {
 	var diags diagnostics
-	for _, e := range typeErrs {
+	for _, e := range errs {
 		if diags == nil {
 			diags = diagnostics{}
 		}
 		filename, diag, err := parseLoaderError(e.Error())
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		diags[filename] = append(diags[filename], diag)
 	}
-
-	return prog, diags, nil
+	return diags, nil
 }
 
 func clearInfoFields(info *loader.PackageInfo) {
