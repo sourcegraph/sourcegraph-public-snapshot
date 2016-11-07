@@ -32,11 +32,11 @@ def test_github_private_auth_onboarding(d):
     wd = d.d
     username = os.getenv("NEW_USER_GITHUB")
     password = os.getenv("NEW_USER_GITHUB_PASSWORD", "")
-
-    # Delete user from Auth0 if currently exists
     if username is None:
         logf("[%s] skipping test_onboarding because $NEW_USER_GITHUB not set" % yellow("WARN"))
         return
+
+    # Delete user from Auth0 if currently exists
     d.delete_user_if_exists(username)
 
     # Go to home, click "Sign up"
@@ -63,11 +63,11 @@ def test_github_public_auth_onboarding(d):
     wd = d.d
     username = os.getenv("NEW_USER_PUBLIC_GITHUB")
     password = os.getenv("NEW_USER_PUBLIC_GITHUB_PASSWORD", "")
+    if username is None:
+        logf("[%s] skipping test_github_public_auth_onboarding because $NEW_USER_PUBLIC_GITHUB not set" % yellow("WARN"))
+        return
 
     # Delete user from Auth0 if currently exists
-    if username is None:
-        logf("[%s] skipping test_onboarding because $NEW_USER_PUBLIC_GITHUB not set" % yellow("WARN"))
-        return
     d.delete_user_if_exists(username)
 
     # Go to home, click "Sign up"
@@ -203,6 +203,9 @@ def test_beta_signup(d):
     wd = d.d
     username = os.getenv("USER_GITHUB")
     password = os.getenv("USER_GITHUB_PASSWORD")
+    if username is None:
+        logf("[%s] skipping test_beta_signup because $USER_GITHUB not set" % yellow("WARN"))
+        return
 
     wd.get(d.sg_url("/"))
     Util.log_in(d, username, password)
