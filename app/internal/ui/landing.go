@@ -2,12 +2,16 @@ package ui
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -16,6 +20,7 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/russross/blackfriday"
@@ -37,6 +42,34 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
+
+func shouldShadow(page string) bool {
+	e := os.Getenv(page + "_LANDING_SHADOW_PERCENT")
+	if e == "" {
+		return false
+	}
+	p, err := strconv.Atoi(e)
+	if err != nil {
+		log15.Crit("landing: shouldShadow parsing "+page+"_LANDING_SHADOW_PERCENT", "error", err)
+		return false
+	}
+	return rand.Uint32()%100 < uint32(p)
+}
+
+func shouldUseXlang(page string) bool {
+	e := os.Getenv(page + "_LANDING_XLANG_PERCENT")
+	if e == "" {
+		return false
+	}
+	p, err := strconv.Atoi(e)
+	if err != nil {
+		log15.Crit("landing: shouldUseXlang parsing "+page+"_LANDING_XLANG_PERCENT", "error", err)
+		return false
+	}
+	return rand.Uint32()%100 < uint32(p)
+}
+
+func init() { rand.Seed(time.Now().UnixNano()) }
 
 type defDescr struct {
 	Title    string
@@ -132,14 +165,22 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
 	}
 
-	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
 	var data []defDescr
 	err = errors.New("xlang repo landing disabled")
-	//data, err := queryRepoLandingData(r, repo)
-	//if err != nil {
-	//	// Just log, so we fallback to legacy in the event of catastrophic failure.
-	//	log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-	//}
+	if shouldUseXlang("REPO") {
+		data, err = queryRepoLandingData(r, repo)
+		if err != nil {
+			// Just log, so we fallback to legacy in the event of catastrophic failure.
+			log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		}
+	} else if shouldShadow("REPO") {
+		go func() {
+			_, err := queryRepoLandingData(r, repo)
+			if err != nil {
+				log15.Crit("queryRepoLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			}
+		}()
+	}
 
 	// If the new system failed for some reason OR if we don't have 5 top
 	// definitions, then fallback to the legacy srclib data.
@@ -178,7 +219,17 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, error) {
+func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDescr, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryRepoLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	language := "go" // TODO(slimsag): long term, add to route
 
 	// Query information about the top definitions in the repo.
@@ -309,7 +360,17 @@ func defDocText(def *sourcegraph.Def) string {
 	return ""
 }
 
-func queryLegacyRepoLandingData(r *http.Request, repo *sourcegraph.Repo) ([]defDescr, error) {
+func queryLegacyRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDescr, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryLegacyRepoLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	results, err := backend.Search.Search(r.Context(), &sourcegraph.SearchOp{
 		Opt: &sourcegraph.SearchOptions{
 			Repos:        []int32{repo.ID},
@@ -369,12 +430,20 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
 	var data *defLandingData
 	err = errors.New("xlang def landing disabled")
-	_ = repoRev
-	//data, err := queryDefLandingData(r, repo, repoRev)
-	//if err != nil {
-	//	// Just log, so we fallback to legacy in the event of catastrophic failure.
-	//	log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-	//}
+	if shouldUseXlang("DEF") {
+		data, err = queryDefLandingData(r, repo, repoRev)
+		if err != nil {
+			// Just log, so we fallback to legacy in the event of catastrophic failure.
+			log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		}
+	} else if shouldShadow("DEF") {
+		go func() {
+			_, err := queryDefLandingData(r, repo, repoRev)
+			if err != nil {
+				log15.Crit("queryDefLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			}
+		}()
+	}
 
 	// If the new system failed for some reason OR if we don't have 3 sources
 	// referencing this page's definition, then fallback to the legacy srclib
@@ -414,7 +483,17 @@ func withSymbolEventTracking(eventName string, u *url.URL, language string, symb
 	return u
 }
 
-func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (*defLandingData, error) {
+func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (res *defLandingData, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryDefLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	defSpec := routevar.ToDefAtRev(mux.Vars(r))
 	language := "go" // TODO(slimsag): long term, add to route
 
@@ -430,7 +509,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
 	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
 	var symbols []lsp.SymbolInformation
-	err := xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		Query: defName,
 		Limit: 100,
 	}, &symbols)
@@ -624,7 +703,17 @@ func legacyWithDefEventTracking(eventName string, u *url.URL, def *sourcegraph.D
 	return u
 }
 
-func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (*defLandingData, error) {
+func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *defLandingData, err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryLegacyDefLandingData")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	vars := mux.Vars(r)
 	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
 	if err != nil {
