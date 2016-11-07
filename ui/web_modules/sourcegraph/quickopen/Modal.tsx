@@ -1,15 +1,10 @@
 import * as React from "react";
 import * as Relay from "react-relay";
 
+import {EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
 import {ModalComp} from "sourcegraph/components/Modal";
 import {Container} from "sourcegraph/quickopen/Container";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
-interface Node {
-	nodeName: string;
-	parentNode: Node;
-	classList: DOMTokenList;
-};
 
 interface Event {
 	target: Node;
@@ -35,14 +30,6 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 		AnalyticsConstants.Events.Quickopen_Initiated.logEvent(eventProps);
 	}
 
-	componentWillMount(): void {
-		document.body.addEventListener("keydown", this.searchModalShortcuts);
-	}
-
-	componentWillUnmount(): void {
-		document.body.removeEventListener("keydown", this.searchModalShortcuts);
-	}
-
 	_getEventProps(): any {
 		let query = "";
 		if (this.refs["searchContainer"]) {
@@ -59,7 +46,8 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 		if (event.target.nodeName === "INPUT" || isNonMonacoTextArea(event.target) || event.metaKey || event.ctrlKey) {
 			return;
 		}
-		if (event.keyCode === 191) { // Slash key ('/').
+		const SlashKeyCode = 191;
+		if (event.key === "Slash" || event.keyCode === SlashKeyCode) {
 			if (!this.props.showModal) {
 				this.dismissModal(false);
 			}
@@ -76,31 +64,18 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 	}
 
 	render(): JSX.Element {
-		if (!this.props.showModal) {
-			return <div />;
-		}
-
 		const r = this.props.repo ? {URI: this.props.repo, rev: this.props.rev} : null;
-		return <ModalComp onDismiss={() => this.dismissModal(true)}>
-			<Container
-				ref="searchContainer"
-				repo={r}
-				files={this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
-				dismissModal={this.dismissModal} />
-		</ModalComp>;
+		return <div>
+			{this.props.showModal && <ModalComp onDismiss={() => this.dismissModal(true)}>
+				<Container
+					ref="searchContainer"
+					repo={r}
+					files={this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
+					dismissModal={this.dismissModal} />
+			</ModalComp>}
+			<EventListener target={global.document.body} event="keydown" callback={this.searchModalShortcuts} />
+		</div>;
 	}
-}
-function isNonMonacoTextArea(n: Node): boolean {
-	if (n.nodeName !== "TEXTAREA") {
-		return false;
-	}
-	let p = n.parentNode;
-	for (let i = 0; p && i < 20; p = p.parentNode, i++) {
-		if (p.classList.contains("monaco-editor")) {
-			return false;
-		}
-	}
-	return true;
 }
 
 const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {

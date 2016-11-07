@@ -90,3 +90,16 @@ export class EventListener extends React.Component<EventListenerProps, {}> {
 		return null;
 	}
 }
+
+export function isNonMonacoTextArea(n: Node): boolean {
+	if (n.nodeName !== "TEXTAREA") {
+		return false;
+	}
+	let p = n.parentNode;
+	for (let i = 0; p && i < 20; p = p.parentNode, i++) {
+		if (p instanceof Element && p.classList.contains("monaco-editor")) {
+			return false;
+		}
+	}
+	return true;
+}

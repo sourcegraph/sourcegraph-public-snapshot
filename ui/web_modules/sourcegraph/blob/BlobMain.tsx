@@ -179,12 +179,12 @@ export class BlobMain extends Container<Props, State> {
 		}
 	}
 
-	_onKeyDownForFindInPage(e: KeyboardEvent): void {
+	_onKeyDownForFindInPage(e: KeyboardEvent & Event): void {
 		// TODO(sqs): can make this unnecessary?
 		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
 		const ctrl = mac ? e.metaKey : e.ctrlKey;
 		const FKey = 70;
-		if (e.keyCode === FKey && ctrl) {
+		if (ctrl && (e.key === "KeyF" || e.keyCode === FKey)) {
 			if (this._editor) {
 				e.preventDefault();
 				(document.getElementsByClassName("inputarea")[0] as any).focus();

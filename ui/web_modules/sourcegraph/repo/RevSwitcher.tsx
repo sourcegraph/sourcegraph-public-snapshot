@@ -3,7 +3,7 @@ import * as debounce from "lodash/debounce";
 import * as React from "react";
 import {Link} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
-import {Component, EventListener} from "sourcegraph/Component";
+import {Component, EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
 import {Base, Heading, Input, Menu} from "sourcegraph/components";
 import {Check, DownMenu} from "sourcegraph/components/symbols";
 import {colors, typography, whitespace} from "sourcegraph/components/utils";
@@ -168,7 +168,7 @@ export class RevSwitcher extends Component<Props, State> {
 		}
 	}
 
-	// _onKeydown causes ESC to close the menu.
+	// _onKeydown controls the rev switcher and the page URL.
 	_onKeydown(ev: KeyboardEvent): void {
 		if (ev.defaultPrevented) {
 			return;
@@ -178,7 +178,11 @@ export class RevSwitcher extends Component<Props, State> {
 		// in an input field.
 		const el = ev.target as HTMLElement;
 		const tag = el.tagName;
-		if (!(ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) && typeof document !== "undefined" && tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") {
+
+		if (!(ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) &&
+			typeof document !== "undefined" && tag !== "INPUT" &&
+			(tag !== "TEXTAREA" || !isNonMonacoTextArea(el)) &&
+			tag !== "SELECT") {
 			// Global hotkeys.
 			let handled = false;
 			if (ev.keyCode === 89 /* y */) {
@@ -313,8 +317,8 @@ export class RevSwitcher extends Component<Props, State> {
 					{tags}
 				</Menu>
 			</div>
-			<EventListener target={global.document} event="click" callback={this._onClickOutside} />
-			<EventListener target={global.document} event="keydown" callback={this._onKeydown} />
+			<EventListener target={global.document.body} event="click" callback={this._onClickOutside} />
+			<EventListener target={global.document.body} event="keydown" callback={this._onKeydown} />
 		</div>;
 	}
 }
