@@ -90,8 +90,8 @@ class Driver(object):
         self.d = wd  # d is the Selenium WebDriver that Driver uses to interact with the browser
         self.sourcegraph_url = sourcegraph_url
 
-    def close(self):
-        self.d.close()
+    def quit(self):
+        self.d.quit()
 
     def sg_url(self, urlpath):
         if len(urlpath) == 0 or urlpath[0] != "/":

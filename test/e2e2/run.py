@@ -153,7 +153,7 @@ Type "continue" to continue.
                     failed_tests.append(test_name)
             finally:
                 if driver is not None:
-                    driver.close()
+                    driver.quit()
     if len(failed_tests) > 0:
         logf('Test run results: %s' % red("%d / %d FAILED" % (len(failed_tests), len(tests))))
     else:
