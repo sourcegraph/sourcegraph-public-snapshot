@@ -184,11 +184,16 @@ export class BlobMain extends Container<Props, State> {
 		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
 		const ctrl = mac ? e.metaKey : e.ctrlKey;
 		const FKey = 70;
-		if (ctrl && (e.key === "KeyF" || e.keyCode === FKey)) {
-			if (this._editor) {
+		const GKey = 71;
+		if (this._editor && ctrl) {
+			if (e.key === "f" || e.keyCode === FKey) {
 				e.preventDefault();
 				(document.getElementsByClassName("inputarea")[0] as any).focus();
 				this._editor.trigger("keyboard", "actions.find", {});
+			} else if (e.key === "g" || e.keyCode === GKey) {
+				e.preventDefault();
+				(document.getElementsByClassName("inputarea")[0] as any).focus();
+				this._editor.trigger("keyboard", "actions.editor.action.nextMatchFindAction", {});
 			}
 		}
 	}
