@@ -15,17 +15,7 @@ export class ListComponent extends React.Component<{}, any> {
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 
-						<Heading level={7} className={base.mb3} color="cool_mid_gray">Normal</Heading>
-
 						<List>
-							<li>Item 1</li>
-							<li>Item 2</li>
-							<li>Item 3</li>
-						</List>
-
-						<Heading level={7} className={base.mb3} color="cool_mid_gray">Node style</Heading>
-
-						<List listStyle="node">
 							<li>Item 1</li>
 							<li>Item 2</li>
 							<li>Item 3</li>
@@ -38,12 +28,6 @@ export class ListComponent extends React.Component<{}, any> {
 {
 `
 <List>
-	<li>Item 1</li>
-	<li>Item 2</li>
-	<li>Item 3</li>
-</List>
-
-<List listStyle="node">
 	<li>Item 1</li>
 	<li>Item 2</li>
 	<li>Item 3</li>
@@ -66,10 +50,10 @@ export class ListComponent extends React.Component<{}, any> {
 						</thead>
 						<tbody>
 							<tr>
-								<td><Code>listStyle</Code></td>
-								<td><Code>normal</Code></td>
+								<td><Code>itemStyle</Code></td>
+								<td><Code>undefined</Code></td>
 								<td>
-									<Code>normal</Code>, <Code>node</Code>
+									<Code>undefined</Code>, <Code>style object</Code>
 								</td>
 							</tr>
 						</tbody>

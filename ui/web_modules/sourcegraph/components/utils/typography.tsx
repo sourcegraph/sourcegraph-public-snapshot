@@ -1,12 +1,12 @@
 // font size in unit, line height
 const scale = [
 	[3.35, 1.25],
-	[2.5, 1.45],
-	[2.0, 1.45],
-	[1.5, 1.45],
-	[1.25, 1.45],
-	[1, 1.45],
-	[0.9, 1.45],
+	[2.5, 1.5],
+	[2.0, 1.5],
+	[1.5, 1.6],
+	[1.25, 1.6],
+	[1, 1.5],
+	[0.9, 1.5],
 ];
 
 const unit = "rem";
@@ -33,7 +33,7 @@ export const codeSize = [
 ];
 
 export const size = [
-	null,
+	{},
 	{
 		fontSize: scale[0][0] + unit,
 		lineHeight: scale[0][1],

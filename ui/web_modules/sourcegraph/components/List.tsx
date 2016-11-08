@@ -1,35 +1,30 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import * as styles from "sourcegraph/components/styles/list.css";
-import * as classNames from "classnames";
+import {whitespace} from "sourcegraph/components/utils";
 
 interface Props {
-	className?: string;
-	children?: any;
-	style?: any;
-	listStyle?: string; // node, normal
+	children?: React.ReactElement<any>[];
+	style?: React.CSSProperties;
+	itemStyle?: React.CSSProperties;
 }
 
-type State = any;
+export function List({children, style, itemStyle}: Props): JSX.Element {
+	const sx = Object.assign({},
+		{	paddingLeft: whitespace[4] },
+		style,
+	);
 
-export class List extends React.Component<Props, State> {
-	static defaultProps = {
-		listStyle: "normal",
-	};
+	const itemSx = Object.assign({},
+		{ marginBottom: whitespace[3] },
+		itemStyle,
+	);
 
-	render(): JSX.Element | null {
-		const {className, children, listStyle} = this.props;
+	if (!children || !children.length || children.length === 0) { return <li></li>; };
 
-		return (
-			<ul className={classNames(listStyleClasses[listStyle || "normal"] || styles.normal, className)} style={this.props.style}>
-				{children}
-			</ul>
-		);
-	}
+	const listItems = children.map((child, i) => {
+		return child.type === "li"
+			? <li key={i} style={itemSx}>{child.props.children}</li>
+			: child;
+	});
+
+	return <ul style={sx}>{listItems}</ul>;
 }
-
-const listStyleClasses = {
-	"normal": styles.normal,
-	"node": styles.node,
-};

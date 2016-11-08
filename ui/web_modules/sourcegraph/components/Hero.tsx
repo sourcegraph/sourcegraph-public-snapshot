@@ -1,37 +1,33 @@
-// tslint:disable: typedef ordered-imports
-
+import * as classNames from "classnames";
 import * as React from "react";
 import * as styles from "sourcegraph/components/styles/hero.css";
-import * as classNames from "classnames";
+import {colors, whitespace} from "sourcegraph/components/utils";
 
 interface Props {
 	className?: string;
+	color?: "transparent" | "white" | "purple" | "blue" | "green" | "dark";
+	children?: React.ReactNode[];
 	pattern?: string;
-	color?: string; // white, purple, blue, green, dark
-	children?: any;
+	style?: React.CSSProperties;
 }
 
-type State = any;
-
-export class Hero extends React.Component<Props, State> {
-	render(): JSX.Element | null {
-		const {color, pattern, children, className} = this.props;
-
-		return (
-			<div className={classNames(styles.hero, colorClasses[color || ""] || styles.white, patternClasses[pattern || ""], className)}>
-				{children}
-			</div>
-		);
-	}
+export function Hero({color = "white", className, pattern, children, style}: Props): JSX.Element {
+	return <div className={classNames(pattern ? patternClasses[pattern] : null, className)} style={{
+		backgroundColor: bgColors[color],
+		color: color === "white" || color === "transparent" ? "inherit" : colors.white(),
+		textAlign: "center",
+		paddingBottom: whitespace[4],
+		paddingTop: whitespace[4],
+	}}>{children}</div>;
 }
 
-const colorClasses = {
-	"transparent": styles.transparent,
-	"white": styles.white,
-	"purple": styles.purple,
-	"blue": styles.blue,
-	"dark": styles.dark,
-	"green": styles.green,
+const bgColors = {
+	"transparent": "transparent",
+	"white": colors.white(),
+	"purple": colors.purple(),
+	"blue": colors.blue(),
+	"dark": colors.coolGray2(),
+	"green": colors.green(),
 };
 
 const patternClasses = {

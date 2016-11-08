@@ -13,6 +13,8 @@ import {Heading, List} from "sourcegraph/components";
 import {Cone} from "sourcegraph/components/symbols";
 import {context} from "sourcegraph/app/context";
 
+import {whitespace} from "sourcegraph/components/utils";
+
 export const NotInBeta = () => (
 	<div className={classNames(layout.containerFixed, base.pv5, base.ph4)} style={{maxWidth: "600px"}}>
 	<Heading align="center" level={4} underline="blue">
@@ -63,7 +65,10 @@ export class DesktopHome extends React.Component<{}, any> {
 					<p>
 						Thanks for using Sourcegraph Desktop! If the app is not working as expected, see our GitHub to:
 					</p>
-					<List className={base.mv3}>
+					<List style={{
+						marginBottom: whitespace[3],
+						marginTop: whitespace[3],
+					}}>
 						<li><strong><a target="_blank" href="https://github.com/sourcegraph-beta/sourcegraph-desktop/blob/master/troubleshooting.md#sourcegraph-desktop-troubleshooting">Browse troubleshooting tips</a></strong></li>
 						<li><strong><a target="_blank" href="https://github.com/sourcegraph-beta/sourcegraph-desktop/issues/new">File an issue</a></strong></li>
 					</List>

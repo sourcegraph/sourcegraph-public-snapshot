@@ -1,19 +1,4 @@
-@value base "sourcegraph/components/styles/_base.css";
 @value backgrounds "sourcegraph/components/styles/_backgrounds.css";
-@value colors "sourcegraph/components/styles/_colors.css";
-@value typography "sourcegraph/components/styles/_typography.css";
-
-.hero {
-	composes: tc from typography;
-	composes: pv4 from base;
-}
-
-.transparent { composes: bg_transparent from colors; }
-.white { composes: bg_near_white from colors; } /* Default */
-.purple { composes: bg_purple bg_purple_gradient white from colors; }
-.blue { composes: bg_blue bg_blue_gradient white from colors; }
-.dark { composes: bg_cool_gray white from colors; }
-.green { composes: bg_green white from colors; }
 
 .bg_img_objects { composes: bg_pattern_objects from backgrounds; }
 .bg_img_objects_fade { composes: bg_pattern_objects_fade from backgrounds; }
