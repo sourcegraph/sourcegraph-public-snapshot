@@ -92,7 +92,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				<div style={{
 					margin: "auto",
 					marginBottom: whitespace[2],
-					maxWidth: 340,
+					maxWidth: 420,
 					textAlign: "center",
 				}}>
 
@@ -112,14 +112,21 @@ export class Home extends React.Component<HomeProps, {}> {
 						<img title="Scala coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/scala.svg`} />
 					</FlexContainer>
 
-					<Heading level={4} align="center" style={{fontWeight: "normal"}}>Support for Go</Heading>
+					<Heading level={4} align="center" style={{fontWeight: "normal"}}>Support for Go, TypeScript, and C</Heading>
 
 					<p style={{
 						color: colors.coolGray3(),
 						paddingLeft: whitespace[4],
 						paddingRight: whitespace[4],
 					}}>
-						TypeScript, JavaScript, Java, Python, Ruby, Scala, C, PHP, C++, and more coming soon...
+						Partial support for JavaScript
+					</p>
+					<p style={{
+						color: colors.coolGray3(),
+						paddingLeft: whitespace[4],
+						paddingRight: whitespace[4],
+					}}>
+						Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
 					</p>
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD})}>
 						<strong>
