@@ -1,4 +1,4 @@
-.PHONY: test dep deploy vnc selenium run chrome-prod chrome-prod-novnc chrome-local firefox-prod firefox-local chrome-prod-repo-jump-to
+.PHONY: test dep deploy vnc selenium run chrome-prod chrome-prod-novnc chrome-local firefox-prod firefox-local chrome-prod-repo-jump-to browser-ext
 
 default: all-prod
 
@@ -10,6 +10,7 @@ test: dep
 
 dep: .env/bin/python .env/bin/pip
 	.env/bin/pip install -r requirements.txt
+	cd ./browser-ext && yarn install && yarn run build
 
 .env/bin/python .env/bin/pip:
 	virtualenv -p python2 .env || virtualenv -p python .env
@@ -26,7 +27,6 @@ selenium:
 run:
 	./run.sh
 
-
 #
 # Demo recipes
 #
@@ -37,6 +37,9 @@ all-prod:
 
 chrome-prod:
 	BROWSER=chrome SOURCEGRAPH_URL="https://sourcegraph.com" $(MAKE) test
+
+browser-ext:
+	BROWSER=chrome OPT="--filter=test_browser_extension" $(MAKE) test
 
 chrome-prod-novnc:
 	BROWSER=chrome SOURCEGRAPH_URL="https://sourcegraph.com" NOVNC=1 $(MAKE) test

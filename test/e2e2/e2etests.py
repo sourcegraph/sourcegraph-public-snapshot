@@ -235,6 +235,105 @@ def test_first_open_jump_to_line(d):
     wd.get(d.sg_url("/github.com/gorilla/pat/-/blob/pat.go#L65:18"))
     wait_for(lambda: len([e for e in wd.find_elements_by_css_selector(".line-numbers") if e.text == "65"]) == 1)
 
+def test_browser_extension_app_injection(d):
+    wd = d.d
+    wd.get("https://github.com/gorilla/mux")
+    wait_for(lambda: len(wd.find_elements_by_id("sourcegraph-app-bootstrap")) == 1)
+    wait_for(lambda: wd.find_element_by_id("sourcegraph-app-bootstrap").value_of_css_property("display") == "none")
+    wait_for(lambda: len(wd.find_elements_by_id("sourcegraph-app-background")) == 1)
+    wait_for(lambda: wd.find_element_by_id("sourcegraph-app-background").value_of_css_property("display") == "none")
+
+def test_browser_extension_hover_j2d_blob(d):
+    wd = d.d
+    wd.get("https://github.com/gorilla/mux/blob/757bef944d0f21880861c2dd9c871ca543023cba/mux.go")
+    wait_for(lambda: len(wd.find_elements_by_class_name("sourcegraph-app-annotator")) == 1)
+
+    # hover over a token, get a popover (may be "Loading...")
+    wait_for(lambda: len(wd.find_elements_by_id("text-node-297-6")) == 1)
+    retry(lambda: d.hover_elem(wd.find_element_by_id("text-node-297-6")))
+    wait_for(lambda: len(wd.find_elements_by_class_name("sg-popover")) == 1)
+
+    # wait for the token to be clickable (textDocument/defnition is resolved)
+    wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-popover") if e.text == "func NewRouter() *Router"]) == 1, 10)
+
+    # click and wait for page navigation
+    retry(lambda: wd.find_element_by_id("text-node-297-6").click())
+    wait_for(lambda: wd.current_url == "https://github.com/gorilla/mux/blob/757bef944d0f21880861c2dd9c871ca543023cba/mux.go#L17")
+
+def test_browser_extension_hover_j2d_unified_pull_request(d):
+    wd = d.d
+    wd.get("https://github.com/gorilla/mux/pull/205/files")
+    wait_for(lambda: len(wd.find_elements_by_class_name("sourcegraph-app-annotator")) == 2)
+
+    tests = [{
+        # addition
+        "node": "text-node-272-5",
+        "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
+        "j2d_location": "https://github.com/captncraig/mux/blob/acfc892941192f90aadd4f452a295bf39fc5f7ed/mux.go#L17",
+    }, {
+        # deletion
+        "node": "text-node-2388-3",
+        "hover": "func setVars(r *Request, val interface{})",
+        "j2d_location": "https://github.com/gorilla/mux/blob/9c068cf16d982f8bd444b8c352acbeec34c4fe5b/mux.go#L326",
+    }, {
+        # unmodified
+        "node": "text-node-317-6",
+        "hover": "func NewRouter() *Router",
+        "j2d_location": "https://github.com/gorilla/mux/blob/9c068cf16d982f8bd444b8c352acbeec34c4fe5b/mux.go#L18",
+    }]
+    for test in tests:
+        # hover over a token, get a popover (may be "Loading...")
+        wait_for(lambda: len(wd.find_elements_by_id(test["node"])) == 1)
+        retry(lambda: d.hover_elem(wd.find_element_by_id(test["node"])))
+        wait_for(lambda: len(wd.find_elements_by_class_name("sg-popover")) == 1)
+
+        # wait for the token to be clickable (textDocument/defnition is resolved)
+        wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-popover") if e.text == test["hover"]]) == 1, 10)
+
+        # click and wait for page navigation
+        retry(lambda: wd.find_element_by_id(test["node"]).click())
+        wait_for(lambda: wd.current_url == test["j2d_location"])
+
+        # refresh location after j2d for next test
+        wd.get("https://github.com/gorilla/mux/pull/205/files")
+
+def test_browser_extension_hover_j2d_split_pull_request(d):
+    wd = d.d
+    wd.get("https://github.com/gorilla/mux/pull/205/files?diff=split")
+    wait_for(lambda: len(wd.find_elements_by_class_name("sourcegraph-app-annotator")) == 2)
+
+    tests = [{
+        # addition
+        "node": "text-node-79-2",
+        "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
+        "j2d_location": "https://github.com/captncraig/mux/blob/acfc892941192f90aadd4f452a295bf39fc5f7ed/mux.go#L17",
+    }, {
+        # deletion
+        "node": "text-node-2388-3",
+        "hover": "func setVars(r *Request, val interface{})",
+        "j2d_location": "https://github.com/gorilla/mux/blob/9c068cf16d982f8bd444b8c352acbeec34c4fe5b/mux.go#L326",
+    }, {
+        # unmodified
+        "node": "text-node-317-6",
+        "hover": "func NewRouter() *Router",
+        "j2d_location": "https://github.com/gorilla/mux/blob/9c068cf16d982f8bd444b8c352acbeec34c4fe5b/mux.go#L18",
+    }]
+    for test in tests:
+        # hover over a token, get a popover (may be "Loading...")
+        wait_for(lambda: len(wd.find_elements_by_id(test["node"])) == 1)
+        retry(lambda: d.hover_elem(wd.find_element_by_id(test["node"])))
+        wait_for(lambda: len(wd.find_elements_by_class_name("sg-popover")) == 1)
+
+        # wait for the token to be clickable (textDocument/defnition is resolved)
+        wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-popover") if e.text == test["hover"]]) == 1, 10)
+
+        # click and wait for page navigation
+        retry(lambda: wd.find_element_by_id(test["node"]).click())
+        wait_for(lambda: wd.current_url == test["j2d_location"])
+
+        # refresh location after j2d for next test
+        wd.get("https://github.com/gorilla/mux/pull/205/files?diff=split")
+
 all_tests = [
     test_github_private_auth_onboarding,
     test_github_public_auth_onboarding,
@@ -244,4 +343,8 @@ all_tests = [
     test_find_external_refs,
     test_beta_signup,
     test_first_open_jump_to_line,
+    test_browser_extension_app_injection,
+    test_browser_extension_hover_j2d_blob,
+    test_browser_extension_hover_j2d_unified_pull_request,
+    test_browser_extension_hover_j2d_split_pull_request,
 ]

@@ -14,6 +14,8 @@ from e2etests import *
 
 user_agent = "Sourcegraph e2etest-bot"
 
+extension_path = "/browser-ext"
+
 emoji = [
     "dog",
     "cat",
@@ -109,13 +111,16 @@ Type "continue" to continue.
     logf('Starting test run with test plan:\n%s' % '\n'.join(['\t'+f.func_name for f in tests]))
 
     for test in tests:
+        if args.browser == "firefox" and "test_browser_extension" in test.func_name:
+            continue
+
         for i in xrange(0, args.tries_before_err):
             logf('[%s](%s) %s (attempt %d/%d)' % (bold("RUN "), args.browser, test.func_name, i + 1, args.tries_before_err))
             try:
                 driver, wd = None, None
                 if args.browser == "chrome":
                     opt = DesiredCapabilities.CHROME.copy()
-                    opt['chromeOptions'] = { "args": ["--user-agent=%s" % user_agent] }
+                    opt['chromeOptions'] = { "args": ["--user-agent=%s" % user_agent, "--load-extension=%s" % extension_path] }
                     opt['loggingPrefs'] = { 'browser': 'SEVERE' }
                     wd = webdriver.Remote(
                         command_executor=('%s/wd/hub' % args.selenium),

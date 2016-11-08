@@ -126,6 +126,9 @@ class Driver(object):
     def hover_token(self, token_text):
         ActionChains(self.d).move_to_element(self.find_token(token_text)).perform()
 
+    def hover_elem(self, elem):
+        ActionChains(self.d).move_to_element(elem).perform()
+
     def find_tokens(self, tok_text):
         return [e for e in self.d.find_elements_by_css_selector(".token.identifier.go") if tok_text in e.text]
 

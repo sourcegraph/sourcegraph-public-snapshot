@@ -1,0 +1,5 @@
+# This Dockerfile is copied to the build output directory by the build script.
+# It mounts the extension source code so selenium can load it for e2e tests.
+FROM selenium/standalone-chrome:2.53.1
+
+ADD . /browser-ext
