@@ -285,34 +285,27 @@ export function convertElementNode(currentNode, annsByStartByte, offset, lineSta
 let popoverCache = {};
 let jumptodefcache = {};
 
-const HOVER_TIME = 200;
+const HOVER_DELAY_MS = 200;
 
-// DOM element for popover
-let popover;
-// target DOM element for popover
+const popover = document.createElement("DIV");
+popover.classList.add(styles.popover);
+popover.classList.add("sg-popover");
+
 let activeTarget;
-// timeout reference for cancelling async hide/show popover
+
+const popOverLoading = document.createElement("DIV");
+popOverLoading.className= styles.popoverTitle; // TODO(john): don't use monospace
+popOverLoading.appendChild(document.createTextNode("Loading..."));
+
 let hoverTimeout;
-// the "Loading..." popover
-let popOverLoading;
+function hidePopover() {
+	clearTimeout(hoverTimeout);
+	if (popover.firstChild) {
+		popover.removeChild(popover.firstChild);
+	}
+}
 
 function addEventListeners(el, path, repoRevSpec, line) {
-	if (!popover) {
-		popover = document.createElement("DIV");
-		popover.classList.add(styles.popover);
-		popover.classList.add("sg-popover");
-	}
-
-	if (!popOverLoading) {
-		const popOverLoadingText = document.createTextNode("Loading...");
-		const popOverLoadingSpan = document.createElement("DIV");
-
-		popOverLoading = document.createElement("DIV");
-		popOverLoadingSpan.className = styles.popoverTitle;
-		popOverLoadingSpan.appendChild(popOverLoadingText);
-		popOverLoading.appendChild(popOverLoadingSpan);
-	}
-
 	el.onclick = function(e) {
 		let t = getTarget(e.target);
 		if (!t || t.style.cursor !== "pointer") return;
@@ -338,12 +331,9 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	}
 
 	el.onmouseout = function(e) {
-		clearTimeout(hoverTimeout);
-		hoverTimeout = setTimeout(() => {
-			hidePopover();
-			activeTarget = null;
-		}, HOVER_TIME);
-	}
+		hidePopover();
+		activeTarget = null;
+	};
 
 	el.onmouseover = function(e) {
 		let t = getTarget(e.target);
@@ -352,15 +342,19 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		if (activeTarget !== t) {
 			activeTarget = t;
 			hidePopover();
+
+
 			hoverTimeout = setTimeout(() => {
 				// Only show "Loading..." if it has been loading for a while. If we
 				// show "Loading..." immediately, there will be a visible flash if
 				// the actual hover text loads quickly thereafter.
 				showPopover(popOverLoading, true);
-			}, 3 * HOVER_TIME);
-			const hoverShowTime = Date.now() + HOVER_TIME;
+			}, 3 * HOVER_DELAY_MS);
+
+
+			const hoverShowTime = Date.now() + HOVER_DELAY_MS;
 			fetchPopoverData(activeTarget, function(elem) {
-				// Always wait at least HOVER_TIME before showing hover, to avoid
+				// Always wait at least HOVER_DELAY_MS before showing hover, to avoid
 				// it obscuring text when you move your mouse rapidly across a code file.
 				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
 				clearTimeout(hoverTimeout);
@@ -404,25 +398,6 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 			// Make it all visible to the user.
 			popover.style.visibility = "visible";
-
-			popover.onmouseover = function(e) {
-				clearTimeout(hoverTimeout);
-			}
-
-			popover.onmouseout = function(e) {
-				clearTimeout(hoverTimeout);
-				hoverTimeout = setTimeout(() => {
-					hidePopover();
-					activeTarget = null;
-				}, HOVER_TIME);
-			}
-		}
-	}
-
-	function hidePopover() {
-		clearTimeout(hoverTimeout);
-		if (popover.firstChild) {
-			popover.removeChild(popover.firstChild);
 		}
 	}
 
@@ -488,8 +463,9 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	}
 
 	function fetchPopoverData(elem, cb) {
-		if (typeof popoverCache[`${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`] !== "undefined") {
-			return cb(popoverCache[`${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`]);
+		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`;
+		if (typeof popoverCache[cacheKey] !== "undefined") {
+			return cb(popoverCache[cacheKey]);
 		}
 
 		const body = [
@@ -524,52 +500,44 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		];
 
 		return fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
-			.then((resp) => {
-				return resp.json()
-					.then((json) => {
-						const keyCache = `${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`;
+			.then((resp) => resp.json().then((json) => {
+				try {
+					const popOverElem = document.createElement("DIV");
+					const popOverTitleElem = document.createElement("DIV");
+					const popOverTitleText = document.createTextNode(json[1].result.contents[0].value);
+					const popOverDocString = document.createElement("DIV");
 
-						try {
-							// Wrapper element
-							const popOverElem = document.createElement("DIV");
-							// Title string
-							const popOverTitleElem = document.createElement("DIV");
-							const popOverTitleText = document.createTextNode(json[1].result.contents[0].value);
-							// Doc string
-							const popOverDocString = document.createElement("DIV");
+					if (json[1].result.contents.length > 0) {
+						elem.style.cursor = "pointer";
+						elem.className = `${elem.className} sg-clickable`;
 
-							if (json[1].result.contents.length > 0) {
-								elem.style.cursor = "pointer";
-								elem.className = `${elem.className} sg-clickable`;
+						popOverTitleElem.className = styles.popoverTitle;
+						popOverTitleElem.appendChild(popOverTitleText);
+						popOverElem.appendChild(popOverTitleElem);
 
-								popOverTitleElem.className = styles.popoverTitle;
-								popOverTitleElem.appendChild(popOverTitleText);
-								popOverElem.appendChild(popOverTitleElem);
+						if (json[1].result.contents.length > 1) {
+							let docString = json[1].result.contents[1];
 
-								if (json[1].result.contents.length > 1) {
-									let docString = json[1].result.contents[1];
-
-									if (typeof docString !== "string") {
-										docString = docString.value;
-									}
-
-									popOverDocString.innerHTML = marked(docString, {gfm: true, breaks: true, sanitize: true});
-									popOverDocString.className = styles.popoverDocstring;
-									popOverElem.appendChild(popOverDocString);
-								}
-
-								popoverCache[keyCache] = popOverElem;
-							} else {
-								popoverCache[keyCache] = null;
+							if (typeof docString !== "string") {
+								docString = docString.value;
 							}
-						} catch(err) {
-							popoverCache[keyCache] = null;
-						} finally {
-							cb(popoverCache[keyCache]);
+
+							popOverDocString.innerHTML = marked(docString, {gfm: true, breaks: true, sanitize: true});
+							popOverDocString.className = styles.popoverDocstring;
+							popOverElem.appendChild(popOverDocString);
 						}
-					})
-					.catch((err) => {cb(null);});
-			})
-			.catch((err) => {cb(null);});
+
+						popoverCache[cacheKey] = popOverElem;
+					} else {
+						popoverCache[cacheKey] = null;
+					}
+				} catch(err) {
+					popoverCache[cacheKey] = null;
+				} finally {
+					cb(popoverCache[cacheKey]);
+				}
+			})).catch((err) => {
+				cb(null);
+			});
 	}
 }
