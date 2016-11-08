@@ -47,7 +47,7 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 			return;
 		}
 		const SlashKeyCode = 191;
-		if (event.key === "Slash" || event.keyCode === SlashKeyCode) {
+		if (event.key === "/" || event.keyCode === SlashKeyCode) {
 			if (!this.props.showModal) {
 				this.dismissModal(false);
 			}
