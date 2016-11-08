@@ -30,9 +30,9 @@ export function SecurityPage(props: {}, {}) {
 
 				<ul>
 					<li>All production systems are hosted on <a href="https://cloud.google.com/security/">Google Cloud Platform</a>.</li>
-					<li>Multi-factor authentication is required on all Google Cloud Platform accounts that have access to production systems.</li>
+					<li>Multi-factor authentication is required on all accounts that have access to production systems.</li>
 					<li>Authentication is handled using <a href="https://auth0.com/security">Auth0</a>.</li>
-					<li>All internal and external network communication between production services occur over TLS/SSH.</li>
+					<li>All external network communication between production services occur over TLS/SSH.</li>
 					<li>External access to production systems is restricted by firewall to restricted IP ranges.</li>
 				</ul>
 
@@ -47,7 +47,7 @@ export function SecurityPage(props: {}, {}) {
 				<ul>
 					<li>No private code is accessed by Sourcegraph without explicit permission from an authorized user.</li>
 					<li>All language analysis is static.</li>
-					<li>Employ a strict review policy for changes to core security, authentication, and permissions logic.</li>
+					<li>We employ a strict review policy for changes to core security, authentication, and permissions logic.</li>
 				</ul>
 
 				<Heading level={4} underline="blue" className={styles.h}>Bug reports</Heading>
