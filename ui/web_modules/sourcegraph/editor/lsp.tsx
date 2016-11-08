@@ -26,6 +26,9 @@ export interface Location {
 }
 
 export function toMonacoLocation(loc: Location): VSCLocation {
+	if (!loc.range) {
+		throw new Error(`location range is not defined: ${JSON.stringify(loc)}`);
+	}
 	return {
 		uri: URI.parse(loc.uri),
 		range: toMonacoRange(loc.range),
@@ -33,6 +36,9 @@ export function toMonacoLocation(loc: Location): VSCLocation {
 }
 
 export function toMonacoRange(r: LSPRange): IRange {
+	if (!r) {
+		throw new Error("range is not defined");
+	}
 	return new Range(r.start.line + 1, r.start.character + 1, r.end.line + 1, r.end.character + 1);
 }
 
