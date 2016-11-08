@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -275,6 +276,19 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 			par.Acquire()
 			go func(pkg string) {
 				defer par.Release()
+				// Prevent any uncaught panics from taking the
+				// entire server down. For an example see
+				// https://github.com/golang/go/issues/17788
+				defer func() {
+					if r := recover(); r != nil {
+						// Same as net/http
+						const size = 64 << 10
+						buf := make([]byte, size)
+						buf = buf[:runtime.Stack(buf, false)]
+						log.Printf("ignoring panic serving %v for pkg %v: %v\n%s", req.Method, pkg, r, buf)
+						return
+					}
+				}()
 				h.collectFromPkg(bctx, fs, pkg, rootPath, &results)
 			}(pkg)
 		}
@@ -332,6 +346,7 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 			}
 			return
 		}
+		// TODO(keegancsmith) Remove vendored doc/go once https://github.com/golang/go/issues/17788 is shipped
 		docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
 
 		// Emit decls
