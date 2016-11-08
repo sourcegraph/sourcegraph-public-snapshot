@@ -108,7 +108,7 @@ export function MasterPlanPage(props: {}) {
 							<li>Go &mdash; <Link target="_blank" to="/github.com/gorilla/websocket/-/blob/client.go">try it</Link></li>
 							<li>TypeScript (beta) &mdash; <Link target="_blank" to="/github.com/ReactiveX/rxjs@master/-/blob/src/scheduler/AsyncAction.ts#L23">try it</Link></li>
 							<li>JavaScript (beta) &mdash; <Link target="_blank" to="/github.com/swimlane/angular-data-table@master/-/blob/src/components/DataTableController.js#L33">try it</Link></li>
-							<li>C (beta) &mdash; <Link target="_blank" to="/github.com/jgamblin/Mirai-Source-Code/-/blob/mirai/bot/resolv.c">try it</Link></li>
+							<li>C (beta) &mdash; <Link target="_blank" to="/github.com/jgamblin/Mirai-Source-Code/-/blob/mirai/bot/resolv.c#L67">try it</Link></li>
 						</ul>
 						<p><Link to="/beta">Sign up for early access</Link> to other languages.</p>
 					</div>
