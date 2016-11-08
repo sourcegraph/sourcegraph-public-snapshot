@@ -106,7 +106,7 @@ export function MasterPlanPage(props: {}) {
 						<p><Link to="/">Sourcegraph</Link> currently supports 4 languages on the web and <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank">Chrome extension</a>, with many more planned by the end of 2016.</p>
 						<ul>
 							<li>Go &mdash; <Link target="_blank" to="/github.com/gorilla/websocket/-/blob/client.go">try it</Link></li>
-							<li>TypeScript (beta) &mdash; <Link target="_blank" to="/github.com/ReactiveX/rxjs@master/-/blob/src/scheduler/AsapScheduler.ts#L14">try it</Link></li>
+							<li>TypeScript (beta) &mdash; <Link target="_blank" to="/github.com/ReactiveX/rxjs@master/-/blob/src/scheduler/AsapScheduler.ts#L17">try it</Link></li>
 							<li>JavaScript (beta) &mdash; <Link target="_blank" to="/github.com/swimlane/angular-data-table@master/-/blob/src/components/DataTableController.js#L33">try it</Link></li>
 							<li>C (beta) &mdash; <Link target="_blank" to="/github.com/jgamblin/Mirai-Source-Code/-/blob/mirai/bot/resolv.c">try it</Link></li>
 						</ul>
