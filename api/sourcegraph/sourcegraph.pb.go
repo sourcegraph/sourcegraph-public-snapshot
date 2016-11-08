@@ -1014,6 +1014,9 @@ type SourceDef struct {
 	// DefVersion is the version of the source that references the def.
 	DefVersion string
 
+	// DefFile is the filepath in the source at which the def is located.
+	DefFile string
+
 	// DefName and DefContainerName of the definition whose references are
 	// being described.
 	DefName, DefContainerName string

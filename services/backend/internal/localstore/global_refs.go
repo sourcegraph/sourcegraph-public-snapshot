@@ -375,12 +375,13 @@ func (g *globalRefs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions)
 	// two of the above subqueries (one for a `def_name` WHERE IN clause, and
 	// another for a `def_container` WHERE IN clause). The subquery represents
 	// the exact amount of data we expect, so it should always be very quick.
-	rows, err := globalGraphDBH.Db.Query(`SELECT def_scheme, global_ref_source.source as def_source, global_ref_version.version as def_version, global_ref_name.name as def_name, global_ref_container.container as def_container, array_agg(files) as files, array_agg(refs) as refs
+	rows, err := globalGraphDBH.Db.Query(`SELECT def_scheme, global_ref_source.source as def_source, global_ref_version.version as def_version, (array_agg(file))[1] as def_file, global_ref_name.name as def_name, global_ref_container.container as def_container, array_agg(files) as files, array_agg(refs) as refs
 		FROM global_ref_by_source
 		JOIN global_ref_name ON (global_ref_name.id = global_ref_by_source.def_name)
 		JOIN global_ref_container ON (global_ref_container.id = global_ref_by_source.def_container)
 		JOIN global_ref_source ON (global_ref_source.id = global_ref_by_source.def_source)
 		JOIN global_ref_version ON (global_ref_version.id = global_ref_by_source.def_version)
+		JOIN global_ref_file ON (global_ref_file.id = global_ref_by_source.def_file)
 
 		-- Omit references to unnamed symbols. I.e., when a source references
 		-- another source in an unnamed way (a Go import statement, JS require,
@@ -406,20 +407,21 @@ func (g *globalRefs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions)
 	topDefs := &sourcegraph.TopDefs{}
 	for rows.Next() {
 		var (
-			scheme                           int16
-			source, version, name, container string
+			scheme                                 int16
+			source, version, file, name, container string
 
 			// Counts per source.
 			files = make(pq.Int64Array, op.Limit)
 			refs  = make(pq.Int64Array, op.Limit)
 		)
-		if err := rows.Scan(&scheme, &source, &version, &name, &container, &files, &refs); err != nil {
+		if err := rows.Scan(&scheme, &source, &version, &file, &name, &container, &files, &refs); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		topDefs.SourceDefs = append(topDefs.SourceDefs, &sourcegraph.SourceDef{
 			DefScheme:        uriSchemeIDLookup[scheme],
 			DefSource:        source,
 			DefVersion:       version,
+			DefFile:          file,
 			DefName:          name,
 			DefContainerName: container,
 			Sources:          len(refs),
