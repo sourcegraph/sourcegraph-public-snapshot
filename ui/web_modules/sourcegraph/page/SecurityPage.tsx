@@ -22,7 +22,6 @@ export function SecurityPage(props: {}, {}) {
 
 				<p className={styles.p}>If you have specific questions or concerns, contact us at <a href="mailto:security@sourcegraph.com">security@sourcegraph.com</a>.</p>
 
-
 				<Heading level={4} underline="blue" className={styles.h}>Access Controls</Heading>
 
 				<p className={styles.p}>Access to all internal systems is protected by multi-factor authentication. All application and user access logs are stored centrally and monitored. No employee can access user information unless explicitly authorized by the user.</p>
