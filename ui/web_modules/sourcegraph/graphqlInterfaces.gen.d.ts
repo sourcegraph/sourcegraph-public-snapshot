@@ -84,6 +84,8 @@ declare namespace GQL {
     uri: string;
     commit: ICommit;
     latest: ICommit;
+    branches: Array<string>;
+    tags: Array<string>;
   }
 
   /*

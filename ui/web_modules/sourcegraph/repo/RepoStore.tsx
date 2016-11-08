@@ -25,8 +25,6 @@ class RepoStoreClass extends Store<any> {
 	commits: any;
 	resolutions: any;
 	inventory: any;
-	branches: any;
-	tags: any;
 	symbols: {
 		content: any;
 		list(inventory: Inventory, repo: string, rev: string | null, query: string): {
@@ -68,22 +66,6 @@ class RepoStoreClass extends Store<any> {
 				return this.content[keyFor(repo, commitID)] || null;
 			},
 		});
-		this.branches = deepFreeze({
-			content: {},
-			errors: {},
-			error(repo) { return this.errors[keyFor(repo)] || null; },
-			list(repo) {
-				return this.content[keyFor(repo)] || null;
-			},
-		});
-		this.tags = deepFreeze({
-			content: {},
-			errors: {},
-			error(repo) { return this.errors[keyFor(repo)] || null; },
-			list(repo) {
-				return this.content[keyFor(repo)] || null;
-			},
-		});
 		this.symbols = deepFreeze({
 			content: {},
 			list(inventory, repo, rev, query) {
@@ -104,8 +86,6 @@ class RepoStoreClass extends Store<any> {
 			repos: this.repos,
 			resolvedRevs: this.resolvedRevs,
 			resolutions: this.resolutions,
-			branches: this.branches,
-			tags: this.tags,
 			inventory: this.inventory,
 			symbols: this.symbols,
 		};
@@ -178,28 +158,6 @@ class RepoStoreClass extends Store<any> {
 						}),
 					}));
 				}
-				break;
-
-			case RepoActions.FetchedBranches:
-				this.branches = deepFreeze(Object.assign({}, this.branches, {
-					content: Object.assign({}, this.branches.content, {
-						[keyFor(action.repo)]: action.branches,
-					}),
-					errors: Object.assign({}, this.branches.errors, {
-						[keyFor(action.repo)]: action.err,
-					}),
-				}));
-				break;
-
-			case RepoActions.FetchedTags:
-				this.tags = deepFreeze(Object.assign({}, this.tags, {
-					content: Object.assign({}, this.tags.content, {
-						[keyFor(action.repo)]: action.tags,
-					}),
-					errors: Object.assign({}, this.tags.errors, {
-						[keyFor(action.repo)]: action.err,
-					}),
-				}));
 				break;
 
 			case RepoActions.FetchedSymbols:

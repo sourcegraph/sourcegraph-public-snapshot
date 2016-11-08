@@ -4,7 +4,6 @@ import { inventoryToSearchModes } from "sourcegraph/editor/modes";
 import { updateRepoCloning } from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
-import { sortBranches, sortTags } from "sourcegraph/repo/vcs";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
@@ -125,34 +124,6 @@ export const RepoBackend = {
 						}
 					}
 				});
-		}
-
-		if (payload instanceof RepoActions.WantBranches) {
-			const action = payload;
-			let branches = RepoStore.branches.list(action.repo);
-			if (branches === null) {
-				RepoBackend.fetch(`/.api/repos/${action.repo}/-/branches?IncludeCommit=true&PerPage=1000`)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => {
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, []));
-					})
-					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedBranches(action.repo, sortBranches(data.Branches) || [])));
-			}
-		}
-
-		if (payload instanceof RepoActions.WantTags) {
-			const action = payload;
-			let tags = RepoStore.tags.list(action.repo);
-			if (tags === null) {
-				RepoBackend.fetch(`/.api/repos/${action.repo}/-/tags?PerPage=1000`)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => {
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, []));
-					})
-					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedTags(action.repo, sortTags(data.Tags) || [])));
-			}
 		}
 
 		if (payload instanceof RepoActions.WantInventory) {

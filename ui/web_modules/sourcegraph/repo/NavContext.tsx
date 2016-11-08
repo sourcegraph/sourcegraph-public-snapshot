@@ -2,7 +2,7 @@ import * as React from "react";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {Label} from "sourcegraph/components";
 import {RepoLink} from "sourcegraph/components/RepoLink";
-import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
+import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
 	repoObj?: any;
 	isCloning: boolean;
 
-	// to pass to RevSwitcherContainer so it can construct URLs
+	// to pass to RevSwitcher so it can construct URLs
 	routes: any[];
 	routeParams: RouteParams;
 }
@@ -41,7 +41,7 @@ export class NavContext extends React.Component<Props, State> {
 					<RepoLink repo={this.props.repo} rev={this.props.rev} />
 				}
 				<div className={styles.repo_nav_context}>{this.props.repoNavContext}</div>
-				{this.props.commitID && <RevSwitcherContainer
+				{this.props.commitID && <RevSwitcher
 					repo={this.props.repo}
 					repoObj={this.props.repoObj}
 					rev={this.props.rev}

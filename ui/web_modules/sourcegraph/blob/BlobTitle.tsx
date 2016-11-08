@@ -5,7 +5,7 @@ import {RouteParams} from "sourcegraph/app/routeParams";
 import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
 import {Base, FlexContainer, Heading} from "sourcegraph/components";
 import {colors, typography} from "sourcegraph/components/utils";
-import {RevSwitcherContainer} from "sourcegraph/repo/RevSwitcherContainer";
+import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
 import {getPathExtension, supportedExtensions} from "sourcegraph/util/supportedExtensions";
@@ -98,7 +98,7 @@ export function BlobTitle({
 			<div>
 				<Heading level={5} color="white" style={{marginBottom: 0}}>
 					{basename(path)}
-					{commitID && <RevSwitcherContainer
+					{commitID && <RevSwitcher
 						repo={repo}
 						repoObj={repoObj}
 						rev={rev}

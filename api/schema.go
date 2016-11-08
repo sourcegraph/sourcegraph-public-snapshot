@@ -24,6 +24,8 @@ type Repository implements Node {
 	uri: String!
 	commit(rev: String!): Commit
 	latest: Commit!
+	branches: [String!]!
+	tags: [String!]!
 }
 
 type Commit implements Node {
