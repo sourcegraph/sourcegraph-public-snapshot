@@ -357,7 +357,7 @@ export class Editor implements IDisposable {
 		})
 			.then((resp) => resp ? resp.result : null)
 			.then((resp: lsp.Location | lsp.Location[] | null) => {
-				if (!resp) {
+				if (!resp || Object.keys(resp).length === 0) {
 					return null;
 				}
 
