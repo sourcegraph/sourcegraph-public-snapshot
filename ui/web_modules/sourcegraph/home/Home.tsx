@@ -101,7 +101,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						margin: ` 0 ${whitespace[5]}`,
 					}}>
 						<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
-						<img title="Typescript supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
+						<img title="TypeScript supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
 						<img title="C supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/c.svg`} />
 					</FlexContainer>
 					<FlexContainer justify="around" style={{
