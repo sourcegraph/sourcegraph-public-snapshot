@@ -28,7 +28,7 @@ import {IRange} from "vs/editor/common/editorCommon";
 interface Props {
 	repo: string;
 	repoObj: any;
-	rev: string;
+	rev: string | null;
 	commitID: string;
 	isCloning: boolean;
 	path: string;

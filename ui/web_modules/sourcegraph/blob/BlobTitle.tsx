@@ -4,6 +4,7 @@ import {Link} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
 import {FlexContainer, Heading} from "sourcegraph/components";
+import {GitHubIcon} from "sourcegraph/components/Icons";
 import {colors, typography} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
@@ -15,7 +16,7 @@ interface Props {
 	repo: string;
 	path: string;
 	repoObj: any;
-	rev: string;
+	rev: string | null;
 	commitID: string;
 	routes: Object[];
 	routeParams: RouteParams;
@@ -48,7 +49,7 @@ const toastSx = Object.assign({},
 	typography.size[8],
 );
 
-function BreadCrumb({repo, path, rev}: {repo: string, path: string, rev: string}): JSX.Element {
+function BreadCrumb({repo, path, rev}: {repo: string, path: string, rev: string | null}): JSX.Element {
 	const pathToFile = path.split("/").slice(0, -1);
 	const links: JSX.Element[] = [];
 	links[0] = 	<Link
@@ -81,6 +82,25 @@ function basename(path: string): string {
 	return base || path;
 };
 
+function convertToGitHubLineNumber(hash: string): string {
+	if (!hash || !hash.startsWith("#L")) {
+		return "";
+	}
+	let lines: string[] = hash.split("#L");
+	if (lines.length !== 2) {
+		return "";
+	}
+	lines = lines[1].split("-");
+	if (lines.length === 1) {
+		// single line
+		return `#L${lines[0]}`;
+	} else if (lines.length === 2) {
+		// line range
+		return `#L${lines[0]}-L${lines[1]}`;
+	}
+	return "";
+}
+
 export function BlobTitle({
 	repo,
 	path,
@@ -94,20 +114,40 @@ export function BlobTitle({
 }: Props): JSX.Element {
 	const extension = getPathExtension(path);
 	const isSupported = extension ? supportedExtensions.indexOf(extension) !== -1 : false;
+	const getRev = () => {
+		if (rev) {
+			return rev;
+		}
+		if (repoObj) {
+			return repoObj.DefaultBranch;
+		}
+		return "master";
+	};
+	// Tech debt: BlobMain won't pass new location on line clicks, so use window.location.
+	// We must register an explicit onClick handler on the GitHub anchor link to detect line hash changes.
+	const gitHubURL = () => `https://${repo}/blob/${getRev()}/${path}${convertToGitHubLineNumber(window.location.hash)}`;
 
 	return <div style={sx}>
 		<FlexContainer justify="between">
 			<div>
 				<Heading level={5} color="white" style={{marginBottom: 0}}>
-					{basename(path)}
-					{commitID && <RevSwitcher
-						repo={repo}
-						repoObj={repoObj}
-						rev={rev}
-						commitID={commitID}
-						routes={routes}
-						routeParams={routeParams}
-						isCloning={isCloning} />}
+					<FlexContainer items="center">
+						{basename(path)}
+						{commitID && <RevSwitcher
+							repo={repo}
+							repoObj={repoObj}
+							rev={rev}
+							commitID={commitID}
+							routes={routes}
+							routeParams={routeParams}
+							isCloning={isCloning} />}
+						<a href={gitHubURL()} style={{paddingLeft: whitespace[3], color: colors.white(), display: "flex"}} onClick={(e) => {
+							e.preventDefault();
+							window.location.href = gitHubURL();
+						}}>
+							<GitHubIcon style={{alignItems: "center"}}/>
+						</a>
+					</FlexContainer>
 				</Heading>
 				<BreadCrumb repo={repo} path={path} rev={rev} />
 			</div>

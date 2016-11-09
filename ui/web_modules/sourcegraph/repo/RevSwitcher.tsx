@@ -14,7 +14,7 @@ import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
 
 interface Props {
 	repo: string;
-	rev: string;
+	rev: string | null;
 	commitID: string;
 	repoObj?: any;
 	isCloning: boolean;
