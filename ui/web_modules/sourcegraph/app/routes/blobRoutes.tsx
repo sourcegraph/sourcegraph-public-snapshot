@@ -1,6 +1,5 @@
 import { rel } from "sourcegraph/app/routePatterns";
 import { BlobMain } from "sourcegraph/blob/BlobMain";
-import { RepoNavContext } from "sourcegraph/blob/RepoNavContext";
 import { withLineColBoundToHash } from "sourcegraph/blob/withLineColBoundToHash";
 import { withPath } from "sourcegraph/blob/withPath";
 import { withResolvedRepoRev } from "sourcegraph/repo/withResolvedRepoRev";
@@ -24,7 +23,6 @@ export const blobRoutes = [
 			}
 			callback(null, {
 				main: _blobMainComponent,
-				repoNavContext: RepoNavContext,
 			});
 		},
 		blobLoaderHelpers: [],

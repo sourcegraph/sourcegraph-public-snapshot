@@ -20,7 +20,6 @@ import {userSettingsRoutes} from "sourcegraph/app/routes/userSettingsRoutes";
 
 interface Props {
 	main: JSX.Element;
-	navContext: JSX.Element;
 	location: any;
 	params?: any;
 }

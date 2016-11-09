@@ -13,7 +13,6 @@ export const homeRoutes: any[] = [
 		getComponent: (location, callback) => {
 			callback(null, {
 				main: HomeRouter,
-				navContext: null,
 			});
 		},
 		path: rel.home,
@@ -21,7 +20,6 @@ export const homeRoutes: any[] = [
 	{
 		getComponent: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: IntegrationsContainer,
 			});
 		},

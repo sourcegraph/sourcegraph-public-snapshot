@@ -1,5 +1,4 @@
 import { rel } from "sourcegraph/app/routePatterns";
-import { NavContext } from "sourcegraph/repo/NavContext";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
 import { withResolvedRepoRev } from "sourcegraph/repo/withResolvedRepoRev";
 
@@ -11,15 +10,11 @@ let _components;
 const getComponents = (location, callback) => {
 	if (!_components) {
 		_components = {
-			navContext: withResolvedRepoRev(NavContext, false),
 			main: withResolvedRepoRev(RepoMain, true),
 		};
 	}
 	callback(null, {
 		main: _components.main,
-
-		// Allow disabling the nav context on a per-route basis.
-		navContext: location.routes[location.routes.length - 1].repoNavContext === false ? null : _components.navContext,
 	});
 };
 

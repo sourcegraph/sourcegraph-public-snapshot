@@ -23,7 +23,6 @@ import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
-	navContext?: JSX.Element;
 	location: Location & {state: {modal?: string}};
 	params: any;
 	role?: string;

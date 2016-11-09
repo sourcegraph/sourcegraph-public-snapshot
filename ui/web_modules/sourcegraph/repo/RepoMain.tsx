@@ -30,7 +30,6 @@ interface Props {
 	rev?: string;
 	commitID?: string;
 	resolvedRev?: any;
-	repoNavContext?: any;
 	repoResolution?: any;
 	repoObj?: any;
 	main?: JSX.Element;

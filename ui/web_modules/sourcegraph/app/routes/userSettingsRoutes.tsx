@@ -6,7 +6,7 @@ export const userSettingsRoutes: PlainRoute[] = [
 	{
 		path: rel.settings,
 		getComponent: (location, callback) => {
-			callback(null, {navContext: null, main: SettingsMain} as any);
+			callback(null, {main: SettingsMain} as any);
 		},
 	},
 ];
