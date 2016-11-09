@@ -3,8 +3,9 @@ import * as React from "react";
 import {Link} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
-import {Base, FlexContainer, Heading} from "sourcegraph/components";
+import {FlexContainer, Heading} from "sourcegraph/components";
 import {colors, typography} from "sourcegraph/components/utils";
+import {whitespace} from "sourcegraph/components/utils/index";
 import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
@@ -26,6 +27,7 @@ const sx = {
 	backgroundColor: colors.coolGray1(),
 	boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
 	zIndex: 1,
+	padding: `${whitespace[2]} ${whitespace[3]}`,
 };
 
 const subSx = Object.assign({},
@@ -93,7 +95,7 @@ export function BlobTitle({
 	const extension = getPathExtension(path);
 	const isSupported = extension ? supportedExtensions.indexOf(extension) !== -1 : false;
 
-	return <Base style={sx} px={3} py={2}>
+	return <div style={sx}>
 		<FlexContainer justify="between">
 			<div>
 				<Heading level={5} color="white" style={{marginBottom: 0}}>
@@ -112,5 +114,5 @@ export function BlobTitle({
 			{!isSupported && <UnsupportedLanguageAlert ext={extension}/>}
 			{toast && <div style={toastSx}>{toast}</div>}
 		</FlexContainer>
-	</Base>;
+	</div>;
 };

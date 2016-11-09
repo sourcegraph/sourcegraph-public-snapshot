@@ -1,12 +1,13 @@
 import * as classNames from "classnames";
 import * as React from "react";
 import {Link} from "react-router";
-import {Avatar, Base, FlexContainer, Heading, Menu, Popover} from "sourcegraph/components";
+import {Avatar, FlexContainer, Heading, Menu, Popover} from "sourcegraph/components";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import {ChevronDown} from "sourcegraph/components/symbols/Zondicons";
 import {colors} from "sourcegraph/components/utils";
+import {whitespace} from "sourcegraph/components/utils/index";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
@@ -22,7 +23,7 @@ export const UserMenu = (props): JSX.Element => {
 	}
 
 	return(
-		<Base p={2} style={{display: "inline-block"}}>
+		<div style={{display: "inline-block", padding: whitespace[2]}}>
 			<Popover left={true}>
 				<FlexContainer items="center" style={{lineHeight: "0", height: 29}}>
 					{props.user.AvatarURL ? <Avatar size="small" img={props.user.AvatarURL} /> : <div>{props.user.Login}</div>}
@@ -57,6 +58,6 @@ export const UserMenu = (props): JSX.Element => {
 					</div>
 				</Menu>
 			</Popover>
-		</Base>
+		</div>
 	);
 };

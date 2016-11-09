@@ -10,8 +10,9 @@ import {UserMenu} from "sourcegraph/app/GlobalNav/UserMenu";
 import {BetaSignup, Integrations, Login, Signup} from "sourcegraph/app/modals/index";
 import {isRootRoute} from "sourcegraph/app/routePatterns";
 import * as styles from "sourcegraph/app/styles/GlobalNav.css";
-import {Base, FlexContainer, Logo} from "sourcegraph/components";
+import {FlexContainer, Logo} from "sourcegraph/components";
 import {colors, layout} from "sourcegraph/components/utils";
+import {whitespace} from "sourcegraph/components/utils/index";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {DemoVideo} from "sourcegraph/home/modals/DemoVideo";
@@ -92,6 +93,7 @@ export class GlobalNav extends Container<Props, State> {
 			boxShadow: `${colors.coolGray3(0.1)} 0px 1px 6px 0px`,
 			display: shouldHide ? "none" : "block",
 			zIndex: 100,
+			padding: `${whitespace[1]} ${whitespace[2]}`,
 		};
 
 		let modal = <div />;
@@ -105,22 +107,20 @@ export class GlobalNav extends Container<Props, State> {
 				{m === "demo_video" && <DemoVideo location={location} router={this.context.router} />}
 			</div>;
 		}
-		return <Base
+		return <div
 			{...layout.clearFix}
 			id="global-nav"
 			role="navigation"
-			px={2}
-			py={1}
 			style={sx}>
 
 			{modal}
 
 			<FlexContainer justify="between" items="center">
 				<Link to="/" style={{lineHeight: "0"}}>
-					<Base p={2}>
+					<div style={{padding: whitespace[2]}}>
 						<Logo className={styles.logomark}
 						width="20px" />
-					</Base>
+					</div>
 				</Link>
 
 				<QuickOpenModal repo={repo} rev={rev}
@@ -135,6 +135,6 @@ export class GlobalNav extends Container<Props, State> {
 					}
 				</FlexContainer>
 			</FlexContainer>
-		</Base>;
+		</div>;
 	}
 };

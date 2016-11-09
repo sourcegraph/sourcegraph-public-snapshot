@@ -2,7 +2,7 @@ import * as classNames from "classnames";
 import * as React from "react";
 import {Link} from "react-router";
 import {urlToBlob} from "sourcegraph/blob/routes";
-import {Base, Header, Heading, Panel} from "sourcegraph/components";
+import {Header, Heading, Panel} from "sourcegraph/components";
 import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
 import {typography} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
@@ -59,7 +59,7 @@ export class TreeList extends React.Component<Props, {}> {
 		);
 
 		return <Panel style={sx}>
-			<Base p={3} mb={3}>
+			<div style={{padding: 3, marginBottom: 3}}>
 				<Heading level={7} color="gray"
 					style={{
 						marginTop: whitespace[3],
@@ -67,7 +67,7 @@ export class TreeList extends React.Component<Props, {}> {
 						marginLeft: whitespace[3],
 					}}>Files</Heading>
 				{items}
-			</Base>
+			</div>
 		</Panel>;
 	}
 }

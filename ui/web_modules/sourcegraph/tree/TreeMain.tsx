@@ -3,8 +3,9 @@ import Helmet from "react-helmet";
 import * as Relay from "react-relay";
 import {Route} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
-import {Base, GridCol, Panel, RepoLink} from "sourcegraph/components";
+import {GridCol, Panel, RepoLink} from "sourcegraph/components";
 import {colors} from "sourcegraph/components/utils";
+import {whitespace} from "sourcegraph/components/utils/index";
 import {trimRepo} from "sourcegraph/repo";
 import {treeParam} from "sourcegraph/tree";
 import {RepoNavContext} from "sourcegraph/tree/RepoNavContext";
@@ -25,10 +26,12 @@ export class TreeMainComponent extends React.Component<Props & {root: GQL.IRoot}
 		return (
 			<div>
 				<Panel style={{borderBottom: `1px solid ${colors.coolGray4(0.6)}`}}>
-					<Base py={2} px={3}>
+					<div style={{
+							padding: `${whitespace[2]} ${whitespace[3]}`,
+						}}>
 						<RepoLink repo={this.props.repo} rev={this.props.rev} style={{marginRight: 4}} />
 						<RepoNavContext params={this.props.routeParams} />
-					</Base>
+					</div>
 				</Panel>
 				{/* Refactor once new Panel and Grid code has been merged in */}
 				<GridCol col={9} style={{marginRight: "auto", marginLeft: "auto", marginTop: 16, float: "none"}}>

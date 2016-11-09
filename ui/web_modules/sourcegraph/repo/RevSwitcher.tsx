@@ -5,7 +5,7 @@ import * as Relay from "react-relay";
 import {Link} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {Component, EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
-import {Base, Heading, Input, Menu} from "sourcegraph/components";
+import {Heading, Input, Menu} from "sourcegraph/components";
 import {Check, DownMenu} from "sourcegraph/components/symbols";
 import {colors, typography, whitespace} from "sourcegraph/components/utils";
 import "sourcegraph/repo/RepoBackend";
@@ -219,12 +219,12 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 			<span
 				onClick={this._onToggleDropdown}
 				style={{ cursor: "pointer" }}>
-				<Base ml={1}>
+				<div style={{marginLeft: whitespace[1]}}>
 					<DownMenu
 						width={10}
 						style={{ fill: colors.coolGray3() }}
 					/>
-				</Base>
+				</div>
 			</span>
 			<div style={{
 				display: this.state.open ? "block" : "none",
