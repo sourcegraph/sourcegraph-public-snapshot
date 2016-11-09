@@ -89,7 +89,7 @@ export function dismissModal(modalName: string, location: Location, router: Inje
 		if (eventObject) {
 			eventObject.logEvent();
 		} else {
-			throw new Error("No event logged on modal dismissal. Set the appropriate event type in AnalyticsConstants.tsx for modalName: \"" + modalName + "\"");
+			// TODO(dan) ensure proper params
 		}
 
 		setLocationModalState(router, location, modalName, false);
