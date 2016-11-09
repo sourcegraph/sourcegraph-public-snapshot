@@ -103,14 +103,20 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		// being blocked as a popup.
 		const tab = global.window.open("", "_blank");
 
-		const response = await lsp.send(model, "textDocument/definition", params);
-		const location = checkResponse(response.result);
-		if (location === null) {
-			// If we didn't click on something useful, close the tab.
+		try {
+			const response = await lsp.send(model, "textDocument/definition", params);
+			const location = response && checkResponse(response.result);
+			if (!location) {
+				// If we didn't click on something useful, close the tab.
+				tab.close();
+			} else {
+				tab.location = urlForLocation(location);
+			}
+		} catch (err) {
+			// There are a lot of places this can throw, so make sure we clean
+			// up.
 			tab.close();
-			return;
 		}
-		tab.location = uriToURL(location);
 	}
 
 }
@@ -127,8 +133,8 @@ function checkResponse(result: any): lsp.Location | null {
 	return null;
 }
 
-function uriToURL(loc: lsp.Location): string {
+function urlForLocation(loc: lsp.Location): string {
 	const {line, character} = loc.range.start;
 	const {repo, rev, path} = URIUtils.repoParamsExt(loc.uri);
-	return urlToBlobLineCol(repo, rev, path, line, character);
+	return urlToBlobLineCol(repo, rev, path, line + 1, character + 1);
 }

@@ -43,6 +43,7 @@ export class URIUtils {
 	// loaded).
 	static repoParamsExt(uri: string): {repo: string, rev: string | null, path: string} {
 		let a = document.createElement("a");
+		uri = uri.replace(/^git/, "http");
 		a.href = uri;
 		return {
 			repo: `${a.hostname}/${a.pathname.replace(/\.git$/, "")}`,
