@@ -96,7 +96,14 @@ export class Home extends React.Component<HomeProps, {}> {
 					textAlign: "center",
 				}}>
 
-					<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
+					<FlexContainer justify="around" style={{
+						height: 100,
+						margin: ` 0 ${whitespace[5]}`,
+					}}>
+						<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
+						<img title="Typescript supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
+						<img title="C supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/c.svg`} />
+					</FlexContainer>
 					<FlexContainer justify="around" style={{
 						height: 100,
 						opacity: 0.5,
@@ -105,7 +112,6 @@ export class Home extends React.Component<HomeProps, {}> {
 					}}>
 
 						<img title="Java coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
-						<img title="Typescript coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
 						<img title="JavaScript coming soon"width="24"  src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
 						<img title="Python coming soon"width="24"  src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
 						<img title="PHP coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />
@@ -119,14 +125,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						paddingLeft: whitespace[4],
 						paddingRight: whitespace[4],
 					}}>
-						Partial support for JavaScript
-					</p>
-					<p style={{
-						color: colors.coolGray3(),
-						paddingLeft: whitespace[4],
-						paddingRight: whitespace[4],
-					}}>
-						Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
+						Partial support for JavaScript.	Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
 					</p>
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD})}>
 						<strong>
