@@ -32,9 +32,9 @@ function TLDR({style}: { style?: React.CSSProperties; }): JSX.Element {
 // emailSubscribeForm in this file.
 
 function EmailSubscribeForm({tabIndex, block, sx}: {
-	tabIndex: number;
-	block: boolean;
-	sx: React.CSSProperties;
+	tabIndex?: number;
+	block?: boolean;
+	sx?: React.CSSProperties;
 }): JSX.Element {
 	return <div style={sx}>
 		<form action="//sourcegraph.us8.list-manage.com/subscribe/post?u=81d5d2fe17e49697663f46503&amp;id=32642fc470" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" className="validate" target="_blank" noValidate>
@@ -64,7 +64,7 @@ function SignInButton({block}: { block: boolean }): JSX.Element {
 }
 
 export function MasterPlanPage(): JSX.Element {
-	return <div>
+	return <div style={{marginBottom: whitespace[4]}}>
 		<Helmet title="Sourcegraph Master Plan" />
 		<Hero pattern="objects" color="blue" style={{padding: whitespace[4]}}>
 			<Heading level={2} color="white">Sourcegraph Master Plan</Heading>
@@ -74,22 +74,28 @@ export function MasterPlanPage(): JSX.Element {
 			margin: "auto",
 			maxWidth: 1000,
 			paddingTop: whitespace[4],
+			paddingLeft: whitespace[2],
+			paddingRight: whitespace[2],
 		}}>
-			<Affix offset={0} style={{
-				flex: "0 0 320px",
-				order: 99,
-				paddingLeft: whitespace[5],
-				paddingTop: whitespace[4],
-			}}>
-				<Heading level={7} color="gray">Phase 1 goals</Heading>
-				<TLDR style={{
-					borderLeft: `1px solid ${colors.coolGray3(0.25)}`,
-					listStyleType: "none",
+			<div style={{
+					flex: "0 0 320px",
+					order: 99,
 					paddingLeft: whitespace[4],
-				}}/>
-				<EmailSubscribeForm tabIndex={5} block={true} sx={{padding: whitespace[4]}} />
-				{!context.user && <SignInButton block={true} />}
-			</Affix>
+					paddingTop: whitespace[3],
+				}}
+				{...media(layout.breakpoints["sm"], { display: "none" })}
+			>
+				<Affix offset={0}>
+					<Heading level={7} color="gray">Phase 1 goals</Heading>
+					<TLDR style={{
+						borderLeft: `1px solid ${colors.coolGray3(0.25)}`,
+						listStyleType: "none",
+						paddingLeft: whitespace[4],
+					}}/>
+					<EmailSubscribeForm tabIndex={5} block={true} sx={{padding: whitespace[4]}} />
+					{!context.user && <SignInButton block={true} />}
+				</Affix>
+			</div>
 			<div style={typography.size[5]}>
 				<p style={typography.size[4]}>
 					Today, Sourcegraph gives you the power of an IDE (jump-to-def, search, and find-references) when reading code on the web, either on <a href="https://sourcegraph.com">Sourcegraph.com</a>, or on GitHub with the <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack">Sourcegraph Chrome extension</a>.
@@ -235,18 +241,6 @@ export function MasterPlanPage(): JSX.Element {
 					<li>Make this all realtime, automatically updated as you make changes in your editor</li>
 				</ol>
 
-				<Panel hoverLevel="low" hover={false} style={{
-					textAlign: "center",
-					padding: whitespace[4],
-				}}>
-					<Heading level={4} style={{marginBottom: whitespace[3]}}>
-						Join the Sourcegraph code review beta
-					</Heading>
-					<div style={typography.size[6]}>
-						<a href="https://docs.google.com/a/sourcegraph.com/forms/d/e/1FAIpQLSf9BYHsv2P1hWt4oRY0_PkteXsb5bxQq3ZXjEJZYf2y6vajFg/viewform" target="_blank"><Button color="blue">Apply for beta access</Button></a>
-					</div>
-				</Panel>
-
 				<a id="global-code-graph"></a>
 				<Heading level={3} style={{marginTop: whitespace[5]}}>
 					Build the global code graph
@@ -291,6 +285,23 @@ export function MasterPlanPage(): JSX.Element {
 				<p>
 					Getting these right and building the global code graph means you’ll be able to find and use more existing, high-quality open-source components for the common parts of your application, so you can focus on solving the problems that are unique to your business or project.
 				</p>
+				<div {...media(layout.breakpoints["not-sm"], { display: "none" })}>
+					<Panel hoverLevel="low" hover={false} style={{
+						margin: "auto",
+						marginBottom: whitespace[2],
+						marginTop: whitespace[4],
+						padding: whitespace[4],
+						textAlign: "center",
+					}}>
+						<Heading level={4} style={{marginBottom: whitespace[3]}}>
+							Subscribe to updates to our master plan
+						</Heading>
+						<div style={typography.size[6]}>
+							<EmailSubscribeForm tabIndex={5} block={true} />
+						</div>
+					</Panel>
+				</div>
+
 			</div>
 		</FlexContainer>
 	</div>;
