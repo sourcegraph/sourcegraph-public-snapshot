@@ -292,7 +292,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		var result interface{}
-		if err := h.callLangServer(ctx, conn, req.Method, req.Notif, params, &result); err != nil {
+		if err := h.callLangServer(ctx, conn, req.Method, req.Notif, req.Params, &result); err != nil {
 			return nil, err
 		}
 
