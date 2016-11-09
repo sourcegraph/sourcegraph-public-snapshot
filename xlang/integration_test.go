@@ -105,7 +105,10 @@ func TestIntegration(t *testing.T) {
 				},
 			},
 			wantSymbols: map[string][]string{
-				"Sum256": []string{"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/crypto/sha256/sha256.go:function:sha256.Sum256:176:5"},
+				"Sum256":                       []string{"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/crypto/sha256/sha256.go:function:sha256.Sum256:176:5"},
+				"dir:src/crypto/sha256 Sum256": []string{"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/crypto/sha256/sha256.go:function:sha256.Sum256:176:5"},
+				"dir:crypto/sha256 Sum256":     []string{}, // invalid dir
+				"dir:foo Sum256":               []string{}, // invalid dir
 			},
 		},
 		"git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770": {

@@ -254,6 +254,35 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			req.Params = (*json.RawMessage)(&b)
 		}
 
+		// workspace/symbol queries must have their `dir:` query filter
+		// rewritten for github.com/golang/go due to its specialized directory
+		// structure. e.g. `dir:src/net/http` should work, but the LS will
+		// expect `dir:net/http` as any real/valid Go project will have package
+		// paths align with the directory structure.
+		if req.Method == "workspace/symbol" && strings.HasPrefix(h.init.OriginalRootPath, "git://github.com/golang/go") {
+			var wsparams lsp.WorkspaceSymbolParams
+			if err := json.Unmarshal(*req.Params, &wsparams); err != nil {
+				return nil, err
+			}
+			q := langserver.ParseQuery(wsparams.Query)
+			if q.Filter == langserver.FilterDir {
+				// If the query does not start with `src/` and it is a request
+				// for a stdlib dir, it should return no results (the filter is
+				// dir, not package path).
+				if _, isStdlib := stdlibPackagePaths[q.Dir]; isStdlib && !strings.HasPrefix(q.Dir, "src") {
+					q.Dir = "sginvalid"
+				} else {
+					q.Dir = langserver.PathTrimPrefix(q.Dir, "src") // "src/net/http" -> "net/http"
+				}
+			}
+			wsparams.Query = q.String()
+			b, err := json.Marshal(wsparams)
+			if err != nil {
+				return nil, err
+			}
+			req.Params = (*json.RawMessage)(&b)
+		}
+
 		// Immediately handle file system requests by adding them to
 		// the VFS shared between the build and lang server.
 		if langserver.IsFileSystemRequest(req.Method) {
