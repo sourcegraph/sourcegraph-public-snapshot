@@ -30,10 +30,10 @@ func (r *Repository) Archive(ctx context.Context, commitID vcs.CommitID) (zipDat
 		return nil, err
 	}
 
-	// Compression level of 1 (minimal compression) seems to perform
-	// the best overall on fast network links, but this has not been
-	// tuned thoroughly.
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-1", string(commitID))
+	// Compression level of 0 (no compression) seems to perform the
+	// best overall on fast network links, but this has not been tuned
+	// thoroughly.
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(commitID))
 	cmd.Repo = r.URL
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
