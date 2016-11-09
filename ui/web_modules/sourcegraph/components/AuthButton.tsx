@@ -48,9 +48,7 @@ export function AuthButton(props: Props): JSX.Element {
 		children,
 	} = props;
 
-	const newUserURL = newUserReturnTo || returnTo;
-	const url = urlToOAuth(provider, scopes || null, returnTo || null, newUserURL || null);
-
+	const url = urlToOAuth(provider, scopes || null, returnTo || null, newUserReturnTo || null);
 	const iconSx = size === "small" ? typography.size[5] : typography.size[4];
 
 	return (
