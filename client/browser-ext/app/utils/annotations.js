@@ -4,7 +4,6 @@ import styles from "../components/App.css";
 import * as utils from "./index";
 import _ from "lodash";
 import EventLogger from "../analytics/EventLogger";
-import marked from "marked";
 
 // addAnnotations is the entry point for injecting annotations onto a blob (el).
 // An invisible marker is appended to the document to indicate that annotation
@@ -278,31 +277,35 @@ export function convertElementNode(currentNode, annsByStartByte, offset, lineSta
 }
 
 // The rest of this file is responsible for fetching/caching annotation specific data from the server
-// and adding interaction popover data to annotated elements.
+// and adding interaction tooltip data to annotated elements.
 // The sate management is done outside of the Redux container, thought it could be there; some of this
 // stuff we don't need synchonized to browser local storage.
 
-let popoverCache = {};
-let jumptodefcache = {};
+let tooltipCache = {};
+let j2dCache = {};
 
 const HOVER_DELAY_MS = 200;
 
-const popover = document.createElement("DIV");
-popover.classList.add(styles.popover);
-popover.classList.add("sg-popover");
+const tooltip = document.createElement("DIV");
+tooltip.classList.add(styles.tooltip);
+tooltip.classList.add("sg-tooltip");
+
+const loadingTooltip = document.createElement("DIV");
+loadingTooltip.appendChild(document.createTextNode("Loading..."));
 
 let activeTarget;
-
-const popOverLoading = document.createElement("DIV");
-popOverLoading.className= styles.popoverTitle; // TODO(john): don't use monospace
-popOverLoading.appendChild(document.createTextNode("Loading..."));
+function getTarget(t) {
+	while (t && t.tagName !== "TD" && !t.dataset && !t.dataset.byteoffset) {t = t.parentNode;}
+	if (t && t.tagName === "SPAN" && t.dataset && t.dataset.byteoffset) return t;
+}
 
 let hoverTimeout;
-function hidePopover() {
+function clearTooltip() {
 	clearTimeout(hoverTimeout);
-	if (popover.firstChild) {
-		popover.removeChild(popover.firstChild);
+	if (tooltip.firstChild) {
+		tooltip.removeChild(tooltip.firstChild);
 	}
+	tooltip.style.visibility = "hidden"; // prevent black dot of empty content
 }
 
 function addEventListeners(el, path, repoRevSpec, line) {
@@ -310,16 +313,19 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		let t = getTarget(e.target);
 		if (!t || t.style.cursor !== "pointer") return;
 
-		let openInNewTab = e.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && e.metaKey) || e.button === 1;
+		let openInNewTab = e.ctrlKey || (navigator.platform.toLowerCase().indexOf("mac") >= 0 && e.metaKey) || e.button === 1;
 
 		fetchJumpURL(t.dataset.byteoffset, function(defObj) {
+			if (!defObj) {
+				return;
+			}
+
 			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
 			// either move to a line on the same page, or refresh the page to a new blob view.
-
 			EventLogger.logEventForCategory("Def", "Click", "JumpDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
 
 			if (defObj.defCurPage && !repoRevSpec.isDelta) {
-				location.hash = defObj.defUrl.slice(defObj.defUrl.indexOf('#'));
+				location.hash = defObj.defUrl.slice(defObj.defUrl.indexOf("#"));
 			} else {
 				if (openInNewTab) {
 					window.open(defObj.defUrl, "_blank");
@@ -331,7 +337,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 	}
 
 	el.onmouseout = function(e) {
-		hidePopover();
+		clearTooltip();
 		activeTarget = null;
 	};
 
@@ -341,203 +347,154 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 		if (activeTarget !== t) {
 			activeTarget = t;
-			hidePopover();
+			clearTooltip();
 
-
-			hoverTimeout = setTimeout(() => {
-				// Only show "Loading..." if it has been loading for a while. If we
-				// show "Loading..." immediately, there will be a visible flash if
-				// the actual hover text loads quickly thereafter.
-				showPopover(popOverLoading, true);
-			}, 3 * HOVER_DELAY_MS);
-
+			// Only show "Loading..." if it has been loading for a while. If we
+			// show "Loading..." immediately, there will be a visible flash if
+			// the actual hover text loads quickly thereafter.
+			hoverTimeout = setTimeout(() => showTooltip(loadingTooltip, true), 3 * HOVER_DELAY_MS);
 
 			const hoverShowTime = Date.now() + HOVER_DELAY_MS;
-			fetchPopoverData(activeTarget, function(elem) {
+			getTooltip(activeTarget, function(elem) {
+				clearTimeout(hoverTimeout); // prevent delayed addition of loading indicator
+				if (elem === null) { // add no tooltip for empty responses
+					return;
+				}
+
 				// Always wait at least HOVER_DELAY_MS before showing hover, to avoid
 				// it obscuring text when you move your mouse rapidly across a code file.
 				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
-				clearTimeout(hoverTimeout);
-				hoverTimeout = setTimeout(() => {
-					showPopover(elem, false);
-				}, hoverTimerRemaining);
+				hoverTimeout = setTimeout(() => showTooltip(elem, false), hoverTimerRemaining);
 			});
 		}
 	}
 
-	function getTarget(t) {
-		while (t && t.tagName !== "TD" && !t.dataset && !t.dataset.byteoffset) {t = t.parentNode;}
-		if (t && t.tagName === "SPAN" && t.dataset && t.dataset.byteoffset) return t;
-	}
+	function showTooltip(elem, isLoading) {
+		clearTooltip();
 
-	function showPopover(elem, isLoading) {
 		if (activeTarget && elem) {
 			// Log event only when displaying a fetched tooltip
 			if (!isLoading) {
 				EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
 			}
 
-			hidePopover();
-			popover.appendChild(elem);
+			tooltip.appendChild(elem);
 
-			// Hide the popover initially while we add it to DOM to render and generate
+			// Hide the tooltip initially while we add it to DOM to render and generate
 			// bounding rectangle but hide as we haven't anchored it to a position yet.
-			popover.style.visibility = "hidden";
+			tooltip.style.visibility = "hidden";
 
 			// Anchor it horizontally, prior to rendering to account for wrapping
-			// changes to vertical height if the popover is at the edge of the viewport.
+			// changes to vertical height if the tooltip is at the edge of the viewport.
 			const activeTargetBound = activeTarget.getBoundingClientRect();
-			popover.style.left = (activeTargetBound.left + window.scrollX) + "px";
+			tooltip.style.left = (activeTargetBound.left + window.scrollX) + "px";
 
 			// Attach the node to DOM so the bounding rectangle is generated.
-			document.body.appendChild(popover);
+			document.body.appendChild(tooltip);
 
-			// Anchor the popover vertically.
-			const popoverBound = popover.getBoundingClientRect();
-			popover.style.top = (activeTargetBound.top - (popoverBound.height + 5) + window.scrollY) + "px";
+			// Anchor the tooltip vertically.
+			const tooltipBound = tooltip.getBoundingClientRect();
+			tooltip.style.top = (activeTargetBound.top - (tooltipBound.height + 5) + window.scrollY) + "px";
 
 			// Make it all visible to the user.
-			popover.style.visibility = "visible";
+			tooltip.style.visibility = "visible";
 		}
+	}
+
+	function wrapLSP(req) {
+		req.id = 1;
+		return [
+			{
+				id: 0,
+				method: "initialize",
+				params: {
+					rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
+					mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
+				},
+			},
+			req,
+			{
+				id: 2,
+				method: "shutdown",
+			},
+			{
+				method: "exit",
+			},
+		];
 	}
 
 	function fetchJumpURL(col, cb) {
-		if (typeof jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`] !== 'undefined') {
-			return cb(jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
+		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
+		if (typeof j2dCache[cacheKey] !== "undefined") {
+			return cb(j2dCache[cacheKey]);
 		}
 
-		const body = [
-			{
-				id: 0,
-				method: "initialize",
-				params: {
-					rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
-					mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
+		const body = wrapLSP({
+			method: "textDocument/definition",
+			params: {
+				textDocument: {
+					uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+				},
+				position: {
+					character: parseInt(col, 10) - 1,
+					line: parseInt(line, 10) - 1,
 				},
 			},
-			{
-				id: 1,
-				method: "textDocument/definition",
-				params: {
-					textDocument: {
-						uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
-					},
-					position: {
-						character: parseInt(col, 10) - 1,
-						line: parseInt(line, 10) - 1,
-					},
-				},
-			},
-			{
-				id: 2,
-				method: "shutdown",
-			},
-			{
-				method: "exit",
-			},
-		];
+		});
 
 		return fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", {method: "POST", body: JSON.stringify(body)})
-			.then((resp) => {
-				return resp.json()
-					.then((json) => {
-						const respUri = json[1].result[0].uri.split("git://")[1];
-						const prt0Uri = respUri.split("?");
-						const prt1Uri = prt0Uri[1].split("#");
+			.then((resp) => resp.json().then((json) => {
+				const respUri = json[1].result[0].uri.split("git://")[1];
+				const prt0Uri = respUri.split("?");
+				const prt1Uri = prt0Uri[1].split("#");
 
-						const repoUri = prt0Uri[0];
-						const frevUri = (repoUri === repoRevSpec.repoURI ? repoRevSpec.relRev : prt1Uri[0]) || "master";
-						const pathUri = prt1Uri[1];
-						const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
+				const repoUri = prt0Uri[0];
+				const frevUri = (repoUri === repoRevSpec.repoURI ? repoRevSpec.relRev : prt1Uri[0]) || "master";
+				const pathUri = prt1Uri[1];
+				const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
 
-						jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`] = {
-							defUrl: `https://${repoUri}/blob/${frevUri}/${pathUri}${lineUri ? "#L" + lineUri : "" }`,
-							defCurPage: path === pathUri,
-						};
+				j2dCache[cacheKey] = {
+					defUrl: `https://${repoUri}/blob/${frevUri}/${pathUri}${lineUri ? "#L" + lineUri : "" }`,
+					defCurPage: path === pathUri,
+				};
 
-						cb(jumptodefcache[`${path}@${repoRevSpec.rev}:${line}@${col}`]);
-					})
-					.catch((err) => {});
-			})
-			.catch((err) => {});
+				cb(j2dCache[cacheKey]);
+			})).catch((err) => cb(null));
 	}
 
-	function fetchPopoverData(elem, cb) {
-		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${elem.dataset.byteoffset}`;
-		if (typeof popoverCache[cacheKey] !== "undefined") {
-			return cb(popoverCache[cacheKey]);
+	function getTooltip(target, cb) {
+		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${target.dataset.byteoffset}`;
+		if (typeof tooltipCache[cacheKey] !== "undefined") {
+			return cb(tooltipCache[cacheKey]);
 		}
 
-		const body = [
-			{
-				id: 0,
-				method: "initialize",
-				params: {
-					rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
-					mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
+		const body = wrapLSP({
+			method: "textDocument/hover",
+			params: {
+				textDocument: {
+					uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
+				},
+				position: {
+					character: parseInt(target.dataset.byteoffset, 10) - 1,
+					line: parseInt(line, 10) - 1,
 				},
 			},
-			{
-				id: 1,
-				method: "textDocument/hover",
-				params: {
-					textDocument: {
-						uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
-					},
-					position: {
-						character: parseInt(elem.dataset.byteoffset, 10) - 1,
-						line: parseInt(line, 10) - 1,
-					},
-				},
-			},
-			{
-				id: 2,
-				method: "shutdown",
-			},
-			{
-				method: "exit",
-			},
-		];
+		});
 
 		return fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
 			.then((resp) => resp.json().then((json) => {
-				try {
-					const popOverElem = document.createElement("DIV");
-					const popOverTitleElem = document.createElement("DIV");
-					const popOverTitleText = document.createTextNode(json[1].result.contents[0].value);
-					const popOverDocString = document.createElement("DIV");
+				const tooltip = document.createElement("DIV");
+				if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
+					target.style.cursor = "pointer";
+					target.className = `${target.className} sg-clickable`;
 
-					if (json[1].result.contents.length > 0) {
-						elem.style.cursor = "pointer";
-						elem.className = `${elem.className} sg-clickable`;
-
-						popOverTitleElem.className = styles.popoverTitle;
-						popOverTitleElem.appendChild(popOverTitleText);
-						popOverElem.appendChild(popOverTitleElem);
-
-						if (json[1].result.contents.length > 1) {
-							let docString = json[1].result.contents[1];
-
-							if (typeof docString !== "string") {
-								docString = docString.value;
-							}
-
-							popOverDocString.innerHTML = marked(docString, {gfm: true, breaks: true, sanitize: true});
-							popOverDocString.className = styles.popoverDocstring;
-							popOverElem.appendChild(popOverDocString);
-						}
-
-						popoverCache[cacheKey] = popOverElem;
-					} else {
-						popoverCache[cacheKey] = null;
-					}
-				} catch(err) {
-					popoverCache[cacheKey] = null;
-				} finally {
-					cb(popoverCache[cacheKey]);
+					tooltip.className = styles.tooltipTitle;
+					tooltip.appendChild(document.createTextNode(json[1].result.contents[0].value));
+					tooltipCache[cacheKey] = tooltip;
+				} else {
+					tooltipCache[cacheKey] = null;
 				}
-			})).catch((err) => {
-				cb(null);
-			});
+				cb(tooltipCache[cacheKey]);
+			})).catch((err) => cb(null));
 	}
 }

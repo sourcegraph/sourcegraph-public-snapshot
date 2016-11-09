@@ -1,4 +1,4 @@
-.popover {
+.tooltip {
 	background-color: #2D2D30;
 	max-width: 500px;
 	max-height: 250px;
@@ -12,16 +12,10 @@
 	position: absolute;
 	word-wrap: break-word;
 	overflow: auto;
-}
-.popoverTitle {
 	padding: 5px 6px;
+}
+
+.tooltipTitle {
 	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 	word-wrap: break-all;
-}
-.popoverDocstring {
-	padding: 5px 6px;
-	font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-	border-top-width: 1px;
-	border-top-style: solid;
-	border-top-color: rgba(204, 204, 204, 0.5);
 }

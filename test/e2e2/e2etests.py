@@ -248,13 +248,13 @@ def test_browser_extension_hover_j2d_blob(d):
     wd.get("https://github.com/gorilla/mux/blob/757bef944d0f21880861c2dd9c871ca543023cba/mux.go")
     wait_for(lambda: len(wd.find_elements_by_class_name("sourcegraph-app-annotator")) == 1)
 
-    # hover over a token, get a popover (may be "Loading...")
+    # hover over a token, get a tooltip (may be "Loading...")
     wait_for(lambda: len(wd.find_elements_by_id("text-node-297-6")) == 1)
     retry(lambda: d.hover_elem(wd.find_element_by_id("text-node-297-6")))
-    wait_for(lambda: len(wd.find_elements_by_class_name("sg-popover")) == 1)
+    wait_for(lambda: len(wd.find_elements_by_class_name("sg-tooltip")) == 1)
 
     # wait for the token to be clickable (textDocument/defnition is resolved)
-    wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-popover") if e.text == "func NewRouter() *Router"]) == 1, 10)
+    wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-tooltip") if e.text == "func NewRouter() *Router"]) == 1, 10)
 
     # click and wait for page navigation
     retry(lambda: wd.find_element_by_id("text-node-297-6").click())
@@ -262,7 +262,7 @@ def test_browser_extension_hover_j2d_blob(d):
 
 def test_browser_extension_hover_j2d_unified_pull_request(d):
     wd = d.d
-    wd.get("https://github.com/gorilla/mux/pull/205/files")
+    wd.get("https://github.com/gorilla/mux/pull/205/files?diff=unified")
     wait_for(lambda: len(wd.find_elements_by_class_name("sourcegraph-app-annotator")) == 2)
 
     tests = [{
@@ -277,25 +277,25 @@ def test_browser_extension_hover_j2d_unified_pull_request(d):
         "j2d_location": "https://github.com/gorilla/mux/blob/9c068cf16d982f8bd444b8c352acbeec34c4fe5b/mux.go#L326",
     }, {
         # unmodified
-        "node": "text-node-317-6",
+        "node": "text-node-474-6",
         "hover": "func NewRouter() *Router",
-        "j2d_location": "https://github.com/gorilla/mux/blob/9c068cf16d982f8bd444b8c352acbeec34c4fe5b/mux.go#L18",
+        "j2d_location": "https://github.com/captncraig/mux/blob/acfc892941192f90aadd4f452a295bf39fc5f7ed/mux.go#L24",
     }]
     for test in tests:
-        # hover over a token, get a popover (may be "Loading...")
+        # hover over a token, get a tooltip (may be "Loading...")
         wait_for(lambda: len(wd.find_elements_by_id(test["node"])) == 1)
         retry(lambda: d.hover_elem(wd.find_element_by_id(test["node"])))
-        wait_for(lambda: len(wd.find_elements_by_class_name("sg-popover")) == 1)
+        wait_for(lambda: len(wd.find_elements_by_class_name("sg-tooltip")) == 1)
 
         # wait for the token to be clickable (textDocument/defnition is resolved)
-        wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-popover") if e.text == test["hover"]]) == 1, 10)
+        wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-tooltip") if e.text == test["hover"]]) == 1, 10)
 
         # click and wait for page navigation
         retry(lambda: wd.find_element_by_id(test["node"]).click())
         wait_for(lambda: wd.current_url == test["j2d_location"])
 
         # refresh location after j2d for next test
-        wd.get("https://github.com/gorilla/mux/pull/205/files")
+        wd.get("https://github.com/gorilla/mux/pull/205/files?diff=unified")
 
 def test_browser_extension_hover_j2d_split_pull_request(d):
     wd = d.d
@@ -319,13 +319,13 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
         "j2d_location": "https://github.com/gorilla/mux/blob/9c068cf16d982f8bd444b8c352acbeec34c4fe5b/mux.go#L18",
     }]
     for test in tests:
-        # hover over a token, get a popover (may be "Loading...")
+        # hover over a token, get a tooltip (may be "Loading...")
         wait_for(lambda: len(wd.find_elements_by_id(test["node"])) == 1)
         retry(lambda: d.hover_elem(wd.find_element_by_id(test["node"])))
-        wait_for(lambda: len(wd.find_elements_by_class_name("sg-popover")) == 1)
+        wait_for(lambda: len(wd.find_elements_by_class_name("sg-tooltip")) == 1)
 
         # wait for the token to be clickable (textDocument/defnition is resolved)
-        wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-popover") if e.text == test["hover"]]) == 1, 10)
+        wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-tooltip") if e.text == test["hover"]]) == 1, 10)
 
         # click and wait for page navigation
         retry(lambda: wd.find_element_by_id(test["node"]).click())
