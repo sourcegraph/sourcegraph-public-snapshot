@@ -33,6 +33,7 @@ declare namespace GQL {
     id: string;
     sha1: string;
     tree: ITree;
+    languages: Array<string>;
   }
 
   /*

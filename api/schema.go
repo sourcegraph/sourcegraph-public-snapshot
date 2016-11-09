@@ -32,6 +32,7 @@ type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
+	languages: [String!]!
 }
 
 type Tree {

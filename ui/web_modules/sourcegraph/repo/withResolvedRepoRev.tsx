@@ -60,7 +60,6 @@ export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): 
 
 			state.resolvedRev = state.repoObj && !state.repoObj.Error ? RepoStore.resolvedRevs.get(state.repo, state.rev) : null;
 			state.commitID = state.resolvedRev && !state.resolvedRev.Error ? state.resolvedRev.CommitID : null;
-			state.inventory = state.commitID ? RepoStore.inventory.get(state.repo, state.commitID) : null;
 			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
@@ -111,15 +110,6 @@ export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): 
 			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.repoObj !== nextState.repoObj) {
 				if (!nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
 					Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev));
-				}
-			}
-			if (prevState.repo !== nextState.repo || prevState.commitID !== nextState.commitID || prevState.repoObj !== nextState.repoObj || prevState.inventory !== nextState.inventory) {
-				if (nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {
-					if (nextState.inventory) {
-						Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(nextState.inventory, nextState.repo, nextState.commitID, ""));
-					} else {
-						Dispatcher.Backends.dispatch(new RepoActions.WantInventory(nextState.repo, nextState.commitID));
-					}
 				}
 			}
 

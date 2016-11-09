@@ -5,7 +5,7 @@ import * as flatten from "lodash/flatten";
 import * as some from "lodash/some";
 
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { Inventory, inventoryToSearchModes } from "sourcegraph/editor/modes";
+import { languagesToSearchModes } from "sourcegraph/editor/modes";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import "sourcegraph/repo/RepoBackend";
 import { Store } from "sourcegraph/Store";
@@ -15,7 +15,7 @@ function keyFor(repo: string, rev?: string) {
 	return `${repo}@${rev || ""}`;
 }
 
-function keyForSymbols(mode: string, repo: string, rev?: string, query?: string) {
+function keyForSymbols(mode: string, repo: string, rev?: string | null, query?: string | null) {
 	return `(mode:${mode})${repo}@${rev || ""}${query ? "?" + query : ""}`;
 }
 
@@ -24,10 +24,9 @@ class RepoStoreClass extends Store<any> {
 	resolvedRevs: any;
 	commits: any;
 	resolutions: any;
-	inventory: any;
 	symbols: {
 		content: any;
-		list(inventory: Inventory, repo: string, rev: string | null, query: string): {
+		list(languages: string[], repo: string, rev: string | null, query: string): {
 			loading: boolean;
 			results: any[];
 		};
@@ -60,17 +59,11 @@ class RepoStoreClass extends Store<any> {
 				return this.content[keyFor(repo)] || null;
 			},
 		});
-		this.inventory = deepFreeze({
-			content: {},
-			get(repo, commitID) {
-				return this.content[keyFor(repo, commitID)] || null;
-			},
-		});
 		this.symbols = deepFreeze({
 			content: {},
-			list(inventory, repo, rev, query) {
+			list(languages: string[], repo: string, rev: string | null, query: string) {
 				const langResults = [];
-				inventoryToSearchModes(inventory).forEach((mode) => langResults.push(this.content[keyForSymbols(mode, repo, rev, query)]));
+				languagesToSearchModes(languages).forEach((mode) => langResults.push(this.content[keyForSymbols(mode, repo, rev, query)]));
 				const results = flatten(filter(langResults));
 				const loading = some(langResults, r => r === undefined);
 				return {
@@ -86,7 +79,6 @@ class RepoStoreClass extends Store<any> {
 			repos: this.repos,
 			resolvedRevs: this.resolvedRevs,
 			resolutions: this.resolutions,
-			inventory: this.inventory,
 			symbols: this.symbols,
 		};
 	}
@@ -115,14 +107,6 @@ class RepoStoreClass extends Store<any> {
 				this.repos = deepFreeze(Object.assign({}, this.repos, {
 					content: Object.assign({}, this.repos.content, {
 						[keyFor(action.repo)]: action.repoObj,
-					}),
-				}));
-				break;
-
-			case RepoActions.FetchedInventory:
-				this.inventory = deepFreeze(Object.assign({}, this.inventory, {
-					content: Object.assign({}, this.inventory.content, {
-						[keyFor(action.repo, action.commitID)]: action.inventory,
 					}),
 				}));
 				break;

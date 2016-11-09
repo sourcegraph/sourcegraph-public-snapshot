@@ -7,14 +7,10 @@ import "monaco-typescript/out/monaco.contribution";
 export const modes = new Set<string>(["c", "go", "ruby", "javascript", "typescript"]);
 export const modesToSearch = new Set<string>(["c", "go", "ruby", "typescript"]); // exclude "JavaScript"; backend is the same as TypeScript
 
-export interface Inventory {
-	Languages: {Name: string, TotalBytes: number, Type: string}[];
-}
-
-export function inventoryToSearchModes(inventory: Inventory): string[] {
+export function languagesToSearchModes(languages: string[]): string[] {
 	const m: string[] = [];
-	inventory.Languages.forEach((language) => {
-		const mode = language.Name.toLowerCase();
+	languages.forEach((language) => {
+		const mode = language.toLowerCase();
 		if (modesToSearch.has(mode)) {
 			m.push(mode);
 		}

@@ -1,6 +1,6 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as lsp from "sourcegraph/editor/lsp";
-import { inventoryToSearchModes } from "sourcegraph/editor/modes";
+import { languagesToSearchModes } from "sourcegraph/editor/modes";
 import { updateRepoCloning } from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
@@ -126,18 +126,6 @@ export const RepoBackend = {
 				});
 		}
 
-		if (payload instanceof RepoActions.WantInventory) {
-			const action = payload;
-			let inventory = RepoStore.inventory.get(action.repo, action.commitID);
-			if (inventory === null) {
-				RepoBackend.fetch(`/.api/repos/${action.repo}@${action.commitID}/-/inventory`)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => ({ Error: err }))
-					.then((data) => Dispatcher.Stores.dispatch(new RepoActions.FetchedInventory(action.repo, action.commitID, data)));
-			}
-		}
-
 		if (payload instanceof RepoActions.RefreshVCS) {
 			const action = payload;
 			RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, { method: "POST" })
@@ -146,11 +134,11 @@ export const RepoBackend = {
 
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
-			let symbols = RepoStore.symbols.list(payload.inventory, payload.repo, payload.rev, payload.query);
+			let symbols = RepoStore.symbols.list(payload.languages, payload.repo, payload.rev, payload.query);
 			if (symbols.results.length > 0) {
 				return;
 			}
-			inventoryToSearchModes(action.inventory).forEach(mode => {
+			languagesToSearchModes(action.languages).forEach(mode => {
 				const url = `git:\/\/${action.repo}?${action.rev}`;
 				const flightKey = `${url}@${mode}?${action.query}`;
 				if (workspaceSymbolFlights.has(flightKey)) {

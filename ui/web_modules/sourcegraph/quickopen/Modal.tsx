@@ -36,10 +36,10 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 			query = (this.refs as {searchContainer: Container}).searchContainer.state.input;
 		}
 		return {
-				repo: this.props.repo,
-				rev: this.props.rev,
-				query: query,
-			};
+			repo: this.props.repo,
+			rev: this.props.rev,
+			query: query,
+		};
 	}
 
 	searchModalShortcuts(event: KeyboardEvent & Event): void {
@@ -71,6 +71,7 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 					ref="searchContainer"
 					repo={r}
 					files={this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
+					languages={this.props.root.repository ? this.props.root.repository.commit.languages : []}
 					dismissModal={this.dismissModal} />
 			</ModalComp>}
 			<EventListener target={global.document.body} event="keydown" callback={this.searchModalShortcuts} />
@@ -93,6 +94,7 @@ const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {
 								name
 							}
 						}
+						languages
 					}
 				}
 			}

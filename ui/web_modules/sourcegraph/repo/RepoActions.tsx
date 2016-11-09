@@ -1,11 +1,9 @@
 import {Repo, RepoList, RepoResolution, SymbolInformation} from "sourcegraph/api";
-import {Inventory} from "sourcegraph/editor/modes";
 
 export type Action =
 	RepoCloning |
 	RefreshVCS |
 	WantCreateRepo | RepoCreated |
-	WantInventory | FetchedInventory |
 	WantRepo | FetchedRepo |
 	WantRepos | ReposFetched |
 	WantResolveRepo | RepoResolved |
@@ -76,28 +74,6 @@ export class ResolvedRev {
 	}
 }
 
-export class WantInventory {
-	repo: string;
-	commitID: string;
-
-	constructor(repo: string, commitID: string) {
-		this.repo = repo;
-		this.commitID = commitID;
-	}
-}
-
-export class FetchedInventory {
-	repo: string;
-	commitID: string;
-	inventory: Inventory;
-
-	constructor(repo: string, commitID: string, inventory: Inventory) {
-		this.repo = repo;
-		this.commitID = commitID;
-		this.inventory = inventory;
-	}
-}
-
 export class RepoCloning {
 	repo: string;
 	isCloning: boolean;
@@ -151,13 +127,13 @@ export class RepoCreated {
 }
 
 export class WantSymbols {
-	inventory: Inventory;
+	languages: string[];
 	repo: string;
 	rev: string;
 	query: string;
 
-	constructor(inventory: Inventory, repo: string, rev: string, query: string) {
-		this.inventory = inventory;
+	constructor(languages: string[], repo: string, rev: string, query: string) {
+		this.languages = languages;
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
