@@ -20,19 +20,12 @@ declare namespace GQL {
   /*
     description: null
   */
-  interface IBlob {
-    __typename: string;
-    bytes: string;
-  }
-
-  /*
-    description: null
-  */
   interface ICommit {
     __typename: string;
     id: string;
     sha1: string;
     tree: ITree;
+    file: IFile;
     languages: Array<string>;
   }
 
@@ -51,7 +44,7 @@ declare namespace GQL {
   interface IFile {
     __typename: string;
     name: string;
-    content: IBlob;
+    content: string;
   }
 
   /*

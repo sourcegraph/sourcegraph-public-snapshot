@@ -1,9 +1,7 @@
 // tslint:disable typedef ordered-imports
-import { TreeEntry } from "sourcegraph/api";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { URIUtils } from "sourcegraph/core/uri";
-import { makeRepoRev } from "sourcegraph/repo";
 import { IDisposable } from "vs/base/common/lifecycle";
 import * as editorCommon from "vs/editor/common/editorCommon";
 import { IRange } from "vs/editor/common/editorCommon";
@@ -111,12 +109,34 @@ export class EditorService implements IEditorService {
 
 		const {repo, rev, path} = URIUtils.repoParams(data.resource);
 		return TPromise.wrap(
-			fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/tree/${path}?ContentsAsString=true&NoSrclibAnns=true`)
+			fetch(`/.api/graphql`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					query: `query Content($repo: String, $rev: String, $path: String) {
+						root {
+							repository(uri: $repo) {
+								commit(rev: $rev) {
+									file(path: $path) {
+										content
+									}
+								}
+							}
+						}
+					}`,
+					variables: { repo, rev, path },
+				}),
+			})
 				.then(checkStatus)
 				.then(resp => resp.json())
-				.then((treeEntry: TreeEntry) => {
+				.then((resp: GQL.IGraphQLResponseRoot) => {
+					if (!resp.data) {
+						throw new Error("file content not available");
+					}
 					// Call getModel again in case we lost a race.
-					return getModel(data.resource) || createModel(treeEntry.ContentsString || "", getModeByFilename(path), data.resource);
+					return getModel(data.resource) || createModel(resp.data.root.repository.commit.file.content, getModeByFilename(path), data.resource);
 				})
 				.catch(err => err)
 		);

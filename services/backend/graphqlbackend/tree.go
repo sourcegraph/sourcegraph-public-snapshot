@@ -77,8 +77,8 @@ func (r *treeResolver) Directories() []*entryResolver {
 		if entry.Type == sourcegraph.DirEntry {
 			l = append(l, &entryResolver{
 				commit: r.commit,
+				name:   entry.Name,
 				path:   path.Join(r.path, entry.Name),
-				entry:  entry,
 			})
 		}
 	}
@@ -91,8 +91,8 @@ func (r *treeResolver) Files() []*entryResolver {
 		if entry.Type != sourcegraph.DirEntry {
 			l = append(l, &entryResolver{
 				commit: r.commit,
+				name:   entry.Name,
 				path:   path.Join(r.path, entry.Name),
-				entry:  entry,
 			})
 		}
 	}
@@ -101,24 +101,30 @@ func (r *treeResolver) Files() []*entryResolver {
 
 type entryResolver struct {
 	commit commitSpec
+	name   string
 	path   string
-	entry  *sourcegraph.BasicTreeEntry
 }
 
 func (r *entryResolver) Name() string {
-	return r.entry.Name
+	return r.name
 }
 
 func (r *entryResolver) Tree(ctx context.Context) (*treeResolver, error) {
 	return makeTreeResolver(ctx, r.commit, r.path, false)
 }
 
-func (r *entryResolver) Content() *blobResolver {
-	return &blobResolver{}
-}
-
-type blobResolver struct{}
-
-func (r *blobResolver) Bytes(ctx context.Context) (string, error) {
-	return "TODO", nil
+func (r *entryResolver) Content(ctx context.Context) (string, error) {
+	file, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: sourcegraph.TreeEntrySpec{
+			RepoRev: sourcegraph.RepoRevSpec{
+				Repo:     r.commit.RepoID,
+				CommitID: r.commit.CommitID,
+			},
+			Path: r.path,
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	return string(file.Contents), nil
 }

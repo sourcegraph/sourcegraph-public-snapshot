@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"path"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
@@ -45,6 +46,16 @@ func (r *commitResolver) Tree(ctx context.Context, args *struct {
 	Recursive bool
 }) (*treeResolver, error) {
 	return makeTreeResolver(ctx, r.commit, args.Path, args.Recursive)
+}
+
+func (r *commitResolver) File(ctx context.Context, args *struct {
+	Path string
+}) (*entryResolver, error) {
+	return &entryResolver{
+		commit: r.commit,
+		name:   path.Base(args.Path),
+		path:   args.Path,
+	}, nil
 }
 
 func (r *commitResolver) Languages(ctx context.Context) ([]string, error) {

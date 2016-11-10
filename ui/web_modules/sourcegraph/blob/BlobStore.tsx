@@ -2,12 +2,6 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { Store } from "sourcegraph/Store";
 
-// keyFor must stay in sync with the key func in
-// (*ui.BlobStore).AddFile.
-export function keyForFile(repo: string, commitID: string | null, path: string): string {
-	return `${repo}#${commitID || ""}#${path}`;
-}
-
 class BlobStoreClass extends Store<any> {
 	toast: string | null;
 	_toastTimeout: number | null;
