@@ -2,7 +2,7 @@
 
 set -e
 
-if [ -n "$CHROME_WEBSTORE_CLIENT_SECRET" ]; then
+if [ -z "$CHROME_WEBSTORE_CLIENT_SECRET" ]; then
     printf "Missing env CHROME_WEBSTORE_CLIENT_SECRET; check the infrastructure repository"
     exit 1
 fi
