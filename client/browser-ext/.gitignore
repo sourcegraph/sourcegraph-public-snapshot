@@ -5,6 +5,8 @@ npm-debug.log
 build/
 dev/
 
+.checksum
+
 *.zip
 *.crx
 *.pem
