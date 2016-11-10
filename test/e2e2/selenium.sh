@@ -22,7 +22,7 @@ if [ "$1" = "kill" ]; then  # if we just want to kill the selenium containers, r
 fi
 
 if [ "$(uname)" = "Linux" ]; then
-    cmd="docker run -d -l -v $(pwd)/browser-ext/build:/browser-ext $LBL $vnc_port_mapping -p $SEL_PORT:4444 $SEL_IMG"
+    cmd="docker run -d -v $(pwd)/browser-ext/build:/browser-ext -l $LBL $vnc_port_mapping -p $SEL_PORT:4444 $SEL_IMG"
     echo "\$ $cmd";
     container=$($cmd);
     sleep 3;
