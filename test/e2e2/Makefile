@@ -1,8 +1,8 @@
-.PHONY: test dep deploy vnc selenium run chrome-prod chrome-prod-novnc chrome-local firefox-prod firefox-local chrome-prod-repo-jump-to browser-ext
+.PHONY: test dep dep-browser-ext deploy vnc selenium run chrome-prod chrome-prod-novnc chrome-local firefox-prod firefox-local chrome-prod-repo-jump-to browser-ext
 
 default: all-prod
 
-test: dep
+test: dep dep-browser-ext
 	BROWSER=${BROWSER} ./selenium.sh
 	BROWSER=${BROWSER} ./vnc.sh &
 	BROWSER=${BROWSER} SOURCEGRAPH_URL=${SOURCEGRAPH_URL} ./run.sh
@@ -10,6 +10,8 @@ test: dep
 
 dep: .env/bin/python .env/bin/pip
 	.env/bin/pip install -r requirements.txt
+
+dep-browser-ext:
 	cd ./browser-ext && yarn install && yarn run build
 
 .env/bin/python .env/bin/pip:
