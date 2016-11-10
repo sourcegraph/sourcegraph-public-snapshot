@@ -22,8 +22,6 @@ function keyForSymbols(mode: string, repo: string, rev?: string | null, query?: 
 class RepoStoreClass extends Store<any> {
 	repos: any;
 	resolvedRevs: any;
-	commits: any;
-	resolutions: any;
 	symbols: {
 		content: any;
 		list(languages: string[], repo: string, rev: string | null, query: string): {
@@ -53,12 +51,6 @@ class RepoStoreClass extends Store<any> {
 				return this.content[keyFor(repo, rev)] || null;
 			},
 		});
-		this.resolutions = deepFreeze({
-			content: {},
-			get(repo) {
-				return this.content[keyFor(repo)] || null;
-			},
-		});
 		this.symbols = deepFreeze({
 			content: {},
 			list(languages: string[], repo: string, rev: string | null, query: string) {
@@ -78,7 +70,6 @@ class RepoStoreClass extends Store<any> {
 		return {
 			repos: this.repos,
 			resolvedRevs: this.resolvedRevs,
-			resolutions: this.resolutions,
 			symbols: this.symbols,
 		};
 	}
@@ -117,31 +108,6 @@ class RepoStoreClass extends Store<any> {
 						[keyFor(action.repo)]: action.isCloning,
 					}),
 				}));
-				break;
-
-			case RepoActions.RepoResolved:
-				this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
-					content: Object.assign({}, this.resolutions.content, {
-						[keyFor(action.repo)]: action.resolution,
-					}),
-				}));
-				break;
-
-			case RepoActions.RepoCreated:
-				this.repos = deepFreeze(Object.assign({}, this.repos, {
-					content: Object.assign({}, this.repos.content, {
-						[keyFor(action.repo)]: action.repoObj,
-					}),
-				}));
-
-				if (!action.repoObj.Error) {
-					// Update resolution to reflect the newly created repo.
-					this.resolutions = deepFreeze(Object.assign({}, this.resolutions, {
-						content: Object.assign({}, this.resolutions.content, {
-							[keyFor(action.repo)]: { Result: { Repo: action.repoObj.URI } },
-						}),
-					}));
-				}
 				break;
 
 			case RepoActions.FetchedSymbols:

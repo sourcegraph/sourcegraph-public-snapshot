@@ -1,7 +1,8 @@
+import * as cloneDeep from "lodash/cloneDeep";
 import * as React from "react";
 import Helmet from "react-helmet";
 import * as Relay from "react-relay";
-import {Route} from "react-router";
+import {InjectedRouter, Route} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {GridCol, Panel, RepoLink} from "sourcegraph/components";
 import {colors} from "sourcegraph/components/utils";
@@ -19,7 +20,36 @@ interface Props {
 	routeParams: RouteParams;
 };
 
-export class TreeMainComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
+type PropsWithRoot = Props & {root: GQL.IRoot};
+
+interface Context {
+	router: InjectedRouter;
+}
+
+export class TreeMainComponent extends React.Component<PropsWithRoot, {}> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	constructor(props: PropsWithRoot, context: Context) {
+		super(props);
+		this._redirectToCanonicalURI(props, context);
+	}
+
+	componentWillReceiveProps(nextProps: PropsWithRoot, nextContext: Context): void {
+		this._redirectToCanonicalURI(nextProps, nextContext);
+	}
+
+	_redirectToCanonicalURI(props: PropsWithRoot, context: Context): void {
+		if (props.repo !== props.root.repository.uri) {
+			setTimeout(function(): void {
+				let locCopy = cloneDeep(props.location);
+				locCopy.pathname = props.location.pathname.replace(new RegExp(props.repo, "g"), props.root.repository.uri);
+				context.router.replace(locCopy);
+			}, 0);
+		}
+	}
+
 	render(): JSX.Element | null {
 		const path = treeParam(this.props.routeParams.splat);
 
@@ -57,6 +87,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 		root: () => Relay.QL`
 			fragment on Root {
 				repository(uri: $repo) {
+					uri
 					commit(rev: $rev) {
 						tree(path: $path) {
 							directories {

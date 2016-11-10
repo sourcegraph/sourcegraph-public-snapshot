@@ -1,4 +1,3 @@
-import * as cloneDeep from "lodash/cloneDeep";
 import * as React from "react";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -16,21 +15,17 @@ interface Props {
 
 type State = any;
 
-// withResolvedRepoRev reads the repo, rev, repo resolution, etc.,
+// withResolvedRepoRev reads the repo, rev, etc.,
 // from the route params. If isMainComponent is true, then it also dispatches
 // actions to populate that data if necessary (dispatch should only be
 // true for the main component, not the nav or other secondary components,
-// or else duplicate WantResolveRepo, etc., actions will be dispatched
-// and could lead to multiple WantCreateRepo, etc., actions being sent
+// or else duplicate actions will be dispatched
+// and could lead to multiple actions being sent
 // to the server).
 export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): React.ComponentClass<Props> {
 
 	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container<Props, State> {
-		static contextTypes: React.ValidationMap<any> = {
-			router: React.PropTypes.object.isRequired,
-		};
-
 		_cloningInterval: any;
 		_cloningTimeout: any;
 
@@ -54,8 +49,6 @@ export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): 
 			state.repo = repoPath(repoSplat);
 			state.rev = repoRev(repoSplat); // the original rev from the URL
 
-			state.repoResolution = RepoStore.resolutions.get(state.repo);
-			state.repoID = state.repoResolution && !state.repoResolution.Error && state.repoResolution.Repo ? state.repoResolution.Repo : null;
 			state.repoObj = RepoStore.repos.get(state.repo);
 
 			state.resolvedRev = state.repoObj && !state.repoObj.Error ? RepoStore.resolvedRevs.get(state.repo, state.rev) : null;
@@ -68,44 +61,8 @@ export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): 
 				return;
 			}
 
-			// Handle change in params OR lost resolution (due to auth change, etc.).
-			if (nextState.repo && !nextState.repoResolution && (prevState.repo !== nextState.repo || prevState.repoResolution !== nextState.repoResolution)) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantResolveRepo(nextState.repo));
-			}
-
-			if (nextState.repoResolution && prevState.repoResolution !== nextState.repoResolution) {
-				if (nextState.repoResolution.Error) {
-					// Do nothing.
-				} else if (nextState.repoResolution.Repo) {
-					let canonicalPath = nextState.repoResolution.CanonicalPath;
-					if (nextState.repo !== canonicalPath) {
-						let locCopy = cloneDeep(this.props.location);
-						locCopy.pathname = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
-						(this.context as any).router.replace(locCopy);
-						return;
-					}
-
-					// Fetch it if it's a local repo.
-					Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
-				} else if (nextState.repoResolution.RemoteRepo) {
-					let remoteRepo = nextState.repoResolution.RemoteRepo;
-					let canonicalPath = `github.com/${nextState.repoResolution.RemoteRepo.Owner}/${nextState.repoResolution.RemoteRepo.Name}`;
-					if (remoteRepo.HTTPCloneURL && !remoteRepo.HTTPCloneURL.startsWith("https://github.com/")) {
-						if (remoteRepo.HTTPCloneURL.startsWith("https://")) {
-							canonicalPath = remoteRepo.HTTPCloneURL.substr("https://".length);
-						} else if (remoteRepo.HTTPCloneURL.startsWith("http://")) {
-							canonicalPath = remoteRepo.HTTPCloneURL.substr("http://".length);
-						}
-					}
-
-					if (nextState.repo !== canonicalPath) {
-						let canonicalURL = this.props.location.pathname.replace(new RegExp(this.state.repo, "g"), canonicalPath);
-						(this.context as any).router.replace(canonicalURL);
-						return;
-					}
-
-					// If it's a remote repo, do nothing; RepoMain should clone the repository.
-				}
+			if (nextState.repo && !nextState.repoObj && (prevState.repo !== nextState.repo)) {
+				Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
 			}
 			if (prevState.repo !== nextState.repo || prevState.rev !== nextState.rev || prevState.repoObj !== nextState.repoObj) {
 				if (!nextState.commitID && nextState.repoObj && !nextState.repoObj.Error && !nextState.isCloning) {

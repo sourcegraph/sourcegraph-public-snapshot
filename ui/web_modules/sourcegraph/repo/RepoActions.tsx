@@ -1,11 +1,9 @@
-import {Repo, RepoList, RepoResolution, SymbolInformation} from "sourcegraph/api";
+import {Repo, RepoList, SymbolInformation} from "sourcegraph/api";
 
 export type Action =
 	RepoCloning |
-	WantCreateRepo | RepoCreated |
 	WantRepo | FetchedRepo |
 	WantRepos | ReposFetched |
-	WantResolveRepo | RepoResolved |
 	WantResolveRev | ResolvedRev |
 	WantSymbols | FetchedSymbols;
 
@@ -80,44 +78,6 @@ export class RepoCloning {
 	constructor(repo: string, isCloning: boolean) {
 		this.repo = repo;
 		this.isCloning = isCloning;
-	}
-}
-
-export class WantResolveRepo {
-	repo: string;
-
-	constructor(repo: string) {
-		this.repo = repo;
-	}
-}
-
-export class RepoResolved {
-	repo: string;
-	resolution: RepoResolution;
-
-	constructor(repo: string, resolution: RepoResolution) {
-		this.repo = repo;
-		this.resolution = resolution;
-	}
-}
-
-export class WantCreateRepo {
-	repo: string;
-	remoteRepo: any;
-
-	constructor(repo: string, remoteRepo: any) {
-		this.repo = repo;
-		this.remoteRepo = remoteRepo;
-	}
-}
-
-export class RepoCreated {
-	repo: string;
-	repoObj: Repo;
-
-	constructor(repo: string, repoObj: Repo) {
-		this.repo = repo;
-		this.repoObj = repoObj;
 	}
 }
 

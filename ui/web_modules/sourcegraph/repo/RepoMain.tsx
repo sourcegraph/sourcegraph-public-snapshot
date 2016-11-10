@@ -1,17 +1,10 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-
-import * as Dispatcher from "sourcegraph/Dispatcher";
-
-import {trimRepo} from "sourcegraph/repo";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
-import * as styles from "sourcegraph/repo/styles/Repo.css";
-
 import {context} from "sourcegraph/app/context";
-
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Header} from "sourcegraph/components/Header";
-
+import {trimRepo} from "sourcegraph/repo";
+import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
 import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
@@ -30,7 +23,6 @@ interface Props {
 	rev?: string;
 	commitID?: string;
 	resolvedRev?: any;
-	repoResolution?: any;
 	repoObj?: any;
 	main?: JSX.Element;
 	isCloning?: boolean;
@@ -41,38 +33,8 @@ interface Props {
 type State = any;
 
 export class RepoMain extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
-	constructor(props: Props) {
-		super(props);
-
-		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);
-	}
-
-	componentWillReceiveProps(nextProps: Props): void {
-		if (this.props.repoResolution !== nextProps.repoResolution) {
-			this._repoResolutionUpdated(nextProps.repo, nextProps.repoResolution);
-		}
-	}
-
-	_repoResolutionUpdated(repo: string, resolution: any): void {
-		// Create the repo if we don't have repoObj (the result of creating a repo) yet,
-		// and this repo was just resolved to a remote repo (which must be explicitly created,
-		// as we do right here).
-		if (!this.props.repoObj && repo && resolution && !resolution.Error && !resolution.Repo && resolution.RemoteRepo) {
-			// Don't create the repo if user agent is bot.
-			if (context.userAgentIsBot) {
-				return;
-			}
-
-			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.RemoteRepo));
-		}
-	}
-
 	render(): JSX.Element | null {
-		const err = (this.props.repoResolution && this.props.repoResolution.Error) || (this.props.repoObj && this.props.repoObj.Error);
+		const err = (this.props.repoObj && this.props.repoObj.Error);
 		if (err) {
 			let msg;
 			let showGitHubCTA = false;

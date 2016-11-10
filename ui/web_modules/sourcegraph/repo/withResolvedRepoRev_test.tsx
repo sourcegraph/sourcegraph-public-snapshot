@@ -1,4 +1,3 @@
-import expect from "expect.js";
 import * as React from "react";
 import {Location} from "sourcegraph/Location";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
@@ -27,47 +26,5 @@ describe("withResolvedRepoRev", () => {
 	it("should render if the repo does not exist", () => {
 		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true} as any));
 		render(<C params={{splat: "r"}}  location={{} as Location}/>);
-	});
-
-	describe("repo resolution", () => {
-		it("should initially trigger WantResolveRepo", () => {
-			const res = render(<C params={{splat: "r"}}  location={{} as Location}/>, {router: {}});
-			expect(res.actions).to.eql([new RepoActions.WantResolveRepo("r")]);
-		});
-		it("should trigger WantRepo for resolved local repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("r", {Repo: 1, CanonicalPath: "r"}));
-			let calledReplace = false;
-			const res = render(<C params={{splat: "r"}}  location={{} as Location}/>, {
-				router: {replace: () => calledReplace = true},
-			});
-			expect(calledReplace).to.be(false);
-			expect(res.actions).to.eql([new RepoActions.WantRepo("r")]);
-		});
-		it("should NOT trigger WantRepo for resolved remote repos", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {RemoteRepo: {Owner: "user", Name: "repo"}}));
-			let calledReplace = false;
-			const res = render(<C params={{splat: "github.com/user/repo"}}  location={{} as Location}/>, {
-				router: {replace: () => calledReplace = true},
-			});
-			expect(calledReplace).to.be(false);
-			expect(res.actions).to.eql([]);
-		});
-
-		it("should redirect for resolved local repos with different canonical name", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("repo", {Repo: 1, CanonicalPath: "renamedRepo"}));
-			let calledReplace = false;
-			render(<C params={{splat: "repo"}} location={{pathname: "sg.com/alias"} as Location} />, {
-				router: {replace: () => calledReplace = true},
-			});
-			expect(calledReplace).to.be(true);
-		});
-		it("should redirect for resolved remote repos with different canonical name", () => {
-			RepoStore.directDispatch(new RepoActions.RepoResolved("github.com/user/repo", {RemoteRepo: {Owner: "renamedUser", Name: "renamedRepo"}}));
-			let calledReplace = false;
-			render(<C params={{splat: "github.com/user/repo"}} location={{pathname: "sg.com/alias"} as Location} />, {
-				router: {replace: () => calledReplace = true},
-			});
-			expect(calledReplace).to.be(true);
-		});
 	});
 });
