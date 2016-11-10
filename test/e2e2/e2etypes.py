@@ -188,6 +188,14 @@ class Driver(object):
         auth0_user_id = auth0_users[0]['user_id']
         subprocess.check_output('curl -H "Authorization: Bearer %s" -X DELETE  https://sourcegraph.auth0.com/api/v2/users/%s' % (auth0_tok, urllib.quote(auth0_user_id)), shell=True)
 
+    def verify_new_tab_opened(self, location):
+        main_window = self.d.current_window_handle
+        wait_for(lambda: len(self.d.window_handles) == 2)
+        retry(lambda: self.d.switch_to.window(self.d.window_handles[1]))
+        wait_for(lambda: self.d.current_url == location)
+        self.d.close()
+        retry(lambda: self.d.switch_to.window(main_window))
+
 # Util contains static methods that define more compound actions
 # than what are available in Driver methods.
 class Util(object):

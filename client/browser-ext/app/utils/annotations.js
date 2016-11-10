@@ -315,24 +315,15 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 
 		let openInNewTab = e.ctrlKey || (navigator.platform.toLowerCase().indexOf("mac") >= 0 && e.metaKey) || e.button === 1;
 
-		fetchJumpURL(t.dataset.byteoffset, function(defObj) {
-			if (!defObj) {
+		fetchJumpURL(t.dataset.byteoffset, function(defUrl) {
+			if (!defUrl) {
 				return;
 			}
 
 			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
 			// either move to a line on the same page, or refresh the page to a new blob view.
 			EventLogger.logEventForCategory("Def", "Click", "JumpDef", Object.assign({}, repoRevSpec, loggingStruct));
-
-			if (defObj.defCurPage && !repoRevSpec.isDelta) {
-				location.hash = defObj.defUrl.slice(defObj.defUrl.indexOf("#"));
-			} else {
-				if (openInNewTab) {
-					window.open(defObj.defUrl, "_blank");
-				} else {
-					location.href = defObj.defUrl;
-				}
-			}
+			window.open(defUrl, "_blank");
 		});
 	}
 
@@ -452,11 +443,7 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 				const pathUri = prt1Uri[1];
 				const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
 
-				j2dCache[cacheKey] = {
-					defUrl: `https://${repoUri}/blob/${frevUri}/${pathUri}${lineUri ? "#L" + lineUri : "" }`,
-					defCurPage: path === pathUri,
-				};
-
+				j2dCache[cacheKey] = `https://sourcegraph.com/${repoUri}@${frevUri}/-/blob/${pathUri}${lineUri ? "#L" + lineUri : ""}`;
 				cb(j2dCache[cacheKey]);
 			})).catch((err) => cb(null));
 	}

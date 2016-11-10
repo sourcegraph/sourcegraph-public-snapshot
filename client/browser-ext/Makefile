@@ -16,6 +16,9 @@ build:
 bundle: build
 	zip -r chrome-bundle.zip build/*
 
+test-e2e:
+	cd ../../test/e2e2 && make browser-ext
+
 export CHROME_BUNDLE ?= $(shell pwd)/chrome-bundle.zip
 deploy: bundle
 	./deploy.sh
