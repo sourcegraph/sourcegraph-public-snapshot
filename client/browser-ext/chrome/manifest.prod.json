@@ -24,6 +24,6 @@
   "background": {
     "scripts": ["js/background.bundle.js"]
   },
-  "permissions": [ "storage", "https://github.com/*", "https://sourcegraph.com/*" ],
+  "permissions": [ "cookies", "storage", "https://github.com/*", "https://sourcegraph.com/*" ],
   "content_security_policy": "default-src 'self'; script-src 'self' 'unsafe-eval'; connect-src 'self' https://sourcegraph-logging.telligentdata.com; style-src * 'unsafe-inline'; img-src 'self' data:;"
 }

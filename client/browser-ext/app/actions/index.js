@@ -3,9 +3,9 @@ import {keyFor} from "../reducers/helpers";
 import fetch, {useAccessToken} from "./xhr";
 import EventLogger from "../analytics/EventLogger";
 
-export function setAccessToken(token) {
-	useAccessToken(token); // for future fetches
-	return {type: types.SET_ACCESS_TOKEN, token};
+export function setTokens(tokens) {
+	useAccessToken(tokens.sessionToken);
+	return {type: types.SET_ACCESS_TOKENS, tokens};
 }
 
 // Utility method to fetch the absolute commit id for a branch
