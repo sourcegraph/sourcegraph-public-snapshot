@@ -34,7 +34,7 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		// ("http://example.com/foo"), follow that URL instead of
 		// treating it as a potential reference in code.
 		const linkContribution = this.editor.getContribution("editor.linkDetector");
-		if (linkContribution && (linkContribution as any).getLinkOccurence(mouseEvent.target.position)) {
+		if (linkContribution && mouseEvent.target.position && (linkContribution as any).getLinkOccurence(mouseEvent.target.position)) {
 			return; // LinkDetector editor contribution will handle the link click.
 		}
 
