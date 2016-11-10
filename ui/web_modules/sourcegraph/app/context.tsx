@@ -37,6 +37,10 @@ class Context {
 	hasPrivateGoogleToken(): boolean {
 		return Boolean(this.googleToken && this.googleToken.scope.includes("https://www.googleapis.com/auth/cloud-platform") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.email") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.profile"));
 	}
+
+	hasChromeExtensionInstalled(): boolean {
+		return document.getElementById("sourcegraph-app-bootstrap") !== null;
+	}
 }
 
 export const context = new Context();
