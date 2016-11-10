@@ -564,10 +564,14 @@ func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLan
 		span.Finish()
 	}()
 
-	// Query all external references for the repository.
+	// Query all external references for the repository. We do this using the
+	// "<language>_bg" mode which runs this request on a separate language
+	// server explicitly for background tasks such as workspace/references.
+	// This makes it such that indexing repositories does not interfere in
+	// terms of resource usage with real user requests.
 	var refs []lspext.ReferenceInformation
 	rootPath := "git://" + source + "?" + version
-	err = xlang.OneShotClientRequest(ctx, language.String(), rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
+	err = xlang.OneShotClientRequest(ctx, language.String()+"_bg", rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
 	if err != nil {
 		return errors.Wrap(err, "workspaceReference")
 	}
