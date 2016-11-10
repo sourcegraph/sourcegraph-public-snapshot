@@ -222,11 +222,8 @@ export class Editor implements IDisposable {
 		});
 	}
 
-	_highlight(startLine: number, startCol?: number, endLine?: number, endCol?: number): void {
-		startCol = typeof startCol === "number" ? startCol : this._editor.getModel().getLineMinColumn(startLine);
-		endLine = typeof endLine === "number" ? endLine : startLine;
-		endCol = typeof endCol === "number" ? endCol : this._editor.getModel().getLineMaxColumn(endLine);
-		this._editor.setSelection(new Range(startLine, startCol, endLine, endCol));
+	public setSelection(range: IRange): void {
+		this._editor.setSelection(range);
 	}
 
 	public getSelection(): any {
@@ -370,10 +367,6 @@ export class Editor implements IDisposable {
 				});
 				return locs.map(lsp.toMonacoLocation);
 			});
-	}
-
-	public setHighlightForLineSelection(startLine: number, endLine: number): void {
-		this._highlight(startLine, endLine < startLine ? Infinity : 0, endLine, startLine > endLine ? 0 : Infinity);
 	}
 
 	private setTokenCursor(word: IWordAtPosition): void {

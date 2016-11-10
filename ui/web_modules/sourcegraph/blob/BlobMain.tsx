@@ -1,4 +1,5 @@
 import * as debounce from "lodash/debounce";
+import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 import Helmet from "react-helmet";
 import { InjectedRouter } from "react-router";
@@ -33,10 +34,7 @@ interface Props {
 	path: string;
 	routes: Object[];
 	routeParams: RouteParams;
-	startLine?: number;
-	startCol?: number;
-	endLine?: number;
-	endCol?: number;
+	selection: RangeOrPosition | null;
 	location: Location;
 }
 
@@ -45,7 +43,7 @@ interface State extends Props {
 }
 
 // BlobMain wraps the Editor component for the primary code view.
-export class BlobMain extends Container<Props, State> {
+class BlobMainEditor extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -113,16 +111,15 @@ export class BlobMain extends Container<Props, State> {
 			throw new Error("editor is not ready");
 		}
 
-		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.commitID !== nextProps.commitID || prevProps.path !== nextProps.path || prevProps.startLine !== nextProps.startLine || prevProps.startCol !== nextProps.startCol || prevProps.endLine !== nextProps.endLine || prevProps.endCol !== nextProps.endCol)) {
+		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.commitID !== nextProps.commitID || prevProps.path !== nextProps.path || !isEqual(prevProps.selection, nextProps.selection))) {
 			if (nextProps.commitID) {
 				// Use absolute commit IDs for the editor model URI.
 				// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
 				const uri = URIUtils.pathInRepo(nextProps.repoObj && nextProps.repoObj.URI ?  nextProps.repoObj.URI : nextProps.repo, nextProps.commitID, nextProps.path);
 
 				let range: IRange;
-				if (typeof nextProps.startLine === "number") {
-					const rop = RangeOrPosition.fromOneIndexed(nextProps.startLine, nextProps.startCol, nextProps.endLine, nextProps.endCol);
-					range = rop.toMonacoRangeAllowEmpty();
+				if (nextProps.selection) {
+					range = nextProps.selection.toMonacoRangeAllowEmpty();
 				} else {
 					// Without a start line, set the cursor to start at the beginning of the document.
 					//
@@ -130,7 +127,7 @@ export class BlobMain extends Container<Props, State> {
 					// first line. Without this, the Ctrl+F search functionality will only
 					// search within the selected line, which is the first line by default.
 					// There's currently no API for unselecting a line so this is a workaround.
-					range = {startLineNumber: 1, startColumn: Infinity, endLineNumber: 1, endColumn: Infinity} as IRange;
+					range = {startLineNumber: 1, startColumn: Infinity, endLineNumber: 1, endColumn: Infinity};
 				}
 
 				// If you are new to this code, you may be confused how this method interacts with _onEditorOpened.
@@ -168,7 +165,7 @@ export class BlobMain extends Container<Props, State> {
 				this._editor.setInput(uri, range).then(() => {
 					// Always decrement this value after opening the editor.
 					this._shortCircuitURLNavigationOnEditorOpened--;
-					this._setEditorHighlightForLineSelection();
+					this._setEditorHighlightForLineSelection(range);
 				});
 			}
 		}
@@ -241,11 +238,9 @@ export class BlobMain extends Container<Props, State> {
 		}
 	}
 
-	_setEditorHighlightForLineSelection(): void {
-		if (this.props.startLine && this.props.startCol === null) {
-			if (this._editor) {
-				this._editor.setHighlightForLineSelection(this.props.startLine, this.props.endLine || this.props.startLine);
-			}
+	_setEditorHighlightForLineSelection(selection: IRange): void {
+		if (this._editor) {
+			this._editor.setSelection(selection);
 		}
 	}
 
@@ -316,3 +311,12 @@ export class BlobMain extends Container<Props, State> {
 			</FlexContainer>);
 	}
 }
+
+// Bind the location hash to the range of the editor.
+export const BlobMain = (props) => {
+	let selection = null;
+	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
+		selection = RangeOrPosition.parse(props.location.hash.replace(/^#L/, ""));
+	}
+	return <BlobMainEditor selection={selection} {...props} />;
+};

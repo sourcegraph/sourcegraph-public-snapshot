@@ -393,7 +393,7 @@ interface WithViewEventsLoggedProps {
 }
 
 export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<{}>): React.ComponentClass<{}> {
-	class WithViewEventsLogged extends React.Component<P, {}> { // eslint-disable-line react/no-multi-comp
+	class WithViewEventsLogged extends React.Component<P, {}> {
 		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 		};
@@ -486,7 +486,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
 				const locWithoutEvent = Object.assign({}, this.props.location, {
-					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined }), // eslint-disable-line no-undefined
+					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined }),
 					state: Object.assign({}, this.props.location.state, { _onboarding: this.props.location.query["_onboarding"] }),
 				});
 

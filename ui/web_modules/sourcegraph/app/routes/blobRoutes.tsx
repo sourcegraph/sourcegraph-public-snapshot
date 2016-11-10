@@ -1,6 +1,5 @@
 import { rel } from "sourcegraph/app/routePatterns";
 import { BlobMain } from "sourcegraph/blob/BlobMain";
-import { withLineColBoundToHash } from "sourcegraph/blob/withLineColBoundToHash";
 import { withPath } from "sourcegraph/blob/withPath";
 import { withResolvedRepoRev } from "sourcegraph/repo/withResolvedRepoRev";
 
@@ -13,11 +12,9 @@ export const blobRoutes = [
 		getComponents: (location: Location, callback: Function) => {
 			if (!_blobMainComponent) {
 				// Create only once to avoid unnecessary remounting after each route change.
-				_blobMainComponent = withLineColBoundToHash(
-					withResolvedRepoRev(
-						withPath(
-							BlobMain
-						)
+				_blobMainComponent = withResolvedRepoRev(
+					withPath(
+						BlobMain
 					)
 				);
 			}
