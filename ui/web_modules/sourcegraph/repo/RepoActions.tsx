@@ -2,7 +2,6 @@ import {Repo, RepoList, RepoResolution, SymbolInformation} from "sourcegraph/api
 
 export type Action =
 	RepoCloning |
-	RefreshVCS |
 	WantCreateRepo | RepoCreated |
 	WantRepo | FetchedRepo |
 	WantRepos | ReposFetched |
@@ -105,14 +104,10 @@ export class RepoResolved {
 export class WantCreateRepo {
 	repo: string;
 	remoteRepo: any;
-	refreshVCS: boolean;
 
-	constructor(repo: string, remoteRepo: any, refreshVCS?: boolean) {
+	constructor(repo: string, remoteRepo: any) {
 		this.repo = repo;
 		this.remoteRepo = remoteRepo;
-		// Settings this option to true will cause the newly create repo to be
-		// automatically cloned.
-		this.refreshVCS = refreshVCS || false;
 	}
 }
 
@@ -154,13 +149,5 @@ export class FetchedSymbols {
 		this.rev = rev;
 		this.query = query;
 		this.symbols = symbols;
-	}
-}
-
-export class RefreshVCS {
-	repo: string;
-
-	constructor(repo: string) {
-		this.repo = repo;
 	}
 }

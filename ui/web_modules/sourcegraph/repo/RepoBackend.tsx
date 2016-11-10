@@ -118,18 +118,8 @@ export const RepoBackend = {
 						const eventProps = { language: action.remoteRepo.Language, private: Boolean(action.remoteRepo.Private) };
 						AnalyticsConstants.Events.Repository_Added.logEvent(eventProps);
 						EventLogger.logIntercomEvent("add-repo", eventProps);
-						if (action.refreshVCS) {
-							RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, { method: "POST" })
-								.then(checkStatus);
-						}
 					}
 				});
-		}
-
-		if (payload instanceof RepoActions.RefreshVCS) {
-			const action = payload;
-			RepoBackend.fetch(`/.api/repos/${action.repo}/-/refresh`, { method: "POST" })
-				.then(checkStatus);
 		}
 
 		if (payload instanceof RepoActions.WantSymbols) {

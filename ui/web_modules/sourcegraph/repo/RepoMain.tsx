@@ -51,19 +51,6 @@ export class RepoMain extends React.Component<Props, State> {
 		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);
 	}
 
-	componentDidMount(): void {
-		// Whenever the user navigates to different RepoMain views, e.g.
-		// navigating directories in the directory tree, viewing code
-		// files, etc. we trigger a MirroredRepos.RefreshVCS operation such
-		// that new changes on the remote are pulled.
-		(this.context as any).router.listenBefore((loc) => {
-			// Don't incur the overhead of triggering this when only the internal state changes.
-			if (loc.pathname !== this.props.location.pathname) {
-				Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.props.repo));
-			}
-		});
-	}
-
 	componentWillReceiveProps(nextProps: Props): void {
 		if (this.props.repoResolution !== nextProps.repoResolution) {
 			this._repoResolutionUpdated(nextProps.repo, nextProps.repoResolution);
