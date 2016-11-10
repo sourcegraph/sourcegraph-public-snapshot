@@ -257,13 +257,28 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 			// pair.
 			rootPath := "git://" + repo.URI + "?" + repo.DefaultBranch
 			var symbols []lsp.SymbolInformation
-			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
-				Query: d.DefName,
-				Limit: 100,
-			}, &symbols)
-			if err != nil {
-				run.Error(errors.Wrap(err, "LSP workspace/symbol"))
-				return
+			if path.Ext(d.DefFile) != "" {
+				// d.DefFile is a file, so use textDocument/documentSymbol
+				err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/documentSymbol", lsp.DocumentSymbolParams{
+					TextDocument: lsp.TextDocumentIdentifier{
+						URI: rootPath + "#" + d.DefFile,
+					},
+				}, &symbols)
+				if err != nil {
+					run.Error(errors.Wrap(err, "LSP textDocument/symbol"))
+					return
+				}
+			} else {
+				// d.DefFile is a directory, so use workspace/symbol with the
+				// `dir:` filter.
+				err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+					Query: fmt.Sprintf("dir:%s %s", d.DefFile, d.DefName),
+					Limit: 100,
+				}, &symbols)
+				if err != nil {
+					run.Error(errors.Wrap(err, "LSP workspace/symbol"))
+					return
+				}
 			}
 
 			// Find the matching symbol.
