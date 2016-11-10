@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/russross/blackfriday"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonrpc2"
 
 	htmpl "html/template"
 
@@ -42,6 +44,29 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
+
+// curlRepro returns curl reproduction instructions for an xlang request.
+func curlRepro(mode, rootPath, method string, params interface{}) string {
+	init := jsonrpc2.Request{
+		ID:     jsonrpc2.ID{Num: 0},
+		Method: "initialize",
+	}
+	init.SetParams(xlang.ClientProxyInitializeParams{
+		InitializeParams: lsp.InitializeParams{
+			RootPath: rootPath,
+		},
+		Mode: mode,
+	})
+	req := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 1}, Method: method}
+	req.SetParams(params)
+	shutdown := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 2}, Method: "shutdown"}
+	exit := jsonrpc2.Request{Method: "exit"}
+	data, err := json.Marshal([]interface{}{init, req, shutdown, exit})
+	if err != nil {
+		log15.Crit("landing: curlRepro:", "error", err)
+	}
+	return fmt.Sprintf(`Reproduce with: curl --data '%s' https://sourcegraph.com/.api/xlang/%s -i`, data, method)
+}
 
 func shouldShadow(page string) bool {
 	e := os.Getenv(page + "_LANDING_SHADOW_PERCENT")
@@ -269,30 +294,33 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 
 			// Lookup the definition based on the source / definition (Name, ContainerName)
 			// pair.
-			rootPath := "git://" + repo.URI + "?" + repo.DefaultBranch
-			var symbols []lsp.SymbolInformation
+			var (
+				rootPath = "git://" + repo.URI + "?" + repo.DefaultBranch
+				symbols  []lsp.SymbolInformation
+				method   string
+				params   interface{}
+			)
 			if path.Ext(d.DefFile) != "" {
 				// d.DefFile is a file, so use textDocument/documentSymbol
-				err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/documentSymbol", lsp.DocumentSymbolParams{
+				method = "textDocument/documentSymbol"
+				params = lsp.DocumentSymbolParams{
 					TextDocument: lsp.TextDocumentIdentifier{
 						URI: rootPath + "#" + d.DefFile,
 					},
-				}, &symbols)
-				if err != nil {
-					run.Error(errors.Wrap(err, "LSP textDocument/symbol"))
-					return
 				}
 			} else {
 				// d.DefFile is a directory, so use workspace/symbol with the
 				// `dir:` filter.
-				err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+				method = "workspace/symbol"
+				params = lsp.WorkspaceSymbolParams{
 					Query: fmt.Sprintf("dir:%s %s", d.DefFile, d.DefName),
 					Limit: 100,
-				}, &symbols)
-				if err != nil {
-					run.Error(errors.Wrap(err, "LSP workspace/symbol"))
-					return
 				}
+			}
+			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, method, params, &symbols)
+			if err != nil {
+				run.Error(errors.Wrap(err, "LSP "+method))
+				return
 			}
 
 			// Find the matching symbol.
@@ -316,25 +344,31 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 			if symbol == nil {
 				msg := "queryRepoLandingData: no symbol info matching top def from global references"
 				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				log15.Warn(curlRepro(language, rootPath, method, params))
 				span.LogEvent(msg)
 				span.SetTag("missing", "symbol")
+				span.LogEvent(curlRepro(language, rootPath, method, params))
 				return
 			}
 
 			// Determine the definition title.
 			var hover lsp.Hover
-			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
+			method = "textDocument/hover"
+			params = lsp.TextDocumentPositionParams{
 				TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
 				Position: lsp.Position{
 					Line:      symbol.Location.Range.Start.Line,
 					Character: symbol.Location.Range.Start.Character,
 				},
-			}, &hover)
+			}
+			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
 			if len(hover.Contents) == 0 {
 				msg := "queryRepoLandingData: LSP textDocument/hover returned no contents"
 				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				log15.Warn(curlRepro(language, rootPath, method, params))
 				span.LogEvent(msg)
 				span.SetTag("missing", "hover")
+				span.LogEvent(curlRepro(language, rootPath, method, params))
 				return
 			}
 
@@ -349,8 +383,10 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 			if hoverDesc == "" {
 				msg := "queryRepoLandingData: no markdown in hover response"
 				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				log15.Warn(curlRepro(language, rootPath, method, params))
 				span.LogEvent(msg)
 				span.SetTag("missing", "markdown")
+				span.LogEvent(curlRepro(language, rootPath, method, params))
 				return
 			}
 
@@ -614,18 +650,23 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 
 	// Determine the definition title.
 	var hover lsp.Hover
-	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
+	method := "textDocument/hover"
+	params := lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
 		Position: lsp.Position{
 			Line:      symbol.Location.Range.Start.Line,
 			Character: symbol.Location.Range.Start.Character,
 		},
-	}, &hover)
+	}
+
+	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
 	if len(hover.Contents) == 0 {
 		msg := "queryDefLandingData: LSP textDocument/hover returned no contents"
 		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		log15.Crit(curlRepro(language, rootPath, method, params))
 		span.LogEvent(msg)
 		span.SetTag("missing", "hover")
+		span.LogEvent(curlRepro(language, rootPath, method, params))
 		return nil, errors.New("LSP textDocument/hover returned no contents")
 	}
 
@@ -640,8 +681,10 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	if hoverDesc == "" {
 		msg := "queryDefLandingData: no markdown in hover response"
 		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		log15.Crit(curlRepro(language, rootPath, method, params))
 		span.LogEvent(msg)
 		span.SetTag("missing", "markdown")
+		span.LogEvent(curlRepro(language, rootPath, method, params))
 		return nil, errors.New("no markdown in hover response")
 	}
 
