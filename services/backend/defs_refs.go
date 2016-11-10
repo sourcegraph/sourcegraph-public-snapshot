@@ -153,10 +153,6 @@ func init() {
 
 func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
 	start := time.Now()
-	defer func() {
-		indexDuration.Set(time.Since(start).Seconds())
-	}()
-
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, op)
 	}
@@ -176,11 +172,18 @@ func (s *defs) RefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshInde
 		return nil
 	}
 
+	// Only set the index duration gauge if the repository is not private,
+	// otherwise we would skew the index duration times by quite a large
+	// margin.
+	defer func() {
+		indexDuration.Set(time.Since(start).Seconds())
+	}()
+
 	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: op.Repo})
 	if err != nil {
 		return err
 	}
 
 	// Refresh global references indexes.
-	return localstore.GlobalRefs.RefreshIndex(ctx, op.Repo, rev.CommitID)
+	return localstore.GlobalRefs.RefreshIndex(ctx, repo.URI, rev.CommitID)
 }
