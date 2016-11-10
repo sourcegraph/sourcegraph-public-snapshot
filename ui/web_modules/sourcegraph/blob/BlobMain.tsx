@@ -302,7 +302,6 @@ class BlobMainEditor extends Container<Props, State> {
 					path={this.props.path}
 					repoObj={this.props.repoObj}
 					rev={this.props.rev}
-					commitID={this.props.commitID}
 					routes={this.props.routes}
 					routeParams={this.props.routeParams}
 					isCloning={this.props.isCloning}

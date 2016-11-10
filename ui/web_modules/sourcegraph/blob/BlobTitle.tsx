@@ -17,7 +17,6 @@ interface Props {
 	path: string;
 	repoObj: any;
 	rev: string | null;
-	commitID: string;
 	routes: Object[];
 	routeParams: RouteParams;
 	isCloning: boolean;
@@ -106,7 +105,6 @@ export function BlobTitle({
 	path,
 	repoObj,
 	rev,
-	commitID,
 	routes,
 	routeParams,
 	isCloning,
@@ -133,14 +131,13 @@ export function BlobTitle({
 				<Heading level={5} color="white" style={{marginBottom: 0}}>
 					<FlexContainer items="center">
 						{basename(path)}
-						{commitID && <RevSwitcher
+						<RevSwitcher
 							repo={repo}
 							repoObj={repoObj}
 							rev={rev}
-							commitID={commitID}
 							routes={routes}
 							routeParams={routeParams}
-							isCloning={isCloning} />}
+							isCloning={isCloning} />
 						<a href={gitHubURL()} style={{paddingLeft: whitespace[3], color: colors.white(), display: "flex"}} onClick={(e) => {
 							e.preventDefault();
 							window.location.href = gitHubURL();
