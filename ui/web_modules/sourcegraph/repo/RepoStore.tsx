@@ -21,7 +21,6 @@ function keyForSymbols(mode: string, repo: string, rev?: string | null, query?: 
 
 class RepoStoreClass extends Store<any> {
 	repos: any;
-	resolvedRevs: any;
 	symbols: {
 		content: any;
 		list(languages: string[], repo: string, rev: string | null, query: string): {
@@ -45,12 +44,6 @@ class RepoStoreClass extends Store<any> {
 				return this.cloning[keyFor(repo)] || false;
 			},
 		});
-		this.resolvedRevs = deepFreeze({
-			content: {},
-			get(repo, rev) {
-				return this.content[keyFor(repo, rev)] || null;
-			},
-		});
 		this.symbols = deepFreeze({
 			content: {},
 			list(languages: string[], repo: string, rev: string | null, query: string) {
@@ -69,7 +62,6 @@ class RepoStoreClass extends Store<any> {
 	toJSON(): any {
 		return {
 			repos: this.repos,
-			resolvedRevs: this.resolvedRevs,
 			symbols: this.symbols,
 		};
 	}
@@ -79,14 +71,6 @@ class RepoStoreClass extends Store<any> {
 			this.repos = deepFreeze(Object.assign({}, this.repos, {
 				listContent: Object.assign({}, this.repos.listContent, {
 					[action.querystring]: action.data,
-				}),
-			}));
-			this.__emitChange();
-			return;
-		} else if (action instanceof RepoActions.ResolvedRev) {
-			this.resolvedRevs = deepFreeze(Object.assign({}, this.resolvedRevs, {
-				content: Object.assign({}, this.resolvedRevs.content, {
-					[keyFor(action.repo, action.rev)]: action.commitID,
 				}),
 			}));
 			this.__emitChange();

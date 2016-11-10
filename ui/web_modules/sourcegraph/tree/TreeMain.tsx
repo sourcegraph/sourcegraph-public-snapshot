@@ -20,7 +20,6 @@ interface Props {
 	route?: Route;
 	routeParams: RouteParams;
 
-	resolvedRev?: any;
 	repoObj?: any;
 	isCloning?: boolean;
 	routes: any[];
@@ -64,7 +63,7 @@ export class TreeMainComponent extends React.Component<PropsWithRoot, {}> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				resolvedRev={this.props.resolvedRev}
+				commit={this.props.root.repository.commit}
 				repoObj={this.props.repoObj}
 				isCloning={this.props.isCloning}
 				route={this.props.route}

@@ -4,7 +4,6 @@ export type Action =
 	RepoCloning |
 	WantRepo | FetchedRepo |
 	WantRepos | ReposFetched |
-	WantResolveRev | ResolvedRev |
 	WantSymbols | FetchedSymbols;
 
 export class WantRepo {
@@ -44,30 +43,6 @@ export class ReposFetched {
 		this.querystring = querystring;
 		this.data = data;
 		this.isUserRepos = isUserRepos;
-	}
-}
-
-export class WantResolveRev {
-	repo: string;
-	rev: string;
-	force: boolean;
-
-	constructor(repo: string, rev: string, force?: boolean) {
-		this.repo = repo;
-		this.rev = rev;
-		this.force = force || false;
-	}
-}
-
-export class ResolvedRev {
-	repo: string;
-	rev: string;
-	commitID: string;
-
-	constructor(repo: string, rev: string, commitID: string) {
-		this.repo = repo;
-		this.rev = rev;
-		this.commitID = commitID;
 	}
 }
 

@@ -5,7 +5,6 @@ import {Component} from "sourcegraph/Component";
 interface Props {
 	repo: string;
 	rev: string | null;
-	commitID?: string;
 	params: any;
 	path: string;
 	route?: any;

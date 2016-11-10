@@ -10,7 +10,6 @@ export function withTree(Component) {
 	interface Props {
 		repo: string;
 		rev?: string;
-		commitID?: string;
 		params: any;
 	}
 

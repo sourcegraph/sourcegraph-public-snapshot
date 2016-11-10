@@ -1,7 +1,6 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as lsp from "sourcegraph/editor/lsp";
 import { languagesToSearchModes } from "sourcegraph/editor/modes";
-import { updateRepoCloning } from "sourcegraph/repo/cloning";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
@@ -40,22 +39,6 @@ export const RepoBackend = {
 					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
-					});
-			}
-		}
-
-		if (payload instanceof RepoActions.WantResolveRev) {
-			const action = payload;
-			let commitID = RepoStore.resolvedRevs.get(action.repo, action.rev);
-			if (commitID === null || action.force) {
-				const revPart = action.rev ? `@${action.rev}` : "";
-				RepoBackend.fetch(`/.api/repos/${action.repo}${revPart}/-/rev`)
-					.then(updateRepoCloning(action.repo))
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => ({ Error: err }))
-					.then((data) => {
-						Dispatcher.Stores.dispatch(new RepoActions.ResolvedRev(action.repo, action.rev, data));
 					});
 			}
 		}

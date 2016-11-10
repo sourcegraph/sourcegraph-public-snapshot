@@ -5,7 +5,7 @@ import {RepoStore} from "sourcegraph/repo/RepoStore";
 import {withResolvedRepoRev} from "sourcegraph/repo/withResolvedRepoRev";
 import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
-const C = withResolvedRepoRev((props) => null, true);
+const C = withResolvedRepoRev((props) => null);
 
 describe("withResolvedRepoRev", () => {
 	it("should render initially", () => {

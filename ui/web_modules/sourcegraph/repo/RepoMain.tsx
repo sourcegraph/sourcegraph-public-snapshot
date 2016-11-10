@@ -21,7 +21,7 @@ interface Props {
 	location?: any;
 	repo: string;
 	rev?: string | null;
-	resolvedRev?: any;
+	commit: GQL.ICommit | null;
 	repoObj?: any;
 	isCloning?: boolean;
 	route?: any;
@@ -72,12 +72,10 @@ export class RepoMain extends React.Component<Props, State> {
 			);
 		}
 
-		if (this.props.resolvedRev && this.props.resolvedRev.Error) {
-			const err2 = this.props.resolvedRev.Error;
-			const msg = `Revision is not available.`;
+		if (!this.props.commit) {
 			return (
-				<Header title={`${httpStatusCode(err2)}`}
-					subtitle={msg} />
+				<Header title="404"
+					subtitle="Revision is not available." />
 			);
 		}
 

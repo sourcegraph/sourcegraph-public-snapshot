@@ -2,6 +2,7 @@ import * as debounce from "lodash/debounce";
 import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 import Helmet from "react-helmet";
+import * as Relay from "react-relay";
 import { InjectedRouter } from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
@@ -30,7 +31,6 @@ interface Props {
 	repo: string;
 	repoObj: any;
 	rev: string | null;
-	commitID: string;
 	isCloning: boolean;
 	path: string;
 	routes: Object[];
@@ -38,16 +38,17 @@ interface Props {
 	selection: RangeOrPosition | null;
 	location: Location;
 
-	resolvedRev?: any;
 	route?: any;
 }
+
+type PropsWithRoot = Props & {root: GQL.IRoot};
 
 interface State extends Props {
 	toast: string | null;
 }
 
 // BlobMain wraps the Editor component for the primary code view.
-class BlobMainEditor extends Container<Props, State> {
+class BlobMainEditor extends Container<PropsWithRoot, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -59,7 +60,7 @@ class BlobMainEditor extends Container<Props, State> {
 	private _editor?: Editor;
 	private _shortCircuitURLNavigationOnEditorOpened: number = 0;
 
-	constructor(props: Props) {
+	constructor(props: PropsWithRoot) {
 		super(props);
 		this._setEditor = this._setEditor.bind(this);
 		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
@@ -84,7 +85,7 @@ class BlobMainEditor extends Container<Props, State> {
 		global.document.body.style.overflowY = "auto";
 	}
 
-	componentWillReceiveProps(nextProps: Props): void {
+	componentWillReceiveProps(nextProps: PropsWithRoot): void {
 		super.componentWillReceiveProps(nextProps, null);
 
 		if (this._editor) {
@@ -92,7 +93,7 @@ class BlobMainEditor extends Container<Props, State> {
 		}
 	}
 
-	reconcileState(state: State, props: Props): void {
+	reconcileState(state: State, props: PropsWithRoot): void {
 		Object.assign(state, props);
 		state.toast = BlobStore.toast;
 	}
@@ -110,68 +111,66 @@ class BlobMainEditor extends Container<Props, State> {
 		}
 	}
 
-	_editorPropsChanged(prevProps: Props | null, nextProps: Props): void {
+	_editorPropsChanged(prevProps: Props | null, nextProps: PropsWithRoot): void {
 		if (!this._editor) {
 			throw new Error("editor is not ready");
 		}
 
-		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.commitID !== nextProps.commitID || prevProps.path !== nextProps.path || !isEqual(prevProps.selection, nextProps.selection))) {
-			if (nextProps.commitID) {
-				// Use absolute commit IDs for the editor model URI.
-				// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
-				const uri = URIUtils.pathInRepo(nextProps.repoObj && nextProps.repoObj.URI ?  nextProps.repoObj.URI : nextProps.repo, nextProps.commitID, nextProps.path);
+		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.path !== nextProps.path || !isEqual(prevProps.selection, nextProps.selection))) {
+			// Use absolute commit IDs for the editor model URI.
+			// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
+			const uri = URIUtils.pathInRepo(nextProps.repoObj && nextProps.repoObj.URI ?  nextProps.repoObj.URI : nextProps.repo, this.props.root.repository.commit.sha1, nextProps.path);
 
-				let range: IRange;
-				if (nextProps.selection) {
-					range = nextProps.selection.toMonacoRangeAllowEmpty();
-				} else {
-					// Without a start line, set the cursor to start at the beginning of the document.
-					//
-					// By default, set the selction of the cursor to be the end of the
-					// first line. Without this, the Ctrl+F search functionality will only
-					// search within the selected line, which is the first line by default.
-					// There's currently no API for unselecting a line so this is a workaround.
-					range = {startLineNumber: 1, startColumn: Infinity, endLineNumber: 1, endColumn: Infinity};
-				}
-
-				// If you are new to this code, you may be confused how this method interacts with _onEditorOpened.
-				// You may also wonder how _shortCircuitURLNavigationOnEditorOpened works. Here's an explanation:
+			let range: IRange;
+			if (nextProps.selection) {
+				range = nextProps.selection.toMonacoRangeAllowEmpty();
+			} else {
+				// Without a start line, set the cursor to start at the beginning of the document.
 				//
-				// Calling this._editor.setInput() below will indirectly invoke _onEditorOpened. The other way
-				// _onEditorOpened is invoked is through a jump-to-def. When a user does a jump-to-def, we need to
-				// update the URL so that React/flux will fetch blob contents, etc. Doing this updates props.location,
-				// and therefore this method to be invoked.
-				//
-				// We have the following cases to handle:
-				// - initial page load: starts with _editorPropsChanged, we tell monaco where to move the cursor,
-				//   (the second argument to this._editor.setInput below) and must not update the URL (doing so
-				//   could make "official" a URL derived from an intermediate set of property values).
-				// - jump-to-def: starts with _onEditorOpened, which calls router.push(url) and eventually invokes this
-				//   method (at which point, we've already updated the URL and don't need to do so again)
-				// - browser "back": starts with _editorPropsChanged (since props.location is updated), we simply
-				//   tell monaco which uri to open and at what range. This is determined entirely by nextProps.location
-				//   and we don't need _onEditorOpened to update the URL (the browser already did so).
-				//
-				// Jump-to-def starts with _onEditorOpened, and starting from that code path we ALWAYS update URL.
-				// Therefore, whenever we invoke _onEditorOpened from _editorPropsChanged, we NEVER update URL.
-				//
-				// The reason that this._shortCircuitURLNavigationOnEditorOpened is an integer and not a boolean is
-				// we might have more than one concurrent call to _editorPropsChanged. If we only stored a boolean,
-				// there is a race condition where we treat one of the _onEditorOpened calls as being initiated by
-				// a jump-to-def and change the URL as a result (this in causes a subtle bug where initial page loads
-				// of links to blob lines redirect to the naked file URL instead of jumping to the correct line).
-				// Note that to be pedantically correct, we should go even further to determine whether _onEditorOpened
-				// calls originated from this code path or the jump-to-def path (we could use a stack of (uri, range)
-				// tuples), but in practice, it's unlikely that any 2 of the above actions (initial page load,
-				// jump-to-def, back button) would occur concurrently. So an integer is good enough.
-
-				this._shortCircuitURLNavigationOnEditorOpened++; // when > 0, _onEditorOpened will not change the URL
-				this._editor.setInput(uri, range).then(() => {
-					// Always decrement this value after opening the editor.
-					this._shortCircuitURLNavigationOnEditorOpened--;
-					this._setEditorHighlightForLineSelection(range);
-				});
+				// By default, set the selction of the cursor to be the end of the
+				// first line. Without this, the Ctrl+F search functionality will only
+				// search within the selected line, which is the first line by default.
+				// There's currently no API for unselecting a line so this is a workaround.
+				range = {startLineNumber: 1, startColumn: Infinity, endLineNumber: 1, endColumn: Infinity};
 			}
+
+			// If you are new to this code, you may be confused how this method interacts with _onEditorOpened.
+			// You may also wonder how _shortCircuitURLNavigationOnEditorOpened works. Here's an explanation:
+			//
+			// Calling this._editor.setInput() below will indirectly invoke _onEditorOpened. The other way
+			// _onEditorOpened is invoked is through a jump-to-def. When a user does a jump-to-def, we need to
+			// update the URL so that React/flux will fetch blob contents, etc. Doing this updates props.location,
+			// and therefore this method to be invoked.
+			//
+			// We have the following cases to handle:
+			// - initial page load: starts with _editorPropsChanged, we tell monaco where to move the cursor,
+			//   (the second argument to this._editor.setInput below) and must not update the URL (doing so
+			//   could make "official" a URL derived from an intermediate set of property values).
+			// - jump-to-def: starts with _onEditorOpened, which calls router.push(url) and eventually invokes this
+			//   method (at which point, we've already updated the URL and don't need to do so again)
+			// - browser "back": starts with _editorPropsChanged (since props.location is updated), we simply
+			//   tell monaco which uri to open and at what range. This is determined entirely by nextProps.location
+			//   and we don't need _onEditorOpened to update the URL (the browser already did so).
+			//
+			// Jump-to-def starts with _onEditorOpened, and starting from that code path we ALWAYS update URL.
+			// Therefore, whenever we invoke _onEditorOpened from _editorPropsChanged, we NEVER update URL.
+			//
+			// The reason that this._shortCircuitURLNavigationOnEditorOpened is an integer and not a boolean is
+			// we might have more than one concurrent call to _editorPropsChanged. If we only stored a boolean,
+			// there is a race condition where we treat one of the _onEditorOpened calls as being initiated by
+			// a jump-to-def and change the URL as a result (this in causes a subtle bug where initial page loads
+			// of links to blob lines redirect to the naked file URL instead of jumping to the correct line).
+			// Note that to be pedantically correct, we should go even further to determine whether _onEditorOpened
+			// calls originated from this code path or the jump-to-def path (we could use a stack of (uri, range)
+			// tuples), but in practice, it's unlikely that any 2 of the above actions (initial page load,
+			// jump-to-def, back button) would occur concurrently. So an integer is good enough.
+
+			this._shortCircuitURLNavigationOnEditorOpened++; // when > 0, _onEditorOpened will not change the URL
+			this._editor.setInput(uri, range).then(() => {
+				// Always decrement this value after opening the editor.
+				this._shortCircuitURLNavigationOnEditorOpened--;
+				this._setEditorHighlightForLineSelection(range);
+			});
 		}
 	}
 
@@ -300,7 +299,7 @@ class BlobMainEditor extends Container<Props, State> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				resolvedRev={this.props.resolvedRev}
+				commit={this.props.root.repository.commit}
 				repoObj={this.props.repoObj}
 				isCloning={this.props.isCloning}
 				route={this.props.route}
@@ -329,10 +328,45 @@ class BlobMainEditor extends Container<Props, State> {
 }
 
 // Bind the location hash to the range of the editor.
-export const BlobMain = (props) => {
+const BlobMainComponent = (props) => {
 	let selection = null;
 	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
 		selection = RangeOrPosition.parse(props.location.hash.replace(/^#L/, ""));
 	}
 	return <BlobMainEditor selection={selection} {...props} />;
+};
+
+const BlobMainContainer = Relay.createContainer(BlobMainComponent, {
+	initialVariables: {
+		repo: "",
+		rev: "",
+		path: "",
+	},
+	fragments: {
+		root: () => Relay.QL`
+			fragment on Root {
+				repository(uri: $repo) {
+					uri
+					commit(rev: $rev) {
+						sha1
+					}
+				}
+			}
+		`,
+	},
+});
+
+export const BlobMain = function(props: Props): JSX.Element {
+	return <Relay.RootContainer
+		Component={BlobMainContainer}
+		route={{
+			name: "Root",
+			queries: {
+				root: () => Relay.QL`
+					query { root }
+				`,
+			},
+			params: props,
+		}}
+	/>;
 };
