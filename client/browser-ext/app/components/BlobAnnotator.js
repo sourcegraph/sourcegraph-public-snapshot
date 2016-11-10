@@ -46,6 +46,7 @@ export default class BlobAnnotator extends Component {
 		this.state = utils.parseURL();
 		this.state.path = props.path;
 
+		EventLogger.logViewEvent("ViewBlobOnGitHub", this.state.path, this.state);
 		if (this.state.isDelta) {
 			this.state.isSplitDiff = this._isSplitDiff();
 
