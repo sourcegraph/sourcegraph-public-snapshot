@@ -10,7 +10,6 @@ import {Check, DownMenu} from "sourcegraph/components/symbols";
 import {colors, typography, whitespace} from "sourcegraph/components/utils";
 import "sourcegraph/repo/RepoBackend";
 import {urlWithRev} from "sourcegraph/repo/routes";
-import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
 
 interface Props {
 	repo: string;
@@ -240,10 +239,10 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 							onChange={this._onChangeQuery}/>
 					</div>
 					<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Branches</Heading>
-					{branches.length === 0 && <li className={styles.disabled}>None found</li>}
+					{branches.length === 0 && <li style={{color: colors.coolGray3()}}>None found</li>}
 					{branches.map((name) => this._item(name))}
 					<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Tags</Heading>
-					{tags.length === 0 && <li className={styles.disabled}>None found</li>}
+					{tags.length === 0 && <li  style={{color: colors.coolGray3()}}>None found</li>}
 					{tags.map((name) => this._item(name))}
 				</Menu>
 			</div>
