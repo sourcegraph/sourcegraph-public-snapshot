@@ -16,6 +16,7 @@ import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import {URIUtils} from "sourcegraph/core/uri";
 import { Location } from "sourcegraph/Location";
 import { trimRepo } from "sourcegraph/repo";
+import {RepoMain} from "sourcegraph/repo/RepoMain";
 import {Store} from "sourcegraph/Store";
 
 // Don't load too much from vscode, because this file is loaded in the
@@ -36,6 +37,9 @@ interface Props {
 	routeParams: RouteParams;
 	selection: RangeOrPosition | null;
 	location: Location;
+
+	resolvedRev?: any;
+	route?: any;
 }
 
 interface State extends Props {
@@ -292,23 +296,35 @@ class BlobMainEditor extends Container<Props, State> {
 		}
 
 		return (
-			<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
-				<Helmet title={title} />
-				<ChromeExtensionToast location={this.props.location}/>
-				<OnboardingModals location={this.props.location}/>
-				{this.props.location.query["tour"] && <TourOverlay location={this.props.location}/>}
-				<BlobTitle
-					repo={this.props.repo}
-					path={this.props.path}
-					repoObj={this.props.repoObj}
-					rev={this.props.rev}
-					routes={this.props.routes}
-					routeParams={this.props.routeParams}
-					isCloning={this.props.isCloning}
-					toast={this.state.toast}
-				/>
-				<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
-			</FlexContainer>);
+			<RepoMain
+				location={this.props.location}
+				repo={this.props.repo}
+				rev={this.props.rev}
+				resolvedRev={this.props.resolvedRev}
+				repoObj={this.props.repoObj}
+				isCloning={this.props.isCloning}
+				route={this.props.route}
+				routes={this.props.routes}
+			>
+				<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
+					<Helmet title={title} />
+					<ChromeExtensionToast location={this.props.location}/>
+					<OnboardingModals location={this.props.location}/>
+					{this.props.location.query["tour"] && <TourOverlay location={this.props.location}/>}
+					<BlobTitle
+						repo={this.props.repo}
+						path={this.props.path}
+						repoObj={this.props.repoObj}
+						rev={this.props.rev}
+						routes={this.props.routes}
+						routeParams={this.props.routeParams}
+						isCloning={this.props.isCloning}
+						toast={this.state.toast}
+					/>
+					<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
+				</FlexContainer>
+			</RepoMain>
+		);
 	}
 }
 

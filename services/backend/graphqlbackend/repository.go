@@ -6,6 +6,7 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
@@ -45,6 +46,9 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		Rev:  args.Rev,
 	})
 	if err != nil {
+		if err == vcs.ErrRevisionNotFound {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &commitResolver{commit: commitSpec{r.repo.ID, rev.CommitID}}, nil

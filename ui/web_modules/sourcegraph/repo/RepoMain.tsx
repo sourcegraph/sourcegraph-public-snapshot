@@ -20,11 +20,9 @@ function repoPageTitle(repo: any): string {
 interface Props {
 	location?: any;
 	repo: string;
-	rev?: string;
-	commitID?: string;
+	rev?: string | null;
 	resolvedRev?: any;
 	repoObj?: any;
-	main?: JSX.Element;
 	isCloning?: boolean;
 	route?: any;
 	routes: any[];
@@ -93,7 +91,7 @@ export class RepoMain extends React.Component<Props, State> {
 			<div className={styles.outer_container}>
 				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				{isMainRoute && title && <Helmet title={title} />}
-				{this.props.main}
+				{this.props.children}
 			</div>
 		);
 	}

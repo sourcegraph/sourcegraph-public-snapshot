@@ -8,6 +8,7 @@ import {GridCol, Panel, RepoLink} from "sourcegraph/components";
 import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {trimRepo} from "sourcegraph/repo";
+import {RepoMain} from "sourcegraph/repo/RepoMain";
 import {treeParam} from "sourcegraph/tree";
 import {RepoNavContext} from "sourcegraph/tree/RepoNavContext";
 import {TreeList} from "sourcegraph/tree/TreeList";
@@ -18,6 +19,11 @@ interface Props {
 	rev: string;
 	route?: Route;
 	routeParams: RouteParams;
+
+	resolvedRev?: any;
+	repoObj?: any;
+	isCloning?: boolean;
+	routes: any[];
 };
 
 type PropsWithRoot = Props & {root: GQL.IRoot};
@@ -54,25 +60,36 @@ export class TreeMainComponent extends React.Component<PropsWithRoot, {}> {
 		const path = treeParam(this.props.routeParams.splat);
 
 		return (
-			<div>
-				<Panel style={{borderBottom: `1px solid ${colors.coolGray4(0.6)}`}}>
-					<div style={{
-							padding: `${whitespace[2]} ${whitespace[3]}`,
-						}}>
-						<RepoLink repo={this.props.repo} rev={this.props.rev} style={{marginRight: 4}} />
-						<RepoNavContext params={this.props.routeParams} />
-					</div>
-				</Panel>
-				{/* Refactor once new Panel and Grid code has been merged in */}
-				<GridCol col={9} style={{marginRight: "auto", marginLeft: "auto", marginTop: 16, float: "none"}}>
-					{path !== "/" && <Helmet title={`${path} · ${trimRepo(this.props.repo)}`} />}
-					<TreeList
-						repo={this.props.repo}
-						rev={this.props.rev}
-						path={path}
-						tree={this.props.root.repository.commit.tree} />
-				</GridCol>
-			</div>
+			<RepoMain
+				location={this.props.location}
+				repo={this.props.repo}
+				rev={this.props.rev}
+				resolvedRev={this.props.resolvedRev}
+				repoObj={this.props.repoObj}
+				isCloning={this.props.isCloning}
+				route={this.props.route}
+				routes={this.props.routes}
+			>
+				<div>
+					<Panel style={{borderBottom: `1px solid ${colors.coolGray4(0.6)}`}}>
+						<div style={{
+								padding: `${whitespace[2]} ${whitespace[3]}`,
+							}}>
+							<RepoLink repo={this.props.repo} rev={this.props.rev} style={{marginRight: 4}} />
+							<RepoNavContext params={this.props.routeParams} />
+						</div>
+					</Panel>
+					{/* Refactor once new Panel and Grid code has been merged in */}
+					<GridCol col={9} style={{marginRight: "auto", marginLeft: "auto", marginTop: 16, float: "none"}}>
+						{path !== "/" && <Helmet title={`${path} · ${trimRepo(this.props.repo)}`} />}
+						<TreeList
+							repo={this.props.repo}
+							rev={this.props.rev}
+							path={path}
+							tree={this.props.root.repository.commit && this.props.root.repository.commit.tree} />
+					</GridCol>
+				</div>
+			</RepoMain>
 		);
 	}
 }

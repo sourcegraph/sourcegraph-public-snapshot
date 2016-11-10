@@ -16,15 +16,8 @@ interface Props {
 type State = any;
 
 // withResolvedRepoRev reads the repo, rev, etc.,
-// from the route params. If isMainComponent is true, then it also dispatches
-// actions to populate that data if necessary (dispatch should only be
-// true for the main component, not the nav or other secondary components,
-// or else duplicate actions will be dispatched
-// and could lead to multiple actions being sent
-// to the server).
-export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): React.ComponentClass<Props> {
+export function withResolvedRepoRev(Component: any): React.ComponentClass<Props> {
 
-	isMainComponent = Boolean(isMainComponent);
 	class WithResolvedRepoRev extends Container<Props, State> {
 		_cloningInterval: any;
 		_cloningTimeout: any;
@@ -57,10 +50,6 @@ export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): 
 		}
 
 		onStateTransition(prevState: State, nextState: State): void {
-			if (!isMainComponent) {
-				return;
-			}
-
 			if (nextState.repo && !nextState.repoObj && (prevState.repo !== nextState.repo)) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
 			}
@@ -72,7 +61,7 @@ export function withResolvedRepoRev(Component: any, isMainComponent?: boolean): 
 
 			// If the repository is cloning, poll against the server for an
 			// update periodically.
-			if (isMainComponent && nextState.isCloning && !this._cloningInterval && !this._cloningTimeout) {
+			if (nextState.isCloning && !this._cloningInterval && !this._cloningTimeout) {
 				// If the cloning would be quick, we don't want to flicker the
 				// loading screen, so display the screen for at least 1s.
 				const displayForAtLeast = 500;
