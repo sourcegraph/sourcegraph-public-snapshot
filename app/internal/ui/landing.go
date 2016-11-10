@@ -136,7 +136,17 @@ func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
+func serveRepoLanding(w http.ResponseWriter, r *http.Request) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "serveRepoLanding")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	vars := mux.Vars(r)
 
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
@@ -172,12 +182,16 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			// Just log, so we fallback to legacy in the event of catastrophic failure.
 			log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 	} else if shouldShadow("REPO") {
 		go func() {
 			_, err := queryRepoLandingData(r, repo)
 			if err != nil {
 				log15.Crit("queryRepoLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				ext.Error.Set(span, true)
+				span.SetTag("err", err.Error())
 			}
 		}()
 	}
@@ -300,7 +314,10 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 				break
 			}
 			if symbol == nil {
-				log15.Warn("queryRepoLandingData: no symbol info matching top def from global references", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				msg := "queryRepoLandingData: no symbol info matching top def from global references"
+				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				span.LogEvent(msg)
+				span.SetTag("missing", "symbol")
 				return
 			}
 
@@ -314,7 +331,10 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 				},
 			}, &hover)
 			if len(hover.Contents) == 0 {
-				log15.Warn("queryRepoLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				msg := "queryRepoLandingData: LSP textDocument/hover returned no contents"
+				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				span.LogEvent(msg)
+				span.SetTag("missing", "hover")
 				return
 			}
 
@@ -327,7 +347,10 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 				}
 			}
 			if hoverDesc == "" {
-				log15.Warn("queryRepoLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				msg := "queryRepoLandingData: no markdown in hover response"
+				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				span.LogEvent(msg)
+				span.SetTag("missing", "markdown")
 				return
 			}
 
@@ -433,7 +456,17 @@ type defLandingData struct {
 	TruncatedRefLocs bool
 }
 
-func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
+func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "serveDefLanding")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
@@ -450,12 +483,16 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			// Just log, so we fallback to legacy in the event of catastrophic failure.
 			log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 	} else if shouldShadow("DEF") {
 		go func() {
 			_, err := queryDefLandingData(r, repo, repoRev)
 			if err != nil {
 				log15.Crit("queryDefLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				ext.Error.Set(span, true)
+				span.SetTag("err", err.Error())
 			}
 		}()
 	}
@@ -585,7 +622,10 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		},
 	}, &hover)
 	if len(hover.Contents) == 0 {
-		log15.Crit("queryDefLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		msg := "queryDefLandingData: LSP textDocument/hover returned no contents"
+		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		span.LogEvent(msg)
+		span.SetTag("missing", "hover")
 		return nil, errors.New("LSP textDocument/hover returned no contents")
 	}
 
@@ -598,7 +638,10 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		}
 	}
 	if hoverDesc == "" {
-		log15.Crit("queryDefLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		msg := "queryDefLandingData: no markdown in hover response"
+		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		span.LogEvent(msg)
+		span.SetTag("missing", "markdown")
 		return nil, errors.New("no markdown in hover response")
 	}
 
