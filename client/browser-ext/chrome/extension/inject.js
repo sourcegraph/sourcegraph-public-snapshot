@@ -157,8 +157,8 @@ window.addEventListener("load", () => {
 	if (isSourcegraphURL()) {
 		injectModules();
 	} else if (isGitHubURL()) {
-		chrome.runtime.sendMessage(null, {type: "getSessionToken"}, {}, (tokens) => {
-			store.dispatch(Actions.setAccessToken(accessToken));
+		chrome.runtime.sendMessage(null, {type: "getSessionToken"}, {}, (token) => {
+			store.dispatch(Actions.setAccessToken(token));
 			injectModules();
 		});
 	}
