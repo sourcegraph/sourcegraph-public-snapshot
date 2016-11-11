@@ -110,16 +110,12 @@ export class RepoMain extends React.Component<Props, State> {
 			);
 		}
 
-		// Determine if the repo route is the main route (not one of its
-		// children like DefInfo, for example).
-		const mainRoute = this.props.routes[this.props.routes.length - 1];
-		const isMainRoute = mainRoute === this.props.route.indexRoute || mainRoute === this.props.route.indexRoute;
 		const title = this.props.repoObj && !this.props.repoObj.Error ? repoPageTitle(this.props.repoObj) : null;
 
 		return (
 			<div className={styles.outer_container}>
 				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
-				{isMainRoute && title && <Helmet title={title} />}
+				{title && <Helmet title={title} />}
 				{this.props.children}
 			</div>
 		);
