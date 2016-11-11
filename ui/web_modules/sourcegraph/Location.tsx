@@ -3,7 +3,7 @@ export interface Location {
 	search: string;
 	hash: string;
 	query: {[key: string]: string | undefined};
-	state: Object | null;
+	state: any | null;
 	action: string;
 	key: string;
 };

@@ -1,8 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/components/styles/flexContainer.css";
 import * as classNames from "classnames";
+import * as React from "react";
+
+import * as styles from "sourcegraph/components/styles/flexContainer.css";
 
 interface Props {
 	direction?: string; // left_right, right_left, top_bottom, bottom_top
@@ -15,10 +14,8 @@ interface Props {
 	style?: Object;
 }
 
-type State = any;
-
-export class FlexContainer extends React.Component<Props, State> {
-	static defaultProps = {
+export class FlexContainer extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		direction: "left_right",
 		wrap: false,
 		justify: "start",

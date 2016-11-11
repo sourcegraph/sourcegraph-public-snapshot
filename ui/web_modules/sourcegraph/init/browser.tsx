@@ -1,17 +1,15 @@
-// tslint:disable: typedef ordered-imports
-
 import "core-js/shim";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import {AppContainer} from "react-hot-loader";
 import * as Relay from "react-relay";
-import "sourcegraph/util/actionLogger";
-import {Router, browserHistory as history, match, applyRouterMiddleware} from "react-router";
+import {Router, applyRouterMiddleware, browserHistory as history, match} from "react-router";
 import {useScroll} from "react-router-scroll";
+import Redbox from "redbox-react";
 import {rootRoute} from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
-import {shouldUpdateScroll, hashLinkScroll} from "sourcegraph/app/routerScrollBehavior";
-import {AppContainer} from "react-hot-loader";
-import Redbox from "redbox-react";
+import {hashLinkScroll, shouldUpdateScroll} from "sourcegraph/app/routerScrollBehavior";
+import "sourcegraph/util/actionLogger";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
 import "sourcegraph/app/routeParams";
@@ -38,7 +36,7 @@ let hotReloadCounter = 0;
 // matchWithRedirectHandling calls the router match func. If the router issues
 // a redirect, it calls match recursively after replacing the location with the
 // new one.
-function matchWithRedirectHandling(recursed) {
+function matchWithRedirectHandling(recursed: boolean): void {
 	match({history, routes: rootRoute}, (err, redirectLocation, renderProps) => {
 		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
 			console.error("404 not found (no route)");

@@ -1,11 +1,9 @@
-// tslint:disable: typedef ordered-imports
-
+import * as classNames from "classnames";
 import * as React from "react";
 
-import * as styles from "sourcegraph/components/styles/input.css";
 import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "sourcegraph/components/styles/input.css";
 import {Alert} from "sourcegraph/components/symbols";
-import * as classNames from "classnames";
 
 export interface Props extends React.HTMLAttributes<HTMLInputElement> {
 	block?: boolean;

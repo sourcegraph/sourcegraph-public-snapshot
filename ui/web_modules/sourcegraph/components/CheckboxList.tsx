@@ -1,8 +1,6 @@
-// tslint:disable: typedef ordered-imports
-
+import * as classNames from "classnames";
 import * as React from "react";
 import * as styles from "sourcegraph/components/styles/checkboxList.css";
-import * as classNames from "classnames";
 
 interface Props {
 	title: string;
@@ -13,9 +11,7 @@ interface Props {
 	className?: string;
 }
 
-type State = any;
-
-export class CheckboxList extends React.Component<Props, State> {
+export class CheckboxList extends React.Component<Props, {}> {
 	// TODO(slimsag): this should be 'element' type?
 	_fieldset: any;
 

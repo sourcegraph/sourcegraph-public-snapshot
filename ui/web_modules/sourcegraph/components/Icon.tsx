@@ -1,6 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+
 import {context} from "sourcegraph/app/context";
 
 interface Props {
@@ -10,9 +9,7 @@ interface Props {
 	icon: string; // See symbols directory
 }
 
-type State = any;
-
-export class Icon extends React.Component<Props, State> {
+export class Icon extends React.Component<Props, {}> {
 
 	static defaultProps: {
 		width: "16px",

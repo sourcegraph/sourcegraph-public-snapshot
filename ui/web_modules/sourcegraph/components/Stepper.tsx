@@ -1,9 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/components/styles/stepper.css";
-import {Icon} from "sourcegraph/components/Icon";
 import * as classNames from "classnames";
+import * as React from "react";
+
+import {Icon} from "sourcegraph/components/Icon";
+import * as styles from "sourcegraph/components/styles/stepper.css";
 
 // @TODO(chexee): Doesn't scale well with large step labels. Keep 'em short for now.
 // @TODO(chexee): Checks are a little off center in Firefox
@@ -17,16 +16,14 @@ interface Props {
 	color?: string; // "purple", "blue", "green", "orange"
 }
 
-type State = any;
-
-export class Stepper extends React.Component<Props, State> {
-	static defaultProps = {
+export class Stepper extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		steps: [null, null, null],
 		stepsComplete: 0,
 		color: "green",
 	};
 
-	renderSteps() {
+	renderSteps(): JSX.Element[] {
 		const {steps, stepsComplete, color} = this.props;
 		return steps.map((step, i) => {
 			if (i < stepsComplete) {

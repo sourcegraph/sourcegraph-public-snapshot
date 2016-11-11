@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 
 import * as styles from "sourcegraph/components/styles/label.css";
@@ -11,9 +9,7 @@ interface Props {
 	children?: any;
 }
 
-type State = any;
-
-export class Label extends React.Component<Props, State> {
+export class Label extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		return (
 			<span className={this.props.className} style={this.props.style}>

@@ -1,15 +1,13 @@
-// tslint:disable: typedef ordered-imports
-
+import * as classNames from "classnames";
 import * as React from "react";
 import {Link} from "react-router";
-import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
-import {breadcrumb} from "sourcegraph/util/breadcrumb";
-import {stripDomain} from "sourcegraph/util/stripDomain";
-import * as classNames from "classnames";
 
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
+import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
+import {breadcrumb} from "sourcegraph/util/breadcrumb";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import {stripDomain} from "sourcegraph/util/stripDomain";
 
 interface Props {
 	repo: string;
@@ -19,9 +17,7 @@ interface Props {
 	style?: Object;
 }
 
-type State = any;
-
-export class RepoLink extends React.Component<Props, State> {
+export class RepoLink extends React.Component<Props, {}> {
 
 	render(): JSX.Element | null {
 		let trimmedPath = stripDomain(this.props.repo);

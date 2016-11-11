@@ -1,7 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import * as classNames from "classnames";
+import * as React from "react";
 
 import * as styles from "sourcegraph/components/styles/menu.css";
 
@@ -11,13 +9,11 @@ interface Props {
 	style?: any;
 }
 
-type State = any;
-
-export class Menu extends React.Component<Props, State> {
-	renderMenuItems() {
-		return React.Children.map(this.props.children, function(ch: React.ReactElement<any>) {
-			return ch && <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>;
-		});
+export class Menu extends React.Component<Props, {}> {
+	renderMenuItems(): JSX.Element[] {
+		return React.Children.map(this.props.children, (ch: React.ReactElement<any>) =>
+			ch && <div key={ch.props} className={roleStyle(ch.props.role)}>{React.cloneElement(ch)}</div>
+		);
 	}
 
 	render(): JSX.Element | null {

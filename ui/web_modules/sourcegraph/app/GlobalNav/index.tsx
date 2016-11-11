@@ -23,7 +23,7 @@ import {Store} from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
-	location: Location & {state: {modal?: string}};
+	location: Location;
 	params: any;
 	role?: string;
 }
