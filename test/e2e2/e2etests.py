@@ -334,16 +334,16 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
         wd.get("https://github.com/gorilla/mux/pull/205/files?diff=split")
 
 all_tests = [
-    test_github_private_auth_onboarding,
-    test_github_public_auth_onboarding,
-    test_login_logout,
-    test_repo_jump_to,
-    test_golden_workflow,
-    test_find_external_refs,
-    test_beta_signup,
-    test_first_open_jump_to_line,
-    test_browser_extension_app_injection,
-    test_browser_extension_hover_j2d_blob,
-    test_browser_extension_hover_j2d_unified_pull_request,
-    test_browser_extension_hover_j2d_split_pull_request,
+    (test_github_private_auth_onboarding, "@kingy"),
+    (test_github_public_auth_onboarding, "@kingy"),
+    (test_login_logout, "@beyang"),
+    (test_repo_jump_to, "@nico"),
+    (test_golden_workflow, "@matt"),
+    (test_find_external_refs, "@stephen"),
+    (test_beta_signup, "@kingy"),
+    (test_first_open_jump_to_line, "@nico"),
+    (test_browser_extension_app_injection, "@john"),
+    (test_browser_extension_hover_j2d_blob, "@john"),
+    (test_browser_extension_hover_j2d_unified_pull_request, "@john"),
+    (test_browser_extension_hover_j2d_split_pull_request, "@john"),
 ]

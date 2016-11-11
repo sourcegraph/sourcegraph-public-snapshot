@@ -36,6 +36,7 @@ emoji = [
 
 failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 *Test name*: `%s`
+*Owner*: %s
 *Browser*: %s
 *URL*: %s
 *Repro*: In directory `$sourcegraph-root/test/e2e2`, run `make test OPT="--pause-on-err --filter=%s" BROWSER=%s SOURCEGRAPH_URL=%s`
@@ -50,9 +51,11 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 (For docs, see https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md)
 """
 
-def failure_msg(test_name, browser, url, sgurl, stack_trace, console_log):
+def failure_msg(test_name, owner, browser, url, sgurl, stack_trace, console_log):
     return failure_msg_template % (
-        test_name, browser.capitalize(), url,
+        test_name, owner,
+        browser.capitalize(),
+        url,
         test_name, browser, sgurl,
         stack_trace,
         console_log,
@@ -80,7 +83,7 @@ def run_tests(args, tests):
     def success(test_name):
         logf('[%s](%s) %s' % (green("PASS"), args.browser, test_name))
 
-    def fail(test_name, exception, driver):
+    def fail(test_name, owner, exception, driver):
         logf('[%s](%s) %s' % (red("FAIL"), args.browser, test_name))
         traceback.print_exc(30)
         console_log_msgs = [e for e in driver.d.get_log('browser')]
@@ -90,7 +93,7 @@ def run_tests(args, tests):
             console_log = "(None)"
         logf('Browser log:\n%s', console_log)
         if args.alert_on_err:
-            msg = failure_msg(test_name, args.browser, driver.d.current_url, args.url, traceback.format_exc(30), console_log)
+            msg = failure_msg(test_name, owner, args.browser, driver.d.current_url, args.url, traceback.format_exc(30), console_log)
             screenshot = driver.d.get_screenshot_as_png()
             slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
         if args.pause_on_err:
@@ -104,14 +107,15 @@ Type "continue" to continue.
             import pdb; pdb.set_trace()
 
     logf('')
-    logf('Starting test run with test plan:\n%s' % '\n'.join(['\t'+f.func_name for f in tests]))
+    logf('Starting test run with test plan:\n%s' % '\n'.join(['\t'+f[0].func_name for f in tests]))
 
     for test in tests:
-        if args.browser == "firefox" and "test_browser_extension" in test.func_name:
+        testfunc, owner = test
+        if args.browser == "firefox" and "test_browser_extension" in testfunc.func_name:
             continue
 
         for i in xrange(0, args.tries_before_err):
-            logf('[%s](%s) %s (attempt %d/%d)' % (bold("RUN "), args.browser, test.func_name, i + 1, args.tries_before_err))
+            logf('[%s](%s) %s (attempt %d/%d)' % (bold("RUN "), args.browser, testfunc.func_name, i + 1, args.tries_before_err))
             try:
                 driver, wd = None, None
                 if args.browser == "chrome":
@@ -141,16 +145,16 @@ Type "continue" to continue.
                 driver = Driver(wd, args.url)
                 driver.d.maximize_window()
                 driver.d.delete_all_cookies()
-                test(driver)
-                success(test.func_name)
+                testfunc(driver)
+                success(testfunc.func_name)
                 if args.interactive:
                     print("ENTER to continue ")
                     raw_input()
                 break # on success, don't retry
             except (E2EError, E2EFatal, Exception) as e:
                 if i == args.tries_before_err - 1: # if this is the last attempt, signal failure
-                    test_name = test.func_name
-                    fail(test_name, e, driver)
+                    test_name = testfunc.func_name
+                    fail(test_name, owner, e, driver)
                     failed_tests.append(test_name)
             finally:
                 if driver is not None:
@@ -181,7 +185,7 @@ def main():
         sys.stderr.write("browser needs to be chrome or firefox, was %s\n" % args.browser)
         return
 
-    tests = [t for t in all_tests if args.filter in t.func_name]
+    tests = [t for t in all_tests if args.filter in t[0].func_name]
 
     if args.alert_on_err:
         slack_cli, slack_ch, _ = slack_and_opsgenie(args)
@@ -191,7 +195,7 @@ def main():
 ```
 %s
 ```
-""" % (animal_emoji, animal_name, args.browser.capitalize(), '\n'.join([t.func_name for t in tests])))
+""" % (animal_emoji, animal_name, args.browser.capitalize(), '\n'.join([t[0].func_name for t in tests])))
         def die_msg():
             slack_cli.api_call("chat.postMessage", channel=slack_ch, text=":%s: *->* :skull: The end-to-end test %s for %s has died." % (animal_emoji, animal_name, args.browser.capitalize()))
         atexit.register(die_msg)
