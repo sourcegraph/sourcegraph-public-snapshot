@@ -62,6 +62,8 @@
 
 		{{if not .Meta.SEO}}
 			<script src="{{mainJavaScriptBundleURL}}"></script>
+		{{else}}
+			<script src="{{assetURL "/scripts/static_event_logger.js"}}"></script>
 		{{end}}
 
 		{{appconf.ExtraBodyHTML}}

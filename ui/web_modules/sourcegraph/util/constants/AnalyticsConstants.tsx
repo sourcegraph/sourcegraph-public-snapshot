@@ -111,102 +111,105 @@ export const Events = {
     //      - Listed in app/analytics/EventLogger.js in the browser-ext folder  
 
 	// Auth events
-	ContactIntercom_Clicked:               	new LoggableEvent("ClickContactIntercom", EventCategories.Auth, EventActions.Click),
-	OAuth2FlowGitHub_Initiated:          	new LoggableEvent("InitiateGitHubOAuth2Flow", EventCategories.Auth, EventActions.Click),
-	OAuth2FlowGitHub_Completed:          	new LoggableEvent("CompletedGitHubOAuth2Flow", EventCategories.Auth, EventActions.Login),
-	OAuth2FlowGCP_Initiated:            	new LoggableEvent("InitiateGCPOAuth2Flow", EventCategories.Auth, EventActions.Click),
-	OAuth2FlowGCP_Completed:            	new LoggableEvent("CompletedGCPOAuth2Flow", EventCategories.Auth, EventActions.Login),
-	Signup_Completed:                       new LoggableEvent("SignupCompleted", EventCategories.Auth, EventActions.Signup),
-	Logout_Clicked:                       	new LoggableEvent("LogoutClicked", EventCategories.Auth, EventActions.Logout),
+	ContactIntercom_Clicked:                    new LoggableEvent("ClickContactIntercom", EventCategories.Auth, EventActions.Click),
+	OAuth2FlowGitHub_Initiated:                 new LoggableEvent("InitiateGitHubOAuth2Flow", EventCategories.Auth, EventActions.Click),
+	OAuth2FlowGitHub_Completed:                 new LoggableEvent("CompletedGitHubOAuth2Flow", EventCategories.Auth, EventActions.Login),
+	OAuth2FlowGCP_Initiated:                    new LoggableEvent("InitiateGCPOAuth2Flow", EventCategories.Auth, EventActions.Click),
+	OAuth2FlowGCP_Completed:                    new LoggableEvent("CompletedGCPOAuth2Flow", EventCategories.Auth, EventActions.Login),
+	Signup_Completed:                           new LoggableEvent("SignupCompleted", EventCategories.Auth, EventActions.Signup),
+	Logout_Clicked:                             new LoggableEvent("LogoutClicked", EventCategories.Auth, EventActions.Logout),
 
 	// Modals
-	JoinModal_Initiated:                 	new LoggableEvent("ShowSignUpModal", EventCategories.Auth, EventActions.Toggle),
-	LoginModal_Initiated:                  	new LoggableEvent("ShowLoginModal", EventCategories.Auth, EventActions.Toggle),
-	ToolsModal_Initiated:       			new LoggableEvent("ClickToolsandIntegrations", EventCategories.Auth, EventActions.Toggle),
-	BetaModal_Initiated:                   	new LoggableEvent("ClickJoinBeta", EventCategories.Auth, EventActions.Toggle),
-	JoinModal_Dismissed:                   	new LoggableEvent("DismissJoinModal", EventCategories.Auth, EventActions.Close),
-	LoginModal_Dismissed:                  	new LoggableEvent("DismissLoginModal", EventCategories.Auth, EventActions.Close),
-	ToolsModal_Dismissed:                  	new LoggableEvent("DismissToolsandIntegrationsModal", EventCategories.Auth, EventActions.Close),
-	BetaModal_Dismissed:                   	new LoggableEvent("DismissBetaModal", EventCategories.Auth, EventActions.Close),
+	JoinModal_Initiated:                        new LoggableEvent("ShowSignUpModal", EventCategories.Auth, EventActions.Toggle),
+	LoginModal_Initiated:                       new LoggableEvent("ShowLoginModal", EventCategories.Auth, EventActions.Toggle),
+	ToolsModal_Initiated:                       new LoggableEvent("ClickToolsandIntegrations", EventCategories.Auth, EventActions.Toggle),
+	BetaModal_Initiated:                        new LoggableEvent("ClickJoinBeta", EventCategories.Auth, EventActions.Toggle),
+	JoinModal_Dismissed:                        new LoggableEvent("DismissJoinModal", EventCategories.Auth, EventActions.Close),
+	LoginModal_Dismissed:                       new LoggableEvent("DismissLoginModal", EventCategories.Auth, EventActions.Close),
+	ToolsModal_Dismissed:                       new LoggableEvent("DismissToolsandIntegrationsModal", EventCategories.Auth, EventActions.Close),
+	BetaModal_Dismissed:                        new LoggableEvent("DismissBetaModal", EventCategories.Auth, EventActions.Close),
 
 	// Toast events
-	ToastChromeCTA_Clicked:               	new LoggableEvent("ChromeToastCTAClicked", EventCategories.Toast, EventActions.Click),
-	ToastChrome_Closed:                    	new LoggableEvent("ChromeToastCloseClicked", EventCategories.Toast, EventActions.Close),
+	ToastChromeCTA_Clicked:                     new LoggableEvent("ChromeToastCTAClicked", EventCategories.Toast, EventActions.Click),
+	ToastChrome_Closed:                         new LoggableEvent("ChromeToastCloseClicked", EventCategories.Toast, EventActions.Close),
 
 	// Repo events
-	Repository_Clicked:                     new LoggableEvent("RepoClicked", EventCategories.Repository, EventActions.Click),
-	Repository_Added:                       new LoggableEvent("AddRepo", EventCategories.Repository, EventActions.Success),
-	RepositoryAuthedLanguagesGitHub_Fetched: new LoggableEvent("AuthedLanguagesGitHubFetched", EventCategories.Repository, EventActions.Fetch),
-	RepositoryAuthedReposGitHub_Fetched: 	new LoggableEvent("AuthedReposGitHubFetched", EventCategories.Repository, EventActions.Fetch),
+	Repository_Clicked:                         new LoggableEvent("RepoClicked", EventCategories.Repository, EventActions.Click),
+	Repository_Added:                           new LoggableEvent("AddRepo", EventCategories.Repository, EventActions.Success),
+	RepositoryAuthedLanguagesGitHub_Fetched:    new LoggableEvent("AuthedLanguagesGitHubFetched", EventCategories.Repository, EventActions.Fetch),
+	RepositoryAuthedReposGitHub_Fetched:        new LoggableEvent("AuthedReposGitHubFetched", EventCategories.Repository, EventActions.Fetch),
 
 	// Onboarding
-	OnboardingRefsCoachCTA_Clicked:      	new LoggableEvent("ReferencesCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
-	OnboardingJ2DCoachCTA_Clicked:       	new LoggableEvent("JumpToDefCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
-	OnboardingSearchCoachCTA_Clicked:    	new LoggableEvent("SearchCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
-	OnboardingTour_Completed:              	new LoggableEvent("OnboardingTourCompleted", EventCategories.Onboarding, EventActions.Success),
-	OnboardingTour_Dismissed:              	new LoggableEvent("DismissTourCTAClicked", EventCategories.Onboarding, EventActions.Close),
+	OnboardingRefsCoachCTA_Clicked:             new LoggableEvent("ReferencesCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
+	OnboardingJ2DCoachCTA_Clicked:              new LoggableEvent("JumpToDefCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
+	OnboardingSearchCoachCTA_Clicked:           new LoggableEvent("SearchCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
+	OnboardingTour_Completed:                   new LoggableEvent("OnboardingTourCompleted", EventCategories.Onboarding, EventActions.Success),
+	OnboardingTour_Dismissed:                   new LoggableEvent("DismissTourCTAClicked", EventCategories.Onboarding, EventActions.Close),
 
-	ChromeExtension_Installed:             	new LoggableEvent("ChromeExtensionInstalled", EventCategories.Onboarding, EventActions.Success),
-	ChromeExtensionInstall_Failed:        	new LoggableEvent("ChromeExtensionInstallFailed", EventCategories.Onboarding, EventActions.Error),
-	ChromeExtensionCTA_Clicked:           	new LoggableEvent("ChromeExtensionCTAClicked", EventCategories.Onboarding, EventActions.Click),
-	ChromeExtensionInstall_Started:       	new LoggableEvent("ChromeExtensionInstallStarted", EventCategories.Onboarding, EventActions.Click),
-	ChromeExtensionStore_Redirected:      	new LoggableEvent("ChromeExtensionStoreRedirect", EventCategories.Onboarding, EventActions.Click),
-	ChromeExtensionSkipCTA_Clicked:      	new LoggableEvent("SkipChromeExtensionCTAClicked", EventCategories.Onboarding, EventActions.Click),
-	ChromeExtensionUnsupportedBrowser_Failed: new LoggableEvent("BrowserDoesNotSupportChromeExtension", EventCategories.Onboarding, EventActions.Error),
-	ChromeExtensionStep_Completed:        	new LoggableEvent("ChromeExtensionStepCompleted", EventCategories.Onboarding, EventActions.Success),
+	ChromeExtension_Installed:                  new LoggableEvent("ChromeExtensionInstalled", EventCategories.Onboarding, EventActions.Success),
+	ChromeExtensionInstall_Failed:              new LoggableEvent("ChromeExtensionInstallFailed", EventCategories.Onboarding, EventActions.Error),
+	ChromeExtensionCTA_Clicked:                 new LoggableEvent("ChromeExtensionCTAClicked", EventCategories.Onboarding, EventActions.Click),
+	ChromeExtensionInstall_Started:             new LoggableEvent("ChromeExtensionInstallStarted", EventCategories.Onboarding, EventActions.Click),
+	ChromeExtensionStore_Redirected:            new LoggableEvent("ChromeExtensionStoreRedirect", EventCategories.Onboarding, EventActions.Click),
+	ChromeExtensionSkipCTA_Clicked:             new LoggableEvent("SkipChromeExtensionCTAClicked", EventCategories.Onboarding, EventActions.Click),
+	ChromeExtensionUnsupportedBrowser_Failed:   new LoggableEvent("BrowserDoesNotSupportChromeExtension", EventCategories.Onboarding, EventActions.Error),
+	ChromeExtensionStep_Completed:              new LoggableEvent("ChromeExtensionStepCompleted", EventCategories.Onboarding, EventActions.Success),
 
-	AuthGitHubStep_Completed:             	new LoggableEvent("GitHubStepCompleted", EventCategories.Onboarding, EventActions.Success),
-	AuthGCPStep_Completed:             		new LoggableEvent("GCPStepCompleted", EventCategories.Onboarding, EventActions.Success),
-	PrivateAuthGitHub_Skipped:            	new LoggableEvent("SkipGitHubPrivateAuth", EventCategories.Onboarding, EventActions.Click),
-	PrivateAuthGCP_Skipped:            		new LoggableEvent("SkipGCPPrivateAuth", EventCategories.Onboarding, EventActions.Click),
+	AuthGitHubStep_Completed:                   new LoggableEvent("GitHubStepCompleted", EventCategories.Onboarding, EventActions.Success),
+	AuthGCPStep_Completed:                      new LoggableEvent("GCPStepCompleted", EventCategories.Onboarding, EventActions.Success),
+	PrivateAuthGitHub_Skipped:                  new LoggableEvent("SkipGitHubPrivateAuth", EventCategories.Onboarding, EventActions.Click),
+	PrivateAuthGCP_Skipped:                     new LoggableEvent("SkipGCPPrivateAuth", EventCategories.Onboarding, EventActions.Click),
 
 	// ReEngagement
-	BetaSubscription_Completed: 			new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
+	BetaSubscription_Completed:                 new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
 
 	// Code view
-	CodeContextMenu_Initiated:            	new LoggableEvent("CodeContextMenuClicked", EventCategories.CodeView, EventActions.Click),
-	CodeReferences_Viewed:                 	new LoggableEvent("ClickedViewReferences", EventCategories.CodeView, EventActions.Click),
-	CodeExternalReferences_Viewed:        	new LoggableEvent("ClickedViewExternalReferences", EventCategories.CodeView, EventActions.Click),
-	CodeToken_Hovered:                      new LoggableEvent("Hovering", EventCategories.CodeView, EventActions.Hover),
-	CodeToken_Clicked:                     	new LoggableEvent("BlobTokenClicked", EventCategories.CodeView, EventActions.Click),
+	CodeContextMenu_Initiated:                  new LoggableEvent("CodeContextMenuClicked", EventCategories.CodeView, EventActions.Click),
+	CodeReferences_Viewed:                      new LoggableEvent("ClickedViewReferences", EventCategories.CodeView, EventActions.Click),
+	CodeExternalReferences_Viewed:              new LoggableEvent("ClickedViewExternalReferences", EventCategories.CodeView, EventActions.Click),
+	CodeToken_Hovered:                          new LoggableEvent("Hovering", EventCategories.CodeView, EventActions.Hover),
+	CodeToken_Clicked:                          new LoggableEvent("BlobTokenClicked", EventCategories.CodeView, EventActions.Click),
 
 	// Quick open/search
-	QuickopenItem_Selected:                	new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),
-	Quickopen_Initiated:                    new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),
-	Quickopen_Dismissed:                    new LoggableEvent("QuickOpenDismissed", EventCategories.QuickOpen, EventActions.Close),
+	QuickopenItem_Selected:                     new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),
+	Quickopen_Initiated:                        new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),
+	Quickopen_Dismissed:                        new LoggableEvent("QuickOpenDismissed", EventCategories.QuickOpen, EventActions.Close),
 
-	// Def info
-	DefInfoDefLink_Clicked:               	new LoggableEvent("DefInfoViewDefLinkClicked", EventCategories.DefInfo, EventActions.Click),
-	DefInfoFileLink_Clicked:              	new LoggableEvent("DefInfoViewFileLinkClicked", EventCategories.DefInfo, EventActions.Click),
-	DefInfoRefLink_Clicked:               	new LoggableEvent("DefInfoRefLinkClicked", EventCategories.DefInfo, EventActions.Click),
+	// Def info - implemented manually in static_event_logger.js 
+	// 	TODO(dadlerj): delete these, or integrate this file with that logger
+	// DefInfoDefLink_Clicked:                  new LoggableEvent("DefInfoViewDefLinkClicked", EventCategories.DefInfo, EventActions.Click),
+	// DefInfoFileLink_Clicked:                 new LoggableEvent("DefInfoViewFileLinkClicked", EventCategories.DefInfo, EventActions.Click),
+	// DefInfoRefSnippedLink_Clicked:           new LoggableEvent("DefInfoRefSnippetLinkClicked", EventCategories.DefInfo, EventActions.Click),
+	// DefInfoRefRepoLink_Clicked:              new LoggableEvent("DefInfoRefRepoLinkClicked", EventCategories.DefInfo, EventActions.Click),
+	// DefInfoRefFileLink_Clicked:              new LoggableEvent("DefInfoRefFileLinkClicked", EventCategories.DefInfo, EventActions.Click),
 
 	// Orgs
-	Org_Selected:                           new LoggableEvent("SelectedOrg", EventCategories.Orgs, EventActions.Click),
-	OrgUser_Invited:                       	new LoggableEvent("InviteUser", EventCategories.Orgs, EventActions.Success),
-	OrgManualInviteModal_Initiated:      	new LoggableEvent("ToggleManualInviteModal", EventCategories.Orgs, EventActions.Toggle),
-	OrgManualInviteModal_Dismissed:      	new LoggableEvent("DismissManualInviteModal", EventCategories.Orgs, EventActions.Close),
-	OrgEmailInvite_Clicked:               	new LoggableEvent("EmailInviteClicked", EventCategories.Orgs, EventActions.Click),
-	AuthedOrgsGitHub_Fetched: 				new LoggableEvent("AuthedOrgsGitHubFetched", EventCategories.Orgs, EventActions.Fetch),
-	AuthedOrgMembersGitHub_Fetched: 		new LoggableEvent("AuthedOrgMembersGitHubFetched", EventCategories.Orgs, EventActions.Fetch),
+	Org_Selected:                               new LoggableEvent("SelectedOrg", EventCategories.Orgs, EventActions.Click),
+	OrgUser_Invited:                            new LoggableEvent("InviteUser", EventCategories.Orgs, EventActions.Success),
+	OrgManualInviteModal_Initiated:             new LoggableEvent("ToggleManualInviteModal", EventCategories.Orgs, EventActions.Toggle),
+	OrgManualInviteModal_Dismissed:             new LoggableEvent("DismissManualInviteModal", EventCategories.Orgs, EventActions.Close),
+	OrgEmailInvite_Clicked:                     new LoggableEvent("EmailInviteClicked", EventCategories.Orgs, EventActions.Click),
+	AuthedOrgsGitHub_Fetched:                   new LoggableEvent("AuthedOrgsGitHubFetched", EventCategories.Orgs, EventActions.Fetch),
+	AuthedOrgMembersGitHub_Fetched:             new LoggableEvent("AuthedOrgMembersGitHubFetched", EventCategories.Orgs, EventActions.Fetch),
 
 	// Settings (org and repo views)
-	SettingsRepoView_Toggled:             	new LoggableEvent("ToggleRepoView", EventCategories.Settings, EventActions.Toggle),
-	SettingsOrgView_Toggled:              	new LoggableEvent("ToggleOrgView", EventCategories.Settings, EventActions.Toggle),
+	SettingsRepoView_Toggled:                   new LoggableEvent("ToggleRepoView", EventCategories.Settings, EventActions.Toggle),
+	SettingsOrgView_Toggled:                    new LoggableEvent("ToggleOrgView", EventCategories.Settings, EventActions.Toggle),
 
 	// Static pages
-	DocsContactSupportCTA_Clicked:       	new LoggableEvent("clickedContactSupportFromDocs", EventCategories.DocsPage, EventActions.Click),
-	DocsInstallExtensionCTA_Clicked:     	new LoggableEvent("clickedInstallBrowserExtFromDocs", EventCategories.DocsPage, EventActions.Click),
-	DocsAuthPrivateCTA_Clicked:          	new LoggableEvent("clickedAuthPrivateReposFromDocs", EventCategories.DocsPage, EventActions.Click),
-	ToolsModalDownloadCTA_Clicked: 			new LoggableEvent("ToolsModalDownloadCTAClicked", EventCategories.Tools, EventActions.Click),
-	PricingCTA_Clicked:                    	new LoggableEvent("ClickPricingCTA", EventCategories.Pricing, EventActions.Click),
-	DashboardRepo_Clicked:                 	new LoggableEvent("DashboardRepoClicked", EventCategories.Dashboard, EventActions.Click),
-	HomeCarousel_Clicked: 					new LoggableEvent("HomeCarouselClicked", EventCategories.Home, EventActions.Click),
-	JobsCTA_Clicked:                 		new LoggableEvent("JobsCTAClicked", EventCategories.Nav, EventActions.Click),
+	DocsContactSupportCTA_Clicked:              new LoggableEvent("clickedContactSupportFromDocs", EventCategories.DocsPage, EventActions.Click),
+	DocsInstallExtensionCTA_Clicked:            new LoggableEvent("clickedInstallBrowserExtFromDocs", EventCategories.DocsPage, EventActions.Click),
+	DocsAuthPrivateCTA_Clicked:                 new LoggableEvent("clickedAuthPrivateReposFromDocs", EventCategories.DocsPage, EventActions.Click),
+	ToolsModalDownloadCTA_Clicked:              new LoggableEvent("ToolsModalDownloadCTAClicked", EventCategories.Tools, EventActions.Click),
+	PricingCTA_Clicked:                         new LoggableEvent("ClickPricingCTA", EventCategories.Pricing, EventActions.Click),
+	DashboardRepo_Clicked:                      new LoggableEvent("DashboardRepoClicked", EventCategories.Dashboard, EventActions.Click),
+	HomeCarousel_Clicked:                       new LoggableEvent("HomeCarouselClicked", EventCategories.Home, EventActions.Click),
+	JobsCTA_Clicked:                            new LoggableEvent("JobsCTAClicked", EventCategories.Nav, EventActions.Click),
 
 	// Non-Interaction Events
 	// Events that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.
 	// See EventLogger.logNonInteractionEventForCategory() for more information
-	ViewRepoMain_Failed: 					new NonInteractionLoggableEvent("ViewRepoMainError", EventCategories.Repository, EventActions.Error),
+	ViewRepoMain_Failed:                        new NonInteractionLoggableEvent("ViewRepoMainError", EventCategories.Repository, EventActions.Error),
 };
 
 export function getModalDismissedEventObject(modalName: string): LoggableEvent {

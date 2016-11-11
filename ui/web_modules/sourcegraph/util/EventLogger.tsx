@@ -456,14 +456,6 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				} else if (this.props.location.query["_invited_by_user"]) {
 					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
 					AnalyticsConstants.Events.OrgEmailInvite_Clicked.logEvent(eventProperties);
-				} else if (this.props.location.query["_def_info_def"]) {
-					if (eventName === "DefInfoViewDefLinkClicked") {
-						AnalyticsConstants.Events.DefInfoDefLink_Clicked.logEvent(eventProperties);
-					} else if (eventName === "DefInfoViewFileLinkClicked") {
-						AnalyticsConstants.Events.DefInfoFileLink_Clicked.logEvent(eventProperties);
-					} else if (eventName === "DefInfoRefLinkClicked") {
-						AnalyticsConstants.Events.DefInfoRefLink_Clicked.logEvent(eventProperties);
-					}
 				} else {
 					EventLogger._logEventForCategoryComponents(AnalyticsConstants.EventCategories.External, AnalyticsConstants.EventActions.Redirect, eventName, eventProperties);
 				}

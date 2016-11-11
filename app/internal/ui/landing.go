@@ -488,8 +488,19 @@ type defLandingData struct {
 	ShortDefName     string // e.g. "NewRouter"
 	DefFileURL       string
 	DefFileName      string
+	DefEventProps    *defEventProps
 	RefLocs          *sourcegraph.RefLocations
 	TruncatedRefLocs bool
+}
+
+type defEventProps struct {
+	DefLanguage  string `json:"def_language"`
+	DefScheme    string `json:"def_scheme"`
+	DefSource    string `json:"def_source"`
+	DefContainer string `json:"def_container"`
+	DefVersion   string `json:"def_version"`
+	DefFile      string `json:"def_file"`
+	DefName      string `json:"def_name"`
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
@@ -550,25 +561,22 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
 }
 
-// withSymbolEventTracking adds symbol event tracking to the specified URL's
-// query parameters. It panics if symbol.Location.URI is unparsable.
-func withSymbolEventTracking(eventName string, u *url.URL, language string, symbol *lsp.SymbolInformation) *url.URL {
+// generateSymbolEventProps generates symbol event logging properties
+// It panics if symbol.Location.URI is unparsable.
+func generateSymbolEventProps(language string, symbol *lsp.SymbolInformation) *defEventProps {
 	symURI, err := url.Parse(symbol.Location.URI)
 	if err != nil {
 		panic(err)
 	}
-
-	q := u.Query()
-	q.Set("_event", eventName)
-	q.Set("_def_language", language)
-	q.Set("_def_scheme", symURI.Scheme)
-	q.Set("_def_source", symURI.Host+symURI.Path)
-	q.Set("_def_version", symURI.RawQuery)
-	q.Set("_def_file", symURI.Fragment)
-	q.Set("_def_container", symbol.ContainerName)
-	q.Set("_def_name", symbol.Name)
-	u.RawQuery = q.Encode()
-	return u
+	return &defEventProps{
+		DefLanguage:  language,
+		DefScheme:    symURI.Scheme,
+		DefSource:    (symURI.Host + symURI.Path),
+		DefVersion:   symURI.RawQuery,
+		DefFile:      symURI.Fragment,
+		DefContainer: symbol.ContainerName,
+		DefName:      symbol.Name,
+	}
 }
 
 func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (res *defLandingData, err error) {
@@ -639,11 +647,9 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	defFileName := symURI.Host + path.Join(symURI.Path, symURI.Fragment)
 	repoURI := symURI.Host + symURI.Path
 
+	eventProps := generateSymbolEventProps(language, symbol)
 	defFileURL := approuter.Rel.URLToBlob(repoURI, "", path.Clean(symURI.Fragment), 0)
-	defFileURL = withSymbolEventTracking("DefInfoViewFileLinkClicked", defFileURL, language, symbol)
-
 	viewDefURL := approuter.Rel.URLToBlob(repoURI, "", path.Clean(symURI.Fragment), symbol.Location.Range.Start.Line+1)
-	viewDefURL = withSymbolEventTracking("DefInfoViewDefLinkClicked", viewDefURL, language, symbol)
 
 	// Create metadata titles.
 	shortTitle := strings.Join([]string{symbol.ContainerName, symbol.Name}, ".")
@@ -783,6 +789,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		},
 		Description:      htmlutil.Sanitize(hoverDesc),
 		RefSnippets:      refSnippets,
+		DefEventProps:    eventProps,
 		ViewDefURL:       viewDefURL.String(),
 		DefName:          hoverTitle,
 		ShortDefName:     symbol.Name,
@@ -793,18 +800,16 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	}, nil
 }
 
-func legacyWithDefEventTracking(eventName string, u *url.URL, def *sourcegraph.Def) *url.URL {
-	q := u.Query()
-	q.Set("_event", eventName)
-	q.Set("_def_language", "go") // srclib def landing pages only ever had GoPackage unit types.
-	q.Set("_def_scheme", "git")
-	q.Set("_def_source", def.Repo)
-	q.Set("_def_version", "")
-	q.Set("_def_file", def.File)
-	q.Set("_def_container", def.Unit)
-	q.Set("_def_name", def.Path)
-	u.RawQuery = q.Encode()
-	return u
+func legacyGenerateSymbolEventProps(def *sourcegraph.Def) *defEventProps {
+	return &defEventProps{
+		DefLanguage:  "go", // srclib def landing pages only ever had GoPackage unit types.
+		DefScheme:    "git",
+		DefSource:    def.Repo,
+		DefVersion:   "",
+		DefFile:      def.File,
+		DefContainer: def.Unit,
+		DefName:      def.Path,
+	}
 }
 
 func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *defLandingData, err error) {
@@ -860,11 +865,9 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *de
 	}
 
 	// fetch definition
+	eventProps := legacyGenerateSymbolEventProps(def)
 	viewDefURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine))
-	viewDefURL = legacyWithDefEventTracking("DefInfoViewDefLinkClicked", viewDefURL, def)
-
 	defFileURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0)
-	defFileURL = legacyWithDefEventTracking("DefInfoViewFileLinkClicked", defFileURL, def)
 
 	// fetch example
 	refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
@@ -924,6 +927,7 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *de
 		Meta:             *m,
 		Description:      def.DocHTML,
 		RefSnippets:      refSnippets,
+		DefEventProps:    eventProps,
 		ViewDefURL:       viewDefURL.String(),
 		DefName:          def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
 		ShortDefName:     def.Name,
