@@ -1,5 +1,6 @@
 import * as classNames from "classnames";
 import * as React from "react";
+import {context} from "sourcegraph/app/context";
 import {CloseIcon} from "sourcegraph/components/Icons";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -32,7 +33,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	}
 
 	render(): JSX.Element | null {
-		if (this.state.isVisible) {
+		if (this.state.isVisible && ! context.hasChromeExtensionInstalled()) {
 			return (
 				<Toast>
 					<a onClick={this._closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><CloseIcon/></a>
