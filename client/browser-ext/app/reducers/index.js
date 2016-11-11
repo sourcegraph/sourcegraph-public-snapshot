@@ -5,7 +5,7 @@ import * as ActionTypes from "../constants/ActionTypes";
 const accessToken = function(state = null, action) {
 	switch (action.type) {
 	case ActionTypes.SET_ACCESS_TOKEN:
-		return action.token ? action.token : null;
+		return action.token;
 	default:
 		return state;
 	}

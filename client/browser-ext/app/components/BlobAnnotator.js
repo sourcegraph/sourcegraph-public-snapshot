@@ -408,6 +408,8 @@ export default class BlobAnnotator extends Component {
 			}
 		} else {
 			// Default case when we don't have any annotation data
+			this.state.selfElement.setAttribute("aria-label", "Loading...");
+
 			return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
 		}
 	}
