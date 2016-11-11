@@ -154,15 +154,14 @@ function injectModules() {
 }
 
 window.addEventListener("load", () => {
-		if (isSourcegraphURL()) {
+	if (isSourcegraphURL()) {
+		injectModules();
+	} else if (isGitHubURL()) {
+		chrome.runtime.sendMessage(null, {type: "getSessionToken"}, {}, (tokens) => {
+			store.dispatch(Actions.setAccessToken(accessToken));
 			injectModules();
-		} else if (isGitHubURL()) {
-			chrome.runtime.sendMessage(null, {type: "getSessionToken"}, {}, (tokens) => {
-				store.dispatch(Actions.setAccessToken(accessToken));
-				injectModules();
-			});
-		}
-
+		});
+	}
 	chrome.runtime.sendMessage(null, {type: "getIdentity"}, {}, (identity) => {
 		if (identity) EventLogger.updatePropsForUser(identity);
 	});

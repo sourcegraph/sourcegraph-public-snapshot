@@ -81,6 +81,8 @@ export function parseURL(loc = window.location) {
 	// TODO: this method has problems handling branch revisions with "/" character.
 	let user, repo, repoURI, rev, path, isDelta;
 
+	if (!isGitHubURL()) return {user: null, repo: null, repoURI: null, rev: null, path: null, isDelta: null, isPullRequest: null, isCommit: null};
+
 	const urlsplit = loc.pathname.slice(1).split("/");
 	user = urlsplit[0];
 	repo = urlsplit[1]
