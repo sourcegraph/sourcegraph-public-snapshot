@@ -290,12 +290,14 @@ class BlobMainEditor extends Container<Props, State> {
 		if (pathParts) {
 			title = `${pathParts[pathParts.length - 1]} · ${title}`;
 		}
+		const showTour = this.props.location.query["tour"] || !global.window.localStorage["sg_onboarding_tour_shown"];
+		global.window.localStorage["sg_onboarding_tour_shown"] = true;
 		return (
 			<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
 				<Helmet title={title} />
 				<ChromeExtensionToast location={this.props.location}/>
 				<OnboardingModals location={this.props.location}/>
-				{this.props.location.query["tour"] && <TourOverlay location={this.props.location}/>}
+				{showTour && <TourOverlay location={this.props.location}/>}
 				<BlobTitle
 					repo={this.props.repo}
 					path={this.props.path}
