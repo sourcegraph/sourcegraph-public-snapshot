@@ -18,7 +18,6 @@ exports.copyAssets = function(type) {
 	mkdir(type);
 	cp(`chrome/manifest.${env}.json`, `${type}/manifest.json`);
 	cp("-R", "chrome/assets/", type);
-	cp("Dockerfile.selenium", `${type}/Dockerfile`)
 	exec(`jade -O "{ env: '${env}' }" -o ${type} chrome/views/`);
 };
 

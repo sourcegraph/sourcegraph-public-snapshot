@@ -28,7 +28,7 @@ test-e2e:
 test-all: test-unit test-e2e2
 
 deploy-e2e: build
-	docker build -t us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest ./build
+	docker build --no-cache -t us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest .
 	gcloud docker -- push us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest
 	cd ../../test/e2e2 && make deploy
 
