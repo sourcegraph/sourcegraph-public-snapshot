@@ -1,4 +1,4 @@
-.PHONY: dep dist build bundle deploy deploy-e2e test-unit test-e2e test-all
+.PHONY: dep dist build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all
 
 default: build
 
@@ -18,6 +18,9 @@ bundle: build
 
 test-unit:
 	yarn run test
+
+test-watch:
+	yarn run test:auto
 
 test-e2e:
 	cd ../../test/e2e2 && make browser-ext

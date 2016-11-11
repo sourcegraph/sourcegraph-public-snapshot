@@ -53,6 +53,7 @@ Use these to make API requests and update application state.
 - `npm` >= 3.6.0
 - `node` >= 5.6.0
 - `yarn` >= 0.16.0
+- `make`
 
 The latest stable version of node will suffice, which you can install as follows after you have installed npm:
 
@@ -91,17 +92,19 @@ dev console, though it can get a little verbose.
 ## Build
 
 ```bash
-$ yarn run build # create unzipped distribution artifact in ./build/; required for e2e tests
+$ make build # create unzipped distribution artifact in ./build; required for e2e tests
 ```
 
 ## Test
 
 ```bash
-$ yarn run test
-$ yarn run test:auto # watch for changes
+$ make test-unit # run unit tests
+$ make test-watch # watch for changes & run unit tests
+$ make test-e2e # run e2e tests
+$ make test-all # run all tests
 ```
 
-End-to-end tests are located above this project root, at `test/e2e2`. Run the e2e tests from that directory via `make browser-ext`.
+End-to-end tests for the extension are located above this project root, at `test/e2e2`.
 
 ## Create Distributions
 
