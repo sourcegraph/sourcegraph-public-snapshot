@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	pathpkg "path"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/ctxvfs"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/cloudresourcemanager/v1"
@@ -27,7 +25,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
@@ -694,12 +691,11 @@ func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 		return nil, err
 	}
 
-	fs := vcs.FileSystem(vcsrepo, vcs.CommitID(repoRev.CommitID))
-	inv, err := inventory.Scan(ctx, vfsutil.Walkable(ctxvfs.StripContext(fs), filepath.Join))
+	files, err := vcsrepo.ReadDir(ctx, vcs.CommitID(repoRev.CommitID), "", true)
 	if err != nil {
 		return nil, err
 	}
-	return inv, nil
+	return inventory.Get(ctx, files)
 }
 
 func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {

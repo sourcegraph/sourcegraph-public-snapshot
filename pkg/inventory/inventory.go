@@ -3,14 +3,11 @@
 package inventory
 
 import (
+	"context"
 	"os"
 	"sort"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
-
-	"context"
-
-	"github.com/kr/fs"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
@@ -38,39 +35,16 @@ type Lang struct {
 // Scan respects the ctx's deadline. If it exceeds the deadline,
 // it will return a partial inventory and the error value
 // context.DeadlineExceeded.
-func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
+func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	langs := map[string]uint64{}
-	var err error
 
-	w := fs.WalkFS("/", vfs)
-Outer:
-	for w.Step() {
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
-			// Carry through this error to the final "return"
-			// statement, so that we return a partial result.
-			break Outer
-		default:
-		}
-
-		if err := w.Err(); err != nil {
-			if w.Path() != "/" && (os.IsNotExist(err) || os.IsPermission(err)) {
-				continue
-			}
-			return nil, err
-		}
-
-		fi := w.Stat()
-		if filelang.IsVendored(w.Path(), w.Stat().Mode().IsDir()) {
-			w.SkipDir()
+	for _, file := range files {
+		if filelang.IsVendored(file.Name(), file.IsDir()) {
 			continue
 		}
-		if fi.Mode().IsRegular() {
-			matchedLangs := filelang.Langs.ByFilename(fi.Name())
-			if len(matchedLangs) > 0 {
-				langs[matchedLangs[0].Name] += uint64(fi.Size())
-			}
+		matchedLangs := filelang.Langs.ByFilename(file.Name())
+		if len(matchedLangs) > 0 {
+			langs[matchedLangs[0].Name] += uint64(file.Size())
 		}
 	}
 
@@ -90,7 +64,7 @@ Outer:
 		}
 	}
 
-	return &inv, err
+	return &inv, nil
 }
 
 // PrimaryProgrammingLanguage returns the primary programming language

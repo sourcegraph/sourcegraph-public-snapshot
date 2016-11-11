@@ -1,43 +1,35 @@
 package inventory
 
 import (
-	"errors"
-	"path"
+	"context"
+	"os"
 	"reflect"
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
-
-	"context"
-
-	"golang.org/x/tools/godoc/vfs"
-	"golang.org/x/tools/godoc/vfs/mapfs"
+	"time"
 )
 
 func TestScan(t *testing.T) {
 	tests := map[string]struct {
-		fs      vfs.FileSystem
+		files   []fi
 		want    *Inventory
 		wantErr error
 	}{
-		"no files": {
-			fs:      mapfs.New(map[string]string{}),
-			wantErr: errors.New("file does not exist"),
-		},
 		"empty file": {
-			fs:   mapfs.New(map[string]string{"a": ""}),
+			files: []fi{
+				fi{"a", ""},
+			},
 			want: &Inventory{},
 		},
 		"excludes": {
-			fs: mapfs.New(map[string]string{
-				"a.min.js":                     "a",
-				"node_modules/a/b.js":          "a",
-				"Godeps/_workspace/src/a/b.go": "a",
-			}),
+			files: []fi{
+				fi{"a.min.js", "a"},
+				fi{"node_modules/a/b.js", "a"},
+				fi{"Godeps/_workspace/src/a/b.go", "a"},
+			},
 			want: &Inventory{},
 		},
 		"java": {
-			fs: mapfs.New(map[string]string{"a.java": "a"}),
+			files: []fi{fi{"a.java", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 1, Type: "programming"},
@@ -45,7 +37,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"go": {
-			fs: mapfs.New(map[string]string{"a.go": "a"}),
+			files: []fi{fi{"a.go", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Go", TotalBytes: 1, Type: "programming"},
@@ -53,7 +45,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"java and go": {
-			fs: mapfs.New(map[string]string{"a.java": "aa", "a.go": "a"}),
+			files: []fi{fi{"a.java", "aa"}, fi{"a.go", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 2, Type: "programming"},
@@ -62,13 +54,13 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"large": {
-			fs: mapfs.New(map[string]string{
-				"a.java": "aaaaaaaaa",
-				"b.java": "bbbbbbb",
-				"a.go":   "aaaaa",
-				"b.go":   "bbb",
-				"c.txt":  "ccccc",
-			}),
+			files: []fi{
+				fi{"a.java", "aaaaaaaaa"},
+				fi{"b.java", "bbbbbbb"},
+				fi{"a.go", "aaaaa"},
+				fi{"b.go", "bbb"},
+				fi{"c.txt", "ccccc"},
+			},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 16, Type: "programming"},
@@ -79,7 +71,11 @@ func TestScan(t *testing.T) {
 		},
 	}
 	for label, test := range tests {
-		inv, err := Scan(context.Background(), vfsutil.Walkable(test.fs, path.Join))
+		var fi []os.FileInfo
+		for _, file := range test.files {
+			fi = append(fi, file)
+		}
+		inv, err := Get(context.Background(), fi)
 		if err != nil && (test.wantErr == nil || err.Error() != test.wantErr.Error()) {
 			t.Errorf("%s: Scan: %s (want error %v)", label, err, test.wantErr)
 			continue
@@ -93,4 +89,28 @@ func TestScan(t *testing.T) {
 			continue
 		}
 	}
+}
+
+type fi struct {
+	Path     string
+	Contents string
+}
+
+func (f fi) Name() string {
+	return f.Path
+}
+func (f fi) Size() int64 {
+	return int64(len(f.Contents))
+}
+func (f fi) IsDir() bool {
+	return false
+}
+func (f fi) Mode() os.FileMode {
+	return os.FileMode(0)
+}
+func (f fi) ModTime() time.Time {
+	return time.Now()
+}
+func (f fi) Sys() interface{} {
+	return interface{}(nil)
 }
