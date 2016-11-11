@@ -1,13 +1,10 @@
 import * as React from "react";
 import Helmet from "react-helmet";
-import {context} from "sourcegraph/app/context";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Header} from "sourcegraph/components/Header";
 import {trimRepo} from "sourcegraph/repo";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
 
 function repoPageTitle(repo: any): string {
 	let title = trimRepo(repo.URI);
@@ -66,12 +63,7 @@ export class RepoMain extends React.Component<Props, State> {
 		const err = (this.props.repoObj && this.props.repoObj.Error);
 		if (err) {
 			let msg;
-			let showGitHubCTA = false;
-			if (err.response && err.response.status === 401) {
-				AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
-				msg = context.user ? `Connect GitHub to add repositories` : `Sign in to add repositories.`;
-				showGitHubCTA = Boolean(context.user && !context.hasPrivateGitHubToken());
-			} else if (err.response && err.response.status === 404) {
+			if (err.response && err.response.status === 404) {
 				AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 				msg = `Repository not found.`;
 			} else {
@@ -84,11 +76,6 @@ export class RepoMain extends React.Component<Props, State> {
 					<Header
 						title={`${httpStatusCode(err)}`}
 						subtitle={msg} />
-					{showGitHubCTA &&
-						<div style={{textAlign: "center"}}>
-							<GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Add private repositories</GitHubAuthButton>
-						</div>
-					}
 				</div>
 			);
 		}
