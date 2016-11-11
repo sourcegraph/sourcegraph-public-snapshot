@@ -34,11 +34,11 @@ export class RepoMain extends React.Component<Props, State> {
 	_refreshInterval: number | null = null;
 
 	componentDidMount(): void {
-		this._updateRefreshInterval(this.props.commit.cloneInProgress);
+		this._updateRefreshInterval(this.props.commit && this.props.commit.cloneInProgress);
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
-		this._updateRefreshInterval(nextProps.commit.cloneInProgress);
+		this._updateRefreshInterval(nextProps.commit && nextProps.commit.cloneInProgress);
 	}
 
 	componentWillUnmount(): void {

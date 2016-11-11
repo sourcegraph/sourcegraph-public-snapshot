@@ -298,7 +298,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				commit={this.props.root.repository.commit}
+				commit={this.props.root.repository && this.props.root.repository.commit}
 				repoObj={this.props.repoObj}
 				route={this.props.route}
 				routes={this.props.routes}

@@ -45,7 +45,7 @@ export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
 	}
 
 	_redirectToCanonicalURI(props: PropsWithRelay, context: Context): void {
-		if (props.repo !== props.root.repository.uri) {
+		if (props.root.repository && props.repo !== props.root.repository.uri) {
 			setTimeout(function(): void {
 				let locCopy = cloneDeep(props.location);
 				locCopy.pathname = props.location.pathname.replace(new RegExp(props.repo, "g"), props.root.repository.uri);
@@ -62,7 +62,7 @@ export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				commit={this.props.root.repository.commit}
+				commit={this.props.root.repository && this.props.root.repository.commit}
 				repoObj={this.props.repoObj}
 				route={this.props.route}
 				routes={this.props.routes}
@@ -84,7 +84,7 @@ export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
 							repo={this.props.repo}
 							rev={this.props.rev}
 							path={path}
-							tree={this.props.root.repository.commit.commit && this.props.root.repository.commit.commit.tree} />
+							tree={this.props.root.repository && this.props.root.repository.commit.commit && this.props.root.repository.commit.commit.tree} />
 					</GridCol>
 				</div>
 			</RepoMain>

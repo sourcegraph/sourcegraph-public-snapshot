@@ -62,7 +62,7 @@ func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, 
 		Repo: r.repo.ID,
 	})
 	if err != nil {
-		if err, ok := err.(*vcs.RepoNotExistError); ok && err.CloneInProgress {
+		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
 			return &commitStateResolver{cloneInProgress: true}, nil
 		}
 		return nil, err
