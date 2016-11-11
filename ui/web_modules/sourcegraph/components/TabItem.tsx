@@ -1,9 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
+import * as classNames from "classnames";
 import * as React from "react";
+
 import {Icon} from "sourcegraph/components/Icon";
 import * as styles from "sourcegraph/components/styles/tabItem.css";
-import * as classNames from "classnames";
 
 interface Props {
 	className?: string;
@@ -17,10 +16,8 @@ interface Props {
 	tabItem?: boolean;
 }
 
-type State = any;
-
-export class TabItem extends React.Component<Props, State> {
-	static defaultProps = {
+export class TabItem extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		active: false,
 		color: "blue",
 		direction: "horizontal",

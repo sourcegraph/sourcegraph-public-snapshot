@@ -1,12 +1,11 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import * as styles from "sourcegraph/home/styles/Integrations.css";
-import {Heading, Button} from "sourcegraph/components";
+
+import {context} from "sourcegraph/app/context";
 import {Component} from "sourcegraph/Component";
+import {Button, Heading} from "sourcegraph/components";
+import * as styles from "sourcegraph/home/styles/Integrations.css";
 import {inBeta} from "sourcegraph/user";
 import * as betautil from "sourcegraph/util/betautil";
-import {context} from "sourcegraph/app/context";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 class Tool {

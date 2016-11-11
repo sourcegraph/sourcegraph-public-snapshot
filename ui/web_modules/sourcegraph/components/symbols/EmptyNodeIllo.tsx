@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 
 interface Props {
@@ -7,10 +5,8 @@ interface Props {
 	width?: number; // appended by "px"
 }
 
-type State = any;
-
-export class EmptyNodeIllo extends React.Component<Props, State> {
-	static defaultProps = {
+export class EmptyNodeIllo extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		width: 500,
 	};
 

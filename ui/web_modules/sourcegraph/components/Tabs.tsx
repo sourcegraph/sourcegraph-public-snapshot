@@ -1,8 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/components/styles/tabs.css";
 import * as classNames from "classnames";
+import * as React from "react";
+
+import * as styles from "sourcegraph/components/styles/tabs.css";
 
 interface Props {
 	direction?: string; // vertical, horizontal
@@ -13,10 +12,8 @@ interface Props {
 	style?: any;
 }
 
-type State = any;
-
-export class Tabs extends React.Component<Props, State> {
-	static defaultProps = {
+export class Tabs extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		size: "default",
 		direction: "horizontal",
 		color: "blue",

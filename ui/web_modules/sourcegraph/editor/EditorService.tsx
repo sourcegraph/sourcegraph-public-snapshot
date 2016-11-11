@@ -1,18 +1,18 @@
-// tslint:disable typedef ordered-imports
 import { TreeEntry } from "sourcegraph/api";
-import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
-import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { URIUtils } from "sourcegraph/core/uri";
 import { makeRepoRev } from "sourcegraph/repo";
+import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
+import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
+
 import { IDisposable } from "vs/base/common/lifecycle";
-import * as editorCommon from "vs/editor/common/editorCommon";
-import { IRange } from "vs/editor/common/editorCommon";
-import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/platform/editor/common/editor";
-import { IEditorViewState } from "vs/editor/common/editorCommon";
-import { createModel, getModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { TPromise } from "vs/base/common/winjs.base";
 import { SimpleEditor, SimpleModel } from "vs/editor/browser/standalone/simpleServices";
+import { createModel, getModel } from "vs/editor/browser/standalone/standaloneEditor";
+import * as editorCommon from "vs/editor/common/editorCommon";
+import { IEditorViewState } from "vs/editor/common/editorCommon";
+import { IRange } from "vs/editor/common/editorCommon";
 import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
+import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/platform/editor/common/editor";
 
 const fetch = singleflightFetch(defaultFetch);
 

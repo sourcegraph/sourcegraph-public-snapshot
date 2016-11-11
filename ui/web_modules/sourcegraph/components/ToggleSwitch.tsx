@@ -1,6 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+
 import * as styles from "sourcegraph/components/styles/toggleSwitch.css";
 
 interface Props {
@@ -13,10 +12,6 @@ interface State {
 }
 
 export class ToggleSwitch extends React.Component<Props, State> {
-	static defaultProps = {
-		defaultChecked: false,
-	};
-
 	state: State = {
 		checked: false,
 	};
@@ -28,7 +23,7 @@ export class ToggleSwitch extends React.Component<Props, State> {
 		};
 	}
 
-	_toggle() {
+	_toggle(): void {
 		this.setState({checked: !this.state.checked}, () => this.props.onChange(this.state.checked));
 	}
 

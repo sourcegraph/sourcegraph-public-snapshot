@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 export const languages = [
 	"C",
 	"C#",
