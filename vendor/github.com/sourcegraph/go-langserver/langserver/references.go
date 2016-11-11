@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"path"
 	"sort"
 	"strings"
 	"sync"
@@ -31,7 +32,11 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 	}
 
 	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
-	_, rev, _ := importgraph.Build(bctx)
+	h.importGraphOnce.Do(func() {
+		// We ignore the errors since we are doing a best-effort analysis
+		_, rev, _ := importgraph.Build(bctx)
+		h.importGraph = rev
+	})
 
 	// NOTICE: Code adapted from golang.org/x/tools/cmd/guru
 	// referrers.go.
@@ -64,13 +69,13 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 	// type-checking.
 	var users map[string]bool
 	if pkgLevel {
-		users = rev[defpkg]
+		users = h.importGraph[defpkg]
 		if users == nil {
 			users = map[string]bool{}
 		}
 		users[defpkg] = true
 	} else {
-		users = rev.Search(defpkg)
+		users = h.importGraph.Search(defpkg)
 	}
 	lconf := loader.Config{
 		Fset:  fset,
@@ -158,7 +163,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 	}
 
 	locs := goRangesToLSPLocations(fset, refs)
-	sort.Sort(locationList(locs))
+	sortBySharedDirWithURI(params.TextDocument.URI, locs)
 	return locs, nil
 }
 
@@ -240,21 +245,54 @@ func sameObj(x, y types.Object) bool {
 	return false
 }
 
-type locationList []lsp.Location
+func sortBySharedDirWithURI(uri string, locs []lsp.Location) {
+	l := locationList{
+		L: locs,
+		D: make([]int, len(locs)),
+	}
+	// l.D[i] = number of shared directories between uri and l.L[i].URI
+	for i := range l.L {
+		u := l.L[i].URI
+		var d int
+		for i := 0; i < len(uri) && i < len(u) && uri[i] == u[i]; i++ {
+			if u[i] == '/' {
+				d++
+			}
+		}
+		if u == uri {
+			// Boost matches in the same uri
+			d++
+		}
+		l.D[i] = d
+	}
+	sort.Sort(l)
+}
+
+type locationList struct {
+	L []lsp.Location
+	D []int
+}
 
 func (l locationList) Less(a, b int) bool {
-	if l[a].URI != l[b].URI {
-		return l[a].URI < l[b].URI
+	if l.D[a] != l.D[b] {
+		return l.D[a] > l.D[b]
 	}
-	if l[a].Range.Start.Line != l[b].Range.Start.Line {
-		return l[a].Range.Start.Line < l[b].Range.Start.Line
+	if x, y := path.Dir(l.L[a].URI), path.Dir(l.L[b].URI); x != y {
+		return x < y
 	}
-	return l[a].Range.Start.Character < l[b].Range.Start.Character
+	if l.L[a].URI != l.L[b].URI {
+		return l.L[a].URI < l.L[b].URI
+	}
+	if l.L[a].Range.Start.Line != l.L[b].Range.Start.Line {
+		return l.L[a].Range.Start.Line < l.L[b].Range.Start.Line
+	}
+	return l.L[a].Range.Start.Character < l.L[b].Range.Start.Character
 }
 
 func (l locationList) Swap(a, b int) {
-	l[a], l[b] = l[b], l[a]
+	l.L[a], l.L[b] = l.L[b], l.L[a]
+	l.D[a], l.D[b] = l.D[b], l.D[a]
 }
 func (l locationList) Len() int {
-	return len(l)
+	return len(l.L)
 }
