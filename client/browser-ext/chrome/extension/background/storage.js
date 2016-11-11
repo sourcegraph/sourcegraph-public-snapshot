@@ -23,7 +23,7 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
 		return true;
 	} else if (message.type === "getSessionToken") {
 		chrome.cookies.get({url: "https://sourcegraph.com", name: "sg-session"}, (sessionToken) => {
-			cb({sessionToken: sessionToken ? sessionToken.value : null});
+			cb(sessionToken ? sessionToken.value : null);
 		});
 		return true;
 	}

@@ -1,4 +1,4 @@
-export const SET_ACCESS_TOKENS = "SET_ACCESS_TOKENS";
+export const SET_ACCESS_TOKEN = "SET_ACCESS_TOKEN";
 
 export const RESOLVED_REV = "RESOLVED_REV";
 

@@ -15,7 +15,7 @@ const isCloning = new Map();
 	(state) => ({
 		resolvedRev: state.resolvedRev,
 		annotations: state.annotations,
-		sgTokens: state.sgTokens,
+		accessToken: state.accessToken,
 	}),
 	(dispatch) => ({
 		actions: bindActionCreators(Actions, dispatch)

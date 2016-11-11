@@ -2,10 +2,10 @@ import {combineReducers} from "redux";
 import {keyFor} from "./helpers";
 import * as ActionTypes from "../constants/ActionTypes";
 
-const sgTokens = function(state = null, action) {
+const accessToken = function(state = null, action) {
 	switch (action.type) {
-	case ActionTypes.SET_ACCESS_TOKENS:
-		return action.tokens;
+	case ActionTypes.SET_ACCESS_TOKEN:
+		return action.token;
 	default:
 		return state;
 	}
@@ -57,4 +57,4 @@ const annotations = function(state = {content: {}}, action) {
 	}
 }
 
-export default combineReducers({sgTokens, resolvedRev, annotations});
+export default combineReducers({accessToken, resolvedRev, annotations});

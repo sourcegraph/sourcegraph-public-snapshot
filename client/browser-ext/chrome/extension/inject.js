@@ -158,7 +158,7 @@ window.addEventListener("load", () => {
 			injectModules();
 		} else if (isGitHubURL()) {
 			chrome.runtime.sendMessage(null, {type: "getSessionToken"}, {}, (tokens) => {
-				store.dispatch(Actions.setTokens(tokens));
+				store.dispatch(Actions.setAccessToken(accessToken));
 				injectModules();
 			});
 		}
