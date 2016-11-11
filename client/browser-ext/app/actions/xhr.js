@@ -42,11 +42,7 @@ export default function(url, init) {
 
 	const defaults = defaultOptions();
 
-	return fetch(url, {
-		...defaults,
-		...init,
-		headers: combineHeaders(defaults ? defaults.headers : null, init && init.headers ? init.headers : null),
-	});
+	return fetch(url, Object.assign({}, defaults, init, {headers: combineHeaders(defaults ? defaults.headers : null, init && init.headers ? init.headers : null)}));
 }
 
 

@@ -7,12 +7,10 @@ browser-ext
 ├── app <-- [React](https://facebook.github.io/react/) + [Redux](http://redux.js.org/) application
 │	└── actions <-- methods to fetch from sourcegraph API & change state
 │	└── analytics <-- user event logger
-│	└── components <-- "receive" state from reducers as and re-render whenever a property it subscribes to
-│						are updated
+│	└── components <-- receive state from reducers as and re-render whenever a property it subscribes to is updated
 │	└── constants <-- the names given to actions
 │	└── reducers <-- "holder" of current state: functions change current state when actions are dispatched
-│	└── store  <-- "persistence" of current state: browser local storage automatically syncs reducer state;
-│					extries can be given TTL, though currently this a bit of boilerplate
+│	└── store  <-- "persistence of current state
 │	└── utils  <-- logic to apply annotations to a blob, misc. utility helpers
 ├── chrome
 │	└── assets <-- an icon for the Chrome/Firefox store
@@ -36,23 +34,16 @@ browser-ext
 The browser (Firefox/Chrome) will load a script onto the page when the user
 visits GitHub.com or Sourcegraph.com.
 
-The script (injects.js) will inject application components (better better
-thought of as "modules") which may either have UI (as in normal React) or
-instead only have side effects (e.g. the "BlobAnnotator" doesn't render
-itself, but it is responsible for manipulating the blob dom to include
-identifier links).
+The script (injects.js) will inject application components ("modules")
+which may either have UI (as in normal React) or only have side effects
+(e.g. the "BlobAnnotator" doesn't render itself, but is responsible for
+updating the GitHub page dom to include tooltips/links).
 
-In both cases, we do this with React.Component as the "modules" base and
-rely on its normal lifecycle methods to initiate most of the control flow.
+In both cases, we do this using React.Component as the module and
+rely on its normal lifecycle methods for most of the control flow.
 The state container is vanilla Redux, and any component/module can subscribe
-to any property on the reducer state and go through a "re-render" cycle when that
-property changes. Of course, the component will also re-render if it changes
-its internal state through this.setState() or if its parent Component updates
-a property, just as in normal React.
-
-In addition to the standard Redux reducer (in-memory) state, we synchronize some
-state to browser local storage. This allows for more seamless coordination between
-multiple tabs. Currently, only the user access token is synchronized.
+to any property on the reducer state to go through a re-render cycle when that
+property changes.
 
 Actions are provided on a Component's this.props via the @connect decorator.
 Use these to make API requests and update application state.
@@ -61,6 +52,7 @@ Use these to make API requests and update application state.
 
 - `npm` >= 3.6.0
 - `node` >= 5.6.0
+- `yarn` >= 0.16.0
 
 The latest stable version of node will suffice, which you can install as follows after you have installed npm:
 
@@ -75,15 +67,18 @@ sudo ln -sf /usr/local/n/versions/node/<VERSION>/bin/node /usr/bin/node
 ## Installation
 
 ```bash
-$ npm install
+$ npm install -g yarn
+$ yarn install
 ```
 
 ## Development
 
 ```bash
-$ npm run dev
+$ yarn run dev
 ```
-* Allow `https://localhost:3000` (insecure) connections in Chrome (navigate to https://localhost:3000, click "ADVANCED", then "Proceed to localhost"). This is necessary because pages are injected on Sourcegraph/GitHub (https), so `webpack-dev-server` procotol must also be https.
+* Allow `https://localhost:3000` (insecure) connections in Chrome (navigate to https://localhost:3000, click "ADVANCED",
+then "Proceed to localhost"). This is necessary because pages are injected on Sourcegraph/GitHub (https), so `webpack-dev-server`
+procotol must also be https.
 * [Load unpacked extensions](https://developer.chrome.com/extensions/getstarted#unpacked) with `./dev` folder.
 * Webpack will manage hot reloading via `react-transform`.
 
@@ -96,20 +91,32 @@ dev console, though it can get a little verbose.
 ## Build
 
 ```bash
-$ npm run build # create unzipped distribution artifact in ./build/; required for e2e tests
+$ yarn run build # create unzipped distribution artifact in ./build/; required for e2e tests
 ```
 
 ## Test
 
 ```bash
-$ npm run test # unit tests
-$ npm run test-e2e # end-to-end tests; requires running the build step prior
+$ yarn run test
+$ yarn run test:auto # watch for changes
 ```
 
-## Create distributions
+End-to-end tests are located above this project root, at `test/e2e2`. Run the e2e tests from that directory via `make browser-ext`.
+
+## Create Distributions
 
 ```bash
-$ npm run dist
+$ make dist
 ```
 
-The reason this process does more than just compress the build directory is to ensure that the environment that the dist is created mimics the environment for the extension submission teams. It spins up a Docker Linux image, chooses a specific version of node and npm, and runs the build process before compressing the file.
+This make target process does more than just compress the build directory, to ensure the environment used to produce build artifacts
+mimics the environment for the extension submission teams.
+
+## Deploy (chrome extension only)
+
+```bash
+$ make deploy
+```
+
+To deploy the chrome extension with your Google Apps credentials, you must have `CHROME_WEBSTORE_CLIENT_SECRET` on your environment and
+be part of the "sg chrome ext devs" Google group. (You must also pay Google a one-time fee of $5...)
