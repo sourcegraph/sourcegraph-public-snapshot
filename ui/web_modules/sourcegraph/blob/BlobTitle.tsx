@@ -19,7 +19,6 @@ interface Props {
 	rev: string | null;
 	routes: Object[];
 	routeParams: RouteParams;
-	isCloning: boolean;
 	toast: string | null;
 }
 
@@ -107,7 +106,6 @@ export function BlobTitle({
 	rev,
 	routes,
 	routeParams,
-	isCloning,
 	toast,
 }: Props): JSX.Element {
 	const extension = getPathExtension(path);
@@ -136,8 +134,7 @@ export function BlobTitle({
 							repoObj={repoObj}
 							rev={rev}
 							routes={routes}
-							routeParams={routeParams}
-							isCloning={isCloning} />
+							routeParams={routeParams} />
 						<a href={gitHubURL()} style={{paddingLeft: whitespace[3], color: colors.white(), display: "flex"}} onClick={(e) => {
 							e.preventDefault();
 							window.location.href = gitHubURL();

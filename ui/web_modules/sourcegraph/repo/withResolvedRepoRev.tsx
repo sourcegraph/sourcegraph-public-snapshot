@@ -19,9 +19,6 @@ type State = any;
 export function withResolvedRepoRev(Component: any): React.ComponentClass<Props> {
 
 	class WithResolvedRepoRev extends Container<Props, State> {
-		_cloningInterval: any;
-		_cloningTimeout: any;
-
 		stores(): Store<any>[] {
 			return [RepoStore];
 		}
@@ -29,9 +26,6 @@ export function withResolvedRepoRev(Component: any): React.ComponentClass<Props>
 		componentWillUnmount(): void {
 			if (super.componentWillUnmount) {
 				super.componentWillUnmount();
-			}
-			if (this._cloningInterval) {
-				clearInterval(this._cloningInterval);
 			}
 		}
 
@@ -43,42 +37,12 @@ export function withResolvedRepoRev(Component: any): React.ComponentClass<Props>
 			state.rev = repoRev(repoSplat); // the original rev from the URL
 
 			state.repoObj = RepoStore.repos.get(state.repo);
-			state.isCloning = RepoStore.repos.isCloning(state.repo);
 		}
 
 		onStateTransition(prevState: State, nextState: State): void {
 			if (nextState.repo && !nextState.repoObj && (prevState.repo !== nextState.repo)) {
 				Dispatcher.Backends.dispatch(new RepoActions.WantRepo(nextState.repo));
 			}
-
-			// If the repository is cloning, poll against the server for an
-			// update periodically.
-			// if (nextState.isCloning && !this._cloningInterval && !this._cloningTimeout) {
-			// 	// If the cloning would be quick, we don't want to flicker the
-			// 	// loading screen, so display the screen for at least 1s.
-			// 	const displayForAtLeast = 500;
-			// 	const pollInterval = 500;
-			// 	const maxAttempts = 10000 / pollInterval; // 10s / 20 times
-
-			// 	this._cloningTimeout = true;
-			// 	let attempt = 0;
-			// 	setTimeout(() => {
-			// 		attempt++;
-			// 		if (attempt > maxAttempts) {
-			// 			clearInterval(this._cloningInterval);
-			// 			this._cloningInterval = null;
-			// 		}
-			// 		this._cloningTimeout = false;
-			// 		if (typeof it === "undefined") { // skip when testing
-			// 			this._cloningInterval = setInterval(() => {
-			// 				Dispatcher.Backends.dispatch(new RepoActions.WantResolveRev(nextState.repo, nextState.rev, true));
-			// 			}, pollInterval);
-			// 		}
-			// 	}, displayForAtLeast);
-			// } else if (!nextState.isCloning && this._cloningInterval) {
-			// 	clearInterval(this._cloningInterval);
-			// 	this._cloningInterval = null;
-			// }
 		}
 
 		render(): JSX.Element | null {

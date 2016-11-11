@@ -21,16 +21,47 @@ interface Props {
 	location?: any;
 	repo: string;
 	rev?: string | null;
-	commit: GQL.ICommit | null;
+	commit: GQL.ICommitState;
 	repoObj?: any;
-	isCloning?: boolean;
 	route?: any;
 	routes: any[];
+	relay: any;
 }
 
 type State = any;
 
 export class RepoMain extends React.Component<Props, State> {
+	_refreshInterval: number | null = null;
+
+	componentDidMount(): void {
+		this._updateRefreshInterval(this.props.commit.cloneInProgress);
+	}
+
+	componentWillReceiveProps(nextProps: Props): void {
+		this._updateRefreshInterval(nextProps.commit.cloneInProgress);
+	}
+
+	componentWillUnmount(): void {
+		if (this._refreshInterval) {
+			clearInterval(this._refreshInterval);
+		}
+	}
+
+	_updateRefreshInterval(cloneInProgress: boolean): void {
+		if (cloneInProgress) {
+			if (!this._refreshInterval) {
+				this._refreshInterval = setInterval(() => {
+					this.props.relay.forceFetch();
+				}, 1000);
+			}
+		} else {
+			if (this._refreshInterval) {
+				clearInterval(this._refreshInterval);
+				this._refreshInterval = null;
+			}
+		}
+	}
+
 	render(): JSX.Element | null {
 		const err = (this.props.repoObj && this.props.repoObj.Error);
 		if (err) {
@@ -66,13 +97,13 @@ export class RepoMain extends React.Component<Props, State> {
 			return null;
 		}
 
-		if (this.props.isCloning) {
+		if (this.props.commit.cloneInProgress) {
 			return (
 				<Header title="Cloning this repository" loading={true} />
 			);
 		}
 
-		if (!this.props.commit) {
+		if (!this.props.commit.commit) {
 			return (
 				<Header title="404"
 					subtitle="Revision is not available." />

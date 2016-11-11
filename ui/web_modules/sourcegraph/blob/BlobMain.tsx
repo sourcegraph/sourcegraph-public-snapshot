@@ -31,7 +31,6 @@ interface Props {
 	repo: string;
 	repoObj: any;
 	rev: string | null;
-	isCloning: boolean;
 	path: string;
 	routes: Object[];
 	routeParams: RouteParams;
@@ -41,14 +40,14 @@ interface Props {
 	route?: any;
 }
 
-type PropsWithRoot = Props & {root: GQL.IRoot};
+type PropsWithRelay = Props & {relay: any; root: GQL.IRoot};
 
 interface State extends Props {
 	toast: string | null;
 }
 
 // BlobMain wraps the Editor component for the primary code view.
-class BlobMainEditor extends Container<PropsWithRoot, State> {
+class BlobMainEditor extends Container<PropsWithRelay, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -60,7 +59,7 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 	private _editor?: Editor;
 	private _shortCircuitURLNavigationOnEditorOpened: number = 0;
 
-	constructor(props: PropsWithRoot) {
+	constructor(props: PropsWithRelay) {
 		super(props);
 		this._setEditor = this._setEditor.bind(this);
 		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
@@ -85,7 +84,7 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 		global.document.body.style.overflowY = "auto";
 	}
 
-	componentWillReceiveProps(nextProps: PropsWithRoot): void {
+	componentWillReceiveProps(nextProps: PropsWithRelay): void {
 		super.componentWillReceiveProps(nextProps, null);
 
 		if (this._editor) {
@@ -93,7 +92,7 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 		}
 	}
 
-	reconcileState(state: State, props: PropsWithRoot): void {
+	reconcileState(state: State, props: PropsWithRelay): void {
 		Object.assign(state, props);
 		state.toast = BlobStore.toast;
 	}
@@ -111,7 +110,7 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 		}
 	}
 
-	_editorPropsChanged(prevProps: Props | null, nextProps: PropsWithRoot): void {
+	_editorPropsChanged(prevProps: Props | null, nextProps: PropsWithRelay): void {
 		if (!this._editor) {
 			throw new Error("editor is not ready");
 		}
@@ -299,12 +298,12 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				commit={this.props.root.repository.commit.commit}
+				commit={this.props.root.repository.commit}
 				repoObj={this.props.repoObj}
-				isCloning={this.props.isCloning}
 				route={this.props.route}
 				routes={this.props.routes}
-			>
+				relay={this.props.relay}
+				>
 				<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
 					<Helmet title={title} />
 					<ChromeExtensionToast location={this.props.location}/>
@@ -317,9 +316,8 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 						rev={this.props.rev}
 						routes={this.props.routes}
 						routeParams={this.props.routeParams}
-						isCloning={this.props.isCloning}
 						toast={this.state.toast}
-					/>
+						/>
 					<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 				</FlexContainer>
 			</RepoMain>
@@ -351,6 +349,7 @@ const BlobMainContainer = Relay.createContainer(BlobMainComponent, {
 						commit {
 							sha1
 						}
+						cloneInProgress
 					}
 				}
 			}
@@ -370,5 +369,5 @@ export const BlobMain = function(props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-	/>;
+		/>;
 };

@@ -1,7 +1,6 @@
 import {Repo, RepoList, SymbolInformation} from "sourcegraph/api";
 
 export type Action =
-	RepoCloning |
 	WantRepo | FetchedRepo |
 	WantRepos | ReposFetched |
 	WantSymbols | FetchedSymbols;
@@ -43,16 +42,6 @@ export class ReposFetched {
 		this.querystring = querystring;
 		this.data = data;
 		this.isUserRepos = isUserRepos;
-	}
-}
-
-export class RepoCloning {
-	repo: string;
-	isCloning: boolean;
-
-	constructor(repo: string, isCloning: boolean) {
-		this.repo = repo;
-		this.isCloning = isCloning;
 	}
 }
 

@@ -10,12 +10,12 @@ const common = {
 
 describe("RepoMain", () => {
 	it("should show an error page if the repo failed to load", () => {
-		let o = renderToString(<RepoMain repo="r" repoObj={{Error: true}} commit={null} {...common} />);
+		let o = renderToString(<RepoMain repo="r" repoObj={{Error: true}} commit={{} as GQL.ICommitState} {...common} relay={null} />);
 		expect(o).to.contain("is not available");
 	});
 
 	it("should show an error page if the rev failed to resolve/load", () => {
-		const o = renderToString(<RepoMain repo="r" rev="v" commit={null} {...common} />);
+		const o = renderToString(<RepoMain repo="r" rev="v" commit={{} as GQL.ICommitState} {...common} relay={null} />);
 		expect(o).to.contain("Revision is not available");
 	});
 });

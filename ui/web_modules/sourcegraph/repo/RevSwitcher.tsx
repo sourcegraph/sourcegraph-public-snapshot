@@ -15,7 +15,6 @@ interface Props {
 	repo: string;
 	rev: string | null;
 	repoObj?: any;
-	isCloning: boolean;
 
 	// to construct URLs
 	routes: any[];
@@ -44,7 +43,6 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 
 			repo: props.repo,
 			rev: props.rev,
-			isCloning: props.isCloning,
 			routes: props.routes,
 			routeParams: props.routeParams,
 		};
@@ -146,12 +144,6 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 	}
 
 	render(): JSX.Element | null {
-		// Hide if cloning the repo, since we require the user to hard-reload. Seeing
-		// the RevSwitcher would confuse them.
-		if (this.state.isCloning) {
-			return null;
-		}
-
 		let branches = this.props.root.repository.branches;
 		if (this.state.query) {
 			branches = branches.filter((name) => fuzzysearch(this.state.query, name));

@@ -21,31 +21,30 @@ interface Props {
 	routeParams: RouteParams;
 
 	repoObj?: any;
-	isCloning?: boolean;
 	routes: any[];
 };
 
-type PropsWithRoot = Props & {root: GQL.IRoot};
+type PropsWithRelay = Props & {relay: any; root: GQL.IRoot};
 
 interface Context {
 	router: InjectedRouter;
 }
 
-export class TreeMainComponent extends React.Component<PropsWithRoot, {}> {
+export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	constructor(props: PropsWithRoot, context: Context) {
+	constructor(props: PropsWithRelay, context: Context) {
 		super(props);
 		this._redirectToCanonicalURI(props, context);
 	}
 
-	componentWillReceiveProps(nextProps: PropsWithRoot, nextContext: Context): void {
+	componentWillReceiveProps(nextProps: PropsWithRelay, nextContext: Context): void {
 		this._redirectToCanonicalURI(nextProps, nextContext);
 	}
 
-	_redirectToCanonicalURI(props: PropsWithRoot, context: Context): void {
+	_redirectToCanonicalURI(props: PropsWithRelay, context: Context): void {
 		if (props.repo !== props.root.repository.uri) {
 			setTimeout(function(): void {
 				let locCopy = cloneDeep(props.location);
@@ -63,11 +62,11 @@ export class TreeMainComponent extends React.Component<PropsWithRoot, {}> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				commit={this.props.root.repository.commit.commit}
+				commit={this.props.root.repository.commit}
 				repoObj={this.props.repoObj}
-				isCloning={this.props.isCloning}
 				route={this.props.route}
 				routes={this.props.routes}
+				relay={this.props.relay}
 			>
 				<div>
 					<Panel style={{borderBottom: `1px solid ${colors.coolGray4(0.6)}`}}>
@@ -115,6 +114,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 								}
 							}
 						}
+						cloneInProgress
 					}
 				}
 			}

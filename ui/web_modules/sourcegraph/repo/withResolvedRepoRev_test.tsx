@@ -17,12 +17,6 @@ describe("withResolvedRepoRev", () => {
 		render(<C params={{splat: "r"}}  location={{} as Location}/>);
 	});
 
-	it("should render if the repo is cloning", () => {
-		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {DefaultBranch: "v"}));
-		RepoStore.directDispatch(new RepoActions.RepoCloning("r", true));
-		render(<C params={{splat: "r"}}  location={{} as Location}/>);
-	});
-
 	it("should render if the repo does not exist", () => {
 		RepoStore.directDispatch(new RepoActions.FetchedRepo("r", {Error: true} as any));
 		render(<C params={{splat: "r"}}  location={{} as Location}/>);

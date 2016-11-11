@@ -39,10 +39,6 @@ class RepoStoreClass extends Store<any> {
 			list(querystring: string) {
 				return this.listContent[querystring] || null;
 			},
-			cloning: {},
-			isCloning(repo) {
-				return this.cloning[keyFor(repo)] || false;
-			},
 		});
 		this.symbols = deepFreeze({
 			content: {},
@@ -82,14 +78,6 @@ class RepoStoreClass extends Store<any> {
 				this.repos = deepFreeze(Object.assign({}, this.repos, {
 					content: Object.assign({}, this.repos.content, {
 						[keyFor(action.repo)]: action.repoObj,
-					}),
-				}));
-				break;
-
-			case RepoActions.RepoCloning:
-				this.repos = deepFreeze(Object.assign({}, this.repos, {
-					cloning: Object.assign({}, this.repos.cloning, {
-						[keyFor(action.repo)]: action.isCloning,
 					}),
 				}));
 				break;
