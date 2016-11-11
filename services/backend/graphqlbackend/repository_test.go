@@ -32,7 +32,9 @@ func TestRepositoryLatestCommit(t *testing.T) {
 					root {
 						repository(uri: "github.com/gorilla/mux") {
 							latest {
-								sha1
+								commit {
+									sha1
+								}
 							}
 						}
 					}
@@ -43,7 +45,9 @@ func TestRepositoryLatestCommit(t *testing.T) {
 					"root": {
 						"repository": {
 							"latest": {
-								"sha1": "` + exampleCommitSHA1 + `"
+								"commit": {
+									"sha1": "` + exampleCommitSHA1 + `"
+								}
 							}
 						}
 					}

@@ -43,12 +43,14 @@ func TestTree(t *testing.T) {
 					root {
 						repository(uri: "github.com/gorilla/mux") {
 							commit(rev: "` + exampleCommitSHA1 + `") {
-								tree(path: "/foo") {
-									directories {
-										name
-									}
-									files {
-										name
+								commit {
+									tree(path: "/foo") {
+										directories {
+											name
+										}
+										files {
+											name
+										}
 									}
 								}
 							}
@@ -61,13 +63,15 @@ func TestTree(t *testing.T) {
 					"root": {
 						"repository": {
 							"commit": {
-								"tree": {
-									"directories": [
-										{"name": "testDirectory"}
-									],
-									"files": [
-										{"name": "testFile"}
-									]
+								"commit": {
+									"tree": {
+										"directories": [
+											{"name": "testDirectory"}
+										],
+										"files": [
+											{"name": "testFile"}
+										]
+									}
 								}
 							}
 						}
