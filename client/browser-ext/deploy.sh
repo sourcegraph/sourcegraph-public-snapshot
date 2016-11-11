@@ -34,3 +34,7 @@ if [ -n "$(echo "$upload_response" | grep FAILURE)" ]; then
 fi
 
 publish_response=$(curl -H "Authorization: Bearer $access_token" -H "x-goog-api-version: 2" -H "Content-Length: 0" -X POST -v "https://www.googleapis.com/chromewebstore/v1.1/items/$app_id/publish")
+
+docker build -t us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest ./build
+gcloud docker -- push us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest
+kubectl delete pod $(kubectl get pods | grep -E 'e2e-chrome' | awk '{ print $1 }');

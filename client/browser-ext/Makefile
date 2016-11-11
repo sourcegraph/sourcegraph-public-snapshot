@@ -22,6 +22,3 @@ test-e2e:
 export CHROME_BUNDLE ?= $(shell pwd)/chrome-bundle.zip
 deploy: bundle
 	./deploy.sh
-	docker build -t us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest ./build
-	gcloud docker -- push us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest
-	kubectl delete pod $(kubectl get pods | grep -E 'e2e-chrome' | awk '{ print $1 }')
