@@ -298,25 +298,7 @@ export default class BlobAnnotator extends Component {
 	onClickAuthPriv(ev) {
 		ev.preventDefault();
 		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
-
-		if (this.state.sgTokens.csrfToken == null) {
-			// User does not have a csrfToken from https://sourcegraph.com
-			location.href = `https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`;
-		} else {
-			const authForm = document.createElement("FORM");
-			const authCsrf = document.createElement("INPUT");
-
-			authForm.setAttribute("id", "sgAuthForm");
-			authForm.setAttribute("target", "_blank");
-			authForm.setAttribute("method", "POST");
-			authForm.setAttribute("action", `https://sourcegraph.com/-/github-oauth/initiate?scopes=${encodeURIComponent("read:org,repo,user:email")}&return-to=${encodeURIComponent(window.location.href)}`);
-			authCsrf.setAttribute("type", "hidden");
-			authCsrf.setAttribute("name", "gorilla.csrf.Token");
-			authCsrf.setAttribute("value", this.state.sgTokens.csrfToken);
-
-			authForm.appendChild(authCsrf);
-			authForm.submit();
-		}
+		location.href = `https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`;
 	}
 
 	onClickFileView(ev) {
@@ -385,7 +367,7 @@ export default class BlobAnnotator extends Component {
 				this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
 				this.state.selfElement.onclick = this.onClickAuthPriv;
 
-				return <span><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</span>;
+				return <span><a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
 			} else if (this.state.resolvedRev.content[keyFor(this.state.repoURI)].cloneInProgress === true) {
 				// Cloning the repo
 				this.state.selfElement.setAttribute("disabled", true);
