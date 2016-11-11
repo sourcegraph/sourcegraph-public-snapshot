@@ -20,12 +20,17 @@ type Root {
 }
 
 type Repository implements Node {
-  id: ID!
+	id: ID!
 	uri: String!
-	commit(rev: String!): Commit
-	latest: Commit!
+	commit(rev: String!): CommitState!
+	latest: CommitState!
 	branches: [String!]!
 	tags: [String!]!
+}
+
+type CommitState {
+	commit: Commit
+	cloneInProgress: Boolean!
 }
 
 type Commit implements Node {

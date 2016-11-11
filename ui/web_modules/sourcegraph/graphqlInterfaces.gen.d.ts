@@ -32,6 +32,15 @@ declare namespace GQL {
   /*
     description: null
   */
+  interface ICommitState {
+    __typename: string;
+    commit: ICommit;
+    cloneInProgress: boolean;
+  }
+
+  /*
+    description: null
+  */
   interface IDirectory {
     __typename: string;
     name: string;
@@ -76,8 +85,8 @@ declare namespace GQL {
     __typename: string;
     id: string;
     uri: string;
-    commit: ICommit;
-    latest: ICommit;
+    commit: ICommitState;
+    latest: ICommitState;
     branches: Array<string>;
     tags: Array<string>;
   }

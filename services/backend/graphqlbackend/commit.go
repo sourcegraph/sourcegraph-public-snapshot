@@ -16,6 +16,19 @@ type commitSpec struct {
 	CommitID string
 }
 
+type commitStateResolver struct {
+	commit          *commitResolver
+	cloneInProgress bool
+}
+
+func (r *commitStateResolver) Commit() *commitResolver {
+	return r.commit
+}
+
+func (r *commitStateResolver) CloneInProgress() bool {
+	return r.cloneInProgress
+}
+
 type commitResolver struct {
 	nodeBase
 	commit commitSpec

@@ -119,7 +119,7 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.path !== nextProps.path || !isEqual(prevProps.selection, nextProps.selection))) {
 			// Use absolute commit IDs for the editor model URI.
 			// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
-			const uri = URIUtils.pathInRepo(nextProps.repoObj && nextProps.repoObj.URI ?  nextProps.repoObj.URI : nextProps.repo, this.props.root.repository.commit.sha1, nextProps.path);
+			const uri = URIUtils.pathInRepo(nextProps.repoObj && nextProps.repoObj.URI ?  nextProps.repoObj.URI : nextProps.repo, this.props.root.repository.commit.commit.sha1, nextProps.path);
 
 			let range: IRange;
 			if (nextProps.selection) {
@@ -299,7 +299,7 @@ class BlobMainEditor extends Container<PropsWithRoot, State> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				commit={this.props.root.repository.commit}
+				commit={this.props.root.repository.commit.commit}
 				repoObj={this.props.repoObj}
 				isCloning={this.props.isCloning}
 				route={this.props.route}
@@ -348,7 +348,9 @@ const BlobMainContainer = Relay.createContainer(BlobMainComponent, {
 				repository(uri: $repo) {
 					uri
 					commit(rev: $rev) {
-						sha1
+						commit {
+							sha1
+						}
 					}
 				}
 			}

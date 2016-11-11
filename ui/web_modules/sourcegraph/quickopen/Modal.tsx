@@ -64,9 +64,9 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 			{this.props.showModal && <ModalComp onDismiss={() => this.dismissModal(true)}>
 				<Container
 					repo={r}
-					commitID={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.sha1 : null}
-					files={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.tree.files : []}
-					languages={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.languages : []}
+					commitID={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.commit.sha1 : null}
+					files={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.commit.tree.files : []}
+					languages={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.commit.languages : []}
 					dismissModal={this.dismissModal} />
 			</ModalComp>}
 			<EventListener target={global.document.body} event="keydown" callback={this.searchModalShortcuts} />
@@ -84,13 +84,15 @@ const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {
 			fragment on Root {
 				repository(uri: $repo) {
 					commit(rev: $rev) {
-						sha1
-						tree(recursive: true) {
-							files {
-								name
+						commit {
+							sha1
+							tree(recursive: true) {
+								files {
+									name
+								}
 							}
+							languages
 						}
-						languages
 					}
 				}
 			}

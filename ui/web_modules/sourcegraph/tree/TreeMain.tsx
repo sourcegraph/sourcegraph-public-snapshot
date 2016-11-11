@@ -63,7 +63,7 @@ export class TreeMainComponent extends React.Component<PropsWithRoot, {}> {
 				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				commit={this.props.root.repository.commit}
+				commit={this.props.root.repository.commit.commit}
 				repoObj={this.props.repoObj}
 				isCloning={this.props.isCloning}
 				route={this.props.route}
@@ -85,7 +85,7 @@ export class TreeMainComponent extends React.Component<PropsWithRoot, {}> {
 							repo={this.props.repo}
 							rev={this.props.rev}
 							path={path}
-							tree={this.props.root.repository.commit && this.props.root.repository.commit.tree} />
+							tree={this.props.root.repository.commit.commit && this.props.root.repository.commit.commit.tree} />
 					</GridCol>
 				</div>
 			</RepoMain>
@@ -105,12 +105,14 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 				repository(uri: $repo) {
 					uri
 					commit(rev: $rev) {
-						tree(path: $path) {
-							directories {
-								name
-							}
-							files {
-								name
+						commit {
+							tree(path: $path) {
+								directories {
+									name
+								}
+								files {
+									name
+								}
 							}
 						}
 					}

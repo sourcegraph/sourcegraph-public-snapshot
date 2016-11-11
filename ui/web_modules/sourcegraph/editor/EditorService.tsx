@@ -119,8 +119,10 @@ export class EditorService implements IEditorService {
 						root {
 							repository(uri: $repo) {
 								commit(rev: $rev) {
-									file(path: $path) {
-										content
+									commit {
+										file(path: $path) {
+											content
+										}
 									}
 								}
 							}
@@ -136,7 +138,7 @@ export class EditorService implements IEditorService {
 						throw new Error("file content not available");
 					}
 					// Call getModel again in case we lost a race.
-					return getModel(data.resource) || createModel(resp.data.root.repository.commit.file.content, getModeByFilename(path), data.resource);
+					return getModel(data.resource) || createModel(resp.data.root.repository.commit.commit.file.content, getModeByFilename(path), data.resource);
 				})
 				.catch(err => err)
 		);
