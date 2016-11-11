@@ -38,19 +38,17 @@ export class EventLogger {
 		}
 	}
 
-	_decorateEventProperties(eventProperties) {
-		eventProperties = eventProperties ? eventProperties : {};
-		eventProperties["Platform"] = window.navigator.userAgent.indexOf("Firefox") !== -1 ? "FirefoxExtension" : "ChromeExtension";
-
-		return Object.assign(eventProperties, {
+	_defaultProperties() {
+		return {
 			path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : "",
-		});
+			Platform: window.navigator.userAgent.indexOf("Firefox") !== -1 ? "FirefoxExtension" : "ChromeExtension",
+		};
 	}
 
-	logEventForCategory(eventCategory, eventAction, eventLabel, eventProperties) {
+	logEventForCategory(eventCategory, eventAction, eventLabel, eventProperties = {}) {
 		if (process.env.NODE_ENV === "test") return;
 
-		const decoratedEventProps = Object.assign(this._decorateEventProperties(eventProperties),
+		const decoratedEventProps = Object.assign({}, eventProperties, this._defaultProperties(),
 			{
 				eventLabel,
 				eventCategory,
@@ -67,7 +65,7 @@ export class EventLogger {
 	logViewEvent(title, page, eventProperties) {
 		if (process.env.NODE_ENV === "test") return;
 
-		const decoratedEventProps = Object.assign(this._decorateEventProperties(eventProperties),
+		const decoratedEventProps = Object.assign({}, eventProperties, this._defaultProperties(),
 			{
 				page_name: page,
 				page_title: title,

@@ -113,3 +113,17 @@ export function getCurrentBranch() {
 
 	return branchDropdownEl[0].title;
 }
+
+export function convertBlobStateToEventLoggerStruct(state) {
+	return {
+		repo: state.repo,
+		repoURI: state.repoURI,
+		rev: state.rev,
+		path: state.path,
+		isDelta: state.isDelta,
+		isPullRequest: state.isPullRequest,
+		isCommit: state.isCommit,
+		language: state.language,
+		isPrivateRepo: state.isPrivateRepo,
+	};
+}

@@ -9,12 +9,12 @@ import EventLogger from "../analytics/EventLogger";
 // An invisible marker is appended to the document to indicate that annotation
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
-export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff) {
-	_applyAnnotations(el, path, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff);
+export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff, loggingStruct) {
+	_applyAnnotations(el, path, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff, loggingStruct);
 }
 
 // _applyAnnotations is a helper function for addAnnotations
-export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff) {
+export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff, loggingStruct) {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
@@ -92,7 +92,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 		// restore event handlers if necessary otherwise move to next line
 		if (el.dataset[`${line}_${repoRevSpec.rev}`]) {
 			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
-				addEventListeners(curLine, path, repoRevSpec, line);
+				addEventListeners(curLine, path, repoRevSpec, line, loggingStruct);
 			}
 			continue;
 		}
@@ -105,7 +105,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			curLine.innerHTML = "";
 			curLine.appendChild(annLine.resultNode);
 
-			addEventListeners(curLine, path, repoRevSpec, line);
+			addEventListeners(curLine, path, repoRevSpec, line, loggingStruct);
 		});
 	}
 }
@@ -308,7 +308,7 @@ function clearTooltip() {
 	tooltip.style.visibility = "hidden"; // prevent black dot of empty content
 }
 
-function addEventListeners(el, path, repoRevSpec, line) {
+function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 	el.onclick = function(e) {
 		let t = getTarget(e.target);
 		if (!t || t.style.cursor !== "pointer") return;
@@ -322,7 +322,7 @@ function addEventListeners(el, path, repoRevSpec, line) {
 
 			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
 			// either move to a line on the same page, or refresh the page to a new blob view.
-			EventLogger.logEventForCategory("Def", "Click", "JumpDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
+			EventLogger.logEventForCategory("Def", "Click", "JumpDef", Object.assign({}, repoRevSpec, loggingStruct));
 
 			if (defObj.defCurPage && !repoRevSpec.isDelta) {
 				location.hash = defObj.defUrl.slice(defObj.defUrl.indexOf("#"));
@@ -348,11 +348,10 @@ function addEventListeners(el, path, repoRevSpec, line) {
 		if (activeTarget !== t) {
 			activeTarget = t;
 			clearTooltip();
-
 			// Only show "Loading..." if it has been loading for a while. If we
 			// show "Loading..." immediately, there will be a visible flash if
 			// the actual hover text loads quickly thereafter.
-			hoverTimeout = setTimeout(() => showTooltip(loadingTooltip, true), 3 * HOVER_DELAY_MS);
+			hoverTimeout = setTimeout(() => showTooltip(loadingTooltip, true, loggingStruct), 3 * HOVER_DELAY_MS);
 
 			const hoverShowTime = Date.now() + HOVER_DELAY_MS;
 			getTooltip(activeTarget, function(elem) {
@@ -364,18 +363,18 @@ function addEventListeners(el, path, repoRevSpec, line) {
 				// Always wait at least HOVER_DELAY_MS before showing hover, to avoid
 				// it obscuring text when you move your mouse rapidly across a code file.
 				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
-				hoverTimeout = setTimeout(() => showTooltip(elem, false), hoverTimerRemaining);
+				hoverTimeout = setTimeout(() => showTooltip(elem, false, loggingStruct), hoverTimerRemaining);
 			});
 		}
 	}
 
-	function showTooltip(elem, isLoading) {
+	function showTooltip(elem, isLoading, loggingStruct) {
 		clearTooltip();
 
 		if (activeTarget && elem) {
 			// Log event only when displaying a fetched tooltip
 			if (!isLoading) {
-				EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", {isDelta: repoRevSpec.isDelta, language: utils.getPathExtension(path)});
+				EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", Object.assign({}, repoRevSpec, loggingStruct));
 			}
 
 			tooltip.appendChild(elem);

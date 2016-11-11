@@ -45,8 +45,10 @@ export default class BlobAnnotator extends Component {
 
 		this.state = utils.parseURL();
 		this.state.path = props.path;
+		this.state.language = utils.getPathExtension(this.state.path);
+		this.state.isPrivateRepo = this.isPrivateRepo();
 
-		EventLogger.logViewEvent("ViewBlobOnGitHub", this.state.path, this.state);
+		EventLogger.logViewEvent("ViewBlobOnGitHub", this.state.path, utils.convertBlobStateToEventLoggerStruct(this.state));
 		if (this.state.isDelta) {
 			this.state.isSplitDiff = this._isSplitDiff();
 
@@ -211,7 +213,7 @@ export default class BlobAnnotator extends Component {
 
 	_hashRefresh() {
 		// Do not modify the URL if not auth'd or if not supported
-		if ((this.isPrivateRepo() &&
+		if ((this.state.isPrivateRepo &&
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
 			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === 'undefined')) ||
 			(utils.supportedExtensions.includes(utils.getPathExtension(this.state.path)))) {
@@ -269,7 +271,7 @@ export default class BlobAnnotator extends Component {
 	}
 
 	_addAnnotations(state) {
-		function apply(repoURI, rev, branch, isBase) {
+		function apply(repoURI, rev, branch, isBase, loggingStruct) {
 			const fext = utils.getPathExtension(state.path);
 
 			if (utils.supportedExtensions.indexOf(fext) < 0) {
@@ -278,16 +280,16 @@ export default class BlobAnnotator extends Component {
 
 			const json = state.annotations.content[keyFor(repoURI, rev, state.path)];
 			if (json) {
-				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase, relRev: json.relRev}, state.blobElement, json.resp.IncludedAnnotations.Annotations, json.resp.IncludedAnnotations.LineStartBytes, state.isSplitDiff);
+				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase, relRev: json.relRev}, state.blobElement, json.resp.IncludedAnnotations.Annotations, json.resp.IncludedAnnotations.LineStartBytes, state.isSplitDiff, loggingStruct);
 			}
 		}
 
 		if (state.isDelta) {
-			if (state.baseCommitID) apply(state.baseRepoURI, state.baseCommitID, state.base, true);
-			if (state.headCommitID) apply(state.headRepoURI, state.headCommitID, state.head, false);
+			if (state.baseCommitID) apply(state.baseRepoURI, state.baseCommitID, state.base, true, utils.convertBlobStateToEventLoggerStruct(state));
+			if (state.headCommitID) apply(state.headRepoURI, state.headCommitID, state.head, false, utils.convertBlobStateToEventLoggerStruct(state));
 		} else {
 			const resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
-			if (resolvedRev && resolvedRev.json && resolvedRev.json.CommitID) apply(state.repoURI, resolvedRev.json.CommitID, state.rev, false);
+			if (resolvedRev && resolvedRev.json && resolvedRev.json.CommitID) apply(state.repoURI, resolvedRev.json.CommitID, state.rev, false, utils.convertBlobStateToEventLoggerStruct(state));
 		}
 	}
 
@@ -298,13 +300,13 @@ export default class BlobAnnotator extends Component {
 
 	onClickAuthPriv(ev) {
 		ev.preventDefault();
-		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
+		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", utils.convertBlobStateToEventLoggerStruct(this.state));
 		location.href = `https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`;
 	}
 
 	onClickFileView(ev) {
 		ev.preventDefault();
-		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", {repo: this.state.repoURI, path: window.location.href, is_private_repo: this.isPrivateRepo()});
+		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", utils.convertBlobStateToEventLoggerStruct(this.state));
 		const targetURL = this.getBlobUrl();
 		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey) || ev.button === 1) {
 			// Remove :focus from target to remove the hover
@@ -362,7 +364,7 @@ export default class BlobAnnotator extends Component {
 
 	render() {
 		if (typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== "undefined") {
-			if (this.isPrivateRepo() && this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === true) {
+			if (this.state.isPrivateRepo && this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === true) {
 				// Not signed in or not auth'd for private repos
 				this.state.selfElement.removeAttribute("disabled");
 				this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
