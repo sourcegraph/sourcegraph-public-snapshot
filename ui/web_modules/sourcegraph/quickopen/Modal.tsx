@@ -70,8 +70,8 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 				<Container
 					ref="searchContainer"
 					repo={r}
-					files={this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
-					languages={this.props.root.repository ? this.props.root.repository.commit.languages : []}
+					files={this.props.root && this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
+					languages={this.props.root && this.props.root.repository ? this.props.root.repository.commit.languages : []}
 					dismissModal={this.dismissModal} />
 			</ModalComp>}
 			<EventListener target={global.document.body} event="keydown" callback={this.searchModalShortcuts} />
@@ -103,9 +103,10 @@ const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {
 });
 
 export const QuickOpenModal = function(props: Props): JSX.Element {
+	const loadingProps = Object.assign({}, props, {root: null});
 	return <Relay.RootContainer
 		Component={QuickOpenModalContainer}
-		renderLoading={() => <div></div>}
+		renderLoading={() => <QuickOpenModalContainer {...loadingProps} />}
 		route={{
 			name: "Root",
 			queries: {
