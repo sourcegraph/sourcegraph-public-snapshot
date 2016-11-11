@@ -414,15 +414,16 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_endTour(): void {
-
 		// Animate dismissal of all coachmarks
 		this._playBoomAnimation(this._searchCoachmarkRef);
-		this._coachmarks.map((mark) => {
-			if (mark) {
-				const el = document.getElementById(mark.markId);
-				if (el) { this._playBoomAnimation(el); }
-			}
-		});
+		if (this._coachmarks) {
+			this._coachmarks.map((mark) => {
+				if (mark) {
+					const el = document.getElementById(mark.markId);
+					if (el) { this._playBoomAnimation(el); }
+				}
+			});
+		}
 
 		window.sessionStorage.setItem("tour", "");
 		delete this.props.location.query["tour"];
