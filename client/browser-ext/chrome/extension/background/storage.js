@@ -22,10 +22,8 @@ chrome.runtime.onMessage.addListener((message, sender, cb) => {
 		});
 		return true;
 	} else if (message.type === "getSessionToken") {
-		chrome.cookies.get({url: "https://sourcegraph.com", name: "csrf_token"}, (csrfToken) => {
-			chrome.cookies.get({url: "https://sourcegraph.com", name: "sg-session"}, (sessionToken) => {
-				cb({csrfToken: csrfToken ? csrfToken.value : null, sessionToken: sessionToken ? sessionToken.value : null});
-			});
+		chrome.cookies.get({url: "https://sourcegraph.com", name: "sg-session"}, (sessionToken) => {
+			cb({sessionToken: sessionToken ? sessionToken.value : null});
 		});
 		return true;
 	}
