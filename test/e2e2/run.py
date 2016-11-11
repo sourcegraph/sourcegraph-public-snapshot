@@ -50,11 +50,7 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 (For docs, see https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md)
 """
 
-def failure_msg(test_name, browser, url, stack_trace, console_log):
-    u = urlparse(url)
-    sgurl = "%s://%s" % (u.scheme, u.hostname)
-    if u.port:
-        sgurl += ":%d" % u.port
+def failure_msg(test_name, browser, url, sgurl, stack_trace, console_log):
     return failure_msg_template % (
         test_name, browser.capitalize(), url,
         test_name, browser, sgurl,
@@ -94,7 +90,7 @@ def run_tests(args, tests):
             console_log = "(None)"
         logf('Browser log:\n%s', console_log)
         if args.alert_on_err:
-            msg = failure_msg(test_name, args.browser, driver.d.current_url, traceback.format_exc(30), console_log)
+            msg = failure_msg(test_name, args.browser, driver.d.current_url, args.url, traceback.format_exc(30), console_log)
             screenshot = driver.d.get_screenshot_as_png()
             slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
         if args.pause_on_err:
