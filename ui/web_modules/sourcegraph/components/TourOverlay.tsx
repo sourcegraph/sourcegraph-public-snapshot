@@ -131,8 +131,10 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	componentDidMount(): void {
-		// Only try to render the onboarding sequence if the tour contains the appropriate query params.
-		if (this.props.location.query["tour"]) {
+		// Only try to render the onboarding sequence if the tour contains the appropriate query params. Or this is their first time viewing.
+		const showTour = this.props.location.query["tour"] || !global.window.localStorage["sg_onboarding_tour_shown"];
+		global.window.localStorage["sg_onboarding_tour_shown"] = true;
+		if (showTour) {
 			this._tryForRenderedTokenIdentifier();
 		}
 	}
@@ -429,6 +431,11 @@ export class TourOverlay extends React.Component<Props, State>  {
 		delete this.props.location.query["tour"];
 		const newLoc = Object.assign({}, this.props.location, {query: this.props.location.query});
 		(this.context as any).router.replace(newLoc);
+		this.setState({
+			visibleMarks: [],
+			visibleAnnotation: null,
+			viewedAnnotations: [],
+		});
 	}
 
 	render(): JSX.Element | null {
