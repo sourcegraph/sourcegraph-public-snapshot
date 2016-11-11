@@ -15,13 +15,13 @@
 <div ignore-csp style="max-width: 680px" class="mx-auto mx2">
 
 	<div class="mb3" id="title">
-		<a href="{{.ViewDefURL}}" class="btn btn-blue right mt2" onclick="sourcegraphLogger.logEventForCategoryComponents('DefInfo', 'Click', 'DefInfoViewDefLinkClicked', {{$.DefEventProps}})">View definition</a>
+		<a href="{{.ViewDefURL}}" class="btn btn-blue right mt2" onclick="sourcegraphLogger.logEventForCategoryComponents('LandingDefInfo', 'Click', 'DefInfoViewDefLinkClicked', {{$.DefEventProps}})">View definition</a>
 		<h1 class="mb0">
 			<span class="code wrap">{{.DefName}}</span>
 		</h1>
 
 		<p>
-			Defined in <a class="wrap" href="{{.DefFileURL}}" onclick="sourcegraphLogger.logEventForCategoryComponents('DefInfo', 'Click', 'DefInfoViewFileLinkClicked', {{$.DefEventProps}})">{{.DefFileName}}</a>
+			Defined in <a class="wrap" href="{{.DefFileURL}}" onclick="sourcegraphLogger.logEventForCategoryComponents('LandingDefInfo', 'Click', 'DefInfoViewFileLinkClicked', {{$.DefEventProps}})">{{.DefFileName}}</a>
 		</p>
 	</div>
 
@@ -38,7 +38,7 @@
 			<h2>Examples</h2>
 
 			{{range .}}
-				<a href="{{.SourceURL}}" class="plainlink" onclick="sourcegraphLogger.logEventForCategoryComponents('DefInfo', 'Click', 'DefInfoRefSnippetLinkClicked', {{$.DefEventProps}})">
+				<a href="{{.SourceURL}}" class="plainlink" onclick="sourcegraphLogger.logEventForCategoryComponents('LandingDefInfo', 'Click', 'DefInfoRefSnippetLinkClicked', {{$.DefEventProps}})">
 					<p><pre class="snippet rounded">{{.Code}}</pre></p>
 				</a>
 			{{end}}
@@ -51,13 +51,13 @@
 		</h2>
 
 		{{range $sourceRefs := .RefLocs.SourceRefs}}
-			<a href="{{urlToRepo $sourceRefs.Source}}" onclick="sourcegraphLogger.logEventForCategoryComponents('DefInfo', 'Click', 'DefInfoRefRepoLinkClicked', {{$.DefEventProps}})">
+			<a href="{{urlToRepo $sourceRefs.Source}}" onclick="sourcegraphLogger.logEventForCategoryComponents('LandingDefInfo', 'Click', 'DefInfoRefRepoLinkClicked', {{$.DefEventProps}})">
 				<strong>{{$sourceRefs.Source}}</strong>
 			</a>
 			<ul>
 				{{range $file := $sourceRefs.FileRefs}}
 				{{$pos := index $file.Positions 0}}
-				<li>{{len $file.Positions}} {{numberedNoun (len $file.Positions) "reference"}} in <a class="wrap" href="{{urlToBlob $sourceRefs.Source $file.File $pos.Start.Line}}" onclick="sourcegraphLogger.logEventForCategoryComponents('DefInfo', 'Click', 'DefInfoRefFileLinkClicked', {{$.DefEventProps}})">{{$file.File}}</a></li>
+				<li>{{len $file.Positions}} {{numberedNoun (len $file.Positions) "reference"}} in <a class="wrap" href="{{urlToBlob $sourceRefs.Source $file.File $pos.Start.Line}}" onclick="sourcegraphLogger.logEventForCategoryComponents('LandingDefInfo', 'Click', 'DefInfoRefFileLinkClicked', {{$.DefEventProps}})">{{$file.File}}</a></li>
 				{{end}}
 			</ul>
 		{{end}}

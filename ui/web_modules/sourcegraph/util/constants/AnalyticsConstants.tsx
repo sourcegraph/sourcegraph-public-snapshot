@@ -24,7 +24,7 @@ export const EventCategories = {
 
 	// Application pages
 	Repository: "Repository",
-	DefInfo: "DefInfo",
+	LandingDefInfo: "LandingDefInfo",
 	QuickOpen: "QuickOpen",
 	CodeView: "CodeView",
 
@@ -177,11 +177,11 @@ export const Events = {
 
 	// Def info - implemented manually in static_event_logger.js 
 	// 	TODO(dadlerj): delete these, or integrate this file with that logger
-	// DefInfoDefLink_Clicked:                  new LoggableEvent("DefInfoViewDefLinkClicked", EventCategories.DefInfo, EventActions.Click),
-	// DefInfoFileLink_Clicked:                 new LoggableEvent("DefInfoViewFileLinkClicked", EventCategories.DefInfo, EventActions.Click),
-	// DefInfoRefSnippedLink_Clicked:           new LoggableEvent("DefInfoRefSnippetLinkClicked", EventCategories.DefInfo, EventActions.Click),
-	// DefInfoRefRepoLink_Clicked:              new LoggableEvent("DefInfoRefRepoLinkClicked", EventCategories.DefInfo, EventActions.Click),
-	// DefInfoRefFileLink_Clicked:              new LoggableEvent("DefInfoRefFileLinkClicked", EventCategories.DefInfo, EventActions.Click),
+	// DefInfoDefLink_Clicked:                  new LoggableEvent("DefInfoViewDefLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
+	// DefInfoFileLink_Clicked:                 new LoggableEvent("DefInfoViewFileLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
+	// DefInfoRefSnippedLink_Clicked:           new LoggableEvent("DefInfoRefSnippetLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
+	// DefInfoRefRepoLink_Clicked:              new LoggableEvent("DefInfoRefRepoLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
+	// DefInfoRefFileLink_Clicked:              new LoggableEvent("DefInfoRefFileLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
 
 	// Orgs
 	Org_Selected:                               new LoggableEvent("SelectedOrg", EventCategories.Orgs, EventActions.Click),
