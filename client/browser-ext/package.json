@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "Sourcegraph browser extension for Chrome",
 	"scripts": {
-		"test": "mocha --opts mocha.opts -t 10000",
+		"test": "mocha --opts mocha.opts -t 5000",
 		"test:auto": "mocha --opts mocha.opts --watch",
 		"dev": "node scripts/dev",
 		"build": "node scripts/build",
