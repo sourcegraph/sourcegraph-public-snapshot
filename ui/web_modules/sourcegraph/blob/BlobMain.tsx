@@ -357,7 +357,7 @@ const BlobMainContainer = Relay.createContainer(BlobMainComponent, {
 	},
 });
 
-export const BlobMain = function(props: Props): JSX.Element {
+export function BlobMain(props: Props): JSX.Element {
 	return <Relay.RootContainer
 		Component={BlobMainContainer}
 		route={{
