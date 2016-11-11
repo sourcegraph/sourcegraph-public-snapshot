@@ -16,6 +16,8 @@ interface State {
 }
 
 export class ModalComp extends React.Component<Props, State> {
+	private htmlElement: HTMLElement;
+
 	constructor(props: Props) {
 		super(props);
 		this.state = {
@@ -23,6 +25,7 @@ export class ModalComp extends React.Component<Props, State> {
 		};
 		this._onClick = this._onClick.bind(this);
 		this._handleKeydown = this._handleKeydown.bind(this);
+		this.bindBackingInstance = this.bindBackingInstance.bind(this);
 	}
 
 	componentDidMount(): void {
@@ -37,7 +40,7 @@ export class ModalComp extends React.Component<Props, State> {
 	}
 
 	_onClick(e: React.MouseEvent<HTMLElement>): void {
-		if (e.target === this.refs["modal_container"]) {
+		if (e.target === this.htmlElement) {
 			if (this.props.onDismiss) {
 				this.props.onDismiss();
 			}
@@ -52,15 +55,17 @@ export class ModalComp extends React.Component<Props, State> {
 		}
 	}
 
+	bindBackingInstance(el: HTMLElement): void {
+		this.htmlElement = el;
+	}
+
 	render(): JSX.Element | null {
-		return (
-			<div ref="modal_container"
-					className={styles.container}
-					onClick={this._onClick}>
-				{this.props.children}
-				<EventListener target={global.document} event="keydown" callback={this._handleKeydown} />
-			</div>
-		);
+		return <div className={styles.container}
+			ref={this.bindBackingInstance}
+			onClick={this._onClick}>
+			{this.props.children}
+			<EventListener target={global.document} event="keydown" callback={this._handleKeydown} />
+		</div>;
 	}
 }
 

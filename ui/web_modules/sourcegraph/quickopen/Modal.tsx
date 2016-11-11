@@ -31,14 +31,9 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 	}
 
 	_getEventProps(): any {
-		let query = "";
-		if (this.refs["searchContainer"]) {
-			query = (this.refs as {searchContainer: Container}).searchContainer.state.input;
-		}
 		return {
 			repo: this.props.repo,
 			rev: this.props.rev,
-			query: query,
 		};
 	}
 
@@ -68,7 +63,6 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 		return <div>
 			{this.props.showModal && <ModalComp onDismiss={() => this.dismissModal(true)}>
 				<Container
-					ref="searchContainer"
 					repo={r}
 					files={this.props.root && this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
 					languages={this.props.root && this.props.root.repository ? this.props.root.repository.commit.languages : []}

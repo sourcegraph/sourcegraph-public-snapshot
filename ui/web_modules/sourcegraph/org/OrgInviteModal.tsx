@@ -1,7 +1,6 @@
 import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {Org, OrgMember} from "sourcegraph/api";
-import {Component} from "sourcegraph/Component";
 import {Button, Heading, Table, User} from "sourcegraph/components";
 import {LocationStateModal} from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
@@ -18,6 +17,7 @@ interface Props {
 
 interface State {
 	isValidForm: boolean;
+
 }
 
 const sx = {
@@ -34,12 +34,17 @@ const rowBorderSx = {
 // General Email Regex RFC 5322 Official Standard.
 const emailRegex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i;
 
-export class OrgInviteModal extends Component<Props, State>  {
+export class OrgInviteModal extends React.Component<Props, State>  {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
 	context: { router: InjectedRouter };
+
+	constructor() {
+		super();
+		this._validateEmail.bind(this);
+	}
 
 	componentDidMount(): void {
 		document.body.addEventListener("keydown", this._shouldSubmitInvite.bind(this));
@@ -83,9 +88,8 @@ export class OrgInviteModal extends Component<Props, State>  {
 		}
 	}
 
-	_validateEmail(): void {
-		let email = this.refs["email"]["value"];
-		let isValid = emailRegex.test(email);
+	_validateEmail(event: React.FormEvent<HTMLInputElement>): void {
+		let isValid = emailRegex.test(event.target.value);
 		this.setState({
 			isValidForm: isValid,
 		});
@@ -141,7 +145,7 @@ export class OrgInviteModal extends Component<Props, State>  {
 												<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} />
 											</td>
 											<td style={Object.assign({}, rowBorderSx, {textAlign: "left"})} width="50%">
-												<input onChange={this._validateEmail.bind(this)} type="email" required={true} ref="email" placeholder="Email address" style={{boxSizing: "border-box", width: "100%"}} defaultValue={member.Email || ""}/>
+												<input onChange={this._validateEmail.bind(this)} type="email" required={true} placeholder="Email address" style={{boxSizing: "border-box", width: "100%"}} defaultValue={member.Email || ""}/>
 											</td>
 											<td style={rowBorderSx} width="20%">
 												<Button onClick={this.onSubmit.bind(this)} disabled={!this.state.isValidForm} style={{float: "right"}} color="blue">Invite</Button>
