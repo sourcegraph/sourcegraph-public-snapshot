@@ -184,7 +184,7 @@ function describeRequest(method: string, params: any): string {
 	if (typeof params.query !== "undefined") {
 		return `${method} with query ${JSON.stringify(params.query)}`;
 	}
-	return `${method} with ${JSON.stringify(params)}`;
+	return method;
 }
 
 function truncate(s: string, max: number): string {
