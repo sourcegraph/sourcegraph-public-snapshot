@@ -296,7 +296,7 @@ class BlobMainEditor extends Container<Props, State> {
 				<Helmet title={title} />
 				<ChromeExtensionToast location={this.props.location}/>
 				<OnboardingModals location={this.props.location}/>
-				<TourOverlay location={this.props.location}/>
+				{this.props.location.query["tour"] && <TourOverlay location={this.props.location}/>}
 				<BlobTitle
 					repo={this.props.repo}
 					path={this.props.path}

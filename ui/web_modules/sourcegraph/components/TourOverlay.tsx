@@ -131,12 +131,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	componentDidMount(): void {
-		// Only try to render the onboarding sequence if the tour contains the appropriate query params. Or this is their first time viewing.
-		const showTour = this.props.location.query["tour"] || !global.window.localStorage["sg_onboarding_tour_shown"];
-		global.window.localStorage["sg_onboarding_tour_shown"] = true;
-		if (showTour) {
-			this._tryForRenderedTokenIdentifier();
-		}
+		this._tryForRenderedTokenIdentifier();
 	}
 
 	componentDidUpdate(prevProps: Props, prevState: State): void {
