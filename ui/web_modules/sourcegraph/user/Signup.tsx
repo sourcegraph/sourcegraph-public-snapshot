@@ -24,7 +24,7 @@ interface Props {
 
 type State = any;
 
-const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go";
+const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go#L153";
 
 export class SignupForm extends Component<Props, State> {
 	_submitForm(): void {
