@@ -12,11 +12,12 @@ interface Props {
 
 type State = {
 	visible: boolean;
-	content: HTMLElement | null;
-	container: HTMLElement | null;
 };
 
 export class Popover extends React.Component<Props, State> {
+	content: HTMLElement;
+	container: HTMLElement;
+
 	constructor(props: Props) {
 		super(props);
 
@@ -27,8 +28,6 @@ export class Popover extends React.Component<Props, State> {
 
 		this.state = {
 			visible: false,
-			content: null,
-			container: null,
 		};
 		this._onClick = this._onClick.bind(this);
 		this.setContainer = this.setContainer.bind(this);
@@ -36,8 +35,8 @@ export class Popover extends React.Component<Props, State> {
 	}
 
 	_onClick(e: MouseEvent & {target: Node}): void {
-		let container = this.refs["container"] as HTMLElement;
-		let content = this.refs["content"] as HTMLElement;
+		let container = this.container;
+		let content = this.content;
 		if (container && container.contains(e.target)) {
 			// Toggle popover visibility when clicking on container or anywhere else
 			this.setState({
@@ -52,10 +51,10 @@ export class Popover extends React.Component<Props, State> {
 	}
 
 	setContent(ref: HTMLElement): void {
-		this.setState({content: ref} as State);
+		this.content = ref;
 	}
 	setContainer(ref: HTMLElement): void {
-		this.setState({container: ref} as State);
+		this.container = ref;
 	}
 
 	render(): JSX.Element | null {
