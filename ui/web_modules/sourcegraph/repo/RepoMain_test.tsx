@@ -6,16 +6,17 @@ import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
 const common = {
 	routes: [],
 	route: {},
+	location: {},
 };
 
 describe("RepoMain", () => {
 	it("should show an error page if the repo failed to load", () => {
-		let o = renderToString(<RepoMain repo="r" repoObj={{Error: true}} commit={{} as GQL.ICommitState} {...common} relay={null} />);
+		let o = renderToString(<RepoMain repo="r" rev="v" repository={null} commit={{} as GQL.ICommitState} {...common} relay={null} />);
 		expect(o).to.contain("is not available");
 	});
 
 	it("should show an error page if the rev failed to resolve/load", () => {
-		const o = renderToString(<RepoMain repo="r" rev="v" commit={{} as GQL.ICommitState} {...common} relay={null} />);
+		let o = renderToString(<RepoMain repo="r" rev="v" repository={{} as GQL.IRepository} commit={{} as GQL.ICommitState} {...common} relay={null} />);
 		expect(o).to.contain("Revision is not available");
 	});
 });

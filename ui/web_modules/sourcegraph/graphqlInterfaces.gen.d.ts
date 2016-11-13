@@ -85,8 +85,10 @@ declare namespace GQL {
     __typename: string;
     id: string;
     uri: string;
+    description: string;
     commit: ICommitState;
     latest: ICommitState;
+    defaultBranch: string;
     branches: Array<string>;
     tags: Array<string>;
   }

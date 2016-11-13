@@ -40,6 +40,10 @@ func (r *repositoryResolver) URI() string {
 	return r.repo.URI
 }
 
+func (r *repositoryResolver) Description() string {
+	return r.repo.Description
+}
+
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,
@@ -68,6 +72,10 @@ func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, 
 		return nil, err
 	}
 	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{r.repo.ID, rev.CommitID}}}, nil
+}
+
+func (r *repositoryResolver) DefaultBranch() string {
+	return r.repo.DefaultBranch
 }
 
 func (r *repositoryResolver) Branches(ctx context.Context) ([]string, error) {

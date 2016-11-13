@@ -1,27 +1,8 @@
-import {Repo, RepoList, SymbolInformation} from "sourcegraph/api";
+import {RepoList, SymbolInformation} from "sourcegraph/api";
 
 export type Action =
-	WantRepo | FetchedRepo |
 	WantRepos | ReposFetched |
 	WantSymbols | FetchedSymbols;
-
-export class WantRepo {
-	repo: string;
-
-	constructor(repo: string) {
-		this.repo = repo;
-	}
-}
-
-export class FetchedRepo {
-	repo: string;
-	repoObj: Repo;
-
-	constructor(repo: string, repoObj: Repo) {
-		this.repo = repo;
-		this.repoObj = repoObj;
-	}
-}
 
 export class WantRepos {
 	querystring: string;

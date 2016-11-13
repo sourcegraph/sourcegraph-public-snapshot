@@ -29,20 +29,6 @@ export const RepoBackend = {
 			}
 		}
 
-		if (payload instanceof RepoActions.WantRepo) {
-			const action = payload;
-			let repo = RepoStore.repos.get(action.repo);
-			if (repo === null) {
-				RepoBackend.fetch(`/.api/repos/${action.repo}`)
-					.then(checkStatus)
-					.then((resp) => resp.json())
-					.catch((err) => ({ Error: err }))
-					.then((data) => {
-						Dispatcher.Stores.dispatch(new RepoActions.FetchedRepo(action.repo, data));
-					});
-			}
-		}
-
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
 			let symbols = RepoStore.symbols.list(payload.languages, payload.repo, payload.rev, payload.query);

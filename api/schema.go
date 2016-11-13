@@ -22,8 +22,10 @@ type Root {
 type Repository implements Node {
 	id: ID!
 	uri: String!
+	description: String!
 	commit(rev: String!): CommitState!
 	latest: CommitState!
+	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
 }

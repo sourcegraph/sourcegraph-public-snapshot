@@ -74,14 +74,6 @@ class RepoStoreClass extends Store<any> {
 		}
 
 		switch (action.constructor) {
-			case RepoActions.FetchedRepo:
-				this.repos = deepFreeze(Object.assign({}, this.repos, {
-					content: Object.assign({}, this.repos.content, {
-						[keyFor(action.repo)]: action.repoObj,
-					}),
-				}));
-				break;
-
 			case RepoActions.FetchedSymbols:
 				this.symbols = deepFreeze(Object.assign({}, this.symbols, {
 					content: Object.assign({}, this.symbols.content, {

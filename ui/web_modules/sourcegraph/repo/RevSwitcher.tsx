@@ -14,7 +14,6 @@ import {urlWithRev} from "sourcegraph/repo/routes";
 interface Props {
 	repo: string;
 	rev: string | null;
-	repoObj?: any;
 
 	// to construct URLs
 	routes: any[];
@@ -24,7 +23,6 @@ interface Props {
 interface State extends Props {
 	open?: boolean;
 	query?: any;
-	effectiveRev?: string;
 }
 
 class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
@@ -58,9 +56,6 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
-
-		// effectiveRev is the rev from the URL, or else the repo's default branch.
-		state.effectiveRev = props.rev || (props.repoObj && !props.repoObj.Error ? props.repoObj.DefaultBranch : null);
 	}
 
 	// abbrevRev shortens rev if it is an absolute commit ID.
@@ -69,7 +64,7 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 	}
 
 	_item(name: string): JSX.Element {
-		let isCurrent = name === this.state.effectiveRev;
+		let isCurrent = name === this.props.rev;
 
 		return (
 			<div key={name} role="menu_item">

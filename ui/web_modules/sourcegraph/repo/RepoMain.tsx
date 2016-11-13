@@ -4,24 +4,13 @@ import {Header} from "sourcegraph/components/Header";
 import {trimRepo} from "sourcegraph/repo";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-
-function repoPageTitle(repo: any): string {
-	let title = trimRepo(repo.URI);
-	if (repo.Description) {
-		title += `: ${repo.Description.slice(0, 40)}${repo.Description.length > 40 ? "..." : ""}`;
-	}
-	return title;
-}
 
 interface Props {
-	location?: any;
 	repo: string;
 	rev?: string | null;
+	repository: GQL.IRepository | null;
 	commit: GQL.ICommitState;
-	repoObj?: any;
-	route?: any;
-	routes: any[];
+	location?: any;
 	relay: any;
 }
 
@@ -60,28 +49,16 @@ export class RepoMain extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		const err = (this.props.repoObj && this.props.repoObj.Error);
-		if (err) {
-			let msg;
-			if (err.response && err.response.status === 404) {
-				AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
-				msg = `Repository not found.`;
-			} else {
-				msg = `Repository is not available.`;
-			}
-
+		if (!this.props.repository) {
+			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 			return (
 				<div>
-				<Helmet title={"Sourcegraph - Not Found"} />
+					<Helmet title="Sourcegraph - Not Found" />
 					<Header
-						title={`${httpStatusCode(err)}`}
-						subtitle={msg} />
+						title="404"
+						subtitle="Repository not found." />
 				</div>
 			);
-		}
-
-		if (!this.props.repo) {
-			return null;
 		}
 
 		if (this.props.commit.cloneInProgress) {
@@ -97,7 +74,11 @@ export class RepoMain extends React.Component<Props, State> {
 			);
 		}
 
-		const title = this.props.repoObj && !this.props.repoObj.Error ? repoPageTitle(this.props.repoObj) : null;
+		let title = trimRepo(this.props.repo);
+		let description = this.props.repository.description;
+		if (description) {
+			title += `: ${description.slice(0, 40)}${description.length > 40 ? "..." : ""}`;
+		}
 
 		return (
 			<div className={styles.outer_container}>

@@ -14,13 +14,11 @@ import {RepoNavContext} from "sourcegraph/tree/RepoNavContext";
 import {TreeList} from "sourcegraph/tree/TreeList";
 
 interface Props {
-	location?: any;
 	repo: string;
 	rev: string;
+	location?: any;
 	route?: Route;
 	routeParams: RouteParams;
-
-	repoObj?: any;
 	routes: any[];
 };
 
@@ -59,13 +57,11 @@ export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
 
 		return (
 			<RepoMain
-				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
+				repository={this.props.root.repository}
 				commit={this.props.root.repository && this.props.root.repository.commit}
-				repoObj={this.props.repoObj}
-				route={this.props.route}
-				routes={this.props.routes}
+				location={this.props.location}
 				relay={this.props.relay}
 			>
 				<div>
@@ -103,6 +99,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 			fragment on Root {
 				repository(uri: $repo) {
 					uri
+					description
 					commit(rev: $rev) {
 						commit {
 							tree(path: $path) {

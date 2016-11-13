@@ -29,7 +29,6 @@ import {IRange} from "vs/editor/common/editorCommon";
 
 interface Props {
 	repo: string;
-	repoObj: any;
 	rev: string | null;
 	path: string;
 	routes: Object[];
@@ -118,7 +117,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.path !== nextProps.path || !isEqual(prevProps.selection, nextProps.selection))) {
 			// Use absolute commit IDs for the editor model URI.
 			// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
-			const uri = URIUtils.pathInRepo(nextProps.repoObj && nextProps.repoObj.URI ?  nextProps.repoObj.URI : nextProps.repo, this.props.root.repository.commit.commit.sha1, nextProps.path);
+			const uri = URIUtils.pathInRepo(nextProps.repo, nextProps.root.repository.commit.commit.sha1, nextProps.path);
 
 			let range: IRange;
 			if (nextProps.selection) {
@@ -295,13 +294,11 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 
 		return (
 			<RepoMain
-				location={this.props.location}
 				repo={this.props.repo}
 				rev={this.props.rev}
+				repository={this.props.root.repository}
 				commit={this.props.root.repository && this.props.root.repository.commit}
-				repoObj={this.props.repoObj}
-				route={this.props.route}
-				routes={this.props.routes}
+				location={this.props.location}
 				relay={this.props.relay}
 				>
 				<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
@@ -312,8 +309,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 					<BlobTitle
 						repo={this.props.repo}
 						path={this.props.path}
-						repoObj={this.props.repoObj}
-						rev={this.props.rev}
+						rev={this.props.rev || (this.props.root.repository && this.props.root.repository.defaultBranch)}
 						routes={this.props.routes}
 						routeParams={this.props.routeParams}
 						toast={this.state.toast}
@@ -345,6 +341,8 @@ const BlobMainContainer = Relay.createContainer(BlobMainComponent, {
 			fragment on Root {
 				repository(uri: $repo) {
 					uri
+					description
+					defaultBranch
 					commit(rev: $rev) {
 						commit {
 							sha1
