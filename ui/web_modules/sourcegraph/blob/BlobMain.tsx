@@ -3,7 +3,7 @@ import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 import Helmet from "react-helmet";
 import * as Relay from "react-relay";
-import { InjectedRouter } from "react-router";
+import { InjectedRouter, Route } from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
@@ -16,9 +16,10 @@ import {Container} from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import {URIUtils} from "sourcegraph/core/uri";
 import { Location } from "sourcegraph/Location";
-import { trimRepo } from "sourcegraph/repo";
+import {repoParam, repoPath, repoRev, trimRepo} from "sourcegraph/repo";
 import {RepoMain} from "sourcegraph/repo/RepoMain";
 import {Store} from "sourcegraph/Store";
+import {treeParam} from "sourcegraph/tree";
 
 // Don't load too much from vscode, because this file is loaded in the
 // initial bundle and we want to keep the initial bundle small.
@@ -31,22 +32,21 @@ interface Props {
 	repo: string;
 	rev: string | null;
 	path: string;
-	routes: Object[];
-	routeParams: RouteParams;
+	routes: Route[];
+	params: RouteParams;
 	selection: RangeOrPosition | null;
 	location: Location;
 
-	route?: any;
+	relay: any;
+	root: GQL.IRoot;
 }
-
-type PropsWithRelay = Props & {relay: any; root: GQL.IRoot};
 
 interface State extends Props {
 	toast: string | null;
 }
 
 // BlobMain wraps the Editor component for the primary code view.
-class BlobMainEditor extends Container<PropsWithRelay, State> {
+class BlobMainEditor extends Container<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -58,7 +58,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 	private _editor?: Editor;
 	private _shortCircuitURLNavigationOnEditorOpened: number = 0;
 
-	constructor(props: PropsWithRelay) {
+	constructor(props: Props) {
 		super(props);
 		this._setEditor = this._setEditor.bind(this);
 		this._onKeyDownForFindInPage = this._onKeyDownForFindInPage.bind(this);
@@ -83,7 +83,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 		global.document.body.style.overflowY = "auto";
 	}
 
-	componentWillReceiveProps(nextProps: PropsWithRelay): void {
+	componentWillReceiveProps(nextProps: Props): void {
 		super.componentWillReceiveProps(nextProps, null);
 
 		if (this._editor) {
@@ -91,7 +91,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 		}
 	}
 
-	reconcileState(state: State, props: PropsWithRelay): void {
+	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.toast = BlobStore.toast;
 	}
@@ -109,7 +109,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 		}
 	}
 
-	_editorPropsChanged(prevProps: Props | null, nextProps: PropsWithRelay): void {
+	_editorPropsChanged(prevProps: Props | null, nextProps: Props): void {
 		if (!this._editor) {
 			throw new Error("editor is not ready");
 		}
@@ -311,7 +311,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 						path={this.props.path}
 						rev={this.props.rev || (this.props.root.repository && this.props.root.repository.defaultBranch)}
 						routes={this.props.routes}
-						routeParams={this.props.routeParams}
+						routeParams={this.props.params}
 						toast={this.state.toast}
 						/>
 					<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
@@ -321,16 +321,7 @@ class BlobMainEditor extends Container<PropsWithRelay, State> {
 	}
 }
 
-// Bind the location hash to the range of the editor.
-const BlobMainComponent = (props) => {
-	let selection = null;
-	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
-		selection = RangeOrPosition.parse(props.location.hash.replace(/^#L/, ""));
-	}
-	return <BlobMainEditor selection={selection} {...props} />;
-};
-
-const BlobMainContainer = Relay.createContainer(BlobMainComponent, {
+const BlobMainContainer = Relay.createContainer(BlobMainEditor, {
 	initialVariables: {
 		repo: "",
 		rev: "",
@@ -355,7 +346,12 @@ const BlobMainContainer = Relay.createContainer(BlobMainComponent, {
 	},
 });
 
-export function BlobMain(props: Props): JSX.Element {
+export function BlobMain(props: {params: any; location: Location, routes: Route[]}): JSX.Element {
+	const repoSplat = repoParam(props.params.splat);
+	let selection = null;
+	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
+		selection = RangeOrPosition.parse(props.location.hash.replace(/^#L/, ""));
+	}
 	return <Relay.RootContainer
 		Component={BlobMainContainer}
 		route={{
@@ -365,7 +361,15 @@ export function BlobMain(props: Props): JSX.Element {
 					query { root }
 				`,
 			},
-			params: props,
+			params: {
+				repo: repoPath(repoSplat),
+				rev: repoRev(repoSplat),
+				path: treeParam(props.params.splat),
+				routes: props.routes,
+				params: props.params,
+				selection: selection,
+				location: props.location,
+			},
 		}}
 		/>;
 };

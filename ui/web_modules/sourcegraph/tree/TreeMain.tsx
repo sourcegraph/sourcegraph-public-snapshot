@@ -2,12 +2,13 @@ import * as cloneDeep from "lodash/cloneDeep";
 import * as React from "react";
 import Helmet from "react-helmet";
 import * as Relay from "react-relay";
-import {InjectedRouter, Route} from "react-router";
+import {InjectedRouter} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {GridCol, Panel, RepoLink} from "sourcegraph/components";
 import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
-import {trimRepo} from "sourcegraph/repo";
+import {Location} from "sourcegraph/Location";
+import {repoParam, repoPath, repoRev, trimRepo} from "sourcegraph/repo";
 import {RepoMain} from "sourcegraph/repo/RepoMain";
 import {treeParam} from "sourcegraph/tree";
 import {RepoNavContext} from "sourcegraph/tree/RepoNavContext";
@@ -16,33 +17,34 @@ import {TreeList} from "sourcegraph/tree/TreeList";
 interface Props {
 	repo: string;
 	rev: string;
-	location?: any;
-	route?: Route;
-	routeParams: RouteParams;
-	routes: any[];
-};
+	path: string;
 
-type PropsWithRelay = Props & {relay: any; root: GQL.IRoot};
+	location: any;
+	params: RouteParams;
+
+	relay: any;
+	root: GQL.IRoot;
+};
 
 interface Context {
 	router: InjectedRouter;
 }
 
-export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
+export class TreeMainComponent extends React.Component<Props, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	constructor(props: PropsWithRelay, context: Context) {
+	constructor(props: Props, context: Context) {
 		super(props);
 		this._redirectToCanonicalURI(props, context);
 	}
 
-	componentWillReceiveProps(nextProps: PropsWithRelay, nextContext: Context): void {
+	componentWillReceiveProps(nextProps: Props, nextContext: Context): void {
 		this._redirectToCanonicalURI(nextProps, nextContext);
 	}
 
-	_redirectToCanonicalURI(props: PropsWithRelay, context: Context): void {
+	_redirectToCanonicalURI(props: Props, context: Context): void {
 		if (props.root.repository && props.repo !== props.root.repository.uri) {
 			setTimeout(function(): void {
 				let locCopy = cloneDeep(props.location);
@@ -53,8 +55,6 @@ export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
 	}
 
 	render(): JSX.Element | null {
-		const path = treeParam(this.props.routeParams.splat);
-
 		return (
 			<RepoMain
 				repo={this.props.repo}
@@ -70,16 +70,16 @@ export class TreeMainComponent extends React.Component<PropsWithRelay, {}> {
 								padding: `${whitespace[2]} ${whitespace[3]}`,
 							}}>
 							<RepoLink repo={this.props.repo} rev={this.props.rev} style={{marginRight: 4}} />
-							<RepoNavContext params={this.props.routeParams} />
+							<RepoNavContext params={this.props.params} />
 						</div>
 					</Panel>
 					{/* Refactor once new Panel and Grid code has been merged in */}
 					<GridCol col={9} style={{marginRight: "auto", marginLeft: "auto", marginTop: 16, float: "none"}}>
-						{path !== "/" && <Helmet title={`${path} · ${trimRepo(this.props.repo)}`} />}
+						{this.props.path !== "/" && <Helmet title={`${this.props.path} · ${trimRepo(this.props.repo)}`} />}
 						<TreeList
 							repo={this.props.repo}
 							rev={this.props.rev}
-							path={path}
+							path={this.props.path}
 							tree={this.props.root.repository && this.props.root.repository.commit.commit && this.props.root.repository.commit.commit.tree} />
 					</GridCol>
 				</div>
@@ -119,7 +119,8 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 	},
 });
 
-export const TreeMain = function(props: Props): JSX.Element {
+export const TreeMain = function(props: {params: any; location: Location}): JSX.Element {
+	const repoSplat = repoParam(props.params.splat);
 	return <Relay.RootContainer
 		Component={TreeMainContainer}
 		route={{
@@ -129,7 +130,13 @@ export const TreeMain = function(props: Props): JSX.Element {
 					query { root }
 				`,
 			},
-			params: props,
+			params: {
+				repo: repoPath(repoSplat),
+				rev: repoRev(repoSplat),
+				path: treeParam(props.params.splat),
+				location: props.location,
+				params: props.params,
+			},
 		}}
 	/>;
 };
