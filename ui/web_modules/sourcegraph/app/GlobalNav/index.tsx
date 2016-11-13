@@ -1,13 +1,14 @@
 import * as React from "react";
 import {Link} from "react-router";
 import {InjectedRouter} from "react-router";
+
 import {context} from "sourcegraph/app/context";
-import  "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
+import "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
 import {GlobalNavStore, SetQuickOpenVisible} from "sourcegraph/app/GlobalNav/GlobalNavStore";
 import {SearchCTA} from "sourcegraph/app/GlobalNav/SearchCTA";
 import {SignupOrLogin} from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import {UserMenu} from "sourcegraph/app/GlobalNav/UserMenu";
-import {BetaSignup, Integrations, Login, Signup} from "sourcegraph/app/modals/index";
+import {BetaSignup, Login, Signup} from "sourcegraph/app/modals/index";
 import {isRootRoute} from "sourcegraph/app/routePatterns";
 import * as styles from "sourcegraph/app/styles/GlobalNav.css";
 import {FlexContainer, Logo} from "sourcegraph/components";
@@ -102,7 +103,6 @@ export class GlobalNav extends Container<Props, State> {
 				{m === "login" && !context.user && <Login location={location} router={this.context.router} />}
 				{m === "join" && <Signup location={location} router={this.context.router} shouldHide={shouldHide} />}
 				{m === "menuBeta" && <BetaSignup location={location} router={this.context.router} />}
-				{m === "menuIntegrations" && <Integrations location={location} router={this.context.router} />}
 				{m === "demo_video" && <DemoVideo location={location} router={this.context.router} />}
 			</div>;
 		}

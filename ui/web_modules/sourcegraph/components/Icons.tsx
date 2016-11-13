@@ -37,9 +37,9 @@ function iconWrapper<P>(Component: React.ComponentClass<P>): wrapper {
 }
 
 type Props = {
-	className: string,
-	style: React.CSSProperties,
-	title: string
+	className?: string,
+	style?: React.CSSProperties,
+	title?: string
 };
 
 type wrapper = (props: Props) => JSX.Element;
