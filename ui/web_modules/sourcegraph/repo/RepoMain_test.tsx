@@ -12,7 +12,7 @@ const common = {
 describe("RepoMain", () => {
 	it("should show an error page if the repo failed to load", () => {
 		let o = renderToString(<RepoMain repo="r" rev="v" repository={null} commit={{} as GQL.ICommitState} {...common} relay={null} />);
-		expect(o).to.contain("is not available");
+		expect(o).to.contain("Repository not found.");
 	});
 
 	it("should show an error page if the rev failed to resolve/load", () => {

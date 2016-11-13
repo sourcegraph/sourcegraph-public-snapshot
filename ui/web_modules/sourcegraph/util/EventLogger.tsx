@@ -289,13 +289,15 @@ class EventLoggerClass {
 			this._telligent("track", eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action}));
 		}
 
-		global.window.ga("send", {
-			hitType: "event",
-			eventCategory: eventObject.category || "",
-			eventAction: eventObject.action || "",
-			eventLabel: eventObject.label,
-			nonInteraction: true,
-		});
+		if (global && global.window && global.window.ga) {
+			global.window.ga("send", {
+				hitType: "event",
+				eventCategory: eventObject.category || "",
+				eventAction: eventObject.action || "",
+				eventLabel: eventObject.label,
+				nonInteraction: true,
+			});
+		}
 	}
 
 	// sets current user's property value
