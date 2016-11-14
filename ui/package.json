@@ -58,7 +58,6 @@
     "lodash": "4.15.0",
     "monaco-languages": "0.6.1",
     "monaco-typescript": "2.0.1",
-    "querystring": "0.2.0",
     "raven-js": "3.5.1",
     "react": "15.3.1",
     "react-dom": "15.3.1",
