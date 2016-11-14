@@ -1,7 +1,6 @@
-// tslint:disable: typedef ordered-imports no-var-requires
-
-import * as React from "react";
+// tslint:disable: no-var-requires
 import * as classNames from "classnames";
+import * as React from "react";
 
 import * as styles from "sourcegraph/components/styles/icon.css";
 
@@ -31,7 +30,16 @@ export const FaThumbsDown = iconWrapper(require("react-icons/lib/fa/thumbs-down"
 
 // iconWrapper lets you pass a style directly to any of the exported components, e.g.
 // <RepoIcon className={styles.foo} />
-function iconWrapper(Component): any {
-	const C = ({className, style, title}) => <div className={classNames(className, styles.icon)} style={style} title={title}><Component /></div>;
-	return C;
+function iconWrapper<P>(Component: React.ComponentClass<P>): wrapper {
+	return function({className, style, title}: Props): JSX.Element {
+		return <div className={classNames(className, styles.icon)} style={style} title={title}><Component /></div>;
+	};
 }
+
+type Props = {
+	className?: string,
+	style?: React.CSSProperties,
+	title?: string
+};
+
+type wrapper = (props: Props) => JSX.Element;

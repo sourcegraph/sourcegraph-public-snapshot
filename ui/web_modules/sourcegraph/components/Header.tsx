@@ -1,8 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import * as styles from "sourcegraph/components/styles/header.css";
+
 import {Loader} from "sourcegraph/components/Loader";
+import * as styles from "sourcegraph/components/styles/header.css";
 
 interface Props {
 	title: string;
@@ -10,9 +9,7 @@ interface Props {
 	loading?: boolean;
 }
 
-type State = any;
-
-export class Header extends React.Component<Props, State> {
+export class Header extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		return (
 			<div className={styles.container}>

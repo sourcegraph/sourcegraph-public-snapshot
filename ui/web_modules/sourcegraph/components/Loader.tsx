@@ -1,10 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 
 import * as style from "sourcegraph/components/styles/loader.css";
 
-export class Loader extends React.Component<{}, any> {
+export class Loader extends React.Component<{}, {}> {
 	render(): JSX.Element | null {
 		return (
 			<div className={style.loader}>

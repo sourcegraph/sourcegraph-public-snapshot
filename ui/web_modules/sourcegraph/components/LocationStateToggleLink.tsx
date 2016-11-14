@@ -1,10 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import {InjectedRouter} from "react-router";
 
-// Copied from react-router Link.js.
-function isLeftClickEvent(ev) { return ev.button === 0; }
-function isModifiedEvent(ev) { return Boolean(ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey); }
+function isLeftClickEvent(ev: MouseEvent): boolean { return ev.button === 0; }
+function isModifiedEvent(ev: MouseEvent): boolean { return Boolean(ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey); }
 
 interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 	location: any;
@@ -29,7 +27,7 @@ interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 // It can be used for showing modals, whose on/off state should not be
 // reflected in the URL. Something else will have to read the location state
 // to determine whether to show it.
-export function LocationStateToggleLink(props: Props, {router}) {
+export function LocationStateToggleLink(props: Props, {router}: {router: InjectedRouter}): JSX.Element {
 
 	const {location, children, modalName} = props;
 	const other = Object.assign({}, props);

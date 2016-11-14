@@ -1,4 +1,3 @@
-// tslint:disable: typedef
 import * as classNames from "classnames";
 import * as React from "react";
 import Helmet from "react-helmet";
@@ -31,7 +30,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		this._installChromeExtensionClicked = this._installChromeExtensionClicked.bind(this);
 	}
 
-	_successHandler() {
+	_successHandler(): void {
 		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({page_name: "ChromeExtensionOnboarding"});
 		EventLogger.setUserProperty("installed_chrome_extension", "true");
 		// Syncs the our site analytics tracking with the chrome extension tracker.
@@ -39,12 +38,12 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		this._continueOnboarding();
 	}
 
-	_failHandler(msg) {
+	_failHandler(): void {
 		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({page_name: "ChromeExtensionOnboarding"});
 		EventLogger.setUserProperty("installed_chrome_extension", "false");
 	}
 
-	_installChromeExtensionClicked() {
+	_installChromeExtensionClicked(): void {
 		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({page_name: "ChromeExtensionOnboarding"});
 
 		if (!!global.chrome) {
@@ -56,12 +55,12 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		}
 	}
 
-	_skipClicked() {
+	_skipClicked(): void {
 		AnalyticsConstants.Events.ChromeExtensionSkipCTA_Clicked.logEvent({page_name: "ChromeExtensionOnboarding"});
 		this._continueOnboarding();
 	}
 
-	_continueOnboarding() {
+	_continueOnboarding(): void {
 		this.props.completeStep();
 	}
 

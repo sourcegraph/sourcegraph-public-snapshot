@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 
 import {Component} from "sourcegraph/Component";
@@ -30,7 +28,7 @@ export class Collapsible extends Component<Props, State> {
 		Object.assign(state, props);
 	}
 
-	_onClick() {
+	_onClick(): void {
 		const isShown = !this.state.shown;
 		this.setState({
 			shown: isShown,

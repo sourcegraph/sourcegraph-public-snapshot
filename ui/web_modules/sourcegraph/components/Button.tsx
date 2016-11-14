@@ -1,7 +1,5 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import * as classNames from "classnames";
+import * as React from "react";
 
 import {Loader} from "sourcegraph/components/Loader";
 import * as styles from "sourcegraph/components/styles/button.css";
@@ -22,7 +20,7 @@ export function Button(props: {
 	id?: string,
 	tabIndex?: number,
 	style?: any,
-}) {
+}): JSX.Element {
 	let {
 		block = false,
 		outline = false,

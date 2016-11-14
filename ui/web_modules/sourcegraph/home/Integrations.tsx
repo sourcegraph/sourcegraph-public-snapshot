@@ -1,77 +1,38 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import * as styles from "sourcegraph/home/styles/Integrations.css";
-import {Heading, Button} from "sourcegraph/components";
-import {Component} from "sourcegraph/Component";
-import {inBeta} from "sourcegraph/user";
-import * as betautil from "sourcegraph/util/betautil";
+
 import {context} from "sourcegraph/app/context";
+import {Button, Heading} from "sourcegraph/components";
+import * as styles from "sourcegraph/home/styles/Integrations.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-
-class Tool {
-	name: string;
-	img: string;
-	url: string;
-	eventObject?: AnalyticsConstants.LoggableEvent;
-
-	constructor(name, img, url, eventObject?) {
-		this.name = name;
-		this.img = img;
-		this.url = url;
-		if (eventObject) {
-			this.eventObject = eventObject;
-		}
-	}
-}
-
-let plugins = [
-	new Tool("Sublime Text", "/img/Dashboard/sublime-text.svg", "https://sourcegraph.com/beta"),
-	new Tool("IntelliJ", "/img/Dashboard/intellij.svg", "https://sourcegraph.com/beta"),
-	new Tool("VS Code", "/img/Dashboard/vscode.svg", "https://sourcegraph.com/beta"),
-	new Tool("Emacs", "/img/Dashboard/emacs.svg", "https://sourcegraph.com/beta"),
-	new Tool("Vim", "/img/Dashboard/vim.svg", "https://sourcegraph.com/beta"),
-];
-
-const otherTools = [
-	new Tool("Chrome", "/img/Dashboard/google-chrome.svg", "https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack", AnalyticsConstants.Events.ToolsModalDownloadCTA_Clicked),
-];
 
 interface Props {
 	location: any;
 }
 
-type State = any;
+function Tool({name, img, url, event}: {name: string, img: string, url: string, event: AnalyticsConstants.LoggableEvent}): JSX.Element {
+	return <a href={url} target="_blank" className={styles.tool} onClick={() => {if (event) { event.logEvent(); }}}>
+		<img className={styles.img} src={`${context.assetsRoot}${img}`}></img>
+		<div className={styles.caption}>{name}</div>
+	</a>;
+}
 
-export class Integrations extends Component<Props, State> {
+export class Integrations extends React.Component<Props, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	reconcileState(state: State, props: Props): void {
-		Object.assign(state, props);
-	}
-
 	render(): JSX.Element | null {
-		if (context.user && inBeta(context.user, betautil.DESKTOP)) {
-			plugins[0]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-sublime-beta#sourcegraph-for-sublime-text-";
-			plugins[1]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-intellij#sourcegraph-for-intellij-idea";
-			plugins[2]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-vscode#sourcegraph-for-visual-studio-code";
-			plugins[3]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-emacs#sourcegraph-for-emacs";
-			plugins[4]["url"] = "https://github.com/sourcegraph-beta/sourcegraph-vim-beta#sourcegraph-for-vim-";
-		}
-
 		return (
 			<div className={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : styles.container}>
 				<div className={styles.menu}>
 					<Heading level={7} color="gray">Browser extensions</Heading>
 					<div className={styles.tool_list}>
-						{otherTools.map((tool, i) => (
-							<a key={i} href={tool.url} target="_blank" className={styles.tool} onClick={() => {if (tool.eventObject) { tool.eventObject.logEvent(); }}}>
-								<img className={styles.img} src={`${context.assetsRoot}${tool.img}`}></img>
-								<div className={styles.caption}>{tool.name}</div>
-							</a>
-						))}
+						<Tool
+							name={"Chrome"}
+							img={"/img/Dashboard/google-chrome.svg"}
+							url={"https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"}
+							event={AnalyticsConstants.Events.ToolsModalDownloadCTA_Clicked}
+						/>
 					</div>
 				</div>
 				{this.props.location.query.onboarding &&

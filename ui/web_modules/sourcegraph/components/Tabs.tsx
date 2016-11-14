@@ -1,8 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/components/styles/tabs.css";
 import * as classNames from "classnames";
+import * as React from "react";
+
+import * as styles from "sourcegraph/components/styles/tabs.css";
 
 interface Props {
 	direction?: string; // vertical, horizontal
@@ -13,16 +12,14 @@ interface Props {
 	style?: any;
 }
 
-type State = any;
-
-export class Tabs extends React.Component<Props, State> {
-	static defaultProps = {
+export class Tabs extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		size: "default",
 		direction: "horizontal",
 		color: "blue",
 	};
 
-	_childrenWithProps() {
+	_childrenWithProps(): JSX.Element[] {
 		return React.Children.map(this.props.children, (child: React.ReactElement<any>) => {
 			if (child.props.tabItem) {
 				return React.cloneElement(child, {
@@ -37,7 +34,7 @@ export class Tabs extends React.Component<Props, State> {
 		});
 	}
 
-	render(): JSX.Element | null {
+	render(): JSX.Element {
 		const {direction, className, style} = this.props;
 		return <div className={classNames(styles.container, direction === "vertical" ? styles.vertical : styles.horizontal, className)} style={style}>{this._childrenWithProps()}</div>;
 	}
