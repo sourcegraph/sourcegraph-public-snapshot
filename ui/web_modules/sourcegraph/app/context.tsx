@@ -1,6 +1,5 @@
 import {EmailAddrList, User} from "sourcegraph/api";
 import {ExternalToken} from "sourcegraph/user";
-import {EventLogger} from "sourcegraph/util/EventLogger";
 import {testOnly} from "sourcegraph/util/testOnly";
 
 class Context {
@@ -41,17 +40,7 @@ class Context {
 	}
 }
 
-export const context = new Context();
-
-// Sets the values of the context given a JSContext object from the server.
-export function reset(args: {appURL: string, assetsRoot: string, buildVars: {Version: string}}): void {
-	if (typeof args.appURL === "undefined" || typeof args.assetsRoot === "undefined" || typeof args.buildVars === "undefined") {
-		throw new Error("appURL, assetsRoot, and buildVars must all be set");
-	}
-	Object.assign(context, args);
-
-	EventLogger.init();
-}
+export const context = global.__sourcegraphJSContext as Context || new Context();
 
 export function mockUser(user: User | null, f: () => void): void {
 	testOnly();
