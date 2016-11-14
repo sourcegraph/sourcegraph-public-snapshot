@@ -19,6 +19,10 @@ class Context {
 		Date: string;
 	};
 
+	constructor(ctx: any) {
+		Object.assign(this, ctx);
+	}
+
 	hasPrivateGitHubToken(): boolean {
 		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("repo") && this.gitHubToken.scope.includes("read:org"));
 	}
@@ -40,7 +44,7 @@ class Context {
 	}
 }
 
-export const context = global.__sourcegraphJSContext as Context || new Context();
+export const context = new Context(global.__sourcegraphJSContext);
 
 export function mockUser(user: User | null, f: () => void): void {
 	testOnly();
