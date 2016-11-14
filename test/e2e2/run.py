@@ -9,6 +9,11 @@ from urlparse import urlparse
 from colors import green, red, bold
 from slackclient import SlackClient
 
+from opsgenie.alert.requests import CreateAlertRequest
+from opsgenie.errors import OpsGenieError
+from opsgenie import OpsGenie
+from opsgenie.config import Configuration
+
 from e2etypes import *
 from e2etests import *
 
@@ -61,6 +66,21 @@ def failure_msg(test_name, owner, browser, url, sgurl, stack_trace, console_log)
         console_log,
     )
 
+def alert_opsgenie(apikey, msg, description):
+    client = OpsGenie(Configuration(apikey=apikey))
+
+    try:
+        request = CreateAlertRequest(
+            message=msg,
+            description=description,
+            source="e2e-bot",
+            teams=["ops_team"])
+        response = client.alert.create_alert(request)
+
+        logf("created OpsGenie alert %s, status: %s", response.alert_id, response.status)
+    except OpsGenieError as err:
+        logf("[ERROR] failed to send OpsGenie alert: %s", err.message)
+
 def slack_and_opsgenie(args):
     slack_cli, slack_ch, opsgenie_key = None, None, None
     if args.alert_on_err:
@@ -70,11 +90,6 @@ def slack_and_opsgenie(args):
             sys.exit(1)
         slack_cli = SlackClient(slack_tok)
     return slack_cli, slack_ch, opsgenie_key
-
-def random_animal_emoji():
-    return random.choice([
-
-    ])
 
 def run_tests(args, tests):
     failed_tests = []
@@ -95,7 +110,12 @@ def run_tests(args, tests):
         if args.alert_on_err:
             msg = failure_msg(test_name, owner, args.browser, driver.d.current_url, args.url, traceback.format_exc(30), console_log)
             screenshot = driver.d.get_screenshot_as_png()
-            slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
+            resp = slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
+            slack_alert_link = resp['file']['permalink']
+            opsg_msg = 'e2e failure: %s (%s)' % (slack_alert_link, test_name)
+            if len(opsg_msg) > 126: # OpsGenie has a 130 char limit on message title length
+                opsg_msg = opsg_msg[:126] + "..."
+            alert_opsgenie(opsgenie_key, opsg_msg, msg)
         if args.pause_on_err:
             print("""
 #################################################################################################
