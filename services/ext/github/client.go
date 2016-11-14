@@ -73,15 +73,13 @@ type githubAuthorizations interface {
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
+	if resp != nil && resp.Request.Header.Get("Authorization") == "" { // do not track user rate limits
+		rateLimitRemainingGauge.Set(float64(resp.Remaining))
+	}
+
 	if err == nil {
 		return nil
 	}
-	if resp == nil {
-		log15.Debug("no response from github", "error", err)
-		return err
-	}
-
-	rateLimitRemainingGauge.Set(float64(resp.Remaining))
 
 	switch err.(type) {
 	case *github.RateLimitError:
@@ -91,6 +89,11 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		log15.Debug("triggered GitHub abuse detection mechanism", "error", err, "op", op)
 		abuseDetectionMechanismCounter.Inc()
 		return legacyerr.Errorf(legacyerr.ResourceExhausted, "triggered GitHub abuse detection mechanism: %s: %v", op, err)
+	}
+
+	if resp == nil {
+		log15.Debug("no response from github", "error", err)
+		return err
 	}
 
 	switch resp.StatusCode {
