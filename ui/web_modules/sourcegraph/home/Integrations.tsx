@@ -12,7 +12,7 @@ interface Props {
 function Tool({name, img, url, event}: {name: string, img: string, url: string, event: AnalyticsConstants.LoggableEvent}): JSX.Element {
 	return <a href={url} target="_blank" className={styles.tool} onClick={() => {if (event) { event.logEvent(); }}}>
 		<img className={styles.img} src={`${context.assetsRoot}${img}`}></img>
-		<div className={styles.caption}>{.name}</div>
+		<div className={styles.caption}>{name}</div>
 	</a>;
 }
 
