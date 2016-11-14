@@ -20,8 +20,6 @@ class Context {
 		Date: string;
 	};
 
-	features: Features;
-
 	hasPrivateGitHubToken(): boolean {
 		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("repo") && this.gitHubToken.scope.includes("read:org"));
 	}
@@ -45,15 +43,8 @@ class Context {
 
 export const context = new Context();
 
-export interface Features {
-};
-
 // Sets the values of the context given a JSContext object from the server.
-export function reset(args: {appURL: string, assetsRoot: string, buildVars: {Version: string}, features: Features}): void {
-	if (typeof args.features !== "undefined") {
-		context.features = args.features;
-	}
-	delete args.features;
+export function reset(args: {appURL: string, assetsRoot: string, buildVars: {Version: string}}): void {
 	if (typeof args.appURL === "undefined" || typeof args.assetsRoot === "undefined" || typeof args.buildVars === "undefined") {
 		throw new Error("appURL, assetsRoot, and buildVars must all be set");
 	}
