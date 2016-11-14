@@ -19,7 +19,7 @@ export class Tabs extends React.Component<Props, {}> {
 		color: "blue",
 	};
 
-	_childrenWithProps() {
+	_childrenWithProps(): JSX.Element[] {
 		return React.Children.map(this.props.children, (child: React.ReactElement<any>) => {
 			if (child.props.tabItem) {
 				return React.cloneElement(child, {
@@ -34,7 +34,7 @@ export class Tabs extends React.Component<Props, {}> {
 		});
 	}
 
-	render(): JSX.Element | null {
+	render(): JSX.Element {
 		const {direction, className, style} = this.props;
 		return <div className={classNames(styles.container, direction === "vertical" ? styles.vertical : styles.horizontal, className)} style={style}>{this._childrenWithProps()}</div>;
 	}
