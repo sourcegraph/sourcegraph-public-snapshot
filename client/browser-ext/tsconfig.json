@@ -5,7 +5,8 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-        "app/*": ["app/*"]
+        "app/*": ["app/*"],
+        "chrome/*": ["chrome/*"]
     },
     "lib": ["es2016", "dom"],
     "types": ["mocha"],

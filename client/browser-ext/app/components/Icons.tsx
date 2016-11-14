@@ -1,12 +1,10 @@
-import React from "react";
-import IconBase from "react-icon-base";
+import * as React from "react";
 
-export {default as TextIcon} from "react-icons/lib/md/format-color-text";
-export {default as SearchIcon} from "react-icons/lib/go/search";
-export {default as CodeIcon} from "react-icons/lib/go/code";
+// tslint:disable-next-line
+const IconBase = require("react-icon-base");
 
-export class SourcegraphIcon extends React.Component {
-	render() {
+export class SourcegraphIcon extends React.Component<any, {}> {
+	render(): JSX.Element {
 		return (<IconBase viewBox="0 0 40 40" {...this.props}>
 			<g fill="none" fill-rule="evenodd">
 				<path d="M11.5941935,5.12629921 L20.4929032,36.888189 C21.0909677,39.0226772 23.3477419,40.279685 25.5325806,39.6951181 C27.7190323,39.1105512 29.0051613,36.9064567 28.4067742,34.7722835 L19.5064516,3.00944882 C18.9080645,0.875590551 16.6516129,-0.381732283 14.4667742,0.203149606 C12.2822581,0.786771654 10.9958065,2.99149606 11.5941935,5.12598425 L11.5941935,5.12629921 Z" id="Shape" fill="#F96316"></path>

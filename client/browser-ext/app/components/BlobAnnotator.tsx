@@ -1,38 +1,53 @@
-import React from "react";
-import {bindActionCreators} from "redux";
-import {connect} from "react-redux";
-import addAnnotations from "../utils/annotations";
-import Component from "./Component";
-import {SourcegraphIcon} from "./Icons";
-import * as Actions from "../actions";
-import * as utils from "../utils";
+import {allActions} from "../actions";
+import {EventLogger} from "../analytics/EventLogger";
 import {keyFor} from "../reducers/helpers";
-import EventLogger from "../analytics/EventLogger";
+import * as utils from "../utils";
+import {addAnnotations} from "../utils/annotations";
+import {Component} from "./Component";
+import {SourcegraphIcon} from "./Icons";
+import * as React from "react";
+import {connect} from "react-redux";
+import {bindActionCreators} from "redux";
 
 const isCloning = new Map();
 
-@connect(
-	(state) => ({
-		resolvedRev: state.resolvedRev,
-		annotations: state.annotations,
-		accessToken: state.accessToken,
-	}),
-	(dispatch) => ({
-		actions: bindActionCreators(Actions, dispatch)
-	})
-)
-export default class BlobAnnotator extends Component {
-	static propTypes = {
-		path: React.PropTypes.string.isRequired,
-		resolvedRev: React.PropTypes.object.isRequired,
-		annotations: React.PropTypes.object.isRequired,
-		actions: React.PropTypes.object.isRequired,
-		blobElement: React.PropTypes.object.isRequired,
-		infoElement: React.PropTypes.object.isRequired,
-		selfElement: React.PropTypes.object.isRequired,
-	};
+interface Props {
+	actions: any;
+	path: any;
+	resolvedRev: Object;
+	annotations: Object;
+	blobElement: HTMLElement;
+	infoElement: HTMLElement;
+	selfElement: HTMLElement;
+}
 
-	constructor(props) {
+interface State {
+	user: string;
+	repo: string;
+	repoURI: string;
+	rev?: string;
+	path?: string;
+	isDelta?: boolean;
+	isPullRequest?: boolean;
+	isCommit?: boolean;
+	resolvedRev: any;
+	annotations: any;
+	accessToken: any;
+	language: string;
+	isPrivateRepo: boolean;
+	isSplitDiff: boolean;
+	baseCommitID?: string;
+	headCommitID?: string;
+	base?: string;
+	head?: string;
+	baseRepoURI?: string;
+	headRepoURI?: string;
+	headLineNumber?: string;
+	refreshInterval?: any;
+}
+
+class Base extends Component<Props, State & Props> {
+	constructor(props: Props) {
 		super(props);
 
 		this.getBlobUrl = this.getBlobUrl.bind(this);
@@ -43,7 +58,7 @@ export default class BlobAnnotator extends Component {
 		this.onClickFileView = this.onClickFileView.bind(this);
 		this.refreshWhenVCSCloned = this.refreshWhenVCSCloned.bind(this);
 
-		this.state = utils.parseURL();
+		this.state = utils.parseURL(window.location) as any; // TODO(john: bad idea)
 		this.state.path = props.path;
 		this.state.language = utils.getPathExtension(this.state.path);
 		this.state.isPrivateRepo = this.isPrivateRepo();
@@ -57,8 +72,10 @@ export default class BlobAnnotator extends Component {
 			if (el && el.length > 0) {
 				// Blob view
 				for (let i = 0; i < el.length; ++i) {
-					const url = el[i].dataset ? el[i].dataset.url : null;
-					if (!url) continue;
+					const url = (el[i] as HTMLElement).dataset ? (el[i] as HTMLElement).dataset["url"] : null;
+					if (!url) {
+						continue;
+					}
 					const urlSplit = url.split("?");
 					if (urlSplit.length !== 2) continue;
 					const query = urlSplit[1];
@@ -75,34 +92,38 @@ export default class BlobAnnotator extends Component {
 				// For snippets in conversation view of pull request
 				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
 				if (baseInput) {
-					baseCommitID = baseInput.value;
+					baseCommitID = (baseInput as HTMLInputElement).value;
 				}
-				if (typeof props.infoElement.href !== 'undefined') {
-					headCommitID = props.infoElement.href.split("/files/")[1].split("#diff")[0];
+				if (typeof (props.infoElement as HTMLAnchorElement).href !== 'undefined') {
+					headCommitID = (props.infoElement as HTMLAnchorElement).href.split("/files/")[1].split("#diff")[0];
 				} else {
 					const headInput = document.querySelector('input[name="comparison_end_oid"]');
 					if (headInput) {
-						headCommitID = headInput.value;
+						headCommitID = (headInput as HTMLInputElement).value;
 					}
 				}
 			} else if (this.state.isPullRequest) {
 				// Files changed view in pull requests
 				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
 				if (baseInput) {
-					baseCommitID = baseInput.value;
+					baseCommitID = (baseInput as HTMLInputElement).value;
 				}
 				const headInput = document.querySelector('input[name="comparison_end_oid"]');
 				if (headInput) {
-					headCommitID = headInput.value;
+					headCommitID = (headInput as HTMLInputElement).value;
 				}
 			} else if (this.state.isCommit) {
 				// Files changed view in commits
 				let shaContainer = document.querySelectorAll(".sha-block");
 				if (shaContainer && shaContainer.length === 2) {
 					let baseShaEl = shaContainer[0].querySelector("a");
-					if (baseShaEl) baseCommitID = baseShaEl.href.split("/").slice(-1)[0];
+					if (baseShaEl) {
+						baseCommitID = baseShaEl.href.split("/").slice(-1)[0];
+					}
 					let headShaEl = shaContainer[1].querySelector("span.sha");
-					if (headShaEl) headCommitID = headShaEl.innerText;
+					if (headShaEl) {
+						headCommitID = (headShaEl as HTMLElement).innerText;
+					}
 				}
 			}
 			if (!baseCommitID) {
@@ -116,7 +137,7 @@ export default class BlobAnnotator extends Component {
 			this.state.headCommitID = headCommitID;
 
 			if (this.state.isPullRequest) {
-				const branches = document.querySelectorAll(".commit-ref,.current-branch");
+				const branches = document.querySelectorAll(".commit-ref,.current-branch") as HTMLCollectionOf<HTMLElement>;
 				this.state.base = branches[0].innerText;
 				this.state.head = branches[1].innerText;
 
@@ -135,8 +156,10 @@ export default class BlobAnnotator extends Component {
 					this.state.headRepoURI = this.state.repoURI;
 				}
 			} else if (this.state.isCommit) {
-				let branchEl = document.querySelector("li.branch");
-				if (branchEl) branchEl = branchEl.querySelector("a")
+				let branchEl = document.querySelector("li.branch") as HTMLElement;
+				if (branchEl) {
+					branchEl = branchEl.querySelector("a") as HTMLElement;
+				}
 				if (branchEl) {
 					this.state.base = branchEl.innerText;
 					this.state.head = branchEl.innerText;
@@ -203,11 +226,13 @@ export default class BlobAnnotator extends Component {
 		// Get first line number of the file's first head hunk. In a split diff, there
 		// is an extra element before the element containing the head data-line-number,
 		// which is why we use a different nth-child value.
-		if (!this.state.isDelta) return;
+		if (!this.state.isDelta) {
+			return;
+		}
 
 		let headLineNumberEl = this.props.blobElement.querySelector(`[data-line-number]:nth-child(${this.state.isSplitDiff ? 3 : 2})`);
 		if (headLineNumberEl) {
-			this.state.headLineNumber = headLineNumberEl.dataset.lineNumber;
+			this.state.headLineNumber = (headLineNumberEl as HTMLElement).dataset["lineNumber"];
 		}
 	}
 
@@ -220,7 +245,8 @@ export default class BlobAnnotator extends Component {
 
 			const selfElementA = this.state.selfElement.getElementsByTagName("A");
 			if (selfElementA) {
-				selfElementA.href = this.getBlobUrl();
+				// TODO(john): this is completely broken...
+				(selfElementA as any).href = this.getBlobUrl();
 			}
 		}
 	}
@@ -234,7 +260,7 @@ export default class BlobAnnotator extends Component {
 			if (!diffToggles || diffToggles.length !== 1) return false;
 
 			const disabledToggle = diffToggles[0].getElementsByTagName("A")[0];
-			return disabledToggle && !disabledToggle.href.includes("diff=split");
+			return disabledToggle && !(disabledToggle as any).href.includes("diff=split");
 		} else {
 			const headerBar = document.getElementsByClassName("details-collapse table-of-contents js-details-container");
 			if (!headerBar || headerBar.length !== 1) return false;
@@ -243,7 +269,7 @@ export default class BlobAnnotator extends Component {
 			if (!diffToggles || diffToggles.length !== 1) return false;
 
 			const selectedToggle = diffToggles[0].querySelector(".selected");
-			return selectedToggle && selectedToggle.href.includes("diff=split");
+			return selectedToggle && (selectedToggle as any).href.includes("diff=split");
 		}
 	}
 
@@ -318,12 +344,12 @@ export default class BlobAnnotator extends Component {
 		}
 	}
 
-	getBlobUrl() {
+	getBlobUrl(): string {
 		let rev;
 		let repo;
 		let selectedLineNumber = "";
 
-		switch(utils.getGitHubRoute()) {
+		switch(utils.getGitHubRoute(window.location)) {
 			case "blob":
 				rev = this.state.rev;
 				repo = this.state.repoURI;
@@ -331,11 +357,11 @@ export default class BlobAnnotator extends Component {
 				break;
 			case "pull":
 			case "commit":
-				const selectedLine = this.state.blobElement.getElementsByClassName("js-linkable-line-number selected-line")[0];
+				const selectedLine = this.state.blobElement.getElementsByClassName("js-linkable-line-number selected-line")[0] as HTMLElement;
 				const jumpToSide = selectedLine ? `${selectedLine.id.match(/([LR])[\d]+$/g) || "R"}` : "R";
 
 				// If no line is selected, jump to first line in the condensed blob
-				selectedLineNumber = selectedLine && selectedLine.dataset ? `#L${selectedLine.dataset.lineNumber}` : "";
+				selectedLineNumber = selectedLine && (selectedLine as any).dataset ? `#L${(selectedLine.dataset as any).lineNumber}` : "";
 				if (!selectedLineNumber && this.state.headLineNumber) {
 					selectedLineNumber = `#L${this.state.headLineNumber}`;
 				}
@@ -351,7 +377,7 @@ export default class BlobAnnotator extends Component {
 				break;
 			default:
 				console.debug("Could not generate blob URL");
-				return window.location;
+				return window.location.href;
 		}
 
 		return `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${selectedLineNumber}`;
@@ -370,21 +396,21 @@ export default class BlobAnnotator extends Component {
 				this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
 				this.state.selfElement.onclick = this.onClickAuthPriv;
 
-				return <span><a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`} onclick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
+				return <span><a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`} onClick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
 			} else if (this.state.resolvedRev.content[keyFor(this.state.repoURI)].cloneInProgress === true) {
 				// Cloning the repo
-				this.state.selfElement.setAttribute("disabled", true);
+				this.state.selfElement.setAttribute("disabled", "true");
 				this.state.selfElement.setAttribute("aria-label", `Sourcegraph is analyzing ${this.state.repoURI.split("github.com/")[1]}`);
 
 				if (isCloning.has(this.state.repoURI) === false) {
-					isCloning.set(this.state.repoURI, true);
+					isCloning.set(this.state.repoURI, "true");
 					this.state.refreshInterval = setInterval(this.refreshWhenVCSCloned, 5000);
 				}
 
 				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Loading...</span>;
 			} else {
 				if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
-					this.state.selfElement.setAttribute("disabled", true);
+					this.state.selfElement.setAttribute("disabled", "true");
 					if (!utils.upcomingExtensions.includes(utils.getPathExtension(this.state.path))) {
 						this.state.selfElement.setAttribute("aria-label", "File not supported");
 					} else {
@@ -403,14 +429,20 @@ export default class BlobAnnotator extends Component {
 							clearInterval(this.state.refreshInterval);
 					}
 
-					return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
+					return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onClick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
 				}
 			}
 		} else {
 			// Default case when we don't have any annotation data
 			this.state.selfElement.setAttribute("aria-label", "Loading...");
 
-			return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onclick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
+			return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onClick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
 		}
 	}
 }
+
+export const BlobAnnotator = connect((state) => ({
+	resolvedRev: state.resolvedRev,
+	annotations: state.annotations,
+	accessToken: state.accessToken,
+} as any), (dispatch) => ({actions: bindActionCreators(allActions, dispatch)}))(Base) as any; // TODO(john): remove any cast

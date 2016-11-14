@@ -1,19 +1,21 @@
-function isInjected(tabId) {
-	return chrome.tabs.executeScriptAsync(tabId, {
+function isInjected(tabId: number): Promise<void> {
+	// TODO(john): find `executeScriptAsync` d.ts
+	return (chrome.tabs as any).executeScriptAsync(tabId, {
 		code: `var injected = window.reactExampleInjected;
 			window.reactExampleInjected = true;
 			injected;`,
-		runAt: "document_start"
+		runAt: "document_start",
 	});
 }
 
-function loadScript(name, tabId, cb) {
+function loadScript(name: string, tabId: number, cb: () => void): Promise<void> {
 	if (process.env.NODE_ENV === "production") {
 		// Do not use direct tab injection; instead, scripts are loaded via
 		// content_scripts (see: https://developer.chrome.com/extensions/content_scripts).
+		return Promise.resolve();
 	} else {
 		// dev: async fetch bundle
-		fetch(`https://localhost:3000/js/${name}.bundle.js`)
+		return fetch(`https://localhost:3000/js/${name}.bundle.js`)
 			.then((res) => res.text())
 			.then((fetchRes) => {
 				// Load redux-devtools-extension inject bundle,
@@ -34,12 +36,17 @@ function loadScript(name, tabId, cb) {
 const arrowURLs = ["^https://github\\.com", "^https://www\\.github\\.com", "^https://sourcegraph\\.com", "^https://www\\.sourcegraph\\.com"];
 
 if (process.env.NODE_ENV !== "production") {
-	chrome.tabs.onUpdated.addListener(async function(tabId, changeInfo, tab) {
-		if (changeInfo.status !== "loading" || !tab.url.match(arrowURLs.join("|"))) return;
+	chrome.tabs.onUpdated.addListener((tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+		if (changeInfo.status !== "loading" || (tab.url && !tab.url.match(arrowURLs.join("|")))) {
+			return Promise.resolve();
+		}
 
-		const result = await isInjected(tabId);
-		if (chrome.runtime.lastError || result[0]) return;
-
-		loadScript("inject", tabId, () => console.log("load inject bundle success!"));
+		return isInjected(tabId).then((result) => {
+			if (chrome.runtime.lastError || result[0]) {
+				return;
+			}
+			// tslint:disable-next-line
+			return loadScript("inject", tabId, () => console.log("load inject bundle success!"));
+		});
 	});
 }

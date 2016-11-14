@@ -1,15 +1,36 @@
-import utf8 from "utf8";
-import fetch from "../actions/xhr";
-import styles from "../components/App.css";
+import {doFetch as fetch} from "../actions/xhr";
+import {EventLogger} from "../analytics/EventLogger";
 import * as utils from "./index";
-import _ from "lodash";
-import EventLogger from "../analytics/EventLogger";
+import * as _ from "lodash"; // TODO(john): do we need this?
+import * as utf8 from "utf8";
+
+function applyTooltipStyling(elem: HTMLElement): void {
+	elem.style.backgroundColor = "#2D2D30";
+	elem.style.maxWidth = "500px";
+	elem.style.maxHeight = "250px";
+	elem.style.overflow = "auto";
+	elem.style.border = "solid 1px #555";
+	elem.style.fontFamily = `"Helvetica Neue", Helvetica, Arial, sans-serif`;
+	elem.style.color = "rgba(213, 229, 242, 1)";
+	elem.style.fontSize = "12px";
+	elem.style.lineHeight = "19px";
+	elem.style.zIndex = "100";
+	elem.style.position = "absolute";
+	elem.style.wordWrap = "break-word";
+	elem.style.padding = "5px 6px";
+}
+
+function applyTooltipTitleStyling(elem: HTMLElement): void {
+	elem.style.fontFamily = `Menlo, Monaco, Consolas, "Courier New", monospace`;
+	elem.style.wordWrap = "break-all";
+}
+
 
 // addAnnotations is the entry point for injecting annotations onto a blob (el).
 // An invisible marker is appended to the document to indicate that annotation
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
-export default function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff, loggingStruct) {
+export function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff, loggingStruct) {
 	_applyAnnotations(el, path, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff, loggingStruct);
 }
 
@@ -202,7 +223,8 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 		wrapNode.id = `text-node-${lineOffset}-${offset}`; // TODO(john): this is not globally unique for diff views.
 		const textNode = document.createTextNode(utf8.decode(nodeText.slice(start, end).join("")));
 
-		wrapNode.dataset.byteoffset = offset;
+		// TODO(john): type this
+		(wrapNode.dataset as any).byteoffset = offset;
 		wrapNode.appendChild(textNode);
 
 		return wrapNode;
@@ -248,7 +270,7 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 export function convertStringNode(currentNode, annsByStartByte, offset, lineStart) {
 	const wrapperNode = document.createElement("SPAN");
 
-	wrapperNode.dataset.byteoffset = offset + 1 - lineStart;
+	(wrapperNode.dataset as any).byteoffset = offset + 1 - lineStart;
 	wrapperNode.appendChild(currentNode.cloneNode(true));
 
 	return {
@@ -264,7 +286,7 @@ export function convertElementNode(currentNode, annsByStartByte, offset, lineSta
 	let bytesConsumed = 0;
 	const wrapperNode = document.createElement("SPAN");
 
-	wrapperNode.dataset.byteoffset = offset + 1 - lineStart;
+	(wrapperNode.dataset as any).byteoffset = offset + 1 - lineStart;
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
 	for (let i = 0; i < currentNode.childNodes.length; ++i) {
@@ -287,7 +309,7 @@ let j2dCache = {};
 const HOVER_DELAY_MS = 200;
 
 const tooltip = document.createElement("DIV");
-tooltip.classList.add(styles.tooltip);
+applyTooltipStyling(tooltip);
 tooltip.classList.add("sg-tooltip");
 
 const loadingTooltip = document.createElement("DIV");
@@ -474,7 +496,7 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 					target.style.cursor = "pointer";
 					target.className = `${target.className} sg-clickable`;
 
-					tooltip.className = styles.tooltipTitle;
+					applyTooltipTitleStyling(tooltip);
 					tooltip.appendChild(document.createTextNode(json[1].result.contents[0].value));
 					tooltipCache[cacheKey] = tooltip;
 				} else {

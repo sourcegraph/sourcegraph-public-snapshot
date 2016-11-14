@@ -8,8 +8,8 @@ module.exports = {
 	devtool: 'eval-cheap-module-source-map',
 	devServer: { host, port, https: true },
 	entry: {
-		background: path.join(__dirname, '../chrome/extension/background'),
-		inject: path.join(__dirname, '../chrome/extension/inject')
+		background: path.join(__dirname, '../chrome/extension/background.tsx'),
+		inject: path.join(__dirname, '../chrome/extension/inject.tsx')
 	},
 	output: {
 		path: path.join(__dirname, '../dev/js'),
@@ -27,23 +27,17 @@ module.exports = {
 		})
 	],
 	resolve: {
-		extensions: ['', '.js']
+		extensions: ['', '.ts', '.tsx', '.js']
 	},
 	module: {
 		loaders: [{
-			test: /\.js$/,
-			loader: 'babel',
-			exclude: /node_modules/,
-			query: {
-				presets: ['react-hmre']
-			}
-		}, {
-			test: /\.css$/,
-			loaders: [
-				'style',
-				'css?modules&sourceMap&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]',
-				'postcss'
-			]
+			test: /\.tsx?$/,
+			loader: 'ts?'+JSON.stringify({
+				compilerOptions: {
+					noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
+				},
+				transpileOnly: true, // type checking is only done as part of linting or testing
+			}),
 		}]
 	}
 };
