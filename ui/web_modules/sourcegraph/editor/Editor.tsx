@@ -276,7 +276,7 @@ export class Editor implements IDisposable {
 		const cached = hoverCache.get(key);
 		if (cached) {
 			return cached.then(hover => {
-				if (hover.contents) {
+				if (hover.contents && hover.contents.length > 0) {
 					this.setTokenCursor(word);
 				}
 				return hover;
