@@ -12,7 +12,7 @@ interface Props {
 	shouldHide: boolean;
 }
 
-const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go";
+const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go#L153";
 
 export const Signup = (props: Props): JSX.Element => {
 	const sx = {

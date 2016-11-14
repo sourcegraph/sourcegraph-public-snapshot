@@ -450,6 +450,13 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					EventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
 					if (eventName === "SignupCompleted") {
 						AnalyticsConstants.Events.Signup_Completed.logEvent(eventProperties);
+						if (context.user) {
+							// When the user signs up. Fire off a request to get orgs and repos if they have the scope.
+							Dispatcher.Backends.dispatch(new RepoActions.WantRepos("RemoteOnly=true", true));
+							if (context.hasOrganizationGitHubToken()) {
+								Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
+							}
+						}
 					} else if (eventName === "CompletedGitHubOAuth2Flow") {
 						AnalyticsConstants.Events.OAuth2FlowGitHub_Completed.logEvent(eventProperties);
 					}
