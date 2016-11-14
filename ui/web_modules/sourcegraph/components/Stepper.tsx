@@ -23,7 +23,7 @@ export class Stepper extends React.Component<Props, {}> {
 		color: "green",
 	};
 
-	renderSteps(): JSX.Element[] {
+	getStepsFragment(): JSX.Element[] {
 		const {steps, stepsComplete, color} = this.props;
 		return steps.map((step, i) => {
 			if (i < stepsComplete) {
@@ -46,7 +46,7 @@ export class Stepper extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element | null {
-		return <div className={classNames(this.props.className, styles.stepper)}>{this.renderSteps()}</div>;
+		return <div className={classNames(this.props.className, styles.stepper)}>{this.getStepsFragment()}</div>;
 	}
 }
 
