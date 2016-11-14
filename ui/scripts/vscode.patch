@@ -360,3 +360,22 @@ index 06e0142..200e056 100644
                          hoverMessage = {
                              language: language,
                              value: source
+diff --git a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js
+index e870c30..812ca4b 100644
+--- a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js
++++ b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js
+@@ -683,13 +683,7 @@ var TextModel = (function (_super) {
+         if (!regex) {
+             return [];
+         }
+-        var searchRange;
+-        if (range_1.Range.isIRange(rawSearchScope)) {
+-            searchRange = this.validateRange(rawSearchScope);
+-        }
+-        else {
+-            searchRange = this.getFullModelRange();
+-        }
++        var searchRange = this.getFullModelRange();
+         if (regex.multiline) {
+             return this._doFindMatchesMultiline(searchRange, regex, limitResultCount);
+         }
