@@ -1,4 +1,4 @@
-.PHONY: all lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags deploy
+.PHONY: all lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags deploy deploy-staging
 
 all: lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags
 
