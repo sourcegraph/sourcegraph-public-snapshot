@@ -15,6 +15,7 @@ declare namespace global {
 	export var chrome: any;
 	export var __webpack_public_path__: any;
 	export var module: any;
+	export var __sourcegraphJSContext: any;
 }
 
 declare module "expect.js" {

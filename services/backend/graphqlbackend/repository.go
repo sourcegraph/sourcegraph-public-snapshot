@@ -6,6 +6,7 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
@@ -39,25 +40,42 @@ func (r *repositoryResolver) URI() string {
 	return r.repo.URI
 }
 
-func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitResolver, error) {
+func (r *repositoryResolver) Description() string {
+	return r.repo.Description
+}
+
+func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,
 		Rev:  args.Rev,
 	})
 	if err != nil {
+		if err == vcs.ErrRevisionNotFound {
+			return &commitStateResolver{}, nil
+		}
+		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+			return &commitStateResolver{cloneInProgress: true}, nil
+		}
 		return nil, err
 	}
-	return &commitResolver{commit: commitSpec{r.repo.ID, rev.CommitID}}, nil
+	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{r.repo.ID, rev.CommitID}}}, nil
 }
 
-func (r *repositoryResolver) Latest(ctx context.Context) (*commitResolver, error) {
+func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,
 	})
 	if err != nil {
+		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+			return &commitStateResolver{cloneInProgress: true}, nil
+		}
 		return nil, err
 	}
-	return &commitResolver{commit: commitSpec{r.repo.ID, rev.CommitID}}, nil
+	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{r.repo.ID, rev.CommitID}}}, nil
+}
+
+func (r *repositoryResolver) DefaultBranch() string {
+	return r.repo.DefaultBranch
 }
 
 func (r *repositoryResolver) Branches(ctx context.Context) ([]string, error) {

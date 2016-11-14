@@ -169,7 +169,6 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * User: ${context.user ? context.user.Login : "(anonymous)"}
 * User agent: \`${window.navigator.userAgent}\`
 * Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
-* Feature flags: \`${JSON.stringify(context.features)}\`
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
 	console.debug(`Post a GitHub issue\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels=lang-${modeID}`);

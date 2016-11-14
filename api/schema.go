@@ -20,18 +20,26 @@ type Root {
 }
 
 type Repository implements Node {
-  id: ID!
+	id: ID!
 	uri: String!
-	commit(rev: String!): Commit
-	latest: Commit!
+	description: String!
+	commit(rev: String!): CommitState!
+	latest: CommitState!
+	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
+}
+
+type CommitState {
+	commit: Commit
+	cloneInProgress: Boolean!
 }
 
 type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
+	file(path: String!): File
 	languages: [String!]!
 }
 
@@ -47,10 +55,6 @@ type Directory {
 
 type File {
 	name: String!
-	content: Blob!
-}
-
-type Blob {
-	bytes: String!
+	content: String!
 }
 `

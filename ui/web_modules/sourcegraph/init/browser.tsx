@@ -3,13 +3,14 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import {AppContainer} from "react-hot-loader";
 import * as Relay from "react-relay";
-import {Router, applyRouterMiddleware, browserHistory as history, match} from "react-router";
 import {useScroll} from "react-router-scroll";
 import Redbox from "redbox-react";
+
+import {Router, applyRouterMiddleware, browserHistory as history, match} from "react-router";
 import {rootRoute} from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
 import {hashLinkScroll, shouldUpdateScroll} from "sourcegraph/app/routerScrollBehavior";
-import "sourcegraph/util/actionLogger";
+import {EventLogger} from "sourcegraph/util/EventLogger";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
 import "sourcegraph/app/routeParams";
@@ -22,7 +23,7 @@ import "sourcegraph/init/Sentry";
 // See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
 import "autotrack/lib/plugins/url-change-tracker";
 
-context.reset(global.window.__sourcegraphJSContext);
+EventLogger.init();
 
 Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {headers: context.context.xhrHeaders}));
 

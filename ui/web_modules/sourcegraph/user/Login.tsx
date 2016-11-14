@@ -1,7 +1,6 @@
 import * as React from "react";
 import Helmet from "react-helmet";
 import {Link} from "react-router";
-import {Component} from "sourcegraph/Component";
 import {Heading} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {Location} from "sourcegraph/Location";
@@ -17,14 +16,11 @@ interface Props {
 	returnTo: string | Location;
 };
 
-type State = any;
-
-export class LoginForm extends Component<Props, State> {
-	render(): JSX.Element | null {
+export function LoginForm(props: Props): JSX.Element {
 		return (
 			<div className={styles.form}>
 				<Heading level={3} align="center" underline="orange">Sign in to Sourcegraph</Heading>
-				<GitHubAuthButton returnTo={this.props.returnTo || this.props.location} tabIndex={1} block={true}>Continue with GitHub</GitHubAuthButton>
+				<GitHubAuthButton returnTo={props.returnTo || props.location} tabIndex={1} block={true}>Continue with GitHub</GitHubAuthButton>
 				<p className={styles.sub_text}>
 					No account yet? <Link tabIndex={5} to="/join">Sign up.</Link>
 				</p>
@@ -33,7 +29,6 @@ export class LoginForm extends Component<Props, State> {
 				</p>
 			</div>
 		);
-	}
 }
 
 // Login is the standalone login page.

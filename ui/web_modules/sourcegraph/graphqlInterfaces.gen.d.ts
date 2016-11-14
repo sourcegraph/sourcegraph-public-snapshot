@@ -20,20 +20,22 @@ declare namespace GQL {
   /*
     description: null
   */
-  interface IBlob {
-    __typename: string;
-    bytes: string;
-  }
-
-  /*
-    description: null
-  */
   interface ICommit {
     __typename: string;
     id: string;
     sha1: string;
     tree: ITree;
+    file: IFile;
     languages: Array<string>;
+  }
+
+  /*
+    description: null
+  */
+  interface ICommitState {
+    __typename: string;
+    commit: ICommit;
+    cloneInProgress: boolean;
   }
 
   /*
@@ -51,7 +53,7 @@ declare namespace GQL {
   interface IFile {
     __typename: string;
     name: string;
-    content: IBlob;
+    content: string;
   }
 
   /*
@@ -83,8 +85,10 @@ declare namespace GQL {
     __typename: string;
     id: string;
     uri: string;
-    commit: ICommit;
-    latest: ICommit;
+    description: string;
+    commit: ICommitState;
+    latest: ICommitState;
+    defaultBranch: string;
     branches: Array<string>;
     tags: Array<string>;
   }

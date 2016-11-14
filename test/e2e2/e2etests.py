@@ -54,7 +54,7 @@ def test_github_private_auth_onboarding(d):
         d.find_button_by_partial_text("Authorize application").click()
 
     wait_for(lambda: len(d.find_tokens("Checkers")) > 0)
-    wait_for(lambda: wd.find_element_by_id("def-coachmark"), max_wait=3.0)
+    wait_for(lambda: wd.find_element_by_id("def-coachmark"), max_wait=4.0)
 
     # Log out
     Util.log_out(d)
@@ -85,8 +85,8 @@ def test_github_public_auth_onboarding(d):
         d.find_button_by_partial_text("Authorize application").click()
 
     wait_for(lambda: len(d.find_tokens("Checkers")) > 0)
-    wait_for(lambda: wd.find_element_by_id("def-coachmark"))
-    wait_for(lambda: wd.find_element_by_id("ref-coachmark"))
+    wait_for(lambda: wd.find_element_by_id("def-coachmark"), max_wait=4.0)
+    wait_for(lambda: wd.find_element_by_id("ref-coachmark"), max_wait=4.0)
 
     # Log out
     Util.log_out(d)
@@ -209,6 +209,7 @@ def test_beta_signup(d):
 
     wd.get(d.sg_url("/"))
     Util.log_in(d, username, password)
+    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "Start exploring code")) > 0)
 
     wd.get(d.sg_url("/beta"))
     wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "Register for beta access")) > 0)

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"path"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
@@ -13,6 +14,19 @@ import (
 type commitSpec struct {
 	RepoID   int32
 	CommitID string
+}
+
+type commitStateResolver struct {
+	commit          *commitResolver
+	cloneInProgress bool
+}
+
+func (r *commitStateResolver) Commit() *commitResolver {
+	return r.commit
+}
+
+func (r *commitStateResolver) CloneInProgress() bool {
+	return r.cloneInProgress
 }
 
 type commitResolver struct {
@@ -45,6 +59,16 @@ func (r *commitResolver) Tree(ctx context.Context, args *struct {
 	Recursive bool
 }) (*treeResolver, error) {
 	return makeTreeResolver(ctx, r.commit, args.Path, args.Recursive)
+}
+
+func (r *commitResolver) File(ctx context.Context, args *struct {
+	Path string
+}) (*entryResolver, error) {
+	return &entryResolver{
+		commit: r.commit,
+		name:   path.Base(args.Path),
+		path:   args.Path,
+	}, nil
 }
 
 func (r *commitResolver) Languages(ctx context.Context) ([]string, error) {

@@ -1,31 +1,22 @@
 import expect from "expect.js";
 import * as React from "react";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
-import {OriginGitHub} from "sourcegraph/repo/RepoBackend";
 import {RepoMain} from "sourcegraph/repo/RepoMain";
 import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
-import {render} from "sourcegraph/util/testutil/renderTestUtils";
 
 const common = {
 	routes: [],
 	route: {},
+	location: {},
 };
 
 describe("RepoMain", () => {
 	it("should show an error page if the repo failed to load", () => {
-		let o = renderToString(<RepoMain repo="r" repoObj={{Error: true}} {...common} />);
-		expect(o).to.contain("is not available");
+		let o = renderToString(<RepoMain repo="r" rev="v" repository={null} commit={{} as GQL.ICommitState} {...common} relay={null} params={undefined as any} />);
+		expect(o).to.contain("Repository not found.");
 	});
 
 	it("should show an error page if the rev failed to resolve/load", () => {
-		const o = renderToString(<RepoMain repo="r" rev="v" resolvedRev={{Error: {}}} {...common} />);
+		let o = renderToString(<RepoMain repo="r" rev="v" repository={{} as GQL.IRepository} commit={{} as GQL.ICommitState} {...common} relay={null} params={undefined as any} />);
 		expect(o).to.contain("Revision is not available");
-	});
-
-	describe("repo creation", () => {
-		it("should trigger WantCreateRepo for just-resolved remote repos", () => {
-			const res = render(<RepoMain repo="r" repoResolution={{RemoteRepo: {Origin: {ID: "123", Service: OriginGitHub}}}} location={{pathname: "/r", state: {}}} {...common} />);
-			expect(res.actions).to.eql([new RepoActions.WantCreateRepo("r", {Origin: {ID: "123", Service: OriginGitHub}})]);
-		});
 	});
 });

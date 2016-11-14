@@ -289,13 +289,15 @@ class EventLoggerClass {
 			this._telligent("track", eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action}));
 		}
 
-		global.window.ga("send", {
-			hitType: "event",
-			eventCategory: eventObject.category || "",
-			eventAction: eventObject.action || "",
-			eventLabel: eventObject.label,
-			nonInteraction: true,
-		});
+		if (global && global.window && global.window.ga) {
+			global.window.ga("send", {
+				hitType: "event",
+				eventCategory: eventObject.category || "",
+				eventAction: eventObject.action || "",
+				eventLabel: eventObject.label,
+				nonInteraction: true,
+			});
+		}
 	}
 
 	// sets current user's property value
@@ -450,6 +452,13 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					EventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
 					if (eventName === "SignupCompleted") {
 						AnalyticsConstants.Events.Signup_Completed.logEvent(eventProperties);
+						if (context.user) {
+							// When the user signs up. Fire off a request to get orgs and repos if they have the scope.
+							Dispatcher.Backends.dispatch(new RepoActions.WantRepos("RemoteOnly=true", true));
+							if (context.hasOrganizationGitHubToken()) {
+								Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
+							}
+						}
 					} else if (eventName === "CompletedGitHubOAuth2Flow") {
 						AnalyticsConstants.Events.OAuth2FlowGitHub_Completed.logEvent(eventProperties);
 					}

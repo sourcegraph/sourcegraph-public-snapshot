@@ -4,7 +4,7 @@ import * as React from "react";
 import * as Relay from "react-relay";
 import {Link} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
-import {Component, EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
+import {Component, EventListener} from "sourcegraph/Component";
 import {Heading, Input, Menu} from "sourcegraph/components";
 import {Check, DownMenu} from "sourcegraph/components/symbols";
 import {colors, typography, whitespace} from "sourcegraph/components/utils";
@@ -14,9 +14,6 @@ import {urlWithRev} from "sourcegraph/repo/routes";
 interface Props {
 	repo: string;
 	rev: string | null;
-	commitID: string;
-	repoObj?: any;
-	isCloning: boolean;
 
 	// to construct URLs
 	routes: any[];
@@ -26,7 +23,6 @@ interface Props {
 interface State extends Props {
 	open?: boolean;
 	query?: any;
-	effectiveRev?: string;
 }
 
 class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
@@ -45,8 +41,6 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 
 			repo: props.repo,
 			rev: props.rev,
-			commitID: props.commitID,
-			isCloning: props.isCloning,
 			routes: props.routes,
 			routeParams: props.routeParams,
 		};
@@ -62,9 +56,6 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
-
-		// effectiveRev is the rev from the URL, or else the repo's default branch.
-		state.effectiveRev = props.rev || (props.repoObj && !props.repoObj.Error ? props.repoObj.DefaultBranch : null);
 	}
 
 	// abbrevRev shortens rev if it is an absolute commit ID.
@@ -73,7 +64,7 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 	}
 
 	_item(name: string): JSX.Element {
-		let isCurrent = name === this.state.effectiveRev;
+		let isCurrent = name === this.props.rev;
 
 		return (
 			<div key={name} role="menu_item">
@@ -139,42 +130,6 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 			return;
 		}
 
-		// Don't trigger if there's a modifier key or if the cursor is focused
-		// in an input field.
-		const el = ev.target as HTMLElement;
-		const tag = el.tagName;
-
-		if (!(ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) &&
-			typeof document !== "undefined" && tag !== "INPUT" &&
-			(tag !== "TEXTAREA" || !isNonMonacoTextArea(el)) &&
-			tag !== "SELECT") {
-			// Global hotkeys.
-			let handled = false;
-			if (ev.keyCode === 89 /* y */) {
-				// Make the URL absolute by adding the absolute 40-char commit ID
-				// as the rev.
-				if (this.state.commitID) {
-					handled = true;
-					(this.context as any).router.push(this._revSwitcherURL(this.state.commitID));
-				}
-			} else if (ev.keyCode === 85 /* u */) {
-				// Remove the rev from the URL entirely.
-				handled = true;
-				(this.context as any).router.push(this._revSwitcherURL(null));
-			} else if (ev.keyCode === 73 /* i */) {
-				// Set the rev to be the repository's default branch.
-				if (this.state.repoObj.DefaultBranch) {
-					handled = true;
-					(this.context as any).router.push(this._revSwitcherURL(this.state.repoObj.DefaultBranch));
-				}
-			}
-			if (handled) {
-				ev.preventDefault();
-				ev.stopPropagation();
-				return;
-			}
-		}
-
 		if (!this.state.open) {
 			return;
 		}
@@ -184,12 +139,6 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 	}
 
 	render(): JSX.Element | null {
-		// Hide if cloning the repo, since we require the user to hard-reload. Seeing
-		// the RevSwitcher would confuse them.
-		if (this.state.isCloning) {
-			return null;
-		}
-
 		let branches = this.props.root.repository.branches;
 		if (this.state.query) {
 			branches = branches.filter((name) => fuzzysearch(this.state.query, name));

@@ -1,9 +1,11 @@
 // Sentry error monitoring code
 import * as Raven from "raven-js";
+import {context} from "sourcegraph/app/context";
 
 if (typeof global.window !== "undefined" && global.window._sentryRavenDSN) {
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
 	let opt = {
+		release: context.buildVars && context.buildVars.Version,
 		tags: global.window._sentryTags,
 		// Will cause a deprecation warning, but the demise of `ignoreErrors` is still under discussion.
 		// See: https://github.com/getsentry/raven-js/issues/73
