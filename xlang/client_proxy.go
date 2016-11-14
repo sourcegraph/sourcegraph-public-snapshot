@@ -279,6 +279,22 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
+
+		// Background modes only ever do one request against them
+		// (currently workspace/reference). As such we do not need to
+		// keep the workspace open.
+		if strings.HasSuffix(c.context.mode, "_bg") {
+			defer func() {
+				go func() {
+					id := serverID{contextID: c.context, pathPrefix: ""}
+					err := c.proxy.shutDownServer(context.Background(), id)
+					if err != nil {
+						log.Printf("error shutting down background server: %s", err)
+					}
+				}()
+			}()
+		}
+
 		var respObj interface{}
 		if err := c.callServer(ctx, req.Method, req.Params, &respObj); err != nil {
 			// Machine parseable to assist us finding most common errors
