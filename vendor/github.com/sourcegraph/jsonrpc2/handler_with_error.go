@@ -37,7 +37,7 @@ func (h HandlerWithError) Handle(ctx context.Context, conn *Conn, req *Request) 
 
 	if !req.Notif {
 		if err := conn.SendResponse(ctx, resp); err != nil {
-			log.Printf("jsonrpc2 handler: sending response %d: %s", resp.ID, err)
+			log.Printf("jsonrpc2 handler: sending response %s: %s", resp.ID, err)
 		}
 	}
 }
