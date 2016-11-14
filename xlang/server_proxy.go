@@ -75,6 +75,14 @@ type serverProxyConnStats struct {
 	// Counts is the total number of calls proxied to the server per
 	// LSP method.
 	Counts map[string]int
+
+	// TotalErrorCount is the total number of calls proxied to the server
+	// that failed.
+	TotalErrorCount int
+
+	// ErrorCounts is the total number of calls proxied to the server that
+	// failed per LSP method.
+	ErrorCounts map[string]int
 }
 
 var (
@@ -97,6 +105,13 @@ var (
 		Help:      "Total number of calls sent to a server proxy before it is shutdown.",
 		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128, 256},
 	}, []string{"mode"})
+	serverConnsFailedMethodCalls = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "lsp_server_failed_method_calls",
+		Help:      "Total number of failed calls sent to a server proxy before it is shutdown.",
+		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128, 256},
+	}, []string{"mode"})
 	serverConnsAliveDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
@@ -110,6 +125,7 @@ func init() {
 	prometheus.MustRegister(serverConnsGauge)
 	prometheus.MustRegister(serverConnsCounter)
 	prometheus.MustRegister(serverConnsMethodCalls)
+	prometheus.MustRegister(serverConnsFailedMethodCalls)
 	prometheus.MustRegister(serverConnsAliveDuration)
 }
 
@@ -182,6 +198,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 		})
 		log.Printf("tracked removed serverProxyConn: %s", msg)
 		serverConnsMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
+		serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
 		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
 	}
 }
@@ -327,6 +344,8 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 // callServer sends an LSP request to the specified server
 // (establishing the connection first if necessary).
 func (p *Proxy) callServer(ctx context.Context, id serverID, method string, params, result interface{}) (err error) {
+	var c *serverProxyConn
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
 		opentracing.Tags{"mode": id.mode, "rootPath": id.rootPath.String(), "method": method, "params": params},
 	)
@@ -334,11 +353,14 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, method string, para
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
+			if c != nil {
+				c.incMethodErrorStat(method)
+			}
 		}
 		span.Finish()
 	}()
 
-	c, err := p.getServerConn(ctx, id)
+	c, err = p.getServerConn(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -449,6 +471,16 @@ func (c *serverProxyConn) incMethodStat(method string) {
 		c.stats.Counts = make(map[string]int)
 	}
 	c.stats.Counts[method] = c.stats.Counts[method] + 1
+	c.mu.Unlock()
+}
+
+func (c *serverProxyConn) incMethodErrorStat(method string) {
+	c.mu.Lock()
+	c.stats.TotalErrorCount++
+	if c.stats.ErrorCounts == nil {
+		c.stats.ErrorCounts = make(map[string]int)
+	}
+	c.stats.ErrorCounts[method] = c.stats.ErrorCounts[method] + 1
 	c.mu.Unlock()
 }
 
