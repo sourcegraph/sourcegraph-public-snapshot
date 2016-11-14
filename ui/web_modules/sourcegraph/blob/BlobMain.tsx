@@ -299,6 +299,8 @@ class BlobMainEditor extends Container<Props, State> {
 				repository={this.props.root.repository}
 				commit={this.props.root.repository && this.props.root.repository.commit}
 				location={this.props.location}
+				routes={this.props.routes}
+				params={this.props.params}
 				relay={this.props.relay}
 				>
 				<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>

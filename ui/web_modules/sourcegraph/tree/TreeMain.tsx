@@ -2,7 +2,7 @@ import * as cloneDeep from "lodash/cloneDeep";
 import * as React from "react";
 import Helmet from "react-helmet";
 import * as Relay from "react-relay";
-import {InjectedRouter} from "react-router";
+import {InjectedRouter, Route} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {GridCol, Panel, RepoLink} from "sourcegraph/components";
 import {colors} from "sourcegraph/components/utils";
@@ -20,6 +20,7 @@ interface Props {
 	path: string;
 
 	location: any;
+	routes: Route[];
 	params: RouteParams;
 
 	relay: any;
@@ -62,6 +63,8 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 				repository={this.props.root.repository}
 				commit={this.props.root.repository && this.props.root.repository.commit}
 				location={this.props.location}
+				routes={this.props.routes}
+				params={this.props.params}
 				relay={this.props.relay}
 			>
 				<div>
@@ -102,6 +105,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 					description
 					commit(rev: $rev) {
 						commit {
+							sha1
 							tree(path: $path) {
 								directories {
 									name
@@ -119,7 +123,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 	},
 });
 
-export const TreeMain = function(props: {params: any; location: Location}): JSX.Element {
+export const TreeMain = function(props: {params: any; location: Location, routes: Route[]}): JSX.Element {
 	const repoSplat = repoParam(props.params.splat);
 	return <Relay.RootContainer
 		Component={TreeMainContainer}
@@ -135,6 +139,7 @@ export const TreeMain = function(props: {params: any; location: Location}): JSX.
 				rev: repoRev(repoSplat),
 				path: treeParam(props.params.splat),
 				location: props.location,
+				routes: props.routes,
 				params: props.params,
 			},
 		}}

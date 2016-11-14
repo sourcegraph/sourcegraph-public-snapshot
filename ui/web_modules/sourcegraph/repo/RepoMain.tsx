@@ -1,7 +1,11 @@
 import * as React from "react";
 import Helmet from "react-helmet";
+import {InjectedRouter, Route} from "react-router";
+import {RouteParams} from "sourcegraph/app/routeParams";
+import {EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
 import {Header} from "sourcegraph/components/Header";
 import {trimRepo} from "sourcegraph/repo";
+import {urlWithRev} from "sourcegraph/repo/routes";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
@@ -10,14 +14,25 @@ interface Props {
 	rev?: string | null;
 	repository: GQL.IRepository | null;
 	commit: GQL.ICommitState;
+	routes: Route[];
+	params: RouteParams;
 	location?: any;
 	relay: any;
 }
 
-type State = any;
+export class RepoMain extends React.Component<Props, {}> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
 
-export class RepoMain extends React.Component<Props, State> {
+	context: { router: InjectedRouter };
+
 	_refreshInterval: number | null = null;
+
+	constructor(props: Props) {
+		super(props);
+		this._onKeydown = this._onKeydown.bind(this);
+	}
 
 	componentDidMount(): void {
 		this._updateRefreshInterval(this.props.commit && this.props.commit.cloneInProgress);
@@ -44,6 +59,23 @@ export class RepoMain extends React.Component<Props, State> {
 			if (this._refreshInterval) {
 				clearInterval(this._refreshInterval);
 				this._refreshInterval = null;
+			}
+		}
+	}
+
+	_onKeydown(ev: KeyboardEvent): void {
+		// Don't trigger if there's a modifier key or if the cursor is focused
+		// in an input field.
+		const el = ev.target as HTMLElement;
+		if (!(ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) &&
+			typeof document !== "undefined" && el.tagName !== "INPUT" &&
+			(el.tagName !== "TEXTAREA" || !isNonMonacoTextArea(el)) &&
+			el.tagName !== "SELECT") {
+			if (ev.keyCode === 89 /* y */ && this.props.commit.commit) {
+				let url = `${urlWithRev(this.props.routes, this.props.params, this.props.commit.commit.sha1)}${window.location.hash}`;
+				this.context.router.push(url);
+				ev.preventDefault();
+				ev.stopPropagation();
 			}
 		}
 	}
@@ -85,6 +117,7 @@ export class RepoMain extends React.Component<Props, State> {
 				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
 				{title && <Helmet title={title} />}
 				{this.props.children}
+				<EventListener target={global.document.body} event="keydown" callback={this._onKeydown} />
 			</div>
 		);
 	}
