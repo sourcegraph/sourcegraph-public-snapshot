@@ -16,6 +16,7 @@ import {EventLogger} from "sourcegraph/util/EventLogger";
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
 import "sourcegraph/app/routeParams";
 import "sourcegraph/Location";
+import "sourcegraph/user";
 
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";
