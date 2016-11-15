@@ -12,12 +12,14 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -64,6 +66,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 	start := time.Now()
 	success := true
 	mode := "unknown"
+	ev := libhoney.NewEvent()
 	defer func() {
 		duration := time.Now().Sub(start)
 		labels := prometheus.Labels{
@@ -72,6 +75,20 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 			"mode":    mode,
 		}
 		xlangRequestDuration.With(labels).Observe(duration.Seconds())
+
+		if sendToHoneyComb {
+			ev.AddField("success", err == nil && success)
+			ev.AddField("method", method)
+			ev.AddField("mode", mode)
+			ev.AddField("error", err)
+			ev.AddField("duration_ms", duration.Seconds()*1000)
+			if actor := auth.ActorFromContext(ctx); actor != nil {
+				ev.AddField("uid", actor.UID)
+				ev.AddField("login", actor.Login)
+				ev.AddField("email", actor.Email)
+			}
+			ev.Send()
+		}
 	}()
 
 	if os.Getenv("DISABLE_XLANG_HTTP_GATEWAY") != "" {
@@ -141,6 +158,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
 		repo := rootPathURI.Host + strings.TrimSuffix(rootPathURI.Path, ".git") // of the form "github.com/foo/bar"
+		ev.AddField("repo", repo)
 		if _, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo}); err != nil {
 			return err
 		}
@@ -189,6 +207,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 				// lightstep.
 				ext.Error.Set(span, true)
 				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
+				ev.AddField("lsp_error", e.Message)
 				success = false
 				if !handlerutil.DebugMode {
 					e.Message = "(error message omitted)"
@@ -200,4 +219,19 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		}
 	}
 	return writeJSON(w, resps)
+}
+
+var sendToHoneyComb bool
+
+func init() {
+	// We are experimenting with honeycomb.io to store more detailed data
+	// w.r.t. xlang. If we start to use honeycomb more, we should
+	// centralize this setup.
+	if writeKey := os.Getenv("HONEYCOMB_TEAM"); writeKey != "" {
+		sendToHoneyComb = true
+		libhoney.Init(libhoney.Config{
+			WriteKey: writeKey,
+			Dataset:  "xlang", // Currently only have the xlang dataset
+		})
+	}
 }

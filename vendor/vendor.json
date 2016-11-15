@@ -139,6 +139,24 @@
 			"revisionTime": "2015-12-09T14:12:55-08:00"
 		},
 		{
+			"checksumSHA1": "imR2wF388/0fBU6RRWx8RvTi8Q8=",
+			"path": "github.com/facebookgo/clock",
+			"revision": "600d898af40aa09a7a93ecb9265d87b0504b6f03",
+			"revisionTime": "2015-04-10T01:09:13Z"
+		},
+		{
+			"checksumSHA1": "/jfkiemtHBkQcesTAtOso945hTY=",
+			"path": "github.com/facebookgo/limitgroup",
+			"revision": "6abd8d71ec01451d7f1929eacaa263bbe2935d05",
+			"revisionTime": "2015-06-12T19:09:41Z"
+		},
+		{
+			"checksumSHA1": "6viCX3VLBaomwZukWCTmipmQWO8=",
+			"path": "github.com/facebookgo/muster",
+			"revision": "fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a",
+			"revisionTime": "2015-07-08T23:28:44Z"
+		},
+		{
 			"checksumSHA1": "VdXZPcDRHK1T7XjBu2KW8Mb8S6w=",
 			"path": "github.com/flynn/go-shlex",
 			"revision": "3f9db97f856818214da2e1057f8ad84803971cff",
@@ -246,6 +264,12 @@
 			"path": "github.com/hjr265/redsync.go/redsync",
 			"revision": "688f6d364b799fa311a6de70b2bb9a4a669221da",
 			"revisionTime": "2016-07-19T15:08:18Z"
+		},
+		{
+			"checksumSHA1": "QLl5eyUOL6zPk31Fj+Gz7FUVkvM=",
+			"path": "github.com/honeycombio/libhoney-go",
+			"revision": "49fbf1b63de2fd516c13f68794cd2a9f723b7293",
+			"revisionTime": "2016-11-10T05:19:52Z"
 		},
 		{
 			"path": "github.com/howeyc/gopass",
@@ -1006,6 +1030,12 @@
 			"path": "google.golang.org/grpc/transport",
 			"revision": "9ac074585f926c8506b6351bfdc396d2b19b1cb1",
 			"revisionTime": "2016-04-13T17:35:15Z"
+		},
+		{
+			"checksumSHA1": "o5Skl9YjZqmvEEqWie3f3oY0Kow=",
+			"path": "gopkg.in/alexcesaro/statsd.v2",
+			"revision": "7fea3f0d2fab1ad973e641e51dba45443a311a90",
+			"revisionTime": "2016-03-20T18:21:10Z"
 		},
 		{
 			"checksumSHA1": "0vRxoJBB9TdAb/qp9kM9+wKQwcQ=",
