@@ -7,8 +7,6 @@ import {PlainRoute} from "react-router";
 import {context} from "sourcegraph/app/context";
 import {GlobalNav} from "sourcegraph/app/GlobalNav";
 import * as styles from "sourcegraph/app/styles/App.css";
-import {EventListener} from "sourcegraph/Component";
-import {desktopContainer} from "sourcegraph/desktop/DesktopContainer";
 import {withViewEventsLogged} from "sourcegraph/util/EventLogger";
 
 import {homeRoutes} from "sourcegraph/app/routes/homeRoutes";
@@ -39,14 +37,9 @@ export class App extends React.Component<Props, State> {
 		if (!context.user && location.pathname === "/") {
 			className = styles.main_container_homepage;
 		}
-		this._handleSourcegraphDesktop = this._handleSourcegraphDesktop.bind(this);
 		this.state = {
 			className: className,
 		};
-	}
-
-	_handleSourcegraphDesktop(event: any): void {
-		(this.context as any).router.replace(event.detail);
 	}
 
 	render(): JSX.Element | null {
@@ -55,16 +48,14 @@ export class App extends React.Component<Props, State> {
 				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
 				<GlobalNav params={this.props.params} location={this.props.location} />
 				{this.props.main}
-				<EventListener target={global.document} event="sourcegraph:desktop" callback={this._handleSourcegraphDesktop} />
 			</div>
 		);
 	}
 }
 
-const desktopClient = global.document && navigator.userAgent.includes("Electron");
 export const rootRoute: PlainRoute = {
 	path: "/",
-	component: withViewEventsLogged(desktopClient ? desktopContainer(App) : App),
+	component: withViewEventsLogged(App),
 	getIndexRoute: (location, callback) => {
 		callback(null, homeRoutes);
 	},

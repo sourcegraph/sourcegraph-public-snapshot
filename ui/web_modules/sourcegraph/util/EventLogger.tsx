@@ -32,13 +32,6 @@ class EventLoggerClass {
 
 		if (typeof document !== "undefined") {
 			document.addEventListener("sourcegraph:platform:initalization", this._initializeForSourcegraphPlatform.bind(this));
-			document.addEventListener("sourcegraph:metrics:logEventForCategory", this._logDesktopEventForCategory.bind(this));
-		}
-	}
-
-	_logDesktopEventForCategory(event: any): void {
-		if (event && event.detail && event.detail.eventCategory && event.detail.eventAction && event.detail.eventLabel) {
-			this._logEventForCategoryComponents(event.detail.eventCategory, event.detail.eventAction, event.detail.eventLabel, event.detail.eventProperties);
 		}
 	}
 
