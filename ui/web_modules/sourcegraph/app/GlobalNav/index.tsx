@@ -16,6 +16,7 @@ import {colors, layout} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {Container} from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import {IntegrationsContainer} from "sourcegraph/home/IntegrationsContainer";
 import {DemoVideo} from "sourcegraph/home/modals/DemoVideo";
 import {Location} from "sourcegraph/Location";
 import {QuickOpenModal} from "sourcegraph/quickopen/Modal";
@@ -104,6 +105,7 @@ export class GlobalNav extends Container<Props, State> {
 				{m === "join" && <Signup location={location} router={this.context.router} shouldHide={shouldHide} />}
 				{m === "menuBeta" && <BetaSignup location={location} router={this.context.router} />}
 				{m === "demo_video" && <DemoVideo location={location} router={this.context.router} />}
+				{m === "menuIntegrations" && <IntegrationsContainer location={location} router={this.context.router} />}
 			</div>;
 		}
 		return <div

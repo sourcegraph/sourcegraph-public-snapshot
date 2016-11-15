@@ -2,6 +2,7 @@ import * as React from "react";
 
 import {context} from "sourcegraph/app/context";
 import {Button, Heading} from "sourcegraph/components";
+import * as modalStyles from "sourcegraph/components/styles/modal.css";
 import * as styles from "sourcegraph/home/styles/Integrations.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
@@ -23,7 +24,7 @@ export class Integrations extends React.Component<Props, {}> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={this.props.location.state && this.props.location.state.modal === "integrations" ? "" : styles.container}>
+			<div className={modalStyles.modal} style={{maxWidth: 380}}>
 				<div className={styles.menu}>
 					<Heading level={7} color="gray">Browser extensions</Heading>
 					<div className={styles.tool_list}>
