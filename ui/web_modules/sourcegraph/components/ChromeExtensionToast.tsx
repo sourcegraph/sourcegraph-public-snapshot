@@ -23,17 +23,29 @@ interface Props {
 export class ChromeExtensionToast extends React.Component<Props, State>  {
 	constructor(props: Props) {
 		super(props);
-		this.state = {isVisible: !window.localStorage[ChromeExtensionToastKey]};
+		this.state = {
+			isVisible: false,
+		};
 	}
 
 	componentDidMount(): void {
-		if (this.state.isVisible) {
-			EventLogger.logViewEvent("ViewChromeExtensionToast", this.props.location.pathname, {toastCopy: ToastTitle});
-		}
+		setTimeout(() => {
+			let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+			let isChrome = /Chrome/i.test(navigator.userAgent);
+			let isToastVisible = !window.localStorage[ChromeExtensionToastKey] && !context.hasChromeExtensionInstalled() && isChrome && !isMobile;
+			this.setState({
+				isVisible: isToastVisible,
+			});
+			if (isToastVisible) {
+				EventLogger.logViewEvent("ViewChromeExtensionToast", this.props.location.pathname, {toastCopy: ToastTitle});
+			}
+		}, 1000);
 	}
 
 	render(): JSX.Element | null {
-		if (this.state.isVisible && ! context.hasChromeExtensionInstalled()) {
+		let {isVisible} = this.state;
+
+		if (isVisible) {
 			return (
 				<Toast>
 					<a onClick={this._closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><CloseIcon/></a>
