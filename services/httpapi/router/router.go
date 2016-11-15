@@ -24,7 +24,6 @@ const (
 	RepoDefLanding      = "repo.def-landing"
 	Repos               = "repos"
 	RepoShield          = "repo.shield"
-	SourcegraphDesktop  = "sourcegraph-desktop"
 	AsyncRefreshIndexes = "async.refresh-indexes"
 	BetaSubscription    = "beta-subscription"
 	Orgs                = "orgs"
@@ -57,7 +56,6 @@ func New(base *mux.Router) *mux.Router {
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 
-	base.Path("/sourcegraph-desktop/").Methods("GET").Name(SourcegraphDesktop)
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
