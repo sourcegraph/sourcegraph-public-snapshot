@@ -189,6 +189,15 @@ export class Editor implements IDisposable {
 				}
 			}
 		}
+
+		// Set the dom readonly property, so keyboard doesn't pop up on mobile.
+		const dom = this._editor.getDomNode();
+		const input = dom.getElementsByClassName("inputarea");
+		if (input.length === 1) {
+			input[0].setAttribute("readOnly", "true");
+		} else {
+			console.error("Didn't set textarea to readOnly");
+		}
 	}
 
 	// Register services for modes (languages) when new models are added.
