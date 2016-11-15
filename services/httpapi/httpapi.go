@@ -53,18 +53,11 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.Annotations).Handler(httptrace.TraceRoute(handler(serveAnnotations)))
 	m.Get(apirouter.GlobalSearch).Handler(httptrace.TraceRoute(handler(serveGlobalSearch)))
-	m.Get(apirouter.Repo).Handler(httptrace.TraceRoute(handler(serveRepo)))
-	m.Get(apirouter.RepoResolve).Handler(httptrace.TraceRoute(handler(serveRepoResolve)))
-	m.Get(apirouter.RepoInventory).Handler(httptrace.TraceRoute(handler(serveRepoInventory)))
 	m.Get(apirouter.RepoCreate).Handler(httptrace.TraceRoute(handler(serveRepoCreate)))
-	m.Get(apirouter.RepoBranches).Handler(httptrace.TraceRoute(handler(serveRepoBranches)))
 	m.Get(apirouter.RepoTree).Handler(httptrace.TraceRoute(handler(serveRepoTree)))
-	m.Get(apirouter.RepoTreeList).Handler(httptrace.TraceRoute(handler(serveRepoTreeList)))
 	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(serveRepoRefresh)))
 	m.Get(apirouter.RepoResolveRev).Handler(httptrace.TraceRoute(handler(serveRepoResolveRev)))
-	m.Get(apirouter.RepoTags).Handler(httptrace.TraceRoute(handler(serveRepoTags)))
 	m.Get(apirouter.RepoDefLanding).Handler(httptrace.TraceRoute(handler(serveRepoDefLanding)))
 	m.Get(apirouter.RepoShield).Handler(httptrace.TraceRoute(handler(serveRepoShield)))
 	m.Get(apirouter.Repos).Handler(httptrace.TraceRoute(handler(serveRepos)))

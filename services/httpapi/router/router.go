@@ -13,32 +13,23 @@ import (
 )
 
 const (
-	Annotations         = "annotations"
+	GraphQL = "graphql"
+	XLang   = "xlang"
+
 	GlobalSearch        = "global.search"
-	Repo                = "repo"
-	RepoResolve         = "repo.resolve"
 	RepoCreate          = "repo.create"
 	RepoRefresh         = "repo.refresh"
-	RepoInventory       = "repo.inventory"
-	RepoBranches        = "repo.branches"
 	RepoTree            = "repo.tree"
 	RepoResolveRev      = "repo.resolve-rev"
-	RepoTags            = "repo.tags"
-	RepoTreeList        = "repo.tree-list"
 	RepoDefLanding      = "repo.def-landing"
-	RepoShield          = "repo.shield"
 	Repos               = "repos"
+	RepoShield          = "repo.shield"
 	SourcegraphDesktop  = "sourcegraph-desktop"
 	AsyncRefreshIndexes = "async.refresh-indexes"
-
-	XLang = "xlang"
-
-	BetaSubscription = "beta-subscription"
-	Orgs             = "orgs"
-	OrgMembers       = "org-members"
-	OrgInvites       = "org-invites"
-
-	GraphQL = "graphql"
+	BetaSubscription    = "beta-subscription"
+	Orgs                = "orgs"
+	OrgMembers          = "org-members"
+	OrgInvites          = "org-invites"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -50,12 +41,13 @@ func New(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 
+	base.Path("/graphql").Methods("GET", "POST").Name(GraphQL)
+	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
+
 	base.Path("/beta-subscription").Methods("POST").Name(BetaSubscription)
 	base.Path("/orgs").Methods("POST").Name(Orgs)
 	base.Path("/org-members").Methods("POST").Name(OrgMembers)
 	base.Path("/org-invites").Methods("POST").Name(OrgInvites)
-
-	base.Path("/annotations").Methods("GET").Name(Annotations)
 
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
@@ -64,29 +56,19 @@ func New(base *mux.Router) *mux.Router {
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
-	base.Path(repoPath).Methods("GET").Name(Repo)
-
-	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 
 	base.Path("/sourcegraph-desktop/").Methods("GET").Name(SourcegraphDesktop)
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
-	repo.Path("/resolve").Methods("GET").Name(RepoResolve)
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
-	repo.Path("/branches").Methods("GET").Name(RepoBranches)
-	repoRev.Path("/tree-list").Methods("GET").Name(RepoTreeList)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
-	repoRev.Path("/inventory").Methods("GET").Name(RepoInventory)
 	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repoRev.Path("/def-landing").Methods("GET").Name(RepoDefLanding)
 	repoRev.Path("/shield").Methods("GET").Name(RepoShield)
-	repo.Path("/tags").Methods("GET").Name(RepoTags)
 
 	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
-
-	base.Path("/graphql").Methods("GET", "POST").Name(GraphQL)
 
 	return base
 }

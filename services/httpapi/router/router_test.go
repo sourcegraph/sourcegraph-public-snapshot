@@ -19,46 +19,6 @@ func TestRouter(t *testing.T) {
 		wantVars      map[string]string
 		wantPath      string
 	}{
-		// Repo
-		{
-			path:          "/repos/repohost.com/foo",
-			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
-		},
-		{
-			path:          "/repos/a/b/c",
-			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "a/b/c"},
-		},
-		{
-			path:          "/repos/a.com/b",
-			wantRouteName: Repo,
-			wantVars:      map[string]string{"Repo": "a.com/b"},
-		},
-		{
-			path:        "/repos/-/myrepo",
-			wantNoMatch: true,
-		},
-		{
-			path:        "/repos/myrepo/-/invalidroute",
-			wantNoMatch: true,
-		},
-		{
-			path:        "/repos/myrepo/-",
-			wantNoMatch: true,
-		},
-
-		// Repo sub-routes
-		{
-			path:          "/repos/repohost.com/foo/-/tags",
-			wantRouteName: RepoTags,
-			wantVars:      map[string]string{"Repo": "repohost.com/foo"},
-		},
-		{
-			path:        "/repos/repohost.com/foo/-/tags/myrevspec",
-			wantNoMatch: true,
-		},
-
 		// Tree
 		{
 			path:          "/repos/r@v/-/tree",

@@ -13,11 +13,9 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
-	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -25,80 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
-
-func serveRepo(w http.ResponseWriter, r *http.Request) error {
-	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
-	if err != nil {
-		return err
-	}
-
-	var lastMod time.Time
-	if repo.UpdatedAt != nil {
-		lastMod = *repo.UpdatedAt
-	}
-	if clientCached, err := writeCacheHeaders(w, r, lastMod, defaultCacheMaxAge); clientCached || err != nil {
-		return err
-	}
-
-	return writeJSON(w, repo)
-}
-
-type repoResolution struct {
-	Data         sourcegraph.RepoResolution
-	IncludedRepo *sourcegraph.Repo // optimistically included repo; see serveRepoResolve
-}
-
-func serveRepoResolve(w http.ResponseWriter, r *http.Request) error {
-	var op sourcegraph.RepoResolveOp
-	if err := schemaDecoder.Decode(&op, r.URL.Query()); err != nil {
-		return err
-	}
-	op.Path = routevar.ToRepo(mux.Vars(r))
-
-	res0, err := backend.Repos.Resolve(r.Context(), &op)
-	if err != nil {
-		return err
-	}
-
-	res := repoResolution{Data: *res0}
-
-	// As an optimization, optimistically include the full local repo
-	// if the operation resolved to a local repo. Clients will almost
-	// always need the local repo in this case, so including it saves
-	// a round-trip.
-	if res0.Repo != 0 {
-		repo, err := backend.Repos.Get(r.Context(), &sourcegraph.RepoSpec{ID: res0.Repo})
-		if err == nil {
-			res.IncludedRepo = repo
-		} else {
-			log15.Warn("Error optimistically including repo in serveRepoResolve", "repo", res0.Repo, "err", err)
-		}
-	}
-
-	return writeJSON(w, res)
-}
-
-func serveRepoInventory(w http.ResponseWriter, r *http.Request) error {
-	repoRev, err := resolveLocalRepoRev(r.Context(), routevar.ToRepoRev(mux.Vars(r)))
-	if err != nil {
-		return err
-	}
-
-	res, err := backend.Repos.GetInventory(r.Context(), repoRev)
-	if err != nil {
-		return err
-	}
-
-	resp := struct {
-		Languages                  []*inventory.Lang
-		PrimaryProgrammingLanguage string
-	}{
-		Languages:                  res.Languages,
-		PrimaryProgrammingLanguage: res.PrimaryProgrammingLanguage(),
-	}
-
-	return writeJSON(w, &resp)
-}
 
 var repoSearchDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",

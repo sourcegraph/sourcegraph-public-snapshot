@@ -82,20 +82,3 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 
 	return writeJSON(w, res)
 }
-
-func serveRepoTreeList(w http.ResponseWriter, r *http.Request) error {
-	unresolvedRepoRev := routevar.ToRepoRev(mux.Vars(r))
-	repoRev, err := resolveLocalRepoRev(r.Context(), unresolvedRepoRev)
-	if err != nil {
-		return err
-	}
-
-	treeList, err := backend.RepoTree.List(r.Context(), &sourcegraph.RepoTreeListOp{Rev: *repoRev})
-	if err != nil {
-		return err
-	}
-	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
-		return err
-	}
-	return writeJSON(w, treeList)
-}
