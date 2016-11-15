@@ -1,6 +1,6 @@
 import { modes } from "sourcegraph/editor/modes";
 
-export const supportedExtensions = ["go", "js", "jsx", "ts", "tsx", "c", "h"];
+export const supportedExtensions = ["go", "js", "jsx", "ts", "tsx", "c", "h", "py"];
 
 export function isSupportedExtension(ext: string): boolean {
 	return supportedExtensions.indexOf(ext) !== -1;

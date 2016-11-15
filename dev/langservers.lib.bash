@@ -15,6 +15,15 @@ detect_dev_langservers() {
 	else
 		echo '# To add JavaScript/TypeScript language support, run `dev/install-langserver.sh javascript-typescript-langserver` or symlink '"$JSTS_LS_DIR"' to a local clone of javascript-typescript-langserver.'
 	fi
+
+	# Python
+	PY_LS_DIR="${LS_ROOT}/python-langserver"
+	if [[ -d "$PY_LS_DIR" ]]; then
+		echo '# Using python-langserver in '"$PY_LS_DIR"' (run `dev/install-langserver.sh python-langserver` to update)'
+		export LANGSERVER_PYTHON=${LANGSERVER_PYTHON-"$PY_LS_DIR"/bin/python-langserver}
+	else
+		echo '# To add Python language support, run `dev/install-langserver.sh python-langserver` or symlink '"$PY_LS_DIR"' to a local clone of python-langserver.'
+	fi
 }
 
 install_langserver() {
@@ -31,6 +40,9 @@ install_langserver() {
 	case "$LS_NAME" in
 		javascript-typescript-langserver)
 			(cd "$LS_DIR" && yarn install && node_modules/.bin/tsc)
+			;;
+		python-langserver)
+			(cd "$LS_DIR" && pip3 install -r requirements.txt)
 			;;
 		*)
 			echo '# Do not know how to install '"$LS_NAME"'. See dev/langservers.lib.bash for a list of known language servers that can be installed using this method.'
