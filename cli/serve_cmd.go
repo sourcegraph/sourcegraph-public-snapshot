@@ -25,8 +25,6 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
-	lightstep "github.com/lightstep/lightstep-tracer-go"
-	opentracing "github.com/opentracing/opentracing-go"
 	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
@@ -41,6 +39,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
@@ -196,11 +195,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
 
-	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
-		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
-			AccessToken: t,
-		}))
-	}
+	traceutil.InitTracer()
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
