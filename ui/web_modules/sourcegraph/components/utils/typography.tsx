@@ -11,7 +11,6 @@ const scale = [
 
 const unit = "rem";
 
-const baseSizeDesktop = "15px";
 const baseSizeMobile = "14px";
 
 export const fontStack = {
@@ -74,5 +73,4 @@ export const typography = {
 	codeSize,
 	weight,
 	baseSizeMobile,
-	baseSizeDesktop,
 };

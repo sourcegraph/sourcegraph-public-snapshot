@@ -2,7 +2,6 @@ import * as React from "react";
 import {context} from "sourcegraph/app/context";
 import {rel} from "sourcegraph/app/routePatterns";
 import {DashboardContainer} from "sourcegraph/dashboard/DashboardContainer";
-import {DesktopHome} from "sourcegraph/desktop/DesktopHome";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Home} from "sourcegraph/home/Home";
 import {IntegrationsContainer} from "sourcegraph/home/IntegrationsContainer";
@@ -36,10 +35,6 @@ class HomeRouter extends React.Component<any, null> {
 	}
 
 	render(): JSX.Element | null {
-		const desktopClient = navigator.userAgent.includes("Electron");
-		if (desktopClient) {
-			return <DesktopHome />;
-		}
 		if (context.user) {
 			return <DashboardContainer {...this.props}/>;
 		}
