@@ -107,3 +107,53 @@ func (r *repositoryResolver) Tags(ctx context.Context) ([]string, error) {
 	}
 	return names, nil
 }
+
+func (r *repositoryResolver) HTTPCloneURL() string {
+	return r.repo.HTTPCloneURL
+}
+
+func (r *repositoryResolver) Private() bool {
+	return r.repo.Private
+}
+
+func (r *repositoryResolver) Language() string {
+	return r.repo.Language
+}
+
+func (r *repositoryResolver) Name() string {
+	return r.repo.Name
+}
+
+func (r *repositoryResolver) Fork() bool {
+	return r.repo.Fork
+}
+
+func (r *repositoryResolver) Mirror() bool {
+	return r.repo.Mirror
+}
+
+func (r *repositoryResolver) Owner() string {
+	return r.repo.Owner
+}
+
+func (r *repositoryResolver) VCSSyncedAt() string {
+	if r.repo.VCSSyncedAt != nil {
+		return r.repo.VCSSyncedAt.String()
+	}
+
+	return ""
+}
+
+func (r *repositoryResolver) PushedAt() string {
+	if r.repo.PushedAt != nil {
+		return r.repo.PushedAt.String()
+	}
+	return ""
+}
+
+func (r *repositoryResolver) CreatedAt() string {
+	if r.repo.CreatedAt != nil {
+		return r.repo.CreatedAt.String()
+	}
+	return ""
+}

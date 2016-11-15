@@ -17,6 +17,7 @@ type Query {
 
 type Root {
 	repository(uri: String!): Repository
+	remoteRepositories: [RemoteRepository!]!
 }
 
 type Repository implements Node {
@@ -57,4 +58,18 @@ type File {
 	name: String!
 	content: String!
 }
-`
+
+type RemoteRepository {
+	uri: String!
+	description: String!
+	owner: String!
+	name: String!
+	httpCloneURL: String!
+	language: String!
+	fork: Boolean!
+	mirror: Boolean!
+	private: Boolean!
+	createdAt: String!
+	pushedAt: String!
+	vcsSyncedAt: String!
+}`

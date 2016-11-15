@@ -13,7 +13,7 @@ import * as styles from "sourcegraph/user/settings/styles/Repos.css";
 import {privateGitHubOAuthScopes, privateGoogleOAuthScopes} from "sourcegraph/util/urlTo";
 
 interface Props {
-	repos: Repo[] | null;
+	repos: GQL.IRemoteRepository[] | null;
 	location?: Location;
 }
 
@@ -32,11 +32,11 @@ export class Repos extends React.Component<Props, State> {
 
 	// _repoSort is a comparison function that sorts more recently
 	// pushed repos first.
-	_repoSort(a: Repo, b: Repo): number {
-		if (a.PushedAt < b.PushedAt) {
+	_repoSort(a: GQL.IRemoteRepository, b: GQL.IRemoteRepository): number {
+		if (a.pushedAt < b.pushedAt) {
 			return 1;
 		}
-		if (a.PushedAt > b.PushedAt) {
+		if (a.pushedAt > b.pushedAt) {
 			return -1;
 		}
 		return 0;
@@ -83,7 +83,7 @@ export class Repos extends React.Component<Props, State> {
 		</div>);
 	}
 
-	_repoList(repos: Repo[]): JSX.Element {
+	_repoList(repos: GQL.IRemoteRepository[]): JSX.Element {
 		return (
 			<div style={{marginLeft: whitespace[4]}}>
 				<div style={{marginTop: whitespace[4], marginBottom: whitespace[3]}}>
@@ -101,9 +101,9 @@ export class Repos extends React.Component<Props, State> {
 				{repos.length > 0 && repos.map((repo, i) =>
 					<div className={styles.row} key={i}>
 						<div className={styles.info}>
-							<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
-							{repo.Description && <p className={styles.description}>
-								{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
+							<RepoLink repo={repo.uri || `github.com/${repo.owner}/${repo.name}`} />
+							{repo.description && <p className={styles.description}>
+								{repo.description.length > 100 ? `${repo.description.substring(0, 100)}...` : repo.description}
 							</p>}
 						</div>
 					</div>
@@ -116,7 +116,7 @@ export class Repos extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		let filteredRepos: Repo[] = [];
+		let filteredRepos: GQL.IRemoteRepository[] = [];
 		if (this.props.repos) {
 			filteredRepos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
 		}

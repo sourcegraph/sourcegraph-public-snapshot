@@ -125,3 +125,22 @@ func resolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	}
 	return repo, nil
 }
+
+func (r *rootResolver) RemoteRepositories(ctx context.Context) ([]*repositoryResolver, error) {
+	reposList, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
+		RemoteOnly: true,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	var l []*repositoryResolver
+	for _, repo := range reposList.Repos {
+		l = append(l, &repositoryResolver{
+			repo: repo,
+		})
+	}
+
+	return l, nil
+}

@@ -81,6 +81,25 @@ declare namespace GQL {
   /*
     description: null
   */
+  interface IRemoteRepository {
+    __typename: string;
+    uri: string;
+    description: string;
+    owner: string;
+    name: string;
+    httpCloneURL: string;
+    language: string;
+    fork: boolean;
+    mirror: boolean;
+    private: boolean;
+    createdAt: string;
+    pushedAt: string;
+    vcsSyncedAt: string;
+  }
+
+  /*
+    description: null
+  */
   interface IRepository {
     __typename: string;
     id: string;
@@ -99,6 +118,7 @@ declare namespace GQL {
   interface IRoot {
     __typename: string;
     repository: IRepository;
+    remoteRepositories: Array<IRemoteRepository>;
   }
 
   /*
