@@ -10,6 +10,7 @@ import {Router, applyRouterMiddleware, browserHistory as history, match} from "r
 import {rootRoute} from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
 import {hashLinkScroll, shouldUpdateScroll} from "sourcegraph/app/routerScrollBehavior";
+import "sourcegraph/util/actionLogger";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
