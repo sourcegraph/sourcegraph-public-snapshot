@@ -64,7 +64,7 @@ func (s *pythonScanner) scan() rune {
 	case ch >= '0' && ch <= '9':
 		{
 			// added complex numbers
-			ch = s.Scanner.Scan()
+			_ = s.Scanner.Scan()
 			ch = s.Peek()
 			if ch == 'j' {
 				s.Next()

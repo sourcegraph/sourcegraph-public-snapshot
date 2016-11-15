@@ -46,6 +46,9 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 		TextDocument: lsp.TextDocumentIdentifier{URI: rootPath + "#" + file},
 		Position:     lsp.Position{Line: line, Character: character},
 	}, &locations)
+	if err != nil {
+		return errors.Wrap(err, "LSP textDocument/definition")
+	}
 	if len(locations) == 0 {
 		return fmt.Errorf("textDocument/definition returned zero locations")
 	}

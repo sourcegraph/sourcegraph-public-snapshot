@@ -58,7 +58,6 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (res *sou
 	defer observe("total", time.Now())
 
 	start := time.Now()
-	var kinds []string
 	var descToks []string                            // "descriptor" tokens that don't have a special filter meaning.
 	for _, token := range strings.Fields(op.Query) { // at first tokenize on spaces
 		if strings.HasPrefix(token, "r:") {
@@ -78,11 +77,6 @@ func (s *search) Search(ctx context.Context, op *sourcegraph.SearchOp) (res *sou
 		if lang, exist := tokenToLanguage[strings.ToLower(token)]; exist {
 			op.Opt.Languages = append(op.Opt.Languages, lang)
 			continue
-		}
-
-		// function shorthand, still include token as a descriptor token
-		if strings.HasSuffix(token, "()") {
-			kinds = append(kinds, "func")
 		}
 
 		if strings.HasSuffix(token, ".com") || strings.HasSuffix(token, ".org") {
@@ -231,10 +225,6 @@ func hydrateDefsResults(ctx context.Context, defs []*sourcegraph.DefSearchResult
 	for _, def := range defs {
 		reporevs_[fmt.Sprintf("%s@%s", def.Def.DefKey.Repo, def.Def.DefKey.CommitID)] = struct{}{}
 		defkeys_[def.Def.DefKey] = struct{}{}
-	}
-	reporevs := make([]string, 0, len(reporevs_))
-	for rr := range reporevs_ {
-		reporevs = append(reporevs, rr)
 	}
 	defkeys := make([]*graph.DefKey, 0, len(defkeys_))
 	for dk := range defkeys_ {
