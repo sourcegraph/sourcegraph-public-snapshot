@@ -13,7 +13,7 @@ if [ ! -d "javascript-typescript-langserver" ]; then
 else
     cd javascript-typescript-langserver && git pull
 fi
-yarn install
+npm install
 ./node_modules/.bin/tsc -p .
 
 cd ..
