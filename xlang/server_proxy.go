@@ -170,6 +170,37 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 	return errs.error()
 }
 
+// shutDownServer will terminate the server matching ID. If no such server
+// exists, no action is taken.
+func (p *Proxy) shutDownServer(ctx context.Context, id serverID) error {
+	var c *serverProxyConn
+
+	p.mu.Lock()
+	for cc := range p.servers {
+		if cc.id == id {
+			c = cc
+			break
+		}
+	}
+	p.mu.Unlock()
+
+	if c == nil {
+		return nil
+	}
+
+	// We have found a server. Remove it from the list and do a
+	// best-effort shutdown.
+	errs := &errorList{}
+	p.removeServerConn(c)
+	if err := c.shutdownAndExit(ctx); err != nil {
+		errs.add(err)
+	}
+	if err := c.conn.Close(); err != nil {
+		errs.add(err)
+	}
+	return errs.error()
+}
+
 // LogServerStats, if true, will log the statistics of a serverProxyConn when
 // it is removed.
 var LogServerStats = true
