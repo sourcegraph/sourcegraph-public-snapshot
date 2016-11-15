@@ -80,8 +80,10 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 			ev.AddField("success", err == nil && success)
 			ev.AddField("method", method)
 			ev.AddField("mode", mode)
-			ev.AddField("error", err)
 			ev.AddField("duration_ms", duration.Seconds()*1000)
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
 			if actor := auth.ActorFromContext(ctx); actor != nil {
 				ev.AddField("uid", actor.UID)
 				ev.AddField("login", actor.Login)
@@ -134,6 +136,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 	if err != nil {
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
 	}
+	addRootPathFields(ev, rootPathURI)
 	if initParams.Mode != "" {
 		mode = initParams.Mode
 	}
@@ -158,7 +161,6 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
 		repo := rootPathURI.Host + strings.TrimSuffix(rootPathURI.Path, ".git") // of the form "github.com/foo/bar"
-		ev.AddField("repo", repo)
 		if _, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo}); err != nil {
 			return err
 		}
@@ -219,6 +221,18 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		}
 	}
 	return writeJSON(w, resps)
+}
+
+func addRootPathFields(ev *libhoney.Event, u *uri.URI) {
+	// u usually looks something like git://github.com/foo/bar?commithash
+	ev.AddField("repo", u.Host+u.Path)
+	ev.AddField("commit", u.RawQuery)
+	if u.Host == "github.com" && len(u.Path) > 1 {
+		i := strings.Index(u.Path[1:], "/")
+		if i > 0 {
+			ev.AddField("repo_org", u.Path[1:i+1])
+		}
+	}
 }
 
 var sendToHoneyComb bool
