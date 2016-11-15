@@ -119,17 +119,9 @@ class BlobMainEditor extends Container<Props, State> {
 			// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
 			const uri = URIUtils.pathInRepo(nextProps.repo, nextProps.root.repository.commit.commit.sha1, nextProps.path);
 
-			let range: IRange;
+			let range = undefined;
 			if (nextProps.selection) {
 				range = nextProps.selection.toMonacoRangeAllowEmpty();
-			} else {
-				// Without a start line, set the cursor to start at the beginning of the document.
-				//
-				// By default, set the selction of the cursor to be the end of the
-				// first line. Without this, the Ctrl+F search functionality will only
-				// search within the selected line, which is the first line by default.
-				// There's currently no API for unselecting a line so this is a workaround.
-				range = {startLineNumber: 1, startColumn: Infinity, endLineNumber: 1, endColumn: Infinity};
 			}
 
 			// If you are new to this code, you may be confused how this method interacts with _onEditorOpened.
@@ -173,21 +165,20 @@ class BlobMainEditor extends Container<Props, State> {
 	}
 
 	_onKeyDownForFindInPage(e: KeyboardEvent & Event): void {
-		// TODO(sqs): can make this unnecessary?
 		const mac = navigator.userAgent.indexOf("Macintosh") >= 0;
 		const ctrl = mac ? e.metaKey : e.ctrlKey;
 		const FKey = 70;
 		const GKey = 71;
 		if (this._editor && ctrl) {
 			if (e.key === "f" || e.keyCode === FKey) {
-				e.preventDefault();
-				(document.getElementsByClassName("inputarea")[0] as any).focus();
 				this._editor.trigger("keyboard", "actions.find", {});
 			} else if (e.key === "g" || e.keyCode === GKey) {
-				e.preventDefault();
-				(document.getElementsByClassName("inputarea")[0] as any).focus();
 				this._editor.trigger("keyboard", "actions.editor.action.nextMatchFindAction", {});
+			} else {
+				return;
 			}
+			e.preventDefault();
+			e.stopPropagation();
 		}
 	}
 
