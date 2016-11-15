@@ -231,7 +231,7 @@ class BlobMainEditor extends Container<Props, State> {
 	}
 
 	_setEditorHighlightForLineSelection(selection: IRange): void {
-		if (this._editor) {
+		if (this._editor && selection) {
 			this._editor.setSelection(selection);
 		}
 	}
