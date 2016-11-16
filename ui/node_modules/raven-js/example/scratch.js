@@ -46,6 +46,12 @@ function showDialog() {
     Raven.showReportDialog();
 }
 
+function testSynthetic() {
+    Raven.captureMessage('synthetic', {
+        stacktrace: true
+    });
+}
+
 function blobExample() {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', 'stack.js');

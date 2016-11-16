@@ -4,7 +4,7 @@ Source Maps
 ===========
 
 Sentry supports un-minifying JavaScript via `Source Maps
-<http://blog.getsentry.com/2015/10/29/debuggable-javascript-with-source-maps.html>`_. This lets you
+<http://blog.sentry.io/2015/10/29/debuggable-javascript-with-source-maps.html>`_. This lets you
 view source code context obtained from stack traces in their original untransformed form, which is
 is particularly useful for debugging minified code (e.g. UglifyJS), or transpiled code from a higher-level
 language (e.g. TypeScript, ES6).
@@ -157,7 +157,7 @@ sourcemaps point to.
 .. code-block:: bash
 
     # Create a new release
-    $ curl https://app.getsentry.com/api/0/projects/:organization_slug/:project_slug/releases/ \
+    $ curl https://sentry.io/api/0/projects/:organization_slug/:project_slug/releases/ \
       -X POST \
       -H 'Authorization: Bearer {TOKEN}' \
       -H 'Content-Type: application/json'
@@ -178,7 +178,7 @@ reference to ``app.map.js``, the name of the uploaded file should be ``http://ex
 .. code-block:: bash
 
     # Upload a file for the given release
-    $ curl https://app.getsentry.com/api/0/projects/:organization_slug/:project_slug/releases/2da95dfb052f477380608d59d32b4ab9/files/ \
+    $ curl https://sentry.io/api/0/projects/:organization_slug/:project_slug/releases/2da95dfb052f477380608d59d32b4ab9/files/ \
       -X POST \
       -H 'Authorization: Bearer {TOKEN}' \
       -F file=@app.js.map \
@@ -198,7 +198,7 @@ reference to ``app.map.js``, the name of the uploaded file should be ``http://ex
 .. code-block:: bash
 
     # If you make a mistake, you can also simply clear out the release
-    $ curl https://app.getsentry.com/api/0/projects/:organization_slug/:project_slug/releases/2da95dfb052f477380608d59d32b4ab9/ \
+    $ curl https://sentry.io/api/0/projects/:organization_slug/:project_slug/releases/2da95dfb052f477380608d59d32b4ab9/ \
       -H 'Authorization: Bearer {TOKEN}' \
       -X DELETE
 
@@ -215,7 +215,7 @@ but without them the grouping algorithm will not be as strong, and the UI
 will not show any contextual source.
 
 Additional information can be found in the `Releases API documentation
-<https://docs.getsentry.com/hosted/api/releases/>`_.
+<https://docs.sentry.io/hosted/api/releases/>`_.
 
 
 .. _assets_multiple_origins:
@@ -363,7 +363,7 @@ If you upload artifacts **after** an error is captured by Sentry, Sentry will no
 Verify your source files are not too large
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For an individual artifact, Sentry accepts a max filesize of **20 MB**.
+For an individual artifact, Sentry accepts a max filesize of **40 MB**.
 
 Often users hit this limit because they are transmitting source files at an interim build stage. For example, after Webpack/Browserify has combined all
 your source files, but before minification has taken place. If possible, send the original source files.

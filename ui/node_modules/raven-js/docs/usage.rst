@@ -126,7 +126,7 @@ functions all allow passing additional data to be tagged onto the error.
 
 .. describe:: tags
 
-    `Tags <https://www.getsentry.com/docs/tags/>`__ to assign to the event.
+    `Tags <https://docs.sentry.io/hosted/learn/context/#tagging-events>`__ to assign to the event.
 
     .. code-block:: javascript
 
@@ -223,7 +223,7 @@ Raven and Sentry support `Source Maps
 <http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/>`_.
 
 We have provided some instructions to creating Source Maps over at
-https://docs.getsentry.com/hosted/clients/javascript/sourcemaps/. Also, checkout our `Gruntfile
+https://docs.sentry.io/hosted/clients/javascript/sourcemaps/. Also, checkout our `Gruntfile
 <https://github.com/getsentry/raven-js/blob/master/Gruntfile.js>`_ for a
 good example of what we're doing.
 

@@ -2,8 +2,8 @@
 /*global assert:false, console:true*/
 'use strict';
 
-var utils = require('../src/utils');
 var Raven = require('../src/raven');
+var utils = Raven.utils;
 var RavenConfigError = require('../src/configError');
 
 var isUndefined = utils.isUndefined;

@@ -171,77 +171,15 @@ describe('TraceKit', function () {
             assert.deepEqual(stackFrames.stack[2], { url: 'http://path/to/file.js', func: 'bar', args: [], line: 109, column: 1 });
         });
 
-        it('should parse Opera 8.54 error', function () {
-            var stackFrames = TraceKit.computeStackTrace(CapturedExceptions.OPERA_854);
-            assert.ok(stackFrames);
-            assert.deepEqual(stackFrames.stack.length, 7);
-            assert.deepEqual(stackFrames.stack[0], { url: 'http://path/to/file.js', func: '?', args: [], line: 44, column: null });
-            assert.deepEqual(stackFrames.stack[1], { url: 'http://path/to/file.js', func: '?', args: [], line: 31, column: null });
-            assert.deepEqual(stackFrames.stack[2], { url: 'http://path/to/file.js', func: '?', args: [], line: 18, column: null });
-            assert.deepEqual(stackFrames.stack[3], { url: 'http://path/to/file.js', func: '?', args: [], line: 4, column: null });
-            assert.deepEqual(stackFrames.stack[4], { url: 'http://path/to/file.js', func: '?', args: [], line: 7, column: null });
-            assert.deepEqual(stackFrames.stack[5], { url: 'http://path/to/file.js', func: '?', args: [], line: 11, column: null });
-            assert.deepEqual(stackFrames.stack[6], { url: 'http://path/to/file.js', func: '?', args: [], line: 15, column: null });
-        });
-
-        it('should parse Opera 9.02 error', function () {
-            var stackFrames = TraceKit.computeStackTrace(CapturedExceptions.OPERA_902);
-            assert.ok(stackFrames);
-            assert.deepEqual(stackFrames.stack.length, 7);
-            assert.deepEqual(stackFrames.stack[0], { url: 'http://path/to/file.js', func: '?', args: [], line: 44, column: null });
-            assert.deepEqual(stackFrames.stack[1], { url: 'http://path/to/file.js', func: '?', args: [], line: 31, column: null });
-            assert.deepEqual(stackFrames.stack[2], { url: 'http://path/to/file.js', func: '?', args: [], line: 18, column: null });
-            assert.deepEqual(stackFrames.stack[3], { url: 'http://path/to/file.js', func: '?', args: [], line: 4, column: null });
-            assert.deepEqual(stackFrames.stack[4], { url: 'http://path/to/file.js', func: '?', args: [], line: 7, column: null });
-            assert.deepEqual(stackFrames.stack[5], { url: 'http://path/to/file.js', func: '?', args: [], line: 11, column: null });
-            assert.deepEqual(stackFrames.stack[6], { url: 'http://path/to/file.js', func: '?', args: [], line: 15, column: null });
-        });
-
-        it('should parse Opera 9.27 error', function () {
-            var stackFrames = TraceKit.computeStackTrace(CapturedExceptions.OPERA_927);
-            assert.ok(stackFrames);
-            assert.deepEqual(stackFrames.stack.length, 3);
-            assert.deepEqual(stackFrames.stack[0], { url: 'http://path/to/file.js', func: '?', args: [], line: 43, column: null });
-            assert.deepEqual(stackFrames.stack[1], { url: 'http://path/to/file.js', func: '?', args: [], line: 31, column: null });
-            assert.deepEqual(stackFrames.stack[2], { url: 'http://path/to/file.js', func: '?', args: [], line: 18, column: null });
-        });
-
-        it('should parse Opera 9.64 error', function () {
-            var stackFrames = TraceKit.computeStackTrace(CapturedExceptions.OPERA_964);
-            assert.ok(stackFrames);
-            assert.deepEqual(stackFrames.stack.length, 6);
-            assert.deepEqual(stackFrames.stack[0], { url: 'http://path/to/file.js', func: '?', args: [], line: 27, column: null });
-            assert.deepEqual(stackFrames.stack[1], { url: 'http://path/to/file.js', func: 'printStackTrace', args: [], line: 18, column: null });
-            assert.deepEqual(stackFrames.stack[2], { url: 'http://path/to/file.js', func: 'bar', args: [], line: 4, column: null });
-            assert.deepEqual(stackFrames.stack[3], { url: 'http://path/to/file.js', func: 'bar', args: [], line: 7, column: null });
-            assert.deepEqual(stackFrames.stack[4], { url: 'http://path/to/file.js', func: 'foo', args: [], line: 11, column: null });
-            assert.deepEqual(stackFrames.stack[5], { url: 'http://path/to/file.js', func: '?', args: [], line: 15, column: null });
-        });
-
-        it('should parse Opera 10 error', function () {
-            var stackFrames = TraceKit.computeStackTrace(CapturedExceptions.OPERA_10);
-            assert.ok(stackFrames);
-            assert.deepEqual(stackFrames.stack.length, 7);
-            assert.deepEqual(stackFrames.stack[0], { url: 'http://path/to/file.js', func: '?', args: [], line: 42, column: null });
-            assert.deepEqual(stackFrames.stack[1], { url: 'http://path/to/file.js', func: '?', args: [], line: 27, column: null });
-            assert.deepEqual(stackFrames.stack[2], { url: 'http://path/to/file.js', func: 'printStackTrace', args: [], line: 18, column: null });
-            assert.deepEqual(stackFrames.stack[3], { url: 'http://path/to/file.js', func: 'bar', args: [], line: 4, column: null });
-            assert.deepEqual(stackFrames.stack[4], { url: 'http://path/to/file.js', func: 'bar', args: [], line: 7, column: null });
-            assert.deepEqual(stackFrames.stack[5], { url: 'http://path/to/file.js', func: 'foo', args: [], line: 11, column: null });
-            assert.deepEqual(stackFrames.stack[6], { url: 'http://path/to/file.js', func: '?', args: [], line: 15, column: null });
-        });
-
         it('should parse Opera 11 error', function () {
             var stackFrames = TraceKit.computeStackTrace(CapturedExceptions.OPERA_11);
             assert.ok(stackFrames);
-            assert.deepEqual(stackFrames.stack.length, 7);
-            assert.deepEqual(stackFrames.stack[0], { url: 'http://path/to/file.js', func: 'createException', args: [], line: 42, column: 12 });
-            assert.deepEqual(stackFrames.stack[1], { url: 'http://path/to/file.js', func: 'run', args: ['ex'], line: 27, column: 8 });
-            assert.deepEqual(stackFrames.stack[2], { url: 'http://path/to/file.js', func: 'printStackTrace', args: ['options'], line: 18, column: 4 });
-            assert.deepEqual(stackFrames.stack[3], { url: 'http://path/to/file.js', func: 'bar', args: ['n'], line: 4, column: 5 });
-            assert.deepEqual(stackFrames.stack[4], { url: 'http://path/to/file.js', func: 'bar', args: ['n'], line: 7, column: 4 });
-            assert.deepEqual(stackFrames.stack[5], { url: 'http://path/to/file.js', func: 'foo', args: [], line: 11, column: 4 });
-            assert.deepEqual(stackFrames.stack[6], { url: 'http://path/to/file.js', func: '?', args: [], line: 15, column: 3 });
+            assert.deepEqual(stackFrames.stack.length, 5);
+            assert.deepEqual(stackFrames.stack[0], { url: 'http://path/to/file.js', func: '<anonymous function: run>', args: ['[arguments not available]'], line: 27, column: null });
+            assert.deepEqual(stackFrames.stack[1], { url: 'http://domain.com:1234/path/to/file.js', func: 'bar', args: ['[arguments not available]'], line: 18, column: null });
+            assert.deepEqual(stackFrames.stack[2], { url: 'http://domain.com:1234/path/to/file.js', func: 'foo', args: ['[arguments not available]'], line: 11, column: null });
+            assert.deepEqual(stackFrames.stack[3], { url: 'http://path/to/file.js', func: '<anonymous function>', args: [], line: 15, column: null });
+            assert.deepEqual(stackFrames.stack[4], { url: 'http://path/to/file.js', func: 'Error created at <anonymous function>', args: [], line: 15, column: null });
         });
 
         it('should parse Opera 12 error', function () {
@@ -249,9 +187,9 @@ describe('TraceKit', function () {
             var stackFrames = TraceKit.computeStackTrace(CapturedExceptions.OPERA_12);
             assert.ok(stackFrames);
             assert.deepEqual(stackFrames.stack.length, 3);
-            assert.deepEqual(stackFrames.stack[0], { url: 'http://localhost:8000/ExceptionLab.html', func: '<anonymous function>', args: ['x'], line: 48, column: 12 });
-            assert.deepEqual(stackFrames.stack[1], { url: 'http://localhost:8000/ExceptionLab.html', func: 'dumpException3', args: [], line: 46, column: 8 });
-            assert.deepEqual(stackFrames.stack[2], { url: 'http://localhost:8000/ExceptionLab.html', func: '<anonymous function>', args: ['event'], line: 1, column: 0 });
+            assert.deepEqual(stackFrames.stack[0], { url: 'http://localhost:8000/ExceptionLab.html', func: '<anonymous function>', args: ['[arguments not available]'], line: 48, column: null });
+            assert.deepEqual(stackFrames.stack[1], { url: 'http://localhost:8000/ExceptionLab.html', func: 'dumpException3', args: ['[arguments not available]'], line: 46, column: null });
+            assert.deepEqual(stackFrames.stack[2], { url: 'http://localhost:8000/ExceptionLab.html', func: '<anonymous function>', args: ['[arguments not available]'], line: 1, column: null });
         });
 
         it('should parse Opera 25 error', function () {

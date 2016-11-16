@@ -1,11 +1,5 @@
 'use strict';
 
-var utils = require('../../src/utils');
-
-var hasKey = utils.hasKey;
-var isString = utils.isString;
-var isUndefined = utils.isUndefined;
-
 /*
  TraceKit - Cross brower stack traces - github.com/occ/TraceKit
  MIT license
@@ -114,7 +108,7 @@ TraceKit.report = (function reportModuleWrapper() {
           return;
         }
         for (var i in handlers) {
-            if (hasKey(handlers, i)) {
+            if (handlers.hasOwnProperty(i)) {
                 try {
                     handlers[i].apply(null, [stack].concat(_slice.call(arguments, 2)));
                 } catch (inner) {
@@ -163,7 +157,7 @@ TraceKit.report = (function reportModuleWrapper() {
             var name = undefined;
             var msg = message; // must be new var or will modify original `arguments`
             var groups;
-            if (isString(message)) {
+            if ({}.toString.call(message) === '[object String]') {
                 var groups = message.match(ERROR_TYPES_RE);
                 if (groups) {
                     name = groups[1];
@@ -244,7 +238,7 @@ TraceKit.report = (function reportModuleWrapper() {
         // slow slow IE to see if onerror occurs or not before reporting
         // this exception; otherwise, we will end up with an incomplete
         // stack trace
-        window.setTimeout(function () {
+        setTimeout(function () {
             if (lastException === ex) {
                 processLastException();
             }
@@ -378,7 +372,7 @@ TraceKit.computeStackTrace = (function computeStackTraceWrapper() {
      * @return {?Object.<string, *>} Stack trace information.
      */
     function computeStackTraceFromStackProp(ex) {
-        if (isUndefined(ex.stack) || !ex.stack) return;
+        if (typeof ex.stack === 'undefined' || !ex.stack) return;
 
         var chrome = /^\s*at (.*?) ?\(((?:file|https?|blob|chrome-extension|native|eval|<anonymous>).*?)(?::(\d+))?(?::(\d+))?\)?\s*$/i,
             gecko = /^\s*(.*?)(?:\((.*?)\))?(?:^|@)((?:file|https?|blob|chrome|\[native).*?)(?::(\d+))?(?::(\d+))?\s*$/i,
@@ -430,7 +424,7 @@ TraceKit.computeStackTrace = (function computeStackTraceWrapper() {
             return null;
         }
 
-        if (!stack[0].column && !isUndefined(ex.columnNumber)) {
+        if (!stack[0].column && typeof ex.columnNumber !== 'undefined') {
             // FireFox uses this awesome columnNumber property for its top frame
             // Also note, Firefox's column number is 0-based and everything else expects 1-based,
             // so adding 1
@@ -440,153 +434,6 @@ TraceKit.computeStackTrace = (function computeStackTraceWrapper() {
         return {
             'name': ex.name,
             'message': ex.message,
-            'url': getLocationHref(),
-            'stack': stack
-        };
-    }
-
-    /**
-     * Computes stack trace information from the stacktrace property.
-     * Opera 10 uses this property.
-     * @param {Error} ex
-     * @return {?Object.<string, *>} Stack trace information.
-     */
-    function computeStackTraceFromStacktraceProp(ex) {
-        // Access and store the stacktrace property before doing ANYTHING
-        // else to it because Opera is not very good at providing it
-        // reliably in other circumstances.
-        var stacktrace = ex.stacktrace;
-        if (isUndefined(ex.stacktrace) || !ex.stacktrace) return;
-
-        var opera10Regex = / line (\d+).*script (?:in )?(\S+)(?:: in function (\S+))?$/i,
-          opera11Regex = / line (\d+), column (\d+)\s*(?:in (?:<anonymous function: ([^>]+)>|([^\)]+))\((.*)\))? in (.*):\s*$/i,
-          lines = stacktrace.split('\n'),
-          stack = [],
-          parts;
-
-        for (var line = 0; line < lines.length; line += 2) {
-            var element = null;
-            if ((parts = opera10Regex.exec(lines[line]))) {
-                element = {
-                    'url': parts[2],
-                    'line': +parts[1],
-                    'column': null,
-                    'func': parts[3],
-                    'args':[]
-                };
-            } else if ((parts = opera11Regex.exec(lines[line]))) {
-                element = {
-                    'url': parts[6],
-                    'line': +parts[1],
-                    'column': +parts[2],
-                    'func': parts[3] || parts[4],
-                    'args': parts[5] ? parts[5].split(',') : []
-                };
-            }
-
-            if (element) {
-                if (!element.func && element.line) {
-                    element.func = UNKNOWN_FUNCTION;
-                }
-
-                stack.push(element);
-            }
-        }
-
-        if (!stack.length) {
-            return null;
-        }
-
-        return {
-            'name': ex.name,
-            'message': ex.message,
-            'url': getLocationHref(),
-            'stack': stack
-        };
-    }
-
-    /**
-     * NOT TESTED.
-     * Computes stack trace information from an error message that includes
-     * the stack trace.
-     * Opera 9 and earlier use this method if the option to show stack
-     * traces is turned on in opera:config.
-     * @param {Error} ex
-     * @return {?Object.<string, *>} Stack information.
-     */
-    function computeStackTraceFromOperaMultiLineMessage(ex) {
-        // Opera includes a stack trace into the exception message. An example is:
-        //
-        // Statement on line 3: Undefined variable: undefinedFunc
-        // Backtrace:
-        //   Line 3 of linked script file://localhost/Users/andreyvit/Projects/TraceKit/javascript-client/sample.js: In function zzz
-        //         undefinedFunc(a);
-        //   Line 7 of inline#1 script in file://localhost/Users/andreyvit/Projects/TraceKit/javascript-client/sample.html: In function yyy
-        //           zzz(x, y, z);
-        //   Line 3 of inline#1 script in file://localhost/Users/andreyvit/Projects/TraceKit/javascript-client/sample.html: In function xxx
-        //           yyy(a, a, a);
-        //   Line 1 of function script
-        //     try { xxx('hi'); return false; } catch(ex) { TraceKit.report(ex); }
-        //   ...
-
-        var lines = ex.message.split('\n');
-        if (lines.length < 4) {
-            return null;
-        }
-
-        var lineRE1 = /^\s*Line (\d+) of linked script ((?:file|https?|blob)\S+)(?:: in function (\S+))?\s*$/i,
-            lineRE2 = /^\s*Line (\d+) of inline#(\d+) script in ((?:file|https?|blob)\S+)(?:: in function (\S+))?\s*$/i,
-            lineRE3 = /^\s*Line (\d+) of function script\s*$/i,
-            stack = [],
-            scripts = document.getElementsByTagName('script'),
-            parts;
-
-        for (var line = 2; line < lines.length; line += 2) {
-            var item = null;
-            if ((parts = lineRE1.exec(lines[line]))) {
-                item = {
-                    'url': parts[2],
-                    'func': parts[3],
-                    'args': [],
-                    'line': +parts[1],
-                    'column': null
-                };
-            } else if ((parts = lineRE2.exec(lines[line]))) {
-                item = {
-                    'url': parts[3],
-                    'func': parts[4],
-                    'args': [],
-                    'line': +parts[1],
-                    'column': null // TODO: Check to see if inline#1 (+parts[2]) points to the script number or column number.
-                };
-                var relativeLine = (+parts[1]); // relative to the start of the <SCRIPT> block
-            } else if ((parts = lineRE3.exec(lines[line]))) {
-                var url = window.location.href.replace(/#.*$/, '');
-                item = {
-                    'url': url,
-                    'func': '',
-                    'args': [],
-                    'line': parts[1],
-                    'column': null
-                };
-            }
-
-            if (item) {
-                if (!item.func) {
-                    item.func = UNKNOWN_FUNCTION;
-                }
-
-                stack.push(item);
-            }
-        }
-
-        if (!stack.length) {
-            return null; // could not parse multiline exception message as Opera stack trace
-        }
-
-        return {
-            'name': ex.name,
-            'message': lines[0],
             'url': getLocationHref(),
             'stack': stack
         };
@@ -717,32 +564,7 @@ TraceKit.computeStackTrace = (function computeStackTraceWrapper() {
         depth = (depth == null ? 0 : +depth);
 
         try {
-            // This must be tried first because Opera 10 *destroys*
-            // its stacktrace property if you try to access the stack
-            // property first!!
-            stack = computeStackTraceFromStacktraceProp(ex);
-            if (stack) {
-                return stack;
-            }
-        } catch (e) {
-            if (TraceKit.debug) {
-                throw e;
-            }
-        }
-
-        try {
             stack = computeStackTraceFromStackProp(ex);
-            if (stack) {
-                return stack;
-            }
-        } catch (e) {
-            if (TraceKit.debug) {
-                throw e;
-            }
-        }
-
-        try {
-            stack = computeStackTraceFromOperaMultiLineMessage(ex);
             if (stack) {
                 return stack;
             }
