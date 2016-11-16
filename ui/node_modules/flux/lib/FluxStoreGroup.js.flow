@@ -18,7 +18,6 @@ import type FluxStore from 'FluxStore';
 var invariant = require('invariant');
 
 type DispatchToken = string;
-type Payload = Object;
 
 /**
  * FluxStoreGroup allows you to execute a callback on every dispatch after
@@ -31,10 +30,10 @@ class FluxStoreGroup {
   constructor(stores: Array<FluxStore>, callback: Function): void {
     this._dispatcher = _getUniformDispatcher(stores);
 
-    // precompute store tokens
+    // Precompute store tokens.
     var storeTokens = stores.map(store => store.getDispatchToken());
 
-    // register with the dispatcher
+    // Register with the dispatcher.
     this._dispatchToken = this._dispatcher.register(payload => {
       this._dispatcher.waitFor(storeTokens);
       callback();
