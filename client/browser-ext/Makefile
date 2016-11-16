@@ -8,6 +8,7 @@ dep:
 # This target is specifically for bundling the Firefox extension, where reviewers expect
 # build output to identically match identically what their (ubuntu) system generates.
 dist: dep
+	yarn run clean
 	docker run -v "$(shell pwd):/browser-ext" -i -t sourcegraph/browser-ext-bundle /bin/bash /bundle.sh
 
 build:

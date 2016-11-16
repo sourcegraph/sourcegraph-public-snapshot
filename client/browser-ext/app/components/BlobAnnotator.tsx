@@ -1,442 +1,224 @@
 import {allActions} from "../actions";
 import {EventLogger} from "../analytics/EventLogger";
+import {AnnotationsState, ResolvedRevState} from "../reducers";
 import {keyFor} from "../reducers/helpers";
 import * as utils from "../utils";
 import {addAnnotations} from "../utils/annotations";
-import {Component} from "./Component";
+import * as github from "../utils/github";
 import {SourcegraphIcon} from "./Icons";
 import * as React from "react";
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 
-const isCloning = new Map();
+const isCloning = new Set<String>();
 
 interface Props {
-	actions: any;
-	path: any;
-	resolvedRev: Object;
-	annotations: Object;
+	path: string;
+	repoURI: string;
 	blobElement: HTMLElement;
-	infoElement: HTMLElement;
 	selfElement: HTMLElement;
 }
 
-interface State {
-	user: string;
-	repo: string;
-	repoURI: string;
-	rev?: string;
-	path?: string;
-	isDelta?: boolean;
-	isPullRequest?: boolean;
-	isCommit?: boolean;
-	resolvedRev: any;
-	annotations: any;
-	accessToken: any;
-	language: string;
-	isPrivateRepo: boolean;
-	isSplitDiff: boolean;
-	baseCommitID?: string;
-	headCommitID?: string;
-	base?: string;
-	head?: string;
-	baseRepoURI?: string;
-	headRepoURI?: string;
-	headLineNumber?: string;
-	refreshInterval?: any;
+interface ReduxProps {
+	actions: typeof allActions;
+	resolvedRev: ResolvedRevState;
+	annotations: AnnotationsState;
 }
 
-class Base extends Component<Props, State & Props> {
-	constructor(props: Props) {
+class Base extends React.Component<Props & ReduxProps, {}> {
+	refreshInterval: NodeJS.Timer;
+
+	// language is determined by the path extension
+	language: string;
+
+	isDelta?: boolean;
+	isCommit?: boolean;
+	isPullRequest?: boolean;
+	isSplitDiff?: boolean;
+
+	// rev is defined for blob view
+	rev?: string;
+
+	// base/head properties are defined for diff views (commit + pull request)
+	baseCommitID?: string;
+	headCommitID?: string;
+	baseBranch?: string;
+	headBranch?: string;
+	baseRepoURI?: string;
+	headRepoURI?: string;
+
+	constructor(props: Props & ReduxProps) {
 		super(props);
+		this.language = utils.getPathExtension(props.path);
 
-		this.getBlobUrl = this.getBlobUrl.bind(this);
-		this._lineRefresh = this._lineRefresh.bind(this);
-		this._hashRefresh = this._hashRefresh.bind(this);
 		this._clickRefresh = this._clickRefresh.bind(this);
-		this.onClickAuthPriv = this.onClickAuthPriv.bind(this);
-		this.onClickFileView = this.onClickFileView.bind(this);
-		this.refreshWhenVCSCloned = this.refreshWhenVCSCloned.bind(this);
 
-		this.state = utils.parseURL(window.location) as any; // TODO(john: bad idea)
-		this.state.path = props.path;
-		this.state.language = utils.getPathExtension(this.state.path);
-		this.state.isPrivateRepo = this.isPrivateRepo();
+		const {isDelta, isPullRequest, isCommit, rev} = utils.parseURL(window.location);
+		this.isDelta = isDelta;
+		this.isPullRequest = isPullRequest;
+		this.isCommit = isCommit;
+		this.rev = rev;
 
-		EventLogger.logViewEvent("ViewBlobOnGitHub", this.state.path, utils.convertBlobStateToEventLoggerStruct(this.state));
-		if (this.state.isDelta) {
-			this.state.isSplitDiff = this._isSplitDiff();
-
-			let baseCommitID, headCommitID;
-			let el = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
-			if (el && el.length > 0) {
-				// Blob view
-				for (let i = 0; i < el.length; ++i) {
-					const url = (el[i] as HTMLElement).dataset ? (el[i] as HTMLElement).dataset["url"] : null;
-					if (!url) {
-						continue;
-					}
-					const urlSplit = url.split("?");
-					if (urlSplit.length !== 2) continue;
-					const query = urlSplit[1];
-					const querySplit = query.split("&");
-					for (let kv of querySplit) {
-						const kvSplit = kv.split("=");
-						const k = kvSplit[0];
-						const v = kvSplit[1];
-						if (k === "base_commit_oid") baseCommitID = v;
-						if (k === "end_commit_oid") headCommitID = v;
-					}
-				}
-			} else if (props.infoElement.tagName === 'A') {
-				// For snippets in conversation view of pull request
-				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
-				if (baseInput) {
-					baseCommitID = (baseInput as HTMLInputElement).value;
-				}
-				if (typeof (props.infoElement as HTMLAnchorElement).href !== 'undefined') {
-					headCommitID = (props.infoElement as HTMLAnchorElement).href.split("/files/")[1].split("#diff")[0];
-				} else {
-					const headInput = document.querySelector('input[name="comparison_end_oid"]');
-					if (headInput) {
-						headCommitID = (headInput as HTMLInputElement).value;
-					}
-				}
-			} else if (this.state.isPullRequest) {
-				// Files changed view in pull requests
-				const baseInput = document.querySelector('input[name="comparison_base_oid"]');
-				if (baseInput) {
-					baseCommitID = (baseInput as HTMLInputElement).value;
-				}
-				const headInput = document.querySelector('input[name="comparison_end_oid"]');
-				if (headInput) {
-					headCommitID = (headInput as HTMLInputElement).value;
-				}
-			} else if (this.state.isCommit) {
-				// Files changed view in commits
-				let shaContainer = document.querySelectorAll(".sha-block");
-				if (shaContainer && shaContainer.length === 2) {
-					let baseShaEl = shaContainer[0].querySelector("a");
-					if (baseShaEl) {
-						baseCommitID = baseShaEl.href.split("/").slice(-1)[0];
-					}
-					let headShaEl = shaContainer[1].querySelector("span.sha");
-					if (headShaEl) {
-						headCommitID = (headShaEl as HTMLElement).innerText;
-					}
-				}
-			}
-			if (!baseCommitID) {
-				console.error("unable to parse base commit id");
-			}
-			if (!headCommitID) {
-				console.error("unable to parse head commit id");
+		EventLogger.logViewEvent("ViewBlobOnGitHub", props.path, this.eventLoggerProps());
+		if (this.isDelta) {
+			this.isSplitDiff = github.isSplitDiff();
+			const deltaRevs = github.getDeltaRevs();
+			if (!deltaRevs) {
+				// TODO(john): error handling
+				return;
 			}
 
-			this.state.baseCommitID = baseCommitID;
-			this.state.headCommitID = headCommitID;
+			this.baseCommitID = deltaRevs.base;
+			this.headCommitID = deltaRevs.head;
 
-			if (this.state.isPullRequest) {
-				const branches = document.querySelectorAll(".commit-ref,.current-branch") as HTMLCollectionOf<HTMLElement>;
-				this.state.base = branches[0].innerText;
-				this.state.head = branches[1].innerText;
-
-				if (this.state.base.includes(":")) {
-					const baseSplit = this.state.base.split(":");
-					this.state.base = baseSplit[1];
-					this.state.baseRepoURI = `github.com/${baseSplit[0]}/${this.state.repo}`;
-				} else {
-					this.state.baseRepoURI = this.state.repoURI;
-				}
-				if (this.state.head.includes(":")) {
-					const headSplit = this.state.head.split(":");
-					this.state.head = headSplit[1];
-					this.state.headRepoURI = `github.com/${headSplit[0]}/${this.state.repo}`;
-				} else {
-					this.state.headRepoURI = this.state.repoURI;
-				}
-			} else if (this.state.isCommit) {
-				let branchEl = document.querySelector("li.branch") as HTMLElement;
-				if (branchEl) {
-					branchEl = branchEl.querySelector("a") as HTMLElement;
-				}
-				if (branchEl) {
-					this.state.base = branchEl.innerText;
-					this.state.head = branchEl.innerText;
-				}
-				this.state.baseRepoURI = this.state.repoURI;
-				this.state.headRepoURI = this.state.repoURI;
+			const deltaInfo = github.getDeltaInfo();
+			if (!deltaInfo) {
+				// TODO(john): error handling
+				return;
 			}
 
-			this._lineRefresh();
+			this.baseRepoURI = deltaInfo.baseURI;
+			this.headRepoURI = deltaInfo.headURI;
 		}
 
-		if (this.state.baseRepoURI !== this.state.headRepoURI) {
+		if (this.baseRepoURI !== this.headRepoURI && this.headRepoURI) {
 			// Ensure the head repo of a cross-repo PR is created.
-			props.actions.ensureRepoExists(this.state.headRepoURI);
-		}
-	}
-
-	componentDidMount() {
-		// Handle context expansion, in which case we should
-		// re-annotate the blob (which is smart enough to only annoate
-		// lines which haven't already been annotated).
-		let diffExpanders = document.getElementsByClassName("diff-expander");
-		if (diffExpanders) {
-			for (let idx = 0; idx < diffExpanders.length; idx++) {
-				diffExpanders[idx].addEventListener("click", this._clickRefresh);
-			}
+			props.actions.ensureRepoExists(this.headRepoURI);
 		}
 
-		window.addEventListener("hashchange", this._hashRefresh);
+		this.fetchAnnotations();
+		this._addAnnotations();
 	}
 
-	componentWillUnmount() {
-		let diffExpanders = document.getElementsByClassName("diff-expander");
-		if (diffExpanders) {
-			for (let idx = 0; idx < diffExpanders.length; idx++) {
-				diffExpanders[idx].removeEventListener("click", this._clickRefresh);
-			}
-		}
-
-		window.removeEventListener("hashchange", this._hashRefresh);
+	componentDidMount(): void {
+		github.registerExpandDiffClickHandler(this._clickRefresh);
 	}
 
-	_clickRefresh() {
+	componentDidUpdate(): void {
+		// Reapply annotations after reducer state changes.
+		this._addAnnotations();
+	}
+
+	_clickRefresh(): void {
 		// Diff expansion is not synchronous, so we must wait for
 		// elements to get added to the DOM before calling into the
 		// annotations code. 500ms is arbitrary but seems to work well.
-		setTimeout(() => {
-			this._lineRefresh();
-			this._hashRefresh();
-			this._addAnnotations(this.state);
+		setTimeout(() => this._addAnnotations(), 500);
+	}
 
-			// Attach to the new diff expander;
-			// TODO: Only attach to the new diff-expander
-			let diffExpanders = document.getElementsByClassName("diff-expander");
-			if (diffExpanders) {
-				for (let idx = 0; idx < diffExpanders.length; idx++) {
-					diffExpanders[idx].addEventListener("click", this._clickRefresh);
-				}
+	fetchAnnotations(): void {
+		if (this.isDelta) {
+			if (this.baseCommitID && this.baseRepoURI) {
+				this.props.actions.getAnnotations(this.baseRepoURI, this.baseCommitID, this.props.path);
 			}
-		}, 500);
-	}
-
-	_lineRefresh() {
-		// Get first line number of the file's first head hunk. In a split diff, there
-		// is an extra element before the element containing the head data-line-number,
-		// which is why we use a different nth-child value.
-		if (!this.state.isDelta) {
-			return;
-		}
-
-		let headLineNumberEl = this.props.blobElement.querySelector(`[data-line-number]:nth-child(${this.state.isSplitDiff ? 3 : 2})`);
-		if (headLineNumberEl) {
-			this.state.headLineNumber = (headLineNumberEl as HTMLElement).dataset["lineNumber"];
-		}
-	}
-
-	_hashRefresh() {
-		// Do not modify the URL if not auth'd or if not supported
-		if ((this.state.isPrivateRepo &&
-			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== 'undefined') &&
-			(typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === 'undefined')) ||
-			(utils.supportedExtensions.includes(utils.getPathExtension(this.state.path)))) {
-
-			const selfElementA = this.state.selfElement.getElementsByTagName("A");
-			if (selfElementA) {
-				// TODO(john): this is completely broken...
-				(selfElementA as any).href = this.getBlobUrl();
+			if (this.headCommitID && this.headRepoURI) {
+				this.props.actions.getAnnotations(this.headRepoURI, this.headCommitID, this.props.path);
 			}
+		} else if (this.rev) {
+			this.props.actions.getAnnotations(this.props.repoURI, this.rev, this.props.path);
 		}
 	}
 
-	_isSplitDiff() {
-		if (this.state.isPullRequest) {
-			const headerBar = document.getElementsByClassName("float-right pr-review-tools");
-			if (!headerBar || headerBar.length !== 1) return false;
-
-			const diffToggles = headerBar[0].getElementsByClassName("BtnGroup");
-			if (!diffToggles || diffToggles.length !== 1) return false;
-
-			const disabledToggle = diffToggles[0].getElementsByTagName("A")[0];
-			return disabledToggle && !(disabledToggle as any).href.includes("diff=split");
-		} else {
-			const headerBar = document.getElementsByClassName("details-collapse table-of-contents js-details-container");
-			if (!headerBar || headerBar.length !== 1) return false;
-
-			const diffToggles = headerBar[0].getElementsByClassName("BtnGroup float-right");
-			if (!diffToggles || diffToggles.length !== 1) return false;
-
-			const selectedToggle = diffToggles[0].querySelector(".selected");
-			return selectedToggle && (selectedToggle as any).href.includes("diff=split");
-		}
-	}
-
-	reconcileState(state, props) {
-		Object.assign(state, props);
-
-		if (!state.isAnnotated) {
-			if (state.isDelta) {
-				if (state.baseCommitID) {
-					state.actions.getAnnotations(state.baseRepoURI, state.baseCommitID, state.path);
-				}
-				if (state.headCommitID) {
-					state.actions.getAnnotations(state.headRepoURI, state.headCommitID, state.path);
-				}
-				state.isAnnotated = true;
-			} else {
-				state.actions.getAnnotations(state.repoURI, state.rev, state.path);
-				state.isAnnotated = true;
-			}
-		}
-	}
-
-	onStateTransition(prevState, nextState) {
-		this._addAnnotations(nextState);
-	}
-
-	_addAnnotations(state) {
-		function apply(repoURI, rev, branch, isBase, loggingStruct) {
-			const fext = utils.getPathExtension(state.path);
+	_addAnnotations(): void {
+		const apply = (repoURI: string, rev: string, isBase: boolean, loggerProps: Object) => {
+			const fext = utils.getPathExtension(this.props.path);
 
 			if (utils.supportedExtensions.indexOf(fext) < 0) {
 				return; // Don't annotate unsupported languages
 			}
 
-			const json = state.annotations.content[keyFor(repoURI, rev, state.path)];
+			const json = this.props.annotations.content[keyFor(repoURI, rev, this.props.path)];
 			if (json) {
-				addAnnotations(state.path, {repoURI, rev, branch, isDelta: state.isDelta, isBase, relRev: json.relRev}, state.blobElement, json.resp.IncludedAnnotations.Annotations, json.resp.IncludedAnnotations.LineStartBytes, state.isSplitDiff, loggingStruct);
+				addAnnotations(this.props.path, {repoURI, rev, isDelta: this.isDelta || false, isBase, relRev: json.relRev}, this.props.blobElement, json.resp.IncludedAnnotations.Annotations, json.resp.IncludedAnnotations.LineStartBytes, this.isSplitDiff || false, loggerProps);
+			}
+		};
+
+		if (this.isDelta) {
+			if (this.baseCommitID && this.baseRepoURI) {
+				apply(this.baseRepoURI, this.baseCommitID, true, this.eventLoggerProps());
+			}
+			if (this.headCommitID && this.headRepoURI) {
+				apply(this.headRepoURI, this.headCommitID, false, this.eventLoggerProps());
+			}
+		} else {
+			const resolvedRev = this.props.resolvedRev.content[keyFor(this.props.repoURI, this.rev)];
+			if (resolvedRev && resolvedRev.json && resolvedRev.json.CommitID) {
+				apply(this.props.repoURI, resolvedRev.json.CommitID, false, this.eventLoggerProps());
 			}
 		}
-
-		if (state.isDelta) {
-			if (state.baseCommitID) apply(state.baseRepoURI, state.baseCommitID, state.base, true, utils.convertBlobStateToEventLoggerStruct(state));
-			if (state.headCommitID) apply(state.headRepoURI, state.headCommitID, state.head, false, utils.convertBlobStateToEventLoggerStruct(state));
-		} else {
-			const resolvedRev = state.resolvedRev.content[keyFor(state.repoURI, state.rev)];
-			if (resolvedRev && resolvedRev.json && resolvedRev.json.CommitID) apply(state.repoURI, resolvedRev.json.CommitID, state.rev, false, utils.convertBlobStateToEventLoggerStruct(state));
-		}
 	}
 
-	isPrivateRepo() {
-		const el = document.getElementsByClassName("label label-private v-align-middle");
-		return el.length > 0
-	}
-
-	onClickAuthPriv(ev) {
-		ev.preventDefault();
-		EventLogger.logEventForCategory("Auth", "Redirect", "ChromeExtensionSgButtonClicked", utils.convertBlobStateToEventLoggerStruct(this.state));
-		location.href = `https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`;
-	}
-
-	onClickFileView(ev) {
-		ev.preventDefault();
-		EventLogger.logEventForCategory("File", "Click", "ChromeExtensionSgButtonClicked", utils.convertBlobStateToEventLoggerStruct(this.state));
-		const targetURL = this.getBlobUrl();
-		if (ev.ctrlKey || (navigator.platform.toLowerCase().indexOf('mac') >= 0 && ev.metaKey) || ev.button === 1) {
-			// Remove :focus from target to remove the hover
-			// tooltip when opening target link in a new window.
-			ev.target.blur();
-			window.open(targetURL, "_blank");
-		} else {
-			location.href = targetURL;
-		}
+	eventLoggerProps(): Object {
+		return {
+			repoURI: this.props.repoURI,
+			path: this.props.path,
+			isPullRequest: this.isPullRequest,
+			isCommit: this.isCommit,
+			language: this.language,
+			isPrivateRepo: github.isPrivateRepo(),
+		};
 	}
 
 	getBlobUrl(): string {
-		let rev;
-		let repo;
-		let selectedLineNumber = "";
+		return `https://sourcegraph.com/${this.props.repoURI}${this.rev ? `@${this.rev}` : ""}/-/blob/${this.props.path}`;
+	}
 
-		switch(utils.getGitHubRoute(window.location)) {
-			case "blob":
-				rev = this.state.rev;
-				repo = this.state.repoURI;
-				selectedLineNumber = `${window.location.hash.match(/^(#L[1-9][0-9]*$)/g) || ""}`;
-				break;
-			case "pull":
-			case "commit":
-				const selectedLine = this.state.blobElement.getElementsByClassName("js-linkable-line-number selected-line")[0] as HTMLElement;
-				const jumpToSide = selectedLine ? `${selectedLine.id.match(/([LR])[\d]+$/g) || "R"}` : "R";
-
-				// If no line is selected, jump to first line in the condensed blob
-				selectedLineNumber = selectedLine && (selectedLine as any).dataset ? `#L${(selectedLine.dataset as any).lineNumber}` : "";
-				if (!selectedLineNumber && this.state.headLineNumber) {
-					selectedLineNumber = `#L${this.state.headLineNumber}`;
-				}
-
-				if (jumpToSide.charAt(0) === "L") {
-					rev = this.state.baseCommitID;
-					repo = this.state.baseRepoURI;
-				} else {
-					rev = this.state.headCommitID;
-					repo = this.state.headRepoURI;
-				}
-
-				break;
-			default:
-				console.debug("Could not generate blob URL");
-				return window.location.href;
+	render(): JSX.Element | null {
+		if (typeof this.props.resolvedRev.content[keyFor(this.props.repoURI)] === "undefined") {
+			return null;
 		}
 
-		return `https://sourcegraph.com/${repo}@${rev}/-/blob/${this.state.path}${selectedLineNumber}`;
-	}
+		if (github.isPrivateRepo() && this.props.resolvedRev.content[keyFor(this.props.repoURI)].authRequired) {
+			// Not signed in or not auth'd for private repos
+			this.props.selfElement.removeAttribute("disabled");
+			this.props.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.props.repoURI.split("github.com/")[1]}`);
 
-	refreshWhenVCSCloned() {
-		this.state.actions.getAnnotations(this.state.repoURI, this.state.rev, this.state.path);
-	}
+			return (<span>
+				<a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`}
+					style={{textDecoration: "none", color: "inherit"}}>
+					<SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />
+					Sourcegraph
+				</a>
+			</span>);
 
+		} else if (this.props.resolvedRev.content[keyFor(this.props.repoURI)].cloneInProgress) {
+			// Cloning the repo
+			this.props.selfElement.setAttribute("disabled", "true");
+			this.props.selfElement.setAttribute("aria-label", `Sourcegraph is analyzing ${this.props.repoURI.split("github.com/")[1]}`);
 
-	render() {
-		if (typeof this.state.resolvedRev.content[keyFor(this.state.repoURI)] !== "undefined") {
-			if (this.state.isPrivateRepo && this.state.resolvedRev.content[keyFor(this.state.repoURI)].authRequired === true) {
-				// Not signed in or not auth'd for private repos
-				this.state.selfElement.removeAttribute("disabled");
-				this.state.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.state.repoURI.split("github.com/")[1]}`);
-				this.state.selfElement.onclick = this.onClickAuthPriv;
+			if (!isCloning.has(this.props.repoURI)) {
+				isCloning.add(this.props.repoURI);
+				this.refreshInterval = setInterval(this.fetchAnnotations, 5000);
+			}
 
-				return <span><a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`} onClick={this.onClickAuthPriv} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />Sourcegraph</a></span>;
-			} else if (this.state.resolvedRev.content[keyFor(this.state.repoURI)].cloneInProgress === true) {
-				// Cloning the repo
-				this.state.selfElement.setAttribute("disabled", "true");
-				this.state.selfElement.setAttribute("aria-label", `Sourcegraph is analyzing ${this.state.repoURI.split("github.com/")[1]}`);
+			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Loading...</span>;
 
-				if (isCloning.has(this.state.repoURI) === false) {
-					isCloning.set(this.state.repoURI, "true");
-					this.state.refreshInterval = setInterval(this.refreshWhenVCSCloned, 5000);
-				}
-
-				return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Loading...</span>;
+		} else if (!utils.supportedExtensions.includes(utils.getPathExtension(this.props.path))) {
+			this.props.selfElement.setAttribute("disabled", "true");
+			if (!utils.upcomingExtensions.includes(utils.getPathExtension(this.props.path))) {
+				this.props.selfElement.setAttribute("aria-label", "File not supported");
 			} else {
-				if (!utils.supportedExtensions.includes(utils.getPathExtension(this.state.path))) {
-					this.state.selfElement.setAttribute("disabled", "true");
-					if (!utils.upcomingExtensions.includes(utils.getPathExtension(this.state.path))) {
-						this.state.selfElement.setAttribute("aria-label", "File not supported");
-					} else {
-						this.state.selfElement.setAttribute("aria-label", "Language support coming soon!");
-					}
+				this.props.selfElement.setAttribute("aria-label", "Language support coming soon!");
+			}
 
-					return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
-				} else {
-					this.state.selfElement.removeAttribute("disabled");
-					this.state.selfElement.setAttribute("aria-label", "View on Sourcegraph");
-					this.state.selfElement.onclick = this.onClickFileView;
+			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
 
-					if (isCloning.has(this.state.repoURI) === true) {
-						isCloning.delete(this.state.repoURI);
-						if (this.state.refreshInterval)
-							clearInterval(this.state.refreshInterval);
-					}
+		} else {
+			this.props.selfElement.removeAttribute("disabled");
+			this.props.selfElement.setAttribute("aria-label", "View on Sourcegraph");
 
-					return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onClick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
+			if (isCloning.has(this.props.repoURI)) {
+				isCloning.delete(this.props.repoURI);
+				if (this.refreshInterval) {
+					clearInterval(this.refreshInterval);
 				}
 			}
-		} else {
-			// Default case when we don't have any annotation data
-			this.state.selfElement.setAttribute("aria-label", "Loading...");
 
-			return <span><a id="SourcegraphFileViewAnchor" href={this.getBlobUrl()} onClick={this.onClickFileView} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</a></span>;
+			return (<span>
+				<a href={this.getBlobUrl()} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />
+					Sourcegraph
+				</a>
+			</span>);
 		}
 	}
 }
@@ -444,5 +226,4 @@ class Base extends Component<Props, State & Props> {
 export const BlobAnnotator = connect((state) => ({
 	resolvedRev: state.resolvedRev,
 	annotations: state.annotations,
-	accessToken: state.accessToken,
-} as any), (dispatch) => ({actions: bindActionCreators(allActions, dispatch)}))(Base) as any; // TODO(john): remove any cast
+}), (dispatch) => ({actions: bindActionCreators(allActions, dispatch)}))(Base) as React.ComponentClass<Props>;

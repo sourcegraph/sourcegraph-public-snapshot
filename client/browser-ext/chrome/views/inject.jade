@@ -11,5 +11,5 @@ html
   body
     #root
     if env !== 'prod'
-      script(src='chrome-extension://lmhkpmbekcpmknklioeibfkpmmfibljd/js/inject.bundle.js')
-    script(src=env == 'prod' ? '/js/app.bundle.js' : 'https://localhost:3000/js/app.bundle.js')
+      script(src='chrome-extension://lmhkpmbekcpmknklioeibfkpmmfibljd/js/redux-devtools-extension.js')
+    script(src=env == 'prod' ? '/js/inject.bundle.js' : 'https://localhost:3000/js/inject.bundle.js')

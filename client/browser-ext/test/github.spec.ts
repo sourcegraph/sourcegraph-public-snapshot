@@ -24,6 +24,14 @@ describe("GitHub DOM", () => {
 			expect(github.getFileContainers()).to.have.length(1);
 		});
 
+		it("should not be split diff", () => {
+			expect(github.isSplitDiff()).to.be.false;
+		});
+
+		it("should not parse base/head rev", () => {
+			expect(github.getDeltaRevs()).to.not.be.ok;
+		});
+
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);
 			expect(data.user).to.eql("gorilla");
@@ -49,6 +57,15 @@ describe("GitHub DOM", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
 				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
 			]);
+		});
+
+		it("should not be split diff", () => {
+			expect(github.isSplitDiff()).to.be.false;
+		});
+
+		it("should parse base/head rev", () => {
+			expect(github.getDeltaRevs()).to.have.property("base", "0b13a922203ebdbfd236c818efcd5ed46097d690");
+			expect(github.getDeltaRevs()).to.have.property("head", "0a192a193177452756c362c20087ddafcf6829c4");
 		});
 
 		it("should parse url", () => {
@@ -78,6 +95,14 @@ describe("GitHub DOM", () => {
 			]);
 		});
 
+		it("should not be split diff", () => {
+			expect(github.isSplitDiff()).to.be.false;
+		});
+
+		it("should not parse base/head rev", () => {
+			expect(github.getDeltaRevs()).to.not.be.ok;
+		});
+
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);
 			expect(data.user).to.eql("gorilla");
@@ -105,6 +130,17 @@ describe("GitHub DOM", () => {
 			]);
 		});
 
+		it("should not be split diff", () => {
+			expect(github.isSplitDiff()).to.be.false;
+		});
+
+		// TODO(john): this is blocked on https://github.com/tmpvar/jsdom/issues/961
+		// it("should parse base/head rev", () => {
+		// 	expect(github.getBaseAndHeadRev()).to.have.property("base", "foo");
+		// 	expect(github.getBaseAndHeadRev()).to.have.property("head", "foo");
+		// });
+
+
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);
 			expect(data.user).to.eql("gorilla");
@@ -131,6 +167,16 @@ describe("GitHub DOM", () => {
 				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
 			]);
 		});
+
+		it("should be split diff", () => {
+			expect(github.isSplitDiff()).to.be.true;
+		});
+
+		// TODO(john): this is blocked on https://github.com/tmpvar/jsdom/issues/961
+		// it("should parse base/head rev", () => {
+		// 	expect(github.getBaseAndHeadRev()).to.have.property("base", "foo");
+		// 	expect(github.getBaseAndHeadRev()).to.have.property("head", "foo");
+		// });
 
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);

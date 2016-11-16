@@ -124,18 +124,3 @@ export function getCurrentBranch(): string | null {
 
 	return (branchDropdownEl[0] as any).title; // TODO(john): provide proper types
 }
-
-// TODO(john): improve the types here...urlData is actually object state.
-export function convertBlobStateToEventLoggerStruct(urlData: GitHubURLData & {language: string, isPrivateRepo: boolean}): GitHubURLData & {language: string, isPrivateRepo: boolean} {
-	return {
-		repo: urlData.repo,
-		repoURI: urlData.repoURI,
-		rev: urlData.rev,
-		path: urlData.path,
-		isDelta: urlData.isDelta,
-		isPullRequest: urlData.isPullRequest,
-		isCommit: urlData.isCommit,
-		language: urlData.language,
-		isPrivateRepo: urlData.isPrivateRepo,
-	};
-}

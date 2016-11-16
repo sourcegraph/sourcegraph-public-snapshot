@@ -4,7 +4,7 @@ class Logger {
 			return;
 		}
 
-		chrome.runtime.sendMessage({type: "getIdentity"}, {}, (identity) => {
+		chrome.runtime.sendMessage({type: "getIdentity"}, (identity) => {
 			if (identity) {
 				if (identity.userId) {
 					chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
@@ -24,7 +24,7 @@ class Logger {
 			chrome.runtime.sendMessage({ type: "setTrackerDeviceId", payload: identity.deviceId });
 		}
 		if (identity && identity.gaClientId) {
-			chrome.runtime.sendMessage({ type: "setTrackerGAClientId", payload: identity.gaClientId});
+			chrome.runtime.sendMessage({ type: "setTrackerGAClientId", payload: identity.gaClientId });
 		}
 	}
 
@@ -74,7 +74,7 @@ class Logger {
 		);
 
 		this._logToConsole(title, decoratedEventProps);
-		chrome.runtime.sendMessage({ type: "trackView", payload: decoratedEventProps});
+		chrome.runtime.sendMessage({ type: "trackView", payload: decoratedEventProps });
 	}
 
 }

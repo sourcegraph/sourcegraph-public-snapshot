@@ -6,7 +6,7 @@ import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 
 interface Props {
-	actions: any; // TODO(john): give stronger type
+	actions: typeof allActions;
 }
 
 class Component extends React.Component<Props, {}> {
@@ -67,7 +67,7 @@ class Component extends React.Component<Props, {}> {
 			props.actions.ensureRepoExists(urlProps.repoURI);
 		}
 
-		chrome.runtime.sendMessage({type: "getIdentity"}, {}, (identity) => {
+		chrome.runtime.sendMessage({type: "getIdentity"}, (identity) => {
 			if (identity) {
 				EventLogger.updatePropsForUser(identity);
 			}

@@ -25,35 +25,49 @@ function applyTooltipTitleStyling(elem: HTMLElement): void {
 	elem.style.wordWrap = "break-all";
 }
 
+interface RepoRevSpec {
+	repoURI: string;
+	rev: string;
+	isDelta: boolean;
+	isBase: boolean;
+	relRev: string;
+}
 
 // addAnnotations is the entry point for injecting annotations onto a blob (el).
 // An invisible marker is appended to the document to indicate that annotation
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
-export function addAnnotations(path, repoRevSpec, el, anns, lineStartBytes, isSplitDiff, loggingStruct) {
+export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, anns: any, lineStartBytes: any, isSplitDiff: boolean, loggingStruct: Object): void {
 	_applyAnnotations(el, path, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff, loggingStruct);
 }
 
 // _applyAnnotations is a helper function for addAnnotations
-export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startBytesByLine, isSplitDiff, loggingStruct) {
+export function _applyAnnotations(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, annsByStartByte: any, startBytesByLine: any, isSplitDiff: boolean, loggingStruct: Object): void {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
+	if (!table) {
+		return;
+	}
 
-	let cells = [];
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];
 
 		// Inline comments from single comment / review of a Pull request
-		if (row.classList && row.classList.contains("inline-comments")) continue;
+		if (row.classList && row.classList.contains("inline-comments")) {
+			continue;
+		}
 
 		// line: line number of the current line
 		// codeCell: The actual table cell that has code inside.
 		//           Each row contains multiple columns, for
 		//           line number and code (multiple in diffs).
-		let line, codeCell;
+		let line;
+		let codeCell;
 		if (repoRevSpec.isDelta) {
-			if (isSplitDiff && row.cells.length !== 4) continue;
+			if (isSplitDiff && row.cells.length !== 4) {
+				continue;
+			}
 
 			// metaCell contains either the line number or the blob expander for common parts in a diff
 			let metaCell;
@@ -97,17 +111,17 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 				continue;
 			}
 
-			line = metaCell.dataset.lineNumber;
+			line = metaCell.dataset["lineNumber"];
 			if (line === "..." || !line) {
 				continue;
 			}
 		} else {
-			line = row.cells[0].dataset.lineNumber;
+			line = row.cells[0].dataset["lineNumber"];
 			codeCell = row.cells[1];
 		}
 
 		const isInner = codeCell.querySelector(".blob-code-inner");
-		const curLine = isInner || codeCell; // DOM node of the "line"
+		const curLine = (isInner || codeCell) as HTMLElement; // DOM node of the "line"
 
 		// If the line has already been annotated,
 		// restore event handlers if necessary otherwise move to next line
@@ -117,7 +131,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 			}
 			continue;
 		}
-		el.dataset[`${line}_${repoRevSpec.rev}`] = true;
+		el.dataset[`${line}_${repoRevSpec.rev}`] = "true";
 
 		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
@@ -133,7 +147,7 @@ export function _applyAnnotations(el, path, repoRevSpec, annsByStartByte, startB
 
 // indexAnnotations creates a fast lookup structure optimized to query
 // annotations by start or end byte.
-export function indexAnnotations(anns) {
+export function indexAnnotations(anns: any): {annsByStartByte: any, annsByEndByte: any} {
 	let annsByStartByte = {};
 	let annsByEndByte = {};
 	for (let i = 0; i < anns.length; i++) {
@@ -150,7 +164,7 @@ export function indexAnnotations(anns) {
 
 // indexLineStartBytes creates a fast lookup structure optimized to query
 // byte offsets by line number (1-indexed).
-export function indexLineStartBytes(lineStartBytes) {
+export function indexLineStartBytes(lineStartBytes: any): any {
 	let startBytesByLine = {};
 	for (let i = 0; i < lineStartBytes.length; i++) {
 		startBytesByLine[i + 1] = lineStartBytes[i];
@@ -160,14 +174,20 @@ export function indexLineStartBytes(lineStartBytes) {
 
 // isStringNode and isCommentNode are predicate functions to
 // identify string identifier DOM elements, as per Github's code styling classes.
-export function isCommentNode(node) {
-	return node.classList.contains("pl-c");
+export function isCommentNode(node: Node): boolean {
+	return (node as any).classList.contains("pl-c");
 }
 
 // isStringNode should skip any string that might have
 // have an eval statement within that must be annotated
-export function isStringNode(node) {
-	return node.classList.contains("pl-s") && node.childNodes.length === 3 && node.childNodes[0].classList.contains("pl-pds") && node.childNodes[2].classList.contains("pl-pds");
+export function isStringNode(node: Node): boolean {
+	// TODO(john): fix this...
+	return (node as any).classList.contains("pl-s") && node.childNodes.length === 3 && (node.childNodes[0] as any).classList.contains("pl-pds") && (node.childNodes[2] as any).classList.contains("pl-pds");
+}
+
+interface ConvertNodeResult {
+	resultNode: Node;
+	bytesConsumed: number;
 }
 
 // convertNode takes a DOM node and returns an object containing the
@@ -175,11 +195,12 @@ export function isStringNode(node) {
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
-	let wrapperNode, c; // c is an intermediate result
+export function convertNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult {
+	let wrapperNode;
+	let c; // c is an intermediate result
 
 	if (currentNode.nodeType === Node.TEXT_NODE) {
-		c = convertTextNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
+		c = convertTextNode(currentNode as Element, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
 	} else if (currentNode.nodeType === Node.ELEMENT_NODE) {
 		c = isStringNode(currentNode) || isCommentNode(currentNode) ?
 			convertStringNode(currentNode, annsByStartByte, offset, lineStart) :
@@ -190,13 +211,13 @@ export function convertNode(currentNode, annsByStartByte, offset, lineStart, ign
 
 	// If this is the top level node for code, return a documentFragment
 	// otherwise copy all the attributes of the original node.
-	if (currentNode.tagName === "TD") {
+	if ((currentNode as any).tagName === "TD") {
 		wrapperNode = document.createDocumentFragment();
 		wrapperNode.appendChild(c.resultNode);
 	} else {
 		wrapperNode = c.resultNode;
 		if (currentNode.attributes && currentNode.attributes.length > 0) {
-			[].map.call(currentNode.attributes, (attr) => {wrapperNode.setAttribute(attr.name, attr.value)});
+			[].map.call(currentNode.attributes, (attr) => wrapperNode.setAttribute(attr.name, attr.value));
 		}
 	}
 
@@ -210,7 +231,7 @@ export function convertNode(currentNode, annsByStartByte, offset, lineStart, ign
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
-export function convertTextNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
+export function convertTextNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult {
 	let nodeText;
 	let prevConsumed = 0;
 	let bytesConsumed = 0;
@@ -218,13 +239,13 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 	const wrapperNode = document.createElement("SPAN");
 	wrapperNode.id = `text-node-wrapper-${lineOffset}`; // TODO(john): this is not globally unique for diff views.
 
-	function createTextNode(nodeText, start, end, offset) {
+	function createTextNode(text: string[], start: number, end: number, off: number): Node {
 		const wrapNode = document.createElement("SPAN");
-		wrapNode.id = `text-node-${lineOffset}-${offset}`; // TODO(john): this is not globally unique for diff views.
-		const textNode = document.createTextNode(utf8.decode(nodeText.slice(start, end).join("")));
+		wrapNode.id = `text-node-${lineOffset}-${off}`; // TODO(john): this is not globally unique for diff views.
+		const textNode = document.createTextNode(utf8.decode(text.slice(start, end).join("")));
 
 		// TODO(john): type this
-		(wrapNode.dataset as any).byteoffset = offset;
+		(wrapNode.dataset as any).byteoffset = off;
 		wrapNode.appendChild(textNode);
 
 		return wrapNode;
@@ -232,7 +253,7 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 
 	// Text could contain escaped character sequences (e.g. "&gt;") or UTF-8
 	// decoded characters (e.g. "˟") which need to be properly counted in terms of bytes.
-	nodeText = utf8.encode(_.unescape(currentNode.textContent)).split("");
+	nodeText = utf8.encode(_.unescape(currentNode.textContent || "")).split("");
 
 	// Handle special case for pull requests (+/- character on diffs).
 	if (ignoreFirstTextChar && nodeText.length > 0) {
@@ -240,7 +261,7 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 		nodeText = nodeText.slice(1);
 	}
 
-	for (bytesConsumed = 0; bytesConsumed < nodeText.length;) {
+	for (bytesConsumed = 0; bytesConsumed < nodeText.length; ) {
 		const match = annsByStartByte[offset + bytesConsumed];
 
 		if (match) {
@@ -267,7 +288,7 @@ export function convertTextNode(currentNode, annsByStartByte, offset, lineStart,
 
 // convertStringNode takes a DOM node which is a plain string and returns an object containing the
 // maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertStringNode(currentNode, annsByStartByte, offset, lineStart) {
+export function convertStringNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number): ConvertNodeResult {
 	const wrapperNode = document.createElement("SPAN");
 
 	(wrapperNode.dataset as any).byteoffset = offset + 1 - lineStart;
@@ -275,14 +296,14 @@ export function convertStringNode(currentNode, annsByStartByte, offset, lineStar
 
 	return {
 		resultNode: wrapperNode,
-		bytesConsumed: currentNode.textContent.length
-	}
+		bytesConsumed: (currentNode.textContent || "").length,
+	};
 }
 
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar) {
+export function convertElementNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult {
 	let bytesConsumed = 0;
 	const wrapperNode = document.createElement("SPAN");
 
@@ -316,13 +337,17 @@ const loadingTooltip = document.createElement("DIV");
 loadingTooltip.appendChild(document.createTextNode("Loading..."));
 
 let activeTarget;
-function getTarget(t) {
-	while (t && t.tagName !== "TD" && !t.dataset && !t.dataset.byteoffset) {t = t.parentNode;}
-	if (t && t.tagName === "SPAN" && t.dataset && t.dataset.byteoffset) return t;
+function getTarget(t: HTMLElement): HTMLElement | undefined {
+	while (t && t.tagName !== "TD" && !t.dataset && !t.dataset["byteoffset"]) {
+		t = (t.parentNode as any); // TODO(john): remove cast
+	}
+	if (t && t.tagName === "SPAN" && t.dataset && t.dataset["byteoffset"]) {
+		return t;
+	}
 }
 
 let hoverTimeout;
-function clearTooltip() {
+function clearTooltip(): void {
 	clearTimeout(hoverTimeout);
 	if (tooltip.firstChild) {
 		tooltip.removeChild(tooltip.firstChild);
@@ -330,14 +355,14 @@ function clearTooltip() {
 	tooltip.style.visibility = "hidden"; // prevent black dot of empty content
 }
 
-function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
-	el.onclick = function(e) {
-		let t = getTarget(e.target);
-		if (!t || t.style.cursor !== "pointer") return;
+function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: string, loggingStruct: Object): void {
+	el.onclick = (e) => {
+		let t = getTarget((e as any).target); // TODO(john): remove type cast
+		if (!t || t.style.cursor !== "pointer") {
+			return;
+		}
 
-		let openInNewTab = e.ctrlKey || (navigator.platform.toLowerCase().indexOf("mac") >= 0 && e.metaKey) || e.button === 1;
-
-		fetchJumpURL(t.dataset.byteoffset, function(defUrl) {
+		fetchJumpURL(t.dataset["byteoffset"], (defUrl) => {
 			if (!defUrl) {
 				return;
 			}
@@ -347,16 +372,18 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 			EventLogger.logEventForCategory("Def", "Click", "JumpDef", Object.assign({}, repoRevSpec, loggingStruct));
 			window.open(defUrl, "_blank");
 		});
-	}
+	};
 
-	el.onmouseout = function(e) {
+	el.onmouseout = (e) => {
 		clearTooltip();
 		activeTarget = null;
 	};
 
-	el.onmouseover = function(e) {
-		let t = getTarget(e.target);
-		if (!t) return;
+	el.onmouseover = (e) => {
+		let t = getTarget((e as any).target); // TDO(john): remove type cast
+		if (!t) {
+			return;
+		}
 
 		if (activeTarget !== t) {
 			activeTarget = t;
@@ -364,10 +391,10 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 			// Only show "Loading..." if it has been loading for a while. If we
 			// show "Loading..." immediately, there will be a visible flash if
 			// the actual hover text loads quickly thereafter.
-			hoverTimeout = setTimeout(() => showTooltip(loadingTooltip, true, loggingStruct), 3 * HOVER_DELAY_MS);
+			hoverTimeout = setTimeout(() => showTooltip(loadingTooltip, true), 3 * HOVER_DELAY_MS);
 
 			const hoverShowTime = Date.now() + HOVER_DELAY_MS;
-			getTooltip(activeTarget, function(elem) {
+			getTooltip(activeTarget, (elem) => {
 				clearTimeout(hoverTimeout); // prevent delayed addition of loading indicator
 				if (elem === null) { // add no tooltip for empty responses
 					return;
@@ -376,12 +403,12 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 				// Always wait at least HOVER_DELAY_MS before showing hover, to avoid
 				// it obscuring text when you move your mouse rapidly across a code file.
 				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
-				hoverTimeout = setTimeout(() => showTooltip(elem, false, loggingStruct), hoverTimerRemaining);
+				hoverTimeout = setTimeout(() => showTooltip(elem, false), hoverTimerRemaining);
 			});
 		}
-	}
+	};
 
-	function showTooltip(elem, isLoading, loggingStruct) {
+	function showTooltip(elem: HTMLElement, isLoading: boolean): void {
 		clearTooltip();
 
 		if (activeTarget && elem) {
@@ -413,7 +440,7 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 		}
 	}
 
-	function wrapLSP(req) {
+	function wrapLSP(req: any): any[] {
 		req.id = 1;
 		return [
 			{
@@ -435,7 +462,7 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 		];
 	}
 
-	function fetchJumpURL(col, cb) {
+	function fetchJumpURL(col: string, cb: (val: any) => void): void {
 		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
 		if (typeof j2dCache[cacheKey] !== "undefined") {
 			return cb(j2dCache[cacheKey]);
@@ -454,7 +481,7 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 			},
 		});
 
-		return fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", {method: "POST", body: JSON.stringify(body)})
+		fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", {method: "POST", body: JSON.stringify(body)})
 			.then((resp) => resp.json().then((json) => {
 				const respUri = json[1].result[0].uri.split("git://")[1];
 				const prt0Uri = respUri.split("?");
@@ -470,8 +497,8 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 			})).catch((err) => cb(null));
 	}
 
-	function getTooltip(target, cb) {
-		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${target.dataset.byteoffset}`;
+	function getTooltip(target: HTMLElement, cb: (val: any) => void): void {
+		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${target.dataset["byteoffset"]}`;
 		if (typeof tooltipCache[cacheKey] !== "undefined") {
 			return cb(tooltipCache[cacheKey]);
 		}
@@ -483,22 +510,22 @@ function addEventListeners(el, path, repoRevSpec, line, loggingStruct) {
 					uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
 				},
 				position: {
-					character: parseInt(target.dataset.byteoffset, 10) - 1,
+					character: parseInt(target.dataset["byteoffset"], 10) - 1,
 					line: parseInt(line, 10) - 1,
 				},
 			},
 		});
 
-		return fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
+		fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
 			.then((resp) => resp.json().then((json) => {
-				const tooltip = document.createElement("DIV");
+				const tooltipText = document.createElement("DIV");
 				if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
 					target.style.cursor = "pointer";
 					target.className = `${target.className} sg-clickable`;
 
-					applyTooltipTitleStyling(tooltip);
-					tooltip.appendChild(document.createTextNode(json[1].result.contents[0].value));
-					tooltipCache[cacheKey] = tooltip;
+					applyTooltipTitleStyling(tooltipText);
+					tooltipText.appendChild(document.createTextNode(json[1].result.contents[0].value));
+					tooltipCache[cacheKey] = tooltipText;
 				} else {
 					tooltipCache[cacheKey] = null;
 				}
