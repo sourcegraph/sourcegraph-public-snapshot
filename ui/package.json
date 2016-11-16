@@ -27,7 +27,7 @@
     "fuzzysearch": "1.0.3",
     "gql2ts": "0.4.0",
     "json-loader": "0.5.4",
-    "mocha": "3.0.2",
+    "mocha": "3.1.2",
     "node-noop": "1.0.0",
     "null-loader": "0.1.1",
     "postcss-loader": "1.1.1",
