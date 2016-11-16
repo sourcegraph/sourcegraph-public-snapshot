@@ -29,14 +29,16 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	}
 
 	componentDidMount(): void {
+		let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+		let isChrome = /Chrome/i.test(navigator.userAgent);
+		if (window.localStorage[ChromeExtensionToastKey] || !isChrome || isMobile) {
+			return;
+		}
 		setTimeout(() => {
-			let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-			let isChrome = /Chrome/i.test(navigator.userAgent);
-			let isToastVisible = !window.localStorage[ChromeExtensionToastKey] && !context.hasChromeExtensionInstalled() && isChrome && !isMobile;
 			this.setState({
-				isVisible: isToastVisible,
+				isVisible: !context.hasChromeExtensionInstalled(),
 			});
-			if (isToastVisible) {
+			if (this.state.isVisible) {
 				EventLogger.logViewEvent("ViewChromeExtensionToast", this.props.location.pathname, {toastCopy: ToastTitle});
 			}
 		}, 1000);
@@ -44,7 +46,6 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 
 	render(): JSX.Element | null {
 		let {isVisible} = this.state;
-
 		if (isVisible) {
 			return (
 				<Toast>
