@@ -64,7 +64,7 @@ declare namespace GQL {
   /*
     description: null
   */
-  interface INode extends IRepository, ICommit {
+  interface INode {
     __typename: string;
     id: string;
   }
