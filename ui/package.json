@@ -61,7 +61,6 @@
     "raven-js": "3.8.1",
     "react": "15.3.2",
     "react-dom": "15.3.2",
-    "react-helmet": "3.2.2",
     "react-icons": "2.2.1",
     "react-relay": "0.9.3",
     "react-router": "3.0.0",
