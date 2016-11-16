@@ -6,7 +6,7 @@ import * as classNames from "classnames";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import Helmet from "react-helmet";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {Heading, Panel} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
 import {whitespace} from "sourcegraph/components/utils/index";
@@ -40,7 +40,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 
 		return (
 			<div>
-				<Helmet title="Home" />
+				<PageTitle title="Home" />
 				<div className={styles.onboarding_container}>
 					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
 						<Heading style={{paddingTop: whitespace[4]}} align="center" level={3}>

@@ -30,10 +30,6 @@ declare module "react-router-scroll" {
 	export function useScroll(arg: any): any;
 }
 
-declare module "react-helmet" {
-	export default {} as any;
-}
-
 declare module "react-hot-loader" {
 	export var AppContainer: any;
 }

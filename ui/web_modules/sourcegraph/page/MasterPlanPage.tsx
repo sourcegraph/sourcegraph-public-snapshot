@@ -1,10 +1,10 @@
 import {media} from "glamor";
 import * as React from "react";
-import Helmet from "react-helmet";
 import {Link} from "react-router";
 import {context} from "sourcegraph/app/context";
 import {Affix, Button, FlexContainer, Heading, Hero, Input, List, Panel} from "sourcegraph/components";
 import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {colors, layout, typography, whitespace} from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
@@ -65,7 +65,7 @@ function SignInButton({block}: { block: boolean }): JSX.Element {
 
 export function MasterPlanPage(): JSX.Element {
 	return <div style={{marginBottom: whitespace[4]}}>
-		<Helmet title="Sourcegraph Master Plan" />
+		<PageTitle title="Sourcegraph Master Plan" />
 		<Hero pattern="objects" color="blue" style={{padding: whitespace[4]}}>
 			<Heading level={2} color="white">Sourcegraph Master Plan</Heading>
 			<p>What we're building and why it matters</p>

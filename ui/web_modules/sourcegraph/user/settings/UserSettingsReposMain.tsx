@@ -1,6 +1,6 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import * as Relay from "react-relay";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {Repos} from "sourcegraph/user/settings/Repos";
 
 interface Props {
@@ -14,7 +14,7 @@ export class UserSettingsReposMainComponent extends React.Component<Props & {roo
 		const {root} = this.props;
 		return (
 			<div>
-				<Helmet title="Repositories"/>
+				<PageTitle title="Repositories"/>
 				<Repos repos={root.remoteRepositories} location={this.props.location} />
 			</div>
 		);

@@ -1,10 +1,10 @@
 import {History} from "history";
 import * as React from "react";
-import Helmet from "react-helmet";
 import {context} from "sourcegraph/app/context";
 import {Component} from "sourcegraph/Component";
 import {Heading} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {Location} from "sourcegraph/Location";
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
@@ -66,7 +66,7 @@ export class SignupForm extends Component<Props, State> {
 function SignupComp(props: {location: any}): JSX.Element {
 	return (
 		<div className={styles.full_page}>
-			<Helmet title="Sign Up" />
+			<PageTitle title="Sign Up" />
 			<SignupForm {...props}
 				returnTo="/" queryObj={{ob: "chrome"}}
 				newUserReturnTo={defaultOnboardingPath}/>

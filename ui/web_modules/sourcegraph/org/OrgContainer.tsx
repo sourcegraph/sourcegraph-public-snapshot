@@ -1,8 +1,8 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import {Org, OrgMember} from "sourcegraph/api";
 import {context} from "sourcegraph/app/context";
 import {GitHubAuthButton, GridCol, GridRow, Heading, TabItem, Tabs} from "sourcegraph/components";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
 import {Container} from "sourcegraph/Container";
@@ -129,7 +129,7 @@ export class OrgContainer extends Container<Props, State> {
 
 		return (
 			<div>
-				<Helmet title="Organizations" />
+				<PageTitle title="Organizations" />
 				<div style={{marginTop: whitespace[2]}}>
 					{(!this._hasOrgs()) ? this._noRepoPanel() :
 						<GridRow>

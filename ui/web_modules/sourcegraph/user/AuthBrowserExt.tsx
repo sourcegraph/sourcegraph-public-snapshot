@@ -1,10 +1,10 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import {InjectedRouter} from "react-router";
 import {context} from "sourcegraph/app/context";
 import {Component} from "sourcegraph/Component";
 import {Heading} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
 
@@ -51,7 +51,7 @@ export class AuthExtForm extends Component<Props, State> {
 function AuthBrowserExtFlowComp(props: {location: any}): JSX.Element {
 	return (
 		<div className={styles.full_page}>
-			<Helmet title="Authorize Sourcegraph for Github" />
+			<PageTitle title="Authorize Sourcegraph for Github" />
 			<AuthExtForm {...props} />
 		</div>
 	);

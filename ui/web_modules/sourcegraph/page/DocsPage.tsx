@@ -1,6 +1,6 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import {Heading, Hero} from "sourcegraph/components";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -8,7 +8,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 export function DocsPage(): JSX.Element {
 	return (
 		<div>
-			<Helmet title="Docs" />
+			<PageTitle title="Docs" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<div className={styles.container}>
 					<Heading level={2} color="white">Sourcegraph Docs</Heading>

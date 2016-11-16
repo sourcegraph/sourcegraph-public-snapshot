@@ -6,14 +6,14 @@ import * as styles from "sourcegraph/page/Page.css";
 import {Link} from "react-router";
 import * as base from "sourcegraph/components/styles/_base.css";
 import {CheckIcon} from "sourcegraph/components/Icons";
-import Helmet from "react-helmet";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {context} from "sourcegraph/app/context";
 
 export function PricingPage(props: {}) {
 	return (
 		<div>
-			<Helmet title="Pricing" />
+			<PageTitle title="Pricing" />
 			<Hero color="transparent" className={base.pv5 || ""}>
 				<div className={styles.container}>
 					<Heading level={1}>Pricing</Heading>

@@ -1,8 +1,8 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import Helmet from "react-helmet";
 import {context} from "sourcegraph/app/context";
 import {Button, Heading, Panel} from "sourcegraph/components";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
@@ -93,7 +93,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 
 		return (
 			<div>
-				<Helmet title="Home" />
+				<PageTitle title="Home" />
 				<div className={styles.onboarding_container}>
 					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
 						<Heading style={{paddingTop: whitespace[4]}} align="center" level={3}>

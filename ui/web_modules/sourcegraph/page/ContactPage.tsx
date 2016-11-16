@@ -4,12 +4,12 @@ import * as React from "react";
 import {Hero, Heading} from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import Helmet from "react-helmet";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 
 export function ContactPage(props: {}, {}) {
 	return (
 		<div>
-			<Helmet title="Contact" />
+			<PageTitle title="Contact" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>
 					<Heading level={3} color="white">Contact Sourcegraph</Heading>

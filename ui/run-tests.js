@@ -38,11 +38,6 @@ Module.prototype.require = function(modulePath) {
 		return null;
 	}
 
-	// skip render of react-helmet
-	if (modulePath === "react-helmet") {
-		return {default: function() { return null; }};
-	}
-
 	// map paths
 	if (modulePath.startsWith("sourcegraph/")) {
 		modulePath = require("path").resolve("web_modules", modulePath);

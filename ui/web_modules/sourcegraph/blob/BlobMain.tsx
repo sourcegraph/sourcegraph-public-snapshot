@@ -1,7 +1,6 @@
 import * as debounce from "lodash/debounce";
 import * as isEqual from "lodash/isEqual";
 import * as React from "react";
-import Helmet from "react-helmet";
 import * as Relay from "react-relay";
 import { InjectedRouter, Route } from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
@@ -11,6 +10,7 @@ import { urlToBlob } from "sourcegraph/blob/routes";
 import {FlexContainer, TourOverlay} from "sourcegraph/components";
 import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
 import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {colors} from "sourcegraph/components/utils/colors";
 import {Container} from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
@@ -295,7 +295,7 @@ class BlobMainEditor extends Container<Props, State> {
 				relay={this.props.relay}
 				>
 				<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
-					<Helmet title={title} />
+					<PageTitle title={title} />
 					<ChromeExtensionToast location={this.props.location}/>
 					<OnboardingModals location={this.props.location}/>
 					{this.props.location.query["tour"] && <TourOverlay location={this.props.location}/>}

@@ -1,8 +1,8 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import {Link} from "react-router";
 import {Heading} from "sourcegraph/components";
 import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {Location} from "sourcegraph/Location";
 import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
@@ -35,7 +35,7 @@ export function LoginForm(props: Props): JSX.Element {
 function LoginComp(props: {location: any}): JSX.Element | null {
 	return (
 		<div className={styles.full_page}>
-			<Helmet title="Sign In" />
+			<PageTitle title="Sign In" />
 			<LoginForm location={props.location} returnTo="/" />
 		</div>
 	);

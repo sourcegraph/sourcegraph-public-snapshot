@@ -1,7 +1,6 @@
 import "sourcegraph/components/styles/_normalize.css";
 
 import * as React from "react";
-import Helmet from "react-helmet";
 import {PlainRoute} from "react-router";
 
 import {context} from "sourcegraph/app/context";
@@ -30,7 +29,6 @@ export class App extends React.Component<Props, {}> {
 		}
 		return (
 			<div className={className}>
-				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle={document.title} />
 				<GlobalNav params={this.props.params} location={this.props.location} />
 				{this.props.main}
 			</div>

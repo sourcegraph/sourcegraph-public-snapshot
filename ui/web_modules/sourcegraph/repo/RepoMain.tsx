@@ -1,10 +1,9 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import {InjectedRouter, Route} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
 import {Header} from "sourcegraph/components/Header";
-import {trimRepo} from "sourcegraph/repo";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {urlWithRev} from "sourcegraph/repo/routes";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -85,7 +84,7 @@ export class RepoMain extends React.Component<Props, {}> {
 			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 			return (
 				<div>
-					<Helmet title="Not Found" />
+					<PageTitle title="Not Found" />
 					<Header
 						title="404"
 						subtitle="Repository not found." />
@@ -106,16 +105,8 @@ export class RepoMain extends React.Component<Props, {}> {
 			);
 		}
 
-		let title = trimRepo(this.props.repo);
-		let description = this.props.repository.description;
-		if (description) {
-			title += `: ${description.slice(0, 40)}${description.length > 40 ? "..." : ""}`;
-		}
-
 		return (
 			<div className={styles.outer_container}>
-				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
-				{title && <Helmet title={title} />}
 				{this.props.children}
 				<EventListener target={global.document.body} event="keydown" callback={this._onKeydown} />
 			</div>

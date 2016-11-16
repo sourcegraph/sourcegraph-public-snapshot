@@ -1,10 +1,10 @@
 import * as cloneDeep from "lodash/cloneDeep";
 import * as React from "react";
-import Helmet from "react-helmet";
 import * as Relay from "react-relay";
 import {InjectedRouter, Route} from "react-router";
 import {RouteParams} from "sourcegraph/app/routeParams";
 import {GridCol, Panel, RepoLink} from "sourcegraph/components";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import {colors} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {Location} from "sourcegraph/Location";
@@ -56,6 +56,17 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element | null {
+		let title: string;
+		if (this.props.path === "/") {
+			title = trimRepo(this.props.repo);
+			let description = this.props.root.repository && this.props.root.repository.description;
+			if (description) {
+				title += `: ${description.slice(0, 40)}${description.length > 40 ? "..." : ""}`;
+			}
+		} else {
+			title = `${this.props.path} · ${trimRepo(this.props.repo)}`;
+		}
+
 		return (
 			<RepoMain
 				repo={this.props.repo}
@@ -67,6 +78,7 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 				params={this.props.params}
 				relay={this.props.relay}
 			>
+				<PageTitle title={title} />
 				<div>
 					<Panel style={{borderBottom: `1px solid ${colors.coolGray4(0.6)}`}}>
 						<div style={{
@@ -78,7 +90,6 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 					</Panel>
 					{/* Refactor once new Panel and Grid code has been merged in */}
 					<GridCol col={9} style={{marginRight: "auto", marginLeft: "auto", marginTop: 16, float: "none"}}>
-						{this.props.path !== "/" && <Helmet title={`${this.props.path} · ${trimRepo(this.props.repo)}`} />}
 						<TreeList
 							repo={this.props.repo}
 							rev={this.props.rev}

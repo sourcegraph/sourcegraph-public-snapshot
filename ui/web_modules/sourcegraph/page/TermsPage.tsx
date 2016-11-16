@@ -1,13 +1,13 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import {Heading, Hero} from "sourcegraph/components";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
 
 export function TermsPage(): JSX.Element {
 	return (
 		<div>
-			<Helmet title="Terms" />
+			<PageTitle title="Terms" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>
 					<Heading level={3} color="white">Sourcegraph Terms of Service</Heading>

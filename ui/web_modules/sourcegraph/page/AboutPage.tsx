@@ -1,6 +1,6 @@
 import * as React from "react";
-import Helmet from "react-helmet";
 import {Link} from "react-router";
+import {PageTitle} from "sourcegraph/components/PageTitle";
 
 import {context} from "sourcegraph/app/context";
 import {Heading, Hero} from "sourcegraph/components";
@@ -11,7 +11,7 @@ import * as styles from "sourcegraph/page/Page.css";
 export function AboutPage(): JSX.Element {
 	return (
 		<div>
-			<Helmet title="About" />
+			<PageTitle title="About" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<div className={styles.container}>
 					<Heading level={3} color="white">Sourcegraph is how developers discover and understand code.</Heading>
