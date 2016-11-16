@@ -18,7 +18,7 @@
     "@types/react-router": "2.0.39",
     "@types/utf8": "2.1.5",
     "@types/whatwg-fetch": "0.0.32",
-    "autoprefixer": "6.4.0",
+    "autoprefixer": "6.5.3",
     "babel-relay-plugin": "0.9.3",
     "css-loader": "0.24.0",
     "expect.js": "0.3.1",
