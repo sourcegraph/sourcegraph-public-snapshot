@@ -80,12 +80,12 @@ export class RepoMain extends React.Component<Props, {}> {
 		}
 	}
 
-	render(): JSX.Element | null {
+	render(): JSX.Element {
 		if (!this.props.repository) {
 			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
 			return (
 				<div>
-					<Helmet title="Sourcegraph - Not Found" />
+					<Helmet title="Not Found" />
 					<Header
 						title="404"
 						subtitle="Repository not found." />

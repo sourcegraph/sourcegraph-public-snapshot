@@ -22,30 +22,15 @@ interface Props {
 	params?: any;
 }
 
-interface State {
-	className: string;
-}
-
-export class App extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
-	constructor(props: Props) {
-		super(props);
+export class App extends React.Component<Props, {}> {
+	render(): JSX.Element {
 		let className = styles.main_container;
 		if (!context.user && location.pathname === "/") {
 			className = styles.main_container_homepage;
 		}
-		this.state = {
-			className: className,
-		};
-	}
-
-	render(): JSX.Element | null {
 		return (
-			<div className={this.state.className}>
-				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle="Sourcegraph" />
+			<div className={className}>
+				<Helmet titleTemplate="%s · Sourcegraph" defaultTitle={document.title} />
 				<GlobalNav params={this.props.params} location={this.props.location} />
 				{this.props.main}
 			</div>
