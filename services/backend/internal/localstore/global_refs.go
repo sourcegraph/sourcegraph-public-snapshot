@@ -629,11 +629,17 @@ func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLan
 			return errors.Wrap(err, "update global_ref_by_source")
 		}
 
-		// Evict unused table data.
-		err = g.evictUnusedData(ctx, tx)
-		if err != nil {
-			return errors.Wrap(err, "evicting unused data")
-		}
+		// TODO(slimsag): Disabled due to performance implications /
+		// transactional locking. Expose as admin-only endpoint at a later
+		// date. In general, evicting unused data is only important in the
+		// very long run.
+		/*
+			// Evict unused table data.
+			err = g.evictUnusedData(ctx, tx)
+			if err != nil {
+				return errors.Wrap(err, "evicting unused data")
+			}
+		*/
 		return nil
 	})
 	if err != nil {
