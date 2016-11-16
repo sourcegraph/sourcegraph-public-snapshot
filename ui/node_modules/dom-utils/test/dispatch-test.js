@@ -12,10 +12,31 @@ describe('dispatch', function() {
     var spy = sinon.spy();
     document.addEventListener('click', spy);
 
-    dispatch(document.body, 'click');
+    dispatch(document, 'click');
 
     assert(spy.calledOnce);
 
+    document.removeEventListener('click', spy);
+  });
+
+  it('supports specifying event attributes via an optional object', function() {
+
+    // Skips this test in unsupporting browsers.
+    if (!document.createEvent) this.skip();
+
+    var spy = sinon.spy(function(event) {
+      assert(event.bubbles);
+      assert(event.cancelable);
+    });
+
+    document.body.addEventListener('click', spy);
+    document.addEventListener('click', spy);
+
+    dispatch(document.body, 'click', {bubbles: true, cancelable: true});
+
+    assert(spy.calledTwice);
+
+    document.body.removeEventListener('click', spy);
     document.removeEventListener('click', spy);
   });
 
@@ -28,7 +49,7 @@ describe('dispatch', function() {
     var spy = sinon.spy();
     document.addEventListener('click', spy);
 
-    dispatch(document.body, 'click', {detail: {foo: 'bar'}});
+    dispatch(document, 'click', {detail: {foo: 'bar'}});
 
     assert(spy.calledOnce);
     assert.deepEqual(spy.getCall(0).args[0].detail, {foo: 'bar'});
@@ -45,37 +66,11 @@ describe('dispatch', function() {
     var spy = sinon.spy();
     document.addEventListener('click', spy);
 
-    dispatch(document.body, 'click', 'MouseEvent');
+    dispatch(document, 'click', 'MouseEvent');
 
     assert(spy.calledOnce);
     assert(spy.getCall(0).args[0] instanceof window.MouseEvent);
 
-    document.removeEventListener('click', spy);
-  });
-
-
-  it('supports specifying event attributes via an optional object', function() {
-
-    // Skips this test in unsupporting browsers.
-    if (!document.createEvent) this.skip();
-
-    var spy = sinon.spy(function(event) {
-      assert(!event.bubbles);
-      assert(!event.cancelable);
-    });
-
-    document.body.addEventListener('click', spy);
-    document.addEventListener('click', spy);
-
-    dispatch(document.body, 'click', 'MouseEvent', {
-      bubbles: false,
-      cancelable: false
-    });
-
-    // Since the event doesn't bubble, only <body> should receive the event.
-    assert(spy.calledOnce);
-
-    document.body.removeEventListener('click', spy);
     document.removeEventListener('click', spy);
   });
 
@@ -85,14 +80,14 @@ describe('dispatch', function() {
     // Skips this test in unsupporting browsers.
     if (!document.createEvent) this.skip();
 
-    assert(dispatch(document.body, 'click'));
+    assert(dispatch(document, 'click', {cancelable: true}));
 
     var spy = sinon.spy(function(event) {
       event.preventDefault();
     });
     document.addEventListener('click', spy);
 
-    assert(!dispatch(document.body, 'click'));
+    assert(!dispatch(document, 'click', {cancelable: true}));
 
     document.removeEventListener('click', spy);
   });

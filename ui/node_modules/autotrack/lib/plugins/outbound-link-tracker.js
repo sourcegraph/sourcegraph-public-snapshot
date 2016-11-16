@@ -55,7 +55,7 @@ function OutboundLinkTracker(tracker, opts) {
   this.delegates = {};
   this.opts.events.forEach(function(event) {
     this.delegates[event] = delegate(document, event, this.opts.linkSelector,
-        this.handleLinkInteractions, {deep: true, useCapture: true});
+        this.handleLinkInteractions, {composed: true, useCapture: true});
   }.bind(this));
 }
 

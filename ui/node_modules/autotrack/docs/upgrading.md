@@ -6,9 +6,11 @@ This guide outlines how to upgrade from any pre-1.0 version to version 1.0.
 
 ### Global changes
 
-In version 1.0, you can no longer require all plugins with the command `ga('require', 'autotrack')`. This change was made to avoid users accidentally enabling plugin behavior they didn't intend.
+In all versions prior to 1.0, you could include all autotrack functionality with the single command `ga('require', 'autotrack')`. This was a convenient shorthand that would individually require all other plugins. You can reference the [original usage instructions](https://github.com/googleanalytics/autotrack/blob/0.6.5/README.md#usage) to see an example.
 
-Going forward, all autotrack plugins must be individually required, and their options individually specified.
+In versions 1.0+, you can no longer require all sub-plugins with this one command. Instead, you have explicitly require each plugin you want to use and pass it its own configuration options (if necessary). This change was made to avoid users accidentally enabling plugin behavior they didn't intend.
+
+The follow example shows how to require all autotrack plugins in versions 1.0+ *(note: the configuration options are omitted for simplicity)*:
 
 ```html
 <script>
@@ -16,9 +18,15 @@ window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
 ga('create', 'UA-XXXXX-Y', 'auto');
 
 // Plugins must be required individually.
-ga('require', 'eventTracker');
-ga('require', 'outboundLinkTracker');
-ga('require', 'urlChangeTracker');
+ga('require', 'cleanUrlTracker', {...});
+ga('require', 'eventTracker', {...});
+ga('require', 'impressionTracker', {...});
+ga('require', 'mediaQueryTracker', {...});
+ga('require', 'outboundFormTracker', {...});
+ga('require', 'outboundLinkTracker', {...});
+ga('require', 'pageVisibilityTracker', {...});
+ga('require', 'socialWidgetTracker', {...});
+ga('require', 'urlChangeTracker', {...});
 // ...
 
 ga('send', 'pageview');
@@ -27,7 +35,7 @@ ga('send', 'pageview');
 <script async src="path/to/autotrack.js"></script>
 ```
 
-In all 1.x versions, a warning will be logged to the console if you require the `autotrack` plugin. In version 2.0, this warning will go away.
+In all 1.x versions, requiring the `autotrack` plugin will do nothing but log a warning to the console. In version 2.0, this warning will go away, and calls to require autotrack may prevent [subsequent commands from running](https://devsite.googleplex.com/analytics/devguides/collection/analyticsjs/using-plugins#waiting_for_plugins_to_load).
 
 ### Individual plugin changes
 

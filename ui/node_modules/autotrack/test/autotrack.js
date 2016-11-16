@@ -51,7 +51,7 @@ describe('autotrack', function() {
         .value;
 
     assert(consoleErrors.length, 1);
-    assert(consoleErrors[0][0].indexOf('https://goo.gl/sZ2WrW') > -1);
+    assert(consoleErrors[0][0].indexOf('https://goo.gl/XsXPg5') > -1);
   });
 
 });

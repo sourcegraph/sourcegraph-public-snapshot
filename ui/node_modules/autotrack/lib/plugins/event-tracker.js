@@ -54,7 +54,7 @@ function EventTracker(tracker, opts) {
   this.delegates = {};
   this.opts.events.forEach(function(event) {
     this.delegates[event] = delegate(document, event, selector,
-        this.handleEvents, {deep: true, useCapture: true});
+        this.handleEvents, {composed: true, useCapture: true});
   }.bind(this));
 }
 
