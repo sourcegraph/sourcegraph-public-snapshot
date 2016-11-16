@@ -1,11 +1,16 @@
 'use strict';
-//     Zepto.js
-//     (c) 2010-2015 Thomas Fuchs
-//     Zepto.js may be freely distributed under the MIT license.
-var simpleSelectorRE = /^[\w-]*$/,
-    toArray = Function.prototype.bind.call(Function.prototype.call, [].slice);
 
-module.exports = function qsa(element, selector) {
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = qsa;
+// Zepto.js
+// (c) 2010-2015 Thomas Fuchs
+// Zepto.js may be freely distributed under the MIT license.
+var simpleSelectorRE = /^[\w-]*$/;
+var toArray = Function.prototype.bind.call(Function.prototype.call, [].slice);
+
+function qsa(element, selector) {
   var maybeID = selector[0] === '#',
       maybeClass = selector[0] === '.',
       nameOnly = maybeID || maybeClass ? selector.slice(1) : selector,
@@ -24,4 +29,5 @@ module.exports = function qsa(element, selector) {
   }
 
   return toArray(element.querySelectorAll(selector));
-};
+}
+module.exports = exports['default'];

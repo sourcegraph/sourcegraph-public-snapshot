@@ -64,8 +64,8 @@
     "react-helmet": "3.2.2",
     "react-icons": "2.2.1",
     "react-relay": "0.9.3",
-    "react-router": "2.7.0",
-    "react-router-scroll": "0.3.2",
+    "react-router": "3.0.0",
+    "react-router-scroll": "0.4.1",
     "string_score": "0.1.22",
     "url": "0.11.0",
     "vscode": "0.0.0"

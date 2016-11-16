@@ -1,23 +1,29 @@
 'use strict';
 
-var babelHelpers = require('../util/babelHelpers.js');
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = _getComputedStyle;
 
-var _utilCamelizeStyle = require('../util/camelizeStyle');
+var _camelizeStyle = require('../util/camelizeStyle');
 
-var _utilCamelizeStyle2 = babelHelpers.interopRequireDefault(_utilCamelizeStyle);
+var _camelizeStyle2 = _interopRequireDefault(_camelizeStyle);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var rposition = /^(top|right|bottom|left)$/;
 var rnumnonpx = /^([+-]?(?:\d*\.|)\d+(?:[eE][+-]?\d+|))(?!px)[a-z%]+$/i;
 
-module.exports = function _getComputedStyle(node) {
+function _getComputedStyle(node) {
   if (!node) throw new TypeError('No Element passed to `getComputedStyle()`');
   var doc = node.ownerDocument;
 
-  return 'defaultView' in doc ? doc.defaultView.opener ? node.ownerDocument.defaultView.getComputedStyle(node, null) : window.getComputedStyle(node, null) : { //ie 8 "magic" from: https://github.com/jquery/jquery/blob/1.11-stable/src/css/curCSS.js#L72
+  return 'defaultView' in doc ? doc.defaultView.opener ? node.ownerDocument.defaultView.getComputedStyle(node, null) : window.getComputedStyle(node, null) : {
+    //ie 8 "magic" from: https://github.com/jquery/jquery/blob/1.11-stable/src/css/curCSS.js#L72
     getPropertyValue: function getPropertyValue(prop) {
       var style = node.style;
 
-      prop = (0, _utilCamelizeStyle2['default'])(prop);
+      prop = (0, _camelizeStyle2.default)(prop);
 
       if (prop == 'float') prop = 'styleFloat';
 
@@ -45,4 +51,5 @@ module.exports = function _getComputedStyle(node) {
       return current;
     }
   };
-};
+}
+module.exports = exports['default'];

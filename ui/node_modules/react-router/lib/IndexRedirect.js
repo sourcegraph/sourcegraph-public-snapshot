@@ -22,13 +22,14 @@ var _InternalPropTypes = require('./InternalPropTypes');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _React$PropTypes = _react2.default.PropTypes;
-var string = _React$PropTypes.string;
-var object = _React$PropTypes.object;
+var _React$PropTypes = _react2.default.PropTypes,
+    string = _React$PropTypes.string,
+    object = _React$PropTypes.object;
 
 /**
  * An <IndexRedirect> is used to redirect from an indexRoute.
  */
+/* eslint-disable react/require-render-return */
 
 var IndexRedirect = _react2.default.createClass({
   displayName: 'IndexRedirect',

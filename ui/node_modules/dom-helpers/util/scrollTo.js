@@ -1,51 +1,76 @@
 'use strict';
-var getOffset = require('../query/offset'),
-    height = require('../query/height'),
-    getScrollParent = require('../query/scrollParent'),
-    scrollTop = require('../query/scrollTop'),
-    raf = require('./requestAnimationFrame'),
-    getWindow = require('../query/isWindow');
 
-module.exports = function scrollTo(selected, scrollParent) {
-    var offset = getOffset(selected),
-        poff = { top: 0, left: 0 },
-        list,
-        listScrollTop,
-        selectedTop,
-        isWin,
-        selectedHeight,
-        listHeight,
-        bottom;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = scrollTo;
 
-    if (!selected) return;
+var _offset = require('../query/offset');
 
-    list = scrollParent || getScrollParent(selected);
-    isWin = getWindow(list);
-    listScrollTop = scrollTop(list);
+var _offset2 = _interopRequireDefault(_offset);
 
-    listHeight = height(list, true);
-    isWin = getWindow(list);
+var _height = require('../query/height');
 
-    if (!isWin) poff = getOffset(list);
+var _height2 = _interopRequireDefault(_height);
 
-    offset = {
-        top: offset.top - poff.top,
-        left: offset.left - poff.left,
-        height: offset.height,
-        width: offset.width
-    };
+var _scrollParent = require('../query/scrollParent');
 
-    selectedHeight = offset.height;
-    selectedTop = offset.top + (isWin ? 0 : listScrollTop);
-    bottom = selectedTop + selectedHeight;
+var _scrollParent2 = _interopRequireDefault(_scrollParent);
 
-    listScrollTop = listScrollTop > selectedTop ? selectedTop : bottom > listScrollTop + listHeight ? bottom - listHeight : listScrollTop;
+var _scrollTop = require('../query/scrollTop');
 
-    var id = raf(function () {
-        return scrollTop(list, listScrollTop);
-    });
+var _scrollTop2 = _interopRequireDefault(_scrollTop);
 
-    return function () {
-        return raf.cancel(id);
-    };
-};
+var _requestAnimationFrame = require('./requestAnimationFrame');
+
+var _requestAnimationFrame2 = _interopRequireDefault(_requestAnimationFrame);
+
+var _isWindow = require('../query/isWindow');
+
+var _isWindow2 = _interopRequireDefault(_isWindow);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function scrollTo(selected, scrollParent) {
+  var offset = (0, _offset2.default)(selected);
+  var poff = { top: 0, left: 0 };
+  var list = void 0,
+      listScrollTop = void 0,
+      selectedTop = void 0,
+      isWin = void 0;
+  var selectedHeight = void 0,
+      listHeight = void 0,
+      bottom = void 0;
+
+  if (!selected) return;
+
+  list = scrollParent || (0, _scrollParent2.default)(selected);
+  isWin = (0, _isWindow2.default)(list);
+  listScrollTop = (0, _scrollTop2.default)(list);
+
+  listHeight = (0, _height2.default)(list, true);
+  isWin = (0, _isWindow2.default)(list);
+
+  if (!isWin) poff = (0, _offset2.default)(list);
+
+  offset = {
+    top: offset.top - poff.top,
+    left: offset.left - poff.left,
+    height: offset.height,
+    width: offset.width
+  };
+
+  selectedHeight = offset.height;
+  selectedTop = offset.top + (isWin ? 0 : listScrollTop);
+  bottom = selectedTop + selectedHeight;
+
+  listScrollTop = listScrollTop > selectedTop ? selectedTop : bottom > listScrollTop + listHeight ? bottom - listHeight : listScrollTop;
+
+  var id = (0, _requestAnimationFrame2.default)(function () {
+    return (0, _scrollTop2.default)(list, listScrollTop);
+  });
+  return function () {
+    return _requestAnimationFrame2.default.cancel(id);
+  };
+}
+module.exports = exports['default'];

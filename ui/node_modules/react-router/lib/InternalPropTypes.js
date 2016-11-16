@@ -6,13 +6,13 @@ exports.falsy = falsy;
 
 var _react = require('react');
 
-var func = _react.PropTypes.func;
-var object = _react.PropTypes.object;
-var arrayOf = _react.PropTypes.arrayOf;
-var oneOfType = _react.PropTypes.oneOfType;
-var element = _react.PropTypes.element;
-var shape = _react.PropTypes.shape;
-var string = _react.PropTypes.string;
+var func = _react.PropTypes.func,
+    object = _react.PropTypes.object,
+    arrayOf = _react.PropTypes.arrayOf,
+    oneOfType = _react.PropTypes.oneOfType,
+    element = _react.PropTypes.element,
+    shape = _react.PropTypes.shape,
+    string = _react.PropTypes.string;
 function falsy(props, propName, componentName) {
   if (props[propName]) return new Error('<' + componentName + '> should not have a "' + propName + '" prop');
 }

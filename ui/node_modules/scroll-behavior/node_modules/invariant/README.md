@@ -4,6 +4,8 @@
 
 A mirror of Facebook's `invariant` (e.g. [React](https://github.com/facebook/react/blob/v0.13.3/src/vendor/core/invariant.js), [flux](https://github.com/facebook/flux/blob/2.0.2/src/invariant.js)).
 
+A way to provide descriptive errors in development but generic errors in production.
+
 ## Install
 
 With [npm](http://npmjs.org) do:

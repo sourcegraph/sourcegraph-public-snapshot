@@ -1,12 +1,12 @@
 'use strict';
 
-var canUseDOM = require('./inDOM');
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-var size;
-
-module.exports = function (recalc) {
+exports.default = function (recalc) {
   if (!size || recalc) {
-    if (canUseDOM) {
+    if (_inDOM2.default) {
       var scrollDiv = document.createElement('div');
 
       scrollDiv.style.position = 'absolute';
@@ -23,3 +23,13 @@ module.exports = function (recalc) {
 
   return size;
 };
+
+var _inDOM = require('./inDOM');
+
+var _inDOM2 = _interopRequireDefault(_inDOM);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var size = void 0;
+
+module.exports = exports['default'];

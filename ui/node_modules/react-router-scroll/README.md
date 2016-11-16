@@ -33,17 +33,17 @@ $ npm i -S react-router-scroll
 
 ### Basic usage
 
-Apply the `useScroll` router middleware, as in the example above.
+Apply the `useScroll` router middleware using `applyRouterMiddleware`, as in the example above.
 
 ### Custom scroll behavior
 
-You can provide a custom `shouldUpdateScroll` callback as an argument to `useScroll`. This callback is called with both the previous and the current router props.
+You can provide a custom `shouldUpdateScroll` callback as an argument to `useScroll`. This callback is called with the previous and the current router props.
 
-You can return:
+The callback can return:
 
-- a falsy value to suppress the scroll update
-- a position array such as `[0, 100]` to scroll to that position
-- a truthy value to get normal scroll behavior
+- a falsy value to suppress updating the scroll position
+- a position array of `x` and `y`, such as `[0, 100]`, to scroll to that position
+- a truthy value to emulate the browser default scroll behavior
 
 ```js
 useScroll((prevRouterProps, { location }) => (
@@ -98,7 +98,7 @@ import useScroll from 'react-router-scroll/lib/useScroll';
 
 #### Server rendering
 
-Do not apply the `useScroll` middleware when rendering on a server. You may use `<ScrollContainer>` in server-rendered components, however, as it will do nothing when rendering on a server.
+Do not apply the `useScroll` middleware when rendering on a server. You may use `<ScrollContainer>` in server-rendered components; it will do nothing when rendering on a server.
 
 [build-badge]: https://img.shields.io/travis/taion/react-router-scroll/master.svg
 [build]: https://travis-ci.org/taion/react-router-scroll

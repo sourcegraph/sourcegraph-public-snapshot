@@ -26,6 +26,7 @@ var func = _react2.default.PropTypes.func;
  * An <IndexRoute> is used to specify its parent's <Route indexRoute> in
  * a JSX route config.
  */
+/* eslint-disable react/require-render-return */
 
 var IndexRoute = _react2.default.createClass({
   displayName: 'IndexRoute',

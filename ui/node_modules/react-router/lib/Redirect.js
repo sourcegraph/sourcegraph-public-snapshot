@@ -18,9 +18,9 @@ var _InternalPropTypes = require('./InternalPropTypes');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _React$PropTypes = _react2.default.PropTypes;
-var string = _React$PropTypes.string;
-var object = _React$PropTypes.object;
+var _React$PropTypes = _react2.default.PropTypes,
+    string = _React$PropTypes.string,
+    object = _React$PropTypes.object;
 
 /**
  * A <Redirect> is used to declare another URL path a client should
@@ -29,6 +29,7 @@ var object = _React$PropTypes.object;
  * Redirects are placed alongside routes in the route configuration
  * and are traversed in the same manner.
  */
+/* eslint-disable react/require-render-return */
 
 var Redirect = _react2.default.createClass({
   displayName: 'Redirect',
@@ -41,8 +42,8 @@ var Redirect = _react2.default.createClass({
       if (route.from) route.path = route.from;
 
       route.onEnter = function (nextState, replace) {
-        var location = nextState.location;
-        var params = nextState.params;
+        var location = nextState.location,
+            params = nextState.params;
 
 
         var pathname = void 0;
