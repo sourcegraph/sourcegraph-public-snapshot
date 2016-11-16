@@ -156,6 +156,14 @@ function testDomElement(document) {
         assert.end()
     })
 
+    test("can serialize style as a string", function(assert) {
+      var div = document.createElement("div")
+      div.setAttribute('style', 'display: none')
+      assert.equal(div.toString(), "<div style=\"display: none\"></div>")
+      cleanup()
+      assert.end()
+    })
+
     test("can serialize text nodes", function(assert) {
         var div = document.createElement("div")
         div.appendChild(document.createTextNode('<test> "&'))
@@ -186,6 +194,25 @@ function testDomElement(document) {
         assert.equal(parent.contains(child1), true)
         assert.equal(parent.contains(child2), true)
 
+        cleanup()
+        assert.end()
+    })
+
+    test("can handle non string attribute values", function(assert) {
+        var div = document.createElement("div")
+        div.setAttribute("data-number", 100)
+        div.setAttribute("data-boolean", true)
+        div.setAttribute("data-null", null)
+        assert.equal(div.toString(), '<div data-number="100" data-boolean="true" data-null=""></div>')
+        cleanup()
+        assert.end()
+    })
+
+    test("can serialize textarea correctly", function(assert) {
+        var input = document.createElement("textarea")
+        input.setAttribute("name", "comment")
+        input.innerHTML = "user input here"
+        assert.equal(input.toString(), '<textarea name="comment">user input here</textarea>')
         cleanup()
         assert.end()
     })
