@@ -31,7 +31,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	componentDidMount(): void {
 		let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 		let isChrome = /Chrome/i.test(navigator.userAgent);
-		if (window.localStorage[ChromeExtensionToastKey] || !isChrome || isMobile) {
+		if (window.localStorage[ChromeExtensionToastKey] || !isChrome || isMobile || context.hasChromeExtensionInstalled()) {
 			return;
 		}
 		setTimeout(() => {
