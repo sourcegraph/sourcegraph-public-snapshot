@@ -89,7 +89,7 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 	}
 
 	_validateEmail(event: React.FormEvent<HTMLInputElement>): void {
-		let isValid = emailRegex.test(event.target.value);
+		let isValid = emailRegex.test(event.currentTarget.value);
 		this.setState({
 			isValidForm: isValid,
 		});
