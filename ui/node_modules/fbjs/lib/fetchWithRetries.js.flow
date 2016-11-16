@@ -106,7 +106,7 @@ function fetchWithRetries(uri: string, initWithRetries?: ?InitWithRetries): Prom
     /**
      * Checks if another attempt should be done to send a request to the server.
      */
-    function shouldRetry(attempt: number): bool {
+    function shouldRetry(attempt: number): boolean {
       return ExecutionEnvironment.canUseDOM && attempt <= _retryDelays.length;
     }
 

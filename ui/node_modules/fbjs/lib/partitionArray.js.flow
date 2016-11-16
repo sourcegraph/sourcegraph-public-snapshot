@@ -16,7 +16,7 @@
  * are part of the first returned array, and all elements that don't are in the
  * second.
  */
-function partitionArray<Tv>(array: Array<Tv>, predicate: (value: Tv, index: number, array: Array<Tv>) => bool, context?: any): [Array<Tv>, Array<Tv>] {
+function partitionArray<Tv>(array: Array<Tv>, predicate: (value: Tv, index: number, array: Array<Tv>) => boolean, context?: any): [Array<Tv>, Array<Tv>] {
   var first = [];
   var second = [];
   array.forEach((element, index) => {

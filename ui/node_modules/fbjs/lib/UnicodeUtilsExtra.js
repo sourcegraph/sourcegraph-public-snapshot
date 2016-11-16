@@ -15,7 +15,6 @@
 
 'use strict';
 
-var Immutable = require('immutable');
 var UnicodeUtils = require('./UnicodeUtils');
 
 /**
@@ -61,10 +60,17 @@ function getCodePointsFormatted(str) {
   return codePoints.map(formatCodePoint);
 }
 
-// We use this funky constructor instead of the object
-// constructor because JS object keys are always coerced
-// to string, but we want a map of int -> string pairs.
-var SpecialEscapesMap = Immutable.Map([[0x07, '\\a'], [0x08, '\\b'], [0x0C, '\\f'], [0x0A, '\\n'], [0x0D, '\\r'], [0x09, '\\t'], [0x0B, '\\v'], [0x22, '\\"'], [0x5c, '\\\\']]);
+var specialEscape = {
+  0x07: '\\a',
+  0x08: '\\b',
+  0x0C: '\\f',
+  0x0A: '\\n',
+  0x0D: '\\r',
+  0x09: '\\t',
+  0x0B: '\\v',
+  0x22: '\\"',
+  0x5c: '\\\\'
+};
 
 /**
  * Returns a double-quoted PHP string with all non-printable and
@@ -83,7 +89,7 @@ function phpEscape(s) {
     for (var _iterator = UnicodeUtils.getCodePoints(s)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
       var cp = _step.value;
 
-      var special = SpecialEscapesMap.get(cp);
+      var special = specialEscape[cp];
       if (special !== undefined) {
         result += special;
       } else if (cp >= 0x20 && cp <= 0x7e) {
@@ -124,7 +130,7 @@ function jsEscape(s) {
   var result = '"';
   for (var i = 0; i < s.length; i++) {
     var cp = s.charCodeAt(i);
-    var special = SpecialEscapesMap.get(cp);
+    var special = specialEscape[cp];
     if (special !== undefined) {
       result += special;
     } else if (cp >= 0x20 && cp <= 0x7e) {
@@ -147,7 +153,7 @@ function c11Escape(s) {
     for (var _iterator2 = UnicodeUtils.getCodePoints(s)[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
       var cp = _step2.value;
 
-      var special = SpecialEscapesMap.get(cp);
+      var special = specialEscape[cp];
       if (special !== undefined) {
         result += special;
       } else if (cp >= 0x20 && cp <= 0x7e) {

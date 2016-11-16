@@ -17,7 +17,7 @@ const isTextNode = require('./isTextNode');
 /**
  * Checks if a given DOM node contains or is another DOM node.
  */
-function containsNode(outerNode: ?Node, innerNode: ?Node): bool {
+function containsNode(outerNode: ?Node, innerNode: ?Node): boolean {
   if (!outerNode || !innerNode) {
     return false;
   } else if (outerNode === innerNode) {

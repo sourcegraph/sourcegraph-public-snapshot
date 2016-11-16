@@ -131,7 +131,7 @@ function getDirection(str: string, strongFallback: ?BidiDirection): BidiDirectio
  *                        detected for the block (default = global direction)
  * @return                True if the resolved direction is LTR
  */
-function isDirectionLTR(str: string, strongFallback: ?BidiDirection): bool {
+function isDirectionLTR(str: string, strongFallback: ?BidiDirection): boolean {
   return getDirection(str, strongFallback) === UnicodeBidiDirection.LTR;
 }
 
@@ -143,7 +143,7 @@ function isDirectionLTR(str: string, strongFallback: ?BidiDirection): bool {
  *                        detected for the block (default = global direction)
  * @return                True if the resolved direction is RTL
  */
-function isDirectionRTL(str: string, strongFallback: ?BidiDirection): bool {
+function isDirectionRTL(str: string, strongFallback: ?BidiDirection): boolean {
   return getDirection(str, strongFallback) === UnicodeBidiDirection.RTL;
 }
 

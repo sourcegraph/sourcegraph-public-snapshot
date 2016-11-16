@@ -19,7 +19,7 @@ import type Set from './Set';
  * The someSet() method tests whether some elements in the given Set pass the
  * test implemented by the provided function.
  */
-function someSet<T>(set: Set<T>, callback: (value: T, key: T, set: Set<T>) => bool, context?: any): bool {
+function someSet<T>(set: Set<T>, callback: (value: T, key: T, set: Set<T>) => boolean, context?: any): boolean {
   var iterator = set.entries();
   var current = iterator.next();
   while (!current.done) {

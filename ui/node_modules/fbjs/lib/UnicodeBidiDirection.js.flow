@@ -43,7 +43,7 @@ let globalDir: ?BidiDirection = null;
 /**
  * Check if a directionality value is a Strong one
  */
-function isStrong(dir: BidiDirection): bool {
+function isStrong(dir: BidiDirection): boolean {
   return dir === LTR || dir === RTL;
 }
 

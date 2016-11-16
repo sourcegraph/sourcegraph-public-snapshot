@@ -15,7 +15,7 @@
  * Checks whether a collection name (e.g. "Map" or "Set") has a native polyfill
  * that is safe to be used.
  */
-function shouldPolyfillES6Collection(collectionName: string): bool {
+function shouldPolyfillES6Collection(collectionName: string): boolean {
   const Collection = global[collectionName];
   if (Collection == null) {
     return true;

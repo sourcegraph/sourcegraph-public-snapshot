@@ -30,12 +30,10 @@ var DEFAULT_RETRIES = [1000, 3000];
  * Automatic retries are done based on the values in `retryDelays`.
  */
 function fetchWithRetries(uri, initWithRetries) {
-  var _ref = initWithRetries || {};
-
-  var fetchTimeout = _ref.fetchTimeout;
-  var retryDelays = _ref.retryDelays;
-
-  var init = _objectWithoutProperties(_ref, ['fetchTimeout', 'retryDelays']);
+  var _ref = initWithRetries || {},
+      fetchTimeout = _ref.fetchTimeout,
+      retryDelays = _ref.retryDelays,
+      init = _objectWithoutProperties(_ref, ['fetchTimeout', 'retryDelays']);
 
   var _fetchTimeout = fetchTimeout != null ? fetchTimeout : DEFAULT_TIMEOUT;
   var _retryDelays = retryDelays != null ? retryDelays : DEFAULT_RETRIES;

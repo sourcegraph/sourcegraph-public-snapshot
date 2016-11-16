@@ -21,7 +21,7 @@ const bStackPool = [];
  * @copyright 2009-2013 Jeremy Ashkenas, DocumentCloud Inc.
  * @license MIT
  */
-function areEqual(a: any, b: any): bool {
+function areEqual(a: any, b: any): boolean {
   const aStack = aStackPool.length ? aStackPool.pop() : [];
   const bStack = bStackPool.length ? bStackPool.pop() : [];
   const result = eq(a, b, aStack, bStack);
@@ -32,7 +32,7 @@ function areEqual(a: any, b: any): bool {
   return result;
 }
 
-function eq(a: any, b: any, aStack: Array<any>, bStack: Array<any>): bool {
+function eq(a: any, b: any, aStack: Array<any>, bStack: Array<any>): boolean {
   if (a === b) {
     // Identical objects are equal. `0 === -0`, but they aren't identical.
     return a !== 0 || 1 / a == 1 / b;
