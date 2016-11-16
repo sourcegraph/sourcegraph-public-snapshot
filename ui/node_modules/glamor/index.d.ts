@@ -290,6 +290,11 @@ export function keyframes(name: string, timeline: TimeLine): string;
 export function insertRule(css: string): void;
 
 /**
+ * Append a css rule as a key-value object at most once to the stylesheet. The ultimate escape hatch.
+ */
+export function insertGlobal(selector: string, style: CSSProperties): void;
+
+/**
  * A helper to extract the css for given rules. useful for debugging, and webcomponents.
  */
 export function cssFor(...rules: Array<StyleAttribute>): string;
