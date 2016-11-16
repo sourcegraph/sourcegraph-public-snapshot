@@ -62,6 +62,7 @@ models.forEach(function (fromModel) {
 	convert[fromModel] = {};
 
 	Object.defineProperty(convert[fromModel], 'channels', {value: conversions[fromModel].channels});
+	Object.defineProperty(convert[fromModel], 'labels', {value: conversions[fromModel].labels});
 
 	var routes = route(fromModel);
 	var routeModels = Object.keys(routes);

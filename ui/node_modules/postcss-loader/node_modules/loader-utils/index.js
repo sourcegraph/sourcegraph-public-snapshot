@@ -65,7 +65,7 @@ exports.parseQuery = function parseQuery(query) {
 	};
 	if(!query) return {};
 	if(typeof query !== "string")
-		throw new Error("parseQuery should get a string as first argument");
+		return query;
 	if(query.substr(0, 1) !== "?")
 		throw new Error("a valid query string passed to parseQuery should begin with '?'");
 	query = query.substr(1);
@@ -106,16 +106,15 @@ exports.parseQuery = function parseQuery(query) {
 };
 
 exports.getLoaderConfig = function(loaderContext, defaultConfigKey) {
-	if (!defaultConfigKey) {
-		throw new Error("Default config key missing");
-	}
 	var query = exports.parseQuery(loaderContext.query);
 	var configKey = query.config || defaultConfigKey;
-	var config = loaderContext.options[configKey] || {};
+	if (configKey) {
+		var config = loaderContext.options[configKey] || {};
+		delete query.config;
+		return assign({}, config, query);
+	}
 
-	delete query.config;
-
-	return assign({}, config, query);
+	return query;
 };
 
 exports.stringifyRequest = function(loaderContext, request) {
@@ -139,11 +138,15 @@ function dotRequest(obj) {
 }
 
 exports.getRemainingRequest = function(loaderContext) {
+	if(loaderContext.remainingRequest)
+		return loaderContext.remainingRequest;
 	var request = loaderContext.loaders.slice(loaderContext.loaderIndex+1).map(dotRequest).concat([loaderContext.resource]);
 	return request.join("!");
 };
 
 exports.getCurrentRequest = function(loaderContext) {
+	if(loaderContext.currentRequest)
+		return loaderContext.currentRequest;
 	var request = loaderContext.loaders.slice(loaderContext.loaderIndex).map(dotRequest).concat([loaderContext.resource]);
 	return request.join("!");
 };

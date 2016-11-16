@@ -16,5 +16,5 @@ function isBinary(buf) {
 }
 
 module.exports = function (buf) {
-	return !isBinary(buf) && /^\s*(?:<\?xml[^>]*>\s*)?(?:<!doctype svg[^>]*>\s*)?<svg[^>]*>[^]*<\/svg>\s*$/i.test(buf.toString().replace(htmlCommentRegex, ''));
+	return !isBinary(buf) && /^\s*(?:<\?xml[^>]*>\s*)?(?:<!doctype svg[^>]*\s*(?:<![^>]*>)*[^>]*>\s*)?<svg[^>]*>[^]*<\/svg>\s*$/i.test(buf.toString().replace(htmlCommentRegex, ''));
 };

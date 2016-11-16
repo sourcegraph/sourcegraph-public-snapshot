@@ -1,3 +1,9 @@
+# 2.0.2
+
+* Major performance boost by lessening algorithmic complexity; each node is
+  now cached and the nested loop removed, meaning that each node is cast to a
+  string only once (thanks to @asztal).
+
 # 2.0.1
 
 * Now compiled with babel 6.

@@ -1,3 +1,7 @@
+# 2.3.1
+
+* Performance tweaks: now performs one AST pass instead of three.
+
 # 2.3.0
 
 * Adds support for a custom encoder function (thanks to @rauchg).

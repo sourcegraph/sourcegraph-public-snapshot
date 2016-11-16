@@ -1,6 +1,6 @@
 # is-svg [![Build Status](https://travis-ci.org/sindresorhus/is-svg.svg?branch=master)](https://travis-ci.org/sindresorhus/is-svg)
 
-> Check if a String/Buffer is [SVG](http://en.wikipedia.org/wiki/Scalable_Vector_Graphics)
+> Check if a string or buffer is [SVG](http://en.wikipedia.org/wiki/Scalable_Vector_Graphics)
 
 
 ## Install
@@ -19,9 +19,10 @@ isSvg('<svg xmlns="http://www.w3.org/2000/svg"><path fill="#00CD9F"/></svg>');
 //=> true
 ```
 
+
 ## Edge cases
 
-This module performs a quick-and-dirty check. It's fast, but in certain cases it'll give incorrect results.
+This module performs a quick-and-dirty check. It's fast, but in certain cases it will give incorrect results.
 
 - Returns `true` for an SVG-like string that isn't well-formed or valid: `<svg><div></svg>`
 
