@@ -15,10 +15,7 @@ interface Props {
 	onInvite: ([]: Array<Object>) => void;
 }
 
-interface State {
-	isValidForm: boolean;
-
-}
+interface State { isValidForm: boolean; }
 
 const sx = {
 	maxWidth: "800px",
@@ -40,10 +37,12 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 	};
 
 	context: { router: InjectedRouter };
+	email: HTMLInputElement;
 
 	constructor() {
 		super();
 		this._validateEmail.bind(this);
+		this.state = { isValidForm: false };
 	}
 
 	componentDidMount(): void {
@@ -69,7 +68,7 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 
 	onSubmit(): void {
 		let invites: Object[] = [];
-		let email = this.refs["email"]["value"];
+		let email = this.email["value"];
 		if (emailRegex.test(email)) {
 			let member = this.props.member;
 			let rowData = {
@@ -145,7 +144,14 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 												<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} />
 											</td>
 											<td style={Object.assign({}, rowBorderSx, {textAlign: "left"})} width="50%">
-												<input onChange={this._validateEmail.bind(this)} type="email" required={true} placeholder="Email address" style={{boxSizing: "border-box", width: "100%"}} defaultValue={member.Email || ""}/>
+												<input
+													onChange={this._validateEmail.bind(this)}
+													type="email"
+													required={true}
+													placeholder="Email address"
+													ref={(el) => this.email = el}
+													style={{ boxSizing: "border-box", width: "100%"}}
+													defaultValue={member.Email || ""} />
 											</td>
 											<td style={rowBorderSx} width="20%">
 												<Button onClick={this.onSubmit.bind(this)} disabled={!this.state.isValidForm} style={{float: "right"}} color="blue">Invite</Button>
