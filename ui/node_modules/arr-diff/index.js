@@ -8,7 +8,7 @@
 'use strict';
 
 var flatten = require('arr-flatten');
-var slice = require('array-slice');
+var slice = [].slice;
 
 /**
  * Return the difference between the first array and
@@ -40,7 +40,7 @@ function diff(arr, arrays) {
   }
 
   if (argsLen > 2) {
-    arrays = flatten(slice(arguments, 1));
+    arrays = flatten(slice.call(arguments, 1));
   }
 
   while (++i < len) {

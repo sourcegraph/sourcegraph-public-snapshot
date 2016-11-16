@@ -23,7 +23,7 @@ chars.escapeRegex = {
   '(': /\(/g,
   ')': /\)/g,
   '[': /\[/g,
-  ']': /\]/g,
+  ']': /\]/g
 };
 
 /**
@@ -40,7 +40,7 @@ chars.ESC = {
   '(': '__UNESC_LTPAREN__',
   ')': '__UNESC_RTPAREN__',
   '[': '__UNESC_LTBRACK__',
-  ']': '__UNESC_RTBRACK__',
+  ']': '__UNESC_RTBRACK__'
 };
 
 /**
@@ -59,7 +59,7 @@ chars.ESC_TEMP = {
   '(': '__TEMP_LTPAREN__',
   ')': '__TEMP_RTPAREN__',
   '[': '__TEMP_LTBRACK__',
-  ']': '__TEMP_RTBRACK__',
+  ']': '__TEMP_RTBRACK__'
 };
 
 chars.TEMP = temp || (temp = reverse(chars.ESC_TEMP));

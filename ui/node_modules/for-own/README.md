@@ -3,7 +3,7 @@
 > Iterate over the own and inherited enumerable properties of an object, and return an object with properties that evaluate to true from the callback. Exit early by returning `false`.
 
 ## Install
-#### Install with [npm](npmjs.org):
+#### Install with [npm](https://www.npmjs.com/):
 
 ```bash
 npm i for-own --save

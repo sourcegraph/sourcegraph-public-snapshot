@@ -6,14 +6,15 @@
  */
 
 module.exports = function isExtglob(str) {
-  if (!str || typeof str !== 'string') {
+  if (typeof str !== 'string' || str === '') {
     return false;
   }
 
-  var m, matches = [];
-  while ((m = /(\\).|([@?!+*]\(.*\))/g.exec(str))) {
-    if (m[2]) matches.push(m[2]);
-    str = str.slice(m.index + m[0].length);
+  var match;
+  while ((match = /(\\).|([@?!+*]\(.*\))/g.exec(str))) {
+    if (match[2]) return true;
+    str = str.slice(match.index + match[0].length);
   }
-  return matches.length;
+
+  return false;
 };

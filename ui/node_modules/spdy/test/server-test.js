@@ -388,6 +388,26 @@ describe('SPDY Server', function() {
         res.end();
       });
     });
+
+    it('should destroy request after end', function(done) {
+      var stream = client.request({
+        method: 'POST',
+        path: '/post'
+      }, function(err) {
+        assert(!err);
+      });
+      stream.end();
+      stream.on('error', function() {});
+
+      server.on('request', function(req, res) {
+        res.end();
+        res.destroy();
+        res.socket.on('close', function() {
+          done();
+        });
+      });
+    });
+
   });
 
   it('should respond to http/1.1', function(done) {
