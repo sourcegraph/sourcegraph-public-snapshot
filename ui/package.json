@@ -42,7 +42,7 @@
     "ts-loader": "1.2.1",
     "tslint": "3.15.1",
     "tslint-react": "^1.1.0",
-    "typed-css-modules": "0.1.12",
+    "typed-css-modules": "0.1.13",
     "typescript": "2.1.1-with.relay",
     "unused-files-webpack-plugin": "3.0.0",
     "url-loader": "0.5.7",

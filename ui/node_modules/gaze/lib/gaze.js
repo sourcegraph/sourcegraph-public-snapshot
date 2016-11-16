@@ -132,7 +132,23 @@ Gaze.prototype.emit = function () {
   // Detect if new folder added to trigger for matching files within folder
   if (e === 'added') {
     if (helper.isDir(filepath)) {
-      fs.readdirSync(filepath).map(function (file) {
+      // It's possible that between `isDir` and `readdirSync()` calls the `filepath`
+      // gets removed, which will result in `ENOENT` exception
+
+      var files;
+
+      try {
+        files = fs.readdirSync(filepath);
+      } catch (e) {
+        // Rethrow the error if it's anything other than `ENOENT`
+        if (e.code !== 'ENOENT') {
+          throw e;
+        }
+
+        files = [];
+      }
+
+      files.map(function (file) {
         return path.join(filepath, file);
       }).filter(function (file) {
         return globule.isMatch(self._patterns, file, self.options);

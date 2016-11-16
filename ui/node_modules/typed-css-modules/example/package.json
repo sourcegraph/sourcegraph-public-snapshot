@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "tcm": "node ../lib/cli.js -p style01.css",
+    "tcmw": "node ../lib/cli.js -w -p style01.css",
     "compile": "npm run tcm && ./node_modules/.bin/tsc -p .",
     "bundle": "npm run compile && ./node_modules/.bin/browserify -o bundle.js -p [ css-modulesify -o bundle.css ] app.js",
     "start": "npm run bundle && node bundle.js"

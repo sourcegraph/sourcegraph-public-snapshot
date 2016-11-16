@@ -37,7 +37,7 @@ describe('DtsCreator', () => {
         done();
       });
     });
-    it('returns DtsCOntent instance from the pair of path and contents', done => {
+    it('returns DtsContent instance from the pair of path and contents', done => {
       creator.create('test/somePath', `.myClass { color: red }`).then(content => {
         assert.equal(content.contents.length, 1);
         assert.equal(content.contents[0], "export const myClass: string;")
@@ -88,6 +88,13 @@ describe('DtsContent', () => {
     it('returns empty object exportion when the result list has no items', done => {
       new DtsCreator().create('test/empty.css').then(content => {
         assert.equal(content.formatted, "export default {};");
+        done();
+      });
+    });
+
+    it('returns camelized tokens when the camelCase option is set', done => {
+      new DtsCreator({camelCase: true}).create('test/kebabed.css').then(content => {
+        assert.equal(content.formatted, "export const myClass: string;");
         done();
       });
     });
