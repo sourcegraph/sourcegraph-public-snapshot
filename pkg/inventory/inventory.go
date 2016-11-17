@@ -30,11 +30,7 @@ type Lang struct {
 	Type string `json:"Type,omitempty"`
 }
 
-// Scan performs an inventory of the tree at fs.
-//
-// Scan respects the ctx's deadline. If it exceeds the deadline,
-// it will return a partial inventory and the error value
-// context.DeadlineExceeded.
+// Get performs an inventory of the files passed in.
 func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	langs := map[string]uint64{}
 
