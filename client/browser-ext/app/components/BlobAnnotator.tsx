@@ -10,13 +10,16 @@ import * as React from "react";
 import {connect} from "react-redux";
 import {bindActionCreators} from "redux";
 
-const isCloning = new Set<String>();
+const isCloning = new Set<string>();
+
+const className = "btn btn-sm tooltipped tooltipped-n";
+const buttonStyle = {marginRight: "5px"};
+const iconStyle = {marginTop: "-1px", paddingRight: "4px", fontSize: "18px"};
 
 interface Props {
 	path: string;
 	repoURI: string;
 	blobElement: HTMLElement;
-	selfElement: HTMLElement;
 }
 
 interface ReduxProps {
@@ -63,7 +66,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 			this.isSplitDiff = github.isSplitDiff();
 			const deltaRevs = github.getDeltaRevs();
 			if (!deltaRevs) {
-				// TODO(john): error handling
+				// TODO(john): error handling strategy
 				return;
 			}
 
@@ -72,7 +75,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 
 			const deltaInfo = github.getDeltaInfo();
 			if (!deltaInfo) {
-				// TODO(john): error handling
+				// TODO(john): error handling strategy
 				return;
 			}
 
@@ -122,7 +125,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 		const apply = (repoURI: string, rev: string, isBase: boolean, loggerProps: Object) => {
 			const fext = utils.getPathExtension(this.props.path);
 
-			if (utils.supportedExtensions.indexOf(fext) < 0) {
+			if (!utils.supportedExtensions.has(fext)) {
 				return; // Don't annotate unsupported languages
 			}
 
@@ -169,43 +172,40 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 
 		if (github.isPrivateRepo() && this.props.resolvedRev.content[keyFor(this.props.repoURI)].authRequired) {
 			// Not signed in or not auth'd for private repos
-			this.props.selfElement.removeAttribute("disabled");
-			this.props.selfElement.setAttribute("aria-label", `Authorize Sourcegraph for ${this.props.repoURI.split("github.com/")[1]}`);
-
-			return (<span>
+			return (<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph for private repos`}>
 				<a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`}
 					style={{textDecoration: "none", color: "inherit"}}>
-					<SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px", WebkitFilter: "grayscale(100%)"}} />
+					<SourcegraphIcon style={Object.assign({WebkitFilter: "grayscale(100%)"}, iconStyle)} />
 					Sourcegraph
 				</a>
-			</span>);
+			</div>);
 
 		} else if (this.props.resolvedRev.content[keyFor(this.props.repoURI)].cloneInProgress) {
 			// Cloning the repo
-			this.props.selfElement.setAttribute("disabled", "true");
-			this.props.selfElement.setAttribute("aria-label", `Sourcegraph is analyzing ${this.props.repoURI.split("github.com/")[1]}`);
-
 			if (!isCloning.has(this.props.repoURI)) {
 				isCloning.add(this.props.repoURI);
 				this.refreshInterval = setInterval(this.fetchAnnotations, 5000);
 			}
 
-			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Loading...</span>;
+			return (<div style={buttonStyle} className={className} aria-label={`Sourcegraph is analyzing ${this.props.repoURI.split("github.com/")[1]}`}>
+				<SourcegraphIcon style={iconStyle} />
+				Loading...
+			</div>);
 
-		} else if (!utils.supportedExtensions.includes(utils.getPathExtension(this.props.path))) {
-			this.props.selfElement.setAttribute("disabled", "true");
-			if (!utils.upcomingExtensions.includes(utils.getPathExtension(this.props.path))) {
-				this.props.selfElement.setAttribute("aria-label", "File not supported");
+		} else if (!utils.supportedExtensions.has(utils.getPathExtension(this.props.path))) {
+			let ariaLabel: string;
+			if (!utils.upcomingExtensions.has(utils.getPathExtension(this.props.path))) {
+				ariaLabel = "File not supported";
 			} else {
-				this.props.selfElement.setAttribute("aria-label", "Language support coming soon!");
+				ariaLabel = "Language support coming soon!";
 			}
 
-			return <span style={{pointerEvents: "none"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />Sourcegraph</span>;
+			return (<div style={Object.assign({cursor: "not-allowed"}, buttonStyle)} className={className} aria-label={ariaLabel}>
+				<SourcegraphIcon style={iconStyle} />
+				Sourcegraph
+			</div>);
 
 		} else {
-			this.props.selfElement.removeAttribute("disabled");
-			this.props.selfElement.setAttribute("aria-label", "View on Sourcegraph");
-
 			if (isCloning.has(this.props.repoURI)) {
 				isCloning.delete(this.props.repoURI);
 				if (this.refreshInterval) {
@@ -213,11 +213,11 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 				}
 			}
 
-			return (<span>
-				<a href={this.getBlobUrl()} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={{marginTop: "-1px", paddingRight: "4px", fontSize: "18px"}} />
+			return (<div style={buttonStyle} className={className} aria-label="View on Sourcegraph">
+				<a href={this.getBlobUrl()} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={iconStyle} />
 					Sourcegraph
 				</a>
-			</span>);
+			</div>);
 		}
 	}
 }

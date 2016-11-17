@@ -1,29 +1,31 @@
 import {doFetch as fetch} from "../actions/xhr";
 import {EventLogger} from "../analytics/EventLogger";
+import * as types from "../constants/types";
+import * as github from "./github";
 import * as utils from "./index";
-import * as _ from "lodash"; // TODO(john): do we need this?
+import * as _ from "lodash"; // TODO(john): see if we can remove lodash
+import {style} from "typestyle";
 import * as utf8 from "utf8";
 
-function applyTooltipStyling(elem: HTMLElement): void {
-	elem.style.backgroundColor = "#2D2D30";
-	elem.style.maxWidth = "500px";
-	elem.style.maxHeight = "250px";
-	elem.style.overflow = "auto";
-	elem.style.border = "solid 1px #555";
-	elem.style.fontFamily = `"Helvetica Neue", Helvetica, Arial, sans-serif`;
-	elem.style.color = "rgba(213, 229, 242, 1)";
-	elem.style.fontSize = "12px";
-	elem.style.lineHeight = "19px";
-	elem.style.zIndex = "100";
-	elem.style.position = "absolute";
-	elem.style.wordWrap = "break-word";
-	elem.style.padding = "5px 6px";
-}
+const tooltipClassName = style({
+	backgroundColor: "#2D2D30",
+	maxWidth: "500px",
+	maxHeight: "250px",
+	overflow: "auto",
+	border: "solid 1px #555",
+	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
+	color: "rgba(213, 229, 242, 1)",
+	fontSize: "12px",
+	zIndex: 100,
+	position: "absolute",
+	wordWrap: "break-word",
+	padding: "5px 6px",
+});
 
-function applyTooltipTitleStyling(elem: HTMLElement): void {
-	elem.style.fontFamily = `Menlo, Monaco, Consolas, "Courier New", monospace`;
-	elem.style.wordWrap = "break-all";
-}
+const tooltipTitleStyle = style({
+	fontFamily: `Menlo, Monaco, Consolas, "Courier New", monospace`,
+	wordWrap: "break-all",
+});
 
 interface RepoRevSpec {
 	repoURI: string;
@@ -37,12 +39,12 @@ interface RepoRevSpec {
 // An invisible marker is appended to the document to indicate that annotation
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
-export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, anns: any, lineStartBytes: any, isSplitDiff: boolean, loggingStruct: Object): void {
+export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, anns: types.Annotation[], lineStartBytes: number[], isSplitDiff: boolean, loggingStruct: Object): void {
 	_applyAnnotations(el, path, repoRevSpec, indexAnnotations(anns).annsByStartByte, indexLineStartBytes(lineStartBytes), isSplitDiff, loggingStruct);
 }
 
 // _applyAnnotations is a helper function for addAnnotations
-export function _applyAnnotations(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, annsByStartByte: any, startBytesByLine: any, isSplitDiff: boolean, loggingStruct: Object): void {
+export function _applyAnnotations(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, annsByStartByte: AnnotationsByByte, startBytesByLine: StartBytesByLine, isSplitDiff: boolean, loggingStruct: Object): void {
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
@@ -50,106 +52,39 @@ export function _applyAnnotations(el: HTMLElement, path: string, repoRevSpec: Re
 		return;
 	}
 
-	for (let i = 0; i < table.rows.length; ++i) {
-		const row = table.rows[i];
-
-		// Inline comments from single comment / review of a Pull request
-		if (row.classList && row.classList.contains("inline-comments")) {
-			continue;
-		}
-
-		// line: line number of the current line
-		// codeCell: The actual table cell that has code inside.
-		//           Each row contains multiple columns, for
-		//           line number and code (multiple in diffs).
-		let line;
-		let codeCell;
-		if (repoRevSpec.isDelta) {
-			if (isSplitDiff && row.cells.length !== 4) {
-				continue;
-			}
-
-			// metaCell contains either the line number or the blob expander for common parts in a diff
-			let metaCell;
-			if (isSplitDiff) {
-				metaCell = repoRevSpec.isBase ? row.cells[0] : row.cells[2];
-			} else {
-				metaCell = repoRevSpec.isBase ? row.cells[0] : row.cells[1];
-			}
-
-			if (metaCell.classList && metaCell.classList.contains("blob-num-expandable")) {
-				continue;
-			}
-
-			if (isSplitDiff) {
-				codeCell = repoRevSpec.isBase ? row.cells[1] : row.cells[3];
-			} else {
-				codeCell = row.cells[2];
-			}
-
-			if (!codeCell) {
-				continue;
-			}
-
-			if (codeCell.classList && codeCell.classList.contains("blob-code-empty")) {
-				continue;
-			}
-
-			let isAddition = codeCell.classList && codeCell.classList.contains("blob-code-addition");
-			let isDeletion = codeCell.classList && codeCell.classList.contains("blob-code-deletion");
-			// Mark the tokens for common lines using start/end bytes from head
-			// Head is preferred over base because with the ?w=1 parameter on
-			// Github, changes that only affect whitespace are hidden by using
-			// line data from head which leads to wrong byte offsets for the tokens.
-			if (!isAddition && !isDeletion && repoRevSpec.isBase && !isSplitDiff) {
-				continue; // careful; we don't need to put head AND base on unmodified parts (but only for unified diff views)
-			}
-			if (isDeletion && !repoRevSpec.isBase) {
-				continue;
-			}
-			if (isAddition && repoRevSpec.isBase) {
-				continue;
-			}
-
-			line = metaCell.dataset["lineNumber"];
-			if (line === "..." || !line) {
-				continue;
-			}
-		} else {
-			line = row.cells[0].dataset["lineNumber"];
-			codeCell = row.cells[1];
-		}
-
-		const isInner = codeCell.querySelector(".blob-code-inner");
-		const curLine = (isInner || codeCell) as HTMLElement; // DOM node of the "line"
+	const cells = github.getCodeCellsForAnnotation(table, Object.assign({isSplitDiff}, repoRevSpec));
+	cells.forEach((cell) => {
+		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
 
 		// If the line has already been annotated,
 		// restore event handlers if necessary otherwise move to next line
-		if (el.dataset[`${line}_${repoRevSpec.rev}`]) {
+		if (el.getAttribute(dataKey)) {
 			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
-				addEventListeners(curLine, path, repoRevSpec, line, loggingStruct);
+				addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
 			}
-			continue;
+			return;
 		}
-		el.dataset[`${line}_${repoRevSpec.rev}`] = "true";
+		el.setAttribute(dataKey, "true");
 
 		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
-			const annLine = convertNode(curLine, annsByStartByte, startBytesByLine[line], startBytesByLine[line], repoRevSpec.isDelta);
+			const annLine = convertNode(cell.cell, annsByStartByte, startBytesByLine[cell.line], startBytesByLine[cell.line], repoRevSpec.isDelta);
 
-			curLine.innerHTML = "";
-			curLine.appendChild(annLine.resultNode);
+			cell.cell.innerHTML = "";
+			cell.cell.appendChild(annLine.resultNode);
 
-			addEventListeners(curLine, path, repoRevSpec, line, loggingStruct);
+			addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
 		});
-	}
+	});
 }
+
+export type AnnotationsByByte = {[key: number]: types.Annotation};
 
 // indexAnnotations creates a fast lookup structure optimized to query
 // annotations by start or end byte.
-export function indexAnnotations(anns: any): {annsByStartByte: any, annsByEndByte: any} {
-	let annsByStartByte = {};
-	let annsByEndByte = {};
+export function indexAnnotations(anns: types.Annotation[]): {annsByStartByte: AnnotationsByByte, annsByEndByte: AnnotationsByByte} {
+	let annsByStartByte: AnnotationsByByte = {};
+	let annsByEndByte: AnnotationsByByte = {};
 	for (let i = 0; i < anns.length; i++) {
 		// From pkg/syntaxhighlight/html_annotator.go
 		const annType = anns[i].Class;
@@ -162,32 +97,47 @@ export function indexAnnotations(anns: any): {annsByStartByte: any, annsByEndByt
 	return {annsByStartByte, annsByEndByte};
 }
 
+export type StartBytesByLine = {[key: number]: number};
+
 // indexLineStartBytes creates a fast lookup structure optimized to query
 // byte offsets by line number (1-indexed).
-export function indexLineStartBytes(lineStartBytes: any): any {
-	let startBytesByLine = {};
+export function indexLineStartBytes(lineStartBytes: number[]): StartBytesByLine {
+	let startBytesByLine: StartBytesByLine = {};
 	for (let i = 0; i < lineStartBytes.length; i++) {
 		startBytesByLine[i + 1] = lineStartBytes[i];
 	}
 	return startBytesByLine;
 }
 
-// isStringNode and isCommentNode are predicate functions to
-// identify string identifier DOM elements, as per Github's code styling classes.
 export function isCommentNode(node: Node): boolean {
-	return (node as any).classList.contains("pl-c");
+	return (node as Element).className.includes("pl-c");
 }
 
-// isStringNode should skip any string that might have
-// have an eval statement within that must be annotated
 export function isStringNode(node: Node): boolean {
-	// TODO(john): fix this...
-	return (node as any).classList.contains("pl-s") && node.childNodes.length === 3 && (node.childNodes[0] as any).classList.contains("pl-pds") && (node.childNodes[2] as any).classList.contains("pl-pds");
+	return (node as Element).className.includes("pl-s") &&
+		node.childNodes.length === 3 &&
+		(node.childNodes[0] as Element).className.includes("pl-pds") &&
+		(node.childNodes[2] as Element).className.includes("pl-pds");
 }
 
-interface ConvertNodeResult {
-	resultNode: Node;
+interface ConvertNodeResult<T extends Node> {
+	resultNode: T;
 	bytesConsumed: number;
+}
+
+function convertNodeHelper(node: Node, annsByStartByte: AnnotationsByByte, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
+	switch (node.nodeType) {
+		case Node.TEXT_NODE:
+			return convertTextNode(node, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
+
+		case Node.ELEMENT_NODE:
+			return isStringNode(node) || isCommentNode(node) ?
+				convertStringNode(node, annsByStartByte, offset, lineStart) :
+				convertElementNode(node, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
+
+		default:
+			throw new Error(`unexpected node type(${node.nodeType})`);
+	}
 }
 
 // convertNode takes a DOM node and returns an object containing the
@@ -195,19 +145,9 @@ interface ConvertNodeResult {
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult {
+export function convertNode(currentNode: Node, annsByStartByte: AnnotationsByByte, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Node> {
 	let wrapperNode;
-	let c; // c is an intermediate result
-
-	if (currentNode.nodeType === Node.TEXT_NODE) {
-		c = convertTextNode(currentNode as Element, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
-	} else if (currentNode.nodeType === Node.ELEMENT_NODE) {
-		c = isStringNode(currentNode) || isCommentNode(currentNode) ?
-			convertStringNode(currentNode, annsByStartByte, offset, lineStart) :
-			convertElementNode(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
-	} else {
-		throw new Error(`unexpected node type(${currentNode.nodeType})`);
-	}
+	let c = convertNodeHelper(currentNode, annsByStartByte, offset, lineStart, ignoreFirstTextChar);
 
 	// If this is the top level node for code, return a documentFragment
 	// otherwise copy all the attributes of the original node.
@@ -231,21 +171,20 @@ export function convertNode(currentNode: Node, annsByStartByte: any, offset: num
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
-export function convertTextNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult {
+export function convertTextNode(currentNode: Node, annsByStartByte: AnnotationsByByte, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
 	let nodeText;
 	let prevConsumed = 0;
 	let bytesConsumed = 0;
 	let lineOffset = offset;
 	const wrapperNode = document.createElement("SPAN");
-	wrapperNode.id = `text-node-wrapper-${lineOffset}`; // TODO(john): this is not globally unique for diff views.
+	wrapperNode.id = `text-node-wrapper-${lineOffset}`;
 
 	function createTextNode(text: string[], start: number, end: number, off: number): Node {
 		const wrapNode = document.createElement("SPAN");
-		wrapNode.id = `text-node-${lineOffset}-${off}`; // TODO(john): this is not globally unique for diff views.
+		wrapNode.id = `text-node-${lineOffset}-${off}`;
 		const textNode = document.createTextNode(utf8.decode(text.slice(start, end).join("")));
 
-		// TODO(john): type this
-		(wrapNode.dataset as any).byteoffset = off;
+		wrapNode.setAttribute("data-byteoffset", `${off}`);
 		wrapNode.appendChild(textNode);
 
 		return wrapNode;
@@ -288,10 +227,9 @@ export function convertTextNode(currentNode: Node, annsByStartByte: any, offset:
 
 // convertStringNode takes a DOM node which is a plain string and returns an object containing the
 // maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertStringNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number): ConvertNodeResult {
+export function convertStringNode(currentNode: Node, annsByStartByte: AnnotationsByByte, offset: number, lineStart: number): ConvertNodeResult<Element> {
 	const wrapperNode = document.createElement("SPAN");
-
-	(wrapperNode.dataset as any).byteoffset = offset + 1 - lineStart;
+	wrapperNode.setAttribute("data-byteoffset", `${offset + 1 - lineStart}`);
 	wrapperNode.appendChild(currentNode.cloneNode(true));
 
 	return {
@@ -303,11 +241,12 @@ export function convertStringNode(currentNode: Node, annsByStartByte: any, offse
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(currentNode: Node, annsByStartByte: any, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult {
+export function convertElementNode(currentNode: Node, annsByStartByte: AnnotationsByByte, offset: number, lineStart: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
 	let bytesConsumed = 0;
 	const wrapperNode = document.createElement("SPAN");
 
-	(wrapperNode.dataset as any).byteoffset = offset + 1 - lineStart;
+	wrapperNode.setAttribute("data-byteoffset", `${offset + 1 - lineStart}`);
+
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
 	for (let i = 0; i < currentNode.childNodes.length; ++i) {
@@ -329,19 +268,31 @@ let j2dCache = {};
 
 const HOVER_DELAY_MS = 200;
 
-const tooltip = document.createElement("DIV");
-applyTooltipStyling(tooltip);
-tooltip.classList.add("sg-tooltip");
+let tooltip;
+let loadingTooltip;
+function createTooltips(): void {
+	if (tooltip || loadingTooltip) {
+		return;
+	}
 
-const loadingTooltip = document.createElement("DIV");
-loadingTooltip.appendChild(document.createTextNode("Loading..."));
+	tooltip	= document.createElement("DIV");
+	tooltip.className = tooltipClassName;
+	tooltip.classList.add("sg-tooltip");
+
+	loadingTooltip = document.createElement("DIV");
+	loadingTooltip.appendChild(document.createTextNode("Loading..."));
+};
 
 let activeTarget;
 function getTarget(t: HTMLElement): HTMLElement | undefined {
-	while (t && t.tagName !== "TD" && !t.dataset && !t.dataset["byteoffset"]) {
+	if (t.tagName === "TD") {
+		// Not hovering over any token in particular.
+		return;
+	}
+	while (t && t.tagName !== "TD" && !t.getAttribute("data-byteoffset")) {
 		t = (t.parentNode as any); // TODO(john): remove cast
 	}
-	if (t && t.tagName === "SPAN" && t.dataset && t.dataset["byteoffset"]) {
+	if (t && t.tagName === "SPAN" && t.getAttribute("data-byteoffset")) {
 		return t;
 	}
 }
@@ -355,9 +306,11 @@ function clearTooltip(): void {
 	tooltip.style.visibility = "hidden"; // prevent black dot of empty content
 }
 
-function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: string, loggingStruct: Object): void {
+function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
+	createTooltips();
+
 	el.onclick = (e) => {
-		let t = getTarget((e as any).target); // TODO(john): remove type cast
+		let t = getTarget(e.target as HTMLElement);
 		if (!t || t.style.cursor !== "pointer") {
 			return;
 		}
@@ -380,7 +333,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 	};
 
 	el.onmouseover = (e) => {
-		let t = getTarget((e as any).target); // TDO(john): remove type cast
+		let t = getTarget(e.target as HTMLElement);
 		if (!t) {
 			return;
 		}
@@ -476,7 +429,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 				},
 				position: {
 					character: parseInt(col, 10) - 1,
-					line: parseInt(line, 10) - 1,
+					line: line - 1,
 				},
 			},
 		});
@@ -511,7 +464,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 				},
 				position: {
 					character: parseInt(target.dataset["byteoffset"], 10) - 1,
-					line: parseInt(line, 10) - 1,
+					line: line - 1,
 				},
 			},
 		});
@@ -523,7 +476,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 					target.style.cursor = "pointer";
 					target.className = `${target.className} sg-clickable`;
 
-					applyTooltipTitleStyling(tooltipText);
+					tooltipText.className = tooltipTitleStyle;
 					tooltipText.appendChild(document.createTextNode(json[1].result.contents[0].value));
 					tooltipCache[cacheKey] = tooltipText;
 				} else {

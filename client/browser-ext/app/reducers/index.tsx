@@ -1,4 +1,4 @@
-import * as Actions from "../constants/ActionTypes"; // TODO(john): rename
+import * as Actions from "../constants/types";
 import {keyFor} from "./helpers";
 import {combineReducers} from "redux";
 
@@ -7,12 +7,13 @@ const accessToken = function(state: AccessTokenState = null, action: Actions.Set
 	switch (action.type) {
 	case Actions.SET_ACCESS_TOKEN:
 		return action.token;
+
 	default:
 		return state;
 	}
 };
 
-export type ResolvedRevState = {content: {[key: string]: any}}; // TODO(john): provide proper type for json.
+export type ResolvedRevState = {content: {[key: string]: any}}; // TODO(john): use proper type
 const resolvedRev = function(state: ResolvedRevState = {content: {}}, action: Actions.ResolvedRevAction): ResolvedRevState {
 	switch (action.type) {
 	case Actions.RESOLVED_REV:
@@ -31,12 +32,13 @@ const resolvedRev = function(state: ResolvedRevState = {content: {}}, action: Ac
 		// Fall through
 		// As a result, we serve the result of the last
 		// successful request (one that returned HTTP 200).
+
 	default:
 		return state; // no update needed; avoid re-rending components
 	}
 };
 
-export type AnnotationsState = {content: {[key: string]: any}}; // TODO(john): provide proper type for json.
+export type AnnotationsState = {content: {[key: string]: any}}; // TODO(john): use proper type
 const annotations = function(state: AnnotationsState = {content: {}}, action: Actions.FetchedAnnotationsAction): AnnotationsState {
 	switch (action.type) {
 	case Actions.FETCHED_ANNOTATIONS:

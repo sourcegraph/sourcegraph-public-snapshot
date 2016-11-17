@@ -3,8 +3,8 @@
 	"version": "0.0.1",
 	"description": "Sourcegraph browser extension for Chrome",
 	"scripts": {
-		"test": "mocha --opts mocha.opts",
-		"test:auto": "mocha --opts mocha.opts --watch",
+		"test": "NODE_ENV=test mocha --opts mocha.opts",
+		"test:auto": "NODE_ENV=test mocha --opts mocha.opts --watch",
 		"dev": "ts-node scripts/dev",
 		"build": "ts-node scripts/build",
 		"clean": "rm -rf build/ dev/ *.zip *.xpi .checksum"
@@ -51,6 +51,7 @@
 		"redux": "^3.2.1",
 		"redux-thunk": "^2.0.1",
 		"telligent-tracker": "^0.1.1",
+		"typestyle": "^0.7.4",
 		"utf8": "^2.1.1"
 	}
 }

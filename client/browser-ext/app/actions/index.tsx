@@ -1,4 +1,4 @@
-import * as types from "../constants/ActionTypes";
+import * as types from "../constants/types";
 import {ReducerState} from "../reducers";
 import {keyFor} from "../reducers/helpers";
 import {doFetch as fetch, useAccessToken} from "./xhr";
@@ -37,7 +37,7 @@ function _resolveRev(dispatch: Dispatch<ReducerState>, state: ReducerState, repo
 				.then((json) => {
 					const xhrResponse = {
 						status: resp.status,
-						head: (resp.headers as any).map, // TODO(john): figure out if we need this
+						head: (resp.headers as any).map, // TODO(john): replace this
 						json: json,
 					};
 					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
@@ -46,7 +46,7 @@ function _resolveRev(dispatch: Dispatch<ReducerState>, state: ReducerState, repo
 				.catch((err) => {
 					const xhrResponse = {
 						status: resp.status,
-						head: (resp.headers as any).map, // TODO(john): figure out if we need this
+						head: (resp.headers as any).map, // TODO(john): replace this
 						json: null,
 					};
 					dispatch({type: types.RESOLVED_REV, repo, rev, xhrResponse});
@@ -99,7 +99,7 @@ export function getAnnotations(repo: string, rev: string, path: string): ThunkAc
 	};
 }
 
-// TODO(john): this doesn't need to be wrapped in Redux...
+// TODO(john): this doesn't need to be wrapped in Redux
 const createdRepoOnce = new Map<string, Promise<null>>();
 export function ensureRepoExists(repo: string): ThunkAction<Promise<null>, ReducerState, any> {
 	return function(): Promise<null> { // no dispatch or state necessary...

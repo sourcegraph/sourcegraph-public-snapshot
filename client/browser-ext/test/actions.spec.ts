@@ -1,5 +1,5 @@
 import * as actions from "../app/actions";
-import * as types from "../app/constants/ActionTypes";
+import * as types from "../app/constants/types";
 import {keyFor} from "../app/reducers/helpers";
 import {expect} from "chai";
 import * as fetchMock from "fetch-mock";
@@ -22,7 +22,7 @@ describe("actions", () => {
 		expect(actions.setAccessToken("token")).to.eql({type: types.SET_ACCESS_TOKEN, token: "token"});
 	});
 
-	// TODO(john): add proper typings
+	// TODO(john): use types
 	function assertAsyncActionsDispatched(action: any, initStore: any, expectedActions: any): any {
 		const store = mockStore(initStore);
 		return store.dispatch(action).then(() => expect(store.getActions()).to.eql(expectedActions));
@@ -43,9 +43,8 @@ describe("actions", () => {
 		it("200s", () => {
 			fetchMock.mock(annotationsAPI, "GET", {Annotations: []} as any); // TODO(john): why is response type invalid?
 
-            // TODO(john): remove undefined
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-				resolvedRev: {content: {[keyFor(repo, undefined, undefined, undefined)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev, undefined, undefined)]: {json: {CommitID: resolvedRev}}}},
+				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				annotations: {content: {}},
 			}, [
 				{type: types.FETCHED_ANNOTATIONS, repo, relRev: rev, rev: resolvedRev, path, xhrResponse: {body: {Annotations: []}, head: undefined, status: 200}},
@@ -56,7 +55,7 @@ describe("actions", () => {
 			fetchMock.mock(annotationsAPI, "GET", 404);
 
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-				resolvedRev: {content: {[keyFor(repo, undefined, undefined, undefined)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev, undefined, undefined)]: {json: {CommitID: resolvedRev}}}},
+				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				annotations: {content: {}},
 			}, [
 				{type: types.FETCHED_ANNOTATIONS, repo, relRev: rev, rev: resolvedRev, path, xhrResponse: {body: null, head: undefined, status: 404}},
@@ -65,7 +64,7 @@ describe("actions", () => {
 
 		it("noops when annotations are cached", () => {
 			return assertAsyncActionsDispatched(actions.getAnnotations(repo, rev, path), {
-				resolvedRev: {content: {[keyFor(repo, undefined, undefined, undefined)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev, undefined, undefined)]: {json: {CommitID: resolvedRev}}}},
+				resolvedRev: {content: {[keyFor(repo)]: {authRequired: false, cloneInProgress: false, respCode: 200}, [keyFor(repo, rev)]: {json: {CommitID: resolvedRev}}}},
 				defs: {content: {[keyFor(repo, resolvedRev, path, query)]: {Annotations: []}}},
 			}, []);
 		});

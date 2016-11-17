@@ -10,7 +10,32 @@ import {render} from "react-dom";
 import {unmountComponentAtNode} from "react-dom";
 import {Provider} from "react-redux";
 
-let store = configureStore();
+const store = configureStore();
+
+function injectComponent(component: React.ReactNode, mount: HTMLElement): void {
+	chrome.runtime.sendMessage({type: "getSessionToken"}, (token) => {
+		store.dispatch(Actions.setAccessToken(token));
+		render(<Provider store={store}>{component}</Provider>, mount);
+	});
+}
+
+function ejectComponent(mount: HTMLElement): void {
+	unmountComponentAtNode(mount);
+	mount.remove();
+}
+
+function injectModules(): void {
+	if (!document.getElementById("sourcegraph-app-bootstrap")) {
+		injectBackgroundApp();
+		injectBlobAnnotator();
+
+		// Add invisible div to the page to indicate injection has completed.
+		let el = document.createElement("div");
+		el.id = "sourcegraph-app-bootstrap";
+		el.style.display = "none";
+		document.body.appendChild(el);
+	}
+}
 
 function injectBackgroundApp(): void {
 	let backgroundContainer = document.createElement("div");
@@ -31,59 +56,20 @@ function injectBlobAnnotator(): void {
 	}
 
 	const files = github.getFileContainers();
-
 	for (let i = 0; i < files.length; ++i) {
 		const file = files[i];
-		if (github.isInlineCommentContainer(file)) {
-			continue;
-		}
 
 		const filePath = isDelta ? github.getDeltaFileName(file) : path;
 		if (!filePath) {
-			throw new Error("cannot infer file path of blob container");
+			throw new Error("cannot determine file path");
 		}
 
-		const blob = file.querySelector(".blob-wrapper") as HTMLElement;
-		if (!blob) { // TODO(john): move this logic into BlobAnnotator
+		const mount = github.createBlobAnnotatorMount(file);
+		if (!mount) {
 			continue;
 		}
-
-		const mountEl = document.createElement("div");
-		mountEl.className = "btn btn-sm tooltipped tooltipped-n sourcegraph-app-annotator";
-		mountEl.style.marginRight = "5px";
-
-		const fileActions = file.querySelector(".file-actions");
-		if (!fileActions) {
-			throw new Error("cannot locate BlobAnnotator injection site");
-		}
-
-		const buttonGroup = fileActions.querySelector(".BtnGroup");
-		if (buttonGroup) { // blob view
-			// mountEl.style.cssFloat = "none";
-			buttonGroup.parentNode.insertBefore(mountEl, buttonGroup);
-		} else { // commit & pull request view
-			const note = file.querySelector(".show-file-notes");
-			if (!note) {
-				throw new Error("cannot locate BlobAnnotator injection site");
-			}
-			mountEl.style.cssFloat = "none";
-			note.parentNode.insertBefore(mountEl, note.nextSibling);
-		}
-
-		injectComponent(<BlobAnnotator path={filePath} repoURI={repoURI} blobElement={blob} selfElement={mountEl} />, mountEl);
+		injectComponent(<BlobAnnotator path={filePath} repoURI={repoURI} blobElement={github.getBlobElement(file)} />, mount);
 	}
-}
-
-function ejectComponent(mountElement: HTMLElement): void {
-	unmountComponentAtNode(mountElement);
-	mountElement.remove();
-}
-
-function injectComponent(component: React.ReactNode, mountElement: HTMLElement): void {
-	chrome.runtime.sendMessage({type: "getSessionToken"}, (token) => {
-		store.dispatch(Actions.setAccessToken(token));
-		render(<Provider store={store}>{component}</Provider>, mountElement);
-	});
 }
 
 function ejectModules(): void {
@@ -104,22 +90,9 @@ function ejectModules(): void {
 	}
 }
 
-function injectModules(): void {
-	if (!document.getElementById("sourcegraph-app-bootstrap")) {
-		injectBackgroundApp();
-		injectBlobAnnotator();
-
-		// Add invisible div to the page to indicate injection has completed.
-		let el = document.createElement("div");
-		el.id = "sourcegraph-app-bootstrap";
-		el.style.display = "none";
-		document.body.appendChild(el);
-	}
-}
-
 window.addEventListener("load", () => {
 	injectModules();
-	chrome.runtime.sendMessage({type: "getIdentity"}, {}, (identity) => {
+	chrome.runtime.sendMessage({type: "getIdentity"}, (identity) => {
 		if (identity) {
 			EventLogger.updatePropsForUser(identity);
 		}

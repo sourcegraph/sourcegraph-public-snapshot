@@ -1,10 +1,18 @@
-export const supportedExtensions = [
+/**
+ * supportedExtensions are the file extensions
+ * the extension will apply annotations to
+ */
+export const supportedExtensions = new Set<string>([
 	"go", // Golang
 	"ts", "tsx", // TypeScript
 	"js", "jsx", // JavaScript
-];
+]);
 
-export const upcomingExtensions = [
+/**
+ * upcomingExtensions are the file types which
+ * will be supported "soon"
+ */
+export const upcomingExtensions = new Set<string>([
 	"cs", // C#
 	"css", // CSS
 	"java", // Java
@@ -20,14 +28,12 @@ export const upcomingExtensions = [
 	"py", "pyc", "pyd", "pyo", "pyw", "pyz", // Python
 	"cc", "cpp", "cxx", "c++", "hh", "hpp", "hxx", "h++", // C++ ("h" and "c" overlap with C)
 	"php", "phtml", "php3", "php4", "php5", "php7", "phps", // PHP
-];
+]);
 
-export const readableGitHubRoute = {
-	"blob": "File",
-	"pull": "Pull request",
-	"commit": "Commit",
-};
-
+/**
+ * getModeFromExtension returns the LSP mode for the
+ * provided file extension (e.g. "jsx")
+ */
 export function getModeFromExtension(ext: string): string {
 	switch (ext) {
 		case "go":
@@ -118,9 +124,9 @@ export function isSourcegraphURL(loc: Location): boolean {
 
 export function getCurrentBranch(): string | null {
 	let branchDropdownEl = document.getElementsByClassName("btn btn-sm select-menu-button js-menu-target css-truncate");
-	if (!branchDropdownEl || branchDropdownEl.length !== 1) {
+	if (branchDropdownEl.length !== 1) {
 		return null;
 	}
 
-	return (branchDropdownEl[0] as any).title; // TODO(john): provide proper types
+	return (branchDropdownEl[0] as HTMLElement).title;
 }

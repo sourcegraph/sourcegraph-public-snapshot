@@ -6,24 +6,96 @@ function invariant(cond: any): void {
 	}
 }
 
-// getFileContainers returns the elements on the page which should be marked
-// up with tooltips & links:
-// - blob view: a single file
-// - commit view: one or more file diffs
-// - PR conversation view: snippets with inline comments
-// - PR unified/split view: one or more file diffs
+/**
+ * getFileContainers returns the elements on the page which should be marked
+ * up with tooltips & links:
+ *
+ * 1. blob view: a single file
+ * 2. commit view: one or more file diffs
+ * 3. PR conversation view: snippets with inline comments
+ * 4. PR unified/split view: one or more file diffs
+ */
 export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
 	return document.getElementsByClassName("file") as HTMLCollectionOf<HTMLElement>;
 }
 
+/**
+ * getBlobElement returns the element within a file container which contains
+ * source code. The blob element contains a <table> element which has line
+ * numbers, source code, and (possibly) diff expanders.
+ */
+export function getBlobElement(fileContainer: HTMLElement): HTMLElement {
+	const blob = fileContainer.querySelector(".blob-wrapper");
+	invariant(blob);
+	return blob as HTMLElement;
+}
+
+/**
+ * getBlobElement returns the <table> element containing line numbers and
+ * source code (including for unified/split diffs).
+ */
+export function getCodeTable(fileContainer: HTMLElement): HTMLTableElement {
+	const table = getBlobElement(fileContainer).querySelector("table");
+	invariant(table);
+	return table as HTMLTableElement;
+}
+
+/**
+ * createBlobAnnotatorMount creates a <div> element and adds it to the DOM
+ * where the BlobAnnotator component should be mounted.
+ */
+export function createBlobAnnotatorMount(fileContainer: HTMLElement): HTMLElement | null {
+	if (isInlineCommentContainer(fileContainer)) {
+		return null;
+	}
+
+	const mountEl = document.createElement("div");
+	mountEl.style.display = "inline-block";
+	mountEl.className = "sourcegraph-app-annotator";
+
+	const fileActions = fileContainer.querySelector(".file-actions");
+	if (!fileActions) {
+		throw new Error("cannot locate BlobAnnotator injection site");
+	}
+
+	const buttonGroup = fileActions.querySelector(".BtnGroup");
+	if (buttonGroup) { // blob view
+		// mountEl.style.cssFloat = "none";
+		buttonGroup.parentNode.insertBefore(mountEl, buttonGroup);
+	} else { // commit & pull request view
+		const note = fileContainer.querySelector(".show-file-notes");
+		if (!note) {
+			throw new Error("cannot locate BlobAnnotator injection site");
+		}
+		note.parentNode.insertBefore(mountEl, note.nextSibling);
+	}
+
+	return mountEl;
+}
+
+/**
+ * isInlineCommentContainer returns true if the element provided
+ * is an inline review comment. It is how you detect if a table cell
+ * contains source code or a comment.
+ */
 export function isInlineCommentContainer(file: HTMLElement): boolean {
 	return file.classList.contains("inline-review-comment");
 }
 
+/**
+ * isPrivateRepo returns true of the current document is for a private
+ * repository URI.
+ */
 export function isPrivateRepo(): boolean {
 	return document.getElementsByClassName("label label-private v-align-middle").length > 0;
 }
 
+/**
+ * registerExpandDiffClickHandler will attach a callback to all diff
+ * context expanders on the current document. It is used to detect
+ * when more source code is shown, and then apply annotations to the
+ * newly displayed ranges.
+ */
 export function registerExpandDiffClickHandler(cb: (ev: any) => void): void {
 	const diffExpanders = document.getElementsByClassName("diff-expander");
 	for (let i = 0; i < diffExpanders.length; ++i) {
@@ -37,7 +109,10 @@ export function registerExpandDiffClickHandler(cb: (ev: any) => void): void {
 	}
 }
 
-// getDeltaFileName returns the path of the file container
+/**
+ * getDeltaFileName returns the path of the file container. It assumes
+ * the file container is for a diff (i.e. a commit or pull request view).
+ */
 export function getDeltaFileName(container: HTMLElement): string {
 	const info = container.querySelector(".file-info") as HTMLElement;
 	invariant(info);
@@ -53,6 +128,9 @@ export function getDeltaFileName(container: HTMLElement): string {
 	}
 }
 
+/**
+ * isSplitDiff returns if the current view shows diffs with split (vs. unified) view.
+ */
 export function isSplitDiff(): boolean {
 	const {isDelta, isPullRequest} = utils.parseURL(window.location);
 	if (!isDelta) {
@@ -84,11 +162,17 @@ export function isSplitDiff(): boolean {
 	}
 }
 
+// TODO(john): combine getDeltaRevs and getDeltaInfo.
+// Currently they are separated because only the latter is testable w/ jsdom.
+
 export interface DeltaRevs {
 	base: string;
 	head: string;
 }
 
+/**
+ * getDeltaRevs returns the base and head revision SHA, or null for non-diff views.
+ */
 export function getDeltaRevs(): DeltaRevs | null {
 	const {isDelta, isCommit} = utils.parseURL(window.location);
 	if (!isDelta) {
@@ -97,13 +181,12 @@ export function getDeltaRevs(): DeltaRevs | null {
 
 	let base = "";
 	let head = "";
-	// const fetchContainer = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
 	let fetchContainers = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
 	if (fetchContainers && fetchContainers.length === 1) {
 		for (let i = 0; i < fetchContainers.length; ++i) {
 		// for conversation view of pull request
 		const el = fetchContainers[i] as HTMLElement;
-		const url = el.dataset ? el.dataset["url"] : null;
+		const url = el.getAttribute("data-url");
 		if (!url) {
 			continue;
 		}
@@ -151,8 +234,12 @@ export interface DeltaInfo {
 	headBranch: string;
 	headURI: string;
 }
+
+/**
+ * getDeltaInfo returns the base and head branches & URIs, or null for non-diff views.
+ */
 export function getDeltaInfo(): DeltaInfo | null {
-	const {repo, repoURI, isDelta, isPullRequest, isCommit} = utils.parseURL(window.location);
+	const {repoURI, isDelta, isPullRequest, isCommit} = utils.parseURL(window.location);
 	if (!isDelta) {
 		return null;
 	}
@@ -165,20 +252,20 @@ export function getDeltaInfo(): DeltaInfo | null {
 	let headURI = "";
 	if (isPullRequest) {
 		const branches = document.querySelectorAll(".commit-ref,.current-branch") as HTMLCollectionOf<HTMLElement>;
-		baseBranch = branches[0].innerText;
-		headBranch = branches[1].innerText;
+		baseBranch = branches[0].title;
+		headBranch = branches[1].title;
 
 		if (baseBranch.includes(":")) {
 			const baseSplit = baseBranch.split(":");
 			baseBranch = baseSplit[1];
-			baseURI = `github.com/${baseSplit[0]}/${repo}`;
+			baseURI = `github.com/${baseSplit[0]}`;
 		} else {
 			baseBranch = repoURI as string;
 		}
 		if (headBranch.includes(":")) {
 			const headSplit = headBranch.split(":");
 			headBranch = headSplit[1];
-			headURI = `github.com/${headSplit[0]}/${repo}`;
+			headURI = `github.com/${headSplit[0]}`;
 		} else {
 			headURI = repoURI as string;
 		}
@@ -189,8 +276,8 @@ export function getDeltaInfo(): DeltaInfo | null {
 			branchEl = branchEl.querySelector("a") as HTMLElement;
 		}
 		if (branchEl) {
-			baseBranch = branchEl.innerText;
-			headBranch = branchEl.innerText;
+			baseBranch = branchEl.innerHTML;
+			headBranch = branchEl.innerHTML;
 		}
 		baseURI = repoURI as string;
 		headURI = repoURI as string;
@@ -200,4 +287,97 @@ export function getDeltaInfo(): DeltaInfo | null {
 		return null;
 	}
 	return {baseBranch, headBranch, baseURI, headURI};
+}
+
+export interface CodeCell {
+	cell: HTMLElement;
+	line: number;
+	isAddition?: boolean; // for diff views
+	isDeletion?: boolean; // for diff views
+}
+
+/**
+ * getCodeCellsForAnnotation code cells which should be annotated
+ */
+export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: {isDelta: boolean, isSplitDiff: boolean; isBase: boolean}): CodeCell[] {
+	const cells: CodeCell[] = [];
+	for (let i = 0; i < table.rows.length; ++i) {
+		const row = table.rows[i];
+
+		// Inline comments can be on
+		if (row.className.includes("inline-comments")) {
+			continue;
+		}
+
+		let line: number; // line number of the current line
+		let codeCell: HTMLTableDataCellElement; // the actual cell that has code inside; each row contains multiple columns
+		let isAddition: boolean | undefined;
+		let isDeletion: boolean | undefined;
+		if (opt.isDelta) {
+			if ((opt.isSplitDiff && row.cells.length !== 4) || (!opt.isSplitDiff && row.cells.length !== 3)) {
+				// for "diff expander" lines
+				continue;
+			}
+
+			let lineCell: HTMLTableDataCellElement;
+			if (opt.isSplitDiff) {
+				lineCell = opt.isBase ? row.cells[0] : row.cells[2];
+			} else {
+				lineCell = opt.isBase ? row.cells[0] : row.cells[1];
+			}
+
+			if (opt.isSplitDiff) {
+				codeCell = opt.isBase ? row.cells[1] : row.cells[3];
+			} else {
+				codeCell = row.cells[2];
+			}
+
+			if (!codeCell) {
+				console.error(`missing code cell at row ${i}`, table);
+				continue;
+			}
+
+			if (codeCell.className.includes("blob-code-empty")) {
+				// for split diffs, this class represents "empty" ranges for one side of the diff
+				continue;
+			}
+
+			isAddition = codeCell.className.includes("blob-code-addition");
+			isDeletion = codeCell.className.includes("blob-code-deletion");
+
+			// additions / deletions should be annotated with the correct revision;
+			// unmodified parts should only be annotated once;
+			// head is preferred over base for unmodified parts because of the ?w=1 parameter
+			if (!isAddition && !isDeletion && opt.isBase && !opt.isSplitDiff) {
+				continue;
+			}
+			if (isDeletion && !opt.isBase) {
+				continue;
+			}
+			if (isAddition && opt.isBase) {
+				continue;
+			}
+
+			const lineData = lineCell.getAttribute("data-line-number") as string;
+			if (lineData === "...") {
+				// row before line "1" on diff views
+				continue;
+			}
+
+			line = parseInt(lineData, 10);
+		} else {
+			line = parseInt(row.cells[0].getAttribute("data-line-number") as string, 10);
+			codeCell = row.cells[1];
+		}
+
+		const innerCode = codeCell.querySelector(".blob-code-inner"); // ignore extraneous inner elements, like "comment" button on diff views
+		cells.push({
+			cell: (innerCode || codeCell) as HTMLElement,
+			line,
+			isAddition,
+			isDeletion,
+		});
+	}
+
+	return cells;
 }
