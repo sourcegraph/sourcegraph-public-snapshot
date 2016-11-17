@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
+	"os"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -13,9 +14,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
+
+var sentryDSNFrontend = os.Getenv("SENTRY_DSN_FRONTEND")
 
 var FuncMap = htmpl.FuncMap{
 	"appconf": func() interface{} { return &appconf.Flags },
@@ -65,7 +67,7 @@ var FuncMap = htmpl.FuncMap{
 		return short
 	},
 
-	"publicRavenDSN": func() string { return conf.PublicRavenDSN },
+	"publicRavenDSN": func() string { return sentryDSNFrontend },
 
 	"urlToTrace": func(ctx context.Context) string {
 		if span := opentracing.SpanFromContext(ctx); span != nil {
