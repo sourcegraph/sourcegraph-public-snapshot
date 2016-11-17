@@ -15,7 +15,7 @@ import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import {IEditorMouseEvent} from "vs/editor/browser/editorBrowser";
-import { IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
+import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { create as createStandaloneEditor, createModel, onDidCreateModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
@@ -113,6 +113,10 @@ export class Editor implements IDisposable {
 			theme: "vs-dark",
 			renderLineHighlight: true,
 		}, { editorService: this._editorService });
+
+		// WORKAROUND: Remove the initial model from the configuration to avoid infinite recursion when the config gets updated internally.
+		// Reproduce issue by using "Find All References" to open the rift view and then right click again in the code outside of the view.
+		delete (this._editor.getRawConfiguration() as IEditorConstructionOptions).model;
 
 		this._editorService.setEditor(this._editor);
 
