@@ -10,9 +10,6 @@
 	(function(){
 		var sentryTags = {};
 
-		{{if buildvar.CommitID}}
-			sentryTags["Deployed commit"] = "{{buildvar.CommitID}}";
-		{{end}}
 		{{if .AuthInfo.UID}}
 			sentryTags["Authed"] = "{{.AuthInfo.Login}}" ? "yes" : "no";
 			sentryTags["Authed UID"] = "{{.AuthInfo.UID}}";
