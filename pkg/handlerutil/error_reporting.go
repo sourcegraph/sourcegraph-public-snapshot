@@ -29,6 +29,7 @@ func init() {
 		ravenClient.DropHandler = func(pkt *raven.Packet) {
 			log.Println("WARNING: dropped error report because buffer is full:", pkt)
 		}
+		ravenClient.SetRelease(buildvar.All.Version)
 	}
 }
 
@@ -95,11 +96,6 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 				}
 			}
 		}
-	}
-
-	// Add deployment tags.
-	if buildvar.All.CommitID != "" {
-		addTag("Deployed commit", buildvar.All.CommitID)
 	}
 
 	// Add error information.
