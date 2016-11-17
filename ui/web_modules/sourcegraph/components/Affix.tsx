@@ -29,11 +29,11 @@ export class Affix extends React.Component<Props, {}> {
 	}
 
 	_affixEl(initialOffset: number): any {
-		const currentWidth = this._affix.clientWidth;
-
 		if (!this._affix) {
 			return;
 		}
+
+		const currentWidth = this._affix.clientWidth;
 		if (initialOffset <= window.scrollY) {
 			this._affix.style.width = `${currentWidth}px`;
 			this._affix.style.position = "fixed";
