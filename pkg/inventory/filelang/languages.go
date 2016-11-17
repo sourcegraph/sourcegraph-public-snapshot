@@ -40,6 +40,7 @@ type Language struct {
 // MatchFilename returns true if the language is associated with files
 // with the given name.
 func (l *Language) MatchFilename(name string) bool {
+	// If you adjust this implementation, remember to update CompileByFilename
 	for _, n := range l.Filenames {
 		if name == n {
 			return true
@@ -115,6 +116,40 @@ func (ls *Languages) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		(*ls)[i].Name = mi.Key.(string)
 	}
 	return nil
+}
+
+func (ls Languages) CompileByFilename() func(string) []*Language {
+	byFilename := map[string][]*Language{}
+	byExt := map[string][]*Language{}
+	for _, l := range ls {
+		for _, n := range l.Filenames {
+			byFilename[n] = append(byFilename[n], l)
+		}
+		for _, x := range l.Extensions {
+			x = strings.ToLower(x)
+			byExt[x] = append(byExt[x], l)
+		}
+	}
+	return func(name string) []*Language {
+		var matches []*Language
+		for _, l := range byFilename[name] {
+			matches = append(matches, l)
+		}
+		for _, l := range byExt[strings.ToLower(path.Ext(name))] {
+			contains := false
+			for _, l2 := range matches {
+				if l2.Name == l.Name {
+					contains = true
+					break
+				}
+			}
+			if !contains {
+				matches = append(matches, l)
+			}
+		}
+		sort.Sort(&sortByPrimaryMatch{name, matches})
+		return matches
+	}
 }
 
 // ByFilename returns a list of languages associated with the given

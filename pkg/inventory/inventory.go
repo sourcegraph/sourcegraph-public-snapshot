@@ -30,6 +30,8 @@ type Lang struct {
 	Type string `json:"Type,omitempty"`
 }
 
+var byFilename = filelang.Langs.CompileByFilename()
+
 // Get performs an inventory of the files passed in.
 func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	langs := map[string]uint64{}
@@ -38,7 +40,7 @@ func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 		if filelang.IsVendored(file.Name(), file.IsDir()) {
 			continue
 		}
-		matchedLangs := filelang.Langs.ByFilename(file.Name())
+		matchedLangs := byFilename(file.Name())
 		if len(matchedLangs) > 0 {
 			langs[matchedLangs[0].Name] += uint64(file.Size())
 		}
@@ -77,9 +79,14 @@ func (inv *Inventory) PrimaryProgrammingLanguage() string {
 
 type langsByTotalBytes []*Lang
 
-func (v langsByTotalBytes) Len() int           { return len(v) }
-func (v langsByTotalBytes) Less(i, j int) bool { return v[i].TotalBytes < v[j].TotalBytes }
-func (v langsByTotalBytes) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+func (v langsByTotalBytes) Len() int      { return len(v) }
+func (v langsByTotalBytes) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v langsByTotalBytes) Less(i, j int) bool {
+	if v[i].TotalBytes == v[j].TotalBytes {
+		return v[i].Name < v[j].Name
+	}
+	return v[i].TotalBytes < v[j].TotalBytes
+}
 
 // LangsOfType returns only langs of the given type (matching the Type
 // field).

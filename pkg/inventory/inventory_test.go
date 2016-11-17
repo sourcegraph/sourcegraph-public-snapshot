@@ -1,7 +1,9 @@
 package inventory
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"os"
 	"reflect"
 	"testing"
@@ -113,4 +115,60 @@ func (f fi) ModTime() time.Time {
 }
 func (f fi) Sys() interface{} {
 	return interface{}(nil)
+}
+
+func BenchmarkGet(b *testing.B) {
+	files, err := readFileTree("prom-repo-tree.txt")
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, err = Get(context.Background(), files)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestGetGolden(t *testing.T) {
+	mustMarshal := func(v interface{}) string {
+		b, err := json.Marshal(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(b)
+	}
+
+	files, err := readFileTree("prom-repo-tree.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"Languages":[{"Name":"Go","TotalBytes":140,"Type":"programming"},{"Name":"YAML","TotalBytes":28,"Type":"data"},{"Name":"HTML","TotalBytes":28,"Type":"markup"},{"Name":"Markdown","TotalBytes":10,"Type":"prose"},{"Name":"CSS","TotalBytes":4,"Type":"markup"},{"Name":"JavaScript","TotalBytes":3,"Type":"programming"},{"Name":"JSON","TotalBytes":2,"Type":"data"},{"Name":"XML","TotalBytes":1,"Type":"data"},{"Name":"Text","TotalBytes":1,"Type":"prose"},{"Name":"Shell","TotalBytes":1,"Type":"programming"},{"Name":"SVG","TotalBytes":1,"Type":"data"},{"Name":"Protocol Buffer","TotalBytes":1,"Type":"markup"},{"Name":"Makefile","TotalBytes":1,"Type":"programming"},{"Name":"Dockerfile","TotalBytes":1,"Type":"data"}]}`
+	got, err := Get(context.Background(), files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mustMarshal(got) != want {
+		t.Errorf("did not match golden\ngot:  %s\nwant: %s", mustMarshal(got), want)
+	}
+}
+
+func readFileTree(name string) ([]os.FileInfo, error) {
+	file, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	var files []os.FileInfo
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		files = append(files, fi{scanner.Text(), "a"})
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return files, nil
 }
