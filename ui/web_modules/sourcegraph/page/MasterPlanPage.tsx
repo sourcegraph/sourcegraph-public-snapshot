@@ -272,7 +272,7 @@ export function MasterPlanPage(): JSX.Element {
 					<li>When evaluating a library, you can see how many people are actively using it, what APIs they’re calling, what other libraries they’re using alongside it, etc., to make the best decision about which library to use.</li>
 				</List>
 				<p>
-					We’ll build open-source tools and open APIs to make these data and features accessible to every developer, in every environment, in every workflow. Code hosts, monitoring tools, cloud providers, etc., will also be able to enhance their own products by using and adding to the global graph graph.
+					We’ll build open-source tools and open APIs to make these data and features accessible to every developer, in every environment, in every workflow. Code hosts, monitoring tools, cloud providers, etc., will also be able to enhance their own products by using and adding to the global code graph.
 				</p>
 				<p>
 					The global code graph is inevitable and universally beneficial, and there are many important things to get right:
