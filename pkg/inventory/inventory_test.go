@@ -22,14 +22,6 @@ func TestScan(t *testing.T) {
 			},
 			want: &Inventory{},
 		},
-		"excludes": {
-			files: []fi{
-				fi{"a.min.js", "a"},
-				fi{"node_modules/a/b.js", "a"},
-				fi{"Godeps/_workspace/src/a/b.go", "a"},
-			},
-			want: &Inventory{},
-		},
 		"java": {
 			files: []fi{fi{"a.java", "a"}},
 			want: &Inventory{
@@ -146,7 +138,7 @@ func TestGetGolden(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := `{"Languages":[{"Name":"Go","TotalBytes":140,"Type":"programming"},{"Name":"YAML","TotalBytes":28,"Type":"data"},{"Name":"HTML","TotalBytes":28,"Type":"markup"},{"Name":"Markdown","TotalBytes":10,"Type":"prose"},{"Name":"CSS","TotalBytes":4,"Type":"markup"},{"Name":"JavaScript","TotalBytes":3,"Type":"programming"},{"Name":"JSON","TotalBytes":2,"Type":"data"},{"Name":"XML","TotalBytes":1,"Type":"data"},{"Name":"Text","TotalBytes":1,"Type":"prose"},{"Name":"Shell","TotalBytes":1,"Type":"programming"},{"Name":"SVG","TotalBytes":1,"Type":"data"},{"Name":"Protocol Buffer","TotalBytes":1,"Type":"markup"},{"Name":"Makefile","TotalBytes":1,"Type":"programming"},{"Name":"Dockerfile","TotalBytes":1,"Type":"data"}]}`
+	want := `{"Languages":[{"Name":"Go","TotalBytes":1505,"Type":"programming"},{"Name":"Markdown","TotalBytes":38,"Type":"prose"},{"Name":"YAML","TotalBytes":29,"Type":"data"},{"Name":"HTML","TotalBytes":28,"Type":"markup"},{"Name":"GAS","TotalBytes":26,"Type":"programming"},{"Name":"Protocol Buffer","TotalBytes":25,"Type":"markup"},{"Name":"JavaScript","TotalBytes":16,"Type":"programming"},{"Name":"CSS","TotalBytes":10,"Type":"markup"},{"Name":"Perl","TotalBytes":9,"Type":"programming"},{"Name":"JSON","TotalBytes":5,"Type":"data"},{"Name":"Shell","TotalBytes":4,"Type":"programming"},{"Name":"Text","TotalBytes":3,"Type":"prose"},{"Name":"SVG","TotalBytes":2,"Type":"data"},{"Name":"INI","TotalBytes":2,"Type":"data"},{"Name":"XML","TotalBytes":1,"Type":"data"},{"Name":"Python","TotalBytes":1,"Type":"programming"},{"Name":"Makefile","TotalBytes":1,"Type":"programming"},{"Name":"Dockerfile","TotalBytes":1,"Type":"data"},{"Name":"C","TotalBytes":1,"Type":"programming"}]}`
 	got, err := Get(context.Background(), files)
 	if err != nil {
 		t.Fatal(err)

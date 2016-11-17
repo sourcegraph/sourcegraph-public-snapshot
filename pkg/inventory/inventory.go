@@ -37,9 +37,13 @@ func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	langs := map[string]uint64{}
 
 	for _, file := range files {
-		if filelang.IsVendored(file.Name(), file.IsDir()) {
-			continue
-		}
+		// NOTE: We used to skip vendored files, but the
+		// filelang.IsVendored function is slow (benchmark goes from
+		// 160ms to 0.5ms without the check). Currently Inventory is
+		// just used to determine which languages are in a repo, the
+		// relative usage (TotalBytes) is not exposed or used. So
+		// including vendored files should be fine for the aggregate
+		// stats.
 		matchedLangs := byFilename(file.Name())
 		if len(matchedLangs) > 0 {
 			langs[matchedLangs[0].Name] += uint64(file.Size())
