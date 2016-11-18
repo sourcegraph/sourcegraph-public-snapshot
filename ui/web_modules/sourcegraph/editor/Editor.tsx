@@ -70,6 +70,7 @@ export class Editor implements IDisposable {
 	private _editor: IStandaloneCodeEditor;
 	private _editorService: EditorService;
 	private _toDispose: IDisposable[] = [];
+	private _disposed: boolean = false;
 	private _initializedModes: Set<string> = new Set();
 	private _elementUnderMouse: Element;
 
@@ -276,6 +277,11 @@ export class Editor implements IDisposable {
 				const translatedLocs: Location[] = locs
 					.filter((loc) => Object.keys(loc).length !== 0)
 					.map(lsp.toMonacoLocation);
+
+				if (this._disposed) {
+					defCache.delete(key);
+					return null; // need to return null, otherwise vscode errors internally
+				}
 				return translatedLocs;
 			});
 
@@ -402,6 +408,7 @@ export class Editor implements IDisposable {
 	}
 
 	public dispose(): void {
+		this._disposed = true;
 		this._editor.dispose();
 		this._toDispose.forEach(disposable => {
 			disposable.dispose();
