@@ -385,7 +385,7 @@ export class Editor implements IDisposable {
 		}
 		const el = (this._elementUnderMouse as any);
 		// Make sure the mouse is still under the target word.
-		if (el.textContent === word.word) {
+		if (el && el.textContent === word.word) {
 			// Ensure tokens that don't identifier class but do have hover info get a pointer cursor.
 			el.style.cursor = "pointer";
 		}
