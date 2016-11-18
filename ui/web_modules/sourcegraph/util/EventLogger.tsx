@@ -196,7 +196,7 @@ class EventLoggerClass {
 	}
 
 	updateTrackerWithIdentificationProps(): any {
-		if (!this._telligent) {
+		if (!this._telligent || !context.hasChromeExtensionInstalled()) {
 			return null;
 		}
 
