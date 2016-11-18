@@ -13,7 +13,7 @@ var writeKey = os.Getenv("HONEYCOMB_TEAM")
 
 // Enabled returns true if honeycomb has been configured to run.
 func Enabled() bool {
-	return writeKey == ""
+	return writeKey != ""
 }
 
 // Event creates an event for logging to dataset. Event.Send will only work if
