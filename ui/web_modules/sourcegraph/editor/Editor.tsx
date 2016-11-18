@@ -96,12 +96,13 @@ export class Editor implements IDisposable {
 
 		this._editorService = new EditorService();
 
+		let initialModel = createModel("", "text/plain");
 		this._editor = createStandaloneEditor(elem, {
 			// If we don't specify an initial model, Monaco will
 			// create this one anyway (but it'll try to call
 			// window.monaco.editor.createModel, and we don't want to
 			// add any implicit dependency on window).
-			model: createModel("", "text/plain"),
+			model: initialModel,
 
 			readOnly: true,
 			automaticLayout: true,
@@ -130,8 +131,9 @@ export class Editor implements IDisposable {
 			const peekWidget = e.target.detail === "vs.editor.contrib.zoneWidget1";
 			const c = e.target.element.classList;
 			const ignoreToken = c.contains("delimeter") || c.contains("comment") || c.contains("view-line") || (c.length === 1 && c.contains("token"));
-			if (ignoreToken || peekWidget || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
+			if (ignoreToken || peekWidget || this._editor.getModel() === initialModel || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
 				(this._editor as any)._contextViewService.hideContextView();
+				return;
 			}
 
 			const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
