@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -66,7 +67,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 	start := time.Now()
 	success := true
 	mode := "unknown"
-	ev := libhoney.NewEvent()
+	ev := honey.Event("xlang")
 	defer func() {
 		duration := time.Now().Sub(start)
 		labels := prometheus.Labels{
@@ -76,7 +77,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		}
 		xlangRequestDuration.With(labels).Observe(duration.Seconds())
 
-		if sendToHoneyComb {
+		if honey.Enabled() {
 			ev.AddField("success", err == nil && success)
 			ev.AddField("method", method)
 			ev.AddField("mode", mode)
@@ -232,20 +233,5 @@ func addRootPathFields(ev *libhoney.Event, u *uri.URI) {
 		if i > 0 {
 			ev.AddField("repo_org", u.Path[1:i+1])
 		}
-	}
-}
-
-var sendToHoneyComb bool
-
-func init() {
-	// We are experimenting with honeycomb.io to store more detailed data
-	// w.r.t. xlang. If we start to use honeycomb more, we should
-	// centralize this setup.
-	if writeKey := os.Getenv("HONEYCOMB_TEAM"); writeKey != "" {
-		sendToHoneyComb = true
-		libhoney.Init(libhoney.Config{
-			WriteKey: writeKey,
-			Dataset:  "xlang", // Currently only have the xlang dataset
-		})
 	}
 }

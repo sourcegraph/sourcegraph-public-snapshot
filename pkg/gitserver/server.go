@@ -11,6 +11,7 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/neelance/chanrpc"
 	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -71,7 +73,9 @@ func (s *Server) processRequests(requests <-chan *request) {
 // handleExecRequest handles a exec request.
 func (s *Server) handleExecRequest(req *execRequest) {
 	start := time.Now()
-	status := ""
+	exitStatus := -10810 // sentinel value to indicate not set
+	var status string
+	var errStr string
 
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
@@ -85,8 +89,22 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		}
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
+			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd, repo).Dec()
-			execDuration.WithLabelValues(cmd, repo, status).Observe(time.Since(start).Seconds())
+			execDuration.WithLabelValues(cmd, repo, status).Observe(duration.Seconds())
+			// Only log to honeycomb if we have the repo to reduce noise
+			if ranGit := exitStatus != -10810; ranGit && honey.Enabled() {
+				ev := honey.Event("gitserver-exec")
+				ev.AddField("repo", req.Repo)
+				ev.AddField("cmd", cmd)
+				ev.AddField("args", strings.Join(req.Args, " "))
+				ev.AddField("duration_ms", duration.Seconds()*1000)
+				ev.AddField("exit_status", exitStatus)
+				if errStr != "" {
+					ev.AddField("error", errStr)
+				}
+				ev.Send()
+			}
 		}()
 	}
 
@@ -123,8 +141,6 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		ProcessResult: processResultChan,
 	}
 
-	var errStr string
-	var exitStatus int
 	if err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
 		errStr = err.Error()
 	}
