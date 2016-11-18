@@ -34,6 +34,7 @@ if (context.sentryDSN) {
 			"Script error.",
 		],
 		ignoreUrls: [
+			/fullstory\.com/i,
 			// Facebook flakiness
 			/graph\.facebook\.com/i,
 			// Facebook blocked
