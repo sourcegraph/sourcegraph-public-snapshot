@@ -11,7 +11,7 @@ interface Props {
 }
 
 export const Symbol = (props: Props) => {
-	const sx = Object.assign({},
+	const sx = Object.assign(
 		{
 			display: "inline",
 			verticalAlign: "middle",

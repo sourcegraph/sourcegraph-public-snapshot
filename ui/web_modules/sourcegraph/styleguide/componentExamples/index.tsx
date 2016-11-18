@@ -14,3 +14,4 @@ export {FormsComponent} from "sourcegraph/styleguide/componentExamples/FormsComp
 export {ListComponent} from "sourcegraph/styleguide/componentExamples/ListComponent";
 export {Symbols} from "sourcegraph/styleguide/componentExamples/Symbols";
 export {UserComponent} from "sourcegraph/styleguide/componentExamples/UserComponent";
+export {RepositoryComponent} from "sourcegraph/styleguide/componentExamples/RepositoryComponent";

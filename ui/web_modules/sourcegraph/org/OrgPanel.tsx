@@ -2,8 +2,8 @@ import * as React from "react";
 import {InjectedRouter} from "react-router";
 import {Org, OrgMember} from "sourcegraph/api";
 import {context} from "sourcegraph/app/context";
-import {Loader} from "sourcegraph/components";
 import {setLocationModalState} from "sourcegraph/components/Modal";
+import {Spinner} from "sourcegraph/components/symbols";
 import {whitespace} from "sourcegraph/components/utils/whitespace";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import {Location} from "sourcegraph/Location";
@@ -97,10 +97,7 @@ export class OrgPanel extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		let {members} = this.props;
 		if (!members) {
-			return <div style={{padding: whitespace[4]}}>
-				<div>Loading organization members</div>
-				<span><Loader/></span>
-			</div>;
+			return <div style={{padding: whitespace[4]}}><Spinner /> Loading organization members</div>;
 		}
 		return <div>
 				<OrgInviteModal onInvite={this._onInviteUser.bind(this)} member={this.state.selectedMember || null} org={this.props.org} location={this.props.location}/>

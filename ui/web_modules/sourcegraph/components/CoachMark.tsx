@@ -30,7 +30,7 @@ export function CoachMark ({
 			"100%": { boxShadow: `${baseShadow}, ${pulseShadowFinish}` },
 	});
 
-	const sx = gStyle(Object.assign({},
+	const sx = gStyle(Object.assign(
 		{
 			animation: active ? `${bounce} 2.5s infinite` : "",
 			background: colors[color](),

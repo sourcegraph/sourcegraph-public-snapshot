@@ -54,11 +54,7 @@ export class TreeList extends React.Component<Props, {}> {
 			</Link>
 		));
 
-		const sx = Object.assign({},
-			typography.size[5],
-		);
-
-		return <Panel style={sx}>
+		return <Panel style={typography.size[5]}>
 			<div style={{padding: 3, marginBottom: 3}}>
 				<Heading level={7} color="gray"
 					style={{

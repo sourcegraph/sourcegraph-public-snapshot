@@ -64,7 +64,7 @@ interface Props { style: React.CSSProperties; }
 
 export function Boom({style}: Props): JSX.Element {
 	const particles = generateParticles(getRandomInt(20, 25));
-	const sx = Object.assign({},
+	const sx = Object.assign(
 		{	position: "relative" },
 		style,
 	);

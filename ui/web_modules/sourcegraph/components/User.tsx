@@ -11,14 +11,14 @@ interface Props {
 	simple?: boolean;
 }
 
-const sx = Object.assign({},
+const sx = Object.assign(
 	{
 		color: colors.coolGray3(),
 	},
 	typography.size[7],
 );
 
-export const User = (props: Props): any => {
+export function User(props: Props): JSX.Element {
 	const {
 		avatar,
 		email,
@@ -27,16 +27,15 @@ export const User = (props: Props): any => {
 		style,
 	} = props;
 
-	return <div
-		style={style}>
-			<FlexContainer items="center">
-				<div style={{marginRight: simple ? whitespace[2] : whitespace[3], marginTop: whitespace[1], float: "left", lineHeight: 0}}>
-					<Avatar img={avatar} size={ simple ? "small" : "medium" } />
-				</div>
-				<div>
-					<div>{nickname}</div>
-					{ !simple && <div style={sx}>{email}</div> }
-				</div>
-			</FlexContainer>
-		</div>;
+	return <div style={style}>
+		<FlexContainer items="center">
+			<div style={{marginRight: simple ? whitespace[2] : whitespace[3], marginTop: whitespace[1], float: "left", lineHeight: 0}}>
+				<Avatar img={avatar} size={ simple ? "small" : "medium" } />
+			</div>
+			<div>
+				<div>{nickname}</div>
+				{ !simple && <div style={sx}>{email}</div> }
+			</div>
+		</FlexContainer>
+	</div>;
 };

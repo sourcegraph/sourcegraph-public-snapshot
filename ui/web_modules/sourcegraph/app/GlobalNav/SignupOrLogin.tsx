@@ -7,7 +7,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 
 export const SignupOrLogin = (props): JSX.Element => {
 
-	const sx = Object.assign({},
+	const sx = Object.assign(
 		{
 			textAlign: "center",
 			display: "inline-block",

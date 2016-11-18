@@ -6,8 +6,7 @@ import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggl
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import {ChevronDown} from "sourcegraph/components/symbols/Zondicons";
-import {colors} from "sourcegraph/components/utils";
-import {whitespace} from "sourcegraph/components/utils/index";
+import {colors, whitespace} from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {EventLogger} from "sourcegraph/util/EventLogger";
 
@@ -35,7 +34,7 @@ export const UserMenu = (props): JSX.Element => {
 					</div>
 					<div>{props.user.Login}</div>
 					<hr role="divider" className={base.mv3} />
-					<Link to="/settings" role="menu_item">Settings</Link>
+					<Link to="/settings" role="menu_item">Organization settings</Link>
 					<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location}	onToggle={(v) => v && AnalyticsConstants.Events.ToolsModal_Initiated.logEvent({page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV})}>
 						Browser extensions
 					</LocationStateToggleLink>

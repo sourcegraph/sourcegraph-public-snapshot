@@ -29,7 +29,7 @@ export const Heading = (props: Props): any => {
 		gray: colors.coolGray3(),
 	};
 
-	const sx = Object.assign({},
+	const sx = Object.assign(
 		{
 			color: headingColors[props.color],
 			fontWeight: typography.weight[2],

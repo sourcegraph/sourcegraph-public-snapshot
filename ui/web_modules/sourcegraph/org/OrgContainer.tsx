@@ -129,7 +129,7 @@ export class OrgContainer extends Container<Props, State> {
 
 		return (
 			<div>
-				<PageTitle title="Organizations" />
+				<PageTitle title="Organization settings" />
 				<div style={{marginTop: whitespace[2]}}>
 					{(!this._hasOrgs()) ? this._noRepoPanel() :
 						<GridRow>

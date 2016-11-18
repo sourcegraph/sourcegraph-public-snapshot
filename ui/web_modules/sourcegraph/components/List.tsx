@@ -8,12 +8,12 @@ interface Props {
 }
 
 export function List({children, style, itemStyle}: Props): JSX.Element {
-	const sx = Object.assign({},
+	const sx = Object.assign(
 		{	paddingLeft: whitespace[4] },
 		style,
 	);
 
-	const itemSx = Object.assign({},
+	const itemSx = Object.assign(
 		{ marginBottom: whitespace[3] },
 		itemStyle,
 	);

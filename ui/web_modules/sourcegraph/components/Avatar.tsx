@@ -5,9 +5,11 @@ const PLACEHOLDER_IMAGE = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
 interface Props {
 	img?: string;
 	size: "tiny" | "small" | "medium" | "large";
+	style?: React.CSSProperties;
+	title?: string;
 }
 
-export function Avatar({size, img}: Props): JSX.Element {
+export function Avatar({img, size, style, title}: Props): JSX.Element {
 
 	let avatarSize;
 
@@ -26,13 +28,16 @@ export function Avatar({size, img}: Props): JSX.Element {
 			break;
 	}
 
-	const sx = {
-		borderRadius: "50%",
-		display: "inline-block",
-		width: avatarSize,
-		height: avatarSize,
-	};
+	const sx = Object.assign(
+		{
+			borderRadius: "50%",
+			display: "inline-block",
+			width: avatarSize,
+			height: avatarSize,
+		},
+		style,
+	);
 
-	return <img style={sx} src={img || PLACEHOLDER_IMAGE} />;
+	return <img style={sx} src={img || PLACEHOLDER_IMAGE} title={title} />;
 
 };

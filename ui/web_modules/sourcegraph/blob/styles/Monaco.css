@@ -1,8 +1,5 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
-@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
-
-@value navbarZIndex from GlobalNav;
 
 @value c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_20, c_black_10, c_purple from colors;
 
@@ -25,7 +22,7 @@
 
 /* Display hover tooltips above global nav. */
 :global .monaco-editor .monaco-editor-hover {
-	z-index: calc(navbarZIndex + 1);
+	z-index: 101;
 	box-sizing: content-box;
 }
 
@@ -330,4 +327,3 @@
 
 :global div.monaco-editor.vs-dark .token.interpolation.jade,
 :global div.monaco-editor.vs-dark .token.interpolation.delimiter.jade { color: magenta; }
-

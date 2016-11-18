@@ -17,7 +17,7 @@ export function ContextMenuIcon ({
 
 	return <div onClick={onClick}
 		{...hover({transform: "scale(1.15)", color: "white"})}
-		{...gStyle(Object.assign({},
+		{...gStyle(Object.assign(
 			{
 				backgroundColor: color,
 				borderRadius: 3,

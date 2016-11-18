@@ -1,7 +1,6 @@
 import * as React from "react";
 import {Link} from "react-router";
 import {Affix, FlexContainer, Heading, Hero, TabItem, Tabs} from "sourcegraph/components";
-import * as base from "sourcegraph/components/styles/_base.css";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {ComponentsContainer} from "sourcegraph/styleguide/ComponentsContainer";
 import * as styles from "sourcegraph/styleguide/styles/StyleguideContainer.css";
@@ -9,38 +8,42 @@ import * as styles from "sourcegraph/styleguide/styles/StyleguideContainer.css";
 export class StyleguideContainer extends React.Component<{}, any> {
 
 	render(): JSX.Element | null {
+
+		const navHeadingSx = {
+			marginLeft: whitespace[3],
+			paddingLeft: whitespace[1],
+			marginTop: whitespace[4],
+		};
+
 		return (
 			<div className={styles.bg_near_white}>
 				<Hero color="purple" pattern="objects">
 					<Heading level={2} color="white">The Graph Guide</Heading>
-					<p style={{maxWidth: "560px"}} className={base.center}>
+					<p style={{
+						marginLeft: "auto",
+						marginRight: "auto",
+						maxWidth: 560,
+						textAlign: "center",
+					}}>
 						Welcome to the Graph Guide – a living guide to Sourcegraph's brand identity, voice, visual style, and approach to user experience and user interfaces.
 					</p>
 				</Hero>
 				<FlexContainer className={styles.container_fixed}>
-					<Affix offset={20} style={{flex: "0 0 240px"}} className={base.orderlast}>
-						<Tabs direction="vertical" color="purple" className={base.ml5}>
+					<Affix offset={20} style={{flex: "0 0 240px", order: 9999}}>
+						<Tabs direction="vertical" color="purple" style={{marginLeft: whitespace[5]}}>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#principles"}}>Principles</Link>
 							</TabItem>
 
-							<Heading level={6} style={{marginLeft: whitespace[3]}}>Brand</Heading>
+							<Heading level={7} style={navHeadingSx}>Brand</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#brand-voice"}}>Voice</Link>
 							</TabItem>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#brand-logo"}}>Logo and Logotype</Link>
 							</TabItem>
-							{/* <TabItem>Colors</TabItem>
-							<TabItem>Typography</TabItem>}
 
-							{/*  <Heading level={6} style={{marginLeft: whitespace[3]}}>Utilities</Heading>
-							<TabItem>Padding</TabItem>
-							<TabItem>Margin</TabItem>
-							<TabItem>Colors</TabItem>
-							<TabItem>Layout</TabItem>*/}
-
-							<Heading level={6} style={{marginLeft: whitespace[3]}}>Layout Components</Heading>
+							<Heading level={7} style={navHeadingSx}>Layout Components</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#layout-flexcontainer"}}>FlexContainer</Link>
 							</TabItem>
@@ -48,7 +51,7 @@ export class StyleguideContainer extends React.Component<{}, any> {
 								<Link to={{pathname: "styleguide", search: "#layout-affix"}}>Affix</Link>
 							</TabItem>
 
-							<Heading level={6} style={{marginLeft: whitespace[3]}}>UI Components</Heading>
+							<Heading level={7} style={navHeadingSx}>UI Components</Heading>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-buttons"}}>Buttons</Link>
 							</TabItem>
@@ -81,6 +84,9 @@ export class StyleguideContainer extends React.Component<{}, any> {
 							</TabItem>
 							<TabItem>
 								<Link to={{pathname: "styleguide", search: "#components-user"}}>User</Link>
+							</TabItem>
+							<TabItem>
+								<Link to={{pathname: "styleguide", search: "#components-repository-card"}}>Repository Card</Link>
 							</TabItem>
 						</Tabs>
 					</Affix>

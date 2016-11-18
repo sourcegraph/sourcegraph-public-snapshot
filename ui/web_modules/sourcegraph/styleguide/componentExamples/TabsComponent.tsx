@@ -170,7 +170,7 @@ export class TabsComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level={4} className={classNames(base.mt5, base.mb3)}>Tabs Properties</Heading>
+				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Tabs Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>
@@ -205,7 +205,7 @@ export class TabsComponent extends React.Component<{}, State> {
 						</tbody>
 					</Table>
 				</Panel>
-				<Heading level={4} className={classNames(base.mt5, base.mb3)}>TabItem Properties</Heading>
+				<Heading level={6} className={classNames(base.mt5, base.mb3)}>TabItem Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{width: "100%"}}>
 						<thead>

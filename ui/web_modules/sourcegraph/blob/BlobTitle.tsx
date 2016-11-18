@@ -28,7 +28,7 @@ const sx = {
 	padding: `${whitespace[2]} ${whitespace[3]}`,
 };
 
-const subSx = Object.assign({},
+const subSx = Object.assign(
 	{ color: colors.coolGray3() },
 	typography.size[7],
 );
@@ -37,7 +37,7 @@ const subHover = {
 	color: `${colors.coolGray4()} !important`,
 };
 
-const toastSx = Object.assign({},
+const toastSx = Object.assign(
 	{
 		color: colors.orange(),
 		marginTop: "auto",

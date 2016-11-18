@@ -26,7 +26,7 @@ export function Annotation ({
 	annotationPosition = "right",
 }: Props): JSX.Element {
 
-	const sx = gStyle(Object.assign({},
+	const sx = gStyle(Object.assign(
 		{ position: "relative" },
 		containerStyle,
 	));
@@ -36,7 +36,7 @@ export function Annotation ({
 		leftOffset = (tooltipStyle && tooltipStyle["width"]) ? "-" + tooltipStyle["width"] : "-350px";
 	}
 
-	const tooltipSx = Object.assign({},
+	const tooltipSx = Object.assign(
 		{
 			position: "absolute",
 			opacity: open ? 1 : 0,

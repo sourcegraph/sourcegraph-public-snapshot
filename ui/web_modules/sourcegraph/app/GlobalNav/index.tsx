@@ -1,7 +1,7 @@
+import {hover, keyframes} from "glamor";
 import * as React from "react";
 import {Link} from "react-router";
 import {InjectedRouter} from "react-router";
-
 import {context} from "sourcegraph/app/context";
 import "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
 import {GlobalNavStore, SetQuickOpenVisible} from "sourcegraph/app/GlobalNav/GlobalNavStore";
@@ -10,8 +10,7 @@ import {SignupOrLogin} from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import {UserMenu} from "sourcegraph/app/GlobalNav/UserMenu";
 import {BetaSignup, Login, Signup} from "sourcegraph/app/modals/index";
 import {isRootRoute} from "sourcegraph/app/routePatterns";
-import * as styles from "sourcegraph/app/styles/GlobalNav.css";
-import {FlexContainer, Logo} from "sourcegraph/components";
+import {FlexContainer, Logo, TabItem, Tabs} from "sourcegraph/components";
 import {colors, layout} from "sourcegraph/components/utils";
 import {whitespace} from "sourcegraph/components/utils/index";
 import {Container} from "sourcegraph/Container";
@@ -94,8 +93,14 @@ export class GlobalNav extends Container<Props, State> {
 			boxShadow: `${colors.coolGray3(0.1)} 0px 1px 6px 0px`,
 			display: shouldHide ? "none" : "block",
 			zIndex: 100,
-			padding: `${whitespace[1]} ${whitespace[2]}`,
+			paddingLeft: whitespace[2],
+			paddingRight: whitespace[2],
 		};
+
+		const logoSpin = keyframes({
+			"50%": { transform: "rotate(180deg) scale(1.2)" },
+			"100%": { transform: "rotate(180deg) scale(1)" },
+		});
 
 		let modal = <div />;
 		if (location.state) {
@@ -117,12 +122,20 @@ export class GlobalNav extends Container<Props, State> {
 			{modal}
 
 			<FlexContainer justify="between" items="center">
-				<Link to="/" style={{lineHeight: "0"}}>
-					<div style={{padding: whitespace[2]}}>
-						<Logo className={styles.logomark}
-						width="20px" />
-					</div>
-				</Link>
+				<FlexContainer items="center">
+					<Link to="/" style={{lineHeight: 0}}>
+						<div style={{padding: whitespace[2], display: "inline-block"}}>
+							<div {...hover({ animation: `${logoSpin} 0.5s ease-in-out 1` })}>
+								<Logo	width="20px" />
+							</div>
+						</div>
+					</Link>
+					<Tabs style={{display: "inline-block", borderBottom: 0 }}>
+						<Link to="/" style={{outline: "none"}}>
+							<TabItem active={isRootRoute(location)}>My repositories</TabItem>
+						</Link>
+					</Tabs>
+				</FlexContainer>
 
 				<QuickOpenModal repo={repo} rev={rev}
 					showModal={this.state.showSearch}

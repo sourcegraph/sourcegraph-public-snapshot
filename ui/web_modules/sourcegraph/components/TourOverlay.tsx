@@ -52,8 +52,7 @@ const closeSx = {
 	paddingTop: whitespace[3],
 };
 
-const actionSx = Object.assign({},
-	typography.size[6],
+const actionSx = Object.assign(
 	{
 		backgroundColor: colors.blue(),
 		color: colors.white(),
@@ -62,6 +61,7 @@ const actionSx = Object.assign({},
 		paddingBottom: whitespace[3],
 		width: 240,
 	},
+	typography.size[6],
 );
 
 const headerSx = {
@@ -74,12 +74,12 @@ const headerSx = {
 	paddingBottom: whitespace[2],
 };
 
-const p = Object.assign({},
-	typography.size[6],
+const p = Object.assign(
 	{
 		width: 270,
 		color: colors.text(),
 	},
+	typography.size[6],
 );
 
 const flagSx = {
