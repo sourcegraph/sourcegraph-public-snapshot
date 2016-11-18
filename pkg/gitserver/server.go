@@ -75,7 +75,20 @@ func (s *Server) handleExecRequest(req *execRequest) {
 
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
-	defer func() { observeExec(req, start, status) }()
+
+	// Instrumentation
+	{
+		repo := repotrackutil.GetTrackedRepo(req.Repo)
+		cmd := ""
+		if len(req.Args) > 0 {
+			cmd = req.Args[0]
+		}
+		execRunning.WithLabelValues(cmd, repo).Inc()
+		defer func() {
+			execRunning.WithLabelValues(cmd, repo).Dec()
+			execDuration.WithLabelValues(cmd, repo, status).Observe(time.Since(start).Seconds())
+		}()
+	}
 
 	dir := path.Join(s.ReposDir, req.Repo)
 	s.cloningMu.Lock()
@@ -131,6 +144,12 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	status = strconv.Itoa(exitStatus)
 }
 
+var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "gitserver",
+	Name:      "exec_running",
+	Help:      "number of gitserver.Command running concurrently.",
+}, []string{"cmd", "repo"})
 var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",
@@ -140,16 +159,8 @@ var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 }, []string{"cmd", "repo", "status"})
 
 func init() {
+	prometheus.MustRegister(execRunning)
 	prometheus.MustRegister(execDuration)
-}
-
-func observeExec(req *execRequest, start time.Time, status string) {
-	repo := repotrackutil.GetTrackedRepo(req.Repo)
-	cmd := ""
-	if len(req.Args) > 0 {
-		cmd = req.Args[0]
-	}
-	execDuration.WithLabelValues(cmd, repo, status).Observe(time.Since(start).Seconds())
 }
 
 // handleSearchRequest handles a search request.
