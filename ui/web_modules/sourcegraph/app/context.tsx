@@ -10,6 +10,7 @@ class Context {
 	emails: EmailAddrList | null;
 	gitHubToken: ExternalToken | null;
 	googleToken: ExternalToken | null;
+	sentryDSN: string;
 	intercomHash: string;
 
 	appURL: string; // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)

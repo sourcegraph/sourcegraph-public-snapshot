@@ -21,6 +21,8 @@ import (
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
+var sentryDSNFrontend = os.Getenv("SENTRY_DSN_FRONTEND")
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
@@ -36,6 +38,7 @@ type JSContext struct {
 	Emails            *sourcegraph.EmailAddrList `json:"emails"`
 	GitHubToken       *sourcegraph.ExternalToken `json:"gitHubToken"`
 	GoogleToken       *sourcegraph.ExternalToken `json:"googleToken"`
+	SentryDSN         string                     `json:"sentryDSN"`
 	IntercomHash      string                     `json:"intercomHash"`
 }
 
@@ -96,6 +99,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		},
 		GitHubToken:  gitHubToken,
 		GoogleToken:  googleToken,
+		SentryDSN:    sentryDSNFrontend,
 		IntercomHash: intercomHMAC(actor.UID),
 	}, nil
 }

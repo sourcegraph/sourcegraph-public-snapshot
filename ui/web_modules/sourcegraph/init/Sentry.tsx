@@ -2,11 +2,10 @@
 import * as Raven from "raven-js";
 import {context} from "sourcegraph/app/context";
 
-if (typeof global.window !== "undefined" && global.window._sentryRavenDSN) {
+if (context.sentryDSN) {
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
 	let opt = {
 		release: context.buildVars && context.buildVars.Version,
-		tags: global.window._sentryTags,
 		// Will cause a deprecation warning, but the demise of `ignoreErrors` is still under discussion.
 		// See: https://github.com/getsentry/raven-js/issues/73
 		ignoreErrors: [
@@ -51,5 +50,11 @@ if (typeof global.window !== "undefined" && global.window._sentryRavenDSN) {
 			/metrics\.itunes\.apple\.com\.edgesuite\.net\//i,
 		],
 	};
-	Raven.config(global.window._sentryRavenDSN, opt).install();
+	Raven.config(context.sentryDSN, opt).install();
+	if (context.user) {
+		Raven.setUserContext({
+			id: context.user.UID,
+			username: context.user.Login,
+		});
+	}
 }
