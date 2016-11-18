@@ -305,7 +305,7 @@ class EventLoggerClass {
 
 	_dedupedArray(inputArray: Array<string>): Array<string> {
 		return inputArray.filter(function (elem: string, index: number, self: any): any {
-			return index === self.indexOf(elem);
+			return elem && (index === self.indexOf(elem));
 		});
 	}
 

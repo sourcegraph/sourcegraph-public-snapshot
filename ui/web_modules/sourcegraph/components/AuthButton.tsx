@@ -42,7 +42,7 @@ export function AuthButton(props: Props): JSX.Element {
 		size,
 		className,
 		tabIndex,
-		pageName,
+		pageName = "",
 		img = true,
 		style,
 		children,
