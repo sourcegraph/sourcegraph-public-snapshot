@@ -43,7 +43,6 @@ const plugins = [
 if (production) {
 	plugins.push(
 		new webpack.optimize.OccurrenceOrderPlugin(),
-		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
 			sourceMap: true,
 		})
