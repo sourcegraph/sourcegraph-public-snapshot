@@ -169,6 +169,7 @@ export const Events = {
 	CodeExternalReferences_Viewed:              new LoggableEvent("ClickedViewExternalReferences", EventCategories.CodeView, EventActions.Click),
 	CodeToken_Hovered:                          new LoggableEvent("Hovering", EventCategories.CodeView, EventActions.Hover),
 	CodeToken_Clicked:                          new LoggableEvent("BlobTokenClicked", EventCategories.CodeView, EventActions.Click),
+	OpenInCodeHost_Clicked:                     new LoggableEvent("OpenInCodeHostClicked", EventCategories.CodeView, EventActions.Click),
 
 	// Quick open/search
 	QuickopenItem_Selected:                     new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),

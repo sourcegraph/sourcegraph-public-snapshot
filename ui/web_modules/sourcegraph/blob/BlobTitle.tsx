@@ -10,6 +10,7 @@ import {whitespace} from "sourcegraph/components/utils/index";
 import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
 import {urlToRepo} from "sourcegraph/repo/routes";
 import {urlToTree} from "sourcegraph/tree/routes";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import {getPathExtension, supportedExtensions} from "sourcegraph/util/supportedExtensions";
 
 interface Props {
@@ -125,6 +126,7 @@ export function BlobTitle({
 							routeParams={routeParams} />
 						<a href={gitHubURL()} style={{paddingLeft: whitespace[3], color: colors.white(), display: "flex"}} onClick={(e) => {
 							e.preventDefault();
+							AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({repo, rev, path});
 							window.location.href = gitHubURL();
 						}}>
 							<GitHubIcon style={{alignItems: "center"}}/>
