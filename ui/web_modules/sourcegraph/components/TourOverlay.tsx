@@ -236,6 +236,9 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 	_coachmarksShouldUpdate(): void {
 		let {visibleMarks} = this.state;
+		if (!this._coachmarks) {
+			return;
+		}
 		this._coachmarks.map((coachmark, index) => {
 			// Remove the element if the coachmark should not be displayed.
 			if (visibleMarks.indexOf(coachmark.markIndex) === -1) {
