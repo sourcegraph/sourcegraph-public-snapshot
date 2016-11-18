@@ -262,6 +262,9 @@ export class Container extends React.Component<Props, State> {
 		const results = categories[c];
 		if (results && results.Results) {
 			const result = results.Results[r];
+			if (!result) {
+				return;
+			}
 			const resultInfo = {
 				category: c,
 				rankInCategory: r,
