@@ -18,7 +18,7 @@ interface Props {
 
 export class TreeList extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
-		if (this.props.tree === null) {
+		if (!this.props.tree) {
 			return <Header
 					title="Not Found"
 					subtitle="Directory not found." />;
