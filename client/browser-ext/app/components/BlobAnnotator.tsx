@@ -59,7 +59,6 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 		this.isCommit = isCommit;
 		this.rev = rev;
 
-		EventLogger.logViewEvent("ViewBlobOnGitHub", props.path, this.eventLoggerProps());
 		if (this.isDelta) {
 			this.isSplitDiff = github.isSplitDiff();
 			const deltaRevs = github.getDeltaRevs();
