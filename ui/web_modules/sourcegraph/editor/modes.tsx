@@ -5,15 +5,19 @@ import "monaco-languages/out/monaco.contribution";
 import "monaco-typescript/out/monaco.contribution";
 
 export const modes = new Set<string>(["c", "go", "ruby", "javascript", "typescript", "python"]);
-export const modesToSearch = new Set<string>(["c", "go", "ruby", "typescript", "python"]); // exclude "JavaScript"; backend is the same as TypeScript
 
 export function languagesToSearchModes(languages: string[]): string[] {
-	const m: string[] = [];
+	const m = new Set<string>();
 	languages.forEach((language) => {
 		const mode = language.toLowerCase();
-		if (modesToSearch.has(mode)) {
-			m.push(mode);
+		if (modes.has(mode)) {
+			m.add(mode);
 		}
 	});
-	return m;
+
+	if (m.has("javascript") && m.has("typescript")) {
+		m.delete("javascript");
+	}
+
+	return Array.from(m);
 }
