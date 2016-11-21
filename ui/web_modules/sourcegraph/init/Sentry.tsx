@@ -32,6 +32,7 @@ if (context.sentryDSN) {
 			// Generic error code from errors outside the security sandbox
 			// You can delete this if using raven.js > 1.0, which ignores these automatically.
 			"Script error.",
+			"WeixinJSBridge",
 		],
 		ignoreUrls: [
 			/fullstory\.com/i,
