@@ -24,44 +24,44 @@ export function RepositoryComponent(): JSX.Element {
 						__typename: "",
 						httpCloneURL: "https://sourcegraph.com/github.com/golang/go",
 						vcsSyncedAt: "",
-					}}
+					} as GQL.IRemoteRepository}
 					contributors={[
 						{
-							AvatarURL: "https://avatars.githubusercontent.com/u/8691941?v=3",
-							UID: "8691941",
-							Login: "jamescuddy",
+							avatarURL: "https://avatars.githubusercontent.com/u/8691941?v=3",
+							login: "jamescuddy",
+							contributions: 5,
 						},
 						{
-							AvatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							UID: "8691941",
-							Login: "chexee",
+							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
+							login: "chexee",
+							contributions: 2,
 						},
 						{
-							AvatarURL: "https://avatars.githubusercontent.com/u/8691941?v=3",
-							UID: "8691941",
-							Login: "jamescuddy",
+							avatarURL: "https://avatars.githubusercontent.com/u/8691941?v=3",
+							login: "jamescuddy",
+							contributions: 5,
 						},
 						{
-							AvatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							UID: "8691941",
-							Login: "chexee",
+							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
+							login: "chexee",
+							contributions: 3,
 						},
 						{
-							AvatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							UID: "8691941",
-							Login: "chexee",
+							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
+							login: "chexee",
+							contributions: 2,
 						},
 						{
-							AvatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							UID: "8691941",
-							Login: "chexee",
+							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
+							login: "chexee",
+							contributions: 1,
 						},
 						{
-							AvatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							UID: "8691941",
-							Login: "chexee",
+							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
+							login: "chexee",
+							contributions: 4,
 						},
-					]} />
+					] as GQL.IContributor[]} />
 
 			</div>
 			<hr />

@@ -97,7 +97,7 @@ export class Repos extends React.Component<Props, {}> {
 			</FlexContainer>
 			<div>
 				{filteredRepos.length > 0 && filteredRepos.map((repo, i) => {
-					return <RepositoryCard repo={repo} key={i} style={{marginBottom: whitespace[3]}} />;
+					return <RepositoryCard contributors={repo.contributors} repo={repo} key={i} style={{marginBottom: whitespace[3]}} />;
 				})}
 			</div>
 			{context.gitHubToken && this._filterInput && this._filterInput.value && filteredRepos.length === 0 &&

@@ -5,6 +5,7 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
+	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -42,6 +43,22 @@ func (r *repositoryResolver) URI() string {
 
 func (r *repositoryResolver) Description() string {
 	return r.repo.Description
+}
+
+func (r *repositoryResolver) Contributors(ctx context.Context) ([]*contributorResolver, error) {
+	contribs, err := backend.Repos.ListContributors(ctx, r.repo, &gogithub.ListContributorsOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	var contribsResolver []*contributorResolver
+	for _, contrib := range contribs {
+		contribsResolver = append(contribsResolver, &contributorResolver{
+			contrib: contrib,
+		})
+	}
+
+	return contribsResolver, nil
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {

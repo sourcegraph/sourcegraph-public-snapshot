@@ -183,6 +183,12 @@ export interface CompletionOptions {
 	triggerCharacters?: string[];
 }
 
+export interface Contributor {
+	Login?: string;
+	AvatarURL?: string;
+	Contributions?: number;
+}
+
 export interface Def {
 	Repo?: string;
 	CommitID?: string;

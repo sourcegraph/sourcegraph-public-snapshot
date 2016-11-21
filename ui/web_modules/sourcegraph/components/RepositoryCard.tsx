@@ -1,11 +1,10 @@
 import * as React from "react";
 import {Link} from "react-router";
-import {User} from "sourcegraph/api/index";
 import {Avatar, FlexContainer, Heading, LanguageLabel, Panel} from "sourcegraph/components";
 import {colors, whitespace} from "sourcegraph/components/utils";
 
 interface Props {
-	contributors?: User[];
+	contributors?: GQL.IContributor[];
 	style?: React.CSSProperties;
 	repo: GQL.IRemoteRepository;
 }
@@ -18,7 +17,7 @@ export function RepositoryCard({style, repo, contributors}: Props): JSX.Element 
 	let contributorAvatars;
 	if (contributors && contributors.length > 0) {
 		contributorAvatars = contributors.slice(0, MAX_CONTRIBUTORS).map( (user, i) => {
-			return <Avatar size="tiny" img={user.AvatarURL} key={i} title={user.Login} style={{
+			return <Avatar size="tiny" img={user.avatarURL} key={i} title={user.login} style={{
 				marginRight: whitespace[2],
 				verticalAlign: "bottom",
 			}} />;

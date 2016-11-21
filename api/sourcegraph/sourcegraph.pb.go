@@ -211,6 +211,12 @@ type Repo struct {
 	Permissions *RepoPermissions `json:"Permissions,omitempty"`
 }
 
+type Contributor struct {
+	Login         string `json:"Login,omitempty"`
+	AvatarURL     string `json:"AvatarURL,omitempty"`
+	Contributions int    `json:"Contributions,omitempty"`
+}
+
 // RepoPermissions describes the actions that a user may perform on a
 // repo. Currently, the definition of these permissions directly maps
 // to GitHub permissions, except for "Pull", which means read access.
