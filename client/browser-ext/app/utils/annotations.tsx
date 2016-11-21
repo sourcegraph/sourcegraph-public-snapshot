@@ -110,14 +110,14 @@ export function indexLineStartBytes(lineStartBytes: number[]): StartBytesByLine 
 }
 
 export function isCommentNode(node: Node): boolean {
-	return (node as Element).className.includes("pl-c");
+	return (node as Element).className.split(" ").includes("pl-c");
 }
 
 export function isStringNode(node: Node): boolean {
-	return (node as Element).className.includes("pl-s") &&
+	return (node as Element).className.split(" ").includes("pl-s") &&
 		node.childNodes.length === 3 &&
-		(node.childNodes[0] as Element).className.includes("pl-pds") &&
-		(node.childNodes[2] as Element).className.includes("pl-pds");
+		(node.childNodes[0] as Element).className.split(" ").includes("pl-pds") &&
+		(node.childNodes[2] as Element).className.split(" ").includes("pl-pds");
 }
 
 interface ConvertNodeResult<T extends Node> {
@@ -290,7 +290,7 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 		return;
 	}
 	while (t && t.tagName !== "TD" && !t.getAttribute("data-byteoffset")) {
-		t = (t.parentNode as any); // TODO(john): remove cast
+		t = (t.parentNode as HTMLElement);
 	}
 	if (t && t.tagName === "SPAN" && t.getAttribute("data-byteoffset")) {
 		return t;
