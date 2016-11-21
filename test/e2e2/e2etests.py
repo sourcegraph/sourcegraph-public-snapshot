@@ -209,7 +209,7 @@ def test_beta_signup(d):
 
     wd.get(d.sg_url("/"))
     Util.log_in(d, username, password)
-    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "Start exploring code")) > 0)
+    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "My repositories")) > 0)
 
     wd.get(d.sg_url("/beta"))
     wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "Register for beta access")) > 0)
