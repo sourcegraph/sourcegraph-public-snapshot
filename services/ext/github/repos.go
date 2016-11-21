@@ -278,6 +278,18 @@ func ReposFromContext(ctx context.Context) Repos {
 	return s
 }
 
+func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
+	ghRepos, resp, err := client(ctx).activity.ListStarred("", opt)
+	if err != nil {
+		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
+	}
+	var repos []*sourcegraph.Repo
+	for _, ghRepo := range ghRepos {
+		repos = append(repos, toRepo(ghRepo.Repository))
+	}
+	return repos, nil
+}
+
 // ListAllGitHubRepos lists all GitHub repositories that fit the
 // criteria that are accessible to the currently authenticated user.
 // It's a convenience wrapper around Repos.ListAccessible, since there

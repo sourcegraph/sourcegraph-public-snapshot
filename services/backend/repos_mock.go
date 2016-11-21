@@ -6,6 +6,7 @@ import (
 
 	"context"
 
+	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -16,6 +17,7 @@ type MockRepos struct {
 	Get                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListStarredRepos            func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
 	Create                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) error
@@ -112,6 +114,19 @@ func (s *MockRepos) MockResolve_NotFound(t *testing.T, wantPath string) (called 
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
 	s.List = func(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
+		*called = true
+		repos := make([]*sourcegraph.Repo, len(wantRepos))
+		for i, repo := range wantRepos {
+			repos[i] = &sourcegraph.Repo{URI: repo}
+		}
+		return &sourcegraph.RepoList{Repos: repos}, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockListStarredRepos(t *testing.T, wantRepos ...string) (called *bool) {
+	called = new(bool)
+	s.ListStarredRepos = func(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error) {
 		*called = true
 		repos := make([]*sourcegraph.Repo, len(wantRepos))
 		for i, repo := range wantRepos {

@@ -18,6 +18,7 @@ type Query {
 type Root {
 	repository(uri: String!): Repository
 	remoteRepositories: [RemoteRepository!]!
+	remoteStarredRepositories: [RemoteRepository!]!
 }
 
 type Repository implements Node {

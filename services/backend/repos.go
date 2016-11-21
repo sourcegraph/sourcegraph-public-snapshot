@@ -66,6 +66,27 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	return repo, nil
 }
 
+func (s *repos) ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (res *sourcegraph.RepoList, err error) {
+	if Mocks.Repos.ListStarredRepos != nil {
+		return Mocks.Repos.ListStarredRepos(ctx, opt)
+	}
+
+	ctx, done := trace(ctx, "Repos", "ListStarred", opt, &err)
+	defer done()
+
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.ListStarredRepos")
+	if opt == nil {
+		opt = &gogithub.ActivityListStarredOptions{}
+	}
+
+	ghRepos, err := github.ListStarredRepos(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sourcegraph.RepoList{Repos: ghRepos}, nil
+}
+
 // ghRepoQueryMatcher matches search queries that look like they refer
 // to GitHub repositories. Examples include "github.com/gorilla/mux", "gorilla/mux", "gorilla mux",
 // "gorilla / mux"

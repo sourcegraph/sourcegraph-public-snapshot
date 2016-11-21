@@ -119,6 +119,7 @@ declare namespace GQL {
     __typename: string;
     repository: IRepository;
     remoteRepositories: Array<IRemoteRepository>;
+    remoteStarredRepositories: Array<IRemoteRepository>;
   }
 
   /*
