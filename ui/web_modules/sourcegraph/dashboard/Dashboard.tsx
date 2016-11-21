@@ -34,11 +34,6 @@ const DashboardContainer = Relay.createContainer(DashboardComponent, {
 					private
 					createdAt
 					pushedAt
-					contributors {
-						avatarURL
-						login
-						contributions
-					}
 				}
 			}
 		`,
