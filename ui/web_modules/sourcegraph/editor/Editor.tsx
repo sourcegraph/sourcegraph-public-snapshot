@@ -137,6 +137,19 @@ export class Editor implements IDisposable {
 				return;
 			}
 
+			// If we have a selection on right click, set it to the cursor
+			// position. Otherwise, Monaco will use the selection end for eg
+			// find all refs.
+			if (!this._editor.getSelection().isEmpty() && e.target.position) {
+				const range = {
+					startLineNumber: e.target.position.lineNumber,
+					startColumn: e.target.position.column,
+					endLineNumber: e.target.position.lineNumber,
+					endColumn: e.target.position.column,
+				};
+				this._editor.setSelection(range);
+			}
+
 			const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
 			AnalyticsConstants.Events.CodeContextMenu_Initiated.logEvent({
 					repo: repo,
