@@ -96,6 +96,15 @@ func GlobalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
 			registerPrometheusCollector(globalGraphDBH.DbMap.Db, "_graph")
 			configureConnectionPool(globalGraphDBH.DbMap.Db)
 		}
+
+		if _, err := globalAppDBH.Db.Query("select id from repo limit 0;"); err != nil {
+			if err := globalAppDBH.CreateSchema(); err != nil {
+				return nil, nil, err
+			}
+			if err := globalGraphDBH.CreateSchema(); err != nil {
+				return nil, nil, err
+			}
+		}
 	}
 
 	return globalAppDBH, globalGraphDBH, nil
