@@ -46,13 +46,6 @@ go install ./cmd/src
 [Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
 steps to [initialize and configure your database](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@master/-/blob/docs/storage.md).
 
-Finally, issue the following commands to set up your database tables:
-
-```
-src pgsql --db=app create
-src pgsql --db=graph create
-```
-
 ## Redis
 
 You can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed, however, the easiest way to get Redis up and running is probably:

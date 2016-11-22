@@ -72,8 +72,8 @@ generate:
 	go list ./... | grep -v /vendor/ | grep -v app/assets | grep -v sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1 | xargs go generate
 	cd ui && npm run generate
 
-db-reset: src
-	src pgsql reset
+drop-entire-local-database:
+	psql -c "drop schema public cascade; create schema public;"
 
 drop-test-dbs:
 	psql -A -t -c "select datname from pg_database where datname like 'sgtmp%' or datname like 'graphtmp%';" | xargs -P 10 -n 1 -t dropdb
