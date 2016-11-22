@@ -60,13 +60,14 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 
 	render(): JSX.Element {
 		const r = this.props.repo ? {URI: this.props.repo, rev: this.props.rev} : null;
+		const commit = this.props.root && this.props.root.repository && this.props.root.repository.commit.commit;
 		return <div>
 			{this.props.showModal && <ModalComp onDismiss={() => this.dismissModal(true)}>
 				<Container
 					repo={r}
-					commitID={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.commit.sha1 : null}
-					files={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.commit.tree.files : []}
-					languages={(this.props.root && this.props.root.repository) ? this.props.root.repository.commit.commit.languages : []}
+					commitID={commit ? commit.sha1 : null}
+					files={commit ? commit.tree.files : []}
+					languages={commit ? commit.languages : []}
 					dismissModal={this.dismissModal} />
 			</ModalComp>}
 			<EventListener target={global.document.body} event="keydown" callback={this.searchModalShortcuts} />
