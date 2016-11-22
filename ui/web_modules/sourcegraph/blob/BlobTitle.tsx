@@ -124,7 +124,7 @@ export function BlobTitle({
 							rev={rev}
 							routes={routes}
 							routeParams={routeParams} />
-						<a href={gitHubURL()} style={{paddingLeft: whitespace[3], color: colors.white(), display: "flex"}} onClick={(e) => {
+						<a href={gitHubURL()} style={{marginLeft: whitespace[3], color: colors.white(), display: "flex"}} onClick={(e) => {
 							e.preventDefault();
 							AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({repo, rev, path});
 							window.location.href = gitHubURL();
