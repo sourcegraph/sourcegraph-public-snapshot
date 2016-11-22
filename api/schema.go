@@ -65,6 +65,7 @@ type Directory {
 type File {
 	name: String!
 	content: String!
+	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 }
 
 type RemoteRepository {
@@ -81,4 +82,16 @@ type RemoteRepository {
 	pushedAt: String!
 	vcsSyncedAt: String!
 	contributors: [Contributor!]!
-}`
+}
+
+type Hunk {
+	startLine: Int!
+	endLine: Int!
+	startByte: Int!
+	endByte: Int!
+	rev: String!
+	name: String!
+	email: String!
+	date: String!
+}
+`

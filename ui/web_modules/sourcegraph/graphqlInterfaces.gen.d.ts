@@ -64,6 +64,22 @@ declare namespace GQL {
     __typename: string;
     name: string;
     content: string;
+    blame: Array<IHunk>;
+  }
+
+  /*
+    description: null
+  */
+  interface IHunk {
+    __typename: string;
+    startLine: number;
+    endLine: number;
+    startByte: number;
+    endByte: number;
+    rev: string;
+    name: string;
+    email: string;
+    date: string;
   }
 
   /*

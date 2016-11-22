@@ -63,8 +63,8 @@ func (r *commitResolver) Tree(ctx context.Context, args *struct {
 
 func (r *commitResolver) File(ctx context.Context, args *struct {
 	Path string
-}) (*entryResolver, error) {
-	return &entryResolver{
+}) (*fileResolver, error) {
+	return &fileResolver{
 		commit: r.commit,
 		name:   path.Base(args.Path),
 		path:   args.Path,

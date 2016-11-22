@@ -75,11 +75,11 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 	}, nil
 }
 
-func (r *treeResolver) Directories() []*entryResolver {
-	var l []*entryResolver
+func (r *treeResolver) Directories() []*fileResolver {
+	var l []*fileResolver
 	for _, entry := range r.tree.Entries {
 		if entry.Type == sourcegraph.DirEntry {
-			l = append(l, &entryResolver{
+			l = append(l, &fileResolver{
 				commit: r.commit,
 				name:   entry.Name,
 				path:   path.Join(r.path, entry.Name),
@@ -89,11 +89,11 @@ func (r *treeResolver) Directories() []*entryResolver {
 	return l
 }
 
-func (r *treeResolver) Files() []*entryResolver {
-	var l []*entryResolver
+func (r *treeResolver) Files() []*fileResolver {
+	var l []*fileResolver
 	for _, entry := range r.tree.Entries {
 		if entry.Type != sourcegraph.DirEntry {
-			l = append(l, &entryResolver{
+			l = append(l, &fileResolver{
 				commit: r.commit,
 				name:   entry.Name,
 				path:   path.Join(r.path, entry.Name),
@@ -103,34 +103,6 @@ func (r *treeResolver) Files() []*entryResolver {
 	return l
 }
 
-type entryResolver struct {
-	commit commitSpec
-	name   string
-	path   string
-}
-
-func (r *entryResolver) Name() string {
-	return r.name
-}
-
-func (r *entryResolver) Tree(ctx context.Context) (*treeResolver, error) {
+func (r *fileResolver) Tree(ctx context.Context) (*treeResolver, error) {
 	return makeTreeResolver(ctx, r.commit, r.path, false)
-}
-
-func (r *entryResolver) Content(ctx context.Context) (string, error) {
-	repoupdater.Enqueue(r.commit.RepoID, auth.ActorFromContext(ctx).UserSpec())
-
-	file, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{
-				Repo:     r.commit.RepoID,
-				CommitID: r.commit.CommitID,
-			},
-			Path: r.path,
-		},
-	})
-	if err != nil {
-		return "", err
-	}
-	return string(file.Contents), nil
 }
