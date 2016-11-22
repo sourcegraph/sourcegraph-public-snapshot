@@ -3,29 +3,9 @@ import {EventLogger} from "../analytics/EventLogger";
 import * as types from "../constants/types";
 import * as github from "./github";
 import * as utils from "./index";
-import * as _ from "lodash"; // TODO(john): see if we can remove lodash
-import {style} from "typestyle";
+import * as tooltips from "./tooltips";
+import * as _ from "lodash";
 import * as utf8 from "utf8";
-
-const tooltipClassName = style({
-	backgroundColor: "#2D2D30",
-	maxWidth: "500px",
-	maxHeight: "250px",
-	overflow: "auto",
-	border: "solid 1px #555",
-	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
-	color: "rgba(213, 229, 242, 1)",
-	fontSize: "12px",
-	zIndex: 100,
-	position: "absolute",
-	wordWrap: "break-word",
-	padding: "5px 6px",
-});
-
-const tooltipTitleStyle = style({
-	fontFamily: `Menlo, Monaco, Consolas, "Courier New", monospace`,
-	wordWrap: "break-all",
-});
 
 interface RepoRevSpec {
 	repoURI: string;
@@ -258,30 +238,8 @@ export function convertElementNode(currentNode: Node, annsByStartByte: Annotatio
 	return {resultNode: wrapperNode, bytesConsumed};
 }
 
-// The rest of this file is responsible for fetching/caching annotation specific data from the server
-// and adding interaction tooltip data to annotated elements.
-// The sate management is done outside of the Redux container, thought it could be there; some of this
-// stuff we don't need synchonized to browser local storage.
-
-let tooltipCache = {};
+let tooltipCache: {[key: string]: string | null} = {};
 let j2dCache = {};
-
-const HOVER_DELAY_MS = 200;
-
-let tooltip;
-let loadingTooltip;
-function createTooltips(): void {
-	if (tooltip || loadingTooltip) {
-		return;
-	}
-
-	tooltip	= document.createElement("DIV");
-	tooltip.className = tooltipClassName;
-	tooltip.classList.add("sg-tooltip");
-
-	loadingTooltip = document.createElement("DIV");
-	loadingTooltip.appendChild(document.createTextNode("Loading..."));
-};
 
 let activeTarget;
 function getTarget(t: HTMLElement): HTMLElement | undefined {
@@ -297,17 +255,8 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 	}
 }
 
-let hoverTimeout;
-function clearTooltip(): void {
-	clearTimeout(hoverTimeout);
-	if (tooltip.firstChild) {
-		tooltip.removeChild(tooltip.firstChild);
-	}
-	tooltip.style.visibility = "hidden"; // prevent black dot of empty content
-}
-
 function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
-	createTooltips();
+	tooltips.createTooltips();
 
 	el.onclick = (e) => {
 		let t = getTarget(e.target as HTMLElement);
@@ -328,70 +277,22 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 	};
 
 	el.onmouseout = (e) => {
-		clearTooltip();
+		tooltips.clearContext();
 		activeTarget = null;
 	};
 
 	el.onmouseover = (e) => {
 		let t = getTarget(e.target as HTMLElement);
-		if (!t) {
+		if (!t || activeTarget === t) {
+			// don't do anything unless target is defined and has changed
 			return;
 		}
 
-		if (activeTarget !== t) {
-			activeTarget = t;
-			clearTooltip();
-			// Only show "Loading..." if it has been loading for a while. If we
-			// show "Loading..." immediately, there will be a visible flash if
-			// the actual hover text loads quickly thereafter.
-			hoverTimeout = setTimeout(() => showTooltip(loadingTooltip, true), 3 * HOVER_DELAY_MS);
-
-			const hoverShowTime = Date.now() + HOVER_DELAY_MS;
-			getTooltip(activeTarget, (elem) => {
-				clearTimeout(hoverTimeout); // prevent delayed addition of loading indicator
-				if (elem === null) { // add no tooltip for empty responses
-					return;
-				}
-
-				// Always wait at least HOVER_DELAY_MS before showing hover, to avoid
-				// it obscuring text when you move your mouse rapidly across a code file.
-				const hoverTimerRemaining = Math.max(0, hoverShowTime - Date.now());
-				hoverTimeout = setTimeout(() => showTooltip(elem, false), hoverTimerRemaining);
-			});
-		}
+		activeTarget = t;
+		tooltips.setContext(t, loggingStruct);
+		tooltips.queueLoading();
+		getTooltip(t, tooltips.setTooltip);
 	};
-
-	function showTooltip(elem: HTMLElement, isLoading: boolean): void {
-		clearTooltip();
-
-		if (activeTarget && elem) {
-			// Log event only when displaying a fetched tooltip
-			if (!isLoading) {
-				EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", Object.assign({}, repoRevSpec, loggingStruct));
-			}
-
-			tooltip.appendChild(elem);
-
-			// Hide the tooltip initially while we add it to DOM to render and generate
-			// bounding rectangle but hide as we haven't anchored it to a position yet.
-			tooltip.style.visibility = "hidden";
-
-			// Anchor it horizontally, prior to rendering to account for wrapping
-			// changes to vertical height if the tooltip is at the edge of the viewport.
-			const activeTargetBound = activeTarget.getBoundingClientRect();
-			tooltip.style.left = (activeTargetBound.left + window.scrollX) + "px";
-
-			// Attach the node to DOM so the bounding rectangle is generated.
-			document.body.appendChild(tooltip);
-
-			// Anchor the tooltip vertically.
-			const tooltipBound = tooltip.getBoundingClientRect();
-			tooltip.style.top = (activeTargetBound.top - (tooltipBound.height + 5) + window.scrollY) + "px";
-
-			// Make it all visible to the user.
-			tooltip.style.visibility = "visible";
-		}
-	}
 
 	function wrapLSP(req: any): any[] {
 		req.id = 1;
@@ -450,7 +351,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 			})).catch((err) => cb(null));
 	}
 
-	function getTooltip(target: HTMLElement, cb: (val: any) => void): void {
+	function getTooltip(target: HTMLElement, cb: (val: string | null) => void): void {
 		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${target.dataset["byteoffset"]}`;
 		if (typeof tooltipCache[cacheKey] !== "undefined") {
 			return cb(tooltipCache[cacheKey]);
@@ -471,14 +372,8 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 
 		fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
 			.then((resp) => resp.json().then((json) => {
-				const tooltipText = document.createElement("DIV");
 				if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
-					target.style.cursor = "pointer";
-					target.className = `${target.className} sg-clickable`;
-
-					tooltipText.className = tooltipTitleStyle;
-					tooltipText.appendChild(document.createTextNode(json[1].result.contents[0].value));
-					tooltipCache[cacheKey] = tooltipText;
+					tooltipCache[cacheKey] = json[1].result.contents[0].value;
 				} else {
 					tooltipCache[cacheKey] = null;
 				}

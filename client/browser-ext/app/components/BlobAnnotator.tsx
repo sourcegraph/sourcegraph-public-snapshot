@@ -1,5 +1,4 @@
 import {allActions} from "../actions";
-import {EventLogger} from "../analytics/EventLogger";
 import {AnnotationsState, ResolvedRevState} from "../reducers";
 import {keyFor} from "../reducers/helpers";
 import * as utils from "../utils";
