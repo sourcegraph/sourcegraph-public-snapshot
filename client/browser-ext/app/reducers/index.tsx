@@ -1,6 +1,9 @@
 import * as Actions from "../constants/types";
-import {keyFor} from "./helpers";
 import {combineReducers} from "redux";
+
+export function keyFor(repo: string, rev?: string, path?: string, query?: string): string {
+	return `${repo || null}@${rev || null}@${path || null}@${query || null}`;
+}
 
 export type AccessTokenState = string | null;
 const accessToken = function(state: AccessTokenState = null, action: Actions.SetAccessTokenAction): AccessTokenState {

@@ -1,13 +1,3 @@
-function isInjected(tabId: number): Promise<void> {
-	// TODO(john): find `executeScriptAsync` d.ts
-	return (chrome.tabs as any).executeScriptAsync(tabId, {
-		code: `var injected = window.reactExampleInjected;
-			window.reactExampleInjected = true;
-			injected;`,
-		runAt: "document_start",
-	});
-}
-
 function loadScript(name: string, tabId: number, cb: () => void): Promise<void> {
 	if (process.env.NODE_ENV === "production") {
 		// Do not use direct tab injection; instead, scripts are loaded via
@@ -41,12 +31,7 @@ if (process.env.NODE_ENV !== "production") {
 			return Promise.resolve();
 		}
 
-		return isInjected(tabId).then((result) => {
-			if (chrome.runtime.lastError || result[0]) {
-				return;
-			}
-			// tslint:disable-next-line
-			return loadScript("inject", tabId, () => console.log("load inject bundle success!"));
-		});
+		// tslint:disable-next-line
+		return loadScript("inject", tabId, () => console.log("load inject bundle success!"));
 	});
 }

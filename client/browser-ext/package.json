@@ -5,8 +5,8 @@
 	"scripts": {
 		"test": "NODE_ENV=test mocha --opts mocha.opts",
 		"test:auto": "NODE_ENV=test mocha --opts mocha.opts --watch",
-		"dev": "ts-node scripts/dev",
-		"build": "ts-node scripts/build",
+		"dev": "NODE_ENV=development ts-node scripts/dev",
+		"build": "NODE_ENV=production ts-node scripts/build",
 		"clean": "rm -rf build/ dev/ *.zip *.xpi .checksum"
 	},
 	"author": "John Rothfels <john@sourcegraph.com>",
@@ -20,6 +20,7 @@
 		"@types/lodash": "^4.14.38",
 		"@types/marked": "^0.0.28",
 		"@types/mocha": "^2.2.32",
+		"@types/raven-js": "^0.0.18",
 		"@types/react": "^0.14.47",
 		"@types/react-dom": "^0.14.18",
 		"@types/react-redux": "^4.4.32",
@@ -45,6 +46,7 @@
 		"html-truncate": "^1.2.1",
 		"lodash": "^4.11.2",
 		"marked": "^0.3.6",
+		"raven-js": "^3.8.1",
 		"react": "^0.14.7",
 		"react-dom": "^0.14.7",
 		"react-icon-base": "^2.0.0",

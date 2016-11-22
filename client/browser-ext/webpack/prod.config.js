@@ -11,11 +11,13 @@ module.exports = {
 		filename: '[name].bundle.js',
 		chunkFilename: '[id].chunk.js'
 	},
+	devtool: "source-map",
 	plugins: [
 		new webpack.optimize.OccurenceOrderPlugin(),
 		new webpack.IgnorePlugin(/[^/]+\/[\S]+.dev$/),
 		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
+			sourceMap: true,
 			comments: false,
 			compressor: {
 				warnings: false

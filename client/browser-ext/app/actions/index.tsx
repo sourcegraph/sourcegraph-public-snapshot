@@ -1,6 +1,5 @@
 import * as types from "../constants/types";
-import {ReducerState} from "../reducers";
-import {keyFor} from "../reducers/helpers";
+import {ReducerState, keyFor} from "../reducers";
 import {doFetch as fetch, useAccessToken} from "./xhr";
 import {Dispatch} from "redux";
 

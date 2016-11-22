@@ -1,9 +1,9 @@
 import {allActions} from "../actions";
-import {ResolvedRevState} from "../reducers";
-import {keyFor} from "../reducers/helpers";
+import {ResolvedRevState, keyFor} from "../reducers";
 import * as utils from "../utils";
 import {addAnnotations} from "../utils/annotations";
 import * as github from "../utils/github";
+import {logError} from "../utils/Sentry";
 import {SourcegraphIcon} from "./Icons";
 import * as React from "react";
 import {connect} from "react-redux";
@@ -64,7 +64,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 			this.isSplitDiff = github.isSplitDiff();
 			const deltaRevs = github.getDeltaRevs();
 			if (!deltaRevs) {
-				// TODO(john): error handling strategy
+				logError("cannot determine deltaRevs");
 				return;
 			}
 
@@ -73,7 +73,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 
 			const deltaInfo = github.getDeltaInfo();
 			if (!deltaInfo) {
-				// TODO(john): error handling strategy
+				logError("cannot determine deltaInfo");
 				return;
 			}
 
@@ -116,13 +116,15 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 			}
 		} else if (this.rev) {
 			this.props.actions.resolveRev(this.props.repoURI, this.rev);
+		} else {
+			logError("unable to fetch annotations; missing revision data");
 		}
 	}
 
 	_addAnnotations(): void {
 		const apply = (repoURI: string, rev: string, isBase: boolean, loggerProps: Object) => {
-			const fext = utils.getPathExtension(this.props.path);
-			if (!utils.supportedExtensions.has(fext)) {
+			const ext = utils.getPathExtension(this.props.path);
+			if (!utils.supportedExtensions.has(ext)) {
 				return; // Don't annotate unsupported languages
 			}
 

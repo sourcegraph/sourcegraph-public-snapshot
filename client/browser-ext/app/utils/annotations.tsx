@@ -1,5 +1,6 @@
 import {doFetch as fetch} from "../actions/xhr";
 import {EventLogger} from "../analytics/EventLogger";
+import {logException} from "../utils/Sentry";
 import * as github from "./github";
 import * as utils from "./index";
 import * as tooltips from "./tooltips";
@@ -41,12 +42,15 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 
 		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
-			const annLine = convertNode(cell.cell, 1, cell.line, repoRevSpec.isDelta);
+			try {
+				const annLine = convertNode(cell.cell, 1, cell.line, repoRevSpec.isDelta);
+				cell.cell.innerHTML = "";
+				cell.cell.appendChild(annLine.resultNode);
 
-			cell.cell.innerHTML = "";
-			cell.cell.appendChild(annLine.resultNode);
-
-			addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
+				addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
+			} catch (e) {
+				logException(e);
+			}
 		});
 	});
 }
@@ -65,7 +69,9 @@ function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirst
 			return convertElementNode(node, offset, line, ignoreFirstTextChar);
 
 		default:
-			throw new Error(`unexpected node type(${node.nodeType})`);
+			const err = new Error(`unexpected node type(${node.nodeType})`);
+			logException(err);
+			throw err;
 	}
 }
 
@@ -226,8 +232,8 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 		getTooltip(t, (data) => tooltips.setTooltip(data, t as HTMLElement));
 	};
 
-	function wrapLSP(req: any): any[] {
-		req.id = 1;
+	function wrapLSP(req: {method: string, params: Object}): Object[] {
+		(req as any).id = 1;
 		return [
 			{
 				id: 0,

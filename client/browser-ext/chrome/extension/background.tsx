@@ -1,3 +1,5 @@
+import "../../app/utils/Sentry";
+
 import * as bluebird from "bluebird";
 global.Promise = bluebird;
 

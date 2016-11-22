@@ -1,9 +1,14 @@
+import * as jsdom from "jsdom";
+
+// initialization for Sentry
+global.document = jsdom.jsdom("<!doctype html><html><body></body></html>");
+global.window = document.defaultView;
+
 import * as utils from "../app/utils";
 import * as annotations from "../app/utils/annotations";
 import * as github from "../app/utils/github";
 import {expect} from "chai";
 import "fetch-mock";
-import * as jsdom from "jsdom";
 
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
