@@ -6,10 +6,12 @@ import (
 	"log"
 	"os"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+
 	libhoney "github.com/honeycombio/libhoney-go"
 )
 
-var writeKey = os.Getenv("HONEYCOMB_TEAM")
+var writeKey = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
 
 // Enabled returns true if honeycomb has been configured to run.
 func Enabled() bool {

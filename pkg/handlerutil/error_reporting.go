@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
 	"strings"
 
@@ -14,13 +13,14 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 var ravenClient *raven.Client
 
 func init() {
-	if dsn := os.Getenv("SENTRY_DSN_BACKEND"); dsn != "" {
+	if dsn := env.Get("SENTRY_DSN_BACKEND", "", "Sentry/Raven DSN used for tracking of backend errors"); dsn != "" {
 		var err error
 		ravenClient, err = raven.NewClient(dsn, nil)
 		if err != nil {

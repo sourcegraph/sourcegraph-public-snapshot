@@ -2,8 +2,9 @@ package traceutil
 
 import (
 	"fmt"
-	"os"
 	"strconv"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -63,13 +64,16 @@ func MultiRecorder(recorders ...basictracer.SpanRecorder) basictracer.SpanRecord
 	return mr
 }
 
+var lightstepAccessToken = env.Get("LIGHTSTEP_ACCESS_TOKEN", "", "access token for sending traces to LightStep")
+var lightstepProject = env.Get("LIGHTSTEP_PROJECT", "", "the project id on LightStep, only used for creating links to traces")
+
 func InitTracer() {
-	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
+	if lightstepAccessToken != "" {
 		options := basictracer.DefaultOptions()
 		options.ShouldSample = func(_ uint64) bool { return true }
 		options.Recorder = MultiRecorder(
 			&trivialFieldsFilter{lightstep.NewRecorder(lightstep.Options{
-				AccessToken: t,
+				AccessToken: lightstepAccessToken,
 			})},
 			&graphqlFieldRecorder{},
 		)
@@ -80,9 +84,9 @@ func InitTracer() {
 // SpanURL returns the URL to the tracing UI for the given span. The span must be non-nil.
 func SpanURL(span opentracing.Span) string {
 	if spanCtx, ok := span.Context().(basictracer.SpanContext); ok {
-		if project := os.Getenv("LIGHTSTEP_PROJECT"); project != "" {
+		if lightstepProject != "" {
 			t := span.(basictracer.Span).Start().UnixNano() / 1000
-			return fmt.Sprintf("https://app.lightstep.com/%s/trace?span_guid=%x&at_micros=%d#span-%x", project, spanCtx.SpanID, t, spanCtx.SpanID)
+			return fmt.Sprintf("https://app.lightstep.com/%s/trace?span_guid=%x&at_micros=%d#span-%x", lightstepProject, spanCtx.SpanID, t, spanCtx.SpanID)
 		}
 		log15.Warn("LIGHTSTEP_PROJECT is not set")
 	}

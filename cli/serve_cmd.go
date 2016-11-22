@@ -35,6 +35,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -102,6 +103,8 @@ Starts an HTTP server serving the app and API.`,
 		}
 	}
 	help.ShowHelpAll = func() error {
+		env.PrintHelp()
+		fmt.Println()
 		var b bytes.Buffer
 		cli.CLI.WriteHelp(&b)
 		return &flags.Error{
@@ -144,6 +147,8 @@ type ServeCmd struct {
 	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_REPOS_DIR"`
 	Gitservers string `long:"git-servers" description:"addresses of the remote gitservers; a local gitserver process is used by default" env:"SRC_GIT_SERVERS"`
 }
+
+var enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 
 func (c *ServeCmd) configureAppURL() (*url.URL, error) {
 	var hostPort string
@@ -261,7 +266,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	mw := []handlerutil.Middleware{middleware.HealthCheck, middleware.RealIP, middleware.NoCacheByDefault}
-	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_HSTS")); v {
+	if v, _ := strconv.ParseBool(enableHSTS); v {
 		mw = append(mw, middleware.StrictTransportSecurity)
 	}
 	mw = append(mw, middleware.SecureHeader)

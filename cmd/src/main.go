@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	// App
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
@@ -24,6 +25,7 @@ import (
 )
 
 func main() {
+	env.Lock()
 	err := cli.Main()
 	if err != nil {
 		os.Exit(1)

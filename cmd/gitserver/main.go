@@ -13,15 +13,18 @@ import (
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
-var addr = os.Getenv("SRC_ADDR")                    // RPC listen address for git server
-var reposDir = os.Getenv("SRC_REPOS_DIR")           // root dir containing repos
-var autoTerminate = os.Getenv("SRC_AUTO_TERMINATE") // terminate if stdin gets closed (e.g. parent process died)
-var profBindAddr = os.Getenv("SRC_PROF_HTTP")       // net/http/pprof http bind address
+var addr = env.Get("SRC_ADDR", "127.0.0.1:0", "RPC listen address for git server.")
+var reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
+var autoTerminate = env.Get("SRC_AUTO_TERMINATE", "false", "Terminate if stdin gets closed (e.g. parent process died).")
+var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 
 func main() {
+	env.Lock()
+
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
@@ -39,9 +42,6 @@ func main() {
 		log.Printf("Profiler available on %s/pprof", profBindAddr)
 	}
 
-	if addr == "" {
-		addr = "127.0.0.1:0"
-	}
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatal(err)

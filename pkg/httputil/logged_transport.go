@@ -7,10 +7,12 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 func init() {
-	if v, _ := strconv.ParseBool(os.Getenv("SG_HTTP_TRACE")); v {
+	if v, _ := strconv.ParseBool(env.Get("SG_HTTP_TRACE", "false", "additional logging for each HTTP request")); v {
 		http.DefaultTransport = &LoggedTransport{
 			Writer:    os.Stderr,
 			Transport: http.DefaultTransport,

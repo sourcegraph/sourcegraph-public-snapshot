@@ -6,7 +6,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // Mount is a no-op (because this file is only used if the 'dist' tag
@@ -15,7 +16,7 @@ import (
 func Mount(mux *http.ServeMux) {}
 
 func init() {
-	if urlStr := os.Getenv("WEBPACK_DEV_SERVER_URL"); urlStr != "" {
+	if urlStr := env.Get("WEBPACK_DEV_SERVER_URL", "", "the URL of Webpack serving the assets"); urlStr != "" {
 		var err error
 		baseURL, err = url.Parse(urlStr)
 		if err != nil {

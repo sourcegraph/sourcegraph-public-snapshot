@@ -2,8 +2,8 @@ package chimputil
 
 import (
 	"errors"
-	"os"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/mailchimp"
 )
 
@@ -13,7 +13,7 @@ const SourcegraphBetaListID = "dd6c4706a1"
 var client *mailchimp.Client
 
 func init() {
-	key := os.Getenv("MAILCHIMP_KEY")
+	key := env.Get("MAILCHIMP_KEY", "", "key for sending mails via MailChimp")
 	if key != "" {
 		client = mailchimp.New(key)
 	}

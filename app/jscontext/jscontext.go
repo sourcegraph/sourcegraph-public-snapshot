@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 
@@ -17,11 +16,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
-var sentryDSNFrontend = os.Getenv("SENTRY_DSN_FRONTEND")
+var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
@@ -110,7 +110,7 @@ func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
 }
 
-var intercomSecretKey = os.Getenv("SG_INTERCOM_SECRET_KEY")
+var intercomSecretKey = env.Get("SG_INTERCOM_SECRET_KEY", "", "secret key for the Intercom widget")
 
 func intercomHMAC(uid string) string {
 	if uid == "" || intercomSecretKey == "" {
