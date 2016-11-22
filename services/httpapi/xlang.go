@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
 	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -55,17 +54,16 @@ type xlangClient interface {
 }
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
-	v := mux.Vars(r)
-	method := v["LSPMethod"]
-	return serveXLangMethod(r.Context(), w, method, r.Body)
+	return serveXLangMethod(r.Context(), w, r.Body)
 }
 
 // serveXLangMethod was split out from serveXLang to support the old
 // hover-info and jump-to-def httpapi endpoints. Once those are gone we
 // extract this back into serveXLang.
-func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string, body io.Reader) (err error) {
+func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader) (err error) {
 	start := time.Now()
 	success := true
+	method := "unknown"
 	mode := "unknown"
 	ev := honey.Event("xlang")
 	defer func() {
@@ -106,7 +104,8 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		return err
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP HTTP gateway: "+reqs[1].Method)
+	method = reqs[1].Method
+	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP HTTP gateway: "+method)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

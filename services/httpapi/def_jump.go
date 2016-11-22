@@ -79,7 +79,7 @@ func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface
 		return err
 	}
 	w := httptest.NewRecorder()
-	err = serveXLangMethod(ctx, w, o.Method, bytes.NewReader(body))
+	err = serveXLangMethod(ctx, w, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}

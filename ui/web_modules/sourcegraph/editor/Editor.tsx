@@ -20,7 +20,7 @@ import { create as createStandaloneEditor, createModel, onDidCreateModel } from 
 import { registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
 import { Range } from "vs/editor/common/core/range";
-import { IPosition, IRange, IReadOnlyModel, IWordAtPosition } from "vs/editor/common/editorCommon";
+import { IModelChangedEvent, IPosition, IRange, IReadOnlyModel, IWordAtPosition } from "vs/editor/common/editorCommon";
 import { Definition, Hover, Location, ReferenceContext } from "vs/editor/common/modes";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 
@@ -123,6 +123,21 @@ export class Editor implements IDisposable {
 		this._editorService.setEditor(this._editor);
 
 		(window as any).ed = this._editor; // for easier debugging via the JS console
+
+		// Warm up the LSP server immediately when the document loads
+		// instead of waiting until the user tries to hover.
+		this._editor.onDidChangeModel((e: IModelChangedEvent) => {
+			// only do it for modes we have called registerModeProviders on.
+			if (!modes.has(this._editor.getModel().getModeId())) {
+				return;
+			}
+			// We modify the name to indicate to our HTTP gateway that this
+			// should not be measured as a user triggered action.
+			lsp.send(this._editor.getModel(), "textDocument/hover?prepare", {
+				textDocument: {uri: e.newModelUrl.toString(true)},
+				position: lsp.toPosition(new Position(1, 1)),
+			});
+		});
 
 		// Don't show context menu for peek view or comments, etc.
 		// Also don't show for unsupported languages.
