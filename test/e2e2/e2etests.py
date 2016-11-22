@@ -254,7 +254,7 @@ def test_browser_extension_hover_j2d_blob(d):
     wait_for(lambda: len(wd.find_elements_by_class_name("sg-tooltip")) == 1)
 
     # wait for the token to be clickable (textDocument/defnition is resolved)
-    wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-tooltip") if e.text == "func NewRouter() *Router"]) == 1, 10)
+    wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-tooltip") if e.text == "func NewRouter() *Router\nNewRouter returns a new router instance."]) == 1, 10)
 
     # click and wait for page navigation
     retry(lambda: wd.find_element_by_id("text-node-297-6").click())
@@ -278,7 +278,7 @@ def test_browser_extension_hover_j2d_unified_pull_request(d):
     }, {
         # unmodified
         "node": "text-node-474-6",
-        "hover": "func NewRouter() *Router",
+        "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
         "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L24",
     }]
     for test in tests:
@@ -315,7 +315,7 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
     }, {
         # unmodified
         "node": "text-node-317-6",
-        "hover": "func NewRouter() *Router",
+        "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
         "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L18",
     }]
     for test in tests:

@@ -238,7 +238,7 @@ export function convertElementNode(currentNode: Node, annsByStartByte: Annotatio
 	return {resultNode: wrapperNode, bytesConsumed};
 }
 
-let tooltipCache: {[key: string]: string | null} = {};
+let tooltipCache: {[key: string]: tooltips.TooltipData} = {};
 let j2dCache = {};
 
 let activeTarget;
@@ -351,7 +351,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 			})).catch((err) => cb(null));
 	}
 
-	function getTooltip(target: HTMLElement, cb: (val: string | null) => void): void {
+	function getTooltip(target: HTMLElement, cb: (val: tooltips.TooltipData) => void): void {
 		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${target.dataset["byteoffset"]}`;
 		if (typeof tooltipCache[cacheKey] !== "undefined") {
 			return cb(tooltipCache[cacheKey]);
@@ -373,7 +373,13 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 		fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
 			.then((resp) => resp.json().then((json) => {
 				if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
-					tooltipCache[cacheKey] = json[1].result.contents[0].value;
+					const title = json[1].result.contents[0].value;
+					let doc;
+					json[1].result.contents.filter((markedString) => markedString.language === "markdown").forEach((content) => {
+						// TODO(john): what if there is more than 1?
+						doc = content.value;
+					})
+					tooltipCache[cacheKey] = {title, doc};
 				} else {
 					tooltipCache[cacheKey] = null;
 				}

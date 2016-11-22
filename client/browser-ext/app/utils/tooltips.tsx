@@ -1,24 +1,37 @@
 import {EventLogger} from "../analytics/EventLogger";
 import * as _ from "lodash";
+import * as marked from "marked";
 import {style} from "typestyle";
+
+// tslint:disable-next-line
+const truncate = require("html-truncate");
+
+export type TooltipData = {title: string, doc?: string} | null;
 
 const tooltipClassName = style({
 	backgroundColor: "#2D2D30",
 	maxWidth: "500px",
 	maxHeight: "250px",
-	overflow: "auto",
 	border: "solid 1px #555",
 	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
 	color: "rgba(213, 229, 242, 1)",
 	fontSize: "12px",
 	zIndex: 100,
 	position: "absolute",
-	wordWrap: "break-word",
-	padding: "5px 6px",
+	overflow: "auto",
+	padding: "5px 5px",
 });
 
 const tooltipTitleStyle = style({
 	fontFamily: `Menlo, Monaco, Consolas, "Courier New", monospace`,
+	wordWrap: "break-all",
+});
+
+const tooltipDocStyle = style({
+	borderTop: "1px solid rgba(256, 256, 256, .8)",
+	marginTop: "5px",
+	paddingTop: "10px",
+	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
 	wordWrap: "break-all",
 });
 
@@ -67,6 +80,7 @@ export function clearContext(): void {
 }
 
 let currentTooltipText: string | null = null;
+let currentTooltipDoc: string | null = null;
 let isLoading = false; // whether the tooltip should show "Loading..." text
 
 let loadingTimer: NodeJS.Timer; // a handle to a timeout which sets the "Loading..." text indicator
@@ -97,9 +111,14 @@ export function queueLoading(): void {
  * setTooltip shows the provided tooltip text (or hides the tooltip, if a null
  * argument is provided). It overrides the "Loading..." tooltip.
  */
-export function setTooltip(value: string | null): void {
+export function setTooltip(data: TooltipData): void {
 	clearLoading();
-	currentTooltipText = value;
+	if (!data) {
+		currentTooltipText = null;
+	} else {
+		currentTooltipText = data.title;
+		currentTooltipDoc = data.doc || null;
+	}
 	updateTooltip();
 }
 
@@ -135,6 +154,13 @@ function _updateTooltip(): void {
 		tooltipText.className = tooltipTitleStyle;
 		tooltipText.appendChild(document.createTextNode(currentTooltipText));
 		tooltip.appendChild(tooltipText);
+
+		if (currentTooltipDoc) {
+			const tooltipDoc = document.createElement("DIV");
+			tooltipDoc.className = tooltipDocStyle;
+			tooltipDoc.innerHTML = truncate(marked(currentTooltipDoc, {gfm: true, breaks: true, sanitize: true}), 300);
+			tooltip.appendChild(tooltipDoc);
+		}
 
 		// only log when displaying a real tooltip (not a loading indicator)
 		EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", hoverEventProps || undefined); // TODO(john): make hover event props invariant?
