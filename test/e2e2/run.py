@@ -9,10 +9,7 @@ from urlparse import urlparse
 from colors import green, red, bold
 from slackclient import SlackClient
 
-from opsgenie.alert.requests import CreateAlertRequest
-from opsgenie.errors import OpsGenieError
-from opsgenie import OpsGenie
-from opsgenie.config import Configuration
+import requests
 
 from e2etypes import *
 from e2etests import *
@@ -66,34 +63,41 @@ def failure_msg(test_name, owner, browser, url, sgurl, stack_trace, console_log)
         console_log,
     )
 
-def alert_opsgenie(apikey, msg, description):
-    client = OpsGenie(Configuration(apikey=apikey))
-
+def alert_alertmanager(alertname, exported_name, url, alertmgr_url, oauth_cookie=None):
+    alert = [{
+        # The `severity: page` is necessary to alert OpsGenie
+        "labels": { "alertname": alertname, "exported_name": exported_name, "severity": "page" },
+        # The `description` and `details` fields are displayed in OpsGenie
+        "annotations": { "description": ("%s: %s" % (alertname, exported_name)), "details": ("See: %s" % url) },
+        "generatorURL": url,
+    }]
+    cookies = None
+    if oauth_cookie is not None:
+        cookies = { "_oauth2_proxy": oauth_cookie }
     try:
-        request = CreateAlertRequest(
-            message=msg,
-            description=description,
-            source="e2e-bot",
-            teams=["ops_team"])
-        response = client.alert.create_alert(request)
+        resp = requests.post(('%s/api/v1/alerts' % alertmgr_url), cookies=cookies, json=alert)
+        if resp.status_code == 200:
+            logf("created Alertmanager alert: %s", id)
+        else:
+            logf("[ERROR] failed to create Alertmanager alert, response code: %d", resp.status_code)
+    except Exception as err:
+        logf("[ERROR] failed to post Alertmanager alert: %s", err.message)
 
-        logf("created OpsGenie alert %s, status: %s", response.alert_id, response.status)
-    except OpsGenieError as err:
-        logf("[ERROR] failed to send OpsGenie alert: %s", err.message)
-
-def slack_and_opsgenie(args):
-    slack_cli, slack_ch, opsgenie_key = None, None, None
+def slack_and_alertmgr(args):
+    slack_cli, slack_ch = None, None
     if args.alert_on_err:
-        slack_tok, slack_ch, opsgenie_key = os.getenv("SLACK_API_TOKEN"), os.getenv("SLACK_WARNING_CHANNEL"), os.getenv("OPSGENIE_KEY")
-        if not slack_ch or not slack_tok or not opsgenie_key:
-            logf("If --alert-on-err is specified, environment variables SLACK_API_TOKEN, SLACK_WARNING_CHANNEL, and OPSGENIE_KEY should be set. Exiting.")
+        slack_tok, slack_ch = os.getenv("SLACK_API_TOKEN"), os.getenv("SLACK_WARNING_CHANNEL")
+        if not slack_ch or not slack_tok:
+            logf("If --alert-on-err is specified, environment variables SLACK_API_TOKEN and SLACK_WARNING_CHANNEL should be set. Exiting.")
             sys.exit(1)
         slack_cli = SlackClient(slack_tok)
-    return slack_cli, slack_ch, opsgenie_key
+        alertmgr_url = os.getenv("ALERT_MANAGER_URL", default="https://alertmanager.sgdev.org")
+        alertmgr_cookie = os.getenv("ALERT_MANAGER_OAUTH_COOKIE")
+    return slack_cli, slack_ch, alertmgr_url, alertmgr_cookie
 
 def run_tests(args, tests):
     failed_tests = []
-    slack_cli, slack_ch, opsgenie_key = slack_and_opsgenie(args)
+    slack_cli, slack_ch, alertmgr_url, alertmgr_cookie = slack_and_alertmgr(args)
 
     def success(test_name):
         logf('[%s](%s) %s' % (green("PASS"), args.browser, test_name))
@@ -112,10 +116,8 @@ def run_tests(args, tests):
             screenshot = driver.d.get_screenshot_as_png()
             resp = slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
             slack_alert_link = resp['file']['permalink']
-            opsg_msg = 'e2e failure: %s (%s)' % (slack_alert_link, test_name)
-            if len(opsg_msg) > 126: # OpsGenie has a 130 char limit on message title length
-                opsg_msg = opsg_msg[:126] + "..."
-            alert_opsgenie(opsgenie_key, opsg_msg, msg)
+            exported_name = '%s,%s' % (test_name, args.browser)
+            alert_alertmanager("E2E failure", exported_name, slack_alert_link, alertmgr_url, oauth_cookie=alertmgr_cookie)
         if args.pause_on_err:
             print("""
 #################################################################################################
@@ -196,7 +198,7 @@ def main():
     p.add_argument("--selenium", help="the address of the Selenium server instance to communicate with", default="http://localhost:4444", type=str)
     p.add_argument("--browser", help="the browser type (firefox or chrome)", default="chrome", type=str)
     p.add_argument("--filter", help="only run the tests matching this query", default="", type=str)
-    p.add_argument("--alert-on-err", help="send alert to OpsGenie and Slack on error. If this is true, the following environment variables should also be set: SLACK_API_TOKEN, SLACK_WARNING_CHANNEL, OPSGENIE_KEY", action="store_true", default=False)
+    p.add_argument("--alert-on-err", help="send alert to Alertmanager and Slack on error. If this is true, the following environment variables should also be set: SLACK_API_TOKEN, SLACK_WARNING_CHANNEL", action="store_true", default=False)
     p.add_argument("--loop", help="loop continuously", action="store_true", default=False)
     p.add_argument("--tries-before-err", help="the number of times a test is tried before signaling failure", default=1, type=int)
 
@@ -208,7 +210,7 @@ def main():
     tests = [t for t in all_tests if args.filter in t[0].func_name]
 
     if args.alert_on_err:
-        slack_cli, slack_ch, _ = slack_and_opsgenie(args)
+        slack_cli, slack_ch, _, __ = slack_and_alertmgr(args)
         animal_emoji = random.choice(emoji)
         animal_name = animal_emoji.replace('_face', '')
         slack_cli.api_call("chat.postMessage", channel=slack_ch, text=""":%s: Hi, I'm the end-to-end test %s for %s! I'll run the following tests in a loop and post errors to this channel until I retire:
