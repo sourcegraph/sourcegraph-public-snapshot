@@ -1,6 +1,9 @@
-.PHONY: dep dist build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all
+.PHONY: install dep dist build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all
 
 default: build
+
+install:
+	yarn install
 
 dep:
 	docker build -t sourcegraph/browser-ext-bundle ./scripts/bundle
@@ -11,7 +14,7 @@ dist: dep
 	yarn run clean
 	docker run -v "$(shell pwd):/browser-ext" -i -t sourcegraph/browser-ext-bundle /bin/bash /bundle.sh
 
-build:
+build: install
 	yarn run build
 
 bundle: build
