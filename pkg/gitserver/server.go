@@ -74,6 +74,7 @@ func (s *Server) processRequests(requests <-chan *request) {
 func (s *Server) handleExecRequest(req *execRequest) {
 	start := time.Now()
 	exitStatus := -10810 // sentinel value to indicate not set
+	var stdoutN, stderrN int64
 	var status string
 	var errStr string
 
@@ -99,6 +100,8 @@ func (s *Server) handleExecRequest(req *execRequest) {
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", strings.Join(req.Args, " "))
 				ev.AddField("duration_ms", duration.Seconds()*1000)
+				ev.AddField("stdout_size", stdoutN)
+				ev.AddField("stderr_size", stderrN)
 				ev.AddField("exit_status", exitStatus)
 				if errStr != "" {
 					ev.AddField("error", errStr)
@@ -125,8 +128,10 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		return
 	}
 
-	stdoutC, stdoutW := chanrpcutil.NewWriter()
-	stderrC, stderrW := chanrpcutil.NewWriter()
+	stdoutC, stdoutWRaw := chanrpcutil.NewWriter()
+	stderrC, stderrWRaw := chanrpcutil.NewWriter()
+	stdoutW := &writeCounter{w: stdoutWRaw}
+	stderrW := &writeCounter{w: stderrWRaw}
 
 	cmd := exec.Command("git", req.Args...)
 	cmd.Dir = dir
@@ -158,6 +163,8 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	}
 	close(processResultChan)
 	status = strconv.Itoa(exitStatus)
+	stdoutN = stdoutW.n
+	stderrN = stderrW.n
 }
 
 var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{

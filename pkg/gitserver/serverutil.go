@@ -2,6 +2,7 @@ package gitserver
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -184,4 +185,21 @@ func (e *environ) Unset(key string) {
 			return
 		}
 	}
+}
+
+// writeCounter wraps an io.WriterCloser and keeps track of bytes written.
+type writeCounter struct {
+	w io.WriteCloser
+	// n is the number of bytes written to w
+	n int64
+}
+
+func (c *writeCounter) Write(p []byte) (n int, err error) {
+	n, err = c.w.Write(p)
+	c.n += int64(n)
+	return
+}
+
+func (c *writeCounter) Close() error {
+	return c.w.Close()
 }
