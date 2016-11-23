@@ -335,8 +335,8 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
         wd.get("https://github.com/gorilla/mux/pull/205/files?diff=split")
 
 all_tests = [
-    (test_github_private_auth_onboarding, "@kingy"),
-    (test_github_public_auth_onboarding, "@kingy"),
+    # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
+    # (test_github_public_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     (test_login_logout, "@beyang"),
     (test_repo_jump_to, "@nico"),
     (test_golden_workflow, "@matt"),
