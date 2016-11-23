@@ -144,7 +144,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	// Check consistency against the URL. The URL route params are for
 	// ease of debugging only, but it'd be confusing if they could
 	// diverge from the actual jsonrpc2 request.
-	if method != strings.TrimSuffix(reqs[1].Method, "?prepare") {
+	if method != reqs[1].Method {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", method, reqs[1].Method)}
 	}
 
