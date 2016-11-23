@@ -13,7 +13,6 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/app/templates"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -88,10 +87,6 @@ type Common struct {
 	// Debug is whether to show debugging info on the rendered page.
 	Debug bool
 
-	// ExternalLinks decides if we should include links to things like
-	// sourcegraph.com and the issue tracker on github.com
-	DisableExternalLinks bool
-
 	// ErrorID is a randomly generated string used to identify a specific instance
 	// of app error in the error logs.
 	ErrorID string
@@ -119,13 +114,12 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		}
 
 		field.Set(reflect.ValueOf(Common{
-			AuthInfo:             auth.ActorFromContext(req.Context()).AuthInfo(),
-			TemplateName:         name,
-			Ctx:                  req.Context(),
-			Debug:                handlerutil.DebugMode,
-			DisableExternalLinks: appconf.Flags.DisableExternalLinks,
-			ErrorID:              existingCommon.ErrorID,
-			JSCtx:                jsctx,
+			AuthInfo:     auth.ActorFromContext(req.Context()).AuthInfo(),
+			TemplateName: name,
+			Ctx:          req.Context(),
+			Debug:        handlerutil.DebugMode,
+			ErrorID:      existingCommon.ErrorID,
+			JSCtx:        jsctx,
 		}))
 	}
 

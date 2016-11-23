@@ -136,8 +136,6 @@ type ServeCmd struct {
 
 	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)" env:"SRC_APP_URL"`
 
-	NoWorker bool `long:"no-worker" description:"deprecated"`
-
 	// Flags containing sensitive information must be added to this struct.
 	ServeCmdPrivate
 
@@ -173,9 +171,6 @@ func (c *ServeCmd) Execute(args []string) error {
 	defer cleanup()
 
 	logHandler := log15.StderrHandler
-	if globalOpt.VerbosePkg != "" {
-		logHandler = log15.MatchFilterHandler("pkg", globalOpt.VerbosePkg, log15.StderrHandler)
-	}
 
 	// We have some noisey debug logs, so to aid development we have a
 	// special dbug level which excludes the noisey logs
@@ -410,6 +405,10 @@ func (c *ServeCmd) safeConfigFlags() string {
 // runGitserver either connects to gitservers specified in c.Gitservers, if any.
 // Otherwise it starts a single local gitserver and connects to it.
 func (c *ServeCmd) runGitserver() {
+	if c.Gitservers == "none" {
+		return
+	}
+
 	gitservers := strings.Fields(c.Gitservers)
 	if len(gitservers) != 0 {
 		for _, addr := range gitservers {

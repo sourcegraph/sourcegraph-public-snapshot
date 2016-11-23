@@ -12,9 +12,7 @@
 		{{end}}
 		<hr />
 		<p>Sorry, there’s been a problem.{{if .ErrorID}} To quickly identify this issue, use the ID <b>{{.ErrorID}}</b>.{{end}}</p>
-		{{if (not .DisableExternalLinks)}}
-			<p>If this issue persists, please <a href="mailto:support@sourcegraph.com">contact us</a> with steps to reproduce and other useful context{{if .ErrorID}}, and include the id above{{end}}.</p>
-		{{end}}
+		<p>If this issue persists, please <a href="mailto:support@sourcegraph.com">contact us</a> with steps to reproduce and other useful context{{if .ErrorID}}, and include the id above{{end}}.</p>
 	</div>
 </div>
 {{end}}

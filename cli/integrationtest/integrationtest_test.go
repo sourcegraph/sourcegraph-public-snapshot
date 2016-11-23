@@ -31,7 +31,6 @@ func TestMain(m *testing.M) {
 	}()
 
 	s, _ := testserver.NewUnstartedServer()
-	s.Config.Serve.NoWorker = true
 	if err := s.Start(); err != nil {
 		panic(err)
 	}

@@ -14,10 +14,7 @@ import (
 
 // globalOpt contains global options.
 var globalOpt struct {
-	Config     func(s string) error `long:"config" description:"INI config file" no-ini:"true" env:"SRC_CONFIG"`
-	Verbose    bool                 `long:"verbose" short:"v" description:"show verbose output (same as --log-level=dbug)" env:"SRC_VERBOSE"`
-	VerbosePkg string               `long:"verbose-pkg" description:"if set, only log output from specified package" env:"SRC_VERBOSE_PKG"`
-	LogLevel   string               `long:"log-level" description:"upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)" default:"info" env:"SRC_LOG_LEVEL"`
+	LogLevel string `long:"log-level" description:"upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)" default:"info" env:"SRC_LOG_LEVEL"`
 
 	Trace          []string      `long:"log-trace" description:"comma separated list of trace logs to show. Options: all,gRPC,HTTP,build,github" default:"HTTP" env:"SRC_LOG_TRACE"`
 	TraceThreshold time.Duration `long:"log-trace-threshold" description:"Show traces that take longer than this." env:"SRC_LOG_TRACE_THRESHOLD"`
@@ -26,10 +23,6 @@ var globalOpt struct {
 func init() {
 	cli.CLI.LongDescription = "src runs and manages a Sourcegraph instance."
 	cli.CLI.AddGroup("Global options", "", &globalOpt)
-
-	cli.CLI.InitFuncs = append(cli.CLI.InitFuncs, func() {
-		srclib.GlobalOpt.Verbose = globalOpt.Verbose
-	})
 }
 
 func init() {
@@ -47,10 +40,6 @@ func Main() error {
 
 	for _, f := range cli.PostInit {
 		f()
-	}
-
-	globalOpt.Config = func(s string) error {
-		return flags.NewIniParser(cli.CLI).ParseFile(s)
 	}
 
 	_, err := cli.CLI.Parse()

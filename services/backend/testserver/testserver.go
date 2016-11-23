@@ -273,7 +273,7 @@ func NewUnstartedServer() (*Server, context.Context) {
 func newUnstartedServer(scheme string) (*Server, context.Context) {
 	var s Server
 
-	s.Config.Flags = append(s.Config.Flags, "-v", "--log-level", "dbug")
+	s.Config.Flags = append(s.Config.Flags, "--log-level", "dbug")
 
 	// SGPATH
 	sgpath, err := ioutil.TempDir("", "sgtest-sgpath")
@@ -310,7 +310,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// FS
 	s.Config.Serve.ReposDir = reposDir
-	s.Config.Serve.Gitservers = "127.0.0.1:3178"
+	s.Config.Serve.Gitservers = "none"
 
 	// Graphstore
 	s.Config.Serve.GraphStoreOpts.Root = reposDir

@@ -26,7 +26,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
@@ -677,10 +676,6 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	// Cap GetInventory operation to some reasonable time.
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
-
-	if localcli.Flags.DisableRepoInventory {
-		return nil, legacyerr.Errorf(legacyerr.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
-	}
 
 	if !isAbsCommitID(repoRev.CommitID) {
 		return nil, errNotAbsCommitID

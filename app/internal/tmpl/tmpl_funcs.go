@@ -27,8 +27,6 @@ var FuncMap = htmpl.FuncMap{
 		return string(b), nil
 	},
 
-	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
-
 	"maxLen": func(maxLen int, s string) string {
 		if len(s) <= maxLen {
 			return s
@@ -40,8 +38,6 @@ var FuncMap = htmpl.FuncMap{
 	"mainJavaScriptBundleURL": assets.MainJavaScriptBundleURL,
 
 	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
-
-	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 
 	"shortDoc": func(s string) string {
 		// Return first sentence if fewer than 128 chars. Otherwise,
