@@ -1,6 +1,6 @@
-import {EventLogger} from "../analytics/EventLogger";
 import * as backend from "../backend";
 import * as utils from "../utils";
+import {EventLogger} from "../utils/EventLogger";
 import * as React from "react";
 
 export class Background extends React.Component<{}, {}> {

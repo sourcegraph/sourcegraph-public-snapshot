@@ -1,5 +1,5 @@
-import {doFetch as fetch} from "../actions/xhr";
-import {EventLogger} from "../analytics/EventLogger";
+import {doFetch as fetch} from "../backend/xhr";
+import {EventLogger} from "../utils/EventLogger";
 import {logException} from "../utils/Sentry";
 import * as github from "./github";
 import * as utils from "./index";

@@ -1,4 +1,4 @@
-import {doFetch as fetch} from "./actions/xhr";
+import {doFetch as fetch} from "./xhr";
 
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
 

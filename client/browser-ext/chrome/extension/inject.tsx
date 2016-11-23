@@ -1,7 +1,7 @@
-import {useAccessToken} from "../../app/actions/xhr";
-import {EventLogger} from "../../app/analytics/EventLogger";
+import {useAccessToken} from "../../app/backend/xhr";
 import {Background} from "../../app/components/Background";
 import {BlobAnnotator} from "../../app/components/BlobAnnotator";
+import {EventLogger} from "../../app/utils/EventLogger";
 import * as github from "../../app/utils/github";
 import {getGitHubRoute, isGitHubURL, parseURL} from "../../app/utils/index";
 import {logError, logException} from "../../app/utils/Sentry";

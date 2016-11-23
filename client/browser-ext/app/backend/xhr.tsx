@@ -1,6 +1,5 @@
 import {singleflightFetch} from "./singleflightFetch";
 
-
 let token: string | null = null;
 export function useAccessToken(tok: string): void {
 	token = tok;

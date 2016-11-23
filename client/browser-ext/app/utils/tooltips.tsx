@@ -1,4 +1,4 @@
-import {EventLogger} from "../analytics/EventLogger";
+import {EventLogger} from "./EventLogger";
 import * as _ from "lodash";
 import * as marked from "marked";
 import {style} from "typestyle";
