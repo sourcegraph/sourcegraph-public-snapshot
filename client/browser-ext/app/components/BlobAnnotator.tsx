@@ -1,13 +1,10 @@
-import {allActions} from "../actions";
-import {ResolvedRevState, keyFor} from "../reducers";
+import * as backend from "../backend";
 import * as utils from "../utils";
 import {addAnnotations} from "../utils/annotations";
 import * as github from "../utils/github";
 import {logError} from "../utils/Sentry";
 import {SourcegraphIcon} from "./Icons";
 import * as React from "react";
-import {connect} from "react-redux";
-import {bindActionCreators} from "redux";
 
 const isCloning = new Set<string>();
 
@@ -21,12 +18,11 @@ interface Props {
 	blobElement: HTMLElement;
 }
 
-interface ReduxProps {
-	actions: typeof allActions;
-	resolvedRev: ResolvedRevState;
+interface State {
+	resolvedRevs: {[key: string]: backend.ResolvedRevResp};
 }
 
-class Base extends React.Component<Props & ReduxProps, {}> {
+export class BlobAnnotator extends React.Component<Props, State> {
 	refreshInterval: NodeJS.Timer;
 
 	// language is determined by the path extension
@@ -48,8 +44,12 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 	baseRepoURI?: string;
 	headRepoURI?: string;
 
-	constructor(props: Props & ReduxProps) {
+	constructor(props: Props) {
 		super(props);
+		this.state = {
+			resolvedRevs: {},
+		};
+
 		this.language = utils.getPathExtension(props.path);
 
 		this._clickRefresh = this._clickRefresh.bind(this);
@@ -83,7 +83,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 
 		if (this.baseRepoURI !== this.headRepoURI && this.headRepoURI) {
 			// Ensure the head repo of a cross-repo PR is created.
-			props.actions.ensureRepoExists(this.headRepoURI);
+			backend.ensureRepoExists(this.headRepoURI);
 		}
 
 		this.resolveRevs();
@@ -106,16 +106,31 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 		setTimeout(() => this._addAnnotations(), 500);
 	}
 
+	_updateResolvedRevs(repo: string, rev?: string): void {
+		const key = backend.cacheKey(repo, rev);
+		if (this.state.resolvedRevs[key] && this.state.resolvedRevs[key].commitID) {
+			return; // nothing to do
+		}
+		const p = backend.resolveRev(repo, rev);
+		if (!p || !p.then) {
+			console.error("WHY THE FUCK IS THIS HAPPENING", p, p.then);
+			return;
+		}
+		p.then((resp) => {
+			this.setState({resolvedRevs: Object.assign({}, this.state.resolvedRevs, {[key]: resp}, {[repo]: resp})});
+		});
+	}
+
 	resolveRevs(): void {
 		if (this.isDelta) {
 			if (this.baseCommitID && this.baseRepoURI) {
-				this.props.actions.resolveRev(this.baseRepoURI, this.baseCommitID);
+				this._updateResolvedRevs(this.baseRepoURI, this.baseCommitID);
 			}
 			if (this.headCommitID && this.headRepoURI) {
-				this.props.actions.resolveRev(this.headRepoURI, this.headCommitID);
+				this._updateResolvedRevs(this.headRepoURI, this.headCommitID);
 			}
 		} else if (this.rev) {
-			this.props.actions.resolveRev(this.props.repoURI, this.rev);
+			this._updateResolvedRevs(this.props.repoURI, this.rev);
 		} else {
 			logError("unable to fetch annotations; missing revision data");
 		}
@@ -139,9 +154,9 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 				apply(this.headRepoURI, this.headCommitID, false, this.eventLoggerProps());
 			}
 		} else {
-			const resolvedRev = this.props.resolvedRev.content[keyFor(this.props.repoURI, this.rev)];
-			if (resolvedRev && resolvedRev.json && resolvedRev.json.CommitID) {
-				apply(this.props.repoURI, resolvedRev.json.CommitID, false, this.eventLoggerProps());
+			const resolvedRev = this.state.resolvedRevs[backend.cacheKey(this.props.repoURI, this.rev)];
+			if (resolvedRev && resolvedRev.commitID) {
+				apply(this.props.repoURI, resolvedRev.commitID, false, this.eventLoggerProps());
 			}
 		}
 	}
@@ -162,11 +177,11 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 	}
 
 	render(): JSX.Element | null {
-		if (typeof this.props.resolvedRev.content[keyFor(this.props.repoURI)] === "undefined") {
+		if (typeof this.state.resolvedRevs[this.props.repoURI] === "undefined") {
 			return null;
 		}
 
-		if (github.isPrivateRepo() && this.props.resolvedRev.content[keyFor(this.props.repoURI)].authRequired) {
+		if (github.isPrivateRepo() && this.state.resolvedRevs[this.props.repoURI].authRequired) {
 			// Not signed in or not auth'd for private repos
 			return (<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph for private repos`}>
 				<a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`}
@@ -176,7 +191,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 				</a>
 			</div>);
 
-		} else if (this.props.resolvedRev.content[keyFor(this.props.repoURI)].cloneInProgress) {
+		} else if (this.state.resolvedRevs[this.props.repoURI].cloneInProgress) {
 			// Cloning the repo
 			if (!isCloning.has(this.props.repoURI)) {
 				isCloning.add(this.props.repoURI);
@@ -217,7 +232,3 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 		}
 	}
 }
-
-export const BlobAnnotator = connect((state) => ({
-	resolvedRev: state.resolvedRev,
-}), (dispatch) => ({actions: bindActionCreators(allActions, dispatch)}))(Base) as React.ComponentClass<Props>;

@@ -18,6 +18,9 @@ module.exports = {
 		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
 			sourceMap: true,
+			compressor: {
+				warnings: false
+			}
 		}),
 		new webpack.DefinePlugin({
 			'process.env': {

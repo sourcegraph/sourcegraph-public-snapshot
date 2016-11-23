@@ -1,5 +1,3 @@
-// tslint:disable
-
 /// <reference path="node_modules/@types/chrome/index.d.ts" />
 
 declare var require: {
@@ -17,4 +15,5 @@ declare namespace global {
 	export var navigator: any;
 	export var Promise: any;
     export var Node: any;
+	export var fetch: typeof window.fetch;
 }

@@ -1,16 +1,10 @@
-import {allActions} from "../actions";
 import {EventLogger} from "../analytics/EventLogger";
+import * as backend from "../backend";
 import * as utils from "../utils";
 import * as React from "react";
-import {connect} from "react-redux";
-import {bindActionCreators} from "redux";
 
-interface Props {
-	actions: typeof allActions;
-}
-
-class Component extends React.Component<Props, {}> {
-	constructor(props: Props) {
+export class Background extends React.Component<{}, {}> {
+	constructor(props: {}) {
 		super(props);
 		this._refresh = this._refresh.bind(this);
 		this._cleanupAndRefresh = this._cleanupAndRefresh.bind(this);
@@ -23,7 +17,7 @@ class Component extends React.Component<Props, {}> {
 		this._cleanupAndRefresh();
 	}
 
-	componentWillUpdate(nextProps: Props): void {
+	componentWillUpdate(nextProps: {}): void {
 		// Call refresh with new props (since this.props are not updated until this method completes).
 		this._refresh(nextProps);
 	}
@@ -52,7 +46,7 @@ class Component extends React.Component<Props, {}> {
 		this.removePopovers();
 	}
 
-	_refresh(props?: Props): void {
+	_refresh(props?: {}): void {
 		if (utils.isSourcegraphURL(window.location)) {
 			return;
 		}
@@ -64,7 +58,7 @@ class Component extends React.Component<Props, {}> {
 		let urlProps = utils.parseURL(window.location);
 
 		if (urlProps.repoURI) {
-			props.actions.ensureRepoExists(urlProps.repoURI);
+			backend.ensureRepoExists(urlProps.repoURI);
 		}
 
 		chrome.runtime.sendMessage({type: "getIdentity"}, (identity) => {
@@ -78,5 +72,3 @@ class Component extends React.Component<Props, {}> {
 		return null; // the injected app is for bootstrapping; nothing needs to be rendered
 	}
 }
-
-export const Background = connect((state) => ({}), (dispatch) => ({actions: bindActionCreators(allActions, dispatch)}))(Component);

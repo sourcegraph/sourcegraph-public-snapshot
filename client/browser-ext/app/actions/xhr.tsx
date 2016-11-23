@@ -1,3 +1,6 @@
+import {singleflightFetch} from "./singleflightFetch";
+
+
 let token: string | null = null;
 export function useAccessToken(tok: string): void {
 	token = tok;
@@ -17,6 +20,7 @@ function defaultOptions(): FetchOptions | undefined {
 	return {headers};
 };
 
-export function doFetch(url: string, opt?: Object): Promise<Response> {
-	return fetch(url, Object.assign({}, defaultOptions(), opt));
+const f = singleflightFetch(global.fetch);
+export function doFetch(url: string, opt?: any): Promise<Response> {
+	return f(url, Object.assign({}, defaultOptions(), opt));
 }

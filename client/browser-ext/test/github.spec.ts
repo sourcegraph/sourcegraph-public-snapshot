@@ -1,3 +1,4 @@
+import "fetch-mock";
 import * as jsdom from "jsdom";
 
 // initialization for Sentry
@@ -8,7 +9,6 @@ import * as utils from "../app/utils";
 import * as annotations from "../app/utils/annotations";
 import * as github from "../app/utils/github";
 import {expect} from "chai";
-import "fetch-mock";
 
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
@@ -200,66 +200,6 @@ describe("GitHub DOM", () => {
 				expect(headCells[3].filter((cell) => cell.isAddition)).to.have.length(21);
 				expect(headCells[4].filter((cell) => cell.isAddition)).to.have.length(3);
 			});
-		});
-	});
-
-	describe("PR conversation view w/ snippets", () => {
-		const url = "https://github.com/gorilla/mux/pull/190";
-		before(setupDOM(url));
-
-		it("should have 3 file containers", () => {
-			expect(github.getFileContainers()).to.have.length(3);
-		});
-
-		it("should get blob from file containers", () => {
-			Array.from(github.getFileContainers()).forEach((file) => expect(github.getBlobElement(file)).to.be.ok);
-		});
-
-		it("should not create blob annotator mounts", () => {
-			Array.from(github.getFileContainers()).forEach((file) => expect(github.createBlobAnnotatorMount(file)).to.not.be.ok);
-		});
-
-		it("should get file names of containers", () => {
-			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				"mux_test.go", "mux.go", "mux.go",
-			]);
-		});
-
-		it("should not be private repo", () => {
-			expect(github.isPrivateRepo()).to.be.false;
-		});
-
-		it("should not be split diff", () => {
-			expect(github.isSplitDiff()).to.be.false;
-		});
-
-		it("should not parse base/head rev", () => {
-			expect(github.getDeltaRevs()).to.not.be.ok;
-		});
-
-		it("should not parse deltaInfo", () => {
-			const deltaInfo = github.getDeltaInfo();
-			expect(deltaInfo).to.have.property("baseBranch", "master");
-			expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
-			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
-			expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
-		});
-
-		it("should not register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(0);
-		});
-
-		it("should parse url", () => {
-			const data = utils.parseURL(window.location);
-			expect(data.user).to.eql("gorilla");
-			expect(data.repo).to.eql("mux");
-			expect(data.repoURI).to.eql("github.com/gorilla/mux");
-			expect(data.rev).to.not.be.ok;
-			expect(data.path).to.not.be.ok;
-			expect(data.isDelta).to.be.true;
-			expect(data.isCommit).to.be.false;
-			expect(data.isPullRequest).to.be.true;
 		});
 	});
 

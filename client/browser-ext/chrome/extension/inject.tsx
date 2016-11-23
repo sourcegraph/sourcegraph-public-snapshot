@@ -1,24 +1,12 @@
-import * as Actions from "../../app/actions";
+import {useAccessToken} from "../../app/actions/xhr";
 import {EventLogger} from "../../app/analytics/EventLogger";
 import {Background} from "../../app/components/Background";
 import {BlobAnnotator} from "../../app/components/BlobAnnotator";
-import {configureStore} from "../../app/store/configureStore";
 import * as github from "../../app/utils/github";
 import {getGitHubRoute, isGitHubURL, parseURL} from "../../app/utils/index";
 import {logError, logException} from "../../app/utils/Sentry";
 import * as React from "react";
-import {render} from "react-dom";
-import {unmountComponentAtNode} from "react-dom";
-import {Provider} from "react-redux";
-
-const store = configureStore();
-
-function injectComponent(component: React.ReactNode, mount: HTMLElement): void {
-	chrome.runtime.sendMessage({type: "getSessionToken"}, (token) => {
-		store.dispatch(Actions.setAccessToken(token));
-		render(<Provider store={store}>{component}</Provider>, mount);
-	});
-}
+import {render, unmountComponentAtNode} from "react-dom";
 
 function ejectComponent(mount: HTMLElement): void {
 	try {
@@ -30,16 +18,21 @@ function ejectComponent(mount: HTMLElement): void {
 }
 
 function injectModules(): void {
-	if (!document.getElementById("sourcegraph-app-bootstrap")) {
-		injectBackgroundApp();
-		injectBlobAnnotator();
+	chrome.runtime.sendMessage({type: "getSessionToken"}, (token) => {
+		if (token) {
+			useAccessToken(token);
+		}
+		if (!document.getElementById("sourcegraph-app-bootstrap")) {
+			injectBackgroundApp();
+			injectBlobAnnotator();
 
-		// Add invisible div to the page to indicate injection has completed.
-		let el = document.createElement("div");
-		el.id = "sourcegraph-app-bootstrap";
-		el.style.display = "none";
-		document.body.appendChild(el);
-	}
+			// Add invisible div to the page to indicate injection has completed.
+			let el = document.createElement("div");
+			el.id = "sourcegraph-app-bootstrap";
+			el.style.display = "none";
+			document.body.appendChild(el);
+		}
+	});
 }
 
 function injectBackgroundApp(): void {
@@ -47,7 +40,7 @@ function injectBackgroundApp(): void {
 	backgroundContainer.id = "sourcegraph-app-background";
 	backgroundContainer.style.display = "none";
 	document.body.appendChild(backgroundContainer);
-	injectComponent(<Background />, backgroundContainer);
+	render(<Background />, backgroundContainer);
 }
 
 function injectBlobAnnotator(): void {
@@ -75,7 +68,7 @@ function injectBlobAnnotator(): void {
 		if (!mount) {
 			continue;
 		}
-		injectComponent(<BlobAnnotator path={filePath} repoURI={repoURI} blobElement={github.getBlobElement(file)} />, mount);
+		render(<BlobAnnotator path={filePath} repoURI={repoURI} blobElement={github.getBlobElement(file)} />, mount);
 	}
 }
 

@@ -8,16 +8,6 @@ function loadScript(name: string, tabId: number, cb: () => void): Promise<void> 
 		return fetch(`https://localhost:3000/js/${name}.bundle.js`)
 			.then((res) => res.text())
 			.then((fetchRes) => {
-				// Load redux-devtools-extension inject bundle,
-				// because inject script and page is in a different context
-				const request = new XMLHttpRequest();
-				request.open("GET", "chrome-extension://lmhkpmbekcpmknklioeibfkpmmfibljd/js/inject.bundle.js");  // sync
-				request.send();
-				request.onload = () => {
-					if (request.readyState === XMLHttpRequest.DONE && request.status === 200) {
-						chrome.tabs.executeScript(tabId, {code: request.responseText, runAt: "document_start"});
-					}
-				};
 				chrome.tabs.executeScript(tabId, {code: fetchRes, runAt: "document_end"}, cb);
 			});
 	}
