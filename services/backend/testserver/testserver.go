@@ -310,6 +310,7 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// FS
 	s.Config.Serve.ReposDir = reposDir
+	s.Config.Serve.Gitservers = "127.0.0.1:3178"
 
 	// Graphstore
 	s.Config.Serve.GraphStoreOpts.Root = reposDir

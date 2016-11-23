@@ -32,7 +32,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -421,7 +420,11 @@ func (c *ServeCmd) runGitserver() {
 
 	stdoutReader, stdoutWriter := io.Pipe()
 	go func() {
-		cmd := exec.Command(srccmd.Path, "git-server", "--auto-terminate", "--repos-dir="+os.ExpandEnv(c.ReposDir))
+		cmd := exec.Command("gitserver")
+		cmd.Env = append(os.Environ(),
+			"SRC_AUTO_TERMINATE=true",
+			"SRC_REPOS_DIR="+os.ExpandEnv(c.ReposDir),
+		)
 		_, err := cmd.StdinPipe() // keep stdin from closing
 		if err != nil {
 			log.Fatalf("git-server failed: %s", err)

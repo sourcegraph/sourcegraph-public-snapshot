@@ -17,6 +17,7 @@ curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &)
 
 export DEBUG=t
 
+go install sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver
 . dev/langservers.lib.bash
 detect_dev_langservers
 
