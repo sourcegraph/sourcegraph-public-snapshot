@@ -15,7 +15,8 @@ export WEBPACK_DEV_SERVER_ADDR=${WEBPACK_DEV_SERVER_ADDR:-127.0.0.1:8080}
 
 curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &)
 
-export DEBUG=t
+export DEBUG=true
+export SRC_APP_DISABLE_SUPPORT_SERVICES=true
 
 go install sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver
 . dev/langservers.lib.bash
@@ -26,6 +27,4 @@ exec "$PWD"/vendor/bin/rego \
 	 -installenv=GOGC=off,GODEBUG=sbrk=1 \
 	 -tags="${GOTAGS-}" \
 	 -extra-watches='app/templates/*' \
-	 sourcegraph.com/sourcegraph/sourcegraph/cmd/src ${SRCFLAGS-} \
-	 serve ${SERVEFLAGS-} \
-	 --app.disable-support-services
+	 sourcegraph.com/sourcegraph/sourcegraph/cmd/src
