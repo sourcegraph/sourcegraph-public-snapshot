@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es5", // don't generate "class" statements, etc.
-    "module": "es6", // generate "import" statements which will be processed by webpack
+    "target": "es5",
+    "module": "es6",
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
