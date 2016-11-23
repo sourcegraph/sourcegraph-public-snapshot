@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"sync"
 
@@ -95,3 +96,110 @@ func (fs *archiveFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, e
 }
 
 func (fs *archiveFS) String() string { return "archiveFS(" + fs.fs.String() + ")" }
+
+// FastVFS wraps a repo and presents a fast VFS interface that calls
+// the repo directly until the ArchiveFileSystem is ready, at which
+// point it calls into the archive for fast, in-memory access.
+func FastVFS(repo interface {
+	Repository
+	Archiver
+}, treeish string) ctxvfs.FileSystem {
+	return &fastVFS{
+		archive:     ArchiveFileSystem(repo, treeish).(*archiveFS),
+		archiveDone: make(chan struct{}),
+		direct:      FileSystem(repo, CommitID(treeish)),
+	}
+}
+
+type fastVFS struct {
+	mu             sync.Mutex
+	archiveStarted bool
+	archive        *archiveFS
+	archiveErr     error
+	archiveDone    chan struct{}
+
+	direct ctxvfs.FileSystem
+}
+
+// chooseImpl returns the direct-to-gitserver VFS implementation until
+// the zip archive is fetched. The zip archive is preferred once it's
+// available, since it's much faster than roundtripping to gitserver.
+func (fs *fastVFS) chooseImpl(ctx context.Context) (ctxvfs.FileSystem, error) {
+	fs.mu.Lock()
+	if !fs.archiveStarted {
+		// Run this once, but don't ever block on it.
+		go func() {
+			fs.archiveErr = fs.archive.fetchOrWait(ctx)
+			close(fs.archiveDone)
+		}()
+		fs.archiveStarted = true
+	}
+	fs.mu.Unlock()
+
+	select {
+	case <-fs.archiveDone:
+		return fs.archive, fs.archiveErr
+	default:
+		return fs.direct, nil
+	}
+}
+
+func (fs *fastVFS) Open(ctx context.Context, name string) (ctxvfs.ReadSeekCloser, error) {
+	v, err := fs.chooseImpl(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return v.Open(ctx, name)
+}
+
+func (fs *fastVFS) Lstat(ctx context.Context, name string) (os.FileInfo, error) {
+	v, err := fs.chooseImpl(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return v.Lstat(ctx, name)
+}
+
+func (fs *fastVFS) Stat(ctx context.Context, name string) (os.FileInfo, error) {
+	v, err := fs.chooseImpl(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return v.Stat(ctx, name)
+}
+
+func (fs *fastVFS) ReadDir(ctx context.Context, name string) ([]os.FileInfo, error) {
+	v, err := fs.chooseImpl(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return v.ReadDir(ctx, name)
+}
+
+func (fs *fastVFS) ListAllFiles(ctx context.Context) ([]string, error) {
+	v, err := fs.chooseImpl(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if v, ok := v.(interface {
+		ListAllFiles(context.Context) ([]string, error)
+	}); ok {
+		return v.ListAllFiles(ctx)
+	}
+
+	fis, err := fs.archive.repo.(Repository).ReadDir(ctx, CommitID(fs.archive.treeish), "", true)
+	if err != nil {
+		return nil, err
+	}
+	paths := make([]string, 0, len(fis))
+	for _, fi := range fis {
+		if fi.Mode().IsRegular() {
+			paths = append(paths, fi.Name())
+		}
+	}
+	return paths, nil
+}
+
+func (fs *fastVFS) String() string {
+	return fmt.Sprintf("FastVFS(%s at commit %s)", fs.archive.repo, fs.archive.treeish)
+}
