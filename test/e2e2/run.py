@@ -84,7 +84,7 @@ def alert_alertmanager(alertname, exported_name, url, alertmgr_url, oauth_cookie
         logf("[ERROR] failed to post Alertmanager alert: %s", err.message)
 
 def slack_and_alertmgr(args):
-    slack_cli, slack_ch = None, None
+    slack_cli, slack_ch, alertmgr_url, alertmgr_cookie = None, None, None, None
     if args.alert_on_err:
         slack_tok, slack_ch = os.getenv("SLACK_API_TOKEN"), os.getenv("SLACK_WARNING_CHANNEL")
         if not slack_ch or not slack_tok:
