@@ -38,29 +38,8 @@ const resolvedRev = function(state: ResolvedRevState = {content: {}}, action: Ac
 	}
 };
 
-export type AnnotationsState = {content: {[key: string]: any}}; // TODO(john): use proper type
-const annotations = function(state: AnnotationsState = {content: {}}, action: Actions.FetchedAnnotationsAction): AnnotationsState {
-	switch (action.type) {
-	case Actions.FETCHED_ANNOTATIONS:
-		if (!state.content[keyFor(action.repo, action.rev, action.path)] || action.xhrResponse.status === 200) {
-			return Object.assign({}, state, {
-				content: Object.assign({}, state.content, {
-					[keyFor(action.repo, action.rev, action.path)]: action.xhrResponse.status === 200 ? {relRev: action.relRev, resp: action.xhrResponse.body} : null,
-				}),
-			});
-		}
-		// Fall through
-		// As a result, we serve the result of the last
-		// successful request (one that returned HTTP 200).
-
-	default:
-		return state;
-	}
-};
-
 export interface ReducerState {
 	accessToken: AccessTokenState;
 	resolvedRev: ResolvedRevState;
-	annotations: AnnotationsState;
 }
-export const rootReducer = combineReducers<ReducerState>({accessToken, resolvedRev, annotations});
+export const rootReducer = combineReducers<ReducerState>({accessToken, resolvedRev});

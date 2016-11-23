@@ -1,8 +1,8 @@
 import * as utils from "../app/utils";
 import * as annotations from "../app/utils/annotations";
 import * as github from "../app/utils/github";
-import * as testData from "./data/annotations";
 import {expect} from "chai";
+import "fetch-mock";
 import * as jsdom from "jsdom";
 
 function setupDOM(url: string): (done: any) => void {
@@ -70,32 +70,10 @@ describe("GitHub DOM", () => {
 		});
 
 		describe("annotations", () => {
-			let _annsByStartByte: annotations.AnnotationsByByte;
-			let _annsByEndByte: annotations.AnnotationsByByte;
-			let _lineStartBytes: annotations.StartBytesByLine;
 			let _codeCells: github.CodeCell[];
 			before(() => {
-				const {annsByStartByte, annsByEndByte} = annotations.indexAnnotations(testData.blobAnnotations.IncludedAnnotations.Annotations);
-				_annsByStartByte = annsByStartByte;
-				_annsByEndByte = annsByEndByte;
-				_lineStartBytes = annotations.indexLineStartBytes(testData.blobAnnotations.IncludedAnnotations.LineStartBytes);
-
 				const file = github.getFileContainers()[0];
 				_codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: false, isSplitDiff: false, isBase: false});
-			});
-
-			it("should index annotations", () => {
-				expect(_annsByStartByte[173]).to.be.ok; // from line 5, "package mux" (the mux token)
-				expect(_annsByStartByte[172]).to.not.be.ok;
-			});
-
-			it("should index line start bytes", () => {
-				expect(_lineStartBytes[0]).to.be.not.ok;
-				expect(_lineStartBytes[1]).to.eql(0);
-				expect(_lineStartBytes[2]).to.eql(60);
-				expect(_lineStartBytes[3]).to.eql(114);
-				expect(_lineStartBytes[4]).to.eql(164);
-				expect(_lineStartBytes[5]).to.eql(165);
 			});
 
 			it("should get code cells", () => {
@@ -104,36 +82,26 @@ describe("GitHub DOM", () => {
 
 			it("should convert element node", () => {
 				// convert line 5, "package mux"
-				const convertedNode = annotations.convertElementNode(_codeCells[4].cell, _annsByStartByte, _lineStartBytes[5], _lineStartBytes[5], false);
+				const convertedNode = annotations.convertElementNode(_codeCells[4].cell, 1, 5, false);
 				expect(convertedNode.bytesConsumed).to.eql(11);
 				expect(convertedNode.resultNode.textContent).to.eql("package mux");
-				expect(convertedNode.resultNode.innerHTML).to.eql(`<span data-byteoffset="1" class="pl-k"><span id="text-node-wrapper-165"><span id="text-node-165-1" data-byteoffset="1">package</span></span></span><span id="text-node-wrapper-172"><span id="text-node-172-8" data-byteoffset="8"> </span><span id="text-node-172-9" data-byteoffset="9">mux</span></span>`);
+				expect(convertedNode.resultNode.innerHTML).to.eql(`<span data-byteoffset="1" class="pl-k"><span id="text-node-wrapper-5-1"><span id="text-node-5-1" data-byteoffset="1">package</span></span></span><span id="text-node-wrapper-5-8"><span id="text-node-5-8" data-byteoffset="8"> </span><span id="text-node-5-9" data-byteoffset="9">mux</span></span>`);
 			});
 
 			it("should convert text node", () => {
 				// convert line 18, " &Router..."
-				const convertedNode = annotations.convertTextNode(_codeCells[17].cell.childNodes[2], _annsByStartByte, _lineStartBytes[18] + 7, _lineStartBytes[18], false);
+				const convertedNode = annotations.convertTextNode(_codeCells[17].cell.childNodes[2], 8, 18, false);
 				expect(convertedNode.bytesConsumed).to.eql(22);
 				expect(convertedNode.resultNode.textContent).to.eql(" &Router{namedRoutes: ");
-				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-326-8" data-byteoffset="8"> &amp;</span><span id="text-node-326-10" data-byteoffset="10">Router</span><span id="text-node-326-16" data-byteoffset="16">{</span><span id="text-node-326-17" data-byteoffset="17">namedRoutes</span><span id="text-node-326-28" data-byteoffset="28">: </span>`);
+				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-18-8" data-byteoffset="8"> </span><span id="text-node-18-9" data-byteoffset="9">&amp;</span><span id="text-node-18-10" data-byteoffset="10">Router</span><span id="text-node-18-16" data-byteoffset="16">{</span><span id="text-node-18-17" data-byteoffset="17">namedRoutes</span><span id="text-node-18-28" data-byteoffset="28">:</span><span id="text-node-18-29" data-byteoffset="29"> </span>`);
 			});
 
 			it("should convert node (stress test)", () => {
 				// convert complete line 18 code cell
-				const convertedNode = annotations.convertElementNode(_codeCells[17].cell, _annsByStartByte, _lineStartBytes[18], _lineStartBytes[18], false);
+				const convertedNode = annotations.convertElementNode(_codeCells[17].cell, 1, 18, false);
 				expect(convertedNode.bytesConsumed).to.eql(73);
 				expect(convertedNode.resultNode.textContent).to.eql("\treturn &Router{namedRoutes: make(map[string]*Route), KeepContext: false}");
-				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-319"><span id="text-node-319-1" data-byteoffset="1">\t</span></span><span data-byteoffset="2" class="pl-k"><span id="text-node-wrapper-320"><span id="text-node-320-2" data-byteoffset="2">return</span></span></span><span id="text-node-wrapper-326"><span id="text-node-326-8" data-byteoffset="8"> &amp;</span><span id="text-node-326-10" data-byteoffset="10">Router</span><span id="text-node-326-16" data-byteoffset="16">{</span><span id="text-node-326-17" data-byteoffset="17">namedRoutes</span><span id="text-node-326-28" data-byteoffset="28">: </span></span><span data-byteoffset="30" class="pl-c1"><span id="text-node-wrapper-348"><span id="text-node-348-30" data-byteoffset="30">make</span></span></span><span id="text-node-wrapper-352"><span id="text-node-352-34" data-byteoffset="34">(</span></span><span data-byteoffset="35" class="pl-k"><span id="text-node-wrapper-353"><span id="text-node-353-35" data-byteoffset="35">map</span></span></span><span id="text-node-wrapper-356"><span id="text-node-356-38" data-byteoffset="38">[</span></span><span data-byteoffset="39" class="pl-k"><span id="text-node-wrapper-357"><span id="text-node-357-39" data-byteoffset="39">string</span></span></span><span id="text-node-wrapper-363"><span id="text-node-363-45" data-byteoffset="45">]*</span><span id="text-node-363-47" data-byteoffset="47">Route</span><span id="text-node-363-52" data-byteoffset="52">), </span><span id="text-node-363-55" data-byteoffset="55">KeepContext</span><span id="text-node-363-66" data-byteoffset="66">: </span></span><span data-byteoffset="68" class="pl-c1"><span id="text-node-wrapper-386"><span id="text-node-386-68" data-byteoffset="68">false</span></span></span><span id="text-node-wrapper-391"><span id="text-node-391-73" data-byteoffset="73">}</span></span>`);
-			});
-
-			it("should detect comment node", () => {
-				expect(annotations.isCommentNode(_codeCells[0].cell.firstChild)).to.be.true;
-				expect(annotations.isCommentNode(_codeCells[6].cell.firstChild)).to.be.false;
-			});
-
-			it("should detect string node", () => {
-				expect(annotations.isStringNode(_codeCells[7].cell.childNodes[1])).to.be.true;
-				expect(annotations.isStringNode(_codeCells[0].cell.firstChild)).to.be.false;
+				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-18-1"><span id="text-node-18-1" data-byteoffset="1">\t</span></span><span data-byteoffset="2" class="pl-k"><span id="text-node-wrapper-18-2"><span id="text-node-18-2" data-byteoffset="2">return</span></span></span><span id="text-node-wrapper-18-8"><span id="text-node-18-8" data-byteoffset="8"> </span><span id="text-node-18-9" data-byteoffset="9">&amp;</span><span id="text-node-18-10" data-byteoffset="10">Router</span><span id="text-node-18-16" data-byteoffset="16">{</span><span id="text-node-18-17" data-byteoffset="17">namedRoutes</span><span id="text-node-18-28" data-byteoffset="28">:</span><span id="text-node-18-29" data-byteoffset="29"> </span></span><span data-byteoffset="30" class="pl-c1"><span id="text-node-wrapper-18-30"><span id="text-node-18-30" data-byteoffset="30">make</span></span></span><span id="text-node-wrapper-18-34"><span id="text-node-18-34" data-byteoffset="34">(</span></span><span data-byteoffset="35" class="pl-k"><span id="text-node-wrapper-18-35"><span id="text-node-18-35" data-byteoffset="35">map</span></span></span><span id="text-node-wrapper-18-38"><span id="text-node-18-38" data-byteoffset="38">[</span></span><span data-byteoffset="39" class="pl-k"><span id="text-node-wrapper-18-39"><span id="text-node-18-39" data-byteoffset="39">string</span></span></span><span id="text-node-wrapper-18-45"><span id="text-node-18-45" data-byteoffset="45">]</span><span id="text-node-18-46" data-byteoffset="46">*</span><span id="text-node-18-47" data-byteoffset="47">Route</span><span id="text-node-18-52" data-byteoffset="52">)</span><span id="text-node-18-53" data-byteoffset="53">,</span><span id="text-node-18-54" data-byteoffset="54"> </span><span id="text-node-18-55" data-byteoffset="55">KeepContext</span><span id="text-node-18-66" data-byteoffset="66">:</span><span id="text-node-18-67" data-byteoffset="67"> </span></span><span data-byteoffset="68" class="pl-c1"><span id="text-node-wrapper-18-68"><span id="text-node-18-68" data-byteoffset="68">false</span></span></span><span id="text-node-wrapper-18-73"><span id="text-node-18-73" data-byteoffset="73">}</span></span>`);
 			});
 		});
 	});
@@ -353,6 +321,7 @@ describe("GitHub DOM", () => {
 		});
 
 		describe("annotations", () => {
+
 			it("should get code cells for each snippet", () => {
 				const files = Array.from(github.getFileContainers());
 				const baseCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: false, isBase: true}));
@@ -380,31 +349,28 @@ describe("GitHub DOM", () => {
 				expect(headCells[4].filter((cell) => cell.isAddition)).to.have.length(3);
 			});
 
-			function getPRTestData(isBase: boolean): {annsByStartByte: annotations.AnnotationsByByte, lineStartBytes: annotations.StartBytesByLine, codeCells: github.CodeCell[]} {
-				const anns = isBase ? testData.pullRequestBaseAnnotations.IncludedAnnotations : testData.pullRequestHeadAnnotations.IncludedAnnotations;
-				const {annsByStartByte} = annotations.indexAnnotations(anns.Annotations);
-				const lineStartBytes = annotations.indexLineStartBytes(anns.LineStartBytes);
+			function getPRCells(isBase: boolean): github.CodeCell[] {
 				const file = github.getFileContainers()[0];
 				const codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: false, isBase});
-				return {annsByStartByte, lineStartBytes, codeCells};
+				return codeCells;
 			}
 
 			it("should convert deletion node (stress test)", () => {
 				// first red line of mux.go
-				const {annsByStartByte, lineStartBytes, codeCells} = getPRTestData(true);
-				const convertedNode = annotations.convertElementNode(codeCells[0].cell, annsByStartByte, lineStartBytes[80], lineStartBytes[80], false);
-				expect(convertedNode.bytesConsumed).to.eql(34); // TODO(john): number doesn't make sense
+				const codeCells = getPRCells(true);
+				const convertedNode = annotations.convertElementNode(codeCells[0].cell, 1, 80, false);
+				expect(convertedNode.bytesConsumed).to.eql(23);
 				expect(convertedNode.resultNode.textContent).to.eql("-\t\tpath := getPath(req)");
-				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-2136"><span id="text-node-2136-1" data-byteoffset="1">-\t</span><span id="text-node-2136-3" data-byteoffset="3">\t</span></span><span data-byteoffset="7" class="pl-smi"><span id="text-node-wrapper-2142"><span id="text-node-2142-7" data-byteoffset="7">path</span></span></span><span id="text-node-wrapper-2146"><span id="text-node-2146-11" data-byteoffset="11"> </span></span><span data-byteoffset="18" class="pl-k"><span id="text-node-wrapper-2153"><span id="text-node-2153-18" data-byteoffset="18">:</span><span id="text-node-2153-19" data-byteoffset="19">=</span></span></span><span id="text-node-wrapper-2157"><span id="text-node-2157-22" data-byteoffset="22"> </span></span><span data-byteoffset="23" class="pl-c1"><span id="text-node-wrapper-2158"><span id="text-node-2158-23" data-byteoffset="23">getPath</span></span></span><span id="text-node-wrapper-2165"><span id="text-node-2165-30" data-byteoffset="30">(req)</span></span>`);
+				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-80-1"><span id="text-node-80-1" data-byteoffset="1">-</span><span id="text-node-80-2" data-byteoffset="2">\t</span><span id="text-node-80-3" data-byteoffset="3">\t</span></span><span data-byteoffset="4" class="pl-smi"><span id="text-node-wrapper-80-4"><span id="text-node-80-4" data-byteoffset="4">path</span></span></span><span id="text-node-wrapper-80-8"><span id="text-node-80-8" data-byteoffset="8"> </span></span><span data-byteoffset="9" class="pl-k"><span id="text-node-wrapper-80-9"><span id="text-node-80-9" data-byteoffset="9">:</span><span id="text-node-80-10" data-byteoffset="10">=</span></span></span><span id="text-node-wrapper-80-11"><span id="text-node-80-11" data-byteoffset="11"> </span></span><span data-byteoffset="12" class="pl-c1"><span id="text-node-wrapper-80-12"><span id="text-node-80-12" data-byteoffset="12">getPath</span></span></span><span id="text-node-wrapper-80-19"><span id="text-node-80-19" data-byteoffset="19">(</span><span id="text-node-80-20" data-byteoffset="20">req</span><span id="text-node-80-23" data-byteoffset="23">)</span></span>`);
 			});
 
 			it("should convert addition node (stress test)", () => {
-				// first green line of mux.go
-				const {annsByStartByte, lineStartBytes, codeCells} = getPRTestData(false);
-				const convertedNode = annotations.convertElementNode(codeCells[4].cell, annsByStartByte, lineStartBytes[57], lineStartBytes[57], false);
-				expect(convertedNode.bytesConsumed).to.eql(24); // TODO(john): number doesn't make sense
+				// second green line of mux.go
+				const codeCells = getPRCells(false);
+				const convertedNode = annotations.convertElementNode(codeCells[4].cell, 1, 57, false);
+				expect(convertedNode.bytesConsumed).to.eql(21);
 				expect(convertedNode.resultNode.textContent).to.eql("+\tuseEncodedPath bool");
-				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-1580"><span id="text-node-1580-1" data-byteoffset="1">+</span><span id="text-node-1580-2" data-byteoffset="2">\tuseEncodedPat</span><span id="text-node-1580-16" data-byteoffset="16">h</span><span id="text-node-1580-17" data-byteoffset="17"> </span></span><span data-byteoffset="21" class="pl-k"><span id="text-node-wrapper-1600"><span id="text-node-1600-21" data-byteoffset="21">bool</span></span></span>`);
+				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-57-1"><span id="text-node-57-1" data-byteoffset="1">+</span><span id="text-node-57-2" data-byteoffset="2">\t</span><span id="text-node-57-3" data-byteoffset="3">useEncodedPath</span><span id="text-node-57-17" data-byteoffset="17"> </span></span><span data-byteoffset="18" class="pl-k"><span id="text-node-wrapper-57-18"><span id="text-node-57-18" data-byteoffset="18">bool</span></span></span>`);
 			});
 		});
 	});

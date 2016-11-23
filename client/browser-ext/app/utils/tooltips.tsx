@@ -75,7 +75,7 @@ export function setContext(activeTarget: HTMLElement | null, loggingStruct: Obje
  */
 export function clearContext(): void {
 	setContext(null, null);
-	setTooltip(null);
+	setTooltip(null, null);
 	hideTooltip();
 }
 
@@ -103,7 +103,7 @@ export function queueLoading(): void {
 	clearLoading();
 	loadingTimer = setTimeout(() => {
 		isLoading = true;
-		updateTooltip();
+		updateTooltip(target);
 	}, 500);
 }
 
@@ -111,7 +111,7 @@ export function queueLoading(): void {
  * setTooltip shows the provided tooltip text (or hides the tooltip, if a null
  * argument is provided). It overrides the "Loading..." tooltip.
  */
-export function setTooltip(data: TooltipData): void {
+export function setTooltip(data: TooltipData, t: HTMLElement | null): void {
 	clearLoading();
 	if (!data) {
 		currentTooltipText = null;
@@ -119,7 +119,7 @@ export function setTooltip(data: TooltipData): void {
 		currentTooltipText = data.title;
 		currentTooltipDoc = data.doc || null;
 	}
-	updateTooltip();
+	updateTooltip(t);
 }
 
 /**
@@ -136,11 +136,11 @@ export function hideTooltip(): void {
  * _updateTooltip displays the appropriate tooltip given current state (and may hide
  * the tooltip if no text is available).
  */
-function _updateTooltip(): void {
+function _updateTooltip(activeTarget: HTMLElement | null): void {
 	hideTooltip(); // hide before updating tooltip text
 
-	if (!target) {
-		// no target to show hover for; tooltip is hidden
+	if (!activeTarget) {
+		// no activeTarget to show hover for; tooltip is hidden
 		return;
 	}
 
@@ -168,14 +168,16 @@ function _updateTooltip(): void {
 		tooltip.appendChild(loadingTooltip);
 	}
 
-	if (!isLoading) {
-		target.style.cursor = "pointer";
-		target.className = `${target.className} sg-clickable`;
+	if (!isLoading && currentTooltipText) {
+		activeTarget.style.cursor = "pointer";
+		if (!activeTarget.className.includes("sg-clickable")) {
+			activeTarget.className = `${activeTarget.className} sg-clickable`;
+		}
 	}
 
 	// Anchor it horizontally, prior to rendering to account for wrapping
 	// changes to vertical height if the tooltip is at the edge of the viewport.
-	const activeTargetBound = target.getBoundingClientRect();
+	const activeTargetBound = activeTarget.getBoundingClientRect();
 	tooltip.style.left = (activeTargetBound.left + window.scrollX) + "px";
 
 	// Anchor the tooltip vertically.

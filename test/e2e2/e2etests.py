@@ -249,15 +249,15 @@ def test_browser_extension_hover_j2d_blob(d):
     wait_for(lambda: len(wd.find_elements_by_class_name("sourcegraph-app-annotator")) == 1)
 
     # hover over a token, get a tooltip (may be "Loading...")
-    wait_for(lambda: len(wd.find_elements_by_id("text-node-297-6")) == 1)
-    retry(lambda: d.hover_elem(wd.find_element_by_id("text-node-297-6")))
+    wait_for(lambda: len(wd.find_elements_by_id("text-node-17-6")) == 1)
+    retry(lambda: d.hover_elem(wd.find_element_by_id("text-node-17-6")))
     wait_for(lambda: len(wd.find_elements_by_class_name("sg-tooltip")) == 1)
 
     # wait for the token to be clickable (textDocument/defnition is resolved)
     wait_for(lambda: len([e for e in wd.find_elements_by_class_name("sg-tooltip") if e.text == "func NewRouter() *Router\nNewRouter returns a new router instance."]) == 1, 10)
 
     # click and wait for page navigation
-    retry(lambda: wd.find_element_by_id("text-node-297-6").click())
+    retry(lambda: wd.find_element_by_id("text-node-17-6").click())
     d.verify_new_tab_opened("https://sourcegraph.com/github.com/gorilla/mux@757bef944d0f21880861c2dd9c871ca543023cba/-/blob/mux.go#L17")
 
 def test_browser_extension_hover_j2d_unified_pull_request(d):
@@ -267,17 +267,17 @@ def test_browser_extension_hover_j2d_unified_pull_request(d):
 
     tests = [{
         # addition
-        "node": "text-node-272-5",
+        "node": "text-node-17-5",
         "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
         "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17",
     }, {
         # deletion
-        "node": "text-node-2388-3",
+        "node": "text-node-88-3",
         "hover": "func setVars(r *Request, val interface{})",
         "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326",
     }, {
         # unmodified
-        "node": "text-node-474-6",
+        "node": "text-node-24-6",
         "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
         "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L24",
     }]
@@ -304,17 +304,17 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
 
     tests = [{
         # addition
-        "node": "text-node-79-2",
+        "node": "text-node-17-5",
         "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
         "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17",
     }, {
         # deletion
-        "node": "text-node-2388-3",
+        "node": "text-node-88-3",
         "hover": "func setVars(r *Request, val interface{})",
         "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326",
     }, {
         # unmodified
-        "node": "text-node-317-6",
+        "node": "text-node-18-6",
         "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
         "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L18",
     }]

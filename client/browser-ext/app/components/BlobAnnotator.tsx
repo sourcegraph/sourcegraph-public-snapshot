@@ -1,5 +1,5 @@
 import {allActions} from "../actions";
-import {AnnotationsState, ResolvedRevState} from "../reducers";
+import {ResolvedRevState} from "../reducers";
 import {keyFor} from "../reducers/helpers";
 import * as utils from "../utils";
 import {addAnnotations} from "../utils/annotations";
@@ -24,7 +24,6 @@ interface Props {
 interface ReduxProps {
 	actions: typeof allActions;
 	resolvedRev: ResolvedRevState;
-	annotations: AnnotationsState;
 }
 
 class Base extends React.Component<Props & ReduxProps, {}> {
@@ -87,7 +86,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 			props.actions.ensureRepoExists(this.headRepoURI);
 		}
 
-		this.fetchAnnotations();
+		this.resolveRevs();
 		this._addAnnotations();
 	}
 
@@ -107,31 +106,27 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 		setTimeout(() => this._addAnnotations(), 500);
 	}
 
-	fetchAnnotations(): void {
+	resolveRevs(): void {
 		if (this.isDelta) {
 			if (this.baseCommitID && this.baseRepoURI) {
-				this.props.actions.getAnnotations(this.baseRepoURI, this.baseCommitID, this.props.path);
+				this.props.actions.resolveRev(this.baseRepoURI, this.baseCommitID);
 			}
 			if (this.headCommitID && this.headRepoURI) {
-				this.props.actions.getAnnotations(this.headRepoURI, this.headCommitID, this.props.path);
+				this.props.actions.resolveRev(this.headRepoURI, this.headCommitID);
 			}
 		} else if (this.rev) {
-			this.props.actions.getAnnotations(this.props.repoURI, this.rev, this.props.path);
+			this.props.actions.resolveRev(this.props.repoURI, this.rev);
 		}
 	}
 
 	_addAnnotations(): void {
 		const apply = (repoURI: string, rev: string, isBase: boolean, loggerProps: Object) => {
 			const fext = utils.getPathExtension(this.props.path);
-
 			if (!utils.supportedExtensions.has(fext)) {
 				return; // Don't annotate unsupported languages
 			}
 
-			const json = this.props.annotations.content[keyFor(repoURI, rev, this.props.path)];
-			if (json) {
-				addAnnotations(this.props.path, {repoURI, rev, isDelta: this.isDelta || false, isBase, relRev: json.relRev}, this.props.blobElement, json.resp.IncludedAnnotations.Annotations, json.resp.IncludedAnnotations.LineStartBytes, this.isSplitDiff || false, loggerProps);
-			}
+			addAnnotations(this.props.path, {repoURI, rev, isDelta: this.isDelta || false, isBase}, this.props.blobElement, this.isSplitDiff || false, loggerProps);
 		};
 
 		if (this.isDelta) {
@@ -183,7 +178,7 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 			// Cloning the repo
 			if (!isCloning.has(this.props.repoURI)) {
 				isCloning.add(this.props.repoURI);
-				this.refreshInterval = setInterval(this.fetchAnnotations, 5000);
+				this.refreshInterval = setInterval(this.resolveRevs, 5000);
 			}
 
 			return (<div style={buttonStyle} className={className} aria-label={`Sourcegraph is analyzing ${this.props.repoURI.split("github.com/")[1]}`}>
@@ -223,5 +218,4 @@ class Base extends React.Component<Props & ReduxProps, {}> {
 
 export const BlobAnnotator = connect((state) => ({
 	resolvedRev: state.resolvedRev,
-	annotations: state.annotations,
 }), (dispatch) => ({actions: bindActionCreators(allActions, dispatch)}))(Base) as React.ComponentClass<Props>;
