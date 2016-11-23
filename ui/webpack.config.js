@@ -71,8 +71,8 @@ plugins.push(new UnusedFilesWebpackPlugin({
 }));
 
 var devtool = "source-map";
-if (!production) {
-	devtool = process.env.WEBPACK_SOURCEMAPS ? "eval-source-map" : "eval";
+if (!production && !process.env.WEBPACK_SOURCEMAPS) {
+	devtool = "eval";
 }
 
 plugins.push(new webpack.LoaderOptionsPlugin({
