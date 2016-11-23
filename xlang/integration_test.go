@@ -128,22 +128,9 @@ func TestIntegration(t *testing.T) {
 				t.Skipf("Skipping the %s integration test in CI; it sometimes exceeds the available memory (4 GB) and fails the whole build.", rootPath)
 			}
 
-			{
-				// Serve repository data from codeload.github.com for
-				// test performance instead of from gitserver. This
-				// technically means we aren't testing gitserver, but
-				// that is well tested separately, and the benefit of
-				// fast tests here outweighs the benefits of a coarser
-				// integration test.
-				orig := xlang.NewRemoteRepoVFS
-				xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
-					fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
-					return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
-				}
-				defer func() {
-					xlang.NewRemoteRepoVFS = orig
-				}()
-			}
+			cleanup := useGithubForVFS()
+			defer cleanup()
+
 			{
 				// If integration tests depend on external repos, we
 				// need to use a pinned, hardcoded revision instead of
@@ -193,5 +180,21 @@ func TestIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+	}
+}
+
+// useGitHubForVFS allows us to serve repository data from codeload.github.com
+// for test performance instead of from gitserver. This technically means we
+// aren't testing gitserver, but that is well tested separately, and the
+// benefit of fast tests here outweighs the benefits of a coarser integration
+// test.
+func useGithubForVFS() func() {
+	orig := xlang.NewRemoteRepoVFS
+	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
+		return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
+	}
+	return func() {
+		xlang.NewRemoteRepoVFS = orig
 	}
 }
