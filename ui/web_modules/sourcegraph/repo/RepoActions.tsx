@@ -1,4 +1,4 @@
-import {RepoList, SymbolInformation} from "sourcegraph/api";
+import { RepoList, SymbolInformation } from "sourcegraph/api";
 
 export type Action =
 	WantRepos | ReposFetched |
@@ -31,12 +31,14 @@ export class WantSymbols {
 	repo: string;
 	rev: string;
 	query: string;
+	prepare?: boolean;
 
-	constructor(languages: string[], repo: string, rev: string, query: string) {
+	constructor(languages: string[], repo: string, rev: string, query: string, prepare?: boolean) {
 		this.languages = languages;
 		this.repo = repo;
 		this.rev = rev;
 		this.query = query;
+		this.prepare = prepare;
 	}
 }
 

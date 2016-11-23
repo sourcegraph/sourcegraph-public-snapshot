@@ -1,10 +1,12 @@
 import * as React from "react";
-import {InjectedRouter, Route} from "react-router";
-import {RouteParams} from "sourcegraph/app/routeParams";
-import {EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
-import {Header} from "sourcegraph/components/Header";
-import {PageTitle} from "sourcegraph/components/PageTitle";
-import {urlWithRev} from "sourcegraph/repo/routes";
+import { InjectedRouter, Route } from "react-router";
+import { RouteParams } from "sourcegraph/app/routeParams";
+import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
+import { Header } from "sourcegraph/components/Header";
+import { PageTitle } from "sourcegraph/components/PageTitle";
+import * as Dispatcher from "sourcegraph/Dispatcher";
+import * as RepoActions from "sourcegraph/repo/RepoActions";
+import { urlWithRev } from "sourcegraph/repo/routes";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
@@ -34,6 +36,8 @@ export class RepoMain extends React.Component<Props, {}> {
 	}
 
 	componentDidMount(): void {
+		// Prefetch symbols
+		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.commit.commit.languages, this.props.repo, this.props.commit.commit.sha1, "", true));
 		this._updateRefreshInterval(this.props.commit && this.props.commit.cloneInProgress);
 	}
 
@@ -81,7 +85,7 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	render(): JSX.Element {
 		if (!this.props.repository) {
-			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
+			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({ repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404" });
 			return (
 				<div>
 					<PageTitle title="Not Found" />

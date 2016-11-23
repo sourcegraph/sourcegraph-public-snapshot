@@ -3,30 +3,30 @@ import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 import * as Relay from "react-relay";
 import { InjectedRouter, Route } from "react-router";
-import {RouteParams} from "sourcegraph/app/routeParams";
+import { RouteParams } from "sourcegraph/app/routeParams";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { urlToBlob } from "sourcegraph/blob/routes";
-import {FlexContainer, TourOverlay} from "sourcegraph/components";
-import {ChromeExtensionToast} from "sourcegraph/components/ChromeExtensionToast";
-import {OnboardingModals} from "sourcegraph/components/OnboardingModals";
-import {PageTitle} from "sourcegraph/components/PageTitle";
-import {colors} from "sourcegraph/components/utils/colors";
-import {Container} from "sourcegraph/Container";
+import { FlexContainer, TourOverlay } from "sourcegraph/components";
+import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
+import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
+import { PageTitle } from "sourcegraph/components/PageTitle";
+import { colors } from "sourcegraph/components/utils/colors";
+import { Container } from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
-import {URIUtils} from "sourcegraph/core/uri";
+import { URIUtils } from "sourcegraph/core/uri";
 import { Location } from "sourcegraph/Location";
-import {repoParam, repoPath, repoRev, trimRepo} from "sourcegraph/repo";
-import {RepoMain} from "sourcegraph/repo/RepoMain";
-import {Store} from "sourcegraph/Store";
-import {treeParam} from "sourcegraph/tree";
+import { repoParam, repoPath, repoRev, trimRepo } from "sourcegraph/repo";
+import { RepoMain } from "sourcegraph/repo/RepoMain";
+import { Store } from "sourcegraph/Store";
+import { treeParam } from "sourcegraph/tree";
 
 // Don't load too much from vscode, because this file is loaded in the
 // initial bundle and we want to keep the initial bundle small.
-import {Editor} from "sourcegraph/editor/Editor";
-import {EditorComponent} from "sourcegraph/editor/EditorComponent";
-import {IEditorOpenedEvent} from "sourcegraph/editor/EditorService";
-import {IRange} from "vs/editor/common/editorCommon";
+import { Editor } from "sourcegraph/editor/Editor";
+import { EditorComponent } from "sourcegraph/editor/EditorComponent";
+import { IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
+import { IRange } from "vs/editor/common/editorCommon";
 
 interface Props {
 	repo: string;
@@ -294,11 +294,11 @@ class BlobMainEditor extends Container<Props, State> {
 				params={this.props.params}
 				relay={this.props.relay}
 				>
-				<FlexContainer direction="top_bottom" style={{flex:"auto", backgroundColor: colors.coolGray1()}}>
+				<FlexContainer direction="top_bottom" style={{ flex: "auto", backgroundColor: colors.coolGray1() }}>
 					<PageTitle title={title} />
-					<ChromeExtensionToast location={this.props.location}/>
-					<OnboardingModals location={this.props.location}/>
-					{this.props.location.query["tour"] && <TourOverlay location={this.props.location}/>}
+					<ChromeExtensionToast location={this.props.location} />
+					<OnboardingModals location={this.props.location} />
+					{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 					<BlobTitle
 						repo={this.props.repo}
 						path={this.props.path}
@@ -330,6 +330,7 @@ const BlobMainContainer = Relay.createContainer(BlobMainEditor, {
 					commit(rev: $rev) {
 						commit {
 							sha1
+							languages
 						}
 						cloneInProgress
 					}
@@ -339,7 +340,7 @@ const BlobMainContainer = Relay.createContainer(BlobMainEditor, {
 	},
 });
 
-export function BlobMain(props: {params: any; location: Location, routes: Route[]}): JSX.Element {
+export function BlobMain(props: { params: any; location: Location, routes: Route[] }): JSX.Element {
 	const repoSplat = repoParam(props.params.splat);
 	let selection = null;
 	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {

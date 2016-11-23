@@ -1,18 +1,18 @@
 import * as cloneDeep from "lodash/cloneDeep";
 import * as React from "react";
 import * as Relay from "react-relay";
-import {InjectedRouter, Route} from "react-router";
-import {RouteParams} from "sourcegraph/app/routeParams";
-import {GridCol, Panel, RepoLink} from "sourcegraph/components";
-import {PageTitle} from "sourcegraph/components/PageTitle";
-import {colors} from "sourcegraph/components/utils";
-import {whitespace} from "sourcegraph/components/utils/index";
-import {Location} from "sourcegraph/Location";
-import {repoParam, repoPath, repoRev, trimRepo} from "sourcegraph/repo";
-import {RepoMain} from "sourcegraph/repo/RepoMain";
-import {treeParam} from "sourcegraph/tree";
-import {RepoNavContext} from "sourcegraph/tree/RepoNavContext";
-import {TreeList} from "sourcegraph/tree/TreeList";
+import { InjectedRouter, Route } from "react-router";
+import { RouteParams } from "sourcegraph/app/routeParams";
+import { GridCol, Panel, RepoLink } from "sourcegraph/components";
+import { PageTitle } from "sourcegraph/components/PageTitle";
+import { colors } from "sourcegraph/components/utils";
+import { whitespace } from "sourcegraph/components/utils/index";
+import { Location } from "sourcegraph/Location";
+import { repoParam, repoPath, repoRev, trimRepo } from "sourcegraph/repo";
+import { RepoMain } from "sourcegraph/repo/RepoMain";
+import { treeParam } from "sourcegraph/tree";
+import { RepoNavContext } from "sourcegraph/tree/RepoNavContext";
+import { TreeList } from "sourcegraph/tree/TreeList";
 
 interface Props {
 	repo: string;
@@ -77,19 +77,19 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 				routes={this.props.routes}
 				params={this.props.params}
 				relay={this.props.relay}
-			>
+				>
 				<PageTitle title={title} />
 				<div>
-					<Panel style={{borderBottom: `1px solid ${colors.coolGray4(0.6)}`}}>
+					<Panel style={{ borderBottom: `1px solid ${colors.coolGray4(0.6)}` }}>
 						<div style={{
-								padding: `${whitespace[2]} ${whitespace[3]}`,
-							}}>
-							<RepoLink repo={this.props.repo} rev={this.props.rev} style={{marginRight: 4}} />
+							padding: `${whitespace[2]} ${whitespace[3]}`,
+						}}>
+							<RepoLink repo={this.props.repo} rev={this.props.rev} style={{ marginRight: 4 }} />
 							<RepoNavContext params={this.props.params} />
 						</div>
 					</Panel>
 					{/* Refactor once new Panel and Grid code has been merged in */}
-					<GridCol col={9} style={{marginRight: "auto", marginLeft: "auto", marginTop: 16, float: "none"}}>
+					<GridCol col={9} style={{ marginRight: "auto", marginLeft: "auto", marginTop: 16, float: "none" }}>
 						<TreeList
 							repo={this.props.repo}
 							rev={this.props.rev}
@@ -125,6 +125,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 									name
 								}
 							}
+							languages
 						}
 						cloneInProgress
 					}
@@ -134,7 +135,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 	},
 });
 
-export const TreeMain = function(props: {params: any; location: Location, routes: Route[]}): JSX.Element {
+export const TreeMain = function(props: { params: any; location: Location, routes: Route[] }): JSX.Element {
 	const repoSplat = repoParam(props.params.splat);
 	return <Relay.RootContainer
 		Component={TreeMainContainer}
@@ -154,5 +155,5 @@ export const TreeMain = function(props: {params: any; location: Location, routes
 				params: props.params,
 			},
 		}}
-	/>;
+		/>;
 };

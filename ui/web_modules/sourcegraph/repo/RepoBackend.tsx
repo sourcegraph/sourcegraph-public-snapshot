@@ -31,7 +31,7 @@ export const RepoBackend = {
 
 		if (payload instanceof RepoActions.WantSymbols) {
 			const action = payload;
-			let symbols = RepoStore.symbols.list(payload.languages, payload.repo, payload.rev, payload.query);
+			let symbols = RepoStore.symbols.list(action.languages, action.repo, action.rev, action.query);
 			if (symbols.results.length > 0) {
 				return;
 			}
@@ -41,8 +41,9 @@ export const RepoBackend = {
 				if (workspaceSymbolFlights.has(flightKey)) {
 					return;
 				}
+				const method = action.prepare ? "workspace/symbol?prepare" : "workspace/symbol";
 				workspaceSymbolFlights.add(flightKey);
-				lsp.sendExt(url, mode, "workspace/symbol", { query: action.query, limit: 100 })
+				lsp.sendExt(url, mode, method, { query: action.query, limit: 100 })
 					.then((r) => {
 						let result;
 						if (r === null || !r.result || !r.result.length) {
