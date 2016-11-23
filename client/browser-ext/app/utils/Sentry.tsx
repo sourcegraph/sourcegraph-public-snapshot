@@ -3,9 +3,6 @@ import * as Raven from "raven-js";
 if (process.env.NODE_ENV === "production") {
 	const opt = {
 		release: chrome.runtime.getManifest().version,
-		tags: {
-			platform: window.navigator.userAgent.indexOf("Firefox") !== -1 ? "firefox" : "chrome",
-		},
 		shouldSendCallback: (data) => data && data.extra && data.extra.extension,  // only log errors explicitly marked by extension
 	};
 
