@@ -24,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -665,6 +666,8 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res 
 	return conf, nil
 }
 
+var inventoryCache = rcache.New("inv", 604800)
+
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repoRev)
@@ -685,20 +688,11 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 		return nil, errNotAbsCommitID
 	}
 
-	// Consult the commit status "cache" for a cached inventory result.
-	//
-	// We cache inventory result on the commit status. This lets us
-	// populate the cache by calling this method from anywhere (e.g.,
-	// after a git push). Just using the memory cache would mean that
-	// each server process would have to recompute this result.
-	const statusContext = "cache:repo.inventory"
-	statuses, err := RepoStatuses.GetCombined(ctx, repoRev)
-	if err != nil {
-		return nil, err
-	}
-	if status := statuses.GetStatus(statusContext); status != nil {
+	// Try cache first
+	cacheKey := fmt.Sprintf("%d:%s", repoRev.Repo, repoRev.CommitID)
+	if b, ok := inventoryCache.Get(cacheKey); ok {
 		var inv inventory.Inventory
-		if err := json.Unmarshal([]byte(status.Description), &inv); err == nil {
+		if err := json.Unmarshal(b, &inv); err == nil {
 			return &inv, nil
 		}
 		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repoRev", repoRev, "err", err)
@@ -711,18 +705,11 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	}
 
 	// Store inventory in cache.
-	jsonData, err := json.Marshal(inv)
+	b, err := json.Marshal(inv)
 	if err != nil {
 		return nil, err
 	}
-
-	_, err = RepoStatuses.Create(ctx, &sourcegraph.RepoStatusesCreateOp{
-		Repo:   *repoRev,
-		Status: sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext},
-	})
-	if err != nil {
-		log15.Warn("Failed to update RepoStatuses cache", "err", err, "Repo URI", repoRev.Repo)
-	}
+	inventoryCache.Set(cacheKey, b)
 
 	return inv, nil
 }
