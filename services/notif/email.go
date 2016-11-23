@@ -26,6 +26,12 @@ func init() {
 	}
 }
 
+// Disable prevents sending of emails, even if the env var is set.
+// Use it in tests to ensure that they do not send live notifications.
+func Disable() {
+	mandrillEnabled = false
+}
+
 // SendMandrillTemplate sends an email template through mandrill.
 func SendMandrillTemplate(template, name, email, subject string, templateContent []gochimp.Var, mergeVars []gochimp.Var) {
 	if !mandrillEnabled {

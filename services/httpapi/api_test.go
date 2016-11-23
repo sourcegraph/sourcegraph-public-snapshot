@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	notif.MustBeDisabled()
+	notif.Disable()
 }
 
 func newTest() *httptestutil.Client {

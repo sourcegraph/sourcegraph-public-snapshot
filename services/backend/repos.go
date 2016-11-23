@@ -29,7 +29,6 @@ import (
 	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -569,7 +568,6 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res 
 	}
 
 	repoMaybeEnqueueUpdate(ctx, repo)
-	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
 
 	return repo, nil
 }
@@ -734,32 +732,6 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 		}
 	}
 	return false
-}
-
-func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, private bool) {
-	user := authpkg.ActorFromContext(ctx).Login
-	if strings.HasPrefix(user, e2eUserPrefix) {
-		return
-	}
-
-	repoType := "public"
-	if private {
-		repoType = "private"
-	}
-	if mirror {
-		repoType += " mirror"
-	} else {
-		repoType += " hosted"
-	}
-
-	msg := fmt.Sprintf("User *%s* added a %s repo", user, repoType)
-	if !private {
-		msg += fmt.Sprintf(": <https://sourcegraph.com/%s|%s>", uri, uri)
-	}
-	if language != "" {
-		msg += fmt.Sprintf(" (%s)", language)
-	}
-	notif.PostOnboardingNotif(msg)
 }
 
 func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (err error) {
