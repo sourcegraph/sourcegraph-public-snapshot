@@ -10,7 +10,6 @@ var (
 	Graph                srcstore.MultiRepoStoreImporterIndexer
 	Queue                = &instrumentedQueue{}
 	RepoConfigs          = &repoConfigs{}
-	RepoStatuses         = &repoStatuses{}
 	RepoVCS              = &repoVCS{}
 	Repos                = &repos{}
 	UserInvites          = &userInvites{}

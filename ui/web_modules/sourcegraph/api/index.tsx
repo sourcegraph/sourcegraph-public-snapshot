@@ -118,13 +118,6 @@ export interface CodeLensParams {
 	textDocument: any;
 }
 
-export interface CombinedStatus {
-	Rev?: string;
-	CommitID?: string;
-	State?: string;
-	Statuses?: RepoStatus[];
-}
-
 export interface Command {
 	title: string;
 	command: string;
@@ -849,24 +842,6 @@ export interface RepoSearchResult {
 
 export interface RepoSpec {
 	ID?: number;
-}
-
-export interface RepoStatus {
-	State?: string;
-	TargetURL?: string;
-	Description?: string;
-	Context?: string;
-	CreatedAt: any;
-	UpdatedAt: any;
-}
-
-export interface RepoStatusList {
-	RepoStatuses?: RepoStatus[];
-}
-
-export interface RepoStatusesCreateOp {
-	Repo: RepoRevSpec;
-	Status: RepoStatus;
 }
 
 export interface RepoTreeGetOp {
