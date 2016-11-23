@@ -634,10 +634,10 @@
 			"revisionTime": "2016-09-28T03:47:51Z"
 		},
 		{
-			"checksumSHA1": "Li4bKR5uXKmvfxP+KZiSdIv0j0I=",
+			"checksumSHA1": "i/hgffiLR/62gIuEMvm4cgBo7GA=",
 			"path": "github.com/sourcegraph/go-langserver/langserver",
-			"revision": "94ca049e3469e765ec650a1b21fb57a6abe794fa",
-			"revisionTime": "2016-11-11T11:34:02Z"
+			"revision": "d7b7e190419b043e974cc6de2baa2bb2c56e2a6e",
+			"revisionTime": "2016-11-23T06:21:42Z"
 		},
 		{
 			"checksumSHA1": "3f9Vr2Jp2jyesx6CszXHH0M4ETw=",

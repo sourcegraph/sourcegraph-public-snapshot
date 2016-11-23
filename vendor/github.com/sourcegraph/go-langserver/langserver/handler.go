@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/tools/refactor/importgraph"
 
@@ -159,6 +160,17 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 		if err := h.reset(&params); err != nil {
 			return nil, err
 		}
+
+		// PERF: Kick off a workspace/symbol in the background to warm up the server
+		go func() {
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
+			defer cancel()
+			h.handleWorkspaceSymbol(ctx, conn, req, lsp.WorkspaceSymbolParams{
+				Query: "",
+				Limit: 100,
+			})
+		}()
+
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync:        lsp.TDSKFull,
