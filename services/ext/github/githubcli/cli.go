@@ -1,10 +1,10 @@
 package githubcli
 
 import (
-	"log"
 	"net/url"
+	"strconv"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // Flags defines settings (in the form of CLI flags) related to
@@ -55,14 +55,11 @@ func (g *GitHubFlags) UploadURL() *url.URL {
 	return u
 }
 
-// Config is the currently active GitHub config (as set by the CLI flags).
-var Config GitHubFlags
+var gitHubHost = env.Get("SRC_GITHUB_HOST", "github.com", "hostname of the GitHub (Enterprise) instance to mirror repos from")
+var gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degredation"))
 
-func init() {
-	cli.PostInit = append(cli.PostInit, func() {
-		_, err := cli.Serve.AddGroup("GitHub", "GitHub", &Config)
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
+// Config is the currently active GitHub config (as set by the CLI flags).
+var Config = GitHubFlags{
+	GitHubHost: gitHubHost,
+	Disable:    gitHubDisable,
 }

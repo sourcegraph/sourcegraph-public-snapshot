@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sort"
 )
@@ -45,8 +46,8 @@ func PrintHelp() {
 	}
 	sort.Strings(names)
 
-	fmt.Println("Environment vairables:")
+	log.Print("Environment vairables:")
 	for _, name := range names {
-		fmt.Printf("  %-30s %s\n", name, descriptions[name])
+		log.Printf("  %-40s %s", name, descriptions[name])
 	}
 }

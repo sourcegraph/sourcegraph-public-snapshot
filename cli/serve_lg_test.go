@@ -40,7 +40,7 @@ func TestServerTLS(t *testing.T) {
 	doTestServer(t, a, ctx)
 	defer a.Close()
 
-	resp, err := http.Get(a.Config.Serve.AppURL)
+	resp, err := http.Get(a.AppURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 
 	// Test HTTP API.
-	httpURL, err := url.Parse(a.Config.Serve.AppURL)
+	httpURL, err := url.Parse(a.AppURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +130,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 
 	// Test app server.
-	resp3, err := http.Get(a.Config.Serve.AppURL + "/_/status")
+	resp3, err := http.Get(a.AppURL + "/_/status")
 	if err != nil {
 		t.Fatal(err)
 	}

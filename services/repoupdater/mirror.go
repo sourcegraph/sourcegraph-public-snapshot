@@ -1,6 +1,7 @@
 package repoupdater
 
 import (
+	"strconv"
 	"time"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -10,10 +11,13 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	sgxcli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 )
+
+var disableMirrorRepoBackgroundUpdate, _ = strconv.ParseBool(env.Get("SRC_APP_DISABLE_MIRROR_REPO_BG_UPDATE", "false", "disable updating mirrored repos in the background"))
+var mirrorRepoUpdateRate, _ = time.ParseDuration(env.Get("SRC_APP_MIRROR_REPO_UPDATE_RATE", "3s", "rate at which to update mirrored repositories"))
 
 // FIXME this dependency injection should be removed
 var Repos interface {
@@ -23,7 +27,7 @@ var Repos interface {
 func init() {
 	sgxcli.ServeInit = append(sgxcli.ServeInit, func() {
 		// If we're updating repos in the background, kick off the updates initially.
-		if !appconf.Flags.DisableMirrorRepoBackgroundUpdate {
+		if !disableMirrorRepoBackgroundUpdate {
 			events.RegisterListener(&mirrorRepoUpdater{})
 		}
 	})
@@ -69,7 +73,7 @@ func (r *mirrorRepoUpdater) mirrorRepos(ctx context.Context) error {
 		if repo.Mirror && !repo.Private {
 			// Sleep a tiny bit longer than MirrorUpdateRate to avoid our
 			// enqueue being no-op / hitting "was recently updated".
-			time.Sleep(appconf.Flags.MirrorRepoUpdateRate + (200 * time.Millisecond))
+			time.Sleep(mirrorRepoUpdateRate + (200 * time.Millisecond))
 			Enqueue(repo.ID, nil)
 			hasMirror = true
 		}
