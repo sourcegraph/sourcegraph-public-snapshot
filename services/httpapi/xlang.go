@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -68,15 +69,33 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	ev := honey.Event("xlang")
 	defer func() {
 		duration := time.Now().Sub(start)
-		labels := prometheus.Labels{
-			"success": fmt.Sprintf("%t", err == nil && success),
-			"method":  method,
-			"mode":    mode,
+
+		// We shouldn't make the distinction of user error, since our
+		// frontend code shouldn't send "invalid" requests. An example
+		// is the browser-ext sending hover requests for private repos
+		// we are not authorized to view. For now we will skip
+		// recording user errors in our apdex scores, but record them
+		// in honeycomb for deep
+		// diving. https://github.com/sourcegraph/sourcegraph/issues/2362
+		isUserError := false
+		if err != nil && errcode.HTTP(err) < 500 {
+			isUserError = true
 		}
-		xlangRequestDuration.With(labels).Observe(duration.Seconds())
+		if !isUserError {
+			labels := prometheus.Labels{
+				"success": fmt.Sprintf("%t", err == nil && success),
+				"method":  method,
+				"mode":    mode,
+			}
+			xlangRequestDuration.With(labels).Observe(duration.Seconds())
+		}
 
 		if honey.Enabled() {
-			ev.AddField("success", err == nil && success)
+			status := strconv.FormatBool(err == nil && success)
+			if isUserError {
+				status = "usererror"
+			}
+			ev.AddField("success", status)
 			ev.AddField("method", method)
 			ev.AddField("mode", mode)
 			ev.AddField("duration_ms", duration.Seconds()*1000)
