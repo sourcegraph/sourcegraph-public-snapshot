@@ -1,24 +1,16 @@
-.PHONY: install dep dist build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all
+.PHONY: install build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all
 
 default: build
 
 install:
 	yarn install
 
-dep:
-	docker build -t sourcegraph/browser-ext-bundle ./scripts/bundle
-
-# This target is specifically for bundling the Firefox extension, where reviewers expect
-# build output to identically match identically what their (ubuntu) system generates.
-dist: dep
-	yarn run clean
-	docker run -v "$(shell pwd):/browser-ext" -i -t sourcegraph/browser-ext-bundle /bin/bash /bundle.sh
-
 build: install
 	yarn run build
 
 bundle: build
 	zip -r chrome-bundle.zip build/*
+	cd build && zip -r ../firefox-bundle.xpi *
 
 test-unit:
 	yarn run test
