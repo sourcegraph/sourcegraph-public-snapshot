@@ -7,6 +7,8 @@
 		"test:auto": "NODE_ENV=test mocha --opts mocha.opts --watch",
 		"dev": "NODE_ENV=development ts-node scripts/dev",
 		"build": "NODE_ENV=production ts-node scripts/build",
+		"fmt": "./node_modules/.bin/tsfmt -r",
+		"fmt-check": "./node_modules/.bin/tsfmt --verify",
 		"clean": "rm -rf build/ dev/ *.zip *.xpi .checksum"
 	},
 	"author": "John Rothfels <john@sourcegraph.com>",

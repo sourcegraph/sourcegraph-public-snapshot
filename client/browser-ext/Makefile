@@ -29,7 +29,13 @@ test-watch:
 test-e2e:
 	cd ../../test/e2e2 && make browser-ext
 
-test-all: test-unit test-e2e2
+test-all: test-unit test-e2e fmt-check
+
+fmt:
+	yarn run fmt
+
+fmt-check:
+	yarn run fmt-check
 
 deploy-e2e: build
 	docker build --no-cache -t us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest .
