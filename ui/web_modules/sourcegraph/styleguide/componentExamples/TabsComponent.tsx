@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
+import { Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -23,27 +23,27 @@ export class TabsComponent extends React.Component<{}, State> {
 					<TabItem
 						active={this.state.activeExample === 0}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 0});
+							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						}}>
+						} }>
 							Colors
 						</a>
 					</TabItem>
 					<TabItem
 						active={this.state.activeExample === 1}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 1});
+							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						}}>
+						} }>
 							Sizes
 						</a>
 					</TabItem>
 					<TabItem
 						active={this.state.activeExample === 2}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 2});
+							this.setState({ activeExample: 2 });
 							e.preventDefault();
-						}}>
+						} }>
 							Orientation
 						</a>
 					</TabItem>
@@ -68,9 +68,9 @@ export class TabsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Tabs>
 	<TabItem active={true}>Tab 1</TabItem>
 	<TabItem>Tab 2</TabItem>
@@ -82,7 +82,7 @@ export class TabsComponent extends React.Component<{}, State> {
 	<TabItem>Tab 3</TabItem>
 </Tabs>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -109,9 +109,9 @@ export class TabsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Tabs size="small">
 	<TabItem active={true}>Tab 1</TabItem>
 	<TabItem>Tab 2</TabItem>
@@ -129,7 +129,7 @@ export class TabsComponent extends React.Component<{}, State> {
 </Tabs>
 
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -150,9 +150,9 @@ export class TabsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Tabs direction="horizontal">
 	<TabItem active={true}>Tab 1</TabItem>
 	<TabItem>Tab 2</TabItem>
@@ -164,7 +164,7 @@ export class TabsComponent extends React.Component<{}, State> {
 	<TabItem>Tab 3</TabItem>
 </Tabs>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -172,7 +172,7 @@ export class TabsComponent extends React.Component<{}, State> {
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Tabs Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>
@@ -207,7 +207,7 @@ export class TabsComponent extends React.Component<{}, State> {
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>TabItem Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

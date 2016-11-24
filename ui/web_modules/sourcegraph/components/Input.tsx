@@ -1,7 +1,7 @@
-import {style} from "glamor";
+import { style } from "glamor";
 import * as React from "react";
-import {Alert} from "sourcegraph/components/symbols";
-import {colors, typography, whitespace} from "sourcegraph/components/utils";
+import { Alert } from "sourcegraph/components/symbols";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props extends React.HTMLAttributes<HTMLInputElement> {
 	block?: boolean;
@@ -73,7 +73,7 @@ export function Input(props: Props): JSX.Element {
 	);
 
 	return <div className={props.className} style={sx}>
-		{props.label &&	<div style={{marginBottom: whitespace[2]}}>{props.label}</div>}
+		{props.label && <div style={{ marginBottom: whitespace[2] }}>{props.label}</div>}
 		<input {...other} style={inputSx} ref={props.domRef} placeholder={props.placeholder}
 			{...style({
 				":focus": {
@@ -84,14 +84,14 @@ export function Input(props: Props): JSX.Element {
 				"::-moz-placeholder": placeholderSx,
 				":-moz-placeholder": placeholderSx,
 				":-ms-input-placeholder": placeholderSx,
-			})}
-		/>
+			}) }
+			/>
 		{props.helperText && <em style={errorTextSx}>{props.helperText}</em>}
 		{props.errorText && <div style={{
 			color: colors.redText(),
 			marginBottom: whitespace[2],
 			marginTop: whitespace[2],
-			}}>
+		}}>
 			<Alert width={16} style={{
 				fill: colors.redText(),
 				marginRight: whitespace[2],

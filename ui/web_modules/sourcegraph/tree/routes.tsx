@@ -1,6 +1,6 @@
-import {makeRepoRev} from "sourcegraph/repo";
-import {urlToRepoRev} from "sourcegraph/repo/routes";
-import {urlTo} from "sourcegraph/util/urlTo";
+import { makeRepoRev } from "sourcegraph/repo";
+import { urlToRepoRev } from "sourcegraph/repo/routes";
+import { urlTo } from "sourcegraph/util/urlTo";
 
 // urlToTree generates the URL to a dir. To get a file's URL, use urlToBlob.
 export function urlToTree(repo: string, rev: string | null, path: string | string[]): string {
@@ -13,5 +13,5 @@ export function urlToTree(repo: string, rev: string | null, path: string | strin
 	}
 
 	const pathStr = typeof path === "string" ? path : path.join("/");
-	return urlTo("tree", {splat: [makeRepoRev(repo, rev), pathStr]} as any);
+	return urlTo("tree", { splat: [makeRepoRev(repo, rev), pathStr] } as any);
 }

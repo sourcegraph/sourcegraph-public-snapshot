@@ -14,7 +14,7 @@ import { CancellationToken } from "vs/base/common/cancellation";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import {IEditorMouseEvent} from "vs/editor/browser/editorBrowser";
+import { IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { create as createStandaloneEditor, createModel, onDidCreateModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
@@ -134,7 +134,7 @@ export class Editor implements IDisposable {
 			// We modify the name to indicate to our HTTP gateway that this
 			// should not be measured as a user triggered action.
 			lsp.send(this._editor.getModel(), "textDocument/hover?prepare", {
-				textDocument: {uri: e.newModelUrl.toString(true)},
+				textDocument: { uri: e.newModelUrl.toString(true) },
 				position: lsp.toPosition(new Position(1, 1)),
 			});
 		});
@@ -167,11 +167,11 @@ export class Editor implements IDisposable {
 
 			const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
 			AnalyticsConstants.Events.CodeContextMenu_Initiated.logEvent({
-					repo: repo,
-					rev: rev || "",
-					path: path,
-					language: this._editor.getModel().getModeId(),
-				}
+				repo: repo,
+				rev: rev || "",
+				path: path,
+				language: this._editor.getModel().getModeId(),
+			}
 			);
 
 		});
@@ -247,7 +247,7 @@ export class Editor implements IDisposable {
 
 	onLineSelected(listener: (mouseDownEvent: IEditorMouseEvent, mouseUpEvent: IEditorMouseEvent) => void): void {
 		let disposeMouseDown = this._editor.onMouseDown(mouseDownEvent => {
-			let disposeMouseUp = this._editor.onMouseUp(function(mouseUpEvent: IEditorMouseEvent): void {
+			let disposeMouseUp = this._editor.onMouseUp(function (mouseUpEvent: IEditorMouseEvent): void {
 				listener(mouseDownEvent, mouseUpEvent);
 				disposeMouseUp.dispose();
 			});
@@ -262,7 +262,7 @@ export class Editor implements IDisposable {
 				resource: uri,
 				options: range ? { selection: range } : undefined,
 			})
-			.done(resolve, reject);
+				.done(resolve, reject);
 		});
 	}
 
@@ -343,11 +343,11 @@ export class Editor implements IDisposable {
 
 				const {repo, rev, path} = URIUtils.repoParams(model.uri);
 				AnalyticsConstants.Events.CodeToken_Hovered.logEvent({
-						repo: repo,
-						rev: rev || "",
-						path: path,
-						language: model.getModeId(),
-					}
+					repo: repo,
+					rev: rev || "",
+					path: path,
+					language: model.getModeId(),
+				}
 				);
 
 				let range: IRange;

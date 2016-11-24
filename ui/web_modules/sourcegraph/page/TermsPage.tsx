@@ -1,6 +1,6 @@
 import * as React from "react";
-import {Heading, Hero} from "sourcegraph/components";
-import {PageTitle} from "sourcegraph/components/PageTitle";
+import { Heading, Hero } from "sourcegraph/components";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
 

@@ -1,4 +1,4 @@
-import {hover, style} from "glamor";
+import { hover, style } from "glamor";
 import * as React from "react";
 
 interface Props {
@@ -21,8 +21,8 @@ export const Symbol = (props: Props) => {
 		props.style
 	);
 	return <svg
-		{...style({fill: props.color ? props.color : "currentColor"})}
-		{...hover({fill: "currentColor"})}
+		{...style({ fill: props.color ? props.color : "currentColor" }) }
+		{...hover({ fill: "currentColor" }) }
 		className={props.className}
 		width={`${props.width ? props.width : 16}px`}
 		style={sx}

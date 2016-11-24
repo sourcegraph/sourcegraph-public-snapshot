@@ -23,13 +23,13 @@ export class Menu extends React.Component<Props, {}> {
 
 function roleStyle(role: string): string {
 	switch (role) {
-	case "menu_item":
-		return styles.menu_item;
-	case "divider":
-		return styles.divider;
-	case "inactive":
-		return styles.inactive;
-	default:
-		return styles.inactive;
+		case "menu_item":
+			return styles.menu_item;
+		case "divider":
+			return styles.divider;
+		case "inactive":
+			return styles.inactive;
+		default:
+			return styles.inactive;
 	}
 }

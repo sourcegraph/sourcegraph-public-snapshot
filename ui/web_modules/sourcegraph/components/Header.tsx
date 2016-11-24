@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {Loader} from "sourcegraph/components/Loader";
+import { Loader } from "sourcegraph/components/Loader";
 import * as styles from "sourcegraph/components/styles/header.css";
 
 interface Props {

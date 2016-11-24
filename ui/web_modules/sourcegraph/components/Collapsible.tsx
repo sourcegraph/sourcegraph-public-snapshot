@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import {Component} from "sourcegraph/Component";
+import { Component } from "sourcegraph/Component";
 
 interface Props {
 	collapsed?: boolean;
@@ -38,7 +38,7 @@ export class Collapsible extends Component<Props, State> {
 	render(): JSX.Element | null {
 		return (
 			<div>
-				<div onClick={this._onClick} style={{cursor: "pointer"}}>{this.state.children[0]}</div>
+				<div onClick={this._onClick} style={{ cursor: "pointer" }}>{this.state.children[0]}</div>
 				{this.state.shown && this.state.children[1]}
 			</div>
 		);

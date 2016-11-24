@@ -1,12 +1,12 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {Org, OrgMember} from "sourcegraph/api";
-import {Button, Heading, Table, User} from "sourcegraph/components";
-import {LocationStateModal} from "sourcegraph/components/Modal";
+import { InjectedRouter } from "react-router";
+import { Org, OrgMember } from "sourcegraph/api";
+import { Button, Heading, Table, User } from "sourcegraph/components";
+import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import {colors} from "sourcegraph/components/utils";
-import {whitespace} from "sourcegraph/components/utils/whitespace";
-import {Location} from "sourcegraph/Location";
+import { colors } from "sourcegraph/components/utils";
+import { whitespace } from "sourcegraph/components/utils/whitespace";
+import { Location } from "sourcegraph/Location";
 
 interface Props {
 	location: Location;
@@ -103,12 +103,12 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 		return (
 			<div>
 				<LocationStateModal router={this.context.router} modalName="orgInvite" location={this.props.location}>
-					<div style={{paddingTop: "50px"}}>
+					<div style={{ paddingTop: "50px" }}>
 						<div className={styles.modal} style={sx}>
 							<Heading underline="blue" level={3}>Invite Teammate</Heading>
 							<p>Enter a valid email address to invite your teamate to join {org.Login} on Sourcegraph</p>
-							<div style={{marginTop: whitespace[3], marginBottom: whitespace[3]}}>
-								<Table style={{width: "100%"}}>
+							<div style={{ marginTop: whitespace[3], marginBottom: whitespace[3] }}>
+								<Table style={{ width: "100%" }}>
 									<thead>
 										<tr>
 											<td style={rowBorderSx}>
@@ -143,18 +143,18 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 											<td style={rowBorderSx} width="30%">
 												<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} />
 											</td>
-											<td style={Object.assign({}, rowBorderSx, {textAlign: "left"})} width="50%">
+											<td style={Object.assign({}, rowBorderSx, { textAlign: "left" })} width="50%">
 												<input
 													onChange={this._validateEmail.bind(this)}
 													type="email"
 													required={true}
 													placeholder="Email address"
 													ref={(el) => this.email = el}
-													style={{ boxSizing: "border-box", width: "100%"}}
+													style={{ boxSizing: "border-box", width: "100%" }}
 													defaultValue={member.Email || ""} />
 											</td>
 											<td style={rowBorderSx} width="20%">
-												<Button onClick={this.onSubmit.bind(this)} disabled={!this.state.isValidForm} style={{float: "right"}} color="blue">Invite</Button>
+												<Button onClick={this.onSubmit.bind(this)} disabled={!this.state.isValidForm} style={{ float: "right" }} color="blue">Invite</Button>
 											</td>
 										</tr>
 									</tbody>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {whitespace} from "sourcegraph/components/utils";
+import { whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	children?: React.ReactElement<any>[];
@@ -9,7 +9,7 @@ interface Props {
 
 export function List({children, style, itemStyle}: Props): JSX.Element {
 	const sx = Object.assign(
-		{	paddingLeft: whitespace[4] },
+		{ paddingLeft: whitespace[4] },
 		style,
 	);
 

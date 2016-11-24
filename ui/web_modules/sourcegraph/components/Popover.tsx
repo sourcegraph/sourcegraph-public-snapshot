@@ -1,7 +1,7 @@
 import * as classNames from "classnames";
 import * as React from "react";
 
-import {Component, EventListener} from "sourcegraph/Component";
+import { Component, EventListener } from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/popover.css";
 
 interface Props {
@@ -34,7 +34,7 @@ export class Popover extends React.Component<Props, State> {
 		this.setContent = this.setContent.bind(this);
 	}
 
-	_onClick(e: MouseEvent & {target: Node}): void {
+	_onClick(e: MouseEvent & { target: Node }): void {
 		let container = this.container;
 		let content = this.content;
 		if (container && container.contains(e.target)) {

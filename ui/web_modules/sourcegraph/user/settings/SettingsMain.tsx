@@ -1,12 +1,12 @@
 import * as React from "react";
-import {Heading, Panel} from "sourcegraph/components";
-import {colors, layout, whitespace} from "sourcegraph/components/utils";
-import {Location} from "sourcegraph/Location";
-import {OrgContainer} from "sourcegraph/org/OrgContainer";
+import { Heading, Panel } from "sourcegraph/components";
+import { colors, layout, whitespace } from "sourcegraph/components/utils";
+import { Location } from "sourcegraph/Location";
+import { OrgContainer } from "sourcegraph/org/OrgContainer";
 
 interface Props { location: Location; }
 
-export function SettingsMain({location}: Props): JSX.Element  {
+export function SettingsMain({location}: Props): JSX.Element {
 
 	const sx = Object.assign({}, layout.container, {
 		marginBottom: whitespace[4],
@@ -22,7 +22,7 @@ export function SettingsMain({location}: Props): JSX.Element  {
 			marginLeft: whitespace[4],
 			marginRight: whitespace[4],
 		}}>Organization settings</Heading>
-		<hr style={{borderColor: colors.coolGray4(0.7)}} />
+		<hr style={{ borderColor: colors.coolGray4(0.7) }} />
 		<OrgContainer location={location} />
 	</Panel>;
 }

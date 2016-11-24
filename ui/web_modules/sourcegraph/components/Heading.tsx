@@ -1,5 +1,5 @@
 import * as React from "react";
-import {colors, typography, whitespace} from "sourcegraph/components/utils/index";
+import { colors, typography, whitespace } from "sourcegraph/components/utils/index";
 
 interface Props {
 	children?: React.ReactNode[];
@@ -52,7 +52,7 @@ export const Heading = (props: Props): any => {
 	};
 
 	return <div style={sx}>
-		{props.children} {props.underline && <br /> }
+		{props.children} {props.underline && <br />}
 		{props.underline && <hr style={underlineSx} />}
 	</div>;
 };

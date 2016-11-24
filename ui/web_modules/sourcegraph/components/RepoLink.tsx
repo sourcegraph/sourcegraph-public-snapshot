@@ -1,13 +1,13 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import {Link} from "react-router";
+import { Link } from "react-router";
 
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
-import {urlToRepo, urlToRepoRev} from "sourcegraph/repo/routes";
-import {breadcrumb} from "sourcegraph/util/breadcrumb";
+import { urlToRepo, urlToRepoRev } from "sourcegraph/repo/routes";
+import { breadcrumb } from "sourcegraph/util/breadcrumb";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {stripDomain} from "sourcegraph/util/stripDomain";
+import { stripDomain } from "sourcegraph/util/stripDomain";
 
 interface Props {
 	repo: string;
@@ -25,13 +25,13 @@ export class RepoLink extends React.Component<Props, {}> {
 			trimmedPath,
 			(i) => <span key={i} className={classNames(styles.sep, base.mh1)}>/</span>,
 			(path, component, i, isLast) => (
-					<Link to={this.props.rev ? urlToRepoRev(this.props.repo, this.props.rev) : urlToRepo(this.props.repo)}
-						title={trimmedPath}
-						key={i}
-						className={isLast ? styles.active : styles.inactive}
-						onClick={() => AnalyticsConstants.Events.Repository_Clicked.logEvent({repoName: trimmedPath})}>
-						{component}
-					</Link>
+				<Link to={this.props.rev ? urlToRepoRev(this.props.repo, this.props.rev) : urlToRepo(this.props.repo)}
+					title={trimmedPath}
+					key={i}
+					className={isLast ? styles.active : styles.inactive}
+					onClick={() => AnalyticsConstants.Events.Repository_Clicked.logEvent({ repoName: trimmedPath })}>
+					{component}
+				</Link>
 			),
 		);
 

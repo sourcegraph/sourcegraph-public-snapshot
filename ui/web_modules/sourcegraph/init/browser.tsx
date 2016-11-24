@@ -1,17 +1,17 @@
 import "core-js/shim";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import {AppContainer} from "react-hot-loader";
+import { AppContainer } from "react-hot-loader";
 import * as Relay from "react-relay";
-import {useScroll} from "react-router-scroll";
+import { useScroll } from "react-router-scroll";
 import Redbox from "redbox-react";
 
-import {Router, applyRouterMiddleware, browserHistory as history, match} from "react-router";
-import {rootRoute} from "sourcegraph/app/App";
+import { Router, applyRouterMiddleware, browserHistory as history, match } from "react-router";
+import { rootRoute } from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
-import {hashLinkScroll, shouldUpdateScroll} from "sourcegraph/app/routerScrollBehavior";
+import { hashLinkScroll, shouldUpdateScroll } from "sourcegraph/app/routerScrollBehavior";
 import "sourcegraph/util/actionLogger";
-import {EventLogger} from "sourcegraph/util/EventLogger";
+import { EventLogger } from "sourcegraph/util/EventLogger";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
 import "sourcegraph/app/routeParams";
@@ -27,7 +27,7 @@ import "autotrack/lib/plugins/url-change-tracker";
 
 EventLogger.init();
 
-Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {headers: context.context.xhrHeaders}));
+Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", { headers: context.context.xhrHeaders }));
 
 declare var __webpack_public_path__: any;
 __webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // tslint-disable-line no-undef
@@ -40,7 +40,7 @@ let hotReloadCounter = 0;
 // a redirect, it calls match recursively after replacing the location with the
 // new one.
 function matchWithRedirectHandling(recursed: boolean): void {
-	match({history, routes: rootRoute}, (err, redirectLocation, renderProps) => {
+	match({ history, routes: rootRoute }, (err, redirectLocation, renderProps) => {
 		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
 			console.error("404 not found (no route)");
 			return;

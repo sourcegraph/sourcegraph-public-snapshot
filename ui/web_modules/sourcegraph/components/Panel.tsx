@@ -1,6 +1,6 @@
-import {hover as gHover} from "glamor";
+import { hover as gHover } from "glamor";
 import * as React from "react";
-import {colors} from "sourcegraph/components/utils/index";
+import { colors } from "sourcegraph/components/utils/index";
 
 interface Props {
 	className?: string;

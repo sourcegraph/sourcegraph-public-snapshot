@@ -12,4 +12,4 @@ export class Toast {
 	}
 }
 
-export class ClearToast {}
+export class ClearToast { }

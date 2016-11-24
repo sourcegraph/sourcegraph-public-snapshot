@@ -1,11 +1,11 @@
 import * as React from "react";
-import {context} from "sourcegraph/app/context";
-import {Button} from "sourcegraph/components";
-import {GitHubIcon, GoogleIcon} from "sourcegraph/components/Icons";
-import {typography, whitespace} from "sourcegraph/components/utils";
-import {Location} from "sourcegraph/Location";
+import { context } from "sourcegraph/app/context";
+import { Button } from "sourcegraph/components";
+import { GitHubIcon, GoogleIcon } from "sourcegraph/components/Icons";
+import { typography, whitespace } from "sourcegraph/components/utils";
+import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {oauthProvider, urlToOAuth} from "sourcegraph/util/urlTo";
+import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
 interface Props {
 	provider: oauthProvider;
@@ -65,12 +65,12 @@ export function AuthButton(props: Props): JSX.Element {
 				className={className}
 				tabIndex={tabIndex}
 				onClick={() => {
-					eventObject.logEvent({page_name: pageName});
-				}}>
+					eventObject.logEvent({ page_name: pageName });
+				} }>
 				{img &&
-					<span style={{marginRight: whitespace[2]}}>
-						{iconType === "github" && <GitHubIcon style={iconSx}/>}
-						{iconType === "google" && <GoogleIcon style={iconSx}/>}
+					<span style={{ marginRight: whitespace[2] }}>
+						{iconType === "github" && <GitHubIcon style={iconSx} />}
+						{iconType === "google" && <GoogleIcon style={iconSx} />}
 					</span>
 				}
 				{children}

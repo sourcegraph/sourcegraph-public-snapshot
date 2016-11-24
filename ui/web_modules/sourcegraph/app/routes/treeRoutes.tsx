@@ -1,8 +1,8 @@
-import {RouterState} from "react-router";
-import {rel} from "sourcegraph/app/routePatterns";
-import {urlToRepo} from "sourcegraph/repo/routes";
-import {urlToTree} from "sourcegraph/tree/routes";
-import {TreeMain} from "sourcegraph/tree/TreeMain";
+import { RouterState } from "react-router";
+import { rel } from "sourcegraph/app/routePatterns";
+import { urlToRepo } from "sourcegraph/repo/routes";
+import { urlToTree } from "sourcegraph/tree/routes";
+import { TreeMain } from "sourcegraph/tree/TreeMain";
 
 // canonicalizeTreeRoute redirects "/myrepo@myrev/-/tree/" to
 // "/myrepo@myrev" and removes the slashes from
@@ -28,7 +28,7 @@ export const treeRoutes = [
 			canonicalizeTreeRoute(nextRouterState, replace);
 		},
 		getComponents: (location: Location, callback: Function) => {
-			callback(null, {main: TreeMain});
+			callback(null, { main: TreeMain });
 		},
 	},
 

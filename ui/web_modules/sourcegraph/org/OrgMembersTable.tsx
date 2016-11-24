@@ -1,7 +1,7 @@
 import * as React from "react";
-import {OrgMember} from "sourcegraph/api";
-import {Button, Heading, Table, User} from "sourcegraph/components";
-import {colors, whitespace} from "sourcegraph/components/utils";
+import { OrgMember } from "sourcegraph/api";
+import { Button, Heading, Table, User } from "sourcegraph/components";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	members: OrgMember[];
@@ -17,7 +17,7 @@ export function OrgMembersTable({members, inviteClicked, sentInvites}: Props): J
 	}
 
 	if (members.length === 0) {
-		return <div style={{marginTop: whitespace[3], marginBottom: whitespace[3]}}>
+		return <div style={{ marginTop: whitespace[3], marginBottom: whitespace[3] }}>
 			<p>Looks like your organization is empty. Invite some of your users to join!</p>
 		</div>;
 	}
@@ -32,14 +32,14 @@ export function OrgMembersTable({members, inviteClicked, sentInvites}: Props): J
 
 	const memberCellSx = Object.assign({ textAlign: "center" }, rowSx);
 
-	return <div style={{marginBottom: whitespace[3]}}>
-		<Table style={{width: "100%"}}>
+	return <div style={{ marginBottom: whitespace[3] }}>
+		<Table style={{ width: "100%" }}>
 			<thead>
 				<tr>
 					<td style={rowSx}>
 						<Heading level={6}>Organization member</Heading>
 					</td>
-					<td	style={memberCellSx}></td>
+					<td style={memberCellSx}></td>
 				</tr>
 			</thead>
 			<tbody>
@@ -51,7 +51,7 @@ export function OrgMembersTable({members, inviteClicked, sentInvites}: Props): J
 						<td style={memberCellSx} width="20%">
 							{!member.SourcegraphUser && (member.Invite || (sentInvites.indexOf(member.Login) > -1)
 								? "Invite sent"
-								: <Button size="small" color="blue" disabled={!(member.CanInvite || !member.Invite)} onClick={(e) => {_inviteSelected(member);}}>Invite</Button>)}
+								: <Button size="small" color="blue" disabled={!(member.CanInvite || !member.Invite)} onClick={(e) => { _inviteSelected(member); } }>Invite</Button>)}
 							{member.SourcegraphUser && "Member"}
 						</td>
 					</tr>

@@ -1,10 +1,10 @@
 import * as React from "react";
-import {context} from "sourcegraph/app/context";
-import {rel} from "sourcegraph/app/routePatterns";
-import {Dashboard} from "sourcegraph/dashboard/Dashboard";
+import { context } from "sourcegraph/app/context";
+import { rel } from "sourcegraph/app/routePatterns";
+import { Dashboard } from "sourcegraph/dashboard/Dashboard";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Home} from "sourcegraph/home/Home";
-import {IntegrationsContainer} from "sourcegraph/home/IntegrationsContainer";
+import { Home } from "sourcegraph/home/Home";
+import { IntegrationsContainer } from "sourcegraph/home/IntegrationsContainer";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 
 export const homeRoutes: any[] = [
@@ -36,7 +36,7 @@ class HomeRouter extends React.Component<any, null> {
 
 	render(): JSX.Element | null {
 		if (context.user) {
-			return <Dashboard {...this.props}/>;
+			return <Dashboard {...this.props} />;
 		}
 		return <Home {...this.props} />;
 	}

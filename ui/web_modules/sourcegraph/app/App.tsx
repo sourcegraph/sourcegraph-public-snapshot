@@ -1,19 +1,19 @@
 import "sourcegraph/components/styles/_normalize.css";
 
 import * as React from "react";
-import {PlainRoute} from "react-router";
+import { PlainRoute } from "react-router";
 
-import {context} from "sourcegraph/app/context";
-import {GlobalNav} from "sourcegraph/app/GlobalNav";
+import { context } from "sourcegraph/app/context";
+import { GlobalNav } from "sourcegraph/app/GlobalNav";
 import * as styles from "sourcegraph/app/styles/App.css";
-import {withViewEventsLogged} from "sourcegraph/util/EventLogger";
+import { withViewEventsLogged } from "sourcegraph/util/EventLogger";
 
-import {homeRoutes} from "sourcegraph/app/routes/homeRoutes";
-import {pageRoutes} from "sourcegraph/app/routes/pageRoutes";
-import {repoRoutes} from "sourcegraph/app/routes/repoRoutes";
-import {styleguideRoutes} from "sourcegraph/app/routes/styleguideRoutes";
-import {userRoutes} from "sourcegraph/app/routes/userRoutes";
-import {userSettingsRoutes} from "sourcegraph/app/routes/userSettingsRoutes";
+import { homeRoutes } from "sourcegraph/app/routes/homeRoutes";
+import { pageRoutes } from "sourcegraph/app/routes/pageRoutes";
+import { repoRoutes } from "sourcegraph/app/routes/repoRoutes";
+import { styleguideRoutes } from "sourcegraph/app/routes/styleguideRoutes";
+import { userRoutes } from "sourcegraph/app/routes/userRoutes";
+import { userSettingsRoutes } from "sourcegraph/app/routes/userSettingsRoutes";
 
 interface Props {
 	main: JSX.Element;

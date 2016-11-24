@@ -1,5 +1,5 @@
-import {rel} from "sourcegraph/app/routePatterns";
-import {StyleguideContainer} from "sourcegraph/styleguide/StyleguideContainer";
+import { rel } from "sourcegraph/app/routePatterns";
+import { StyleguideContainer } from "sourcegraph/styleguide/StyleguideContainer";
 
 export const styleguideRoutes: any[] = [
 	{

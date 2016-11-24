@@ -1,7 +1,7 @@
 import * as React from "react";
-import {Link} from "react-router";
-import {Avatar, FlexContainer, Heading, LanguageLabel, Panel} from "sourcegraph/components";
-import {colors, whitespace} from "sourcegraph/components/utils";
+import { Link } from "react-router";
+import { Avatar, FlexContainer, Heading, LanguageLabel, Panel } from "sourcegraph/components";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	contributors?: GQL.IContributor[];
@@ -16,7 +16,7 @@ export function RepositoryCard({style, repo, contributors}: Props): JSX.Element 
 
 	let contributorAvatars;
 	if (contributors && contributors.length > 0) {
-		contributorAvatars = contributors.slice(0, MAX_CONTRIBUTORS).map( (user, i) => {
+		contributorAvatars = contributors.slice(0, MAX_CONTRIBUTORS).map((user, i) => {
 			return <Avatar size="tiny" img={user.avatarURL} key={i} title={user.login} style={{
 				marginRight: whitespace[2],
 				verticalAlign: "bottom",
@@ -32,17 +32,17 @@ export function RepositoryCard({style, repo, contributors}: Props): JSX.Element 
 	return <Panel hoverLevel="low" style={sx}>
 		<FlexContainer justify="between">
 			<div>
-				<Heading level={6} style={{marginTop: 0}}>
+				<Heading level={6} style={{ marginTop: 0 }}>
 					{repo.uri
 						? <Link to={repo.uri}>{repo.owner} / {repo.name}</Link>
 						: <span>{repo.owner} / {repo.name}</span>
 					}
 				</Heading>
-				{repo.description && <div style={{color: colors.coolGray3()}}>{repo.description}</div>}
-				{contributorAvatars && <div style={{marginTop: whitespace[3]}}>
+				{repo.description && <div style={{ color: colors.coolGray3() }}>{repo.description}</div>}
+				{contributorAvatars && <div style={{ marginTop: whitespace[3] }}>
 					{contributorAvatars}
 					{hasMoreContribs && contributors &&
-						<span style={{color: colors.coolGray3()}}>
+						<span style={{ color: colors.coolGray3() }}>
 							+ {contributors.length - MAX_CONTRIBUTORS}
 							{contributors.length - MAX_CONTRIBUTORS === 1 ? " contributor" : " contributors"}
 						</span>

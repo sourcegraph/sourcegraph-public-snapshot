@@ -1,7 +1,7 @@
 import expect from "expect.js";
 import * as React from "react";
-import {RepoMain} from "sourcegraph/repo/RepoMain";
-import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
+import { RepoMain } from "sourcegraph/repo/RepoMain";
+import { renderToString } from "sourcegraph/util/testutil/componentTestUtils";
 
 const common = {
 	routes: [],

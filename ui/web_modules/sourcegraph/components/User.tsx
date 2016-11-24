@@ -1,7 +1,7 @@
 import * as React from "react";
-import {Avatar, FlexContainer} from "sourcegraph/components";
-import {colors, typography} from "sourcegraph/components/utils";
-import {whitespace} from "sourcegraph/components/utils/whitespace";
+import { Avatar, FlexContainer } from "sourcegraph/components";
+import { colors, typography } from "sourcegraph/components/utils";
+import { whitespace } from "sourcegraph/components/utils/whitespace";
 
 interface Props {
 	email?: string;
@@ -29,12 +29,12 @@ export function User(props: Props): JSX.Element {
 
 	return <div style={style}>
 		<FlexContainer items="center">
-			<div style={{marginRight: simple ? whitespace[2] : whitespace[3], marginTop: whitespace[1], float: "left", lineHeight: 0}}>
-				<Avatar img={avatar} size={ simple ? "small" : "medium" } />
+			<div style={{ marginRight: simple ? whitespace[2] : whitespace[3], marginTop: whitespace[1], float: "left", lineHeight: 0 }}>
+				<Avatar img={avatar} size={simple ? "small" : "medium"} />
 			</div>
 			<div>
 				<div>{nickname}</div>
-				{ !simple && <div style={sx}>{email}</div> }
+				{!simple && <div style={sx}>{email}</div>}
 			</div>
 		</FlexContainer>
 	</div>;

@@ -1,5 +1,5 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Store} from "sourcegraph/Store";
+import { Store } from "sourcegraph/Store";
 
 export type Action =
 	SetQuickOpenVisible;

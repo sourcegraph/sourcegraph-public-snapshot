@@ -1,10 +1,10 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Hero, Heading} from "sourcegraph/components";
+import { Hero, Heading } from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {PageTitle} from "sourcegraph/components/PageTitle";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 
 export function SecurityPage(props: {}, {}) {
 	return (

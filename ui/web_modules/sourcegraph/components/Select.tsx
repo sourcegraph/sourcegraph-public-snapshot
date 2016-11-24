@@ -2,8 +2,8 @@ import * as classNames from "classnames";
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/select.css";
-import {Alert} from "sourcegraph/components/symbols";
-import {ChevronDown} from "sourcegraph/components/symbols/Zondicons";
+import { Alert } from "sourcegraph/components/symbols";
+import { ChevronDown } from "sourcegraph/components/symbols/Zondicons";
 
 interface Props {
 	block?: boolean;
@@ -38,11 +38,11 @@ export class Select extends React.Component<Props, State> {
 					placeholder={placeholder ? placeholder : ""}>
 					{children}
 				</select>
-				<ChevronDown style={{marginLeft: "-28px"}} width={11} className={styles.icon} />
+				<ChevronDown style={{ marginLeft: "-28px" }} width={11} className={styles.icon} />
 				{helperText && <em className={classNames(styles.small, styles.block, base.mt2)}>{helperText}</em>}
 				{errorText &&
 					<div className={classNames(styles.red, base.mv2)}>
-						<Alert width={16} className={classNames(base.mr2, styles.red_fill)} style={{marginTop: "-4px"}} />
+						<Alert width={16} className={classNames(base.mr2, styles.red_fill)} style={{ marginTop: "-4px" }} />
 						This is an error message.
 					</div>
 				}

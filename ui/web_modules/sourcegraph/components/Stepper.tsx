@@ -1,7 +1,7 @@
 import * as classNames from "classnames";
 import * as React from "react";
 
-import {Icon} from "sourcegraph/components/Icon";
+import { Icon } from "sourcegraph/components/Icon";
 import * as styles from "sourcegraph/components/styles/stepper.css";
 
 // @TODO(chexee): Doesn't scale well with large step labels. Keep 'em short for now.

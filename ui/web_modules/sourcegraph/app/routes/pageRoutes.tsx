@@ -1,13 +1,13 @@
-import {rel} from "sourcegraph/app/routePatterns";
-import {AboutPage} from "sourcegraph/page/AboutPage";
-import {BetaPage} from "sourcegraph/page/BetaPage";
-import {ContactPage} from "sourcegraph/page/ContactPage";
-import {DocsPage} from "sourcegraph/page/DocsPage";
-import {MasterPlanPage} from "sourcegraph/page/MasterPlanPage";
-import {PricingPage} from "sourcegraph/page/PricingPage";
-import {PrivacyPage} from "sourcegraph/page/PrivacyPage";
-import {SecurityPage} from "sourcegraph/page/SecurityPage";
-import {TermsPage} from "sourcegraph/page/TermsPage";
+import { rel } from "sourcegraph/app/routePatterns";
+import { AboutPage } from "sourcegraph/page/AboutPage";
+import { BetaPage } from "sourcegraph/page/BetaPage";
+import { ContactPage } from "sourcegraph/page/ContactPage";
+import { DocsPage } from "sourcegraph/page/DocsPage";
+import { MasterPlanPage } from "sourcegraph/page/MasterPlanPage";
+import { PricingPage } from "sourcegraph/page/PricingPage";
+import { PrivacyPage } from "sourcegraph/page/PrivacyPage";
+import { SecurityPage } from "sourcegraph/page/SecurityPage";
+import { TermsPage } from "sourcegraph/page/TermsPage";
 
 export const pageRoutes: any[] = [
 	{

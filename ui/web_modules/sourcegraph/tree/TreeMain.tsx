@@ -47,7 +47,7 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 
 	_redirectToCanonicalURI(props: Props, context: Context): void {
 		if (props.root.repository && props.repo !== props.root.repository.uri) {
-			setTimeout(function(): void {
+			setTimeout(function (): void {
 				let locCopy = cloneDeep(props.location);
 				locCopy.pathname = props.location.pathname.replace(new RegExp(props.repo, "g"), props.root.repository.uri);
 				context.router.replace(locCopy);
@@ -135,7 +135,7 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 	},
 });
 
-export const TreeMain = function(props: { params: any; location: Location, routes: Route[] }): JSX.Element {
+export const TreeMain = function (props: { params: any; location: Location, routes: Route[] }): JSX.Element {
 	const repoSplat = repoParam(props.params.splat);
 	return <Relay.RootContainer
 		Component={TreeMainContainer}

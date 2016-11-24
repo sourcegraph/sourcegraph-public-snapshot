@@ -1,5 +1,5 @@
 import * as React from "react";
-import {colors} from "sourcegraph/components/utils";
+import { colors } from "sourcegraph/components/utils";
 
 interface Props {
 	style?: React.CSSProperties;
@@ -37,7 +37,7 @@ export function OrgLogo({size, img, style}: Props): JSX.Element {
 			lineHeight: "0",
 		},
 		style
-		)}>
+	)}>
 		<img style={{
 			borderRadius: "3px",
 			display: "inline-block",

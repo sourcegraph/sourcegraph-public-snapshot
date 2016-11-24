@@ -15,7 +15,7 @@ export class TabPanel extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		const {className, children, active} = this.props;
 		return (
-			<div className={className} style={{display: active ? "block" : "none"}}>
+			<div className={className} style={{ display: active ? "block" : "none" }}>
 				{children}
 			</div>
 		);

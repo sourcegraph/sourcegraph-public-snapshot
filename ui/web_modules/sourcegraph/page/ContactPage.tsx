@@ -1,10 +1,10 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Hero, Heading} from "sourcegraph/components";
+import { Hero, Heading } from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {PageTitle} from "sourcegraph/components/PageTitle";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 
 export function ContactPage(props: {}, {}) {
 	return (
@@ -39,7 +39,7 @@ export function ContactPage(props: {}, {}) {
 				<p className={styles.p}>For enterprise account inquiries or anything else related to Sourcegraph, contact us at <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>.</p>
 
 				<Heading level={4} underline="blue" className={styles.h5}>In the real world</Heading>
-				<p className={styles.p}>Sourcegraph<br/>121 2nd St, Suite 200<br/>San Francisco CA, 94105, USA</p>
+				<p className={styles.p}>Sourcegraph<br />121 2nd St, Suite 200<br />San Francisco CA, 94105, USA</p>
 				<p className={styles.p}><a href="https://www.google.com/maps/place/Sourcegraph/@37.7878302,-122.4013944,17z/data=!3m1!4b1!4m5!3m4!1s0x80858062cd4c9f97:0xf3a9d5164f1d61ec!8m2!3d37.7878302!4d-122.3992004" target="_blank">View on Google Maps</a></p>
 			</div>
 		</div>

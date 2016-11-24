@@ -88,8 +88,8 @@ class EventLoggerClass {
 
 		this.userAgentIsBot = Boolean(context.userAgentIsBot);
 
-		global.window.ga(function(tracker: any): any {
-				this._gaClientID = tracker.get("clientId");
+		global.window.ga(function (tracker: any): any {
+			this._gaClientID = tracker.get("clientId");
 		}.bind(this));
 
 		this._updateUser();
@@ -202,8 +202,8 @@ class EventLoggerClass {
 
 		let idProps = { detail: { deviceId: this._getTelligentDuid(), userId: context.user && context.user.Login } };
 		if (global.window.ga) {
-			this._telligent("addStaticMetadataObject", {deviceInfo: {GAClientId: this._gaClientID}});
-			setTimeout(() =>  document.dispatchEvent(new CustomEvent("sourcegraph:identify", Object.assign(idProps, {gaClientId: this._gaClientID}))), 20);
+			this._telligent("addStaticMetadataObject", { deviceInfo: { GAClientId: this._gaClientID } });
+			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", Object.assign(idProps, { gaClientId: this._gaClientID }))), 20);
 		} else {
 			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", idProps)), 20);
 		}
@@ -217,7 +217,7 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		return Object.assign({}, platformProperties, {Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""});
+		return Object.assign({}, platformProperties, { Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : "" });
 	}
 
 	// Use logViewEvent as the default way to log view events for Telligent and GA
@@ -227,10 +227,10 @@ class EventLoggerClass {
 			return;
 		}
 
-		this._logToConsole(title, Object.assign({}, this._decorateEventProperties(eventProperties), {page_name: page, page_title: title}));
+		this._logToConsole(title, Object.assign({}, this._decorateEventProperties(eventProperties), { page_name: page, page_title: title }));
 
 		if (this._telligent) {
-			this._telligent("track", "view", Object.assign({}, this._decorateEventProperties(eventProperties), {page_name: page, page_title: title}));
+			this._telligent("track", "view", Object.assign({}, this._decorateEventProperties(eventProperties), { page_name: page, page_title: title }));
 		}
 	}
 
@@ -247,10 +247,10 @@ class EventLoggerClass {
 			return;
 		}
 		if (this._telligent) {
-			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
+			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
 		}
 
-		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction}));
+		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
 
 		if (global && global.window && global.window.ga) {
 			global.window.ga("send", {
@@ -276,10 +276,10 @@ class EventLoggerClass {
 			return;
 		}
 
-		this._logToConsole(eventObject.action, Object.assign(this._decorateEventProperties(eventProperties),  {eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action, nonInteraction: true}));
+		this._logToConsole(eventObject.action, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action, nonInteraction: true }));
 
 		if (this._telligent) {
-			this._telligent("track", eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), {eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action}));
+			this._telligent("track", eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action }));
 		}
 
 		if (global && global.window && global.window.ga) {
@@ -319,16 +319,16 @@ class EventLoggerClass {
 						let repoOwners: Array<string> = [];
 						let repoNames: Array<string> = [];
 						for (let repo of action.data.Repos) {
-								languages.push(repo["Language"]);
-								repoNames.push(repo["Name"]);
-								repoOwners.push(repo["Owner"]);
-								repos.push(` ${repo["Owner"]}/${repo["Name"]}`);
+							languages.push(repo["Language"]);
+							repoNames.push(repo["Name"]);
+							repoOwners.push(repo["Owner"]);
+							repos.push(` ${repo["Owner"]}/${repo["Name"]}`);
 						}
 
 						this.setUserProperty("authed_languages_github", this._dedupedArray(languages));
 						this.setUserProperty("num_repos_github", action.data.Repos.length);
-						AnalyticsConstants.Events.RepositoryAuthedLanguagesGitHub_Fetched.logEvent({"fetched_languages_github": this._dedupedArray(languages)});
-						AnalyticsConstants.Events.RepositoryAuthedReposGitHub_Fetched.logEvent({"fetched_repo_names_github": this._dedupedArray(repoNames), "fetched_repo_owners_github": this._dedupedArray(repoOwners), "fetched_repos_github": this._dedupedArray(repos)});
+						AnalyticsConstants.Events.RepositoryAuthedLanguagesGitHub_Fetched.logEvent({ "fetched_languages_github": this._dedupedArray(languages) });
+						AnalyticsConstants.Events.RepositoryAuthedReposGitHub_Fetched.logEvent({ "fetched_repo_names_github": this._dedupedArray(repoNames), "fetched_repo_owners_github": this._dedupedArray(repoOwners), "fetched_repos_github": this._dedupedArray(repos) });
 					}
 				}
 				break;
@@ -348,7 +348,7 @@ class EventLoggerClass {
 					}
 					this.setIntercomProperty("authed_orgs_github", orgNames);
 					this.setUserProperty("authed_orgs_github", orgNames);
-					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({"fetched_orgs_github": orgNames});
+					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({ "fetched_orgs_github": orgNames });
 				}
 				break;
 			case OrgActions.OrgMembersFetched:
@@ -360,7 +360,7 @@ class EventLoggerClass {
 						orgMemberNames.push(member.Login);
 						orgMemberEmails.push(member.Email || "");
 					}
-					AnalyticsConstants.Events.AuthedOrgMembersGitHub_Fetched.logEvent({"fetched_org_github": orgName, "fetched_org_member_names_github": orgMemberNames, "fetched_org_member_emails_github": orgMemberEmails});
+					AnalyticsConstants.Events.AuthedOrgMembersGitHub_Fetched.logEvent({ "fetched_org_github": orgName, "fetched_org_member_names_github": orgMemberNames, "fetched_org_member_emails_github": orgMemberEmails });
 				}
 				break;
 			default:
@@ -368,7 +368,7 @@ class EventLoggerClass {
 				// of the action (if set). Override this behavior by including another case above.
 				if (action.eventObject) {
 					action.eventObject.logEvent();
-				} else  if (action.eventName) {
+				} else if (action.eventName) {
 					this._logEventForCategoryComponents(AnalyticsConstants.EventCategories.Unknown, AnalyticsConstants.EventActions.Fetch, action.eventName);
 				}
 				break;
@@ -544,9 +544,9 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					if (lang) { eventProps.language = lang; }
 				}
 
-				EventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
+				EventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, { pattern: getRoutePattern(routes) }));
 			} else {
-				EventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, {pattern: getRoutePattern(routes)}));
+				EventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, { pattern: getRoutePattern(routes) }));
 			}
 		}
 

@@ -1,4 +1,4 @@
-const names: {[key: string]: string} = {
+const names: { [key: string]: string } = {
 	golang: "Go",
 	java: "Java",
 	python: "Python",

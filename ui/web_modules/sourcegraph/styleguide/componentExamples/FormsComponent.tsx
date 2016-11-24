@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Table, Code, Input, Select} from "sourcegraph/components";
+import { Heading, Panel, Table, Code, Input, Select } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -53,9 +53,9 @@ export class FormsComponent extends React.Component<{}, State> {
 					</div>
 					<hr />
 					<code>
-						<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-`
+						<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+							{
+								`
 <Input placeholder="Placeholder text" block={true} label="Input label" helperText="This is optional helper text." className={base.mb4} />
 <Select defaultValue="" label="Select label">
 	<option value="" disabled={true}>Placeholder</option>
@@ -83,13 +83,13 @@ export class FormsComponent extends React.Component<{}, State> {
 </Select>
 
 `
-}
+							}
 						</pre>
 					</code>
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

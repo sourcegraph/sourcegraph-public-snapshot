@@ -1,15 +1,15 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {Org, OrgMember} from "sourcegraph/api";
-import {context} from "sourcegraph/app/context";
-import {setLocationModalState} from "sourcegraph/components/Modal";
-import {Spinner} from "sourcegraph/components/symbols";
-import {whitespace} from "sourcegraph/components/utils/whitespace";
+import { InjectedRouter } from "react-router";
+import { Org, OrgMember } from "sourcegraph/api";
+import { context } from "sourcegraph/app/context";
+import { setLocationModalState } from "sourcegraph/components/Modal";
+import { Spinner } from "sourcegraph/components/symbols";
+import { whitespace } from "sourcegraph/components/utils/whitespace";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Location} from "sourcegraph/Location";
+import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
-import {OrgInviteModal} from "sourcegraph/org/OrgInviteModal";
-import {OrgMembersTable} from "sourcegraph/org/OrgMembersTable";
+import { OrgInviteModal } from "sourcegraph/org/OrgInviteModal";
+import { OrgMembersTable } from "sourcegraph/org/OrgMembersTable";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
@@ -47,10 +47,10 @@ export class OrgPanel extends React.Component<Props, State> {
 	_invitedUser(member: OrgMember): void {
 		if (member.Email != null && context.user != null && this.props.org.Login) {
 			Dispatcher.Backends.dispatch(new OrgActions.SubmitOrgInvitation(member.Login || "", member.Email, this.props.org.Login, String(this.props.org.ID)));
-			AnalyticsConstants.Events.OrgUser_Invited.logEvent({org_name: this.props.org.Login, num_invites: 1});
+			AnalyticsConstants.Events.OrgUser_Invited.logEvent({ org_name: this.props.org.Login, num_invites: 1 });
 			this._updateSentInvites([member]);
 		} else {
-			AnalyticsConstants.Events.OrgManualInviteModal_Initiated.logEvent({org_name: this.props.org.Login});
+			AnalyticsConstants.Events.OrgManualInviteModal_Initiated.logEvent({ org_name: this.props.org.Login });
 			setLocationModalState(this.context.router, this.props.location, "orgInvite", true);
 			this.setState(Object.assign({}, this.state, {
 				selectedMember: member,
@@ -60,7 +60,7 @@ export class OrgPanel extends React.Component<Props, State> {
 
 	_onInviteUser(invites: Array<Object>): void {
 		if (this.props.org && this.props.org.Login && context.user) {
-			AnalyticsConstants.Events.OrgUser_Invited.logEvent({org_name: this.props.org.Login, num_invites: invites.length});
+			AnalyticsConstants.Events.OrgUser_Invited.logEvent({ org_name: this.props.org.Login, num_invites: invites.length });
 			for (let i = 0; i < invites.length; i++) {
 				let invite = invites[i];
 				let member = invite["member"];
@@ -97,11 +97,11 @@ export class OrgPanel extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		let {members} = this.props;
 		if (!members) {
-			return <div style={{padding: whitespace[4]}}><Spinner /> Loading organization members</div>;
+			return <div style={{ padding: whitespace[4] }}><Spinner /> Loading organization members</div>;
 		}
 		return <div>
-				<OrgInviteModal onInvite={this._onInviteUser.bind(this)} member={this.state.selectedMember || null} org={this.props.org} location={this.props.location}/>
-				<div style={{padding: whitespace[4]}}>{this._orgMembersList(members)}</div>
-			</div>;
+			<OrgInviteModal onInvite={this._onInviteUser.bind(this)} member={this.state.selectedMember || null} org={this.props.org} location={this.props.location} />
+			<div style={{ padding: whitespace[4] }}>{this._orgMembersList(members)}</div>
+		</div>;
 	}
 }

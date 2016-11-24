@@ -6,7 +6,7 @@ declare var require: {
 };
 
 declare namespace process {
-	export var env: {NODE_ENV: string};
+	export var env: { NODE_ENV: string };
 }
 
 declare namespace global {
@@ -19,7 +19,7 @@ declare namespace global {
 }
 
 declare module "expect.js" {
-	export default function(arg: any): any;
+	export default function (arg: any): any;
 }
 
 declare module "fuzzysearch" {

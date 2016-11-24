@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Table, Code, Stepper} from "sourcegraph/components";
+import { Heading, Panel, Table, Code, Stepper } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -33,9 +33,9 @@ export class StepperComponent extends React.Component<{}, State> {
 					</div>
 					<hr />
 					<code>
-						<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-`
+						<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+							{
+								`
 <Stepper steps={[null, null, null, null]} stepsComplete={0} color="blue" />
 <Stepper steps={[null, null, null, null]} stepsComplete={1} color="purple" />
 <Stepper steps={[null, null, null, null]} stepsComplete={2} color="green" />
@@ -43,13 +43,13 @@ export class StepperComponent extends React.Component<{}, State> {
 <Stepper steps={["Step 1", "Step 2", "Step 3", "Step 4"]} stepsComplete={4} color="green" />
 
 `
-}
+							}
 						</pre>
 					</code>
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

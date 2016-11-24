@@ -1,5 +1,5 @@
 import * as React from "react";
-import {context} from "sourcegraph/app/context";
+import { context } from "sourcegraph/app/context";
 
 interface Props {
 	className?: string;

@@ -1,12 +1,12 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import {Link} from "react-router";
-import {urlToBlob} from "sourcegraph/blob/routes";
-import {Header, Heading, Panel} from "sourcegraph/components";
-import {FileIcon, FolderIcon} from "sourcegraph/components/Icons";
-import {typography} from "sourcegraph/components/utils";
-import {whitespace} from "sourcegraph/components/utils/index";
-import {urlToTree} from "sourcegraph/tree/routes";
+import { Link } from "react-router";
+import { urlToBlob } from "sourcegraph/blob/routes";
+import { Header, Heading, Panel } from "sourcegraph/components";
+import { FileIcon, FolderIcon } from "sourcegraph/components/Icons";
+import { typography } from "sourcegraph/components/utils";
+import { whitespace } from "sourcegraph/components/utils/index";
+import { urlToTree } from "sourcegraph/tree/routes";
 import * as styles from "sourcegraph/tree/styles/Tree.css";
 
 interface Props {
@@ -20,8 +20,8 @@ export class TreeList extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		if (!this.props.tree) {
 			return <Header
-					title="Not Found"
-					subtitle="Directory not found." />;
+				title="Not Found"
+				subtitle="Directory not found." />;
 		}
 
 		let items: JSX.Element[] = [];
@@ -55,7 +55,7 @@ export class TreeList extends React.Component<Props, {}> {
 		));
 
 		return <Panel style={typography.size[5]}>
-			<div style={{padding: 3, marginBottom: 3}}>
+			<div style={{ padding: 3, marginBottom: 3 }}>
 				<Heading level={7} color="gray"
 					style={{
 						marginTop: whitespace[3],

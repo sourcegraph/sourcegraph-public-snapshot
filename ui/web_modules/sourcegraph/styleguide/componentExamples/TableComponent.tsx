@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
+import { Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -23,18 +23,18 @@ export class TableComponent extends React.Component<{}, State> {
 					<TabItem
 						active={this.state.activeExample === 0}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 0});
+							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						}}>
+						} }>
 							Default
 						</a>
 					</TabItem>
 					<TabItem
 						active={this.state.activeExample === 1}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 1});
+							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						}}>
+						} }>
 							Bordered
 						</a>
 					</TabItem>
@@ -45,7 +45,7 @@ export class TableComponent extends React.Component<{}, State> {
 						<TabPanel>
 							<div className={base.pa4}>
 								<Heading level={7} className={base.mb3} color="cool_mid_gray">Default table style</Heading>
-								<Table style={{width: "100%"}}>
+								<Table style={{ width: "100%" }}>
 									<thead>
 										<tr>
 											<td>Name</td>
@@ -79,9 +79,9 @@ export class TableComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Table style={{width: "100%"}}>
 	<thead>
 		<tr>
@@ -114,14 +114,14 @@ export class TableComponent extends React.Component<{}, State> {
 	</tbody>
 </Table>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
 								<Heading level={7} className={base.mb3} color="cool_mid_gray">Default table style</Heading>
-								<Table style={{width: "100%"}} bordered={true}>
+								<Table style={{ width: "100%" }} bordered={true}>
 									<thead>
 										<tr>
 											<td>Name</td>
@@ -155,9 +155,9 @@ export class TableComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Table style={{width: "100%"}} bordered={true}>
 	<thead>
 		<tr>
@@ -190,7 +190,7 @@ export class TableComponent extends React.Component<{}, State> {
 	</tbody>
 </Table>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -198,7 +198,7 @@ export class TableComponent extends React.Component<{}, State> {
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

@@ -1,5 +1,5 @@
 import * as BlobActions from "sourcegraph/blob/BlobActions";
-import {URIUtils} from "sourcegraph/core/uri";
+import { URIUtils } from "sourcegraph/core/uri";
 
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { makeRepoRev } from "sourcegraph/repo";
@@ -7,10 +7,10 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
-import {TPromise} from "vs/base/common/winjs.base";
-import {ICommonCodeEditor, IPosition, IReadOnlyModel, ModeContextKeys} from "vs/editor/common/editorCommon";
-import {EditorAction, ServicesAccessor, editorAction} from "vs/editor/common/editorCommonExtensions";
-import {ContextKeyExpr} from "vs/platform/contextkey/common/contextkey";
+import { TPromise } from "vs/base/common/winjs.base";
+import { ICommonCodeEditor, IPosition, IReadOnlyModel, ModeContextKeys } from "vs/editor/common/editorCommon";
+import { EditorAction, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
+import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 
 const fetch = singleflightFetch(defaultFetch);
 
@@ -33,7 +33,7 @@ class FindExternalReferencesAction extends EditorAction {
 		this._findExternalReferences(editor.getModel(), editor.getPosition());
 	}
 
-	private	_findExternalReferences(model: IReadOnlyModel, pos: IPosition): TPromise<void> {
+	private _findExternalReferences(model: IReadOnlyModel, pos: IPosition): TPromise<void> {
 		const {repo, rev, path} = URIUtils.repoParams(model.uri);
 		AnalyticsConstants.Events.CodeExternalReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 

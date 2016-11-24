@@ -18,7 +18,7 @@ export const fontStack = {
 	code: "Menlo, Consolas, Monaco, monospace;",
 };
 
-export const weight = [ null, 100, 800 ];
+export const weight = [null, 100, 800];
 
 export const codeSize = [
 	{

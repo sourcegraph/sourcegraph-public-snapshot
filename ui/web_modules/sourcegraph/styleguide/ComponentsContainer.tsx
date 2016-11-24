@@ -1,7 +1,7 @@
 import * as React from "react";
-import {Heading} from "sourcegraph/components";
+import { Heading } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {whitespace} from "sourcegraph/components/utils";
+import { whitespace } from "sourcegraph/components/utils";
 import {
 	AffixComponent,
 	ButtonsComponent,
@@ -57,67 +57,67 @@ export class ComponentsContainer extends React.Component<{}, any> {
 					<li>Casual, but not unprofessional</li>
 				</ul>
 
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="brand-logo"></a>
 					<LogoComponent />
 				</div>
 
 				<Heading level={3} underline="purple" className={base.mt5}>Layout Components</Heading>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="layout-flexcontainer"></a>
 					<FlexContainerComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="layout-affix"></a>
 					<AffixComponent />
 				</div>
 
 				<Heading level={3} underline="purple" className={base.mt5}>UI Components</Heading>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-buttons"></a>
 					<ButtonsComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-checklists"></a>
 					<ChecklistsComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-forms"></a>
 					<FormsComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-headings"></a>
 					<HeadingsComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-list"></a>
 					<ListComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-panels"></a>
 					<PanelsComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-stepper"></a>
 					<StepperComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-symbols"></a>
 					<Symbols />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-table"></a>
 					<TableComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-tabs"></a>
 					<TabsComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-user"></a>
 					<UserComponent />
 				</div>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[5]}}>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-repository-card"></a>
 					<RepositoryComponent />
 				</div>

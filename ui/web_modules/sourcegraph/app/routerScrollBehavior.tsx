@@ -1,4 +1,4 @@
-import {RouterState} from "react-router";
+import { RouterState } from "react-router";
 
 // shouldUpdateScroll makes it so that the window does NOT scroll
 // if the previous and next routes have an identical, non-empty

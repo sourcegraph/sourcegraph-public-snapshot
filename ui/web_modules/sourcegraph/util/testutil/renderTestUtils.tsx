@@ -1,6 +1,6 @@
 import * as TestUtils from "react-addons-test-utils";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {testOnly} from "sourcegraph/util/testOnly";
+import { testOnly } from "sourcegraph/util/testOnly";
 
 testOnly();
 

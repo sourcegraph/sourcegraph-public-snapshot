@@ -1,7 +1,7 @@
 import * as classNames from "classnames";
 import * as React from "react";
 import * as styles from "sourcegraph/components/styles/hero.css";
-import {colors, whitespace} from "sourcegraph/components/utils";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	className?: string;

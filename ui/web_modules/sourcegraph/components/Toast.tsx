@@ -15,7 +15,7 @@ export class Toast extends React.Component<Props, {}> {
 
 	constructor(props: Props) {
 		super(props);
-		this.state = {alertVisible: true};
+		this.state = { alertVisible: true };
 	}
 
 	render(): JSX.Element {

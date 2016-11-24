@@ -1,14 +1,14 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Hero, Heading, Panel, Button} from "sourcegraph/components";
+import { Hero, Heading, Panel, Button } from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
-import {Link} from "react-router";
+import { Link } from "react-router";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {CheckIcon} from "sourcegraph/components/Icons";
-import {PageTitle} from "sourcegraph/components/PageTitle";
+import { CheckIcon } from "sourcegraph/components/Icons";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {context} from "sourcegraph/app/context";
+import { context } from "sourcegraph/app/context";
 
 export function PricingPage(props: {}) {
 	return (
@@ -29,14 +29,14 @@ export function PricingPage(props: {}) {
 								<p>for individuals and teams, for public and private code</p>
 							</Panel>
 							{!context.user && <Link to="/join"
-								onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({plan: "free", page_name: AnalyticsConstants.PAGE_PRICING})}>
+								onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "free", page_name: AnalyticsConstants.PAGE_PRICING })}>
 								<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up</Button>
 							</Link>}
 							{context.user && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon className={styles.icon} /> Your current plan</Button>}
 						</div>
 						<div className={styles.details}>
 							<Heading level={4} color="purple" underline="purple">
-								Free includes<br/>
+								Free includes<br />
 								<span className={styles.details_cumulative}>Features every dev loves:</span>
 							</Heading>
 							<ul className={styles.details_list}>
@@ -53,17 +53,17 @@ export function PricingPage(props: {}) {
 						<div className={styles.plan_box}>
 							<Panel color="blue" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Enterprise</Heading>
-								<p>for large teams and <br/>enterprises</p>
+								<p>for large teams and <br />enterprises</p>
 							</Panel>
 							<Link to="/contact"
-								onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({plan: "enterprise", page_name: AnalyticsConstants.PAGE_PRICING})}>
+								onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "enterprise", page_name: AnalyticsConstants.PAGE_PRICING })}>
 								<Button block={true} className={styles.plan_cta || ""} color="blue">Contact us</Button>
 							</Link>
 						</div>
 						<div className={styles.details}>
 							<Heading level={4} color="blue" underline="blue">
-								Enterprise includes<br/>
-								<span className={styles.details_cumulative}>Everything in Free, <br/>and:</span>
+								Enterprise includes<br />
+								<span className={styles.details_cumulative}>Everything in Free, <br />and:</span>
 							</Heading>
 							<ul className={styles.details_list}>
 								<li>Unlimited branches and commits for private projects</li>

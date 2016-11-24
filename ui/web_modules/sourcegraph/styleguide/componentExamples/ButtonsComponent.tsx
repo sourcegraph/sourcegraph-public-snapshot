@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
+import { Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -23,18 +23,18 @@ export class ButtonsComponent extends React.Component<{}, State> {
 					<TabItem
 						active={this.state.activeExample === 0}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 0});
+							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						}}>
+						} }>
 							Colors and styles
 						</a>
 					</TabItem>
 					<TabItem
 						active={this.state.activeExample === 1}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 1});
+							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						}}>
+						} }>
 							Sizes
 						</a>
 					</TabItem>
@@ -64,9 +64,9 @@ export class ButtonsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Button>Submit</Button>
 <Button color="blue">Submit</Button>
 <Button color="purple">Submit</Button>
@@ -81,7 +81,7 @@ export class ButtonsComponent extends React.Component<{}, State> {
 <Button color="red" outline={true}>Submit</Button>
 <Button color="orange" outline={true}>Submit</Button>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -98,14 +98,14 @@ export class ButtonsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Button color="blue" size="small">Submit</Button>
 <Button color="blue">Submit</Button>
 <Button color="blue" size="large">Submit</Button>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -113,7 +113,7 @@ export class ButtonsComponent extends React.Component<{}, State> {
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

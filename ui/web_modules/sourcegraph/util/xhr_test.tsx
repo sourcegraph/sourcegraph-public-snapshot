@@ -1,8 +1,8 @@
 import expect from "expect.js";
 import "isomorphic-fetch";
-import {combineHeaders} from "sourcegraph/util/xhr";
+import { combineHeaders } from "sourcegraph/util/xhr";
 
-function getHeaders(h: Headers | null): {[key: string]: string[]} | null {
+function getHeaders(h: Headers | null): { [key: string]: string[] } | null {
 	if (!h) {
 		return null;
 	}

@@ -1,6 +1,6 @@
 // Sentry error monitoring code
 import * as Raven from "raven-js";
-import {context} from "sourcegraph/app/context";
+import { context } from "sourcegraph/app/context";
 
 if (context.sentryDSN) {
 	// Ignore rules (from https://gist.github.com/impressiver/5092952).
@@ -24,7 +24,7 @@ if (context.sentryDSN) {
 			// Facebook borked
 			"fb_xd_fragment",
 			// ISP "optimizing" proxy - `Cache-Control: no-transform` seems to reduce this. (thanks @acdha)
-				// See http://stackoverflow.com/questions/4113268/how-to-stop-javascript-injection-from-vodafone-proxy
+			// See http://stackoverflow.com/questions/4113268/how-to-stop-javascript-injection-from-vodafone-proxy
 			"bmi_SafeAddOnload",
 			"EBCallBackMessageReceived",
 			// See http://toolbar.conduit.com/Developer/HtmlAndGadget/Methods/JSInjection.aspx

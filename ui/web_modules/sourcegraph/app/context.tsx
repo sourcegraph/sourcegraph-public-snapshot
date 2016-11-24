@@ -1,9 +1,9 @@
-import {EmailAddrList, User} from "sourcegraph/api";
-import {ExternalToken} from "sourcegraph/user";
-import {testOnly} from "sourcegraph/util/testOnly";
+import { EmailAddrList, User } from "sourcegraph/api";
+import { ExternalToken } from "sourcegraph/user";
+import { testOnly } from "sourcegraph/util/testOnly";
 
 class Context {
-	xhrHeaders: {[key: string]: string};
+	xhrHeaders: { [key: string]: string };
 	csrfToken: string;
 	userAgentIsBot: boolean;
 	user: User | null;

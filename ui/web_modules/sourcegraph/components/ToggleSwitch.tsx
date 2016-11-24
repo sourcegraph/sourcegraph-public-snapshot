@@ -24,16 +24,16 @@ export class ToggleSwitch extends React.Component<Props, State> {
 	}
 
 	_toggle(): void {
-		this.setState({checked: !this.state.checked}, () => this.props.onChange(this.state.checked));
+		this.setState({ checked: !this.state.checked }, () => this.props.onChange(this.state.checked));
 	}
 
 	render(): JSX.Element | null {
 		return (
 			<div className={styles.toggle} onClick={this._toggle.bind(this)}>
-				<input type="checkbox" name="toggle" className={styles.toggle_checkbox} checked={this.state.checked} readOnly={true}/>
+				<input type="checkbox" name="toggle" className={styles.toggle_checkbox} checked={this.state.checked} readOnly={true} />
 				<label className={styles.toggle_label}>
-						<span className={styles.toggle_inner}></span>
-						<span className={styles.toggle_switch}></span>
+					<span className={styles.toggle_inner}></span>
+					<span className={styles.toggle_switch}></span>
 				</label>
 			</div>
 		);

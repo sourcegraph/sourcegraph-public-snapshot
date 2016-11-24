@@ -1,9 +1,9 @@
 // tslint:disable: typedef ordered-imports
 
-import {History} from "history";
+import { History } from "history";
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {context} from "sourcegraph/app/context";
+import { InjectedRouter } from "react-router";
+import { context } from "sourcegraph/app/context";
 
 // redirectIfLoggedIn wraps a component and issues a redirect
 // if there is an authenticated user. It is useful for wrapping
@@ -26,8 +26,8 @@ export function redirectIfLoggedIn(url: Location | string, queryObj: History.Que
 
 		componentWillMount(): void {
 			const redirQueryObj = Object.assign({}, queryObj, this.props.location.query || null);
-			const redirRouteObj = typeof url === "string" ? {pathname: url} : url;
-			const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, {query: redirQueryObj});
+			const redirRouteObj = typeof url === "string" ? { pathname: url } : url;
+			const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, { query: redirQueryObj });
 
 			if (context.user) {
 				this.context.router.replace(redirLocation);

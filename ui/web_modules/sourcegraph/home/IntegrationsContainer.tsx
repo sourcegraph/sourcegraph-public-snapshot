@@ -1,8 +1,8 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {LocationStateModal} from "sourcegraph/components/Modal";
-import {Integrations} from "sourcegraph/home/Integrations";
-import {Location} from "sourcegraph/Location";
+import { InjectedRouter } from "react-router";
+import { LocationStateModal } from "sourcegraph/components/Modal";
+import { Integrations } from "sourcegraph/home/Integrations";
+import { Location } from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

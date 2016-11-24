@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code, ChecklistItem} from "sourcegraph/components";
+import { Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code, ChecklistItem } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -23,18 +23,18 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 					<TabItem
 						active={this.state.activeExample === 0}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 0});
+							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						}}>
+						} }>
 							Without CTA
 						</a>
 					</TabItem>
 					<TabItem
 						active={this.state.activeExample === 1}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 1});
+							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						}}>
+						} }>
 							With CTA
 						</a>
 					</TabItem>
@@ -59,9 +59,9 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <ChecklistItem complete={true}>
 	<Heading level={4}>Connect with FooBar</Heading>
 	<p className={base.mt2}>
@@ -75,19 +75,19 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 	</p>
 </ChecklistItem>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
 						<TabPanel>
 							<div className={base.pa4}>
-								<ChecklistItem complete={true} actionText="Install" actionOnClick={function() { alert("Boo"); }} className={base.mb5}>
+								<ChecklistItem complete={true} actionText="Install" actionOnClick={function () { alert("Boo"); } } className={base.mb5}>
 									<Heading level={4}>Connect with FooBar</Heading>
 									<p className={base.mt2}>
 										For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
 									</p>
 								</ChecklistItem>
-								<ChecklistItem complete={false} actionText="Install" actionOnClick={function() { alert("Boo"); }} className={base.mb5}>
+								<ChecklistItem complete={false} actionText="Install" actionOnClick={function () { alert("Boo"); } } className={base.mb5}>
 									<Heading level={4}>Connect with FooBar Editor</Heading>
 									<p className={base.mt2}>
 										For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel.
@@ -96,9 +96,9 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <ChecklistItem complete={true} actionText="Install" actionOnClick={function() { alert("Boo"); }}>
 	<Heading level={4}>Connect with FooBar</Heading>
 	<p className={base.mt2}>
@@ -113,7 +113,7 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 </ChecklistItem>
 
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -134,9 +134,9 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Tabs direction="horizontal">
 	<TabItem active={true}>Tab 1</TabItem>
 	<TabItem>Tab 2</TabItem>
@@ -148,7 +148,7 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 	<TabItem>Tab 3</TabItem>
 </Tabs>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -156,7 +156,7 @@ export class ChecklistsComponent extends React.Component<{}, State> {
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

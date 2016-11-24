@@ -1,16 +1,16 @@
-import {History} from "history";
+import { History } from "history";
 import * as React from "react";
-import {context} from "sourcegraph/app/context";
-import {Component} from "sourcegraph/Component";
-import {Heading} from "sourcegraph/components";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import {PageTitle} from "sourcegraph/components/PageTitle";
-import {Location} from "sourcegraph/Location";
-import {redirectIfLoggedIn} from "sourcegraph/user/redirectIfLoggedIn";
+import { context } from "sourcegraph/app/context";
+import { Component } from "sourcegraph/Component";
+import { Heading } from "sourcegraph/components";
+import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
+import { PageTitle } from "sourcegraph/components/PageTitle";
+import { Location } from "sourcegraph/Location";
+import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {urlToOAuth} from "sourcegraph/util/urlTo";
+import { urlToOAuth } from "sourcegraph/util/urlTo";
 
 interface Props {
 	location: any;
@@ -39,12 +39,12 @@ export class SignupForm extends Component<Props, State> {
 
 	render(): JSX.Element | null {
 		const redirQueryObj = Object.assign({}, this.props.location.query, this.props.queryObj);
-		const redirRouteObj = typeof this.props.returnTo === "string" ? {pathname: this.props.returnTo} : this.props.returnTo;
-		const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, {query: redirQueryObj});
+		const redirRouteObj = typeof this.props.returnTo === "string" ? { pathname: this.props.returnTo } : this.props.returnTo;
+		const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, { query: redirQueryObj });
 
 		const newUserRedirQueryObj = Object.assign({}, this.props.location.query, this.props.queryObj);
-		const newUserRedirRouteObj = typeof this.props.newUserReturnTo === "string" ? {pathname: this.props.newUserReturnTo} : this.props.newUserReturnTo;
-		const newUserRedirLocation = Object.assign({}, this.props.location || null, newUserRedirRouteObj, {query: newUserRedirQueryObj});
+		const newUserRedirRouteObj = typeof this.props.newUserReturnTo === "string" ? { pathname: this.props.newUserReturnTo } : this.props.newUserReturnTo;
+		const newUserRedirLocation = Object.assign({}, this.props.location || null, newUserRedirRouteObj, { query: newUserRedirQueryObj });
 
 		const publicCodeURL = urlToOAuth("github", "read:org,user:email", this.props.returnTo || null, newUserRedirLocation);
 
@@ -63,15 +63,15 @@ export class SignupForm extends Component<Props, State> {
 	}
 }
 
-function SignupComp(props: {location: any}): JSX.Element {
+function SignupComp(props: { location: any }): JSX.Element {
 	return (
 		<div className={styles.full_page}>
 			<PageTitle title="Sign Up" />
 			<SignupForm {...props}
-				returnTo="/" queryObj={{ob: "chrome"}}
-				newUserReturnTo={defaultOnboardingPath}/>
+				returnTo="/" queryObj={{ ob: "chrome" }}
+				newUserReturnTo={defaultOnboardingPath} />
 		</div>
 	);
 }
 
-export const Signup = redirectIfLoggedIn("/", {ob: "chrome"}, SignupComp);
+export const Signup = redirectIfLoggedIn("/", { ob: "chrome" }, SignupComp);

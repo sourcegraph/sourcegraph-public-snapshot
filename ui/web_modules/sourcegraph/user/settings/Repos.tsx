@@ -1,12 +1,12 @@
 import * as debounce from "lodash/debounce";
 import * as React from "react";
-import {context} from "sourcegraph/app/context";
-import {FlexContainer, Heading, Input, RepositoryCard} from "sourcegraph/components";
-import {GitHubAuthButton, GoogleAuthButton} from "sourcegraph/components";
-import {Spinner} from "sourcegraph/components/symbols";
-import {layout, whitespace} from "sourcegraph/components/utils";
-import {Location} from "sourcegraph/Location";
-import {privateGitHubOAuthScopes, privateGoogleOAuthScopes} from "sourcegraph/util/urlTo";
+import { context } from "sourcegraph/app/context";
+import { FlexContainer, Heading, Input, RepositoryCard } from "sourcegraph/components";
+import { GitHubAuthButton, GoogleAuthButton } from "sourcegraph/components";
+import { Spinner } from "sourcegraph/components/symbols";
+import { layout, whitespace } from "sourcegraph/components/utils";
+import { Location } from "sourcegraph/Location";
+import { privateGitHubOAuthScopes, privateGoogleOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
 	repos: GQL.IRemoteRepository[] | null;
@@ -81,7 +81,7 @@ export class Repos extends React.Component<Props, {}> {
 			filteredRepos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
 		}
 
-		return <div style={{margin: whitespace[4]}}>
+		return <div style={{ margin: whitespace[4] }}>
 			<FlexContainer justify="between" wrap={true} style={{
 				marginTop: whitespace[4],
 				marginBottom: whitespace[3],
@@ -97,11 +97,11 @@ export class Repos extends React.Component<Props, {}> {
 			</FlexContainer>
 			<div>
 				{filteredRepos.length > 0 && filteredRepos.map((repo, i) => {
-					return <RepositoryCard contributors={repo.contributors} repo={repo} key={i} style={{marginBottom: whitespace[3]}} />;
+					return <RepositoryCard contributors={repo.contributors} repo={repo} key={i} style={{ marginBottom: whitespace[3] }} />;
 				})}
 			</div>
 			{context.gitHubToken && this._filterInput && this._filterInput.value && filteredRepos.length === 0 &&
-				<div style={{margin: whitespace[4], textAlign: "center"}}>No matching repositories</div>
+				<div style={{ margin: whitespace[4], textAlign: "center" }}>No matching repositories</div>
 			}
 		</div>;
 	}
@@ -117,7 +117,7 @@ export class Repos extends React.Component<Props, {}> {
 
 		return <div style={sx}>
 			{this._header()}
-			{!this.props.repos ? <div style={{margin: whitespace[4], textAlign: "center"}}><Spinner /> Loading...</div> : this._repoList() }
+			{!this.props.repos ? <div style={{ margin: whitespace[4], textAlign: "center" }}><Spinner /> Loading...</div> : this._repoList()}
 		</div>;
 	}
 }

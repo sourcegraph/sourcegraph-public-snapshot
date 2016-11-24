@@ -1,5 +1,5 @@
 import expect from "expect.js";
-import {repoPath, repoRev} from "sourcegraph/repo";
+import { repoPath, repoRev } from "sourcegraph/repo";
 
 describe("repoRev and repoPath", () => {
 	let tests = {

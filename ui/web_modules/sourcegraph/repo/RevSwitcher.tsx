@@ -2,14 +2,14 @@ import fuzzysearch from "fuzzysearch";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as Relay from "react-relay";
-import {Link} from "react-router";
-import {RouteParams} from "sourcegraph/app/routeParams";
-import {Component, EventListener} from "sourcegraph/Component";
-import {Heading, Input, Menu} from "sourcegraph/components";
-import {Check, DownMenu} from "sourcegraph/components/symbols";
-import {colors, typography, whitespace} from "sourcegraph/components/utils";
+import { Link } from "react-router";
+import { RouteParams } from "sourcegraph/app/routeParams";
+import { Component, EventListener } from "sourcegraph/Component";
+import { Heading, Input, Menu } from "sourcegraph/components";
+import { Check, DownMenu } from "sourcegraph/components/symbols";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import "sourcegraph/repo/RepoBackend";
-import {urlWithRev} from "sourcegraph/repo/routes";
+import { urlWithRev } from "sourcegraph/repo/routes";
 
 interface Props {
 	repo: string;
@@ -25,7 +25,7 @@ interface State extends Props {
 	query?: any;
 }
 
-class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
+class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -34,7 +34,7 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 	_debouncedSetQuery: any;
 	_wrapper: any;
 
-	constructor(props: Props & {root: GQL.IRoot}) {
+	constructor(props: Props & { root: GQL.IRoot }) {
 		super(props);
 		this.state = {
 			open: false,
@@ -51,7 +51,7 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 		this._onKeydown = this._onKeydown.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			this.setState(Object.assign({}, this.state, { query: query }));
-		}, 150, {leading: true, trailing: true});
+		}, 150, { leading: true, trailing: true });
 	}
 
 	reconcileState(state: State, props: Props): void {
@@ -75,7 +75,7 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 						{isCurrent && <Check width={16} style={{ fill: colors.coolGray3() }} />}
 					</span>
 
-					{name && <span style={{fontWeight: isCurrent ? "bold" : "normal"}}>
+					{name && <span style={{ fontWeight: isCurrent ? "bold" : "normal" }}>
 						{this._abbrevRev(name)}
 					</span>}
 
@@ -167,31 +167,31 @@ class RevSwitcherComponent extends Component<Props & {root: GQL.IRoot}, State> {
 			<span
 				onClick={this._onToggleDropdown}
 				style={{ cursor: "pointer" }}>
-				<div style={{marginLeft: whitespace[1]}}>
+				<div style={{ marginLeft: whitespace[1] }}>
 					<DownMenu
 						width={10}
 						style={{ fill: colors.coolGray3() }}
-					/>
+						/>
 				</div>
 			</span>
 			<div style={{
 				display: this.state.open ? "block" : "none",
 				position: "absolute",
 			}}>
-				<Menu style={{minWidth: 320, paddingTop: whitespace[3]}}>
+				<Menu style={{ minWidth: 320, paddingTop: whitespace[3] }}>
 					<div>
 						<Input block={true}
 							domRef={(e) => this._input = e}
 							type="text"
-							style={{fontWeight: "normal"}}
+							style={{ fontWeight: "normal" }}
 							placeholder="Find branch or tag"
-							onChange={this._onChangeQuery}/>
+							onChange={this._onChangeQuery} />
 					</div>
-					<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Branches</Heading>
-					{branches.length === 0 && <li style={{color: colors.coolGray3()}}>None found</li>}
+					<Heading level={7} color="gray" style={{ marginTop: whitespace[3] }}>Branches</Heading>
+					{branches.length === 0 && <li style={{ color: colors.coolGray3() }}>None found</li>}
 					{branches.map((name) => this._item(name))}
-					<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Tags</Heading>
-					{tags.length === 0 && <li  style={{color: colors.coolGray3()}}>None found</li>}
+					<Heading level={7} color="gray" style={{ marginTop: whitespace[3] }}>Tags</Heading>
+					{tags.length === 0 && <li style={{ color: colors.coolGray3() }}>None found</li>}
 					{tags.map((name) => this._item(name))}
 				</Menu>
 			</div>
@@ -217,7 +217,7 @@ const RevSwitcherContainer = Relay.createContainer(RevSwitcherComponent, {
 	},
 });
 
-export const RevSwitcher = function(props: Props): JSX.Element {
+export const RevSwitcher = function (props: Props): JSX.Element {
 	return <Relay.RootContainer
 		Component={RevSwitcherContainer}
 		route={{
@@ -229,5 +229,5 @@ export const RevSwitcher = function(props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-	/>;
+		/>;
 };

@@ -1,6 +1,6 @@
-import {media, merge} from "glamor";
+import { media, merge } from "glamor";
 import * as React from "react";
-import {breakpoints} from "sourcegraph/components/utils/layout";
+import { breakpoints } from "sourcegraph/components/utils/layout";
 
 interface Props {
 	align?: "left" | "right" | "none";
@@ -25,7 +25,7 @@ export function GridCol({
 	const colSize: number = 100 / 12;
 	const unit = "%";
 	const colSizes = Array.from(Array(13), (_, i) => colSize * i);
-	const column = colSizes.map((val) => val + unit );
+	const column = colSizes.map((val) => val + unit);
 
 	const sx = merge(
 		media(breakpoints["sm"], { width: colSm ? column[colSm] : "" }),

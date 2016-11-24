@@ -1,17 +1,17 @@
-import {hover} from "glamor";
+import { hover } from "glamor";
 import * as React from "react";
-import {Link} from "react-router";
-import {RouteParams} from "sourcegraph/app/routeParams";
-import {UnsupportedLanguageAlert} from "sourcegraph/blob/UnsupportedLanguageAlert";
-import {FlexContainer, Heading} from "sourcegraph/components";
-import {GitHubIcon} from "sourcegraph/components/Icons";
-import {colors, typography} from "sourcegraph/components/utils";
-import {whitespace} from "sourcegraph/components/utils/index";
-import {RevSwitcher} from "sourcegraph/repo/RevSwitcher";
-import {urlToRepo} from "sourcegraph/repo/routes";
-import {urlToTree} from "sourcegraph/tree/routes";
+import { Link } from "react-router";
+import { RouteParams } from "sourcegraph/app/routeParams";
+import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAlert";
+import { FlexContainer, Heading } from "sourcegraph/components";
+import { GitHubIcon } from "sourcegraph/components/Icons";
+import { colors, typography } from "sourcegraph/components/utils";
+import { whitespace } from "sourcegraph/components/utils/index";
+import { RevSwitcher } from "sourcegraph/repo/RevSwitcher";
+import { urlToRepo } from "sourcegraph/repo/routes";
+import { urlToTree } from "sourcegraph/tree/routes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {getPathExtension, supportedExtensions} from "sourcegraph/util/supportedExtensions";
+import { getPathExtension, supportedExtensions } from "sourcegraph/util/supportedExtensions";
 
 interface Props {
 	repo: string;
@@ -47,22 +47,22 @@ const toastSx = Object.assign(
 	typography.size[8],
 );
 
-function BreadCrumb({repo, path, rev}: {repo: string, path: string, rev: string | null}): JSX.Element {
+function BreadCrumb({repo, path, rev}: { repo: string, path: string, rev: string | null }): JSX.Element {
 	const pathToFile = path.split("/").slice(0, -1);
 	const links: JSX.Element[] = [];
-	links[0] = 	<Link
+	links[0] = <Link
 		key={0}
-		{...hover(subHover)}
+		{...hover(subHover) }
 		style={subSx}
 		to={urlToRepo(repo)}>{repo.split("/").join(" / ")}
 	</Link>;
 
 	const crumbs = pathToFile.map((item, index) => <span key={index + 1}
-	style={subSx}
-	>&nbsp;/&nbsp;
+		style={subSx}
+		>&nbsp;/&nbsp;
 		<Link
 			style={subSx}
-			{...hover(subHover)}
+			{...hover(subHover) }
 			to={urlToTree(repo, rev, pathToFile.slice(0, index + 1))}>
 			{item}
 		</Link>
@@ -116,7 +116,7 @@ export function BlobTitle({
 	return <div style={sx}>
 		<FlexContainer justify="between">
 			<div>
-				<Heading level={5} color="white" style={{marginBottom: 0}}>
+				<Heading level={5} color="white" style={{ marginBottom: 0 }}>
 					<FlexContainer items="center">
 						{basename(path)}
 						<RevSwitcher
@@ -124,18 +124,18 @@ export function BlobTitle({
 							rev={rev}
 							routes={routes}
 							routeParams={routeParams} />
-						<a href={gitHubURL()} style={{marginLeft: whitespace[3], color: colors.white(), display: "flex"}} onClick={(e) => {
+						<a href={gitHubURL()} style={{ marginLeft: whitespace[3], color: colors.white(), display: "flex" }} onClick={(e) => {
 							e.preventDefault();
-							AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({repo, rev, path});
+							AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path });
 							window.location.href = gitHubURL();
-						}}>
-							<GitHubIcon style={{alignItems: "center"}}/>
+						} }>
+							<GitHubIcon style={{ alignItems: "center" }} />
 						</a>
 					</FlexContainer>
 				</Heading>
 				<BreadCrumb repo={repo} path={path} rev={rev} />
 			</div>
-			{!isSupported && <UnsupportedLanguageAlert ext={extension}/>}
+			{!isSupported && <UnsupportedLanguageAlert ext={extension} />}
 			{toast && <div style={toastSx}>{toast}</div>}
 		</FlexContainer>
 	</div>;

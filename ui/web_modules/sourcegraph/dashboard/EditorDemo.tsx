@@ -1,8 +1,8 @@
 import * as React from "react";
-import {URIUtils} from "sourcegraph/core/uri";
+import { URIUtils } from "sourcegraph/core/uri";
 import { Editor } from "sourcegraph/editor/Editor";
 import { EditorComponent } from "sourcegraph/editor/EditorComponent";
-import {Range} from "vs/editor/common/core/range";
+import { Range } from "vs/editor/common/core/range";
 
 type Props = {
 	repo: string;
@@ -35,7 +35,7 @@ export class EditorDemo extends React.Component<Props, State> {
 
 	render(): JSX.Element | null {
 		return (
-			<EditorComponent editorRef={this._setEditor} style={{display: "flex", flexDirection: "column", height:"225px", border: "solid 1px #efefef"}} />
+			<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flexDirection: "column", height: "225px", border: "solid 1px #efefef" }} />
 		);
 	}
 }

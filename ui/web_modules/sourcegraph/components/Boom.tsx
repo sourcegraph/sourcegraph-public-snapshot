@@ -1,6 +1,6 @@
-import {keyframes, style as gStyle} from "glamor";
+import { keyframes, style as gStyle } from "glamor";
 import * as React from "react";
-import {colors} from "sourcegraph/components/utils";
+import { colors } from "sourcegraph/components/utils";
 
 const fillColors = [
 	colors.blue(),
@@ -54,7 +54,7 @@ function generateParticles(count: number): JSX.Element[] {
 				borderRadius: "50%",
 				boxShadow: `0 0 2px 1px ${colors.black(0.1)}`,
 				animation: `${particleMovement} 850ms cubic-bezier(0.000, 0.735, 1.000, 1.010) 1 forwards`,
-			})}></div>
+			}) }></div>
 		);
 	}
 	return particles;
@@ -65,7 +65,7 @@ interface Props { style: React.CSSProperties; }
 export function Boom({style}: Props): JSX.Element {
 	const particles = generateParticles(getRandomInt(20, 25));
 	const sx = Object.assign(
-		{	position: "relative" },
+		{ position: "relative" },
 		style,
 	);
 	return <div style={sx}>{particles}</div>;

@@ -1,14 +1,14 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import {context} from "sourcegraph/app/context";
-import {Component} from "sourcegraph/Component";
-import {Button, CheckboxList, Input} from "sourcegraph/components";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
+import { context } from "sourcegraph/app/context";
+import { Component } from "sourcegraph/Component";
+import { Button, CheckboxList, Input } from "sourcegraph/components";
+import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {editors, languages} from "sourcegraph/home/HomeUtils";
+import { editors, languages } from "sourcegraph/home/HomeUtils";
 import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
-import {langName} from "sourcegraph/Language";
+import { langName } from "sourcegraph/Language";
 import * as UserActions from "sourcegraph/user/UserActions";
 
 interface Props {
@@ -55,7 +55,7 @@ export class BetaInterestForm extends Component<Props, State> {
 
 	_onDispatch(action: any): void {
 		if (action instanceof UserActions.BetaSubscriptionCompleted) {
-			this.setState({resp: action.resp});
+			this.setState({ resp: action.resp });
 		}
 	}
 
@@ -81,11 +81,11 @@ export class BetaInterestForm extends Component<Props, State> {
 		}
 
 		if (this._editors.selected().length === 0) {
-			this.setState({formError: "Please select at least one preferred editor."});
+			this.setState({ formError: "Please select at least one preferred editor." });
 			return;
 		}
 		if (this._languages.selected().length === 0) {
-			this.setState({formError: "Please select at least one preferred language."});
+			this.setState({ formError: "Please select at least one preferred language." });
 			return;
 		}
 
@@ -148,28 +148,28 @@ export class BetaInterestForm extends Component<Props, State> {
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
 				<form className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
-						<div className={styles.row}>
-							<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
-						</div>
-						{(!emails || emails.length === 0) && <div className={styles.row}>
-							<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
-						</div>}
-						<div className={styles.row}>
-							<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
-						</div>
-						<div className={styles.row}>
-							<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
-						</div>
-						<div className={styles.row}>
-							<textarea ref={(c) => this._message = c} className={styles.textarea} name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
-						</div>
-						<div className={classNames(styles.row, base.pb4)}>
-							<Button block={true} type="submit" color="purple">{betaRegistered ? "Update my interests" : "Participate in the beta"}</Button>
-						</div>
-						<div className={classNames(styles.row, base.pb4)}>
-							{this.state.formError && <strong>{this.state.formError}</strong>}
-							{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
-						</div>
+					<div className={styles.row}>
+						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
+					</div>
+					{(!emails || emails.length === 0) && <div className={styles.row}>
+						<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
+					</div>}
+					<div className={styles.row}>
+						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
+					</div>
+					<div className={styles.row}>
+						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
+					</div>
+					<div className={styles.row}>
+						<textarea ref={(c) => this._message = c} className={styles.textarea} name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
+					</div>
+					<div className={classNames(styles.row, base.pb4)}>
+						<Button block={true} type="submit" color="purple">{betaRegistered ? "Update my interests" : "Participate in the beta"}</Button>
+					</div>
+					<div className={classNames(styles.row, base.pb4)}>
+						{this.state.formError && <strong>{this.state.formError}</strong>}
+						{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
+					</div>
 				</form>
 			</div>
 		);

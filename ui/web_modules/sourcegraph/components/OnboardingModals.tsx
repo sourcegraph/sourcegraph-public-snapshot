@@ -1,9 +1,9 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {LocationStateModal, setLocationModalState} from "sourcegraph/components/Modal";
-import {ChromeExtensionOnboarding} from "sourcegraph/dashboard/ChromeExtensionOnboarding";
-import {GitHubPrivateAuthOnboarding} from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
-import {Location} from "sourcegraph/Location";
+import { InjectedRouter } from "react-router";
+import { LocationStateModal, setLocationModalState } from "sourcegraph/components/Modal";
+import { ChromeExtensionOnboarding } from "sourcegraph/dashboard/ChromeExtensionOnboarding";
+import { GitHubPrivateAuthOnboarding } from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
+import { Location } from "sourcegraph/Location";
 
 interface Props {
 	location: Location;
@@ -28,13 +28,13 @@ export class OnboardingModals extends React.Component<Props, {}>  {
 		return (
 			<div>
 				<LocationStateModal modalName="chrome" location={this.props.location} router={this.context.router}>
-					<div style={{maxWidth: "800px", marginLeft: "auto", marginRight: "auto"}}>
-						<ChromeExtensionOnboarding completeStep={this._completeChromeStep.bind(this)} location={this.props.location}/>
+					<div style={{ maxWidth: "800px", marginLeft: "auto", marginRight: "auto" }}>
+						<ChromeExtensionOnboarding completeStep={this._completeChromeStep.bind(this)} location={this.props.location} />
 					</div>
 				</LocationStateModal>
 				<LocationStateModal modalName="github" location={this.props.location} router={this.context.router}>
-					<div style={{maxWidth: "800px", marginLeft: "auto", marginRight: "auto"}}>
-						<GitHubPrivateAuthOnboarding completeStep={this._completeGitHubStep.bind(this)} location={this.props.location}/>
+					<div style={{ maxWidth: "800px", marginLeft: "auto", marginRight: "auto" }}>
+						<GitHubPrivateAuthOnboarding completeStep={this._completeGitHubStep.bind(this)} location={this.props.location} />
 					</div>
 				</LocationStateModal>
 			</div>

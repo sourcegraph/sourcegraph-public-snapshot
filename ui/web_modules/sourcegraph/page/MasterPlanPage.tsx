@@ -1,11 +1,11 @@
-import {media} from "glamor";
+import { media } from "glamor";
 import * as React from "react";
-import {Link} from "react-router";
-import {context} from "sourcegraph/app/context";
-import {Affix, Button, FlexContainer, Heading, Hero, Input, List, Panel} from "sourcegraph/components";
-import {LocationStateToggleLink} from "sourcegraph/components/LocationStateToggleLink";
-import {PageTitle} from "sourcegraph/components/PageTitle";
-import {colors, layout, typography, whitespace} from "sourcegraph/components/utils";
+import { Link } from "react-router";
+import { context } from "sourcegraph/app/context";
+import { Affix, Button, FlexContainer, Heading, Hero, Input, List, Panel } from "sourcegraph/components";
+import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
+import { PageTitle } from "sourcegraph/components/PageTitle";
+import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 function TLDR({style}: { style?: React.CSSProperties; }): JSX.Element {
@@ -39,8 +39,8 @@ function EmailSubscribeForm({tabIndex, block, sx}: {
 	return <div style={sx}>
 		<form action="//sourcegraph.us8.list-manage.com/subscribe/post?u=81d5d2fe17e49697663f46503&amp;id=32642fc470" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" className="validate" target="_blank" noValidate>
 			<div>
-				<div style={{position: "absolute", left: "-5000px"}} aria-hidden="true"><input type="text" name="b_81d5d2fe17e49697663f46503_32642fc470" tabIndex={-1} value="" /></div>
-				<Input block={block} type="email" defaultValue="" name="EMAIL" id="mce-EMAIL" placeholder="Email address" style={{marginBottom: whitespace[1]}} tabIndex={tabIndex} />
+				<div style={{ position: "absolute", left: "-5000px" }} aria-hidden="true"><input type="text" name="b_81d5d2fe17e49697663f46503_32642fc470" tabIndex={-1} value="" /></div>
+				<Input block={block} type="email" defaultValue="" name="EMAIL" id="mce-EMAIL" placeholder="Email address" style={{ marginBottom: whitespace[1] }} tabIndex={tabIndex} />
 				<Button type="submit" block={block} id="mc-embedded-subscribe" color="gray" tabIndex={tabIndex + 1}>Subscribe to updates</Button>
 			</div>
 		</form>
@@ -49,24 +49,24 @@ function EmailSubscribeForm({tabIndex, block, sx}: {
 
 function SignInButton({block}: { block: boolean }): JSX.Element {
 	return <LocationStateToggleLink
-			href="/join"
-			modalName="join"
-			location={location}
-			onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({page_name: location.pathname})}
-			{...media(layout.breakpoints["sm"], { display: "none" })}
-			style={{
-				paddingTop: whitespace[2],
-				paddingBottom: whitespace[2],
-			}}
+		href="/join"
+		modalName="join"
+		location={location}
+		onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname })}
+		{...media(layout.breakpoints["sm"], { display: "none" }) }
+		style={{
+			paddingTop: whitespace[2],
+			paddingBottom: whitespace[2],
+		}}
 		>
-			<Button block={block} color="blue">Try Sourcegraph</Button>
-		</LocationStateToggleLink>;
+		<Button block={block} color="blue">Try Sourcegraph</Button>
+	</LocationStateToggleLink>;
 }
 
 export function MasterPlanPage(): JSX.Element {
-	return <div style={{marginBottom: whitespace[4]}}>
+	return <div style={{ marginBottom: whitespace[4] }}>
 		<PageTitle title="Sourcegraph Master Plan" />
-		<Hero pattern="objects" color="blue" style={{padding: whitespace[4]}}>
+		<Hero pattern="objects" color="blue" style={{ padding: whitespace[4] }}>
 			<Heading level={2} color="white">Sourcegraph Master Plan</Heading>
 			<p>What we're building and why it matters</p>
 		</Hero>
@@ -78,21 +78,21 @@ export function MasterPlanPage(): JSX.Element {
 			paddingRight: whitespace[2],
 		}}>
 			<div style={{
-					flex: "0 0 320px",
-					order: 99,
-					paddingLeft: whitespace[4],
-					paddingTop: whitespace[3],
-				}}
-				{...media(layout.breakpoints["sm"], { display: "none" })}
-			>
+				flex: "0 0 320px",
+				order: 99,
+				paddingLeft: whitespace[4],
+				paddingTop: whitespace[3],
+			}}
+				{...media(layout.breakpoints["sm"], { display: "none" }) }
+				>
 				<Affix offset={0}>
 					<Heading level={7} color="gray">Phase 1 goals</Heading>
 					<TLDR style={{
 						borderLeft: `1px solid ${colors.coolGray3(0.25)}`,
 						listStyleType: "none",
 						paddingLeft: whitespace[4],
-					}}/>
-					<EmailSubscribeForm tabIndex={5} block={true} sx={{padding: whitespace[4]}} />
+					}} />
+					<EmailSubscribeForm tabIndex={5} block={true} sx={{ padding: whitespace[4] }} />
 					{!context.user && <SignInButton block={true} />}
 				</Affix>
 			</div>
@@ -121,7 +121,7 @@ export function MasterPlanPage(): JSX.Element {
 				</p>
 
 				<a id="code-intelligence"></a>
-				<Heading level={3} style={{marginTop: whitespace[5]}}>
+				<Heading level={3} style={{ marginTop: whitespace[5] }}>
 					Make basic code intelligence ubiquitous (in every editor and language)
 				</Heading>
 				<Panel hoverLevel="low" hover={false} style={{
@@ -196,7 +196,7 @@ export function MasterPlanPage(): JSX.Element {
 					padding: whitespace[4],
 					textAlign: "center",
 				}}>
-					<Heading level={4} style={{marginBottom: whitespace[3]}}>
+					<Heading level={4} style={{ marginBottom: whitespace[3] }}>
 						See how good your team's dev tools are
 					</Heading>
 					<div style={typography.size[6]}>
@@ -205,7 +205,7 @@ export function MasterPlanPage(): JSX.Element {
 				</Panel>
 
 				<a id="code-review"></a>
-				<Heading level={3} style={{marginTop: whitespace[5]}}>
+				<Heading level={3} style={{ marginTop: whitespace[5] }}>
 					Make code review continuous and more intelligent
 				</Heading>
 
@@ -242,7 +242,7 @@ export function MasterPlanPage(): JSX.Element {
 				</ol>
 
 				<a id="global-code-graph"></a>
-				<Heading level={3} style={{marginTop: whitespace[5]}}>
+				<Heading level={3} style={{ marginTop: whitespace[5] }}>
 					Build the global code graph
 				</Heading>
 				<p>
@@ -285,7 +285,7 @@ export function MasterPlanPage(): JSX.Element {
 				<p>
 					Getting these right and building the global code graph means you’ll be able to find and use more existing, high-quality open-source components for the common parts of your application, so you can focus on solving the problems that are unique to your business or project.
 				</p>
-				<div {...media(layout.breakpoints["not-sm"], { display: "none" })}>
+				<div {...media(layout.breakpoints["not-sm"], { display: "none" }) }>
 					<Panel hoverLevel="low" hover={false} style={{
 						margin: "auto",
 						marginBottom: whitespace[2],
@@ -293,7 +293,7 @@ export function MasterPlanPage(): JSX.Element {
 						padding: whitespace[4],
 						textAlign: "center",
 					}}>
-						<Heading level={4} style={{marginBottom: whitespace[3]}}>
+						<Heading level={4} style={{ marginBottom: whitespace[3] }}>
 							Subscribe to updates to our master plan
 						</Heading>
 						<div style={typography.size[6]}>

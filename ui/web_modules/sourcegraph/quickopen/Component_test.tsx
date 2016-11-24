@@ -1,9 +1,9 @@
 import expect from "expect.js";
 import * as React from "react";
 
-import {ResultCategories, ResultRow} from "sourcegraph/quickopen/Components";
-import {Category, SearchDelegate} from "sourcegraph/quickopen/Container";
-import {renderToString} from "sourcegraph/util/testutil/componentTestUtils";
+import { ResultCategories, ResultRow } from "sourcegraph/quickopen/Components";
+import { Category, SearchDelegate } from "sourcegraph/quickopen/Container";
+import { renderToString } from "sourcegraph/util/testutil/componentTestUtils";
 
 interface Case {
 	categories: Category[];

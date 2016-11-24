@@ -1,8 +1,8 @@
 import * as classNames from "classnames";
 import * as React from "react";
 
-import {Button} from "sourcegraph/components/Button";
-import {Icon} from "sourcegraph/components/Icon";
+import { Button } from "sourcegraph/components/Button";
+import { Icon } from "sourcegraph/components/Icon";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/components/styles/checklistItem.css";
 

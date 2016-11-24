@@ -1,5 +1,5 @@
 import * as React from "react";
-import {colors, whitespace} from "sourcegraph/components/utils";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	language: string;
@@ -19,7 +19,7 @@ export function LanguageLabel({language, style}: Props): JSX.Element {
 	return <div style={style}>
 		<span style={{
 			display: "inline-block",
-			backgroundColor: language ? langColors[language] :  colors.blue(),
+			backgroundColor: language ? langColors[language] : colors.blue(),
 			width: 7,
 			height: 7,
 			borderRadius: "50%",

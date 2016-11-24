@@ -1,10 +1,10 @@
-import {context} from "sourcegraph/app/context";
-import {URIUtils} from "sourcegraph/core/uri";
-import {defaultFetch as fetch} from "sourcegraph/util/xhr";
+import { context } from "sourcegraph/app/context";
+import { URIUtils } from "sourcegraph/core/uri";
+import { defaultFetch as fetch } from "sourcegraph/util/xhr";
 import URI from "vs/base/common/uri";
-import {Range} from "vs/editor/common/core/range";
-import {IPosition, IRange, IReadOnlyModel} from "vs/editor/common/editorCommon";
-import {Location as VSCLocation} from "vs/editor/common/modes";
+import { Range } from "vs/editor/common/core/range";
+import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
+import { Location as VSCLocation } from "vs/editor/common/modes";
 
 interface LSPPosition {
 	line: number;
@@ -12,7 +12,7 @@ interface LSPPosition {
 }
 
 export function toPosition(pos: IPosition): LSPPosition {
-	return {line: pos.lineNumber - 1, character: pos.column - 1};
+	return { line: pos.lineNumber - 1, character: pos.column - 1 };
 }
 
 interface LSPRange {
@@ -45,7 +45,7 @@ export function toMonacoRange(r: LSPRange): IRange {
 type LSPResponse = {
 	method: string;
 	result: any;
-	error: {code: number, message: string};
+	error: { code: number, message: string };
 };
 
 // send sends an LSP request with the given method and params. Because
@@ -70,9 +70,9 @@ export function sendExt(uri: string, modeID: string, method: string, params: any
 				mode: modeID,
 			},
 		},
-		{id: 1, method, params},
-		{id: 2, method: "shutdown"},
-		{method: "exit"},
+		{ id: 1, method, params },
+		{ id: 2, method: "shutdown" },
+		{ method: "exit" },
 	];
 
 	type LSPResponseWithTraceURL = {
@@ -92,7 +92,7 @@ export function sendExt(uri: string, modeID: string, method: string, params: any
 			if (resp.status >= 200 && resp.status <= 299) {
 				// Pass along the main request's response (not the
 				// initialize/shutdown responses).
-				return resp.json().then((resps: LSPResponse[]) => ({resp: resps[1], traceURL}));
+				return resp.json().then((resps: LSPResponse[]) => ({ resp: resps[1], traceURL }));
 			}
 
 			// Synthesize an LSP response object from the HTTP error,

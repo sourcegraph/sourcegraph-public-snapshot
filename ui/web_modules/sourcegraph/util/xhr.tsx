@@ -1,6 +1,6 @@
 import "whatwg-fetch";
 
-import {context} from "sourcegraph/app/context";
+import { context } from "sourcegraph/app/context";
 
 // This file provides a common entrypoint to the fetch API.
 
@@ -49,7 +49,7 @@ export function checkStatus(resp: Response): Promise<Response> | Response {
 		} catch (error) {
 			err = new Error(resp.statusText);
 			(err as any).body = body;
-			(err as any).response = {status: resp.status, statusText: resp.statusText, url: resp.url};
+			(err as any).response = { status: resp.status, statusText: resp.statusText, url: resp.url };
 		}
 		throw err;
 	});

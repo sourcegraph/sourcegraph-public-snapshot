@@ -1,13 +1,13 @@
 import * as React from "react";
-import {Code, Heading, Panel, RepositoryCard, Table} from "sourcegraph/components";
-import {whitespace} from "sourcegraph/components/utils";
+import { Code, Heading, Panel, RepositoryCard, Table } from "sourcegraph/components";
+import { whitespace } from "sourcegraph/components/utils";
 
 export function RepositoryComponent(): JSX.Element {
-	return <div style={{marginBottom: whitespace[4], marginTop: whitespace[4]}}>
+	return <div style={{ marginBottom: whitespace[4], marginTop: whitespace[4] }}>
 		<Heading level={3}>Repository Card</Heading>
 
 		<Panel hoverLevel="low">
-			<div style={{padding: whitespace[4]}}>
+			<div style={{ padding: whitespace[4] }}>
 
 				<RepositoryCard
 					repo={{
@@ -71,7 +71,7 @@ export function RepositoryComponent(): JSX.Element {
 					paddingLeft: whitespace[4],
 					paddingRight: whitespace[4],
 				}}>
-{`
+					{`
 	<RepositoryCard
 		repo={{
 			ID: 123,
@@ -121,15 +121,15 @@ export function RepositoryComponent(): JSX.Element {
 			},
 		]} />
 `
-}
+					}
 				</pre>
 			</code>
 		</Panel>
-		<Heading level={6} style={{marginTop: whitespace[3], marginBottom: whitespace[2]}}>
+		<Heading level={6} style={{ marginTop: whitespace[3], marginBottom: whitespace[2] }}>
 			RepositoryCard Properties
 		</Heading>
-		<Panel hoverLevel="low" style={{padding: whitespace[4]}}>
-			<Table style={{width: "100%"}}>
+		<Panel hoverLevel="low" style={{ padding: whitespace[4] }}>
+			<Table style={{ width: "100%" }}>
 				<thead>
 					<tr>
 						<td>Prop</td>

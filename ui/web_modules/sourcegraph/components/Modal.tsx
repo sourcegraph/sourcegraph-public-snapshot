@@ -1,10 +1,10 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {EventListener} from "sourcegraph/Component";
+import { InjectedRouter } from "react-router";
+import { EventListener } from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import {Location} from "sourcegraph/Location";
+import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
+import { renderedOnBody } from "sourcegraph/util/renderedOnBody";
 
 interface Props {
 	onDismiss?: () => void;
@@ -79,7 +79,7 @@ export function setLocationModalState(router: InjectedRouter, location: Location
 		{
 			state: Object.assign({},
 				location.state,
-				{ modal: visible ? modalName : null},
+				{ modal: visible ? modalName : null },
 			),
 		})
 	);
@@ -117,7 +117,7 @@ interface LocationStateModalProps {
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
 export function LocationStateModal({location, modalName, children, onDismiss, style, router}: LocationStateModalProps): JSX.Element {
-	if (!location.state || !(location.state as any).modal || (location.state as any).modal  !== modalName) {
+	if (!location.state || !(location.state as any).modal || (location.state as any).modal !== modalName) {
 		return <span />;
 	}
 

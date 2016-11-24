@@ -1,9 +1,9 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {LocationStateModal} from "sourcegraph/components/Modal";
+import { InjectedRouter } from "react-router";
+import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import {Location} from "sourcegraph/Location";
-import {LoginForm} from "sourcegraph/user/Login";
+import { Location } from "sourcegraph/Location";
+import { LoginForm } from "sourcegraph/user/Login";
 
 interface Props {
 	location: Location;
@@ -17,7 +17,7 @@ export const Login = (props: Props): JSX.Element => {
 		marginRight: "auto",
 	};
 
-	return(
+	return (
 		<LocationStateModal modalName="login" location={props.location} router={props.router}>
 			<div className={styles.modal} style={sx}>
 				<LoginForm

@@ -7,12 +7,12 @@
 // returned by the first call. The Response is cloned so that they may
 // read the body.
 export function singleflightFetch(fetch): any {
-	const inFlight: {[key: string]: boolean} = {};
+	const inFlight: { [key: string]: boolean } = {};
 	type WaitingFetch = {
 		resolve: (result: Promise<Response> | Response) => void,
 		reject: (err: any) => void
 	};
-	const waiting: {[key: string]: WaitingFetch[]} = {};
+	const waiting: { [key: string]: WaitingFetch[] } = {};
 	const done = (key: string) => {
 		delete inFlight[key];
 		const waitingFetches = waiting[key];
@@ -32,7 +32,7 @@ export function singleflightFetch(fetch): any {
 				waiting[key] = [];
 			}
 			return new Promise((resolve, reject) => {
-				waiting[key].push({resolve, reject});
+				waiting[key].push({ resolve, reject });
 			});
 		}
 

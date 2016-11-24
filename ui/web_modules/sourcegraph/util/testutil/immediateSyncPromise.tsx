@@ -1,6 +1,6 @@
 // tslint:disable: typedef ordered-imports
 
-import {testOnly} from "sourcegraph/util/testOnly";
+import { testOnly } from "sourcegraph/util/testOnly";
 
 // immediateSyncPromise returns an object that looks like a resolved promise
 // but whose then and catch callbacks are executed synchronously

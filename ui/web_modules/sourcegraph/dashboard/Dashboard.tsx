@@ -1,8 +1,8 @@
 import * as React from "react";
 import * as Relay from "react-relay";
-import {PageTitle} from "sourcegraph/components/PageTitle";
-import {Location} from "sourcegraph/Location";
-import {Repos} from "sourcegraph/user/settings/Repos";
+import { PageTitle } from "sourcegraph/components/PageTitle";
+import { Location } from "sourcegraph/Location";
+import { Repos } from "sourcegraph/user/settings/Repos";
 
 interface Props { location: Location; }
 
@@ -40,7 +40,7 @@ const DashboardContainer = Relay.createContainer(DashboardComponent, {
 	},
 });
 
-export const Dashboard = function(props: Props): JSX.Element {
+export const Dashboard = function (props: Props): JSX.Element {
 	return <Relay.RootContainer
 		Component={DashboardContainer}
 		route={{
@@ -52,5 +52,5 @@ export const Dashboard = function(props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-	/>;
+		/>;
 };
