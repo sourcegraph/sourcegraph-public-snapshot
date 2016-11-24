@@ -8,7 +8,7 @@ global.window = document.defaultView;
 import * as utils from "../app/utils";
 import * as annotations from "../app/utils/annotations";
 import * as github from "../app/utils/github";
-import {expect} from "chai";
+import { expect } from "chai";
 
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
@@ -78,7 +78,7 @@ describe("GitHub DOM", () => {
 			let _codeCells: github.CodeCell[];
 			before(() => {
 				const file = github.getFileContainers()[0];
-				_codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: false, isSplitDiff: false, isBase: false});
+				_codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: false, isSplitDiff: false, isBase: false });
 			});
 
 			it("should get code cells", () => {
@@ -176,8 +176,8 @@ describe("GitHub DOM", () => {
 		describe("annotations", () => {
 			it("should get code cells", () => {
 				const files = Array.from(github.getFileContainers());
-				const baseCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: false, isBase: true}));
-				const headCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: false, isBase: false}));
+				const baseCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase: true }));
+				const headCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase: false }));
 
 				baseCells.forEach((group) => group.forEach((cell) => expect(cell.isDeletion).to.be.true));
 				headCells.forEach((group) => group.forEach((cell) => expect(cell.isDeletion).to.be.false));
@@ -269,8 +269,8 @@ describe("GitHub DOM", () => {
 
 			it("should get code cells for each snippet", () => {
 				const files = Array.from(github.getFileContainers());
-				const baseCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: false, isBase: true}));
-				const headCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: false, isBase: false}));
+				const baseCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase: true }));
+				const headCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase: false }));
 
 				baseCells.forEach((group) => group.forEach((cell) => expect(cell.isDeletion).to.be.true));
 				headCells.forEach((group) => group.forEach((cell) => expect(cell.isDeletion).to.be.false));
@@ -296,7 +296,7 @@ describe("GitHub DOM", () => {
 
 			function getPRCells(isBase: boolean): github.CodeCell[] {
 				const file = github.getFileContainers()[0];
-				const codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: false, isBase});
+				const codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase });
 				return codeCells;
 			}
 
@@ -385,8 +385,8 @@ describe("GitHub DOM", () => {
 		describe("annotations", () => {
 			it("should get code cells for each snippet", () => {
 				const files = Array.from(github.getFileContainers());
-				const baseCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: true, isBase: true}));
-				const headCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), {isDelta: true, isSplitDiff: true, isBase: false}));
+				const baseCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: true, isBase: true }));
+				const headCells = files.map((file) => github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: true, isBase: false }));
 
 				baseCells.forEach((group) => group.forEach((cell) => expect(cell.isAddition).to.be.false));
 				headCells.forEach((group) => group.forEach((cell) => expect(cell.isDeletion).to.be.false));

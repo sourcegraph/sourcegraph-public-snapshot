@@ -1,11 +1,11 @@
-import {singleflightFetch} from "./singleflightFetch";
+import { singleflightFetch } from "./singleflightFetch";
 
 let token: string | null = null;
 export function useAccessToken(tok: string): void {
 	token = tok;
 }
 
-type FetchOptions = {headers: Headers};
+type FetchOptions = { headers: Headers };
 
 function defaultOptions(): FetchOptions | undefined {
 	if (typeof Headers === "undefined") {
@@ -16,7 +16,7 @@ function defaultOptions(): FetchOptions | undefined {
 	if (token) {
 		headers.set("Authorization", `session ${token}`);
 	}
-	return {headers};
+	return { headers };
 };
 
 const f = singleflightFetch(global.fetch);

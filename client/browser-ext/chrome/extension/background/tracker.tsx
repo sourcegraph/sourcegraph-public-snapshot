@@ -3,7 +3,7 @@ const telligent = require("telligent-tracker");
 const telligentFunctionName = "telligent";
 
 // Create the initializing function
-window[telligentFunctionName] = function(): void {
+window[telligentFunctionName] = function (): void {
 	(window[telligentFunctionName].q = window[telligentFunctionName].q || []).push(arguments);
 };
 
@@ -31,8 +31,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	} else if (request.type === "setTrackerUserId") {
 		t("setUserId", request.payload);
 	} else if (request.type === "setTrackerDeviceId") {
-		t("addStaticMetadataObject", {deviceInfo: {TelligentWebDeviceId: request.payload}});
+		t("addStaticMetadataObject", { deviceInfo: { TelligentWebDeviceId: request.payload } });
 	} else if (request.type === "setTrackerGAClientId") {
-		t("addStaticMetadataObject", {deviceInfo: {GAClientId: request.payload}});
+		t("addStaticMetadataObject", { deviceInfo: { GAClientId: request.payload } });
 	}
 });

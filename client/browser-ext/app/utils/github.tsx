@@ -1,5 +1,5 @@
 import * as utils from ".";
-import {logException} from "./Sentry";
+import { logException } from "./Sentry";
 
 function invariant(cond: any): void {
 	if (!cond) {
@@ -187,28 +187,28 @@ export function getDeltaRevs(): DeltaRevs | null {
 	let fetchContainers = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
 	if (fetchContainers && fetchContainers.length === 1) {
 		for (let i = 0; i < fetchContainers.length; ++i) {
-		// for conversation view of pull request
-		const el = fetchContainers[i] as HTMLElement;
-		const url = el.getAttribute("data-url");
-		if (!url) {
-			continue;
-		}
+			// for conversation view of pull request
+			const el = fetchContainers[i] as HTMLElement;
+			const url = el.getAttribute("data-url");
+			if (!url) {
+				continue;
+			}
 
-		const urlSplit = url.split("?");
-		invariant(urlSplit.length === 2);
-		const query = urlSplit[1];
-		const querySplit = query.split("&");
-		for (let kv of querySplit) {
-			const kvSplit = kv.split("=");
-			const k = kvSplit[0];
-			const v = kvSplit[1];
-			if (k === "base_commit_oid") {
-				base = v;
+			const urlSplit = url.split("?");
+			invariant(urlSplit.length === 2);
+			const query = urlSplit[1];
+			const querySplit = query.split("&");
+			for (let kv of querySplit) {
+				const kvSplit = kv.split("=");
+				const k = kvSplit[0];
+				const v = kvSplit[1];
+				if (k === "base_commit_oid") {
+					base = v;
+				}
+				if (k === "end_commit_oid") {
+					head = v;
+				}
 			}
-			if (k === "end_commit_oid") {
-				head = v;
-			}
-		}
 		}
 	} else if (isCommit) {
 		const shaContainer = document.querySelectorAll(".sha-block");
@@ -228,7 +228,7 @@ export function getDeltaRevs(): DeltaRevs | null {
 	if (base === "" || head === "") {
 		return null;
 	}
-	return {base, head};
+	return { base, head };
 }
 
 export interface DeltaInfo {
@@ -289,7 +289,7 @@ export function getDeltaInfo(): DeltaInfo | null {
 	if (baseBranch === "" || headBranch === "" || baseURI === "" || headURI === "") {
 		return null;
 	}
-	return {baseBranch, headBranch, baseURI, headURI};
+	return { baseBranch, headBranch, baseURI, headURI };
 }
 
 export interface CodeCell {
@@ -302,7 +302,7 @@ export interface CodeCell {
 /**
  * getCodeCellsForAnnotation code cells which should be annotated
  */
-export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: {isDelta: boolean, isSplitDiff: boolean; isBase: boolean}): CodeCell[] {
+export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: { isDelta: boolean, isSplitDiff: boolean; isBase: boolean }): CodeCell[] {
 	const cells: CodeCell[] = [];
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];

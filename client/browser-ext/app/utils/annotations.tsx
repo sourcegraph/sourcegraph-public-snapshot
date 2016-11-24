@@ -1,6 +1,6 @@
-import {doFetch as fetch} from "../backend/xhr";
-import {EventLogger} from "../utils/EventLogger";
-import {logException} from "../utils/Sentry";
+import { doFetch as fetch } from "../backend/xhr";
+import { EventLogger } from "../utils/EventLogger";
+import { logException } from "../utils/Sentry";
 import * as github from "./github";
 import * as utils from "./index";
 import * as tooltips from "./tooltips";
@@ -26,7 +26,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		return;
 	}
 
-	const cells = github.getCodeCellsForAnnotation(table, Object.assign({isSplitDiff}, repoRevSpec));
+	const cells = github.getCodeCellsForAnnotation(table, Object.assign({ isSplitDiff }, repoRevSpec));
 	cells.forEach((cell) => {
 		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
 
@@ -153,7 +153,7 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 		nodeText = nodeText.slice(token.length);
 	}
 
-	return {resultNode: wrapperNode, bytesConsumed};
+	return { resultNode: wrapperNode, bytesConsumed };
 }
 
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
@@ -173,10 +173,10 @@ export function convertElementNode(currentNode: Node, offset: number, line: numb
 		bytesConsumed += res.bytesConsumed;
 	}
 
-	return {resultNode: wrapperNode, bytesConsumed};
+	return { resultNode: wrapperNode, bytesConsumed };
 }
 
-let tooltipCache: {[key: string]: tooltips.TooltipData} = {};
+let tooltipCache: { [key: string]: tooltips.TooltipData } = {};
 let j2dCache = {};
 
 let activeTarget;
@@ -232,7 +232,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 		getTooltip(t, (data) => tooltips.setTooltip(data, t as HTMLElement));
 	};
 
-	function wrapLSP(req: {method: string, params: Object}): Object[] {
+	function wrapLSP(req: { method: string, params: Object }): Object[] {
 		(req as any).id = 1;
 		return [
 			{
@@ -273,7 +273,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 			},
 		});
 
-		fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", {method: "POST", body: JSON.stringify(body)})
+		fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", { method: "POST", body: JSON.stringify(body) })
 			.then((resp) => resp.json().then((json) => {
 				const respUri = json[1].result[0].uri.split("git://")[1];
 				const prt0Uri = respUri.split("?");
@@ -308,7 +308,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 			},
 		});
 
-		fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", {method: "POST", body: JSON.stringify(body)})
+		fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", { method: "POST", body: JSON.stringify(body) })
 			.then((resp) => resp.json().then((json) => {
 				if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
 					const title = json[1].result.contents[0].value;
@@ -317,7 +317,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 						// TODO(john): what if there is more than 1?
 						doc = content.value;
 					});
-					tooltipCache[cacheKey] = {title, doc};
+					tooltipCache[cacheKey] = { title, doc };
 				} else {
 					tooltipCache[cacheKey] = null;
 				}

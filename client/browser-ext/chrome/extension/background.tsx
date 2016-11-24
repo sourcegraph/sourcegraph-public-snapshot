@@ -11,7 +11,7 @@ function promisifier(method: any): (...args: any[]) => Promise<any> {
 }
 
 function promisifyAll(obj: Object, list: string[]): void {
-	list.forEach(api => bluebird.promisifyAll(obj[api], {promisifier}));
+	list.forEach(api => bluebird.promisifyAll(obj[api], { promisifier }));
 }
 
 // let chrome extension api support Promise

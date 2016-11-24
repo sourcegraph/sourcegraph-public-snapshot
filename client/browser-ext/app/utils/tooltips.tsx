@@ -1,12 +1,12 @@
-import {EventLogger} from "./EventLogger";
+import { EventLogger } from "./EventLogger";
 import * as _ from "lodash";
 import * as marked from "marked";
-import {style} from "typestyle";
+import { style } from "typestyle";
 
 // tslint:disable-next-line
 const truncate = require("html-truncate");
 
-export type TooltipData = {title: string, doc?: string} | null;
+export type TooltipData = { title: string, doc?: string } | null;
 
 const tooltipClassName = style({
 	backgroundColor: "#2D2D30",
@@ -48,7 +48,7 @@ export function createTooltips(): void {
 		return; // idempotence
 	}
 
-	tooltip	= document.createElement("DIV");
+	tooltip = document.createElement("DIV");
 	tooltip.className = tooltipClassName;
 	tooltip.classList.add("sg-tooltip");
 	tooltip.style.visibility = "hidden";
@@ -158,7 +158,7 @@ function _updateTooltip(activeTarget: HTMLElement | null): void {
 		if (currentTooltipDoc) {
 			const tooltipDoc = document.createElement("DIV");
 			tooltipDoc.className = tooltipDocStyle;
-			tooltipDoc.innerHTML = truncate(marked(currentTooltipDoc, {gfm: true, breaks: true, sanitize: true}), 300);
+			tooltipDoc.innerHTML = truncate(marked(currentTooltipDoc, { gfm: true, breaks: true, sanitize: true }), 300);
 			tooltip.appendChild(tooltipDoc);
 		}
 

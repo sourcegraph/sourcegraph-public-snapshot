@@ -6,7 +6,7 @@ declare var require: {
 };
 
 declare namespace process {
-	export var env: {NODE_ENV: string};
+	export var env: { NODE_ENV: string };
 }
 
 declare namespace global {
@@ -14,6 +14,6 @@ declare namespace global {
 	export var document: any;
 	export var navigator: any;
 	export var Promise: any;
-    export var Node: any;
+	export var Node: any;
 	export var fetch: typeof window.fetch;
 }

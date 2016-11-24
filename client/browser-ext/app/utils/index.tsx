@@ -111,7 +111,7 @@ export function parseURL(loc: Location): GitHubURLData {
 	const isCommit = urlsplit[2] === "commit";
 	const isDelta = isPullRequest || isCommit;
 
-	return {user, repo, rev, path, repoURI, isDelta, isPullRequest, isCommit};
+	return { user, repo, rev, path, repoURI, isDelta, isPullRequest, isCommit };
 }
 
 export function isGitHubURL(loc: Location): boolean {

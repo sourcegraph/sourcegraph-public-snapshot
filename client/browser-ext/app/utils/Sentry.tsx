@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === "production") {
 
 export function setUser(id: string): void {
 	if (process.env.NODE_ENV === "production") {
-		Raven.setUserContext({id});
+		Raven.setUserContext({ id });
 	}
 }
 
@@ -23,6 +23,6 @@ export function logError(msg: string): void {
 export function logException(err: Error): void {
 	console.error(err);
 	if (process.env.NODE_ENV === "production") {
-		Raven.captureException(err, {extra: {extension: true}});
+		Raven.captureException(err, { extra: { extension: true } });
 	}
 }

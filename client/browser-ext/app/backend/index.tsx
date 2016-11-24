@@ -1,4 +1,4 @@
-import {doFetch as fetch} from "./xhr";
+import { doFetch as fetch } from "./xhr";
 
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
 
@@ -20,13 +20,13 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 	return fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
 		.then((resp) => {
 			if (resp.status === 404) {
-				return {authRequired: true};
+				return { authRequired: true };
 			}
 			if (resp.status === 202) {
-				return {cloneInProgress: true};
+				return { cloneInProgress: true };
 			}
 
-			const p = resp.json().then((json) => ({commitID: json.CommitID}));
+			const p = resp.json().then((json) => ({ commitID: json.CommitID }));
 			resolvedRevCache.set(key, p);
 			return p;
 		});
@@ -50,6 +50,6 @@ export function ensureRepoExists(repo: string): void {
 		},
 	};
 
-	fetch("https://sourcegraph.com/.api/repos?AcceptAlreadyExists=true", {method: "POST", body: JSON.stringify(body)});
+	fetch("https://sourcegraph.com/.api/repos?AcceptAlreadyExists=true", { method: "POST", body: JSON.stringify(body) });
 	createdRepoOnce.add(repo);
 }

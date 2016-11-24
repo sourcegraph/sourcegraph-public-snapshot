@@ -1,4 +1,4 @@
-import {setUser as setSentryUser} from "../utils/Sentry";
+import { setUser as setSentryUser } from "../utils/Sentry";
 
 class Logger {
 	constructor() {
@@ -6,7 +6,7 @@ class Logger {
 			return;
 		}
 
-		chrome.runtime.sendMessage({type: "getIdentity"}, (identity) => {
+		chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
 			if (identity) {
 				if (identity.userId) {
 					chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
@@ -59,7 +59,7 @@ class Logger {
 		);
 
 		this._logToConsole(eventAction, decoratedEventProps);
-		chrome.runtime.sendMessage({ type: "trackEvent", payload: decoratedEventProps});
+		chrome.runtime.sendMessage({ type: "trackEvent", payload: decoratedEventProps });
 	}
 
 	// Use logViewEvent as the default way to log view events for Telligent and GA

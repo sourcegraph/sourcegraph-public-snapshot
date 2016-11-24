@@ -8,7 +8,7 @@ function loadScript(name: string, tabId: number, cb: () => void): Promise<void> 
 		return fetch(`https://localhost:3000/js/${name}.bundle.js`)
 			.then((res) => res.text())
 			.then((fetchRes) => {
-				chrome.tabs.executeScript(tabId, {code: fetchRes, runAt: "document_end"}, cb);
+				chrome.tabs.executeScript(tabId, { code: fetchRes, runAt: "document_end" }, cb);
 			});
 	}
 }

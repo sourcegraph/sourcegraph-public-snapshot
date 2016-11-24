@@ -1,12 +1,12 @@
-import {useAccessToken} from "../../app/backend/xhr";
-import {Background} from "../../app/components/Background";
-import {BlobAnnotator} from "../../app/components/BlobAnnotator";
-import {EventLogger} from "../../app/utils/EventLogger";
+import { useAccessToken } from "../../app/backend/xhr";
+import { Background } from "../../app/components/Background";
+import { BlobAnnotator } from "../../app/components/BlobAnnotator";
+import { EventLogger } from "../../app/utils/EventLogger";
 import * as github from "../../app/utils/github";
-import {getGitHubRoute, isGitHubURL, parseURL} from "../../app/utils/index";
-import {logError, logException} from "../../app/utils/Sentry";
+import { getGitHubRoute, isGitHubURL, parseURL } from "../../app/utils/index";
+import { logError, logException } from "../../app/utils/Sentry";
 import * as React from "react";
-import {render, unmountComponentAtNode} from "react-dom";
+import { render, unmountComponentAtNode } from "react-dom";
 
 function ejectComponent(mount: HTMLElement): void {
 	try {
@@ -18,7 +18,7 @@ function ejectComponent(mount: HTMLElement): void {
 }
 
 function injectModules(): void {
-	chrome.runtime.sendMessage({type: "getSessionToken"}, (token) => {
+	chrome.runtime.sendMessage({ type: "getSessionToken" }, (token) => {
 		if (token) {
 			useAccessToken(token);
 		}
@@ -92,7 +92,7 @@ function ejectModules(): void {
 
 window.addEventListener("load", () => {
 	injectModules();
-	chrome.runtime.sendMessage({type: "getIdentity"}, (identity) => {
+	chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
 		if (identity) {
 			EventLogger.updatePropsForUser(identity);
 		}
@@ -106,7 +106,7 @@ document.addEventListener("keydown", (e: KeyboardEvent) => {
 	if ((e.target as HTMLElement).tagName === "INPUT" ||
 		(e.target as HTMLElement).tagName === "SELECT" ||
 		(e.target as HTMLElement).tagName === "TEXTAREA") {
-			return;
+		return;
 	}
 
 	if (e.keyCode === 85) {

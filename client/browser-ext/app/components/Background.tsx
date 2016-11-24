@@ -1,6 +1,6 @@
 import * as backend from "../backend";
 import * as utils from "../utils";
-import {EventLogger} from "../utils/EventLogger";
+import { EventLogger } from "../utils/EventLogger";
 import * as React from "react";
 
 export class Background extends React.Component<{}, {}> {
@@ -29,7 +29,7 @@ export class Background extends React.Component<{}, {}> {
 
 	removePopovers(): void {
 		const popovers = document.getElementsByClassName("sg-popover");
-		for (let i = popovers.length; i > 0; ) {
+		for (let i = popovers.length; i > 0;) {
 			popovers[--i].remove();
 		}
 	}
@@ -61,7 +61,7 @@ export class Background extends React.Component<{}, {}> {
 			backend.ensureRepoExists(urlProps.repoURI);
 		}
 
-		chrome.runtime.sendMessage({type: "getIdentity"}, (identity) => {
+		chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
 			if (identity) {
 				EventLogger.updatePropsForUser(identity);
 			}

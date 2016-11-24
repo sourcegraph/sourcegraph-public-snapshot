@@ -1,16 +1,16 @@
 import * as backend from "../backend";
 import * as utils from "../utils";
-import {addAnnotations} from "../utils/annotations";
+import { addAnnotations } from "../utils/annotations";
 import * as github from "../utils/github";
-import {logError} from "../utils/Sentry";
-import {SourcegraphIcon} from "./Icons";
+import { logError } from "../utils/Sentry";
+import { SourcegraphIcon } from "./Icons";
 import * as React from "react";
 
 const isCloning = new Set<string>();
 
 const className = "btn btn-sm tooltipped tooltipped-n";
-const buttonStyle = {marginRight: "5px"};
-const iconStyle = {marginTop: "-1px", paddingRight: "4px", fontSize: "18px"};
+const buttonStyle = { marginRight: "5px" };
+const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px" };
 
 interface Props {
 	path: string;
@@ -19,7 +19,7 @@ interface Props {
 }
 
 interface State {
-	resolvedRevs: {[key: string]: backend.ResolvedRevResp};
+	resolvedRevs: { [key: string]: backend.ResolvedRevResp };
 }
 
 export class BlobAnnotator extends React.Component<Props, State> {
@@ -117,7 +117,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			return;
 		}
 		p.then((resp) => {
-			this.setState({resolvedRevs: Object.assign({}, this.state.resolvedRevs, {[key]: resp}, {[repo]: resp})});
+			this.setState({ resolvedRevs: Object.assign({}, this.state.resolvedRevs, { [key]: resp }, { [repo]: resp }) });
 		});
 	}
 
@@ -143,7 +143,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 				return; // Don't annotate unsupported languages
 			}
 
-			addAnnotations(this.props.path, {repoURI, rev, isDelta: this.isDelta || false, isBase}, this.props.blobElement, this.isSplitDiff || false, loggerProps);
+			addAnnotations(this.props.path, { repoURI, rev, isDelta: this.isDelta || false, isBase }, this.props.blobElement, this.isSplitDiff || false, loggerProps);
 		};
 
 		if (this.isDelta) {
@@ -185,8 +185,8 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			// Not signed in or not auth'd for private repos
 			return (<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph for private repos`}>
 				<a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`}
-					style={{textDecoration: "none", color: "inherit"}}>
-					<SourcegraphIcon style={Object.assign({WebkitFilter: "grayscale(100%)"}, iconStyle)} />
+					style={{ textDecoration: "none", color: "inherit" }}>
+					<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />
 					Sourcegraph
 				</a>
 			</div>);
@@ -211,7 +211,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 				ariaLabel = "Language support coming soon!";
 			}
 
-			return (<div style={Object.assign({cursor: "not-allowed"}, buttonStyle)} className={className} aria-label={ariaLabel}>
+			return (<div style={Object.assign({ cursor: "not-allowed" }, buttonStyle)} className={className} aria-label={ariaLabel}>
 				<SourcegraphIcon style={iconStyle} />
 				Sourcegraph
 			</div>);
@@ -225,7 +225,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			}
 
 			return (<div style={buttonStyle} className={className} aria-label="View on Sourcegraph">
-				<a href={this.getBlobUrl()} style={{textDecoration: "none", color: "inherit"}}><SourcegraphIcon style={iconStyle} />
+				<a href={this.getBlobUrl()} style={{ textDecoration: "none", color: "inherit" }}><SourcegraphIcon style={iconStyle} />
 					Sourcegraph
 				</a>
 			</div>);
