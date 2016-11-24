@@ -4,7 +4,6 @@ import { BlobAnnotator } from "../../app/components/BlobAnnotator";
 import { EventLogger } from "../../app/utils/EventLogger";
 import * as github from "../../app/utils/github";
 import { getGitHubRoute, isGitHubURL, parseURL } from "../../app/utils/index";
-import { logError, logException } from "../../app/utils/Sentry";
 import * as React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 
@@ -13,7 +12,7 @@ function ejectComponent(mount: HTMLElement): void {
 		unmountComponentAtNode(mount);
 		mount.remove();
 	} catch (e) {
-		logException(e);
+		console.error(e);
 	}
 }
 
@@ -50,7 +49,7 @@ function injectBlobAnnotator(): void {
 
 	const {repoURI, path, isDelta} = parseURL(window.location);
 	if (!repoURI) {
-		logError("cannot determine repo URI");
+		console.error("cannot determine repo URI");
 		return;
 	}
 
@@ -60,7 +59,7 @@ function injectBlobAnnotator(): void {
 
 		const filePath = isDelta ? github.getDeltaFileName(file) : path;
 		if (!filePath) {
-			logError("cannot determine file path");
+			console.error("cannot determine file path");
 			return;
 		}
 
@@ -132,6 +131,6 @@ document.addEventListener("sourcegraph:identify", (ev: CustomEvent) => {
 		EventLogger.updatePropsForUser(ev.detail);
 		chrome.runtime.sendMessage({ type: "setIdentity", identity: ev.detail });
 	} else {
-		logError("sourcegraph:identify missing details");
+		console.error("sourcegraph:identify missing details");
 	}
 });

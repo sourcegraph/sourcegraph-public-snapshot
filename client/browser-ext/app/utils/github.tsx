@@ -1,11 +1,8 @@
 import * as utils from ".";
-import { logException } from "./Sentry";
 
 function invariant(cond: any): void {
 	if (!cond) {
-		const err = Error("github invariant exception");
-		logException(err);
-		throw err;
+		throw new Error("github invariant exception");
 	}
 }
 

@@ -1,5 +1,3 @@
-import { setUser as setSentryUser } from "../utils/Sentry";
-
 class Logger {
 	constructor() {
 		if (process.env.NODE_ENV === "test") {
@@ -20,7 +18,6 @@ class Logger {
 
 	updatePropsForUser(identity?: any): void {
 		if (identity && identity.userId) {
-			setSentryUser(identity.userId);
 			chrome.runtime.sendMessage({ type: "setTrackerUserId", payload: identity.userId });
 		}
 		if (identity && identity.deviceId) {

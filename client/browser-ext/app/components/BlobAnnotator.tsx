@@ -2,7 +2,6 @@ import * as backend from "../backend";
 import * as utils from "../utils";
 import { addAnnotations } from "../utils/annotations";
 import * as github from "../utils/github";
-import { logError } from "../utils/Sentry";
 import { SourcegraphIcon } from "./Icons";
 import * as React from "react";
 
@@ -64,7 +63,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			this.isSplitDiff = github.isSplitDiff();
 			const deltaRevs = github.getDeltaRevs();
 			if (!deltaRevs) {
-				logError("cannot determine deltaRevs");
+				console.error("cannot determine deltaRevs");
 				return;
 			}
 
@@ -73,7 +72,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 			const deltaInfo = github.getDeltaInfo();
 			if (!deltaInfo) {
-				logError("cannot determine deltaInfo");
+				console.error("cannot determine deltaInfo");
 				return;
 			}
 
@@ -132,7 +131,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		} else if (this.rev) {
 			this._updateResolvedRevs(this.props.repoURI, this.rev);
 		} else {
-			logError("unable to fetch annotations; missing revision data");
+			console.error("unable to fetch annotations; missing revision data");
 		}
 	}
 

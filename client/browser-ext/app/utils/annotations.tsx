@@ -1,6 +1,5 @@
 import { doFetch as fetch } from "../backend/xhr";
 import { EventLogger } from "../utils/EventLogger";
-import { logException } from "../utils/Sentry";
 import * as github from "./github";
 import * as utils from "./index";
 import * as tooltips from "./tooltips";
@@ -49,7 +48,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 
 				addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
 			} catch (e) {
-				logException(e);
+				console.error(e);
 			}
 		});
 	});
@@ -69,9 +68,7 @@ function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirst
 			return convertElementNode(node, offset, line, ignoreFirstTextChar);
 
 		default:
-			const err = new Error(`unexpected node type(${node.nodeType})`);
-			logException(err);
-			throw err;
+			throw new Error(`unexpected node type(${node.nodeType})`);
 	}
 }
 
