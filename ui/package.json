@@ -75,6 +75,8 @@
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
     "test": "npm run lint && npm run test-unit && npm run test-tsmapimports",
     "lint": "./lint.sh",
+    "fmt": "./node_modules/.bin/tsfmt -r",
+    "fmt-check": "./node_modules/.bin/tsfmt --verify",
     "test-unit": "node run-tests.js",
     "test-tsmapimports": "cd scripts/tsmapimports; PATH=$PATH:../../node_modules/.bin npm test",
     "dep": "npm rebuild fsevents",
