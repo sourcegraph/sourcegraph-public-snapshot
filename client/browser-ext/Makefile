@@ -1,4 +1,4 @@
-.PHONY: install build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all
+.PHONY: install build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all selenium-chrome fmt fmt-check
 
 default: build
 
@@ -29,9 +29,11 @@ fmt:
 fmt-check:
 	yarn run fmt-check
 
-deploy-e2e: build
+selenium-chrome: build
 	docker build --no-cache -t us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest .
 	gcloud docker -- push us.gcr.io/sourcegraph-dev/selenium-standalone-chrome-with-extension:latest
+
+deploy-e2e:
 	cd ../../test/e2e2 && make deploy
 
 export CHROME_BUNDLE ?= $(shell pwd)/chrome-bundle.zip

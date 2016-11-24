@@ -18,6 +18,7 @@ dep-browser-ext:
 	virtualenv -p python2 .env || virtualenv -p python .env
 
 deploy:
+	cd ./browser-ext && make selenium-chrome
 	./deploy.sh
 
 vnc:
