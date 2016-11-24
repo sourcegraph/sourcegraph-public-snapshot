@@ -18,5 +18,5 @@
     "page": "background.html"
   },
   "permissions": [ "cookies", "tabs", "storage", "https://github.com/*", "https://sourcegraph.com/*"],
-  "content_security_policy": "default-src 'self'; script-src 'self' https://localhost:3000  https://sourcegraph-logging.telligentdata.com 'unsafe-eval'; connect-src https://sourcegraph.com/ https://sourcegraph-logging.telligentdata.com https://sentry.io https://localhost:3000 wss://localhost:3000; style-src https://github.com/ 'unsafe-inline' 'self' blob:; img-src 'self' data:;"
+  "content_security_policy": "default-src 'self'; script-src 'self' https://localhost:3000  https://sourcegraph-logging.telligentdata.com 'unsafe-eval'; connect-src https://sourcegraph.com/ https://sourcegraph-logging.telligentdata.com https://sentry.io https://localhost:3000 wss://localhost:3000;"
 }
