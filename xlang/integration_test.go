@@ -190,7 +190,7 @@ func TestIntegration(t *testing.T) {
 // test.
 func useGithubForVFS() func() {
 	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
 		return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
 	}

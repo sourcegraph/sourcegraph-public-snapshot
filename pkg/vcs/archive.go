@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
@@ -97,26 +98,29 @@ func (fs *archiveFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, e
 
 func (fs *archiveFS) String() string { return "archiveFS(" + fs.fs.String() + ")" }
 
-// FastVFS wraps a repo and presents a fast VFS interface that calls
-// the repo directly until the ArchiveFileSystem is ready, at which
-// point it calls into the archive for fast, in-memory access.
-func FastVFS(repo interface {
+// FastVFS wraps a repo and presents a fast VFS interface that calls the repo
+// directly until the ArchiveFileSystem is ready, at which point it calls into
+// the archive for fast, in-memory access. ctx is required so we can kick of
+// background fetching straight away.
+func FastVFS(ctx context.Context, repo interface {
 	Repository
 	Archiver
 }, treeish string) ctxvfs.FileSystem {
-	return &fastVFS{
-		archive:     ArchiveFileSystem(repo, treeish).(*archiveFS),
-		archiveDone: make(chan struct{}),
-		direct:      FileSystem(repo, CommitID(treeish)),
+	fs := &fastVFS{
+		archive: ArchiveFileSystem(repo, treeish).(*archiveFS),
+		direct:  FileSystem(repo, CommitID(treeish)),
 	}
+	go func() {
+		defer atomic.StoreUint32(&fs.archiveDone, 1)
+		fs.archiveErr = fs.archive.fetchOrWait(ctx)
+	}()
+	return fs
 }
 
 type fastVFS struct {
-	mu             sync.Mutex
-	archiveStarted bool
-	archive        *archiveFS
-	archiveErr     error
-	archiveDone    chan struct{}
+	archive     *archiveFS
+	archiveErr  error
+	archiveDone uint32
 
 	direct ctxvfs.FileSystem
 }
@@ -125,23 +129,10 @@ type fastVFS struct {
 // the zip archive is fetched. The zip archive is preferred once it's
 // available, since it's much faster than roundtripping to gitserver.
 func (fs *fastVFS) chooseImpl(ctx context.Context) (ctxvfs.FileSystem, error) {
-	fs.mu.Lock()
-	if !fs.archiveStarted {
-		// Run this once, but don't ever block on it.
-		go func() {
-			fs.archiveErr = fs.archive.fetchOrWait(ctx)
-			close(fs.archiveDone)
-		}()
-		fs.archiveStarted = true
-	}
-	fs.mu.Unlock()
-
-	select {
-	case <-fs.archiveDone:
+	if atomic.LoadUint32(&fs.archiveDone) == 1 {
 		return fs.archive, fs.archiveErr
-	default:
-		return fs.direct, nil
 	}
+	return fs.direct, nil
 }
 
 func (fs *fastVFS) Open(ctx context.Context, name string) (ctxvfs.ReadSeekCloser, error) {

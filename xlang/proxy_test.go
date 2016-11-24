@@ -481,7 +481,7 @@ func yza() {}
 			// Mock repo and dep fetching to use test fixtures.
 			{
 				orig := xlang.NewRemoteRepoVFS
-				xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+				xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					return mapFS(test.fs), nil
 				}
 				defer func() {
@@ -582,7 +582,7 @@ func TestProxy_connections(t *testing.T) {
 	ctx := context.Background()
 
 	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
@@ -768,7 +768,7 @@ func TestProxy_propagation(t *testing.T) {
 	ctx := context.Background()
 
 	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {

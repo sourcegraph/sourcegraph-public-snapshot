@@ -292,7 +292,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// proxy has already checked the user's permissions to read
 		// this repo, so we don't need to check permissions again
 		// here.
-		c.rootFS, err = NewRemoteRepoVFS(id.rootPath.CloneURL(), id.rootPath.Rev())
+		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootPath.CloneURL(), id.rootPath.Rev())
 		if err != nil {
 			_ = c.conn.Close()
 			_ = rwc.Close()

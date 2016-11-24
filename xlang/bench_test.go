@@ -110,7 +110,7 @@ func BenchmarkIntegration(b *testing.B) {
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := xlang.NewRemoteRepoVFS(root.CloneURL(), root.Rev())
+			fs, err := xlang.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
 			if err != nil {
 				b.Fatal(err)
 			}
