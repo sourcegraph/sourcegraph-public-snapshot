@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -162,14 +163,16 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 		}
 
 		// PERF: Kick off a workspace/symbol in the background to warm up the server
-		go func() {
-			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
-			defer cancel()
-			h.handleWorkspaceSymbol(ctx, conn, req, lsp.WorkspaceSymbolParams{
-				Query: "",
-				Limit: 100,
-			})
-		}()
+		if yes, _ := strconv.ParseBool(envWarmupOnInitialize); yes {
+			go func() {
+				ctx, cancel := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
+				defer cancel()
+				_, _ = h.handleWorkspaceSymbol(ctx, conn, req, lsp.WorkspaceSymbolParams{
+					Query: "",
+					Limit: 100,
+				})
+			}()
+		}
 
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
