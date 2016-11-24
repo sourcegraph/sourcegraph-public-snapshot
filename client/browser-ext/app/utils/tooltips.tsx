@@ -58,15 +58,15 @@ export function createTooltips(): void {
 	loadingTooltip.appendChild(document.createTextNode("Loading..."));
 };
 
-let target: HTMLElement | null = null;
+let activeTarget: HTMLElement | null = null;
 let hoverEventProps: Object | null = null;
 
 /**
  * setContext registers the active target (element) being moused over, as well
  * as properties to send to the event logger on when the tooltip is shown.
  */
-export function setContext(activeTarget: HTMLElement | null, loggingStruct: Object | null): void {
-	target = activeTarget;
+export function setContext(target: HTMLElement | null, loggingStruct: Object | null): void {
+	activeTarget = target;
 	hoverEventProps = loggingStruct;
 }
 
@@ -103,7 +103,7 @@ export function queueLoading(): void {
 	clearLoading();
 	loadingTimer = setTimeout(() => {
 		isLoading = true;
-		updateTooltip(target);
+		updateTooltip(activeTarget);
 	}, 500);
 }
 
@@ -111,15 +111,21 @@ export function queueLoading(): void {
  * setTooltip shows the provided tooltip text (or hides the tooltip, if a null
  * argument is provided). It overrides the "Loading..." tooltip.
  */
-export function setTooltip(data: TooltipData, t: HTMLElement | null): void {
+export function setTooltip(data: TooltipData, target: HTMLElement | null): void {
+	if (target !== activeTarget) {
+		// setTooltip is called asynchronously after a fetch; only update the tooltip
+		// if the currently set active target matches the target argument
+		return;
+	}
 	clearLoading();
+
 	if (!data) {
 		currentTooltipText = null;
 	} else {
 		currentTooltipText = data.title;
 		currentTooltipDoc = data.doc || null;
 	}
-	updateTooltip(t);
+	updateTooltip(target);
 }
 
 /**
@@ -136,11 +142,11 @@ export function hideTooltip(): void {
  * _updateTooltip displays the appropriate tooltip given current state (and may hide
  * the tooltip if no text is available).
  */
-function _updateTooltip(activeTarget: HTMLElement | null): void {
+function _updateTooltip(target: HTMLElement | null): void {
 	hideTooltip(); // hide before updating tooltip text
 
-	if (!activeTarget) {
-		// no activeTarget to show hover for; tooltip is hidden
+	if (!target) {
+		// no target to show hover for; tooltip is hidden
 		return;
 	}
 
@@ -169,20 +175,20 @@ function _updateTooltip(activeTarget: HTMLElement | null): void {
 	}
 
 	if (!isLoading && currentTooltipText) {
-		activeTarget.style.cursor = "pointer";
-		if (!activeTarget.className.includes("sg-clickable")) {
-			activeTarget.className = `${activeTarget.className} sg-clickable`;
+		target.style.cursor = "pointer";
+		if (!target.className.includes("sg-clickable")) {
+			target.className = `${target.className} sg-clickable`;
 		}
 	}
 
 	// Anchor it horizontally, prior to rendering to account for wrapping
 	// changes to vertical height if the tooltip is at the edge of the viewport.
-	const activeTargetBound = activeTarget.getBoundingClientRect();
-	tooltip.style.left = (activeTargetBound.left + window.scrollX) + "px";
+	const targetBound = target.getBoundingClientRect();
+	tooltip.style.left = (targetBound.left + window.scrollX) + "px";
 
 	// Anchor the tooltip vertically.
 	const tooltipBound = tooltip.getBoundingClientRect();
-	tooltip.style.top = (activeTargetBound.top - (tooltipBound.height + 5) + window.scrollY) + "px";
+	tooltip.style.top = (targetBound.top - (tooltipBound.height + 5) + window.scrollY) + "px";
 
 	// Make it all visible to the user.
 	tooltip.style.visibility = "visible";
