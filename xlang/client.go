@@ -18,10 +18,14 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-// NewDefaultClient returns a new one-shot connection to the LSP proxy server at
+// UnsafeNewDefaultClient returns a new one-shot connection to the LSP proxy server at
 // $LSP_PROXY. This is quick (except TCP connection time) because the LSP proxy
 // server retains the same underlying connection.
-func NewDefaultClient() (*Client, error) {
+//
+// SECURITY NOTE this does not check the user has permission to read the repo
+// of any operation done on the Client. Please ensure the user has access to
+// the repo.
+func UnsafeNewDefaultClient() (*Client, error) {
 	addr := os.Getenv("LSP_PROXY")
 	if addr == "" {
 		return nil, errors.New("no LSP_PROXY env var set (need address to LSP proxy)")
@@ -113,14 +117,17 @@ func (c *Client) finishWithError(span opentracing.Span, err *error) {
 	span.Finish()
 }
 
-// OneShotClientRequest performs a one-shot LSP client request to the specified
+// UnsafeOneShotClientRequest performs a one-shot LSP client request to the specified
 // method (e.g. "textDocument/definition") and stores the results in the given
 // pointer value.
-func OneShotClientRequest(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
+//
+// SECURITY NOTE this does not check the user has permission to read the
+// repo. Please ensure the user has access to the repo.
+func UnsafeOneShotClientRequest(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
 	// Connect to the xlang proxy.
-	c, err := NewDefaultClient()
+	c, err := UnsafeNewDefaultClient()
 	if err != nil {
-		return errors.Wrap(err, "NewDefaultClient")
+		return errors.Wrap(err, "UnsafeNewDefaultClient")
 	}
 	defer c.Close()
 

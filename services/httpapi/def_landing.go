@@ -42,7 +42,7 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 	// the definition.
 	rootPath := "git://" + repo.URI + "?" + repoRev.CommitID
 	var locations []lsp.Location
-	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/definition", lsp.TextDocumentPositionParams{
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, "textDocument/definition", lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: rootPath + "#" + file},
 		Position:     lsp.Position{Line: line, Character: character},
 	}, &locations)
@@ -61,7 +61,7 @@ func serveRepoDefLanding(w http.ResponseWriter, r *http.Request) error {
 	withoutFile := *uri
 	withoutFile.Fragment = ""
 	var symbols []lsp.SymbolInformation
-	err = xlang.OneShotClientRequest(r.Context(), language, withoutFile.String(), "textDocument/documentSymbol", lsp.DocumentSymbolParams{
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, withoutFile.String(), "textDocument/documentSymbol", lsp.DocumentSymbolParams{
 		TextDocument: lsp.TextDocumentIdentifier{
 			URI: uri.String(),
 		},

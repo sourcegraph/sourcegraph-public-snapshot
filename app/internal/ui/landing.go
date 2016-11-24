@@ -317,7 +317,7 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 					Limit: 100,
 				}
 			}
-			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, method, params, &symbols)
+			err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &symbols)
 			if err != nil {
 				run.Error(errors.Wrap(err, "LSP "+method))
 				return
@@ -361,7 +361,7 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 					Character: symbol.Location.Range.Start.Character,
 				},
 			}
-			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
+			err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
 			if len(hover.Contents) == 0 {
 				msg := "queryRepoLandingData: LSP textDocument/hover returned no contents"
 				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
@@ -608,7 +608,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
 	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
 	var symbols []lsp.SymbolInformation
-	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
 		Query: defName,
 		Limit: 100,
 	}, &symbols)
@@ -666,7 +666,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		},
 	}
 
-	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
 	if len(hover.Contents) == 0 {
 		msg := "queryDefLandingData: LSP textDocument/hover returned no contents"
 		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))

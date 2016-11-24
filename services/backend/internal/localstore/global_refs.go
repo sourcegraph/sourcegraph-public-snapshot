@@ -571,7 +571,7 @@ func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLan
 	// terms of resource usage with real user requests.
 	var refs []lspext.ReferenceInformation
 	rootPath := "git://" + source + "?" + version
-	err = xlang.OneShotClientRequest(ctx, language.String()+"_bg", rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
+	err = xlang.UnsafeOneShotClientRequest(ctx, language.String()+"_bg", rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
 	if err != nil {
 		return errors.Wrap(err, "workspaceReference")
 	}
