@@ -2,6 +2,15 @@
 
 set -e
 
+if [ "$(uname)" = "Linux" ]; then
+    OPEN=xdg-open;
+elif [ "$(uname)" = "Darwin" ]; then
+    OPEN=open;
+else
+    printf "Not running on Mac or Linux, aborting"
+    exit 1
+fi
+
 if [ -z "$CHROME_WEBSTORE_CLIENT_SECRET" ]; then
     printf "Missing env CHROME_WEBSTORE_CLIENT_SECRET; check the infrastructure repository"
     exit 1
@@ -11,7 +20,7 @@ app_id="dgjhfomjieaadpoljlnidmbgkdffpack"
 client_id="527047051561-0vr4iah44ftj7ovd0cg3kk03hou5ggp0.apps.googleusercontent.com"
 client_secret="$CHROME_WEBSTORE_CLIENT_SECRET"
 
-open "https://accounts.google.com/o/oauth2/auth?response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&client_id=$client_id&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
+$OPEN "https://accounts.google.com/o/oauth2/auth?response_type=code&scope=https://www.googleapis.com/auth/chromewebstore&client_id=$client_id&redirect_uri=urn:ietf:wg:oauth:2.0:oob"
 read -p "Follow the web prompt and enter your code: " code
 
 printf "Generating access token...\n"
