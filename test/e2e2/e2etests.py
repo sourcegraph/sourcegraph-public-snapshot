@@ -23,7 +23,7 @@ def test_repo_jump_to(d):
     for query, result_text, url_path in repo_queries:
         d.active_elem().send_keys("/")
         d.active_elem().send_keys(query)
-        wait_for(d.all_network_indicators_are_invisible, max_wait=4)
+        wait_for(d.all_network_indicators_are_invisible, max_wait=10)
         wait_for(lambda: len(d.find_search_modal_results(result_text, exact_match=True)) > 0)
         Util.select_search_result_using_arrow_keys(d, result_text, exact_match=True)
         wait_for(lambda: wd.current_url == d.sg_url(url_path), text=('wd.current_url == "%s"' % d.sg_url(url_path)))
