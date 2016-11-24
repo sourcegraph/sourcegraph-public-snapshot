@@ -54,12 +54,11 @@ End-to-end tests for the extension are located above this project root, at `test
 
 ## Create Distributions
 
-```bash
-$ make dist
-```
+Generate zipped artifacts (`chrome-bundle.zip` and `firefox-bundle.xpi`) to upload to the Chrome/Firefox web stores.
 
-This make target process does more than just compress the build directory, to ensure the environment used to produce build artifacts
-mimics the environment for the extension submission teams.
+```bash
+$ make bundle
+```
 
 ## Deploy (chrome extension only)
 
