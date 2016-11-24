@@ -1,0 +1,18 @@
+sudo: false
+
+language: node_js
+
+node_js:
+  - '0.10'
+  - '0.12'
+
+before_script:
+  - npm run pretest
+
+script:
+  - npm run test-verbose
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always

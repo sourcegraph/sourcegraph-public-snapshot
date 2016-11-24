@@ -44,6 +44,7 @@
     "tslint-react": "^1.1.0",
     "typed-css-modules": "0.1.13",
     "typescript": "2.1.1-with.relay",
+    "typescript-formatter": "^4.0.1",
     "unused-files-webpack-plugin": "3.0.0",
     "url-loader": "0.5.7",
     "webpack": "2.1.0-beta.27",
