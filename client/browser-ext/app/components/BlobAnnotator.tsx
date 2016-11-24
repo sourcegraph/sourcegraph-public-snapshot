@@ -110,12 +110,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		if (this.state.resolvedRevs[key] && this.state.resolvedRevs[key].commitID) {
 			return; // nothing to do
 		}
-		const p = backend.resolveRev(repo, rev);
-		if (!p || !p.then) {
-			console.error("WHY THE FUCK IS THIS HAPPENING", p, p.then);
-			return;
-		}
-		p.then((resp) => {
+		backend.resolveRev(repo, rev).then((resp) => {
 			this.setState({ resolvedRevs: Object.assign({}, this.state.resolvedRevs, { [key]: resp }, { [repo]: resp }) });
 		});
 	}

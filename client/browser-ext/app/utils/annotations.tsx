@@ -18,6 +18,8 @@ interface RepoRevSpec {
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
 export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, isSplitDiff: boolean, loggingStruct: Object): void {
+	prewarmLSP(path, repoRevSpec);
+
 	// The blob is represented by a table; the first column is the line number,
 	// the second is code. Each row is a line of code
 	const table = el.querySelector("table");
@@ -190,6 +192,28 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 	}
 }
 
+function wrapLSP(req: { method: string, params: Object }, repoRevSpec: RepoRevSpec, path: string): Object[] {
+	(req as any).id = 1;
+	return [
+		{
+			id: 0,
+			method: "initialize",
+			params: {
+				rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
+				mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
+			},
+		},
+		req,
+		{
+			id: 2,
+			method: "shutdown",
+		},
+		{
+			method: "exit",
+		},
+	];
+}
+
 function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
 	tooltips.createTooltips();
 
@@ -229,28 +253,6 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 		getTooltip(t, (data) => tooltips.setTooltip(data, t as HTMLElement));
 	};
 
-	function wrapLSP(req: { method: string, params: Object }): Object[] {
-		(req as any).id = 1;
-		return [
-			{
-				id: 0,
-				method: "initialize",
-				params: {
-					rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
-					mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
-				},
-			},
-			req,
-			{
-				id: 2,
-				method: "shutdown",
-			},
-			{
-				method: "exit",
-			},
-		];
-	}
-
 	function fetchJumpURL(col: string, cb: (val: any) => void): void {
 		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
 		if (typeof j2dCache[cacheKey] !== "undefined") {
@@ -268,7 +270,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 					line: line - 1,
 				},
 			},
-		});
+		}, repoRevSpec, path);
 
 		fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", { method: "POST", body: JSON.stringify(body) })
 			.then((resp) => resp.json().then((json) => {
@@ -303,7 +305,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 					line: line - 1,
 				},
 			},
-		});
+		}, repoRevSpec, path);
 
 		fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", { method: "POST", body: JSON.stringify(body) })
 			.then((resp) => resp.json().then((json) => {
@@ -321,4 +323,26 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 				cb(tooltipCache[cacheKey]);
 			})).catch((err) => cb(null));
 	}
+}
+
+const prewarmCache = new Set<string>();
+function prewarmLSP(path: string, repoRevSpec: RepoRevSpec): void {
+	const uri = `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`;
+	if (prewarmCache.has(uri)) {
+		return;
+	}
+	prewarmCache.add(uri);
+
+	const body = wrapLSP({
+		method: "textDocument/hover?prepare",
+		params: {
+			textDocument: { uri },
+			position: {
+				character: 0,
+				line: 0,
+			},
+		},
+	}, repoRevSpec, path);
+
+	fetch("https://sourcegraph.com/.api/xlang/textDocument/hover?prepare", { method: "POST", body: JSON.stringify(body) });
 }
