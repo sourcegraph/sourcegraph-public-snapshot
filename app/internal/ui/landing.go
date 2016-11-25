@@ -522,12 +522,6 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
 
-	// We don't support xlang yet on new commits for golang/go https://github.com/sourcegraph/sourcegraph/issues/2370
-	// DefLanding is pretty only ever used on the default branch, so used old version
-	if repo.URI == "github.com/golang/go" {
-		repoRev.CommitID = "838eaa738f2bc07c3706b96f9e702cb80877dfe1"
-	}
-
 	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
 	var data *defLandingData
 	err = errors.New("xlang def landing disabled")
@@ -830,6 +824,11 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *de
 	}()
 
 	vars := mux.Vars(r)
+	// We don't support xlang yet on new commits for golang/go https://github.com/sourcegraph/sourcegraph/issues/2370
+	// DefLanding is pretty only ever used on the default branch, so used old version
+	if vars["Repo"] == "github.com/golang/go" {
+		vars["Rev"] = "@838eaa738f2bc07c3706b96f9e702cb80877dfe1"
+	}
 	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
 	if err != nil {
 		return nil, err
