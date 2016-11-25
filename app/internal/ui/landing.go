@@ -522,6 +522,12 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
 
+	// We don't support xlang yet on new commits for golang/go https://github.com/sourcegraph/sourcegraph/issues/2370
+	// DefLanding is pretty only ever used on the default branch, so used old version
+	if repo.URI == "github.com/golang/go" {
+		repoRev.CommitID = "838eaa738f2bc07c3706b96f9e702cb80877dfe1"
+	}
+
 	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
 	var data *defLandingData
 	err = errors.New("xlang def landing disabled")
