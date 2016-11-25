@@ -3,6 +3,7 @@ package xlang
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) {
+func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) error {
 	var connOpt []jsonrpc2.ConnOpt
 	if p.Trace {
 		connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
@@ -35,6 +36,10 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
 
 	p.mu.Lock()
+	if p.clients == nil {
+		p.mu.Unlock()
+		return errors.New("the proxy has been closed")
+	}
 	p.clients[c] = struct{}{}
 	clientConnsGauge.Set(float64(len(p.clients)))
 	clientConnsCounter.Inc()
@@ -45,6 +50,7 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 		}
 		p.removeClientConn(c)
 	}()
+	return nil
 }
 
 var (

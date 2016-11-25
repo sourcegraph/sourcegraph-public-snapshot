@@ -83,7 +83,10 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 		if err != nil {
 			return err
 		}
-		p.newClientProxyConn(ctx, nc)
+		err = p.newClientProxyConn(ctx, nc)
+		if err != nil {
+			return err
+		}
 	}
 }
 
