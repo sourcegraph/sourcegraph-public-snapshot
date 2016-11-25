@@ -105,16 +105,31 @@ func (fs *archiveFS) String() string { return "archiveFS(" + fs.fs.String() + ")
 func FastVFS(ctx context.Context, repo interface {
 	Repository
 	Archiver
-}, treeish string) ctxvfs.FileSystem {
+}, treeish string) (ctxvfs.FileSystem, error) {
 	fs := &fastVFS{
 		archive: ArchiveFileSystem(repo, treeish).(*archiveFS),
-		direct:  FileSystem(repo, CommitID(treeish)),
 	}
 	go func() {
 		defer atomic.StoreUint32(&fs.archiveDone, 1)
 		fs.archiveErr = fs.archive.fetchOrWait(ctx)
 	}()
-	return fs
+	// We only set direct now, since we may have to do a blocking resolve
+	// of treeish to make it an absolute commit. Absolute commit is
+	// required for caching/perf reasons. We also wanted to kick off the
+	// archive fetch before this lookup. The length being 40 is the same
+	// check used by gitcmd.
+	var commit CommitID
+	if len(treeish) == 40 {
+		commit = CommitID(treeish)
+	} else {
+		var err error
+		commit, err = repo.ResolveRevision(ctx, treeish)
+		if err != nil {
+			return nil, err
+		}
+	}
+	fs.direct = FileSystem(repo, commit)
+	return fs, nil
 }
 
 type fastVFS struct {
