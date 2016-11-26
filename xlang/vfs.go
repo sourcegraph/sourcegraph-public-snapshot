@@ -20,5 +20,5 @@ import (
 // It is a var so that it can be mocked in tests.
 var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
-	return vcs.FastVFS(ctx, gitcmd.Open(repo), rev)
+	return vcs.ArchiveFileSystem(gitcmd.Open(repo), rev), nil
 }
