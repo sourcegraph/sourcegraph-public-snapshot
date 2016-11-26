@@ -8,7 +8,12 @@ import (
 )
 
 func main() {
-	json, err := graphql.SchemaToJSON(api.Schema)
+	b := graphql.New()
+	if err := b.Parse(api.Schema); err != nil {
+		panic(err)
+	}
+
+	json, err := b.ToJSON()
 	if err != nil {
 		panic(err)
 	}

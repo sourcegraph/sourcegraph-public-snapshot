@@ -261,86 +261,6 @@ func makeFieldExec(s *schema.Schema, typeName string, f *schema.Field, m reflect
 	return fe, nil
 }
 
-func makeStructPacker(s *schema.Schema, obj *common.InputMap, typ reflect.Type) (*structPacker, error) {
-	if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
-		return nil, fmt.Errorf("expected pointer to struct, got %s", typ)
-	}
-	structType := typ.Elem()
-
-	var fields []*structPackerField
-	defaultStruct := reflect.New(structType).Elem()
-	for _, f := range obj.Fields {
-		fe := &structPackerField{
-			name: f.Name,
-		}
-
-		sf, ok := structType.FieldByNameFunc(func(n string) bool { return strings.EqualFold(n, f.Name) })
-		if !ok {
-			return nil, fmt.Errorf("missing argument %q", f.Name)
-		}
-		fe.fieldIndex = sf.Index
-
-		ft, nonNull := unwrapNonNull(f.Type)
-		if f.Default != nil {
-			nonNull = true
-		}
-		expectType := func(got, want reflect.Type) error {
-			if got != want {
-				return fmt.Errorf("%q has wrong type, expected %s", sf.Name, want)
-			}
-			return nil
-		}
-		switch ft := ft.(type) {
-		case *scalar:
-			want := ft.reflectType
-			if !nonNull {
-				want = reflect.PtrTo(want)
-			}
-			if err := expectType(sf.Type, want); err != nil {
-				return nil, err
-			}
-			fe.fieldPacker = &valuePacker{
-				nonNull: nonNull,
-			}
-		case *schema.Enum:
-			want := reflect.TypeOf("string")
-			if !nonNull {
-				want = reflect.PtrTo(want)
-			}
-			if err := expectType(sf.Type, want); err != nil {
-				return nil, err
-			}
-			fe.fieldPacker = &valuePacker{
-				nonNull: nonNull,
-			}
-		case *schema.InputObject:
-			e, err := makeStructPacker(s, &ft.InputMap, sf.Type)
-			if err != nil {
-				return nil, err
-			}
-			fe.fieldPacker = e
-		default:
-			panic("TODO")
-		}
-
-		if f.Default != nil {
-			defaultValue, err := coerceValue(nil, f.Type, f.Default)
-			if err != nil {
-				return nil, err
-			}
-			defaultStruct.FieldByIndex(fe.fieldIndex).Set(fe.fieldPacker.pack(defaultValue))
-		}
-
-		fields = append(fields, fe)
-	}
-
-	return &structPacker{
-		structType:    structType,
-		defaultStruct: defaultStruct,
-		fields:        fields,
-	}, nil
-}
-
 func makeTypeAssertions(s *schema.Schema, typeName string, impls []*schema.Object, resolverType reflect.Type, typeRefMap map[typeRefMapKey]*typeRef) (map[string]*typeAssertExec, error) {
 	typeAssertions := make(map[string]*typeAssertExec)
 	for _, impl := range impls {
@@ -690,6 +610,9 @@ func coerceMap(r *request, io *common.InputMap, m map[string]interface{}) (map[s
 	for _, iv := range io.Fields {
 		value, ok := m[iv.Name]
 		if !ok {
+			if _, nonNull := unwrapNonNull(iv.Type); !nonNull {
+				continue
+			}
 			if iv.Default == nil {
 				return nil, errors.Errorf("missing %q", iv.Name)
 			}
@@ -709,7 +632,10 @@ func coerceValue(r *request, typ common.Type, value interface{}) (interface{}, e
 		return r.vars[string(v)], nil
 	}
 
-	t, _ := unwrapNonNull(typ)
+	t, nonNull := unwrapNonNull(typ)
+	if !nonNull && value == nil {
+		return nil, nil
+	}
 	switch t := t.(type) {
 	case *scalar:
 		v, err := t.coerceInput(value)
@@ -719,51 +645,19 @@ func coerceValue(r *request, typ common.Type, value interface{}) (interface{}, e
 		return v, nil
 	case *schema.InputObject:
 		return coerceMap(r, &t.InputMap, value.(map[string]interface{}))
+	case *common.List:
+		list := value.([]interface{})
+		coerced := make([]interface{}, len(list))
+		for i, entry := range list {
+			c, err := coerceValue(r, t.OfType, entry)
+			if err != nil {
+				return nil, err
+			}
+			coerced[i] = c
+		}
+		return coerced, nil
 	}
 	return value, nil
-}
-
-type packer interface {
-	pack(value interface{}) reflect.Value
-}
-
-type structPacker struct {
-	structType    reflect.Type
-	defaultStruct reflect.Value
-	fields        []*structPackerField
-}
-
-type structPackerField struct {
-	name        string
-	fieldIndex  []int
-	fieldPacker packer
-}
-
-func (e *structPacker) pack(value interface{}) reflect.Value {
-	values := value.(map[string]interface{})
-	v := reflect.New(e.structType)
-	v.Elem().Set(e.defaultStruct)
-	for _, f := range e.fields {
-		if value, ok := values[f.name]; ok {
-			fv := f.fieldPacker.pack(value)
-			v.Elem().FieldByIndex(f.fieldIndex).Set(fv)
-		}
-	}
-	return v
-}
-
-type valuePacker struct {
-	nonNull bool
-}
-
-func (e *valuePacker) pack(value interface{}) reflect.Value {
-	v := reflect.ValueOf(value)
-	if !e.nonNull {
-		p := reflect.New(v.Type())
-		p.Elem().Set(v)
-		return p
-	}
-	return v
 }
 
 func skipByDirective(r *request, d map[string]*query.Directive) bool {
