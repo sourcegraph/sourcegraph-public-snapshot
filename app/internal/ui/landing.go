@@ -380,15 +380,6 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 					break
 				}
 			}
-			if hoverDesc == "" {
-				msg := "queryRepoLandingData: no markdown in hover response"
-				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-				log15.Warn(curlRepro(language, rootPath, method, params))
-				span.LogEvent(msg)
-				span.SetTag("missing", "markdown")
-				span.LogEvent(curlRepro(language, rootPath, method, params))
-				return
-			}
 
 			u, err := approuter.Rel.URLToLegacyDefLanding(*symbol)
 			if err != nil {
@@ -693,15 +684,6 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			break
 		}
 	}
-	if hoverDesc == "" {
-		msg := "queryDefLandingData: no markdown in hover response"
-		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-		log15.Crit(curlRepro(language, rootPath, method, params))
-		span.LogEvent(msg)
-		span.SetTag("missing", "markdown")
-		span.LogEvent(curlRepro(language, rootPath, method, params))
-		return nil, errors.New("no markdown in hover response")
-	}
 
 	// Determine canonical URL and whether the symbol shold be indexed.
 	canonicalURL := canonicalRepoURL(
@@ -713,7 +695,11 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		repoRev.CommitID,
 	)
 	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	shouldIndexSymbol := len(symbol.Name) >= 3 && (symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod)
+
+	goodName := len(symbol.Name) >= 3
+	goodKind := symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod
+	goodDocs := len(hoverDesc) >= 20
+	goodSymbol := goodName && goodKind && goodDocs
 
 	// Request up to 5 files for up to 3 sources (e.g. repos) that reference
 	// the definition.
@@ -793,7 +779,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			// Don't noindex pages with a canonical URL. See
 			// https://www.seroundtable.com/archives/020151.html.
 			CanonicalURL: canonicalURL,
-			Index:        allowRobots(repo) && shouldIndexSymbol && canonRev,
+			Index:        allowRobots(repo) && goodSymbol && canonRev,
 		},
 		Description:      htmlutil.Sanitize(hoverDesc),
 		RefSnippets:      refSnippets,
