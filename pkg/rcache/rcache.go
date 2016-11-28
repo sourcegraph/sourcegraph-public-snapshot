@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 const (
@@ -101,6 +101,8 @@ var (
 	globalPrefix string
 )
 
+var redisMasterEndpoint = env.Get("REDIS_MASTER_ENDPOINT", ":6379", "redis used for caches")
+
 func init() {
 	hostname := os.Getenv("SRC_APP_URL")
 	if hostname == "" {
@@ -108,13 +110,11 @@ func init() {
 	}
 	globalPrefix = fmt.Sprintf("%s:%s", hostname, dataVersion)
 
-	endpoint := conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")
-
 	pool = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", endpoint)
+			c, err := redis.Dial("tcp", redisMasterEndpoint)
 			if err != nil {
 				return nil, err
 			}

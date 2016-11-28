@@ -5,7 +5,6 @@ import (
 
 	"fmt"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 )
 
@@ -15,7 +14,7 @@ func init() {
 		defer c.Close()
 		if _, err := c.Do("PING"); err != nil {
 			return "Redis is unavailable or misconfigured",
-				fmt.Sprintf("Start a Redis server listening at port %s", conf.GetenvOrDefault("REDIS_MASTER_ENDPOINT", ":6379")),
+				fmt.Sprintf("Start a Redis server listening at port %s", redisMasterEndpoint),
 				err
 		}
 		return

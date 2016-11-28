@@ -3,7 +3,8 @@ package notif
 import (
 	"fmt"
 	"log"
-	"os"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -14,8 +15,10 @@ var mandrillEnabled bool
 
 var mandrill *gochimp.MandrillAPI
 
+var mandrillKey = env.Get("MANDRILL_KEY", "", "key for sending mails via Mandrill")
+
 func init() {
-	if mandrillKey := os.Getenv("MANDRILL_KEY"); mandrillKey != "" {
+	if mandrillKey != "" {
 		mandrillEnabled = true
 
 		var err error

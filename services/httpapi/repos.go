@@ -61,7 +61,7 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, defaultCacheMaxAge); clientCached || err != nil {
+	if clientCached, err := writeCacheHeaders(w, r, time.Time{}, 60*time.Second); clientCached || err != nil {
 		return err
 	}
 
