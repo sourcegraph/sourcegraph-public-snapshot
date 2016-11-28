@@ -143,14 +143,13 @@ describe("GitHub DOM", () => {
 			expect(deltaRevs).to.have.property("head", "0a192a193177452756c362c20087ddafcf6829c4");
 		});
 
-		// TODO: Fix me! Disabled due to https://github.com/sourcegraph/sourcegraph/issues/2373
-		//it("should parse deltaInfo", () => {
-		//	const deltaInfo = github.getDeltaInfo();
-		//	expect(deltaInfo).to.have.property("baseBranch", "master");
-		//	expect(deltaInfo).to.have.property("headBranch", "master");
-		//	expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
-		//	expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
-		//});
+		it("should parse deltaInfo", () => {
+			const deltaInfo = github.getDeltaInfo();
+			expect(deltaInfo).to.have.property("baseBranch", "master");
+			expect(deltaInfo).to.have.property("headBranch", "master");
+			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
+			expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
+		});
 
 		it("should register diff expand handlers", () => {
 			github.registerExpandDiffClickHandler(() => ({}));
