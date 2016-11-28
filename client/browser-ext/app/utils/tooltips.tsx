@@ -132,7 +132,11 @@ export function setTooltip(data: TooltipData, target: HTMLElement | null): void 
  * hideTooltip makes the tooltip on the DOM invisible.
  */
 export function hideTooltip(): void {
-	if (tooltip.firstChild) {
+	if (!tooltip) {
+		return;
+	}
+
+	while (tooltip.firstChild) {
 		tooltip.removeChild(tooltip.firstChild);
 	}
 	tooltip.style.visibility = "hidden"; // prevent black dot of empty content
@@ -156,6 +160,11 @@ function _updateTooltip(target: HTMLElement | null): void {
 			return;
 		}
 
+		target.style.cursor = "pointer";
+		if (!target.className.includes("sg-clickable")) {
+			target.className = `${target.className} sg-clickable`;
+		}
+
 		const tooltipText = document.createElement("DIV");
 		tooltipText.className = tooltipTitleStyle;
 		tooltipText.appendChild(document.createTextNode(currentTooltipText));
@@ -172,13 +181,6 @@ function _updateTooltip(target: HTMLElement | null): void {
 		EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", hoverEventProps || undefined); // TODO(john): make hover event props invariant?
 	} else {
 		tooltip.appendChild(loadingTooltip);
-	}
-
-	if (!isLoading && currentTooltipText) {
-		target.style.cursor = "pointer";
-		if (!target.className.includes("sg-clickable")) {
-			target.className = `${target.className} sg-clickable`;
-		}
 	}
 
 	// Anchor it horizontally, prior to rendering to account for wrapping

@@ -1,6 +1,7 @@
 import * as backend from "../backend";
 import * as utils from "../utils";
 import { EventLogger } from "../utils/EventLogger";
+import * as tooltips from "../utils/tooltips";
 import * as React from "react";
 
 export class Background extends React.Component<{}, {}> {
@@ -27,23 +28,16 @@ export class Background extends React.Component<{}, {}> {
 		document.removeEventListener("popstate", this._popstateUpdate);
 	}
 
-	removePopovers(): void {
-		const popovers = document.getElementsByClassName("sg-popover");
-		for (let i = popovers.length; i > 0;) {
-			popovers[--i].remove();
-		}
-	}
-
 	_cleanupAndRefresh(): void {
-		// Clean up any popovers on the page before refreshing (after pjax:success).
-		// Otherwise, popovers may remain on the page because the anchored elem's mousout
+		// Clean up any tooltips on the page before refreshing (after pjax:success).
+		// Otherwise, tooltips may remain on the page because the anchored elem's mousout
 		// event may not have fired (and the elem may no longer be on the page).
-		this.removePopovers();
+		tooltips.hideTooltip();
 		this._refresh();
 	}
 
 	_popstateUpdate(): void {
-		this.removePopovers();
+		tooltips.hideTooltip();
 	}
 
 	_refresh(props?: {}): void {
