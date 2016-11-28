@@ -16,6 +16,7 @@ function defaultOptions(): FetchOptions | undefined {
 	if (token) {
 		headers.set("Authorization", `session ${token}`);
 	}
+	headers.set("x-sourcegraph-browser-extension", "true");
 	return { headers };
 };
 
