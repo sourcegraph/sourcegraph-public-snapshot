@@ -716,7 +716,8 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 
 	goodName := len(symbol.Name) >= 3
 	goodKind := symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod
-	goodSymbol := goodName && goodKind
+	goodDocs := len(hoverDesc) >= 20
+	goodSymbol := goodName && goodKind && goodDocs
 
 	// Request up to 5 files for up to 3 sources (e.g. repos) that reference
 	// the definition.
