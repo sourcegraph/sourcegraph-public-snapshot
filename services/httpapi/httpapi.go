@@ -12,8 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -37,20 +35,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	var mw []handlerutil.Middleware
 	mw = append(mw, httpapiauth.AuthorizationMiddleware)
 	mw = append(mw, eventsutil.AgentMiddleware)
-
-	if conf.GetenvBool("SG_USE_CSP") {
-		// Set the CSP handler. Determine the report URI by seeing what
-		// path prefix m currently has (if it was just /.csp-report, then
-		// it'd never match, since this handler is usually mounted at
-		// /.api/).
-		reportURI, err := m.Path(cspConfig.Policy.ReportURI).URLPath()
-		if err != nil {
-			panic(err.Error())
-		}
-		cspConfig.Policy.ReportURI = reportURI.String()
-		cspHandler := csp.NewHandler(cspConfig)
-		mw = append(mw, cspHandler.Middleware)
-	}
 
 	// Set handlers for the installed routes.
 	m.Get(apirouter.GlobalSearch).Handler(httptrace.TraceRoute(handler(serveGlobalSearch)))
@@ -90,13 +74,6 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		},
 		Error: handleError,
 	}
-}
-
-// cspConfig is the Content Security Policy config for API handlers.
-var cspConfig = csp.Config{
-	// Strict because API responses should never be treated as page
-	// content.
-	Policy: &csp.Policy{DefaultSrc: []string{"'none'"}, ReportURI: "/.csp-report"},
 }
 
 var schemaDecoder = schema.NewDecoder()
