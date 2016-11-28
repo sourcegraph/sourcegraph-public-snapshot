@@ -713,7 +713,10 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		repoRev.CommitID,
 	)
 	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	shouldIndexSymbol := len(symbol.Name) >= 3 && (symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod)
+
+	goodName := len(symbol.Name) >= 3
+	goodKind := symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod
+	goodSymbol := goodName && goodKind
 
 	// Request up to 5 files for up to 3 sources (e.g. repos) that reference
 	// the definition.
@@ -793,7 +796,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			// Don't noindex pages with a canonical URL. See
 			// https://www.seroundtable.com/archives/020151.html.
 			CanonicalURL: canonicalURL,
-			Index:        allowRobots(repo) && shouldIndexSymbol && canonRev,
+			Index:        allowRobots(repo) && goodSymbol && canonRev,
 		},
 		Description:      htmlutil.Sanitize(hoverDesc),
 		RefSnippets:      refSnippets,
