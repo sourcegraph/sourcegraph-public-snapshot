@@ -39,7 +39,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	// Set handlers for the installed routes.
 	m.Get(apirouter.GlobalSearch).Handler(httptrace.TraceRoute(handler(serveGlobalSearch)))
 	m.Get(apirouter.RepoCreate).Handler(httptrace.TraceRoute(handler(serveRepoCreate)))
-	m.Get(apirouter.RepoTree).Handler(httptrace.TraceRoute(handler(serveRepoTree)))
 	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(serveRepoRefresh)))
 	m.Get(apirouter.RepoResolveRev).Handler(httptrace.TraceRoute(handler(serveRepoResolveRev)))
 	m.Get(apirouter.RepoDefLanding).Handler(httptrace.TraceRoute(handler(serveRepoDefLanding)))

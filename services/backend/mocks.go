@@ -13,7 +13,6 @@ import (
 var Mocks MockServices
 
 type MockServices struct {
-	Annotations MockAnnotations
 	Async       MockAsync
 	Defs        MockDefs
 	MirrorRepos MockMirrorRepos

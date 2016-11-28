@@ -19,7 +19,6 @@ const (
 	GlobalSearch        = "global.search"
 	RepoCreate          = "repo.create"
 	RepoRefresh         = "repo.refresh"
-	RepoTree            = "repo.tree"
 	RepoResolveRev      = "repo.resolve-rev"
 	RepoDefLanding      = "repo.def-landing"
 	Repos               = "repos"
@@ -62,7 +61,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
-	repoRev.Path("/tree{Path:.*}").Name(RepoTree)
 	repoRev.Path("/def-landing").Methods("GET").Name(RepoDefLanding)
 	repoRev.Path("/shield").Methods("GET").Name(RepoShield)
 
