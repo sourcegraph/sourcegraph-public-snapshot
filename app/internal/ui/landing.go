@@ -380,15 +380,6 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 					break
 				}
 			}
-			if hoverDesc == "" {
-				msg := "queryRepoLandingData: no markdown in hover response"
-				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-				log15.Warn(curlRepro(language, rootPath, method, params))
-				span.LogEvent(msg)
-				span.SetTag("missing", "markdown")
-				span.LogEvent(curlRepro(language, rootPath, method, params))
-				return
-			}
 
 			u, err := approuter.Rel.URLToLegacyDefLanding(*symbol)
 			if err != nil {
@@ -692,15 +683,6 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			hoverDesc = string(blackfriday.MarkdownCommon([]byte(s.Value)))
 			break
 		}
-	}
-	if hoverDesc == "" {
-		msg := "queryDefLandingData: no markdown in hover response"
-		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-		log15.Crit(curlRepro(language, rootPath, method, params))
-		span.LogEvent(msg)
-		span.SetTag("missing", "markdown")
-		span.LogEvent(curlRepro(language, rootPath, method, params))
-		return nil, errors.New("no markdown in hover response")
 	}
 
 	// Determine canonical URL and whether the symbol shold be indexed.
