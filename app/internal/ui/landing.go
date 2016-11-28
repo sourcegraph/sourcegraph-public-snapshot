@@ -274,7 +274,7 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 	// Query information about the top definitions in the repo.
 	topDefs, err := backend.Defs.TopDefs(r.Context(), sourcegraph.TopDefsOptions{
 		Source: repo.URI,
-		Limit:  20,
+		Limit:  5,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "Defs.TopDefs")
