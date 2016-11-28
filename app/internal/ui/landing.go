@@ -608,10 +608,12 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
 	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
 	var symbols []lsp.SymbolInformation
-	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+	method := "workspace/symbol"
+	params := lsp.WorkspaceSymbolParams{
 		Query: defName,
 		Limit: 100,
-	}, &symbols)
+	}
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &symbols)
 
 	// Find the matching symbol.
 	var symbol *lsp.SymbolInformation
@@ -636,7 +638,13 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		break
 	}
 	if symbol == nil {
-		return nil, fmt.Errorf("could not finding matching symbol info")
+		msg := "queryDefLandingData: could not find matching symbol info"
+		log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		log15.Warn(curlRepro(language, rootPath, method, params))
+		span.LogEvent(msg)
+		span.SetTag("missing", "symbol")
+		span.LogEvent(curlRepro(language, rootPath, method, params))
+		return nil, errors.New("LSP workspace/symbol did not return matching symbol info")
 	}
 
 	// Create links to the definition.
@@ -657,8 +665,8 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 
 	// Determine the definition title.
 	var hover lsp.Hover
-	method := "textDocument/hover"
-	params := lsp.TextDocumentPositionParams{
+	method = "textDocument/hover"
+	hoverParams := lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
 		Position: lsp.Position{
 			Line:      symbol.Location.Range.Start.Line,
@@ -666,7 +674,7 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		},
 	}
 
-	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, hoverParams, &hover)
 	if len(hover.Contents) == 0 {
 		msg := "queryDefLandingData: LSP textDocument/hover returned no contents"
 		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
