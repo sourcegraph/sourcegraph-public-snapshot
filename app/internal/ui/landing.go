@@ -669,10 +669,10 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	if len(hover.Contents) == 0 {
 		msg := "queryDefLandingData: LSP textDocument/hover returned no contents"
 		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-		log15.Crit(curlRepro(language, rootPath, method, params))
+		log15.Crit(curlRepro(language, rootPath, method, hoverParams))
 		span.LogEvent(msg)
 		span.SetTag("missing", "hover")
-		span.LogEvent(curlRepro(language, rootPath, method, params))
+		span.LogEvent(curlRepro(language, rootPath, method, hoverParams))
 		return nil, errors.New("LSP textDocument/hover returned no contents")
 	}
 
