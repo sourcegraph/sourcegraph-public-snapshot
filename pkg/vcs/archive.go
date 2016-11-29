@@ -41,7 +41,8 @@ type archiveFS struct {
 	treeish string
 
 	once sync.Once
-	err  error          // the error encountered during the Archive call (if any)
+	err  error // the error encountered during the Archive call (if any)
+	zr   *zip.Reader
 	fs   vfs.FileSystem // the zipfs virtual file system
 }
 
@@ -64,6 +65,7 @@ func (fs *archiveFS) fetch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	fs.zr = zr
 	fs.fs = zipfs.New(&zip.ReadCloser{Reader: *zr}, "")
 	return nil
 }
@@ -94,6 +96,20 @@ func (fs *archiveFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, e
 		return nil, err
 	}
 	return fs.fs.ReadDir(path)
+}
+
+func (fs *archiveFS) ListAllFiles(ctx context.Context) ([]string, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
+		return nil, err
+	}
+
+	filenames := make([]string, 0, len(fs.zr.File))
+	for _, f := range fs.zr.File {
+		if f.Mode().IsRegular() {
+			filenames = append(filenames, f.Name)
+		}
+	}
+	return filenames, nil
 }
 
 func (fs *archiveFS) String() string { return "archiveFS(" + fs.fs.String() + ")" }

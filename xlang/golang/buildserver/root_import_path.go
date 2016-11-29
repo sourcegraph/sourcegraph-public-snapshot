@@ -45,7 +45,7 @@ func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRoot
 	//
 	// Since we have not yet set h.FS, we need to construct our own
 	// VFS and use it to walk.
-	fs := &vfsutil.RemoteProxyFS{Conn: conn}
+	fs := vfsutil.RemoteFS(conn)
 	w := ctxvfs.Walk(ctx, "/", fs)
 	const maxSlashes = 3 // heuristic, shouldn't need to traverse too deep to find this out
 	const maxFiles = 25  // heuristic, shouldn't need to read too many files to find this out

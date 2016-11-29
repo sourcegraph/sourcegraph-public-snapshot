@@ -203,7 +203,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err
 		}
-		h.FS.Bind(h.OverlayMountPath, &vfsutil.RemoteProxyFS{Conn: conn}, "/", ctxvfs.BindBefore)
+		h.FS.Bind(h.OverlayMountPath, vfsutil.RemoteFS(conn), "/", ctxvfs.BindBefore)
 		var langInitResp lsp.InitializeResult
 		if err := h.callLangServer(ctx, conn, req.Method, req.Notif, langInitParams, &langInitResp); err != nil {
 			return nil, err

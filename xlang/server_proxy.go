@@ -416,7 +416,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	// significant operations, not when we're just receiving traces or
 	// performing simple VFS ops.
 	var span opentracing.Span
-	if shouldCreateChildSpan := req.Method != "telemetry/event" && (traceFSRequests || !strings.HasPrefix(req.Method, "fs/")); shouldCreateChildSpan {
+	if shouldCreateChildSpan := req.Method != "telemetry/event" && (traceFSRequests || !isFSMethod(req.Method)); shouldCreateChildSpan {
 		op := "LSP server proxy: handle " + req.Method
 
 		// Try to get our parent span context from this JSON-RPC request's metadata.
@@ -484,9 +484,19 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.clientBroadcast(ctx, req)
 
 		return nil, nil
+
+	case "textDocument/xcontent":
+		return c.handleTextDocumentContentExt(ctx, req)
+
+	case "workspace/xfiles":
+		return c.handleWorkspaceFilesExt(ctx, req)
 	}
 
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("server proxy handler: method not found: %q", req.Method)}
+}
+
+func isFSMethod(method string) bool {
+	return strings.HasPrefix(method, "fs/") || method == "textDocument/xcontent" || method == "workspace/xfiles"
 }
 
 func (c *serverProxyConn) updateLastTime() {

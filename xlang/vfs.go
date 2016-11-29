@@ -22,3 +22,7 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) 
 	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
 	return vcs.ArchiveFileSystem(gitcmd.Open(repo), rev), nil
 }
+
+type AllFilesLister interface {
+	ListAllFiles(ctx context.Context) ([]string, error)
+}
