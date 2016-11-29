@@ -46,7 +46,7 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 ```
 %s
 ```
-*Browser console errors*:
+%s:
 ```
 %s
 ```
@@ -54,13 +54,16 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 """
 
 def failure_msg(test_name, owner, browser, url, sgurl, stack_trace, console_log):
+    browser_log_title = "*Browser console* (only console.error for Firefox)"
+    if browser == 'chrome':
+        browser_log_title = "*Browser console* (console.error and console.log for Chrome)"
     return failure_msg_template % (
         test_name, owner,
         browser.capitalize(),
         url,
         test_name, browser, sgurl,
         stack_trace,
-        console_log,
+        browser_log_title, console_log,
     )
 
 def alert_alertmanager(alertname, exported_name, url, alertmgr_url, oauth_cookie=None):
@@ -95,6 +98,16 @@ def slack_and_alertmgr(args):
         alertmgr_cookie = os.getenv("ALERT_MANAGER_OAUTH_COOKIE")
     return slack_cli, slack_ch, alertmgr_url, alertmgr_cookie
 
+# get_browser_log gets the browser logs, filtering out debugging messages
+def get_browser_log(driver):
+    def include(e):
+        if '''%c%s%c LSP %s %s %c%sms''' in e['message']:
+            return False
+        if "console.groupEnd" in e['message']:
+            return False
+        return True
+    return [e for e in driver.d.get_log('browser') if include(e)]
+
 def run_tests(args, tests):
     failed_tests = []
     slack_cli, slack_ch, alertmgr_url, alertmgr_cookie = slack_and_alertmgr(args)
@@ -105,7 +118,7 @@ def run_tests(args, tests):
     def fail(test_name, owner, exception, driver):
         logf('[%s](%s) %s' % (red("FAIL"), args.browser, test_name))
         traceback.print_exc(30)
-        console_log_msgs = [e for e in driver.d.get_log('browser')]
+        console_log_msgs = get_browser_log(driver)
         if len(console_log_msgs) > 0:
             console_log = '\n'.join([('[%s] %s' % (e['level'], e['message'])) for e in console_log_msgs])
         else:
@@ -143,7 +156,7 @@ Type "continue" to continue.
                 if args.browser == "chrome":
                     opt = DesiredCapabilities.CHROME.copy()
                     opt['chromeOptions'] = { "args": ["--user-agent=%s" % user_agent, "--load-extension=%s" % extension_path] }
-                    opt['loggingPrefs'] = { 'browser': 'SEVERE' }
+                    opt['loggingPrefs'] = { 'browser': 'INFO' }
                     wd = webdriver.Remote(
                         command_executor=('%s/wd/hub' % args.selenium),
                         desired_capabilities=opt,
