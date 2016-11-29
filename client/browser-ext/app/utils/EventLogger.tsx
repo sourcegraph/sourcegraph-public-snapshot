@@ -1,3 +1,5 @@
+import { getPlatform } from ".";
+
 class Logger {
 	constructor() {
 		if (process.env.NODE_ENV === "test") {
@@ -38,7 +40,7 @@ class Logger {
 	_defaultProperties(): Object {
 		return {
 			path_name: window.location.pathname,
-			Platform: window.navigator.userAgent.indexOf("Firefox") !== -1 ? "FirefoxExtension" : "ChromeExtension",
+			Platform: getPlatform(),
 		};
 	}
 

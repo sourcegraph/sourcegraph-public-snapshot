@@ -28,7 +28,7 @@ type textDocumentPositionRequest struct {
 	Character int
 }
 
-func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface{}) error {
+func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface{}, client string) error {
 	if !strings.HasSuffix(o.File, ".go") {
 		return &errcode.HTTPErr{
 			Status: http.StatusNotFound,
@@ -79,7 +79,7 @@ func (o textDocumentPositionRequest) Serve(ctx context.Context, result interface
 		return err
 	}
 	w := httptest.NewRecorder()
-	err = serveXLangMethod(ctx, w, bytes.NewReader(body))
+	err = serveXLangMethod(ctx, w, bytes.NewReader(body), client)
 	if err != nil {
 		return err
 	}

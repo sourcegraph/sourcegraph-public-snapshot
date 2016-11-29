@@ -55,13 +55,13 @@ type xlangClient interface {
 }
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
-	return serveXLangMethod(r.Context(), w, r.Body)
+	return serveXLangMethod(r.Context(), w, r.Body, r.Header.Get("x-sourcegraph-client"))
 }
 
 // serveXLangMethod was split out from serveXLang to support the old
 // hover-info and jump-to-def httpapi endpoints. Once those are gone we
 // extract this back into serveXLang.
-func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader) (err error) {
+func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader, client string) (err error) {
 	start := time.Now()
 	success := true
 	method := "unknown"
@@ -99,6 +99,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 			ev.AddField("method", method)
 			ev.AddField("mode", mode)
 			ev.AddField("duration_ms", duration.Seconds()*1000)
+			ev.AddField("client", client)
 			if err != nil {
 				ev.AddField("error", err.Error())
 			}

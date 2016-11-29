@@ -48,6 +48,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 	actor := auth.ActorFromContext(req.Context())
 
 	headers := make(map[string]string)
+	headers["x-sourcegraph-client"] = conf.AppURL.String()
 	sessionCookie := auth.SessionCookie(req)
 	if sessionCookie != "" {
 		headers["Authorization"] = httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)

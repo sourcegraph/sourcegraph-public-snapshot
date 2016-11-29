@@ -11,7 +11,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
@@ -22,6 +24,14 @@ type treeEntry struct {
 }
 
 func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
+	if actor := auth.ActorFromContext(r.Context()); actor != nil {
+		ev := honey.Event("repo_tree")
+		ev.AddField("uid", actor.UID)
+		ev.AddField("login", actor.Login)
+		ev.AddField("email", actor.Email)
+		ev.Send()
+	}
+
 	vars := mux.Vars(r)
 	orig := routevar.ToTreeEntry(vars)
 	repoRev, err := resolveLocalRepoRev(r.Context(), orig.RepoRev)

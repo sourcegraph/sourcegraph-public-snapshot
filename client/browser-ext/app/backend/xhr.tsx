@@ -1,3 +1,4 @@
+import { getPlatform } from "../utils";
 import { singleflightFetch } from "./singleflightFetch";
 
 let token: string | null = null;
@@ -16,7 +17,7 @@ function defaultOptions(): FetchOptions | undefined {
 	if (token) {
 		headers.set("Authorization", `session ${token}`);
 	}
-	headers.set("x-sourcegraph-browser-extension", "true");
+	headers.set("x-sourcegraph-client", `${getPlatform()} v${chrome.runtime.getManifest().version}`);
 	return { headers };
 };
 

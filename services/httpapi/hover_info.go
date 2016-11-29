@@ -24,6 +24,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	client := r.Header.Get("x-sourcegraph-client")
 	file := r.URL.Query().Get("file")
 
 	line, err := strconv.Atoi(r.URL.Query().Get("line"))
@@ -52,7 +53,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		File:      file,
 		Line:      line,
 		Character: character,
-	}.Serve(r.Context(), &hover)
+	}.Serve(r.Context(), &hover, client)
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func serveRepoHoverInfo(w http.ResponseWriter, r *http.Request) error {
 		File:      file,
 		Line:      line,
 		Character: character,
-	}.Serve(r.Context(), &locations)
+	}.Serve(r.Context(), &locations, client)
 	if err == nil && len(locations) >= 1 {
 		uri, err := url.Parse(locations[0].URI)
 		if err != nil {

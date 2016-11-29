@@ -130,3 +130,7 @@ export function getCurrentBranch(): string | null {
 
 	return (branchDropdownEl[0] as HTMLElement).title;
 }
+
+export function getPlatform(): string {
+	return window.navigator.userAgent.indexOf("Firefox") !== -1 ? "firefox-extension" : "chrome-extension";
+}
