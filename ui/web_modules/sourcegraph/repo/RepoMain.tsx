@@ -36,13 +36,19 @@ export class RepoMain extends React.Component<Props, {}> {
 	}
 
 	componentDidMount(): void {
-		// Prefetch symbols
-		Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.commit.commit.languages, this.props.repo, this.props.commit.commit.sha1, "", true));
 		this._updateRefreshInterval(this.props.commit && this.props.commit.cloneInProgress);
+		if (this.props.commit.commit) {
+			// prefetch on first load if repository is already cloned
+			this.prefetchSymbols(this.props.repo, this.props.commit.commit);
+		}
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
 		this._updateRefreshInterval(nextProps.commit && nextProps.commit.cloneInProgress);
+		if (nextProps.commit.commit && (!this.props.commit.commit || nextProps.commit.commit.sha1 !== this.props.commit.commit.sha1)) {
+			// prefetch if the repository is being cloned or if we switch repositories after first page load
+			this.prefetchSymbols(nextProps.repo, nextProps.commit.commit);
+		}
 	}
 
 	componentWillUnmount(): void {
@@ -80,6 +86,15 @@ export class RepoMain extends React.Component<Props, {}> {
 				ev.preventDefault();
 				ev.stopPropagation();
 			}
+		}
+	}
+
+	// prefetchSymbols best-effort prefetches symbols
+	prefetchSymbols(repo: string, commit: GQL.ICommit | null): void {
+		if (commit) {
+			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(commit.languages, repo, commit.sha1, "", true));
+		} else {
+			console.error("could not fetch workspace/symbol: repository commit was null");
 		}
 	}
 
