@@ -1,4 +1,5 @@
 import { hover, select } from "glamor";
+import * as debounce from "lodash/debounce";
 import * as React from "react";
 import { InjectedRouter, Link } from "react-router";
 import { ITree } from "vs/base/parts/tree/browser/tree";
@@ -28,18 +29,24 @@ export class FileTree extends React.Component<Props, {}> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	private _treeImpl: ITree;
+	private treeImpl: ITree;
 	context: { router: InjectedRouter };
 
 	constructor() {
 		super();
 		this.divMounted = this.divMounted.bind(this);
+		this.onResize = debounce(this.onResize.bind(this), 300, { leading: true, trailing: true });
 	}
 
 	componentWillUnmount(): void {
-		if (this._treeImpl) {
-			this._treeImpl.dispose();
+		window.removeEventListener("resize", this.onResize);
+		if (this.treeImpl) {
+			this.treeImpl.dispose();
 		}
+	}
+
+	componentDidMount(): void {
+		window.addEventListener("resize", this.onResize);
 	}
 
 	divMounted(domElement: HTMLElement): void {
@@ -50,7 +57,7 @@ export class FileTree extends React.Component<Props, {}> {
 			controller: new Controller(this.selectElement.bind(this)),
 			renderer: new Renderer(),
 		};
-		this._treeImpl = new Tree(domElement, config);
+		this.treeImpl = new Tree(domElement, config);
 		this.setTreeInput(this.props.files);
 	}
 
@@ -74,14 +81,19 @@ export class FileTree extends React.Component<Props, {}> {
 	}
 
 	setTreeInput(files: GQL.IFile[]): void {
-		if (!this._treeImpl) { return; }
+		if (!this.treeImpl) { return; }
 		const data = makeTree(files);
-		this._treeImpl.setInput(data);
+		this.treeImpl.setInput(data);
 
 		// Set and expand the selection
 		const nodePath = nodePathFromPath(data, this.props.path);
-		this._treeImpl.expandAll(nodePath);
-		this._treeImpl.setSelection([nodePath[nodePath.length - 1]]);
+		this.treeImpl.expandAll(nodePath);
+		this.treeImpl.setSelection([nodePath[nodePath.length - 1]]);
+	}
+
+	onResize(): void {
+		if (!this.treeImpl) { return; }
+		this.treeImpl.layout();
 	}
 
 	render(): JSX.Element {

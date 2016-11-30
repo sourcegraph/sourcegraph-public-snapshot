@@ -67,7 +67,7 @@ export class EditorController extends Container<Props, State> {
 		super.componentDidMount();
 
 		global.document.addEventListener("keydown", this._onKeyDownForFindInPage);
-		global.document.addEventListener("resize", this._onResize);
+		window.addEventListener("resize", this._onResize);
 
 		global.document.body.style.overflowY = "hidden";
 	}
@@ -76,7 +76,7 @@ export class EditorController extends Container<Props, State> {
 		super.componentWillUnmount();
 
 		global.document.removeEventListener("keydown", this._onKeyDownForFindInPage);
-		global.document.removeEventListener("resize", this._onResize);
+		window.removeEventListener("resize", this._onResize);
 
 		global.document.body.style.overflowY = "auto";
 	}
