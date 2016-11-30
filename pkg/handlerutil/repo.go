@@ -1,9 +1,6 @@
 package handlerutil
 
 import (
-	"bytes"
-	"fmt"
-	"go/doc"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,12 +11,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 // RepoCommon holds all of the information necessary to render a
@@ -184,144 +178,4 @@ func RedirectToNewRepoURI(w http.ResponseWriter, r *http.Request, newRepoURI str
 
 	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
 	return nil
-}
-
-// ResolveSrclibDataVersion calls Repos.GetSrclibDataVersionForPath on
-// the given entry spec. If a srclib data version exists,
-// entry.RepoRev.CommitID is set to the version's commit ID.
-//
-// If the rev requested by the user (userInputRev) is empty, then it
-// performs a lenient resolution: it behaves as though entry.Path is
-// also empty and returns the latest build on the default branch for
-// the repository, even if the requested file has changed more
-// recently. This is because in this case we assume the user cares
-// more about seeing srclib defs/refs than any exact version.
-func ResolveSrclibDataVersion(ctx context.Context, entry sourcegraph.TreeEntrySpec, userInputRev string) (sourcegraph.RepoRevSpec, *sourcegraph.SrclibDataVersion, error) {
-	if userInputRev == "" {
-		entry.Path = ""
-	}
-
-	dataVer, err := backend.Repos.GetSrclibDataVersionForPath(ctx, &entry)
-	if err == nil {
-		entry.RepoRev.CommitID = dataVer.CommitID
-	}
-	return entry.RepoRev, dataVer, err
-}
-
-// GetDefCommon returns common information about a definition, based
-// on the route vars.  It additionally returns common repository and
-// revision information. It may also return custom errors
-// URLMovedError, or NoVCSDataError.
-//
-// dc.Def.DefKey will be set to the def specification based on the
-// request when getting actual def fails.
-func GetDefCommon(ctx context.Context, vars map[string]string, opt *sourcegraph.DefGetOptions) (dc *sourcegraph.Def, repo *sourcegraph.Repo, err error) {
-	repo, err = GetRepo(ctx, vars)
-	if err != nil {
-		return
-	}
-
-	repoRev := routevar.ToRepoRev(vars)
-	defSpec := routevar.ToDefAtRev(vars)
-
-	// If we fail to get a def, return the best known information to the caller.
-	dc = &sourcegraph.Def{
-		Def: graph.Def{
-			DefKey: graph.DefKey{
-				Repo:     defSpec.Repo,
-				Unit:     defSpec.Unit,
-				UnitType: defSpec.UnitType,
-				Path:     defSpec.Path,
-			},
-		},
-	}
-
-	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  repoRev.Rev,
-	})
-	if err != nil {
-		return
-	}
-	absRepoRev := sourcegraph.RepoRevSpec{
-		Repo:     repo.ID,
-		CommitID: res.CommitID,
-	}
-
-	resolvedRev, _, err := ResolveSrclibDataVersion(ctx, sourcegraph.TreeEntrySpec{RepoRev: absRepoRev}, repoRev.Rev)
-	if err != nil {
-		return
-	}
-	dc.Def.DefKey.CommitID = resolvedRev.CommitID
-
-	dc, err = backend.Defs.Get(ctx, &sourcegraph.DefsGetOp{
-		Def: sourcegraph.NewDefSpecFromDefKey(dc.Def.DefKey, repo.ID),
-		Opt: opt,
-	})
-	if err != nil {
-		return
-	}
-
-	if repoRev.Rev != "" {
-		// Check if the def's file has been changed AFTER the resolved
-		// srclib-last-version AND the user specified a rev in the URL. If
-		// so, then we can't actually display this def, because we'd only
-		// be able to show it on an older version of the file (which would
-		// mean that users would see file data from an older commit when
-		// looking at a newer commit's def--that is BAD).
-		//
-		// Right now, the best course of action is to 404. This is a
-		// fairly rare case that should be remedied as soon as the next
-		// build completes. The alternative would be to display a warning
-		// saying "this file is N commits behind the requested commit,"
-		// but that adds a lot of complexity to the code and to the UI (as
-		// we have seen in the past). If a user's looking at a file that
-		// was changed since the last srclib version, they also see an
-		// unannotated file, so this is consistent with that behavior as
-		// well.
-		//
-		// If the user didn't specify a rev in the URL, then they probably
-		// care more about seeing the def than seeing the exact version,
-		// so we only perform this strict check if they did.
-		defResolvedRev, err := backend.Repos.GetSrclibDataVersionForPath(ctx, &sourcegraph.TreeEntrySpec{
-			RepoRev: absRepoRev, // use originally requested rev, not already resolved last-srclib-version
-			Path:    dc.File,
-		})
-		if err != nil {
-			return dc, repo, err
-		}
-		if defResolvedRev.CommitID != resolvedRev.CommitID {
-			return dc, repo, &errcode.HTTPErr{
-				Status: http.StatusNotFound,
-				Err:    fmt.Errorf("no srclib data for def %v (file %s was modified between last srclib analysis version %s and rev %s)", defSpec, dc.File, resolvedRev.CommitID, repoRev.Rev),
-			}
-		}
-	}
-
-	// this can not be moved to svc/local, because HTML sanitation needs to
-	// happen on the local sourcegraph instance, not on an untrusted
-	// server
-	ComputeDocHTML(dc)
-	return
-}
-
-// ComputeDocHTML computes the DocHTML field of the Def
-// from its internal Docs field, and sanitizes it.
-func ComputeDocHTML(dc *sourcegraph.Def) {
-	if len(dc.Docs) < 1 {
-		return
-	}
-	defDoc := dc.Docs[0]
-	var docHTML string
-	switch defDoc.Format {
-	case "text/html":
-		docHTML = defDoc.Data
-	// TODO "text/x-markdown"
-	// TODO "text/x-rst"
-	default: // including "text/plain"
-		var buf bytes.Buffer
-		doc.ToHTML(&buf, defDoc.Data, nil)
-		docHTML = buf.String()
-	}
-	dc.DocHTML = htmlutil.Sanitize(docHTML)
 }

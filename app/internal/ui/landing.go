@@ -3,27 +3,21 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
-	"github.com/jaytaylor/html2text"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/russross/blackfriday"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
@@ -67,34 +61,6 @@ func curlRepro(mode, rootPath, method string, params interface{}) string {
 	}
 	return fmt.Sprintf(`Reproduce with: curl --data '%s' https://sourcegraph.com/.api/xlang/%s -i`, data, method)
 }
-
-func shouldShadow(page string) bool {
-	e := os.Getenv(page + "_LANDING_SHADOW_PERCENT")
-	if e == "" {
-		return false
-	}
-	p, err := strconv.Atoi(e)
-	if err != nil {
-		log15.Crit("landing: shouldShadow parsing "+page+"_LANDING_SHADOW_PERCENT", "error", err)
-		return false
-	}
-	return rand.Uint32()%100 < uint32(p)
-}
-
-func shouldUseXlang(page string) bool {
-	e := os.Getenv(page + "_LANDING_XLANG_PERCENT")
-	if e == "" {
-		return false
-	}
-	p, err := strconv.Atoi(e)
-	if err != nil {
-		log15.Crit("landing: shouldUseXlang parsing "+page+"_LANDING_XLANG_PERCENT", "error", err)
-		return false
-	}
-	return rand.Uint32()%100 < uint32(p)
-}
-
-func init() { rand.Seed(time.Now().UnixNano()) }
 
 type defDescr struct {
 	Title    string
@@ -200,36 +166,13 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) (err error) {
 		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
 	}
 
-	var data []defDescr
-	err = errors.New("xlang repo landing disabled")
-	xlang := shouldUseXlang("REPO")
-	if xlang {
-		data, err = queryRepoLandingData(r, repo)
-		if err != nil {
-			// Just log, so we fallback to legacy in the event of catastrophic failure.
-			log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
-		}
-	} else if shouldShadow("REPO") {
-		go func() {
-			_, err := queryRepoLandingData(r, repo)
-			if err != nil {
-				log15.Crit("queryRepoLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-				ext.Error.Set(span, true)
-				span.SetTag("err", err.Error())
-			}
-		}()
-	}
-
-	if !xlang {
-		// Fallback to legacy / srclib data.
-		legacyRepoLandingCounter.Inc()
-		data, err = queryLegacyRepoLandingData(r, repo)
-		if err != nil {
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
-		}
+	data, err := queryRepoLandingData(r, repo)
+	if err != nil {
+		// Just log, so we fallback to legacy in the event of catastrophic failure.
+		log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		ext.Error.Set(span, true)
+		span.SetTag("err", err.Error())
+		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
 	}
 
 	m := repoMeta(repo)
@@ -402,64 +345,6 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 	return desc, nil
 }
 
-func defDocText(def *sourcegraph.Def) string {
-	for _, doc := range def.Docs {
-		if doc.Format == "text/plain" {
-			return doc.Data
-		}
-	}
-	if plain, err := html2text.FromString(def.DocHTML.HTML); err == nil {
-		return plain
-	}
-	for _, doc := range def.Docs {
-		if doc.Format == "markdown" {
-			if plain, err := html2text.FromString(doc.Data); err == nil {
-				return plain
-			}
-		}
-	}
-	return ""
-}
-
-func queryLegacyRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDescr, err error) {
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryLegacyRepoLandingData")
-	r = r.WithContext(ctx)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
-	results, err := backend.Search.Search(r.Context(), &sourcegraph.SearchOp{
-		Opt: &sourcegraph.SearchOptions{
-			Repos:        []int32{repo.ID},
-			Languages:    []string{"Go"},
-			NotKinds:     []string{"package"},
-			IncludeRepos: false,
-			ListOptions:  sourcegraph.ListOptions{PerPage: 20},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var defDescrs []defDescr
-	for _, defResult := range results.DefResults {
-		def := &defResult.Def
-		handlerutil.ComputeDocHTML(def)
-		f := def.FmtStrings
-		defDescrs = append(defDescrs, defDescr{
-			Title:    fmt.Sprintf("%s %s %s%s", f.DefKeyword, f.Name.ScopeQualified, f.NameAndTypeSeparator, f.Type.Unqualified),
-			DocText:  defDocText(def),
-			RefCount: int(defResult.RefCount),
-			URL:      approuter.Rel.URLToDefLanding(def.DefKey).String(),
-		})
-	}
-	return defDescrs, nil
-}
-
 type snippet struct {
 	Code      htmpl.HTML
 	SourceURL string
@@ -509,35 +394,12 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 		return errors.Wrap(err, "GetRepoAndRev")
 	}
 
-	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
-	var data *defLandingData
-	err = errors.New("xlang def landing disabled")
-	xlang := shouldUseXlang("DEF")
-	if xlang {
-		data, err = queryDefLandingData(r, repo, repoRev)
-		if err != nil {
-			// Just log, so we fallback to legacy in the event of catastrophic failure.
-			log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-	} else if shouldShadow("DEF") {
-		go func() {
-			_, err := queryDefLandingData(r, repo, repoRev)
-			if err != nil {
-				log15.Crit("queryDefLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-				ext.Error.Set(span, true)
-				span.SetTag("err", err.Error())
-			}
-		}()
-	}
-
-	if !xlang {
-		legacyDefLandingCounter.Inc()
-		data, err = queryLegacyDefLandingData(r, repo)
-		if err != nil {
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
-		}
+	data, err := queryDefLandingData(r, repo, repoRev)
+	if err != nil {
+		// Just log, so we fallback to legacy in the event of catastrophic failure.
+		log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		ext.Error.Set(span, true)
+		span.SetTag("err", err.Error())
 	}
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
 }
@@ -743,7 +605,6 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 						},
 						ExpandContextLines: 2,
 					},
-					NoSrclibAnns: true,
 				},
 			})
 			if err != nil {
@@ -782,164 +643,4 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		RefLocs:          refLocs,
 		TruncatedRefLocs: refLocs.TotalSources > len(refLocs.SourceRefs),
 	}, nil
-}
-
-func legacyGenerateSymbolEventProps(def *sourcegraph.Def) *defEventProps {
-	return &defEventProps{
-		DefLanguage:  "go", // srclib def landing pages only ever had GoPackage unit types.
-		DefScheme:    "git",
-		DefSource:    def.Repo,
-		DefVersion:   "",
-		DefFile:      def.File,
-		DefContainer: def.Unit,
-		DefName:      def.Path,
-	}
-}
-
-func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *defLandingData, err error) {
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryLegacyDefLandingData")
-	r = r.WithContext(ctx)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
-	vars := mux.Vars(r)
-	// We don't support xlang yet on new commits for golang/go https://github.com/sourcegraph/sourcegraph/issues/2370
-	// DefLanding is pretty only ever used on the default branch, so used old version
-	if vars["Repo"] == "github.com/golang/go" {
-		vars["Rev"] = "@838eaa738f2bc07c3706b96f9e702cb80877dfe1"
-	}
-	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
-	if err != nil {
-		return nil, err
-	}
-
-	defSpec := sourcegraph.DefSpec{
-		Repo:     repo.ID,
-		CommitID: def.DefKey.CommitID,
-		UnitType: def.DefKey.UnitType,
-		Unit:     def.DefKey.Unit,
-		Path:     def.DefKey.Path,
-	}
-
-	// get all caller repositories with counts (global refs)
-	const (
-		refLocRepoLimit = 3 // max 3 separate repos
-		refLocFileLimit = 5 // max 5 files per repo
-	)
-	refLocs, err := backend.Defs.DeprecatedListRefLocations(r.Context(), &sourcegraph.DeprecatedDefsListRefLocationsOp{
-		Def: defSpec,
-		Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
-			// NOTE(mate): this has no effect at the moment
-			ListOptions: sourcegraph.ListOptions{PerPage: refLocRepoLimit},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	// WORKAROUND(mate): because ListRefLocations ignores pagination options
-	truncLen := len(refLocs.RepoRefs)
-	if truncLen > refLocRepoLimit {
-		truncLen = refLocRepoLimit
-	}
-	refLocs.RepoRefs = refLocs.RepoRefs[:truncLen]
-	for _, repoRef := range refLocs.RepoRefs {
-		if len(repoRef.Files) > refLocFileLimit {
-			repoRef.Files = repoRef.Files[:refLocFileLimit]
-		}
-	}
-
-	// fetch definition
-	eventProps := legacyGenerateSymbolEventProps(def)
-	viewDefURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine))
-	defFileURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0)
-
-	// fetch example
-	refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
-		Def: defSpec,
-		Opt: &sourcegraph.DeprecatedDefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
-	})
-	if err != nil {
-		return nil, err
-	}
-	var refSnippets []*snippet
-	for _, ref := range refs.Refs {
-		opt := &sourcegraph.RepoTreeGetOptions{
-			ContentsAsString: true,
-			GetFileOptions: sourcegraph.GetFileOptions{
-				FileRange: sourcegraph.FileRange{
-					StartByte: int64(ref.Start),
-					EndByte:   int64(ref.End),
-				},
-				ExpandContextLines: 2,
-			},
-			NoSrclibAnns: true,
-		}
-		refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
-		if err != nil {
-			return nil, err
-		}
-		refEntrySpec := sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{Repo: refRepo.Repo, CommitID: ref.CommitID},
-			Path:    ref.File,
-		}
-		refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
-		if err != nil {
-			return nil, fmt.Errorf("could not get ref tree: %s", err)
-		}
-		refSnippets = append(refSnippets, &snippet{
-			Code:      htmpl.HTML(refEntry.ContentsString),
-			SourceURL: approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, int(refEntry.FileRange.StartLine+1)).String(),
-		})
-	}
-
-	m := defMeta(def, trimRepo(repo.URI), false)
-	m.SEO = true
-	// Don't noindex pages with a canonical URL. See
-	// https://www.seroundtable.com/archives/020151.html.
-	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL,
-		getRouteName(r),
-		mux.Vars(r),
-		r.URL.Query(),
-		repo.DefaultBranch,
-		def.CommitID,
-	)
-	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev
-
-	return &defLandingData{
-		Meta:             *m,
-		Description:      def.DocHTML,
-		RefSnippets:      refSnippets,
-		DefEventProps:    eventProps,
-		ViewDefURL:       viewDefURL.String(),
-		DefName:          def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
-		ShortDefName:     def.Name,
-		DefFileURL:       defFileURL.String(),
-		DefFileName:      repo.URI + "/" + def.Def.File,
-		RefLocs:          refLocs.Convert(),
-		TruncatedRefLocs: refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
-	}, nil
-}
-
-var legacyDefLandingCounter = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "legacy_def_landing",
-	Help:      "Number of times a legacy def landing page has been served.",
-})
-
-var legacyRepoLandingCounter = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "legacy_repo_landing",
-	Help:      "Number of times a legacy repo landing page has been served.",
-})
-
-func init() {
-	prometheus.MustRegister(legacyDefLandingCounter)
-	prometheus.MustRegister(legacyRepoLandingCounter)
 }

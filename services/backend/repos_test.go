@@ -298,7 +298,7 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 
 	want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "github.com/is/accessible"}}}
 	if !reflect.DeepEqual(repoList, want) {
-		t.Fatalf("got repos %q, want %q", repoList, want)
+		t.Fatalf("got repos %v, want %v", repoList, want)
 	}
 	if !*calledListAccessible {
 		t.Error("!calledListAccessible")

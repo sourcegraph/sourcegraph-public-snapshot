@@ -6,17 +6,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
-	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 func init() {
 	accesscontrol.Repos = localstore.Repos
 	repoupdater.Repos = Repos
 	repoupdater.MirrorRepos = MirrorRepos
-}
-
-func SetGraphStore(graph srcstore.MultiRepoStoreImporterIndexer) {
-	localstore.Graph = graph
 }
 
 // LegacyGitHubScope returns the scope granted to the auth flow used before Auth0.

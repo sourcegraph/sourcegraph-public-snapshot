@@ -3,7 +3,6 @@ package testserver
 import (
 	"flag"
 	"fmt"
-	"go/build"
 	"io/ioutil"
 	"log"
 	"net"
@@ -71,15 +70,8 @@ func (s *Server) allEnvConfig() []string {
 	}
 	env = append(env, s.serverEnvConfig()...)
 	env = append(env, s.dbEnvConfig()...)
-	env = append(env, s.srclibEnvConfig()...)
 	env = append(env, s.Config...)
 	return env
-}
-
-func (s *Server) srclibEnvConfig() []string {
-	return []string{
-		"SG_BUILD_LOG_DIR=" + filepath.Join(s.SGPATH, "build-logs"),
-	}
 }
 
 func (s *Server) serverEnvConfig() []string {
@@ -361,44 +353,6 @@ func (s *Server) Start() error {
 	time.Sleep(75 * time.Millisecond)
 
 	return nil
-}
-
-// SrclibSampleToolchain returns the dir and the SRCLIBPATH for the
-// included srclib-sample toolchain.
-//
-// If buildDocker is true, its corresponding Docker image is also
-// built. The dockerImage is the Docker image tag to use, and it is
-// only returned if buildDocker is true.
-//
-// This func assumes that the sample toolchain has been vendored in
-// the sourcegraph repo at
-// testutil/testdata/srclibpath/sourcegraph.com/sourcegraph/srclib-sample. The
-// vendored srclib-sample toolchain can be updated by manually copying
-// files from the srclib-sample repo (there's no automatic way to
-// update this yet because it's probably an infrequent
-// occurrence). Note that you should delete srclib-sample's .git and
-// testdata dirs and NOT check them into the sourcegraph repo.
-func SrclibSampleToolchain(buildDocker bool) (dir, srclibpath, dockerImage string) {
-	p, err := build.Default.Import("sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil", "", build.FindOnly)
-	if err != nil {
-		log.Fatal("Couldn't find testutil package (while getting SRCLIBPATH for test app):", err)
-	}
-	srclibpath = filepath.Join(p.Dir, "testdata/srclibpath")
-	dir = filepath.Join(p.Dir, "testdata/srclibpath/sourcegraph.com/sourcegraph/srclib-sample")
-	if fi, err := os.Stat(dir); err != nil || !fi.Mode().IsDir() {
-		log.Fatalf("Failed to locate srclib-sample dir in SRCLIBPATH for test app: error %v, IsDir=%v", err, fi.Mode().IsDir())
-	}
-
-	if buildDocker {
-		dockerImage = "sourcegraph-test/srclib-sample"
-		cmd := exec.Command("docker", "build", "-t", dockerImage, ".")
-		cmd.Dir = dir
-		if out, err := cmd.CombinedOutput(); err != nil {
-			log.Fatalf("Error building srclib sample toolchain in %s.\n\n%s", dir, out)
-		}
-	}
-
-	return
 }
 
 // localhostCert is a PEM-encoded TLS cert with SAN IPs
