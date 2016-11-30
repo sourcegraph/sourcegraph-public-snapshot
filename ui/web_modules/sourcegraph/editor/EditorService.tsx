@@ -90,8 +90,6 @@ export class EditorService implements IEditorService {
 				}
 			}
 
-			this.editor.focus();
-
 			if (this._onDidOpenEditor) {
 				this._onDidOpenEditor({ model: model, editor: this.editor._widget });
 			}

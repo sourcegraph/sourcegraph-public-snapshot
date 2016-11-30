@@ -1,12 +1,12 @@
 import { rel } from "sourcegraph/app/routePatterns";
-import { BlobMain } from "sourcegraph/blob/BlobMain";
+import { Workbench } from "sourcegraph/workbench/workbench";
 
 export const blobRoutes = [
 	{
 		path: rel.blob,
 		keepScrollPositionOnRouteChangeKey: "file",
 		getComponents: (location: Location, callback: Function) => {
-			callback(null, { main: BlobMain });
+			callback(null, { main: Workbench });
 		},
 		blobLoaderHelpers: [],
 	},

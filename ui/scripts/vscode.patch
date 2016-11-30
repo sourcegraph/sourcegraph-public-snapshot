@@ -379,3 +379,16 @@ index e870c30..812ca4b 100644
          if (regex.multiline) {
              return this._doFindMatchesMultiline(searchRange, regex, limitResultCount);
          }
+diff --git a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
+index 0931517..2b15e20 100644
+--- a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
++++ b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
+@@ -72,7 +72,7 @@
+ 	left: 3px;
+ 	height: 3px;
+ 	width: 100%;
+-	box-shadow: #DDD 0 6px 6px -6px inset;
++	box-shadow: #000 0 6px 6px -6px inset;
+ }
+ .monaco-scrollable-element > .shadow.left {
+ 	display: block;
