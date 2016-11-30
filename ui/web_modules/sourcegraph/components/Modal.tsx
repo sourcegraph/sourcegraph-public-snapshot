@@ -34,9 +34,7 @@ export class ModalComp extends React.Component<Props, State> {
 	}
 
 	componentWillUnmount(): void {
-		if (this.state.originalOverflow !== document.body.style.overflowY) {
-			document.body.style.overflow = this.state.originalOverflow;
-		}
+		document.body.style.overflow = this.state.originalOverflow;
 	}
 
 	_onClick(e: React.MouseEvent<HTMLElement>): void {
