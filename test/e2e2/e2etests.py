@@ -107,31 +107,31 @@ def test_login_logout(d):
 def test_golden_workflow(d):
     wd = d.d
 
-    # Get to NewKMSKeyGenerator landing page (presumably after
+    # Get to NewRouter landing page (presumably after
     # clicking on a Google search result).
-    wd.get(d.sg_url("/github.com/aws/aws-sdk-go/-/info/GoPackage/github.com/aws/aws-sdk-go/service/s3/s3crypto/-/NewKMSKeyGenerator"))
+    wd.get(d.sg_url("/github.com/gorilla/mux/-/info/GoPackage/github.com/gorilla/mux/-/NewRouter"))
 
     # Click on first usage example
-    retry(lambda: wd.find_element_by_partial_link_text("handler := s3crypto.NewKMSKeyGenerator").click())
+    retry(lambda: wd.find_element_by_partial_link_text("router := mux.NewRouter()").click())
 
-    # Hover over "NewEncryptionClient" token
-    wait_for(lambda: len(d.find_tokens("NewEncryptionClient")) > 0)
-    d.hover_token("NewEncryptionClient")
-    wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewEncryptionClient")[0]).text)
+    # Hover over "NewRouter" token
+    wait_for(lambda: len(d.find_tokens("NewRouter")) > 0)
+    d.hover_token("NewRouter")
+    wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0]).text)
 
     # Right click and peek
-    retry(lambda: d.right_click(d.find_token("NewEncryptionClient")))
+    retry(lambda: d.right_click(d.find_token("NewRouter")))
     retry(lambda: d.find_context_menu_option("Peek Definition").click())
 
-    # Click "NewEncryptionClient" token
-    retry(lambda: d.find_token("NewEncryptionClient").click())
+    # Click "NewRouter" token
+    retry(lambda: d.find_token("NewRouter").click())
 
     # Dismiss peek view
     retry(lambda: d.active_elem().send_keys(Keys.ESCAPE))
 
     # Right click and find refs
     def rc():
-        retry(lambda: d.right_click(d.find_token("NewEncryptionClient")))
+        retry(lambda: d.right_click(d.find_token("NewRouter")))
         retry(lambda: d.find_context_menu_option("Find All References").click())
         wait_for(lambda: len(d.find_references_menu_options()) > 0, 10)
     retry(rc)
@@ -146,12 +146,12 @@ def test_golden_workflow(d):
     # Dismiss peek view
     retry(lambda: d.active_elem().send_keys(Keys.ESCAPE))
 
-    # Jump to modal to "NewEncryptionClient"
+    # Jump to modal to "NewRouter"
     retry(lambda: d.active_elem().send_keys("/"))
-    retry(lambda: d.active_elem().send_keys("NewEncryptionClient"))
+    retry(lambda: d.active_elem().send_keys("NewRouter"))
     wait_for(d.all_network_indicators_are_invisible, max_wait=4)
     retry(lambda: d.active_elem().send_keys(Keys.ENTER))
-    wait_for(lambda: "encryption_client.go" in wd.current_url and "/github.com/aws/aws-sdk-go" in wd.current_url)
+    wait_for(lambda: "mux.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
 
 def test_find_external_refs(d):
     wd = d.d
@@ -165,9 +165,9 @@ def test_find_external_refs(d):
         "symbol": "mux.Router",
         "symbol_name": "Router",
     }, {
-        "repo": "github.com/aws/aws-sdk-go",
-        "symbol": "s3crypto.NewKMSKeyGenerator",
-        "symbol_name": "NewKMSKeyGenerator",
+        "repo": "github.com/golang/go",
+        "symbol": "json.Marshal",
+        "symbol_name": "Marshal",
     }]
     for test in tests:
         # Go to repo page
@@ -176,7 +176,7 @@ def test_find_external_refs(d):
 
         # Jump to symbol
         d.active_elem().send_keys("/")
-        d.active_elem().send_keys(test['symbol_name'])
+        d.active_elem().send_keys(test['symbol'])
         wait_for(d.all_network_indicators_are_invisible, max_wait=4)
         wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
         Util.select_search_result_using_arrow_keys(d, test['symbol'])
