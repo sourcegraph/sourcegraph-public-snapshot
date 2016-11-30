@@ -24,7 +24,6 @@ export interface AnnotationsGetDefAtPosOptions {
 export interface AnnotationsListOptions {
 	Entry: TreeEntrySpec;
 	Range?: FileRange;
-	NoSrclibAnns?: boolean;
 }
 
 export interface AsyncRefreshIndexesOp {
@@ -182,108 +181,12 @@ export interface Contributor {
 	Contributions?: number;
 }
 
-export interface Def {
-	Repo?: string;
-	CommitID?: string;
-	UnitType?: string;
-	Unit?: string;
-	Path: string;
-	Name: string;
-	Kind?: string;
-	File: string;
-	DefStart: number;
-	DefEnd: number;
-	Exported?: boolean;
-	Local?: boolean;
-	Test?: boolean;
-	Data?: any;
-	Docs?: any[];
-	TreePath?: string;
-	DocHTML?: any;
-	FmtStrings?: any;
-	StartLine?: number;
-	EndLine?: number;
-}
-
-export interface DefDoc {
-	Format: string;
-	Data: string;
-}
-
-export interface DefFormatStrings {
-	Name: any;
-	Type: any;
-	NameAndTypeSeparator?: string;
-	Language?: string;
-	DefKeyword?: string;
-	Kind?: string;
-}
-
-export interface DefGetOptions {
-	Doc?: boolean;
-	ComputeLineRange?: boolean;
-}
-
 export interface DefKey {
 	Repo?: string;
 	CommitID?: string;
 	UnitType?: string;
 	Unit?: string;
 	Path: string;
-}
-
-export interface DefList {
-	Defs?: Def[];
-	Total?: number;
-}
-
-export interface DefListOptions {
-	Name?: string;
-	Query?: string;
-	ByteStart?: number;
-	ByteEnd?: number;
-	DefKeys?: any[];
-	RepoRevs?: string[];
-	UnitType?: string;
-	Unit?: string;
-	Path?: string;
-	Files?: string[];
-	FilePathPrefix?: string;
-	Kinds?: string[];
-	Exported?: boolean;
-	Nonlocal?: boolean;
-	IncludeTest?: boolean;
-	Doc?: boolean;
-	Fuzzy?: boolean;
-	Sort?: string;
-	Direction?: string;
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface DefSearchResult {
-	Repo?: string;
-	CommitID?: string;
-	UnitType?: string;
-	Unit?: string;
-	Path: string;
-	Name: string;
-	Kind?: string;
-	File: string;
-	DefStart: number;
-	DefEnd: number;
-	Exported?: boolean;
-	Local?: boolean;
-	Test?: boolean;
-	Data?: any;
-	Docs?: any[];
-	TreePath?: string;
-	DocHTML?: any;
-	FmtStrings?: any;
-	StartLine?: number;
-	EndLine?: number;
-	Score?: number;
-	RefCount?: number;
 }
 
 export interface DefSpec {
@@ -294,63 +197,9 @@ export interface DefSpec {
 	Path?: string;
 }
 
-export interface DefsGetOp {
-	Def: DefSpec;
-	Opt?: DefGetOptions;
-}
-
 export interface DefsRefreshIndexOp {
 	Repo?: number;
 	Force?: boolean;
-}
-
-export interface DeprecatedDefFileRef {
-	Path?: string;
-	Count?: number;
-	Positions?: DeprecatedFilePosition[];
-	Score?: number;
-}
-
-export interface DeprecatedDefListRefLocationsOptions {
-	Repos?: string[];
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface DeprecatedDefListRefsOptions {
-	Repo?: number;
-	CommitID?: string;
-	Files?: string[];
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface DeprecatedDefRepoRef {
-	Repo?: string;
-	Count?: number;
-	Score?: number;
-	Files?: DeprecatedDefFileRef[];
-}
-
-export interface DeprecatedDefsListRefLocationsOp {
-	Def: DefSpec;
-	Opt?: DeprecatedDefListRefLocationsOptions;
-}
-
-export interface DeprecatedDefsListRefsOp {
-	Def: DefSpec;
-	Opt?: DeprecatedDefListRefsOptions;
-}
-
-export interface DeprecatedFilePosition {
-	Line?: number;
-	Column?: number;
-}
-
-export interface DeprecatedRefLocationsList {
-	RepoRefs?: DeprecatedDefRepoRef[];
-	HasMore?: boolean;
-	TotalRepos?: number;
 }
 
 export interface Diagnostic {
@@ -390,28 +239,6 @@ export interface Diff {
 }
 
 export interface DiffOptions {
-}
-
-export interface Doc {
-	Repo?: string;
-	CommitID?: string;
-	UnitType?: string;
-	Unit?: string;
-	Path: string;
-	Format: string;
-	Data: string;
-	File?: string;
-	Start?: number;
-	End?: number;
-	DocUnit?: string;
-}
-
-export interface DocKey {
-	Repo?: string;
-	CommitID?: string;
-	UnitType?: string;
-	Unit?: string;
-	Path: string;
 }
 
 export interface DocumentFormattingParams {
@@ -624,13 +451,6 @@ export interface Origin {
 	APIBaseURL?: string;
 }
 
-export interface Output {
-	Defs?: any[];
-	Refs?: any[];
-	Docs?: any[];
-	Anns?: any[];
-}
-
 export interface ParameterInformation {
 	label: string;
 	documentation?: string;
@@ -641,53 +461,12 @@ export interface Position {
 	character: number;
 }
 
-export interface Propagate {
-}
-
 export interface PublishDiagnosticsParams {
 	uri: string;
 	diagnostics: any[];
 }
 
-export interface QualFormatStrings {
-	Unqualified?: string;
-	ScopeQualified?: string;
-	DepQualified?: string;
-	RepositoryWideQualified?: string;
-	LanguageWideQualified?: string;
-}
-
 export interface Range {
-}
-
-export interface Ref {
-	DefRepo?: string;
-	DefUnitType?: string;
-	DefUnit?: string;
-	DefPath: string;
-	Repo?: string;
-	CommitID?: string;
-	UnitType?: string;
-	Unit?: string;
-	Def?: boolean;
-	File?: string;
-	Start: number;
-	End: number;
-}
-
-export interface RefDefKey {
-	DefRepo?: string;
-	DefUnitType?: string;
-	DefUnit?: string;
-	DefPath: string;
-}
-
-export interface RefKey {
-}
-
-export interface RefList {
-	Refs?: any[];
-	HasMore?: boolean;
 }
 
 export interface RefLocations {
@@ -695,9 +474,6 @@ export interface RefLocations {
 }
 
 export interface RefLocationsOptions {
-}
-
-export interface RefSet {
 }
 
 export interface ReferenceContext {
@@ -860,7 +636,6 @@ export interface RepoTreeGetOptions {
 	FullLines?: boolean;
 	Recursive?: boolean;
 	RecurseSingleSubfolderLimit?: number;
-	NoSrclibAnns?: boolean;
 }
 
 export interface RepoTreeListOp {
@@ -922,9 +697,6 @@ export interface ReposUpdateOp {
 	Private?: any;
 }
 
-export interface RepositoryListingDef {
-}
-
 export interface ResolvedRev {
 	CommitID?: string;
 }
@@ -962,12 +734,6 @@ export interface SearchResult {
 	StartLine?: number;
 	EndLine?: number;
 	Match?: number[];
-}
-
-export interface SearchResultsList {
-	RepoResults?: RepoSearchResult[];
-	DefResults?: DefSearchResult[];
-	SearchQueryOptions?: SearchOptions[];
 }
 
 export interface ServerCapabilities {
@@ -1030,11 +796,6 @@ export interface SourceDef {
 }
 
 export interface SourceRef {
-}
-
-export interface SrclibDataVersion {
-	CommitID?: string;
-	CommitsBehind?: number;
 }
 
 export interface StreamResponse {

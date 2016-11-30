@@ -20,6 +20,39 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
+// dbLang is a numerical identifier that identifies the language of a definition
+// in the database. NOTE: this values of existing dbLang constants should NOT be
+// changed. Doing so would require a database migration.
+type dbLang uint16
+
+func (d dbLang) String() string {
+	for lang, id := range toDBLang_ {
+		if id == d {
+			return lang
+		}
+	}
+	panic("invalid DB lang constant")
+}
+
+const (
+	dbLangGo     = 1
+	dbLangJava   = 2
+	dbLangPython = 3
+)
+
+var toDBLang_ = map[string]dbLang{
+	"go":     dbLangGo,
+	"java":   dbLangJava,
+	"python": dbLangPython,
+}
+
+func toDBLang(lang string) (dbLang, error) {
+	if l, exists := toDBLang_[strings.ToLower(lang)]; exists {
+		return l, nil
+	}
+	return 0, fmt.Errorf("unrecognized language %s", lang)
+}
+
 // The goal of this global_ref DB is to take the top level [URI, Name, ContainerName]
 // which effectively describes a symbol being referenced, and map it back into one or
 // more respective Location which describes where the reference was made (thus

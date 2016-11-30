@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func (r *Router) URLToRepo(repo string) *url.URL {
@@ -60,14 +60,14 @@ func (r *Router) URLToBlobRange(repo, rev, file string, startLine, endLine, star
 	}
 }
 
-func (r *Router) URLToDefKey(def graph.DefKey) *url.URL {
+func (r *Router) URLToDefKey(def sourcegraph.DefKey) *url.URL {
 	return r.urlToDef(def.Repo, revStr(def.CommitID), def.UnitType,
 		routevar.DefKeyPathToURLPath(def.Unit),
 		routevar.DefKeyPathToURLPath(def.Path),
 	)
 }
 
-func (r *Router) URLToDefLanding(def graph.DefKey) *url.URL {
+func (r *Router) URLToDefLanding(def sourcegraph.DefKey) *url.URL {
 	return &url.URL{
 		Path: fmt.Sprintf("/%s%s/-/info/%s/%s/-/%s",
 			def.Repo, revStr(def.CommitID), def.UnitType, routevar.DefKeyPathToURLPath(def.Unit), routevar.DefKeyPathToURLPath(def.Path)),
@@ -104,7 +104,7 @@ func (r *Router) URLToLegacyDefLanding(s lsp.SymbolInformation) (string, error) 
 		}
 	}
 
-	return r.URLToDefLanding(graph.DefKey{
+	return r.URLToDefLanding(sourcegraph.DefKey{
 		Repo:     repo,
 		CommitID: "",
 		UnitType: "GoPackage",

@@ -5,9 +5,7 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 type TreeEntryType int32
@@ -324,12 +322,6 @@ type RepoResolution struct {
 	// RemoteRepo holds metadata about the repo that exists on a
 	// remote service (such as GitHub).
 	RemoteRepo *Repo `json:"RemoteRepo,omitempty"`
-}
-
-// SrclibDataVersion specifies a srclib store version.
-type SrclibDataVersion struct {
-	CommitID      string `json:"CommitID,omitempty"`
-	CommitsBehind int32  `json:"CommitsBehind,omitempty"`
 }
 
 type ReposCreateOp struct {
@@ -685,80 +677,6 @@ type ExternalToken struct {
 	Scope string `json:"scope,omitempty"`
 }
 
-// Def is a code def returned by the Sourcegraph API.
-type Def struct {
-	graph.Def  `json:""`
-	DocHTML    *htmlutil.HTML          `json:"DocHTML,omitempty"`
-	FmtStrings *graph.DefFormatStrings `json:"FmtStrings,omitempty"`
-	// StartLine and EndLine are populated if
-	// DefGetOptions.ComputeLineRange is true.
-	StartLine uint32 `json:"StartLine,omitempty"`
-	EndLine   uint32 `json:"EndLine,omitempty"`
-}
-
-// DefGetOptions specifies options for DefsService.Get.
-type DefGetOptions struct {
-	Doc bool `json:"Doc,omitempty" url:",omitempty"`
-	// ComputeLineRange is whether the server should compute the start
-	// and end line numbers (1-indexed). This incurs additional cost,
-	// so it's not always desired.
-	ComputeLineRange bool `json:"ComputeLineRange,omitempty" url:",omitempty"`
-}
-
-// DefListOptions specifies options for DefsService.List.
-type DefListOptions struct {
-	Name string `json:"Name,omitempty" url:",omitempty"`
-	// Specifies a search query for defs. If specified, then the Sort and Direction
-	// options are ignored
-	Query string `json:"Query,omitempty" url:",omitempty"`
-	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
-	// with the specified start and end byte offsets. This filter is only applied if
-	// both values are set.
-	ByteStart uint32 `json:"ByteStart,omitempty"`
-	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
-	// with the specified start and end byte offsets. This filter is only applied if
-	// both values are set.
-	ByteEnd uint32 `json:"ByteEnd,omitempty"`
-	// DefKeys, if set, will return the definitions that match the given DefKey
-	DefKeys []*graph.DefKey `json:"DefKeys,omitempty"`
-	// RepoRevs constrains the results to a set of repository revisions (given by their
-	// URIs plus an optional "@" and a revision specifier). For example,
-	// "repo.com/foo@revspec".
-	//
-	// TODO(repo-key): Make this use repo IDs, not URIs.
-	RepoRevs []string `json:"RepoRevs,omitempty" url:",omitempty,comma"`
-	UnitType string   `json:"UnitType,omitempty" url:",omitempty"`
-	Unit     string   `json:"Unit,omitempty" url:",omitempty"`
-	Path     string   `json:"Path,omitempty" url:",omitempty"`
-	// Files, if specified, will restrict the results to only defs defined in the
-	// specified file.
-	Files []string `json:"Files,omitempty" url:",omitempty"`
-	// FilePathPrefix, if specified, will restrict the results to only defs defined in
-	// files whose path is underneath the specified prefix.
-	FilePathPrefix string   `json:"FilePathPrefix,omitempty" url:",omitempty"`
-	Kinds          []string `json:"Kinds,omitempty" url:",omitempty,comma"`
-	Exported       bool     `json:"Exported,omitempty" url:",omitempty"`
-	Nonlocal       bool     `json:"Nonlocal,omitempty" url:",omitempty"`
-	// IncludeTest is whether the results should include definitions in test files.
-	IncludeTest bool `json:"IncludeTest,omitempty" url:",omitempty"`
-	// Enhancements
-	Doc   bool `json:"Doc,omitempty" url:",omitempty"`
-	Fuzzy bool `json:"Fuzzy,omitempty" url:",omitempty"`
-	// Sorting
-	Sort      string `json:"Sort,omitempty" url:",omitempty"`
-	Direction string `json:"Direction,omitempty" url:",omitempty"`
-	// Paging
-	ListOptions `json:""`
-}
-
-// DeprecatedDefListRefsOptions configures the scope of ref search for a def.
-type DeprecatedDefListRefsOptions struct {
-	Repo        int32    `json:"Repo,omitempty" url:",omitempty"`
-	CommitID    string   `json:"CommitID,omitempty" url:",omitempty"`
-	Files       []string `json:"Files,omitempty" url:",omitempty"`
-	ListOptions `json:""`
-}
-
 // DefSpec specifies a def.
 type DefSpec struct {
 	Repo     int32  `json:"Repo,omitempty"`
@@ -768,111 +686,41 @@ type DefSpec struct {
 	Path     string `json:"Path,omitempty"`
 }
 
-type DefsGetOp struct {
-	Def DefSpec        `json:"Def"`
-	Opt *DefGetOptions `json:"Opt,omitempty"`
-}
-
-type DefList struct {
-	Defs         []*Def `json:"Defs,omitempty"`
-	ListResponse `json:""`
-}
-
-type DeprecatedDefsListRefsOp struct {
-	Def DefSpec                       `json:"Def"`
-	Opt *DeprecatedDefListRefsOptions `json:"Opt,omitempty"`
-}
-
-type RefList struct {
-	Refs           []*graph.Ref `json:"Refs,omitempty"`
-	StreamResponse `json:""`
-}
-
-// DeprecatedDefListRefLocationsOptions holds the options for fetching
-// all locations referencing a def.
-type DeprecatedDefListRefLocationsOptions struct {
-	// Repos is the list of repos to restrict the results to.
-	// If empty, all repos are searched for references.
-	Repos []string `json:"Repos,omitempty" url:",omitempty"`
-	// ListOptions specifies options for paginating
-	// the result.
-	ListOptions `json:""`
-}
-
-// DeprecatedDefListRefLocationsOptions holds the options for fetching
-// all locations referencing the specified def.
-type DeprecatedDefsListRefLocationsOp struct {
-	// Def identifies the definition whose locations are requested.
-	Def DefSpec `json:"Def"`
-	// Opt controls the scope of the search for ref locations of this def.
-	Opt *DeprecatedDefListRefLocationsOptions `json:"Opt,omitempty"`
-}
-
-// DeprecatedRefLocationsList lists the repos and files that reference a def.
-type DeprecatedRefLocationsList struct {
-	// RepoRefs holds the repos and files referencing the def.
-	RepoRefs []*DeprecatedDefRepoRef `json:"RepoRefs,omitempty"`
-	// StreamResponse specifies if more results are available.
-	StreamResponse `json:""`
-	// TotalRepos is the total number of repos which reference the def.
-	TotalRepos int32 `json:"TotalRepos,omitempty"`
-}
-
-func (d *DeprecatedRefLocationsList) Convert() *RefLocations {
-	sourceRefs := make([]*SourceRef, len(d.RepoRefs))
-	for i, r := range d.RepoRefs {
-		sourceRefs[i] = r.Convert()
-	}
-	return &RefLocations{
-		SourceRefs:     sourceRefs,
-		StreamResponse: d.StreamResponse,
-		TotalSources:   int(d.TotalRepos),
-	}
-}
-
-// DeprecatedDefRepoRef identifies a repo and its files that reference a def.
-type DeprecatedDefRepoRef struct {
-	// Repo is the name of repo that references the def.
-	Repo string `json:"Repo,omitempty"`
-	// Count is the number of references to the def in the repo.
-	Count int32 `json:"Count,omitempty"`
-	// Score is the importance score of this repo for the def.
-	Score float32 `json:"Score,omitempty"`
-	// Files is the list of files in this repo referencing the def.
-	Files []*DeprecatedDefFileRef `json:"Files,omitempty"`
-}
-
-func (d *DeprecatedDefRepoRef) Convert() *SourceRef {
-	files := make([]*FileRef, len(d.Files))
-	for i, f := range d.Files {
-		files[i] = f.Convert()
-	}
-	return &SourceRef{Source: d.Repo, Refs: int(d.Count), Score: int16(d.Score), FileRefs: files}
-}
-
-// DeprecatedFilePosition represents a line:column in a file.
-type DeprecatedFilePosition struct {
-	Line   int32 `json:"Line,omitempty"`
-	Column int32 `json:"Column,omitempty"`
-}
-
-// DeprecatedDefFileRef identifies a file that references a def.
-type DeprecatedDefFileRef struct {
-	// Path is the path of this file.
-	Path string `json:"Path,omitempty"`
-	// Count is the number of references to the def in this file.
-	Count int32 `json:"Count,omitempty"`
-	// Positions is the locations in the file that the def is referenced.
-	Positions []*DeprecatedFilePosition `json:"Positions,omitempty"`
-	// Score is the importance score of this file for the def.
-	Score float32 `json:"Score,omitempty"`
-}
-
-func (d *DeprecatedDefFileRef) Convert() *FileRef {
-	// Use d.Count since d.Positions is not actually populated today. This at
-	// least gives us valid "N times in file X" counts.
-	positions := make([]lsp.Range, d.Count)
-	return &FileRef{File: d.Path, Positions: positions, Score: int16(d.Score)}
+// DefKey specifies a definition, either concretely or abstractly. A concrete
+// definition key has a non-empty CommitID and refers to a definition defined in a
+// specific commit. An abstract definition key has an empty CommitID and is
+// considered to refer to definitions from any number of commits (so long as the
+// Repo, UnitType, Unit, and Path match).
+//
+// You can think of CommitID as the time dimension. With an empty CommitID, you
+// are referring to a definition that may or may not exist at various times. With a
+// non-empty CommitID, you are referring to a specific definition of a definition at
+// the time specified by the CommitID.
+type DefKey struct {
+	// Repo is the VCS repository that defines this definition.
+	Repo string `protobuf:"bytes,1,opt,name=Repo,proto3" json:"Repo,omitempty"`
+	// CommitID is the ID of the VCS commit that this definition was defined in. The
+	// CommitID is always a full commit ID (40 hexadecimal characters for git
+	// and hg), never a branch or tag name.
+	CommitID string `protobuf:"bytes,2,opt,name=CommitID,proto3" json:"CommitID,omitempty"`
+	// UnitType is the type name of the source unit (obtained from unit.Type(u))
+	// that this definition was defined in.
+	UnitType string `protobuf:"bytes,3,opt,name=UnitType,proto3" json:"UnitType,omitempty"`
+	// Unit is the name of the source unit (obtained from u.Name()) that this
+	// definition was defined in.
+	Unit string `protobuf:"bytes,4,opt,name=Unit,proto3" json:"Unit,omitempty"`
+	// Path is a unique identifier for the def, relative to the source unit.
+	// It should remain stable across commits as long as the def is the
+	// "same" def. Its Elasticsearch mapping is defined separately (because
+	// it is a multi_field, which the struct tag can't currently represent).
+	//
+	// Path encodes no structural semantics. Its only meaning is to be a stable
+	// unique identifier within a given source unit. In many languages, it is
+	// convenient to use the namespace hierarchy (with some modifications) as
+	// the Path, but this may not always be the case. I.e., don't rely on Path
+	// to find parents or children or any other structural propreties of the
+	// def hierarchy). See Def.TreePath instead.
+	Path string `protobuf:"bytes,5,opt,name=Path,proto3" json:"Path"`
 }
 
 // RefLocationsOptions specifies options for querying locations that reference
@@ -1001,9 +849,6 @@ type SourceDef struct {
 type RepoTreeGetOptions struct {
 	ContentsAsString bool `json:"ContentsAsString,omitempty" url:",omitempty"`
 	GetFileOptions   `json:""`
-	// NoSrclibAnns indicates whether or not srclib annotations should be
-	// excluded in the (optional) returned list of annotations.
-	NoSrclibAnns bool `json:"NoSrclibAnns,omitempty"`
 }
 
 // GetFileOptions specifies options for GetFileWithOptions.
@@ -1163,12 +1008,10 @@ type EventList struct {
 	AppURL string `json:"AppURL,omitempty"`
 }
 
-// An Annotation is metadata (such as a srclib ref) attached to a
-// portion of a file.
+// An Annotation is metadata attached to a portion of a file.
 type Annotation struct {
 	// URL is the location where more information about the
-	// annotation's topic may be found (e.g., for a srclib ref, it's
-	// the def's URL).
+	// annotation's topic may be found.
 	URL string `json:"URL,omitempty"`
 	// StartByte is the start of the byte range.
 	StartByte uint32 `json:"StartByte"`
@@ -1210,9 +1053,6 @@ type AnnotationsListOptions struct {
 	// should be fetched for. If it is not set, then all of the file's
 	// annotations are returned.
 	Range *FileRange `json:"Range,omitempty"`
-	// NoSrclibAnns indicates whether or not srclib annotations should be
-	// excluded in the returned list of annotations.
-	NoSrclibAnns bool `json:"NoSrclibAnns,omitempty"`
 }
 
 // AnnotationsGetDefAtPosOptions specifies options for Annotations.GetDefAtPos
@@ -1285,26 +1125,6 @@ type RepoSearchResult struct {
 type SearchReposResultList struct {
 	// Repos is the list of repo search results.
 	Repos []*Repo `json:"Repos,omitempty"`
-}
-
-// DefSearchResult holds a result of a global def search.
-type DefSearchResult struct {
-	// Def is the def matching the search query.
-	Def `json:""`
-	// Score is the computed relevance of this result to the search query.
-	Score float32 `json:"Score,omitempty"`
-	// RefCount is global ref count for this def.
-	RefCount int32 `json:"RefCount,omitempty"`
-}
-
-// SearchResultsList is a list of results to a global search.
-type SearchResultsList struct {
-	// RepoResults is the list of repo search results
-	RepoResults []*RepoSearchResult `json:"RepoResults,omitempty"`
-	// DefResults is the list of def search results
-	DefResults []*DefSearchResult `json:"DefResults,omitempty"`
-	// SearchOptions is a list of options to a global search query.
-	SearchQueryOptions []*SearchOptions `json:"SearchQueryOptions,omitempty"`
 }
 
 // OrgListOptions holds the options for listing organization details

@@ -27,9 +27,6 @@ __pycache__
 # Test binaries
 *.test
 
-.srclib-cache
-.srclib-store
-
 grapher/python/pysonar2/tests
 grapher/ruby/rubysonar/target
 grapher/ruby/rubysonar/dependency-reduced-pom.xml

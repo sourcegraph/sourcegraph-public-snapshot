@@ -75,9 +75,8 @@ func serveRepoTree(w http.ResponseWriter, r *http.Request) error {
 	// the heuristic is ~ 2500 lines at avg. 40 chars per line
 	if entry.Type == sourcegraph.FileEntry && len(entry.ContentsString) < (40*2500) {
 		anns, err := backend.Annotations.List(r.Context(), &sourcegraph.AnnotationsListOptions{
-			Entry:        entrySpec,
-			Range:        &opt.FileRange,
-			NoSrclibAnns: opt.NoSrclibAnns,
+			Entry: entrySpec,
+			Range: &opt.FileRange,
 		})
 		if err == nil {
 			res.IncludedAnnotations = anns
