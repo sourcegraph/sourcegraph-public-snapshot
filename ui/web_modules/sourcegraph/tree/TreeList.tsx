@@ -13,7 +13,7 @@ interface Props {
 	repo: string;
 	rev: string;
 	path: string;
-	tree: GQL.ITree;
+	tree: GQL.ITree | null;
 }
 
 export class TreeList extends React.Component<Props, {}> {

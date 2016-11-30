@@ -605,9 +605,13 @@
 						"isDeprecated": false,
 						"name": "root",
 						"type": {
-							"kind": "OBJECT",
-							"name": "Root",
-							"ofType": null
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "Root",
+								"ofType": null
+							}
 						}
 					},
 					{

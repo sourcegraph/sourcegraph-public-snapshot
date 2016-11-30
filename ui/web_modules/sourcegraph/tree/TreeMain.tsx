@@ -46,9 +46,10 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 
 	_redirectToCanonicalURI(props: Props, context: Context): void {
 		if (props.root.repository && props.repo !== props.root.repository.uri) {
+			let uri = props.root.repository.uri;
 			setTimeout(function (): void {
 				let locCopy = cloneDeep(props.location);
-				locCopy.pathname = props.location.pathname.replace(new RegExp(props.repo, "g"), props.root.repository.uri);
+				locCopy.pathname = props.location.pathname.replace(new RegExp(props.repo, "g"), uri);
 				context.router.replace(locCopy);
 			}, 0);
 		}
@@ -71,7 +72,7 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 				repo={this.props.repo}
 				rev={this.props.rev}
 				repository={this.props.root.repository}
-				commit={this.props.root.repository && this.props.root.repository.commit}
+				commit={this.props.root.repository ? this.props.root.repository.commit : { __typename: "", commit: null, cloneInProgress: false }}
 				location={this.props.location}
 				routes={this.props.routes}
 				params={this.props.params}

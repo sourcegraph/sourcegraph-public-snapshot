@@ -140,6 +140,10 @@ class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State>
 	}
 
 	render(): JSX.Element | null {
+		if (!this.props.root.repository) {
+			return null;
+		}
+
 		let branches = this.props.root.repository.branches;
 		if (this.state.query) {
 			branches = branches.filter((name) => fuzzysearch(this.state.query, name));

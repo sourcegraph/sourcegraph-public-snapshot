@@ -66,7 +66,7 @@ class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot 
 				<Container
 					repo={r}
 					commitID={commit ? commit.sha1 : null}
-					files={commit ? commit.tree.files : []}
+					files={(commit && commit.tree) ? commit.tree.files : []}
 					languages={commit ? commit.languages : []}
 					dismissModal={this.dismissModal} />
 			</ModalComp>}

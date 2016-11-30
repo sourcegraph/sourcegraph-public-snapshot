@@ -24,8 +24,8 @@ declare namespace GQL {
 		__typename: string;
 		id: string;
 		sha1: string;
-		tree: ITree;
-		file: IFile;
+		tree: ITree | null;
+		file: IFile | null;
 		languages: Array<string>;
 	}
 
@@ -34,7 +34,7 @@ declare namespace GQL {
 	*/
 	interface ICommitState {
 		__typename: string;
-		commit: ICommit;
+		commit: ICommit | null;
 		cloneInProgress: boolean;
 	}
 
@@ -101,7 +101,7 @@ declare namespace GQL {
 	interface IQuery {
 		__typename: string;
 		root: IRoot;
-		node: Node;
+		node: Node | null;
 	}
 
 	/*
@@ -145,7 +145,7 @@ declare namespace GQL {
 	*/
 	interface IRoot {
 		__typename: string;
-		repository: IRepository;
+		repository: IRepository | null;
 		remoteRepositories: Array<IRemoteRepository>;
 		remoteStarredRepositories: Array<IRemoteRepository>;
 	}

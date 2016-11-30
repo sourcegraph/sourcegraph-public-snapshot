@@ -154,7 +154,7 @@ export class EditorService implements IEditorService {
 				.then(checkStatus)
 				.then(resp => resp.json())
 				.then((resp: GQL.IGraphQLResponseRoot) => {
-					if (!resp.data) {
+					if (!resp.data || !resp.data.root.repository || !resp.data.root.repository.commit.commit || !resp.data.root.repository.commit.commit.file) {
 						throw new Error("file content not available");
 					}
 

@@ -10,7 +10,10 @@ import { treeParam } from "sourcegraph/tree";
 import { FileTree } from "sourcegraph/workbench/fileTree";
 
 class WorkbenchComponent extends React.Component<ControllerProps, {}> {
-	render(): JSX.Element {
+	render(): JSX.Element | null {
+		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
+			return null;
+		}
 		const files = this.props.root.repository.commit.commit.tree.files;
 		return <div style={{
 			display: "flex",

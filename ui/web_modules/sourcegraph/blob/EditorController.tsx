@@ -116,7 +116,7 @@ export class EditorController extends Container<Props, State> {
 		if (!prevProps || (prevProps.repo !== nextProps.repo || prevProps.rev !== nextProps.rev || prevProps.path !== nextProps.path || !isEqual(prevProps.selection, nextProps.selection))) {
 			// Use absolute commit IDs for the editor model URI.
 			// Normalizing repo URI (for example github.com/HvyIndustries/Crane => github.com/HvyIndustries/crane)
-			const uri = URIUtils.pathInRepo(nextProps.repo, nextProps.root.repository.commit.commit.sha1, nextProps.path);
+			const uri = URIUtils.pathInRepo(nextProps.repo, nextProps.root.repository && nextProps.root.repository.commit.commit && nextProps.root.repository.commit.commit.sha1, nextProps.path);
 
 			let range = undefined;
 			if (nextProps.selection) {
@@ -292,7 +292,7 @@ export class EditorController extends Container<Props, State> {
 				repo={this.props.repo}
 				rev={this.props.rev}
 				repository={this.props.root.repository}
-				commit={this.props.root.repository && this.props.root.repository.commit}
+				commit={this.props.root.repository ? this.props.root.repository.commit : { __typename: "", commit: null, cloneInProgress: false }}
 				location={this.props.location}
 				routes={this.props.routes}
 				params={this.props.params}

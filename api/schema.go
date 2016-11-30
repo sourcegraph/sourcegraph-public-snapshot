@@ -11,7 +11,7 @@ interface Node {
 }
 
 type Query {
-	root: Root
+	root: Root!
 	node(id: ID!): Node
 }
 
