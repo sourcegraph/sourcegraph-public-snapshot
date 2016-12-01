@@ -130,11 +130,11 @@ export class GlobalNav extends Container<Props, State> {
 							</div>
 						</div>
 					</Link>
-					<Tabs style={{ display: "inline-block", borderBottom: 0 }}>
+					{context.user && <Tabs style={{ display: "inline-block", borderBottom: 0 }}>
 						<Link to="/" style={{ outline: "none" }}>
 							<TabItem active={isRootRoute(location)}>My repositories</TabItem>
 						</Link>
-					</Tabs>
+					</Tabs>}
 				</FlexContainer>
 
 				<QuickOpenModal repo={repo} rev={rev}
