@@ -91,6 +91,8 @@ export interface Change {
 }
 
 export interface ClientCapabilities {
+	xfilesProvider?: boolean;
+	xcontentProvider?: boolean;
 }
 
 export interface CodeActionContext {
@@ -367,8 +369,9 @@ export interface InitializeError {
 
 export interface InitializeParams {
 	processId?: number;
-	rootPath: string;
-	capabilities?: any;
+	rootPath?: string;
+	initializationOptions?: any;
+	capabilities: any;
 }
 
 export interface InitializeResult {

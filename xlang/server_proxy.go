@@ -366,7 +366,13 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	return c.conn.Call(ctx, "initialize", lspext.InitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
+		InitializeParams: lsp.InitializeParams{
+			RootPath: "file:///",
+			Capabilities: lsp.ClientCapabilities{
+				XFilesProvider:   true,
+				XContentProvider: true,
+			},
+		},
 		OriginalRootPath: c.id.rootPath.String(),
 		Mode:             c.id.mode,
 	}, nil, addTraceMeta(ctx))
