@@ -150,8 +150,10 @@ def test_golden_workflow(d):
     retry(lambda: d.active_elem().send_keys("/"))
     retry(lambda: d.active_elem().send_keys("NewRouter"))
     Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
-    retry(lambda: d.active_elem().send_keys(Keys.ENTER))
-    wait_for(lambda: "mux.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
+    def e():
+        d.active_elem().send_keys(Keys.ENTER)
+        wait_for(lambda: "mux.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
+    retry(e)
 
 def test_find_external_refs(d):
     wd = d.d
