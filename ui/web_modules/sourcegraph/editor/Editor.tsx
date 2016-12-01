@@ -1,3 +1,4 @@
+import * as moment from "moment";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { URIUtils } from "sourcegraph/core/uri";
 import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
@@ -9,6 +10,8 @@ import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
+import "vs/editor/common/editorCommon";
+import "vs/editor/contrib/codelens/browser/codelens";
 
 import { CancellationToken } from "vs/base/common/cancellation";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
@@ -17,12 +20,13 @@ import URI from "vs/base/common/uri";
 import { IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { create as createStandaloneEditor, createModel, onDidCreateModel } from "vs/editor/browser/standalone/standaloneEditor";
-import { registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
+import { registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
 import { Range } from "vs/editor/common/core/range";
 import { IModelChangedEvent, IPosition, IRange, IReadOnlyModel, IWordAtPosition } from "vs/editor/common/editorCommon";
-import { Definition, Hover, Location, ReferenceContext } from "vs/editor/common/modes";
+import { Command, Definition, Hover, ICodeLensSymbol, Location, ReferenceContext } from "vs/editor/common/modes";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
+import { CommandsRegistry } from "vs/platform/commands/common/commands";
 
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 import { IEditor } from "vs/platform/editor/common/editor";
@@ -42,8 +46,10 @@ function normalisePosition(model: IReadOnlyModel, position: IPosition): IPositio
 function cacheKey(model: IReadOnlyModel, position: IPosition): string {
 	return `${model.uri.toString(true)}:${position.lineNumber}:${position.column}`;
 }
+
 const hoverCache = new Map<string, Thenable<Hover>>(); // "single-flight" and caching on word boundaries
 const defCache = new Map<string, Thenable<Definition | null>>(); // "single-flight" and caching on word boundaries
+const codeLensCache = new Map<string, Thenable<ICodeLensSymbol[]>>();
 
 // HACK: don't show "Right-click to view references" on primitive types; if done properly, this
 // should be determined by a type property on the hover response.
@@ -96,7 +102,6 @@ export class Editor implements IDisposable {
 		}));
 
 		this._editorService = new EditorService();
-
 		let initialModel = createModel("", "text/plain");
 		this._editor = createStandaloneEditor(elem, {
 			// If we don't specify an initial model, Monaco will
@@ -114,6 +119,7 @@ export class Editor implements IDisposable {
 			lineHeight: 21,
 			theme: "vs-dark",
 			renderLineHighlight: true,
+			codeLens: window.localStorage["feature_flag_code_lens"],
 		}, { editorService: this._editorService });
 
 		// WORKAROUND: Remove the initial model from the configuration to avoid infinite recursion when the config gets updated internally.
@@ -233,6 +239,13 @@ export class Editor implements IDisposable {
 		} else {
 			console.error("Didn't set textarea to readOnly");
 		}
+
+		CommandsRegistry.registerCommand("codelens.authorship.commit", (accessor, args) => {
+			AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent({
+				commitURL: args,
+			});
+			window.open(`https://${args}`, "_newtab");
+		});
 	}
 
 	// Register services for modes (languages) when new models are added.
@@ -241,6 +254,7 @@ export class Editor implements IDisposable {
 			this._toDispose.push(registerHoverProvider(mode, this));
 			this._toDispose.push(registerDefinitionProvider(mode, this));
 			this._toDispose.push(registerReferenceProvider(mode, this));
+			this._toDispose.push(registerCodeLensProvider(mode, this));
 			this._initializedModes.add(mode);
 		}
 	};
@@ -429,6 +443,40 @@ export class Editor implements IDisposable {
 			// Ensure tokens that don't identifier class but do have hover info get a pointer cursor.
 			el.style.cursor = "pointer";
 		}
+	}
+
+	// Necessary implementation for the code lens to be rendered. The code lens is implemented inside of provideCodeLenses so it is only necessary
+	// to return the lens.
+	resolveCodeLens(model: IReadOnlyModel, codeLens: ICodeLensSymbol, token: CancellationToken): ICodeLensSymbol | Thenable<ICodeLensSymbol> {
+		return codeLens;
+	}
+
+	provideCodeLenses(model: IReadOnlyModel, token: CancellationToken): ICodeLensSymbol[] | Thenable<ICodeLensSymbol[]> {
+		const key = model.uri.toString(true);
+		const cached = codeLensCache.get(key);
+		if (cached) {
+			return cached;
+		}
+
+		let blameData = this._editorService.getEditorBlameData();
+		let codeLenses: ICodeLensSymbol[] = [];
+		for (let i = 0; i < blameData.length; i++) {
+			const {repo, rev} = URIUtils.repoParams(model.uri);
+			const blameLine = blameData[i];
+			const timeSince = moment(new Date(blameLine.date)).fromNow();
+			codeLenses.push({
+				id: `${blameLine.rev}${blameLine.startLine}-${blameLine.endLine}`,
+				range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),
+				command: {
+					id: "codelens.authorship.commit",
+					title: `${blameLine.name} ${timeSince}`,
+					arguments: [`${repo}/commit/${blameLine.rev}#diff-${rev}`],
+				} as Command,
+			});
+		}
+		const p = Promise.resolve(codeLenses);
+		codeLensCache.set(key, p);
+		return p;
 	}
 
 	public layout(): void {

@@ -57,6 +57,7 @@
     "glamor": "2.18.2",
     "isomorphic-fetch": "2.2.1",
     "lodash": "4.17.2",
+    "moment": "^2.17.0",
     "monaco-languages": "0.6.1",
     "monaco-typescript": "2.0.1",
     "raven-js": "3.8.1",

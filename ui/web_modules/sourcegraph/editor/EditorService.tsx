@@ -29,6 +29,8 @@ export class EditorService implements IEditorService {
 
 	private _onDidOpenEditor: (e: IEditorOpenedEvent) => void;
 
+	private _fileBlame: GQL.IHunk[] = [];
+
 	public setEditor(editor: editorCommon.IEditor): void {
 		this.editor = new SimpleEditor(editor);
 	}
@@ -98,6 +100,14 @@ export class EditorService implements IEditorService {
 		});
 	}
 
+	private setEditorBlameData(data: GQL.IHunk[]): void {
+		this._fileBlame = data;
+	}
+
+	public getEditorBlameData(): GQL.IHunk[] {
+		return this._fileBlame;
+	}
+
 	private resolveModel(data: IResourceInput, refresh?: boolean): TPromise<editorCommon.IModel> {
 		const existingModel = getModel(data.resource);
 		if (existingModel) {
@@ -105,6 +115,16 @@ export class EditorService implements IEditorService {
 		}
 
 		const {repo, rev, path} = URIUtils.repoParams(data.resource);
+		const blameBody = window.localStorage["feature_flag_code_lens"] ? `blame(startLine: 0, endLine: 0) {
+												name
+												email
+												rev
+												date
+												startLine
+												endLine
+												startByte
+												endByte
+											}` : "";
 		return TPromise.wrap(
 			fetch(`/.api/graphql`, {
 				method: "POST",
@@ -119,6 +139,7 @@ export class EditorService implements IEditorService {
 									commit {
 										file(path: $path) {
 											content
+											${blameBody}
 										}
 									}
 								}
@@ -135,6 +156,7 @@ export class EditorService implements IEditorService {
 						throw new Error("file content not available");
 					}
 					// Call getModel again in case we lost a race.
+					this.setEditorBlameData(resp.data.root.repository.commit.commit.file.blame);
 					return getModel(data.resource) || createModel(resp.data.root.repository.commit.commit.file.content, getModeByFilename(path), data.resource);
 				})
 				.catch(err => err)
