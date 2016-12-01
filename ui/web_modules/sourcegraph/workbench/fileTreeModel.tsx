@@ -30,7 +30,8 @@ export function nodePathFromPath(root: Node, path: string): Node[] {
 	parts.forEach(name => {
 		const next = cur.children.find(x => x.label === name);
 		if (!next) {
-			throw "File path not found in file tree";
+			console.error(`${path} not found in tree `, root);
+			return [];
 		}
 		cur = next;
 		nodes.push(cur);
