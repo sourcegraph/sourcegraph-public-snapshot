@@ -16,11 +16,11 @@ class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 			flexDirection: "row",
 			flex: "auto",
 		}}>
-			<FileTree
+			{localStorage["file-tree"] && <FileTree
 				files={files}
 				repo={this.props.repo}
 				rev={this.props.rev}
-				path={this.props.path} />
+				path={this.props.path} />}
 			<EditorController {...this.props} />
 		</div>;
 	}
