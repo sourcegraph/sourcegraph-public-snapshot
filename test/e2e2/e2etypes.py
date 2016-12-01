@@ -233,3 +233,15 @@ class Util(object):
             for i in xrange(0, 40): # network events might have changed the list, so try one more time from the top
                 d.active_elem().send_keys(Keys.UP)
         raise E2EError("did not find search result '%s'" % result_text)
+
+    # wait_for_all_network_indicators_to_be_invisible_with_jiggle is a
+    # kludge to address
+    # https://github.com/sourcegraph/sourcegraph/issues/2391
+    @staticmethod
+    def wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4):
+        def f():
+            # "jiggle" the switch
+            d.active_elem().send_keys(Keys.SPACE)
+            d.active_elem().send_keys(Keys.BACKSPACE)
+            wait_for(d.all_network_indicators_are_invisible, max_wait=jiggle_wait)
+        retry(f)

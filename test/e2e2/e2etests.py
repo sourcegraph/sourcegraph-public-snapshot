@@ -23,14 +23,7 @@ def test_repo_jump_to(d):
     for query, result_text, url_path in repo_queries:
         d.active_elem().send_keys("/")
         d.active_elem().send_keys(query)
-
-        # kludge: jiggle the switch (addresses https://github.com/sourcegraph/sourcegraph/issues/2391)
-        def f():
-            d.active_elem().send_keys(Keys.SPACE)
-            d.active_elem().send_keys(Keys.BACKSPACE)
-            wait_for(d.all_network_indicators_are_invisible, max_wait=5)
-        retry(f)
-
+        Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=5)
         wait_for(lambda: len(d.find_search_modal_results(result_text, exact_match=True)) > 0)
         Util.select_search_result_using_arrow_keys(d, result_text, exact_match=True)
         wait_for(lambda: wd.current_url == d.sg_url(url_path), text=('wd.current_url == "%s"' % d.sg_url(url_path)))
@@ -156,7 +149,7 @@ def test_golden_workflow(d):
     # Jump to modal to "NewRouter"
     retry(lambda: d.active_elem().send_keys("/"))
     retry(lambda: d.active_elem().send_keys("NewRouter"))
-    wait_for(d.all_network_indicators_are_invisible, max_wait=4)
+    Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
     retry(lambda: d.active_elem().send_keys(Keys.ENTER))
     wait_for(lambda: "mux.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
 
@@ -184,7 +177,7 @@ def test_find_external_refs(d):
         # Jump to symbol
         d.active_elem().send_keys("/")
         d.active_elem().send_keys(test['symbol'])
-        wait_for(d.all_network_indicators_are_invisible, max_wait=4)
+        Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
         wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
         Util.select_search_result_using_arrow_keys(d, test['symbol'])
 
