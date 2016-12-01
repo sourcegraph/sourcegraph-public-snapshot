@@ -6,6 +6,7 @@ import { Affix, Button, FlexContainer, Heading, Hero, Input, List, Panel } from 
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
+import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 function TLDR({style}: { style?: React.CSSProperties; }): JSX.Element {
@@ -98,7 +99,7 @@ export function MasterPlanPage(): JSX.Element {
 			</div>
 			<div style={typography.size[5]}>
 				<p style={typography.size[4]}>
-					Today, Sourcegraph gives you the power of an IDE (jump-to-def, search, and find-references) when reading code on the web, either on <a href="https://sourcegraph.com">Sourcegraph.com</a>, or on GitHub with the <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack">Sourcegraph Chrome extension</a>.
+					Today, Sourcegraph gives you the power of an IDE (jump-to-def, search, and find-references) when reading code on the web, either on <a href="https://sourcegraph.com">Sourcegraph.com</a>, or on GitHub with the <a onClick={installChromeExtensionClicked}>Sourcegraph Chrome extension</a>.
 				</p>
 				<p style={typography.size[4]}>
 					What most people don’t know is that our long-term vision is to make it so everyone, in every community, in every country, and in every industry—not just the ones working at the half-dozen dominant tech companies—can create products using the best technology. We believe this is the only way the world will sustain broad economic growth and build the innovations we need over the next 100 years in transportation, health care, energy, AI, communication, space travel, etc.
@@ -132,7 +133,7 @@ export function MasterPlanPage(): JSX.Element {
 				}}>
 					<div style={typography.size[6]}>
 						<p>
-							<Link to="/">Sourcegraph</Link> currently supports 4 languages on the web and <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank">Chrome extension</a>, with many more planned by the end of 2016.</p>
+							<Link to="/">Sourcegraph</Link> currently supports 4 languages on the web and <a onClick={installChromeExtensionClicked}>Chrome extension</a>, with many more planned by the end of 2016.</p>
 						<List>
 							<li>Go &mdash; <Link target="_blank" to="/github.com/gorilla/websocket/-/blob/client.go">try it</Link></li>
 							<li>TypeScript (beta) &mdash; <Link target="_blank" to="/github.com/ReactiveX/rxjs@master/-/blob/src/scheduler/AsyncAction.ts#L23">try it</Link></li>
@@ -235,7 +236,7 @@ export function MasterPlanPage(): JSX.Element {
 					Here’s how we’ll bring continuous, intelligent code review (as described above) to every team:
 				</p>
 				<ol>
-					<li>Add basic code intelligence (jump-to-def, hover, find-references, etc.) to diff views in code review tools (GitHub pull requests, etc.) &mdash; <strong><a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack">&#x2714; done</a></strong></li>
+					<li>Add basic code intelligence (jump-to-def, hover, find-references, etc.) to diff views in code review tools (GitHub pull requests, etc.) &mdash; <strong><a onClick={installChromeExtensionClicked}>&#x2714; done</a></strong></li>
 					<li>Apply code intelligence to provide an impact analysis checklist for every change in every code review tool</li>
 					<li>Create a way to enable quick sharing of code in your working tree</li>
 					<li>Make this all realtime, automatically updated as you make changes in your editor</li>
