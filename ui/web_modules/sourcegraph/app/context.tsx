@@ -41,7 +41,7 @@ class Context {
 	}
 
 	hasChromeExtensionInstalled(): boolean {
-		return document.getElementById("sourcegraph-app-bootstrap") !== null;
+		return document.getElementById("sourcegraph-app-background") !== null;
 	}
 }
 

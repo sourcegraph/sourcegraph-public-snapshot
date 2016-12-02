@@ -82,7 +82,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 
 	_isChromeExtensionInstalled(): boolean {
 		// Check for a invisible element injected by the extension on https://(www.)?sourcegraph.com/*
-		return document.getElementById("sourcegraph-app-bootstrap") !== null;
+		return document.getElementById("sourcegraph-app-background") !== null;
 	}
 
 	render(): JSX.Element | null {
