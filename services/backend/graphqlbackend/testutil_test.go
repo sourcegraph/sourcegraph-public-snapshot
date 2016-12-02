@@ -7,5 +7,6 @@ import (
 
 func resetMocks() {
 	localstore.Mocks = localstore.MockStores{}
+	localstore.Graph = &localstore.Mocks.Graph
 	backend.Mocks = backend.MockServices{}
 }

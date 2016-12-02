@@ -14,24 +14,25 @@ import (
 )
 
 type MockRepos struct {
-	Get              func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
-	Resolve          func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
-	List             func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListStarredRepos func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
-	ListContributors func(v0 context.Context, v1 *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error)
-	Create           func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
-	Update           func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
-	Delete           func(v0 context.Context, v1 *sourcegraph.RepoSpec) error
-	GetConfig        func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
-	GetCommit        func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
-	ResolveRev       func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
-	ListCommits      func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
-	ListBranches     func(v0 context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
-	ListTags         func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
-	EnableWebhook    func(v0 context.Context, v1 *sourcegraph.RepoWebhookOptions) error
-	ListDeps         func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
-	ListCommitters   func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
-	GetInventory     func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	Get                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	Resolve                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
+	List                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListStarredRepos            func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
+	ListContributors            func(v0 context.Context, v1 *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error)
+	Create                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
+	Update                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
+	Delete                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) error
+	GetConfig                   func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
+	GetCommit                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ResolveRev                  func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
+	ListCommits                 func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
+	ListBranches                func(v0 context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
+	ListTags                    func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
+	EnableWebhook               func(v0 context.Context, v1 *sourcegraph.RepoWebhookOptions) error
+	ListDeps                    func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
+	ListCommitters              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	GetSrclibDataVersionForPath func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
+	GetInventory                func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
@@ -193,6 +194,15 @@ func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commi
 	s.GetCommit = func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 		*called = true
 		return commit, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockGetSrclibDataVersionForPath_Current(t *testing.T) (called *bool) {
+	called = new(bool)
+	s.GetSrclibDataVersionForPath = func(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
+		*called = true
+		return &sourcegraph.SrclibDataVersion{CommitID: entry.RepoRev.CommitID}, nil
 	}
 	return
 }

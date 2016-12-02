@@ -1,0 +1,32 @@
+#!/bin/bash
+
+case $1 in
+    scan)
+        echo '['
+		echo '{"Type":"sample","Name":"myunit0","Dependencies":[{"name":"mydep"}],"Ops":{"graph":null,"depresolve":null}}'
+		for i in {1..5}; do
+		echo ',{"Type":"sample","Name":"myunit'$i'","Dependencies":[{"name":"mydep"}],"Ops":{"graph":null,"depresolve":null}}'
+		done
+		echo ']'
+        ;;
+    graph)
+		# Hack to emit different defs for different source units, to
+		# aid in testing and verifying behavior when there are
+		# multiple source units.
+		UNIT_JSON=$(cat) # read from stdin
+		unit_num_re='myunit([0-9]+)'
+		if [[ $UNIT_JSON =~ $unit_num_re ]]; then
+			UNIT_NUM=${BASH_REMATCH[1]}
+		fi
+        echo '{"Defs":['
+		echo '{"Repo":"","UnitType":"sample","Unit":".","Path":"mydef'$UNIT_NUM'","Name":"mydef'$UNIT_NUM'x","File":"f'$UNIT_NUM'","DefStart":123,"DefEnd":456,"Exported":true,"Kind":"var","TreePath":"mydef'$UNIT_NUM'","Data":{}}'
+		echo '],"Refs":[],"Docs":[]}'
+        ;;
+    depresolve)
+        echo '[{"Raw":{"name":"mydep"},"Target":{"ToRepoCloneURL":"https://github.com/example/repo"}}]'
+        ;;
+    *)
+        echo Unknown command: $1 >&2
+        exit 1
+        ;;
+esac

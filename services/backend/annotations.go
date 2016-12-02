@@ -1,7 +1,10 @@
 package backend
 
 import (
+	"bytes"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -10,8 +13,14 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	annotationspkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/annotations"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/syntaxhighlight"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/srclib/graph"
+	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 var Annotations = &annotations{}
@@ -59,6 +68,10 @@ func (s *annotations) List(ctx context.Context, opt *sourcegraph.AnnotationsList
 
 	funcs := []func(context.Context, *sourcegraph.AnnotationsListOptions, *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error){
 		s.listSyntaxHighlights,
+	}
+
+	if !opt.NoSrclibAnns {
+		funcs = append(funcs, s.listRefs)
 	}
 
 	par := parallel.NewRun(len(funcs))
@@ -131,6 +144,68 @@ func selectAppropriateLexer(path string) syntaxhighlight.Lexer {
 	return lexer
 }
 
+func (s *annotations) listRefs(ctx context.Context, opt *sourcegraph.AnnotationsListOptions, entry *sourcegraph.TreeEntry) ([]*sourcegraph.Annotation, error) {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.listRefs", opt.Entry.RepoRev.Repo); err != nil {
+		return nil, err
+	}
+
+	if opt.Entry.Path == "" {
+		return nil, fmt.Errorf("listRefs: no file path specified for file in %v", opt.Entry.RepoRev)
+	}
+
+	repo, err := (&repos{}).Get(ctx, &sourcegraph.RepoSpec{ID: opt.Entry.RepoRev.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	filters := []srcstore.RefFilter{
+		srcstore.ByRepos(repo.URI),
+		srcstore.ByCommitIDs(opt.Entry.RepoRev.CommitID),
+		srcstore.ByFiles(true, opt.Entry.Path),
+	}
+	if opt.Range != nil {
+		start := uint32(opt.Range.StartByte)
+		end := uint32(opt.Range.EndByte)
+		if start != 0 {
+			filters = append(filters, srcstore.RefFilterFunc(func(ref *graph.Ref) bool {
+				return ref.Start >= start
+			}))
+		}
+		if end != 0 {
+			filters = append(filters, srcstore.RefFilterFunc(func(ref *graph.Ref) bool {
+				return ref.End <= end
+			}))
+		}
+	}
+
+	refs, err := localstore.Graph.Refs(filters...)
+	if err != nil {
+		return nil, err
+	}
+
+	anns := make([]*sourcegraph.Annotation, len(refs))
+	for i, ref := range refs {
+		def := ref.DefKey()
+		var u string
+		if strings.HasPrefix(def.Path, "https://") || strings.HasPrefix(def.Path, "http://") {
+			// If the ref's def path is an absolute URL, set the annotation's URL to be that.
+			// This is used in some languages (e.g., JavaScript, CSS) for references to builtin
+			// or standard library definitions.
+			u = def.Path
+		} else {
+			u = approuter.Rel.URLToDefKey(def).String()
+		}
+
+		anns[i] = &sourcegraph.Annotation{
+			URL:       u,
+			Def:       ref.Def,
+			StartByte: ref.Start,
+			EndByte:   ref.End,
+		}
+	}
+	return anns, nil
+}
+
 func computeLineStartBytes(data []byte) []uint32 {
 	if len(data) == 0 {
 		return []uint32{}
@@ -144,8 +219,96 @@ func computeLineStartBytes(data []byte) []uint32 {
 	return pos
 }
 
+func (s *annotations) GetDefAtPos(ctx context.Context, opt *sourcegraph.AnnotationsGetDefAtPosOptions) (res *sourcegraph.DefSpec, err error) {
+	if Mocks.Annotations.GetDefAtPos != nil {
+		return Mocks.Annotations.GetDefAtPos(ctx, opt)
+	}
+
+	ctx, done := trace(ctx, "Annotations", "GetDefAtPos", opt, &err)
+	defer done()
+
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Annotations.GetDefAtPos", opt.Entry.RepoRev.Repo); err != nil {
+		return nil, err
+	}
+
+	if opt.Entry.Path == "" {
+		return nil, fmt.Errorf("GetDefAtPos: no file path specified for file in %v", opt.Entry.RepoRev)
+	}
+
+	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: opt.Entry.RepoRev.Repo})
+	if err != nil {
+		return nil, err
+	}
+
+	entry, err := RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
+		Entry: opt.Entry,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	offset := uint32(0)
+	contents := entry.Contents
+	for line := opt.Line; line > 0; line-- {
+		eol := bytes.IndexByte(contents, '\n')
+		if eol == -1 {
+			break
+		}
+		offset += uint32(eol + 1)
+		contents = contents[eol+1:]
+	}
+	offset += opt.Character
+
+	filters := []srcstore.RefFilter{
+		srcstore.ByRepos(repo.URI),
+		srcstore.ByCommitIDs(opt.Entry.RepoRev.CommitID),
+		srcstore.ByFiles(true, opt.Entry.Path),
+		srcstore.RefFilterFunc(func(ref *graph.Ref) bool {
+			return ref.Start <= offset && ref.End > offset
+		}),
+	}
+
+	refs, err := localstore.Graph.Refs(filters...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(refs) == 0 {
+		return nil, legacyerr.Errorf(legacyerr.NotFound, "no ref found")
+	}
+
+	r := refs[0]
+	defRepo, err := localstore.Repos.GetByURI(ctx, r.DefRepo)
+	if err != nil {
+		return nil, err
+	}
+
+	var defCommitID string
+	switch defRepo.ID {
+	case opt.Entry.RepoRev.Repo:
+		defCommitID = opt.Entry.RepoRev.CommitID
+	default:
+		defaultRev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+			Repo: defRepo.ID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		defCommitID = defaultRev.CommitID
+	}
+
+	return &sourcegraph.DefSpec{
+		Repo:     defRepo.ID,
+		CommitID: defCommitID,
+		UnitType: r.DefUnitType,
+		Unit:     r.DefUnit,
+		Path:     r.DefPath,
+	}, nil
+}
+
 type MockAnnotations struct {
-	List func(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+	List        func(v0 context.Context, v1 *sourcegraph.AnnotationsListOptions) (*sourcegraph.AnnotationList, error)
+	GetDefAtPos func(v0 context.Context, v1 *sourcegraph.AnnotationsGetDefAtPosOptions) (*sourcegraph.DefSpec, error)
 }
 
 func (s *MockAnnotations) MockList(t *testing.T, wantAnns ...*sourcegraph.Annotation) (called *bool) {

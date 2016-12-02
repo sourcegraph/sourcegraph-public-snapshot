@@ -1,0 +1,12 @@
+language: go # dummy
+
+before_install:
+  - echo nothing to do
+install:
+  - sudo wget -NO /usr/local/bin/src https://github.com/sourcegraph/srclib/releases/download/v0.0.8/src
+  - sudo chmod +x /usr/local/bin/src
+  - src toolchain add sourcegraph.com/sourcegraph/srclib-sample
+before_script:
+  - echo nothing to do
+script:
+  - src test -m program

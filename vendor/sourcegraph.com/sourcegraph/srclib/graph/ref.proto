@@ -1,0 +1,60 @@
+syntax = "proto3";
+package graph;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+// Ref represents a reference from source code to a Def.
+message Ref {
+    // DefRepo is the repository URI of the Def that this Ref refers
+    // to.
+    string DefRepo = 1 [(gogoproto.jsontag) = "DefRepo,omitempty"];
+
+    // DefUnitType is the source unit type of the Def that this Ref refers to.
+    string DefUnitType = 3 [(gogoproto.jsontag) = "DefUnitType,omitempty"];
+
+    // DefUnit is the name of the source unit that this ref exists in.
+    string DefUnit = 4 [(gogoproto.jsontag) = "DefUnit,omitempty"];
+    
+    // Path is the path of the Def that this ref refers to.
+    string DefPath = 5 [(gogoproto.jsontag) = "DefPath"];
+
+
+    // Repo is the VCS repository in which this ref exists.
+    string Repo = 6 [(gogoproto.jsontag) = "Repo,omitempty"];
+
+    // CommitID is the ID of the VCS commit that this ref exists
+    // in. The CommitID is always a full commit ID (40 hexadecimal
+    // characters for git and hg), never a branch or tag name.
+    string CommitID = 7 [(gogoproto.jsontag) = "CommitID,omitempty"];
+
+    // UnitType is the type name of the source unit that this ref
+    // exists in.
+    string UnitType = 8 [(gogoproto.jsontag) = "UnitType,omitempty"];
+
+    // Unit is the name of the source unit that this ref exists in.
+    string Unit = 9 [(gogoproto.jsontag) = "Unit,omitempty"];
+
+    // Def is true if this Ref spans the name of the Def it points to.
+    bool Def = 17 [(gogoproto.jsontag) = "Def,omitempty"];
+
+    // File is the filename in which this Ref exists.
+    string File = 10 [(gogoproto.jsontag) = "File,omitempty"];
+
+    // Start is the byte offset of this ref's first byte in File.
+    uint32 Start = 11 [(gogoproto.jsontag) = "Start"];
+
+    // End is the byte offset of this ref's last byte in File.
+    uint32 End = 12 [(gogoproto.jsontag) = "End"];
+};
+
+message RefDefKey {
+    string DefRepo = 1 [(gogoproto.jsontag) = "DefRepo,omitempty"];
+    string DefUnitType = 3 [(gogoproto.jsontag) = "DefUnitType,omitempty"];
+    string DefUnit = 4 [(gogoproto.jsontag) = "DefUnit,omitempty"];
+    string DefPath = 5 [(gogoproto.jsontag) = "DefPath"];
+};

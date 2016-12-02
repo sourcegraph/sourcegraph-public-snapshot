@@ -1,0 +1,54 @@
+syntax = "proto3";
+package ann;
+
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+
+option (gogoproto.goproto_getters_all) = false;
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.sizer_all) = true;
+
+// An Ann is a source code annotation.
+//
+// Annotations are unique on (Repo, CommitID, UnitType, Unit, File,
+// StartLine, EndLine, Type).
+message Ann {
+    // Repo is the VCS repository in which this ann exists.
+    string Repo = 1 [(gogoproto.jsontag) = "Repo,omitempty"];
+
+    // CommitID is the ID of the VCS commit that this ann exists
+    // in. The CommitID is always a full commit ID (40 hexadecimal
+    // characters for git and hg), never a branch or tag name.
+    string CommitID = 2 [(gogoproto.jsontag) = "CommitID,omitempty"];
+
+    // UnitType is the source unit type that the annotation exists
+    // on. It is either the source unit type during whose processing
+    // the annotation was detected/created. Multiple annotations may
+    // exist on the same file from different source unit types if a
+    // file is contained in multiple source units.
+    string UnitType = 3 [(gogoproto.jsontag) = "UnitType,omitempty"];
+
+    // Unit is the name of the source unit that this ann exists in.
+    string Unit = 4 [(gogoproto.jsontag) = "Unit,omitempty"];
+
+    // File is the filename in which this Ann exists.
+    string File = 5 [(gogoproto.jsontag) = "File,omitempty"];
+
+    // TODO(sqs): Add byte offset fields. Add back byte offset fixups to grapher/grapher.go when done.
+
+    // StartLine is the line number (inclusive, 1-indexed) of the
+    // beginning of the annotation.
+    uint32 StartLine = 6 [(gogoproto.jsontag) = "StartLine"];
+
+    // EndLine is the line number (inclusive, 1-indexed) of the end of
+    // the annotation.
+    uint32 EndLine = 7 [(gogoproto.jsontag) = "EndLine"];
+
+    // Type is the type of the annotation. See this package's type
+    // constants for a list of possible types.
+    string Type = 8 [(gogoproto.jsontag) = "Type"];
+
+    // Data contains arbitrary JSON data that is specific to this
+    // annotation type (e.g., the link URL for Link annotations).
+    bytes Data = 9 [(gogoproto.casttype) = "sourcegraph.com/sqs/pbtypes.RawMessage", (gogoproto.jsontag) = "Data,omitempty"];
+};

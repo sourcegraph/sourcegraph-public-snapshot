@@ -34,6 +34,7 @@ func main() {
 	}
 
 	packages := []string{
+		"sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/srclib/graph",
 		"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs",
 		"sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/go-langserver/pkg/lsp",
 		"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph",

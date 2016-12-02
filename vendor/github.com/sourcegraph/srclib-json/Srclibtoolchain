@@ -1,0 +1,25 @@
+{
+  "Tools": [
+    {
+      "Subcmd": "scan",
+      "Op": "scan",
+      "SourceUnitTypes": [
+        "json"
+      ]
+    },
+    {
+      "Subcmd": "graph",
+      "Op": "graph",
+      "SourceUnitTypes": [
+        "json"
+      ]
+    }
+  ],
+  "Bundle": {
+    "Paths": [
+		"Srclibtoolchain",
+		".bin",
+		".bin/srclib-json"
+	]
+  }
+}

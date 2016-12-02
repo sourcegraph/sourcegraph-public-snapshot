@@ -285,6 +285,50 @@ func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sou
 	return allowed, nil
 }
 
+// VerifyUserHasReadAccessToDefRepoRefs filters out any DefRepoRefs which the
+// user does not have access to (e.g. ones originating from private repos). It
+// consults with the Postgres DB (Repos.Get) and GitHub (via VerifyUserHasReadAccessAll)
+// in order to quickly filter the refs. The returned list is the ones the user
+// has access to.
+func VerifyUserHasReadAccessToDefRepoRefs(ctx context.Context, method string, repoRefs []*sourcegraph.DeprecatedDefRepoRef) ([]*sourcegraph.DeprecatedDefRepoRef, error) {
+	// Build a list of repos that we must check for access.
+	repos := make([]*sourcegraph.Repo, 0, len(repoRefs))
+	for _, r := range repoRefs {
+		// SECURITY: We must get the entire repo object by URI, or else we
+		// would be missing the Private field thus making all private repos
+		// public in the eyes of VerifyUserHasReadAccessAll. We do not use
+		// standard Repos.GetByURI as that would perform a GitHub API request
+		// for each repo.
+		repo, err := Repos.UnsafeDangerousGetByURI(ctx, r.Repo)
+		if err != nil {
+			return nil, err
+		}
+		repos = append(repos, repo)
+	}
+
+	// Perform the access check.
+	allowed, err := VerifyUserHasReadAccessAll(ctx, method, repos)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a map of repo URIs we can access.
+	allowedURIs := make(map[string]struct{}, len(allowed))
+	for _, allowed := range allowed {
+		allowedURIs[allowed.URI] = struct{}{}
+	}
+
+	// Formulate the final list of repoRefs the user can access.
+	final := make([]*sourcegraph.DeprecatedDefRepoRef, 0, len(repoRefs))
+	for _, repoRef := range repoRefs {
+		if _, allowed := allowedURIs[repoRef.Repo]; !allowed {
+			continue
+		}
+		final = append(final, repoRef)
+	}
+	return final, nil
+}
+
 // VerifyActorHasWriteAccess checks if the given actor is authorized to make
 // write requests to this server.
 //

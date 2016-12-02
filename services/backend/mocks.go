@@ -19,12 +19,14 @@ type MockServices struct {
 	MirrorRepos MockMirrorRepos
 	RepoTree    MockRepoTree
 	Repos       MockRepos
+	Search      MockSearch
 	Orgs        MockOrgs
 }
 
 // testContext creates a new context.Context for use by tests
 func testContext() context.Context {
 	localstore.Mocks = localstore.MockStores{}
+	localstore.Graph = &localstore.Mocks.Graph
 	Mocks = MockServices{}
 
 	ctx := context.Background()

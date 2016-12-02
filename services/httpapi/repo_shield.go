@@ -21,6 +21,16 @@ func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "Defs.TotalRefs")
 	}
 
+	deprTotalRefs, deprErr := backend.Defs.DeprecatedTotalRefs(r.Context(), repo.URI)
+	if deprErr != nil && totalRefs == 0 {
+		return errors.Wrap(deprErr, "Defs.DeprecatedTotalRefs")
+	}
+	if deprTotalRefs > totalRefs {
+		w.Header().Set("X-Sourcegraph-Datatype", "legacy") // for debugging only, can remove later.
+		totalRefs = deprTotalRefs
+	} else {
+		w.Header().Set("X-Sourcegraph-Datatype", "xlang") // for debugging only, can remove later.
+	}
 	w.Header().Set("X-Sourcegraph-Exact-Count", fmt.Sprint(totalRefs))
 
 	// Format e.g. "1,399" as "1.3k".

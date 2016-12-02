@@ -1,4 +1,4 @@
-package resolveutil
+package depresolve
 
 import (
 	"fmt"
@@ -8,37 +8,12 @@ import (
 
 	"github.com/golang/gddo/gosrc"
 	"golang.org/x/tools/go/vcs"
+	"sourcegraph.com/sourcegraph/srclib/dep"
 )
 
-// ResolvedTarget represents a resolved dependency target.
-type ResolvedTarget struct {
-	// ToRepoCloneURL is the clone URL of the repository that is depended on.
-	//
-	// When graphers emit ResolvedDependencies, they should fill in this field,
-	// not ToRepo, so that the dependent repository can be added if it doesn't
-	// exist. The ToRepo URI alone does not specify enough information to add
-	// the repository (because it doesn't specify the VCS type, scheme, etc.).
-	ToRepoCloneURL string
-
-	// ToUnit is the name of the source unit that is depended on.
-	ToUnit string
-
-	// ToUnitType is the type of the source unit that is depended on.
-	ToUnitType string
-
-	// ToVersion is the version of the dependent repository (if known),
-	// according to whatever version string specifier is used by FromRepo's
-	// dependency management system.
-	ToVersionString string
-
-	// ToRevSpec specifies the desired VCS revision of the dependent repository
-	// (if known).
-	ToRevSpec string
-}
-
-func ResolveImportPath(importPath string) (*ResolvedTarget, error) {
+func ResolveImportPath(importPath string) (*dep.ResolvedTarget, error) {
 	// Handle some special (and edge) cases faster for performance and corner-cases.
-	target := &ResolvedTarget{ToUnit: importPath, ToUnitType: "GoPackage"}
+	target := &dep.ResolvedTarget{ToUnit: importPath, ToUnitType: "GoPackage"}
 	switch {
 	// CGO package "C"
 	case importPath == "C":

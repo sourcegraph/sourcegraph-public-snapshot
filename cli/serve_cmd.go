@@ -37,6 +37,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/graphstoreutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
@@ -47,6 +48,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
+	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 
 var (
@@ -69,7 +71,13 @@ var (
 
 	reposDir   = os.ExpandEnv(env.Get("SRC_REPOS_DIR", "$SGPATH/repos", "root dir containing repos"))
 	gitservers = env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers; a local gitserver process is used by default")
+
+	graphstoreRoot = os.ExpandEnv(env.Get("SRC_GRAPHSTORE_ROOT", "$SGPATH/repos", "root dir, HTTP VFS (http[s]://...), or S3 bucket (s3://...) in which to store graph data"))
 )
+
+func init() {
+	srclib.CacheLocalRepo = false
+}
 
 func configureAppURL() (*url.URL, error) {
 	var hostPort string
@@ -168,6 +176,8 @@ func Main() error {
 		return err
 	}
 
+	log15.Debug("GraphStore", "at", graphstoreRoot)
+
 	for _, f := range cli.ServeInit {
 		f()
 	}
@@ -183,6 +193,8 @@ func Main() error {
 	if err != nil {
 		return err
 	}
+
+	backend.SetGraphStore(graphstoreutil.New(graphstoreRoot, nil))
 
 	// Server identity keypair
 	if idKeyData != "" {
