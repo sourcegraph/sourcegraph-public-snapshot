@@ -216,6 +216,9 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 
 	getBlobUrl(): string {
+		if (this.isDelta) {
+			return `https://sourcegraph.com/${this.headRepoURI}${this.headCommitID ? `@${this.headCommitID}` : ""}/-/blob/${this.props.path}`;
+		}
 		return `https://sourcegraph.com/${this.props.repoURI}${this.rev ? `@${this.rev}` : ""}/-/blob/${this.props.path}`;
 	}
 
