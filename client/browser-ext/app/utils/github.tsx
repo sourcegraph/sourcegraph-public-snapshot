@@ -51,13 +51,20 @@ export function createBlobAnnotatorMount(fileContainer: HTMLElement): HTMLElemen
 		return null;
 	}
 
+	const existingMount = fileContainer.querySelector(".sourcegraph-app-annotator");
+	if (existingMount) {
+		// Make this function idempotent; no need to create a mount twice.
+		return existingMount as HTMLElement;
+	}
+
 	const mountEl = document.createElement("div");
 	mountEl.style.display = "inline-block";
 	mountEl.className = "sourcegraph-app-annotator";
 
 	const fileActions = fileContainer.querySelector(".file-actions");
 	if (!fileActions) {
-		throw new Error("cannot locate BlobAnnotator injection site");
+		// E.g. snippets on the PR conversation view.
+		return null;
 	}
 
 	const buttonGroup = fileActions.querySelector(".BtnGroup");

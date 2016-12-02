@@ -240,8 +240,6 @@ def test_first_open_jump_to_line(d):
 def test_browser_extension_app_injection(d):
     wd = d.d
     wd.get("https://github.com/gorilla/mux")
-    wait_for(lambda: len(wd.find_elements_by_id("sourcegraph-app-bootstrap")) == 1)
-    wait_for(lambda: wd.find_element_by_id("sourcegraph-app-bootstrap").value_of_css_property("display") == "none")
     wait_for(lambda: len(wd.find_elements_by_id("sourcegraph-app-background")) == 1)
     wait_for(lambda: wd.find_element_by_id("sourcegraph-app-background").value_of_css_property("display") == "none")
 
