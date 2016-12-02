@@ -6,15 +6,11 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"sort"
 	"strings"
-	"sync"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
-	"github.com/microcosm-cc/bluemonday"
-	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
@@ -25,7 +21,6 @@ import (
 	htmpl "html/template"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/toprepos"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
@@ -61,28 +56,6 @@ func curlRepro(mode, rootPath, method string, params interface{}) string {
 	}
 	return fmt.Sprintf(`Reproduce with: curl --data '%s' https://sourcegraph.com/.api/xlang/%s -i`, data, method)
 }
-
-type defDescr struct {
-	Title    string
-	DocText  string
-	RefCount int
-	URL      string
-
-	// These two fields are unused today, but specify the number of files
-	// (across all sources/repos) and the number of sources (repos) that
-	// reference the definition.
-	FileCount, SourcesCount int
-
-	// sortIndex is a private field use for sorting the concurrently retrieved
-	// descriptions.
-	sortIndex int
-}
-
-type sortedDefDescr []defDescr
-
-func (s sortedDefDescr) Len() int           { return len(s) }
-func (s sortedDefDescr) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
-func (s sortedDefDescr) Less(i, j int) bool { return s[i].sortIndex < s[j].sortIndex }
 
 func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 	lang := mux.Vars(r)["Lang"]
@@ -125,224 +98,6 @@ func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 		Langs:        []string{"Go"},
 		Repos:        repos,
 	})
-}
-
-func serveRepoLanding(w http.ResponseWriter, r *http.Request) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), "serveRepoLanding")
-	r = r.WithContext(ctx)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
-	vars := mux.Vars(r)
-
-	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
-	if err != nil {
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
-	}
-
-	// terminate early on non-Go repos
-	if repo.Language != "Go" {
-		http.Error(w, "404 - Page not found. (No landing page for non-Go repo.)", http.StatusNotFound)
-		return nil
-	}
-
-	repoURL := approuter.Rel.URLToRepo(repo.URI).String()
-
-	var sanitizedREADME []byte
-	readmeEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{
-			RepoRev: repoRev,
-			Path:    "README.md",
-		},
-	})
-	if err != nil && errcode.Code(err) != legacyerr.NotFound {
-		return err
-	} else if err == nil {
-		sanitizedREADME = bluemonday.UGCPolicy().SanitizeBytes(blackfriday.MarkdownCommon(readmeEntry.Contents))
-	}
-
-	data, err := queryRepoLandingData(r, repo)
-	if err != nil {
-		// Just log, so we fallback to legacy in the event of catastrophic failure.
-		log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-		ext.Error.Set(span, true)
-		span.SetTag("err", err.Error())
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
-	}
-
-	m := repoMeta(repo)
-	m.SEO = true
-
-	return tmpl.Exec(r, w, "repolanding.html", http.StatusOK, nil, &struct {
-		tmpl.Common
-		Meta meta
-
-		SanitizedREADME string
-		Repo            *sourcegraph.Repo
-		RepoRev         sourcegraph.RepoRevSpec
-		RepoURL         string
-		Defs            []defDescr
-	}{
-		Meta:            *m,
-		SanitizedREADME: string(sanitizedREADME),
-		Repo:            repo,
-		RepoRev:         repoRev,
-		RepoURL:         repoURL,
-		Defs:            data,
-	})
-}
-
-func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDescr, err error) {
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryRepoLandingData")
-	r = r.WithContext(ctx)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
-	language := "go" // TODO(slimsag): long term, add to route
-
-	// Query information about the top definitions in the repo.
-	topDefs, err := backend.Defs.TopDefs(r.Context(), sourcegraph.TopDefsOptions{
-		Source: repo.URI,
-		Limit:  5,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "Defs.TopDefs")
-	}
-
-	run := parallel.NewRun(32)
-	var (
-		descMu sync.RWMutex
-		desc   []defDescr
-	)
-	for i, d := range topDefs.SourceDefs {
-		d := d
-		sortIndex := i
-		run.Acquire()
-		go func() {
-			defer run.Release()
-
-			// Lookup the definition based on the source / definition (Name, ContainerName)
-			// pair.
-			var (
-				rootPath = "git://" + repo.URI + "?" + repo.DefaultBranch
-				symbols  []lsp.SymbolInformation
-				method   string
-				params   interface{}
-			)
-			if path.Ext(d.DefFile) != "" {
-				// d.DefFile is a file, so use textDocument/documentSymbol
-				method = "textDocument/documentSymbol"
-				params = lsp.DocumentSymbolParams{
-					TextDocument: lsp.TextDocumentIdentifier{
-						URI: rootPath + "#" + d.DefFile,
-					},
-				}
-			} else {
-				// d.DefFile is a directory, so use workspace/symbol with the
-				// `dir:` filter.
-				method = "workspace/symbol"
-				params = lsp.WorkspaceSymbolParams{
-					Query: fmt.Sprintf("dir:%s %s", d.DefFile, d.DefName),
-					Limit: 100,
-				}
-			}
-			err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &symbols)
-			if err != nil {
-				run.Error(errors.Wrap(err, "LSP "+method))
-				return
-			}
-
-			// Find the matching symbol.
-			var symbol *lsp.SymbolInformation
-			for _, sym := range symbols {
-				if sym.Name != d.DefName || sym.ContainerName != d.DefContainerName {
-					continue
-				}
-				withoutFile, err := url.Parse(sym.Location.URI)
-				if err != nil {
-					run.Error(errors.Wrap(err, "parsing symbol location URI"))
-					return
-				}
-				withoutFile.Fragment = ""
-				if withoutFile.String() != rootPath {
-					continue
-				}
-				symbol = &sym
-				break
-			}
-			if symbol == nil {
-				msg := "queryRepoLandingData: no symbol info matching top def from global references"
-				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-				log15.Warn(curlRepro(language, rootPath, method, params))
-				span.LogEvent(msg)
-				span.SetTag("missing", "symbol")
-				span.LogEvent(curlRepro(language, rootPath, method, params))
-				return
-			}
-
-			// Determine the definition title.
-			var hover lsp.Hover
-			method = "textDocument/hover"
-			params = lsp.TextDocumentPositionParams{
-				TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
-				Position: lsp.Position{
-					Line:      symbol.Location.Range.Start.Line,
-					Character: symbol.Location.Range.Start.Character,
-				},
-			}
-			err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
-			if len(hover.Contents) == 0 {
-				msg := "queryRepoLandingData: LSP textDocument/hover returned no contents"
-				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-				log15.Warn(curlRepro(language, rootPath, method, params))
-				span.LogEvent(msg)
-				span.SetTag("missing", "hover")
-				span.LogEvent(curlRepro(language, rootPath, method, params))
-				return
-			}
-
-			hoverTitle := hover.Contents[0].Value
-			var hoverDesc string
-			for _, s := range hover.Contents {
-				if s.Language == "markdown" {
-					hoverDesc = s.Value
-					break
-				}
-			}
-
-			u, err := approuter.Rel.URLToLegacyDefLanding(*symbol)
-			if err != nil {
-				run.Error(err)
-				return
-			}
-			descMu.Lock()
-			defer descMu.Unlock()
-			desc = append(desc, defDescr{
-				Title:        hoverTitle,
-				DocText:      hoverDesc,
-				RefCount:     d.Refs,
-				FileCount:    d.Files,
-				SourcesCount: d.Sources,
-				URL:          u,
-				sortIndex:    sortIndex,
-			})
-		}()
-	}
-	if err := run.Wait(); err != nil {
-		return nil, err
-	}
-	sort.Sort(sortedDefDescr(desc))
-	return desc, nil
 }
 
 type snippet struct {

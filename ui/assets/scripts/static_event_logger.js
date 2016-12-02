@@ -89,9 +89,6 @@ var sourcegraphLogger;
 		logDefLandingViewEvent: function() {
 			this.logViewEvent("ViewDefLanding", location.pathname, {});
 		},
-		logRepoLandingViewEvent: function() {
-			this.logViewEvent("ViewRepoLanding", location.pathname, {});
-		},
 		logRepoIndexViewEvent: function() {
 			this.logViewEvent("ViewRepoIndex", location.pathname, {});
 		},
@@ -140,7 +137,6 @@ var sourcegraphLogger;
 		if (page_title) {
 			switch (page_title) {
 				case "deflanding.html": sourcegraphLogger.logDefLandingViewEvent(); break;
-				case "repolanding.html": sourcegraphLogger.logRepoLandingViewEvent(); break;
 				case "repoindex.html": sourcegraphLogger.logRepoIndexViewEvent(); break;
 			}
 		}
