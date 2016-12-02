@@ -12,6 +12,8 @@ export interface StyleAttribute {
   [attributeName: string]: '';
 }
 
+type Rule = StyleAttribute | CSSProperties;
+
 /**
  * Defines a `rule` with the given key-value pairs. Returns an object (of shape
  * `{'data-css-<id>': ''}`), to be added to an element's attributes. This is not the same
@@ -235,16 +237,21 @@ export function parent(selector: string, props: CSSProperties): StyleAttribute;
 /**
  * Combine rules, with latter styles taking precedence over previous ones.
  */
-export function compose(...rules: Array<any>): StyleAttribute;
+export function compose(...rules: Array<Rule>): StyleAttribute;
 /**
  * Combine rules, with latter styles taking precedence over previous ones.
  */
-export function merge(...rules: Array<any>): StyleAttribute;
+export function merge(...rules: Array<Rule>): StyleAttribute;
+
+/**
+ * In glamor, css rules are treated as values. The css function lets you define these values.
+ */
+export function css(...rules: Array<Rule>): StyleAttribute;
 
 /**
  * Media queries!
  */
-export function media(query: string, ...rules: Array<CSSProperties>): StyleAttribute;
+export function media(query: string, ...rules: Array<Rule>): StyleAttribute;
 
 /**
  * Included Media query presets.

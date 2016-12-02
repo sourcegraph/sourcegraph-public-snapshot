@@ -3,6 +3,7 @@ import * as Relay from "react-relay";
 import { Route } from "react-router";
 
 import { EditorController, Props as ControllerProps } from "sourcegraph/blob/EditorController";
+import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoParam, repoPath, repoRev } from "sourcegraph/repo";
 import { treeParam } from "sourcegraph/tree";
@@ -13,15 +14,24 @@ class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 		const files = this.props.root.repository.commit.commit.tree.files;
 		return <div style={{
 			display: "flex",
-			flexDirection: "row",
+			flexDirection: "column",
 			flex: "auto",
+			width: "100%",
 		}}>
-			{localStorage["file-tree"] && <FileTree
-				files={files}
-				repo={this.props.repo}
-				rev={this.props.rev}
-				path={this.props.path} />}
-			<EditorController {...this.props} />
+			<ChromeExtensionToast location={this.props.location} />
+			<div style={{
+				display: "flex",
+				flexDirection: "row",
+				flex: "auto",
+				width: "100%",
+			}}>
+				<FileTree
+					files={files}
+					repo={this.props.repo}
+					rev={this.props.rev}
+					path={this.props.path} />
+				<EditorController {...this.props} />
+			</div>
 		</div>;
 	}
 }

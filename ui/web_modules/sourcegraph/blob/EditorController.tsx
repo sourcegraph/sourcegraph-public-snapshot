@@ -7,7 +7,6 @@ import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { FlexContainer, TourOverlay } from "sourcegraph/components";
-import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors } from "sourcegraph/components/utils/colors";
@@ -294,7 +293,6 @@ export class EditorController extends Container<Props, State> {
 				>
 				<FlexContainer direction="top_bottom" style={{ flex: "auto", backgroundColor: colors.coolGray1() }}>
 					<PageTitle title={title} />
-					<ChromeExtensionToast location={this.props.location} />
 					<OnboardingModals location={this.props.location} />
 					{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 					<BlobTitle

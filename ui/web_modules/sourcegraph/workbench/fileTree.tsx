@@ -1,4 +1,4 @@
-import { hover, select } from "glamor";
+import { css, hover, select } from "glamor";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import { InjectedRouter, Link } from "react-router";
@@ -49,8 +49,10 @@ export class FileTree extends React.Component<Props, {}> {
 		window.addEventListener("resize", this.onResize);
 	}
 
-	divMounted(domElement: HTMLElement): void {
+	divMounted(domElement: HTMLDivElement): void {
 		if (!domElement) { return; }
+
+		this.resizeForSafari(domElement);
 
 		const config = {
 			dataSource: new FileTreeDataSource(),
@@ -58,7 +60,7 @@ export class FileTree extends React.Component<Props, {}> {
 			renderer: new Renderer(),
 		};
 		this.treeImpl = new Tree(domElement, config);
-		this.setTreeInput(this.props.files);
+		this.setTreeInput(this.props);
 	}
 
 	selectElement(node: Node): boolean {
@@ -76,24 +78,41 @@ export class FileTree extends React.Component<Props, {}> {
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
-		if (this.props.repo === nextProps.repo) { return; }
-		this.setTreeInput(nextProps.files);
+		if (!this.treeImpl) { return; }
+		this.setTreeInput(nextProps);
 	}
 
-	setTreeInput(files: GQL.IFile[]): void {
-		if (!this.treeImpl) { return; }
-		const data = makeTree(files);
-		this.treeImpl.setInput(data);
-
-		// Set and expand the selection
-		const nodePath = nodePathFromPath(data, this.props.path);
+	setTreeInput(props: Props): void {
+		let data = this.treeImpl.getInput();
+		if (!data || data.repo !== props.repo) {
+			data = makeTree(props.files, props.repo);
+			this.treeImpl.setInput(data);
+		}
+		// Expand the selection
+		const nodePath = nodePathFromPath(data, props.path);
+		const file = nodePath[nodePath.length - 1];
 		this.treeImpl.expandAll(nodePath);
-		this.treeImpl.setSelection([nodePath[nodePath.length - 1]]);
+		this.treeImpl.setSelection([file]);
+
+		// Reveal the element
+		const pos = this.treeImpl.getRelativeTop(file);
+		if (pos < 0 || pos > 1) {
+			this.treeImpl.reveal(file, 1 / 3);
+		}
 	}
 
 	onResize(): void {
 		if (!this.treeImpl) { return; }
+		const el = this.treeImpl.getHTMLElement();
+		this.resizeForSafari(el);
 		this.treeImpl.layout();
+	}
+
+	// Safari can't handle percent parent element in calc, so we manually set
+	// the element height.
+	resizeForSafari(domElement: HTMLElement): void {
+		if (domElement.clientHeight !== 0) { return; }
+		domElement.style.height = domElement.parentElement.clientHeight - 50 + "px";
 	}
 
 	render(): JSX.Element {
@@ -124,10 +143,15 @@ export class FileTree extends React.Component<Props, {}> {
 				backgroundImage: `url('data:image/svg+xml, ${DownChevron}')`,
 			}),
 		);
-		return <div>
+		const media = css({
+			width: 0,
+			"@media(min-width: 768px)": {
+				minWidth: 300,
+			},
+		});
+		return <div {...media}>
 			<Title repo={this.props.repo} />
 			<div {...style} ref={this.divMounted} style={{
-				minWidth: 300,
 				height: "calc(100% - 50px)",
 			}}>
 			</div>
