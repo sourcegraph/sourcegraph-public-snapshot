@@ -2,6 +2,7 @@ import * as utils from ".";
 
 function invariant(cond: any): void {
 	if (!cond) {
+		console.error("I AM HER!")
 		throw new Error("github invariant exception");
 	}
 }

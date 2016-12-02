@@ -3,7 +3,7 @@ import { doFetch as fetch } from "./xhr";
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
 
 export interface ResolvedRevResp {
-	authRequired?: boolean;
+	notFound?: boolean;
 	cloneInProgress?: boolean;
 	commitID?: string;
 }
@@ -20,7 +20,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 	return fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
 		.then((resp) => {
 			if (resp.status === 404) {
-				return { authRequired: true };
+				return { notFound: true };
 			}
 			if (resp.status === 202) {
 				return { cloneInProgress: true };
