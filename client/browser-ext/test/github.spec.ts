@@ -412,4 +412,44 @@ describe("GitHub DOM", () => {
 			});
 		});
 	});
+
+	describe("PR ancillary views", () => {
+		describe("commit subview", () => {
+			const url = "https://github.com/gorilla/mux/pull/190/commits/0f3e78049d1980ca91e916b5ff90f711310c651f";
+			before(setupDOM(url));
+
+			it("should parse base/head rev", () => {
+				const deltaRevs = github.getDeltaRevs();
+				expect(deltaRevs).to.have.property("base", "0b13a922203ebdbfd236c818efcd5ed46097d690");
+				expect(deltaRevs).to.have.property("head", "0f3e78049d1980ca91e916b5ff90f711310c651f");
+			});
+
+			it("should parse deltaInfo", () => {
+				const deltaInfo = github.getDeltaInfo();
+				expect(deltaInfo).to.have.property("baseBranch", "master");
+				expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
+				expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
+				expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
+			});
+		});
+
+		describe("files subview", () => {
+			const url = "https://github.com/gorilla/mux/pull/190/files/0f3e78049d1980ca91e916b5ff90f711310c651f";
+			before(setupDOM(url));
+
+			it("should parse base/head rev", () => {
+				const deltaRevs = github.getDeltaRevs();
+				expect(deltaRevs).to.have.property("base", "0b13a922203ebdbfd236c818efcd5ed46097d690");
+				expect(deltaRevs).to.have.property("head", "0f3e78049d1980ca91e916b5ff90f711310c651f");
+			});
+
+			it("should parse deltaInfo", () => {
+				const deltaInfo = github.getDeltaInfo();
+				expect(deltaInfo).to.have.property("baseBranch", "master");
+				expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
+				expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
+				expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
+			});
+		});
+	});
 });

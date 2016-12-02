@@ -172,7 +172,6 @@ export function isSplitDiff(): boolean {
 }
 
 // TODO(john): combine getDeltaRevs and getDeltaInfo.
-// Currently they are separated because only the latter is testable w/ jsdom.
 
 export interface DeltaRevs {
 	base: string;
@@ -183,37 +182,50 @@ export interface DeltaRevs {
  * getDeltaRevs returns the base and head revision SHA, or null for non-diff views.
  */
 export function getDeltaRevs(): DeltaRevs | null {
-	const {isDelta, isCommit} = utils.parseURL(window.location);
+	const {isDelta, isCommit, isPullRequest} = utils.parseURL(window.location);
 	if (!isDelta) {
 		return null;
 	}
 
 	let base = "";
 	let head = "";
-	let fetchContainers = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
-	if (fetchContainers && fetchContainers.length === 1) {
-		for (let i = 0; i < fetchContainers.length; ++i) {
-			// for conversation view of pull request
-			const el = fetchContainers[i] as HTMLElement;
-			const url = el.getAttribute("data-url");
-			if (!url) {
-				continue;
+	const fetchContainers = document.getElementsByClassName("js-socket-channel js-updatable-content js-pull-refresh-on-pjax");
+	if (isPullRequest) {
+		if (fetchContainers && fetchContainers.length === 1) {
+			for (let i = 0; i < fetchContainers.length; ++i) {
+				// for conversation view of pull request
+				const el = fetchContainers[i] as HTMLElement;
+				const url = el.getAttribute("data-url");
+				if (!url) {
+					continue;
+				}
+
+				const urlSplit = url.split("?");
+				invariant(urlSplit.length === 2);
+				const query = urlSplit[1];
+				const querySplit = query.split("&");
+				for (let kv of querySplit) {
+					const kvSplit = kv.split("=");
+					const k = kvSplit[0];
+					const v = kvSplit[1];
+					if (k === "base_commit_oid") {
+						base = v;
+					}
+					if (k === "end_commit_oid") {
+						head = v;
+					}
+				}
 			}
 
-			const urlSplit = url.split("?");
-			invariant(urlSplit.length === 2);
-			const query = urlSplit[1];
-			const querySplit = query.split("&");
-			for (let kv of querySplit) {
-				const kvSplit = kv.split("=");
-				const k = kvSplit[0];
-				const v = kvSplit[1];
-				if (k === "base_commit_oid") {
-					base = v;
-				}
-				if (k === "end_commit_oid") {
-					head = v;
-				}
+		} else {
+			// Last-ditch: look for inline comment form input which has base/head on it.
+			const baseInput = document.querySelector(`input[name="comparison_base_oid"]`);
+			if (baseInput) {
+				base = (baseInput as HTMLInputElement).value;
+			}
+			const headInput = document.querySelector(`input[name="comparison_end_oid"]`);
+			if (headInput) {
+				head = (headInput as HTMLInputElement).value;
 			}
 		}
 	} else if (isCommit) {
