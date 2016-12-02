@@ -9,7 +9,6 @@ detect_dev_langservers() {
 	# JavaScript/TypeScript
 	JSTS_LS_DIR="${LS_ROOT}/javascript-typescript-langserver"
 	if [[ -d "$JSTS_LS_DIR" ]]; then
-		echo '# Using javascript-typescript-langserver in '"$JSTS_LS_DIR"' (run `dev/install-langserver.sh javascript-typescript-langserver` to update)'
 		export LANGSERVER_TYPESCRIPT=${LANGSERVER_TYPESCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
 		export LANGSERVER_JAVASCRIPT=${LANGSERVER_JAVASCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
 	else
@@ -19,10 +18,19 @@ detect_dev_langservers() {
 	# Python
 	PY_LS_DIR="${LS_ROOT}/python-langserver"
 	if [[ -d "$PY_LS_DIR" ]]; then
-		echo '# Using python-langserver in '"$PY_LS_DIR"' (run `dev/install-langserver.sh python-langserver` to update)'
 		export LANGSERVER_PYTHON=${LANGSERVER_PYTHON-"$PY_LS_DIR"/bin/python-langserver}
 	else
 		echo '# To add Python language support, run `dev/install-langserver.sh python-langserver` or symlink '"$PY_LS_DIR"' to a local clone of python-langserver.'
+	fi
+
+	# PHP
+	if [[ -n "${LANGSERVER_PHP:+1}" ]]; then
+		# no-op, the user has already set the server
+		true
+	elif [[ $(docker images felixfbecker/php-language-server -q) ]]; then
+		export LANGSERVER_PHP=$(dirname "${BASH_SOURCE[0]}")/php-langserver
+	else
+		echo '# To add PHP language support, run `docker pull felixfbecker/php-language-server`'
 	fi
 }
 

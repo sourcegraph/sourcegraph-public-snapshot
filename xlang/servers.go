@@ -53,14 +53,14 @@ func RegisterServersFromEnv() error {
 			}
 			switch {
 			case strings.HasPrefix(val, "tcp://"):
-				log15.Info("Registering language server listener.", "mode", mode, "listener", val)
+				log15.Info("Registering language server listener", "mode", mode, "listener", val)
 				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
 					return net.DialTimeout("tcp", strings.TrimPrefix(val, "tcp://"), 5*time.Second)
 				}
 			case strings.Contains(val, ":"):
 				return fmt.Errorf(`invalid language server URL %q (you probably mean "tcp://%s")`, val, val)
 			default:
-				log15.Info("Registering language server executable (will exec and manage subprocesses, communicating over stdin/stdout).", "mode", mode, "path", val)
+				log15.Info("Registering language server executable", "mode", mode, "path", val)
 				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
 					cmd := exec.Command(val)
 					cmd.Stderr = &prefixWriter{w: os.Stderr, prefix: filepath.Base(val) + ": "}
@@ -81,7 +81,7 @@ func RegisterServersFromEnv() error {
 		}
 	}
 	if len(ServersByMode) == 0 {
-		log15.Warn("No language servers registered.")
+		log15.Warn("No language servers registered")
 	}
 	return nil
 }

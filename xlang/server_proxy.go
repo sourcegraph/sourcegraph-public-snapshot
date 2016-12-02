@@ -365,9 +365,16 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	defer span.Finish()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+	rootPath := "/"
+	// TODO(keegancsmith) Make more servers follow rootPath spec
+	if c.id.mode != "php" {
+		// Only our PHP server follows the spec for rootPath, other
+		// servers take a URI.
+		rootPath = "file:///"
+	}
 	return c.conn.Call(ctx, "initialize", lspext.InitializeParams{
 		InitializeParams: lsp.InitializeParams{
-			RootPath: "file:///",
+			RootPath: rootPath,
 			Capabilities: lsp.ClientCapabilities{
 				XFilesProvider:   true,
 				XContentProvider: true,

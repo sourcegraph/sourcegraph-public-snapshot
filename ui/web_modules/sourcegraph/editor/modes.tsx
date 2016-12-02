@@ -5,6 +5,9 @@ import "monaco-languages/out/monaco.contribution";
 import "monaco-typescript/out/monaco.contribution";
 
 export const modes = new Set<string>(["c", "go", "ruby", "javascript", "typescript", "python"]);
+if (window.localStorage["phpLangEnabled"]) {
+	modes.add("php");
+}
 
 export function languagesToSearchModes(languages: string[]): string[] {
 	const m = new Set<string>();
