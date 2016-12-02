@@ -202,15 +202,13 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) (err error) {
 
 	var data []defDescr
 	err = errors.New("xlang repo landing disabled")
-	xlang := shouldUseXlang("REPO")
-	if xlang {
+	if shouldUseXlang("REPO") {
 		data, err = queryRepoLandingData(r, repo)
 		if err != nil {
 			// Just log, so we fallback to legacy in the event of catastrophic failure.
 			log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
 		}
 	} else if shouldShadow("REPO") {
 		go func() {
@@ -223,12 +221,18 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) (err error) {
 		}()
 	}
 
-	if !xlang {
+	// If the new system failed for some reason OR if we don't have 5 top
+	// definitions, then fallback to the legacy srclib data.
+	if err != nil || len(data) < 5 {
 		// Fallback to legacy / srclib data.
 		legacyRepoLandingCounter.Inc()
-		data, err = queryLegacyRepoLandingData(r, repo)
-		if err != nil {
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
+		legacyData, legacyErr := queryLegacyRepoLandingData(r, repo)
+		if legacyErr != nil && err != nil {
+			// Only return an error if both systems error'd out.
+			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("multiple errors: queryRepoLandingData=%v queryLegacyRepoLandingData=%v", err, legacyErr)}
+		}
+		if legacyData != nil {
+			data = legacyData
 		}
 	}
 
@@ -512,8 +516,7 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 	// TODO(slimsag): see https://github.com/sourcegraph/sourcegraph/issues/2021
 	var data *defLandingData
 	err = errors.New("xlang def landing disabled")
-	xlang := shouldUseXlang("DEF")
-	if xlang {
+	if shouldUseXlang("DEF") {
 		data, err = queryDefLandingData(r, repo, repoRev)
 		if err != nil {
 			// Just log, so we fallback to legacy in the event of catastrophic failure.
@@ -532,11 +535,18 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 		}()
 	}
 
-	if !xlang {
+	// If the new system failed for some reason OR if we don't have 3 sources
+	// referencing this page's definition, then fallback to the legacy srclib
+	// data.
+	if err != nil || len(data.RefLocs.SourceRefs) < 3 {
 		legacyDefLandingCounter.Inc()
-		data, err = queryLegacyDefLandingData(r, repo)
-		if err != nil {
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
+		legacyData, legacyErr := queryLegacyDefLandingData(r, repo)
+		if legacyErr != nil && err != nil {
+			// Only return an error if both systems error'd out.
+			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: fmt.Errorf("multiple errors: queryDefLandingData=%v queryLegacyDefLandingData=%v", err, legacyErr)}
+		}
+		if legacyData != nil {
+			data = legacyData
 		}
 	}
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
