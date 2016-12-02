@@ -135,6 +135,12 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 
 	resolveRevs(): void {
+		const repoStat = this.state.resolvedRevs[this.props.repoURI];
+		if (repoStat && repoStat.notFound) {
+			// User doesn't have permission to view repo; no need to fetch.
+			return;
+		}
+
 		if (this.isDelta) {
 			if (this.baseCommitID && this.baseRepoURI) {
 				this.updateResolvedRevs(this.baseRepoURI, this.baseCommitID);
