@@ -4,7 +4,6 @@ import * as github from "./github";
 import * as utils from "./index";
 import * as tooltips from "./tooltips";
 import * as _ from "lodash";
-import * as utf8 from "utf8";
 
 interface RepoRevSpec {
 	repoURI: string;
@@ -115,7 +114,7 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 	function createTextNode(text: string, off: number): Node {
 		const wrapNode = document.createElement("SPAN");
 		wrapNode.id = `text-node-${line}-${off}`;
-		const textNode = document.createTextNode(utf8.decode(text));
+		const textNode = document.createTextNode(text);
 
 		wrapNode.setAttribute("data-byteoffset", `${off}`);
 		wrapNode.appendChild(textNode);
@@ -123,14 +122,12 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 		return wrapNode;
 	}
 
-	// Text could contain escaped character sequences (e.g. "&gt;") or UTF-8
-	// decoded characters (e.g. "˟") which need to be properly counted in terms of bytes.
-	// nodeText = utf8.encode(_.unescape(currentNode.textContent || "")).split("");
-	nodeText = utf8.encode(_.unescape(currentNode.textContent || ""));
+	// Text could contain escaped character sequences (e.g. "&gt;")
+	nodeText = _.unescape(currentNode.textContent || "");
 
 	// Handle special case for pull requests (+/- character on diffs).
 	if (ignoreFirstTextChar && nodeText.length > 0) {
-		wrapperNode.appendChild(document.createTextNode(utf8.decode(nodeText[0])));
+		wrapperNode.appendChild(document.createTextNode(nodeText[0]));
 		nodeText = nodeText.slice(1);
 	}
 
