@@ -45,7 +45,7 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	componentWillReceiveProps(nextProps: Props): void {
 		this._updateRefreshInterval(nextProps.commit && nextProps.commit.cloneInProgress);
-		if (nextProps.commit.commit && (!this.props.commit.commit || nextProps.commit.commit.sha1 !== this.props.commit.commit.sha1)) {
+		if (nextProps.commit && nextProps.commit.commit && (!this.props.commit || !this.props.commit.commit || nextProps.commit.commit.sha1 !== this.props.commit.commit.sha1)) {
 			// prefetch if the repository is being cloned or if we switch repositories after first page load
 			this.prefetchSymbols(nextProps.repo, nextProps.commit.commit);
 		}
