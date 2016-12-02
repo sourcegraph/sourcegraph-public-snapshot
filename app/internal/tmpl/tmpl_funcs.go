@@ -42,6 +42,27 @@ var FuncMap = htmpl.FuncMap{
 	"assetURL":                assets.URL,
 	"mainJavaScriptBundleURL": assets.MainJavaScriptBundleURL,
 
+	"shortDoc": func(s string) string {
+		// Return first sentence if fewer than 128 chars. Otherwise,
+		// returns all the words before the upper cap
+
+		var short string
+		if i := strings.IndexAny(s, ".!?‽"); i != -1 {
+			short = s[0 : i+1]
+		} else {
+			short = s
+		}
+
+		const maxChars = 128
+		if len(short) > maxChars {
+			if j := strings.LastIndexAny(short, " \t\n"); j != -1 {
+				short = short[0:j]
+			}
+		}
+
+		return short
+	},
+
 	"urlToTrace": func(ctx context.Context) string {
 		if span := opentracing.SpanFromContext(ctx); span != nil {
 			return traceutil.SpanURL(span)
@@ -93,6 +114,10 @@ var FuncMap = htmpl.FuncMap{
 
 	"urlToRepo": func(repo string) string {
 		return router.Rel.URLToRepo(repo).String()
+	},
+
+	"urlToRepoLanding": func(repo string) string {
+		return router.Rel.URLToRepoLanding(repo).String()
 	},
 
 	"urlToBlob": func(repo, path string, line int) string {

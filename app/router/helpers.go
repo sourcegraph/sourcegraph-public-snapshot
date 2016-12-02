@@ -16,6 +16,10 @@ func (r *Router) URLToRepo(repo string) *url.URL {
 	return &url.URL{Path: fmt.Sprintf("/%s", repo)}
 }
 
+func (r *Router) URLToRepoLanding(repo string) *url.URL {
+	return &url.URL{Path: fmt.Sprintf("/%s/-/info", repo)}
+}
+
 func (r *Router) URLToSitemap(lang string) *url.URL {
 	if lang != "" {
 		return &url.URL{Path: fmt.Sprintf("/sitemap/%s", lang)}
