@@ -67,7 +67,13 @@ function injectBlobAnnotator(): void {
 		if (!mount) {
 			continue;
 		}
-		render(<BlobAnnotator path={filePath} repoURI={repoURI} blobElement={github.getBlobElement(file)} />, mount);
+
+		const blob = github.tryGetBlobElement(file);
+		if (!blob) {
+			// File may be collapsed.
+			continue;
+		}
+		render(<BlobAnnotator path={filePath} repoURI={repoURI} blobElement={blob} />, mount);
 	}
 }
 

@@ -2,7 +2,7 @@ import * as utils from ".";
 
 function invariant(cond: any): void {
 	if (!cond) {
-		console.error("I AM HER!")
+		console.error("github invariant exception");
 		throw new Error("github invariant exception");
 	}
 }
@@ -21,14 +21,13 @@ export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
 }
 
 /**
- * getBlobElement returns the element within a file container which contains
+ * tryGetBlobElement returns the element within a file container which contains
  * source code. The blob element contains a <table> element which has line
- * numbers, source code, and (possibly) diff expanders.
+ * numbers, source code, and (possibly) diff expanders. If the file container
+ * is collapsed (e.g. for large files) then null is returned
  */
-export function getBlobElement(fileContainer: HTMLElement): HTMLElement {
-	const blob = fileContainer.querySelector(".blob-wrapper");
-	invariant(blob);
-	return blob as HTMLElement;
+export function tryGetBlobElement(fileContainer: HTMLElement): HTMLElement | null {
+	return fileContainer.querySelector(".blob-wrapper") as HTMLElement | null;
 }
 
 /**
@@ -36,7 +35,9 @@ export function getBlobElement(fileContainer: HTMLElement): HTMLElement {
  * source code (including for unified/split diffs).
  */
 export function getCodeTable(fileContainer: HTMLElement): HTMLTableElement {
-	const table = getBlobElement(fileContainer).querySelector("table");
+	const blob = tryGetBlobElement(fileContainer);
+	invariant(blob);
+	const table = (blob as HTMLElement).querySelector("table");
 	invariant(table);
 	return table as HTMLTableElement;
 }

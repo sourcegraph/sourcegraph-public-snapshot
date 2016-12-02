@@ -28,7 +28,7 @@ describe("GitHub DOM", () => {
 		});
 
 		it("should get blob from file container", () => {
-			Array.from(github.getFileContainers()).forEach((file) => expect(github.getBlobElement(file)).to.be.ok);
+			Array.from(github.getFileContainers()).forEach((file) => expect(github.tryGetBlobElement(file)).to.be.ok);
 		});
 
 		it("should create blob annotator mount", () => {
@@ -115,7 +115,7 @@ describe("GitHub DOM", () => {
 		});
 
 		it("should get blob from file containers", () => {
-			Array.from(github.getFileContainers()).forEach((file) => expect(github.getBlobElement(file)).to.be.ok);
+			Array.from(github.getFileContainers()).forEach((file) => expect(github.tryGetBlobElement(file)).to.be.ok);
 		});
 
 		it("should create blob annotator mounts", () => {
@@ -207,7 +207,7 @@ describe("GitHub DOM", () => {
 		});
 
 		it("should get blob from file containers", () => {
-			Array.from(github.getFileContainers()).forEach((file) => expect(github.getBlobElement(file)).to.be.ok);
+			Array.from(github.getFileContainers()).forEach((file) => expect(github.tryGetBlobElement(file)).to.be.ok);
 		});
 
 		it("should create blob annotator mounts", () => {
@@ -324,7 +324,7 @@ describe("GitHub DOM", () => {
 		});
 
 		it("should get blob from file containers", () => {
-			Array.from(github.getFileContainers()).forEach((file) => expect(github.getBlobElement(file)).to.be.ok);
+			Array.from(github.getFileContainers()).forEach((file) => expect(github.tryGetBlobElement(file)).to.be.ok);
 		});
 
 		it("should create blob annotator mounts", () => {
