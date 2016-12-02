@@ -119,14 +119,20 @@ export class FileTree extends React.Component<Props, {}> {
 		// This weird styling is necessary because we need to use real
 		// selectors to override the default Monaco CSS.
 		const style = Object.assign(
-			select(` .monaco-tree.focused .monaco-tree-rows > .monaco-tree-row.focused:not(.highlighted),
-					.monaco-tree.focused .monaco-tree-rows > .monaco-tree-row.selected:not(.highlighted),
+			select(` .monaco-tree.focused .monaco-tree-rows > .monaco-tree-row.selected:not(.highlighted),
 					.monaco-tree.focused .monaco-tree-rows > .monaco-tree-row.focused.selected:not(.highlighted),
 					.monaco-tree .monaco-tree-rows > .monaco-tree-row.focused.selected,
-					.monaco-tree .monaco-tree-rows > .monaco-tree-row.selected:not(.highlighted),
-					.monaco-tree .monaco-tree-rows > .monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused)`, {
+					.monaco-tree .monaco-tree-rows > .monaco-tree-row.selected:not(.highlighted)`, {
 					background: colors.blueText(),
 				}),
+			select(" .monaco-tree.focused .monaco-tree-rows > .monaco-tree-row.focused:not(.highlighted)", {
+				background: colors.coolGray1(),
+				color: colors.white(),
+			}),
+			select(" .monaco-tree .monaco-tree-rows > .monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused)", {
+				background: colors.coolGray1(.5),
+				color: colors.white(),
+			}),
 			select(" .monaco-tree div", {
 				color: colors.coolGray4(),
 			}),
