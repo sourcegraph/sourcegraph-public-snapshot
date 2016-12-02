@@ -272,8 +272,8 @@ const (
 )
 
 type ShowMessageParams struct {
-	Type    int    `json:"type"`
-	Message string `json:"message"`
+	Type    MessageType `json:"type"`
+	Message string      `json:"message"`
 }
 
 type MessageActionItem struct {
@@ -281,14 +281,14 @@ type MessageActionItem struct {
 }
 
 type ShowMessageRequestParams struct {
-	Type    int                 `json:"type"`
+	Type    MessageType         `json:"type"`
 	Message string              `json:"message"`
 	Actions []MessageActionItem `json:"actions"`
 }
 
 type LogMessageParams struct {
-	Type    int    `json:"type"`
-	Message string `json:"message"`
+	Type    MessageType `json:"type"`
+	Message string      `json:"message"`
 }
 
 type DidChangeConfigurationParams struct {

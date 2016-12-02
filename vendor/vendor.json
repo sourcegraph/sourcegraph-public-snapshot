@@ -646,10 +646,10 @@
 			"revisionTime": "2016-11-24T09:53:04Z"
 		},
 		{
-			"checksumSHA1": "PkFF/Y800Yw1phWvDtJ98lS7Mf8=",
+			"checksumSHA1": "VYyT6NppyRDF76d69Wh5icIjaVI=",
 			"path": "github.com/sourcegraph/go-langserver/pkg/lsp",
-			"revision": "00b99356a4548dba7494a8d10596f7b9e0c2fd91",
-			"revisionTime": "2016-11-29T20:51:56Z"
+			"revision": "5b9c6c2e10de3c8d03ef7765b05012ddece386be",
+			"revisionTime": "2016-12-01T12:42:00Z"
 		},
 		{
 			"checksumSHA1": "lt2KuTN8e7P3iPe0F6+ad0Qi79c=",

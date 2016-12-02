@@ -566,7 +566,7 @@ export interface Location {
 }
 
 export interface LogMessageParams {
-	type: number;
+	type: any;
 	message: string;
 }
 
@@ -997,12 +997,12 @@ export interface ServerConfig {
 }
 
 export interface ShowMessageParams {
-	type: number;
+	type: any;
 	message: string;
 }
 
 export interface ShowMessageRequestParams {
-	type: number;
+	type: any;
 	message: string;
 	actions: any[];
 }

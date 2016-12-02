@@ -422,7 +422,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	// significant operations, not when we're just receiving traces or
 	// performing simple VFS ops.
 	var span opentracing.Span
-	if shouldCreateChildSpan := req.Method != "telemetry/event" && (traceFSRequests || !isFSMethod(req.Method)); shouldCreateChildSpan {
+	if shouldCreateChildSpan := !isInfraMethod(req.Method) && (traceFSRequests || !isFSMethod(req.Method)); shouldCreateChildSpan {
 		op := "LSP server proxy: handle " + req.Method
 
 		// Try to get our parent span context from this JSON-RPC request's metadata.
@@ -485,6 +485,27 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		return c.handleFS(ctx, req.Method, path)
 
+	case "window/logMessage":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var m lsp.LogMessageParams
+		if err := json.Unmarshal(*req.Params, &m); err != nil {
+			return nil, err
+		}
+		// lsp.Log is the equivalent to a debug log level. We are
+		// generally not interested in debug logs.
+		if m.Type == lsp.Log {
+			return nil, nil
+		}
+		log.Printf("window/logMessage(%d) %s: %s", m.Type, c.id, m.Message)
+		// Log to the span for the server, not for this specific
+		// request.
+		if span := opentracing.SpanFromContext(ctx); span != nil {
+			span.LogEventWithPayload("window/logMessage", m)
+		}
+		return nil, nil
+
 	case "textDocument/publishDiagnostics":
 		// Forward to all clients.
 		c.clientBroadcast(ctx, req)
@@ -503,6 +524,13 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 func isFSMethod(method string) bool {
 	return strings.HasPrefix(method, "fs/") || method == "textDocument/xcontent" || method == "workspace/xfiles"
+}
+
+// isInfraMethod returns true for methods which do not affect the end
+// user. These are methods related to telemetry/logging/etc. Generally these
+// are not useful to log.
+func isInfraMethod(method string) bool {
+	return method == "telemetry/event" || method == "window/logMessage" || method == "textDocument/publishDiagnostics"
 }
 
 func (c *serverProxyConn) updateLastTime() {
