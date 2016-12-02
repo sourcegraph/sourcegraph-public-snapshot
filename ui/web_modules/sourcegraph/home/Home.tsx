@@ -203,7 +203,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					}
 				)}>
 					<Heading align="center" level={3}>
-						Understand code smarter and faster with Sourcegraph
+						Read code smarter and faster with Sourcegraph
 					</Heading>
 					<Heading align="center" color="gray" level={4} style={{
 						fontWeight: "normal",

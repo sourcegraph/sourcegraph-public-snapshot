@@ -51,7 +51,7 @@ export class AuthExtForm extends Component<Props, State> {
 function AuthBrowserExtFlowComp(props: { location: any }): JSX.Element {
 	return (
 		<div className={styles.full_page}>
-			<PageTitle title="Authorize Sourcegraph for Github" />
+			<PageTitle title="Authorize Sourcegraph for GitHub" />
 			<AuthExtForm {...props} />
 		</div>
 	);
