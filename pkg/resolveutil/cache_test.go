@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/groupcache/lru"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
-	"sourcegraph.com/sourcegraph/srclib/dep"
 )
 
 func resetCache() {
@@ -20,21 +19,21 @@ func resetCache() {
 func TestResolveCustomImportPath(t *testing.T) {
 	resetCache()
 
-	targets := map[string]*dep.ResolvedTarget{
-		"golang.org/x/net":         &dep.ResolvedTarget{ToRepoCloneURL: "https://github.com/golang/net", ToUnit: "github.com/golang/net"},
-		"golang.org/x/net/context": &dep.ResolvedTarget{ToRepoCloneURL: "https://github.com/golang/net", ToUnit: "github.com/golang/net/context"},
+	targets := map[string]*ResolvedTarget{
+		"golang.org/x/net":         &ResolvedTarget{ToRepoCloneURL: "https://github.com/golang/net", ToUnit: "github.com/golang/net"},
+		"golang.org/x/net/context": &ResolvedTarget{ToRepoCloneURL: "https://github.com/golang/net", ToUnit: "github.com/golang/net/context"},
 
-		"k8s.io/kubernetes":         &dep.ResolvedTarget{ToRepoCloneURL: "https://github.com/kubernetes/kubernetes", ToUnit: "github.com/kubernetes/kubernetes"},
-		"k8s.io/kubernetes/pkg/api": &dep.ResolvedTarget{ToRepoCloneURL: "https://github.com/kubernetes/kubernetes", ToUnit: "github.com/kubernetes/kubernetes/pkg/api"},
+		"k8s.io/kubernetes":         &ResolvedTarget{ToRepoCloneURL: "https://github.com/kubernetes/kubernetes", ToUnit: "github.com/kubernetes/kubernetes"},
+		"k8s.io/kubernetes/pkg/api": &ResolvedTarget{ToRepoCloneURL: "https://github.com/kubernetes/kubernetes", ToUnit: "github.com/kubernetes/kubernetes/pkg/api"},
 
-		"gopkg.in/inconshreveable/log15.v2": &dep.ResolvedTarget{ToRepoCloneURL: "https://gopkg.in/inconshreveable/log15.v2", ToUnit: "gopkg.in/inconshreveable/log15.v2"},
-		"azul3d.org/semver.v2":              &dep.ResolvedTarget{ToRepoCloneURL: "https://azul3d.org/semver.v2", ToUnit: "azul3d.org/semver.v2"},
+		"gopkg.in/inconshreveable/log15.v2": &ResolvedTarget{ToRepoCloneURL: "https://gopkg.in/inconshreveable/log15.v2", ToUnit: "gopkg.in/inconshreveable/log15.v2"},
+		"azul3d.org/semver.v2":              &ResolvedTarget{ToRepoCloneURL: "https://azul3d.org/semver.v2", ToUnit: "azul3d.org/semver.v2"},
 
-		"sourcegraph.com/sourcegraph/srclib/graph":    &dep.ResolvedTarget{ToRepoCloneURL: "https://sourcegraph.com/sourcegraph/srclib.git", ToUnit: "sourcegraph.com/sourcegraph/srclib/graph"},
-		"sourcegraph.com/sourcegraph/sourcegraph/app": &dep.ResolvedTarget{ToRepoCloneURL: "https://sourcegraph.com/sourcegraph/sourcegraph.git", ToUnit: "sourcegraph.com/sourcegraph/sourcegraph/app"},
+		"sourcegraph.com/sourcegraph/srclib/graph":    &ResolvedTarget{ToRepoCloneURL: "https://sourcegraph.com/sourcegraph/srclib.git", ToUnit: "sourcegraph.com/sourcegraph/srclib/graph"},
+		"sourcegraph.com/sourcegraph/sourcegraph/app": &ResolvedTarget{ToRepoCloneURL: "https://sourcegraph.com/sourcegraph/sourcegraph.git", ToUnit: "sourcegraph.com/sourcegraph/sourcegraph/app"},
 	}
 	var calledAPI bool
-	resolveImportPath = func(importPath string) (*dep.ResolvedTarget, error) {
+	resolveImportPath = func(importPath string) (*ResolvedTarget, error) {
 		calledAPI = true
 		if repoRoot, ok := targets[importPath]; ok {
 			return repoRoot, nil
