@@ -10,7 +10,7 @@ development environment. Here's what you need:
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [Go](https://golang.org/doc/install) (v1.7.0 or higher)
-- [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
+- [Node JS](https://nodejs.org/en/download/) (v5.6.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
   - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
@@ -41,18 +41,23 @@ cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
 go install ./cmd/src
 ```
 
+Running the preceding commands will build and install the `src` binary in `$GOPATH/bin`, which you will use in subsequent steps such as PostgreSQL setup.
+
 ## PostgreSQL
 
 [Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
-steps to [initialize and configure your database](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@master/-/blob/docs/storage.md).
+steps to [initialize and configure your database](https://github.com/sourcegraph/sourcegraph/blob/master/docs/storage.md).
 
 ## Redis
 
-You can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed, however, the easiest way to get Redis up and running is probably:
+You can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed and are running Linux, however, the easiest way to get Redis up and running is probably:
 
 ```
-docker run -p 6379:6379 -v $redis-data-dir redis
+sudo dockerd # if docker isn't already running
+sudo docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
 ```
+
+**`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data.**
 
 ## Build
 
@@ -76,7 +81,7 @@ docker-machine start default
 eval $(docker-machine env)
 ```
 
-Then run:
+Then run the following commands (**NOTE: Node.js must be installed for the this step**):
 
 ```
 make dep
