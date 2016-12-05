@@ -30,12 +30,8 @@ type Ref struct {
 	// Def is the definition being referenced.
 	Def Def
 
-	// Position is the position of the reference.
-	Position token.Position
-}
-
-func (r *Ref) String() string {
-	return fmt.Sprintf("&Ref{Def.ImportPath: %q, Def.PackageName: %q, Def.Path: %q, Position: \"%s:%d:%d:%d\"}", r.Def.ImportPath, r.Def.PackageName, r.Def.Path, r.Position.Filename, r.Position.Line, r.Position.Column, r.Position.Offset)
+	// Pos is the position of the reference.
+	Pos token.Pos
 }
 
 type Config struct {
@@ -60,8 +56,8 @@ func (c *Config) Refs(emit func(*Ref)) error {
 			}
 		}
 		emit(&Ref{
-			Def:      *d,
-			Position: c.FileSet.Position(pos),
+			Def: *d,
+			Pos: pos,
 		})
 		return nil
 	}
