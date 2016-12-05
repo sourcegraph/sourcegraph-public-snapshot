@@ -5,7 +5,7 @@ class Feature {
 
 	public isEnabled(): boolean {
 		if (!global.window) {
-			return true;
+			return false;
 		}
 		return localStorage[this.name] === enabled;
 	}
