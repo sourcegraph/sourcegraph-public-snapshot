@@ -24,7 +24,6 @@ export interface AnnotationsGetDefAtPosOptions {
 export interface AnnotationsListOptions {
 	Entry: TreeEntrySpec;
 	Range?: FileRange;
-	NoSrclibAnns?: boolean;
 }
 
 export interface AsyncRefreshIndexesOp {
@@ -863,7 +862,6 @@ export interface RepoTreeGetOptions {
 	FullLines?: boolean;
 	Recursive?: boolean;
 	RecurseSingleSubfolderLimit?: number;
-	NoSrclibAnns?: boolean;
 }
 
 export interface RepoTreeListOp {

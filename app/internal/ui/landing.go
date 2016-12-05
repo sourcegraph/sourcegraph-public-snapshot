@@ -293,7 +293,6 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *de
 				},
 				ExpandContextLines: 2,
 			},
-			NoSrclibAnns: true,
 		}
 		refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
 		if err != nil {

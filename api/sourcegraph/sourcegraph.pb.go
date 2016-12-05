@@ -1001,9 +1001,6 @@ type SourceDef struct {
 type RepoTreeGetOptions struct {
 	ContentsAsString bool `json:"ContentsAsString,omitempty" url:",omitempty"`
 	GetFileOptions   `json:""`
-	// NoSrclibAnns indicates whether or not srclib annotations should be
-	// excluded in the (optional) returned list of annotations.
-	NoSrclibAnns bool `json:"NoSrclibAnns,omitempty"`
 }
 
 // GetFileOptions specifies options for GetFileWithOptions.
@@ -1210,9 +1207,6 @@ type AnnotationsListOptions struct {
 	// should be fetched for. If it is not set, then all of the file's
 	// annotations are returned.
 	Range *FileRange `json:"Range,omitempty"`
-	// NoSrclibAnns indicates whether or not srclib annotations should be
-	// excluded in the returned list of annotations.
-	NoSrclibAnns bool `json:"NoSrclibAnns,omitempty"`
 }
 
 // AnnotationsGetDefAtPosOptions specifies options for Annotations.GetDefAtPos
