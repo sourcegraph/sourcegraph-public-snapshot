@@ -705,52 +705,6 @@ type DefGetOptions struct {
 	ComputeLineRange bool `json:"ComputeLineRange,omitempty" url:",omitempty"`
 }
 
-// DefListOptions specifies options for DefsService.List.
-type DefListOptions struct {
-	Name string `json:"Name,omitempty" url:",omitempty"`
-	// Specifies a search query for defs. If specified, then the Sort and Direction
-	// options are ignored
-	Query string `json:"Query,omitempty" url:",omitempty"`
-	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
-	// with the specified start and end byte offsets. This filter is only applied if
-	// both values are set.
-	ByteStart uint32 `json:"ByteStart,omitempty"`
-	// ByteStart and ByteEnd will restrict the results to only definitions that overlap
-	// with the specified start and end byte offsets. This filter is only applied if
-	// both values are set.
-	ByteEnd uint32 `json:"ByteEnd,omitempty"`
-	// DefKeys, if set, will return the definitions that match the given DefKey
-	DefKeys []*graph.DefKey `json:"DefKeys,omitempty"`
-	// RepoRevs constrains the results to a set of repository revisions (given by their
-	// URIs plus an optional "@" and a revision specifier). For example,
-	// "repo.com/foo@revspec".
-	//
-	// TODO(repo-key): Make this use repo IDs, not URIs.
-	RepoRevs []string `json:"RepoRevs,omitempty" url:",omitempty,comma"`
-	UnitType string   `json:"UnitType,omitempty" url:",omitempty"`
-	Unit     string   `json:"Unit,omitempty" url:",omitempty"`
-	Path     string   `json:"Path,omitempty" url:",omitempty"`
-	// Files, if specified, will restrict the results to only defs defined in the
-	// specified file.
-	Files []string `json:"Files,omitempty" url:",omitempty"`
-	// FilePathPrefix, if specified, will restrict the results to only defs defined in
-	// files whose path is underneath the specified prefix.
-	FilePathPrefix string   `json:"FilePathPrefix,omitempty" url:",omitempty"`
-	Kinds          []string `json:"Kinds,omitempty" url:",omitempty,comma"`
-	Exported       bool     `json:"Exported,omitempty" url:",omitempty"`
-	Nonlocal       bool     `json:"Nonlocal,omitempty" url:",omitempty"`
-	// IncludeTest is whether the results should include definitions in test files.
-	IncludeTest bool `json:"IncludeTest,omitempty" url:",omitempty"`
-	// Enhancements
-	Doc   bool `json:"Doc,omitempty" url:",omitempty"`
-	Fuzzy bool `json:"Fuzzy,omitempty" url:",omitempty"`
-	// Sorting
-	Sort      string `json:"Sort,omitempty" url:",omitempty"`
-	Direction string `json:"Direction,omitempty" url:",omitempty"`
-	// Paging
-	ListOptions `json:""`
-}
-
 // DeprecatedDefListRefsOptions configures the scope of ref search for a def.
 type DeprecatedDefListRefsOptions struct {
 	Repo        int32    `json:"Repo,omitempty" url:",omitempty"`
@@ -771,11 +725,6 @@ type DefSpec struct {
 type DefsGetOp struct {
 	Def DefSpec        `json:"Def"`
 	Opt *DefGetOptions `json:"Opt,omitempty"`
-}
-
-type DefList struct {
-	Defs         []*Def `json:"Defs,omitempty"`
-	ListResponse `json:""`
 }
 
 type DeprecatedDefsListRefsOp struct {

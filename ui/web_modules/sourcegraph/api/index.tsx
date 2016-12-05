@@ -233,35 +233,6 @@ export interface DefKey {
 	Path: string;
 }
 
-export interface DefList {
-	Defs?: Def[];
-	Total?: number;
-}
-
-export interface DefListOptions {
-	Name?: string;
-	Query?: string;
-	ByteStart?: number;
-	ByteEnd?: number;
-	DefKeys?: any[];
-	RepoRevs?: string[];
-	UnitType?: string;
-	Unit?: string;
-	Path?: string;
-	Files?: string[];
-	FilePathPrefix?: string;
-	Kinds?: string[];
-	Exported?: boolean;
-	Nonlocal?: boolean;
-	IncludeTest?: boolean;
-	Doc?: boolean;
-	Fuzzy?: boolean;
-	Sort?: string;
-	Direction?: string;
-	PerPage?: number;
-	Page?: number;
-}
-
 export interface DefSearchResult {
 	Repo?: string;
 	CommitID?: string;
