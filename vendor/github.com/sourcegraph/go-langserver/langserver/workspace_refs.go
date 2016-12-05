@@ -83,6 +83,17 @@ func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC
 		par.Acquire()
 		go func(pkg *loader.PackageInfo) {
 			defer par.Release()
+			// Prevent any uncaught panics from taking the entire server down.
+			defer func() {
+				if r := recover(); r != nil {
+					// Same as net/http
+					const size = 64 << 10
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					log.Printf("ignoring panic serving %v for pkg %v: %v\n%s", req.Method, pkg, r, buf)
+					return
+				}
+			}()
 			err := h.externalRefsFromPkg(ctx, bctx, conn, fset, pkg, rootPath, &results)
 			if err != nil {
 				log.Printf("externalRefsFromPkg: %v: %v", pkg, err)
@@ -151,7 +162,7 @@ func (h *LangHandler) externalRefsTypecheck(ctx context.Context, bctx *build.Con
 	}
 
 	// Publish typechecking error diagnostics.
-	diags, err := typecheckErrorDiagnostics(typeErrs)
+	diags, err := errsToDiagnostics(typeErrs, prog)
 	if err != nil {
 		return nil, err
 	}

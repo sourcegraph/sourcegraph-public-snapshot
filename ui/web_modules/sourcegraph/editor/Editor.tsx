@@ -1,28 +1,33 @@
+import * as moment from "moment";
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { URIUtils } from "sourcegraph/core/uri";
 import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
+import "vs/editor/common/editorCommon";
+import "vs/editor/contrib/codelens/browser/codelens";
 
 import { CancellationToken } from "vs/base/common/cancellation";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import {IEditorMouseEvent} from "vs/editor/browser/editorBrowser";
-import { IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
+import { IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
+import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { create as createStandaloneEditor, createModel, onDidCreateModel } from "vs/editor/browser/standalone/standaloneEditor";
-import { registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
+import { registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
 import { Range } from "vs/editor/common/core/range";
-import { IPosition, IRange, IReadOnlyModel, IWordAtPosition } from "vs/editor/common/editorCommon";
-import { Definition, Hover, Location, ReferenceContext } from "vs/editor/common/modes";
+import { IModelChangedEvent, IPosition, IRange, IReadOnlyModel, IWordAtPosition } from "vs/editor/common/editorCommon";
+import { Command, Definition, Hover, ICodeLensSymbol, Location, ReferenceContext } from "vs/editor/common/modes";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
+import { CommandsRegistry } from "vs/platform/commands/common/commands";
 
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 import { IEditor } from "vs/platform/editor/common/editor";
@@ -42,8 +47,10 @@ function normalisePosition(model: IReadOnlyModel, position: IPosition): IPositio
 function cacheKey(model: IReadOnlyModel, position: IPosition): string {
 	return `${model.uri.toString(true)}:${position.lineNumber}:${position.column}`;
 }
+
 const hoverCache = new Map<string, Thenable<Hover>>(); // "single-flight" and caching on word boundaries
 const defCache = new Map<string, Thenable<Definition | null>>(); // "single-flight" and caching on word boundaries
+const codeLensCache = new Map<string, Thenable<ICodeLensSymbol[]>>();
 
 // HACK: don't show "Right-click to view references" on primitive types; if done properly, this
 // should be determined by a type property on the hover response.
@@ -70,6 +77,7 @@ export class Editor implements IDisposable {
 	private _editor: IStandaloneCodeEditor;
 	private _editorService: EditorService;
 	private _toDispose: IDisposable[] = [];
+	private _disposed: boolean = false;
 	private _initializedModes: Set<string> = new Set();
 	private _elementUnderMouse: Element;
 
@@ -95,13 +103,13 @@ export class Editor implements IDisposable {
 		}));
 
 		this._editorService = new EditorService();
-
+		let initialModel = createModel("", "text/plain");
 		this._editor = createStandaloneEditor(elem, {
 			// If we don't specify an initial model, Monaco will
 			// create this one anyway (but it'll try to call
 			// window.monaco.editor.createModel, and we don't want to
 			// add any implicit dependency on window).
-			model: createModel("", "text/plain"),
+			model: initialModel,
 
 			readOnly: true,
 			automaticLayout: true,
@@ -112,11 +120,31 @@ export class Editor implements IDisposable {
 			lineHeight: 21,
 			theme: "vs-dark",
 			renderLineHighlight: true,
+			codeLens: Features.codeLens.isEnabled(),
 		}, { editorService: this._editorService });
+
+		// WORKAROUND: Remove the initial model from the configuration to avoid infinite recursion when the config gets updated internally.
+		// Reproduce issue by using "Find All References" to open the rift view and then right click again in the code outside of the view.
+		delete (this._editor.getRawConfiguration() as IEditorConstructionOptions).model;
 
 		this._editorService.setEditor(this._editor);
 
 		(window as any).ed = this._editor; // for easier debugging via the JS console
+
+		// Warm up the LSP server immediately when the document loads
+		// instead of waiting until the user tries to hover.
+		this._editor.onDidChangeModel((e: IModelChangedEvent) => {
+			// only do it for modes we have called registerModeProviders on.
+			if (!modes.has(this._editor.getModel().getModeId())) {
+				return;
+			}
+			// We modify the name to indicate to our HTTP gateway that this
+			// should not be measured as a user triggered action.
+			lsp.send(this._editor.getModel(), "textDocument/hover?prepare", {
+				textDocument: { uri: e.newModelUrl.toString(true) },
+				position: lsp.toPosition(new Position(1, 1)),
+			});
+		});
 
 		// Don't show context menu for peek view or comments, etc.
 		// Also don't show for unsupported languages.
@@ -126,17 +154,31 @@ export class Editor implements IDisposable {
 			const peekWidget = e.target.detail === "vs.editor.contrib.zoneWidget1";
 			const c = e.target.element.classList;
 			const ignoreToken = c.contains("delimeter") || c.contains("comment") || c.contains("view-line") || (c.length === 1 && c.contains("token"));
-			if (ignoreToken || peekWidget || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
+			if (ignoreToken || peekWidget || this._editor.getModel() === initialModel || !isSupportedMode(this._editor.getModel().getModeId()) || isOnboarding) {
 				(this._editor as any)._contextViewService.hideContextView();
+				return;
+			}
+
+			// If we have a selection on right click, set it to the cursor
+			// position. Otherwise, Monaco will use the selection end for eg
+			// find all refs.
+			if (!this._editor.getSelection().isEmpty() && e.target.position) {
+				const range = {
+					startLineNumber: e.target.position.lineNumber,
+					startColumn: e.target.position.column,
+					endLineNumber: e.target.position.lineNumber,
+					endColumn: e.target.position.column,
+				};
+				this._editor.setSelection(range);
 			}
 
 			const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
 			AnalyticsConstants.Events.CodeContextMenu_Initiated.logEvent({
-					repo: repo,
-					rev: rev || "",
-					path: path,
-					language: this._editor.getModel().getModeId(),
-				}
+				repo: repo,
+				rev: rev || "",
+				path: path,
+				language: this._editor.getModel().getModeId(),
+			}
 			);
 
 		});
@@ -189,6 +231,22 @@ export class Editor implements IDisposable {
 				}
 			}
 		}
+
+		// Set the dom readonly property, so keyboard doesn't pop up on mobile.
+		const dom = this._editor.getDomNode();
+		const input = dom.getElementsByClassName("inputarea");
+		if (input.length === 1) {
+			input[0].setAttribute("readOnly", "true");
+		} else {
+			console.error("Didn't set textarea to readOnly");
+		}
+
+		CommandsRegistry.registerCommand("codelens.authorship.commit", (accessor, args) => {
+			AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent({
+				commitURL: args,
+			});
+			window.open(`https://${args}`, "_newtab");
+		});
 	}
 
 	// Register services for modes (languages) when new models are added.
@@ -197,13 +255,14 @@ export class Editor implements IDisposable {
 			this._toDispose.push(registerHoverProvider(mode, this));
 			this._toDispose.push(registerDefinitionProvider(mode, this));
 			this._toDispose.push(registerReferenceProvider(mode, this));
+			this._toDispose.push(registerCodeLensProvider(mode, this));
 			this._initializedModes.add(mode);
 		}
 	};
 
 	onLineSelected(listener: (mouseDownEvent: IEditorMouseEvent, mouseUpEvent: IEditorMouseEvent) => void): void {
 		let disposeMouseDown = this._editor.onMouseDown(mouseDownEvent => {
-			let disposeMouseUp = this._editor.onMouseUp(function(mouseUpEvent: IEditorMouseEvent): void {
+			let disposeMouseUp = this._editor.onMouseUp(function (mouseUpEvent: IEditorMouseEvent): void {
 				listener(mouseDownEvent, mouseUpEvent);
 				disposeMouseUp.dispose();
 			});
@@ -218,15 +277,12 @@ export class Editor implements IDisposable {
 				resource: uri,
 				options: range ? { selection: range } : undefined,
 			})
-			.done(resolve, reject);
+				.done(resolve, reject);
 		});
 	}
 
-	_highlight(startLine: number, startCol?: number, endLine?: number, endCol?: number): void {
-		startCol = typeof startCol === "number" ? startCol : this._editor.getModel().getLineMinColumn(startLine);
-		endLine = typeof endLine === "number" ? endLine : startLine;
-		endCol = typeof endCol === "number" ? endCol : this._editor.getModel().getLineMaxColumn(endLine);
-		this._editor.setSelection(new Range(startLine, startCol, endLine, endCol));
+	public setSelection(range: IRange): void {
+		this._editor.setSelection(range);
 	}
 
 	public getSelection(): any {
@@ -264,6 +320,11 @@ export class Editor implements IDisposable {
 				const translatedLocs: Location[] = locs
 					.filter((loc) => Object.keys(loc).length !== 0)
 					.map(lsp.toMonacoLocation);
+
+				if (this._disposed) {
+					defCache.delete(key);
+					return null; // need to return null, otherwise vscode errors internally
+				}
 				return translatedLocs;
 			});
 
@@ -279,7 +340,7 @@ export class Editor implements IDisposable {
 		const cached = hoverCache.get(key);
 		if (cached) {
 			return cached.then(hover => {
-				if (hover.contents) {
+				if (hover.contents && hover.contents.length > 0) {
 					this.setTokenCursor(word);
 				}
 				return hover;
@@ -297,11 +358,11 @@ export class Editor implements IDisposable {
 
 				const {repo, rev, path} = URIUtils.repoParams(model.uri);
 				AnalyticsConstants.Events.CodeToken_Hovered.logEvent({
-						repo: repo,
-						rev: rev || "",
-						path: path,
-						language: model.getModeId(),
-					}
+					repo: repo,
+					rev: rev || "",
+					path: path,
+					language: model.getModeId(),
+				}
 				);
 
 				let range: IRange;
@@ -357,7 +418,7 @@ export class Editor implements IDisposable {
 		})
 			.then((resp) => resp ? resp.result : null)
 			.then((resp: lsp.Location | lsp.Location[] | null) => {
-				if (!resp) {
+				if (!resp || Object.keys(resp).length === 0) {
 					return null;
 				}
 
@@ -372,10 +433,6 @@ export class Editor implements IDisposable {
 			});
 	}
 
-	public setHighlightForLineSelection(startLine: number, endLine: number): void {
-		this._highlight(startLine, endLine < startLine ? Infinity : 0, endLine, startLine > endLine ? 0 : Infinity);
-	}
-
 	private setTokenCursor(word: IWordAtPosition): void {
 		// model.getWordAtPosition can return null.
 		if (!word) {
@@ -383,10 +440,44 @@ export class Editor implements IDisposable {
 		}
 		const el = (this._elementUnderMouse as any);
 		// Make sure the mouse is still under the target word.
-		if (el.textContent === word.word) {
+		if (el && el.textContent === word.word) {
 			// Ensure tokens that don't identifier class but do have hover info get a pointer cursor.
 			el.style.cursor = "pointer";
 		}
+	}
+
+	// Necessary implementation for the code lens to be rendered. The code lens is implemented inside of provideCodeLenses so it is only necessary
+	// to return the lens.
+	resolveCodeLens(model: IReadOnlyModel, codeLens: ICodeLensSymbol, token: CancellationToken): ICodeLensSymbol | Thenable<ICodeLensSymbol> {
+		return codeLens;
+	}
+
+	provideCodeLenses(model: IReadOnlyModel, token: CancellationToken): ICodeLensSymbol[] | Thenable<ICodeLensSymbol[]> {
+		const key = model.uri.toString(true);
+		const cached = codeLensCache.get(key);
+		if (cached) {
+			return cached;
+		}
+
+		let blameData = this._editorService.getEditorBlameData();
+		let codeLenses: ICodeLensSymbol[] = [];
+		for (let i = 0; i < blameData.length; i++) {
+			const {repo, rev} = URIUtils.repoParams(model.uri);
+			const blameLine = blameData[i];
+			const timeSince = moment(new Date(blameLine.date)).fromNow();
+			codeLenses.push({
+				id: `${blameLine.rev}${blameLine.startLine}-${blameLine.endLine}`,
+				range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),
+				command: {
+					id: "codelens.authorship.commit",
+					title: `${blameLine.name} ${timeSince}`,
+					arguments: [`${repo}/commit/${blameLine.rev}#diff-${rev}`],
+				} as Command,
+			});
+		}
+		const p = Promise.resolve(codeLenses);
+		codeLensCache.set(key, p);
+		return p;
 	}
 
 	public layout(): void {
@@ -394,6 +485,7 @@ export class Editor implements IDisposable {
 	}
 
 	public dispose(): void {
+		this._disposed = true;
 		this._editor.dispose();
 		this._toDispose.forEach(disposable => {
 			disposable.dispose();

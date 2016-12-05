@@ -1,3 +1,0 @@
---compilers js:babel-core/register
---recursive
--r co-mocha

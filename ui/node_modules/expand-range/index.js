@@ -39,5 +39,5 @@ module.exports = function expandRange(str, options, fn) {
   }
 
   args.push(opts);
-  return fill.apply(fill, args.concat(fn));
+  return fill.apply(null, args.concat(fn));
 };

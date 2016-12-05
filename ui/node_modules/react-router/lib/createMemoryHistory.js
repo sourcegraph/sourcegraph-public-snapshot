@@ -18,7 +18,7 @@ var _createMemoryHistory2 = _interopRequireDefault(_createMemoryHistory);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function createMemoryHistory(options) {
-  // signatures and type checking differ between `useRoutes` and
+  // signatures and type checking differ between `useQueries` and
   // `createMemoryHistory`, have to create `memoryHistory` first because
   // `useQueries` doesn't understand the signature
   var memoryHistory = (0, _createMemoryHistory2.default)(options);
@@ -26,7 +26,6 @@ function createMemoryHistory(options) {
     return memoryHistory;
   };
   var history = (0, _useQueries2.default)((0, _useBasename2.default)(createHistory))(options);
-  history.__v2_compatible__ = true;
   return history;
 }
 module.exports = exports['default'];

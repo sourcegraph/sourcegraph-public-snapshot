@@ -1,8 +1,8 @@
 import expect from "expect.js";
 import "isomorphic-fetch";
-import {combineHeaders} from "sourcegraph/util/xhr";
+import { combineHeaders } from "sourcegraph/util/xhr";
 
-function getHeaders(h: Headers | null): {[key: string]: string[]} | null {
+function getHeaders(h: Headers | null): { [key: string]: string[] } | null {
 	if (!h) {
 		return null;
 	}
@@ -26,16 +26,16 @@ function getHeaders(h: Headers | null): {[key: string]: string[]} | null {
 
 describe("combineHeaders", () => {
 	it("should combine two Headers objects", () => {
-		const a = new Headers({ // eslint-disable-line quote-props
+		const a = new Headers({
 			w: "w0",
 			"x-y": "z0",
 		});
-		const b = new Headers({ // eslint-disable-line quote-props
+		const b = new Headers({
 			u: "u0",
 			"X-Y": "z1",
 		});
 
-		expect(getHeaders(combineHeaders(a, b))).to.eql({ // eslint-disable-line quote-props
+		expect(getHeaders(combineHeaders(a, b))).to.eql({
 			w: ["w0"],
 			u: ["u0"],
 			"x-y": ["z0", "z1"],

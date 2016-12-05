@@ -1,6 +1,6 @@
 sudo: false
 language: node_js
 node_js:
-    - "0.12"
+    - "4"
 script:
     - node_modules/.bin/grunt test

@@ -1,5 +1,5 @@
 import * as React from "react";
-import {Symbol} from "sourcegraph/components/symbols/Symbol";
+import { Symbol } from "sourcegraph/components/symbols/Symbol";
 
 interface Props {
 	className?: string;

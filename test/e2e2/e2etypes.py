@@ -126,6 +126,9 @@ class Driver(object):
     def hover_token(self, token_text):
         ActionChains(self.d).move_to_element(self.find_token(token_text)).perform()
 
+    def hover_elem(self, elem):
+        ActionChains(self.d).move_to_element(elem).perform()
+
     def find_tokens(self, tok_text):
         return [e for e in self.d.find_elements_by_css_selector(".token.identifier.go") if tok_text in e.text]
 
@@ -185,6 +188,14 @@ class Driver(object):
         auth0_user_id = auth0_users[0]['user_id']
         subprocess.check_output('curl -H "Authorization: Bearer %s" -X DELETE  https://sourcegraph.auth0.com/api/v2/users/%s' % (auth0_tok, urllib.quote(auth0_user_id)), shell=True)
 
+    def verify_new_tab_opened(self, location):
+        main_window = self.d.current_window_handle
+        wait_for(lambda: len(self.d.window_handles) == 2)
+        retry(lambda: self.d.switch_to.window(self.d.window_handles[1]))
+        wait_for(lambda: self.d.current_url == location)
+        self.d.close()
+        retry(lambda: self.d.switch_to.window(main_window))
+
 # Util contains static methods that define more compound actions
 # than what are available in Driver methods.
 class Util(object):
@@ -222,3 +233,15 @@ class Util(object):
             for i in xrange(0, 40): # network events might have changed the list, so try one more time from the top
                 d.active_elem().send_keys(Keys.UP)
         raise E2EError("did not find search result '%s'" % result_text)
+
+    # wait_for_all_network_indicators_to_be_invisible_with_jiggle is a
+    # kludge to address
+    # https://github.com/sourcegraph/sourcegraph/issues/2391
+    @staticmethod
+    def wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4):
+        def f():
+            # "jiggle" the switch
+            d.active_elem().send_keys(Keys.SPACE)
+            d.active_elem().send_keys(Keys.BACKSPACE)
+            wait_for(d.all_network_indicators_are_invisible, max_wait=jiggle_wait)
+        retry(f)

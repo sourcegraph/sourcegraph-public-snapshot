@@ -2,8 +2,8 @@ package cli
 
 import (
 	"bufio"
-	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,182 +25,150 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/keegancsmith/tmpfriend"
-	lightstep "github.com/lightstep/lightstep-tracer-go"
-	opentracing "github.com/opentracing/opentracing-go"
-	"sourcegraph.com/sourcegraph/go-flags"
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/graphstoreutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
+	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 
-// Stripped down help message presented to most users (full help message can be
-// gotten with -a or --help-all).
-var shortHelpMessage = `Usage:
-  src serve [serve-OPTIONS]
+var (
+	logLevel       = env.Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, dbug-dev, info, warn, error, crit)")
+	trace          = env.Get("SRC_LOG_TRACE", "HTTP", "space separated list of trace logs to show. Options: all, HTTP, build, github")
+	traceThreshold = env.Get("SRC_LOG_TRACE_THRESHOLD", "", "show traces that take longer than this")
 
-Starts an HTTP server serving the app and API.
+	httpAddr  = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app, REST API, and gRPC API")
+	httpsAddr = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app, REST API, and gRPC API")
 
-[serve command options]
-          --http-addr=                           HTTP listen address for app, REST API, and gRPC API (:3080)
-          --https-addr=                          HTTPS (TLS) listen address for app, REST API, and gRPC API (:3443)
-          --prof-http=BIND-ADDR                  net/http/pprof http bind address (:6060)
-          --app-url=                             publicly accessible URL to web app (e.g., what you type into your browser) (http://<http-addr>)
-          --tls-cert=                            certificate file (for TLS)
-          --tls-key=                             key file (for TLS)
-      -i, --id-key=                              identity key file
-          --id-key-data=                         identity key file data (overrides -i/--id-key) [$SRC_ID_KEY_DATA]
-          --dequeue-msec=                        if no builds are dequeued, sleep up to this many msec before trying again (1000)
+	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
-    Help Options:
-      -h, --help                                 Show common serve flags
-      -a, --help-all                             Show all serve flags
+	appURL     = env.Get("SRC_APP_URL", "http://<http-addr>", "publicly accessible URL to web app (e.g., what you type into your browser)")
+	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
 
-    Local:
-          --local.clcache=                       how often to refresh the commit-log cache in seconds; if 0, then no cache is used (0)
-          --local.clcachesize=                   number of commits to cache on refresh (500)
-`
+	certFile = env.Get("SRC_TLS_CERT", "", "certificate file for TLS")
+	keyFile  = env.Get("SRC_TLS_KEY", "", "key file for TLS")
+
+	idKeyData = env.Get("SRC_ID_KEY_DATA", "", "identity key file data")
+
+	reposDir   = os.ExpandEnv(env.Get("SRC_REPOS_DIR", "$SGPATH/repos", "root dir containing repos"))
+	gitservers = env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers; a local gitserver process is used by default")
+
+	graphstoreRoot = os.ExpandEnv(env.Get("SRC_GRAPHSTORE_ROOT", "$SGPATH/repos", "root dir, HTTP VFS (http[s]://...), or S3 bucket (s3://...) in which to store graph data"))
+)
 
 func init() {
-	// We will register our own custom help group.
-	cli.CustomHelpCmds = append(cli.CustomHelpCmds, "serve")
-
-	c, err := cli.CLI.AddCommand("serve",
-		"start web server",
-		`
-Starts an HTTP server serving the app and API.`,
-		&serveCmdInst,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	c.SubcommandsOptional = true
-	cli.Serve = c
-
-	// Build the group.
-	var help struct {
-		ShowHelp    func() error `short:"h" long:"help" description:"Show common serve flags"`
-		ShowHelpAll func() error `short:"a" long:"help-all" description:"Show all serve flags"`
-	}
-	help.ShowHelp = func() error {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: shortHelpMessage,
-		}
-	}
-	help.ShowHelpAll = func() error {
-		var b bytes.Buffer
-		cli.CLI.WriteHelp(&b)
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: b.String(),
-		}
-	}
-
-	// Add the group to the command.
-	_, err = c.AddGroup("Help Options", "", &help)
-	if err != nil {
-		log.Fatal(err)
-	}
+	srclib.CacheLocalRepo = false
 }
 
-// ServeCmdPrivate holds the parameters containing private data about the
-// instance. These fields will not be forwarded with the other metrics.
-type ServeCmdPrivate struct {
-	CertFile string `long:"tls-cert" description:"certificate file (for TLS)" env:"SRC_TLS_CERT"`
-	KeyFile  string `long:"tls-key" description:"key file (for TLS)" env:"SRC_TLS_KEY"`
-
-	IDKeyData string `long:"id-key-data" description:"identity key file data (overrides -i/--id-key)" env:"SRC_ID_KEY_DATA"`
-}
-
-var serveCmdInst ServeCmd
-
-type ServeCmd struct {
-	HTTPAddr  string `long:"http-addr" default:":3080" description:"HTTP listen address for app, REST API, and gRPC API" env:"SRC_HTTP_ADDR"`
-	HTTPSAddr string `long:"https-addr" default:":3443" description:"HTTPS (TLS) listen address for app, REST API, and gRPC API" env:"SRC_HTTPS_ADDR"`
-
-	ProfBindAddr string `long:"prof-http" default:":6060" description:"net/http/pprof http bind address" value-name:"BIND-ADDR" env:"SRC_PROF_HTTP"`
-
-	AppURL string `long:"app-url" default:"http://<http-addr>" description:"publicly accessible URL to web app (e.g., what you type into your browser)" env:"SRC_APP_URL"`
-
-	NoWorker bool `long:"no-worker" description:"deprecated"`
-
-	// Flags containing sensitive information must be added to this struct.
-	ServeCmdPrivate
-
-	GraphStoreOpts `group:"Graph data storage (defs, refs, etc.)" namespace:"graphstore"`
-
-	ReposDir   string `long:"fs.repos-dir" description:"root dir containing repos" default:"$SGPATH/repos" env:"SRC_REPOS_DIR"`
-	Gitservers string `long:"git-servers" description:"addresses of the remote gitservers; a local gitserver process is used by default" env:"SRC_GIT_SERVERS"`
-}
-
-func (c *ServeCmd) configureAppURL() (*url.URL, error) {
+func configureAppURL() (*url.URL, error) {
 	var hostPort string
-	if strings.HasPrefix(c.HTTPAddr, ":") {
+	if strings.HasPrefix(httpAddr, ":") {
 		// Prepend localhost if HTTP listen addr is just a port.
-		hostPort = "localhost" + c.HTTPAddr
+		hostPort = "localhost" + httpAddr
 	} else {
-		hostPort = c.HTTPAddr
+		hostPort = httpAddr
 	}
-	if c.AppURL == "" {
-		c.AppURL = "http://<http-addr>"
+	if appURL == "" {
+		appURL = "http://<http-addr>"
 	}
-	c.AppURL = strings.Replace(c.AppURL, "<http-addr>", hostPort, -1)
+	appURL = strings.Replace(appURL, "<http-addr>", hostPort, -1)
 
-	appURL, err := url.Parse(c.AppURL)
+	u, err := url.Parse(appURL)
 	if err != nil {
 		return nil, err
 	}
 
-	return appURL, nil
+	return u, nil
 }
 
-func (c *ServeCmd) Execute(args []string) error {
+func Main() error {
+	log.SetFlags(0)
+	log.SetPrefix("")
+
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "help", "-h", "--help":
+			log.Print("Build information:")
+			b, err := json.MarshalIndent(buildvar.All, "", "  ")
+			if err != nil {
+				return err
+			}
+			log.Print(string(b))
+			log.Print()
+
+			env.PrintHelp()
+
+			log.Print()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			for _, st := range sysreq.Check(ctx, skippedSysReqs()) {
+				log.Printf("%s:", st.Name)
+				if st.OK() {
+					log.Print("\tOK")
+					continue
+				}
+				if st.Skipped {
+					log.Print("\tSkipped")
+					continue
+				}
+				if st.Problem != "" {
+					log.Print("\t" + st.Problem)
+				}
+				if st.Err != nil {
+					log.Printf("\tError: %s", st.Err)
+				}
+				if st.Fix != "" {
+					log.Printf("\tPossible fix: %s", st.Fix)
+				}
+			}
+
+			return nil
+		}
+	}
+
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
 	logHandler := log15.StderrHandler
-	if globalOpt.VerbosePkg != "" {
-		logHandler = log15.MatchFilterHandler("pkg", globalOpt.VerbosePkg, log15.StderrHandler)
-	}
 
 	// We have some noisey debug logs, so to aid development we have a
 	// special dbug level which excludes the noisey logs
-	if globalOpt.LogLevel == "dbug-dev" {
-		globalOpt.LogLevel = "dbug"
+	if logLevel == "dbug-dev" {
+		logLevel = "dbug"
 		logHandler = log15.FilterHandler(loghandlers.NotNoisey, logHandler)
 	}
 
 	// Filter trace logs
-	logHandler = log15.FilterHandler(loghandlers.Trace(globalOpt.Trace, globalOpt.TraceThreshold), logHandler)
+	d, _ := time.ParseDuration(traceThreshold)
+	logHandler = log15.FilterHandler(loghandlers.Trace(strings.Fields(trace), d), logHandler)
 
 	// Filter log output by level.
-	lvl, err := log15.LvlFromString(globalOpt.LogLevel)
+	lvl, err := log15.LvlFromString(logLevel)
 	if err != nil {
 		return err
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
 
-	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
-		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
-			AccessToken: t,
-		}))
-	}
+	traceutil.InitTracer()
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
@@ -208,30 +176,29 @@ func (c *ServeCmd) Execute(args []string) error {
 		return err
 	}
 
-	c.GraphStoreOpts.expandEnv()
-	log15.Debug("GraphStore", "at", c.GraphStoreOpts.Root)
+	log15.Debug("GraphStore", "at", graphstoreRoot)
 
 	for _, f := range cli.ServeInit {
 		f()
 	}
 
-	if c.ProfBindAddr != "" {
-		go debugserver.Start(c.ProfBindAddr)
-		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", c.ProfBindAddr))
+	if profBindAddr != "" {
+		go debugserver.Start(profBindAddr)
+		log15.Debug("Profiler available", "on", fmt.Sprintf("%s/pprof", profBindAddr))
 	}
 
 	app.Init()
 
-	conf.AppURL, err = c.configureAppURL()
+	conf.AppURL, err = configureAppURL()
 	if err != nil {
 		return err
 	}
 
-	c.GraphStoreOpts.apply()
+	backend.SetGraphStore(graphstoreutil.New(graphstoreRoot, nil))
 
 	// Server identity keypair
-	if s := c.IDKeyData; s != "" {
-		auth.ActiveIDKey, err = auth.FromString(s)
+	if idKeyData != "" {
+		auth.ActiveIDKey, err = auth.FromString(idKeyData)
 		if err != nil {
 			return err
 		}
@@ -239,7 +206,7 @@ func (c *ServeCmd) Execute(args []string) error {
 		log15.Warn("Using default ID key.")
 	}
 
-	c.runGitserver()
+	runGitserver()
 
 	sm := http.NewServeMux()
 	newRouter := func() *mux.Router {
@@ -258,10 +225,10 @@ func (c *ServeCmd) Execute(args []string) error {
 	sm.Handle("/", gziphandler.GzipHandler(handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter())))))
 	assets.Mount(sm)
 
-	if (c.CertFile != "" || c.KeyFile != "") && c.HTTPSAddr == "" {
-		return errors.New("HTTPS listen address (--https-addr) must be specified if TLS cert and key are set")
+	if (certFile != "" || keyFile != "") && httpsAddr == "" {
+		return errors.New("HTTPS listen address must be specified if TLS cert and key are set")
 	}
-	useTLS := c.CertFile != "" || c.KeyFile != ""
+	useTLS := certFile != "" || keyFile != ""
 
 	if useTLS && conf.AppURL.Scheme == "http" {
 		log15.Warn("TLS is enabled but app url scheme is http", "appURL", conf.AppURL)
@@ -272,7 +239,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	mw := []handlerutil.Middleware{middleware.HealthCheck, middleware.RealIP, middleware.NoCacheByDefault}
-	if v, _ := strconv.ParseBool(os.Getenv("SG_ENABLE_HSTS")); v {
+	if v, _ := strconv.ParseBool(enableHSTS); v {
 		mw = append(mw, middleware.StrictTransportSecurity)
 	}
 	mw = append(mw, middleware.SecureHeader)
@@ -288,7 +255,7 @@ func (c *ServeCmd) Execute(args []string) error {
 	//
 	//
 	// Start event listeners.
-	c.initializeEventListeners()
+	initializeEventListeners()
 
 	srv := &http.Server{
 		Handler:      handlerutil.WithMiddleware(sm, mw...),
@@ -297,24 +264,24 @@ func (c *ServeCmd) Execute(args []string) error {
 	}
 
 	// Start HTTP server.
-	if c.HTTPAddr != "" {
-		l, err := net.Listen("tcp", c.HTTPAddr)
+	if httpAddr != "" {
+		l, err := net.Listen("tcp", httpAddr)
 		if err != nil {
 			return err
 		}
 
-		log15.Debug("HTTP running", "on", c.HTTPAddr)
+		log15.Debug("HTTP running", "on", httpAddr)
 		go func() { log.Fatal(srv.Serve(l)) }()
 	}
 
 	// Start HTTPS server.
-	if useTLS && c.HTTPSAddr != "" {
-		l, err := net.Listen("tcp", c.HTTPSAddr)
+	if useTLS && httpsAddr != "" {
+		l, err := net.Listen("tcp", httpsAddr)
 		if err != nil {
 			return err
 		}
 
-		cert, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
 			return err
 		}
@@ -324,12 +291,12 @@ func (c *ServeCmd) Execute(args []string) error {
 			Certificates: []tls.Certificate{cert},
 		})
 
-		log15.Debug("HTTPS running", "on", c.HTTPSAddr)
+		log15.Debug("HTTPS running", "on", httpsAddr)
 		go func() { log.Fatal(srv.Serve(l)) }()
 	}
 
 	// Connection test
-	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", c.AppURL))
+	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", appURL))
 
 	// Start background repo updater worker.
 	repoUpdaterCtx, err := authenticateScopedContext(context.Background(), []string{"internal:repoupdater"})
@@ -380,7 +347,7 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 
 // initializeEventListeners creates special scoped contexts and passes them to
 // event listeners.
-func (c *ServeCmd) initializeEventListeners() {
+func initializeEventListeners() {
 	for _, l := range events.GetRegisteredListeners() {
 		listenerCtx, err := authenticateScopedContext(auth.WithActor(context.Background(), &auth.Actor{}), l.Scopes())
 		if err != nil {
@@ -391,32 +358,14 @@ func (c *ServeCmd) initializeEventListeners() {
 	}
 }
 
-// safeConfigFlags returns the commandline flag data for the `src serve` command,
-// by filtering out secrets in the ServeCmdPrivate flag struct.
-func (c *ServeCmd) safeConfigFlags() string {
-	serveFlagData := cli.Serve.GetData()
-	if len(serveFlagData) > 0 {
-		// The first element is the data of the top level group under `src serve`,
-		// i.e. the data of the struct ServeCmd. Since this struct contains private
-		// flags (ServeCmdPrivate), we discard this struct from the returned slice,
-		// and instead append a safe version of this struct.
-		serveFlagData = serveFlagData[1:]
-	}
-	serveCmdSafe := *c
-	serveCmdSafe.ServeCmdPrivate = ServeCmdPrivate{}
-	configStr := fmt.Sprintf("%+v", serveCmdSafe)
-	for _, data := range serveFlagData {
-		if data != nil {
-			configStr = fmt.Sprintf("%s %+v", configStr, data)
-		}
-	}
-	return configStr
-}
-
-// runGitserver either connects to gitservers specified in c.Gitservers, if any.
+// runGitserver either connects to gitservers specified in gitservers, if any.
 // Otherwise it starts a single local gitserver and connects to it.
-func (c *ServeCmd) runGitserver() {
-	gitservers := strings.Fields(c.Gitservers)
+func runGitserver() {
+	if gitservers == "none" {
+		return
+	}
+
+	gitservers := strings.Fields(gitservers)
 	if len(gitservers) != 0 {
 		for _, addr := range gitservers {
 			gitserver.DefaultClient.Connect(addr)
@@ -426,7 +375,11 @@ func (c *ServeCmd) runGitserver() {
 
 	stdoutReader, stdoutWriter := io.Pipe()
 	go func() {
-		cmd := exec.Command(srccmd.Path, "git-server", "--auto-terminate", "--repos-dir="+os.ExpandEnv(c.ReposDir))
+		cmd := exec.Command("gitserver")
+		cmd.Env = append(os.Environ(),
+			"SRC_AUTO_TERMINATE=true",
+			"SRC_REPOS_DIR="+os.ExpandEnv(reposDir),
+		)
 		_, err := cmd.StdinPipe() // keep stdin from closing
 		if err != nil {
 			log.Fatalf("git-server failed: %s", err)

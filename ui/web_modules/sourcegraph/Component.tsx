@@ -28,7 +28,9 @@ export class Component<P, S> extends React.Component<P, S> {
 		return false;
 	}
 
-	setState(patch: S | ((prevState: S, props: P) => S), callback?: () => any): void {
+	setState(state: S, callback?: () => any): void;
+	setState(f: (prevState: S, props: P) => S, callback?: () => any): void;
+	setState(patch: any, callback?: () => any): void {
 		if (patch instanceof Function) {
 			throw new Error("setState with function parameter not supported");
 		} else {

@@ -34,13 +34,8 @@ require.extensions[".css"] = function(module, filename) {
 
 Module.prototype.require = function(modulePath) {
 	// avoid dependencies on vscode
-	if (modulePath.startsWith("sourcegraph/editor/") || modulePath === "sourcegraph/blob/BlobMain") {
+	if (modulePath.startsWith("sourcegraph/editor/") || modulePath === "sourcegraph/blob/BlobMain" || modulePath.startsWith("sourcegraph/workbench/")) {
 		return null;
-	}
-
-	// skip render of react-helmet
-	if (modulePath === "react-helmet") {
-		return {default: function() { return null; }};
 	}
 
 	// map paths

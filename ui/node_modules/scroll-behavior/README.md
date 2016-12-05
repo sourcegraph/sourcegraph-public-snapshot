@@ -1,8 +1,8 @@
 # scroll-behavior [![Travis][build-badge]][build] [![npm][npm-badge]][npm]
 
-Scroll management for [`history`](https://github.com/ReactTraining/history).
+Pluggable browser scroll management.
 
-**If you are using [React Router](https://github.com/reactjs/react-router), check out [react-router-scroll](https://github.com/taion/react-router-scroll), which wraps up the scroll management logic here into a router middleware.**
+**If you use [React Router](https://github.com/reactjs/react-router), use [react-router-scroll](https://github.com/taion/react-router-scroll), which wraps up the scroll management logic here into a React Router middleware.**
 
 [![Codecov][codecov-badge]][codecov]
 [![Discord][discord-badge]][discord]
@@ -10,10 +10,19 @@ Scroll management for [`history`](https://github.com/ReactTraining/history).
 ## Usage
 
 ```js
-import createHistory from 'history/lib/createBrowserHistory';
-import withScroll from 'scroll-behavior';
+import ScrollBehavior from 'scroll-behavior';
 
-const history = withScroll(createHistory());
+/* ... */
+
+const scrollBehavior = new ScrollBehavior({
+  addTransitionHook,
+  stateStorage,
+  getCurrentLocation,
+  /* shouldUpdateScroll, */
+});
+
+// After a transition:
+scrollBehavior.updateScroll(/* prevContext, context */);
 ```
 
 ## Guide
@@ -21,54 +30,67 @@ const history = withScroll(createHistory());
 ### Installation
 
 ```
-$ npm i -S history
 $ npm i -S scroll-behavior
 ```
 
-### Scroll behaviors
-
 ### Basic usage
 
-Extend your history object using `withScroll`. The extended history object will manage the scroll position for transitions.
+Create a `ScrollBehavior` object with the following arguments:
+- `addTransitionHook`: this function should take a transition hook function and return an unregister function
+  - The transition hook function should be called immediately before a transition updates the page
+  - The unregister function should remove the transition hook when called
+- `stateStorage`: this object should implement `read` and `save` methods
+  - The `save` method should take a location object, a nullable element key, and a truthy value; it should save that value for the duration of the page session
+  - The `read` method should take a location object and a nullable element key; it should return the value that `save` was called with for that location and element key, or a falsy value if no saved value is available
+- `getCurrentLocation`: this function should return the current location object
+
+This object will keep track of the scroll position. Call the `updateScroll` method on this object after transitions to emulate the default browser scroll behavior on page changes.
+
+Call the `stop` method to tear down all listeners.
 
 ### Custom scroll behavior
 
-You can customize the scroll behavior by providing a `shouldUpdateScroll` callback when extending the history object. This callback is called with both the previous location and the current location.
+You can customize the scroll behavior by providing a `shouldUpdateScroll` callback when constructing the `ScrollBehavior` object. When you call `updateScroll`, you can pass in up to two additional context arguments, which will get passed to this callback.
 
-You can return:
+The callback can return:
 
-- a falsy value to suppress the scroll update
-- a position array such as `[0, 100]` to scroll to that position
-- a truthy value to get normal scroll behavior
+- a falsy value to suppress updating the scroll position
+- a position array of `x` and `y`, such as `[0, 100]`, to scroll to that position
+- a truthy value to emulate the browser default scroll behavior
+
+Assuming we call `updateScroll` with the previous and current location objects:
 
 ```js
-const history = withScroll(createHistory(), (prevLocation, location) => (
-  // Don't scroll if the pathname is the same.
-  !prevLocation || location.pathname !== prevLocation.pathname
-));
+const scrollBehavior = new ScrollBehavior({
+  ...options,
+  shouldUpdateScroll: (prevLocation, location) => (
+    // Don't scroll if the pathname is the same.
+    !prevLocation || location.pathname !== prevLocation.pathname
+  ),
+});
 ```
 
 ```js
-const history = withScroll(createHistory(), (prevLocation, location) => (
-  // Scroll to top when attempting to vist the current path.
-  prevLocation && location.pathname === prevLocation.pathname ? [0, 0] : true
-));
+const scrollBehavior = new ScrollBehavior({
+  ...options,
+  shouldUpdateScroll: (prevLocation, location) => (
+    // Scroll to top when attempting to vist the current path.
+    prevLocation && location.pathname === prevLocation.pathname ? [0, 0] : true
+  ),
+});
 ```
 
 ### Scrolling elements other than `window`
 
-The `withScroll`-extended history object has a `registerScrollElement` method. This method registers an element other than `window` to have managed scroll behavior on transitions. Each of these elements needs to be given a unique key at registration time, and can be given an optional `shouldUpdateScroll` callback that behaves as above.
+Call the `registerElement` method to register an element other than `window` to have managed scroll behavior. Each of these elements needs to be given a unique key at registration time, and can be given an optional `shouldUpdateScroll` callback that behaves as above. This method should also be called with the current context per `updateScroll` above, if applicable, to set up the element's initial scroll position.
 
 ```js
-const history = withScroll(createHistory(), () => false);
-history.listen(listener);
-
-history.registerScrollElement(
-  key, element, shouldUpdateScroll
+scrollBehavior.registerScrollElement(
+  key, element, shouldUpdateScroll, context,
 );
 ```
 
-The `registerScrollElement` method returns an `unregister` function that you can use to explicitly unregister the scroll behavior on the element, if necessary. In general, you will not need to do this, as `withScroll` will perform all necessary cleanup on removal of the last history listener.
+To unregister an element, call the `unregisterElement` method with the key used to register that element.
 
 [build-badge]: https://img.shields.io/travis/taion/scroll-behavior/master.svg
 [build]: https://travis-ci.org/taion/scroll-behavior

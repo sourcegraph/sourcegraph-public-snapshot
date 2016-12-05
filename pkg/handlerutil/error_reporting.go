@@ -5,31 +5,31 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-
 	"strings"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 var ravenClient *raven.Client
 
 func init() {
-	if dsn := conf.PrivateRavenDSN; dsn != "" {
+	if dsn := env.Get("SENTRY_DSN_BACKEND", "", "Sentry/Raven DSN used for tracking of backend errors"); dsn != "" {
 		var err error
 		ravenClient, err = raven.NewClient(dsn, nil)
 		if err != nil {
-			log.Fatalf("Error initializing Raven (Sentry) error reporter (with SG_APP_RAVEN_DSN=%q): %s.", dsn, err)
+			log.Fatalf("error initializing Sentry error reporter: %s", err)
 		}
 		ravenClient.DropHandler = func(pkt *raven.Packet) {
 			log.Println("WARNING: dropped error report because buffer is full:", pkt)
 		}
+		ravenClient.SetRelease(buildvar.All.Version)
 	}
 }
 
@@ -96,11 +96,6 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 				}
 			}
 		}
-	}
-
-	// Add deployment tags.
-	if buildvar.All.CommitID != "" {
-		addTag("Deployed commit", buildvar.All.CommitID)
 	}
 
 	// Add error information.

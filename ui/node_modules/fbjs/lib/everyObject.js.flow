@@ -33,7 +33,7 @@ var hasOwnProperty = Object.prototype.hasOwnProperty;
  * visits them. Properties that are deleted before being visited are not
  * visited.
  */
-function everyObject(object: ?Object, callback: (value: any, name: string, object: Object) => any, context?: any): bool {
+function everyObject(object: ?Object, callback: (value: any, name: string, object: Object) => any, context?: any): boolean {
   for (var name in object) {
     if (hasOwnProperty.call(object, name)) {
       if (!callback.call(context, object[name], name, object)) {

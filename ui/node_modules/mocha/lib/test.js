@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Module dependencies.
  */
@@ -19,7 +21,7 @@ module.exports = Test;
  * @param {String} title
  * @param {Function} fn
  */
-function Test(title, fn) {
+function Test (title, fn) {
   if (!isString(title)) {
     throw new Error('Test `title` should be a "string" but "' + typeof title + '" was given instead.');
   }
@@ -35,7 +37,7 @@ Test.prototype = create(Runnable.prototype, {
   constructor: Test
 });
 
-Test.prototype.clone = function() {
+Test.prototype.clone = function () {
   var test = new Test(this.title, this.fn);
   test.timeout(this.timeout());
   test.slow(this.slow());

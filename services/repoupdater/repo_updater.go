@@ -10,7 +10,6 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 )
 
 // FIXME this dependency injection should be removed
@@ -109,7 +108,7 @@ func (ru *repoUpdater) enqueue(op *repoUpdateOp) {
 
 	// Clear repos that were updated long ago from recent map.
 	for rs, lastUpdated := range ru.recent {
-		if lastUpdated.Before(now.Add(-appconf.Flags.MirrorRepoUpdateRate)) {
+		if lastUpdated.Before(now.Add(-mirrorRepoUpdateRate)) {
 			delete(ru.recent, rs)
 		}
 	}

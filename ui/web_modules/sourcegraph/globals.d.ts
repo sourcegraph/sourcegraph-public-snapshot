@@ -6,7 +6,7 @@ declare var require: {
 };
 
 declare namespace process {
-	export var env: {NODE_ENV: string};
+	export var env: { NODE_ENV: string };
 }
 
 declare namespace global {
@@ -15,10 +15,11 @@ declare namespace global {
 	export var chrome: any;
 	export var __webpack_public_path__: any;
 	export var module: any;
+	export var __sourcegraphJSContext: any;
 }
 
 declare module "expect.js" {
-	export default function(arg: any): any;
+	export default function (arg: any): any;
 }
 
 declare module "fuzzysearch" {
@@ -27,10 +28,6 @@ declare module "fuzzysearch" {
 
 declare module "react-router-scroll" {
 	export function useScroll(arg: any): any;
-}
-
-declare module "react-helmet" {
-	export default {} as any;
 }
 
 declare module "react-hot-loader" {

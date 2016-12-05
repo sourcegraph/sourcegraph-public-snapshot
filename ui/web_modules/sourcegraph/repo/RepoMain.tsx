@@ -1,151 +1,133 @@
 import * as React from "react";
-import Helmet from "react-helmet";
-
+import { InjectedRouter, Route } from "react-router";
+import { RouteParams } from "sourcegraph/app/routeParams";
+import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
+import { Header } from "sourcegraph/components/Header";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-
-import {trimRepo} from "sourcegraph/repo";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import { urlWithRev } from "sourcegraph/repo/routes";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
-
-import {context} from "sourcegraph/app/context";
-
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import {Header} from "sourcegraph/components/Header";
-
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {httpStatusCode} from "sourcegraph/util/httpStatusCode";
-import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
-
-function repoPageTitle(repo: any): string {
-	let title = trimRepo(repo.URI);
-	if (repo.Description) {
-		title += `: ${repo.Description.slice(0, 40)}${repo.Description.length > 40 ? "..." : ""}`;
-	}
-	return title;
-}
 
 interface Props {
-	location?: any;
 	repo: string;
-	rev?: string;
-	commitID?: string;
-	resolvedRev?: any;
-	repoNavContext?: any;
-	repoResolution?: any;
-	repoObj?: any;
-	main?: JSX.Element;
-	isCloning?: boolean;
-	route?: any;
-	routes: any[];
+	rev?: string | null;
+	repository: GQL.IRepository | null;
+	commit: GQL.ICommitState;
+	routes: Route[];
+	params: RouteParams;
+	location?: any;
+	relay: any;
 }
 
-type State = any;
-
-export class RepoMain extends React.Component<Props, State> {
+export class RepoMain extends React.Component<Props, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
+	context: { router: InjectedRouter };
+
+	_refreshInterval: number | null = null;
+
 	constructor(props: Props) {
 		super(props);
-
-		this._repoResolutionUpdated(this.props.repo, this.props.repoResolution);
+		this._onKeydown = this._onKeydown.bind(this);
 	}
 
 	componentDidMount(): void {
-		// Whenever the user navigates to different RepoMain views, e.g.
-		// navigating directories in the directory tree, viewing code
-		// files, etc. we trigger a MirroredRepos.RefreshVCS operation such
-		// that new changes on the remote are pulled.
-		(this.context as any).router.listenBefore((loc) => {
-			// Don't incur the overhead of triggering this when only the internal state changes.
-			if (loc.pathname !== this.props.location.pathname) {
-				Dispatcher.Backends.dispatch(new RepoActions.RefreshVCS(this.props.repo));
-			}
-		});
+		this._updateRefreshInterval(this.props.commit && this.props.commit.cloneInProgress);
+		if (this.props.commit.commit) {
+			// prefetch on first load if repository is already cloned
+			this.prefetchSymbols(this.props.repo, this.props.commit.commit);
+		}
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
-		if (this.props.repoResolution !== nextProps.repoResolution) {
-			this._repoResolutionUpdated(nextProps.repo, nextProps.repoResolution);
+		this._updateRefreshInterval(nextProps.commit && nextProps.commit.cloneInProgress);
+		if (nextProps.commit && nextProps.commit.commit && (!this.props.commit || !this.props.commit.commit || nextProps.commit.commit.sha1 !== this.props.commit.commit.sha1)) {
+			// prefetch if the repository is being cloned or if we switch repositories after first page load
+			this.prefetchSymbols(nextProps.repo, nextProps.commit.commit);
 		}
 	}
 
-	_repoResolutionUpdated(repo: string, resolution: any): void {
-		// Create the repo if we don't have repoObj (the result of creating a repo) yet,
-		// and this repo was just resolved to a remote repo (which must be explicitly created,
-		// as we do right here).
-		if (!this.props.repoObj && repo && resolution && !resolution.Error && !resolution.Repo && resolution.RemoteRepo) {
-			// Don't create the repo if user agent is bot.
-			if (context.userAgentIsBot) {
-				return;
-			}
-
-			Dispatcher.Backends.dispatch(new RepoActions.WantCreateRepo(repo, resolution.RemoteRepo));
+	componentWillUnmount(): void {
+		if (this._refreshInterval) {
+			clearInterval(this._refreshInterval);
 		}
 	}
 
-	render(): JSX.Element | null {
-		const err = (this.props.repoResolution && this.props.repoResolution.Error) || (this.props.repoObj && this.props.repoObj.Error);
-		if (err) {
-			let msg;
-			let showGitHubCTA = false;
-			if (err.response && err.response.status === 401) {
-				AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "401"});
-				msg = context.user ? `Connect GitHub to add repositories` : `Sign in to add repositories.`;
-				showGitHubCTA = Boolean(context.user && !context.hasPrivateGitHubToken());
-			} else if (err.response && err.response.status === 404) {
-				AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404"});
-				msg = `Repository not found.`;
-			} else {
-				msg = `Repository is not available.`;
+	_updateRefreshInterval(cloneInProgress: boolean): void {
+		if (cloneInProgress) {
+			if (!this._refreshInterval) {
+				this._refreshInterval = setInterval(() => {
+					this.props.relay.forceFetch();
+				}, 1000);
 			}
+		} else {
+			if (this._refreshInterval) {
+				clearInterval(this._refreshInterval);
+				this._refreshInterval = null;
+			}
+		}
+	}
 
+	_onKeydown(ev: KeyboardEvent): void {
+		// Don't trigger if there's a modifier key or if the cursor is focused
+		// in an input field.
+		const el = ev.target as HTMLElement;
+		if (!(ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) &&
+			typeof document !== "undefined" && el.tagName !== "INPUT" &&
+			(el.tagName !== "TEXTAREA" || !isNonMonacoTextArea(el)) &&
+			el.tagName !== "SELECT") {
+			if (ev.keyCode === 89 /* y */ && this.props.commit.commit) {
+				let url = `${urlWithRev(this.props.routes, this.props.params, this.props.commit.commit.sha1)}${window.location.hash}`;
+				this.context.router.push(url);
+				ev.preventDefault();
+				ev.stopPropagation();
+			}
+		}
+	}
+
+	// prefetchSymbols best-effort prefetches symbols
+	prefetchSymbols(repo: string, commit: GQL.ICommit | null): void {
+		if (commit) {
+			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(commit.languages, repo, commit.sha1, "", true));
+		} else {
+			console.error("could not fetch workspace/symbol: repository commit was null");
+		}
+	}
+
+	render(): JSX.Element {
+		if (!this.props.repository) {
+			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({ repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404" });
 			return (
 				<div>
-				<Helmet title={"Sourcegraph - Not Found"} />
+					<PageTitle title="Not Found" />
 					<Header
-						title={`${httpStatusCode(err)}`}
-						subtitle={msg} />
-					{showGitHubCTA &&
-						<div style={{textAlign: "center"}}>
-							<GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Add private repositories</GitHubAuthButton>
-						</div>
-					}
+						title="404"
+						subtitle="Repository not found." />
 				</div>
 			);
 		}
 
-		if (!this.props.repo) {
-			return null;
-		}
-
-		if (this.props.isCloning) {
+		if (this.props.commit.cloneInProgress) {
 			return (
 				<Header title="Cloning this repository" loading={true} />
 			);
 		}
 
-		if (this.props.resolvedRev && this.props.resolvedRev.Error) {
-			const err2 = this.props.resolvedRev.Error;
-			const msg = `Revision is not available.`;
+		if (!this.props.commit.commit) {
 			return (
-				<Header title={`${httpStatusCode(err2)}`}
-					subtitle={msg} />
+				<Header title="404"
+					subtitle="Revision is not available." />
 			);
 		}
 
-		// Determine if the repo route is the main route (not one of its
-		// children like DefInfo, for example).
-		const mainRoute = this.props.routes[this.props.routes.length - 1];
-		const isMainRoute = mainRoute === this.props.route.indexRoute || mainRoute === this.props.route.indexRoute;
-		const title = this.props.repoObj && !this.props.repoObj.Error ? repoPageTitle(this.props.repoObj) : null;
-
 		return (
 			<div className={styles.outer_container}>
-				{/* NOTE: This should (roughly) be kept in sync with page titles in app/internal/ui. */}
-				{isMainRoute && title && <Helmet title={title} />}
-				{this.props.main}
+				{this.props.children}
+				<EventListener target={global.document.body} event="keydown" callback={this._onKeydown} />
 			</div>
 		);
 	}

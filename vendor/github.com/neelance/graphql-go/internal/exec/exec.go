@@ -18,6 +18,13 @@ import (
 	"github.com/neelance/graphql-go/internal/schema"
 )
 
+// keep in sync with main package
+const OpenTracingTagType = "graphql.type"
+const OpenTracingTagField = "graphql.field"
+const OpenTracingTagTrivial = "graphql.trivial"
+const OpenTracingTagArgsPrefix = "graphql.args."
+const OpenTracingTagError = "graphql.error"
+
 type Exec struct {
 	queryExec    iExec
 	mutationExec iExec
@@ -189,7 +196,7 @@ func makeFieldExecs(s *schema.Schema, typeName string, fields map[string]*schema
 		}
 
 		m := resolverType.Method(methodIndex)
-		fe, err := makeFieldExec(s, f, m, methodIndex, methodHasReceiver, typeRefMap)
+		fe, err := makeFieldExec(s, typeName, f, m, methodIndex, methodHasReceiver, typeRefMap)
 		if err != nil {
 			return nil, fmt.Errorf("method %q of %s: %s", m.Name, resolverType, err)
 		}
@@ -198,7 +205,7 @@ func makeFieldExecs(s *schema.Schema, typeName string, fields map[string]*schema
 	return fieldExecs, nil
 }
 
-func makeFieldExec(s *schema.Schema, f *schema.Field, m reflect.Method, methodIndex int, methodHasReceiver bool, typeRefMap map[typeRefMapKey]*typeRef) (*fieldExec, error) {
+func makeFieldExec(s *schema.Schema, typeName string, f *schema.Field, m reflect.Method, methodIndex int, methodHasReceiver bool, typeRefMap map[typeRefMapKey]*typeRef) (*fieldExec, error) {
 	in := make([]reflect.Type, m.Type.NumIn())
 	for i := range in {
 		in[i] = m.Type.In(i)
@@ -241,6 +248,7 @@ func makeFieldExec(s *schema.Schema, f *schema.Field, m reflect.Method, methodIn
 	}
 
 	fe := &fieldExec{
+		typeName:    typeName,
 		field:       f,
 		methodIndex: methodIndex,
 		hasContext:  hasContext,
@@ -251,86 +259,6 @@ func makeFieldExec(s *schema.Schema, f *schema.Field, m reflect.Method, methodIn
 		return nil, err
 	}
 	return fe, nil
-}
-
-func makeStructPacker(s *schema.Schema, obj *common.InputMap, typ reflect.Type) (*structPacker, error) {
-	if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
-		return nil, fmt.Errorf("expected pointer to struct, got %s", typ)
-	}
-	structType := typ.Elem()
-
-	var fields []*structPackerField
-	defaultStruct := reflect.New(structType).Elem()
-	for _, f := range obj.Fields {
-		fe := &structPackerField{
-			name: f.Name,
-		}
-
-		sf, ok := structType.FieldByNameFunc(func(n string) bool { return strings.EqualFold(n, f.Name) })
-		if !ok {
-			return nil, fmt.Errorf("missing argument %q", f.Name)
-		}
-		fe.fieldIndex = sf.Index
-
-		ft, nonNull := unwrapNonNull(f.Type)
-		if f.Default != nil {
-			nonNull = true
-		}
-		expectType := func(got, want reflect.Type) error {
-			if got != want {
-				return fmt.Errorf("%q has wrong type, expected %s", sf.Name, want)
-			}
-			return nil
-		}
-		switch ft := ft.(type) {
-		case *scalar:
-			want := ft.reflectType
-			if !nonNull {
-				want = reflect.PtrTo(want)
-			}
-			if err := expectType(sf.Type, want); err != nil {
-				return nil, err
-			}
-			fe.fieldPacker = &valuePacker{
-				nonNull: nonNull,
-			}
-		case *schema.Enum:
-			want := reflect.TypeOf("string")
-			if !nonNull {
-				want = reflect.PtrTo(want)
-			}
-			if err := expectType(sf.Type, want); err != nil {
-				return nil, err
-			}
-			fe.fieldPacker = &valuePacker{
-				nonNull: nonNull,
-			}
-		case *schema.InputObject:
-			e, err := makeStructPacker(s, &ft.InputMap, sf.Type)
-			if err != nil {
-				return nil, err
-			}
-			fe.fieldPacker = e
-		default:
-			panic("TODO")
-		}
-
-		if f.Default != nil {
-			defaultValue, err := coerceValue(nil, f.Type, f.Default)
-			if err != nil {
-				return nil, err
-			}
-			defaultStruct.FieldByIndex(fe.fieldIndex).Set(fe.fieldPacker.pack(defaultValue))
-		}
-
-		fields = append(fields, fe)
-	}
-
-	return &structPacker{
-		structType:    structType,
-		defaultStruct: defaultStruct,
-		fields:        fields,
-	}, nil
 }
 
 func makeTypeAssertions(s *schema.Schema, typeName string, impls []*schema.Object, resolverType reflect.Type, typeRefMap map[typeRefMapKey]*typeRef) (map[string]*typeAssertExec, error) {
@@ -611,6 +539,7 @@ func (e *objectExec) execFragment(ctx context.Context, r *request, frag *query.F
 }
 
 type fieldExec struct {
+	typeName    string
 	field       *schema.Field
 	methodIndex int
 	hasContext  bool
@@ -620,22 +549,22 @@ type fieldExec struct {
 }
 
 func (e *fieldExec) execField(ctx context.Context, r *request, f *query.Field, resolver reflect.Value, addResult addResultFn) {
-	trivial := !e.hasContext && e.argsPacker == nil && !e.hasError
-
-	var span opentracing.Span
-	if !trivial {
-		span, ctx = opentracing.StartSpanFromContext(ctx, "GraphQL field: "+f.Name)
-		defer span.Finish()
+	span, spanCtx := opentracing.StartSpanFromContext(ctx, fmt.Sprintf("GraphQL field: %s.%s", e.typeName, e.field.Name))
+	defer span.Finish()
+	span.SetTag(OpenTracingTagType, e.typeName)
+	span.SetTag(OpenTracingTagField, e.field.Name)
+	if !e.hasContext && e.argsPacker == nil && !e.hasError {
+		span.SetTag(OpenTracingTagTrivial, true)
 	}
 
-	result, err := e.execField2(ctx, r, f, resolver, span)
+	result, err := e.execField2(spanCtx, r, f, resolver, span)
 
 	if err != nil {
 		r.addError(errors.Errorf("%s", err))
 		addResult(f.Alias, nil) // TODO handle non-nil
 
 		ext.Error.Set(span, true)
-		span.SetTag("errorMsg", err)
+		span.SetTag(OpenTracingTagError, err)
 		return
 	}
 
@@ -657,7 +586,7 @@ func (e *fieldExec) execField2(ctx context.Context, r *request, f *query.Field, 
 				return nil, err
 			}
 			values[name] = v
-			span.SetTag(name, v)
+			span.SetTag(OpenTracingTagArgsPrefix+name, v)
 		}
 		in = append(in, e.argsPacker.pack(values))
 	}
@@ -681,6 +610,9 @@ func coerceMap(r *request, io *common.InputMap, m map[string]interface{}) (map[s
 	for _, iv := range io.Fields {
 		value, ok := m[iv.Name]
 		if !ok {
+			if _, nonNull := unwrapNonNull(iv.Type); !nonNull {
+				continue
+			}
 			if iv.Default == nil {
 				return nil, errors.Errorf("missing %q", iv.Name)
 			}
@@ -700,7 +632,10 @@ func coerceValue(r *request, typ common.Type, value interface{}) (interface{}, e
 		return r.vars[string(v)], nil
 	}
 
-	t, _ := unwrapNonNull(typ)
+	t, nonNull := unwrapNonNull(typ)
+	if !nonNull && value == nil {
+		return nil, nil
+	}
 	switch t := t.(type) {
 	case *scalar:
 		v, err := t.coerceInput(value)
@@ -710,51 +645,19 @@ func coerceValue(r *request, typ common.Type, value interface{}) (interface{}, e
 		return v, nil
 	case *schema.InputObject:
 		return coerceMap(r, &t.InputMap, value.(map[string]interface{}))
+	case *common.List:
+		list := value.([]interface{})
+		coerced := make([]interface{}, len(list))
+		for i, entry := range list {
+			c, err := coerceValue(r, t.OfType, entry)
+			if err != nil {
+				return nil, err
+			}
+			coerced[i] = c
+		}
+		return coerced, nil
 	}
 	return value, nil
-}
-
-type packer interface {
-	pack(value interface{}) reflect.Value
-}
-
-type structPacker struct {
-	structType    reflect.Type
-	defaultStruct reflect.Value
-	fields        []*structPackerField
-}
-
-type structPackerField struct {
-	name        string
-	fieldIndex  []int
-	fieldPacker packer
-}
-
-func (e *structPacker) pack(value interface{}) reflect.Value {
-	values := value.(map[string]interface{})
-	v := reflect.New(e.structType)
-	v.Elem().Set(e.defaultStruct)
-	for _, f := range e.fields {
-		if value, ok := values[f.name]; ok {
-			fv := f.fieldPacker.pack(value)
-			v.Elem().FieldByIndex(f.fieldIndex).Set(fv)
-		}
-	}
-	return v
-}
-
-type valuePacker struct {
-	nonNull bool
-}
-
-func (e *valuePacker) pack(value interface{}) reflect.Value {
-	v := reflect.ValueOf(value)
-	if !e.nonNull {
-		p := reflect.New(v.Type())
-		p.Elem().Set(v)
-		return p
-	}
-	return v
 }
 
 func skipByDirective(r *request, d map[string]*query.Directive) bool {

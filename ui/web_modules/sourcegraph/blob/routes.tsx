@@ -16,7 +16,7 @@ export function urlToBlobLineCol(repo: string, rev: string | null, path: string,
 	return `${urlToBlob(repo, rev, path)}#L${line}:${col}`;
 }
 
-export function parseBlobURL(urlPathname: string): {repo: string, rev: string | null, path: string, hash?: string} {
+export function parseBlobURL(urlPathname: string): { repo: string, rev: string | null, path: string, hash?: string } {
 	let hash: string | undefined;
 	if (urlPathname.indexOf("#") !== -1) {
 		const idx = urlPathname.indexOf("#");

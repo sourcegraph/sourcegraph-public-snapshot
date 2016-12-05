@@ -13,15 +13,14 @@ import (
 var Mocks MockServices
 
 type MockServices struct {
-	Annotations  MockAnnotations
-	Async        MockAsync
-	Defs         MockDefs
-	MirrorRepos  MockMirrorRepos
-	RepoStatuses MockRepoStatuses
-	RepoTree     MockRepoTree
-	Repos        MockRepos
-	Search       MockSearch
-	Orgs         MockOrgs
+	Annotations MockAnnotations
+	Async       MockAsync
+	Defs        MockDefs
+	MirrorRepos MockMirrorRepos
+	RepoTree    MockRepoTree
+	Repos       MockRepos
+	Search      MockSearch
+	Orgs        MockOrgs
 }
 
 // testContext creates a new context.Context for use by tests

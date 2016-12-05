@@ -1,6 +1,6 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as UserActions from "sourcegraph/user/UserActions";
-import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
+import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 class UserBackendClass {
 	fetch: any;
@@ -25,8 +25,8 @@ class UserBackendClass {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
-				.catch((err) => ({Error: err}))
-				.then(function(data: any): void {
+				.catch((err) => ({ Error: err }))
+				.then(function (data: any): void {
 					Dispatcher.Stores.dispatch(new UserActions.BetaSubscriptionCompleted(data));
 				});
 		}

@@ -1,9 +1,7 @@
 @value vars "sourcegraph/components/styles/_vars.css";
 @value base "sourcegraph/components/styles/_base.css";
-@value colors "sourcegraph/components/styles/_colors.css";
 @value grid "sourcegraph/components/styles/_grid.css";
 @value typography "sourcegraph/components/styles/_typography.css";
-@value GlobalNav "sourcegraph/app/styles/GlobalNav.css";
 
 @value media_sm from vars;
 
@@ -52,4 +50,8 @@
 	display: flex;
 	flex-direction: column;
 	flex: auto;
+	box-shadow: -2px 0 3px 0px rgba(0,0,0,0.1);
+	z-index: 1;
+	overflow-x: hidden;
+	width: 100%
 }

@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 
 interface Props {
@@ -9,17 +7,15 @@ interface Props {
 	tabPanel?: boolean;
 }
 
-type State = any;
-
-export class TabPanel extends React.Component<Props, State> {
-	static defaultProps = {
+export class TabPanel extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		tabPanel: true,
 	};
 
 	render(): JSX.Element | null {
 		const {className, children, active} = this.props;
 		return (
-			<div className={className} style={{display: active ? "block" : "none"}}>
+			<div className={className} style={{ display: active ? "block" : "none" }}>
 				{children}
 			</div>
 		);

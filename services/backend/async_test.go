@@ -156,7 +156,7 @@ func TestAsyncWorker_mutex(t *testing.T) {
 	go func() {
 		err := w.refreshIndexes(ctx1, op)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 		close(done1)
 	}()

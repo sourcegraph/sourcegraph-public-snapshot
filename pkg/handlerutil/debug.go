@@ -1,8 +1,9 @@
 package handlerutil
 
 import (
-	"os"
 	"strconv"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // DebugMode is true if and only if the application is running in debug mode. In
@@ -11,5 +12,5 @@ import (
 var DebugMode bool
 
 func init() {
-	DebugMode, _ = strconv.ParseBool(os.Getenv("DEBUG"))
+	DebugMode, _ = strconv.ParseBool(env.Get("DEBUG", "false", "debug mode"))
 }

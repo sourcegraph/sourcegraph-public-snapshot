@@ -25,6 +25,18 @@ var compressible = require('compressible')
 Checks if the given `Content-Type` is compressible. The `type` argument is expected
 to be a value MIME type or `Content-Type` string, though no validation is performed.
 
+The MIME is looked up in the [`mime-db`](https://www.npmjs.com/package/mime-db) and
+if there is compressible information in the database entry, that is returned. Otherwise,
+this module will fallback to `true` for the following types:
+
+  * `text/*`
+  * `*/*+json`
+  * `*/*+text`
+  * `*/*+xml`
+
+If this module is not sure if a type is specifically compressible or specifically
+uncompressible, `undefined` is returned.
+
 ```js
 compressible('text/html') // => true
 compressible('image/png') // => false

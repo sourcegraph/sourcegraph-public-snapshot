@@ -1,3 +1,8 @@
+# 2.2.2
+
+* Removed a dependency on `flatten`.
+* Performance tweaks; now performs a single AST pass instead of four.
+
 # 2.2.1
 
 * Now compiled with Babel 6.

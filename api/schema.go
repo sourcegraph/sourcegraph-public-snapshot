@@ -17,19 +17,39 @@ type Query {
 
 type Root {
 	repository(uri: String!): Repository
+	remoteRepositories: [RemoteRepository!]!
+	remoteStarredRepositories: [RemoteRepository!]!
 }
 
 type Repository implements Node {
-  id: ID!
+	id: ID!
 	uri: String!
-	commit(rev: String!): Commit
-	latest: Commit!
+	description: String!
+	commit(rev: String!): CommitState!
+	latest: CommitState!
+	defaultBranch: String!
+	branches: [String!]!
+	tags: [String!]!
+	contributors: [Contributor!]!
+}
+
+type Contributor {
+	login:             String!
+	avatarURL:         String!
+	contributions:     Int!
+}
+
+type CommitState {
+	commit: Commit
+	cloneInProgress: Boolean!
 }
 
 type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
+	file(path: String!): File
+	languages: [String!]!
 }
 
 type Tree {
@@ -44,10 +64,34 @@ type Directory {
 
 type File {
 	name: String!
-	content: Blob!
+	content: String!
+	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 }
 
-type Blob {
-	bytes: String!
+type RemoteRepository {
+	uri: String!
+	description: String!
+	owner: String!
+	name: String!
+	httpCloneURL: String!
+	language: String!
+	fork: Boolean!
+	mirror: Boolean!
+	private: Boolean!
+	createdAt: String!
+	pushedAt: String!
+	vcsSyncedAt: String!
+	contributors: [Contributor!]!
+}
+
+type Hunk {
+	startLine: Int!
+	endLine: Int!
+	startByte: Int!
+	endByte: Int!
+	rev: String!
+	name: String!
+	email: String!
+	date: String!
 }
 `

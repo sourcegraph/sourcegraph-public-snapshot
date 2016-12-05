@@ -3,8 +3,12 @@ package langserver
 import (
 	"context"
 	"fmt"
-	"strconv"
+	"go/scanner"
+	"go/token"
+	"go/types"
 	"strings"
+
+	"golang.org/x/tools/go/loader"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
@@ -29,38 +33,56 @@ func (h *LangHandler) publishDiagnostics(ctx context.Context, conn JSONRPC2Conn,
 	return nil
 }
 
-func parseLoaderError(errStr string) (filename string, diag *lsp.Diagnostic, err error) {
-	c1 := strings.Index(errStr, ":")
-	if c1 <= 0 || c1 == len(errStr)-1 {
-		return "", nil, fmt.Errorf("invalid error message 1: %q", errStr)
+func errsToDiagnostics(typeErrs []error, prog *loader.Program) (diagnostics, error) {
+	var diags diagnostics
+	for _, typeErr := range typeErrs {
+		var (
+			p    token.Position
+			pEnd token.Position
+			msg  string
+		)
+		switch e := typeErr.(type) {
+		case types.Error:
+			p = e.Fset.Position(e.Pos)
+			_, path, _ := prog.PathEnclosingInterval(e.Pos, e.Pos)
+			if len(path) > 0 {
+				pEnd = e.Fset.Position(path[0].End())
+			}
+			msg = e.Msg
+		case scanner.Error:
+			p = e.Pos
+			msg = e.Msg
+		case scanner.ErrorList:
+			if len(e) == 0 {
+				continue
+			}
+			p = e[0].Pos
+			msg = e[0].Msg
+			if len(e) > 1 {
+				msg = fmt.Sprintf("%s (and %d more errors)", msg, len(e)-1)
+			}
+		default:
+			return nil, fmt.Errorf("unexpected type error: %#+v", typeErr)
+		}
+		// LSP is 0-indexed, so subtract one from the numbers Go reports.
+		start := lsp.Position{Line: p.Line - 1, Character: p.Column - 1}
+		end := lsp.Position{Line: pEnd.Line - 1, Character: pEnd.Column - 1}
+		if !pEnd.IsValid() {
+			end = start
+		}
+		diag := &lsp.Diagnostic{
+			Range: lsp.Range{
+				Start: start,
+				End:   end,
+			},
+			Severity: lsp.Error,
+			Source:   "go",
+			Message:  strings.TrimSpace(msg),
+		}
+		if diags == nil {
+			diags = diagnostics{}
+		}
+		diags[p.Filename] = append(diags[p.Filename], diag)
 	}
-	c2 := c1 + 1 + strings.Index(errStr[c1+1:], ":")
-	if c2 <= c1 || c2 == len(errStr)-1 {
-		return "", nil, fmt.Errorf("invalid error message 2: %q", errStr)
-	}
-	c3 := c2 + 1 + strings.Index(errStr[c2+1:], ":")
-	if c3 <= c2 || c3 == len(errStr)-1 {
-		return "", nil, fmt.Errorf("invalid error message 3: %q", errStr)
-	}
-
-	filename = errStr[:c1]
-	line, err := strconv.Atoi(errStr[c1+1 : c2])
-	if err != nil {
-		return "", nil, err
-	}
-	col, err := strconv.Atoi(errStr[c2+1 : c3])
-	if err != nil {
-		return "", nil, err
-	}
-	return filename, &lsp.Diagnostic{
-		Range: lsp.Range{
-			// LSP is 0-indexed, so subtract one from the numbers Go
-			// reports.
-			Start: lsp.Position{Line: line - 1, Character: col - 1},
-			End:   lsp.Position{Line: line - 1, Character: col - 1},
-		},
-		Severity: lsp.Error,
-		Source:   "go",
-		Message:  strings.TrimSpace(errStr[c3+1:]),
-	}, nil
+	return diags, nil
 }

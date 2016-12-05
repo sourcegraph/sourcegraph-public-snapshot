@@ -1,30 +1,19 @@
 import fuzzysearch from "fuzzysearch";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
-import {Link} from "react-router";
-import {RouteParams} from "sourcegraph/app/routeParams";
-import {Component, EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
-import {Base, Heading, Input, Menu} from "sourcegraph/components";
-import {Check, DownMenu} from "sourcegraph/components/symbols";
-import {colors, typography, whitespace} from "sourcegraph/components/utils";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
+import * as Relay from "react-relay";
+import { Link } from "react-router";
+import { RouteParams } from "sourcegraph/app/routeParams";
+import { Component, EventListener } from "sourcegraph/Component";
+import { Heading, Input, Menu } from "sourcegraph/components";
+import { Check, DownMenu } from "sourcegraph/components/symbols";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import "sourcegraph/repo/RepoBackend";
-import {urlWithRev} from "sourcegraph/repo/routes";
-import * as styles from "sourcegraph/repo/styles/RevSwitcher.css";
+import { urlWithRev } from "sourcegraph/repo/routes";
 
 interface Props {
 	repo: string;
-	rev: string;
-	commitID: string;
-	repoObj?: any;
-	isCloning: boolean;
-
-	// branches is RepoStore.branches.
-	branches: any;
-
-	// tags is RepoStore.tags.
-	tags: any;
+	rev: string | null;
 
 	// to construct URLs
 	routes: any[];
@@ -34,10 +23,9 @@ interface Props {
 interface State extends Props {
 	open?: boolean;
 	query?: any;
-	effectiveRev?: string;
 }
 
-export class RevSwitcher extends Component<Props, State> {
+class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -46,17 +34,13 @@ export class RevSwitcher extends Component<Props, State> {
 	_debouncedSetQuery: any;
 	_wrapper: any;
 
-	constructor(props: Props) {
+	constructor(props: Props & { root: GQL.IRoot }) {
 		super(props);
 		this.state = {
 			open: false,
 
 			repo: props.repo,
 			rev: props.rev,
-			commitID: props.commitID,
-			isCloning: props.isCloning,
-			branches: props.branches,
-			tags: props.tags,
 			routes: props.routes,
 			routeParams: props.routeParams,
 		};
@@ -67,26 +51,11 @@ export class RevSwitcher extends Component<Props, State> {
 		this._onKeydown = this._onKeydown.bind(this);
 		this._debouncedSetQuery = debounce((query) => {
 			this.setState(Object.assign({}, this.state, { query: query }));
-		}, 150, {leading: true, trailing: true});
+		}, 150, { leading: true, trailing: true });
 	}
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
-
-		// effectiveRev is the rev from the URL, or else the repo's default branch.
-		state.effectiveRev = props.rev || (props.repoObj && !props.repoObj.Error ? props.repoObj.DefaultBranch : null);
-	}
-
-	onStateTransition(prevState: State, nextState: State): void {
-		const becameOpen = nextState.open && nextState.open !== prevState.open;
-		if (becameOpen || nextState.repo !== nextState.repo) {
-			// Don't load when page loads until we become open.
-			const initialLoad = !prevState.repo && !nextState.open;
-			if (!initialLoad) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantBranches(nextState.repo));
-				Dispatcher.Backends.dispatch(new RepoActions.WantTags(nextState.repo));
-			}
-		}
 	}
 
 	// abbrevRev shortens rev if it is an absolute commit ID.
@@ -94,32 +63,19 @@ export class RevSwitcher extends Component<Props, State> {
 		return rev.length === 40 ? rev.substring(0, 12) : rev;
 	}
 
-	_loadingItem(itemType: string): JSX.Element {
-		return <li className={styles.disabled}>Loading {itemType}&hellip;</li>;
-	}
-
-	_errorItem(): JSX.Element {
-		return <li className={styles.disabled}>Error</li>;
-	}
-
-	_emptyItem(): JSX.Element {
-		return <li className={styles.disabled}>None found</li>;
-	}
-
-	_item(name: string, commitID: string): JSX.Element {
-		let isCurrent = name === this.state.effectiveRev;
+	_item(name: string): JSX.Element {
+		let isCurrent = name === this.props.rev;
 
 		return (
-			<div key={`r${name}.${commitID}`} role="menu_item">
+			<div key={name} role="menu_item">
 				<Link
 					to={this._revSwitcherURL(name)}
-					title={commitID}
 					onClick={this._closeDropdown}>
 					<span style={{ display: "inline-block", width: 24 }}>
 						{isCurrent && <Check width={16} style={{ fill: colors.coolGray3() }} />}
 					</span>
 
-					{name && <span style={{fontWeight: isCurrent ? "bold" : "normal"}}>
+					{name && <span style={{ fontWeight: isCurrent ? "bold" : "normal" }}>
 						{this._abbrevRev(name)}
 					</span>}
 
@@ -174,42 +130,6 @@ export class RevSwitcher extends Component<Props, State> {
 			return;
 		}
 
-		// Don't trigger if there's a modifier key or if the cursor is focused
-		// in an input field.
-		const el = ev.target as HTMLElement;
-		const tag = el.tagName;
-
-		if (!(ev.altKey || ev.ctrlKey || ev.metaKey || ev.shiftKey) &&
-			typeof document !== "undefined" && tag !== "INPUT" &&
-			(tag !== "TEXTAREA" || !isNonMonacoTextArea(el)) &&
-			tag !== "SELECT") {
-			// Global hotkeys.
-			let handled = false;
-			if (ev.keyCode === 89 /* y */) {
-				// Make the URL absolute by adding the absolute 40-char commit ID
-				// as the rev.
-				if (this.state.commitID) {
-					handled = true;
-					(this.context as any).router.push(this._revSwitcherURL(this.state.commitID));
-				}
-			} else if (ev.keyCode === 85 /* u */) {
-				// Remove the rev from the URL entirely.
-				handled = true;
-				(this.context as any).router.push(this._revSwitcherURL(null));
-			} else if (ev.keyCode === 73 /* i */) {
-				// Set the rev to be the repository's default branch.
-				if (this.state.repoObj.DefaultBranch) {
-					handled = true;
-					(this.context as any).router.push(this._revSwitcherURL(this.state.repoObj.DefaultBranch));
-				}
-			}
-			if (handled) {
-				ev.preventDefault();
-				ev.stopPropagation();
-				return;
-			}
-		}
-
 		if (!this.state.open) {
 			return;
 		}
@@ -219,57 +139,14 @@ export class RevSwitcher extends Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		// Hide if cloning the repo, since we require the user to hard-reload. Seeing
-		// the RevSwitcher would confuse them.
-		if (this.state.isCloning) {
-			return null;
+		let branches = this.props.root.repository.branches;
+		if (this.state.query) {
+			branches = branches.filter((name) => fuzzysearch(this.state.query, name));
 		}
 
-		let branches = this.state.branches.list(this.state.repo);
-		if (this.state.branches.error(this.state.repo)) {
-			branches = this._errorItem();
-		} else if (!branches) {
-			branches = this._loadingItem("branches");
-		} else if (this.state.query) {
-			branches = branches.filter((b) => fuzzysearch(this.state.query, b.Name));
-		}
-		if (branches.length === 0) {
-			branches = this._emptyItem();
-		}
-
-		let tags = this.state.tags.list(this.state.repo);
-		if (this.state.tags.error(this.state.repo)) {
-			tags = this._errorItem();
-		} else if (!tags) {
-			tags = this._loadingItem("tags");
-		} else if (this.state.query) {
-			tags = tags.filter((t) => fuzzysearch(this.state.query, t.Name));
-		}
-		if (tags.length === 0) {
-			tags = this._emptyItem();
-		}
-
-		let currentItem;
-		if (branches instanceof Array) {
-			branches.forEach((b) => {
-				if (b.Name === this.state.effectiveRev) {
-					currentItem = b;
-				}
-			});
-		}
-		if (tags instanceof Array) {
-			tags.forEach((t) => {
-				if (t.Name === this.state.effectiveRev) {
-					currentItem = t;
-				}
-			});
-		}
-
-		if (branches instanceof Array) {
-			branches = branches.map((b) => this._item(b.Name, b.Head));
-		}
-		if (tags instanceof Array) {
-			tags = tags.map((t) => this._item(t.Name, t.CommitID));
+		let tags = this.props.root.repository.tags;
+		if (this.state.query) {
+			tags = tags.filter((name) => fuzzysearch(this.state.query, name));
 		}
 
 		let title;
@@ -290,31 +167,32 @@ export class RevSwitcher extends Component<Props, State> {
 			<span
 				onClick={this._onToggleDropdown}
 				style={{ cursor: "pointer" }}>
-				<Base ml={1}>
+				<div style={{ marginLeft: whitespace[1] }}>
 					<DownMenu
 						width={10}
 						style={{ fill: colors.coolGray3() }}
-					/>
-				</Base>
+						/>
+				</div>
 			</span>
 			<div style={{
 				display: this.state.open ? "block" : "none",
 				position: "absolute",
 			}}>
-				<Menu style={{minWidth: 320, paddingTop: whitespace[3]}}>
+				<Menu style={{ minWidth: 320, paddingTop: whitespace[3] }}>
 					<div>
 						<Input block={true}
 							domRef={(e) => this._input = e}
 							type="text"
-							style={{fontWeight: "normal"}}
+							style={{ fontWeight: "normal" }}
 							placeholder="Find branch or tag"
-							onChange={this._onChangeQuery}/>
+							onChange={this._onChangeQuery} />
 					</div>
-					{this.state.rev && !currentItem && !this.state.query && this._item(this.state.rev, this.state.commitID)}
-					<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Branches</Heading>
-					{branches}
-					<Heading level={7} color="gray" style={{marginTop: whitespace[3]}}>Tags</Heading>
-					{tags}
+					<Heading level={7} color="gray" style={{ marginTop: whitespace[3] }}>Branches</Heading>
+					{branches.length === 0 && <li style={{ color: colors.coolGray3() }}>None found</li>}
+					{branches.map((name) => this._item(name))}
+					<Heading level={7} color="gray" style={{ marginTop: whitespace[3] }}>Tags</Heading>
+					{tags.length === 0 && <li style={{ color: colors.coolGray3() }}>None found</li>}
+					{tags.map((name) => this._item(name))}
 				</Menu>
 			</div>
 			<EventListener target={global.document.body} event="click" callback={this._onClickOutside} />
@@ -322,3 +200,34 @@ export class RevSwitcher extends Component<Props, State> {
 		</div>;
 	}
 }
+
+const RevSwitcherContainer = Relay.createContainer(RevSwitcherComponent, {
+	initialVariables: {
+		repo: "",
+	},
+	fragments: {
+		root: () => Relay.QL`
+			fragment on Root {
+				repository(uri: $repo) {
+					branches
+					tags
+				}
+			}
+		`,
+	},
+});
+
+export const RevSwitcher = function (props: Props): JSX.Element {
+	return <Relay.RootContainer
+		Component={RevSwitcherContainer}
+		route={{
+			name: "Root",
+			queries: {
+				root: () => Relay.QL`
+					query { root }
+				`,
+			},
+			params: props,
+		}}
+		/>;
+};

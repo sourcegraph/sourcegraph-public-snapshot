@@ -31,7 +31,7 @@ the entire viewport height.
 html {
 	color: c_cool_dark_gray;
 	font-size: desktop_base_size;
-	line-height: 1.6;
+	line-height: 1.5;
 	background: c_cool_pale_gray_2;
 	background-size: cover;
 }

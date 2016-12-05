@@ -31,13 +31,12 @@ func TestMain(m *testing.M) {
 	}()
 
 	s, _ := testserver.NewUnstartedServer()
-	s.Config.Serve.NoWorker = true
 	if err := s.Start(); err != nil {
 		panic(err)
 	}
 	defer s.Close() // This will kill the started src process. It's important that this func runs before os.Exit, otherwise there will be a runaway zombie process.
 	var err error
-	h, err = url.Parse(s.Config.Serve.AppURL)
+	h, err = url.Parse(s.AppURL)
 	if err != nil {
 		panic(err)
 	}

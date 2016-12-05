@@ -3,7 +3,7 @@
 export function mockTimeout(f) {
 	let orig = (global as any).setTimeout;
 	let callbacks: any[] = [];
-	(global as any).setTimeout = function(callback, delay) {
+	(global as any).setTimeout = function (callback, delay) {
 		callbacks.push(callback);
 	};
 	try {

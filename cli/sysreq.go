@@ -3,11 +3,11 @@ package cli
 import (
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/kr/text"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 
 	"context"
@@ -15,10 +15,12 @@ import (
 
 const skipSysReqsEnvVar = "SRC_SKIP_REQS"
 
+var skipSysReqsEnv = env.Get(skipSysReqsEnvVar, "false", "skip system requirement checks")
+
 // skippedSysReqs returns a list of sysreq names to skip (e.g.,
 // "Docker").
 func skippedSysReqs() []string {
-	return strings.Fields(os.Getenv(skipSysReqsEnvVar))
+	return strings.Fields(skipSysReqsEnv)
 }
 
 // checkSysReqs uses package sysreq to check for the presence of

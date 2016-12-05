@@ -14,7 +14,6 @@ type MockStores struct {
 	Graph                srcstore.MockMultiRepoStore
 	Queue                MockQueue
 	RepoConfigs          MockRepoConfigs
-	RepoStatuses         MockRepoStatuses
 	RepoVCS              MockRepoVCS
 	Repos                MockRepos
 }

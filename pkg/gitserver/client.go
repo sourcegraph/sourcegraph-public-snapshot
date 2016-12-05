@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"errors"
-	"hash/fnv"
 	"log"
 	"time"
 
@@ -235,21 +234,15 @@ func (c *Client) create(ctx context.Context, repo string, mirrorRemote string, o
 	if err == nil {
 		return vcs.ErrRepoExist
 	}
-	if !vcs.IsRepoNotExist(err) {
+	repoNotExistError, ok := err.(vcs.RepoNotExistError)
+	if !ok {
 		// The only acceptable error is repo doesn't exist, if it's something else, there's a problem. Return the error.
 		return err
-	}
-	if repoNotExistError := err.(vcs.RepoNotExistError); repoNotExistError.CloneInProgress {
+	} else if repoNotExistError.CloneInProgress {
 		// If some server is already cloning this repository, report it and don't try to create another.
 		return repoNotExistError
 	}
-
 	// This hash is used to avoid concurrent init on two servers, it does not need to be stable over long timespans.
-	h := fnv.New32a()
-	if _, err := h.Write([]byte(repo)); err != nil {
-		return err
-	}
-
 	sum := md5.Sum([]byte(repo))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.servers))
 

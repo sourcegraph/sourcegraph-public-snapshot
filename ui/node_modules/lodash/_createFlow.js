@@ -1,6 +1,5 @@
 var LodashWrapper = require('./_LodashWrapper'),
-    baseFlatten = require('./_baseFlatten'),
-    baseRest = require('./_baseRest'),
+    flatRest = require('./_flatRest'),
     getData = require('./_getData'),
     getFuncName = require('./_getFuncName'),
     isArray = require('./isArray'),
@@ -9,14 +8,14 @@ var LodashWrapper = require('./_LodashWrapper'),
 /** Used as the size to enable large array optimizations. */
 var LARGE_ARRAY_SIZE = 200;
 
-/** Used as the `TypeError` message for "Functions" methods. */
+/** Error message constants. */
 var FUNC_ERROR_TEXT = 'Expected a function';
 
 /** Used to compose bitmasks for function metadata. */
-var CURRY_FLAG = 8,
-    PARTIAL_FLAG = 32,
-    ARY_FLAG = 128,
-    REARG_FLAG = 256;
+var WRAP_CURRY_FLAG = 8,
+    WRAP_PARTIAL_FLAG = 32,
+    WRAP_ARY_FLAG = 128,
+    WRAP_REARG_FLAG = 256;
 
 /**
  * Creates a `_.flow` or `_.flowRight` function.
@@ -26,9 +25,7 @@ var CURRY_FLAG = 8,
  * @returns {Function} Returns the new flow function.
  */
 function createFlow(fromRight) {
-  return baseRest(function(funcs) {
-    funcs = baseFlatten(funcs, 1);
-
+  return flatRest(function(funcs) {
     var length = funcs.length,
         index = length,
         prereq = LodashWrapper.prototype.thru;
@@ -53,7 +50,7 @@ function createFlow(fromRight) {
           data = funcName == 'wrapper' ? getData(func) : undefined;
 
       if (data && isLaziable(data[0]) &&
-            data[1] == (ARY_FLAG | CURRY_FLAG | PARTIAL_FLAG | REARG_FLAG) &&
+            data[1] == (WRAP_ARY_FLAG | WRAP_CURRY_FLAG | WRAP_PARTIAL_FLAG | WRAP_REARG_FLAG) &&
             !data[4].length && data[9] == 1
           ) {
         wrapper = wrapper[getFuncName(data[0])].apply(wrapper, data[3]);

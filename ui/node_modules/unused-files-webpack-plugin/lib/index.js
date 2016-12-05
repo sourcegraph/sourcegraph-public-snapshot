@@ -58,10 +58,17 @@ var UnusedFilesWebpackPlugin = exports.UnusedFilesWebpackPlugin = function () {
         return (0, _path.join)(globOptions.cwd, it);
       };
 
+      var handleError = function handleError(err) {
+        if (compilation.bail) {
+          done(err);
+        } else {
+          compilation.errors.push(err);
+        }
+      };
+
       (0, _glob2.default)(this.options.pattern, globOptions, function (err, files) {
         if (err) {
-          compilation.errors.push(err);
-          done();
+          handleError(err);
           return;
         }
         var unused = files.filter(function (filepath) {
@@ -74,11 +81,11 @@ var UnusedFilesWebpackPlugin = exports.UnusedFilesWebpackPlugin = function () {
         var error = new Error("\nUnusedFilesWebpackPlugin found some unused files:\n" + unused.join("\n"));
 
         if (_this2.options.failOnUnused) {
-          compilation.errors.push(error);
+          handleError(error);
         } else {
           compilation.warnings.push(error);
+          done();
         }
-        done();
       });
     }
   }, {

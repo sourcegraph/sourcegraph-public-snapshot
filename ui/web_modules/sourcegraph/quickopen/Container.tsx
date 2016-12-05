@@ -15,7 +15,6 @@ import { URIUtils } from "sourcegraph/core/uri";
 
 import { urlToBlob, urlToBlobLineCol } from "sourcegraph/blob/routes";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { Inventory } from "sourcegraph/editor/modes";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { RepoStore } from "sourcegraph/repo/RepoStore";
 import "string_score";
@@ -58,7 +57,9 @@ interface Props {
 		URI: string;
 		rev: string | null;
 	};
+	commitID: string | null;
 	files: GQL.IFile[];
+	languages: string[];
 };
 
 interface Results {
@@ -82,10 +83,6 @@ interface State {
 	// Whether or not to allow scrolling. Used to prevent jumping when expanding
 	// a category.
 	allowScroll: boolean;
-	// Resolved repository commitID.
-	commitID: string | null;
-	// Resolved repository inventory.
-	inventory: Inventory | null;
 };
 
 export interface Category {
@@ -143,8 +140,6 @@ export class Container extends React.Component<Props, State> {
 				repos: { Title: "Repositories", IsLoading: false, Results: [] },
 			},
 			allowScroll: true,
-			commitID: null,
-			inventory: null,
 		};
 		this.delegate = {
 			dismiss: props.dismissModal,
@@ -160,12 +155,6 @@ export class Container extends React.Component<Props, State> {
 		this.listeners = [
 			RepoStore.addListener(this.updateResults),
 		];
-		if (this.props.repo) {
-			const r = RepoStore.resolvedRevs.get(this.props.repo.URI, this.props.repo.rev);
-			if (r !== null) {
-				this.setState(Object.assign({}, this.state, { commitID: r.CommitID }));
-			}
-		}
 		setTimeout(() => {
 			this.fetchResults();
 			this.updateResults();
@@ -248,12 +237,8 @@ export class Container extends React.Component<Props, State> {
 		// Debounced fetch of results with GitHub search request
 		this.fetchRepoResultsWithGitHub(query);
 
-		if (this.props.repo !== null && this.state.commitID) {
-			if (this.state.inventory) {
-				Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.state.inventory, this.props.repo.URI, this.state.commitID, query));
-			} else {
-				Dispatcher.Backends.dispatch(new RepoActions.WantInventory(this.props.repo.URI, this.state.commitID));
-			}
+		if (this.props.repo !== null && this.props.commitID) {
+			Dispatcher.Backends.dispatch(new RepoActions.WantSymbols(this.props.languages, this.props.repo.URI, this.props.commitID, query));
 		}
 	}
 
@@ -277,6 +262,9 @@ export class Container extends React.Component<Props, State> {
 		const results = categories[c];
 		if (results && results.Results) {
 			const result = results.Results[r];
+			if (!result) {
+				return;
+			}
 			const resultInfo = {
 				category: c,
 				rankInCategory: r,
@@ -300,42 +288,35 @@ export class Container extends React.Component<Props, State> {
 		const query = this.state.input;
 		const repo = this.props.repo;
 		let {symbols, files, repos} = cloneDeep(this.state.results);
-		const commitID = this.state.commitID;
-
-		let inventory = null;
 
 		// Update symbols
-		if (repo && this.state.commitID) {
-			inventory = RepoStore.inventory.get(repo.URI, commitID) || null;
-
-			if (inventory) {
-				const updatedSymbols = RepoStore.symbols.list(inventory, repo.URI, commitID, query);
-				if (updatedSymbols.results.length > 0 || !updatedSymbols.loading) {
-					const symbolResults: Result[] = [];
-					updatedSymbols.results.forEach(sym => {
-						let title = sym.name;
-						if (sym.containerName) {
-							title = `${sym.containerName}.${sym.name}`;
-						}
-						const kind = symbolKindName(sym.kind);
-						const {path} = URIUtils.repoParamsExt(sym.location.uri);
-						const desc = `${kind ? kind : ""} in ${path}`;
-						let idx = title.toLowerCase().indexOf(query.toLowerCase());
-						const line = sym.location.range.start.line;
-						const col = sym.location.range.start.character;
-						symbolResults.push({
-							title: title,
-							description: desc,
-							index: idx !== -1 ? idx : 0,
-							length: idx !== -1 ? query.length : 0,
-							URLPath: urlToBlobLineCol(repo.URI, repo.rev, path, line + 1, col + 1),
-						});
+		if (repo && this.props.commitID) {
+			const updatedSymbols = RepoStore.symbols.list(this.props.languages, repo.URI, this.props.commitID, query);
+			if (updatedSymbols.results.length > 0 || !updatedSymbols.loading) {
+				const symbolResults: Result[] = [];
+				updatedSymbols.results.forEach(sym => {
+					let title = sym.name;
+					if (sym.containerName) {
+						title = `${sym.containerName}.${sym.name}`;
+					}
+					const kind = symbolKindName(sym.kind);
+					const {path} = URIUtils.repoParamsExt(sym.location.uri);
+					const desc = `${kind ? kind : ""} in ${path}`;
+					let idx = title.toLowerCase().indexOf(query.toLowerCase());
+					const line = sym.location.range.start.line;
+					const col = sym.location.range.start.character;
+					symbolResults.push({
+						title: title,
+						description: desc,
+						index: idx !== -1 ? idx : 0,
+						length: idx !== -1 ? query.length : 0,
+						URLPath: urlToBlobLineCol(repo.URI, repo.rev, path, line + 1, col + 1),
 					});
+				});
 
-					symbols.Results = symbolResults;
-				}
-				symbols.IsLoading = updatedSymbols.loading;
+				symbols.Results = symbolResults;
 			}
+			symbols.IsLoading = updatedSymbols.loading;
 
 			// Update files
 			interface Scorable {
@@ -380,7 +361,7 @@ export class Container extends React.Component<Props, State> {
 			sel.category = firstVisibleCategory;
 		}
 
-		this.setState(Object.assign({}, this.state, { results: results, inventory }));
+		this.setState(Object.assign({}, this.state, { results: results }));
 	}
 
 	expand(category: number): () => void {

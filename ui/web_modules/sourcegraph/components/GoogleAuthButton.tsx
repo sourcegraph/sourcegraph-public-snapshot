@@ -1,6 +1,6 @@
 import * as React from "react";
-import {AuthButton} from "sourcegraph/components/AuthButton";
-import {Location} from "sourcegraph/Location";
+import { AuthButton } from "sourcegraph/components/AuthButton";
+import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {

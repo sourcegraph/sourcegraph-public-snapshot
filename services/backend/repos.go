@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	pathpkg "path"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/ctxvfs"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/cloudresourcemanager/v1"
@@ -26,12 +24,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
-	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
@@ -67,6 +63,48 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	}
 
 	return repo, nil
+}
+
+func (s *repos) ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (res *sourcegraph.RepoList, err error) {
+	if Mocks.Repos.ListStarredRepos != nil {
+		return Mocks.Repos.ListStarredRepos(ctx, opt)
+	}
+
+	ctx, done := trace(ctx, "Repos", "ListStarred", opt, &err)
+	defer done()
+
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.ListStarredRepos")
+	if opt == nil {
+		opt = &gogithub.ActivityListStarredOptions{}
+	}
+
+	ghRepos, err := github.ListStarredRepos(ctx, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &sourcegraph.RepoList{Repos: ghRepos}, nil
+}
+
+func (s *repos) ListContributors(ctx context.Context, repo *sourcegraph.Repo, opt *gogithub.ListContributorsOptions) (res []*sourcegraph.Contributor, err error) {
+	if Mocks.Repos.ListContributors != nil {
+		return Mocks.Repos.ListContributors(ctx, opt)
+	}
+
+	ctx, done := trace(ctx, "Repos", "ListContributors", opt, &err)
+	defer done()
+
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.ListContributors")
+	if opt == nil {
+		opt = &gogithub.ListContributorsOptions{}
+	}
+
+	ghContributors, err := github.ListGitHubContributors(ctx, repo, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	return ghContributors, nil
 }
 
 // ghRepoQueryMatcher matches search queries that look like they refer
@@ -529,7 +567,6 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res 
 	}
 
 	repoMaybeEnqueueUpdate(ctx, repo)
-	sendCreateRepoSlackMsg(ctx, repo.URI, repo.Language, repo.Mirror, repo.Private)
 
 	return repo, nil
 }
@@ -626,6 +663,8 @@ func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res 
 	return conf, nil
 }
 
+var inventoryCache = rcache.New("inv", 604800)
+
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repoRev)
@@ -638,28 +677,15 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	if localcli.Flags.DisableRepoInventory {
-		return nil, legacyerr.Errorf(legacyerr.Unimplemented, "repo inventory listing is disabled by the configuration (DisableRepoInventory/--local.disable-repo-inventory)")
-	}
-
 	if !isAbsCommitID(repoRev.CommitID) {
 		return nil, errNotAbsCommitID
 	}
 
-	// Consult the commit status "cache" for a cached inventory result.
-	//
-	// We cache inventory result on the commit status. This lets us
-	// populate the cache by calling this method from anywhere (e.g.,
-	// after a git push). Just using the memory cache would mean that
-	// each server process would have to recompute this result.
-	const statusContext = "cache:repo.inventory"
-	statuses, err := RepoStatuses.GetCombined(ctx, repoRev)
-	if err != nil {
-		return nil, err
-	}
-	if status := statuses.GetStatus(statusContext); status != nil {
+	// Try cache first
+	cacheKey := fmt.Sprintf("%d:%s", repoRev.Repo, repoRev.CommitID)
+	if b, ok := inventoryCache.Get(cacheKey); ok {
 		var inv inventory.Inventory
-		if err := json.Unmarshal([]byte(status.Description), &inv); err == nil {
+		if err := json.Unmarshal(b, &inv); err == nil {
 			return &inv, nil
 		}
 		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repoRev", repoRev, "err", err)
@@ -672,18 +698,11 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	}
 
 	// Store inventory in cache.
-	jsonData, err := json.Marshal(inv)
+	b, err := json.Marshal(inv)
 	if err != nil {
 		return nil, err
 	}
-
-	_, err = RepoStatuses.Create(ctx, &sourcegraph.RepoStatusesCreateOp{
-		Repo:   *repoRev,
-		Status: sourcegraph.RepoStatus{Description: string(jsonData), Context: statusContext},
-	})
-	if err != nil {
-		log15.Warn("Failed to update RepoStatuses cache", "err", err, "Repo URI", repoRev.Repo)
-	}
+	inventoryCache.Set(cacheKey, b)
 
 	return inv, nil
 }
@@ -694,12 +713,11 @@ func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 		return nil, err
 	}
 
-	fs := vcs.FileSystem(vcsrepo, vcs.CommitID(repoRev.CommitID))
-	inv, err := inventory.Scan(ctx, vfsutil.Walkable(ctxvfs.StripContext(fs), filepath.Join))
+	files, err := vcsrepo.ReadDir(ctx, vcs.CommitID(repoRev.CommitID), "", true)
 	if err != nil {
 		return nil, err
 	}
-	return inv, nil
+	return inventory.Get(ctx, files)
 }
 
 func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
@@ -709,32 +727,6 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 		}
 	}
 	return false
-}
-
-func sendCreateRepoSlackMsg(ctx context.Context, uri, language string, mirror, private bool) {
-	user := authpkg.ActorFromContext(ctx).Login
-	if strings.HasPrefix(user, e2eUserPrefix) {
-		return
-	}
-
-	repoType := "public"
-	if private {
-		repoType = "private"
-	}
-	if mirror {
-		repoType += " mirror"
-	} else {
-		repoType += " hosted"
-	}
-
-	msg := fmt.Sprintf("User *%s* added a %s repo", user, repoType)
-	if !private {
-		msg += fmt.Sprintf(": <https://sourcegraph.com/%s|%s>", uri, uri)
-	}
-	if language != "" {
-		msg += fmt.Sprintf(" (%s)", language)
-	}
-	notif.PostOnboardingNotif(msg)
 }
 
 func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (err error) {

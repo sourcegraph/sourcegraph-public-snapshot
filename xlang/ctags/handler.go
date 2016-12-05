@@ -47,7 +47,7 @@ func handleRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Reque
 		var params lspext.InitializeParams
 		json.Unmarshal(*req.Params, &params)
 		info.mode = params.Mode
-		info.fs = &vfsutil.RemoteProxyFS{Conn: conn}
+		info.fs = vfsutil.RemoteFS(conn)
 
 		// Start downloading and analyzing the tags asynchronously.
 		go getTags(ctx)

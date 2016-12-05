@@ -1,3 +1,8 @@
+# 2.2.2
+
+* No longer hangs on an unescaped semicolon; instead the parser will throw
+  an exception for these cases.
+
 # 2.2.1
 
 * Allows a consumer to specify whitespace tokens when creating a new Node

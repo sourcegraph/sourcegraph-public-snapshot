@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/russross/blackfriday"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonrpc2"
 
 	htmpl "html/template"
 
@@ -42,6 +44,29 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
+
+// curlRepro returns curl reproduction instructions for an xlang request.
+func curlRepro(mode, rootPath, method string, params interface{}) string {
+	init := jsonrpc2.Request{
+		ID:     jsonrpc2.ID{Num: 0},
+		Method: "initialize",
+	}
+	init.SetParams(xlang.ClientProxyInitializeParams{
+		InitializeParams: lsp.InitializeParams{
+			RootPath: rootPath,
+		},
+		Mode: mode,
+	})
+	req := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 1}, Method: method}
+	req.SetParams(params)
+	shutdown := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 2}, Method: "shutdown"}
+	exit := jsonrpc2.Request{Method: "exit"}
+	data, err := json.Marshal([]interface{}{init, req, shutdown, exit})
+	if err != nil {
+		log15.Crit("landing: curlRepro:", "error", err)
+	}
+	return fmt.Sprintf(`Reproduce with: curl --data '%s' https://sourcegraph.com/.api/xlang/%s -i`, data, method)
+}
 
 func shouldShadow(page string) bool {
 	e := os.Getenv(page + "_LANDING_SHADOW_PERCENT")
@@ -136,7 +161,17 @@ func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
+func serveRepoLanding(w http.ResponseWriter, r *http.Request) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "serveRepoLanding")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	vars := mux.Vars(r)
 
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), vars)
@@ -172,12 +207,16 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			// Just log, so we fallback to legacy in the event of catastrophic failure.
 			log15.Crit("queryRepoLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 	} else if shouldShadow("REPO") {
 		go func() {
 			_, err := queryRepoLandingData(r, repo)
 			if err != nil {
 				log15.Crit("queryRepoLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				ext.Error.Set(span, true)
+				span.SetTag("err", err.Error())
 			}
 		}()
 	}
@@ -235,7 +274,7 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 	// Query information about the top definitions in the repo.
 	topDefs, err := backend.Defs.TopDefs(r.Context(), sourcegraph.TopDefsOptions{
 		Source: repo.URI,
-		Limit:  20,
+		Limit:  5,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "Defs.TopDefs")
@@ -255,14 +294,32 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 
 			// Lookup the definition based on the source / definition (Name, ContainerName)
 			// pair.
-			rootPath := "git://" + repo.URI + "?" + repo.DefaultBranch
-			var symbols []lsp.SymbolInformation
-			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
-				Query: d.DefName,
-				Limit: 100,
-			}, &symbols)
+			var (
+				rootPath = "git://" + repo.URI + "?" + repo.DefaultBranch
+				symbols  []lsp.SymbolInformation
+				method   string
+				params   interface{}
+			)
+			if path.Ext(d.DefFile) != "" {
+				// d.DefFile is a file, so use textDocument/documentSymbol
+				method = "textDocument/documentSymbol"
+				params = lsp.DocumentSymbolParams{
+					TextDocument: lsp.TextDocumentIdentifier{
+						URI: rootPath + "#" + d.DefFile,
+					},
+				}
+			} else {
+				// d.DefFile is a directory, so use workspace/symbol with the
+				// `dir:` filter.
+				method = "workspace/symbol"
+				params = lsp.WorkspaceSymbolParams{
+					Query: fmt.Sprintf("dir:%s %s", d.DefFile, d.DefName),
+					Limit: 100,
+				}
+			}
+			err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &symbols)
 			if err != nil {
-				run.Error(errors.Wrap(err, "LSP workspace/symbol"))
+				run.Error(errors.Wrap(err, "LSP "+method))
 				return
 			}
 
@@ -285,21 +342,33 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 				break
 			}
 			if symbol == nil {
-				log15.Warn("queryRepoLandingData: no symbol info matching top def from global references", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				msg := "queryRepoLandingData: no symbol info matching top def from global references"
+				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				log15.Warn(curlRepro(language, rootPath, method, params))
+				span.LogEvent(msg)
+				span.SetTag("missing", "symbol")
+				span.LogEvent(curlRepro(language, rootPath, method, params))
 				return
 			}
 
 			// Determine the definition title.
 			var hover lsp.Hover
-			err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
+			method = "textDocument/hover"
+			params = lsp.TextDocumentPositionParams{
 				TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
 				Position: lsp.Position{
 					Line:      symbol.Location.Range.Start.Line,
 					Character: symbol.Location.Range.Start.Character,
 				},
-			}, &hover)
+			}
+			err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &hover)
 			if len(hover.Contents) == 0 {
-				log15.Warn("queryRepoLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				msg := "queryRepoLandingData: LSP textDocument/hover returned no contents"
+				log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				log15.Warn(curlRepro(language, rootPath, method, params))
+				span.LogEvent(msg)
+				span.SetTag("missing", "hover")
+				span.LogEvent(curlRepro(language, rootPath, method, params))
 				return
 			}
 
@@ -310,10 +379,6 @@ func queryRepoLandingData(r *http.Request, repo *sourcegraph.Repo) (res []defDes
 					hoverDesc = s.Value
 					break
 				}
-			}
-			if hoverDesc == "" {
-				log15.Warn("queryRepoLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-				return
 			}
 
 			u, err := approuter.Rel.URLToLegacyDefLanding(*symbol)
@@ -414,11 +479,32 @@ type defLandingData struct {
 	ShortDefName     string // e.g. "NewRouter"
 	DefFileURL       string
 	DefFileName      string
+	DefEventProps    *defEventProps
 	RefLocs          *sourcegraph.RefLocations
 	TruncatedRefLocs bool
 }
 
-func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
+type defEventProps struct {
+	DefLanguage  string `json:"def_language"`
+	DefScheme    string `json:"def_scheme"`
+	DefSource    string `json:"def_source"`
+	DefContainer string `json:"def_container"`
+	DefVersion   string `json:"def_version"`
+	DefFile      string `json:"def_file"`
+	DefName      string `json:"def_name"`
+}
+
+func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), "serveDefLanding")
+	r = r.WithContext(ctx)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
@@ -435,12 +521,16 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			// Just log, so we fallback to legacy in the event of catastrophic failure.
 			log15.Crit("queryDefLandingData", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
 	} else if shouldShadow("DEF") {
 		go func() {
 			_, err := queryDefLandingData(r, repo, repoRev)
 			if err != nil {
 				log15.Crit("queryDefLandingData: shadow", "error", err, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+				ext.Error.Set(span, true)
+				span.SetTag("err", err.Error())
 			}
 		}()
 	}
@@ -462,25 +552,22 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) error {
 	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
 }
 
-// withSymbolEventTracking adds symbol event tracking to the specified URL's
-// query parameters. It panics if symbol.Location.URI is unparsable.
-func withSymbolEventTracking(eventName string, u *url.URL, language string, symbol *lsp.SymbolInformation) *url.URL {
+// generateSymbolEventProps generates symbol event logging properties
+// It panics if symbol.Location.URI is unparsable.
+func generateSymbolEventProps(language string, symbol *lsp.SymbolInformation) *defEventProps {
 	symURI, err := url.Parse(symbol.Location.URI)
 	if err != nil {
 		panic(err)
 	}
-
-	q := u.Query()
-	q.Set("_event", eventName)
-	q.Set("_def_language", language)
-	q.Set("_def_scheme", symURI.Scheme)
-	q.Set("_def_source", symURI.Host+symURI.Path)
-	q.Set("_def_version", symURI.RawQuery)
-	q.Set("_def_file", symURI.Fragment)
-	q.Set("_def_container", symbol.ContainerName)
-	q.Set("_def_name", symbol.Name)
-	u.RawQuery = q.Encode()
-	return u
+	return &defEventProps{
+		DefLanguage:  language,
+		DefScheme:    symURI.Scheme,
+		DefSource:    (symURI.Host + symURI.Path),
+		DefVersion:   symURI.RawQuery,
+		DefFile:      symURI.Fragment,
+		DefContainer: symbol.ContainerName,
+		DefName:      symbol.Name,
+	}
 }
 
 func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev sourcegraph.RepoRevSpec) (res *defLandingData, err error) {
@@ -504,15 +591,20 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	)
 	if len(split) == 2 {
 		defContainerName, defName = split[0], split[1]
+	} else {
+		split := strings.Split(defSpec.Unit, "/")
+		defContainerName = split[len(split)-1]
 	}
 
 	// Lookup the definition based on the legacy srclib defkey in the page URL.
 	rootPath := "git://" + defSpec.Repo + "?" + repoRev.CommitID
 	var symbols []lsp.SymbolInformation
-	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "workspace/symbol", lsp.WorkspaceSymbolParams{
+	method := "workspace/symbol"
+	params := lsp.WorkspaceSymbolParams{
 		Query: defName,
 		Limit: 100,
-	}, &symbols)
+	}
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, params, &symbols)
 
 	// Find the matching symbol.
 	var symbol *lsp.SymbolInformation
@@ -537,7 +629,13 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		break
 	}
 	if symbol == nil {
-		return nil, fmt.Errorf("could not finding matching symbol info")
+		msg := "queryDefLandingData: could not find matching symbol info"
+		log15.Warn(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		log15.Warn(curlRepro(language, rootPath, method, params))
+		span.LogEvent(msg)
+		span.SetTag("missing", "symbol")
+		span.LogEvent(curlRepro(language, rootPath, method, params))
+		return nil, errors.New("LSP workspace/symbol did not return matching symbol info")
 	}
 
 	// Create links to the definition.
@@ -548,11 +646,9 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	defFileName := symURI.Host + path.Join(symURI.Path, symURI.Fragment)
 	repoURI := symURI.Host + symURI.Path
 
+	eventProps := generateSymbolEventProps(language, symbol)
 	defFileURL := approuter.Rel.URLToBlob(repoURI, "", path.Clean(symURI.Fragment), 0)
-	defFileURL = withSymbolEventTracking("DefInfoViewFileLinkClicked", defFileURL, language, symbol)
-
 	viewDefURL := approuter.Rel.URLToBlob(repoURI, "", path.Clean(symURI.Fragment), symbol.Location.Range.Start.Line+1)
-	viewDefURL = withSymbolEventTracking("DefInfoViewDefLinkClicked", viewDefURL, language, symbol)
 
 	// Create metadata titles.
 	shortTitle := strings.Join([]string{symbol.ContainerName, symbol.Name}, ".")
@@ -560,15 +656,23 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 
 	// Determine the definition title.
 	var hover lsp.Hover
-	err = xlang.OneShotClientRequest(r.Context(), language, rootPath, "textDocument/hover", lsp.TextDocumentPositionParams{
+	method = "textDocument/hover"
+	hoverParams := lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: symbol.Location.URI},
 		Position: lsp.Position{
 			Line:      symbol.Location.Range.Start.Line,
 			Character: symbol.Location.Range.Start.Character,
 		},
-	}, &hover)
+	}
+
+	err = xlang.UnsafeOneShotClientRequest(r.Context(), language, rootPath, method, hoverParams, &hover)
 	if len(hover.Contents) == 0 {
-		log15.Crit("queryDefLandingData: LSP textDocument/hover returned no contents", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		msg := "queryDefLandingData: LSP textDocument/hover returned no contents"
+		log15.Crit(msg, "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
+		log15.Crit(curlRepro(language, rootPath, method, hoverParams))
+		span.LogEvent(msg)
+		span.SetTag("missing", "hover")
+		span.LogEvent(curlRepro(language, rootPath, method, hoverParams))
 		return nil, errors.New("LSP textDocument/hover returned no contents")
 	}
 
@@ -579,10 +683,6 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			hoverDesc = string(blackfriday.MarkdownCommon([]byte(s.Value)))
 			break
 		}
-	}
-	if hoverDesc == "" {
-		log15.Crit("queryDefLandingData: no markdown in hover response", "trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
-		return nil, errors.New("no markdown in hover response")
 	}
 
 	// Determine canonical URL and whether the symbol shold be indexed.
@@ -595,7 +695,11 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 		repoRev.CommitID,
 	)
 	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	shouldIndexSymbol := len(symbol.Name) >= 3 && (symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod)
+
+	goodName := len(symbol.Name) >= 3
+	goodKind := symbol.Kind == lsp.SKClass || symbol.Kind == lsp.SKConstructor || symbol.Kind == lsp.SKFunction || symbol.Kind == lsp.SKInterface || symbol.Kind == lsp.SKMethod
+	goodDocs := len(hoverDesc) >= 20
+	goodSymbol := goodName && goodKind && goodDocs
 
 	// Request up to 5 files for up to 3 sources (e.g. repos) that reference
 	// the definition.
@@ -675,10 +779,11 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 			// Don't noindex pages with a canonical URL. See
 			// https://www.seroundtable.com/archives/020151.html.
 			CanonicalURL: canonicalURL,
-			Index:        allowRobots(repo) && shouldIndexSymbol && canonRev,
+			Index:        allowRobots(repo) && goodSymbol && canonRev,
 		},
 		Description:      htmlutil.Sanitize(hoverDesc),
 		RefSnippets:      refSnippets,
+		DefEventProps:    eventProps,
 		ViewDefURL:       viewDefURL.String(),
 		DefName:          hoverTitle,
 		ShortDefName:     symbol.Name,
@@ -689,18 +794,16 @@ func queryDefLandingData(r *http.Request, repo *sourcegraph.Repo, repoRev source
 	}, nil
 }
 
-func legacyWithDefEventTracking(eventName string, u *url.URL, def *sourcegraph.Def) *url.URL {
-	q := u.Query()
-	q.Set("_event", eventName)
-	q.Set("_def_language", "go") // srclib def landing pages only ever had GoPackage unit types.
-	q.Set("_def_scheme", "git")
-	q.Set("_def_source", def.Repo)
-	q.Set("_def_version", "")
-	q.Set("_def_file", def.File)
-	q.Set("_def_container", def.Unit)
-	q.Set("_def_name", def.Path)
-	u.RawQuery = q.Encode()
-	return u
+func legacyGenerateSymbolEventProps(def *sourcegraph.Def) *defEventProps {
+	return &defEventProps{
+		DefLanguage:  "go", // srclib def landing pages only ever had GoPackage unit types.
+		DefScheme:    "git",
+		DefSource:    def.Repo,
+		DefVersion:   "",
+		DefFile:      def.File,
+		DefContainer: def.Unit,
+		DefName:      def.Path,
+	}
 }
 
 func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *defLandingData, err error) {
@@ -715,6 +818,11 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *de
 	}()
 
 	vars := mux.Vars(r)
+	// We don't support xlang yet on new commits for golang/go https://github.com/sourcegraph/sourcegraph/issues/2370
+	// DefLanding is pretty only ever used on the default branch, so used old version
+	if vars["Repo"] == "github.com/golang/go" {
+		vars["Rev"] = "@838eaa738f2bc07c3706b96f9e702cb80877dfe1"
+	}
 	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
 	if err != nil {
 		return nil, err
@@ -756,11 +864,9 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *de
 	}
 
 	// fetch definition
+	eventProps := legacyGenerateSymbolEventProps(def)
 	viewDefURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine))
-	viewDefURL = legacyWithDefEventTracking("DefInfoViewDefLinkClicked", viewDefURL, def)
-
 	defFileURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0)
-	defFileURL = legacyWithDefEventTracking("DefInfoViewFileLinkClicked", defFileURL, def)
 
 	// fetch example
 	refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
@@ -820,6 +926,7 @@ func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *de
 		Meta:             *m,
 		Description:      def.DocHTML,
 		RefSnippets:      refSnippets,
+		DefEventProps:    eventProps,
 		ViewDefURL:       viewDefURL.String(),
 		DefName:          def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
 		ShortDefName:     def.Name,

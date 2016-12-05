@@ -1,26 +1,77 @@
 'use strict';
 
-module.exports = {
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.closest = exports.querySelectorAll = exports.scrollTop = exports.scrollParent = exports.contains = exports.position = exports.offsetParent = exports.offset = exports.width = exports.height = exports.matches = undefined;
 
-  matches: require('./matches'),
+var _matches = require('./matches');
 
-  height: require('./height'),
+var _matches2 = _interopRequireDefault(_matches);
 
-  width: require('./width'),
+var _height = require('./height');
 
-  offset: require('./offset'),
+var _height2 = _interopRequireDefault(_height);
 
-  offsetParent: require('./offsetParent'),
+var _width = require('./width');
 
-  position: require('./position'),
+var _width2 = _interopRequireDefault(_width);
 
-  contains: require('./contains'),
+var _offset = require('./offset');
 
-  scrollParent: require('./scrollParent'),
+var _offset2 = _interopRequireDefault(_offset);
 
-  scrollTop: require('./scrollTop'),
+var _offsetParent = require('./offsetParent');
 
-  querySelectorAll: require('./querySelectorAll'),
+var _offsetParent2 = _interopRequireDefault(_offsetParent);
 
-  closest: require('./closest')
+var _position = require('./position');
+
+var _position2 = _interopRequireDefault(_position);
+
+var _contains = require('./contains');
+
+var _contains2 = _interopRequireDefault(_contains);
+
+var _scrollParent = require('./scrollParent');
+
+var _scrollParent2 = _interopRequireDefault(_scrollParent);
+
+var _scrollTop = require('./scrollTop');
+
+var _scrollTop2 = _interopRequireDefault(_scrollTop);
+
+var _querySelectorAll = require('./querySelectorAll');
+
+var _querySelectorAll2 = _interopRequireDefault(_querySelectorAll);
+
+var _closest = require('./closest');
+
+var _closest2 = _interopRequireDefault(_closest);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.matches = _matches2.default;
+exports.height = _height2.default;
+exports.width = _width2.default;
+exports.offset = _offset2.default;
+exports.offsetParent = _offsetParent2.default;
+exports.position = _position2.default;
+exports.contains = _contains2.default;
+exports.scrollParent = _scrollParent2.default;
+exports.scrollTop = _scrollTop2.default;
+exports.querySelectorAll = _querySelectorAll2.default;
+exports.closest = _closest2.default;
+exports.default = {
+  matches: _matches2.default,
+  height: _height2.default,
+  width: _width2.default,
+  offset: _offset2.default,
+  offsetParent: _offsetParent2.default,
+  position: _position2.default,
+  contains: _contains2.default,
+  scrollParent: _scrollParent2.default,
+  scrollTop: _scrollTop2.default,
+  querySelectorAll: _querySelectorAll2.default,
+  closest: _closest2.default
 };

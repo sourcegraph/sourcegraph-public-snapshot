@@ -15,10 +15,12 @@ type InputValue struct {
 	Name    string
 	Type    Type
 	Default interface{}
+	Desc    string
 }
 
 func ParseInputValue(l *lexer.Lexer) *InputValue {
 	p := &InputValue{}
+	p.Desc = l.DescComment()
 	p.Name = l.ConsumeIdent()
 	l.ConsumeToken(':')
 	p.Type = ParseType(l)
@@ -32,12 +34,14 @@ func ParseInputValue(l *lexer.Lexer) *InputValue {
 type Variable string
 
 func ParseValue(l *lexer.Lexer, constOnly bool) interface{} {
-	if !constOnly && l.Peek() == '$' {
+	switch l.Peek() {
+	case '$':
+		if constOnly {
+			l.SyntaxError("variable not allowed")
+			panic("unreachable")
+		}
 		l.ConsumeToken('$')
 		return Variable(l.ConsumeIdent())
-	}
-
-	switch l.Peek() {
 	case scanner.Int:
 		return l.ConsumeInt()
 	case scanner.Float:
@@ -50,9 +54,29 @@ func ParseValue(l *lexer.Lexer, constOnly bool) interface{} {
 			return true
 		case "false":
 			return false
+		case "null":
+			return nil
 		default:
 			return ident
 		}
+	case '[':
+		l.ConsumeToken('[')
+		var list []interface{}
+		for l.Peek() != ']' {
+			list = append(list, ParseValue(l, constOnly))
+		}
+		l.ConsumeToken(']')
+		return list
+	case '{':
+		l.ConsumeToken('{')
+		obj := make(map[string]interface{})
+		for l.Peek() != '}' {
+			name := l.ConsumeIdent()
+			l.ConsumeToken(':')
+			obj[name] = ParseValue(l, constOnly)
+		}
+		l.ConsumeToken('}')
+		return obj
 	default:
 		l.SyntaxError("invalid value")
 		panic("unreachable")

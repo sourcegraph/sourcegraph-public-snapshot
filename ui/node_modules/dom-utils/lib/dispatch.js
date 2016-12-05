@@ -21,11 +21,10 @@ module.exports = function(element, eventType, eventName, initDict) {
     eventName = null;
   }
 
-  // To allow for reasonable defaults, events should bubble and be cancelable
-  // unless explicitly told not to.
   initDict = initDict || {};
-  initDict.bubbles = 'bubbles' in initDict ? initDict.bubbles : true;
-  initDict.cancelable = 'cancelable' in initDict ? initDict.cancelable : true;
+  initDict.bubbles = initDict.bubbles || false;
+  initDict.cancelable = initDict.cancelable || false;
+  initDict.composed = initDict.composed || false;
 
   // If a detail property is passed, this is a custom event.
   if ('detail' in initDict) isCustom = true;

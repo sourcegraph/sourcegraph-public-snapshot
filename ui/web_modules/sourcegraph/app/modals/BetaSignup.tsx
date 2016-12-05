@@ -1,11 +1,11 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
+import { InjectedRouter } from "react-router";
 
-import {Heading} from "sourcegraph/components/index";
-import {LocationStateModal, dismissModal} from "sourcegraph/components/Modal";
+import { Heading } from "sourcegraph/components/index";
+import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
-import {Location} from "sourcegraph/Location";
+import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
+import { Location } from "sourcegraph/Location";
 
 interface Props {
 	location: Location;

@@ -1,4 +1,4 @@
-import {IPosition, IRange} from "vs/editor/common/editorCommon";
+import { IPosition, IRange } from "vs/editor/common/editorCommon";
 
 // RangeOrPosition represents a range or position.
 export class RangeOrPosition {
@@ -60,7 +60,7 @@ export class RangeOrPosition {
 	private endLine?: number;
 	private endCol?: number;
 
-	zeroIndexed(): {startLine: number, startCol?: number, endLine?: number, endCol?: number} {
+	zeroIndexed(): { startLine: number, startCol?: number, endLine?: number, endCol?: number } {
 		return this.removeUndefined({
 			startLine: this.startLine,
 			startCol: this.startCol,
@@ -69,7 +69,7 @@ export class RangeOrPosition {
 		});
 	}
 
-	oneIndexed(): {startLine: number, startCol?: number, endLine?: number, endCol?: number} {
+	oneIndexed(): { startLine: number, startCol?: number, endLine?: number, endCol?: number } {
 		return this.removeUndefined({
 			startLine: this.startLine + 1,
 			startCol: typeof this.startCol === "number" ? this.startCol + 1 : undefined,
@@ -142,7 +142,7 @@ export class RangeOrPosition {
 		return s;
 	}
 
-	private removeUndefined(o: {startLine: number, startCol?: number, endLine?: number, endCol?: number}): {startLine: number, startCol?: number, endLine?: number, endCol?: number} {
+	private removeUndefined(o: { startLine: number, startCol?: number, endLine?: number, endCol?: number }): { startLine: number, startCol?: number, endLine?: number, endCol?: number } {
 		if (o.startCol === undefined) {
 			delete o.startCol;
 		}

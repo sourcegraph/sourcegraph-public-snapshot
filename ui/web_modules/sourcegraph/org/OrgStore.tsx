@@ -1,8 +1,8 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import "sourcegraph/org/OrgBackend";
-import {Store} from "sourcegraph/Store";
-import {deepFreeze} from "sourcegraph/util/deepFreeze";
+import { Store } from "sourcegraph/Store";
+import { deepFreeze } from "sourcegraph/util/deepFreeze";
 
 class OrgStoreClass extends Store<any> {
 	orgs: any;

@@ -1,10 +1,10 @@
-import {context} from "sourcegraph/app/context";
-import {URIUtils} from "sourcegraph/core/uri";
-import {defaultFetch as fetch} from "sourcegraph/util/xhr";
+import { context } from "sourcegraph/app/context";
+import { URIUtils } from "sourcegraph/core/uri";
+import { defaultFetch as fetch } from "sourcegraph/util/xhr";
 import URI from "vs/base/common/uri";
-import {Range} from "vs/editor/common/core/range";
-import {IPosition, IRange, IReadOnlyModel} from "vs/editor/common/editorCommon";
-import {Location as VSCLocation} from "vs/editor/common/modes";
+import { Range } from "vs/editor/common/core/range";
+import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
+import { Location as VSCLocation } from "vs/editor/common/modes";
 
 interface LSPPosition {
 	line: number;
@@ -12,7 +12,7 @@ interface LSPPosition {
 }
 
 export function toPosition(pos: IPosition): LSPPosition {
-	return {line: pos.lineNumber - 1, character: pos.column - 1};
+	return { line: pos.lineNumber - 1, character: pos.column - 1 };
 }
 
 interface LSPRange {
@@ -26,6 +26,9 @@ export interface Location {
 }
 
 export function toMonacoLocation(loc: Location): VSCLocation {
+	if (!loc.range) {
+		throw new Error(`location range is not defined: ${JSON.stringify(loc)}`);
+	}
 	return {
 		uri: URI.parse(loc.uri),
 		range: toMonacoRange(loc.range),
@@ -33,13 +36,16 @@ export function toMonacoLocation(loc: Location): VSCLocation {
 }
 
 export function toMonacoRange(r: LSPRange): IRange {
+	if (!r) {
+		throw new Error("range is not defined");
+	}
 	return new Range(r.start.line + 1, r.start.character + 1, r.end.line + 1, r.end.character + 1);
 }
 
 type LSPResponse = {
 	method: string;
 	result: any;
-	error: {code: number, message: string};
+	error: { code: number, message: string };
 };
 
 // send sends an LSP request with the given method and params. Because
@@ -64,9 +70,9 @@ export function sendExt(uri: string, modeID: string, method: string, params: any
 				mode: modeID,
 			},
 		},
-		{id: 1, method, params},
-		{id: 2, method: "shutdown"},
-		{method: "exit"},
+		{ id: 1, method, params },
+		{ id: 2, method: "shutdown" },
+		{ method: "exit" },
 	];
 
 	type LSPResponseWithTraceURL = {
@@ -86,7 +92,7 @@ export function sendExt(uri: string, modeID: string, method: string, params: any
 			if (resp.status >= 200 && resp.status <= 299) {
 				// Pass along the main request's response (not the
 				// initialize/shutdown responses).
-				return resp.json().then((resps: LSPResponse[]) => ({resp: resps[1], traceURL}));
+				return resp.json().then((resps: LSPResponse[]) => ({ resp: resps[1], traceURL }));
 			}
 
 			// Synthesize an LSP response object from the HTTP error,
@@ -163,7 +169,6 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * User: ${context.user ? context.user.Login : "(anonymous)"}
 * User agent: \`${window.navigator.userAgent}\`
 * Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
-* Feature flags: \`${JSON.stringify(context.features)}\`
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
 	console.debug(`Post a GitHub issue\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels=lang-${modeID}`);
@@ -179,7 +184,7 @@ function describeRequest(method: string, params: any): string {
 	if (typeof params.query !== "undefined") {
 		return `${method} with query ${JSON.stringify(params.query)}`;
 	}
-	return `${method} with ${JSON.stringify(params)}`;
+	return method;
 }
 
 function truncate(s: string, max: number): string {

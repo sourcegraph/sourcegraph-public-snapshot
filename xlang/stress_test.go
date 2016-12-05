@@ -3,7 +3,6 @@ package xlang_test
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 	"path"
 	"sort"
@@ -18,7 +17,6 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // BenchmarkStress benchmarks performing "textDocument/definition",
@@ -38,22 +36,8 @@ func BenchmarkStress(b *testing.B) {
 	xlang.LogServerStats = false
 	xlang.LogTrackedErrors = false
 
-	{
-		// Serve repository data from codeload.github.com for
-		// test performance instead of from gitserver. This
-		// technically means we aren't testing gitserver, but
-		// that is well tested separately, and the benefit of
-		// fast tests here outweighs the benefits of a coarser
-		// integration test.
-		orig := xlang.NewRemoteRepoVFS
-		xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
-			fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
-			return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
-		}
-		defer func() {
-			xlang.NewRemoteRepoVFS = orig
-		}()
-	}
+	cleanup := useGithubForVFS()
+	defer cleanup()
 
 	tests := map[string]struct { // map key is rootPath
 		mode    string
@@ -80,7 +64,7 @@ func BenchmarkStress(b *testing.B) {
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := xlang.NewRemoteRepoVFS(root.CloneURL(), root.Rev())
+			fs, err := xlang.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
 			if err != nil {
 				b.Fatal(err)
 			}

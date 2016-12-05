@@ -12,6 +12,7 @@ function DOMText(value, owner) {
 
 DOMText.prototype.type = "DOMTextNode"
 DOMText.prototype.nodeType = 3
+DOMText.prototype.nodeName = "#text"
 
 DOMText.prototype.toString = function _Text_toString() {
     return this.data

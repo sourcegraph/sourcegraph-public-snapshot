@@ -6,6 +6,7 @@ import (
 
 	"context"
 
+	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -16,6 +17,8 @@ type MockRepos struct {
 	Get                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	Resolve                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListStarredRepos            func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
+	ListContributors            func(v0 context.Context, v1 *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error)
 	Create                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
 	Delete                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) error
@@ -118,6 +121,33 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 			repos[i] = &sourcegraph.Repo{URI: repo}
 		}
 		return &sourcegraph.RepoList{Repos: repos}, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockListStarredRepos(t *testing.T, wantRepos ...string) (called *bool) {
+	called = new(bool)
+	s.ListStarredRepos = func(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error) {
+		*called = true
+		repos := make([]*sourcegraph.Repo, len(wantRepos))
+		for i, repo := range wantRepos {
+			repos[i] = &sourcegraph.Repo{URI: repo}
+		}
+		return &sourcegraph.RepoList{Repos: repos}, nil
+	}
+	return
+}
+
+func (s *MockRepos) MockListContributors(t *testing.T, wantContributors ...string) (called *bool) {
+	called = new(bool)
+	s.ListContributors = func(ctx context.Context, v1 *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error) {
+		*called = true
+		contributors := make([]*sourcegraph.Contributor, len(wantContributors))
+		for i, contributor := range wantContributors {
+			contributors[i] = &sourcegraph.Contributor{Login: contributor}
+		}
+		return contributors, nil
+
 	}
 	return
 }

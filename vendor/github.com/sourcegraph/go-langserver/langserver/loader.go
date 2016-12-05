@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
@@ -217,11 +218,14 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 	span.SetTag("cached", ok)
 	var diags diagnostics
 	if !ok {
+		typecheckCacheTotal.WithLabelValues("miss").Inc()
 		res.fset = token.NewFileSet()
 		res.prog, diags, res.err = typecheck(res.fset, bctx, bpkg)
 		h.mu.Lock()
 		h.cache[k] = res
 		h.mu.Unlock()
+	} else {
+		typecheckCacheTotal.WithLabelValues("hit").Inc()
 	}
 	return res.fset, res.prog, diags, res.err
 }
@@ -286,26 +290,11 @@ func typecheck(fset *token.FileSet, bctx *build.Context, bpkg *build.Package) (*
 	if err != nil && prog == nil {
 		return nil, nil, err
 	}
-	diag, err := typecheckErrorDiagnostics(typeErrs)
+	diags, err := errsToDiagnostics(typeErrs, prog)
 	if err != nil {
 		return nil, nil, err
 	}
-	return prog, diag, nil
-}
-
-func typecheckErrorDiagnostics(errs []error) (diagnostics, error) {
-	var diags diagnostics
-	for _, e := range errs {
-		if diags == nil {
-			diags = diagnostics{}
-		}
-		filename, diag, err := parseLoaderError(e.Error())
-		if err != nil {
-			return nil, err
-		}
-		diags[filename] = append(diags[filename], diag)
-	}
-	return diags, nil
+	return prog, diags, nil
 }
 
 func clearInfoFields(info *loader.PackageInfo) {
@@ -331,4 +320,15 @@ func clearInfoFields(info *loader.PackageInfo) {
 func isMultiplePackageError(err error) bool {
 	_, ok := err.(*build.MultiplePackageError)
 	return ok
+}
+
+var typecheckCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "golangserver",
+	Subsystem: "typecheck",
+	Name:      "cache_request_total",
+	Help:      "Count of requests to cache.",
+}, []string{"type"})
+
+func init() {
+	prometheus.MustRegister(typecheckCacheTotal)
 }

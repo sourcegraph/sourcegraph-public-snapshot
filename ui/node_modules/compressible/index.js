@@ -48,11 +48,11 @@ function compressible (type) {
   var mime = match && match[1].toLowerCase()
   var data = db[mime]
 
-  if ((data && data.compressible) || compressibleTypeRegExp.test(mime)) {
-    return true
+  // return database information
+  if (data && data.compressible !== undefined) {
+    return data.compressible
   }
 
-  return data
-    ? data.compressible
-    : undefined
+  // fallback to regexp or unknown
+  return compressibleTypeRegExp.test(mime) || undefined
 }

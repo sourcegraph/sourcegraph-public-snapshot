@@ -6,7 +6,9 @@ import (
 	"path"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
 type treeResolver struct {
@@ -16,6 +18,8 @@ type treeResolver struct {
 }
 
 func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recursive bool) (*treeResolver, error) {
+	repoupdater.Enqueue(commit.RepoID, auth.ActorFromContext(ctx).UserSpec())
+
 	if recursive {
 		if path != "" {
 			return nil, errors.New("not implemented")
@@ -71,54 +75,34 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 	}, nil
 }
 
-func (r *treeResolver) Directories() []*entryResolver {
-	var l []*entryResolver
+func (r *treeResolver) Directories() []*fileResolver {
+	var l []*fileResolver
 	for _, entry := range r.tree.Entries {
 		if entry.Type == sourcegraph.DirEntry {
-			l = append(l, &entryResolver{
+			l = append(l, &fileResolver{
 				commit: r.commit,
+				name:   entry.Name,
 				path:   path.Join(r.path, entry.Name),
-				entry:  entry,
 			})
 		}
 	}
 	return l
 }
 
-func (r *treeResolver) Files() []*entryResolver {
-	var l []*entryResolver
+func (r *treeResolver) Files() []*fileResolver {
+	var l []*fileResolver
 	for _, entry := range r.tree.Entries {
 		if entry.Type != sourcegraph.DirEntry {
-			l = append(l, &entryResolver{
+			l = append(l, &fileResolver{
 				commit: r.commit,
+				name:   entry.Name,
 				path:   path.Join(r.path, entry.Name),
-				entry:  entry,
 			})
 		}
 	}
 	return l
 }
 
-type entryResolver struct {
-	commit commitSpec
-	path   string
-	entry  *sourcegraph.BasicTreeEntry
-}
-
-func (r *entryResolver) Name() string {
-	return r.entry.Name
-}
-
-func (r *entryResolver) Tree(ctx context.Context) (*treeResolver, error) {
+func (r *fileResolver) Tree(ctx context.Context) (*treeResolver, error) {
 	return makeTreeResolver(ctx, r.commit, r.path, false)
-}
-
-func (r *entryResolver) Content() *blobResolver {
-	return &blobResolver{}
-}
-
-type blobResolver struct{}
-
-func (r *blobResolver) Bytes(ctx context.Context) (string, error) {
-	return "TODO", nil
 }

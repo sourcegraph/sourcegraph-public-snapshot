@@ -48,14 +48,10 @@ func (self FlagsRuleMaker) Lookahead(pattern string, state ...string) RegexpRule
 func (self FlagsRuleMaker) Consume(runes string, spaces bool) RegexpRule {
 	return RegexpRule{matcher: func(source []byte) []int {
 		pos := 0
-		l := len(source)
-		for pos < l {
-			// TODO: Unicode support?
-			r := rune(source[pos])
-			if spaces && unicode.IsSpace(r) || strings.ContainsRune(runes, r) {
-				pos++
-			}
-			break
+		// TODO: Unicode support?
+		r := rune(source[pos])
+		if spaces && unicode.IsSpace(r) || strings.ContainsRune(runes, r) {
+			pos++
 		}
 		if pos == 0 {
 			return nil

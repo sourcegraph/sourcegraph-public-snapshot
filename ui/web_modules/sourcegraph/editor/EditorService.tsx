@@ -1,18 +1,17 @@
-// tslint:disable typedef ordered-imports
-import { TreeEntry } from "sourcegraph/api";
-import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
-import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { URIUtils } from "sourcegraph/core/uri";
-import { makeRepoRev } from "sourcegraph/repo";
+import { Features } from "sourcegraph/util/features";
+import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
+import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
+
 import { IDisposable } from "vs/base/common/lifecycle";
-import * as editorCommon from "vs/editor/common/editorCommon";
-import { IRange } from "vs/editor/common/editorCommon";
-import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/platform/editor/common/editor";
-import { IEditorViewState } from "vs/editor/common/editorCommon";
-import { createModel, getModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { TPromise } from "vs/base/common/winjs.base";
 import { SimpleEditor, SimpleModel } from "vs/editor/browser/standalone/simpleServices";
+import { createModel, getModel } from "vs/editor/browser/standalone/standaloneEditor";
+import * as editorCommon from "vs/editor/common/editorCommon";
+import { IEditorViewState } from "vs/editor/common/editorCommon";
+import { IRange } from "vs/editor/common/editorCommon";
 import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
+import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/platform/editor/common/editor";
 
 const fetch = singleflightFetch(defaultFetch);
 
@@ -31,6 +30,8 @@ export class EditorService implements IEditorService {
 	private _savedState: Map<string, IEditorViewState> = new Map();
 
 	private _onDidOpenEditor: (e: IEditorOpenedEvent) => void;
+
+	private _fileBlame: GQL.IHunk[] = [];
 
 	public setEditor(editor: editorCommon.IEditor): void {
 		this.editor = new SimpleEditor(editor);
@@ -93,14 +94,20 @@ export class EditorService implements IEditorService {
 				}
 			}
 
-			this.editor.focus();
-
 			if (this._onDidOpenEditor) {
 				this._onDidOpenEditor({ model: model, editor: this.editor._widget });
 			}
 
 			return this.editor;
 		});
+	}
+
+	private setEditorBlameData(data: GQL.IHunk[]): void {
+		this._fileBlame = data;
+	}
+
+	public getEditorBlameData(): GQL.IHunk[] {
+		return this._fileBlame;
 	}
 
 	private resolveModel(data: IResourceInput, refresh?: boolean): TPromise<editorCommon.IModel> {
@@ -110,13 +117,49 @@ export class EditorService implements IEditorService {
 		}
 
 		const {repo, rev, path} = URIUtils.repoParams(data.resource);
+		const blameBody = Features.codeLens.isEnabled() ? `blame(startLine: 0, endLine: 0) {
+												name
+												email
+												rev
+												date
+												startLine
+												endLine
+												startByte
+												endByte
+											}` : "";
 		return TPromise.wrap(
-			fetch(`/.api/repos/${makeRepoRev(repo, rev)}/-/tree/${path}?ContentsAsString=true&NoSrclibAnns=true`)
+			fetch(`/.api/graphql`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					query: `query Content($repo: String, $rev: String, $path: String) {
+						root {
+							repository(uri: $repo) {
+								commit(rev: $rev) {
+									commit {
+										file(path: $path) {
+											content
+											${blameBody}
+										}
+									}
+								}
+							}
+						}
+					}`,
+					variables: { repo, rev, path },
+				}),
+			})
 				.then(checkStatus)
 				.then(resp => resp.json())
-				.then((treeEntry: TreeEntry) => {
+				.then((resp: GQL.IGraphQLResponseRoot) => {
+					if (!resp.data) {
+						throw new Error("file content not available");
+					}
 					// Call getModel again in case we lost a race.
-					return getModel(data.resource) || createModel(treeEntry.ContentsString || "", getModeByFilename(path), data.resource);
+					this.setEditorBlameData(resp.data.root.repository.commit.commit.file.blame);
+					return getModel(data.resource) || createModel(resp.data.root.repository.commit.commit.file.content, getModeByFilename(path), data.resource);
 				})
 				.catch(err => err)
 		);

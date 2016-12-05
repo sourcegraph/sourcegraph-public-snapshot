@@ -109,16 +109,24 @@ Default: `true`
 Pass `false` to disable discarding unused namespace rules.
 
 
-## Contributing
+## Contributors
 
-Pull requests are welcome. If you add functionality, then please add unit tests
-to cover it.
+Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+| [<img src="https://avatars.githubusercontent.com/u/1282980?v=3" width="100px;"/><br /><sub>Ben Briggs</sub>](http://beneb.info)<br />[💻](https://github.com/ben-eb/postcss-discard-unused/commits?author=ben-eb) [📖](https://github.com/ben-eb/postcss-discard-unused/commits?author=ben-eb) 👀 [⚠️](https://github.com/ben-eb/postcss-discard-unused/commits?author=ben-eb) | [<img src="https://avatars.githubusercontent.com/u/5635476?v=3" width="100px;"/><br /><sub>Bogdan Chadkin</sub>](https://github.com/TrySound)<br />[💻](https://github.com/ben-eb/postcss-discard-unused/commits?author=TrySound) [📖](https://github.com/ben-eb/postcss-discard-unused/commits?author=TrySound) 👀 [⚠️](https://github.com/ben-eb/postcss-discard-unused/commits?author=TrySound) | [<img src="https://avatars.githubusercontent.com/u/770675?v=3" width="100px;"/><br /><sub>Paweł Lesiecki</sub>](https://github.com/plesiecki)<br />[💻](https://github.com/ben-eb/postcss-discard-unused/commits?author=plesiecki) [⚠️](https://github.com/ben-eb/postcss-discard-unused/commits?author=plesiecki) |
+| :---: | :---: | :---: |
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors] specification. Contributions of
+any kind welcome!
 
 ## License
 
 MIT © [Ben Briggs](http://beneb.info)
 
+
+[all-contributors]: https://github.com/kentcdodds/all-contributors
 [ci]:      https://travis-ci.org/ben-eb/postcss-discard-unused
 [deps]:    https://gemnasium.com/ben-eb/postcss-discard-unused
 [npm]:     http://badge.fury.io/js/postcss-discard-unused

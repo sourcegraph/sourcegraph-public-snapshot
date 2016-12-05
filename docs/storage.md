@@ -48,11 +48,3 @@ PGSSLMODE=disable
 To test the environment's credentials, run `psql` (the PostgreSQL CLI
 client) with the `PG*` environment variables set. If you see a
 database prompt, then the environment's credentials are valid.
-
-**NOTE: the hostname that you provide for `PGHOST` must actually exist -- for local development, you will most likely want to use `localhost`.**
-
-# Sourcegraph database management
-
-Prior to running Sourcegraph for the first time you will need to run `src pgsql create` which will initialize the database and tables.
-
-The `src pgsql` command provides subcommands to drop, reset and truncate the database. See `src pgsql -h` for more information.

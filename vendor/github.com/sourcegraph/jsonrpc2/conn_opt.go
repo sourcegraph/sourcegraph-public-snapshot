@@ -60,7 +60,7 @@ func LogMessages(log *log.Logger) ConnOpt {
 					log.Printf("--> result #%s: %s: %s", resp.ID, method, result)
 				case resp.Error != nil:
 					err, _ := json.Marshal(resp.Error)
-					log.Printf("--> error #%d: %s: %s", resp.ID, method, err)
+					log.Printf("--> error #%s: %s: %s", resp.ID, method, err)
 				}
 			}
 		})(c)

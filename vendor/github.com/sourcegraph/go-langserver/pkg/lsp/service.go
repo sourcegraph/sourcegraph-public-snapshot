@@ -3,12 +3,24 @@ package lsp
 type None struct{}
 
 type InitializeParams struct {
-	ProcessID    int                 `json:"processId,omitempty"`
-	RootPath     string              `json:"rootPath"`
-	Capabilities *ClientCapabilities `json:"capabilities,omitempty"`
+	ProcessID             int                `json:"processId,omitempty"`
+	RootPath              string             `json:"rootPath,omitempty"`
+	InitializationOptions interface{}        `json:"initializationOptions,omitempty"`
+	Capabilities          ClientCapabilities `json:"capabilities"`
 }
 
-type ClientCapabilities struct{}
+type ClientCapabilities struct {
+	// Below are Sourcegraph extensions. They do not live in lspext since
+	// they are extending the field InitializeParams.Capabilities
+
+	// XFilesProvider indicates the client provides support for
+	// workspace/xfiles. This is a Sourcegraph extension.
+	XFilesProvider bool `json:"xfilesProvider,omitempty"`
+
+	// XContentProvider indicates the client provides support for
+	// textDocument/xcontent. This is a Sourcegraph extension.
+	XContentProvider bool `json:"xcontentProvider,omitempty"`
+}
 
 type InitializeResult struct {
 	Capabilities ServerCapabilities `json:"capabilities,omitempty"`
@@ -260,8 +272,8 @@ const (
 )
 
 type ShowMessageParams struct {
-	Type    int    `json:"type"`
-	Message string `json:"message"`
+	Type    MessageType `json:"type"`
+	Message string      `json:"message"`
 }
 
 type MessageActionItem struct {
@@ -269,14 +281,14 @@ type MessageActionItem struct {
 }
 
 type ShowMessageRequestParams struct {
-	Type    int                 `json:"type"`
+	Type    MessageType         `json:"type"`
 	Message string              `json:"message"`
 	Actions []MessageActionItem `json:"actions"`
 }
 
 type LogMessageParams struct {
-	Type    int    `json:"type"`
-	Message string `json:"message"`
+	Type    MessageType `json:"type"`
+	Message string      `json:"message"`
 }
 
 type DidChangeConfigurationParams struct {

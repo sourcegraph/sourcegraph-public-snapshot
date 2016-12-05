@@ -1,18 +1,18 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import {InjectedRouter} from "react-router";
-import {context} from "sourcegraph/app/context";
-import {Annotation, Boom, Button, Heading} from "sourcegraph/components";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import {Close, Flag} from "sourcegraph/components/symbols/Zondicons";
-import {colors, typography, whitespace} from "sourcegraph/components/utils";
-import {fontStack} from "sourcegraph/components/utils/typography";
+import { InjectedRouter } from "react-router";
+import { context } from "sourcegraph/app/context";
+import { Annotation, Boom, Button, Heading } from "sourcegraph/components";
+import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
+import { Close, Flag } from "sourcegraph/components/symbols/Zondicons";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { fontStack } from "sourcegraph/components/utils/typography";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import {Location} from "sourcegraph/Location";
+import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
-import {privateGitHubOAuthScopes} from "sourcegraph/util/urlTo";
+import { EventLogger } from "sourcegraph/util/EventLogger";
+import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props { location: Location; }
 
@@ -52,8 +52,7 @@ const closeSx = {
 	paddingTop: whitespace[3],
 };
 
-const actionSx = Object.assign({},
-	typography.size[6],
+const actionSx = Object.assign(
 	{
 		backgroundColor: colors.blue(),
 		color: colors.white(),
@@ -62,6 +61,7 @@ const actionSx = Object.assign({},
 		paddingBottom: whitespace[3],
 		width: 240,
 	},
+	typography.size[6],
 );
 
 const headerSx = {
@@ -74,12 +74,12 @@ const headerSx = {
 	paddingBottom: whitespace[2],
 };
 
-const p = Object.assign({},
-	typography.size[6],
+const p = Object.assign(
 	{
 		width: 270,
 		color: colors.text(),
 	},
+	typography.size[6],
 );
 
 const flagSx = {
@@ -117,9 +117,6 @@ export class TourOverlay extends React.Component<Props, State>  {
 		if (tourStore !== null) {
 			visibleMarks = tourStore.length > 0 ? tourStore.split(",").map(Number) : [];
 		}
-		if (context.hasPrivateGitHubToken() && visibleMarks.indexOf(_refCoachmarkIndex) !== -1) {
-			visibleMarks.splice(visibleMarks.indexOf(_refCoachmarkIndex), 1);
-		}
 
 		this.state = {
 			visibleAnnotation: null,
@@ -134,10 +131,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	componentDidMount(): void {
-		// Only try to render the onboarding sequence if the tour contains the appropriate query params.
-		if (this.props.location.query["tour"]) {
-			this._tryForRenderedTokenIdentifier();
-		}
+		this._tryForRenderedTokenIdentifier();
 	}
 
 	componentDidUpdate(prevProps: Props, prevState: State): void {
@@ -149,7 +143,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	componentWillReceiveProps(nextProps: Props): void {
 		// Safety buffer for shortcircuting the url changes.
 		if (nextProps.location !== this.props.location) {
-			setTimeout(function(): void {
+			setTimeout(function (): void {
 				// If the location has changed render the coachmarks in a new random location in the view.
 				this._tryForRenderedTokenIdentifier();
 			}.bind(this), 10);
@@ -173,20 +167,20 @@ export class TourOverlay extends React.Component<Props, State>  {
 				// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
 				// Render the first tooltip in the top half. Then render the second tooltip based on the second half of visible nodes.
 				let random = Math.random() * x.length / 2;
-				let refrandom = Math.random() * ((x.length - x.length / 2) - 1 ) + x.length / 2;
+				let refrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
 				let defRandom = x[Math.floor((random) + 1)];
 				let refRandom = x[Math.floor(refrandom + 1)];
 
 				// Build custom fields for coachmark.
 				let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
-				let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{marginLeft: whitespace[4], fontSize: 14}} color="darkBlue" size="small">Install the Chrome extension</Button>;
+				let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4], fontSize: 14 }} color="darkBlue" size="small">Install the Chrome extension</Button>;
 
 				let refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
-				let refActionCTA = <div style={{paddingLeft: whitespace[4]}}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="darkBlue" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
+				let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="darkBlue" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
 				this._coachmarks = [
-					this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", defActionCTA),
-					this._initCoachmarkAnnotation(refRandom, "ref-coachmark", "ref-mark", _refCoachmarkIndex, "View references and definitions", refSubtitle, "Enable these features for your private code", refActionCTA),
+					this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", context.hasChromeExtensionInstalled() ? null : defActionCTA),
+					this._initCoachmarkAnnotation(refRandom, "ref-coachmark", "ref-mark", _refCoachmarkIndex, "View references and definitions", refSubtitle, "Enable these features for your private code", context.hasPrivateGitHubToken() ? null : refActionCTA),
 				];
 
 				this._coachmarksShouldUpdate();
@@ -242,6 +236,9 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 	_coachmarksShouldUpdate(): void {
 		let {visibleMarks} = this.state;
+		if (!this._coachmarks) {
+			return;
+		}
 		this._coachmarks.map((coachmark, index) => {
 			// Remove the element if the coachmark should not be displayed.
 			if (visibleMarks.indexOf(coachmark.markIndex) === -1) {
@@ -289,28 +286,28 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 	_renderCoachmarkAnnotationForContainer(coachmark: Coachmark, containerNode: any): void {
 		let {visibleAnnotation} = this.state;
-		let refs = <div id={coachmark.markId} style={{whitespace: "normal"}}>
+		let refs = <div id={coachmark.markId} style={{ whitespace: "normal" }}>
 			<Annotation
 				color="purple"
 				pulseColor="white"
 				open={visibleAnnotation === coachmark.markIndex}
 				active={!this.state.viewedAnnotations.includes(coachmark.markIndex)}
 				markOnClick={() => this._handleCoachmarkClicked(coachmark.markIndex)}
-				tooltipStyle={{whitespace: "normal !important", zIndex: 102, backgroundColor: colors.blue()}}>
+				tooltipStyle={{ whitespace: "normal !important", zIndex: 102, backgroundColor: colors.blue() }}>
 
 				<span style={closeSx} onClick={() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null }))}>
 					<Close width={12} color={colors.coolGray2(0.5)} />
 				</span>
 				<div style={headerSx}>
-					<Heading color="blue" level={6} style={{marginTop: 0}}>{coachmark.headingTitle}</Heading>
+					<Heading color="blue" level={6} style={{ marginTop: 0 }}>{coachmark.headingTitle}</Heading>
 					{coachmark.headingSubtitle}
 				</div>
-				<div style={{padding: whitespace[4]}}>
-					<Flag width={15} style={flagSx} color={colors.blue2(0.9)}/>
-					<strong style={actionSx}>{coachmark.actionTitle}</strong>
-					{coachmark.actionCTA}
-				</div>
-
+				{coachmark.actionCTA &&
+					<div style={{ padding: whitespace[4] }}>
+						<Flag width={15} style={flagSx} color={colors.blue2(0.9)} />
+						<strong style={actionSx}>{coachmark.actionTitle}</strong>
+						{coachmark.actionCTA}
+					</div>}
 			</Annotation>
 		</div>;
 
@@ -323,25 +320,25 @@ export class TourOverlay extends React.Component<Props, State>  {
 			{
 				visibleAnnotation: this.state.visibleAnnotation === markIndex ? null : markIndex,
 				viewedAnnotations:
-					this.state.viewedAnnotations.includes(markIndex)
-						? this.state.viewedAnnotations
-						: this.state.viewedAnnotations.concat([markIndex]),
+				this.state.viewedAnnotations.includes(markIndex)
+					? this.state.viewedAnnotations
+					: this.state.viewedAnnotations.concat([markIndex]),
 			}
 		));
 
 		switch (markIndex) {
 			case _refCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingRefsCoachCTA_Clicked.logEvent({page_name: "BlobViewOnboarding"});
+				AnalyticsConstants.Events.OnboardingRefsCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
-			break;
+				break;
 			case _defCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingJ2DCoachCTA_Clicked.logEvent({page_name: "BlobViewOnboarding"});
+				AnalyticsConstants.Events.OnboardingJ2DCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
-			break;
+				break;
 			case _searchCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingSearchCoachCTA_Clicked.logEvent({page_name: "BlobViewOnboarding"});
+				AnalyticsConstants.Events.OnboardingSearchCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
-			break;
+				break;
 			default:
 				return;
 		}
@@ -353,7 +350,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		return (
 			<div
 				ref={(c) => this._searchCoachmarkRef = c}
-				style={{ position: "fixed", right: 160, top: 40}}>
+				style={{ position: "fixed", right: 160, top: 40 }}>
 				<Annotation
 					color="purple"
 					pulseColor="white"
@@ -363,9 +360,9 @@ export class TourOverlay extends React.Component<Props, State>  {
 					markOnClick={() => this._handleCoachmarkClicked(markIndex)}>
 
 					<span style={closeSx} onClick={
-						() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null}))
+						() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null }))
 					}>
-						<Close width={12}  color={colors.coolGray2(0.5)} />
+						<Close width={12} color={colors.coolGray2(0.5)} />
 					</span>
 					<div style={Object.assign({},
 						headerSx,
@@ -380,65 +377,71 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_successHandler(): void {
-		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({page_name: "BlobViewOnboarding"});
+		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({ page_name: "BlobViewOnboarding" });
 		EventLogger.setUserProperty("installed_chrome_extension", "true");
 		// Syncs the our site analytics tracking with the chrome extension tracker.
 		EventLogger.updateTrackerWithIdentificationProps();
 	}
 
 	_failHandler(msg: String): void {
-		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({page_name: "BlobViewOnboarding"});
+		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "BlobViewOnboarding" });
 		EventLogger.setUserProperty("installed_chrome_extension", "false");
 	}
 
 	_installChromeExtensionClicked(): void {
-		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({page_name: "BlobViewOnboarding"});
+		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 
 		if (!!global.chrome) {
-			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({page_name: "BlobViewOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({ page_name: "BlobViewOnboarding" });
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
-			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({page_name: "BlobViewOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "BlobViewOnboarding" });
 			window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");
 		}
 	}
 
 	_renderDismissButton(): JSX.Element | null {
 		return (
-			<div style={{ position: "fixed", right: 42, bottom: 36}}>
+			<div style={{ position: "fixed", right: 42, bottom: 36 }}>
 				<Button onClick={() => this._dismissTour()} size="small" color="white" outline={false}>Dismiss tour</Button>
 			</div>
 		);
 	}
 
 	_dismissTour(): void {
-		AnalyticsConstants.Events.OnboardingTour_Dismissed.logEvent({page_name: "BlobViewOnboarding"});
+		AnalyticsConstants.Events.OnboardingTour_Dismissed.logEvent({ page_name: "BlobViewOnboarding" });
 		this._endTour();
 	}
 
 	_endTour(): void {
-
 		// Animate dismissal of all coachmarks
 		this._playBoomAnimation(this._searchCoachmarkRef);
-		this._coachmarks.map((mark) => {
-			if (mark) {
-				const el = document.getElementById(mark.markId);
-				if (el) { this._playBoomAnimation(el); }
-			}
-		});
+		if (this._coachmarks) {
+			this._coachmarks.map((mark) => {
+				if (mark) {
+					const el = document.getElementById(mark.markId);
+					if (el) { this._playBoomAnimation(el); }
+				}
+			});
+		}
 
 		window.sessionStorage.setItem("tour", "");
 		delete this.props.location.query["tour"];
-		const newLoc = Object.assign({}, this.props.location, {query: this.props.location.query});
+		const newLoc = Object.assign({}, this.props.location, { query: this.props.location.query });
 		(this.context as any).router.replace(newLoc);
+		this.setState({
+			visibleMarks: [],
+			visibleAnnotation: null,
+			viewedAnnotations: [],
+		});
 	}
 
 	render(): JSX.Element | null {
 		let {visibleMarks, visibleAnnotation} = this.state;
-		return (<div style={{zIndex: 101}}>
-					{visibleMarks.indexOf(_searchCoachmarkIndex) !== -1 && this._renderSearchCoachmarkAnnotation(visibleAnnotation, _searchCoachmarkIndex)}
-					{visibleMarks.length > 0 && this._renderDismissButton()}
-				</div>
+		return (<div style={{ zIndex: 101 }}>
+			{visibleMarks.indexOf(_searchCoachmarkIndex) !== -1 && this._renderSearchCoachmarkAnnotation(visibleAnnotation, _searchCoachmarkIndex)}
+			{visibleMarks.length > 0 && this._renderDismissButton()}
+		</div>
 		);
 	}
 }

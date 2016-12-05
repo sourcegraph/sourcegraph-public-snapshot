@@ -87,9 +87,9 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 	// Default change freq is Weekly, but if the repo was rebuilt in
 	// the last week, use Daily.
 	chgFreq := sitemap.Weekly
-	if lastMod != nil && time.Since(*lastMod) < time.Hour*24*7 {
-		chgFreq = sitemap.Daily
-	}
+	//if lastMod != nil && time.Since(*lastMod) < time.Hour*24*7 {
+	//	chgFreq = sitemap.Daily
+	//}
 
 	// Add repo main page.
 	sm.URLs = append(sm.URLs, sitemap.URL{

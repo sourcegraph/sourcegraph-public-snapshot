@@ -1,5 +1,5 @@
 import * as React from "react";
-import {colors} from "sourcegraph/components/utils";
+import { colors } from "sourcegraph/components/utils";
 
 interface Props {
 	style?: React.CSSProperties;
@@ -25,27 +25,24 @@ export function OrgLogo({size, img, style}: Props): JSX.Element {
 			throw new Error("invalid size");
 	}
 
-	return <div style={Object.assign({}, style, sx)}>
-		<img style={imgSx(imgSize)} src={img} />
+	return <div style={Object.assign(
+		{
+			display: "inline-block",
+			backgroundColor: "white",
+			borderColor: colors.coolGray4(0.8),
+			borderRadius: "3px",
+			borderStyle: "solid",
+			borderWidth: 1,
+			padding: 3,
+			lineHeight: "0",
+		},
+		style
+	)}>
+		<img style={{
+			borderRadius: "3px",
+			display: "inline-block",
+			width: imgSize,
+			height: imgSize,
+		}} src={img} />
 	</div>;
-};
-
-function imgSx(size: string): Object {
-	return {
-		borderRadius: "3px",
-		display: "inline-block",
-		width: size,
-		height: size,
-	};
-}
-
-const sx = {
-	display: "inline-block",
-	backgroundColor: "white",
-	borderColor: colors.coolGray4(0.8),
-	borderRadius: "3px",
-	borderStyle: "solid",
-	borderWidth: 1,
-	padding: 3,
-	lineHeight: "0",
 };

@@ -1,6 +1,6 @@
-import {PlainRoute} from "react-router";
-import {matchPattern} from "react-router/lib/PatternUtils";
-import {Location} from "sourcegraph/Location";
+import { PlainRoute } from "react-router";
+import { matchPattern } from "react-router/lib/PatternUtils";
+import { Location } from "sourcegraph/Location";
 
 export type RouteName = "styleguide" |
 	"home" |
@@ -54,6 +54,7 @@ export const rel = {
 
 export const abs = {
 	about: rel.about,
+	beta: rel.beta,
 	plan: rel.plan,
 	contact: rel.contact,
 	docs: rel.docs,

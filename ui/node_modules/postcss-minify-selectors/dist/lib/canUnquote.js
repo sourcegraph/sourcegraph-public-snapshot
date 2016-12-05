@@ -19,13 +19,10 @@ var range = /[\u0000-\u002c\u002e\u002f\u003A-\u0040\u005B-\u005E\u0060\u007B-\u
 
 function canUnquote(value) {
     value = (0, _unquote2.default)(value);
-    if (value === '-') {
+    if (value === '-' || value === '') {
         return false;
     }
-    if (value) {
-        value = value.replace(escapes, 'a').replace(/\\./g, 'a');
-        return !(range.test(value) || /^(?:-?\d|--)/.test(value));
-    }
-    return false;
+    value = value.replace(escapes, 'a').replace(/\\./g, 'a');
+    return !(range.test(value) || /^(?:-?\d|--)/.test(value));
 }
 module.exports = exports['default'];

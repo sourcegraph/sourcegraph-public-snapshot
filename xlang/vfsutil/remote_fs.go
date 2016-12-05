@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,6 +15,16 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
+
+// RemoteFS selects the currently active remote FS protocol (based on
+// env vars) and returns it for conn.
+func RemoteFS(conn *jsonrpc2.Conn) ctxvfs.FileSystem {
+	// Temporary experiment. Soon it will always be XRemoteFS
+	if v, _ := strconv.ParseBool(os.Getenv("X_REMOTE_FS_ENABLE")); v {
+		return &XRemoteFS{Conn: conn}
+	}
+	return &RemoteProxyFS{Conn: conn}
+}
 
 // RemoteProxyFS is an implementation of ctxvfs.FileSystem that
 // communicates with the LSP proxy server over JSON-RPC to access the

@@ -1,6 +1,4 @@
-// tslint:disable: typedef ordered-imports
-
-import {RouterState} from "react-router";
+import { RouterState } from "react-router";
 
 // shouldUpdateScroll makes it so that the window does NOT scroll
 // if the previous and next routes have an identical, non-empty
@@ -26,7 +24,7 @@ export function shouldUpdateScroll(prevRouterProps: RouterState | null, nextRout
 }
 
 // Work around for react-router hash scroll behavior - https://github.com/reactjs/react-router/issues/394
-export function hashLinkScroll() {
+export function hashLinkScroll(): void {
 	const {hash} = window.location;
 	if (hash !== "") {
 		// Push onto callback queue so it runs after the DOM is updated,

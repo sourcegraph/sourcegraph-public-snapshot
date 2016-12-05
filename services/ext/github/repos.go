@@ -12,13 +12,12 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
 var (
-	reposGithubPublicCache        = rcache.New("gh_pub", conf.GetenvIntOrDefault("SG_REPOS_GITHUB_PUBLIC_CACHE_TTL_SECONDS", 600))
+	reposGithubPublicCache        = rcache.New("gh_pub", 600)
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repos",
@@ -278,6 +277,18 @@ func ReposFromContext(ctx context.Context) Repos {
 	return s
 }
 
+func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
+	ghRepos, resp, err := client(ctx).activity.ListStarred("", opt)
+	if err != nil {
+		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
+	}
+	var repos []*sourcegraph.Repo
+	for _, ghRepo := range ghRepos {
+		repos = append(repos, toRepo(ghRepo.Repository))
+	}
+	return repos, nil
+}
+
 // ListAllGitHubRepos lists all GitHub repositories that fit the
 // criteria that are accessible to the currently authenticated user.
 // It's a convenience wrapper around Repos.ListAccessible, since there
@@ -305,4 +316,41 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 		}
 	}
 	return allRepos, nil
+}
+
+func ListGitHubContributors(ctx context.Context, repo *sourcegraph.Repo, opt *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error) {
+	ghContributors, resp, err := client(ctx).repos.ListContributors(repo.Owner, repo.Name, opt)
+	if err != nil {
+		return nil, checkResponse(ctx, resp, err, "github.repos.ListContributors")
+	}
+
+	var contribs []*sourcegraph.Contributor
+	for _, ghContrib := range ghContributors {
+		contribs = append(contribs, toContributor(ghContrib))
+	}
+
+	return contribs, nil
+}
+
+func toContributor(ghContrib *github.Contributor) *sourcegraph.Contributor {
+	strv := func(s *string) string {
+		if s == nil {
+			return ""
+		}
+		return *s
+	}
+	intv := func(i *int) int {
+		if i == nil {
+			return 0
+		}
+		return *i
+	}
+
+	contrib := sourcegraph.Contributor{
+		Login:         strv(ghContrib.Login),
+		AvatarURL:     strv(ghContrib.AvatarURL),
+		Contributions: intv(ghContrib.Contributions),
+	}
+
+	return &contrib
 }

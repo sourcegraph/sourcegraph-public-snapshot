@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Table, Code, Logo} from "sourcegraph/components";
+import { Heading, Panel, Table, Code, Logo } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -28,21 +28,21 @@ export class LogoComponent extends React.Component<{}, State> {
 					</div>
 					<div className={base.pa4}>
 						<Heading level={7} className={base.mb3} color="cool_mid_gray">Logotype</Heading>
-						<p><Logo width="128px" type="logotype"/></p>
-						<p><Logo width="256px" type="logotype"/></p>
-						<p><Logo width="512px" type="logotype"/></p>
+						<p><Logo width="128px" type="logotype" /></p>
+						<p><Logo width="256px" type="logotype" /></p>
+						<p><Logo width="512px" type="logotype" /></p>
 					</div>
 					<div className={base.pa4}>
 						<Heading level={7} className={base.mb3} color="cool_mid_gray">Logotype with tag</Heading>
-						<p><Logo width="128px" type="logotype-with-tag"/></p>
-						<p><Logo width="256px" type="logotype-with-tag"/></p>
-						<p><Logo width="512px" type="logotype-with-tag"/></p>
+						<p><Logo width="128px" type="logotype-with-tag" /></p>
+						<p><Logo width="256px" type="logotype-with-tag" /></p>
+						<p><Logo width="512px" type="logotype-with-tag" /></p>
 					</div>
 					<hr />
 					<code>
-						<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+						<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+							{
+								`
 <Logo width="64px" />
 <Logo width="32px" />
 <Logo width="16px" />
@@ -53,13 +53,13 @@ export class LogoComponent extends React.Component<{}, State> {
 <Logo width="256px" type="logotype-with-tag"/>
 <Logo width="512px" type="logotype-with-tag"/>
 	`
-}
+							}
 						</pre>
 					</code>
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

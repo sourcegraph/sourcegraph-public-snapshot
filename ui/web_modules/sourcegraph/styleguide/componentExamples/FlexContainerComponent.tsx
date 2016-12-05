@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Table, Code, FlexContainer} from "sourcegraph/components";
+import { Heading, Panel, Table, Code, FlexContainer } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 export class FlexContainerComponent extends React.Component<{}, any> {
@@ -36,7 +36,7 @@ export class FlexContainerComponent extends React.Component<{}, any> {
 								Man had always assumed that he was more intelligent than dolphins.
 							</div>
 							<div className={classNames(base.ba, base.pa2)}>
-							Man had always assumed that he was more intelligent than dolphins.
+								Man had always assumed that he was more intelligent than dolphins.
 							</div>
 						</FlexContainer>
 
@@ -79,9 +79,9 @@ export class FlexContainerComponent extends React.Component<{}, any> {
 					</div>
 					<hr />
 					<code>
-						<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-`
+						<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+							{
+								`
 <FlexContainer>
 	<div>42.</div>
 	<div>
@@ -108,13 +108,13 @@ export class FlexContainerComponent extends React.Component<{}, any> {
 </FlexContainer>
 
 `
-}
+							}
 						</pre>
 					</code>
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

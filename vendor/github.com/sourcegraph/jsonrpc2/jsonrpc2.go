@@ -318,7 +318,7 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (*call, error
 	// responses.
 	var cc *call
 	if m.request != nil && wait {
-		cc = &call{request: m.request, seq: c.seq, done: make(chan error)}
+		cc = &call{request: m.request, seq: c.seq, done: make(chan error, 1)}
 		c.pending[ID{Num: c.seq}] = cc // use next seq as call ID
 		m.request.ID.Num = c.seq
 		c.seq++

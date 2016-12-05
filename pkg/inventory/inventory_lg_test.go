@@ -22,7 +22,6 @@ func TestBuildRepo_serverside_hosted_lg(t *testing.T) {
 	t.Parallel()
 
 	a, ctx := testserver.NewUnstartedServer()
-	a.Config.Serve.NoWorker = true
 	if err := a.Start(); err != nil {
 		t.Fatal(err)
 	}

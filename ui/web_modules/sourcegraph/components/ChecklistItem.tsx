@@ -1,11 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/components/styles/checklistItem.css";
-import * as base from "sourcegraph/components/styles/_base.css";
-import {Icon} from "sourcegraph/components/Icon";
-import {Button} from "sourcegraph/components/Button";
 import * as classNames from "classnames";
+import * as React from "react";
+
+import { Button } from "sourcegraph/components/Button";
+import { Icon } from "sourcegraph/components/Icon";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "sourcegraph/components/styles/checklistItem.css";
 
 interface Props {
 	className?: string;
@@ -15,9 +14,7 @@ interface Props {
 	actionOnClick?: () => void;
 }
 
-type State = any;
-
-export class ChecklistItem extends React.Component<Props, State> {
+export class ChecklistItem extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		const {className, children, complete, actionText, actionOnClick} = this.props;
 		return (

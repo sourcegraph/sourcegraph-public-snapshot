@@ -27,7 +27,7 @@
  */
 
 var R_LATIN_ASCII = 'a-zA-Z';
-var R_LATIN_FULLWIDTH = 'Ａ-Ｚａ-ｚ';
+var R_LATIN_FULLWIDTH = '\uFF21-\uFF3A\uFF41-\uFF5A';
 var R_LATIN = R_LATIN_ASCII + R_LATIN_FULLWIDTH;
 
 /**
@@ -36,10 +36,10 @@ var R_LATIN = R_LATIN_ASCII + R_LATIN_FULLWIDTH;
  * NOTE: Some ranges include non-BMP characters. We do not support those ranges
  * for now.
  */
-var R_HIRAGANA = '぀-ゟ';
-var R_KATAKANA = '゠-ヿ';
-var R_KATAKANA_PHONETIC = 'ㇰ-ㇿ';
-var R_KATAKANA_HALFWIDTH = '･-ﾟ';
+var R_HIRAGANA = '\u3040-\u309F';
+var R_KATAKANA = '\u30A0-\u30FF';
+var R_KATAKANA_PHONETIC = '\u31F0-\u31FF';
+var R_KATAKANA_HALFWIDTH = '\uFF65-\uFF9F';
 // var R_KANA_SUPPLEMENT     = '\U0001B000-\U0001B0FF';
 var R_KATAKANA_ALL = R_KATAKANA + R_KATAKANA_PHONETIC + R_KATAKANA_HALFWIDTH;
 var R_KANA = R_HIRAGANA + R_KATAKANA_ALL;
@@ -54,8 +54,8 @@ var I_HIRAGANA_TO_KATAKANA = I_KATAKANA[0] - I_HIRAGANA[0];
  * NOTE: Some ranges include non-BMP characters. We do not support those ranges
  * for now.
  */
-var R_IDEO_MAIN = '一-鿏';
-var R_IDEO_EXT_A = '㐀-䶿';
+var R_IDEO_MAIN = '\u4E00-\u9FCF';
+var R_IDEO_EXT_A = '\u3400-\u4DBF';
 // var R_IDEO_EXT_B = '\U00020000-\U0002A6DF';
 // var R_IDEO_EXT_C = '\U0002A700-\U0002B73F';
 // var R_IDEO_EXT_D = '\U0002B740-\U0002B81F';
@@ -69,7 +69,7 @@ var R_IDEO = R_IDEO_MAIN + R_IDEO_EXT_A;
 // var R_HANGUL_JAMO_EXT_B     = '\uD7B0-\uD7FF';
 // var R_HANGUL_COMPATIBILITY  = '\u3130-\u318F';
 // var R_HANGUL_COMP_HALFWIDTH = '\uFFA0-\uFFDF';
-var R_HANGUL_SYLLABLES = '가-힯';
+var R_HANGUL_SYLLABLES = '\uAC00-\uD7AF';
 
 /**
  * Globals

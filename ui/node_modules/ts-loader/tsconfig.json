@@ -1,9 +1,0 @@
-{
-    "compilerOptions": {
-        "module": "commonjs",
-        "moduleResolution": "node"
-    },
-    "files": [
-        "index.ts"
-    ]
-}

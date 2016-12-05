@@ -3,20 +3,21 @@ const webpack = require('webpack');
 
 module.exports = {
 	entry: {
-		background: path.join(__dirname, '../chrome/extension/background'),
-		inject: path.join(__dirname, '../chrome/extension/inject')
+		background: path.join(__dirname, '../chrome/extension/background.tsx'),
+		inject: path.join(__dirname, '../chrome/extension/inject.tsx')
 	},
 	output: {
 		path: path.join(__dirname, '../build/js'),
 		filename: '[name].bundle.js',
 		chunkFilename: '[id].chunk.js'
 	},
+	devtool: "source-map",
 	plugins: [
 		new webpack.optimize.OccurenceOrderPlugin(),
 		new webpack.IgnorePlugin(/[^/]+\/[\S]+.dev$/),
 		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
-			comments: false,
+			sourceMap: true,
 			compressor: {
 				warnings: false
 			}
@@ -28,20 +29,17 @@ module.exports = {
 		})
 	],
 	resolve: {
-		extensions: ['', '.js']
+		extensions: ['', '.ts', '.tsx', '.js']
 	},
 	module: {
 		loaders: [{
-			test: /\.js$/,
-			loader: 'babel',
-			exclude: /node_modules/
-		}, {
-			test: /\.css$/,
-			loaders: [
-				'style',
-				'css?modules&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]',
-				'postcss'
-			]
+			test: /\.tsx?$/,
+			loader: 'ts?'+JSON.stringify({
+				compilerOptions: {
+					noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
+				},
+				transpileOnly: true, // type checking is only done as part of linting or testing
+			}),
 		}]
 	}
 };

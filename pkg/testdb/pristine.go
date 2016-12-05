@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 )
 
@@ -26,7 +25,7 @@ var (
 	// PristineDBs. Increasing poolSize makes the initialization time
 	// slower but reduces the average wait time for a DB to be
 	// supplied to a test.
-	poolSize = flag.Int("db.pool", conf.GetenvIntOrDefault("SG_DB_TEST_POOL", 8), "DB pool size")
+	poolSize = flag.Int("db.pool", 8, "DB pool size")
 
 	// label is a string that uniquely identifies a package's
 	// tests. It is used to create the names of pristine DBs so that

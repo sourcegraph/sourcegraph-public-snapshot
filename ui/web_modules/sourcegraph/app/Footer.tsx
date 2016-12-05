@@ -1,14 +1,14 @@
-import {hover, style} from "glamor";
+import { hover, style } from "glamor";
 import * as React from "react";
-import {Link} from "react-router";
-import {colors, whitespace} from "sourcegraph/components/utils";
+import { Link } from "react-router";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 export function Footer(): JSX.Element {
-	return <div style={{backgroundColor: colors.coolGray4(0.2)}}>
+	return <div style={{ backgroundColor: colors.coolGray4(0.2) }}>
 		<div style={{
-				padding: whitespace[3],
-				textAlign: "center",
-			}}>
+			padding: whitespace[3],
+			textAlign: "center",
+		}}>
 			<Item url="/about">About</Item>
 			<Item url="/plan">Master plan</Item>
 			<Item url="https://text.sourcegraph.com" anchor>Blog</Item>

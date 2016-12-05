@@ -37,6 +37,7 @@ func (h *DebugHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Age:        time.Since(stats.Created),
 				Idle:       time.Since(stats.Last),
 				Counts:     summariseCounts(stats.Counts),
+				Errors:     summariseCounts(stats.ErrorCounts),
 			})
 		}
 		for name, sx := range modes {
@@ -62,6 +63,7 @@ type serverSummary struct {
 	Age        time.Duration
 	Idle       time.Duration
 	Counts     string
+	Errors     string
 }
 
 type modeSummary struct {
@@ -97,8 +99,8 @@ var debugTmpl = template.Must(template.New("").Parse(`
 {{range .}}
   <h3>{{.Name}} ({{.TotalOpen}} open)</h3>
   <table class="table table-condensed table-hover">
-  <tr><th>ServerID</th><th>TotalCount</th><th>Age</th><th>Idle</th><th>Counts</th></tr>
-  {{range .Servers}}<tr><td>{{.ID}}</td><td>{{.TotalCount}}</td><td>{{.Age}}</td><td>{{.Idle}}</td><td>{{.Counts}}</td></tr>{{end}}
+  <tr><th>ServerID</th><th>TotalCount</th><th>Age</th><th>Idle</th><th>Counts</th><th>Errors</th></tr>
+  {{range .Servers}}<tr><td>{{.ID}}</td><td>{{.TotalCount}}</td><td>{{.Age}}</td><td>{{.Idle}}</td><td>{{.Counts}}</td><td>{{.Errors}}</td></tr>{{end}}
   </table>
 {{end}}
 

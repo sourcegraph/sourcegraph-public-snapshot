@@ -158,6 +158,7 @@ Add unit tests for any new or changed functionality. Lint and test your code
 using [grunt](http://gruntjs.com/).
 
 ## Release History
+* 1.1.2 - Prevent more ENOENT errors from escaping (@alexgorbatchev).
 * 1.1.1 - Prevent fs.watch errors from escaping error handler (@rosen-vladimirov). Fix _addToWatched without path.sep (@wyicwx).
 * 1.1.0 - Update to `globule@1.0.0` with `minimatch >= 3.0.0`.
 * 1.0.0 - Revert back to 0.5.2. Drop support for Node.js v0.8. Fix for `maxListeners`. Update globule to `0.2.0`.

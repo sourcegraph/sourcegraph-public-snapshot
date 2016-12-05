@@ -96,6 +96,14 @@ import (
 // 	JOIN global_ref_source source
 // 	ON (source.id = global_ref_by_file.source);
 //
+// To delete all global refs data for a specific language, find it's ID in defs.go:
+//
+// 	DELETE FROM global_ref_by_source WHERE language=<ID>;
+// 	DELETE FROM global_ref_by_file WHERE language=<ID>;
+//
+// Data inside the other tables for the language does not need to be deleted
+// manually, it will be automatically garbage collected at the next repository
+// index.
 
 // TODO: Long term, support more URI schemes (svn, hg, npm, mvn, etc). For now,
 // you can rest assured these are all that can be in the DB.
@@ -197,6 +205,10 @@ type dbGlobalRefBySource struct{}
 
 func (*dbGlobalRefBySource) CreateTable() string {
 	return `CREATE table global_ref_by_source (
+		-- language represents the language that this reference was created by.
+		-- See defs.go for a complete list of IDs.
+		language smallint NOT NULL,
+
 		-- def_name represents the name of the definition being referenced by
 		-- this source.
 		def_name integer references global_ref_name(id) NOT NULL,
@@ -231,6 +243,7 @@ func (*dbGlobalRefBySource) CreateTable() string {
 		score smallint NOT NULL,
 		UNIQUE(def_name, def_container, def_scheme, def_source, def_version, def_file, scheme, source, version)
 	);
+	CREATE INDEX global_ref_by_source_language ON global_ref_by_source USING btree (language);
 	CREATE INDEX global_ref_by_source_def_name ON global_ref_by_source USING btree (def_name);
 	CREATE INDEX global_ref_by_source_def_container ON global_ref_by_source USING btree (def_container);
 	CREATE INDEX global_ref_by_source_def_scheme ON global_ref_by_source USING btree (def_scheme);
@@ -254,6 +267,10 @@ type dbGlobalRefByFile struct{}
 
 func (*dbGlobalRefByFile) CreateTable() string {
 	return `CREATE table global_ref_by_file (
+		-- language represents the language that this reference was created by.
+		-- See defs.go for a complete list of IDs.
+		language smallint NOT NULL,
+
 		-- def_name represents the name of the definition being referenced by
 		-- this source.
 		def_name integer references global_ref_name(id) NOT NULL,
@@ -292,6 +309,7 @@ func (*dbGlobalRefByFile) CreateTable() string {
 		score smallint NOT NULL,
 		UNIQUE(def_name, def_container, def_scheme, def_source, def_version, def_file, scheme, source, version, file)
 	);
+	CREATE INDEX global_ref_by_file_language ON global_ref_by_file USING btree (language);
 	CREATE INDEX global_ref_by_file_def_name ON global_ref_by_file USING btree (def_name);
 	CREATE INDEX global_ref_by_file_def_container ON global_ref_by_file USING btree (def_container);
 	CREATE INDEX global_ref_by_file_def_scheme ON global_ref_by_file USING btree (def_scheme);
@@ -311,18 +329,12 @@ func (*dbGlobalRefByFile) DropTable() string {
 type globalRefs struct{}
 
 // RefreshIndex refreshes the global refs index for the specified repository.
-func (g *globalRefs) RefreshIndex(ctx context.Context, repoID int32, commit string) error {
-	// Determine the repo's URI.
-	repo, err := Repos.Get(ctx, repoID)
-	if err != nil {
-		return errors.Wrap(err, "Repos.Get")
-	}
-
+func (g *globalRefs) RefreshIndex(ctx context.Context, source, version string) error {
 	// TODO(slimsag): use inventory
-	languages := []string{"go"}
+	languages := []dbLang{dbLangGo}
 	var errs []string
 	for _, language := range languages {
-		if err := g.refreshIndexForLanguage(ctx, language, repo.URI, commit); err != nil {
+		if err := g.refreshIndexForLanguage(ctx, language, source, version); err != nil {
 			log15.Crit("refreshing index failed", "language", language, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", language, err))
 		}
@@ -363,12 +375,13 @@ func (g *globalRefs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions)
 	// two of the above subqueries (one for a `def_name` WHERE IN clause, and
 	// another for a `def_container` WHERE IN clause). The subquery represents
 	// the exact amount of data we expect, so it should always be very quick.
-	rows, err := globalGraphDBH.Db.Query(`SELECT def_scheme, global_ref_source.source as def_source, global_ref_version.version as def_version, global_ref_name.name as def_name, global_ref_container.container as def_container, array_agg(files) as files, array_agg(refs) as refs
+	rows, err := globalGraphDBH.Db.Query(`SELECT def_scheme, global_ref_source.source as def_source, global_ref_version.version as def_version, (array_agg(file))[1] as def_file, global_ref_name.name as def_name, global_ref_container.container as def_container, array_agg(files) as files, array_agg(refs) as refs
 		FROM global_ref_by_source
 		JOIN global_ref_name ON (global_ref_name.id = global_ref_by_source.def_name)
 		JOIN global_ref_container ON (global_ref_container.id = global_ref_by_source.def_container)
 		JOIN global_ref_source ON (global_ref_source.id = global_ref_by_source.def_source)
 		JOIN global_ref_version ON (global_ref_version.id = global_ref_by_source.def_version)
+		JOIN global_ref_file ON (global_ref_file.id = global_ref_by_source.def_file)
 
 		-- Omit references to unnamed symbols. I.e., when a source references
 		-- another source in an unnamed way (a Go import statement, JS require,
@@ -394,20 +407,21 @@ func (g *globalRefs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions)
 	topDefs := &sourcegraph.TopDefs{}
 	for rows.Next() {
 		var (
-			scheme                           int16
-			source, version, name, container string
+			scheme                                 int16
+			source, version, file, name, container string
 
 			// Counts per source.
 			files = make(pq.Int64Array, op.Limit)
 			refs  = make(pq.Int64Array, op.Limit)
 		)
-		if err := rows.Scan(&scheme, &source, &version, &name, &container, &files, &refs); err != nil {
+		if err := rows.Scan(&scheme, &source, &version, &file, &name, &container, &files, &refs); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
 		topDefs.SourceDefs = append(topDefs.SourceDefs, &sourcegraph.SourceDef{
 			DefScheme:        uriSchemeIDLookup[scheme],
 			DefSource:        source,
 			DefVersion:       version,
+			DefFile:          file,
 			DefName:          name,
 			DefContainerName: container,
 			Sources:          len(refs),
@@ -540,11 +554,24 @@ func (g *globalRefs) queryRefsByFile(db *sql.DB, source string, op sourcegraph.R
 	return refsByFile, nil
 }
 
-func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language, repoURI, commit string) error {
-	// Query all external references for the repository.
+func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language dbLang, source, version string) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language.String())
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	// Query all external references for the repository. We do this using the
+	// "<language>_bg" mode which runs this request on a separate language
+	// server explicitly for background tasks such as workspace/references.
+	// This makes it such that indexing repositories does not interfere in
+	// terms of resource usage with real user requests.
 	var refs []lspext.ReferenceInformation
-	rootPath := "git://" + repoURI + "?" + commit
-	err := xlang.OneShotClientRequest(ctx, language, rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
+	rootPath := "git://" + source + "?" + version
+	err = xlang.UnsafeOneShotClientRequest(ctx, language.String()+"_bg", rootPath, "workspace/reference", lspext.WorkspaceReferenceParams{}, &refs)
 	if err != nil {
 		return errors.Wrap(err, "workspaceReference")
 	}
@@ -591,22 +618,28 @@ func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language, repo
 		}
 
 		// Update the global_ref_by_file table.
-		err = g.updateRefByFile(ctx, tx, refs, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs)
+		err = g.updateRefByFile(ctx, tx, language, refs, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs)
 		if err != nil {
 			return errors.Wrap(err, "update global_ref_by_file")
 		}
 
 		// Update the global_ref_by_source table.
-		err = g.updateRefBySource(ctx, tx, refs, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs)
+		err = g.updateRefBySource(ctx, tx, language, refs, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs)
 		if err != nil {
 			return errors.Wrap(err, "update global_ref_by_source")
 		}
 
-		// Evict unused table data.
-		err = g.evictUnusedData(ctx, tx)
-		if err != nil {
-			return errors.Wrap(err, "evicting unused data")
-		}
+		// TODO(slimsag): Disabled due to performance implications /
+		// transactional locking. Expose as admin-only endpoint at a later
+		// date. In general, evicting unused data is only important in the
+		// very long run.
+		/*
+			// Evict unused table data.
+			err = g.evictUnusedData(ctx, tx)
+			if err != nil {
+				return errors.Wrap(err, "evicting unused data")
+			}
+		*/
 		return nil
 	})
 	if err != nil {
@@ -682,7 +715,7 @@ func (g *globalRefs) updateRefField(ctx context.Context, tx *sql.Tx, refs []lspe
 }
 
 // updateRefByFile updates the global_ref_by_file table.
-func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, refs []lspext.ReferenceInformation, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs map[string]int32) (err error) {
+func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, language dbLang, refs []lspext.ReferenceInformation, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs map[string]int32) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "updateRefByFile")
 	defer func() {
 		if err != nil {
@@ -696,6 +729,7 @@ func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, refs []lsp
 	// First, create a temporary table. Note that this must reflect the same
 	// exact fields present in the global_refs_by_file table.
 	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_refs_by_file (
+		language smallint,
 		def_name integer,
 		def_container integer,
 		def_scheme smallint,
@@ -715,6 +749,7 @@ func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, refs []lsp
 
 	// Copy the new refs into the temporary table.
 	copy, err := tx.Prepare(pq.CopyIn("new_refs_by_file",
+		"language",
 		"def_name",
 		"def_container",
 		"def_scheme",
@@ -744,6 +779,7 @@ func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, refs []lsp
 
 		// Translate respective fields into IDs and copy into the temp table.
 		if _, err := copy.Exec(
+			language,                      // language
 			nameIDs[r.Name],               // def_name
 			containerIDs[r.ContainerName], // def_container
 			defURI.scheme,                 // def_scheme
@@ -787,13 +823,14 @@ func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, refs []lsp
 		}] = struct{}{}
 	}
 	for refURI := range deletions {
-		if _, err := tx.Exec(`DELETE FROM global_ref_by_file WHERE scheme=$1 AND source=$2`, refURI.scheme, sourceIDs[refURI.source]); err != nil {
+		if _, err := tx.Exec(`DELETE FROM global_ref_by_file WHERE language=$1 AND scheme=$2 AND source=$3`, language, refURI.scheme, sourceIDs[refURI.source]); err != nil {
 			return errors.Wrap(err, "executing global_ref_by_file deletion")
 		}
 	}
 
 	// Insert from temporary table into the real table.
 	_, err = tx.Exec(`INSERT INTO global_ref_by_file(
+		language,
 		def_name,
 		def_container,
 		def_scheme,
@@ -806,7 +843,8 @@ func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, refs []lsp
 		file,
 		positions,
 		score
-	) SELECT d.def_name,
+	) SELECT d.language,
+		d.def_name,
 		d.def_container,
 		d.def_scheme,
 		d.def_source,
@@ -826,7 +864,7 @@ func (g *globalRefs) updateRefByFile(ctx context.Context, tx *sql.Tx, refs []lsp
 }
 
 // updateRefBySource updates the global_ref_by_source table.
-func (g *globalRefs) updateRefBySource(ctx context.Context, tx *sql.Tx, refs []lspext.ReferenceInformation, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs map[string]int32) (err error) {
+func (g *globalRefs) updateRefBySource(ctx context.Context, tx *sql.Tx, language dbLang, refs []lspext.ReferenceInformation, sourceIDs, versionIDs, fileIDs, nameIDs, containerIDs map[string]int32) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "updateRefBySource")
 	defer func() {
 		if err != nil {
@@ -840,6 +878,7 @@ func (g *globalRefs) updateRefBySource(ctx context.Context, tx *sql.Tx, refs []l
 	// First, create a temporary table. Note that this must reflect the same
 	// exact fields present in the global_refs_by_source table.
 	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_refs_by_source (
+		language smallint,
 		def_name integer,
 		def_container integer,
 		def_scheme smallint,
@@ -859,6 +898,7 @@ func (g *globalRefs) updateRefBySource(ctx context.Context, tx *sql.Tx, refs []l
 
 	// Copy the new refs into the temporary table.
 	copy, err := tx.Prepare(pq.CopyIn("new_refs_by_source",
+		"language",
 		"def_name",
 		"def_container",
 		"def_scheme",
@@ -892,6 +932,7 @@ func (g *globalRefs) updateRefBySource(ctx context.Context, tx *sql.Tx, refs []l
 
 		// Translate respective fields into IDs and copy into the temp table.
 		if _, err := copy.Exec(
+			language,                      // language
 			nameIDs[r.Name],               // def_name
 			containerIDs[r.ContainerName], // def_container
 			defURI.scheme,                 // def_scheme
@@ -935,13 +976,14 @@ func (g *globalRefs) updateRefBySource(ctx context.Context, tx *sql.Tx, refs []l
 		}] = struct{}{}
 	}
 	for refURI := range deletions {
-		if _, err := tx.Exec(`DELETE FROM global_ref_by_source WHERE scheme=$1 AND source=$2`, refURI.scheme, sourceIDs[refURI.source]); err != nil {
+		if _, err := tx.Exec(`DELETE FROM global_ref_by_source WHERE language=$1 AND scheme=$2 AND source=$3`, language, refURI.scheme, sourceIDs[refURI.source]); err != nil {
 			return errors.Wrap(err, "executing global_ref_by_source deletion")
 		}
 	}
 
 	// Insert from temporary table into the real table.
 	_, err = tx.Exec(`INSERT INTO global_ref_by_source(
+			language,
 			def_name,
 			def_container,
 			def_scheme,
@@ -954,7 +996,8 @@ func (g *globalRefs) updateRefBySource(ctx context.Context, tx *sql.Tx, refs []l
 			files,
 			refs,
 			score
-		) SELECT d.def_name,
+		) SELECT d.language,
+			d.def_name,
 			d.def_container,
 			d.def_scheme,
 			d.def_source,

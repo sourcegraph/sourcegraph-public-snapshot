@@ -11,6 +11,7 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/neelance/chanrpc"
 	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -71,11 +73,43 @@ func (s *Server) processRequests(requests <-chan *request) {
 // handleExecRequest handles a exec request.
 func (s *Server) handleExecRequest(req *execRequest) {
 	start := time.Now()
-	status := ""
+	exitStatus := -10810 // sentinel value to indicate not set
+	var stdoutN, stderrN int64
+	var status string
+	var errStr string
 
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
-	defer func() { observeExec(req, start, status) }()
+
+	// Instrumentation
+	{
+		repo := repotrackutil.GetTrackedRepo(req.Repo)
+		cmd := ""
+		if len(req.Args) > 0 {
+			cmd = req.Args[0]
+		}
+		execRunning.WithLabelValues(cmd, repo).Inc()
+		defer func() {
+			duration := time.Since(start)
+			execRunning.WithLabelValues(cmd, repo).Dec()
+			execDuration.WithLabelValues(cmd, repo, status).Observe(duration.Seconds())
+			// Only log to honeycomb if we have the repo to reduce noise
+			if ranGit := exitStatus != -10810; ranGit && honey.Enabled() {
+				ev := honey.Event("gitserver-exec")
+				ev.AddField("repo", req.Repo)
+				ev.AddField("cmd", cmd)
+				ev.AddField("args", strings.Join(req.Args, " "))
+				ev.AddField("duration_ms", duration.Seconds()*1000)
+				ev.AddField("stdout_size", stdoutN)
+				ev.AddField("stderr_size", stderrN)
+				ev.AddField("exit_status", exitStatus)
+				if errStr != "" {
+					ev.AddField("error", errStr)
+				}
+				ev.Send()
+			}
+		}()
+	}
 
 	dir := path.Join(s.ReposDir, req.Repo)
 	s.cloningMu.Lock()
@@ -94,8 +128,10 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		return
 	}
 
-	stdoutC, stdoutW := chanrpcutil.NewWriter()
-	stderrC, stderrW := chanrpcutil.NewWriter()
+	stdoutC, stdoutWRaw := chanrpcutil.NewWriter()
+	stderrC, stderrWRaw := chanrpcutil.NewWriter()
+	stdoutW := &writeCounter{w: stdoutWRaw}
+	stderrW := &writeCounter{w: stderrWRaw}
 
 	cmd := exec.Command("git", req.Args...)
 	cmd.Dir = dir
@@ -110,8 +146,6 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		ProcessResult: processResultChan,
 	}
 
-	var errStr string
-	var exitStatus int
 	if err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
 		errStr = err.Error()
 	}
@@ -129,8 +163,16 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	}
 	close(processResultChan)
 	status = strconv.Itoa(exitStatus)
+	stdoutN = stdoutW.n
+	stderrN = stderrW.n
 }
 
+var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	Namespace: "src",
+	Subsystem: "gitserver",
+	Name:      "exec_running",
+	Help:      "number of gitserver.Command running concurrently.",
+}, []string{"cmd", "repo"})
 var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",
@@ -140,16 +182,8 @@ var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 }, []string{"cmd", "repo", "status"})
 
 func init() {
+	prometheus.MustRegister(execRunning)
 	prometheus.MustRegister(execDuration)
-}
-
-func observeExec(req *execRequest, start time.Time, status string) {
-	repo := repotrackutil.GetTrackedRepo(req.Repo)
-	cmd := ""
-	if len(req.Args) > 0 {
-		cmd = req.Args[0]
-	}
-	execDuration.WithLabelValues(cmd, repo, status).Observe(time.Since(start).Seconds())
 }
 
 // handleSearchRequest handles a search request.

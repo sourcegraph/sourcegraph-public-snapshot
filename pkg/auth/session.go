@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"os"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -12,15 +13,16 @@ import (
 )
 
 var sessionStore *redistore.RediStore
+var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "", "redis used for storing sessions")
+var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 
 // InitSessionStore initializes the session store.
 func InitSessionStore(secureCookie bool) {
-	sessionStoreRedis := os.Getenv("SRC_SESSION_STORE_REDIS")
 	if sessionStoreRedis == "" {
 		sessionStoreRedis = ":6379"
 	}
 	var err error
-	sessionStore, err = redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(os.Getenv("SRC_SESSION_COOKIE_KEY")))
+	sessionStore, err = redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
 	if err != nil {
 		panic(err)
 	}

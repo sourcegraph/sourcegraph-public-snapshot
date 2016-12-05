@@ -1,6 +1,7 @@
 package xlang
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
@@ -17,7 +18,11 @@ import (
 // be performed by the caller to the LSP client proxy.
 //
 // It is a var so that it can be mocked in tests.
-var NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
 	return vcs.ArchiveFileSystem(gitcmd.Open(repo), rev), nil
+}
+
+type AllFilesLister interface {
+	ListAllFiles(ctx context.Context) ([]string, error)
 }

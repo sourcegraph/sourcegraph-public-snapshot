@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as base from "sourcegraph/components/styles/_base.css";
-import {Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code} from "sourcegraph/components";
+import { Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code } from "sourcegraph/components";
 import * as classNames from "classnames";
 
 interface State {
@@ -23,18 +23,18 @@ export class PanelsComponent extends React.Component<{}, State> {
 					<TabItem
 						active={this.state.activeExample === 0}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 0});
+							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						}}>
+						} }>
 							Colors and styles
 						</a>
 					</TabItem>
 					<TabItem
 						active={this.state.activeExample === 1}>
 						<a href="#" onClick={(e) => {
-							this.setState({activeExample: 1});
+							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						}}>
+						} }>
 							Hoverables
 						</a>
 					</TabItem>
@@ -67,9 +67,9 @@ export class PanelsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Panel color="blue">
 	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 </Panel>
@@ -89,7 +89,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 </Panel>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -101,14 +101,14 @@ export class PanelsComponent extends React.Component<{}, State> {
 							</div>
 							<hr />
 							<code>
-								<pre className={base.ph4} style={{whiteSpace: "pre-wrap"}}>
-{
-	`
+								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
+									{
+										`
 <Panel hoverLevel="low" hover={true}>
 	For instance, on the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.
 </Panel>
 	`
-}
+									}
 								</pre>
 							</code>
 						</TabPanel>
@@ -116,7 +116,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 				</Panel>
 				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{width: "100%"}}>
+					<Table style={{ width: "100%" }}>
 						<thead>
 							<tr>
 								<td>Prop</td>

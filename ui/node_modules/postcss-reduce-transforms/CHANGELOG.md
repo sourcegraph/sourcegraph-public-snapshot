@@ -1,3 +1,8 @@
+# 1.0.4
+
+* Refactor the main module, slight performance tweak and ±0.9K less file size
+  on disk.
+
 # 1.0.3
 
 * The `translate(tx, 0)` compression was changed from `translateX(tx)`

@@ -90,6 +90,15 @@ Color.prototype = {
 		var rgb = this.values.rgb;
 		return rgb.concat([this.values.alpha]);
 	},
+	rgbaArrayNormalized: function () {
+		var rgb = this.values.rgb;
+		var glRgba = [];
+		for (var i = 0; i < 3; i++) {
+			glRgba[i] = rgb[i] / 255;
+		}
+		glRgba.push(this.values.alpha);
+		return glRgba;
+	},
 	hslaArray: function () {
 		var hsl = this.values.hsl;
 		return hsl.concat([this.values.alpha]);

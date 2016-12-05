@@ -1,6 +1,6 @@
-import {style as gStyle} from "glamor";
+import { style as gStyle } from "glamor";
 import * as React from "react";
-import {CoachMark, Panel} from "sourcegraph/components/index";
+import { CoachMark, Panel } from "sourcegraph/components/index";
 
 interface Props {
 	color?: "blue" | "purple" | "orange" | "green";
@@ -14,7 +14,7 @@ interface Props {
 	active: boolean;
 }
 
-export function Annotation ({
+export function Annotation({
 	color = "blue",
 	pulseColor = "blue",
 	active = false,
@@ -26,7 +26,7 @@ export function Annotation ({
 	annotationPosition = "right",
 }: Props): JSX.Element {
 
-	const sx = gStyle(Object.assign({},
+	const sx = gStyle(Object.assign(
 		{ position: "relative" },
 		containerStyle,
 	));
@@ -36,12 +36,12 @@ export function Annotation ({
 		leftOffset = (tooltipStyle && tooltipStyle["width"]) ? "-" + tooltipStyle["width"] : "-350px";
 	}
 
-	const tooltipSx = Object.assign({},
+	const tooltipSx = Object.assign(
 		{
 			position: "absolute",
 			opacity: open ? 1 : 0,
 			display: open ? "hidden" : "block",
-			transform: `scale(${ open ? 1 : 0})`,
+			transform: `scale(${open ? 1 : 0})`,
 			transformOrigin: `${annotationPosition === "right" ? "left" : "right"} top`,
 			top: 22.5,
 			left: leftOffset,

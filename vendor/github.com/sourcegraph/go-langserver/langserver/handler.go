@@ -7,8 +7,12 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
+
+	"golang.org/x/tools/refactor/importgraph"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -39,6 +43,10 @@ type LangHandler struct {
 	// cached typechecking results
 	cacheMus map[typecheckKey]*sync.Mutex
 	cache    map[typecheckKey]typecheckResult
+
+	// cache the reverse import graph
+	importGraphOnce sync.Once
+	importGraph     importgraph.Graph
 }
 
 // reset clears all internal state in h.
@@ -66,6 +74,8 @@ func (h *LangHandler) resetCaches(lock bool) {
 	}
 	h.cacheMus = map[typecheckKey]*sync.Mutex{}
 	h.cache = map[typecheckKey]typecheckResult{}
+	h.importGraphOnce = sync.Once{}
+	h.importGraph = nil
 	if lock {
 		h.mu.Unlock()
 	}
@@ -151,6 +161,19 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 		if err := h.reset(&params); err != nil {
 			return nil, err
 		}
+
+		// PERF: Kick off a workspace/symbol in the background to warm up the server
+		if yes, _ := strconv.ParseBool(envWarmupOnInitialize); yes {
+			go func() {
+				ctx, cancel := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
+				defer cancel()
+				_, _ = h.handleWorkspaceSymbol(ctx, conn, req, lsp.WorkspaceSymbolParams{
+					Query: "",
+					Limit: 100,
+				})
+			}()
+		}
+
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync:        lsp.TDSKFull,

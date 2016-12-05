@@ -10,24 +10,27 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/oauth2"
 )
 
-var Auth0Domain = os.Getenv("AUTH0_DOMAIN")
+var Auth0Domain = env.Get("AUTH0_DOMAIN", "", "domain of the Auth0 account")
 
 var Auth0Config = &oauth2.Config{
-	ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
-	ClientSecret: os.Getenv("AUTH0_CLIENT_SECRET"),
+	ClientID:     env.Get("AUTH0_CLIENT_ID", "", "OAuth client ID for Auth0"),
+	ClientSecret: env.Get("AUTH0_CLIENT_SECRET", "", "OAuth client secret for Auth0"),
 	Endpoint: oauth2.Endpoint{
 		AuthURL:  "https://" + Auth0Domain + "/authorize",
 		TokenURL: "https://" + Auth0Domain + "/oauth/token",
 	},
 }
 
-var auth0ManagementTokenSource = oauth2.StaticTokenSource(&oauth2.Token{AccessToken: os.Getenv("AUTH0_MANAGEMENT_API_TOKEN")})
+var auth0ManagementTokenSource = oauth2.StaticTokenSource(&oauth2.Token{
+	AccessToken: env.Get("AUTH0_MANAGEMENT_API_TOKEN", "", "management token for accessing the Auth0 user database"),
+})
 
 func SetAppMetadata(ctx context.Context, uid string, key string, value interface{}) error {
 	body, err := json.Marshal(struct {
@@ -65,9 +68,7 @@ func ListUsersByGitHubID(ctx context.Context, ghIDs []string) (map[string]User, 
 		return nil, errors.New("Array of GitHub IDs is required")
 	}
 
-	var token = (&oauth2.Token{AccessToken: os.Getenv("AUTH0_MANAGEMENT_API_TOKEN")})
-	aClient := Auth0Config.Client(oauth2.NoContext, token)
-	resp, err := aClient.Get("https://" + Auth0Domain + "/api/v2/users?q=identities.user_id%3A(" + url.QueryEscape(strings.Join(ghIDs, " ")) + ")")
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users?q=identities.user_id%3A(" + url.QueryEscape(strings.Join(ghIDs, " ")) + ")")
 	if err != nil {
 		return nil, err
 	}

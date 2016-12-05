@@ -1,7 +1,7 @@
 import * as React from "react";
-import {Panel} from "sourcegraph/components";
-import {Alert} from "sourcegraph/components/symbols";
-import {whitespace} from "sourcegraph/components/utils/index";
+import { Panel } from "sourcegraph/components";
+import { Alert } from "sourcegraph/components/symbols";
+import { whitespace } from "sourcegraph/components/utils/index";
 
 interface Props { ext: string | null; }
 

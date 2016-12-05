@@ -1,43 +1,29 @@
 package inventory
 
 import (
-	"errors"
-	"path"
+	"bufio"
+	"context"
+	"encoding/json"
+	"os"
 	"reflect"
 	"testing"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vfsutil"
-
-	"context"
-
-	"golang.org/x/tools/godoc/vfs"
-	"golang.org/x/tools/godoc/vfs/mapfs"
+	"time"
 )
 
 func TestScan(t *testing.T) {
 	tests := map[string]struct {
-		fs      vfs.FileSystem
+		files   []fi
 		want    *Inventory
 		wantErr error
 	}{
-		"no files": {
-			fs:      mapfs.New(map[string]string{}),
-			wantErr: errors.New("file does not exist"),
-		},
 		"empty file": {
-			fs:   mapfs.New(map[string]string{"a": ""}),
-			want: &Inventory{},
-		},
-		"excludes": {
-			fs: mapfs.New(map[string]string{
-				"a.min.js":                     "a",
-				"node_modules/a/b.js":          "a",
-				"Godeps/_workspace/src/a/b.go": "a",
-			}),
+			files: []fi{
+				fi{"a", ""},
+			},
 			want: &Inventory{},
 		},
 		"java": {
-			fs: mapfs.New(map[string]string{"a.java": "a"}),
+			files: []fi{fi{"a.java", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 1, Type: "programming"},
@@ -45,7 +31,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"go": {
-			fs: mapfs.New(map[string]string{"a.go": "a"}),
+			files: []fi{fi{"a.go", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Go", TotalBytes: 1, Type: "programming"},
@@ -53,7 +39,7 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"java and go": {
-			fs: mapfs.New(map[string]string{"a.java": "aa", "a.go": "a"}),
+			files: []fi{fi{"a.java", "aa"}, fi{"a.go", "a"}},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 2, Type: "programming"},
@@ -62,13 +48,13 @@ func TestScan(t *testing.T) {
 			},
 		},
 		"large": {
-			fs: mapfs.New(map[string]string{
-				"a.java": "aaaaaaaaa",
-				"b.java": "bbbbbbb",
-				"a.go":   "aaaaa",
-				"b.go":   "bbb",
-				"c.txt":  "ccccc",
-			}),
+			files: []fi{
+				fi{"a.java", "aaaaaaaaa"},
+				fi{"b.java", "bbbbbbb"},
+				fi{"a.go", "aaaaa"},
+				fi{"b.go", "bbb"},
+				fi{"c.txt", "ccccc"},
+			},
 			want: &Inventory{
 				Languages: []*Lang{
 					{Name: "Java", TotalBytes: 16, Type: "programming"},
@@ -79,7 +65,11 @@ func TestScan(t *testing.T) {
 		},
 	}
 	for label, test := range tests {
-		inv, err := Scan(context.Background(), vfsutil.Walkable(test.fs, path.Join))
+		var fi []os.FileInfo
+		for _, file := range test.files {
+			fi = append(fi, file)
+		}
+		inv, err := Get(context.Background(), fi)
 		if err != nil && (test.wantErr == nil || err.Error() != test.wantErr.Error()) {
 			t.Errorf("%s: Scan: %s (want error %v)", label, err, test.wantErr)
 			continue
@@ -93,4 +83,84 @@ func TestScan(t *testing.T) {
 			continue
 		}
 	}
+}
+
+type fi struct {
+	Path     string
+	Contents string
+}
+
+func (f fi) Name() string {
+	return f.Path
+}
+func (f fi) Size() int64 {
+	return int64(len(f.Contents))
+}
+func (f fi) IsDir() bool {
+	return false
+}
+func (f fi) Mode() os.FileMode {
+	return os.FileMode(0)
+}
+func (f fi) ModTime() time.Time {
+	return time.Now()
+}
+func (f fi) Sys() interface{} {
+	return interface{}(nil)
+}
+
+func BenchmarkGet(b *testing.B) {
+	files, err := readFileTree("prom-repo-tree.txt")
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, err = Get(context.Background(), files)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func TestGetGolden(t *testing.T) {
+	mustMarshal := func(v interface{}) string {
+		b, err := json.Marshal(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(b)
+	}
+
+	files, err := readFileTree("prom-repo-tree.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"Languages":[{"Name":"Go","TotalBytes":1505,"Type":"programming"},{"Name":"Markdown","TotalBytes":38,"Type":"prose"},{"Name":"YAML","TotalBytes":29,"Type":"data"},{"Name":"HTML","TotalBytes":28,"Type":"markup"},{"Name":"GAS","TotalBytes":26,"Type":"programming"},{"Name":"Protocol Buffer","TotalBytes":25,"Type":"markup"},{"Name":"JavaScript","TotalBytes":16,"Type":"programming"},{"Name":"CSS","TotalBytes":10,"Type":"markup"},{"Name":"Perl","TotalBytes":9,"Type":"programming"},{"Name":"JSON","TotalBytes":5,"Type":"data"},{"Name":"Shell","TotalBytes":4,"Type":"programming"},{"Name":"Text","TotalBytes":3,"Type":"prose"},{"Name":"SVG","TotalBytes":2,"Type":"data"},{"Name":"INI","TotalBytes":2,"Type":"data"},{"Name":"XML","TotalBytes":1,"Type":"data"},{"Name":"Python","TotalBytes":1,"Type":"programming"},{"Name":"Makefile","TotalBytes":1,"Type":"programming"},{"Name":"Dockerfile","TotalBytes":1,"Type":"data"},{"Name":"C","TotalBytes":1,"Type":"programming"}]}`
+	got, err := Get(context.Background(), files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mustMarshal(got) != want {
+		t.Errorf("did not match golden\ngot:  %s\nwant: %s", mustMarshal(got), want)
+	}
+}
+
+func readFileTree(name string) ([]os.FileInfo, error) {
+	file, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	var files []os.FileInfo
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		files = append(files, fi{scanner.Text(), "a"})
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return files, nil
 }

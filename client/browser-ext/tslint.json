@@ -1,0 +1,21 @@
+{
+  "extends": "tslint:latest",
+  "rules": {
+		"comment-format": [false],
+		"indent": [true, "tabs"],
+		"interface-name": [false],
+		"max-line-length": [false],
+		"member-access": false,
+		"member-ordering": [false],
+		"no-default-export": true,
+		"no-string-literal": false,
+		"object-literal-key-quotes": false,
+		"object-literal-shorthand": false,
+		"object-literal-sort-keys": false,
+		"only-arrow-functions": false,
+		"switch-default": false,
+		"typedef": [true, "call-signature", "parameter", "property-declaration", "member-variable-declaration"],
+		"variable-name": [true, "check-format", "allow-leading-underscore", "allow-pascal-case", "ban-keywords"]
+  },
+  "rulesDirectory": []
+}

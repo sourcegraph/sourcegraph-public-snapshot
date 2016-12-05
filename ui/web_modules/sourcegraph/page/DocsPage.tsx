@@ -1,6 +1,6 @@
 import * as React from "react";
-import Helmet from "react-helmet";
-import {Heading, Hero} from "sourcegraph/components";
+import { Heading, Hero } from "sourcegraph/components";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -8,7 +8,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 export function DocsPage(): JSX.Element {
 	return (
 		<div>
-			<Helmet title="Docs" />
+			<PageTitle title="Docs" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<div className={styles.container}>
 					<Heading level={2} color="white">Sourcegraph Docs</Heading>
@@ -50,34 +50,34 @@ export function DocsPage(): JSX.Element {
 				<a id="code_intelligence"></a>
 				<Heading level={4} className={styles.h5}>Code Intelligence</Heading>
 				<p className={styles.p}>Sourcegraph’s code intelligence provides you with full context of the code you are reading, without leaving the page.</p>
-				<br/>
+				<br />
 
 				<a id="find_local_references"></a>
 				<Heading level={5} className={styles.h5}>Find Local References</Heading>
 				<p className={styles.p}>Right click on a symbol and select “Find Local References” to find all the places it's referenced in the current repository.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_local_references_1.png" width="100%"/></a>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_local_references_1.png" width="100%" /></a>
 				<p className={styles.p}>A pop-up will appear, under the symbol, showing how it's being used in specific examples.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_local_references_2.png" width="100%"/></a>
-				<br/>
-				<br/>
-				<br/>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_local_references_2.png" width="100%" /></a>
+				<br />
+				<br />
+				<br />
 
 				<a id="go_to_definition"></a>
 				<Heading level={5} className={styles.h5}>Go to Definition</Heading>
 				<p className={styles.p}>Click on a symbol to jump to its definition. Alternatively, you can right click on a symbol and select “Peek Definition” to view its definition inline.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/peek_definition.png" width="100%"/></a>
-				<br/>
-				<br/>
-				<br/>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/peek_definition.png" width="100%" /></a>
+				<br />
+				<br />
+				<br />
 
 				<a id="find_external_references"></a>
 				<Heading level={5} className={styles.h5}>Find External References</Heading>
 				<p className={styles.p}>Right click on a symbol and select “Find External References” to find all the places it's referenced across all publicly viewable code on GitHub.</p>
-				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_external_references.png" width="100%"/></a>
-				<br/>
-				<br/>
+				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_external_references.png" width="100%" /></a>
+				<br />
+				<br />
 
-				<br/>
+				<br />
 
 				<a id="search"></a>
 				<Heading level={4} className={styles.h5}>Search</Heading>
@@ -86,30 +86,30 @@ export function DocsPage(): JSX.Element {
 					<li className={styles.p}>hitting "/" from anywhere on sourcegraph.com, or</li>
 					<li className={styles.p}>clicking the search icon in the nav bar</li>
 				</ul>
-				<br/>
+				<br />
 
 				<a id="repository_search"></a>
 				<Heading level={5} className={styles.h5}>Repository Search</Heading>
 				<p className={styles.p}>Jump to any publicly viewable GitHub repository and also any private repositories you've authenticated.</p>
 				<a href="https://sourcegraph.com/github.com/docker/docker/-/blob/api/errors/errors.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/repo_search.png" width="100%" /></a>
-				<br/>
-				<br/>
+				<br />
+				<br />
 
 				<a id="file_search"></a>
 				<Heading level={5} className={styles.h5}>File Search</Heading>
 				<p className={styles.p}>Once you are within a repository, you can jump to any file within the repository.</p>
 				<a href="https://sourcegraph.com/github.com/gorilla/mux" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/file_search.png" width="100%" /></a>
-				<br/>
-				<br/>
+				<br />
+				<br />
 
 				<a id="definition_search"></a>
 				<Heading level={5} className={styles.h5}>Definition Search</Heading>
 				<p className={styles.p}>Once you are within a repository, you can jump to any definition. A definition can be any function, method, struct, type, variable, or package.</p>
 				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/definition_search.png" width="100%" /></a>
-				<br/>
-				<br/>
+				<br />
+				<br />
 
-				<br/>
+				<br />
 
 				<a id="chrome_extension"></a>
 				<Heading level={3} underline="blue">Chrome Extension</Heading>
@@ -119,21 +119,21 @@ export function DocsPage(): JSX.Element {
 				<Heading level={5} className={styles.h5}>Hover over Documentation</Heading>
 				<p className={styles.p}>Hover over any symbol on GitHub to get its type information and documentation.</p>
 				<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/github_hover_over_documentation.png" width="100%" /></a>
-				<br/>
-				<br/>
+				<br />
+				<br />
 
 				<a id="github_go_to_definition"></a>
 				<Heading level={5} className={styles.h5}>Go to Definition</Heading>
 				<p className={styles.p}>Click on a symbol on GitHub to go to its definition.</p>
 				<a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/github_jump_to_definition.png" width="100%" /></a>
-				<br/>
-				<br/>
+				<br />
+				<br />
 
 				<a id="github_keyboard_shortcuts"></a>
 				<Heading level={5} className={styles.h5}>Keyboard shortcuts</Heading>
 				<p className={styles.p}>Press `u` when viewing code on GitHub to navigate to the same code on Sourcegraph.com.</p>
 
-				<br/>
+				<br />
 
 				<a id="languages_supported"></a>
 				<Heading level={3} underline="blue">Languages Supported</Heading>
@@ -148,7 +148,7 @@ export function DocsPage(): JSX.Element {
 					<li className={styles.p}>C</li>
 					<li className={styles.p}><a href="https://sourcegraph.com/beta" target="_blank">Don't see your language?</a></li>
 				</ul>
-				<br/>
+				<br />
 
 				<p id="contact_us" className={styles.p}>Want to request a feature or find a bug? Email support@sourcegraph.com.</p>
 

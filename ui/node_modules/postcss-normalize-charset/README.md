@@ -40,5 +40,5 @@ See [PostCSS] docs for examples for your environment.
 MIT © [Bogdan Chadkin](mailto:trysound@yandex.ru)
 
 [PostCSS]: https://github.com/postcss/postcss
-[ci-img]:  https://travis-ci.org/TrySound/postcss-normalize-charset.svg
-[ci]:      https://travis-ci.org/TrySound/postcss-normalize-charset
+[ci-img]:  https://travis-ci.org/ben-eb/postcss-normalize-charset.svg
+[ci]:      https://travis-ci.org/ben-eb/postcss-normalize-charset

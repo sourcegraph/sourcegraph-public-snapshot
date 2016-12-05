@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,10 +17,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	localcli "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
+
+var numAsyncWorkers = env.Get("SRC_NUM_ASYNC_WORKERS", "4", "number of async workers to run")
 
 var Async = &async{}
 
@@ -29,7 +32,8 @@ type asyncWorker struct{}
 // StartAsyncWorkers will start async workers to consume jobs from the queue.
 func StartAsyncWorkers(ctx context.Context) {
 	w := &asyncWorker{}
-	for i := 0; i < localcli.Flags.NumAsyncWorkers; i++ {
+	n, _ := strconv.Atoi(numAsyncWorkers)
+	for i := 0; i < n; i++ {
 		go func() {
 			for {
 				didWork := w.try(ctx)

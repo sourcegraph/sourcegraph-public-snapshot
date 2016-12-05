@@ -25,7 +25,7 @@ marked.marked.Renderer = (marked as any).marked.marked.Renderer;
 Object.assign(marked, marked.marked); // make it callable
 // END HACK
 
-import {DefaultConfig} from "vs/editor/common/config/defaultConfig";
+import { DefaultConfig } from "vs/editor/common/config/defaultConfig";
 
 // Set defaults for standalone editor
 DefaultConfig.editor.wrappingIndent = "none";

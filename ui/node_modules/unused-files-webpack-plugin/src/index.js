@@ -31,10 +31,17 @@ export class UnusedFilesWebpackPlugin {
     const fileDepsMap = this._getFileDepsMap(compilation);
     const absolutePathResolver = it => joinPath(globOptions.cwd, it);
 
+    const handleError = err => {
+      if (compilation.bail) {
+        done(err);
+      } else {
+        compilation.errors.push(err);
+      }
+    };
+
     glob(this.options.pattern, globOptions, (err, files) => {
       if (err) {
-        compilation.errors.push(err);
-        done();
+        handleError(err);
         return;
       }
       const unused = files.filter(filepath =>
@@ -49,11 +56,11 @@ UnusedFilesWebpackPlugin found some unused files:
 ${unused.join(`\n`)}`);
 
       if (this.options.failOnUnused) {
-        compilation.errors.push(error);
+        handleError(error);
       } else {
         compilation.warnings.push(error);
+        done();
       }
-      done();
     });
   }
 

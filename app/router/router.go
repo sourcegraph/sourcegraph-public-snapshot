@@ -4,7 +4,6 @@ package router
 import (
 	"log"
 	"net/url"
-	"os"
 
 	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
@@ -93,9 +92,6 @@ func (r *Router) URLToOrError(routeName string, params ...string) (*url.URL, err
 func (r *Router) URLTo(routeName string, params ...string) *url.URL {
 	u, err := r.URLToOrError(routeName, params...)
 	if err != nil {
-		if os.Getenv("STRICT_URL_GEN") != "" && *u == (url.URL{}) {
-			log.Panicf("Failed to generate route. See log message above.")
-		}
 		log.Printf("Route error: failed to make URL for route %q (params: %v): %s", routeName, params, err)
 		return &url.URL{}
 	}

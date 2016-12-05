@@ -1,20 +1,17 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 
 interface Props {
 	className?: string;
-	style?: any;
-	children?: any;
+	style?: React.CSSProperties;
+	children?: React.ReactNode[];
 	offset?: number;
 }
 
-type State = any;
-
-export class Affix extends React.Component<Props, State> {
+export class Affix extends React.Component<Props, {}> {
 	_affix: {
 		offsetTop: number,
 		style: any,
+		clientWidth: number,
 	};
 
 	componentDidMount(): void {
@@ -35,7 +32,10 @@ export class Affix extends React.Component<Props, State> {
 		if (!this._affix) {
 			return;
 		}
+
+		const currentWidth = this._affix.clientWidth;
 		if (initialOffset <= window.scrollY) {
+			this._affix.style.width = `${currentWidth}px`;
 			this._affix.style.position = "fixed";
 			this._affix.style.top = `${this.props.offset}px`;
 		} else if (initialOffset > window.scrollY) {
@@ -43,12 +43,10 @@ export class Affix extends React.Component<Props, State> {
 		}
 	}
 
-	render(): JSX.Element | null {
+	render(): JSX.Element {
 		const {className, style, children} = this.props;
-		return (
-			<div className={className} style={style}>
-				<div ref={(el) => this._affix = el}>{children}</div>
-			</div>
-		);
+		return <div className={className} style={style}>
+			<div ref={(el) => this._affix = el}>{children}</div>
+		</div>;
 	}
 }

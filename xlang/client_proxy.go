@@ -3,6 +3,7 @@ package xlang
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) {
+func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) error {
 	var connOpt []jsonrpc2.ConnOpt
 	if p.Trace {
 		connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
@@ -35,6 +36,10 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	c.conn = jsonrpc2.NewConn(ctx, rwc, jsonrpc2.HandlerWithError(c.handle), connOpt...)
 
 	p.mu.Lock()
+	if p.clients == nil {
+		p.mu.Unlock()
+		return errors.New("the proxy has been closed")
+	}
 	p.clients[c] = struct{}{}
 	clientConnsGauge.Set(float64(len(p.clients)))
 	clientConnsCounter.Inc()
@@ -45,6 +50,7 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 		}
 		p.removeClientConn(c)
 	}()
+	return nil
 }
 
 var (
@@ -279,6 +285,22 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
+
+		// Background modes only ever do one request against them
+		// (currently workspace/reference). As such we do not need to
+		// keep the workspace open.
+		if strings.HasSuffix(c.context.mode, "_bg") {
+			defer func() {
+				go func() {
+					id := serverID{contextID: c.context, pathPrefix: ""}
+					err := c.proxy.shutDownServer(context.Background(), id)
+					if err != nil {
+						log.Printf("error shutting down background server: %s", err)
+					}
+				}()
+			}()
+		}
+
 		var respObj interface{}
 		if err := c.callServer(ctx, req.Method, req.Params, &respObj); err != nil {
 			// Machine parseable to assist us finding most common errors

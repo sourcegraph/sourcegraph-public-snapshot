@@ -92,6 +92,8 @@ export interface Change {
 }
 
 export interface ClientCapabilities {
+	xfilesProvider?: boolean;
+	xcontentProvider?: boolean;
 }
 
 export interface CodeActionContext {
@@ -116,13 +118,6 @@ export interface CodeLensOptions {
 
 export interface CodeLensParams {
 	textDocument: any;
-}
-
-export interface CombinedStatus {
-	Rev?: string;
-	CommitID?: string;
-	State?: string;
-	Statuses?: RepoStatus[];
 }
 
 export interface Command {
@@ -181,6 +176,12 @@ export interface CompletionList {
 export interface CompletionOptions {
 	resolveProvider?: boolean;
 	triggerCharacters?: string[];
+}
+
+export interface Contributor {
+	Login?: string;
+	AvatarURL?: string;
+	Contributions?: number;
 }
 
 export interface Def {
@@ -541,8 +542,9 @@ export interface InitializeError {
 
 export interface InitializeParams {
 	processId?: number;
-	rootPath: string;
-	capabilities?: any;
+	rootPath?: string;
+	initializationOptions?: any;
+	capabilities: any;
 }
 
 export interface InitializeResult {
@@ -564,7 +566,7 @@ export interface Location {
 }
 
 export interface LogMessageParams {
-	type: number;
+	type: any;
 	message: string;
 }
 
@@ -845,24 +847,6 @@ export interface RepoSpec {
 	ID?: number;
 }
 
-export interface RepoStatus {
-	State?: string;
-	TargetURL?: string;
-	Description?: string;
-	Context?: string;
-	CreatedAt: any;
-	UpdatedAt: any;
-}
-
-export interface RepoStatusList {
-	RepoStatuses?: RepoStatus[];
-}
-
-export interface RepoStatusesCreateOp {
-	Repo: RepoRevSpec;
-	Status: RepoStatus;
-}
-
 export interface RepoTreeGetOp {
 	Entry: TreeEntrySpec;
 	Opt?: RepoTreeGetOptions;
@@ -1013,12 +997,12 @@ export interface ServerConfig {
 }
 
 export interface ShowMessageParams {
-	type: number;
+	type: any;
 	message: string;
 }
 
 export interface ShowMessageRequestParams {
-	type: number;
+	type: any;
 	message: string;
 	actions: any[];
 }

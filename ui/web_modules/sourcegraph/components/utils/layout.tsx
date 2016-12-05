@@ -1,4 +1,4 @@
-import {after, before, merge} from "glamor";
+import { after, before, merge } from "glamor";
 
 export const breakpoints = {
 	"not-sm": "screen and (min-width: 48em)",

@@ -16,6 +16,16 @@ import (
 	"github.com/neelance/graphql-go/internal/schema"
 )
 
+const OpenTracingTagQuery = "graphql.query"
+const OpenTracingTagOperationName = "graphql.operationName"
+const OpenTracingTagVariables = "graphql.variables"
+
+const OpenTracingTagType = "graphql.type"
+const OpenTracingTagField = "graphql.field"
+const OpenTracingTagTrivial = "graphql.trivial"
+const OpenTracingTagArgsPrefix = "graphql.args."
+const OpenTracingTagError = "graphql.error"
+
 type ID string
 
 func ParseSchema(schemaString string, resolver interface{}) (*Schema, error) {
@@ -75,6 +85,14 @@ func (b *SchemaBuilder) ApplyResolver(resolver interface{}) (*Schema, error) {
 	}, nil
 }
 
+func (b *SchemaBuilder) ToJSON() ([]byte, error) {
+	result, err := exec.IntrospectSchema(b.schema)
+	if err != nil {
+		return nil, err
+	}
+	return json.MarshalIndent(result, "", "\t")
+}
+
 type Schema struct {
 	schema *schema.Schema
 	exec   *exec.Exec
@@ -95,38 +113,24 @@ func (s *Schema) Exec(ctx context.Context, queryString string, operationName str
 	}
 
 	span, subCtx := opentracing.StartSpanFromContext(ctx, "GraphQL request")
-	span.SetTag("query", queryString)
+	span.SetTag(OpenTracingTagQuery, queryString)
 	if operationName != "" {
-		span.SetTag("operationName", operationName)
+		span.SetTag(OpenTracingTagOperationName, operationName)
 	}
 	if len(variables) != 0 {
-		span.SetTag("variables", variables)
+		span.SetTag(OpenTracingTagVariables, variables)
 	}
 	defer span.Finish()
 
 	data, errs := exec.ExecuteRequest(subCtx, s.exec, document, operationName, variables)
 	if len(errs) != 0 {
 		ext.Error.Set(span, true)
-		span.SetTag("errorMsg", errs)
+		span.SetTag(OpenTracingTagError, errs)
 	}
 	return &Response{
 		Data:   data,
 		Errors: errs,
 	}
-}
-
-func SchemaToJSON(schemaString string) ([]byte, error) {
-	b := New()
-	if err := b.Parse(schemaString); err != nil {
-		return nil, err
-	}
-
-	result, err := exec.IntrospectSchema(b.schema)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(result)
 }
 
 type ScalarConfig struct {

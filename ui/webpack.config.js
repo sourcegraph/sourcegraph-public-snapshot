@@ -43,7 +43,6 @@ const plugins = [
 if (production) {
 	plugins.push(
 		new webpack.optimize.OccurrenceOrderPlugin(),
-		new webpack.optimize.DedupePlugin(),
 		new webpack.optimize.UglifyJsPlugin({
 			sourceMap: true,
 		})
@@ -72,8 +71,8 @@ plugins.push(new UnusedFilesWebpackPlugin({
 }));
 
 var devtool = "source-map";
-if (!production) {
-	devtool = process.env.WEBPACK_SOURCEMAPS ? "eval-source-map" : "eval";
+if (!production && !process.env.WEBPACK_SOURCEMAPS) {
+	devtool = "eval";
 }
 
 plugins.push(new webpack.LoaderOptionsPlugin({
@@ -109,17 +108,17 @@ module.exports = {
 		rules: [
 			{
 				test: /\.tsx?$/,
-				loader: 'ts?'+JSON.stringify({
+				loader: 'ts-loader?'+JSON.stringify({
 					compilerOptions: {
 						noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
 					},
 					transpileOnly: true, // type checking is only done as part of linting or testing
 				}),
 			},
-			{test: /\.(svg|png)$/, loader: "url"},
-			{test: /\.(woff|eot|ttf)$/, loader: "url?name=fonts/[name].[ext]"},
-			{test: /\.json$/, loader: "json"},
-			{test: /\.css$/, include: `${__dirname}/node_modules/vscode`, loader: "style!css"}, // TODO(sqs): add ?sourceMap
+			{test: /\.(svg|png)$/, loader: "url-loader"},
+			{test: /\.(woff|eot|ttf)$/, loader: "url-loader?name=fonts/[name].[ext]"},
+			{test: /\.json$/, loader: "json-loader"},
+			{test: /\.css$/, include: `${__dirname}/node_modules/vscode`, loader: "style-loader!css-loader"}, // TODO(sqs): add ?sourceMap
 			{
 				test: /\.css$/,
 				exclude: `${__dirname}/node_modules/vscode`,
@@ -147,7 +146,7 @@ module.exports = {
 		contentBase: `${__dirname}/assets`,
 		host: devServerAddr.hostname,
 		public: `${publicURL.hostname}:${publicURL.port}`,
-		port: devServerAddr.port,
+		port: parseInt(devServerAddr.port),
 		headers: {"Access-Control-Allow-Origin": "*"},
 		noInfo: true,
 		quiet: true,

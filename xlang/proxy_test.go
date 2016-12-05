@@ -481,7 +481,7 @@ func yza() {}
 			// Mock repo and dep fetching to use test fixtures.
 			{
 				orig := xlang.NewRemoteRepoVFS
-				xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+				xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					return mapFS(test.fs), nil
 				}
 				defer func() {
@@ -582,7 +582,7 @@ func TestProxy_connections(t *testing.T) {
 	ctx := context.Background()
 
 	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {
@@ -663,12 +663,19 @@ func TestProxy_connections(t *testing.T) {
 	addr, done := startProxy(t, proxy)
 	defer done()
 
+	// We always send the same capabilities, put in variable to avoid
+	// repetition.
+	caps := lsp.ClientCapabilities{
+		XFilesProvider:   true,
+		XContentProvider: true,
+	}
+
 	// Start the test client C1.
 	c1 := dialProxy(t, addr, nil)
 
 	// C1 connects to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v"},
+		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v", Capabilities: caps},
 		Mode:             "test",
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
@@ -691,7 +698,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	}
 	want := []testRequest{
 		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
+			InitializeParams: lsp.InitializeParams{RootPath: "file:///", Capabilities: caps},
 			OriginalRootPath: "test://test?v",
 			Mode:             "test",
 		}},
@@ -745,7 +752,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 		{"shutdown", nil},
 		{"exit", nil},
 		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
+			InitializeParams: lsp.InitializeParams{RootPath: "file:///", Capabilities: caps},
 			OriginalRootPath: "test://test?v",
 			Mode:             "test",
 		}},
@@ -768,7 +775,7 @@ func TestProxy_propagation(t *testing.T) {
 	ctx := context.Background()
 
 	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
+	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
 	}
 	defer func() {

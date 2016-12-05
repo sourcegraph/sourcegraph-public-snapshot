@@ -19,7 +19,7 @@
     <!-- Mocking -->
     <script src="../node_modules/sinon/pkg/sinon.js"></script>
     <script>
-    window.TEST = true;
+    window.__DEV__ = true;
     beforeEach(function() {
         this.sinon = sinon.sandbox.create();
     });

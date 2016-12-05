@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
 import * as classNames from "classnames";
+import * as React from "react";
 
-import {Loader} from "sourcegraph/components/Loader";
+import { Loader } from "sourcegraph/components/Loader";
 import * as styles from "sourcegraph/components/styles/button.css";
 
 export function Button(props: {
@@ -22,7 +20,7 @@ export function Button(props: {
 	id?: string,
 	tabIndex?: number,
 	style?: any,
-}) {
+}): JSX.Element {
 	let {
 		block = false,
 		outline = false,
@@ -48,10 +46,10 @@ export function Button(props: {
 	delete other.className;
 
 	return (
-		<button {...(other as any)} className={classNames(colorClass(color, outline), (disabled || loading) ? styles.disabled : null, block ? styles.block : null, size && sizeClasses[size], className)}
+		<button {...(other as any) } className={classNames(colorClass(color, outline), (disabled || loading) ? styles.disabled : null, block ? styles.block : null, size && sizeClasses[size], className)}
 			onClick={onClick}>
 			{imageUrl ? <img className={styles.button_image} src={imageUrl} /> : ""}
-			{loading && <Loader {...props}/>}
+			{loading && <Loader {...props} />}
 			{!loading && children}
 		</button>
 	);
@@ -59,26 +57,26 @@ export function Button(props: {
 
 function colorClass(color: string, outline: boolean): string {
 	switch (color) {
-	case "normal":
-		return outline ? styles.outline_normal : styles.solid_normal;
-	case "disabled":
-		return outline ? "" : styles.solid_disabled;
-	case "blue":
-		return outline ? styles.outline_blue : styles.solid_blue;
-	case "purple":
-		return outline ? styles.outline_purple : styles.solid_purple;
-	case "green":
-		return outline ? styles.outline_green : styles.solid_green;
-	case "red":
-		return outline ? styles.outline_red : styles.solid_red;
-	case "orange":
-		return outline ? styles.outline_orange : styles.solid_orange;
-	case "white":
-		return outline ? "" : styles.solid_white;
-	case "darkBlue":
-		return outline ? styles.outline_blue : styles.solid_dark_blue;
-	default:
-		return outline ? styles.outline_normal : styles.solid_normal;
+		case "normal":
+			return outline ? styles.outline_normal : styles.solid_normal;
+		case "disabled":
+			return outline ? "" : styles.solid_disabled;
+		case "blue":
+			return outline ? styles.outline_blue : styles.solid_blue;
+		case "purple":
+			return outline ? styles.outline_purple : styles.solid_purple;
+		case "green":
+			return outline ? styles.outline_green : styles.solid_green;
+		case "red":
+			return outline ? styles.outline_red : styles.solid_red;
+		case "orange":
+			return outline ? styles.outline_orange : styles.solid_orange;
+		case "white":
+			return outline ? "" : styles.solid_white;
+		case "darkBlue":
+			return outline ? styles.outline_blue : styles.solid_dark_blue;
+		default:
+			return outline ? styles.outline_normal : styles.solid_normal;
 	}
 }
 

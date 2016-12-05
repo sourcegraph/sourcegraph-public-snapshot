@@ -326,8 +326,16 @@ function testDocument(document) {
 
     test("input has type=text by default", function (assert) {
         var elem = document.createElement("input")
-        assert.equal(elem.type, "text");
+        assert.equal(elem.getAttribute("type"), "text");
         assert.equal(elemString(elem), "<input type=\"text\" />")
+        assert.end()
+    })
+
+    test("input type=text can be overridden", function (assert) {
+        var elem = document.createElement("input")
+        elem.setAttribute("type", "hidden")
+        assert.equal(elem.getAttribute("type"), "hidden");
+        assert.equal(elemString(elem), "<input type=\"hidden\" />")
         assert.end()
     })
 

@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/components/styles/table.css";
 import * as classNames from "classnames";
+import * as React from "react";
 
+import * as styles from "sourcegraph/components/styles/table.css";
 interface Props {
 	className?: string;
 	children?: any;
@@ -11,9 +9,7 @@ interface Props {
 	style?: any;
 }
 
-type State = any;
-
-export class Table extends React.Component<Props, State> {
+export class Table extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		const {className, children, bordered, style} = this.props;
 

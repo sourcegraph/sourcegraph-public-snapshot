@@ -28,8 +28,9 @@ var provide = require('../provide');
  * @constructor
  */
 function Autotrack() {
-  console.error('Requiring the `autotrack` plugin no longer requires all ' +
-      'sub-plugins be default. See https://goo.gl/sZ2WrW for details.');
+  console.error('Warning! Requiring the `autotrack` plugin no longer ' +
+      'requires ' +' all sub-plugins by default.\n' +
+      'See https://goo.gl/XsXPg5 for details.');
 }
 
 

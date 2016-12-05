@@ -3,8 +3,6 @@
 
 export const colors: string;
 export const vars: string;
-export const GlobalNav: string;
-export const navbarZIndex: string;
 export const c_cool_gray: string;
 export const c_cool_mid_gray: string;
 export const c_cool_mid_gray_3: string;

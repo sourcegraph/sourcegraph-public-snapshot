@@ -16,7 +16,6 @@
 
 'use strict';
 
-const Immutable = require('immutable');
 const UnicodeUtils = require('./UnicodeUtils');
 
 /**
@@ -62,10 +61,17 @@ function getCodePointsFormatted(str) {
   return codePoints.map(formatCodePoint);
 }
 
-// We use this funky constructor instead of the object
-// constructor because JS object keys are always coerced
-// to string, but we want a map of int -> string pairs.
-const SpecialEscapesMap = Immutable.Map([[0x07, '\\a'], [0x08, '\\b'], [0x0C, '\\f'], [0x0A, '\\n'], [0x0D, '\\r'], [0x09, '\\t'], [0x0B, '\\v'], [0x22, '\\"'], [0x5c, '\\\\']]);
+const specialEscape = {
+  0x07: '\\a',
+  0x08: '\\b',
+  0x0C: '\\f',
+  0x0A: '\\n',
+  0x0D: '\\r',
+  0x09: '\\t',
+  0x0B: '\\v',
+  0x22: '\\"',
+  0x5c: '\\\\'
+};
 
 /**
  * Returns a double-quoted PHP string with all non-printable and
@@ -77,7 +83,7 @@ const SpecialEscapesMap = Immutable.Map([[0x07, '\\a'], [0x08, '\\b'], [0x0C, '\
 function phpEscape(s) {
   var result = '"';
   for (let cp of UnicodeUtils.getCodePoints(s)) {
-    let special = SpecialEscapesMap.get(cp);
+    let special = specialEscape[cp];
     if (special !== undefined) {
       result += special;
     } else if (cp >= 0x20 && cp <= 0x7e) {
@@ -103,7 +109,7 @@ function jsEscape(s) {
   var result = '"';
   for (var i = 0; i < s.length; i++) {
     let cp = s.charCodeAt(i);
-    let special = SpecialEscapesMap.get(cp);
+    let special = specialEscape[cp];
     if (special !== undefined) {
       result += special;
     } else if (cp >= 0x20 && cp <= 0x7e) {
@@ -119,7 +125,7 @@ function jsEscape(s) {
 function c11Escape(s) {
   var result = '';
   for (let cp of UnicodeUtils.getCodePoints(s)) {
-    let special = SpecialEscapesMap.get(cp);
+    let special = specialEscape[cp];
     if (special !== undefined) {
       result += special;
     } else if (cp >= 0x20 && cp <= 0x7e) {

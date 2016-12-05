@@ -1,21 +1,16 @@
 import * as React from "react";
-import {Integrations} from "sourcegraph/home/Integrations";
-import "sourcegraph/user/UserBackend"; // for side effects
+import { InjectedRouter } from "react-router";
+import { LocationStateModal } from "sourcegraph/components/Modal";
+import { Integrations } from "sourcegraph/home/Integrations";
+import { Location } from "sourcegraph/Location";
 
 interface Props {
-	location?: any;
+	location: Location;
+	router: InjectedRouter;
 }
 
-type State = any;
-
-export class IntegrationsContainer extends React.Component<Props, State> {
-	reconcileState(state: State, props: Props): void {
-		Object.assign(state, props);
-	}
-
-	render(): JSX.Element | null {
-		return (<div>
-			<Integrations location={this.props.location}/>
-		</div>);
-	}
+export function IntegrationsContainer(props: Props): JSX.Element {
+	return <LocationStateModal modalName="menuIntegrations" location={props.location} router={props.router}>
+		<Integrations location={props.location} />
+	</LocationStateModal>;
 }

@@ -85,9 +85,6 @@ function Connection(socket, options) {
     }
   });
 
-  // Interleaving configuration
-  state.maxChunk = options.maxChunk === undefined ? 8 * 1024 : options.maxChunk;
-
   // Various state info
   state.pool = state.protocol.compressionPool.create(options.headerCompression);
   state.counters = {

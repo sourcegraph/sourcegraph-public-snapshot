@@ -1,21 +1,23 @@
-// tslint:disable: typedef ordered-imports
-
 import "core-js/shim";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { AppContainer } from "react-hot-loader";
 import * as Relay from "react-relay";
-import "sourcegraph/util/actionLogger";
-import {Router, browserHistory as history, match, applyRouterMiddleware} from "react-router";
-import {useScroll} from "react-router-scroll";
-import {rootRoute} from "sourcegraph/app/App";
-import * as context from "sourcegraph/app/context";
-import {shouldUpdateScroll, hashLinkScroll} from "sourcegraph/app/routerScrollBehavior";
-import {AppContainer} from "react-hot-loader";
+import { useScroll } from "react-router-scroll";
 import Redbox from "redbox-react";
+
+import { Router, applyRouterMiddleware, browserHistory as history, match } from "react-router";
+import { rootRoute } from "sourcegraph/app/App";
+import * as context from "sourcegraph/app/context";
+import { hashLinkScroll, shouldUpdateScroll } from "sourcegraph/app/routerScrollBehavior";
+import "sourcegraph/util/actionLogger";
+import { EventLogger } from "sourcegraph/util/EventLogger";
+import "sourcegraph/util/features";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
 import "sourcegraph/app/routeParams";
 import "sourcegraph/Location";
+import "sourcegraph/user";
 
 // REQUIRED. Configures Sentry error monitoring.
 import "sourcegraph/init/Sentry";
@@ -24,9 +26,9 @@ import "sourcegraph/init/Sentry";
 // See https://github.com/googleanalytics/autotrack#shouldtrackurlchange.
 import "autotrack/lib/plugins/url-change-tracker";
 
-context.reset(global.window.__sourcegraphJSContext);
+EventLogger.init();
 
-Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {headers: context.context.xhrHeaders}));
+Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", { headers: context.context.xhrHeaders }));
 
 declare var __webpack_public_path__: any;
 __webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // tslint-disable-line no-undef
@@ -38,8 +40,8 @@ let hotReloadCounter = 0;
 // matchWithRedirectHandling calls the router match func. If the router issues
 // a redirect, it calls match recursively after replacing the location with the
 // new one.
-function matchWithRedirectHandling(recursed) {
-	match({history, routes: rootRoute}, (err, redirectLocation, renderProps) => {
+function matchWithRedirectHandling(recursed: boolean): void {
+	match({ history, routes: rootRoute }, (err, redirectLocation, renderProps) => {
 		if (typeof err === "undefined" && typeof redirectLocation === "undefined" && typeof renderProps === "undefined") {
 			console.error("404 not found (no route)");
 			return;

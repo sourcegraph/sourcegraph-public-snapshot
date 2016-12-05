@@ -1,6 +1,8 @@
 var postcss = require('postcss');
 
-module.exports = postcss.plugin('postcss-normalize-charset', function (opts) {
+var charset = 'charset';
+
+module.exports = postcss.plugin('postcss-normalize-' + charset, function (opts) {
     opts = opts || {};
 
     return function (css) {
@@ -9,12 +11,12 @@ module.exports = postcss.plugin('postcss-normalize-charset', function (opts) {
         var nonAscii = /[^\x00-\x7F]/;
 
         css.walk(function (node) {
-            if (node.type === 'atrule' && node.name === 'charset') {
+            if (node.type === 'atrule' && node.name === charset) {
                 if (!charsetRule) {
                     charsetRule = node;
                 }
                 node.remove();
-            } else if (!nonAsciiNode && node.parent && node.parent.type === 'root' && nonAscii.test(node)) {
+            } else if (!nonAsciiNode && node.parent === css && nonAscii.test(node)) {
                 nonAsciiNode = node;
             }
         });
@@ -22,13 +24,13 @@ module.exports = postcss.plugin('postcss-normalize-charset', function (opts) {
         if (nonAsciiNode) {
             if (!charsetRule && opts.add !== false) {
                 charsetRule = postcss.atRule({
-                    name: 'charset',
+                    name: charset,
                     params: '"utf-8"'
                 });
             }
             if (charsetRule) {
                 charsetRule.source = nonAsciiNode.source;
-                css.root().prepend(charsetRule);
+                css.prepend(charsetRule);
             }
         }
     };

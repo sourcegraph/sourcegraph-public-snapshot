@@ -49,7 +49,7 @@ function OutboundFormTracker(tracker, opts) {
   this.tracker = tracker;
 
   this.delegate = delegate(document, 'submit', 'form',
-      this.handleFormSubmits.bind(this), {deep: true, useCapture: true});
+      this.handleFormSubmits.bind(this), {composed: true, useCapture: true});
 }
 
 

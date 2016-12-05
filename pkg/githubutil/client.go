@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 
@@ -263,8 +263,8 @@ func (t disabledTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 var Default = &Config{
 	BaseURL: &url.URL{Scheme: "https", Host: "api.github.com"},
 	OAuth: oauth2.Config{
-		ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
-		ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+		ClientID:     env.Get("GITHUB_CLIENT_ID", "", "OAuth client ID for GitHub"),
+		ClientSecret: env.Get("GITHUB_CLIENT_SECRET", "", "OAuth client secret for GitHub"),
 		Endpoint:     githuboauth.Endpoint,
 	},
 	Cache: &cacheWithMetrics{

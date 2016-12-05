@@ -160,7 +160,6 @@ const typeToInterface = (type, ignoredTypes) => {
 
     if (possibleTypes.length) {
       additionalInfo = generateTypeDeclaration(type.description, generateTypeName(type.name), possibleTypes.join(' | '))
-      interfaceDeclaration += ` extends ${possibleTypes.join(', ')}`;
     }
   }
 

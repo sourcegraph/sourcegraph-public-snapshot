@@ -83,7 +83,7 @@ function populateStatusesMap (statuses, codes) {
  * the status message.
  *
  * @param {string|number} code
- * @returns {string}
+ * @returns {number}
  * @public
  */
 

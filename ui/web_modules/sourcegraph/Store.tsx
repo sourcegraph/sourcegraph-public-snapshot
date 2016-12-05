@@ -1,7 +1,7 @@
-import {Store as FluxUtilsStore} from "flux/utils";
-import {Dispatcher} from "sourcegraph/Dispatcher";
-import {deepFreeze} from "sourcegraph/util/deepFreeze";
-import {testOnly} from "sourcegraph/util/testOnly";
+import { Store as FluxUtilsStore } from "flux/utils";
+import { Dispatcher } from "sourcegraph/Dispatcher";
+import { deepFreeze } from "sourcegraph/util/deepFreeze";
+import { testOnly } from "sourcegraph/util/testOnly";
 
 export class Store<TPayload> extends FluxUtilsStore<TPayload> {
 	// hack: access internal fields of store and dispatcher

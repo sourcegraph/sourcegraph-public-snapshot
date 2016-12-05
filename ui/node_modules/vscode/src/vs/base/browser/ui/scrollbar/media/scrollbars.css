@@ -72,7 +72,7 @@
 	left: 3px;
 	height: 3px;
 	width: 100%;
-	box-shadow: #DDD 0 6px 6px -6px inset;
+	box-shadow: #000 0 6px 6px -6px inset;
 }
 .monaco-scrollable-element > .shadow.left {
 	display: block;

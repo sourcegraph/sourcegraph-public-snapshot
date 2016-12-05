@@ -51,11 +51,31 @@ Handle.prototype._getPeerName = function _getPeerName() {
 
 Handle.prototype._closeCallback = function _closeCallback(callback) {
   var state = this._spdyState;
+  var stream = state.stream;
 
-  if (state.ending)
-    state.stream.end(callback);
-  else
-    state.stream.abort(callback);
+  if (state.ending) {
+    // The .end() method of the stream may be called by us or by the
+    // .shutdown() method in our super-class. If the latter has already been
+    // called, then calling the .end() method below will have no effect, with
+    // the result that the callback will never get executed, leading to an ever
+    // so subtle memory leak.
+    if (stream._writableState.finished) {
+      // NOTE: it is important to call `setImmediate` instead of `nextTick`,
+      // since this is how regular `handle.close()` works in node.js core.
+      //
+      // Using `nextTick` will lead to `net.Socket` emitting `close` before
+      // `end` on UV_EOF. This results in aborted request without `end` event.
+      setImmediate(callback);
+    } else if (stream._writableState.ending) {
+      stream.once('finish', function() {
+        callback(null);
+      });
+    } else {
+      stream.end(callback);
+    }
+  } else {
+    stream.abort(callback);
+  }
 
   // Only a single end is allowed
   state.ending = false;

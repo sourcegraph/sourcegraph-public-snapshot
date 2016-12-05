@@ -2,6 +2,7 @@ package langserver
 
 import (
 	"context"
+	"fmt"
 	"go/ast"
 	"go/build"
 	"go/doc"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -18,22 +20,55 @@ import (
 	"golang.org/x/tools/go/buildutil"
 
 	"github.com/neelance/parallel"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-// query is a structured representation that is parsed from the user's
+// Query is a structured representation that is parsed from the user's
 // raw query string.
-type query struct {
-	kind      lsp.SymbolKind
-	filter    filterType
-	file, dir string
-	tokens    []string
+type Query struct {
+	Kind      lsp.SymbolKind
+	Filter    FilterType
+	File, Dir string
+	Tokens    []string
 }
 
-// parseQuery parses a user's raw query string and returns a
+// String converts the query back into a logically equivalent, but not strictly
+// byte-wise equal, query string. It is useful for converting a modified query
+// structure back into a query string.
+func (q Query) String() string {
+	s := ""
+	switch q.Filter {
+	case FilterExported:
+		s = queryJoin(s, "is:exported")
+	case FilterDir:
+		s = queryJoin(s, fmt.Sprintf("%s:%s", q.Filter, q.Dir))
+	default:
+		// no filter.
+	}
+	if q.Kind != 0 {
+		for kwd, kind := range keywords {
+			if kind == q.Kind {
+				s = queryJoin(s, kwd)
+			}
+		}
+	}
+	for _, token := range q.Tokens {
+		s = queryJoin(s, token)
+	}
+	return s
+}
+
+// queryJoin joins the strings into "<s><space><e>" ensuring there is no
+// trailing or leading whitespace at the end of the string.
+func queryJoin(s, e string) string {
+	return strings.TrimSpace(s + " " + e)
+}
+
+// ParseQuery parses a user's raw query string and returns a
 // structured representation of the query.
-func parseQuery(q string) (qu query) {
+func ParseQuery(q string) (qu Query) {
 	// All queries are case insensitive.
 	q = strings.ToLower(q)
 
@@ -41,12 +76,12 @@ func parseQuery(q string) (qu query) {
 	for _, field := range strings.Fields(q) {
 		// Check if the field is a filter like `is:exported`.
 		if strings.HasPrefix(field, "dir:") {
-			qu.filter = filterDir
-			qu.dir = strings.TrimPrefix(field, "dir:")
+			qu.Filter = FilterDir
+			qu.Dir = strings.TrimPrefix(field, "dir:")
 			continue
 		}
 		if field == "is:exported" {
-			qu.filter = filterExported
+			qu.Filter = FilterExported
 			continue
 		}
 
@@ -56,20 +91,20 @@ func parseQuery(q string) (qu query) {
 		})
 		for _, tok := range tokens {
 			if kind, isKeyword := keywords[tok]; isKeyword {
-				qu.kind = kind
+				qu.Kind = kind
 				continue
 			}
-			qu.tokens = append(qu.tokens, tok)
+			qu.Tokens = append(qu.Tokens, tok)
 		}
 	}
 	return qu
 }
 
-type filterType string
+type FilterType string
 
 const (
-	filterExported filterType = "exported"
-	filterDir      filterType = "dir"
+	FilterExported FilterType = "exported"
+	FilterDir      FilterType = "dir"
 )
 
 // keywords are keyword tokens that will be interpreted as symbol kind
@@ -87,7 +122,7 @@ var keywords = map[string]lsp.SymbolKind{
 // resultSorter is a utility struct for collecting, filtering, and
 // sorting symbol results.
 type resultSorter struct {
-	query
+	Query
 	results   []scoredSymbol
 	resultsMu sync.Mutex
 }
@@ -124,7 +159,7 @@ func (s *resultSorter) Swap(i, j int) {
 // symbol in the list of results if its score > 0.
 func (s *resultSorter) Collect(si lsp.SymbolInformation) {
 	s.resultsMu.Lock()
-	score := score(s.query, si)
+	score := score(s.Query, si)
 	if score > 0 {
 		sc := scoredSymbol{score, si}
 		s.results = append(s.results, sc)
@@ -143,31 +178,31 @@ func (s *resultSorter) Results() []lsp.SymbolInformation {
 
 // score returns 0 for results that aren't matches. Results that are matches are assigned
 // a positive score, which should be used for ranking purposes.
-func score(q query, s lsp.SymbolInformation) (scor int) {
-	if q.kind != 0 {
-		if q.kind != s.Kind {
+func score(q Query, s lsp.SymbolInformation) (scor int) {
+	if q.Kind != 0 {
+		if q.Kind != s.Kind {
 			return 0
 		}
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
 	filename := strings.TrimPrefix(strings.ToLower(s.Location.URI), "file://")
 	isVendor := strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/")
-	if q.filter == filterExported && isVendor {
+	if q.Filter == FilterExported && isVendor {
 		// is:exported excludes vendor symbols always.
 		return 0
 	}
-	if q.file != "" && filename != q.file {
+	if q.File != "" && filename != q.File {
 		// We're restricting results to a single file, and this isn't it.
 		return 0
 	}
-	if len(q.tokens) == 0 { // early return if empty query
+	if len(q.Tokens) == 0 { // early return if empty query
 		if isVendor {
 			return 1 // lower score for vendor symbols
 		} else {
 			return 2
 		}
 	}
-	for i, tok := range q.tokens {
+	for i, tok := range q.Tokens {
 		tok := strings.ToLower(tok)
 		if strings.HasPrefix(container, tok) {
 			scor += 2
@@ -182,7 +217,7 @@ func score(q query, s lsp.SymbolInformation) (scor int) {
 			scor += 2
 		}
 		if tok == name {
-			if i == len(q.tokens)-1 {
+			if i == len(q.Tokens)-1 {
 				scor += 50
 			} else {
 				scor += 5
@@ -222,21 +257,21 @@ func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos t
 // the Go language server.
 func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.DocumentSymbolParams) ([]lsp.SymbolInformation, error) {
 	f := strings.TrimPrefix(params.TextDocument.URI, "file://")
-	return h.handleSymbol(ctx, conn, req, query{file: f}, 0)
+	return h.handleSymbol(ctx, conn, req, Query{File: f}, 0)
 }
 
 // handleSymbol handles `workspace/symbol` requests for the Go
 // language server.
 func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
-	q := parseQuery(params.Query)
-	if q.filter == filterDir {
-		q.dir = path.Join(h.init.RootImportPath, q.dir)
+	q := ParseQuery(params.Query)
+	if q.Filter == FilterDir {
+		q.Dir = path.Join(h.init.RootImportPath, q.Dir)
 	}
 	return h.handleSymbol(ctx, conn, req, q, params.Limit)
 }
 
-func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, query query, limit int) ([]lsp.SymbolInformation, error) {
-	results := resultSorter{query: query, results: make([]scoredSymbol, 0)}
+func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, query Query, limit int) ([]lsp.SymbolInformation, error) {
+	results := resultSorter{Query: query, results: make([]scoredSymbol, 0)}
 	{
 		fs := token.NewFileSet()
 		rootPath := h.FilePath(h.init.RootPath)
@@ -256,8 +291,8 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 		for pkg := range pkgs {
 			// If we're restricting results to a single file or dir, ensure the
 			// package dir matches to avoid doing unnecessary work.
-			if results.query.file != "" {
-				filePkgPath := path.Dir(results.query.file)
+			if results.Query.File != "" {
+				filePkgPath := path.Dir(results.Query.File)
 				if PathHasPrefix(filePkgPath, h.init.BuildContext.GOROOT) {
 					filePkgPath = PathTrimPrefix(filePkgPath, h.init.BuildContext.GOROOT)
 				} else {
@@ -268,13 +303,26 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 					continue
 				}
 			}
-			if results.query.filter == filterDir && !pathEqual(pkg, results.query.dir) {
+			if results.Query.Filter == FilterDir && !pathEqual(pkg, results.Query.Dir) {
 				continue
 			}
 
 			par.Acquire()
 			go func(pkg string) {
 				defer par.Release()
+				// Prevent any uncaught panics from taking the
+				// entire server down. For an example see
+				// https://github.com/golang/go/issues/17788
+				defer func() {
+					if r := recover(); r != nil {
+						// Same as net/http
+						const size = 64 << 10
+						buf := make([]byte, size)
+						buf = buf[:runtime.Stack(buf, false)]
+						log.Printf("ignoring panic serving %v for pkg %v: %v\n%s", req.Method, pkg, r, buf)
+						return
+					}
+				}()
 				h.collectFromPkg(bctx, fs, pkg, rootPath, &results)
 			}(pkg)
 		}
@@ -292,8 +340,14 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 // exist. Otherwise, it returns nil.
 func (h *LangHandler) getPkgSyms(pkg string) []lsp.SymbolInformation {
 	h.pkgSymCacheMu.Lock()
-	defer h.pkgSymCacheMu.Unlock()
-	return h.pkgSymCache[pkg]
+	l, ok := h.pkgSymCache[pkg]
+	h.pkgSymCacheMu.Unlock()
+	if ok {
+		symbolCacheTotal.WithLabelValues("hit").Inc()
+	} else {
+		symbolCacheTotal.WithLabelValues("miss").Inc()
+	}
+	return l
 }
 
 // setPkgSyms updates the cached symbols for package pkg.
@@ -314,9 +368,7 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 	if pkgSyms == nil {
 		buildPkg, err := bctx.Import(pkg, rootPath, 0)
 		if err != nil {
-			if !(strings.Contains(err.Error(), "no buildable Go source files") || strings.Contains(err.Error(), "found packages") || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
-				log.Printf("skipping possible package %s: %s", pkg, err)
-			}
+			maybeLogImportError(pkg, err)
 			return
 		}
 
@@ -332,6 +384,7 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 			}
 			return
 		}
+		// TODO(keegancsmith) Remove vendored doc/go once https://github.com/golang/go/issues/17788 is shipped
 		docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
 
 		// Emit decls
@@ -346,7 +399,7 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
 			}
 			for _, v := range t.Methods {
-				if results.query.filter == filterExported && (!ast.IsExported(v.Name) || !ast.IsExported(t.Name)) {
+				if results.Query.Filter == FilterExported && (!ast.IsExported(v.Name) || !ast.IsExported(t.Name)) {
 					continue
 				}
 				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
@@ -379,7 +432,7 @@ func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg
 	}
 
 	for _, sym := range pkgSyms {
-		if results.query.filter == filterExported && !ast.IsExported(sym.Name) {
+		if results.Query.Filter == FilterExported && !ast.IsExported(sym.Name) {
 			continue
 		}
 		results.Collect(sym)
@@ -416,4 +469,22 @@ func parseDir(fset *token.FileSet, bctx *build.Context, path string, filter func
 	}
 
 	return
+}
+
+func maybeLogImportError(pkg string, err error) {
+	_, isNoGoError := err.(*build.NoGoError)
+	if !(isNoGoError || !isMultiplePackageError(err) || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
+		log.Printf("skipping possible package %s: %s", pkg, err)
+	}
+}
+
+var symbolCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "golangserver",
+	Subsystem: "symbol",
+	Name:      "cache_request_total",
+	Help:      "Count of requests to cache.",
+}, []string{"type"})
+
+func init() {
+	prometheus.MustRegister(symbolCacheTotal)
 }

@@ -16,9 +16,9 @@ var _InternalPropTypes = require('./InternalPropTypes');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _React$PropTypes = _react2.default.PropTypes;
-var string = _React$PropTypes.string;
-var func = _React$PropTypes.func;
+var _React$PropTypes = _react2.default.PropTypes,
+    string = _React$PropTypes.string,
+    func = _React$PropTypes.func;
 
 /**
  * A <Route> is used to declare which components are rendered to the
@@ -30,6 +30,7 @@ var func = _React$PropTypes.func;
  * that lead to it are considered "active" and their components are
  * rendered into the DOM, nested in the same order as in the tree.
  */
+/* eslint-disable react/require-render-return */
 
 var Route = _react2.default.createClass({
   displayName: 'Route',

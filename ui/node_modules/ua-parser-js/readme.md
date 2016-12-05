@@ -1,21 +1,20 @@
 # UAParser.js
 
-Lightweight JavaScript-based User-Agent string parser. Supports browser & node.js environment. Also available as jQuery/Zepto plugin, Component/Bower/Meteor package, & RequireJS/AMD module
+<img align="right" src="https://raw.githubusercontent.com/faisalman/ua-parser-js/gh-pages/images/logo.png"> A not-so-lightweight-anymore JavaScript-based User-Agent string parser. Can be used either in browser (client-side) or in node.js (server-side) environment. Also available as jQuery/Zepto plugin, Bower/Meteor package, & RequireJS/AMD module. This library aims to identify detailed type of web browser, layout engine, operating system, cpu architecture, and device type/model, entirely from user-agent string with a relatively small footprint (~11KB when minified / ~4KB gzipped). Written in vanilla JavaScript, which means it doesn't require any other library and can be used independently.
 
 [![Build Status](https://travis-ci.org/faisalman/ua-parser-js.svg?branch=master)](https://travis-ci.org/faisalman/ua-parser-js)
+[![NPM](https://img.shields.io/npm/v/ua-parser-js.svg)](https://www.npmjs.com/package/ua-parser-js)
+[![Bower](https://img.shields.io/bower/v/ua-parser-js.svg)](https://bower.io/)
+[![CDNJS](https://img.shields.io/cdnjs/v/UAParser.js.svg)](https://cdnjs.com/libraries/UAParser.js)
+[![Gratipay](https://img.shields.io/gratipay/team/UAParser.js.svg)](https://gratipay.com/UAParser.js)
 [![Flattr this](http://api.flattr.com/button/flattr-badge-large.png)](http://flattr.com/thing/3867907/faisalmanua-parser-js-on-GitHub)
 
 * Author    : Faisal Salman <<fyzlman@gmail.com>>
 * Demo      : http://faisalman.github.io/ua-parser-js
 * Source    : https://github.com/faisalman/ua-parser-js
 
-## Features
 
-Extract detailed type of web browser, layout engine, operating system, cpu architecture, and device type/model purely from user-agent string with relatively lightweight footprint (~11KB minified / ~4KB gzipped). Written in vanilla js, which means it doesn't depends on any other library.
-
-![It's over 9000](https://raw.githubusercontent.com/faisalman/ua-parser-js/gh-pages/images/over9000.jpg)
-
-## Methods
+# Methods
 
 * `getBrowser()`
     * returns `{ name: '', version: '' }`
@@ -29,7 +28,7 @@ Iceweasel, IE [Mobile], Iron, Jasmine, K-Meleon, Konqueror, Kindle, Links,
 Lunascape, Lynx, Maemo, Maxthon, Midori, Minimo, MIUI Browser, [Mobile] Safari, 
 Mosaic, Mozilla, Netfront, Netscape, NetSurf, Nokia, OmniWeb, Opera [Mini/Mobi/Tablet], 
 PhantomJS, Phoenix, Polaris, QQBrowser, RockMelt, Silk, Skyfire, SeaMonkey, SlimBrowser,
-Swiftfox, Tizen, UCBrowser, Vivaldi, w3m, Yandex
+Swiftfox, Tizen, UCBrowser, Vivaldi, w3m, WeChat, Yandex
 
 # 'browser.version' determined dynamically
 ```
@@ -94,7 +93,8 @@ ppc, sparc, sparc64
 * `setUA(uastring)`
     * set & parse UA string
 
-## Example
+
+# Example
 
 ```html
 <!doctype html>
@@ -167,7 +167,7 @@ ppc, sparc, sparc64
 </html>
 ```
 
-### Using node.js
+## Using node.js
 
 ```sh
 $ npm install ua-parser-js
@@ -188,34 +188,35 @@ http.createServer(function (req, res) {
 console.log('Server running at http://127.0.0.1:1337/');
 ```
 
-### Using requirejs
+## Using requirejs
 
 ```js
-require(['ua-parser'], function(UAParser) {
+requirejs.config({
+    baseUrl : 'js/lib', // path to your script directory
+    paths   : {
+        'ua-parser-js' : 'ua-parser.min'
+    }
+});
+
+requirejs(['ua-parser-js'], function(UAParser) {
     var parser = new UAParser();
     console.log(parser.getResult());
 });
 ```
 
-### Using component
-
-```sh
-$ component install faisalman/ua-parser-js
-```
-
-### Using bower
+## Using bower
 
 ```sh
 $ bower install ua-parser-js
 ```
 
-### Using meteor
+## Using meteor
 
 ```sh
 $ meteor add faisalman:ua-parser-js
 ```
 
-### Using jQuery/Zepto ($.ua)
+## Using jQuery/Zepto ($.ua)
 
 Although written in vanilla js (which means it doesn't depends on jQuery), this library will automatically detect if jQuery/Zepto is present and create `$.ua` object based on browser's user-agent (although in case you need, `window.UAParser` constructor is still present). To get/set user-agent you can use: `$.ua.get()` / `$.ua.set(uastring)`. 
 
@@ -238,7 +239,7 @@ console.log($.ua.device);           // {vendor: "Motorola", model: "Xoom", type:
 console.log(parseInt($.ua.browser.version.split('.')[0], 10));  // 4
 ```
 
-### Extending regex patterns
+## Extending regex patterns
 
 * `UAParser(uastring[, extensions])`
 
@@ -246,29 +247,44 @@ Pass your own regexes to extend the limited matching rules.
 
 ```js
 // Example:
-var uaString = 'ownbrowser/1.3';
-var ownBrowser = [[/(ownbrowser)\/([\w\.]+)/i], [UAParser.BROWSER.NAME, UAParser.BROWSER.VERSION]];
-var parser = new UAParser(uaString, {browser: ownBrowser});
-console.log(parser.getBrowser());   // {name: "ownbrowser", version: "1.3"}
+var uaString = 'MyOwnBrowser/1.3';
+var myOwnRegex = [[/(myownbrowser)\/([\w\.]+)/i], [UAParser.BROWSER.NAME, UAParser.BROWSER.VERSION]];
+var parser = new UAParser(uaString, { browser: myOwnRegex });
+console.log(parser.getBrowser());   // {name: "MyOwnBrowser", version: "1.3"}
 ```
 
-## Development
 
-Verify, test, & minify script
+# Development
+
+## Contribute
+
+* Fork and clone this repository
+* Make some changes as required
+* Write a unit test to showcase your feature
+* Run the test suites to make sure the changes you made didn't break anything
 
 ```sh
 $ npm run test
+```
+
+* Commit and push to your own repository
+* Submit a pull request to this repository under `develop` branch
+* Profit?
+
+## Build
+
+Build a minified & packed script
+
+```sh
 $ npm run build
 ```
 
-Then submit a pull request to https://github.com/faisalman/ua-parser-js under `develop` branch.
 
-
-## License
+# License
 
 Dual licensed under GPLv2 & MIT
 
-Copyright © 2012-2015 Faisal Salman <<fyzlman@gmail.com>>
+Copyright © 2012-2016 Faisal Salman <<fyzlman@gmail.com>>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of 
 this software and associated documentation files (the "Software"), to deal in 

@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"strings"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 // clientCacheInfo reads the cache information supplied by the client in the
@@ -19,13 +17,6 @@ func clientCacheInfo(r *http.Request) (ifModSince time.Time, noCache bool, err e
 	noCache = strings.Contains(r.Header.Get("cache-control"), "no-cache")
 	return ifModSince, noCache, err
 }
-
-var (
-	// defaultCacheMaxAge is the default "Cache-Control: max-age=N" value to
-	// send as an HTTP response header. During development, this should be set
-	// to 0 to allow more accurate performance measurement.
-	defaultCacheMaxAge = conf.GetenvDurationOrDefault("SG_API_DEFAULT_CACHE_MAX_AGE", "0s")
-)
 
 // writeCacheHeaders writes HTTP cache-related response headers.
 //

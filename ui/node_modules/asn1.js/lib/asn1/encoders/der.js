@@ -86,6 +86,8 @@ DERNode.prototype._encodeStr = function encodeStr(str, tag) {
     return this._createEncoderBuffer(str);
   } else if (/str$/.test(tag)) {
     return this._createEncoderBuffer(str);
+  } else if (tag === 'objDesc') {
+    return this._createEncoderBuffer(str);
   } else {
     return this.reporter.error('Encoding of string type: ' + tag +
                                ' unsupported');

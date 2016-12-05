@@ -23,15 +23,15 @@ describe("RangeOrPosition", () => {
 
 	describe("fromZeroIndexed", () => {
 		[
-			{input: {startLine: 1}, want: {startLine: 1}},
-			{input: {startLine: 1, startCol: 2}, want: "same"},
-			{input: {startLine: 1, endLine: 1}, want: {startLine: 1}},
-			{input: {startLine: 1, endLine: 2}, want: "same"},
-			{input: {startLine: 1, startCol: 2, endLine: 3}, want: {startLine: 1, endLine: 3}},
-			{input: {startLine: 1, startCol: 2}, want: "same"},
-			{input: {startLine: 1, endLine: 2, endCol: 3}, want: {startLine: 1, endLine: 2}},
-			{input: {startLine: 1, startCol: 2, endLine: 3, endCol: 4}, want: "same"},
-			{input: {startLine: 1, startCol: 2}, want: "same"},
+			{ input: { startLine: 1 }, want: { startLine: 1 } },
+			{ input: { startLine: 1, startCol: 2 }, want: "same" },
+			{ input: { startLine: 1, endLine: 1 }, want: { startLine: 1 } },
+			{ input: { startLine: 1, endLine: 2 }, want: "same" },
+			{ input: { startLine: 1, startCol: 2, endLine: 3 }, want: { startLine: 1, endLine: 3 } },
+			{ input: { startLine: 1, startCol: 2 }, want: "same" },
+			{ input: { startLine: 1, endLine: 2, endCol: 3 }, want: { startLine: 1, endLine: 2 } },
+			{ input: { startLine: 1, startCol: 2, endLine: 3, endCol: 4 }, want: "same" },
+			{ input: { startLine: 1, startCol: 2 }, want: "same" },
 		].forEach((test: any) => {
 			it(JSON.stringify(test.input), () => {
 				const r = RangeOrPosition.fromZeroIndexed(test.input.startLine, test.input.startCol, test.input.endLine, test.input.endCol);

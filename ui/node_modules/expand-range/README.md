@@ -1,15 +1,16 @@
-# expand-range [![NPM version](https://badge.fury.io/js/expand-range.svg)](http://badge.fury.io/js/expand-range)
+# expand-range [![NPM version](https://img.shields.io/npm/v/expand-range.svg?style=flat)](https://www.npmjs.com/package/expand-range) [![NPM downloads](https://img.shields.io/npm/dm/expand-range.svg?style=flat)](https://npmjs.org/package/expand-range) [![Build Status](https://img.shields.io/travis/jonschlinkert/expand-range.svg?style=flat)](https://travis-ci.org/jonschlinkert/expand-range)
 
-> Fast, bash-like range expansion. Expand a range of numbers or letters, uppercase or lowercase. See the benchmarks. Used by micromatch.
+Fast, bash-like range expansion. Expand a range of numbers or letters, uppercase or lowercase. See the benchmarks. Used by micromatch.
 
-## Install with [npm](npmjs.org)
+## Install
 
-```bash
-npm i expand-range --save
+Install with [npm](https://www.npmjs.com/):
+
+```sh
+$ npm install expand-range --save
 ```
 
 Wraps [fill-range] to do range expansion using `..` separated strings. See [fill-range] for the full list of options and features.
-
 
 ## Example usage
 
@@ -23,9 +24,9 @@ var expand = require('expand-range');
 expand(start, stop, increment);
 ```
 
- - `start`: the number or letter to start with
- - `end`: the number or letter to end with
- - `increment`: optionally pass the increment to use. works for letters or numbers
+* `start`: the number or letter to start with
+* `end`: the number or letter to end with
+* `increment`: optionally pass the increment to use. works for letters or numbers
 
 **Examples**
 
@@ -55,7 +56,6 @@ expand('1..10..2')
 //=> [ '1', '3', '5', '7', '9' ]
 ```
 
-
 ### Custom function
 
 Optionally pass a custom function as the second argument:
@@ -70,38 +70,76 @@ expand('a..e', function (val, isNumber, pad, i) {
 //=> ['a0', 'b1', 'c2', 'd3', 'e4']
 ```
 
-## Related
+## Benchmarks
 
-- [micromatch]: wildcard/glob matcher for javascript. a faster alternative to minimatch.
-- [fill-range]: the library this depends on for core functionality
-- [braces]: this library is used in braces, a fast Brash-like brace expansion lib.
+```sh
+# benchmark/fixtures/alpha-lower.js (29 bytes)
+  brace-expansion x 145,653 ops/sec ±0.89% (87 runs sampled)
+  expand-range x 453,213 ops/sec ±1.66% (85 runs sampled)
+  minimatch x 152,193 ops/sec ±1.17% (86 runs sampled)
 
-## Run tests
+# benchmark/fixtures/alpha-upper.js (29 bytes)
+  brace-expansion x 149,975 ops/sec ±1.10% (88 runs sampled)
+  expand-range x 459,390 ops/sec ±1.27% (84 runs sampled)
+  minimatch x 155,253 ops/sec ±1.25% (88 runs sampled)
 
-Install dev dependencies
+# benchmark/fixtures/padded.js (33 bytes)
+  brace-expansion x 14,694 ops/sec ±1.37% (85 runs sampled)
+  expand-range x 169,393 ops/sec ±1.76% (80 runs sampled)
+  minimatch x 15,052 ops/sec ±1.15% (88 runs sampled)
 
-```bash
-npm i -d && npm test
+# benchmark/fixtures/range.js (29 bytes)
+  brace-expansion x 142,968 ops/sec ±1.35% (86 runs sampled)
+  expand-range x 465,579 ops/sec ±1.43% (86 runs sampled)
+  minimatch x 126,872 ops/sec ±1.18% (90 runs sampled)
 ```
 
+## Related projects
+
+You might also be interested in these projects:
+
+* [braces](https://www.npmjs.com/package/braces): Fastest brace expansion for node.js, with the most complete support for the Bash 4.3 braces… [more](https://www.npmjs.com/package/braces) | [homepage](https://github.com/jonschlinkert/braces)
+* [fill-range](https://www.npmjs.com/package/fill-range): Fill in a range of numbers or letters, optionally passing an increment or multiplier to… [more](https://www.npmjs.com/package/fill-range) | [homepage](https://github.com/jonschlinkert/fill-range)
+* [micromatch](https://www.npmjs.com/package/micromatch): Glob matching for javascript/node.js. A drop-in replacement and faster alternative to minimatch and multimatch. | [homepage](https://github.com/jonschlinkert/micromatch)
+
 ## Contributing
-Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](https://github.com/jonschlinkert/expand-range/issues).
+
+Pull requests and stars are always welcome. For bugs and feature requests, [please create an issue](https://github.com/jonschlinkert/expand-range/issues/new).
+
+## Building docs
+
+Generate readme and API documentation with [verb](https://github.com/verbose/verb):
+
+```sh
+$ npm install verb && npm run docs
+```
+
+Or, if [verb](https://github.com/verbose/verb) is installed globally:
+
+```sh
+$ verb
+```
+
+## Running tests
+
+Install dev dependencies:
+
+```sh
+$ npm install -d && npm test
+```
 
 ## Author
 
 **Jon Schlinkert**
- 
-+ [github/jonschlinkert](https://github.com/jonschlinkert)
-+ [twitter/jonschlinkert](http://twitter.com/jonschlinkert) 
+
+* [github/jonschlinkert](https://github.com/jonschlinkert)
+* [twitter/jonschlinkert](http://twitter.com/jonschlinkert)
 
 ## License
-Copyright (c) 2015 Jon Schlinkert  
-Released under the MIT license
+
+Copyright © 2016, [Jon Schlinkert](https://github.com/jonschlinkert).
+Released under the [MIT license](https://github.com/jonschlinkert/expand-range/blob/master/LICENSE).
 
 ***
 
-_This file was generated by [verb](https://github.com/assemble/verb) on January 30, 2015._
-
-[fill-range]: https://github.com/jonschlinkert/fill-range
-[micromatch]: https://github.com/jonschlinkert/micromatch
-[braces]: https://github.com/jonschlinkert/braces
+_This file was generated by [verb](https://github.com/verbose/verb), v0.9.0, on May 05, 2016._

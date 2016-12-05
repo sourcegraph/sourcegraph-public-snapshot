@@ -13,10 +13,12 @@ if [ ! -d "javascript-typescript-langserver" ]; then
 else
     cd javascript-typescript-langserver && git pull
 fi
-yarn install
+yarn
 ./node_modules/.bin/tsc -p .
 
 cd ..
 docker build -t $IMAGE:$TAG .
 gcloud docker -- push $IMAGE:$TAG
 
+# Also push latest if on CI
+[ -z "$CI" ] || (docker tag $IMAGE:$TAG $IMAGE:latest && gcloud docker -- push $IMAGE:latest)

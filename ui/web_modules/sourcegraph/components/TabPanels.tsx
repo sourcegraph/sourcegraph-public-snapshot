@@ -1,5 +1,3 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
 
 interface Props {
@@ -9,10 +7,8 @@ interface Props {
 	styles?: any;
 }
 
-type State = any;
-
-export class TabPanels extends React.Component<Props, State> {
-	static defaultProps = {
+export class TabPanels extends React.Component<Props, {}> {
+	static defaultProps: Props = {
 		active: 0,
 	};
 
@@ -20,9 +16,9 @@ export class TabPanels extends React.Component<Props, State> {
 		return React.Children.map(this.props.children, (child: React.ReactElement<any>, i) => {
 			if (child.props.tabPanel) {
 				if (this.props.active === i) {
-					return React.cloneElement(child, {active: true});
+					return React.cloneElement(child, { active: true });
 				}
-				return React.cloneElement(child, {active: false});
+				return React.cloneElement(child, { active: false });
 			}
 			return React.cloneElement(child);
 		});

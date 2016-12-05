@@ -55,8 +55,8 @@ function checkRangeExpression(range, version) {
   if (expressions.length === 1) {
     return checkSimpleExpression(expressions[0], version);
   } else {
-    var startVersion = expressions[0];
-    var endVersion = expressions[1];
+    var startVersion = expressions[0],
+        endVersion = expressions[1];
 
     !(isSimpleVersion(startVersion) && isSimpleVersion(endVersion)) ? process.env.NODE_ENV !== 'production' ? invariant(false, 'operands to the "-" operator must be simple (no modifiers)') : invariant(false) : void 0;
 
@@ -80,10 +80,9 @@ function checkSimpleExpression(range, version) {
 
   var versionComponents = version.split(componentRegex);
 
-  var _getModifierAndCompon = getModifierAndComponents(range);
-
-  var modifier = _getModifierAndCompon.modifier;
-  var rangeComponents = _getModifierAndCompon.rangeComponents;
+  var _getModifierAndCompon = getModifierAndComponents(range),
+      modifier = _getModifierAndCompon.modifier,
+      rangeComponents = _getModifierAndCompon.rangeComponents;
 
   switch (modifier) {
     case '<':
@@ -329,11 +328,9 @@ function compare(a, b) {
  * or greater than `b`, respectively
  */
 function compareComponents(a, b) {
-  var _normalizeVersions = normalizeVersions(a, b);
-
-  var aNormalized = _normalizeVersions[0];
-  var bNormalized = _normalizeVersions[1];
-
+  var _normalizeVersions = normalizeVersions(a, b),
+      aNormalized = _normalizeVersions[0],
+      bNormalized = _normalizeVersions[1];
 
   for (var i = 0; i < bNormalized.length; i++) {
     var result = compareNumeric(aNormalized[i], bNormalized[i]);

@@ -1,16 +1,16 @@
 // tslint:disable: typedef ordered-imports
 
 import * as React from "react";
-import {Hero, Heading} from "sourcegraph/components";
+import { Hero, Heading } from "sourcegraph/components";
 import * as styles from "sourcegraph/page/Page.css";
 import * as base from "sourcegraph/components/styles/_base.css";
-import Helmet from "react-helmet";
-import {BetaInterestForm} from "sourcegraph/home/BetaInterestForm";
+import { PageTitle } from "sourcegraph/components/PageTitle";
+import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 
 export function BetaPage(props) {
 	return (
 		<div>
-			<Helmet title="Beta" />
+			<PageTitle title="Beta" />
 			<Hero pattern="objects" className={base.pv5}>
 				<div className={styles.container}>
 					<Heading level={2} color="blue">Get the future Sourcegraph sooner</Heading>
@@ -33,7 +33,7 @@ export function BetaPage(props) {
 					<li className={styles.p}><a href="https://github.com/sourcegraph/sourcegraph/blob/master/CONTRIBUTING.md#reporting-bugs-and-creating-issues" target="_blank">Report bugs</a> that you encounter.</li>
 					<li className={styles.p}>Share feedback with us and help shape the future of Sourcegraph.</li>
 				</ul>
-				<br/>
+				<br />
 				<Heading level={3} underline="blue">Register for beta access</Heading>
 
 				<BetaInterestForm loginReturnTo="/beta" />

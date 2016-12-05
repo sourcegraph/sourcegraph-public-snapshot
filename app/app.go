@@ -1,8 +1,6 @@
 package app
 
 import (
-	"io/ioutil"
-	"log"
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
@@ -11,10 +9,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 
 	// Import for side effects.
@@ -30,17 +28,15 @@ func NewHandler(r *router.Router) http.Handler {
 
 	auth.InitSessionStore(conf.AppURL.Scheme == "https")
 
-	var mw []handlerutil.Middleware
-	mw = append(mw, httpapiauth.AuthorizationMiddleware, auth.CookieMiddleware)
-	mw = append(mw, eventsutil.AgentMiddleware)
+	mw := []handlerutil.Middleware{
+		httpapiauth.AuthorizationMiddleware,
+		auth.CookieMiddleware,
+		githubAuthMiddleware,
+		eventsutil.AgentMiddleware,
+	}
 	mw = append(mw, internal.Middleware...)
 
 	m := http.NewServeMux()
-	if conf.GetenvBool("SG_USE_CSP") {
-		cspHandler := csp.NewHandler(cspConfig)
-		cspHandler.ReportLog = log.New(ioutil.Discard, "", 0)
-		mw = append(mw, cspHandler.Middleware)
-	}
 
 	m.Handle("/", r)
 
@@ -69,23 +65,15 @@ func NewHandler(r *router.Router) http.Handler {
 	return handlerutil.WithMiddleware(m, mw...)
 }
 
-// cspConfig is the Content Security Policy config for app handlers.
-var cspConfig = csp.Config{
-	// Strict because API responses should never be treated as page
-	// content.
-	PolicyReportOnly: &csp.Policy{
-		DefaultSrc: []string{"'self'"},
-		FrameSrc:   []string{"https://www.youtube.com", "https://speakerdeck.com"},
-		FontSrc:    []string{"'self'", "https://s3-us-west-2.amazonaws.com/sourcegraph-assets/fonts/"},
-		ScriptSrc:  []string{"'self'", "https://www.google-analytics.com", "https://platform.twitter.com", "https://speakerdeck.com"},
-		ImgSrc:     []string{"*"},
-		StyleSrc:   []string{"*"},
-		ReportURI:  "/.csp-report",
-	},
-}
-
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
 	auth.DeleteSession(w, r)
 	http.Redirect(w, r, "/", http.StatusFound)
 	return nil
+}
+
+func githubAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := github.NewContextWithAuthedClient(r.Context())
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

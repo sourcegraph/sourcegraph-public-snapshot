@@ -14,8 +14,9 @@ type scalar struct {
 	coerceInput func(input interface{}) (interface{}, error)
 }
 
-func (*scalar) Kind() string       { return "SCALAR" }
-func (t *scalar) TypeName() string { return t.name }
+func (*scalar) Kind() string          { return "SCALAR" }
+func (t *scalar) TypeName() string    { return t.name }
+func (t *scalar) Description() string { return "" }
 
 var intScalar = &scalar{
 	name:        "Int",
@@ -44,7 +45,16 @@ var floatScalar = &scalar{
 	name:        "Float",
 	reflectType: reflect.TypeOf(float64(0)),
 	coerceInput: func(input interface{}) (interface{}, error) {
-		return input, nil // TODO
+		switch input := input.(type) {
+		case int32:
+			return float64(input), nil
+		case int:
+			return float64(input), nil
+		case float64:
+			return input, nil
+		default:
+			return nil, fmt.Errorf("wrong type")
+		}
 	},
 }
 var stringScalar = &scalar{

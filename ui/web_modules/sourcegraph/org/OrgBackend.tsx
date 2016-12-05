@@ -1,7 +1,7 @@
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as OrgActions from "sourcegraph/org/OrgActions";
-import {OrgStore} from "sourcegraph/org/OrgStore";
-import {checkStatus, defaultFetch} from "sourcegraph/util/xhr";
+import { OrgStore } from "sourcegraph/org/OrgStore";
+import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 class OrganizationBackendClass {
 	fetch: any;
@@ -15,29 +15,29 @@ class OrganizationBackendClass {
 			const orgs = OrgStore.orgs;
 			if (orgs === null) {
 				this.fetch("/.api/orgs", {
-						method: "POST",
-						body: JSON.stringify({
-							Username: payload.username,
-						}),
-					})
+					method: "POST",
+					body: JSON.stringify({
+						Username: payload.username,
+					}),
+				})
 					.then(checkStatus)
 					.then((resp) => resp.json())
-					.catch((err) => ({Error: err}))
+					.catch((err) => ({ Error: err }))
 					.then((data) => {
 						Dispatcher.Stores.dispatch(new OrgActions.OrgsFetched(data.Orgs, payload.username));
 					});
 			}
 		} else if (payload instanceof OrgActions.WantOrgMembers) {
 			this.fetch("/.api/org-members", {
-					method: "POST",
-					body: JSON.stringify({
-						OrgName: payload.orgName,
-						OrgID: payload.orgID,
-					}),
-				})
+				method: "POST",
+				body: JSON.stringify({
+					OrgName: payload.orgName,
+					OrgID: payload.orgID,
+				}),
+			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
-				.catch((err) => ({Error: err}))
+				.catch((err) => ({ Error: err }))
 				.then((data) => {
 					Dispatcher.Stores.dispatch(new OrgActions.OrgMembersFetched(data.OrgMembers, payload.orgName));
 				});
@@ -54,8 +54,8 @@ class OrganizationBackendClass {
 			})
 				.then(checkStatus)
 				.then((resp) => resp.json())
-				.catch((err) => ({Error: err}))
-				.then(function(data: any): void {
+				.catch((err) => ({ Error: err }))
+				.then(function (data: any): void {
 					Dispatcher.Stores.dispatch(new OrgActions.OrgInvitationComplete(data));
 					OrganizationBackend.__onDispatch(new OrgActions.WantOrgMembers(payload.externalOrgName, payload.externalOrgID));
 				});

@@ -12,7 +12,7 @@ const interfaceUtils = require('./util/interface');
 const namespaceUtils = require('./util/namespace')
 
 program
-  .version('0.3.1')
+  .version('0.4.0')
   .usage('[options] <schema.json>')
   .option('-o --output-file [outputFile]', 'name for ouput file, defaults to graphqlInterfaces.d.ts', 'graphqlInterfaces.d.ts')
   .option('-n --namespace [namespace]', 'name for the namespace, defaults to "GQL"', 'GQL')

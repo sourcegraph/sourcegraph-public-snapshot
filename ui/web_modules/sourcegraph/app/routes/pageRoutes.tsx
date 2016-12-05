@@ -1,20 +1,19 @@
-import {rel} from "sourcegraph/app/routePatterns";
-import {AboutPage} from "sourcegraph/page/AboutPage";
-import {BetaPage} from "sourcegraph/page/BetaPage";
-import {ContactPage} from "sourcegraph/page/ContactPage";
-import {DocsPage} from "sourcegraph/page/DocsPage";
-import {MasterPlanPage} from "sourcegraph/page/MasterPlanPage";
-import {PricingPage} from "sourcegraph/page/PricingPage";
-import {PrivacyPage} from "sourcegraph/page/PrivacyPage";
-import {SecurityPage} from "sourcegraph/page/SecurityPage";
-import {TermsPage} from "sourcegraph/page/TermsPage";
+import { rel } from "sourcegraph/app/routePatterns";
+import { AboutPage } from "sourcegraph/page/AboutPage";
+import { BetaPage } from "sourcegraph/page/BetaPage";
+import { ContactPage } from "sourcegraph/page/ContactPage";
+import { DocsPage } from "sourcegraph/page/DocsPage";
+import { MasterPlanPage } from "sourcegraph/page/MasterPlanPage";
+import { PricingPage } from "sourcegraph/page/PricingPage";
+import { PrivacyPage } from "sourcegraph/page/PrivacyPage";
+import { SecurityPage } from "sourcegraph/page/SecurityPage";
+import { TermsPage } from "sourcegraph/page/TermsPage";
 
 export const pageRoutes: any[] = [
 	{
 		path: rel.about,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: AboutPage,
 			});
 		},
@@ -23,7 +22,6 @@ export const pageRoutes: any[] = [
 		path: rel.plan,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: MasterPlanPage,
 			});
 		},
@@ -32,7 +30,6 @@ export const pageRoutes: any[] = [
 		path: rel.beta,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: BetaPage,
 			});
 		},
@@ -41,7 +38,6 @@ export const pageRoutes: any[] = [
 		path: rel.contact,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: ContactPage,
 			});
 		},
@@ -50,7 +46,6 @@ export const pageRoutes: any[] = [
 		path: rel.security,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: SecurityPage,
 			});
 		},
@@ -59,7 +54,6 @@ export const pageRoutes: any[] = [
 		path: rel.pricing,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: PricingPage,
 			});
 		},
@@ -68,7 +62,6 @@ export const pageRoutes: any[] = [
 		path: rel.terms,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: TermsPage,
 			});
 		},
@@ -77,7 +70,6 @@ export const pageRoutes: any[] = [
 		path: rel.privacy,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: PrivacyPage,
 			});
 		},
@@ -86,7 +78,6 @@ export const pageRoutes: any[] = [
 		path: rel.docs,
 		getComponents: (location, callback) => {
 			callback(null, {
-				navContext: null,
 				main: DocsPage,
 			});
 		},

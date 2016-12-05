@@ -35,8 +35,9 @@ func init() {
 // minimalClient contains the minimal set of GitHub API methods needed
 // by this package.
 type minimalClient struct {
-	repos  githubRepos
-	search githubSearch
+	repos    githubRepos
+	search   githubSearch
+	activity githubActivity
 
 	// These are authenticated as the OAuth2 client application using
 	// HTTP Basic auth, not as the user. (Some GitHub API endpoints
@@ -48,8 +49,9 @@ type minimalClient struct {
 
 func newMinimalClient(isAuthedUser bool, userClient *github.Client, appClient *github.Client) *minimalClient {
 	return &minimalClient{
-		repos:  userClient.Repositories,
-		search: userClient.Search,
+		repos:    userClient.Repositories,
+		search:   userClient.Search,
+		activity: userClient.Activity,
 
 		appAuthorizations: appClient.Authorizations,
 
@@ -61,6 +63,7 @@ type githubRepos interface {
 	Get(owner, repo string) (*github.Repository, *github.Response, error)
 	GetByID(id int) (*github.Repository, *github.Response, error)
 	List(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error)
+	ListContributors(owner string, repository string, opt *github.ListContributorsOptions) ([]*github.Contributor, *github.Response, error)
 	CreateHook(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
 }
 
@@ -68,20 +71,22 @@ type githubSearch interface {
 	Repositories(query string, opt *github.SearchOptions) (*github.RepositoriesSearchResult, *github.Response, error)
 }
 
+type githubActivity interface {
+	ListStarred(user string, opt *github.ActivityListStarredOptions) ([]*github.StarredRepository, *github.Response, error)
+}
+
 type githubAuthorizations interface {
 	Revoke(clientID, token string) (*github.Response, error)
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
+	if resp != nil && resp.Request.Header.Get("Authorization") == "" { // do not track user rate limits
+		rateLimitRemainingGauge.Set(float64(resp.Remaining))
+	}
+
 	if err == nil {
 		return nil
 	}
-	if resp == nil {
-		log15.Debug("no response from github", "error", err)
-		return err
-	}
-
-	rateLimitRemainingGauge.Set(float64(resp.Remaining))
 
 	switch err.(type) {
 	case *github.RateLimitError:
@@ -91,6 +96,11 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		log15.Debug("triggered GitHub abuse detection mechanism", "error", err, "op", op)
 		abuseDetectionMechanismCounter.Inc()
 		return legacyerr.Errorf(legacyerr.ResourceExhausted, "triggered GitHub abuse detection mechanism: %s: %v", op, err)
+	}
+
+	if resp == nil {
+		log15.Debug("no response from github", "error", err)
+		return err
 	}
 
 	switch resp.StatusCode {

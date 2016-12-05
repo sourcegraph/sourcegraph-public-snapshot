@@ -1,7 +1,7 @@
 # Build docker images other than the main sourcegraph app.
 # NOTE: It is expected to run this from the project root.
 
-.PHONY: default gcloud xlang
+.PHONY: default gcloud xlang gitserver
 
 default:
 	@echo "Please select a target"
@@ -13,3 +13,6 @@ gcloud:
 
 xlang: gcloud
 	cd xlang && $(MAKE)
+
+gitserver: gcloud
+	cd cmd/gitserver && ./build.sh

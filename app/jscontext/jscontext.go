@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 
@@ -17,9 +16,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
+
+var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
@@ -36,6 +38,7 @@ type JSContext struct {
 	Emails            *sourcegraph.EmailAddrList `json:"emails"`
 	GitHubToken       *sourcegraph.ExternalToken `json:"gitHubToken"`
 	GoogleToken       *sourcegraph.ExternalToken `json:"googleToken"`
+	SentryDSN         string                     `json:"sentryDSN"`
 	IntercomHash      string                     `json:"intercomHash"`
 }
 
@@ -45,6 +48,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 	actor := auth.ActorFromContext(req.Context())
 
 	headers := make(map[string]string)
+	headers["x-sourcegraph-client"] = conf.AppURL.String()
 	sessionCookie := auth.SessionCookie(req)
 	if sessionCookie != "" {
 		headers["Authorization"] = httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
@@ -96,6 +100,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		},
 		GitHubToken:  gitHubToken,
 		GoogleToken:  googleToken,
+		SentryDSN:    sentryDSNFrontend,
 		IntercomHash: intercomHMAC(actor.UID),
 	}, nil
 }
@@ -106,7 +111,7 @@ func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
 }
 
-var intercomSecretKey = os.Getenv("SG_INTERCOM_SECRET_KEY")
+var intercomSecretKey = env.Get("SG_INTERCOM_SECRET_KEY", "", "secret key for the Intercom widget")
 
 func intercomHMAC(uid string) string {
 	if uid == "" || intercomSecretKey == "" {

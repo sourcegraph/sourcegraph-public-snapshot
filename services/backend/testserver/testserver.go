@@ -19,10 +19,8 @@ import (
 
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/srccmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/srclib/flagutil"
 )
 
 var (
@@ -41,7 +39,8 @@ var (
 // assigned ports and temporary directories that it cleans up after
 // Close() is called.
 type Server struct {
-	Config Config
+	Config []string
+	AppURL string
 
 	SGPATH string
 
@@ -59,20 +58,6 @@ type Server struct {
 	basePortListener net.Listener
 }
 
-type Config struct {
-	Flags          []interface{} // flags to `src`
-	Serve          cli.ServeCmd
-	ServeFlags     []interface{} // flags to `src serve`
-	ExtraEnvConfig []string      // Optional additional environment variables.
-}
-
-func (c *Config) args() ([]string, error) {
-	flags := c.Flags
-	flags = append(flags, "serve", &c.Serve)
-	flags = append(flags, c.ServeFlags...)
-	return makeCommandLineArgs(flags...)
-}
-
 func (s *Server) allEnvConfig() []string {
 	var env []string
 	for _, v := range os.Environ() {
@@ -87,7 +72,7 @@ func (s *Server) allEnvConfig() []string {
 	env = append(env, s.serverEnvConfig()...)
 	env = append(env, s.dbEnvConfig()...)
 	env = append(env, s.srclibEnvConfig()...)
-	env = append(env, s.Config.ExtraEnvConfig...)
+	env = append(env, s.Config...)
 	return env
 }
 
@@ -166,7 +151,7 @@ func (s *Server) Close() {
 }
 
 func (s *Server) AbsURL(rest string) string {
-	return strings.TrimSuffix(s.Config.Serve.AppURL, "/") + rest
+	return strings.TrimSuffix(s.AppURL, "/") + rest
 }
 
 var (
@@ -254,14 +239,16 @@ func NewServer() (*Server, context.Context) {
 func NewUnstartedServerTLS() (*Server, context.Context) {
 	s, ctx := newUnstartedServer("https")
 
-	s.Config.Serve.KeyFile = filepath.Join(s.SGPATH, "localhost.key")
-	s.Config.Serve.CertFile = filepath.Join(s.SGPATH, "localhost.crt")
-	if err := ioutil.WriteFile(s.Config.Serve.KeyFile, localhostKey, 0600); err != nil {
+	keyFile := filepath.Join(s.SGPATH, "localhost.key")
+	certFile := filepath.Join(s.SGPATH, "localhost.crt")
+	if err := ioutil.WriteFile(keyFile, localhostKey, 0600); err != nil {
 		log.Fatal(err)
 	}
-	if err := ioutil.WriteFile(s.Config.Serve.CertFile, localhostCert, 0600); err != nil {
+	if err := ioutil.WriteFile(certFile, localhostCert, 0600); err != nil {
 		log.Fatal(err)
 	}
+	s.Config = append(s.Config, "SRC_TLS_KEY="+keyFile)
+	s.Config = append(s.Config, "SRC_TLS_CERT="+certFile)
 
 	return s, ctx
 }
@@ -273,7 +260,7 @@ func NewUnstartedServer() (*Server, context.Context) {
 func newUnstartedServer(scheme string) (*Server, context.Context) {
 	var s Server
 
-	s.Config.Flags = append(s.Config.Flags, "-v", "--log-level", "dbug")
+	s.Config = append(s.Config, "SRC_LOG_LEVEL=dbug")
 
 	// SGPATH
 	sgpath, err := ioutil.TempDir("", "sgtest-sgpath")
@@ -297,11 +284,11 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	}
 
 	// HTTP
-	s.Config.Serve.HTTPAddr = fmt.Sprintf(":%d", httpPort)
-	s.Config.Serve.HTTPSAddr = fmt.Sprintf(":%d", httpsPort)
+	s.Config = append(s.Config, fmt.Sprintf("SRC_HTTP_ADDR=:%d", httpPort))
+	s.Config = append(s.Config, fmt.Sprintf("SRC_HTTPS_ADDR=:%d", httpsPort))
 
 	// App
-	s.Config.Serve.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
+	s.AppURL = fmt.Sprintf("%s://localhost:%d/", scheme, mainHTTPPort)
 
 	reposDir := filepath.Join(sgpath, "repos")
 	if err := os.MkdirAll(reposDir, 0700); err != nil {
@@ -309,10 +296,11 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	}
 
 	// FS
-	s.Config.Serve.ReposDir = reposDir
+	s.Config = append(s.Config, "SRC_REPOS_DIR="+reposDir)
+	s.Config = append(s.Config, "SRC_GIT_SERVERS=none")
 
 	// Graphstore
-	s.Config.Serve.GraphStoreOpts.Root = reposDir
+	s.Config = append(s.Config, "SRC_GRAPHSTORE_ROOT="+reposDir)
 
 	s.Ctx = context.Background()
 
@@ -334,15 +322,9 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 func (s *Server) Start() error {
 	// Set flags on server cmd.
-	sgxArgs, err := s.Config.args()
-	if err != nil {
-		return err
-	}
 	s.ServerCmd.Env = s.allEnvConfig()
-	s.ServerCmd.Args = append(s.ServerCmd.Args, sgxArgs...)
 
 	if *verbose {
-		log.Printf("testapp cmd     = %v", s.ServerCmd.Args)
 		log.Printf("testapp cmd.Env = %v", s.ServerCmd.Env)
 	}
 
@@ -361,16 +343,16 @@ func (s *Server) Start() error {
 		select {
 		case <-cmdFinished:
 			if ps := s.ServerCmd.ProcessState; ps != nil && ps.Exited() {
-				return fmt.Errorf("server PID %d (%s) exited unexpectedly: %v", s.ServerCmd.Process.Pid, s.Config.Serve.AppURL, ps.Sys())
+				return fmt.Errorf("server PID %d (%s) exited unexpectedly: %v", s.ServerCmd.Process.Pid, s.AppURL, ps.Sys())
 			}
 		default:
 			// busy wait
 		}
 		if time.Since(start) > maxWait {
 			s.Close()
-			return fmt.Errorf("timeout waiting for test server at %s to start (%s)", s.Config.Serve.AppURL, maxWait)
+			return fmt.Errorf("timeout waiting for test server at %s to start (%s)", s.AppURL, maxWait)
 		}
-		if resp, err := http.Get(s.Config.Serve.AppURL); err == nil {
+		if resp, err := http.Get(s.AppURL); err == nil {
 			resp.Body.Close()
 			break
 		}
@@ -417,26 +399,6 @@ func SrclibSampleToolchain(buildDocker bool) (dir, srclibpath, dockerImage strin
 	}
 
 	return
-}
-
-// makeCommandLineArgs takes a list of EITHER (1) flag structs (like
-// client.CredentialsOpts) or (2) strings (which denote subcommands) and
-// converts them into command-line arguments.
-func makeCommandLineArgs(flagsAndSubcommands ...interface{}) ([]string, error) {
-	var args []string
-	for _, v := range flagsAndSubcommands {
-		switch v := v.(type) {
-		case string:
-			args = append(args, v)
-		default:
-			optArgs, err := flagutil.MarshalArgs(v)
-			if err != nil {
-				return nil, err
-			}
-			args = append(args, optArgs...)
-		}
-	}
-	return args, nil
 }
 
 // localhostCert is a PEM-encoded TLS cert with SAN IPs

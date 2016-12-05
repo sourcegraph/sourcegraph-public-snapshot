@@ -3,14 +3,11 @@
 package inventory
 
 import (
+	"context"
 	"os"
 	"sort"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
-
-	"context"
-
-	"github.com/kr/fs"
 )
 
 // Inventory summarizes a tree's contents (e.g., which programming
@@ -33,44 +30,23 @@ type Lang struct {
 	Type string `json:"Type,omitempty"`
 }
 
-// Scan performs an inventory of the tree at fs.
-//
-// Scan respects the ctx's deadline. If it exceeds the deadline,
-// it will return a partial inventory and the error value
-// context.DeadlineExceeded.
-func Scan(ctx context.Context, vfs fs.FileSystem) (*Inventory, error) {
+var byFilename = filelang.Langs.CompileByFilename()
+
+// Get performs an inventory of the files passed in.
+func Get(ctx context.Context, files []os.FileInfo) (*Inventory, error) {
 	langs := map[string]uint64{}
-	var err error
 
-	w := fs.WalkFS("/", vfs)
-Outer:
-	for w.Step() {
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
-			// Carry through this error to the final "return"
-			// statement, so that we return a partial result.
-			break Outer
-		default:
-		}
-
-		if err := w.Err(); err != nil {
-			if w.Path() != "/" && (os.IsNotExist(err) || os.IsPermission(err)) {
-				continue
-			}
-			return nil, err
-		}
-
-		fi := w.Stat()
-		if filelang.IsVendored(w.Path(), w.Stat().Mode().IsDir()) {
-			w.SkipDir()
-			continue
-		}
-		if fi.Mode().IsRegular() {
-			matchedLangs := filelang.Langs.ByFilename(fi.Name())
-			if len(matchedLangs) > 0 {
-				langs[matchedLangs[0].Name] += uint64(fi.Size())
-			}
+	for _, file := range files {
+		// NOTE: We used to skip vendored files, but the
+		// filelang.IsVendored function is slow (benchmark goes from
+		// 160ms to 0.5ms without the check). Currently Inventory is
+		// just used to determine which languages are in a repo, the
+		// relative usage (TotalBytes) is not exposed or used. So
+		// including vendored files should be fine for the aggregate
+		// stats.
+		matchedLangs := byFilename(file.Name())
+		if len(matchedLangs) > 0 {
+			langs[matchedLangs[0].Name] += uint64(file.Size())
 		}
 	}
 
@@ -90,7 +66,7 @@ Outer:
 		}
 	}
 
-	return &inv, err
+	return &inv, nil
 }
 
 // PrimaryProgrammingLanguage returns the primary programming language
@@ -107,9 +83,14 @@ func (inv *Inventory) PrimaryProgrammingLanguage() string {
 
 type langsByTotalBytes []*Lang
 
-func (v langsByTotalBytes) Len() int           { return len(v) }
-func (v langsByTotalBytes) Less(i, j int) bool { return v[i].TotalBytes < v[j].TotalBytes }
-func (v langsByTotalBytes) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
+func (v langsByTotalBytes) Len() int      { return len(v) }
+func (v langsByTotalBytes) Swap(i, j int) { v[i], v[j] = v[j], v[i] }
+func (v langsByTotalBytes) Less(i, j int) bool {
+	if v[i].TotalBytes == v[j].TotalBytes {
+		return v[i].Name < v[j].Name
+	}
+	return v[i].TotalBytes < v[j].TotalBytes
+}
 
 // LangsOfType returns only langs of the given type (matching the Type
 // field).

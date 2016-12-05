@@ -23,6 +23,15 @@ import (
 // changed. Doing so would require a database migration.
 type dbLang uint16
 
+func (d dbLang) String() string {
+	for lang, id := range toDBLang_ {
+		if id == d {
+			return lang
+		}
+	}
+	panic("invalid DB lang constant")
+}
+
 const (
 	dbLangGo     = 1
 	dbLangJava   = 2

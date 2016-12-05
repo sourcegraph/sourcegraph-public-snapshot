@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+        "app/*": ["app/*"],
+        "chrome/*": ["chrome/*"]
+    },
+    "lib": ["es2016", "dom"],
+    "types": ["mocha"],
+    "jsx": "react",
+    "allowJs": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "experimentalDecorators": true,
+    "noEmit": true
+  },
+  "exclude": [
+    "node_modules",
+    "scripts"
+  ]
+}

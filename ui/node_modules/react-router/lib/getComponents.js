@@ -4,11 +4,7 @@ exports.__esModule = true;
 
 var _AsyncUtils = require('./AsyncUtils');
 
-var _makeStateWithLocation = require('./makeStateWithLocation');
-
-var _makeStateWithLocation2 = _interopRequireDefault(_makeStateWithLocation);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _PromiseUtils = require('./PromiseUtils');
 
 function getComponentsForRoute(nextState, route, callback) {
   if (route.component || route.components) {
@@ -17,16 +13,14 @@ function getComponentsForRoute(nextState, route, callback) {
   }
 
   var getComponent = route.getComponent || route.getComponents;
-  if (!getComponent) {
+  if (getComponent) {
+    var componentReturn = getComponent.call(route, nextState, callback);
+    if ((0, _PromiseUtils.isPromise)(componentReturn)) componentReturn.then(function (component) {
+      return callback(null, component);
+    }, callback);
+  } else {
     callback();
-    return;
   }
-
-  var location = nextState.location;
-
-  var nextStateWithLocation = (0, _makeStateWithLocation2.default)(nextState, location);
-
-  getComponent.call(route, nextStateWithLocation, callback);
 }
 
 /**

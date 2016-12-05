@@ -1,18 +1,17 @@
-// tslint:disable: typedef
 import * as classNames from "classnames";
 import * as React from "react";
-import Helmet from "react-helmet";
-import {context} from "sourcegraph/app/context";
-import {Button, Heading, Panel} from "sourcegraph/components";
+import { context } from "sourcegraph/app/context";
+import { Button, Heading, Panel } from "sourcegraph/components";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as colors from "sourcegraph/components/styles/_colors.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import {GitHubLogo} from "sourcegraph/components/symbols";
-import {colors as jsColors, whitespace} from "sourcegraph/components/utils";
-import {EditorDemo} from "sourcegraph/dashboard/EditorDemo";
+import { GitHubLogo } from "sourcegraph/components/symbols";
+import { colors as jsColors, whitespace } from "sourcegraph/components/utils";
+import { EditorDemo } from "sourcegraph/dashboard/EditorDemo";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {EventLogger} from "sourcegraph/util/EventLogger";
+import { EventLogger } from "sourcegraph/util/EventLogger";
 
 interface Props {
 	location?: any;
@@ -31,37 +30,37 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		this._installChromeExtensionClicked = this._installChromeExtensionClicked.bind(this);
 	}
 
-	_successHandler() {
-		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({page_name: "ChromeExtensionOnboarding"});
+	_successHandler(): void {
+		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({ page_name: "ChromeExtensionOnboarding" });
 		EventLogger.setUserProperty("installed_chrome_extension", "true");
 		// Syncs the our site analytics tracking with the chrome extension tracker.
 		EventLogger.updateTrackerWithIdentificationProps();
 		this._continueOnboarding();
 	}
 
-	_failHandler(msg) {
-		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({page_name: "ChromeExtensionOnboarding"});
+	_failHandler(): void {
+		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "ChromeExtensionOnboarding" });
 		EventLogger.setUserProperty("installed_chrome_extension", "false");
 	}
 
-	_installChromeExtensionClicked() {
-		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({page_name: "ChromeExtensionOnboarding"});
+	_installChromeExtensionClicked(): void {
+		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "ChromeExtensionOnboarding" });
 
 		if (!!global.chrome) {
-			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({page_name: "ChromeExtensionOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({ page_name: "ChromeExtensionOnboarding" });
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
-			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({page_name: "ChromeExtensionOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "ChromeExtensionOnboarding" });
 			window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");
 		}
 	}
 
-	_skipClicked() {
-		AnalyticsConstants.Events.ChromeExtensionSkipCTA_Clicked.logEvent({page_name: "ChromeExtensionOnboarding"});
+	_skipClicked(): void {
+		AnalyticsConstants.Events.ChromeExtensionSkipCTA_Clicked.logEvent({ page_name: "ChromeExtensionOnboarding" });
 		this._continueOnboarding();
 	}
 
-	_continueOnboarding() {
+	_continueOnboarding(): void {
 		this.props.completeStep();
 	}
 
@@ -74,7 +73,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 		if (isMobile || !isChrome) {
-			AnalyticsConstants.Events.ChromeExtensionUnsupportedBrowser_Failed.logEvent({page_name: "ChromeExtensionOnboarding"});
+			AnalyticsConstants.Events.ChromeExtensionUnsupportedBrowser_Failed.logEvent({ page_name: "ChromeExtensionOnboarding" });
 			return false;
 		}
 
@@ -83,7 +82,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 
 	_isChromeExtensionInstalled(): boolean {
 		// Check for a invisible element injected by the extension on https://(www.)?sourcegraph.com/*
-		return document.getElementById("sourcegraph-app-bootstrap") !== null;
+		return document.getElementById("sourcegraph-app-background") !== null;
 	}
 
 	render(): JSX.Element | null {
@@ -94,10 +93,10 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 
 		return (
 			<div>
-				<Helmet title="Home" />
+				<PageTitle title="Home" />
 				<div className={styles.onboarding_container}>
 					<Panel className={classNames(base.pb3, base.ph4, base.ba, base.br2, colors.b__cool_pale_gray)}>
-						<Heading style={{paddingTop: whitespace[4]}} align="center" level={3}>
+						<Heading style={{ paddingTop: whitespace[4] }} align="center" level={3}>
 							Browse code smarter on Sourcegraph
 						</Heading>
 						<div className={styles.user_actions} style={{ maxWidth: "360px" }}>
@@ -107,13 +106,13 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 						</div>
 						{this._exampleProps()}
 						<div className={classNames(styles.user_actions)}>
-						<div className={classNames(styles.inline_actions, base.pt3)} style={{verticalAlign: "top"}}>
-							<GitHubLogo width={70} color={jsColors.coolGray3()} className={classNames(base.hidden_s)} style={{marginRight: "-20px", verticalAlign: "top"}}/>
-							<img width={70} className={classNames(base.hidden_s)} src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
-						</div>
-						<div className={classNames(styles.inline_actions, base.pt2, base.pl3)} style={{maxWidth: "340px"}}>
-							<Heading align="left" level={6}>
-								Want code intelligence while browsing GitHub?
+							<div className={classNames(styles.inline_actions, base.pt3)} style={{ verticalAlign: "top" }}>
+								<GitHubLogo width={70} color={jsColors.coolGray3()} className={classNames(base.hidden_s)} style={{ marginRight: "-20px", verticalAlign: "top" }} />
+								<img width={70} className={classNames(base.hidden_s)} src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
+							</div>
+							<div className={classNames(styles.inline_actions, base.pt2, base.pl3)} style={{ maxWidth: "340px" }}>
+								<Heading align="left" level={6}>
+									Want code intelligence while browsing GitHub?
 							</Heading>
 								<p className={classNames(typography.tl, base.mt3, typography.f6)}>
 									Browse GitHub with instant documentation, jump to definition, and intelligent code search with the Sourcegraph for GitHub browser extension.

@@ -99,20 +99,6 @@ type Origin struct {
 	APIBaseURL string `json:"APIBaseURL,omitempty"`
 }
 
-// CombinedStatus is the combined status (i.e., incorporating statuses from all
-// contexts) of the repository at a specific rev.
-type CombinedStatus struct {
-	// Rev is the revision that this status describes. It is set mutually exclusive with CommitID.
-	Rev string `json:"Rev,omitempty"`
-	// CommitID is the full commit ID of the commit this status describes. It is set mutually exclusively with Rev.
-	CommitID string `json:"CommitID,omitempty"`
-	// State is the combined status of the repository. Possible values are: failure,
-	// pending, or success.
-	State string `json:"State,omitempty"`
-	// Statuses are the statuses for each context.
-	Statuses []*RepoStatus `json:"Statuses,omitempty"`
-}
-
 // ListOptions specifies general pagination options for fetching a list of results.
 type ListOptions struct {
 	PerPage int32 `json:"PerPage,omitempty" url:",omitempty"`
@@ -211,6 +197,12 @@ type Repo struct {
 	Permissions *RepoPermissions `json:"Permissions,omitempty"`
 }
 
+type Contributor struct {
+	Login         string `json:"Login,omitempty"`
+	AvatarURL     string `json:"AvatarURL,omitempty"`
+	Contributions int    `json:"Contributions,omitempty"`
+}
+
 // RepoPermissions describes the actions that a user may perform on a
 // repo. Currently, the definition of these permissions directly maps
 // to GitHub permissions, except for "Pull", which means read access.
@@ -279,32 +271,6 @@ type RepoRevSpec struct {
 // RepoSpec specifies a repository.
 type RepoSpec struct {
 	ID int32 `json:"ID,omitempty"`
-}
-
-// RepoStatus is the status of the repository at a specific rev (in a single
-// context).
-type RepoStatus struct {
-	// State is the current status of the repository. Possible values are: pending,
-	// success, error, or failure.
-	State string `json:"State,omitempty"`
-	// TargetURL is the URL of the page representing this status. It will be linked
-	// from the UI to allow users to see the source of the status.
-	TargetURL string `json:"TargetURL,omitempty"`
-	// Description is a short, high-level summary of the status.
-	Description string `json:"Description,omitempty"`
-	// A string label to differentiate this status from the statuses of other systems.
-	Context   string    `json:"Context,omitempty"`
-	CreatedAt time.Time `json:"CreatedAt"`
-	UpdatedAt time.Time `json:"UpdatedAt"`
-}
-
-type RepoStatusList struct {
-	RepoStatuses []*RepoStatus `json:"RepoStatuses,omitempty"`
-}
-
-type RepoStatusesCreateOp struct {
-	Repo   RepoRevSpec `json:"Repo"`
-	Status RepoStatus  `json:"Status"`
 }
 
 type RepoList struct {
@@ -1013,6 +979,9 @@ type SourceDef struct {
 
 	// DefVersion is the version of the source that references the def.
 	DefVersion string
+
+	// DefFile is the filepath in the source at which the def is located.
+	DefFile string
 
 	// DefName and DefContainerName of the definition whose references are
 	// being described.

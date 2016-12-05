@@ -8,18 +8,21 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
+	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -43,7 +46,7 @@ func init() {
 	prometheus.MustRegister(xlangRequestDuration)
 }
 
-var xlangNewClient = func() (xlangClient, error) { return xlang.NewDefaultClient() }
+var xlangNewClient = func() (xlangClient, error) { return xlang.UnsafeNewDefaultClient() }
 
 type xlangClient interface {
 	Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error
@@ -52,26 +55,61 @@ type xlangClient interface {
 }
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
-	v := mux.Vars(r)
-	method := v["LSPMethod"]
-	return serveXLangMethod(r.Context(), w, method, r.Body)
+	return serveXLangMethod(r.Context(), w, r.Body, r.Header.Get("x-sourcegraph-client"))
 }
 
 // serveXLangMethod was split out from serveXLang to support the old
 // hover-info and jump-to-def httpapi endpoints. Once those are gone we
 // extract this back into serveXLang.
-func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string, body io.Reader) (err error) {
+func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader, client string) (err error) {
 	start := time.Now()
 	success := true
+	method := "unknown"
 	mode := "unknown"
+	ev := honey.Event("xlang")
 	defer func() {
 		duration := time.Now().Sub(start)
-		labels := prometheus.Labels{
-			"success": fmt.Sprintf("%t", err == nil && success),
-			"method":  method,
-			"mode":    mode,
+
+		// We shouldn't make the distinction of user error, since our
+		// frontend code shouldn't send "invalid" requests. An example
+		// is the browser-ext sending hover requests for private repos
+		// we are not authorized to view. For now we will skip
+		// recording user errors in our apdex scores, but record them
+		// in honeycomb for deep
+		// diving. https://github.com/sourcegraph/sourcegraph/issues/2362
+		isUserError := false
+		if err != nil && errcode.HTTP(err) < 500 {
+			isUserError = true
 		}
-		xlangRequestDuration.With(labels).Observe(duration.Seconds())
+		if !isUserError {
+			labels := prometheus.Labels{
+				"success": fmt.Sprintf("%t", err == nil && success),
+				"method":  method,
+				"mode":    mode,
+			}
+			xlangRequestDuration.With(labels).Observe(duration.Seconds())
+		}
+
+		if honey.Enabled() {
+			status := strconv.FormatBool(err == nil && success)
+			if isUserError {
+				status = "usererror"
+			}
+			ev.AddField("success", status)
+			ev.AddField("method", method)
+			ev.AddField("mode", mode)
+			ev.AddField("duration_ms", duration.Seconds()*1000)
+			ev.AddField("client", client)
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
+			if actor := auth.ActorFromContext(ctx); actor != nil {
+				ev.AddField("uid", actor.UID)
+				ev.AddField("login", actor.Login)
+				ev.AddField("email", actor.Email)
+			}
+			ev.Send()
+		}
 	}()
 
 	if os.Getenv("DISABLE_XLANG_HTTP_GATEWAY") != "" {
@@ -86,7 +124,8 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		return err
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP HTTP gateway: "+reqs[1].Method)
+	method = reqs[1].Method
+	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP HTTP gateway: "+method)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -117,6 +156,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 	if err != nil {
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
 	}
+	addRootPathFields(ev, rootPathURI)
 	if initParams.Mode != "" {
 		mode = initParams.Mode
 	}
@@ -124,7 +164,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 	// Check consistency against the URL. The URL route params are for
 	// ease of debugging only, but it'd be confusing if they could
 	// diverge from the actual jsonrpc2 request.
-	if method != strings.TrimSuffix(reqs[1].Method, "?prepare") {
+	if method != reqs[1].Method {
 		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", method, reqs[1].Method)}
 	}
 
@@ -189,6 +229,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 				// lightstep.
 				ext.Error.Set(span, true)
 				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
+				ev.AddField("lsp_error", e.Message)
 				success = false
 				if !handlerutil.DebugMode {
 					e.Message = "(error message omitted)"
@@ -200,4 +241,16 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, method string,
 		}
 	}
 	return writeJSON(w, resps)
+}
+
+func addRootPathFields(ev *libhoney.Event, u *uri.URI) {
+	// u usually looks something like git://github.com/foo/bar?commithash
+	ev.AddField("repo", u.Host+u.Path)
+	ev.AddField("commit", u.RawQuery)
+	if u.Host == "github.com" && len(u.Path) > 1 {
+		i := strings.Index(u.Path[1:], "/")
+		if i > 0 {
+			ev.AddField("repo_org", u.Path[1:i+1])
+		}
+	}
 }

@@ -3,10 +3,8 @@
 
 export const vars: string;
 export const base: string;
-export const colors: string;
 export const grid: string;
 export const typography: string;
-export const GlobalNav: string;
 export const media_sm: string;
 export const nav: string;
 export const repoName: string;

@@ -1,6 +1,6 @@
-import {hover, keyframes, style as gStyle} from "glamor";
+import { hover, keyframes, style as gStyle } from "glamor";
 import * as React from "react";
-import {colors} from "sourcegraph/components/utils";
+import { colors } from "sourcegraph/components/utils";
 
 interface Props {
 	color?: "blue" | "purple" | "orange" | "green";
@@ -14,7 +14,7 @@ const hoverSx = hover({
 	transform: "scale(1.2)",
 });
 
-export function CoachMark ({
+export function CoachMark({
 	color = "blue",
 	onClick,
 	pulseColor = "blue",
@@ -27,10 +27,10 @@ export function CoachMark ({
 	const pulseShadowFinish = `0 0 0 50px ${colors[pulseColor](0)}`;
 
 	const bounce = keyframes({
-			"100%": { boxShadow: `${baseShadow}, ${pulseShadowFinish}` },
+		"100%": { boxShadow: `${baseShadow}, ${pulseShadowFinish}` },
 	});
 
-	const sx = gStyle(Object.assign({},
+	const sx = gStyle(Object.assign(
 		{
 			animation: active ? `${bounce} 2.5s infinite` : "",
 			background: colors[color](),

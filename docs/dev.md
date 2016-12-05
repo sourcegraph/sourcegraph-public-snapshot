@@ -10,13 +10,12 @@ development environment. Here's what you need:
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [Go](https://golang.org/doc/install) (v1.7.0 or higher)
-- [node](https://nodejs.org/en/download/) (v4.0.0 or higher)
+- [Node JS](https://nodejs.org/en/download/) (v5.6.0 or higher)
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
   - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
-- [Node JS](http://nodejs.org/)
 - A test user account on GitHub
   - this should be a separate GitHub user account for development whose username has the suffix `-test`
   - get somebody to add you to the "sourcegraphtest" GitHub organization
@@ -49,16 +48,9 @@ Running the preceding commands will build and install the `src` binary in `$GOPA
 [Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
 steps to [initialize and configure your database](https://github.com/sourcegraph/sourcegraph/blob/master/docs/storage.md).
 
-Finally, issue the following commands to set up your database tables:
-
-```
-src pgsql --db=app create
-src pgsql --db=graph create
-```
-
 ## Redis
 
-You can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed, however, the easiest way to get Redis up and running is probably:
+You can follow the [instructions to install Redis natively](http://redis.io/topics/quickstart). If you have Docker installed and are running Linux, however, the easiest way to get Redis up and running is probably:
 
 ```
 sudo dockerd # if docker isn't already running

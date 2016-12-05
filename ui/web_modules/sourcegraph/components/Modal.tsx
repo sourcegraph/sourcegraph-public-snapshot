@@ -1,10 +1,10 @@
 import * as React from "react";
-import {InjectedRouter} from "react-router";
-import {EventListener} from "sourcegraph/Component";
+import { InjectedRouter } from "react-router";
+import { EventListener } from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import {Location} from "sourcegraph/Location";
+import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import {renderedOnBody} from "sourcegraph/util/renderedOnBody";
+import { renderedOnBody } from "sourcegraph/util/renderedOnBody";
 
 interface Props {
 	onDismiss?: () => void;
@@ -16,6 +16,8 @@ interface State {
 }
 
 export class ModalComp extends React.Component<Props, State> {
+	private htmlElement: HTMLElement;
+
 	constructor(props: Props) {
 		super(props);
 		this.state = {
@@ -23,6 +25,7 @@ export class ModalComp extends React.Component<Props, State> {
 		};
 		this._onClick = this._onClick.bind(this);
 		this._handleKeydown = this._handleKeydown.bind(this);
+		this.bindBackingInstance = this.bindBackingInstance.bind(this);
 	}
 
 	componentDidMount(): void {
@@ -31,13 +34,11 @@ export class ModalComp extends React.Component<Props, State> {
 	}
 
 	componentWillUnmount(): void {
-		if (this.state.originalOverflow !== document.body.style.overflowY) {
-			document.body.style.overflow = this.state.originalOverflow;
-		}
+		document.body.style.overflow = this.state.originalOverflow;
 	}
 
 	_onClick(e: React.MouseEvent<HTMLElement>): void {
-		if (e.target === this.refs["modal_container"]) {
+		if (e.target === this.htmlElement) {
 			if (this.props.onDismiss) {
 				this.props.onDismiss();
 			}
@@ -52,15 +53,17 @@ export class ModalComp extends React.Component<Props, State> {
 		}
 	}
 
+	bindBackingInstance(el: HTMLElement): void {
+		this.htmlElement = el;
+	}
+
 	render(): JSX.Element | null {
-		return (
-			<div ref="modal_container"
-					className={styles.container}
-					onClick={this._onClick}>
-				{this.props.children}
-				<EventListener target={global.document} event="keydown" callback={this._handleKeydown} />
-			</div>
-		);
+		return <div className={styles.container}
+			ref={this.bindBackingInstance}
+			onClick={this._onClick}>
+			{this.props.children}
+			<EventListener target={global.document} event="keydown" callback={this._handleKeydown} />
+		</div>;
 	}
 }
 
@@ -74,7 +77,7 @@ export function setLocationModalState(router: InjectedRouter, location: Location
 		{
 			state: Object.assign({},
 				location.state,
-				{ modal: visible ? modalName : null},
+				{ modal: visible ? modalName : null },
 			),
 		})
 	);
@@ -89,7 +92,7 @@ export function dismissModal(modalName: string, location: Location, router: Inje
 		if (eventObject) {
 			eventObject.logEvent();
 		} else {
-			throw new Error("No event logged on modal dismissal. Set the appropriate event type in AnalyticsConstants.tsx for modalName: \"" + modalName + "\"");
+			// TODO(dan) ensure proper params
 		}
 
 		setLocationModalState(router, location, modalName, false);
@@ -112,7 +115,7 @@ interface LocationStateModalProps {
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
 export function LocationStateModal({location, modalName, children, onDismiss, style, router}: LocationStateModalProps): JSX.Element {
-	if (!location.state || !(location.state as any).modal || (location.state as any).modal  !== modalName) {
+	if (!location.state || !(location.state as any).modal || (location.state as any).modal !== modalName) {
 		return <span />;
 	}
 

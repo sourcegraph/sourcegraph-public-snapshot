@@ -2,11 +2,11 @@
 
 import * as React from "react";
 
-import {Component} from "sourcegraph/Component";
+import { Component } from "sourcegraph/Component";
 
-import {Link} from "react-router";
-import {urlTo} from "sourcegraph/util/urlTo";
-import {breadcrumb} from "sourcegraph/util/breadcrumb";
+import { Link } from "react-router";
+import { urlTo } from "sourcegraph/util/urlTo";
+import { breadcrumb } from "sourcegraph/util/breadcrumb";
 
 import * as styles from "sourcegraph/components/styles/breadcrumb.css";
 
@@ -31,7 +31,7 @@ export class RepoNavContext extends Component<Props, State> {
 			`/${this.state.treePath}`,
 			(i) => <span key={i} className={styles.sep}>/</span>,
 			(path, component, i, isLast) => (
-				<Link to={urlTo("tree", Object.assign({}, this.state.params, {splat: [this.state.params.splat[0], pathParts.slice(0, i).join("/")]}))}
+				<Link to={urlTo("tree", Object.assign({}, this.state.params, { splat: [this.state.params.splat[0], pathParts.slice(0, i).join("/")] }))}
 					key={i}
 					className={isLast ? styles.active : styles.inactive}>
 					{component}

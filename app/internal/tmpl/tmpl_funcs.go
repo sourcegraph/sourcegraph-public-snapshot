@@ -5,20 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	htmpl "html/template"
+	"strconv"
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/appconf"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
+var disableSupportServices, _ = strconv.ParseBool(env.Get("SRC_APP_DISABLE_SUPPORT_SERVICES", "false", "disable 3rd party support services, including Zendesk, FullStory, Google Analytics"))
+var googleAnalyticsTrackingID = env.Get("GOOGLE_ANALYTICS_TRACKING_ID", "", "Google Analytics tracking ID (UA-########-#)")
+
 var FuncMap = htmpl.FuncMap{
-	"appconf": func() interface{} { return &appconf.Flags },
+	"disableSupportServices":    func() bool { return disableSupportServices },
+	"googleAnalyticsTrackingID": func() string { return googleAnalyticsTrackingID },
 
 	"json": func(v interface{}) (string, error) {
 		b, err := json.Marshal(v)
@@ -27,8 +31,6 @@ var FuncMap = htmpl.FuncMap{
 		}
 		return string(b), nil
 	},
-
-	"customFeedbackForm": func() htmpl.HTML { return appconf.Flags.CustomFeedbackForm },
 
 	"maxLen": func(maxLen int, s string) string {
 		if len(s) <= maxLen {
@@ -39,10 +41,6 @@ var FuncMap = htmpl.FuncMap{
 
 	"assetURL":                assets.URL,
 	"mainJavaScriptBundleURL": assets.MainJavaScriptBundleURL,
-
-	"googleAnalyticsTrackingID": func() string { return appconf.Flags.GoogleAnalyticsTrackingID },
-
-	"fileSearchDisabled": func() bool { return appconf.Flags.DisableSearch },
 
 	"shortDoc": func(s string) string {
 		// Return first sentence if fewer than 128 chars. Otherwise,
@@ -64,8 +62,6 @@ var FuncMap = htmpl.FuncMap{
 
 		return short
 	},
-
-	"publicRavenDSN": func() string { return conf.PublicRavenDSN },
 
 	"urlToTrace": func(ctx context.Context) string {
 		if span := opentracing.SpanFromContext(ctx); span != nil {

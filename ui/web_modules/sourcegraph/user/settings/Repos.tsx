@@ -1,25 +1,20 @@
 import * as debounce from "lodash/debounce";
 import * as React from "react";
-import {Repo} from "sourcegraph/api/index";
-import {context} from "sourcegraph/app/context";
-import {Button, Heading, Input} from "sourcegraph/components";
-import {GitHubAuthButton} from "sourcegraph/components/GitHubAuthButton";
-import {GoogleAuthButton} from "sourcegraph/components/GoogleAuthButton";
-import {RepoLink} from "sourcegraph/components/RepoLink";
-import * as base from "sourcegraph/components/styles/_base.css";
-import {whitespace} from "sourcegraph/components/utils/whitespace";
-import {Location} from "sourcegraph/Location";
-import * as styles from "sourcegraph/user/settings/styles/Repos.css";
-import {privateGitHubOAuthScopes, privateGoogleOAuthScopes} from "sourcegraph/util/urlTo";
+import { context } from "sourcegraph/app/context";
+import { FlexContainer, Heading, Input, RepositoryCard } from "sourcegraph/components";
+import { GitHubAuthButton, GoogleAuthButton } from "sourcegraph/components";
+import { Spinner } from "sourcegraph/components/symbols";
+import { layout, whitespace } from "sourcegraph/components/utils";
+import { Location } from "sourcegraph/Location";
+import { Features } from "sourcegraph/util/features";
+import { privateGitHubOAuthScopes, privateGoogleOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
-	repos: Repo[] | null;
+	repos: GQL.IRemoteRepository[] | null;
 	location?: Location;
 }
 
-type State = any;
-
-export class Repos extends React.Component<Props, State> {
+export class Repos extends React.Component<Props, {}> {
 	_filterInput: any;
 
 	constructor(props: Props) {
@@ -32,11 +27,11 @@ export class Repos extends React.Component<Props, State> {
 
 	// _repoSort is a comparison function that sorts more recently
 	// pushed repos first.
-	_repoSort(a: Repo, b: Repo): number {
-		if (a.PushedAt < b.PushedAt) {
+	_repoSort(a: GQL.IRemoteRepository, b: GQL.IRemoteRepository): number {
+		if (a.pushedAt < b.pushedAt) {
 			return 1;
 		}
-		if (a.PushedAt > b.PushedAt) {
+		if (a.pushedAt > b.pushedAt) {
 			return -1;
 		}
 		return 0;
@@ -46,7 +41,7 @@ export class Repos extends React.Component<Props, State> {
 		this.forceUpdate();
 	}
 
-	_showRepo(repo: Repo): boolean {
+	_showRepo(repo: GQL.IRemoteRepository): boolean {
 		if (this._filterInput && this._filterInput.value &&
 			this._qualifiedName(repo).indexOf(this._filterInput.value.trim().toLowerCase()) === -1) {
 			return false;
@@ -55,81 +50,75 @@ export class Repos extends React.Component<Props, State> {
 		return true; // no filter; return all
 	}
 
-	_qualifiedName(repo: Repo): string {
-		return (`${repo.Owner}/${repo.Name}`).toLowerCase();
+	_qualifiedName(repo: GQL.IRemoteRepository): string {
+		return (`${repo.owner}/${repo.name} ${repo.language}`).toLowerCase();
 	}
 
 	_header(): JSX.Element {
-		return (
-			<header className={styles.header}>
-				<Heading level={7} color="gray">Your repositories</Heading>
-				{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
-				<div className={styles.input_bar}>
-					{!context.hasPrivateGitHubToken() && <GitHubAuthButton scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>}
-					{window.localStorage["google"] === "true" && !context.hasPrivateGoogleToken() && <GoogleAuthButton scopes={privateGoogleOAuthScopes} returnTo={this.props.location} className={styles.google_button}>Add GCP repositories</GoogleAuthButton>}
-				</div>
-			</header>);
+		const btnSx = {
+			marginRight: whitespace[2],
+			marginBottom: whitespace[3],
+		};
+		return <header>
+			{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
+			<FlexContainer items="center" justify="center" wrap={true}>
+				{!context.hasPrivateGitHubToken() &&
+					<GitHubAuthButton scopes={privateGitHubOAuthScopes} style={btnSx} returnTo={this.props.location}>
+						Add private repositories
+					</GitHubAuthButton>
+				}
+				{Features.googleCloudPlatform.isEnabled() && !context.hasPrivateGoogleToken() &&
+					<GoogleAuthButton scopes={privateGoogleOAuthScopes} returnTo={this.props.location} style={btnSx} >
+						Add GCP repositories
+					</GoogleAuthButton>
+				}
+			</FlexContainer>
+		</header>;
 	}
 
-	_footer(): JSX.Element {
-		return (<div>
-			{this.props.location && this.props.location.query["onboarding"] &&
-				<footer className={styles.footer}>
-					<a className={styles.footer_link} href="/integrations?onboarding=t">
-						<Button color="green" className={styles.footer_btn}>Continue</Button>
-					</a>
-				</footer>
-			}
-		</div>);
-	}
-
-	_repoList(repos: Repo[]): JSX.Element {
-		return (
-			<div style={{marginLeft: whitespace[4]}}>
-				<div style={{marginTop: whitespace[4], marginBottom: whitespace[3]}}>
-				{context.gitHubToken && repos.length === 0 ?
-					<p className={styles.indicator}>Looks like you have no repositories.</p> :
-					<div>
-						<Input type="text"
-							placeholder="Find a repository..."
-							domRef={(e) => this._filterInput = e}
-							spellCheck={false}
-							onChange={this._handleFilter} />
-					</div>}
-				</div>
-			<div className={styles.repos_list}>
-				{repos.length > 0 && repos.map((repo, i) =>
-					<div className={styles.row} key={i}>
-						<div className={styles.info}>
-							<RepoLink repo={repo.URI || `github.com/${repo.Owner}/${repo.Name}`} />
-							{repo.Description && <p className={styles.description}>
-								{repo.Description.length > 100 ? `${repo.Description.substring(0, 100)}...` : repo.Description}
-							</p>}
-						</div>
-					</div>
-				)}
-			</div>
-			{context.gitHubToken && this._filterInput && this._filterInput.value && repos.length === 0 &&
-				<p className={styles.indicator}>No matching repositories</p>
-			}
-		</div>);
-	}
-
-	render(): JSX.Element | null {
-		let filteredRepos: Repo[] = [];
+	_repoList(): JSX.Element {
+		let filteredRepos: GQL.IRemoteRepository[] = [];
 		if (this.props.repos) {
 			filteredRepos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
 		}
 
-		return (
-			<div className={base.pb6}>
-				{this._header()}
-				{!this.props.repos ?
-					<p style={{marginTop: whitespace[4], marginBottom: whitespace[4], marginLeft: whitespace[4]}}>
-						Loading...
-					</p> : this._repoList(filteredRepos)}
-				{this._footer()}
+		return <div style={{ margin: whitespace[4] }}>
+			<FlexContainer justify="between" wrap={true} style={{
+				marginTop: whitespace[4],
+				marginBottom: whitespace[3],
+			}}>
+				<Heading level={4}>My repositories</Heading>
+				<Input type="text"
+					placeholder="Filter repositories ..."
+					domRef={(e) => this._filterInput = e}
+					spellCheck={false}
+					onChange={this._handleFilter}
+					inputSize="small"
+					style={{ marginTop: whitespace[3], minWidth: 225 }} />
+			</FlexContainer>
+			<div>
+				{filteredRepos.length > 0 && filteredRepos.map((repo, i) => {
+					return <RepositoryCard contributors={repo.contributors} repo={repo} key={i} style={{ marginBottom: whitespace[3] }} />;
+				})}
 			</div>
+			{context.gitHubToken && this._filterInput && this._filterInput.value && filteredRepos.length === 0 &&
+				<div style={{ margin: whitespace[4], textAlign: "center" }}>No matching repositories</div>
+			}
+		</div>;
+	}
+
+	render(): JSX.Element {
+		const sx = Object.assign({},
+			layout.container,
+			{
+				maxWidth: 960,
+				padding: whitespace[3],
+			},
 		);
+
+		return <div style={sx}>
+			{this._header()}
+			{!this.props.repos ? <div style={{ margin: whitespace[4], textAlign: "center" }}><Spinner /> Loading...</div> : this._repoList()}
+		</div>;
 	}
 }

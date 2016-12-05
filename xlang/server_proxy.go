@@ -75,6 +75,14 @@ type serverProxyConnStats struct {
 	// Counts is the total number of calls proxied to the server per
 	// LSP method.
 	Counts map[string]int
+
+	// TotalErrorCount is the total number of calls proxied to the server
+	// that failed.
+	TotalErrorCount int
+
+	// ErrorCounts is the total number of calls proxied to the server that
+	// failed per LSP method.
+	ErrorCounts map[string]int
 }
 
 var (
@@ -97,6 +105,13 @@ var (
 		Help:      "Total number of calls sent to a server proxy before it is shutdown.",
 		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128, 256},
 	}, []string{"mode"})
+	serverConnsFailedMethodCalls = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "lsp_server_failed_method_calls",
+		Help:      "Total number of failed calls sent to a server proxy before it is shutdown.",
+		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128, 256},
+	}, []string{"mode"})
 	serverConnsAliveDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
@@ -110,6 +125,7 @@ func init() {
 	prometheus.MustRegister(serverConnsGauge)
 	prometheus.MustRegister(serverConnsCounter)
 	prometheus.MustRegister(serverConnsMethodCalls)
+	prometheus.MustRegister(serverConnsFailedMethodCalls)
 	prometheus.MustRegister(serverConnsAliveDuration)
 }
 
@@ -154,6 +170,37 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 	return errs.error()
 }
 
+// shutDownServer will terminate the server matching ID. If no such server
+// exists, no action is taken.
+func (p *Proxy) shutDownServer(ctx context.Context, id serverID) error {
+	var c *serverProxyConn
+
+	p.mu.Lock()
+	for cc := range p.servers {
+		if cc.id == id {
+			c = cc
+			break
+		}
+	}
+	p.mu.Unlock()
+
+	if c == nil {
+		return nil
+	}
+
+	// We have found a server. Remove it from the list and do a
+	// best-effort shutdown.
+	errs := &errorList{}
+	p.removeServerConn(c)
+	if err := c.shutdownAndExit(ctx); err != nil {
+		errs.add(err)
+	}
+	if err := c.conn.Close(); err != nil {
+		errs.add(err)
+	}
+	return errs.error()
+}
+
 // LogServerStats, if true, will log the statistics of a serverProxyConn when
 // it is removed.
 var LogServerStats = true
@@ -182,6 +229,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 		})
 		log.Printf("tracked removed serverProxyConn: %s", msg)
 		serverConnsMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
+		serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
 		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
 	}
 }
@@ -244,7 +292,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		// proxy has already checked the user's permissions to read
 		// this repo, so we don't need to check permissions again
 		// here.
-		c.rootFS, err = NewRemoteRepoVFS(id.rootPath.CloneURL(), id.rootPath.Rev())
+		c.rootFS, err = NewRemoteRepoVFS(ctx, id.rootPath.CloneURL(), id.rootPath.Rev())
 		if err != nil {
 			_ = c.conn.Close()
 			_ = rwc.Close()
@@ -317,8 +365,21 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 	defer span.Finish()
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+	rootPath := "/"
+	// TODO(keegancsmith) Make more servers follow rootPath spec
+	if c.id.mode != "php" {
+		// Only our PHP server follows the spec for rootPath, other
+		// servers take a URI.
+		rootPath = "file:///"
+	}
 	return c.conn.Call(ctx, "initialize", lspext.InitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "file:///"},
+		InitializeParams: lsp.InitializeParams{
+			RootPath: rootPath,
+			Capabilities: lsp.ClientCapabilities{
+				XFilesProvider:   true,
+				XContentProvider: true,
+			},
+		},
 		OriginalRootPath: c.id.rootPath.String(),
 		Mode:             c.id.mode,
 	}, nil, addTraceMeta(ctx))
@@ -327,6 +388,8 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 // callServer sends an LSP request to the specified server
 // (establishing the connection first if necessary).
 func (p *Proxy) callServer(ctx context.Context, id serverID, method string, params, result interface{}) (err error) {
+	var c *serverProxyConn
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
 		opentracing.Tags{"mode": id.mode, "rootPath": id.rootPath.String(), "method": method, "params": params},
 	)
@@ -334,11 +397,14 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, method string, para
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
+			if c != nil {
+				c.incMethodErrorStat(method)
+			}
 		}
 		span.Finish()
 	}()
 
-	c, err := p.getServerConn(ctx, id)
+	c, err = p.getServerConn(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -363,7 +429,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	// significant operations, not when we're just receiving traces or
 	// performing simple VFS ops.
 	var span opentracing.Span
-	if shouldCreateChildSpan := req.Method != "telemetry/event" && (traceFSRequests || !strings.HasPrefix(req.Method, "fs/")); shouldCreateChildSpan {
+	if shouldCreateChildSpan := !isInfraMethod(req.Method) && (traceFSRequests || !isFSMethod(req.Method)); shouldCreateChildSpan {
 		op := "LSP server proxy: handle " + req.Method
 
 		// Try to get our parent span context from this JSON-RPC request's metadata.
@@ -426,14 +492,52 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		return c.handleFS(ctx, req.Method, path)
 
+	case "window/logMessage":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var m lsp.LogMessageParams
+		if err := json.Unmarshal(*req.Params, &m); err != nil {
+			return nil, err
+		}
+		// lsp.Log is the equivalent to a debug log level. We are
+		// generally not interested in debug logs.
+		if m.Type == lsp.Log {
+			return nil, nil
+		}
+		log.Printf("window/logMessage(%d) %s: %s", m.Type, c.id, m.Message)
+		// Log to the span for the server, not for this specific
+		// request.
+		if span := opentracing.SpanFromContext(ctx); span != nil {
+			span.LogEventWithPayload("window/logMessage", m)
+		}
+		return nil, nil
+
 	case "textDocument/publishDiagnostics":
 		// Forward to all clients.
 		c.clientBroadcast(ctx, req)
 
 		return nil, nil
+
+	case "textDocument/xcontent":
+		return c.handleTextDocumentContentExt(ctx, req)
+
+	case "workspace/xfiles":
+		return c.handleWorkspaceFilesExt(ctx, req)
 	}
 
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("server proxy handler: method not found: %q", req.Method)}
+}
+
+func isFSMethod(method string) bool {
+	return strings.HasPrefix(method, "fs/") || method == "textDocument/xcontent" || method == "workspace/xfiles"
+}
+
+// isInfraMethod returns true for methods which do not affect the end
+// user. These are methods related to telemetry/logging/etc. Generally these
+// are not useful to log.
+func isInfraMethod(method string) bool {
+	return method == "telemetry/event" || method == "window/logMessage" || method == "textDocument/publishDiagnostics"
 }
 
 func (c *serverProxyConn) updateLastTime() {
@@ -449,6 +553,16 @@ func (c *serverProxyConn) incMethodStat(method string) {
 		c.stats.Counts = make(map[string]int)
 	}
 	c.stats.Counts[method] = c.stats.Counts[method] + 1
+	c.mu.Unlock()
+}
+
+func (c *serverProxyConn) incMethodErrorStat(method string) {
+	c.mu.Lock()
+	c.stats.TotalErrorCount++
+	if c.stats.ErrorCounts == nil {
+		c.stats.ErrorCounts = make(map[string]int)
+	}
+	c.stats.ErrorCounts[method] = c.stats.ErrorCounts[method] + 1
 	c.mu.Unlock()
 }
 

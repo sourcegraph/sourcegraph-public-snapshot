@@ -1,9 +1,9 @@
 import * as React from "react";
 import * as Relay from "react-relay";
 
-import {EventListener, isNonMonacoTextArea} from "sourcegraph/Component";
-import {ModalComp} from "sourcegraph/components/Modal";
-import {Container} from "sourcegraph/quickopen/Container";
+import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
+import { ModalComp } from "sourcegraph/components/Modal";
+import { Container } from "sourcegraph/quickopen/Container";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Event {
@@ -19,7 +19,7 @@ export type Props = {
 }
 
 // QuickOpenModal controls when and how to show the search modal.
-class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot}, {}> {
+class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
 	constructor() {
 		super();
 		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
@@ -31,15 +31,10 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 	}
 
 	_getEventProps(): any {
-		let query = "";
-		if (this.refs["searchContainer"]) {
-			query = (this.refs as {searchContainer: Container}).searchContainer.state.input;
-		}
 		return {
-				repo: this.props.repo,
-				rev: this.props.rev,
-				query: query,
-			};
+			repo: this.props.repo,
+			rev: this.props.rev,
+		};
 	}
 
 	searchModalShortcuts(event: KeyboardEvent & Event): void {
@@ -64,13 +59,15 @@ class QuickOpenModalComponent extends React.Component<Props & {root: GQL.IRoot},
 	}
 
 	render(): JSX.Element {
-		const r = this.props.repo ? {URI: this.props.repo, rev: this.props.rev} : null;
+		const r = this.props.repo ? { URI: this.props.repo, rev: this.props.rev } : null;
+		const commit = this.props.root && this.props.root.repository && this.props.root.repository.commit.commit;
 		return <div>
 			{this.props.showModal && <ModalComp onDismiss={() => this.dismissModal(true)}>
 				<Container
-					ref="searchContainer"
 					repo={r}
-					files={this.props.root.repository ? this.props.root.repository.commit.tree.files : []}
+					commitID={commit ? commit.sha1 : null}
+					files={commit ? commit.tree.files : []}
+					languages={commit ? commit.languages : []}
 					dismissModal={this.dismissModal} />
 			</ModalComp>}
 			<EventListener target={global.document.body} event="keydown" callback={this.searchModalShortcuts} />
@@ -88,10 +85,14 @@ const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {
 			fragment on Root {
 				repository(uri: $repo) {
 					commit(rev: $rev) {
-						tree(recursive: true) {
-							files {
-								name
+						commit {
+							sha1
+							tree(recursive: true) {
+								files {
+									name
+								}
 							}
+							languages
 						}
 					}
 				}
@@ -100,9 +101,11 @@ const QuickOpenModalContainer = Relay.createContainer(QuickOpenModalComponent, {
 	},
 });
 
-export const QuickOpenModal = function(props: Props): JSX.Element {
+export const QuickOpenModal = function (props: Props): JSX.Element {
+	const loadingProps = Object.assign({}, props, { root: null });
 	return <Relay.RootContainer
 		Component={QuickOpenModalContainer}
+		renderLoading={() => <QuickOpenModalContainer {...loadingProps} />}
 		route={{
 			name: "Root",
 			queries: {
@@ -112,5 +115,5 @@ export const QuickOpenModal = function(props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-	/>;
+		/>;
 };

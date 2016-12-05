@@ -27,16 +27,9 @@
 		{{end}}
 
 		{{template "Head" $}}
-
-		{{appconf.ExtraHeadHTML}}
-
 	</head>
 
-	<body class="bg-gray m0"
-		{{if fileSearchDisabled}}
-			data-file-search-disabled="true"
-		{{end}}>
-
+	<body class="bg-gray m0">
 		{{template "Nav" $}}
 
 		<div class="xcontainer" id="main">{{template "Body" $}}</div>
@@ -56,15 +49,11 @@
 			</div>
 		{{end}}
 
-		{{if appconf.CustomFeedbackForm}}
-			<div id="custom-feedback-form">{{customFeedbackForm}}</div>
-		{{end}}
-
 		{{if not .Meta.SEO}}
 			<script src="{{mainJavaScriptBundleURL}}"></script>
+		{{else}}
+			<script src="{{assetURL "/scripts/static_event_logger.js"}}"></script>
 		{{end}}
-
-		{{appconf.ExtraBodyHTML}}
 	</body>
 </html>
 {{end}}

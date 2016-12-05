@@ -24,13 +24,12 @@ module.exports = function parseUrl(url) {
 
   // When parsing file relative paths (e.g. `../index.html`), IE will correctly
   // resolve the `href` property but will keep the `..` in the `path` property.
-  // To workaround this, we reparse with the full URL from the `href` property.
-  if (url.charAt(0) == '.') return parseUrl(a.href);
-
-  // Sometimes IE will return no port or just a colon, especially for things
-  // like relative port URLs (e.g. "//google.com").
-  var protocol = !a.protocol || ':' == a.protocol ?
-      location.protocol : a.protocol;
+  // It will also not include the `host` or `hostname` properties. Furthermore,
+  // IE will sometimes return no protocol or just a colon, especially for things
+  // like relative protocol URLs (e.g. "//google.com").
+  // To workaround all of these issues, we reparse with the full URL from the
+  // `href` property.
+  if (url.charAt(0) == '.' || url.charAt(0) == '/') return parseUrl(a.href);
 
   // Don't include default ports.
   var port = (a.port == HTTP_PORT || a.port == HTTPS_PORT) ? '' : a.port;
@@ -38,17 +37,13 @@ module.exports = function parseUrl(url) {
   // PhantomJS sets the port to "0" when using the file: protocol.
   port = port == '0' ? '' : port;
 
-  // IE will return an empty string for host and hostname with a relative URL.
-  var host = a.host == '' ? location.host : a.host;
-  var hostname = a.hostname == '' ? location.hostname : a.hostname;
-
   // Sometimes IE incorrectly includes a port for default ports
   // (e.g. `:80` or `:443`) even when no port is specified in the URL.
   // http://bit.ly/1rQNoMg
-  host = host.replace(DEFAULT_PORT, '');
+  var host = a.host.replace(DEFAULT_PORT, '');
 
   // Not all browser support `origin` so we have to build it.
-  var origin = a.origin ? a.origin : protocol + '//' + host;
+  var origin = a.origin ? a.origin : a.protocol + '//' + host;
 
   // Sometimes IE doesn't include the leading slash for pathname.
   // http://bit.ly/1rQNoMg
@@ -57,13 +52,12 @@ module.exports = function parseUrl(url) {
   return cache[url] = {
     hash: a.hash,
     host: host,
-    hostname: hostname,
+    hostname: a.hostname,
     href: a.href,
     origin: origin,
-
     pathname: pathname,
     port: port,
-    protocol: protocol,
+    protocol: a.protocol,
     search: a.search,
 
     // Expose additional helpful properties not part of the Location object.

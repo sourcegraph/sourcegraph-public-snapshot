@@ -1,16 +1,16 @@
-import {EmailAddrList, User} from "sourcegraph/api";
-import {ExternalToken} from "sourcegraph/user";
-import {EventLogger} from "sourcegraph/util/EventLogger";
-import {testOnly} from "sourcegraph/util/testOnly";
+import { EmailAddrList, User } from "sourcegraph/api";
+import { ExternalToken } from "sourcegraph/user";
+import { testOnly } from "sourcegraph/util/testOnly";
 
 class Context {
-	xhrHeaders: {[key: string]: string};
+	xhrHeaders: { [key: string]: string };
 	csrfToken: string;
 	userAgentIsBot: boolean;
 	user: User | null;
 	emails: EmailAddrList | null;
 	gitHubToken: ExternalToken | null;
 	googleToken: ExternalToken | null;
+	sentryDSN: string;
 	intercomHash: string;
 
 	appURL: string; // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)
@@ -20,7 +20,9 @@ class Context {
 		Date: string;
 	};
 
-	features: Features;
+	constructor(ctx: any) {
+		Object.assign(this, ctx);
+	}
 
 	hasPrivateGitHubToken(): boolean {
 		return Boolean(this.gitHubToken && this.gitHubToken.scope.includes("repo") && this.gitHubToken.scope.includes("read:org"));
@@ -37,26 +39,13 @@ class Context {
 	hasPrivateGoogleToken(): boolean {
 		return Boolean(this.googleToken && this.googleToken.scope.includes("https://www.googleapis.com/auth/cloud-platform") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.email") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.profile"));
 	}
+
+	hasChromeExtensionInstalled(): boolean {
+		return document.getElementById("sourcegraph-app-background") !== null;
+	}
 }
 
-export const context = new Context();
-
-export interface Features {
-};
-
-// Sets the values of the context given a JSContext object from the server.
-export function reset(args: {appURL: string, assetsRoot: string, buildVars: {Version: string}, features: Features}): void {
-	if (typeof args.features !== "undefined") {
-		context.features = args.features;
-	}
-	delete args.features;
-	if (typeof args.appURL === "undefined" || typeof args.assetsRoot === "undefined" || typeof args.buildVars === "undefined") {
-		throw new Error("appURL, assetsRoot, and buildVars must all be set");
-	}
-	Object.assign(context, args);
-
-	EventLogger.init();
-}
+export const context = new Context(global.__sourcegraphJSContext);
 
 export function mockUser(user: User | null, f: () => void): void {
 	testOnly();

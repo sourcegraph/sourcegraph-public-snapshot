@@ -12,8 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/csp"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -38,39 +36,17 @@ func NewHandler(m *mux.Router) http.Handler {
 	mw = append(mw, httpapiauth.AuthorizationMiddleware)
 	mw = append(mw, eventsutil.AgentMiddleware)
 
-	if conf.GetenvBool("SG_USE_CSP") {
-		// Set the CSP handler. Determine the report URI by seeing what
-		// path prefix m currently has (if it was just /.csp-report, then
-		// it'd never match, since this handler is usually mounted at
-		// /.api/).
-		reportURI, err := m.Path(cspConfig.Policy.ReportURI).URLPath()
-		if err != nil {
-			panic(err.Error())
-		}
-		cspConfig.Policy.ReportURI = reportURI.String()
-		cspHandler := csp.NewHandler(cspConfig)
-		mw = append(mw, cspHandler.Middleware)
-	}
-
 	// Set handlers for the installed routes.
-	m.Get(apirouter.Annotations).Handler(httptrace.TraceRoute(handler(serveAnnotations)))
 	m.Get(apirouter.GlobalSearch).Handler(httptrace.TraceRoute(handler(serveGlobalSearch)))
-	m.Get(apirouter.Repo).Handler(httptrace.TraceRoute(handler(serveRepo)))
-	m.Get(apirouter.RepoResolve).Handler(httptrace.TraceRoute(handler(serveRepoResolve)))
-	m.Get(apirouter.RepoInventory).Handler(httptrace.TraceRoute(handler(serveRepoInventory)))
 	m.Get(apirouter.RepoCreate).Handler(httptrace.TraceRoute(handler(serveRepoCreate)))
-	m.Get(apirouter.RepoBranches).Handler(httptrace.TraceRoute(handler(serveRepoBranches)))
 	m.Get(apirouter.RepoTree).Handler(httptrace.TraceRoute(handler(serveRepoTree)))
-	m.Get(apirouter.RepoTreeList).Handler(httptrace.TraceRoute(handler(serveRepoTreeList)))
 	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(serveRepoRefresh)))
 	m.Get(apirouter.RepoResolveRev).Handler(httptrace.TraceRoute(handler(serveRepoResolveRev)))
-	m.Get(apirouter.RepoTags).Handler(httptrace.TraceRoute(handler(serveRepoTags)))
 	m.Get(apirouter.RepoDefLanding).Handler(httptrace.TraceRoute(handler(serveRepoDefLanding)))
 	m.Get(apirouter.RepoShield).Handler(httptrace.TraceRoute(handler(serveRepoShield)))
 	m.Get(apirouter.Repos).Handler(httptrace.TraceRoute(handler(serveRepos)))
 	m.Get(apirouter.AsyncRefreshIndexes).Handler(httptrace.TraceRoute(handler(serveRefreshIndexes)))
 
-	m.Get(apirouter.SourcegraphDesktop).Handler(httptrace.TraceRoute(handler(serveSourcegraphDesktopUpdateURL)))
 	m.Get(apirouter.Orgs).Handler(httptrace.TraceRoute(handler(serveOrgs)))
 	m.Get(apirouter.OrgMembers).Handler(httptrace.TraceRoute(handler(serveOrgMembers)))
 	m.Get(apirouter.OrgInvites).Handler(httptrace.TraceRoute(handler(serveOrgInvites)))
@@ -98,13 +74,6 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		},
 		Error: handleError,
 	}
-}
-
-// cspConfig is the Content Security Policy config for API handlers.
-var cspConfig = csp.Config{
-	// Strict because API responses should never be treated as page
-	// content.
-	Policy: &csp.Policy{DefaultSrc: []string{"'none'"}, ReportURI: "/.csp-report"},
 }
 
 var schemaDecoder = schema.NewDecoder()

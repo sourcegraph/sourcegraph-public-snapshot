@@ -1,8 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as styles from "sourcegraph/components/styles/code_2.css";
 import * as classNames from "classnames";
+import * as React from "react";
+
+import * as styles from "sourcegraph/components/styles/code_2.css";
 
 interface Props {
 	className?: string;
@@ -10,9 +9,7 @@ interface Props {
 	style?: any;
 }
 
-type State = any;
-
-export class Code extends React.Component<Props, State> {
+export class Code extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		const {className, children, style} = this.props;
 		return <span className={classNames(className, styles.code)} style={style}>{children}</span>;

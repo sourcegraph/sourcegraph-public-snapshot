@@ -1,11 +1,11 @@
 React Native
 ============
 
-.. sentry:support-warning::
+React Native for Raven.js is a pure JavaScript error reporting solution. The plugin will report errors originating from React Native's
+JavaScript engine (e.g. programming errors like "x is undefined"), but might not catch errors that originate from the underlying
+operating system (iOS / Android) unless they happen to be transmitted to React Native's global error handler.
 
-    The React Native plugin is experimental, and not ready for production use.
-
- .. versionadded:: 1.3.0
+Errors caught via the React Native plugin include stack traces, breadcrumbs, and allow for unminification via source maps.
 
 Installation
 ------------
@@ -74,7 +74,7 @@ To generate both an application JavaScript file (main.jsbundle) and source map f
       --sourcemap-output main.jsbundle.map
 
 This will write both main.jsbundle and main.jsbundle.map to the current directory. Next, you'll need to `create a new release and upload these files as release artifacts
-<https://docs.getsentry.com/hosted/clients/javascript/sourcemaps/#uploading-source-maps-to-sentry>`__.
+<https://docs.sentry.io/hosted/clients/javascript/sourcemaps/#uploading-source-maps-to-sentry>`__.
 
 Naming your Artifacts
 ~~~~~~~~~~~~~~~~~~~~~

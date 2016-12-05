@@ -61,13 +61,15 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 	ctx = github.WithRepos(ctx, &githubRepos)
 
 	wantRepo := &sourcegraph.Repo{
-		ID:     1,
-		URI:    "github.com/u/r",
-		Mirror: true,
+		ID:      1,
+		URI:     "github.com/u/r",
+		Mirror:  true,
+		Private: true,
 	}
 
 	githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
 		Description: "This is a repository",
+		Private:     true,
 	})
 
 	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)

@@ -35,9 +35,4 @@ export const plan_cta_noop: string;
 export const details: string;
 export const details_list: string;
 export const details_cumulative: string;
-export const mp_body: string;
-export const button_sep: string;
-export const mailchimp_embed: string;
-export const mailchimp_input: string;
-export const mailchimp_button: string;
 

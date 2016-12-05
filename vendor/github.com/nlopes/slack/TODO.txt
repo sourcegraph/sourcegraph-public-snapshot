@@ -1,3 +1,0 @@
-- Add more tests!!!
-- Add support to have markdown hints
-  - See section Message Formatting at https://api.slack.com/docs/formatting
