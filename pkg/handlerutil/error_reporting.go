@@ -22,7 +22,7 @@ var ravenClient *raven.Client
 func init() {
 	if dsn := env.Get("SENTRY_DSN_BACKEND", "", "Sentry/Raven DSN used for tracking of backend errors"); dsn != "" {
 		var err error
-		ravenClient, err = raven.NewClient(dsn, nil)
+		ravenClient, err = raven.New(dsn)
 		if err != nil {
 			log.Fatalf("error initializing Sentry error reporter: %s", err)
 		}
