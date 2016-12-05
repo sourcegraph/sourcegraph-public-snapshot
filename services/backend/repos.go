@@ -59,7 +59,7 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	}
 
 	if repo.Blocked {
-		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo)
+		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo.URI)
 	}
 
 	return repo, nil
