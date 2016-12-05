@@ -129,12 +129,6 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	return localstore.GlobalRefs.TotalRefs(ctx, source)
 }
 
-func (s *defs) TopDefs(ctx context.Context, op sourcegraph.TopDefsOptions) (res *sourcegraph.TopDefs, err error) {
-	ctx, done := trace(ctx, "Defs", "TopDefs", op, &err)
-	defer done()
-	return localstore.GlobalRefs.TopDefs(ctx, op)
-}
-
 func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (res *sourcegraph.RefLocations, err error) {
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()

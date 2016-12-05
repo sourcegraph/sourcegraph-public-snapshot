@@ -53,7 +53,6 @@ func init() {
 	router.Get(routeDefRedirectToDefLanding).Handler(httptrace.TraceRoute(http.HandlerFunc(serveDefRedirectToDefLanding)))
 	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(internal.Handler(serveDefLanding)))
 	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
-	router.Get(routeRepoLanding).Handler(httptrace.TraceRoute(internal.Handler(serveRepoLanding)))
 	router.Get(routeTree).Handler(httptrace.TraceRoute(handler(serveTree)))
 	router.Get(routeTopLevel).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
 	router.Get(routeHomePage).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
