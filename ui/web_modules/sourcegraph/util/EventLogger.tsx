@@ -8,6 +8,7 @@ import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Features } from "sourcegraph/util/features";
 import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util/inventory";
 
 class EventLoggerClass {
@@ -263,7 +264,7 @@ class EventLoggerClass {
 	}
 
 	_logToConsole(eventAction: string, object?: any): void {
-		if (global.window && global.window.localStorage && global.window.localStorage["log_debug"]) {
+		if (Features.eventLogDebug.isEnabled()) {
 			console.debug("%cEVENT %s", "color: #aaa", eventAction, object); // tslint:disable-line
 		}
 	}

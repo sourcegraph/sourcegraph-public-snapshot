@@ -3,24 +3,15 @@
 
 import "monaco-languages/out/monaco.contribution";
 import "monaco-typescript/out/monaco.contribution";
+import { Features } from "sourcegraph/util/features";
 
 export const modes = new Set<string>(["c", "go", "ruby", "javascript", "typescript", "python"]);
-if (window.localStorage["phpLangEnabled"]) {
+
+if (Features.langPHP.isEnabled()) {
 	modes.add("php");
 }
 
 export function languagesToSearchModes(languages: string[]): string[] {
-	const m = new Set<string>();
-	languages.forEach((language) => {
-		const mode = language.toLowerCase();
-		if (modes.has(mode)) {
-			m.add(mode);
-		}
-	});
-
-	if (m.has("javascript") && m.has("typescript")) {
-		m.delete("javascript");
-	}
-
-	return Array.from(m);
+	return languages.map(lang => lang.toLowerCase())
+		.filter(lang => modes.has(lang) && lang !== "javascript");
 }

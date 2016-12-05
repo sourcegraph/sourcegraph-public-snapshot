@@ -1,6 +1,8 @@
 import { URIUtils } from "sourcegraph/core/uri";
+import { Features } from "sourcegraph/util/features";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
+
 import { IDisposable } from "vs/base/common/lifecycle";
 import { TPromise } from "vs/base/common/winjs.base";
 import { SimpleEditor, SimpleModel } from "vs/editor/browser/standalone/simpleServices";
@@ -115,7 +117,7 @@ export class EditorService implements IEditorService {
 		}
 
 		const {repo, rev, path} = URIUtils.repoParams(data.resource);
-		const blameBody = window.localStorage["feature_flag_code_lens"] ? `blame(startLine: 0, endLine: 0) {
+		const blameBody = Features.codeLens.isEnabled() ? `blame(startLine: 0, endLine: 0) {
 												name
 												email
 												rev

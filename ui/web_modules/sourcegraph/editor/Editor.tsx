@@ -5,6 +5,7 @@ import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorServ
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 
 import "sourcegraph/editor/FindExternalReferencesAction";
@@ -119,7 +120,7 @@ export class Editor implements IDisposable {
 			lineHeight: 21,
 			theme: "vs-dark",
 			renderLineHighlight: true,
-			codeLens: window.localStorage["feature_flag_code_lens"],
+			codeLens: Features.codeLens.isEnabled(),
 		}, { editorService: this._editorService });
 
 		// WORKAROUND: Remove the initial model from the configuration to avoid infinite recursion when the config gets updated internally.

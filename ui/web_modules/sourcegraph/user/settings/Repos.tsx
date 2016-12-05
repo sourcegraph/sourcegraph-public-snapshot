@@ -6,6 +6,7 @@ import { GitHubAuthButton, GoogleAuthButton } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { layout, whitespace } from "sourcegraph/components/utils";
 import { Location } from "sourcegraph/Location";
+import { Features } from "sourcegraph/util/features";
 import { privateGitHubOAuthScopes, privateGoogleOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
@@ -66,7 +67,7 @@ export class Repos extends React.Component<Props, {}> {
 						Add private repositories
 					</GitHubAuthButton>
 				}
-				{window.localStorage["google"] === "true" && !context.hasPrivateGoogleToken() &&
+				{Features.googleCloudPlatform.isEnabled() && !context.hasPrivateGoogleToken() &&
 					<GoogleAuthButton scopes={privateGoogleOAuthScopes} returnTo={this.props.location} style={btnSx} >
 						Add GCP repositories
 					</GoogleAuthButton>
