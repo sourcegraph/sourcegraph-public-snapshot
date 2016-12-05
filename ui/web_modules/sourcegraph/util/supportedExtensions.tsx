@@ -1,8 +1,11 @@
 import { modes } from "sourcegraph/editor/modes";
 
-const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx", "c", "h", "py"]);
+const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx", "c", "h"]);
 if (modes.has("php")) {
 	supportedExtensions.add("php");
+}
+if (modes.has("python")) {
+	supportedExtensions.add("py");
 }
 
 export function isSupportedExtension(ext: string): boolean {
