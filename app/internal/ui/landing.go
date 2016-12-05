@@ -90,6 +90,20 @@ func shouldUseXlang(page string) bool {
 
 func init() { rand.Seed(time.Now().UnixNano()) }
 
+// serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
+// URLs directly to the repo itself (sourcegraph.com/<repo>).
+func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
+	repo, rev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	if err != nil {
+		if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
+			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
+		}
+		return errors.Wrap(err, "GetRepoAndRev")
+	}
+	http.Redirect(w, r, approuter.Rel.URLToRepoRev(repo.URI, rev.CommitID).String(), http.StatusMovedPermanently)
+	return nil
+}
+
 func serveRepoIndex(w http.ResponseWriter, r *http.Request) error {
 	lang := mux.Vars(r)["Lang"]
 	var langDispName string
