@@ -18,7 +18,6 @@ type MockServices struct {
 	MirrorRepos MockMirrorRepos
 	RepoTree    MockRepoTree
 	Repos       MockRepos
-	Search      MockSearch
 	Orgs        MockOrgs
 }
 
