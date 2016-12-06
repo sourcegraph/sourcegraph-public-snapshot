@@ -1,5 +1,6 @@
 import { modes } from "sourcegraph/editor/modes";
 
+const ignoredExtensions = new Set<string>(["md"]);
 const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx", "c", "h"]);
 if (modes.has("php")) {
 	supportedExtensions.add("php");
@@ -10,6 +11,11 @@ if (modes.has("python")) {
 
 export function isSupportedExtension(ext: string): boolean {
 	return supportedExtensions.has(ext);
+}
+
+// ignored extensions, like md, will not trigger a warning banner
+export function isIgnoredExtension(ext: string): boolean {
+	return ignoredExtensions.has(ext);
 }
 
 export function isSupportedMode(modeId: string): boolean {

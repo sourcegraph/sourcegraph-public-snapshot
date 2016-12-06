@@ -11,7 +11,7 @@ import { RevSwitcher } from "sourcegraph/repo/RevSwitcher";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { urlToTree } from "sourcegraph/tree/routes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { getPathExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
+import { getPathExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
 
 interface Props {
 	repo: string;
@@ -109,6 +109,7 @@ export function BlobTitle({
 }: Props): JSX.Element {
 	const extension = getPathExtension(path);
 	const isSupported = extension ? isSupportedExtension(extension) : false;
+	const isIgnored = extension ? isIgnoredExtension(extension) : false;
 	// Tech debt: BlobMain won't pass new location on line clicks, so use window.location.
 	// We must register an explicit onClick handler on the GitHub anchor link to detect line hash changes.
 	const gitHubURL = () => `https://${repo}/blob/${rev}/${path}${convertToGitHubLineNumber(window.location.hash)}`;
@@ -135,7 +136,7 @@ export function BlobTitle({
 				</Heading>
 				<BreadCrumb repo={repo} path={path} rev={rev} />
 			</div>
-			{!isSupported && <UnsupportedLanguageAlert ext={extension} />}
+			{!isSupported && !isIgnored && <UnsupportedLanguageAlert ext={extension} />}
 			{toast && <div style={toastSx}>{toast}</div>}
 		</FlexContainer>
 	</div>;
