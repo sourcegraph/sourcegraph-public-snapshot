@@ -97,6 +97,11 @@ function ejectModules(): void {
 	if (background) {
 		ejectComponent(background);
 	}
+
+	const annotated = document.getElementsByClassName("sg-blob-annotated") as HTMLCollectionOf<HTMLElement>;
+	for (let idx = annotated.length - 1; idx >= 0; idx--) {
+		annotated.item(idx).remove();
+	}
 }
 
 window.addEventListener("load", () => {

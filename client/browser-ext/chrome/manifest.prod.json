@@ -1,5 +1,5 @@
 {
-  "version": "1.1.72",
+  "version": "1.1.73",
   "name": "Sourcegraph for GitHub",
   "manifest_version": 2,
   "description": "Gives GitHub IDE powers: jump to definition and hover tooltips in code, PRs, and diffs",
