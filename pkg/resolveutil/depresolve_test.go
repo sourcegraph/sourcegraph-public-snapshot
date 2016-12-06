@@ -34,16 +34,18 @@ func TestResolveImportPath(t *testing.T) {
 		{"gopkg.in/redis.v3/internal/hashtag", &ResolvedTarget{"https://gopkg.in/redis.v3", "gopkg.in/redis.v3/internal/hashtag", "GoPackage", "", ""}},
 		{"github.com/gorilla/mux", &ResolvedTarget{"https://github.com/gorilla/mux", "github.com/gorilla/mux", "GoPackage", "", ""}},
 		{"github.com/aws/aws-sdk-go/aws/request", &ResolvedTarget{"https://github.com/aws/aws-sdk-go", "github.com/aws/aws-sdk-go/aws/request", "GoPackage", "", ""}},
-		{"cloud.google.com/go", &ResolvedTarget{"https://github.com/GoogleCloudPlatform/gcloud-golang", "github.com/GoogleCloudPlatform/gcloud-golang", "GoPackage", "", ""}},
-		{"cloud.google.com/go/bigtable", &ResolvedTarget{"https://github.com/GoogleCloudPlatform/gcloud-golang", "github.com/GoogleCloudPlatform/gcloud-golang/bigtable", "GoPackage", "", ""}},
+		{"cloud.google.com/go", &ResolvedTarget{"https://code.googlesource.com/gocloud", "code.googlesource.com/gocloud", "GoPackage", "", ""}},
+		{"cloud.google.com/go/bigtable", &ResolvedTarget{"https://code.googlesource.com/gocloud", "code.googlesource.com/gocloud/bigtable", "GoPackage", "", ""}},
 	}
 	for _, test := range tests {
-		got, err := ResolveImportPath(test.ImportPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(got, test.Result) {
-			t.Errorf("failed:\ngot : %#v\nwant: %#v", got, test.Result)
-		}
+		t.Run(test.ImportPath, func(t *testing.T) {
+			got, err := ResolveImportPath(test.ImportPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, test.Result) {
+				t.Errorf("failed:\ngot : %#v\nwant: %#v", got, test.Result)
+			}
+		})
 	}
 }
