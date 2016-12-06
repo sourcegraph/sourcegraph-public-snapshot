@@ -27,7 +27,7 @@ detect_dev_langservers() {
 	if [[ -n "${LANGSERVER_PHP:+1}" ]]; then
 		# no-op, the user has already set the server
 		true
-	elif [[ $(docker images -q felixfbecker/php-language-server) ]]; then
+	elif [[ $(docker && docker images -q felixfbecker/php-language-server) ]]; then
 		export LANGSERVER_PHP=$(dirname "${BASH_SOURCE[0]}")/php-langserver
 	else
 		echo '# To add PHP language support, run `docker pull felixfbecker/php-language-server`'
