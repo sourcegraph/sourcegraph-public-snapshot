@@ -14,10 +14,13 @@ import "sourcegraph/editor/vscode";
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
 
+import { getDeclarationsAtPosition } from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
+
 import { CancellationToken } from "vs/base/common/cancellation";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
+import { TPromise } from "vs/base/common/winjs.base";
 import { IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { create as createStandaloneEditor, createModel, onDidCreateModel } from "vs/editor/browser/standalone/standaloneEditor";
@@ -27,6 +30,8 @@ import { Range } from "vs/editor/common/core/range";
 import { IModelChangedEvent, IPosition, IRange, IReadOnlyModel, IWordAtPosition } from "vs/editor/common/editorCommon";
 import { Command, Definition, Hover, ICodeLensSymbol, Location, ReferenceContext } from "vs/editor/common/modes";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
+import { ReferencesController } from "vs/editor/contrib/referenceSearch/browser/referencesController";
+import { ReferencesModel } from "vs/editor/contrib/referenceSearch/browser/referencesModel";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
 
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
@@ -80,6 +85,7 @@ export class Editor implements IDisposable {
 	private _disposed: boolean = false;
 	private _initializedModes: Set<string> = new Set();
 	private _elementUnderMouse: Element;
+	private _referencesController: ReferencesController;
 
 	constructor(
 		elem: HTMLElement
@@ -130,6 +136,8 @@ export class Editor implements IDisposable {
 		this._editorService.setEditor(this._editor);
 
 		(window as any).ed = this._editor; // for easier debugging via the JS console
+
+		this._referencesController = ReferencesController.get(this._editor);
 
 		// Warm up the LSP server immediately when the document loads
 		// instead of waiting until the user tries to hover.
@@ -247,6 +255,49 @@ export class Editor implements IDisposable {
 			});
 			window.open(`https://${args}`, "_newtab");
 		});
+
+		if (Features.externalReferences.isEnabled()) {
+			this._editor.addAction({
+				id: "peek.external.references",
+				label: "Peek External References",
+				contextMenuGroupId: "navigation",
+				contextMenuOrder: 1.3,
+				run: this._openReferencesController.bind(this),
+			});
+		}
+	}
+
+	_openReferencesController(editor: IStandaloneCodeEditor): void {
+		if (this._referencesController) {
+			getDeclarationsAtPosition(editor.getModel(), editor.getPosition()).then(references => {
+				let result: Location[] = [];
+				// Example of how to add to the peek view.
+				// result.push({
+				// 	range: {
+				// 		startColumn: 26,
+				// 		startLineNumber: 233,
+				// 		endLineNumber: 233,
+				// 		endColumn: 40,
+				// 	},
+				// 	uri: URI.from({
+				// 		scheme: "git",
+				// 		authority: "github.com",
+				// 		fragment: "src/time/time.go",
+				// 		path: "/golang/go",
+				// 		query: "0d818588685976407c81c60d2fda289361cbc8ec",
+				// 	}),
+				// });
+				this._referencesController.toggleWidget(this._editor.getSelection(), TPromise.as(new ReferencesModel(result)), {
+					getMetaTitle: () => {
+						return "(Placeholder) External References";
+					},
+					onGoto: () => {
+						this._referencesController.closeWidget();
+						return TPromise.as(this._editor);
+					},
+				});
+			});
+		}
 	}
 
 	// Register services for modes (languages) when new models are added.
@@ -329,7 +380,6 @@ export class Editor implements IDisposable {
 			});
 
 		defCache.set(key, flight);
-
 		return flight;
 	}
 

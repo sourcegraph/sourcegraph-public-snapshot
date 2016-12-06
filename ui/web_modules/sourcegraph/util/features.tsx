@@ -21,6 +21,7 @@ class Feature {
 
 export const Features = {
 	codeLens: new Feature("code-lens"),
+	externalReferences: new Feature("external-references"),
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
