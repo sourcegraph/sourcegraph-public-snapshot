@@ -46,7 +46,7 @@ func PrintHelp() {
 	}
 	sort.Strings(names)
 
-	log.Print("Environment vairables:")
+	log.Print("Environment variables:")
 	for _, name := range names {
 		log.Printf("  %-40s %s", name, descriptions[name])
 	}
