@@ -52,7 +52,7 @@ export function AuthButton(props: Props): JSX.Element {
 	const iconSx = size === "small" ? typography.size[5] : typography.size[4];
 
 	return (
-		<form method="POST" action={url}>
+		<form method="POST" action={url} onSubmit={() => eventObject.logEvent({ page_name: pageName })}>
 			<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
 			<Button
 				style={style}
@@ -63,10 +63,7 @@ export function AuthButton(props: Props): JSX.Element {
 				block={block}
 				size={size}
 				className={className}
-				tabIndex={tabIndex}
-				onClick={() => {
-					eventObject.logEvent({ page_name: pageName });
-				} }>
+				tabIndex={tabIndex}>
 				{img &&
 					<span style={{ marginRight: whitespace[2] }}>
 						{iconType === "github" && <GitHubIcon style={iconSx} />}
