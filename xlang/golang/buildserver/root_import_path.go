@@ -10,9 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
-	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // determineRootImportPath determines the root import path for the Go
@@ -22,7 +20,7 @@ import (
 // It's intended to handle cases like
 // github.com/kubernetes/kubernetes, which has doc.go files that
 // indicate its root import path is k8s.io/kubernetes.
-func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRootPath string, conn *jsonrpc2.Conn) (rootImportPath string, err error) {
+func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRootPath string, fs ctxvfs.FileSystem) (rootImportPath string, err error) {
 	if originalRootPath == "" {
 		return "", errors.New("unable to determine Go workspace root import path without due to empty root path")
 	}
@@ -43,9 +41,7 @@ func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRoot
 	// import path comments that don't share a prefix, which is weird
 	// and would break this).
 	//
-	// Since we have not yet set h.FS, we need to construct our own
-	// VFS and use it to walk.
-	fs := vfsutil.RemoteFS(conn)
+	// Since we have not yet set h.FS, we need to use the passed in fs.
 	w := ctxvfs.Walk(ctx, "/", fs)
 	const maxSlashes = 3 // heuristic, shouldn't need to traverse too deep to find this out
 	const maxFiles = 25  // heuristic, shouldn't need to read too many files to find this out
