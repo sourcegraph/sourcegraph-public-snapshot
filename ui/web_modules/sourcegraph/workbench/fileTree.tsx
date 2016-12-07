@@ -7,7 +7,7 @@ import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { FlexContainer, Heading } from "sourcegraph/components";
-import { colors, layout, whitespace } from "sourcegraph/components/utils";
+import { colors, whitespace } from "sourcegraph/components/utils";
 import { Events } from "sourcegraph/util/constants/AnalyticsConstants";
 import { urlTo } from "sourcegraph/util/urlTo";
 import { Controller, FileTreeDataSource, Node, Renderer, makeTree, nodePathFromPath } from "sourcegraph/workbench/fileTreeModel";
@@ -173,7 +173,6 @@ function Title({repo}: { repo: string }): JSX.Element {
 		position: "relative",
 		paddingLeft: whitespace[4],
 		margin: 0,
-		height: layout.editorToolbarHeight,
 	}}>
 		<Heading level={5}>
 			<Link to={urlTo("repo", { splat: repo })}

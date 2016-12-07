@@ -16,6 +16,8 @@ machine:
     PGSSLMODE: disable
     REDIS_MASTER_ENDPOINT: ":6379"
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
+    YARN_VERSION: 0.17.8
+    PATH: "${PATH}:${HOME}/.yarn/bin"
 
     # Don't block on `git diff` invocations of `less`.
     GIT_PAGER:
@@ -23,8 +25,15 @@ machine:
     version: 6.6.0
 
 dependencies:
+  pre:
+    - |
+      if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
+        curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
+      fi
   cache_directories:
     - ~/cache
+    - ~/.yarn
+    - ~/.yarn-cache
     - ~/bin
 
   override:
