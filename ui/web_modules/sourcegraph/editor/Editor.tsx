@@ -509,8 +509,11 @@ export class Editor implements IDisposable {
 			return cached;
 		}
 
-		let blameData = this._editorService.getEditorBlameData();
 		let codeLenses: ICodeLensSymbol[] = [];
+		let blameData = this._editorService.getEditorBlameData();
+		if (!blameData) {
+			return codeLenses;
+		}
 		for (let i = 0; i < blameData.length; i++) {
 			const {repo, rev} = URIUtils.repoParams(model.uri);
 			const blameLine = blameData[i];
@@ -528,6 +531,15 @@ export class Editor implements IDisposable {
 		const p = Promise.resolve(codeLenses);
 		codeLensCache.set(key, p);
 		return p;
+	}
+
+	toggleAuthors(visible: boolean): void {
+		Features.codeLens.toggle();
+
+		this._editor.updateOptions({ codeLens: visible });
+
+		const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
+		AnalyticsConstants.Events.AuthorsToggle_Clicked.logEvent({ visible, repo, rev, path });
 	}
 
 	public layout(): void {

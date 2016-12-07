@@ -1,7 +1,6 @@
 @value base "sourcegraph/components/styles/_base.css";
 @value colors "sourcegraph/components/styles/_colors.css";
 @value typography "sourcegraph/components/styles/_typography.css";
-@value breadcrumb "sourcegraph/components/styles/breadcrumb.css";
 @value animation "sourcegraph/components/styles/animation.css";
 
 .list_item {
@@ -48,18 +47,6 @@
 	flex: 1 1 auto;
 	letter-spacing: initial;
 	text-transform: none;
-}
-
-.path_sep {
-	composes: sep from breadcrumb;
-}
-
-.path_active {
-	composes: active from breadcrumb;
-}
-
-.path_inactive {
-	composes: inactive from breadcrumb;
 }
 
 .hidden {

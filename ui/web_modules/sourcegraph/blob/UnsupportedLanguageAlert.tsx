@@ -3,9 +3,12 @@ import { Panel } from "sourcegraph/components";
 import { Alert } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils/index";
 
-interface Props { ext: string | null; }
+interface Props {
+	ext: string | null;
+	style?: React.CSSProperties;
+}
 
-export function UnsupportedLanguageAlert({ext}: Props): JSX.Element {
+export function UnsupportedLanguageAlert({ext, style}: Props): JSX.Element {
 
 	const iconSx = {
 		fill: "white",
@@ -13,10 +16,10 @@ export function UnsupportedLanguageAlert({ext}: Props): JSX.Element {
 		marginRight: whitespace[2],
 	};
 
-	const sx = {
-		margin: whitespace[2],
-		padding: `${whitespace[2]} ${whitespace[3]}`,
-	};
+	const sx = Object.assign({
+		display: "inline-block",
+		padding: `${whitespace[1]} ${whitespace[2]}`,
+	}, style);
 
 	return <Panel color="orange" style={sx}>
 		<Alert width={14} style={iconSx} />

@@ -1,10 +1,17 @@
-import { after, before, merge } from "glamor";
+import { after, before, media, merge } from "glamor";
 
 export const breakpoints = {
-	"not-sm": "screen and (min-width: 48em)",
-	"sm": "screen and (max-width: 48em)",
-	"md": "screen and (min-width: 48em) and (max-width: 64em)",
-	"lg": "screen and (min-width: 64em)",
+	notSm: "screen and (min-width: 48em)",
+	sm: "screen and (max-width: 48em)",
+	md: "screen and (min-width: 48em) and (max-width: 64em)",
+	lg: "screen and (min-width: 64em)",
+};
+
+const hide = {
+	notSm: media(breakpoints.notSm, { display: "none" }),
+	sm: media(breakpoints.sm, { display: "none !important" }),
+	md: media(breakpoints.md, { display: "none !important" }),
+	lg: media(breakpoints.lg, { display: "none !important" }),
 };
 
 export const clearFix = merge(
@@ -25,8 +32,12 @@ export const container = {
 	maxWidth: 1280,
 };
 
+const editorToolbarHeight = 65;
+
 export const layout = {
 	breakpoints,
 	clearFix,
 	container,
+	editorToolbarHeight,
+	hide,
 };

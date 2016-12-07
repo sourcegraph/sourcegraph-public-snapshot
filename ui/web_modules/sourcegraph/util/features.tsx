@@ -17,10 +17,19 @@ class Feature {
 	public disable(): void {
 		delete localStorage[this.name];
 	}
+
+	public toggle(): void {
+		if (this.isEnabled()) {
+			this.disable();
+		} else {
+			this.enable();
+		}
+	}
 }
 
 export const Features = {
-	codeLens: new Feature("code-lens"),
+	authorsToggle: new Feature("authors_toggle"),
+	codeLens: new Feature("code_lens"),
 	externalReferences: new Feature("external-references"),
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),

@@ -18,6 +18,7 @@ interface Props {
 	// to construct URLs
 	routes: any[];
 	routeParams: RouteParams;
+	style?: React.CSSProperties;
 }
 
 interface State extends Props {
@@ -161,6 +162,7 @@ class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State>
 				position: "relative",
 			},
 			typography.size[6],
+			this.props.style,
 		);
 
 		return <div ref={(e) => this._wrapper = e} style={sx}>

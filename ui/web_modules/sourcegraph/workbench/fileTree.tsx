@@ -6,8 +6,8 @@ import { ITree } from "vs/base/parts/tree/browser/tree";
 import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 
 import { urlToBlob } from "sourcegraph/blob/routes";
-import { Heading } from "sourcegraph/components/Heading";
-import { colors } from "sourcegraph/components/utils/colors";
+import { FlexContainer, Heading } from "sourcegraph/components";
+import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { Events } from "sourcegraph/util/constants/AnalyticsConstants";
 import { urlTo } from "sourcegraph/util/urlTo";
 import { Controller, FileTreeDataSource, Node, Renderer, makeTree, nodePathFromPath } from "sourcegraph/workbench/fileTreeModel";
@@ -166,19 +166,22 @@ export class FileTree extends React.Component<Props, {}> {
 }
 
 function Title({repo}: { repo: string }): JSX.Element {
-	return <Heading level={5} style={{
-		boxShadow: `rgba(0, 0, 0, 0.4) 0px 2px 6px 0px`,
+	return <FlexContainer items="center" style={{
+		boxShadow: `${colors.black(0.4)} 0px 2px 6px 0px`,
 		zIndex: 1,
 		background: colors.coolGray2(),
 		position: "relative",
+		paddingLeft: whitespace[4],
 		margin: 0,
-		padding: "10px 20px 10px",
+		height: layout.editorToolbarHeight,
 	}}>
-		<Link to={urlTo("repo", { splat: repo })}
-			{...hover({ color: `${colors.white()} !important` }) }
-			style={{ color: colors.coolGray4() }}
-			>
-			{repo.replace(/^github.com\//, "")}
-		</Link>
-	</Heading >;
+		<Heading level={5}>
+			<Link to={urlTo("repo", { splat: repo })}
+				{...hover({ color: `${colors.white()} !important` }) }
+				style={{ color: colors.coolGray4() }}
+				>
+				{repo.replace(/^github.com\//, "")}
+			</Link>
+		</Heading>
+	</FlexContainer>;
 }

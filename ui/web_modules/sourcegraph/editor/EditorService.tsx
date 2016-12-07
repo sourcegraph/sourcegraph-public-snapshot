@@ -117,7 +117,7 @@ export class EditorService implements IEditorService {
 		}
 
 		const {repo, rev, path} = URIUtils.repoParams(data.resource);
-		const blameBody = Features.codeLens.isEnabled() ? `blame(startLine: 0, endLine: 0) {
+		const blameBody = Features.authorsToggle.isEnabled() ? `blame(startLine: 0, endLine: 0) {
 												name
 												email
 												rev

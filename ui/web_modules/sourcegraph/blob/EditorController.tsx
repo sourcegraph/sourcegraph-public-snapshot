@@ -17,6 +17,7 @@ import { Location } from "sourcegraph/Location";
 import { trimRepo } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
 import { Store } from "sourcegraph/Store";
+import { Features } from "sourcegraph/util/features";
 
 // Don't load too much from vscode, because this file is loaded in the
 // initial bundle and we want to keep the initial bundle small.
@@ -39,6 +40,7 @@ export interface Props {
 }
 
 interface State extends Props {
+	codeLens: boolean;
 	toast: string | null;
 }
 
@@ -273,13 +275,18 @@ export class EditorController extends Container<Props, State> {
 		this.context.router.push(url);
 	}
 
+	toggleAuthors(visible: boolean): void {
+		if (this._editor && Features.authorsToggle.isEnabled()) {
+			this._editor.toggleAuthors(visible);
+		}
+	};
+
 	render(): JSX.Element | null {
 		let title = trimRepo(this.props.repo);
 		const pathParts = this.props.path ? this.props.path.split("/") : null;
 		if (pathParts) {
 			title = `${pathParts[pathParts.length - 1]} · ${title}`;
 		}
-
 		return (
 			<RepoMain
 				repo={this.props.repo}
@@ -302,6 +309,7 @@ export class EditorController extends Container<Props, State> {
 						routes={this.props.routes}
 						routeParams={this.props.params}
 						toast={this.state.toast}
+						toggleAuthors={(visible) => this.toggleAuthors(visible)}
 						/>
 					<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 				</FlexContainer>

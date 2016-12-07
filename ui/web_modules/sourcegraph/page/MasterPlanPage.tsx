@@ -1,4 +1,3 @@
-import { media } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { context } from "sourcegraph/app/context";
@@ -54,7 +53,7 @@ function SignInButton({block}: { block: boolean }): JSX.Element {
 		modalName="join"
 		location={location}
 		onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname })}
-		{...media(layout.breakpoints["sm"], { display: "none" }) }
+		{ ...layout.hide.sm }
 		style={{
 			paddingTop: whitespace[2],
 			paddingBottom: whitespace[2],
@@ -84,7 +83,7 @@ export function MasterPlanPage(): JSX.Element {
 				paddingLeft: whitespace[4],
 				paddingTop: whitespace[3],
 			}}
-				{...media(layout.breakpoints["sm"], { display: "none" }) }
+				{ ...layout.hide.sm }
 				>
 				<Affix offset={0}>
 					<Heading level={7} color="gray">Phase 1 goals</Heading>
@@ -286,7 +285,7 @@ export function MasterPlanPage(): JSX.Element {
 				<p>
 					Getting these right and building the global code graph means you’ll be able to find and use more existing, high-quality open-source components for the common parts of your application, so you can focus on solving the problems that are unique to your business or project.
 				</p>
-				<div {...media(layout.breakpoints["not-sm"], { display: "none" }) }>
+				<div { ...layout.hide.notSm }>
 					<Panel hoverLevel="low" hover={false} style={{
 						margin: "auto",
 						marginBottom: whitespace[2],

@@ -3,10 +3,9 @@ import * as React from "react";
 import * as Relay from "react-relay";
 import { InjectedRouter, Route } from "react-router";
 import { RouteParams } from "sourcegraph/app/routeParams";
-import { GridCol, Panel, RepoLink } from "sourcegraph/components";
+import { GridCol, Panel } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
-import { colors } from "sourcegraph/components/utils";
-import { whitespace } from "sourcegraph/components/utils/index";
+import { colors, whitespace } from "sourcegraph/components/utils";
 import { Location } from "sourcegraph/Location";
 import { repoParam, repoPath, repoRev, trimRepo } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
@@ -84,8 +83,10 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 						<div style={{
 							padding: `${whitespace[2]} ${whitespace[3]}`,
 						}}>
-							<RepoLink repo={this.props.repo} rev={this.props.rev} style={{ marginRight: 4 }} />
-							<RepoNavContext params={this.props.params} />
+							<RepoNavContext params={this.props.params} style={{
+								color: colors.coolGray3(),
+								marginRight: 4,
+							}} />
 						</div>
 					</Panel>
 					{/* Refactor once new Panel and Grid code has been merged in */}

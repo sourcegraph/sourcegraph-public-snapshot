@@ -7,6 +7,7 @@ interface Props {
 	underline?: Color;
 	color: Color;
 	align?: "left" | "right" | "center"; // left, right, center
+	compact?: boolean;
 	style?: Object;
 }
 
@@ -33,8 +34,8 @@ export const Heading = (props: Props): any => {
 		{
 			color: headingColors[props.color],
 			fontWeight: typography.weight[2],
-			marginBottom: whitespace[2],
-			marginTop: whitespace[2],
+			marginBottom: props.compact ? 0 : whitespace[2],
+			marginTop: props.compact ? 0 : whitespace[2],
 			textTransform: props.level === 7 ? "uppercase" : "auto",
 			textAlign: props.align,
 		},

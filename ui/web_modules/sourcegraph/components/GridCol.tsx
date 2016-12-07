@@ -28,9 +28,9 @@ export function GridCol({
 	const column = colSizes.map((val) => val + unit);
 
 	const sx = merge(
-		media(breakpoints["sm"], { width: colSm ? column[colSm] : "" }),
-		media(breakpoints["md"], { width: colMd ? column[colMd] : "" }),
-		media(breakpoints["lg"], { width: colLg ? column[colLg] : "" }),
+		media(breakpoints.sm, { width: colSm ? column[colSm] : "" }),
+		media(breakpoints.md, { width: colMd ? column[colMd] : "" }),
+		media(breakpoints.lg, { width: colLg ? column[colLg] : "" }),
 		{
 			boxSizing: "border-box",
 			width: column[col],

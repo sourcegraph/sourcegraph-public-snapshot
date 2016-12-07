@@ -1,4 +1,4 @@
-import { hover, media, merge } from "glamor";
+import { hover, merge } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { Button, FlexContainer, Logo } from "sourcegraph/components";
@@ -47,7 +47,7 @@ export function Nav({context, style, location}: Props): JSX.Element {
 					modalName="join"
 					location={location}
 					onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV })}
-					{...media(layout.breakpoints["sm"], { display: "none" }) }
+					{ ...layout.hide.sm }
 					style={{
 						paddingTop: whitespace[2],
 						paddingBottom: whitespace[2],

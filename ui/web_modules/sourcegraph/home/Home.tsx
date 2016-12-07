@@ -234,5 +234,5 @@ interface TweetProps { children?: React.ReactNode[]; }
 function Tweet({children}: TweetProps): JSX.Element {
 	return <div
 		{...style({ flex: "0 0 49%", maxWidth: "49%" }) }
-		{...media(layout.breakpoints["sm"], { flex: "0 0 100%", maxWidth: "100%" }) }>{children}</div>;
+		{...media(layout.breakpoints.sm, { flex: "0 0 100%", maxWidth: "100%" }) }>{children}</div>;
 }

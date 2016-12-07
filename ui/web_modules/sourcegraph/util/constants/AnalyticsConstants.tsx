@@ -107,8 +107,8 @@ export class NonInteractionLoggableEvent extends LoggableEvent {
 // TODO: Add list of permissable properties to each event to limit proliferation
 export const Events = {
 	// NOTE: this is only a repository for sourcegraph.com events; others include:
-	// - Chrome extension 
-	//      - Listed in app/analytics/EventLogger.js in the browser-ext folder  
+	// - Chrome extension
+	//      - Listed in app/analytics/EventLogger.js in the browser-ext folder
 
 	// Auth events
 	ContactIntercom_Clicked: new LoggableEvent("ClickContactIntercom", EventCategories.Auth, EventActions.Click),
@@ -173,13 +173,14 @@ export const Events = {
 	FileTree_Navigated: new LoggableEvent("FileTreeActivated", EventCategories.CodeView, EventActions.Click),
 	CodeLensVisibility_Toggled: new LoggableEvent("ToggleCodeLensVisibility", EventCategories.CodeView, EventActions.Toggle),
 	CodeLensCommit_Clicked: new LoggableEvent("ClickedCodeLensCommit", EventCategories.CodeView, EventActions.Click),
+	AuthorsToggle_Clicked: new LoggableEvent("ClickedAuthorsToggle", EventCategories.CodeView, EventActions.Click),
 
 	// Quick open/search
 	QuickopenItem_Selected: new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),
 	Quickopen_Initiated: new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),
 	Quickopen_Dismissed: new LoggableEvent("QuickOpenDismissed", EventCategories.QuickOpen, EventActions.Close),
 
-	// Def info - implemented manually in static_event_logger.js 
+	// Def info - implemented manually in static_event_logger.js
 	// 	TODO(dadlerj): delete these, or integrate this file with that logger
 	// DefInfoDefLink_Clicked:                  new LoggableEvent("DefInfoViewDefLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
 	// DefInfoFileLink_Clicked:                 new LoggableEvent("DefInfoViewFileLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
