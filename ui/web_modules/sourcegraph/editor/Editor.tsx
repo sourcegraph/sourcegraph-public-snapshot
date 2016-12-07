@@ -508,7 +508,7 @@ export class Editor implements IDisposable {
 		for (let i = 0; i < blameData.length; i++) {
 			const {repo, rev} = URIUtils.repoParams(model.uri);
 			const blameLine = blameData[i];
-			const timeSince = moment(new Date(blameLine.date)).fromNow();
+			const timeSince = moment(blameLine.date, "YYYY-MM-DDThh:mmTZD").fromNow();
 			codeLenses.push({
 				id: `${blameLine.rev}${blameLine.startLine}-${blameLine.endLine}`,
 				range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),
