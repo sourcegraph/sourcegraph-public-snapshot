@@ -15,6 +15,8 @@ import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/pl
 
 const fetch = singleflightFetch(defaultFetch);
 
+const codeLensCache = new Map<string, GQL.IHunk[]>();
+
 export interface IEditorOpenedEvent {
 	model: editorCommon.IModel;
 	editor: editorCommon.IEditor;
@@ -30,8 +32,6 @@ export class EditorService implements IEditorService {
 	private _savedState: Map<string, IEditorViewState> = new Map();
 
 	private _onDidOpenEditor: (e: IEditorOpenedEvent) => void;
-
-	private _fileBlame: GQL.IHunk[] = [];
 
 	public setEditor(editor: editorCommon.IEditor): void {
 		this.editor = new SimpleEditor(editor);
@@ -102,12 +102,12 @@ export class EditorService implements IEditorService {
 		});
 	}
 
-	private setEditorBlameData(data: GQL.IHunk[]): void {
-		this._fileBlame = data;
-	}
-
-	public getEditorBlameData(): GQL.IHunk[] {
-		return this._fileBlame;
+	public getEditorBlameData(key: string): GQL.IHunk[] {
+		let cachedLens = codeLensCache.get(key);
+		if (cachedLens) {
+			return cachedLens;
+		}
+		return [];
 	}
 
 	private resolveModel(data: IResourceInput, refresh?: boolean): TPromise<editorCommon.IModel> {
@@ -157,8 +157,9 @@ export class EditorService implements IEditorService {
 					if (!resp.data) {
 						throw new Error("file content not available");
 					}
+
 					// Call getModel again in case we lost a race.
-					this.setEditorBlameData(resp.data.root.repository.commit.commit.file.blame);
+					codeLensCache.set("git://" + repo + "?" + rev + "#" + path, resp.data.root.repository.commit.commit.file.blame);
 					return getModel(data.resource) || createModel(resp.data.root.repository.commit.commit.file.content, getModeByFilename(path), data.resource);
 				})
 				.catch(err => err)

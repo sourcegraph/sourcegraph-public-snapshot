@@ -55,7 +55,6 @@ function cacheKey(model: IReadOnlyModel, position: IPosition): string {
 
 const hoverCache = new Map<string, Thenable<Hover>>(); // "single-flight" and caching on word boundaries
 const defCache = new Map<string, Thenable<Definition | null>>(); // "single-flight" and caching on word boundaries
-const codeLensCache = new Map<string, Thenable<ICodeLensSymbol[]>>();
 
 // HACK: don't show "Right-click to view references" on primitive types; if done properly, this
 // should be determined by a type property on the hover response.
@@ -504,16 +503,8 @@ export class Editor implements IDisposable {
 
 	provideCodeLenses(model: IReadOnlyModel, token: CancellationToken): ICodeLensSymbol[] | Thenable<ICodeLensSymbol[]> {
 		const key = model.uri.toString(true);
-		const cached = codeLensCache.get(key);
-		if (cached) {
-			return cached;
-		}
-
+		let blameData = this._editorService.getEditorBlameData(key);
 		let codeLenses: ICodeLensSymbol[] = [];
-		let blameData = this._editorService.getEditorBlameData();
-		if (!blameData) {
-			return codeLenses;
-		}
 		for (let i = 0; i < blameData.length; i++) {
 			const {repo, rev} = URIUtils.repoParams(model.uri);
 			const blameLine = blameData[i];
@@ -528,9 +519,7 @@ export class Editor implements IDisposable {
 				} as Command,
 			});
 		}
-		const p = Promise.resolve(codeLenses);
-		codeLensCache.set(key, p);
-		return p;
+		return Promise.resolve(codeLenses);
 	}
 
 	toggleAuthors(visible: boolean): void {
