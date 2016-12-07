@@ -531,6 +531,7 @@ func yza() {}
 }
 
 func startProxy(t testing.TB, proxy *xlang.Proxy) (addr string, done func()) {
+	xlang.LogServerStats = false
 	bindAddr := ":0"
 	if os.Getenv("CI") != "" {
 		// CircleCI has issues with IPv6 (e.g., "dial tcp [::]:39984:

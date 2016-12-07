@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -200,6 +201,111 @@ func BenchmarkIntegration(b *testing.B) {
 					}
 					b.StopTimer() // don't include server teardown
 				})
+			}
+		})
+	}
+}
+
+// BenchmarkIntegrationShared is a benchmark for testing how well we reuse
+// previously computed artifacts.
+//
+// go test -c
+// ./xlang.test -test.bench=IntegrationShared -test.v -test.run='^$
+func BenchmarkIntegrationShared(b *testing.B) {
+	if testing.Short() {
+		b.Skip("skip long integration test")
+	}
+
+	cleanup := useGithubForVFS()
+	defer cleanup()
+
+	tests := map[string]struct {
+		// oldRootPath will be run outside of the benchmark timers. It is where the reused artifacts will come from
+		oldRootPath string
+
+		rootPath string
+
+		// Only a TextDocument is specified since we do the same
+		// prepare hover as in production.
+		path string
+	}{
+		// noop tests the case where no go files have changed between commits
+		"noop": {
+			oldRootPath: "git://github.com/kubernetes/kubernetes?ae03433a70ddb01b9c2be052a9ea0810395ff368",
+			rootPath:    "git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33",
+			path:        "pkg/ssh/ssh.go",
+		},
+		// fast is a small change in one file
+		"fast": {
+			oldRootPath: "git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33",
+			rootPath:    "git://github.com/kubernetes/kubernetes?e105eec9c91afdd19e5245ddfadf2e2d2155eb6f",
+			path:        "pkg/ssh/ssh.go",
+		},
+	}
+	ctx := context.Background()
+	for label, test := range tests {
+		b.Run(label, func(b *testing.B) {
+			old, err := uri.Parse(test.oldRootPath)
+			if err != nil {
+				b.Fatal(err)
+			}
+			root, err := uri.Parse(test.rootPath)
+			if err != nil {
+				b.Fatal(err)
+			}
+
+			oldfs, err := xlang.NewRemoteRepoVFS(ctx, old.CloneURL(), old.Rev())
+			if err != nil {
+				b.Fatal(err)
+			}
+			fs, err := xlang.NewRemoteRepoVFS(ctx, root.CloneURL(), root.Rev())
+			if err != nil {
+				b.Fatal(err)
+			}
+			// ensure repo archive has been fetched and read before starting timer
+			oldfs.Stat(ctx, ".")
+			fs.Stat(ctx, ".")
+
+			do := func(c *jsonrpc2.Conn, rootPath string) {
+				if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
+					InitializeParams: lsp.InitializeParams{RootPath: rootPath},
+					Mode:             "go",
+				}, nil); err != nil {
+					b.Fatal(err)
+				}
+
+				var hover lsp.Hover
+				if err := c.Call(ctx, "textDocument/hover", &lsp.TextDocumentPositionParams{
+					TextDocument: lsp.TextDocumentIdentifier{
+						URI: rootPath + "#" + test.path,
+					},
+				}, &hover); err != nil {
+					b.Fatal(err)
+				}
+
+				if err := c.Close(); err != nil {
+					b.Fatal(err)
+				}
+			}
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+
+				proxy := xlang.NewProxy()
+				addr, done := startProxy(b, proxy)
+				defer done() // TODO ensure we close between each loop
+
+				c := dialProxy(b, addr, nil)
+				do(c, test.oldRootPath)
+				c = dialProxy(b, addr, nil)
+
+				b.StartTimer()
+				do(c, test.rootPath)
+				b.StopTimer()
+
+				proxy.ShutDownIdleServers(ctx, 0)
+				done()
 			}
 		})
 	}
