@@ -24,7 +24,7 @@ import { Features } from "sourcegraph/util/features";
 import { Editor } from "sourcegraph/editor/Editor";
 import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import { IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
-import { IRange } from "vs/editor/common/editorCommon";
+import { ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 
 export interface Props {
 	repo: string;
@@ -104,7 +104,7 @@ export class EditorController extends Container<Props, State> {
 		if (this._editor) {
 			this._editorPropsChanged(null, this.props);
 			this._editor.onDidOpenEditor(e => this._onEditorOpened(e));
-			this._editor.onLineSelected((mouseDownEvent, mouseUpEvent): void => this._onLineSelected());
+			this._editor.onCursorSelectionChanged(this.onCursorSelectionChanged);
 		}
 	}
 
@@ -181,46 +181,21 @@ export class EditorController extends Container<Props, State> {
 		}
 	}
 
-	_onLineSelected(): void {
-		if (!this._editor || !this._editor.getSelection()) {
-			return;
-		}
-
-		let selection = this._editor.getSelection();
-		let startSelection;
-		let startColumn;
-		let endSelection;
-		let endColumn;
-		// Fix URL hash formatting to be in asc order.
-		if (selection.selectionStartLineNumber < selection.positionLineNumber) {
-			startSelection = selection.selectionStartLineNumber;
-			startColumn = selection.selectionStartColumn;
-			endSelection = selection.positionLineNumber;
-			endColumn = selection.positionColumn;
-		} else {
-			startSelection = selection.positionLineNumber;
-			startColumn = selection.positionColumn;
-			endSelection = selection.selectionStartLineNumber;
-			endColumn = selection.selectionStartColumn;
-		}
-
-		// Handle VSCode selection off by 1 case.
-		if (startSelection !== endSelection) {
-			if (selection.selectionStartColumn === 1 && selection.selectionStartLineNumber > selection.positionLineNumber) {
-				endSelection = endSelection - 1;
-			} else if (selection.endColumn === 1) {
-				endSelection = endSelection - 1;
-			}
-		}
+	onCursorSelectionChanged(e: ICursorSelectionChangedEvent): void {
+		const startLine = e.selection.startLineNumber;
+		const endLine = e.selection.endLineNumber;
 
 		let lineHash: string;
-		if (startSelection !== endSelection) {
-			lineHash = "#L" + startSelection + "-" + endSelection;
+		if (startLine !== endLine) {
+			lineHash = "#L" + startLine + "-" + endLine;
 		} else {
-			lineHash = "#L" + startSelection;
+			lineHash = "#L" + startLine;
 		}
 
-		history.replaceState("", document.title, window.location.pathname + lineHash); // nice and clean
+		// Circumvent react-router to avoid a jarring jump to the anchor position.
+		// Some components depend on knowing url has changed so dispatch a event to indicate this has happened.
+		history.replaceState("", document.title, window.location.pathname + lineHash);
+		window.document.dispatchEvent(new Event("editorLineSelected"));
 	}
 
 	_onResize(e: Event): void {
