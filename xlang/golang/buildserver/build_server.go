@@ -302,7 +302,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				}
 			})
 		}
-		if req.Method == "workspace/reference" {
+		if req.Method == "workspace/xreferences" {
 			// We need every transitive dependency, for every Go package in the
 			// repository.
 			w := ctxvfs.Walk(ctx, h.RootFSPath, h.FS)
