@@ -164,7 +164,7 @@ class AuthorshipContrib implements modes.CodeLensProvider {
 				range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),
 				command: {
 					id: "codelens.authorship.commit",
-					title: `${blameLine.name} ${timeSince}`,
+					title: `${blameLine.name} ${timeSince} - ${blameLine.rev.substr(0, 6)}`,
 					arguments: [`${repo}/commit/${blameLine.rev}#diff-${rev}`],
 				} as Command,
 			});
