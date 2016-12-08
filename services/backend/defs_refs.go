@@ -132,7 +132,37 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (res *sourcegraph.RefLocations, err error) {
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()
-	return localstore.GlobalRefs.RefLocations(ctx, op)
+
+	// TODO(slimsag): return real data from global refs DB
+	//return localstore.GlobalRefs.RefLocations(ctx, op)
+
+	return &sourcegraph.RefLocations{
+		Locations: []*sourcegraph.RefLocation{
+			&sourcegraph.RefLocation{
+				Scheme:    "git",
+				Host:      "github.com",
+				Path:      "/sourcegraph/checkup",
+				Version:   "00c94905b0c76fba4633457c3c9a196b0b6c3aed",
+				File:      "checkup.go",
+				StartLine: 130,
+				StartChar: 18,
+				EndLine:   130,
+				EndChar:   18,
+			},
+			&sourcegraph.RefLocation{
+				Scheme:    "git",
+				Host:      "github.com",
+				Path:      "/golang/go",
+				Version:   "0d818588685976407c81c60d2fda289361cbc8ec",
+				File:      "src/time/time.go",
+				StartLine: 233,
+				StartChar: 26,
+				EndLine:   233,
+				EndChar:   40,
+			},
+		},
+		StreamResponse: sourcegraph.StreamResponse{HasMore: false},
+	}, nil
 }
 
 var indexDuration = prometheus.NewGauge(prometheus.GaugeOpts{
