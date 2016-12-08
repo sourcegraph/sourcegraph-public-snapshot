@@ -13,12 +13,13 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // lspTests runs all test suites for LSP functionality.
-func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition map[string]string, wantReferences, wantSymbols map[string][]string) {
+func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string) {
 	for pos, want := range wantHover {
 		tbRun(t, fmt.Sprintf("hover-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
 			hoverTest(t, ctx, c, root, pos, want)
@@ -28,6 +29,11 @@ func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI
 	for pos, want := range wantDefinition {
 		tbRun(t, fmt.Sprintf("definition-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
 			definitionTest(t, ctx, c, root, pos, want)
+		})
+	}
+	for pos, want := range wantXDefinition {
+		tbRun(t, fmt.Sprintf("xdefinition-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
+			xdefinitionTest(t, ctx, c, root, pos, want)
 		})
 	}
 
@@ -89,6 +95,21 @@ func definitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	definition = strings.TrimPrefix(definition, "file:///")
 	if definition != want {
 		t.Errorf("got %q, want %q", definition, want)
+	}
+}
+
+func xdefinitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, pos, want string) {
+	file, line, char, err := parsePos(pos)
+	if err != nil {
+		t.Fatal(err)
+	}
+	xdefinition, err := callXDefinition(ctx, c, root.WithFilePath(file).String(), line, char)
+	if err != nil {
+		t.Fatal(err)
+	}
+	xdefinition = strings.TrimPrefix(xdefinition, "file:///")
+	if xdefinition != want {
+		t.Errorf("got %q, want %q", xdefinition, want)
 	}
 }
 
@@ -184,6 +205,28 @@ func callDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, cha
 			str += ", "
 		}
 		str += fmt.Sprintf("%s:%d:%d", loc.URI, loc.Range.Start.Line+1, loc.Range.Start.Character+1)
+	}
+	return str, nil
+}
+
+func callXDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, char int) (string, error) {
+	var res []lspext.LocationInformation
+	err := c.Call(ctx, "textDocument/xdefinition", lsp.TextDocumentPositionParams{
+		TextDocument: lsp.TextDocumentIdentifier{URI: uri},
+		Position:     lsp.Position{Line: line, Character: char},
+	}, &res)
+	if err != nil {
+		return "", err
+	}
+	var str string
+	for i, loc := range res {
+		if loc.Location.URI == "" {
+			continue
+		}
+		if i != 0 {
+			str += ", "
+		}
+		str += fmt.Sprintf("%s:%d:%d %s", loc.Location.URI, loc.Location.Range.Start.Line+1, loc.Location.Range.Start.Character+1, loc.Symbol)
 	}
 	return str, nil
 }

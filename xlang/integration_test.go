@@ -25,6 +25,7 @@ func TestIntegration(t *testing.T) {
 		pinDepReposToRev map[string]string // so that file:line:col expectations are stable
 		wantHover        map[string]string
 		wantDefinition   map[string]string
+		wantXDefinition  map[string]string
 		wantReferences   map[string][]string
 		wantSymbols      map[string][]string
 	}{
@@ -38,6 +39,9 @@ func TestIntegration(t *testing.T) {
 			},
 			wantDefinition: map[string]string{
 				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6", // stdlib
+			},
+			wantXDefinition: map[string]string{
+				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6 attr_package:net/http attr_packageName:http name:Request",
 			},
 		},
 		"git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8": {
@@ -54,6 +58,9 @@ func TestIntegration(t *testing.T) {
 				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6", // vendored TODO(sqs): really want the below result which has the non-vendored path as well, need to implement that
 				//"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 git://github.com/alecthomas/units#bytes.go:30:6", // vendored
 			},
+			wantXDefinition: map[string]string{
+				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 attr_package:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units attr_packageName:units name:ParseBase2Bytes vendor:true",
+			},
 		},
 		"git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f": {
 			mode: "go",
@@ -65,6 +72,9 @@ func TestIntegration(t *testing.T) {
 			},
 			wantDefinition: map[string]string{
 				"golint/golint.go:91:18": "git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f#lint.go:31:6", // diff pkg, same repo
+			},
+			wantXDefinition: map[string]string{
+				"golint/golint.go:91:18": "git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f#lint.go:31:6 attr_package:github.com/golang/lint attr_packageName:lint name:Linter",
 			},
 		},
 		"git://github.com/gorilla/csrf?a8abe8abf66db8f4a9750d76ba95b4021a354757": {
@@ -80,6 +90,9 @@ func TestIntegration(t *testing.T) {
 			wantDefinition: map[string]string{
 				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6", // diff repo
 			},
+			wantXDefinition: map[string]string{
+				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6 attr_package:github.com/gorilla/securecookie attr_packageName:securecookie name:SecureCookie",
+			},
 		},
 		"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171": {
 			// SHA is equivalent to go1.7.1 tag, but make sure we
@@ -93,6 +106,10 @@ func TestIntegration(t *testing.T) {
 			wantDefinition: map[string]string{
 				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/encoding/hex/hex.go:70:6", // func decl
 				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/bytes/buffer.go:17:6",     // stdlib type
+			},
+			wantXDefinition: map[string]string{
+				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/encoding/hex/hex.go:70:6 attr_package:encoding/hex attr_packageName:hex name:fromHexChar",
+				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/bytes/buffer.go:17:6 attr_package:bytes attr_packageName:bytes name:Buffer",
 			},
 			wantReferences: map[string][]string{
 				"src/net/http/httptest/server.go:204:25": []string{ // httptest.Server
@@ -118,6 +135,9 @@ func TestIntegration(t *testing.T) {
 			},
 			wantDefinition: map[string]string{
 				"libmachine/provision/provisioner.go:107:50": "git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770#libmachine/drivers/utils.go:36:6",
+			},
+			wantXDefinition: map[string]string{
+				"libmachine/provision/provisioner.go:107:50": "git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770#libmachine/drivers/utils.go:36:6 attr_package:github.com/docker/machine/libmachine/drivers attr_packageName:drivers name:RunSSHCommandFromDriver",
 			},
 		},
 	}
@@ -174,7 +194,7 @@ func TestIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantReferences, test.wantSymbols)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols)
 
 			if err := c.Close(); err != nil {
 				t.Fatal(err)
