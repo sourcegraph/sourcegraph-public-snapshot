@@ -100,7 +100,8 @@ function ejectModules(): void {
 
 	const annotated = document.getElementsByClassName("sg-blob-annotated") as HTMLCollectionOf<HTMLElement>;
 	for (let idx = annotated.length - 1; idx >= 0; idx--) {
-		annotated.item(idx).remove();
+		// Remove class name; allows re-applying annotations.
+		annotated.item(idx).className = annotated.item(idx).className.replace("sg-blob-annotated", "");
 	}
 }
 
