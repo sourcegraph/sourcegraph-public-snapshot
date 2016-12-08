@@ -39,7 +39,10 @@ func (h *LangHandler) handleHover(ctx context.Context, conn JSONRPC2Conn, req *j
 		}
 		return nil, fmt.Errorf("type/object not found at %+v", params.Position)
 	}
-
+	if o != nil && !o.Pos().IsValid() {
+		// Only builtins have invalid position, and don't have useful info.
+		return nil, nil
+	}
 	// Don't package-qualify the string output.
 	qf := func(*types.Package) string { return "" }
 
@@ -57,6 +60,7 @@ func (h *LangHandler) handleHover(ctx context.Context, conn JSONRPC2Conn, req *j
 		if s == "" {
 			s = types.ObjectString(o, qf)
 		}
+
 	} else if t != nil {
 		s = types.TypeString(t, qf)
 	}

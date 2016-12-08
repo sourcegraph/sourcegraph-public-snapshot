@@ -15,7 +15,7 @@ import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/pl
 
 const fetch = singleflightFetch(defaultFetch);
 
-const codeLensCache = new Map<string, GQL.IHunk[]>();
+export const codeLensCache = new Map<string, GQL.IHunk[]>();
 
 export interface IEditorOpenedEvent {
 	model: editorCommon.IModel;
@@ -100,14 +100,6 @@ export class EditorService implements IEditorService {
 
 			return this.editor;
 		});
-	}
-
-	public getEditorBlameData(key: string): GQL.IHunk[] {
-		let cachedLens = codeLensCache.get(key);
-		if (cachedLens) {
-			return cachedLens;
-		}
-		return [];
 	}
 
 	private resolveModel(data: IResourceInput, refresh?: boolean): TPromise<editorCommon.IModel> {
