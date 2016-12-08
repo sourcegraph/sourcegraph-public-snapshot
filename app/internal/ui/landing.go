@@ -158,7 +158,7 @@ type defLandingData struct {
 	DefFileURL       string
 	DefFileName      string
 	DefEventProps    *defEventProps
-	RefLocs          *sourcegraph.RefLocations
+	RefLocs          *sourcegraph.DeprecatedRefLocations
 	TruncatedRefLocs bool
 }
 

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -767,12 +766,12 @@ type DeprecatedRefLocationsList struct {
 	TotalRepos int32 `json:"TotalRepos,omitempty"`
 }
 
-func (d *DeprecatedRefLocationsList) Convert() *RefLocations {
-	sourceRefs := make([]*SourceRef, len(d.RepoRefs))
+func (d *DeprecatedRefLocationsList) Convert() *DeprecatedRefLocations {
+	sourceRefs := make([]*DeprecatedSourceRef, len(d.RepoRefs))
 	for i, r := range d.RepoRefs {
 		sourceRefs[i] = r.Convert()
 	}
-	return &RefLocations{
+	return &DeprecatedRefLocations{
 		SourceRefs:     sourceRefs,
 		StreamResponse: d.StreamResponse,
 		TotalSources:   int(d.TotalRepos),
@@ -791,12 +790,12 @@ type DeprecatedDefRepoRef struct {
 	Files []*DeprecatedDefFileRef `json:"Files,omitempty"`
 }
 
-func (d *DeprecatedDefRepoRef) Convert() *SourceRef {
-	files := make([]*FileRef, len(d.Files))
+func (d *DeprecatedDefRepoRef) Convert() *DeprecatedSourceRef {
+	files := make([]*DeprecatedFileRef, len(d.Files))
 	for i, f := range d.Files {
 		files[i] = f.Convert()
 	}
-	return &SourceRef{Source: d.Repo, Refs: int(d.Count), Score: int16(d.Score), FileRefs: files}
+	return &DeprecatedSourceRef{Source: d.Repo, Refs: int(d.Count), Score: int16(d.Score), FileRefs: files}
 }
 
 // DeprecatedFilePosition represents a line:column in a file.
@@ -817,44 +816,26 @@ type DeprecatedDefFileRef struct {
 	Score float32 `json:"Score,omitempty"`
 }
 
-func (d *DeprecatedDefFileRef) Convert() *FileRef {
+func (d *DeprecatedDefFileRef) Convert() *DeprecatedFileRef {
 	// Use d.Count since d.Positions is not actually populated today. This at
 	// least gives us valid "N times in file X" counts.
 	positions := make([]lsp.Range, d.Count)
-	return &FileRef{File: d.Path, Positions: positions, Score: int16(d.Score)}
+	return &DeprecatedFileRef{File: d.Path, Positions: positions, Score: int16(d.Score)}
 }
 
-// RefLocationsOptions specifies options for querying locations that reference
-// a definition.
-type RefLocationsOptions struct {
-	// Sources is the maximum number of source (e.g. repo) references to return.
-	Sources int
-
-	// Files is the maximum number of file references per source to return.
-	Files int
-
-	// Source is the source of the definition whose references are being
-	// queried. e.g. the git repository URI ("github.com/gorilla/mux").
-	Source string
-
-	// Name and ContainerName of the definition whose references are being
-	// queried.
-	Name, ContainerName string
-}
-
-// RefLocations lists the sources and files that reference a def.
-type RefLocations struct {
+// DeprecatedRefLocations lists the sources and files that reference a def.
+type DeprecatedRefLocations struct {
 	// SourceRefs holds the sources and files referencing the def.
-	SourceRefs []*SourceRef
+	SourceRefs []*DeprecatedSourceRef
 	// StreamResponse specifies if more results are available.
 	StreamResponse
 	// TotalSources is the total number of sources which reference the def.
 	TotalSources int
 }
 
-// SourceRef identifies a source (e.g. a repo) and its files that reference a
+// DeprecatedSourceRef identifies a source (e.g. a repo) and its files that reference a
 // def.
-type SourceRef struct {
+type DeprecatedSourceRef struct {
 	// Scheme is the URI scheme for the source, e.g. "git"
 	Scheme string
 
@@ -874,11 +855,11 @@ type SourceRef struct {
 	Score int16
 
 	// FileRefs is the list of files in this source referencing the def.
-	FileRefs []*FileRef
+	FileRefs []*DeprecatedFileRef
 }
 
-// FileRef identifies a file that references a def.
-type FileRef struct {
+// DeprecatedFileRef identifies a file that references a def.
+type DeprecatedFileRef struct {
 	// Scheme is the URI scheme for the source, e.g. "git"
 	Scheme string
 
@@ -898,52 +879,38 @@ type FileRef struct {
 	Score int16
 }
 
-// TopDefsOptions specifies options for querying the top definitions inside a
-// source (e.g. a repo).
-type TopDefsOptions struct {
-	// Source is the source of the definition whose references are being
-	// queried. e.g. the git repository URI ("github.com/gorilla/mux").
-	Source string
-
-	// Limit is the maximum number of definitions to return.
-	Limit int
+// RefLocationsOptions specifies options for querying locations that reference
+// a definition.
+type RefLocationsOptions struct {
+	URI             string
+	Line, Character int
+	Offset, Limit   int
 }
 
-// TopDefs lists the top definitions inside of a source (e.g. a repo).
-type TopDefs struct {
-	// SourceDefs holds the definitions for the source.
-	SourceDefs []*SourceDef
+// RefLocations is a lists of reference locations to a definition.
+type RefLocations struct {
+	// Locations is the actual locations that reference a definition.
+	Locations []*RefLocation
 	// StreamResponse specifies if more results are available.
 	StreamResponse
 }
 
-// SourceDef identifies a definition inside a source (e.g. a repo) and provides
-// statistics like the number of other sources and files that reference the def.
-type SourceDef struct {
-	// DefScheme is the URI scheme for the def's source, e.g. "git"
-	DefScheme string
+// RefLocation represents the location of a reference to a definition.
+type RefLocation struct {
+	// Scheme, Host, Path, Version, and File combined compose a URI at which a
+	// reference to a definition has been made. For example:
+	//
+	//  <scheme>://<host><path>?<version>#<file>
+	// 	git://github.com/gorilla/mux?master#sub/pkg/main.go
+	//
+	// The scheme is limited to VCS protocol schemes (e.g. `git` or `svn`)
+	// which are viewable directly by Sourcegraph itself. No language-specific
+	// schemes like `npm` etc are applicable here.
+	Scheme, Host, Path, Version, File string
 
-	// DefSource is the source of the def (e.g. a repo URI).
-	DefSource string
-
-	// DefVersion is the version of the source that references the def.
-	DefVersion string
-
-	// DefFile is the filepath in the source at which the def is located.
-	DefFile string
-
-	// DefName and DefContainerName of the definition whose references are
-	// being described.
-	DefName, DefContainerName string
-
-	// Sources is the number of sources that reference this def.
-	Sources int
-
-	// Files is the number of files in all sources that reference this def.
-	Files int
-
-	// Refs is the number of references to this def across all sources.
-	Refs int
+	// Start and end line/character positions at which the reference begins and
+	// ends, respectively.
+	StartLine, StartChar, EndLine, EndChar int
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
