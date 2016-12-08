@@ -24,7 +24,6 @@ export interface AnnotationsGetDefAtPosOptions {
 export interface AnnotationsListOptions {
 	Entry: TreeEntrySpec;
 	Range?: FileRange;
-	NoSrclibAnns?: boolean;
 }
 
 export interface AsyncRefreshIndexesOp {
@@ -232,35 +231,6 @@ export interface DefKey {
 	UnitType?: string;
 	Unit?: string;
 	Path: string;
-}
-
-export interface DefList {
-	Defs?: Def[];
-	Total?: number;
-}
-
-export interface DefListOptions {
-	Name?: string;
-	Query?: string;
-	ByteStart?: number;
-	ByteEnd?: number;
-	DefKeys?: any[];
-	RepoRevs?: string[];
-	UnitType?: string;
-	Unit?: string;
-	Path?: string;
-	Files?: string[];
-	FilePathPrefix?: string;
-	Kinds?: string[];
-	Exported?: boolean;
-	Nonlocal?: boolean;
-	IncludeTest?: boolean;
-	Doc?: boolean;
-	Fuzzy?: boolean;
-	Sort?: string;
-	Direction?: string;
-	PerPage?: number;
-	Page?: number;
 }
 
 export interface DefSearchResult {
@@ -863,7 +833,6 @@ export interface RepoTreeGetOptions {
 	FullLines?: boolean;
 	Recursive?: boolean;
 	RecurseSingleSubfolderLimit?: number;
-	NoSrclibAnns?: boolean;
 }
 
 export interface RepoTreeListOp {

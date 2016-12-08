@@ -50,8 +50,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
 
-	base.Path("/global-search").Methods("GET").Name(GlobalSearch)
-
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
 

@@ -11,7 +11,6 @@ import (
 	"github.com/golang/groupcache/lru"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
-	"sourcegraph.com/sourcegraph/srclib-go/depresolve"
 )
 
 var importPathMappingCache = cache.TTL(cache.Sync(lru.New(200000)), time.Hour)
@@ -37,7 +36,7 @@ type ResolveInfo struct {
 	CloneURL            string
 }
 
-var resolveImportPath = depresolve.ResolveImportPath
+var resolveImportPath = ResolveImportPath
 
 // ResolveCustomImportPath resolves a custom Go package import path to its
 // canonical import path, repo URI and clone URL.
