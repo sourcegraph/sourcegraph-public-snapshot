@@ -219,7 +219,7 @@ export function getDeltaRevs(): DeltaRevs | null {
 
 		} else {
 			// Last-ditch: look for inline comment form input which has base/head on it.
-			const baseInput = document.querySelector(`input[name="comparison_base_oid"]`);
+			const baseInput = document.querySelector(`input[name="comparison_start_oid"]`);
 			if (baseInput) {
 				base = (baseInput as HTMLInputElement).value;
 			}
