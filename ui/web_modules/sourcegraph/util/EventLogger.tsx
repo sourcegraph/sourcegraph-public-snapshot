@@ -8,7 +8,6 @@ import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { activateDefaultExperiments } from "sourcegraph/util/experiments";
 import { Features } from "sourcegraph/util/features";
 import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util/inventory";
 
@@ -557,7 +556,8 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// receive any live A/B tests, and if so, to activate them. The Optimize 360 event handler is 
 			// idempotent, and only pings Google's remote server once per page load. By firing here, we 
 			// provide universal handling of live A/B tests, with no other frontend JavaScript code required
-			activateDefaultExperiments();
+			// TODO (Dan): turned off to prevent Optimize from firing after an event has ended 
+			// activateDefaultExperiments();
 
 			return React.createElement(component, this.props);
 		}
