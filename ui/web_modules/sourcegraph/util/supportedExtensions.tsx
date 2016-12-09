@@ -13,6 +13,9 @@ if (modes.has("php")) {
 if (modes.has("python")) {
 	supportedExtensions.add("py");
 }
+if (modes.has("java")) {
+	supportedExtensions.add("java");
+}
 
 export function isSupportedExtension(ext: string): boolean {
 	return supportedExtensions.has(ext);

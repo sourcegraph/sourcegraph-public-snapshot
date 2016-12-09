@@ -18,6 +18,9 @@ if (Features.langPHP.isEnabled()) {
 if (Features.langPython.isEnabled()) {
 	modes.add("python");
 }
+if (Features.langJava.isEnabled()) {
+	modes.add("java");
+}
 
 export function languagesToSearchModes(languages: string[]): string[] {
 	return languages.map(lang => lang.toLowerCase())
