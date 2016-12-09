@@ -18,7 +18,7 @@ function setupDOM(url: string): (done: any) => void {
 	});
 }
 
-describe("GitHub DOM", () => {
+describe.skip("GitHub DOM", () => {
 	describe("blob view", () => {
 		const url = "https://github.com/gorilla/mux/blob/757bef944d0f21880861c2dd9c871ca543023cba/mux.go";
 		before(setupDOM(url));
