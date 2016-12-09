@@ -68,7 +68,7 @@ export function BlobTitle({
 	return <FlexContainer justify="between" items="center" wrap={true} style={{
 		backgroundColor: colors.coolGray1(),
 		boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
-		height: layout.editorToolbarHeight,
+		minHeight: layout.editorToolbarHeight,
 		zIndex: 1,
 		padding: `${whitespace[2]} ${whitespace[3]}`,
 	}}>

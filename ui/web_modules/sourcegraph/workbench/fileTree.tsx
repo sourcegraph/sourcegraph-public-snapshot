@@ -1,4 +1,4 @@
-import { css, hover, select } from "glamor";
+import { hover, media, select } from "glamor";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import { InjectedRouter, Link } from "react-router";
@@ -7,7 +7,7 @@ import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { FlexContainer, Heading } from "sourcegraph/components";
-import { colors, whitespace } from "sourcegraph/components/utils";
+import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { Events } from "sourcegraph/util/constants/AnalyticsConstants";
 import { urlTo } from "sourcegraph/util/urlTo";
 import { Controller, FileTreeDataSource, Node, Renderer, makeTree, nodePathFromPath } from "sourcegraph/workbench/fileTreeModel";
@@ -32,6 +32,9 @@ export class FileTree extends React.Component<Props, {}> {
 	private treeImpl: ITree;
 	context: { router: InjectedRouter };
 
+	// Element directly containing the FileTree
+	fileTreeEl: HTMLElement;
+
 	constructor() {
 		super();
 		this.divMounted = this.divMounted.bind(this);
@@ -52,7 +55,8 @@ export class FileTree extends React.Component<Props, {}> {
 	divMounted(domElement: HTMLDivElement): void {
 		if (!domElement) { return; }
 
-		this.resizeForSafari(domElement);
+		this.fileTreeEl = domElement;
+		this.resizeTreeToWindow(this.fileTreeEl);
 
 		const config = {
 			dataSource: new FileTreeDataSource(),
@@ -103,16 +107,24 @@ export class FileTree extends React.Component<Props, {}> {
 
 	onResize(): void {
 		if (!this.treeImpl) { return; }
-		const el = this.treeImpl.getHTMLElement();
-		this.resizeForSafari(el);
+		this.resizeTreeToWindow(this.fileTreeEl);
 		this.treeImpl.layout();
 	}
 
-	// Safari can't handle percent parent element in calc, so we manually set
-	// the element height.
-	resizeForSafari(domElement: HTMLElement): void {
-		if (domElement.clientHeight !== 0) { return; }
-		domElement.style.height = domElement.parentElement.clientHeight - 50 + "px";
+	// Both calc and FlexBox create an infinite height resizing loop in Firefox.
+	resizeTreeToWindow(domElement: HTMLElement): void {
+
+		// This should be the direct parent of the domElement.
+		// In this case, we expect this to be the direct parent of this.fileTreeEl
+		const treeParentEl = domElement.parentElement;
+		const treeParent = treeParentEl.getBoundingClientRect();
+
+		// Firefox calculates clientHeight differently. Check if the File Tree is extending beyond the viewport. If so, resize to to match the bottom of the viewport.
+		const fileTreeHeight = window.innerHeight < treeParent.bottom
+			? (window.innerHeight - treeParent.top) - layout.editorToolbarHeight
+			: treeParentEl.clientHeight - layout.editorToolbarHeight;
+
+		domElement.style.height = `${fileTreeHeight}px`;
 	}
 
 	render(): JSX.Element {
@@ -149,18 +161,14 @@ export class FileTree extends React.Component<Props, {}> {
 				backgroundImage: `url('data:image/svg+xml, ${DownChevron}')`,
 			}),
 		);
-		const media = css({
-			width: 0,
-			"@media(min-width: 768px)": {
-				minWidth: 300,
-			},
-		});
-		return <div {...media}>
+
+		return <div
+			{...media(layout.breakpoints.notSm, { minWidth: 300 }) }
+			style={{ overflow: "hidden", width: 0 }}>
+
 			<Title repo={this.props.repo} />
-			<div {...style} ref={this.divMounted} style={{
-				height: "calc(100% - 50px)",
-			}}>
-			</div>
+			<div {...style} ref={this.divMounted}></div>
+
 		</div>;
 	}
 }
@@ -168,11 +176,12 @@ export class FileTree extends React.Component<Props, {}> {
 function Title({repo}: { repo: string }): JSX.Element {
 	return <FlexContainer items="center" style={{
 		boxShadow: `${colors.black(0.4)} 0px 2px 6px 0px`,
-		zIndex: 1,
 		background: colors.coolGray2(),
-		position: "relative",
+		minHeight: layout.editorToolbarHeight,
 		paddingLeft: whitespace[4],
 		margin: 0,
+		position: "relative",
+		zIndex: 1,
 	}}>
 		<Heading level={5}>
 			<Link to={urlTo("repo", { splat: repo })}
