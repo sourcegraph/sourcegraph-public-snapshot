@@ -23,6 +23,12 @@ func (h *HandlerCommon) InitTracer(conn *jsonrpc2.Conn) {
 		return
 	}
 
+	if t := opentracing.GlobalTracer(); t != nil {
+		h.tracer = t
+		h.tracerOK = true
+		return
+	}
+
 	t := tracer{conn: conn}
 	opt := basictracer.DefaultOptions()
 	opt.Recorder = &t

@@ -39,14 +39,15 @@ func init() {
 
 func TestProxy(t *testing.T) {
 	tests := map[string]struct {
-		rootPath       string
-		mode           string
-		fs             map[string]string
-		wantHover      map[string]string
-		wantDefinition map[string]string
-		wantReferences map[string][]string
-		wantSymbols    map[string][]string
-		depFS          map[string]map[string]string // dep clone URL -> map VFS
+		rootPath        string
+		mode            string
+		fs              map[string]string
+		wantHover       map[string]string
+		wantDefinition  map[string]string
+		wantXDefinition map[string]string
+		wantReferences  map[string][]string
+		wantSymbols     map[string][]string
+		depFS           map[string]map[string]string // dep clone URL -> map VFS
 	}{
 		"go basic": {
 			rootPath: "git://test/pkg?master",
@@ -67,6 +68,12 @@ func TestProxy(t *testing.T) {
 				"a.go:1:23": "git://test/pkg?master#a.go:1:17",
 				"b.go:1:17": "git://test/pkg?master#b.go:1:17",
 				"b.go:1:23": "git://test/pkg?master#a.go:1:17",
+			},
+			wantXDefinition: map[string]string{
+				"a.go:1:17": "git://test/pkg?master#a.go:1:17 attr_package:test/pkg attr_packageName:p name:A",
+				"a.go:1:23": "git://test/pkg?master#a.go:1:17 attr_package:test/pkg attr_packageName:p name:A",
+				"b.go:1:17": "git://test/pkg?master#b.go:1:17 attr_package:test/pkg attr_packageName:p name:B",
+				"b.go:1:23": "git://test/pkg?master#a.go:1:17 attr_package:test/pkg attr_packageName:p name:A",
 			},
 			wantReferences: map[string][]string{
 				"a.go:1:17": []string{
@@ -153,6 +160,13 @@ func TestProxy(t *testing.T) {
 				"d2/b.go:1:47": "git://test/pkg?master#d/a.go:1:17",
 				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39",
 			},
+			wantXDefinition: map[string]string{
+				"a.go:1:17":    "git://test/pkg?master#d/a.go:1:17 attr_package:test/pkg/d attr_packageName:d name:A",
+				"a.go:1:23":    "git://test/pkg?master#d/a.go:1:17 attr_package:test/pkg/d attr_packageName:d name:A",
+				"d2/b.go:1:39": "git://test/pkg?master#d/d2/b.go:1:39 attr_package:test/pkg/d/d2 attr_packageName:d2 name:B",
+				"d2/b.go:1:47": "git://test/pkg?master#d/a.go:1:17 attr_package:test/pkg/d attr_packageName:d name:A",
+				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39 attr_package:test/pkg/d/d2 attr_packageName:d2 name:B",
+			},
 			wantSymbols: map[string][]string{
 				"":            []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
 				"is:exported": []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
@@ -185,6 +199,10 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "main.go:3:47": "git://test/pkg?master#a.go:1:17",    // p.A() -> a.go func A()
 				// "main.go:3:52": "git://test/pkg?master#main.go:3:39", // B() -> func B()
 			},
+			wantXDefinition: map[string]string{
+				"a.go:1:17": "git://test/pkg?master#a.go:1:17 attr_package:test/pkg attr_packageName:p name:A",
+				"a.go:1:23": "git://test/pkg?master#a.go:1:17 attr_package:test/pkg attr_packageName:p name:A",
+			},
 			wantSymbols: map[string][]string{
 				"":            []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
 				"is:exported": []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
@@ -203,6 +221,9 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19",
 				// "a.go:1:53": "git://github.com/golang/go?" + runtime.Version() + "#src/builtin/builtin.go:TODO:TODO", // TODO(sqs): support builtins
+			},
+			wantXDefinition: map[string]string{
+				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19 attr_package:fmt attr_packageName:fmt name:Println",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/golang/go?go1.7.1": {
@@ -235,6 +256,10 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "b/b.go:1:20": "git://test/pkg?master#a", // TODO(sqs): make import paths hoverable
 				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17",
 			},
+			wantXDefinition: map[string]string{
+				"a/a.go:1:17": "git://test/pkg?master#a/a.go:1:17 attr_package:test/pkg/a attr_packageName:a name:A",
+				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17 attr_package:test/pkg/a attr_packageName:a name:A",
+			},
 			wantReferences: map[string][]string{
 				"a/a.go:1:17": []string{
 					"git://test/pkg?master#a/a.go:1:17",
@@ -262,6 +287,9 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24",
+			},
+			wantXDefinition: map[string]string{
+				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24 attr_package:test/pkg/vendor/github.com/v/vendored attr_packageName:vendored name:V vendor:true",
 			},
 			wantReferences: map[string][]string{
 				"vendor/github.com/v/vendored/v.go:1:24": []string{
@@ -318,6 +346,9 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19",
 			},
+			wantXDefinition: map[string]string{
+				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19 attr_package:github.com/d/dep attr_packageName:dep name:D",
+			},
 			wantReferences: map[string][]string{
 				"a.go:1:51": []string{
 					"git://test/pkg?master#a.go:1:51",
@@ -342,6 +373,9 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			wantDefinition: map[string]string{
 				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32",
 			},
+			wantXDefinition: map[string]string{
+				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32 attr_package:github.com/d/dep/vendor/vendp attr_packageName:vendp attr_parent:F name:V vendor:true",
+			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": map[string]string{
 					"d.go":               `package dep; import "vendp"; func D() (v vendp.V) { return }`,
@@ -360,6 +394,9 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20",
+			},
+			wantXDefinition: map[string]string{
+				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20 attr_package:github.com/d/dep/subp attr_packageName:subp name:D",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": {
@@ -381,6 +418,10 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:53": "git://github.com/d/dep1?HEAD#d1.go:1:48", // func D1
 				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32", // field D2
 			},
+			wantXDefinition: map[string]string{
+				"a.go:1:53": "git://github.com/d/dep1?HEAD#d1.go:1:48 attr_package:github.com/d/dep1 attr_packageName:dep1 name:D1",
+				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32 attr_package:github.com/d/dep2 attr_packageName:dep2 attr_parent:D2 name:D2",
+			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep1?HEAD": {
 					"d1.go": `package dep1; import "github.com/d/dep2"; func D1() dep2.D2 { return dep2.D2{} }`,
@@ -401,6 +442,9 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantDefinition: map[string]string{
 				"a.go:1:53": "git://github.com/golang/text?HEAD#dummy.go:1:20",
+			},
+			wantXDefinition: map[string]string{
+				"a.go:1:53": "git://github.com/golang/text?HEAD#dummy.go:1:20 attr_package:golang.org/x/text attr_packageName:text name:F",
 			},
 			depFS: map[string]map[string]string{
 				// We override the Git cloning of this repo to use
@@ -442,6 +486,12 @@ var (
 				"a/a.go:5:11": "git://test/foo?master#b/b.go:4:2", // "b.B"
 				"b/b.go:4:2":  "git://test/foo?master#b/b.go:4:2", // "B = 123"
 				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2", // "bb = B"
+			},
+			wantXDefinition: map[string]string{
+				"a/a.go:5:5":  "git://test/foo?master#a/a.go:5:5 attr_package:other/foo/a attr_packageName:a name:A",
+				"a/a.go:5:11": "git://test/foo?master#b/b.go:4:2 attr_package:other/foo/b attr_packageName:b name:B",
+				"b/b.go:4:2":  "git://test/foo?master#b/b.go:4:2 attr_package:other/foo/b attr_packageName:b name:B",
+				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2 attr_package:other/foo/b attr_packageName:b name:B",
 			},
 		},
 
@@ -525,7 +575,7 @@ func yza() {}
 				t.Fatal("initialize:", err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantReferences, test.wantSymbols)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols)
 		})
 	}
 }

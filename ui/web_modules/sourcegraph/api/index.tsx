@@ -968,6 +968,7 @@ export interface ServerCapabilities {
 	documentRangeFormattingProvider?: boolean;
 	documentOnTypeFormattingProvider?: any;
 	renameProvider?: boolean;
+	xworkspaceReferencesProvider?: boolean;
 }
 
 export interface ServerConfig {

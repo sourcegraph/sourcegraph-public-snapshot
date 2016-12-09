@@ -54,6 +54,10 @@ type ServerCapabilities struct {
 	DocumentRangeFormattingProvider  bool                             `json:"documentRangeFormattingProvider,omitempty"`
 	DocumentOnTypeFormattingProvider *DocumentOnTypeFormattingOptions `json:"documentOnTypeFormattingProvider,omitempty"`
 	RenameProvider                   bool                             `json:"renameProvider,omitempty"`
+
+	// XWorkspaceReferencesProvider indicates the server provides support for
+	// xworkspace/references. This is a Sourcegraph extension.
+	XWorkspaceReferencesProvider bool `json:"xworkspaceReferencesProvider,omitempty"`
 }
 
 type CompletionOptions struct {
@@ -189,6 +193,31 @@ const (
 	SKBoolean     SymbolKind = 17
 	SKArray       SymbolKind = 18
 )
+
+func (s SymbolKind) String() string {
+	return symbolKindName[s]
+}
+
+var symbolKindName = map[SymbolKind]string{
+	SKFile:        "file",
+	SKModule:      "module",
+	SKNamespace:   "namespace",
+	SKPackage:     "package",
+	SKClass:       "class",
+	SKMethod:      "method",
+	SKProperty:    "property",
+	SKField:       "field",
+	SKConstructor: "constructor",
+	SKEnum:        "enum",
+	SKInterface:   "interface",
+	SKFunction:    "function",
+	SKVariable:    "variable",
+	SKConstant:    "constant",
+	SKString:      "string",
+	SKNumber:      "number",
+	SKBoolean:     "boolean",
+	SKArray:       "array",
+}
 
 type SymbolInformation struct {
 	Name          string     `json:"name"`

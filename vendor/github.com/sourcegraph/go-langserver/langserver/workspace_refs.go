@@ -25,7 +25,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceReferenceParams) ([]lspext.ReferenceInformation, error) {
+func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceReferencesParams) ([]lspext.ReferenceInformation, error) {
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
 
@@ -58,7 +58,7 @@ func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC
 		pkgs []string
 	)
 	for pkg := range buildutil.ExpandPatterns(bctx, []string{pkgPat}) {
-		// Ignore any vendor package so we can avoid scanning it for external
+		// Ignore any vendor package so we can avoid scanning it for dependency
 		// references, per the workspace/reference spec. This saves us a
 		// considerable amount of work.
 		bpkg, err := bctx.Import(pkg, rootPath, build.FindOnly)
@@ -71,12 +71,12 @@ func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC
 		}
 		pkgs = append(pkgs, pkg)
 	}
-	prog, err := h.externalRefsTypecheck(ctx, bctx, conn, fset, pkgs)
+	prog, err := h.workspaceRefsTypecheck(ctx, bctx, conn, fset, pkgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// Collect external references.
+	// Collect dependency references.
 	results := refResultSorter{results: make([]lspext.ReferenceInformation, 0)}
 	par := parallel.NewRun(parallelism)
 	for _, pkg := range prog.Imported {
@@ -94,29 +94,20 @@ func (h *LangHandler) handleWorkspaceReference(ctx context.Context, conn JSONRPC
 					return
 				}
 			}()
-			err := h.externalRefsFromPkg(ctx, bctx, conn, fset, pkg, rootPath, &results)
+			err := h.workspaceRefsFromPkg(ctx, bctx, conn, fset, pkg, rootPath, &results)
 			if err != nil {
-				log.Printf("externalRefsFromPkg: %v: %v", pkg, err)
+				log.Printf("workspaceRefsFromPkg: %v: %v", pkg, err)
 			}
 		}(pkg)
 	}
 	_ = par.Wait()
 
 	sort.Sort(&results) // sort to provide consistent results
-
-	// TODO: We calculate all the results and then throw them away. If we ever
-	// decide to begin using limiting, we can improve the performance of this
-	// dramatically. For now, it lives in the spec just so that other
-	// implementations are aware it may need to be done and to design with that
-	// in mind.
-	if len(results.results) > params.Limit && params.Limit > 0 {
-		results.results = results.results[:params.Limit]
-	}
 	return results.results, nil
 }
 
-func (h *LangHandler) externalRefsTypecheck(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fset *token.FileSet, pkgs []string) (prog *loader.Program, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "externalRefsTypecheck")
+func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fset *token.FileSet, pkgs []string) (prog *loader.Program, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "workspaceRefsTypecheck")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -176,10 +167,10 @@ func (h *LangHandler) externalRefsTypecheck(ctx context.Context, bctx *build.Con
 	return prog, nil
 }
 
-// externalRefsFromPkg collects all the external references from the specified
-// package and returns the results.
-func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fs *token.FileSet, pkg *loader.PackageInfo, rootPath string, results *refResultSorter) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "externalRefsFromPkg")
+// workspaceRefsFromPkg collects all the references made to dependencies from
+// the specified package and returns the results.
+func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fs *token.FileSet, pkg *loader.PackageInfo, rootPath string, results *refResultSorter) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "workspaceRefsFromPkg")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -189,11 +180,7 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 	}()
 	span.SetTag("pkg", pkg)
 
-	pkgInWorkspace := func(path string) bool {
-		return PathHasPrefix(path, h.init.RootImportPath)
-	}
-
-	// Compute external references.
+	// Compute workspace references.
 	cfg := &refs.Config{
 		FileSet:  fs,
 		Pkg:      pkg.Pkg,
@@ -201,54 +188,79 @@ func (h *LangHandler) externalRefsFromPkg(ctx context.Context, bctx *build.Conte
 		Info:     &pkg.Info,
 	}
 	refsErr := cfg.Refs(func(r *refs.Ref) {
-		var defName, defContainerName string
-		if fields := strings.Fields(r.Def.Path); len(fields) > 0 {
-			defName = fields[0]
-			defContainerName = strings.Join(fields[1:], " ")
-		}
-		if defContainerName == "" {
-			defContainerName = r.Def.PackageName
-		}
-
-		defPkg, err := bctx.Import(r.Def.ImportPath, rootPath, build.FindOnly)
+		symDesc, err := defSymbolDescriptor(bctx, rootPath, r.Def)
 		if err != nil {
 			// Log the error, and flag it as one in the trace -- but do not
 			// halt execution (hopefully, it is limited to a small subset of
 			// the data).
 			ext.Error.Set(span, true)
-			err := fmt.Errorf("externalRefsFromPkg: failed to import %v: %v", r.Def.ImportPath, err)
+			err := fmt.Errorf("workspaceRefsFromPkg: failed to import %v: %v", r.Def.ImportPath, err)
 			log.Println(err)
 			span.SetTag("error", err.Error())
 			return
 		}
 
-		// If the symbol the reference is to is defined within this workspace,
-		// exclude it. We only emit refs to symbols that are external to the
-		// workspace.
-		if pkgInWorkspace(defPkg.ImportPath) {
-			return
-		}
-
 		results.resultsMu.Lock()
 		results.results = append(results.results, lspext.ReferenceInformation{
-			Name:          defName,
-			ContainerName: defContainerName,
-			URI:           "file://" + defPkg.Dir,
-			Location:      goRangeToLSPLocation(fs, r.Pos, r.Pos), // TODO: internal/refs doesn't generate end positions
+			Reference: goRangeToLSPLocation(fs, r.Pos, r.Pos), // TODO: internal/refs doesn't generate end positions
+			Symbol:    *symDesc,
 		})
 		results.resultsMu.Unlock()
 	})
 	if refsErr != nil {
 		// Trace the error, but do not consider it a true error. In many cases
-		// it is a problem with the user's code, not our external reference
+		// it is a problem with the user's code, not our workspace reference
 		// finding code.
-		span.SetTag("err", fmt.Sprintf("externalRefsFromPkg: external refs failed: %v: %v", pkg, refsErr))
+		span.SetTag("err", fmt.Sprintf("workspaceRefsFromPkg: workspace refs failed: %v: %v", pkg, refsErr))
 	}
 	return nil
 }
 
+func defSymbolDescriptor(bctx *build.Context, rootPath string, def refs.Def) (*lspext.SymbolDescriptor, error) {
+	/*
+		def.
+
+		var defName, defContainerName string
+		if fields := strings.Fields(def.Path); len(fields) > 0 {
+			defName = fields[0]
+			defContainerName = strings.Join(fields[1:], " ")
+		}
+		if defContainerName == "" {
+			defContainerName = def.PackageName
+		}
+	*/
+
+	defPkg, err := bctx.Import(def.ImportPath, rootPath, build.FindOnly)
+	if err != nil {
+		return nil, err
+	}
+
+	attributes := map[string]interface{}{
+		"package":     defPkg.ImportPath,
+		"packageName": def.PackageName,
+	}
+
+	var defName string
+	fields := strings.Fields(def.Path)
+	if len(fields) >= 1 {
+		defName = fields[0]
+	}
+	if len(fields) >= 2 {
+		attributes["parent"] = fields[1]
+	}
+
+	return &lspext.SymbolDescriptor{
+		Name:       defName,
+		Vendor:     IsVendorDir(defPkg.Dir),
+		Attributes: attributes,
+		// TODO: be nice and emit Kind, File and Repo fields too. They
+		// are optional, though, so let's punt on it for now and see
+		// how well it works.
+	}, nil
+}
+
 // refResultSorter is a utility struct for collecting, filtering, and
-// sorting external reference results.
+// sorting workspace reference results.
 type refResultSorter struct {
 	results   []lspext.ReferenceInformation
 	resultsMu sync.Mutex
@@ -257,5 +269,5 @@ type refResultSorter struct {
 func (s *refResultSorter) Len() int      { return len(s.results) }
 func (s *refResultSorter) Swap(i, j int) { s.results[i], s.results[j] = s.results[j], s.results[i] }
 func (s *refResultSorter) Less(i, j int) bool {
-	return s.results[i].Location.URI < s.results[j].Location.URI
+	return s.results[i].Reference.URI < s.results[j].Reference.URI
 }
