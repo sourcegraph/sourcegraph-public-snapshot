@@ -217,19 +217,6 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 }
 
 func defSymbolDescriptor(bctx *build.Context, rootPath string, def refs.Def) (*lspext.SymbolDescriptor, error) {
-	/*
-		def.
-
-		var defName, defContainerName string
-		if fields := strings.Fields(def.Path); len(fields) > 0 {
-			defName = fields[0]
-			defContainerName = strings.Join(fields[1:], " ")
-		}
-		if defContainerName == "" {
-			defContainerName = def.PackageName
-		}
-	*/
-
 	defPkg, err := bctx.Import(def.ImportPath, rootPath, build.FindOnly)
 	if err != nil {
 		return nil, err
@@ -246,7 +233,8 @@ func defSymbolDescriptor(bctx *build.Context, rootPath string, def refs.Def) (*l
 		defName = fields[0]
 	}
 	if len(fields) >= 2 {
-		attributes["parent"] = fields[1]
+		attributes["parent"] = fields[0]
+		defName = fields[1]
 	}
 
 	return &lspext.SymbolDescriptor{

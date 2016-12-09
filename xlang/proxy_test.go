@@ -374,7 +374,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32 attr_package:github.com/d/dep/vendor/vendp attr_packageName:vendp attr_parent:F name:V vendor:true",
+				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32 attr_package:github.com/d/dep/vendor/vendp attr_packageName:vendp attr_parent:V name:F vendor:true",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": map[string]string{
