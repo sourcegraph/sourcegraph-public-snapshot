@@ -52,11 +52,7 @@ func (n fakeNode) End() token.Pos { return n.e }
 func goRangesToLSPLocations(fset *token.FileSet, nodes []*ast.Ident) []lsp.Location {
 	locs := make([]lsp.Location, len(nodes))
 	for i, node := range nodes {
-		p := fset.Position(node.Pos())
-		locs[i] = lsp.Location{
-			URI:   "file://" + p.Filename,
-			Range: rangeForNode(fset, node),
-		}
+		locs[i] = goRangeToLSPLocation(fset, node.Pos(), node.End())
 	}
 	return locs
 }
