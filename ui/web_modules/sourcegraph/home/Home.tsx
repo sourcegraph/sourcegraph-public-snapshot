@@ -39,7 +39,6 @@ export class Home extends React.Component<HomeProps, {}> {
 	}
 
 	render(): JSX.Element | null {
-
 		return <div style={{
 			backgroundColor: "white",
 			overflowX: "hidden",
