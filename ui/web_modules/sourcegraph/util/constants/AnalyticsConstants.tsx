@@ -167,6 +167,7 @@ export const Events = {
 	CodeContextMenu_Initiated: new LoggableEvent("CodeContextMenuClicked", EventCategories.CodeView, EventActions.Click),
 	CodeReferences_Viewed: new LoggableEvent("ClickedViewReferences", EventCategories.CodeView, EventActions.Click),
 	CodeExternalReferences_Viewed: new LoggableEvent("ClickedViewExternalReferences", EventCategories.CodeView, EventActions.Click),
+	CodeGlobalReferences_Viewed: new LoggableEvent("ClickedViewGlobalReferences", EventCategories.CodeView, EventActions.Click),
 	CodeToken_Hovered: new LoggableEvent("Hovering", EventCategories.CodeView, EventActions.Hover),
 	CodeToken_Clicked: new LoggableEvent("BlobTokenClicked", EventCategories.CodeView, EventActions.Click),
 	OpenInCodeHost_Clicked: new LoggableEvent("OpenInCodeHostClicked", EventCategories.CodeView, EventActions.Click),

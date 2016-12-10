@@ -51,6 +51,14 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IDefinition {
+		__typename: string;
+		globalReferences: Array<IRefFields>;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IDirectory {
 		__typename: string;
 		name: string;
@@ -65,6 +73,7 @@ declare namespace GQL {
 		name: string;
 		content: string;
 		blame: Array<IHunk>;
+		definition: IDefinition | null;
 	}
 
 	/*
@@ -102,6 +111,26 @@ declare namespace GQL {
 		__typename: string;
 		root: IRoot;
 		node: Node | null;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IRefFields {
+		__typename: string;
+		refLocation: IRefLocation | null;
+		uri: IURI | null;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IRefLocation {
+		__typename: string;
+		startLineNumber: number;
+		startColumn: number;
+		endLineNumber: number;
+		endColumn: number;
 	}
 
 	/*
@@ -157,5 +186,17 @@ declare namespace GQL {
 		__typename: string;
 		directories: Array<IDirectory>;
 		files: Array<IFile>;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IURI {
+		__typename: string;
+		host: string;
+		fragment: string;
+		path: string;
+		query: string;
+		scheme: string;
 	}
 }

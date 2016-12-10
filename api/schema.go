@@ -21,6 +21,26 @@ type Root {
 	remoteStarredRepositories: [RemoteRepository!]!
 }
 
+type RefFields {
+	refLocation: RefLocation
+	uri: URI
+}
+
+type URI {
+	host: String!
+	fragment: String!
+	path: String!
+	query: String!
+	scheme: String!
+}
+
+type RefLocation {
+	startLineNumber: Int!
+	startColumn: Int!
+	endLineNumber: Int!
+	endColumn: Int!
+}
+
 type Repository implements Node {
 	id: ID!
 	uri: String!
@@ -66,6 +86,11 @@ type File {
 	name: String!
 	content: String!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
+	definition(line: Int!, column: Int!): Definition
+}
+
+type Definition {
+   globalReferences: [RefFields!]!
 }
 
 type RemoteRepository {

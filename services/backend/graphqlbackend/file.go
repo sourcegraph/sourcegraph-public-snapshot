@@ -68,3 +68,43 @@ func (r *fileResolver) Blame(ctx context.Context,
 
 	return hunksResolver, nil
 }
+
+func (r *fileResolver) Definition(ctx context.Context,
+	args *struct {
+		Line   int32
+		Column int32
+	}) (*definitionResolver, error) {
+
+	refs, err := backend.Defs.RefLocations(ctx, sourcegraph.RefLocationsOptions{
+		RepoID:    string(r.commit.RepoID),
+		Path:      r.path,
+		Version:   r.commit.CommitID,
+		File:      r.name,
+		Line:      int(args.Line),
+		Character: int(args.Column),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var globalRefs []*globalReferencesResolver
+	for _, ref := range refs.Locations {
+		globalRefs = append(globalRefs, &globalReferencesResolver{
+			refLocation: &refLocationResolver{
+				startLineNumber: int32(ref.StartLine),
+				startColumn:     int32(ref.StartChar),
+				endLineNumber:   int32(ref.EndLine),
+				endColumn:       int32(ref.EndChar),
+			},
+			uri: &uriResolver{
+				host:     ref.Host,
+				fragment: ref.File,
+				path:     ref.Path,
+				query:    ref.Version,
+				scheme:   ref.Scheme,
+			},
+		})
+	}
+
+	return &definitionResolver{globalReferences: globalRefs}, nil
+}

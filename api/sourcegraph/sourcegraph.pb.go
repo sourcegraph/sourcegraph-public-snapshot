@@ -882,9 +882,9 @@ type DeprecatedFileRef struct {
 // RefLocationsOptions specifies options for querying locations that reference
 // a definition.
 type RefLocationsOptions struct {
-	URI             string
-	Line, Character int
-	Offset, Limit   int
+	RepoID, Host, Path, Version, File string
+	Line, Character                   int
+	Offset, Limit                     int
 }
 
 // RefLocations is a lists of reference locations to a definition.
