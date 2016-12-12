@@ -368,3 +368,21 @@ index 5a004276c..95d84c875 100644
  			}
  			return service;
  		});
+diff --git a/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts b/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
+index cd5d7b479..75c607245 100644
+--- a/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
++++ b/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
+@@ -710,7 +710,12 @@ export class ReferenceWidget extends PeekViewWidget {
+ 
+ 		// Update widget header
+ 		if (reference.uri.scheme !== Schemas.inMemory) {
+-			this.setTitle(reference.name, getPathLabel(reference.directory, this._contextService));
++			const file = reference.uri;
++			const path = file.path + "/" + file.fragment;
++			const dirs = path.split("/");
++			dirs.splice(0, 1);
++			const base = dirs.pop();
++			this.setTitle(base, dirs.join("/"));
+ 		} else {
+ 			this.setTitle(nls.localize('peekView.alternateTitle', "References"));
+ 		}
