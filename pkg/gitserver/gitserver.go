@@ -9,7 +9,6 @@ import (
 
 type request struct {
 	Exec   *execRequest
-	Search *searchRequest
 	Create *createRequest
 	Remove *removeRequest
 }
@@ -37,23 +36,6 @@ type processResult struct {
 	Error      string
 	ExitStatus int
 }
-
-// searchRequest is a request to search a git repository.
-type searchRequest struct {
-	Repo      string
-	Commit    vcs.CommitID
-	Opt       vcs.SearchOptions
-	ReplyChan chan<- *searchReply
-}
-
-type searchReply struct {
-	RepoNotFound    bool // If true, search returned with noop because repo is not found.
-	CloneInProgress bool // If true, search returned with noop because clone is in progress.
-	Results         []*vcs.SearchResult
-	Error           string // If non-empty, an error happened.
-}
-
-func (r *searchReply) repoFound() bool { return !r.RepoNotFound }
 
 // createRequest is a request to create a git repository.
 type createRequest struct {
@@ -91,11 +73,6 @@ func setSpanTags(span opentracing.Span, r *request) {
 		span.SetTag("repo", r.Exec.Repo)
 		span.SetTag("args", r.Exec.Args)
 		span.SetTag("opt", r.Exec.Opt)
-	case r.Search != nil:
-		span.SetTag("request", "Search")
-		span.SetTag("repo", r.Search.Repo)
-		span.SetTag("commit", r.Search.Commit)
-		span.SetTag("opt", r.Search.Opt)
 	case r.Create != nil:
 		span.SetTag("request", "Create")
 		span.SetTag("repo", r.Create.Repo)

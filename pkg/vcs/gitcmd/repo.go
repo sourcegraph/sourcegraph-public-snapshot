@@ -688,15 +688,6 @@ func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.Comm
 	return vcs.CommitID(bytes.TrimSpace(out)), nil
 }
 
-func (r *Repository) Search(ctx context.Context, at vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Search")
-	span.SetTag("Commit", at)
-	span.SetTag("Opt", opt)
-	defer span.Finish()
-
-	return gitserver.DefaultClient.Search(ctx, r.URL, at, opt)
-}
-
 func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Committers")
 	span.SetTag("Opt", opt)

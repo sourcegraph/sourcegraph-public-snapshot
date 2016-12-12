@@ -176,27 +176,6 @@ func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 	return append(stdout, stderr...), err
 }
 
-// Search performs a remote search.
-func (c *Client) Search(ctx context.Context, repo string, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	genReply, err := c.broadcastCall(ctx, func() (*request, func() (genericReply, bool)) {
-		replyChan := make(chan *searchReply, 1)
-		return &request{Search: &searchRequest{Repo: repo, Commit: commit, Opt: opt, ReplyChan: replyChan}},
-			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	reply := genReply.(*searchReply)
-	if reply.CloneInProgress {
-		return nil, vcs.RepoNotExistError{CloneInProgress: true}
-	}
-	if reply.Error != "" {
-		return nil, errors.New(reply.Error)
-	}
-	return reply.Results, nil
-}
-
 // Init creates a new empty repository remotely.
 func (c *Client) Init(ctx context.Context, repo string) error {
 	return c.create(ctx, repo, "", nil)

@@ -89,10 +89,6 @@ type Repository interface {
 	// UpdateEverything updates all branches, tags, etc., to match the
 	// default remote repository.
 	UpdateEverything(context.Context, RemoteOpts) (*UpdateResult, error)
-
-	// Search searches the text of a repository at the given commit
-	// ID.
-	Search(context.Context, CommitID, SearchOptions) ([]*SearchResult, error)
 }
 
 // BlameOptions configures a blame.
