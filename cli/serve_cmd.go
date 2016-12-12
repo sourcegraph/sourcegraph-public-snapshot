@@ -67,8 +67,6 @@ var (
 	certFile = env.Get("SRC_TLS_CERT", "", "certificate file for TLS")
 	keyFile  = env.Get("SRC_TLS_KEY", "", "key file for TLS")
 
-	idKeyData = env.Get("SRC_ID_KEY_DATA", "", "identity key file data")
-
 	reposDir   = os.ExpandEnv(env.Get("SRC_REPOS_DIR", "$SGPATH/repos", "root dir containing repos"))
 	gitservers = env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers; a local gitserver process is used by default")
 
@@ -195,16 +193,6 @@ func Main() error {
 	}
 
 	backend.SetGraphStore(graphstoreutil.New(graphstoreRoot, nil))
-
-	// Server identity keypair
-	if idKeyData != "" {
-		auth.ActiveIDKey, err = auth.FromString(idKeyData)
-		if err != nil {
-			return err
-		}
-	} else {
-		log15.Warn("Using default ID key.")
-	}
 
 	runGitserver()
 
