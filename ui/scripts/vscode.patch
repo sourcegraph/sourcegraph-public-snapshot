@@ -1,5 +1,18 @@
+diff --git a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
+index 0931517a3..2b15e20a4 100644
+--- a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
++++ b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
+@@ -72,7 +72,7 @@
+ 	left: 3px;
+ 	height: 3px;
+ 	width: 100%;
+-	box-shadow: #DDD 0 6px 6px -6px inset;
++	box-shadow: #000 0 6px 6px -6px inset;
+ }
+ .monaco-scrollable-element > .shadow.left {
+ 	display: block;
 diff --git a/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts b/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
-index 38a4fcd..58820f9 100644
+index 648c36a37..e1fd59037 100644
 --- a/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
 +++ b/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
 @@ -194,7 +194,12 @@ export class SimpleWorkerClient<T> extends Disposable {
@@ -17,11 +30,11 @@ index 38a4fcd..58820f9 100644
  		this._worker = this._register(workerFactory.create(
  			'vs/base/common/worker/simpleWorker',
 diff --git a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
-index c9ba5ea..8ae2336 100644
+index 52bca4b7a..df6a7de55 100644
 --- a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
 +++ b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
-@@ -8,7 +8,13 @@ import * as flags from 'vs/base/common/flags';
- import { logOnceWebWorkerWarning, IWorker, IWorkerCallback, IWorkerFactory } from 'vs/base/common/worker/simpleWorker';
+@@ -19,7 +19,13 @@ function environment(name: string, fallback: any = false): any {
+ }
  
  function defaultGetWorkerUrl(workerId: string, label: string): string {
 -	return require.toUrl('./' + workerId) + '#' + label;
@@ -33,10 +46,10 @@ index c9ba5ea..8ae2336 100644
 +	// we choose that approach instead of debugging it for now.
 +	throw new Error('web worker disabled; this should be unreachable');
  }
- var getWorkerUrl = flags.getCrossOriginWorkerScriptUrl || defaultGetWorkerUrl;
+ var getWorkerUrl = getCrossOriginWorkerScriptUrl || defaultGetWorkerUrl;
  
 diff --git a/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts b/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
-index f80f9d4..62cab87 100644
+index f80f9d44e..62cab872e 100644
 --- a/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
 +++ b/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
 @@ -9,17 +9,12 @@
@@ -62,11 +75,176 @@ index f80f9d4..62cab87 100644
  			setTimeout(function () {
  				let messageHandler = ws.create((msg: any) => {
  					(<any>self).postMessage(msg);
+diff --git a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
+index 09b38d10a..da61944b8 100644
+--- a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
++++ b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
+@@ -3668,7 +3668,7 @@ export interface IEditor {
+ 	 * will not be destroyed.
+ 	 * It is safe to call setModel(null) to simply detach the current model from the editor.
+ 	 */
+-	setModel(model: IEditorModel): void;
++	setModel(model: IEditorModel | undefined): void;
+ 
+ 	/**
+ 	 * Change the decorations. All decorations added through this changeAccessor
+diff --git a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
+index bbef60f8f..e424678d2 100644
+--- a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
++++ b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
+@@ -21,7 +21,6 @@ import { computeLinks } from 'vs/editor/common/modes/linkComputer';
+ import { BasicInplaceReplace } from 'vs/editor/common/modes/supports/inplaceReplaceSupport';
+ import { IRawModelData } from 'vs/editor/common/services/editorSimpleWorkerCommon';
+ import { getWordAtText, ensureValidWordDefinition } from 'vs/editor/common/model/wordHelper';
+-import { createMonacoBaseAPI } from 'vs/editor/common/standalone/standaloneBase';
+ 
+ export interface IMirrorModel {
+ 	readonly uri: URI;
+@@ -518,9 +517,3 @@ export class EditorSimpleWorkerImpl extends BaseEditorSimpleWorker implements IR
+ export function create(): IRequestHandler {
+ 	return new EditorSimpleWorkerImpl();
+ }
+-
+-var global: any = self;
+-let isWebWorker = (typeof global.importScripts === 'function');
+-if (isWebWorker) {
+-	global.monaco = createMonacoBaseAPI();
+-}
+diff --git a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
+index 71ba74893..f05d17a87 100644
+--- a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
++++ b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
+@@ -451,7 +451,7 @@ export interface IContextKeyServiceTarget {
+ 	setAttribute(attr: string, value: string): void;
+ 	removeAttribute(attr: string): void;
+ 	hasAttribute(attr: string): boolean;
+-	getAttribute(attr: string): string;
++	getAttribute(attr: string): string | null;
+ }
+ 
+ export let IContextKeyService = createDecorator<IContextKeyService>('contextKeyService');
+diff --git a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+index f4fb6eb0d..5a004276c 100644
+--- a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
++++ b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+@@ -83,37 +83,9 @@ export class InstantiationService implements IInstantiationService {
+ 
+ 		let canceledError: Error;
+ 
+-		return new TPromise((c, e, p) => {
+-			require([descriptor.moduleName], (_module?: any) => {
+-				if (canceledError) {
+-					e(canceledError);
+-				}
+-
+-				if (!_module) {
+-					return e(illegalArgument('module not found: ' + descriptor.moduleName));
+-				}
+-
+-				let ctor: Function;
+-				if (!descriptor.ctorName) {
+-					ctor = _module;
+-				} else {
+-					ctor = _module[descriptor.ctorName];
+-				}
+-
+-				if (typeof ctor !== 'function') {
+-					return e(illegalArgument('not a function: ' + descriptor.ctorName || descriptor.moduleName));
+-				}
+-
+-				try {
+-					args.unshift.apply(args, descriptor.staticArguments()); // instead of spread in ctor call
+-					c(this._createInstance(new SyncDescriptor<T>(ctor), args));
+-				} catch (error) {
+-					return e(error);
+-				}
+-			}, e);
+-		}, () => {
+-			canceledError = canceled();
+-		});
++		// HACK: Remove an unused dynamic import that Webpack
++		// complains about.
++		throw new Error("require call is incompatible with webpack");
+ 	}
+ 
+ 	private _createInstance<T>(desc: SyncDescriptor<T>, args: any[]): T {
+
+diff --git a/ui/node_modules/vscode/src/vs/base/common/platform.ts b/ui/node_modules/vscode/src/vs/base/common/platform.ts
+index 3075beb0a..de6365bbe 100644
+--- a/ui/node_modules/vscode/src/vs/base/common/platform.ts
++++ b/ui/node_modules/vscode/src/vs/base/common/platform.ts
+@@ -43,7 +43,9 @@ declare let self: any;
+ export const LANGUAGE_DEFAULT = 'en';
+ 
+ // OS detection
+-if (typeof process === 'object') {
++// We add the check for process.title because webpack injects a process
++// variable, causing this check to mistakenly succeed in the web browser.
++if (typeof process === 'object' && (process as any).title !== "browser") {
+ 	_isWindows = (process.platform === 'win32');
+ 	_isMacintosh = (process.platform === 'darwin');
+ 	_isLinux = (process.platform === 'linux');
+diff --git a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts
+index 8475280eb..fc508dcaf 100644
+--- a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts
++++ b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts
+@@ -893,12 +893,7 @@ export class TextModel extends OrderGuaranteeEventEmitter implements editorCommo
+ 			return [];
+ 		}
+ 
+-		let searchRange: Range;
+-		if (Range.isIRange(rawSearchScope)) {
+-			searchRange = this.validateRange(rawSearchScope);
+-		} else {
+-			searchRange = this.getFullModelRange();
+-		}
++		const searchRange = this.getFullModelRange();
+ 
+ 		if (regex.multiline) {
+ 			return this._doFindMatchesMultiline(searchRange, regex, limitResultCount);
+diff --git a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
+index 2c1980787..726da1b83 100644
+--- a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
++++ b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
+@@ -368,7 +368,7 @@ class GotoDefinitionWithMouseEditorContribution implements editorCommon.IEditorC
+ 							source += '\n\u2026';
+ 						}
+ 
+-						const language = this.modeService.getModeIdByFilenameOrFirstLine(editorModel.uri.fsPath);
++						const language = this.modeService.getModeIdByFilenameOrFirstLine(editorModel.uri.fragment);
+ 						hoverMessage = {
+ 							language,
+ 							value: source
+diff --git a/ui/node_modules/vscode/src/vs/editor/editor.main.ts b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
+index 34afc07f3..3ce47776f 100644
+--- a/ui/node_modules/vscode/src/vs/editor/editor.main.ts
++++ b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
+@@ -10,17 +10,9 @@ import 'vs/editor/contrib/quickOpen/browser/quickOutline';
+ import 'vs/editor/contrib/quickOpen/browser/gotoLine';
+ import 'vs/editor/contrib/quickOpen/browser/quickCommand';
+ 
+-import { createMonacoBaseAPI } from 'vs/editor/common/standalone/standaloneBase';
+-import { createMonacoEditorAPI } from 'vs/editor/browser/standalone/standaloneEditor';
+-import { createMonacoLanguagesAPI } from 'vs/editor/browser/standalone/standaloneLanguages';
+ import { DefaultConfig } from 'vs/editor/common/config/defaultConfig';
+ 
+ // Set defaults for standalone editor
+ DefaultConfig.editor.wrappingIndent = 'none';
+ DefaultConfig.editor.folding = false;
+-DefaultConfig.editor.glyphMargin = false;
+-
+-var global: any = self;
+-global.monaco = createMonacoBaseAPI();
+-global.monaco.editor = createMonacoEditorAPI();
+-global.monaco.languages = createMonacoLanguagesAPI();
+\ No newline at end of file
++DefaultConfig.editor.glyphMargin = false;
+\ No newline at end of file
 diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
-index 0e70b5a..44175c0 100644
+index 37ca08de6..11fadd38a 100644
 --- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
-@@ -236,65 +236,3 @@ export function colorize(text: string, languageId: string, options: IColorizerOp
+@@ -254,66 +254,3 @@ export function colorize(text: string, languageId: string, options: IColorizerOp
  export function colorizeModelLine(model: IModel, lineNumber: number, tabSize: number = 4): string {
  	return Colorizer.colorizeModelLine(model, lineNumber, tabSize);
  }
@@ -121,6 +299,7 @@ index 0e70b5a..44175c0 100644
 -		EditorLayoutInfo: <any>editorCommon.EditorLayoutInfo,
 -		BareFontInfo: <any>editorCommon.BareFontInfo,
 -		FontInfo: <any>editorCommon.FontInfo,
+-		TextModelResolvedOptions: <any>editorCommon.TextModelResolvedOptions,
 -
 -		// vars
 -		EditorType: editorCommon.EditorType,
@@ -133,10 +312,10 @@ index 0e70b5a..44175c0 100644
 -	};
 -}
 diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
-index 808d6df..79f1905 100644
+index 9bd1213b9..350eaa79a 100644
 --- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
-@@ -478,39 +478,3 @@ class SuggestAdapter {
+@@ -480,39 +480,3 @@ class SuggestAdapter {
  		});
  	}
  }
@@ -173,222 +352,19 @@ index 808d6df..79f1905 100644
 -		DocumentHighlightKind: modes.DocumentHighlightKind,
 -		CompletionItemKind: CompletionItemKind,
 -		SymbolKind: modes.SymbolKind,
--		IndentAction: modes.IndentAction
+-		IndentAction: IndentAction
 -	};
 -}
-diff --git a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
-index 527609a..9041aa3 100644
---- a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
-@@ -19,7 +19,6 @@ import { computeLinks } from 'vs/editor/common/modes/linkComputer';
- import { BasicInplaceReplace } from 'vs/editor/common/modes/supports/inplaceReplaceSupport';
- import { IRawModelData } from 'vs/editor/common/services/editorSimpleWorkerCommon';
- import { getWordAtText, ensureValidWordDefinition } from 'vs/editor/common/model/wordHelper';
--import { createMonacoBaseAPI } from 'vs/editor/common/standalone/standaloneBase';
- 
- export interface IMirrorModel {
- 	uri: URI;
-@@ -397,9 +396,3 @@ export class EditorSimpleWorkerImpl extends BaseEditorSimpleWorker implements IR
- export function create(): IRequestHandler {
- 	return new EditorSimpleWorkerImpl();
- }
--
--var global: any = self;
--let isWebWorker = (typeof global.importScripts === 'function');
--if (isWebWorker) {
--	global.monaco = createMonacoBaseAPI();
--}
-diff --git a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
-index 287c98b..28c418c 100644
---- a/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/common/standalone/standaloneBase.ts
-@@ -214,21 +214,3 @@ export enum KeyCode {
- 	 */
- 	MAX_VALUE
- }
--
--export function createMonacoBaseAPI(): typeof monaco {
--	return {
--		editor: undefined,
--		languages: undefined,
--		CancellationTokenSource: CancellationTokenSource,
--		Emitter: Emitter,
--		KeyCode: KeyCode,
--		KeyMod: KeyMod,
--		Position: Position,
--		Range: Range,
--		Selection: Selection,
--		SelectionDirection: SelectionDirection,
--		Severity: Severity,
--		Promise: TPromise,
--		Uri: URI
--	};
--}
-diff --git a/ui/node_modules/vscode/src/vs/editor/editor.main.ts b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
-index 7634a8e..abd19c1 100644
---- a/ui/node_modules/vscode/src/vs/editor/editor.main.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
-@@ -10,16 +10,8 @@ import 'vs/editor/contrib/quickOpen/browser/quickOutline';
- import 'vs/editor/contrib/quickOpen/browser/gotoLine';
- import 'vs/editor/contrib/quickOpen/browser/quickCommand';
- 
--import { createMonacoBaseAPI } from 'vs/editor/common/standalone/standaloneBase';
--import { createMonacoEditorAPI } from 'vs/editor/browser/standalone/standaloneEditor';
--import { createMonacoLanguagesAPI } from 'vs/editor/browser/standalone/standaloneLanguages';
- import { DefaultConfig } from 'vs/editor/common/config/defaultConfig';
- 
- // Set defaults for standalone editor
- DefaultConfig.editor.wrappingIndent = 'none';
- DefaultConfig.editor.folding = false;
--
--var global: any = self;
--global.monaco = createMonacoBaseAPI();
--global.monaco.editor = createMonacoEditorAPI();
--global.monaco.languages = createMonacoLanguagesAPI();
-\ No newline at end of file
 diff --git a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
-index f4fb6eb..5a00427 100644
+index 5a004276c..95d84c875 100644
 --- a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 +++ b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
-@@ -83,37 +83,9 @@ export class InstantiationService implements IInstantiationService {
- 
- 		let canceledError: Error;
- 
--		return new TPromise((c, e, p) => {
--			require([descriptor.moduleName], (_module?: any) => {
--				if (canceledError) {
--					e(canceledError);
--				}
--
--				if (!_module) {
--					return e(illegalArgument('module not found: ' + descriptor.moduleName));
--				}
--
--				let ctor: Function;
--				if (!descriptor.ctorName) {
--					ctor = _module;
--				} else {
--					ctor = _module[descriptor.ctorName];
--				}
--
--				if (typeof ctor !== 'function') {
--					return e(illegalArgument('not a function: ' + descriptor.ctorName || descriptor.moduleName));
--				}
--
--				try {
--					args.unshift.apply(args, descriptor.staticArguments()); // instead of spread in ctor call
--					c(this._createInstance(new SyncDescriptor<T>(ctor), args));
--				} catch (error) {
--					return e(error);
--				}
--			}, e);
--		}, () => {
--			canceledError = canceled();
--		});
-+		// HACK: Remove an unused dynamic import that Webpack
-+		// complains about.
-+		throw new Error("require call is incompatible with webpack");
- 	}
- 
- 	private _createInstance<T>(desc: SyncDescriptor<T>, args: any[]): T {
-diff --git a/ui/node_modules/vscode/src/vs/editor/browser/viewParts/currentLineHighlight/currentLineHighlight.ts b/ui/node_modules/vscode/src/vs/editor/browser/viewParts/currentLineHighlight/currentLineHighlight.ts
-index 54937e8..2f1926a 100644
---- a/ui/node_modules/vscode/src/vs/editor/browser/viewParts/currentLineHighlight/currentLineHighlight.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/browser/viewParts/currentLineHighlight/currentLineHighlight.ts
-@@ -134,6 +134,6 @@ export class CurrentLineHighlightOverlay extends DynamicViewOverlay {
- 	}
- 
- 	private _shouldShowCurrentLine(): boolean {
--		return this._renderLineHighlight && this._selectionIsEmpty && this._primaryCursorIsInEditableRange && !this._readOnly;
-+		return this._renderLineHighlight && this._selectionIsEmpty && this._primaryCursorIsInEditableRange;
- 	}
- }
-diff --git a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
-index 8395226..ca000ad 100644
---- a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
-@@ -3746,7 +3746,7 @@ export interface IEditor {
- 	 * will not be destroyed.
- 	 * It is safe to call setModel(null) to simply detach the current model from the editor.
- 	 */
--	setModel(model: IEditorModel): void;
-+	setModel(model: IEditorModel | undefined): void;
- 
- 	/**
- 	 * Change the decorations. All decorations added through this changeAccessor
-diff --git a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
-index 71ba748..f05d17a 100644
---- a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
-+++ b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
-@@ -451,7 +451,7 @@ export interface IContextKeyServiceTarget {
- 	setAttribute(attr: string, value: string): void;
- 	removeAttribute(attr: string): void;
- 	hasAttribute(attr: string): boolean;
--	getAttribute(attr: string): string;
-+	getAttribute(attr: string): string | null;
- }
- 
- export let IContextKeyService = createDecorator<IContextKeyService>('contextKeyService');
-diff --git a/ui/node_modules/vscode/src/vs/base/common/platform.js b/ui/node_modules/vscode/src/vs/base/common/platform.js
-index ca276d1..f6b341e 100644
---- a/ui/node_modules/vscode/src/vs/base/common/platform.js
-+++ b/ui/node_modules/vscode/src/vs/base/common/platform.js
-@@ -15,7 +15,9 @@ var _locale = undefined;
- var _language = undefined;
- exports.LANGUAGE_DEFAULT = 'en';
- // OS detection
--if (typeof process === 'object') {
-+// We add the check for process.title because webpack injects a process
-+// variable, causing this check to mistakenly succeed in the web browser.
-+if (typeof process === 'object' && process.title !== "browser") {
-     _isWindows = (process.platform === 'win32');
-     _isMacintosh = (process.platform === 'darwin');
-     _isLinux = (process.platform === 'linux');
-diff --git a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js
-index 06e0142..200e056 100644
---- a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js
-+++ b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.js
-@@ -328,7 +328,10 @@ var GotoDefinitionWithMouseEditorContribution = (function () {
-                         if (to < editorModel.getLineCount()) {
-                             source += '\n\u2026';
-                         }
--                        var language = _this.modeService.getModeIdByFilenameOrFirstLine(editorModel.uri.fsPath);
-+                        // Sourcegraph uses a nonstandard URI field, because it needs to
-+                        // distinguish between repository URL and the filepath inside the
-+                        // repository.
-+                        var language = _this.modeService.getModeIdByFilenameOrFirstLine(editorModel.uri.fragment);
-                         hoverMessage = {
-                             language: language,
-                             value: source
-diff --git a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js
-index e870c30..812ca4b 100644
---- a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js
-+++ b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.js
-@@ -683,13 +683,7 @@ var TextModel = (function (_super) {
-         if (!regex) {
-             return [];
-         }
--        var searchRange;
--        if (range_1.Range.isIRange(rawSearchScope)) {
--            searchRange = this.validateRange(rawSearchScope);
--        }
--        else {
--            searchRange = this.getFullModelRange();
--        }
-+        var searchRange = this.getFullModelRange();
-         if (regex.multiline) {
-             return this._doFindMatchesMultiline(searchRange, regex, limitResultCount);
-         }
-diff --git a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
-index 0931517..2b15e20 100644
---- a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
-+++ b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
-@@ -72,7 +72,7 @@
- 	left: 3px;
- 	height: 3px;
- 	width: 100%;
--	box-shadow: #DDD 0 6px 6px -6px inset;
-+	box-shadow: #000 0 6px 6px -6px inset;
- }
- .monaco-scrollable-element > .shadow.left {
- 	display: block;
+@@ -98,7 +98,7 @@ export class InstantiationService implements IInstantiationService {
+ 		let serviceArgs = serviceDependencies.map(dependency => {
+ 			let service = this._getOrCreateServiceInstance(dependency.id);
+ 			if (!service && this._strict && !dependency.optional) {
+-				throw new Error(`[createInstance] ${desc.ctor.name} depends on UNKNOWN service ${dependency.id}.`);
++				console.warn(`[createInstance] ${desc.ctor.name} depends on UNKNOWN service ${dependency.id}.`);
+ 			}
+ 			return service;
+ 		});
