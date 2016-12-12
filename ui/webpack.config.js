@@ -66,6 +66,7 @@ plugins.push(new UnusedFilesWebpackPlugin({
 			"**/*.md",
 			"**/*.go",
 			"web_modules/sourcegraph/api/index.tsx",
+			"web_modules/sourcegraph/util/experiments.tsx",
 		],
 	},
 }));
