@@ -23,8 +23,8 @@ import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
-import "sourcegraph/editor/overrides/iconLabel";
 import "sourcegraph/editor/vscode";
+import "sourcegraph/workbench/overrides/iconLabel";
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
 

@@ -7,7 +7,7 @@ import { IModeService } from "vs/editor/common/services/modeService";
 import { ITextEditorModel, ITextModelContentProvider, ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { EditorModel } from "vs/workbench/common/editor";
 
-import { getContent } from "sourcegraph/editor/retriever";
+import { fetchContent } from "sourcegraph/editor/contentLoader";
 
 export class TextModelResolverService implements ITextModelResolverService {
 	public _serviceBrand: any;
@@ -20,7 +20,7 @@ export class TextModelResolverService implements ITextModelResolverService {
 	}
 
 	createModelReference(resource: URI): TPromise<IReference<ITextEditorModel>> {
-		return this.getModel(resource).then(model =>
+		return this.getModel(resource).then((model) =>
 			new ImmortalReference(new TextEditorModel(model))
 		);
 	}
@@ -33,12 +33,12 @@ export class TextModelResolverService implements ITextModelResolverService {
 
 	private getModel(resource: URI): TPromise<IModel> {
 		let model = this.modelService.getModel(resource);
-		if (model !== null) {
+		if (model) {
 			return TPromise.wrap(model);
 		}
-		return getContent(resource).then(content => {
+		return fetchContent(resource).then((content) => {
 			model = this.modelService.getModel(resource);
-			if (model !== null) {
+			if (model) {
 				return model;
 			}
 			const mode = this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment);

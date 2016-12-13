@@ -372,6 +372,14 @@ diff --git a/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browse
 index cd5d7b479..75c607245 100644
 --- a/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
 +++ b/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
+@@ -8,7 +8,6 @@ import 'vs/css!./referencesWidget';
+ import * as nls from 'vs/nls';
+ import * as collections from 'vs/base/common/collections';
+ import { onUnexpectedError } from 'vs/base/common/errors';
+-import { getPathLabel } from 'vs/base/common/labels';
+ import Event, { Emitter } from 'vs/base/common/event';
+ import { IDisposable, dispose, Disposables, empty as EmptyDisposable } from 'vs/base/common/lifecycle';
+ import { Schemas } from 'vs/base/common/network';
 @@ -710,7 +710,12 @@ export class ReferenceWidget extends PeekViewWidget {
  
  		// Update widget header
