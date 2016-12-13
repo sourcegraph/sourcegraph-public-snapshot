@@ -40,8 +40,9 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 
 		if (this.newTabEvent(mouseEvent)) {
 			// HACK: Disable the builtin gotodef contrib for this event.
-			mouseEvent.event.metaKey = false;
-			mouseEvent.event.ctrlKey = false;
+			const event = mouseEvent.event as any;
+			event.metaKey = false;
+			event.ctrlKey = false;
 
 			this.openInNewTab(mouseEvent.target);
 			return;

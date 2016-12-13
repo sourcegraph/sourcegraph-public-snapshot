@@ -1,6 +1,5 @@
 import * as moment from "moment";
 import { CancellationToken } from "vs/base/common/cancellation";
-import URI from "vs/base/common/uri";
 import { onLanguage, registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
 import { Range } from "vs/editor/common/core/range";
@@ -58,9 +57,6 @@ export class ReferenceProvider implements modes.ReferenceProvider {
 				AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
-				locs.forEach((l) => {
-					l.uri = URIUtils.toRefsDisplayURI(URI.parse(l.uri)).toString();
-				});
 				return locs.map(lsp.toMonacoLocation);
 			});
 	}
@@ -80,7 +76,7 @@ export class HoverProvider implements modes.HoverProvider {
 		}
 
 		const flight = lsp.send(model, "textDocument/hover", {
-			textDocument: { uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true) },
+			textDocument: { uri: model.uri.toString(true) },
 			position: lsp.toPosition(position),
 		})
 			.then(resp => {
@@ -196,7 +192,7 @@ export class DefinitionProvder implements modes.DefinitionProvider {
 		}
 
 		const flight = lsp.send(model, "textDocument/definition", {
-			textDocument: { uri: URIUtils.fromRefsDisplayURIMaybe(model.uri).toString(true) },
+			textDocument: { uri: model.uri.toString(true) },
 			position: lsp.toPosition(position),
 		})
 			.then((resp) => resp ? resp.result : null)

@@ -11,7 +11,8 @@ import * as editorCommon from "vs/editor/common/editorCommon";
 import { IEditorViewState } from "vs/editor/common/editorCommon";
 import { IRange } from "vs/editor/common/editorCommon";
 import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
-import { IEditor, IEditorService, IResourceInput, ITextEditorModel } from "vs/platform/editor/common/editor";
+import { IEditor, IEditorService, IResourceInput } from "vs/platform/editor/common/editor";
+import { ITextEditorModel } from "vs/workbench/common/editor";
 
 const fetch = singleflightFetch(defaultFetch);
 

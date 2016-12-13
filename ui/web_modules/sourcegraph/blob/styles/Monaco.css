@@ -159,10 +159,6 @@
   box-shadow: inset 0 1px 0 1px c_blue_8;
 }
 
-:global .monaco-editor.vs-dark .reference-zone-widget .ref-tree .reference-file {
-	margin-right: 20px;
-}
-
 :global .monaco-editor.vs-dark .reference-zone-widget .monaco-count-badge {
 	background-color: c_blue_2;
 }

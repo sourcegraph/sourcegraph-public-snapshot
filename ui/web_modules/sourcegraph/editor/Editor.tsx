@@ -3,7 +3,7 @@ import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
-import { create as createStandaloneEditor, createModel } from "vs/editor/browser/standalone/standaloneEditor";
+import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { Position } from "vs/editor/common/core/position";
 import { IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
@@ -15,6 +15,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes } from "sourcegraph/editor/modes";
+import { createEditor } from "sourcegraph/editor/setup";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
@@ -23,6 +24,7 @@ import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
+import "sourcegraph/workbench/overrides/iconLabel";
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
 
@@ -37,9 +39,8 @@ export class Editor implements IDisposable {
 	) {
 		HoverOperation.HOVER_TIME = 200;
 
-		this._editorService = new EditorService();
 		let initialModel = createModel("", "text/plain");
-		this._editor = createStandaloneEditor(elem, {
+		[this._editor, this._editorService] = createEditor(elem, {
 			// If we don't specify an initial model, Monaco will
 			// create this one anyway (but it'll try to call
 			// window.monaco.editor.createModel, and we don't want to
@@ -54,15 +55,14 @@ export class Editor implements IDisposable {
 			fontSize: 15,
 			lineHeight: 21,
 			theme: "vs-dark",
-			renderLineHighlight: true,
+			renderLineHighlight: "line",
 			codeLens: Features.codeLens.isEnabled(),
-		}, { editorService: this._editorService });
+			glyphMargin: false,
+		});
 
 		// WORKAROUND: Remove the initial model from the configuration to avoid infinite recursion when the config gets updated internally.
 		// Reproduce issue by using "Find All References" to open the rift view and then right click again in the code outside of the view.
 		delete (this._editor.getRawConfiguration() as IEditorConstructionOptions).model;
-
-		this._editorService.setEditor(this._editor);
 
 		(window as any).ed = this._editor; // for easier debugging via the JS console
 
