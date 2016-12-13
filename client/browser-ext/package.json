@@ -48,7 +48,7 @@
 		"react": "^0.14.7",
 		"react-dom": "^0.14.7",
 		"react-icon-base": "^2.0.0",
-		"telligent-tracker": "^0.1.1",
+		"telligent-tracker": "^0.1.2",
 		"typestyle": "^0.7.4"
 	}
 }
