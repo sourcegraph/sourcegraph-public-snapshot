@@ -2,6 +2,7 @@ import Event from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { DynamicStandaloneServices } from "vs/editor/browser/standalone/standaloneServices";
+import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IBackupService } from "vs/platform/backup/common/backup";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
@@ -14,6 +15,8 @@ import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/w
 import { WorkbenchMessageService } from "vs/workbench/services/message/browser/messageService";
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
+
+import { TextModelResolverService } from "sourcegraph/editor/resolverService";
 
 export function setupServices(domElement: HTMLDivElement, resource: URI): ServiceCollection {
 	const dynServices = new DynamicStandaloneServices(domElement, {});
@@ -38,6 +41,10 @@ export function setupServices(domElement: HTMLDivElement, resource: URI): Servic
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource,
 	}));
+	set(ITextModelResolverService, TextModelResolverService);
+
+	const resolver = services.get(ITextModelResolverService) as ITextModelResolverService;
+	resolver.registerTextModelContentProvider("git", services.get(ITextModelResolverService));
 
 	return services;
 }

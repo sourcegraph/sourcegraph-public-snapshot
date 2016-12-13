@@ -4,7 +4,7 @@ import { Registry } from "vs/platform/platform";
 import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
 import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
 
-export function setConfiguration(services: ServiceCollection): void {
+export function configureServices(services: ServiceCollection): void {
 	const configsvc = services.get(IConfigurationService) as IConfigurationService;
 	configsvc["_config"] = config;
 	const viewReg = (Registry.as(viewKey.Viewlets) as ViewletRegistry);

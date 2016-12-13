@@ -3,7 +3,7 @@ import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
 import "sourcegraph/workbench/overrides/fileService";
-import "sourcegraph/workbench/overrides/iconLabel";
+import "sourcegraph/workbench/overrides/labels";
 
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
@@ -13,13 +13,15 @@ import URI from "vs/base/common/uri";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { setConfiguration } from "sourcegraph/workbench/config";
+import { configureEditor } from "sourcegraph/editor/config";
+import { configureServices } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/setupServices";
 
-export function init(domElement: HTMLDivElement, workspace: URI): Workbench {
+export function init(domElement: HTMLDivElement, resource: URI): Workbench {
+	const workspace = resource.with({fragment: ""});
 	const services = setupServices(domElement, workspace);
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
-	setConfiguration(services);
+	configureServices(services);
 
 	const parent = domElement.parentElement;
 	const workbench = instantiationService.createInstance(
@@ -32,6 +34,9 @@ export function init(domElement: HTMLDivElement, workspace: URI): Workbench {
 	);
 	workbench.startup();
 	workbench.layout();
+
+	const editor = workbench.getEditorPart();
+	configureEditor(editor, resource, instantiationService);
 	return workbench;
 }
 

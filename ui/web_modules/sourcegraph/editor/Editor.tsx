@@ -24,7 +24,7 @@ import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
-import "sourcegraph/workbench/overrides/iconLabel";
+import "sourcegraph/workbench/overrides/labels";
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
 
