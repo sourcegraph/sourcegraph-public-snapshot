@@ -7,7 +7,9 @@ import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToas
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoParam, repoPath, repoRev } from "sourcegraph/repo";
 import { treeParam } from "sourcegraph/tree";
+import { Features } from "sourcegraph/util/features";
 import { FileTree } from "sourcegraph/workbench/fileTree";
+import { Shell } from "sourcegraph/workbench/shell";
 
 class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 	render(): JSX.Element | null {
@@ -15,6 +17,9 @@ class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 			return null;
 		}
 		const files = this.props.root.repository.commit.commit.tree.files;
+		if (Features.workbench.isEnabled()) {
+			return <Shell />;
+		}
 		return <div style={{
 			display: "flex",
 			flexDirection: "column",

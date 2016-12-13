@@ -95,6 +95,7 @@ module.exports = {
 			`${__dirname}/web_modules`,
 			"node_modules",
 			`${__dirname}/node_modules/vscode/src`,
+			`${__dirname}/web_modules/sourcegraph/workbench/overrides`,
 		],
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 	},

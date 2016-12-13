@@ -41,7 +41,7 @@ patch --no-backup-if-mismatch --quiet --directory "$REPO_DIR" -p1 < "$REPO_DIR"/
 echo OK
 
 echo -n Compiling TypeScript...
-$REPO_DIR/ui/node_modules/typescript/bin/tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
+tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
 
 # Remove dependency on Monaco, to avoid people accidentally using

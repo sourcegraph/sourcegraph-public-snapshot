@@ -34,6 +34,7 @@ export const Features = {
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
+	workbench: new Feature("vscode-workbench"),
 
 	eventLogDebug: new Feature("event-log-debug"),
 	actionLogDebug: new Feature("action-log-debug"),
