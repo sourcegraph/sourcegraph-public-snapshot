@@ -7,6 +7,8 @@ import "sourcegraph/workbench/overrides/labels";
 
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
+import "vs/workbench/browser/parts/editor/stringEditor";
+import "vs/workbench/parts/files/browser/explorerViewlet";
 import "vs/workbench/parts/files/browser/files.contribution";
 
 import URI from "vs/base/common/uri";
