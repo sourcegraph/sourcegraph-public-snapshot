@@ -18,7 +18,11 @@ class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 		}
 		const files = this.props.root.repository.commit.commit.tree.files;
 		if (Features.workbench.isEnabled()) {
-			return <Shell />;
+			return <Shell
+					repo={this.props.repo}
+					rev={this.props.rev}
+					path={this.props.path}
+			/>;
 		}
 		return <div style={{
 			display: "flex",

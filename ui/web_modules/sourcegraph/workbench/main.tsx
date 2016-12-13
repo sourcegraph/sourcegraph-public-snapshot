@@ -16,8 +16,8 @@ import { Workbench } from "vs/workbench/electron-browser/workbench";
 import { setConfiguration } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/setupServices";
 
-export function init(domElement: HTMLDivElement): Workbench {
-	const services = setupServices(domElement);
+export function init(domElement: HTMLDivElement, workspace: URI): Workbench {
+	const services = setupServices(domElement, workspace);
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 	setConfiguration(services);
 
@@ -26,7 +26,7 @@ export function init(domElement: HTMLDivElement): Workbench {
 		Workbench,
 		parent,
 		domElement,
-		workspace,
+		{resource: workspace},
 		options,
 		services,
 	);
@@ -36,7 +36,3 @@ export function init(domElement: HTMLDivElement): Workbench {
 }
 
 const options = {};
-
-const workspace = {
-	resource: URI.parse("foo://github.com/sourcegraph/sourcegraph"),
-};

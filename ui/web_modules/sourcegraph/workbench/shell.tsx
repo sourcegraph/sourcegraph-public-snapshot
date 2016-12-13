@@ -2,7 +2,13 @@ import * as autobind from "autobind-decorator";
 import * as React from "react";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-interface Props {};
+import { URIUtils } from "sourcegraph/core/uri";
+
+interface Props {
+	repo: string;
+	rev: string | null;
+	path: string;
+};
 
 interface State {};
 
@@ -25,7 +31,8 @@ export class Shell extends React.Component<Props, State> {
 				// component unmounted before require finished.
 				return;
 			}
-			this.workbench = init(domElement);
+			const workspace = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
+			this.workbench = init(domElement, workspace);
 		});
 	}
 
