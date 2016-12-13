@@ -86,7 +86,7 @@ type File {
 	name: String!
 	content: String!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
-	definition(line: Int!, column: Int!): Definition
+	definition(line: Int!, column: Int!, language: String!): Definition
 }
 
 type Definition {
