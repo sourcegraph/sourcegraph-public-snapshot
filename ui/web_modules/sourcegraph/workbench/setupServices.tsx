@@ -1,5 +1,4 @@
 import Event from "vs/base/common/event";
-import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { DynamicStandaloneServices } from "vs/editor/browser/standalone/standaloneServices";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
@@ -11,14 +10,12 @@ import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/co
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
 import { IMessageService } from "vs/platform/message/common/message";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
-import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { WorkbenchMessageService } from "vs/workbench/services/message/browser/messageService";
+import { TextModelResolverService } from "vs/workbench/services/textmodelResolver/common/textModelResolverService";
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
-import { TextModelResolverService } from "sourcegraph/editor/resolverService";
-
-export function setupServices(domElement: HTMLDivElement, resource: URI): ServiceCollection {
+export function setupServices(domElement: HTMLDivElement): ServiceCollection {
 	const dynServices = new DynamicStandaloneServices(domElement, {});
 	const services = (dynServices as any)._serviceCollection;
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
@@ -37,14 +34,7 @@ export function setupServices(domElement: HTMLDivElement, resource: URI): Servic
 	set(IBackupService, BackupService);
 	set(IMessageService, WorkbenchMessageService);
 	set(IThemeService, ThemeService);
-
-	services.set(IWorkspaceContextService, new WorkspaceContextService({
-		resource,
-	}));
 	set(ITextModelResolverService, TextModelResolverService);
-
-	const resolver = services.get(ITextModelResolverService) as ITextModelResolverService;
-	resolver.registerTextModelContentProvider("git", services.get(ITextModelResolverService));
 
 	return services;
 }

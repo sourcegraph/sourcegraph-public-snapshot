@@ -12,15 +12,20 @@ import { fetchContent } from "sourcegraph/editor/contentLoader";
 export class TextModelResolverService implements ITextModelResolverService {
 	public _serviceBrand: any;
 
+	private contentProvider: ITextModelContentProvider;
+
 	constructor(
 		@IModelService private modelService: IModelService,
 		@IModeService private modeService: IModeService,
 	) {
-		//
+		this.contentProvider = new TextModelContentProvider(
+			modelService,
+			modeService,
+		);
 	}
 
 	createModelReference(resource: URI): TPromise<IReference<ITextEditorModel>> {
-		return this.getModel(resource).then((model) =>
+		return this.contentProvider.provideTextContent(resource).then((model) =>
 			new ImmortalReference(new TextEditorModel(model))
 		);
 	}
@@ -31,7 +36,27 @@ export class TextModelResolverService implements ITextModelResolverService {
 		};
 	}
 
-	private getModel(resource: URI): TPromise<IModel> {
+}
+
+class TextEditorModel extends EditorModel {
+	textEditorModel: IModel;
+
+	constructor(model: IModel) {
+		super();
+		this.textEditorModel = model;
+	}
+}
+
+export class TextModelContentProvider implements ITextModelContentProvider {
+
+	constructor(
+		@IModelService private modelService: IModelService,
+		@IModeService private modeService: IModeService,
+	) {
+		//
+	}
+
+	provideTextContent(resource: URI): TPromise<IModel> {
 		let model = this.modelService.getModel(resource);
 		if (model) {
 			return TPromise.wrap(model);
@@ -42,18 +67,7 @@ export class TextModelResolverService implements ITextModelResolverService {
 				return model;
 			}
 			const mode = this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment);
-			model = this.modelService.createModel(content, mode, resource);
-			return model;
+			return this.modelService.createModel(content, mode, resource);
 		});
-	}
-
-}
-
-class TextEditorModel extends EditorModel {
-	textEditorModel: IModel;
-
-	constructor(model: IModel) {
-		super();
-		this.textEditorModel = model;
 	}
 }

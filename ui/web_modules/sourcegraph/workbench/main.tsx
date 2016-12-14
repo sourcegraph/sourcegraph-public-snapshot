@@ -16,14 +16,14 @@ import { IInstantiationService } from "vs/platform/instantiation/common/instanti
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { configureEditor } from "sourcegraph/editor/config";
-import { configureServices } from "sourcegraph/workbench/config";
+import { configureServices, configurePostStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/setupServices";
 
 export function init(domElement: HTMLDivElement, resource: URI): Workbench {
 	const workspace = resource.with({fragment: ""});
-	const services = setupServices(domElement, workspace);
+	const services = setupServices(domElement);
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
-	configureServices(services);
+	configureServices(services, workspace);
 
 	const parent = domElement.parentElement;
 	const workbench = instantiationService.createInstance(
@@ -39,6 +39,7 @@ export function init(domElement: HTMLDivElement, resource: URI): Workbench {
 
 	const editor = workbench.getEditorPart();
 	configureEditor(editor, resource, instantiationService);
+	configurePostStartup(services);
 	return workbench;
 }
 
