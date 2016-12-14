@@ -3,9 +3,9 @@ import { TPromise } from "vs/base/common/winjs.base";
 import { ICommonCodeEditor, IPosition, IReadOnlyModel, ModeContextKeys } from "vs/editor/common/editorCommon";
 import { EditorAction, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
 import { Location } from "vs/editor/common/modes";
-import { getDeclarationsAtPosition } from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
 import { ReferencesController } from "vs/editor/contrib/referenceSearch/browser/referencesController";
 import { ReferencesModel } from "vs/editor/contrib/referenceSearch/browser/referencesModel";
+import { PeekContext } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
 import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 
 import * as BlobActions from "sourcegraph/blob/BlobActions";
@@ -20,23 +20,21 @@ import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
 const fetch = singleflightFetch(defaultFetch);
 
-function cacheKey(model: IReadOnlyModel, position: IPosition): string {
-	return `${model.uri.toString(true)}:${position.lineNumber}:${position.column}`;
-}
-
 @editorAction
 class FindExternalReferencesAction extends EditorAction {
 	constructor() {
-		super({
-			id: "editor.action.findExternalReferences",
-			label: "Find External References",
-			alias: "Find External References",
-			precondition: ContextKeyExpr.and(ModeContextKeys.hasReferenceProvider),
-			menuOpts: {
-				group: "navigation",
-				order: 1.4,
-			},
-		});
+		if (!Features.externalReferences.isEnabled()) {
+			super({
+				id: "editor.action.findExternalReferences",
+				label: "Find External References",
+				alias: "Find External References",
+				precondition: ContextKeyExpr.and(ModeContextKeys.hasReferenceProvider),
+				menuOpts: {
+					group: "navigation",
+					order: 1.4,
+				},
+			});
+		}
 	}
 
 	public run(accessor: ServicesAccessor, editor: ICommonCodeEditor): void {
@@ -63,8 +61,6 @@ class FindExternalReferencesAction extends EditorAction {
 	}
 }
 
-const globalRefsCache = new Map<string, TPromise<ReferencesModel>>();
-
 @editorAction
 class PeekExternalReferences extends EditorAction {
 	constructor() {
@@ -73,7 +69,7 @@ class PeekExternalReferences extends EditorAction {
 				id: "peek.external.references",
 				label: "Peek External References",
 				alias: "Peek External References",
-				precondition: ContextKeyExpr.and(ModeContextKeys.hasReferenceProvider),
+				precondition: ContextKeyExpr.and(ModeContextKeys.hasReferenceProvider, PeekContext.notInPeekEditor),
 				menuOpts: {
 					group: "navigation",
 					order: 1.3,
@@ -87,77 +83,53 @@ class PeekExternalReferences extends EditorAction {
 	}
 
 	_getGlobalReferencesAtPosition(editor: ICommonCodeEditor): void {
-		getDeclarationsAtPosition(editor.getModel(), editor.getPosition()).then(declLocs => {
-			if (!declLocs || declLocs.length === 0) {
-				return TPromise.as(null);
-			}
+		const controller = ReferencesController.get(editor);
+		const { repo, path } = URIUtils.repoParams(editor.getModel().uri);
+		const editorPosition = editor.getPosition();
+		let model = editor.getModel();
+		let refData: RefData = {
+			language: model.getModeIdAtPosition(editorPosition.lineNumber, editorPosition.column),
+			repo: repo,
+			version: model.uri.query,
+			file: path,
+			line: editorPosition.lineNumber - 1,
+			column: editorPosition.column - 1,
+		};
 
-			const loc = declLocs[0];
-			const key = cacheKey(editor.getModel(), {
-				lineNumber: loc.range.startLineNumber,
-				column: loc.range.startColumn,
+		resolveGlobalReferences(refData).then((globalRefs) => {
+			let globalRefLocs: Location[] = [];
+			globalRefs.forEach((ref) => {
+				if (!ref.refLocation || !ref.uri) {
+					return;
+				}
+				globalRefLocs.push({
+					range: {
+						startLineNumber: ref.refLocation.startLineNumber + 1,
+						startColumn: ref.refLocation.startColumn + 1,
+						endLineNumber: ref.refLocation.endLineNumber + 1,
+						endColumn: ref.refLocation.endColumn + 1,
+					},
+					uri: URI.from({
+						scheme: ref.uri.scheme,
+						query: ref.uri.query,
+						path: ref.uri.path,
+						fragment: ref.uri.fragment,
+						authority: ref.uri.host,
+					}),
+				});
 			});
-			const cached = globalRefsCache.get(key);
-			const controller = ReferencesController.get(editor);
 
-			if (cached) {
-				return controller.toggleWidget(editor.getSelection(), cached, {
-					getMetaTitle: () => {
-						return "";
-					},
-					onGoto: () => {
-						controller.closeWidget();
-						return TPromise.as(editor);
-					},
-				});
-			}
-
-			const { repo, path } = URIUtils.repoParams(editor.getModel().uri);
-			let uri = editor.getModel().uri;
-			let refData: RefData = {
-				repo: repo,
-				version: uri.query,
-				file: path,
-				line: loc.range.startLineNumber,
-				column: loc.range.startColumn,
-			};
-
-			resolveGlobalReferences(refData).then((globalRefs) => {
-				let globalRefLocs: Location[] = [];
-				globalRefs.forEach((ref) => {
-					if (!ref.refLocation || !ref.uri) {
-						return;
-					}
-					globalRefLocs.push({
-						range: {
-							startLineNumber: ref.refLocation.startLineNumber,
-							startColumn: ref.refLocation.startColumn,
-							endLineNumber: ref.refLocation.endLineNumber,
-							endColumn: ref.refLocation.endColumn,
-						},
-						uri: URI.from({
-							scheme: ref.uri.scheme,
-							query: ref.uri.query,
-							path: ref.uri.path,
-							fragment: ref.uri.fragment,
-							authority: ref.uri.host,
-						}),
-					});
-				});
-
-				const refModel = TPromise.as(new ReferencesModel(globalRefLocs));
-				globalRefsCache.set(key, refModel);
-				controller.toggleWidget(editor.getSelection(), refModel, {
-					getMetaTitle: () => {
-						return "";
-					},
-					onGoto: () => {
-						controller.closeWidget();
-						return TPromise.as(editor);
-					},
-				});
-			})
-				.catch(err => err);
-		});
+			const refModel = TPromise.as(new ReferencesModel(globalRefLocs));
+			controller.toggleWidget(editor.getSelection(), refModel, {
+				getMetaTitle: () => {
+					return "";
+				},
+				onGoto: () => {
+					controller.closeWidget();
+					return TPromise.as(editor);
+				},
+			});
+		})
+			.catch(err => err);
 	}
 }
