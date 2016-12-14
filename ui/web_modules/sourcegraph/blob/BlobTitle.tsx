@@ -43,92 +43,99 @@ function convertToGitHubLineNumber(hash: string): string {
 	return "";
 }
 
-export function BlobTitle({
-	toggleAuthors,
-	repo,
-	path,
-	rev,
-	routes,
-	routeParams,
-	toast,
-}: Props): JSX.Element {
-	const extension = getPathExtension(path);
-	const isSupported = extension ? isSupportedExtension(extension) : false;
-	const isIgnored = extension ? isIgnoredExtension(extension) : false;
-	// Tech debt: BlobMain won't pass new location on line clicks, so use window.location.
-	// We must register an explicit onClick handler on the GitHub anchor link to detect line hash changes.
-	const gitHubURL = () => `https://${repo}/blob/${rev}/${path}${convertToGitHubLineNumber(window.location.hash)}`;
-
-	function goToGitHub(e: React.MouseEvent<any>): void {
-		e.preventDefault();
-		AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path });
-		window.location.href = gitHubURL();
+export class BlobTitle extends React.Component<Props, {}> {
+	constructor(props: Props) {
+		super(props);
+		this.onEditorLineSelected = this.onEditorLineSelected.bind(this);
 	}
 
-	return <FlexContainer justify="between" items="center" wrap={true} style={{
-		backgroundColor: colors.coolGray1(),
-		boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
-		minHeight: layout.editorToolbarHeight,
-		zIndex: 1,
-		padding: `${whitespace[2]} ${whitespace[3]}`,
-	}}>
-		<div>
-			<Heading level={6} color="white" compact={true}>
-				{basename(path)}
-				<RevSwitcher
+	componentDidMount(): void {
+		window.document.addEventListener("editorLineSelected", this.onEditorLineSelected);
+	}
+
+	componentWillUnmount(): void {
+		window.document.removeEventListener("editorLineSelected", this.onEditorLineSelected);
+	}
+
+	onEditorLineSelected(): void {
+		// This component depends on knowing the URL, which may change via history.replaceState when editor cursor
+		// position/selection is updated; when it does, redraw the component to update the GitHub URL line selection.
+		this.forceUpdate();
+	}
+
+	render(): JSX.Element {
+		const {repo, path, rev, routes, routeParams, toggleAuthors, toast } = this.props;
+
+		const extension = getPathExtension(path);
+		const isSupported = extension ? isSupportedExtension(extension) : false;
+		const isIgnored = extension ? isIgnoredExtension(extension) : false;
+		const gitHubURL = `https://${repo}/blob/${rev}/${path}${convertToGitHubLineNumber(window.location.hash)}`;
+
+		return <FlexContainer justify="between" items="center" wrap={true} style={{
+			backgroundColor: colors.coolGray1(),
+			boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
+			height: layout.editorToolbarHeight,
+			zIndex: 1,
+			padding: `${whitespace[2]} ${whitespace[3]}`,
+		}}>
+			<div>
+				<Heading level={6} color="white" compact={true}>
+					{basename(path)}
+					<RevSwitcher
+						repo={repo}
+						rev={rev}
+						routes={routes}
+						routeParams={routeParams}
+						style={{ marginLeft: whitespace[1] }} />
+				</Heading>
+				<PathBreadcrumb
 					repo={repo}
+					path={path}
 					rev={rev}
-					routes={routes}
-					routeParams={routeParams}
-					style={{ marginLeft: whitespace[1] }} />
-			</Heading>
-			<PathBreadcrumb
-				repo={repo}
-				path={path}
-				rev={rev}
-				linkSx={Object.assign({ color: colors.coolGray3() }, typography.size[7])}
-				linkHoverSx={{ color: `${colors.coolGray4()} !important` }}
-				style={{ marginBottom: 0 }} />
-		</div>
+					linkSx={Object.assign({ color: colors.coolGray3() }, typography.size[7])}
+					linkHoverSx={{ color: `${colors.coolGray4()} !important` }}
+					style={{ marginBottom: 0 }} />
+			</div>
 
-		<div style={Object.assign({
-			color: "white",
-			flex: "1 1",
-			paddingRight: whitespace[1],
-			textAlign: "right",
-		}, typography.size[7])}>
+			<div style={Object.assign({
+				color: "white",
+				flex: "1 1",
+				paddingRight: whitespace[1],
+				textAlign: "right",
+			}, typography.size[7])}>
 
-			<a href={gitHubURL()} onClick={(e) => goToGitHub(e)} { ...layout.hide.sm }>
-				<Button size="small" style={{
-					backgroundColor: "transparent",
-					fontSize: "inherit",
-					marginRight: whitespace[3],
-					paddingLeft: whitespace[2],
-					paddingRight: whitespace[2],
-				}}>
-					<GitHubLogo width={16} style={{
-						marginRight: whitespace[2],
-						verticalAlign: "text-top",
-					}} />
-					View on GitHub
-				</Button>
-			</a>
+				<a href={gitHubURL} onClick={() => AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path })} { ...layout.hide.sm }>
+					<Button size="small" style={{
+						backgroundColor: "transparent",
+						fontSize: "inherit",
+						marginRight: whitespace[3],
+						paddingLeft: whitespace[2],
+						paddingRight: whitespace[2],
+					}}>
+						<GitHubLogo width={16} style={{
+							marginRight: whitespace[2],
+							verticalAlign: "text-top",
+						}} />
+						View on GitHub
+					</Button>
+				</a>
 
-			{Features.authorsToggle.isEnabled() && <div
-				style={{ display: "inline-block" }}
-				{ ...layout.hide.sm}>
-				<ToggleSwitch
-					labels={true}
-					size="small"
-					defaultChecked={Features.codeLens.isEnabled()}
-					onChange={(visible) => toggleAuthors(visible)}
-					style={{ marginRight: whitespace[1], position: "relative", top: -2 }}
-					/> <strong>Show authors</strong>
-			</div>}
+				{Features.authorsToggle.isEnabled() && <div
+					style={{ display: "inline-block" }}
+					{ ...layout.hide.sm}>
+					<ToggleSwitch
+						labels={true}
+						size="small"
+						defaultChecked={Features.codeLens.isEnabled()}
+						onChange={(visible) => toggleAuthors(visible)}
+						style={{ marginRight: whitespace[1], position: "relative", top: -2 }}
+						/> <strong>Show authors</strong>
+				</div>}
 
-			{!isSupported && !isIgnored && <UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />}
-			{toast && <div>{toast}</div>}
+				{!isSupported && !isIgnored && <UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />}
+				{toast && <div>{toast}</div>}
 
-		</div>
-	</FlexContainer>;
+			</div>
+		</FlexContainer>;
+	}
 };

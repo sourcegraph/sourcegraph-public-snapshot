@@ -1399,10 +1399,6 @@ json-stringify-safe@~5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
 
-JSON@~1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/JSON/-/JSON-1.0.0.tgz#8681531c28f8438a075589ff07248246ea960d8c"
-
 json3@^3.3.2:
   version "3.3.2"
   resolved "https://registry.yarnpkg.com/json3/-/json3-3.3.2.tgz#3c0434743df93e2f5c42aee7b19bcb483575f4e1"
@@ -2382,12 +2378,11 @@ tar@~2.2.0, tar@~2.2.1:
     fstream "^1.0.2"
     inherits "2"
 
-telligent-tracker@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/telligent-tracker/-/telligent-tracker-0.1.1.tgz#69e740aefad0152e1027ea4f1883d0fbd023b3ab"
+telligent-tracker@^0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/telligent-tracker/-/telligent-tracker-0.1.2.tgz#2f4e45df53f1246df3b9d0cbf780180c00b0d58f"
   dependencies:
     browser-cookie-lite "~0.3.1"
-    JSON "~1.0.0"
     jstimezonedetect "1.0.5"
     lodash.filter "^4.2.1"
     lodash.find "^4.2.0"

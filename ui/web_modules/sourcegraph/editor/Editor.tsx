@@ -1,11 +1,10 @@
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import { IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { Position } from "vs/editor/common/core/position";
-import { IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
+import { ICursorSelectionChangedEvent, IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 import { IEditor } from "vs/platform/editor/common/editor";
@@ -171,15 +170,8 @@ export class Editor implements IDisposable {
 		}
 	}
 
-	onLineSelected(listener: (mouseDownEvent: IEditorMouseEvent, mouseUpEvent: IEditorMouseEvent) => void): void {
-		let disposeMouseDown = this._editor.onMouseDown(mouseDownEvent => {
-			let disposeMouseUp = this._editor.onMouseUp(function (mouseUpEvent: IEditorMouseEvent): void {
-				listener(mouseDownEvent, mouseUpEvent);
-				disposeMouseUp.dispose();
-			});
-		});
-
-		this._toDispose.push(disposeMouseDown);
+	onCursorSelectionChanged(listener: (e: ICursorSelectionChangedEvent) => void): void {
+		this._editor.onDidChangeCursorSelection(listener);
 	}
 
 	setInput(uri: URI, range?: IRange): Promise<IEditor> {
