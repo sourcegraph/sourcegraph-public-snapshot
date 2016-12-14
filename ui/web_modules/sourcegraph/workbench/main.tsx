@@ -3,6 +3,7 @@ import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
 import "sourcegraph/workbench/overrides/fileService";
+import "sourcegraph/workbench/overrides/instantiationService";
 import "sourcegraph/workbench/overrides/labels";
 
 import "vs/editor/common/editorCommon";
