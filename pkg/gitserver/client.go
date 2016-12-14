@@ -53,7 +53,10 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 		span.Finish()
 	}()
 	req, _ := newRequest()
-	setSpanTags(span, req)
+	span.SetTag("request", "Exec")
+	span.SetTag("repo", req.Exec.Repo)
+	span.SetTag("args", req.Exec.Args)
+	span.SetTag("opt", req.Exec.Opt)
 
 	// Check that ctx is not expired before broadcasting over the network.
 	if err := ctx.Err(); err != nil {
