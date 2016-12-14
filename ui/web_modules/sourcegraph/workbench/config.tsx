@@ -13,6 +13,8 @@ import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
 import { Features } from "sourcegraph/util/features";
 
+// Configure services sets the Workbench configuration. It must run after setup
+// services and before workbench startup.
 export function configureServices(services: ServiceCollection, resource: URI): void {
 	const configsvc = services.get(IConfigurationService) as IConfigurationService;
 	configsvc["_config"] = config;
@@ -25,6 +27,7 @@ export function configureServices(services: ServiceCollection, resource: URI): v
 	}));
 }
 
+// Workbench overwrites a few services, so we add these services after startup.
 export function configurePostStartup(services: ServiceCollection): void {
 	const resolver = services.get(ITextModelResolverService) as ITextModelResolverService;
 	resolver.registerTextModelContentProvider("git", new TextModelContentProvider(

@@ -15,6 +15,12 @@ import { TextModelResolverService } from "vs/workbench/services/textmodelResolve
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
+// Setup services for the workbench. A lot of the ones required by Workbench
+// aren't necessary for Sourcegraph at this point. For instance,
+// EnvironmentService isn't something we need because a user will not have a
+// home directory on Sourcegraph. Others, like ThemeService, will probably be
+// implemented someday, so users can customize color themes.
+
 export function setupServices(domElement: HTMLDivElement): ServiceCollection {
 	const dynServices = new DynamicStandaloneServices(domElement, {});
 	const services = (dynServices as any)._serviceCollection;
