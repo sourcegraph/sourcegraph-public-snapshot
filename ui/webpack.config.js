@@ -31,7 +31,6 @@ const plugins = [
 		"process.getuid": "function() { return 0; }",
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
-	new webpack.IgnorePlugin(/\.json$/),
 	new webpack.IgnorePlugin(/\_test\.js$/),
 
 	// This file isn't actually used, but it contains a dynamic import that Webpack complains about.

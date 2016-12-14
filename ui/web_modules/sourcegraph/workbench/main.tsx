@@ -13,6 +13,7 @@ import "vs/workbench/parts/files/browser/files.contribution";
 
 import URI from "vs/base/common/uri";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
+import { IOptions } from "vs/workbench/common/options";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { configureEditor } from "sourcegraph/editor/config";
@@ -31,7 +32,7 @@ export function init(domElement: HTMLDivElement, resource: URI): Workbench {
 		parent,
 		domElement,
 		{resource: workspace},
-		options,
+		options(resource),
 		services,
 	);
 	workbench.startup();
@@ -43,4 +44,10 @@ export function init(domElement: HTMLDivElement, resource: URI): Workbench {
 	return workbench;
 }
 
-const options = {};
+function options(resource: URI): IOptions {
+	return {
+		filesToOpen: [
+			{resource},
+		],
+	};
+}
