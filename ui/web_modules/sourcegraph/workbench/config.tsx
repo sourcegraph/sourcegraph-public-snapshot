@@ -9,11 +9,14 @@ import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/w
 import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
 import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
 
+import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
+import { Features } from "sourcegraph/util/features";
 
 export function configureServices(services: ServiceCollection, resource: URI): void {
 	const configsvc = services.get(IConfigurationService) as IConfigurationService;
 	configsvc["_config"] = config;
+
 	const viewReg = (Registry.as(viewKey.Viewlets) as ViewletRegistry);
 	viewReg.setDefaultViewletId(VIEWLET_ID);
 
@@ -44,5 +47,17 @@ const config = {
 			visible: 0,
 		},
 	},
-	editor: {},
+	editor: {
+		readOnly: true,
+		automaticLayout: true,
+		scrollBeyondLastLine: false,
+		wrappingColumn: 0,
+		fontFamily: code_font_face,
+		fontSize: 15,
+		lineHeight: 21,
+		theme: "vs-dark",
+		renderLineHighlight: "line",
+		codeLens: Features.codeLens.isEnabled(),
+		glyphMargin: false,
+	},
 };

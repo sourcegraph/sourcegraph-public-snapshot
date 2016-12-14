@@ -16,7 +16,7 @@ import { IInstantiationService } from "vs/platform/instantiation/common/instanti
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { configureEditor } from "sourcegraph/editor/config";
-import { configureServices, configurePostStartup } from "sourcegraph/workbench/config";
+import { configurePostStartup, configureServices } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/setupServices";
 
 export function init(domElement: HTMLDivElement, resource: URI): Workbench {
