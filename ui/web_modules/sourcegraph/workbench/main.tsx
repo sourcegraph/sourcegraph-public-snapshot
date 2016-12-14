@@ -14,14 +14,16 @@ import "vs/workbench/parts/files/browser/files.contribution";
 
 import URI from "vs/base/common/uri";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
+import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IOptions } from "vs/workbench/common/options";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
+
 
 import { configureEditor } from "sourcegraph/editor/config";
 import { configurePostStartup, configureServices } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/setupServices";
 
-export function init(domElement: HTMLDivElement, resource: URI): Workbench {
+export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
 	const workspace = resource.with({fragment: ""});
 	const services = setupServices(domElement);
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
@@ -42,7 +44,7 @@ export function init(domElement: HTMLDivElement, resource: URI): Workbench {
 	const editor = workbench.getEditorPart();
 	configureEditor(editor, resource, instantiationService);
 	configurePostStartup(services);
-	return workbench;
+	return [workbench, services];
 }
 
 function options(resource: URI): IOptions {

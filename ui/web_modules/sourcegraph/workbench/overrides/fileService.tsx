@@ -8,7 +8,12 @@ import * as nodeService from "vs/workbench/services/files/node/fileService";
 import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
-class FileService {
+// File service provides files from Sourcegraph's API instead of a normal file
+// system. It is used for Workspace discovery, but not for retrieving file
+// content. File content is resolved using the modelResolver, which uses
+// contentLoader.tsx.
+
+class FileService implements IFileService {
 	constructor() {
 		//
 	}
