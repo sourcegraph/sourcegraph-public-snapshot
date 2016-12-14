@@ -218,7 +218,8 @@ func TestRepos_List_type(t *testing.T) {
 
 // TestRepos_List_query tests the behavior of Repos.List when called with
 // a query.
-func TestRepos_List_query(t *testing.T) {
+// Test batch 1 (correct filtering)
+func TestRepos_List_query1(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -229,85 +230,84 @@ func TestRepos_List_query(t *testing.T) {
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 	s := repos{}
 
-	{ // Test batch 1 (correct filtering)
-		createdRepos := []*sourcegraph.Repo{
-			{URI: "abc/def", Owner: "abc", Name: "def", DefaultBranch: "master"},
-			{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
-			{URI: "jkl/mno/pqr", Owner: "mno", Name: "pqr", DefaultBranch: "master"},
-			{URI: "github.com/abc/xyz", Owner: "abc", Name: "xyz", DefaultBranch: "master", Mirror: true},
-		}
-		for _, repo := range createdRepos {
-			if created, err := s.Create(ctx, repo); err != nil {
-				t.Fatal(err)
-			} else {
-				repo.ID = created
-			}
-		}
-		tests := []struct {
-			query string
-			want  []string
-		}{
-			{"def", []string{"abc/def", "def/ghi"}},
-			{"ABC/DEF", []string{"abc/def"}},
-			{"xyz", []string{"github.com/abc/xyz"}},
-			{"mno/p", []string{"jkl/mno/pqr"}},
-			{"jkl mno pqr", []string{"jkl/mno/pqr"}},
-		}
-		for _, test := range tests {
-			repos, err := s.List(ctx, &RepoListOp{Query: test.query})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
-				t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
-			}
-		}
-		for _, repo := range createdRepos {
-			if err := s.Delete(ctx, repo.ID); err != nil {
-				t.Fatal(err)
-			}
+	createdRepos := []*sourcegraph.Repo{
+		{URI: "abc/def", Owner: "abc", Name: "def", DefaultBranch: "master"},
+		{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
+		{URI: "jkl/mno/pqr", Owner: "mno", Name: "pqr", DefaultBranch: "master"},
+		{URI: "github.com/abc/xyz", Owner: "abc", Name: "xyz", DefaultBranch: "master", Mirror: true},
+	}
+	for _, repo := range createdRepos {
+		if created, err := s.Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		} else {
+			repo.ID = created
 		}
 	}
+	tests := []struct {
+		query string
+		want  []string
+	}{
+		{"def", []string{"abc/def", "def/ghi"}},
+		{"ABC/DEF", []string{"abc/def"}},
+		{"xyz", []string{"github.com/abc/xyz"}},
+		{"mno/p", []string{"jkl/mno/pqr"}},
+		{"jkl mno pqr", []string{"jkl/mno/pqr"}},
+	}
+	for _, test := range tests {
+		repos, err := s.List(ctx, &RepoListOp{Query: test.query})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
+		}
+	}
+}
 
-	{ // Test batch 2 (correct ranking)
-		createdRepos := []*sourcegraph.Repo{
-			{URI: "a/def", Owner: "a", Name: "def", DefaultBranch: "master"},
-			{URI: "b/def", Owner: "b", Name: "def", DefaultBranch: "master", Fork: true},
-			{URI: "c/def", Owner: "c", Name: "def", DefaultBranch: "master", Private: true},
-			{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
-			{URI: "def/jkl", Owner: "def", Name: "jkl", DefaultBranch: "master", Fork: true},
-			{URI: "def/mno", Owner: "def", Name: "mno", DefaultBranch: "master", Private: true},
-			{URI: "abc/m", Owner: "abc", Name: "m", DefaultBranch: "master"},
+// Test batch 2 (correct ranking)
+func TestRepos_List_query2(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx, done := testContext()
+	defer done()
+
+	ctx = github.WithMockHasAuthedUser(ctx, false)
+	s := repos{}
+
+	createdRepos := []*sourcegraph.Repo{
+		{URI: "a/def", Owner: "a", Name: "def", DefaultBranch: "master"},
+		{URI: "b/def", Owner: "b", Name: "def", DefaultBranch: "master", Fork: true},
+		{URI: "c/def", Owner: "c", Name: "def", DefaultBranch: "master", Private: true},
+		{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
+		{URI: "def/jkl", Owner: "def", Name: "jkl", DefaultBranch: "master", Fork: true},
+		{URI: "def/mno", Owner: "def", Name: "mno", DefaultBranch: "master", Private: true},
+		{URI: "abc/m", Owner: "abc", Name: "m", DefaultBranch: "master"},
+	}
+	for _, repo := range createdRepos {
+		if created, err := s.Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		} else {
+			repo.ID = created
 		}
-		for _, repo := range createdRepos {
-			if created, err := s.Create(ctx, repo); err != nil {
-				t.Fatal(err)
-			} else {
-				repo.ID = created
-			}
+	}
+	tests := []struct {
+		query string
+		want  []string
+	}{
+		{"def", []string{"c/def", "a/def", "def/mno", "def/ghi", "b/def", "def/jkl"}},
+		{"b/def", []string{"b/def"}},
+		{"def/", []string{"def/mno", "def/ghi", "def/jkl"}},
+		{"def/m", []string{"def/mno"}},
+	}
+	for _, test := range tests {
+		repos, err := s.List(ctx, &RepoListOp{Query: test.query})
+		if err != nil {
+			t.Fatal(err)
 		}
-		tests := []struct {
-			query string
-			want  []string
-		}{
-			{"def", []string{"c/def", "a/def", "def/mno", "def/ghi", "b/def", "def/jkl"}},
-			{"b/def", []string{"b/def"}},
-			{"def/", []string{"def/mno", "def/ghi", "def/jkl"}},
-			{"def/m", []string{"def/mno"}},
-		}
-		for _, test := range tests {
-			repos, err := s.List(ctx, &RepoListOp{Query: test.query})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
-				t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
-			}
-		}
-		for _, repo := range createdRepos {
-			if err := s.Delete(ctx, repo.ID); err != nil {
-				t.Fatal(err)
-			}
+		if got := repoURIs(repos); !reflect.DeepEqual(got, test.want) {
+			t.Errorf("%q: got repos %q, want %q", test.query, got, test.want)
 		}
 	}
 }

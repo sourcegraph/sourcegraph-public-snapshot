@@ -21,7 +21,6 @@ type MockRepos struct {
 	ListContributors            func(v0 context.Context, v1 *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error)
 	Create                      func(v0 context.Context, v1 *sourcegraph.ReposCreateOp) (*sourcegraph.Repo, error)
 	Update                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) (*sourcegraph.Repo, error)
-	Delete                      func(v0 context.Context, v1 *sourcegraph.RepoSpec) error
 	GetConfig                   func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.RepoConfig, error)
 	GetCommit                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev                  func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)

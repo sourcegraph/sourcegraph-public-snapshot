@@ -249,24 +249,3 @@ func (c *Client) create(ctx context.Context, repo string, mirrorRemote string, o
 	// Repo did not exist and was successfully created.
 	return nil
 }
-
-// Remove removes repo remotely.
-func (c *Client) Remove(ctx context.Context, repo string) error {
-	genReply, err := c.broadcastCall(ctx, func() (*request, func() (genericReply, bool)) {
-		replyChan := make(chan *removeReply, 1)
-		return &request{Remove: &removeRequest{Repo: repo, ReplyChan: replyChan}},
-			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
-	})
-	if err != nil {
-		return err
-	}
-
-	reply := genReply.(*removeReply)
-	if reply.CloneInProgress {
-		return vcs.RepoNotExistError{CloneInProgress: true}
-	}
-	if reply.Error != "" {
-		return errors.New(reply.Error)
-	}
-	return nil
-}

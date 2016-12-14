@@ -767,34 +767,3 @@ func (s *repos) InternalUpdate(ctx context.Context, repo int32, op InternalRepoU
 	}
 	return nil
 }
-
-// Delete a repository.
-func (s *repos) Delete(ctx context.Context, repo int32) error {
-	if Mocks.Repos.Delete != nil {
-		return Mocks.Repos.Delete(ctx, repo)
-	}
-
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo); err != nil {
-		return err
-	}
-
-	var dir string
-	if !skipFS {
-		var err error
-		dir, err = getRepoDir(ctx, repo)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err := appDBH(ctx).Exec(`DELETE FROM repo WHERE id=$1;`, repo)
-	if err != nil {
-		return err
-	}
-	if !skipFS && dir != "" {
-		if err := gitserver.DefaultClient.Remove(ctx, dir); err != nil {
-			log15.Warn("Deleting repo on filesystem failed", "repo", repo, "dir", dir, "err", err)
-		}
-	}
-	return nil
-}
