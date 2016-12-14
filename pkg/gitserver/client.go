@@ -39,24 +39,19 @@ func (c *Client) Connect(addr string) {
 	}()
 }
 
-type genericReply interface {
-	repoFound() bool
-}
-
-func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request, func() (genericReply, bool))) (_ interface{}, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.broadcastCall")
+func (c *Cmd) broadcastExec(ctx context.Context) (_ *execReply, errRes error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.broadcastExec")
 	defer func() {
-		if err != nil {
+		if errRes != nil {
 			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
+			span.SetTag("err", errRes.Error())
 		}
 		span.Finish()
 	}()
-	req, _ := newRequest()
 	span.SetTag("request", "Exec")
-	span.SetTag("repo", req.Exec.Repo)
-	span.SetTag("args", req.Exec.Args)
-	span.SetTag("opt", req.Exec.Opt)
+	span.SetTag("repo", c.Repo)
+	span.SetTag("args", c.Args[1:])
+	span.SetTag("opt", c.Opt)
 
 	// Check that ctx is not expired before broadcasting over the network.
 	if err := ctx.Err(); err != nil {
@@ -64,12 +59,13 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 		return nil, err
 	}
 
-	allReplies := make(chan genericReply, len(c.servers))
-	for _, server := range c.servers {
-		req, getReply := newRequest()
+	allReplies := make(chan *execReply, len(c.client.servers))
+	for _, server := range c.client.servers {
+		replyChan := make(chan *execReply, 1)
+		req := &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}}
 		server <- req
 		go func() {
-			reply, ok := getReply()
+			reply, ok := <-replyChan
 			if !ok {
 				allReplies <- nil
 				return
@@ -79,7 +75,7 @@ func (c *Client) broadcastCall(ctx context.Context, newRequest func() (*request,
 	}
 
 	rpcError := false
-	for range c.servers {
+	for range c.client.servers {
 		reply := <-allReplies
 		if reply == nil {
 			rpcError = true
@@ -101,7 +97,7 @@ var deadlineExceededCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",
 	Name:      "client_deadline_exceeded",
-	Help:      "Times that Client.broadcastCall() returned context.DeadlineExceeded",
+	Help:      "Times that Client.broadcastExec() returned context.DeadlineExceeded",
 })
 
 func init() {
@@ -133,16 +129,11 @@ func (c *Client) Command(name string, arg ...string) *Cmd {
 
 // DividedOutput runs the command and returns its standard output and standard error.
 func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
-	genReply, err := c.client.broadcastCall(ctx, func() (*request, func() (genericReply, bool)) {
-		replyChan := make(chan *execReply, 1)
-		return &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}},
-			func() (genericReply, bool) { reply, ok := <-replyChan; return reply, ok }
-	})
+	reply, err := c.broadcastExec(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	reply := genReply.(*execReply)
 	if reply.CloneInProgress {
 		return nil, nil, vcs.RepoNotExistError{CloneInProgress: true}
 	}
