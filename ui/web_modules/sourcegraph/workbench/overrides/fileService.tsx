@@ -48,13 +48,17 @@ function retrieveFilesAndDirs(resource: URI): any {
 		}`, {repo, rev});
 }
 
+// Convert a list of files into a hierarchical file stat structure.
 function toFileStat(resource: URI, files: string[]): IFileStat {
 	const {repo, rev, path} = URIUtils.repoParams(resource);
 	let children = files.filter(x => x.startsWith(path) && x !== path);
-	children = children.map(x => x.split("/")[0] || x);
+	children = children.map(x => {
+		x = x.substr(path.length);
+		return x.split("/")[0] || x;
+	});
 	children = uniq(children);
 	const childStats = children.map(x => toFileStat(
-		URIUtils.pathInRepo(repo, rev, path + "/" + x),
+		URIUtils.pathInRepo(repo, rev, path + x),
 		files,
 	));
 	return {
