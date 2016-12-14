@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as base from "sourcegraph/components/styles/_base.css";
-import { Heading, Panel, Table, Code } from "sourcegraph/components";
 import * as classNames from "classnames";
+import * as React from "react";
+import { Code, Heading, Panel, Table } from "sourcegraph/components";
+import * as base from "sourcegraph/components/styles/_base.css";
 
 export class AffixComponent extends React.Component<{}, any> {
 

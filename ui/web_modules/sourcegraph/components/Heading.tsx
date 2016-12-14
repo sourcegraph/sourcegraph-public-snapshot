@@ -34,6 +34,7 @@ export const Heading = (props: Props): any => {
 		{
 			color: headingColors[props.color],
 			fontWeight: typography.weight[2],
+			letterSpacing: props.level === 7 ? 0.5 : 0,
 			marginBottom: props.compact ? 0 : whitespace[2],
 			marginTop: props.compact ? 0 : whitespace[2],
 			textTransform: props.level === 7 ? "uppercase" : "auto",

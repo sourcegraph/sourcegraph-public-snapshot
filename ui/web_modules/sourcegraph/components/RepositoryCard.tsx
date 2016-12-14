@@ -1,7 +1,9 @@
+import { media } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { Avatar, FlexContainer, Heading, LanguageLabel, Panel } from "sourcegraph/components";
-import { colors, whitespace } from "sourcegraph/components/utils";
+import { colors, layout, whitespace } from "sourcegraph/components/utils";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	contributors?: GQL.IContributor[];
@@ -24,17 +26,21 @@ export function RepositoryCard({style, repo, contributors}: Props): JSX.Element 
 		});
 	}
 
+	function trackRepoClick(): void {
+		AnalyticsConstants.Events.Repository_Clicked.logEvent({ repo });
+	}
+
 	const sx = Object.assign(
 		{ padding: whitespace[4] },
 		style,
 	);
 
 	return <Panel hoverLevel="low" style={sx}>
-		<FlexContainer justify="between">
-			<div>
+		<FlexContainer justify="between" wrap={true}>
+			<div style={{ flex: "1 1", marginRight: whitespace[2] }}>
 				<Heading level={6} style={{ marginTop: 0 }}>
 					{repo.uri
-						? <Link to={repo.uri}>{repo.owner} / {repo.name}</Link>
+						? <Link to={repo.uri} onClick={trackRepoClick}>{repo.owner} / {repo.name}</Link>
 						: <span>{repo.owner} / {repo.name}</span>
 					}
 				</Heading>
@@ -50,10 +56,13 @@ export function RepositoryCard({style, repo, contributors}: Props): JSX.Element 
 				</div>}
 			</div>
 			{repo.language &&
-				<LanguageLabel language={repo.language} style={{
-					alignSelf: "flex-end",
-					textAlign: "right",
-				}} />
+				<span style={{ alignSelf: "flex-end" }}
+					{ ...media(layout.breakpoints.sm, {
+						flex: "1 0 100%",
+						marginTop: whitespace[2],
+					}) }>
+					<LanguageLabel language={repo.language} />
+				</span>
 			}
 		</FlexContainer>
 	</Panel>;

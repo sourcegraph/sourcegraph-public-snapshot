@@ -1,41 +1,26 @@
-import * as classNames from "classnames";
 import * as React from "react";
-
-import * as styles from "sourcegraph/components/styles/tabs.css";
+import { colors } from "sourcegraph/components/utils";
 
 interface Props {
-	direction?: string; // vertical, horizontal
-	color?: string; // blue, purple
-	size?: string; // small, large, default
-	children?: any;
-	className?: string;
-	style?: any;
+	size?: "small" | "large" | "default";
+	children?: React.ReactNode[];
+	direction?: "vertical" | "horizontal";
+	style?: React.CSSProperties;
 }
 
-export class Tabs extends React.Component<Props, {}> {
-	static defaultProps: Props = {
-		size: "default",
-		direction: "horizontal",
-		color: "blue",
-	};
+export function Tabs({
+	children,
+	direction = "horizontal",
+	style,
+}: Props): JSX.Element {
 
-	_childrenWithProps(): JSX.Element[] {
-		return React.Children.map(this.props.children, (child: React.ReactElement<any>) => {
-			if (child.props.tabItem) {
-				return React.cloneElement(child, {
-					direction: this.props.direction,
-					color: this.props.color,
-					size: this.props.size,
-				});
-			}
-			return React.cloneElement(child, {
-				className: this.props.direction === "vertical" ? styles.item_vertical : styles.item_horizontal,
-			});
-		});
-	}
+	const sx = Object.assign({
+		borderColor: colors.coolGray2(0.2),
+		borderWidth: 0,
+		borderLeftWidth: direction === "vertical" ? 1 : 0,
+		borderBottomWidth: direction === "horizontal" ? 1 : 0,
+		borderStyle: "solid",
+	}, style);
 
-	render(): JSX.Element {
-		const {direction, className, style} = this.props;
-		return <div className={classNames(styles.container, direction === "vertical" ? styles.vertical : styles.horizontal, className)} style={style}>{this._childrenWithProps()}</div>;
-	}
+	return <div style={sx}>{children}</div>;
 }

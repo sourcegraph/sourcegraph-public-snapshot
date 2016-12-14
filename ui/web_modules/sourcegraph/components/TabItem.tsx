@@ -1,50 +1,80 @@
-import * as classNames from "classnames";
+import { merge, select } from "glamor";
 import * as React from "react";
-
-import { Icon } from "sourcegraph/components/Icon";
-import * as styles from "sourcegraph/components/styles/tabItem.css";
+import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
-	className?: string;
-	children?: any;
-	hideMobile?: boolean;
 	active?: boolean;
-	color?: string; // blue, purple
-	size?: string; // small, large
-	icon?: string | JSX.Element;
-	direction?: string;
-	tabItem?: boolean;
+	children?: any;
+	color?: "blue" | "purple";
+	direction?: "vertical" | "horizontal";
+	hideMobile?: boolean;
+	inverted?: boolean;
+	size?: "small" | "large";
+	style?: React.CSSProperties;
 }
 
-export class TabItem extends React.Component<Props, {}> {
-	static defaultProps: Props = {
-		active: false,
-		color: "blue",
-		direction: "horizontal",
-		tabItem: true,
+export function TabItem({
+	active,
+	children,
+	color = "blue",
+	direction = "horizontal",
+	hideMobile,
+	inverted,
+	size,
+	style,
+}: Props): JSX.Element {
+
+	const borderWidth = 3;
+
+	const horizontalSx = {
+		display: "inline-block",
+		borderBottomWidth: `${borderWidth}px !important`,
+		margin: whitespace[2],
+		marginBottom: -1,
+		marginTop: 0,
+		padding: whitespace[2],
+		paddingTop: 12,
 	};
 
-	render(): JSX.Element | null {
-		const {size, children, hideMobile, active, color, icon, direction} = this.props;
-		return (
-			<span
-				className={classNames(sizeClasses[size || "normal"], hideMobile ? styles.hidden_s : null, active ? styles.active : styles.inactive, colorClasses[color || "blue"] || styles.blue, direction === "vertical" ? styles.vertical : styles.horizontal)}>
-				{icon && typeof icon === "string" && <Icon icon={`${icon}-blue`} height="14px" width="auto" className={classNames(styles.icon, !active ? styles.hide : null)} />}
-				{icon && typeof icon === "string" && <Icon icon={`${icon}-gray`} height="14px" width="auto" className={classNames(styles.icon, active ? styles.hide : null)} />}
-				{icon && typeof icon !== "string" && React.cloneElement(icon, { className: active ? `${styles.component_icon} ${styles.active} ${colorClasses[color || "blue"]}` : `${styles.component_icon} ${styles.inactive}` })}
-				{children}
-			</span>
-		);
-	}
+	const verticalSx = {
+		display: "block",
+		borderLeftWidth: `${borderWidth}px !important`,
+		marginBottom: whitespace[2],
+		marginLeft: -1,
+		padding: whitespace[1],
+		paddingLeft: `calc(${whitespace[4]} - ${borderWidth}px)`,
+		paddingRight: whitespace[3],
+	};
+
+	const tabSize = {
+		"small": typography.size[7],
+		"large": typography.size[3],
+	};
+
+	const sx = merge(
+		{
+			borderWidth: 0,
+			borderColor: active ? colors[color]() : "transparent",
+			borderStyle: "solid",
+			fontSize: "inherit",
+		},
+
+		direction === "vertical" ? verticalSx : horizontalSx,
+		tabSize && size ? tabSize[size] : null,
+		hideMobile ? layout.hide.sm : {},
+
+		select(" a",
+			active
+				? { color: inverted ? "white" : colors[color]() }
+				: { color: colors.coolGray3() }
+		),
+
+		select(" a:hover",
+			active
+				? { color: inverted ? "white" : colors[color]() }
+				: { color: inverted ? colors.coolGray4() : colors.coolGray2() }
+		)
+	);
+
+	return <span {...sx} style={style}>{children}</span>;
 }
-
-const sizeClasses = {
-	"small": styles.small,
-	"normal": styles.normal,
-	"large": styles.large,
-};
-
-const colorClasses = {
-	"blue": styles.blue,
-	"purple": styles.purple,
-};

@@ -5,7 +5,6 @@ export { ButtonsComponent } from "sourcegraph/styleguide/componentExamples/Butto
 export { TabsComponent } from "sourcegraph/styleguide/componentExamples/TabsComponent";
 export { PanelsComponent } from "sourcegraph/styleguide/componentExamples/PanelsComponent";
 export { StepperComponent } from "sourcegraph/styleguide/componentExamples/StepperComponent";
-export { ChecklistsComponent } from "sourcegraph/styleguide/componentExamples/ChecklistsComponent";
 export { LogoComponent } from "sourcegraph/styleguide/componentExamples/LogoComponent";
 export { TableComponent } from "sourcegraph/styleguide/componentExamples/TableComponent";
 export { FlexContainerComponent } from "sourcegraph/styleguide/componentExamples/FlexContainerComponent";

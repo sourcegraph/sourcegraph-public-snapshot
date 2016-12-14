@@ -11,7 +11,7 @@ export class StyleguideContainer extends React.Component<{}, any> {
 
 		const navHeadingSx = {
 			marginLeft: whitespace[3],
-			paddingLeft: whitespace[1],
+			paddingLeft: whitespace[3],
 			marginTop: whitespace[4],
 		};
 
@@ -30,62 +30,59 @@ export class StyleguideContainer extends React.Component<{}, any> {
 				</Hero>
 				<FlexContainer className={styles.container_fixed}>
 					<Affix offset={20} style={{ flex: "0 0 240px", order: 9999 }}>
-						<Tabs direction="vertical" color="purple" style={{ marginLeft: whitespace[5] }}>
-							<TabItem>
+						<Tabs style={{ marginLeft: whitespace[5] }} direction="vertical">
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#principles" }}>Principles</Link>
 							</TabItem>
 
 							<Heading level={7} style={navHeadingSx}>Brand</Heading>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#brand-voice" }}>Voice</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#brand-logo" }}>Logo and Logotype</Link>
 							</TabItem>
 
 							<Heading level={7} style={navHeadingSx}>Layout Components</Heading>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#layout-flexcontainer" }}>FlexContainer</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#layout-affix" }}>Affix</Link>
 							</TabItem>
 
 							<Heading level={7} style={navHeadingSx}>UI Components</Heading>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-buttons" }}>Buttons</Link>
 							</TabItem>
-							<TabItem>
-								<Link to={{ pathname: "styleguide", search: "#components-checklists" }}>Checklist Items</Link>
-							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-forms" }}>Forms</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-headings" }}>Headings</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-list" }}>Lists</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-panels" }}>Panels</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-stepper" }}>Stepper</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-symbols" }}>Symbols</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-table" }}>Table</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-tabs" }}>Tabs</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-user" }}>User</Link>
 							</TabItem>
-							<TabItem>
+							<TabItem direction="vertical" color="purple">
 								<Link to={{ pathname: "styleguide", search: "#components-repository-card" }}>Repository Card</Link>
 							</TabItem>
 						</Tabs>

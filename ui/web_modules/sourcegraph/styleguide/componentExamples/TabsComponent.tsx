@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import { Code, Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code } from "sourcegraph/components";
-import * as classNames from "classnames";
+import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -19,7 +17,7 @@ export class TabsComponent extends React.Component<{}, State> {
 			<div className={base.mv4}>
 				<Heading level={3} className={base.mb2}>Tabs</Heading>
 
-				<Tabs color="purple">
+				<Tabs>
 					<TabItem
 						active={this.state.activeExample === 0}>
 						<a href="#" onClick={(e) => {
@@ -56,14 +54,14 @@ export class TabsComponent extends React.Component<{}, State> {
 								<Heading level={7} className={base.mb3} color="cool_mid_gray">Default (Blue)</Heading>
 								<Tabs>
 									<TabItem active={true}>Tab 1</TabItem>
-									<TabItem>Tab 2</TabItem>
+									<TabItem hideMobile={true}>Tab 2</TabItem>
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
 								<Heading level={7} className={base.mv3} color="cool_mid_gray">Purple</Heading>
-								<Tabs color="purple">
-									<TabItem active={true}>Tab 1</TabItem>
-									<TabItem>Tab 2</TabItem>
-									<TabItem>Tab 3</TabItem>
+								<Tabs>
+									<TabItem color="purple" active={true}>Tab 1</TabItem>
+									<TabItem color="purple">Tab 2</TabItem>
+									<TabItem color="purple">Tab 3</TabItem>
 								</Tabs>
 							</div>
 							<hr />
@@ -76,10 +74,10 @@ export class TabsComponent extends React.Component<{}, State> {
 	<TabItem>Tab 2</TabItem>
 	<TabItem>Tab 3</TabItem>
 </Tabs>
-<Tabs color="purple">
-	<TabItem active={true}>Tab 1</TabItem>
-	<TabItem>Tab 2</TabItem>
-	<TabItem>Tab 3</TabItem>
+<Tabs>
+	<TabItem color="purple" active={true}>Tab 1</TabItem>
+	<TabItem color="purple">Tab 2</TabItem>
+	<TabItem color="purple">Tab 3</TabItem>
 </Tabs>
 	`
 									}
@@ -89,10 +87,10 @@ export class TabsComponent extends React.Component<{}, State> {
 						<TabPanel>
 							<div className={base.pa4}>
 								<Heading level={7} className={base.mb3} color="cool_mid_gray">Small</Heading>
-								<Tabs size="small">
-									<TabItem active={true}>Tab 1</TabItem>
-									<TabItem>Tab 2</TabItem>
-									<TabItem>Tab 3</TabItem>
+								<Tabs>
+									<TabItem size="small" active={true}>Tab 1</TabItem>
+									<TabItem size="small">Tab 2</TabItem>
+									<TabItem size="small">Tab 3</TabItem>
 								</Tabs>
 								<Heading level={7} className={base.mv3} color="cool_mid_gray">Default</Heading>
 								<Tabs>
@@ -101,10 +99,10 @@ export class TabsComponent extends React.Component<{}, State> {
 									<TabItem>Tab 3</TabItem>
 								</Tabs>
 								<Heading level={7} className={base.mv3} color="cool_mid_gray">Large</Heading>
-								<Tabs size="large">
-									<TabItem active={true}>Tab 1</TabItem>
-									<TabItem>Tab 2</TabItem>
-									<TabItem>Tab 3</TabItem>
+								<Tabs>
+									<TabItem size="large" active={true}>Tab 1</TabItem>
+									<TabItem size="large">Tab 2</TabItem>
+									<TabItem size="large">Tab 3</TabItem>
 								</Tabs>
 							</div>
 							<hr />
@@ -112,20 +110,20 @@ export class TabsComponent extends React.Component<{}, State> {
 								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
 									{
 										`
-<Tabs size="small">
+<Tabs>
 	<TabItem active={true}>Tab 1</TabItem>
-	<TabItem>Tab 2</TabItem>
-	<TabItem>Tab 3</TabItem>
+	<TabItem size="small">Tab 2</TabItem>
+	<TabItem size="small">Tab 3</TabItem>
 </Tabs>
 <Tabs>
 	<TabItem active={true}>Tab 1</TabItem>
 	<TabItem>Tab 2</TabItem>
 	<TabItem>Tab 3</TabItem>
 </Tabs>
-<Tabs size="large">
-	<TabItem active={true}>Tab 1</TabItem>
-	<TabItem>Tab 2</TabItem>
-	<TabItem>Tab 3</TabItem>
+<Tabs>
+	<TabItem size="large" active={true}>Tab 1</TabItem>
+	<TabItem size="large">Tab 2</TabItem>
+	<TabItem size="large">Tab 3</TabItem>
 </Tabs>
 
 	`
@@ -143,9 +141,9 @@ export class TabsComponent extends React.Component<{}, State> {
 								</Tabs>
 								<Heading level={7} className={base.mv3} color="cool_mid_gray">Vertical</Heading>
 								<Tabs direction="vertical">
-									<TabItem active={true}>Tab 1</TabItem>
-									<TabItem>Tab 2</TabItem>
-									<TabItem>Tab 3</TabItem>
+									<TabItem direction="vertical" active={true}>Tab 1</TabItem>
+									<TabItem direction="vertical">Tab 2</TabItem>
+									<TabItem direction="vertical">Tab 3</TabItem>
 								</Tabs>
 							</div>
 							<hr />
@@ -160,8 +158,8 @@ export class TabsComponent extends React.Component<{}, State> {
 </Tabs>
 <Tabs direction="vertical">
 	<TabItem active={true}>Tab 1</TabItem>
-	<TabItem>Tab 2</TabItem>
-	<TabItem>Tab 3</TabItem>
+	<TabItem direction="vertical">Tab 2</TabItem>
+	<TabItem direction="vertical">Tab 3</TabItem>
 </Tabs>
 	`
 									}
@@ -170,7 +168,28 @@ export class TabsComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Tabs Properties</Heading>
+				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Tabs Properties</Heading>
+				<Panel hoverLevel="low" className={base.pa4}>
+					<Table style={{ width: "100%" }}>
+						<thead>
+							<tr>
+								<td>Prop</td>
+								<td>Default value</td>
+								<td>Values</td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><Code>direction</Code></td>
+								<td><Code>horizontal</Code></td>
+								<td>
+									<Code>horizontal</Code>, <Code>vertical</Code>
+								</td>
+							</tr>
+						</tbody>
+					</Table>
+				</Panel>
+				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>TabItem Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{ width: "100%" }}>
 						<thead>
@@ -189,34 +208,6 @@ export class TabsComponent extends React.Component<{}, State> {
 								</td>
 							</tr>
 							<tr>
-								<td><Code>size</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>small</Code>, <Code>large</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>direction</Code></td>
-								<td><Code>horizontal</Code></td>
-								<td>
-									<Code>horizontal</Code>, <Code>vertical</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
-				</Panel>
-				<Heading level={6} className={classNames(base.mt5, base.mb3)}>TabItem Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
 								<td><Code>active</Code></td>
 								<td><Code>false</Code></td>
 								<td>
@@ -231,24 +222,24 @@ export class TabsComponent extends React.Component<{}, State> {
 								</td>
 							</tr>
 							<tr>
-								<td><Code>icon</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>Any icon rendered from Icon</Code>
-								</td>
-							</tr>
-							<tr>
 								<td><Code>size</Code></td>
 								<td><Code>null</Code></td>
 								<td>
-									<Code>small</Code>, <Code>large</Code>, <Code>Inherited from Tabs</Code>
+									<Code>small</Code>, <Code>large</Code>
 								</td>
 							</tr>
 							<tr>
 								<td><Code>direction</Code></td>
 								<td><Code>horizontal</Code></td>
 								<td>
-									<Code>horizontal</Code>, <Code>vertical</Code>, <Code>Inherited from Tabs</Code>
+									<Code>horizontal</Code>, <Code>vertical</Code>
+								</td>
+							</tr>
+							<tr>
+								<td><Code>inverted</Code></td>
+								<td><Code>false</Code></td>
+								<td>
+									<Code>true</Code>, <Code>false</Code>
 								</td>
 							</tr>
 						</tbody>
