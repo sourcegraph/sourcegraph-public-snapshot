@@ -39,8 +39,8 @@ func (c *Client) Connect(addr string) {
 	}()
 }
 
-func (c *Cmd) broadcastExec(ctx context.Context) (_ *execReply, errRes error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.broadcastExec")
+func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
 		if errRes != nil {
 			ext.Error.Set(span, true)
@@ -53,42 +53,26 @@ func (c *Cmd) broadcastExec(ctx context.Context) (_ *execReply, errRes error) {
 	span.SetTag("args", c.Args[1:])
 	span.SetTag("opt", c.Opt)
 
-	// Check that ctx is not expired before broadcasting over the network.
+	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
 		return nil, err
 	}
 
-	allReplies := make(chan *execReply, len(c.client.servers))
-	for _, server := range c.client.servers {
-		replyChan := make(chan *execReply, 1)
-		req := &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}}
-		server <- req
-		go func() {
-			reply, ok := <-replyChan
-			if !ok {
-				allReplies <- nil
-				return
-			}
-			allReplies <- reply
-		}()
-	}
-
-	rpcError := false
-	for range c.client.servers {
-		reply := <-allReplies
-		if reply == nil {
-			rpcError = true
-			continue
-		}
-		if reply.repoFound() {
-			return reply, nil
-		}
-	}
-	if rpcError {
+	sum := md5.Sum([]byte(c.Repo))
+	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.servers))
+	replyChan := make(chan *execReply, 1)
+	c.client.servers[serverIndex] <- &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}}
+	reply, ok := <-replyChan
+	if !ok {
 		return nil, errRPCFailed
 	}
-	return nil, vcs.RepoNotExistError{}
+
+	if !reply.repoFound() {
+		return nil, vcs.RepoNotExistError{}
+	}
+
+	return reply, nil
 }
 
 var errRPCFailed = errors.New("gitserver: rpc failed")
@@ -97,7 +81,7 @@ var deadlineExceededCounter = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",
 	Name:      "client_deadline_exceeded",
-	Help:      "Times that Client.broadcastExec() returned context.DeadlineExceeded",
+	Help:      "Times that Client.sendExec() returned context.DeadlineExceeded",
 })
 
 func init() {
@@ -129,7 +113,7 @@ func (c *Client) Command(name string, arg ...string) *Cmd {
 
 // DividedOutput runs the command and returns its standard output and standard error.
 func (c *Cmd) DividedOutput(ctx context.Context) ([]byte, []byte, error) {
-	reply, err := c.broadcastExec(ctx)
+	reply, err := c.sendExec(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -198,24 +182,6 @@ func (c *Client) create(ctx context.Context, repo string, mirrorRemote string, o
 		return vcs.RepoNotExistError{CloneInProgress: true}
 	}
 
-	// We check if repo already exists by executing `git remote`. It may seem redundant since the
-	// create request also checks that, but the purpose is to first do a broadcast and check if _any_
-	// server already has the repo available.
-	cmd := c.Command("git", "remote")
-	cmd.Repo = repo
-	err := cmd.Run(ctx)
-	if err == nil {
-		return vcs.ErrRepoExist
-	}
-	repoNotExistError, ok := err.(vcs.RepoNotExistError)
-	if !ok {
-		// The only acceptable error is repo doesn't exist, if it's something else, there's a problem. Return the error.
-		return err
-	} else if repoNotExistError.CloneInProgress {
-		// If some server is already cloning this repository, report it and don't try to create another.
-		return repoNotExistError
-	}
-	// This hash is used to avoid concurrent init on two servers, it does not need to be stable over long timespans.
 	sum := md5.Sum([]byte(repo))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.servers))
 
