@@ -44,9 +44,9 @@ export class Shell extends React.Component<Props, State> {
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
-		// if (!this.mounted || !this.workbench) {
-		// 	return;
-		// }
+		if (!this.mounted || !this.workbench) {
+			return;
+		}
 		// const resource = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
 		// const editorService = this.services.get(IEditorService) as IEditorService;
 		// editorService.openEditor({resource});

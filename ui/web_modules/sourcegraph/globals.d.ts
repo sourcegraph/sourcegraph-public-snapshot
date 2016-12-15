@@ -55,6 +55,10 @@ declare module "child_process" {
 	export default {} as any;
 }
 
+declare namespace Electron {
+	type CrashReporterStartOptions = any;
+}
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.

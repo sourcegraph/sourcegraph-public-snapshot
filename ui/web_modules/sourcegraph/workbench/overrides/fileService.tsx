@@ -1,7 +1,7 @@
 import * as uniq from "lodash/uniq";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
-import { IFileService, IFilesConfiguration, IResolveFileOptions, IFileStat, IContent, IStreamContent, IImportResult, IResolveContentOptions, IUpdateContentOptions } from "vs/platform/files/common/files";
+import { IFileStat, IResolveFileOptions } from "vs/platform/files/common/files";
 import * as electronService from "vs/workbench/services/files/electron-browser/fileService";
 import * as nodeService from "vs/workbench/services/files/node/fileService";
 
@@ -13,7 +13,7 @@ import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 // content. File content is resolved using the modelResolver, which uses
 // contentLoader.tsx.
 
-class FileService implements IFileService {
+class FileService {
 	constructor() {
 		//
 	}
@@ -26,8 +26,8 @@ class FileService implements IFileService {
 	}
 }
 
-nodeService.FileService = FileService;
-electronService.FileService = FileService;
+(nodeService as any).FileService = FileService;
+(electronService as any).FileService = FileService;
 
 
 function retrieveFilesAndDirs(resource: URI): any {
@@ -56,19 +56,19 @@ function retrieveFilesAndDirs(resource: URI): any {
 // Convert a list of files into a hierarchical file stat structure.
 function toFileStat(resource: URI, files: string[]): IFileStat {
 	const {repo, rev, path} = URIUtils.repoParams(resource);
-	let children = files.filter(x => x.startsWith(path) && x !== path);
-	children = children.map(x => {
+	const childrenOfResource = files.filter(x => x.startsWith(path) && x !== path);
+	const dirComponents = childrenOfResource.map(x => {
 		x = x.substr(path.length);
 		return x.split("/")[0] || x;
 	});
-	children = uniq(children);
-	const childStats = children.map(x => toFileStat(
-		URIUtils.pathInRepo(repo, rev, path + x),
+	const uniqDirs = uniq(dirComponents);
+	const childStats = uniqDirs.map(dir => toFileStat(
+		URIUtils.pathInRepo(repo, rev, path + dir),
 		files,
 	));
 	return {
 		hasChildren: childStats.length > 0,
-		isDirectory: childStats.length > 0, // TODO
+		isDirectory: childStats.length > 0,
 		resource: resource,
 		name: path,
 		mtime: 0,
