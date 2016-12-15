@@ -10,7 +10,7 @@ import URI from "vs/base/common/uri";
 
 export class FileLabel extends vs.FileLabel {
 	setFile(file: URI, provider: IWorkspaceProvider): void {
-		setFile(file, provider);
+		setFile.bind(this)(file, provider);
 	}
 }
 

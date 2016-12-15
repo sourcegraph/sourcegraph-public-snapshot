@@ -21,7 +21,6 @@ import { TextModelResolverService } from "vs/workbench/services/textmodelResolve
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
-
 import { ConfigurationService } from "sourcegraph/workbench/config";
 
 // Setup services for the workbench. A lot of the ones required by Workbench
@@ -33,7 +32,7 @@ import { ConfigurationService } from "sourcegraph/workbench/config";
 // can customize color themes. When they are implemented, we can either use the
 // VSCode ones and override some methods, or we can write our own from scratch.
 
-export function setupServices(domElement: HTMLDivElement, resource: URI): ServiceCollection {
+export function setupServices(domElement: HTMLDivElement, workspace: URI): ServiceCollection {
 	const dynServices = new DynamicStandaloneServices(domElement, {});
 	const services = (dynServices as any)._serviceCollection;
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
@@ -56,7 +55,7 @@ export function setupServices(domElement: HTMLDivElement, resource: URI): Servic
 	set(IConfigurationService, ConfigurationService);
 
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
-		resource,
+		resource: workspace,
 	}));
 
 	const viewReg = (Registry.as(viewKey.Viewlets) as ViewletRegistry);

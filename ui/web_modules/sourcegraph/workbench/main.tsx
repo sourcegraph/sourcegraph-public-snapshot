@@ -23,7 +23,7 @@ import { setupServices } from "sourcegraph/workbench/setupServices";
 // init creates the editor interface.
 export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
 	const workspace = resource.with({ fragment: "" });
-	const services = setupServices(domElement, resource);
+	const services = setupServices(domElement, workspace);
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 
 	const parent = domElement.parentElement;

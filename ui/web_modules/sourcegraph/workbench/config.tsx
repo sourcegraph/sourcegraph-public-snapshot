@@ -51,7 +51,6 @@ export class ConfigurationService {
 		return this.config;
 	}
 
-
 	lookup(key: string): IConfigurationValue<any> {
 		return {
 			value: getConfigurationValue(this.config, key),

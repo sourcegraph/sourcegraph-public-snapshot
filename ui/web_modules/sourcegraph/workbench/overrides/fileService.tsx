@@ -16,7 +16,6 @@ export class FileService {
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
-		debugger;
 		return retrieveFilesAndDirs(resource).then(({root}) => {
 			const files = root.repository.commit.commit.tree.files.map(file => file.name);
 			return toFileStat(resource, files);
