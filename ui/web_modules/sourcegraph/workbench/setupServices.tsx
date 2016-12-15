@@ -11,12 +11,16 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
 import { IMessageService } from "vs/platform/message/common/message";
+import { Registry } from "vs/platform/platform";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
 import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
+import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
 import { WorkbenchMessageService } from "vs/workbench/services/message/browser/messageService";
 import { TextModelResolverService } from "vs/workbench/services/textmodelResolver/common/textModelResolverService";
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
+
 
 import { ConfigurationService } from "sourcegraph/workbench/config";
 
@@ -54,6 +58,9 @@ export function setupServices(domElement: HTMLDivElement, resource: URI): Servic
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource,
 	}));
+
+	const viewReg = (Registry.as(viewKey.Viewlets) as ViewletRegistry);
+	viewReg.setDefaultViewletId(VIEWLET_ID);
 
 	return services;
 }

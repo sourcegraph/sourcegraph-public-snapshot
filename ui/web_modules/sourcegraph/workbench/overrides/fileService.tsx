@@ -6,17 +6,17 @@ import { IFileStat, IResolveFileOptions } from "vs/platform/files/common/files";
 import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
-// File service provides files from Sourcegraph's API instead of a normal file
+// FileService provides files from Sourcegraph's API instead of a normal file
 // system. It is used to find the files in a Workspace, but not for retrieving
 // file content. File content is resolved using the modelResolver, which uses
 // contentLoader.tsx.
-
 export class FileService {
 	constructor() {
 		//
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
+		debugger;
 		return retrieveFilesAndDirs(resource).then(({root}) => {
 			const files = root.repository.commit.commit.tree.files.map(file => file.name);
 			return toFileStat(resource, files);
