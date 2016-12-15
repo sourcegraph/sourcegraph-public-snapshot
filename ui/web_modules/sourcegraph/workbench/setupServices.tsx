@@ -18,8 +18,11 @@ import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/serv
 // Setup services for the workbench. A lot of the ones required by Workbench
 // aren't necessary for Sourcegraph at this point. For instance,
 // EnvironmentService isn't something we need because a user will not have a
-// home directory on Sourcegraph. Others, like ThemeService, will probably be
-// implemented someday, so users can customize color themes.
+// home directory on Sourcegraph.
+
+// Others, like ThemeService, will probably be implemented someday, so users
+// can customize color themes. When they are implemented, we can either use the
+// VSCode ones and override some methods, or we can write our own from scratch.
 
 export function setupServices(domElement: HTMLDivElement): ServiceCollection {
 	const dynServices = new DynamicStandaloneServices(domElement, {});
@@ -45,7 +48,7 @@ export function setupServices(domElement: HTMLDivElement): ServiceCollection {
 	return services;
 }
 
-class LifecycleService implements ILifecycleService {
+class LifecycleService {
 
 	_serviceBrand: any;
 
@@ -61,43 +64,42 @@ class LifecycleService implements ILifecycleService {
 
 }
 
-class EnvironmentService implements IEnvironmentService {
+class EnvironmentService {
 
 	_serviceBrand: any;
 
-	appSettingsHome: string = "home";
+	appSettingsHome: string = "app-settings-home";
 }
 
-class WindowService implements IWindowService {
+class WindowService {
 
 	_serviceBrand: any;
 
 	getCurrentWindowId(): number {
-		return 2;
+		return 1;
 	}
 
 }
 
-class WindowsService implements IWindowsService {
+class WindowsService {
 
 	_serviceBrand: any;
 
 }
 
-class IntegrityService implements IIntegrityService {
+class IntegrityService {
 
 	_serviceBrand: any;
 
 	isPure(): TPromise<IntegrityTestResult> {
 		return TPromise.wrap({
 			isPure: true,
-			proof: [1, 2],
 		} as any);
 	}
 
 }
 
-class BackupService implements IBackupService {
+class BackupService {
 
 	_serviceBrand: any;
 
@@ -106,12 +108,12 @@ class BackupService implements IBackupService {
 	}
 }
 
-class ThemeService implements IThemeService {
+class ThemeService {
 
 	_serviceBrand: any;
 
 	onDidColorThemeChange(): Event<string> {
-		return "foo" as any;
+		return {} as any;
 	}
 
 	getColorTheme(): string {

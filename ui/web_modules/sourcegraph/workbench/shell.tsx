@@ -15,7 +15,8 @@ interface Props {
 interface State {};
 
 // Shell loads the workbench and calls init on it. It transmits data from the
-// React UI layer into the Workbench interface.
+// React UI layer into the Workbench interface. It is primarily controlled by
+// React Router. It uses code splitting to minimize bundle size.
 export class Shell extends React.Component<Props, State> {
 	workbench: Workbench;
 	services: ServiceCollection;
@@ -43,12 +44,12 @@ export class Shell extends React.Component<Props, State> {
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
-		if (!this.mounted || !this.workbench) {
-			return;
-		}
-		const resource = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
-		const editorService = this.services.get(IEditorService) as IEditorService;
-		editorService.openEditor({resource});
+		// if (!this.mounted || !this.workbench) {
+		// 	return;
+		// }
+		// const resource = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
+		// const editorService = this.services.get(IEditorService) as IEditorService;
+		// editorService.openEditor({resource});
 		// TODO scroll to the right position.
 	}
 
