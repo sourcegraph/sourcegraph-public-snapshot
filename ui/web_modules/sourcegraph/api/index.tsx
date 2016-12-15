@@ -919,6 +919,7 @@ export interface ServerCapabilities {
 	documentOnTypeFormattingProvider?: any;
 	renameProvider?: boolean;
 	xworkspaceReferencesProvider?: boolean;
+	xdefinitionProvider?: boolean;
 }
 
 export interface ServerConfig {
