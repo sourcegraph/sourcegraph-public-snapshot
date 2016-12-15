@@ -97,6 +97,9 @@ module.exports = {
 			`${__dirname}/web_modules/sourcegraph/workbench/overrides`,
 		],
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+		alias: [
+			
+		],
 	},
 	devtool: devtool,
 	output: {
