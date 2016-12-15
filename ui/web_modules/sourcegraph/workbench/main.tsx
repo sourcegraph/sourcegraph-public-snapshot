@@ -24,7 +24,7 @@ import { setupServices } from "sourcegraph/workbench/setupServices";
 
 // init creates the editor interface
 export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
-	const workspace = resource.with({fragment: ""});
+	const workspace = resource.with({ fragment: "" });
 	const services = setupServices(domElement);
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 	configureServices(services, workspace);
@@ -34,7 +34,7 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 		Workbench,
 		parent,
 		domElement,
-		{resource: workspace},
+		{ resource: workspace },
 		options(resource),
 		services,
 	);
@@ -50,7 +50,7 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 function options(resource: URI): IOptions {
 	return {
 		filesToOpen: [
-			{resource},
+			{ resource },
 		],
 	};
 }

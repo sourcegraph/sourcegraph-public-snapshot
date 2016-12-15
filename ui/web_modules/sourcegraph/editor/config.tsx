@@ -1,8 +1,9 @@
-import { browserHistory } from "react-router";
 import URI from "vs/base/common/uri";
 import { IEditorInput } from "vs/platform/editor/common/editor";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
+import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
+import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
@@ -13,7 +14,7 @@ export function configureEditor(editor: EditorPart, resource: URI, instantiation
 }
 
 function editorOpened(input: IEditorInput): void {
-	if (!global.window) {
+	if (!global.window || updating) {
 		return;
 	}
 	let resource;
@@ -24,5 +25,13 @@ function editorOpened(input: IEditorInput): void {
 	}
 	// TODO set workspace on workspace jump.
 	const {repo, rev, path} = URIUtils.repoParams(resource);
-	browserHistory.push(urlToBlob(repo, rev, path));
+	history.pushState({}, "", urlToBlob(repo, rev, path));
+}
+
+let updating = false;
+export function updateEditor(editor: EditorPart, resource: URI, services: ServiceCollection): void {
+	const editorService = services.get(IWorkbenchEditorService) as IWorkbenchEditorService;
+	updating = true;
+	editorService.openEditor({ resource });
+	updating = false;
 }

@@ -1,10 +1,10 @@
 import * as autobind from "autobind-decorator";
 import * as React from "react";
-import { IEditorService } from "vs/platform/editor/common/editor";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { URIUtils } from "sourcegraph/core/uri";
+import { updateEditor } from "sourcegraph/editor/config";
 
 interface Props {
 	repo: string;
@@ -12,7 +12,7 @@ interface Props {
 	path: string;
 };
 
-interface State {};
+interface State { };
 
 // Shell loads the workbench and calls init on it. It transmits data from the
 // React UI layer into the Workbench interface. It is primarily controlled by
@@ -47,14 +47,12 @@ export class Shell extends React.Component<Props, State> {
 		if (!this.mounted || !this.workbench) {
 			return;
 		}
-		// const resource = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
-		// const editorService = this.services.get(IEditorService) as IEditorService;
-		// editorService.openEditor({resource});
-		// TODO scroll to the right position.
+		const resource = URIUtils.pathInRepo(nextProps.repo, nextProps.rev, nextProps.path);
+		updateEditor(this.workbench.getEditorPart(), resource, this.services);
 	}
 
 	render(): JSX.Element {
-		return <div className={"vs-dark"} style={{height: "100%"}} ref={this.domRef}></div>;
+		return <div className={"vs-dark"} style={{ height: "100%" }} ref={this.domRef}></div>;
 	}
 
 }

@@ -10,7 +10,7 @@ const modules = {
 
 // Overrides create instance async. This is required so that Webpack can
 // statically bundle the modules.
-(InstantiationService.prototype as any)._createInstanceAsync = function(desc: any, args: any): any {
+(InstantiationService.prototype as any)._createInstanceAsync = function (desc: any, args: any): any {
 	const _this = this;
 	const ctor = modules[desc._ctorName];
 	if (!ctor) {

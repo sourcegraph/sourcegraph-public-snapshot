@@ -50,7 +50,7 @@ function retrieveFilesAndDirs(resource: URI): any {
 					}
 				}
 			}
-		}`, {repo, rev});
+		}`, { repo, rev });
 }
 
 // Convert a list of files into a hierarchical file stat structure.
