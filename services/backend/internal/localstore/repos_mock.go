@@ -13,7 +13,6 @@ type MockRepos struct {
 	Get            func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
 	GetByURI       func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	List           func(v0 context.Context, v1 *RepoListOp) ([]*sourcegraph.Repo, error)
-	Search         func(v0 context.Context, v1 string) ([]*sourcegraph.RepoSearchResult, error)
 	Create         func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
 	Update         func(v0 context.Context, v1 RepoUpdate) error
 	InternalUpdate func(ctx context.Context, repo int32, op InternalRepoUpdate) error

@@ -34,10 +34,17 @@ export const container = {
 
 const editorToolbarHeight = 65;
 
+export const flexItem = {
+	autoSize: { flex: "1 1 auto" },
+	autoGrow: { flex: "1 0 auto" },
+	autoShrink: { flex: "0 1 auto" },
+};
+
 export const layout = {
 	breakpoints,
 	clearFix,
 	container,
 	editorToolbarHeight,
+	flexItem,
 	hide,
 };

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"os"
 	"os/exec"
 	"path"
 	"strconv"
@@ -56,9 +55,6 @@ func (s *Server) processRequests(requests <-chan *request) {
 		}
 		if req.Create != nil {
 			go s.handleCreateRequest(req.Create)
-		}
-		if req.Remove != nil {
-			go s.handleRemoveRequest(req.Remove)
 		}
 	}
 }
@@ -254,60 +250,4 @@ func init() {
 
 func observeCreate(start time.Time, status string) {
 	createDuration.WithLabelValues(status).Observe(time.Since(start).Seconds())
-}
-
-// handleRemoveRequest handles a remove request.
-func (s *Server) handleRemoveRequest(req *removeRequest) {
-	status := ""
-
-	defer recoverAndLog()
-	defer close(req.ReplyChan)
-	defer func() { defer observeRemove(status) }()
-
-	dir := path.Join(s.ReposDir, req.Repo)
-	s.cloningMu.Lock()
-	_, cloneInProgress := s.cloning[dir]
-	s.cloningMu.Unlock()
-	if cloneInProgress {
-		req.ReplyChan <- &removeReply{CloneInProgress: true}
-		status = "clone-in-progress"
-		return
-	}
-	if !repoExists(dir) {
-		req.ReplyChan <- &removeReply{RepoNotFound: true}
-		status = "repo-not-found"
-		return
-	}
-
-	cmd := exec.Command("git", "remote")
-	cmd.Dir = dir
-	if err := cmd.Run(); err != nil {
-		req.ReplyChan <- &removeReply{Error: fmt.Sprintf("not a repository: %s", req.Repo)}
-		status = "not-a-repository"
-		return
-	}
-
-	if err := os.RemoveAll(dir); err != nil {
-		req.ReplyChan <- &removeReply{Error: err.Error()}
-		status = "failed"
-		return
-	}
-	req.ReplyChan <- &removeReply{}
-	status = "success"
-}
-
-// Remove should be pretty much instant, so we just track counts.
-var removeCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "remove_total",
-	Help:      "Total calls to gitserver.Remove",
-}, []string{"status"})
-
-func init() {
-	prometheus.MustRegister(removeCounter)
-}
-
-func observeRemove(status string) {
-	removeCounter.WithLabelValues(status).Inc()
 }

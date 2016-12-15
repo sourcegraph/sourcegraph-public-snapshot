@@ -216,6 +216,10 @@ export const Events = {
 	// Events that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.
 	// See EventLogger.logNonInteractionEventForCategory() for more information
 	ViewRepoMain_Failed: new NonInteractionLoggableEvent("ViewRepoMainError", EventCategories.Repository, EventActions.Error),
+
+	// Dashboard Events
+	DashboardRepositoryTab_Clicked: new LoggableEvent("DashboardRepositoryTab_Clicked", EventCategories.Nav, EventActions.Click),
+
 };
 
 export function getModalDismissedEventObject(modalName: string): LoggableEvent {

@@ -2,15 +2,11 @@
 // and a client that provides remote access to them.
 package gitserver
 
-import (
-	"github.com/opentracing/opentracing-go"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-)
+import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 type request struct {
 	Exec   *execRequest
 	Create *createRequest
-	Remove *removeRequest
 }
 
 // execRequest is a request to execute a command inside a git repository.
@@ -49,39 +45,4 @@ type createReply struct {
 	RepoExist       bool   // If true, create returned with noop because repo exists.
 	CloneInProgress bool   // If true, create returned with noop because clone is in progress.
 	Error           string // If non-empty, an error happened.
-}
-
-// removeRequest is a request to remove a git repository.
-type removeRequest struct {
-	Repo      string
-	ReplyChan chan<- *removeReply
-}
-
-type removeReply struct {
-	RepoNotFound    bool   // If true, remove returned with noop because repo is not found.
-	CloneInProgress bool   // If true, remove returned with noop because clone is in progress.
-	Error           string // If non-empty, an error happened.
-}
-
-func (r *removeReply) repoFound() bool { return !r.RepoNotFound }
-
-// setSpanTags sets the relevant span tags on span for this request.
-func setSpanTags(span opentracing.Span, r *request) {
-	switch {
-	case r.Exec != nil:
-		span.SetTag("request", "Exec")
-		span.SetTag("repo", r.Exec.Repo)
-		span.SetTag("args", r.Exec.Args)
-		span.SetTag("opt", r.Exec.Opt)
-	case r.Create != nil:
-		span.SetTag("request", "Create")
-		span.SetTag("repo", r.Create.Repo)
-		span.SetTag("MirrorRemote", r.Create.MirrorRemote)
-		span.SetTag("opt", r.Create.Opt)
-	case r.Remove != nil:
-		span.SetTag("request", "Remove")
-		span.SetTag("repo", r.Remove.Repo)
-	default:
-		span.SetTag("request", "unknown type")
-	}
 }

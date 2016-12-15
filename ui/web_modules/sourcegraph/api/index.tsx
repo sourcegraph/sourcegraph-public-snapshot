@@ -233,31 +233,6 @@ export interface DefKey {
 	Path: string;
 }
 
-export interface DefSearchResult {
-	Repo?: string;
-	CommitID?: string;
-	UnitType?: string;
-	Unit?: string;
-	Path: string;
-	Name: string;
-	Kind?: string;
-	File: string;
-	DefStart: number;
-	DefEnd: number;
-	Exported?: boolean;
-	Local?: boolean;
-	Test?: boolean;
-	Data?: any;
-	Docs?: any[];
-	TreePath?: string;
-	DocHTML?: any;
-	FmtStrings?: any;
-	StartLine?: number;
-	EndLine?: number;
-	Score?: number;
-	RefCount?: number;
-}
-
 export interface DefSpec {
 	Repo?: number;
 	CommitID?: string;
@@ -819,10 +794,6 @@ export interface RepoRevSpec {
 	CommitID?: string;
 }
 
-export interface RepoSearchResult {
-	Repo?: Repo;
-}
-
 export interface RepoSpec {
 	ID?: number;
 }
@@ -914,27 +885,12 @@ export interface ResolvedRev {
 export interface SSHConfig {
 }
 
-export interface SearchOp {
-	Query?: string;
-	Opt?: SearchOptions;
-}
-
 export interface SearchOptions {
-	Repos?: number[];
-	NotRepos?: number[];
-	Languages?: string[];
-	NotLanguages?: string[];
-	Kinds?: string[];
-	NotKinds?: string[];
-	PerPage?: number;
-	Page?: number;
-	IncludeRepos?: boolean;
-	Fast?: boolean;
-	AllowEmpty?: boolean;
-}
-
-export interface SearchReposResultList {
-	Repos?: Repo[];
+	Query?: string;
+	QueryType?: string;
+	ContextLines?: number;
+	N?: number;
+	Offset?: number;
 }
 
 export interface SearchResult {
@@ -944,12 +900,6 @@ export interface SearchResult {
 	StartLine?: number;
 	EndLine?: number;
 	Match?: number[];
-}
-
-export interface SearchResultsList {
-	RepoResults?: RepoSearchResult[];
-	DefResults?: DefSearchResult[];
-	SearchQueryOptions?: SearchOptions[];
 }
 
 export interface ServerCapabilities {
@@ -969,6 +919,7 @@ export interface ServerCapabilities {
 	documentOnTypeFormattingProvider?: any;
 	renameProvider?: boolean;
 	xworkspaceReferencesProvider?: boolean;
+	xdefinitionProvider?: boolean;
 }
 
 export interface ServerConfig {

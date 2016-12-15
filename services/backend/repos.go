@@ -631,20 +631,6 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (res 
 	return s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
 }
 
-func (s *repos) Delete(ctx context.Context, repo *sourcegraph.RepoSpec) (err error) {
-	if Mocks.Repos.Delete != nil {
-		return Mocks.Repos.Delete(ctx, repo)
-	}
-
-	ctx, done := trace(ctx, "Repos", "Delete", repo, &err)
-	defer done()
-
-	if err := localstore.Repos.Delete(ctx, repo.ID); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
 	if Mocks.Repos.GetConfig != nil {
 		return Mocks.Repos.GetConfig(ctx, repo)

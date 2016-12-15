@@ -1,7 +1,7 @@
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { rel } from "sourcegraph/app/routePatterns";
-import { Dashboard } from "sourcegraph/dashboard/Dashboard";
+import { Dashboard } from "sourcegraph/dashboard";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { Home } from "sourcegraph/home/Home";
 import { IntegrationsContainer } from "sourcegraph/home/IntegrationsContainer";

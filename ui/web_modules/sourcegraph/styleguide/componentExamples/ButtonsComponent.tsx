@@ -1,9 +1,8 @@
-// tslint:disable: typedef ordered-imports
-
-import * as React from "react";
-import * as base from "sourcegraph/components/styles/_base.css";
-import { Button, Heading, Panel, Tabs, TabItem, TabPanels, TabPanel, Table, Code } from "sourcegraph/components";
 import * as classNames from "classnames";
+import * as React from "react";
+import { Button, Code, Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
+import * as base from "sourcegraph/components/styles/_base.css";
+import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -19,7 +18,7 @@ export class ButtonsComponent extends React.Component<{}, State> {
 			<div className={base.mv4}>
 				<Heading level={3} className={base.mb2}>Buttons</Heading>
 
-				<Tabs color="purple">
+				<Tabs>
 					<TabItem
 						active={this.state.activeExample === 0}>
 						<a href="#" onClick={(e) => {
@@ -111,7 +110,7 @@ export class ButtonsComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{ width: "100%" }}>
 						<thead>

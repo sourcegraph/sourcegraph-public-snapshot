@@ -91,8 +91,8 @@ func (h *HandlerShared) FilePath(uri string) string {
 func (h *HandlerShared) readFile(ctx context.Context, uri string) ([]byte, error) {
 	h.Mu.Lock()
 	fs := h.FS
-	path := h.FilePath(uri)
 	h.Mu.Unlock()
+	path := h.FilePath(uri)
 	contents, err := ctxvfs.ReadFile(ctx, fs, path)
 	if os.IsNotExist(err) {
 		if _, ok := err.(*os.PathError); !ok {

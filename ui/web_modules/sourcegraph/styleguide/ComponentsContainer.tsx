@@ -5,7 +5,6 @@ import { whitespace } from "sourcegraph/components/utils";
 import {
 	AffixComponent,
 	ButtonsComponent,
-	ChecklistsComponent,
 	FlexContainerComponent,
 	FormsComponent,
 	HeadingsComponent,
@@ -76,10 +75,6 @@ export class ComponentsContainer extends React.Component<{}, any> {
 				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-buttons"></a>
 					<ButtonsComponent />
-				</div>
-				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
-					<a id="components-checklists"></a>
-					<ChecklistsComponent />
 				</div>
 				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-forms"></a>

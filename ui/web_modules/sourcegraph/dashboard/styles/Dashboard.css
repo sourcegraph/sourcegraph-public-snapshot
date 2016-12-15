@@ -1,127 +1,17 @@
 @value base "sourcegraph/components/styles/_base.css";
-@value grid "sourcegraph/components/styles/_grid.css";
-@value colors "sourcegraph/components/styles/_colors.css";
-@value vars "sourcegraph/components/styles/_vars.css";
-@value typography "sourcegraph/components/styles/_typography.css";
 @value layout "sourcegraph/components/styles/_layout.css";
 
-@value media_sm from vars;
-
 .container_fixed { composes: containerFixed from layout; }
-.bg_white_50 { composes: bg_white_50 from colors; }
-.mid_gray { composes: cool_mid_gray from colors; }
-.cool_pale_gray {	composes: cool_pale_gray from colors; }
-.inline_block { display: inline-block; }
-.tc { composes: tc from typography; }
-.br3 { composes: br3 from base; }
-
-.max_width_500 { max-width: 500px; }
-
-.bg {
-	composes: bg_pale_blue_gradient from colors;
-	flex: 1;
-}
-
-.repositories {	margin-top: -20px; }
-
-.item {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	justify-content: flex-start;
-}
-
-.button {
-	composes: tr from typography;
-	flex: 0 0 150px;
-}
-
-.content { flex: 1 1 auto; }
-
-.logo {
-	width: 390px;
-	height: 52px;
-	composes: mb4 from base;
-	composes: center from base;
-	display: block;
-}
-@media screen and media_sm {
-	.logo {
-		width: auto;
-		max-width: 390px;
-		height: auto;
-	}
-}
-
-.repo_description {
-	composes: mt0 mb0 from base;
-	composes: cool_mid_gray from colors;
-	min-width: 0;
-	text-overflow: ellipsis;
-	overflow: hidden;
-	font-size: 0.9rem;
-}
-
-.description {
-	text-align: center;
-	composes: mt3 mb0 from base;
-	font-size: 1.2rem;
-	font-weight: normal;
-	margin-left: auto;
-	margin-right: auto;
-	max-width: 440px; /* calibrated to produce the right linebreaks */
-}
 
 .actions {
 	margin-left: auto;
 	margin-right: auto;
 	text-align: center;
 }
+
 .user_actions {
 	composes: actions;
 	composes: mv3 from base;
-}
-.search_actions {
-	composes: actions;
-	composes: mt4 from base;
-}
-.action_button {
-	composes: mh2 ph2 mb2 from base;
-}
-.action_icon {
-	font-size: 120%;
-	vertical-align: text-top;
-	padding-right: 5px;
-}
-.action_link {
-	composes: action_button;
-	border-color: transparent;
-}
-@value c_dark_blue_2 from colors;
-.action_link:hover {
-	border-color: c_dark_blue_2;
-}
-
-.search_input {
-	composes: f4 from typography;
-}
-
-.onboarding_search_input {
-	composes: f4 from typography;
-	composeS: pt2 from base;
-	vertical-align: middle;
-}
-
-.search_button {
-	font-weight: bold;
-	composes: action_button;
-	composes: ph4 from base;
-}
-
-.home_container {
-	composes: container_fixed;
-	composes: mb4 pt4 ph3 from base;
-	max-width: 575px;
 }
 
 .onboarding_container {
@@ -135,108 +25,16 @@
 	display: inline-block;
 }
 
-@media screen and (max-height: 950px) {
-	.home_container { margin-top: 0; }
-}
-@media screen and (min-height: 950px) {
-	.home_container { margin-top: 6vh; }
-}
-
-.top_queries_panel {
-	composes: mt5 mb4 pb2 from base;
-	padding-top: 1.5rem; /* need in between pt3 and pt4 */
-	min-height: 100px;
-}
-.notice {
-	composes: ma0 from base;
-	composes: cool_mid_gray from colors;
-	text-align: center;
-}
-.search_settings_panel {
-	composes: pt2 pb1 from base;
-}
-.search_settings {
-}
-
-/* TitledSection */
-.titled_section {
-	composes: bt from base;
-	composes: b__cool_pale_gray from colors;
-	position: relative;
-}
-.section_title {
-	composes: bg_pale_blue from colors;
-	composes: pv1 pr3 from base;
-	position: absolute;
-	top: -16px;
-	font-size: 1.1rem;
-	font-weight: bold;
-	composes: cool_mid_gray from colors;
-	user-select: none;
-}
-
-/* Queries */
-@value c_blue_2 from colors;
-.query {
-	font-size: 0.95rem;
-	composes: mr2 mb2 from base;
-	border-width: 1px !important;;
-	border-color: c_blue_2;
-	border-radius: 50px;
-}
-.query:hover {
-	border-color: c_dark_blue_2;
-}
-
 .github_button {
 	composes: mr3 mb2 from base;
 	z-index: 10;
 }
 
-.repos {
-	width: 100%;
+.action_button {
+	composes: mh2 ph2 mb2 from base;
 }
 
-.repos_list {
-	composes: pv3 from base;
-}
-.row {
-	composes: pv2 from base;
-	width: 100%;
-	display: flex;
-	align-items: center;
-}
-.info {
-	text-align: left;
-}
-.toggle {
-	padding-left: 10px;
-	margin-left: auto;
-}
-
-.list_label_right {
-	composes: mid_gray from colors;
-	float: right; 
-	display: inline;
-	margin-right: 5px;
-	font-size: 0.9rem;
-}
-
-.description {
-	composes: mt0 mb0 from base;
-	composes: cool_mid_gray from colors;
-	min-width: 0;
-	text-overflow: ellipsis;
-	overflow: hidden;
-	font-size: 0.9rem;
-}
-
-.repos_left_padding {
-	padding-left: 90px;
-}
-
-@media media_sm {
-	.repos_left_padding {
-		padding-left: 65px;
-	}
+.action_link {
+	composes: action_button;
+	border-color: transparent;
 }

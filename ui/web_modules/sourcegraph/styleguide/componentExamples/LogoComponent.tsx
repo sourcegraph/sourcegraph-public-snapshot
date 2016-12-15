@@ -1,9 +1,7 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
+import { Code, Heading, Logo, Panel, Table } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { Heading, Panel, Table, Code, Logo } from "sourcegraph/components";
-import * as classNames from "classnames";
+import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -57,7 +55,7 @@ export class LogoComponent extends React.Component<{}, State> {
 						</pre>
 					</code>
 				</Panel>
-				<Heading level={6} className={classNames(base.mt5, base.mb3)}>Properties</Heading>
+				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{ width: "100%" }}>
 						<thead>

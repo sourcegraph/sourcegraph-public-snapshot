@@ -81,4 +81,6 @@ export const colors = {
 	greenText: green2,
 	redText: red2,
 	text: coolGray1,
+	red: red2,
+	gray: coolGray3,
 };

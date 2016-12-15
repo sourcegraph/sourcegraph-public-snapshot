@@ -134,9 +134,9 @@ export class OrgContainer extends Container<Props, State> {
 					{(!this._hasOrgs()) ? this._noRepoPanel() :
 						<GridRow>
 							<GridCol style={{ paddingTop: whitespace[4], paddingRight: whitespace[0] }} align="left" col={3} colSm={10}>
-								<Tabs direction="vertical">
+								<Tabs direction="vertical" style={{ borderLeft: "none" }}>
 									{(this.state.orgs && this.state.orgs.length > 0) && this.state.orgs.map((org, i) =>
-										<TabItem key={i} active={Boolean(this.state.selectedOrg && (this.state.selectedOrg.Login === org.Login))}>
+										<TabItem key={i} active={Boolean(this.state.selectedOrg && (this.state.selectedOrg.Login === org.Login))} direction="vertical">
 											<a onClick={this._onSelectOrg.bind(this, org)}>
 												<OrgCard org={org} />
 											</a>

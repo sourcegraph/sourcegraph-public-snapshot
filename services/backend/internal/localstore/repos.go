@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -311,122 +310,6 @@ func (repos *priorityRepoList) Swap(i, j int) {
 
 func (repos *priorityRepoList) Less(i, j int) bool {
 	return repos.repos[i].priority > repos.repos[j].priority
-}
-
-// DEPRECATED
-func (s *repos) Search(ctx context.Context, query string) ([]*sourcegraph.RepoSearchResult, error) {
-	if Mocks.Repos.Search != nil {
-		return Mocks.Repos.Search(ctx, query)
-	}
-
-	query = strings.TrimSpace(query)
-
-	// Does not perform search with one character because the range is too broad.
-	if len(query) < 2 {
-		return []*sourcegraph.RepoSearchResult{}, nil
-	}
-
-	var exactArgs, fuzzArgs []interface{}
-	exactArg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(exactArgs))
-		exactArgs = append(exactArgs, a)
-		return v
-	}
-	fuzzArg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(fuzzArgs))
-		fuzzArgs = append(fuzzArgs, a)
-		return v
-	}
-
-	// Perform exact match search first when possible,
-	// do fuzz match search next if no exact match results found.
-	performExactMatch := true
-	baseSQL := "SELECT repo.* FROM repo WHERE fork=false AND"
-	exactSQL, fuzzSQL := baseSQL, baseSQL
-
-	// Values used for determine results' priority.
-	var owner, name string
-
-	// Slashes indicate the user knows exactly what they're looking for.
-	if strings.Contains(query, "/") {
-		fuzzSQL += fmt.Sprintf(" uri LIKE %s", fuzzArg("%"+query+"%"))
-
-		fields := strings.Split(query, "/")
-		if len(fields) == 2 {
-			exactSQL += fmt.Sprintf(" LOWER(owner) = LOWER(%s) AND LOWER(name) = LOWER(%s)", exactArg(fields[0]), exactArg(fields[1]))
-			owner, name = fields[0], fields[1]
-		} else {
-			performExactMatch = false
-		}
-
-	} else {
-		fields := strings.Fields(query)
-		if len(fields) == 1 {
-			// Only one keyword, which could either be the owner or repo name.
-			exactSQL += fmt.Sprintf(" (LOWER(owner) = LOWER(%s) OR LOWER(name) = LOWER(%s))", exactArg(query), exactArg(query))
-			fuzzSQL += fmt.Sprintf(" (owner ILIKE %s OR name ILIKE %s)", fuzzArg(query+"%"), fuzzArg(query+"%"))
-			owner, name = query, query
-
-		} else if len(fields) == 2 {
-			// Two keywords. The first could be owners, the second could be repo name.
-			exactSQL += fmt.Sprintf(" LOWER(owner) = LOWER(%s) AND LOWER(name) = LOWER(%s)", exactArg(fields[0]), exactArg(fields[1]))
-			fuzzSQL += fmt.Sprintf(" owner ILIKE %s AND name ILIKE %s", fuzzArg(fields[0]+"%"), fuzzArg(fields[1]+"%"))
-			owner, name = fields[0], fields[1]
-
-		} else {
-			// Three keywords are too much.
-			return []*sourcegraph.RepoSearchResult{}, nil
-		}
-	}
-
-	exactSQL += " LIMIT 3"
-	fuzzSQL += " LIMIT 3"
-
-	var exactRepos, repos []*sourcegraph.Repo
-	var err error
-	if performExactMatch {
-		exactRepos, err = s.query(ctx, exactSQL, exactArgs...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if len(exactRepos) > 0 {
-		repos = exactRepos
-	} else {
-		repos, err = s.query(ctx, fuzzSQL, fuzzArgs...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	priorityRepos := make([]*priorityRepo, 0, len(repos))
-	for _, repo := range repos {
-		prepo := &priorityRepo{
-			Repo: repo,
-		}
-		if repo.Owner == owner && repo.Name == name {
-			prepo.priority = 2
-		} else if repo.Owner == owner || repo.Name == name {
-			prepo.priority = 1
-		}
-		priorityRepos = append(priorityRepos, prepo)
-	}
-
-	sort.Sort(&priorityRepoList{repos: priorityRepos})
-
-	// Critical permissions check. DO NOT REMOVE.
-	var results []*sourcegraph.RepoSearchResult
-	for _, prepo := range priorityRepos {
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.Search", prepo.Repo.ID); err != nil {
-			continue
-		}
-		results = append(results, &sourcegraph.RepoSearchResult{
-			Repo: prepo.Repo,
-		})
-	}
-
-	return results, nil
 }
 
 var errOptionsSpecifyEmptyResult = errors.New("pgsql: options specify and empty result set")
@@ -763,37 +646,6 @@ func (s *repos) InternalUpdate(ctx context.Context, repo int32, op InternalRepoU
 		_, err := appDBH(ctx).Exec(`UPDATE repo SET "vcs_synced_at"=$1 WHERE id=$2`, op.VCSSyncedAt, repo)
 		if err != nil {
 			return err
-		}
-	}
-	return nil
-}
-
-// Delete a repository.
-func (s *repos) Delete(ctx context.Context, repo int32) error {
-	if Mocks.Repos.Delete != nil {
-		return Mocks.Repos.Delete(ctx, repo)
-	}
-
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Delete", repo); err != nil {
-		return err
-	}
-
-	var dir string
-	if !skipFS {
-		var err error
-		dir, err = getRepoDir(ctx, repo)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err := appDBH(ctx).Exec(`DELETE FROM repo WHERE id=$1;`, repo)
-	if err != nil {
-		return err
-	}
-	if !skipFS && dir != "" {
-		if err := gitserver.DefaultClient.Remove(ctx, dir); err != nil {
-			log15.Warn("Deleting repo on filesystem failed", "repo", repo, "dir", dir, "err", err)
 		}
 	}
 	return nil
