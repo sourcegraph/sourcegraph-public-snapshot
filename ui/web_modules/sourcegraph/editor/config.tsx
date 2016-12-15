@@ -20,7 +20,7 @@ function editorOpened(input: IEditorInput): void {
 	if (input["resource"]) {
 		resource = (input as any).resource;
 	} else {
-		throw "Couldn't find resource";
+		throw "Couldn't find resource.";
 	}
 	// TODO set workspace on workspace jump.
 	const {repo, rev, path} = URIUtils.repoParams(resource);

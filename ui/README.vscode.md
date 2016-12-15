@@ -11,6 +11,10 @@ But we will need to modify some of vscode's behavior. Here are our rules:
 
 # Vocabulary
 * `Workbench` - The interface of VSCode. It controls all of the `Part`s (editor, file tree).
-* `Part` - A major UI element. e.g. File tree explorer, editor, activity bar along the bottom of the screen.
-* `Service` - VSCode has a dependency injection system to allow each class to have the dependencies it requires. We override many of these services to provide Sourcegraph specific functionality.
-* `common`, `browser`, `electron` - These are various layers that VSCode source is separated into. We can use anything in the Browser directory, and must replace functionality provided by services in `electron`. Read https://github.com/Microsoft/vscode/wiki/Code-Organization for details.
+* `Part` - A major UI element. We use the editor part, the title bar part, and the file explorer part.
+* `Service` - VSCode has a dependency injection system to provide each class it's dependencies. We override many of these services to provide Sourcegraph-specific functionality.
+* `common`, `browser`, `electron`, `electron-browser` - These are various
+  layers that VSCode source is separated into. We can use anything in the
+  browser or common directory, and must replace functionality provided by
+  functionality that depends on `electron`, `electron-browser` or `node`. Read
+  https://github.com/Microsoft/vscode/wiki/Code-Organization for details.
