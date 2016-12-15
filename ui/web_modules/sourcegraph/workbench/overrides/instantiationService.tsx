@@ -1,7 +1,8 @@
 import { TPromise } from "vs/base/common/winjs.base";
 import { InstantiationService } from "vs/platform/instantiation/common/instantiationService";
 import { StringEditor } from "vs/workbench/browser/parts/editor/stringEditor";
-import { ExplorerViewlet } from "vs/workbench/parts/files/browser/explorerViewlet";
+
+import { ExplorerViewlet } from "sourcegraph/workbench/overrides/explorerViewlet";
 
 const modules = {
 	ExplorerViewlet,
