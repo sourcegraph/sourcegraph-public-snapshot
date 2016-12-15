@@ -12,6 +12,13 @@ export function configureEditor(editor: EditorPart, resource: URI): void {
 	stacks.activeGroup.onEditorActivated(editorOpened);
 }
 
+// updating is true if we are opening the editor as a result of a URL change.
+// In this case, we should not push to the URL contents, because they are
+// already up to date and it would break the history stack.
+let updating = false;
+
+// editorOpened is called whenever a new editor is created or activated. When
+// this event happens, we update the URL to match the editor file.
 function editorOpened(input: IEditorInput): void {
 	if (!global.window || updating) {
 		return;
@@ -27,7 +34,6 @@ function editorOpened(input: IEditorInput): void {
 	history.pushState({}, "", urlToBlob(repo, rev, path));
 }
 
-let updating = false;
 export function updateEditor(editor: EditorPart, resource: URI, services: ServiceCollection): void {
 	const editorService = services.get(IWorkbenchEditorService) as IWorkbenchEditorService;
 	updating = true;
