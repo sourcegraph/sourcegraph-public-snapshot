@@ -185,7 +185,7 @@ func score(q Query, s lsp.SymbolInformation) (scor int) {
 		}
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
-	filename := strings.TrimPrefix(strings.ToLower(s.Location.URI), "file://")
+	filename := strings.TrimPrefix(s.Location.URI, "file://")
 	isVendor := strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/")
 	if q.Filter == FilterExported && isVendor {
 		// is:exported excludes vendor symbols always.

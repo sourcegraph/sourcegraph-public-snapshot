@@ -26,6 +26,9 @@ import (
 )
 
 func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceReferencesParams) ([]lspext.ReferenceInformation, error) {
+	// TODO(slimsag): respect params.Files which will make performance in any
+	// moderately sized repository more bearable (right now these are really bad).
+
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
 
@@ -94,7 +97,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 					return
 				}
 			}()
-			err := h.workspaceRefsFromPkg(ctx, bctx, conn, fset, pkg, rootPath, &results)
+			err := h.workspaceRefsFromPkg(ctx, bctx, conn, params, fset, pkg, rootPath, &results)
 			if err != nil {
 				log.Printf("workspaceRefsFromPkg: %v: %v", pkg, err)
 			}
@@ -169,7 +172,7 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 
 // workspaceRefsFromPkg collects all the references made to dependencies from
 // the specified package and returns the results.
-func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fs *token.FileSet, pkg *loader.PackageInfo, rootPath string, results *refResultSorter) (err error) {
+func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, params lspext.WorkspaceReferencesParams, fs *token.FileSet, pkg *loader.PackageInfo, rootPath string, results *refResultSorter) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "workspaceRefsFromPkg")
 	defer func() {
 		if err != nil {
@@ -199,11 +202,14 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 			span.SetTag("error", err.Error())
 			return
 		}
+		if !symDesc.Contains(params.Query) {
+			return
+		}
 
 		results.resultsMu.Lock()
 		results.results = append(results.results, lspext.ReferenceInformation{
 			Reference: goRangeToLSPLocation(fs, r.Pos, r.Pos), // TODO: internal/refs doesn't generate end positions
-			Symbol:    *symDesc,
+			Symbol:    symDesc,
 		})
 		results.resultsMu.Unlock()
 	})
@@ -216,35 +222,33 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 	return nil
 }
 
-func defSymbolDescriptor(bctx *build.Context, rootPath string, def refs.Def) (*lspext.SymbolDescriptor, error) {
+func defSymbolDescriptor(bctx *build.Context, rootPath string, def refs.Def) (lspext.SymbolDescriptor, error) {
 	defPkg, err := bctx.Import(def.ImportPath, rootPath, build.FindOnly)
 	if err != nil {
 		return nil, err
 	}
 
-	attributes := map[string]interface{}{
+	desc := lspext.SymbolDescriptor{
+		"vendor":      IsVendorDir(defPkg.Dir),
 		"package":     defPkg.ImportPath,
 		"packageName": def.PackageName,
+		"recv":        "",
+		"name":        "",
 	}
 
-	var defName string
 	fields := strings.Fields(def.Path)
-	if len(fields) >= 1 {
-		defName = fields[0]
+	switch {
+	case len(fields) == 0:
+		// reference to just a package
+	case len(fields) >= 2:
+		desc["recv"] = fields[0]
+		desc["name"] = fields[1]
+	case len(fields) >= 1:
+		desc["name"] = fields[0]
+	default:
+		panic("invalid def.Path response from internal/refs")
 	}
-	if len(fields) >= 2 {
-		attributes["parent"] = fields[0]
-		defName = fields[1]
-	}
-
-	return &lspext.SymbolDescriptor{
-		Name:       defName,
-		Vendor:     IsVendorDir(defPkg.Dir),
-		Attributes: attributes,
-		// TODO: be nice and emit Kind, File and Repo fields too. They
-		// are optional, though, so let's punt on it for now and see
-		// how well it works.
-	}, nil
+	return desc, nil
 }
 
 // refResultSorter is a utility struct for collecting, filtering, and

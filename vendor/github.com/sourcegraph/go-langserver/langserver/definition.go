@@ -24,7 +24,7 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn JSONRPC2Conn, r
 	return locs, nil
 }
 
-func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lspext.LocationInformation, error) {
+func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lspext.SymbolLocationInformation, error) {
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
 
@@ -58,10 +58,10 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, 
 	if len(nodes) == 0 {
 		return nil, errors.New("definition not found")
 	}
-	locs := make([]lspext.LocationInformation, 0, len(nodes))
+	locs := make([]lspext.SymbolLocationInformation, 0, len(nodes))
 	for _, node := range nodes {
 		// Determine location information for the node.
-		l := lspext.LocationInformation{
+		l := lspext.SymbolLocationInformation{
 			Location: goRangeToLSPLocation(fset, node.Pos(), node.End()),
 		}
 		// LSP expects a range to be of the entire body, not just of the
@@ -76,7 +76,7 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, 
 				// TODO: tracing
 				log.Println("refs.DefInfo:", err)
 			} else {
-				l.Symbol = *symDesc
+				l.Symbol = symDesc
 			}
 		} else {
 			// TODO: tracing

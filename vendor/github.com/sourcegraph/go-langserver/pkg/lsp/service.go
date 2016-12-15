@@ -58,6 +58,10 @@ type ServerCapabilities struct {
 	// XWorkspaceReferencesProvider indicates the server provides support for
 	// xworkspace/references. This is a Sourcegraph extension.
 	XWorkspaceReferencesProvider bool `json:"xworkspaceReferencesProvider,omitempty"`
+
+	// XDefinitionProvider indicates the server provides support for
+	// textDocument/xdefinition. This is a Sourcegraph extension.
+	XDefinitionProvider bool `json:"xdefinitionProvider,omitempty"`
 }
 
 type CompletionOptions struct {
