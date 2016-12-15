@@ -2,10 +2,7 @@ import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
-import "sourcegraph/workbench/overrides/fileService";
 import "sourcegraph/workbench/overrides/instantiationService";
-import "sourcegraph/workbench/overrides/labels";
-import "sourcegraph/workbench/overrides/titleBar";
 
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";

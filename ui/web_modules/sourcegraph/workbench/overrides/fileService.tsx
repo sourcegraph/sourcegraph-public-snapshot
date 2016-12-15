@@ -2,8 +2,6 @@ import * as uniq from "lodash/uniq";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IFileStat, IResolveFileOptions } from "vs/platform/files/common/files";
-import * as electronService from "vs/workbench/services/files/electron-browser/fileService";
-import * as nodeService from "vs/workbench/services/files/node/fileService";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
@@ -13,7 +11,7 @@ import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 // file content. File content is resolved using the modelResolver, which uses
 // contentLoader.tsx.
 
-class FileService {
+export class FileService {
 	constructor() {
 		//
 	}
@@ -25,9 +23,6 @@ class FileService {
 		});
 	}
 }
-
-(nodeService as any).FileService = FileService;
-(electronService as any).FileService = FileService;
 
 function retrieveFilesAndDirs(resource: URI): any {
 	const {repo, rev} = URIUtils.repoParams(resource);

@@ -1,6 +1,6 @@
 import { IAction } from "vs/base/common/actions";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { ExplorerViewlet as VSExplorerViewlet } from "vs/workbench/parts/files/browser/explorerViewlet";
+import { ExplorerViewlet as VSExplorerViewlet } from "vscode/src/vs/workbench/parts/files/browser/explorerViewlet";
 
 import { URIUtils } from "sourcegraph/core/uri";
 

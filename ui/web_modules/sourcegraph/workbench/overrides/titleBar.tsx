@@ -1,5 +1,7 @@
-import { TitlebarPart } from "vs/workbench/browser/parts/titlebar/titlebarPart";
+import { TitlebarPart as VSTitlebarPart } from "vscode/src/vs/workbench/browser/parts/titlebar/titlebarPart";
 
-// Stop VSCode from updating the page title, we want to provide something
-// custom.
-TitlebarPart.prototype.updateTitle = () => { /* */ };
+export class TitlebarPart extends VSTitlebarPart {
+	updateTitle(): void {
+		//
+	}
+}
