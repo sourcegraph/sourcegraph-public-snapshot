@@ -348,3 +348,69 @@ index cd5d7b479..75c607245 100644
  		} else {
  			this.setTitle(nls.localize('peekView.alternateTitle', "References"));
  		}
+diff --git a/ui/node_modules/vscode/src/vs/platform/product.ts b/ui/node_modules/vscode/src/vs/platform/product.ts
+index d7b5a2926..05f7d072d 100644
+--- a/ui/node_modules/vscode/src/vs/platform/product.ts
++++ b/ui/node_modules/vscode/src/vs/platform/product.ts
+@@ -54,9 +54,23 @@ export interface IProductConfiguration {
+ 	checksumFailMoreInfoUrl: string;
+ }
+ 
+-const rootPath = path.dirname(uri.parse(require.toUrl('')).fsPath);
+-const productJsonPath = path.join(rootPath, 'product.json');
+-const product = require.__$__nodeRequire(productJsonPath) as IProductConfiguration;
++const json = {
++	"nameShort": "Code - OSS",
++	"nameLong": "Code - OSS",
++	"applicationName": "code-oss",
++	"dataFolderName": ".vscode-oss",
++	"win32MutexName": "vscodeoss",
++	"licenseUrl": "https://github.com/Microsoft/vscode/blob/master/LICENSE.txt",
++	"win32DirName": "Microsoft Code OSS",
++	"win32NameVersion": "Microsoft Code OSS",
++	"win32RegValueName": "CodeOSS",
++	"win32AppId": "{{E34003BB-9E10-4501-8C11-BE3FAA83F23F}",
++	"win32AppUserModelId": "Microsoft.CodeOSS",
++	"darwinBundleIdentifier": "com.visualstudio.code.oss",
++	"reportIssueUrl": "https://github.com/Microsoft/vscode/issues/new",
++	"urlProtocol": "code-oss",
++} as any;
++const product = json as IProductConfiguration;
+ 
+ if (process.env['VSCODE_DEV']) {
+ 	product.nameShort += ' Dev';
+diff --git a/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts b/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+index 269902194..664a7fa26 100644
+--- a/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
++++ b/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+@@ -74,7 +74,7 @@ export class ActivitybarPart extends Part implements IActivityBarService {
+ 		this.pinnedViewlets = this.memento[ActivitybarPart.PINNED_VIEWLETS] || this.viewletService.getViewlets().map(v => v.id);
+ 
+ 		// Update viewlet switcher when external viewlets become ready
+-		this.extensionService.onReady().then(() => this.updateViewletSwitcher());
++		// this.extensionService.onReady().then(() => this.updateViewletSwitcher());
+ 
+ 		this.registerListeners();
+ 	}
+diff --git a/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts b/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
+index 7b75d5a9d..733cc3ea9 100644
+--- a/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
++++ b/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
+@@ -48,7 +48,7 @@ import { WorkbenchEditorService } from 'vs/workbench/services/editor/browser/edi
+ import { Position, Parts, IPartService, ILayoutOptions } from 'vs/workbench/services/part/common/partService';
+ import { IWorkspace, IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
+ import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
+-import { ContextMenuService } from 'vs/workbench/services/contextview/electron-browser/contextmenuService';
++// import { ContextMenuService } from 'vs/workbench/services/contextview/electron-browser/contextmenuService';
+ import { WorkbenchKeybindingService } from 'vs/workbench/services/keybinding/electron-browser/keybindingService';
+ import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+ import { IConfigurationEditingService } from 'vs/workbench/services/configuration/common/configurationEditing';
+@@ -422,7 +422,7 @@ export class Workbench implements IPartService {
+ 		serviceCollection.set(IKeybindingService, this.keybindingService);
+ 
+ 		// Context Menu
+-		serviceCollection.set(IContextMenuService, this.instantiationService.createInstance(ContextMenuService));
++		// serviceCollection.set(IContextMenuService, this.instantiationService.createInstance(ContextMenuService));
+ 
+ 		// Menus/Actions
+ 		serviceCollection.set(IMenuService, new SyncDescriptor(MenuService));

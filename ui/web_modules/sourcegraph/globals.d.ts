@@ -51,13 +51,13 @@ declare module "querystring" {
 	export function parse(query: string): any;
 }
 
-declare module "child_process" {
-	export default {} as any;
-}
+// declare module "child_process" {
+// 	export default {} as any;
+// }
 
-declare namespace Electron {
-	type CrashReporterStartOptions = any;
-}
+// declare namespace Electron {
+// 	type CrashReporterStartOptions = any;
+// }
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

@@ -43,13 +43,12 @@ echo OK
 echo -n Compiling TypeScript...
 tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
+echo OK
 
 # Remove dependency on Monaco, to avoid people accidentally using
 # monaco.d.ts types (which virtually all are aliases to types defined
 # elsewhere in vscode, and having two names for the same type can be
 # confusing).
 rm "$VENDOR_DIR"/src/vs/monaco.d.ts
-echo OK
 
-echo
 echo 'Done! Updated vscode in' "$VENDOR_DIR"
