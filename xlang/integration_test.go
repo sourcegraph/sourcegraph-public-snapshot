@@ -22,6 +22,7 @@ func TestIntegration(t *testing.T) {
 
 	tests := map[string]struct { // map key is rootPath
 		mode             string
+		ciBlacklist      bool
 		pinDepReposToRev map[string]string // so that file:line:col expectations are stable
 		wantHover        map[string]string
 		wantDefinition   map[string]string
@@ -97,7 +98,8 @@ func TestIntegration(t *testing.T) {
 		"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171": {
 			// SHA is equivalent to go1.7.1 tag, but make sure we
 			// retain the original rev spec in definition results.
-			mode: "go",
+			mode:        "go",
+			ciBlacklist: true, // skip on CI since the repo is large
 			wantHover: map[string]string{
 				"src/encoding/hex/hex.go:70:12":  "func fromHexChar(c byte) (byte, bool)", // func decl
 				"src/encoding/hex/hex.go:104:18": "type Buffer struct",                    // bytes.Buffer
@@ -129,7 +131,8 @@ func TestIntegration(t *testing.T) {
 			},
 		},
 		"git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770": {
-			mode: "go",
+			mode:        "go",
+			ciBlacklist: true, // skip on CI due to large repo size
 			wantHover: map[string]string{
 				"libmachine/provision/provisioner.go:107:50": "func RunSSHCommandFromDriver(...",
 			},
@@ -140,12 +143,24 @@ func TestIntegration(t *testing.T) {
 				"libmachine/provision/provisioner.go:107:50": "git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770#libmachine/drivers/utils.go:36:6 attr_package:github.com/docker/machine/libmachine/drivers attr_packageName:drivers name:RunSSHCommandFromDriver",
 			},
 		},
+		"git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33": {
+			mode:        "go",
+			ciBlacklist: true, // skip on CI due to large repo size
+			wantHover: map[string]string{
+				"pkg/ssh/ssh.go:49:38":               "func NewCounter(...",
+				"pkg/util/workqueue/queue.go:113:15": "struct field L sync.Locker",
+			},
+		},
 	}
 	for rootPath, test := range tests {
-		label := strings.TrimPrefix(strings.Replace(strings.Replace(rootPath, "//", "", 1), "/", "-", -1), "git:") // abbreviated label
+		root, err := uri.Parse(rootPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		label := strings.Replace(strings.TrimPrefix(root.Path, "/"), "/", "-", -1)
 		t.Run(label, func(t *testing.T) {
-			if os.Getenv("CI") != "" && (strings.Contains(rootPath, "github.com/golang/go") || strings.Contains(rootPath, "github.com/docker/machine")) {
-				t.Skipf("Skipping the %s integration test in CI; it sometimes exceeds the available memory (4 GB) and fails the whole build.", rootPath)
+			if os.Getenv("CI") != "" && test.ciBlacklist {
+				t.Skipf("Skipping the %s integration test in CI", rootPath)
 			}
 
 			cleanup := useGithubForVFS()
