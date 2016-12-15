@@ -42,7 +42,7 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	workbench.layout();
 
 	const editor = workbench.getEditorPart();
-	configureEditor(editor, resource, services);
+	configureEditor(editor, resource);
 	configurePostStartup(services);
 	return [workbench, services];
 }

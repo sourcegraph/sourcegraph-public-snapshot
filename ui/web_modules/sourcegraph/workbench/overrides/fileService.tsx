@@ -29,7 +29,6 @@ class FileService {
 (nodeService as any).FileService = FileService;
 (electronService as any).FileService = FileService;
 
-
 function retrieveFilesAndDirs(resource: URI): any {
 	const {repo, rev} = URIUtils.repoParams(resource);
 	return fetchGraphQLQuery(`query Files($repo: String!, $rev: String!) {
