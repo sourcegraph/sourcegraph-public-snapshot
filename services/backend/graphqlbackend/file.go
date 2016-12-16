@@ -71,14 +71,14 @@ func (r *fileResolver) Blame(ctx context.Context,
 
 func (r *fileResolver) Definition(ctx context.Context,
 	args *struct {
-		Line   int32
-		Column int32
+		Line     int32
+		Column   int32
+		Language string
 	}) (*definitionResolver, error) {
 
 	refs, err := backend.Defs.RefLocations(ctx, sourcegraph.RefLocationsOptions{
-		RepoID:    string(r.commit.RepoID),
-		Path:      r.path,
-		Version:   r.commit.CommitID,
+		RepoID:    r.commit.RepoID,
+		Language:  args.Language,
 		File:      r.name,
 		Line:      int(args.Line),
 		Character: int(args.Column),

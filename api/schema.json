@@ -444,6 +444,20 @@
 										"ofType": null
 									}
 								}
+							},
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "language",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
 							}
 						],
 						"deprecationReason": null,

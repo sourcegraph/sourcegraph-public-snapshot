@@ -20,7 +20,7 @@ export function resolveGlobalReferences(ref: RefData): Promise<Array<GQL.IRefFie
 								id
 								file(path: $file) {
 									name
-									definition(line: $line, column: $column) {
+									definition(line: $line, column: $column, language: $language) {
 										globalReferences {
 											refLocation {
 												startLineNumber
