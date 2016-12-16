@@ -4,7 +4,7 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 
-import { urlToBlob } from "sourcegraph/blob/routes";
+import { parseBlobURL, urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 
 export function configureEditor(editor: EditorPart, resource: URI): void {
@@ -12,15 +12,10 @@ export function configureEditor(editor: EditorPart, resource: URI): void {
 	stacks.activeGroup.onEditorActivated(editorOpened);
 }
 
-// updating is true if we are opening the editor as a result of a URL change.
-// In this case, we should not push to the URL contents, because they are
-// already up to date and it would break the history stack.
-let updating = false;
-
 // editorOpened is called whenever a new editor is created or activated. When
 // this event happens, we update the URL to match the editor file.
 function editorOpened(input: IEditorInput): void {
-	if (!global.window || updating) {
+	if (!global.window) {
 		return;
 	}
 	let resource;
@@ -30,13 +25,17 @@ function editorOpened(input: IEditorInput): void {
 		throw "Couldn't find resource.";
 	}
 	// TODO set workspace on workspace jump.
+	const oldParams = parseBlobURL(document.location.toString());
+	const currentURL = urlToBlob(oldParams.repo, oldParams.rev, oldParams.path);
 	const {repo, rev, path} = URIUtils.repoParams(resource);
-	history.pushState({}, "", urlToBlob(repo, rev, path));
+	const url = urlToBlob(repo, rev, path);
+	if (url === currentURL) {
+		return;
+	}
+	history.pushState({}, "", url);
 }
 
 export function updateEditor(editor: EditorPart, resource: URI, services: ServiceCollection): void {
 	const editorService = services.get(IWorkbenchEditorService) as IWorkbenchEditorService;
-	updating = true;
 	editorService.openEditor({ resource });
-	updating = false;
 }
