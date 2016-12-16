@@ -31,7 +31,6 @@ const plugins = [
 		"process.getuid": "function() { return 0; }",
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
-	new webpack.IgnorePlugin(/\.json$/),
 	new webpack.IgnorePlugin(/\_test\.js$/),
 
 	// This file isn't actually used, but it contains a dynamic import that Webpack complains about.
@@ -97,6 +96,18 @@ module.exports = {
 			`${__dirname}/node_modules/vscode/src`,
 		],
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+		alias: {
+			"electron": "sourcegraph/workbench/overrides/electron",
+			"vs/workbench/parts/files/browser/explorerViewlet": "sourcegraph/workbench/overrides/explorerViewlet",
+			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",
+			"vs/workbench/services/files/electron-browser/fileService": "sourcegraph/workbench/overrides/fileService",
+			"fs": "sourcegraph/workbench/overrides/fs",
+			"vs/base/browser/ui/iconLabel/iconLabel": "sourcegraph/workbench/overrides/iconLabel",
+			"vs/workbench/browser/labels": "sourcegraph/workbench/overrides/labels",
+			"native-keymap": "sourcegraph/workbench/overrides/native-keymap",
+			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
+			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
+		},
 	},
 	devtool: devtool,
 	output: {

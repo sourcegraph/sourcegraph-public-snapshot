@@ -7,14 +7,26 @@ import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToas
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoParam, repoPath, repoRev } from "sourcegraph/repo";
 import { treeParam } from "sourcegraph/tree";
+import { Features } from "sourcegraph/util/features";
 import { FileTree } from "sourcegraph/workbench/fileTree";
+import { Shell } from "sourcegraph/workbench/shell";
 
+// WorkbenchComponent loads the VSCode workbench shell, or our home made file
+// tree and Editor, depending on configuration. To learn about VSCode, and the
+// way we use it, read README.vscode.md.
 class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 	render(): JSX.Element | null {
 		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
 			return null;
 		}
 		const files = this.props.root.repository.commit.commit.tree.files;
+		if (Features.workbench.isEnabled()) {
+			return <Shell
+				repo={this.props.repo}
+				rev={this.props.rev}
+				path={this.props.path}
+				/>;
+		}
 		return <div style={{
 			display: "flex",
 			flexDirection: "column",

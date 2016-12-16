@@ -45,6 +45,7 @@ export const Features = {
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
+	workbench: new Feature("vscode-workbench"),
 
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),

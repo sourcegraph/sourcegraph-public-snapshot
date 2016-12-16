@@ -41,15 +41,14 @@ patch --no-backup-if-mismatch --quiet --directory "$REPO_DIR" -p1 < "$REPO_DIR"/
 echo OK
 
 echo -n Compiling TypeScript...
-$REPO_DIR/ui/node_modules/typescript/bin/tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
+tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
+echo OK
 
 # Remove dependency on Monaco, to avoid people accidentally using
 # monaco.d.ts types (which virtually all are aliases to types defined
 # elsewhere in vscode, and having two names for the same type can be
 # confusing).
 rm "$VENDOR_DIR"/src/vs/monaco.d.ts
-echo OK
 
-echo
 echo 'Done! Updated vscode in' "$VENDOR_DIR"

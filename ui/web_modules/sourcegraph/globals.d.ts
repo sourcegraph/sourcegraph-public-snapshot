@@ -51,8 +51,9 @@ declare module "querystring" {
 	export function parse(query: string): any;
 }
 
-declare module "child_process" {
-	export default {} as any;
+// Electron namespace is required by VSCode.
+declare namespace Electron {
+	type CrashReporterStartOptions = any;
 }
 
 /*---------------------------------------------------------------------------------------------

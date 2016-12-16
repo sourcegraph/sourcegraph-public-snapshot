@@ -9,7 +9,7 @@ function cleanupSourceFiles {
 # remove anyway. If we don't do this, people might accidentally commit
 # them (which would introduce a large commit and be confusing). Only
 # the .d.ts and .js files should be committed.
-trap cleanupSourceFiles EXIT
+#trap cleanupSourceFiles EXIT
 
 
 # gsed is required on OS X (brew install gnu-sed)
