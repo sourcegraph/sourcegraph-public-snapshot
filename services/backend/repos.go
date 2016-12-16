@@ -64,6 +64,22 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	return repo, nil
 }
 
+func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo, err error) {
+	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
+	defer done()
+
+	repo, err := localstore.Repos.GetByURI(ctx, uri)
+	if err != nil {
+		return nil, err
+	}
+
+	if repo.Blocked {
+		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo.URI)
+	}
+
+	return repo, nil
+}
+
 func (s *repos) ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (res *sourcegraph.RepoList, err error) {
 	if Mocks.Repos.ListStarredRepos != nil {
 		return Mocks.Repos.ListStarredRepos(ctx, opt)
@@ -613,7 +629,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 	}, nil
 }
 
-func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (res *sourcegraph.Repo, err error) {
+func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error) {
 	if Mocks.Repos.Update != nil {
 		return Mocks.Repos.Update(ctx, op)
 	}
@@ -624,10 +640,10 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (res 
 	ts := time.Now()
 	update := localstore.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := localstore.Repos.Update(ctx, update); err != nil {
-		return nil, err
+		return err
 	}
 
-	return s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
+	return nil
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {

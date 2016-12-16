@@ -30,7 +30,7 @@ type MockRepository struct {
 
 	Committers_ func(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error)
 
-	UpdateEverything_ func(context.Context, vcs.RemoteOpts) (*vcs.UpdateResult, error)
+	UpdateEverything_ func(context.Context, vcs.RemoteOpts) error
 
 	Search_ func(context.Context, vcs.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
 }
@@ -93,7 +93,7 @@ func (r MockRepository) Committers(ctx context.Context, opt vcs.CommittersOption
 	return r.Committers_(ctx, opt)
 }
 
-func (r MockRepository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
+func (r MockRepository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) error {
 	return r.UpdateEverything_(ctx, opt)
 }
 

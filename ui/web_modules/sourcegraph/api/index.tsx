@@ -26,12 +26,6 @@ export interface AnnotationsListOptions {
 	Range?: FileRange;
 }
 
-export interface AsyncRefreshIndexesOp {
-	Repo?: number;
-	Source?: string;
-	Force?: boolean;
-}
-
 export interface AuthInfo {
 	UID?: string;
 	Login?: string;
@@ -85,9 +79,6 @@ export interface BranchesOptions {
 	IncludeCommit?: boolean;
 	BehindAheadBranch?: string;
 	ContainsCommit?: string;
-}
-
-export interface Change {
 }
 
 export interface ClientCapabilities {
@@ -718,6 +709,7 @@ export interface Repo {
 	VCSSyncedAt?: any;
 	Origin?: Origin;
 	Permissions?: RepoPermissions;
+	IndexedRevision?: string;
 }
 
 export interface RepoConfig {
@@ -873,6 +865,7 @@ export interface ReposUpdateOp {
 	Fork?: any;
 	Mirror?: any;
 	Private?: any;
+	IndexedRevision?: string;
 }
 
 export interface RepositoryListingDef {
@@ -1032,9 +1025,6 @@ export interface URIList {
 export interface UpdateEmailsOp {
 	UserSpec: UserSpec;
 	Add?: EmailAddrList;
-}
-
-export interface UpdateResult {
 }
 
 export interface User {

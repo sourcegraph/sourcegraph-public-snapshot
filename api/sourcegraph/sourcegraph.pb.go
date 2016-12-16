@@ -194,6 +194,8 @@ type Repo struct {
 	// permissions for GitHub repositories; all other repositories
 	// report that all users have the Pull permission only.
 	Permissions *RepoPermissions `json:"Permissions,omitempty"`
+	// IndexedRevision is the revision that the global index is currently based on.
+	IndexedRevision *string `json:"IndexedRevision,omitempty"`
 }
 
 type Contributor struct {
@@ -440,6 +442,8 @@ type ReposUpdateOp struct {
 	Mirror ReposUpdateOp_BoolType `json:"Mirror,omitempty"`
 	// Private, if non-empty, updates whether this repository is private.
 	Private ReposUpdateOp_BoolType `json:"Private,omitempty"`
+	// IndexedRevision is the revision that the global index is currently based on.
+	IndexedRevision string `json:"IndexedRevision,omitempty"`
 }
 
 type ReposListCommitsOp struct {
@@ -1003,16 +1007,6 @@ type DefsRefreshIndexOp struct {
 	Repo int32 `json:"Repo,omitempty"`
 	// Force ensures we reindex, even if we have already indexed the latest
 	// commit for repo
-	Force bool `json:"Force,omitempty"`
-}
-
-type AsyncRefreshIndexesOp struct {
-	// Repo will have all of its indexes refreshed.
-	Repo int32 `json:"Repo,omitempty"`
-	// Source helps tie back async jobs to their source.
-	Source string `json:"Source,omitempty"`
-	// Force will ensure all indexes are refreshed, even if the index
-	// already includes the latest commit.
 	Force bool `json:"Force,omitempty"`
 }
 

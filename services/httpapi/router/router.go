@@ -16,18 +16,17 @@ const (
 	GraphQL = "graphql"
 	XLang   = "xlang"
 
-	GlobalSearch        = "global.search"
-	RepoCreate          = "repo.create"
-	RepoRefresh         = "repo.refresh"
-	RepoResolveRev      = "repo.resolve-rev"
-	RepoDefLanding      = "repo.def-landing"
-	Repos               = "repos"
-	RepoShield          = "repo.shield"
-	AsyncRefreshIndexes = "async.refresh-indexes"
-	BetaSubscription    = "beta-subscription"
-	Orgs                = "orgs"
-	OrgMembers          = "org-members"
-	OrgInvites          = "org-invites"
+	GlobalSearch     = "global.search"
+	RepoCreate       = "repo.create"
+	RepoRefresh      = "repo.refresh"
+	RepoResolveRev   = "repo.resolve-rev"
+	RepoDefLanding   = "repo.def-landing"
+	Repos            = "repos"
+	RepoShield       = "repo.shield"
+	BetaSubscription = "beta-subscription"
+	Orgs             = "orgs"
+	OrgMembers       = "org-members"
+	OrgInvites       = "org-invites"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -61,8 +60,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
 	repoRev.Path("/def-landing").Methods("GET").Name(RepoDefLanding)
 	repoRev.Path("/shield").Methods("GET").Name(RepoShield)
-
-	repo.Path("/async-refresh-indexes").Methods("POST").Name(AsyncRefreshIndexes)
 
 	return base
 }

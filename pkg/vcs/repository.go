@@ -88,7 +88,7 @@ type Repository interface {
 
 	// UpdateEverything updates all branches, tags, etc., to match the
 	// default remote repository.
-	UpdateEverything(context.Context, RemoteOpts) (*UpdateResult, error)
+	UpdateEverything(context.Context, RemoteOpts) error
 }
 
 // BlameOptions configures a blame.
