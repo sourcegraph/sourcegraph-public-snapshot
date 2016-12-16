@@ -438,25 +438,3 @@ index 269902194..664a7fa26 100644
  
  		this.registerListeners();
  	}
-diff --git a/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts b/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
-index 7b75d5a9d..733cc3ea9 100644
---- a/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
-+++ b/ui/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
-@@ -48,7 +48,7 @@ import { WorkbenchEditorService } from 'vs/workbench/services/editor/browser/edi
- import { Position, Parts, IPartService, ILayoutOptions } from 'vs/workbench/services/part/common/partService';
- import { IWorkspace, IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
- import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
--import { ContextMenuService } from 'vs/workbench/services/contextview/electron-browser/contextmenuService';
-+// import { ContextMenuService } from 'vs/workbench/services/contextview/electron-browser/contextmenuService';
- import { WorkbenchKeybindingService } from 'vs/workbench/services/keybinding/electron-browser/keybindingService';
- import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
- import { IConfigurationEditingService } from 'vs/workbench/services/configuration/common/configurationEditing';
-@@ -422,7 +422,7 @@ export class Workbench implements IPartService {
- 		serviceCollection.set(IKeybindingService, this.keybindingService);
- 
- 		// Context Menu
--		serviceCollection.set(IContextMenuService, this.instantiationService.createInstance(ContextMenuService));
-+		// serviceCollection.set(IContextMenuService, this.instantiationService.createInstance(ContextMenuService));
- 
- 		// Menus/Actions
- 		serviceCollection.set(IMenuService, new SyncDescriptor(MenuService));

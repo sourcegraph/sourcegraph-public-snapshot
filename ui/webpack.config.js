@@ -106,6 +106,7 @@ module.exports = {
 			"vs/workbench/browser/labels": "sourcegraph/workbench/overrides/labels",
 			"native-keymap": "sourcegraph/workbench/overrides/native-keymap",
 			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
+			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
 		},
 	},
 	devtool: devtool,
