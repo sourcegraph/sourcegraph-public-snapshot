@@ -43,6 +43,18 @@ export class Shell extends React.Component<Props, State> {
 		});
 	}
 
+	componentWillMount(): void {
+		window.onresize = () => {
+			if (this.workbench) {
+				this.workbench.layout();
+			}
+		};
+	}
+
+	componentWillUnmount(): void {
+		window.onresize = () => void (0);
+	}
+
 	componentWillReceiveProps(nextProps: Props): void {
 		if (!this.mounted || !this.workbench) {
 			return;
