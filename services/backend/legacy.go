@@ -11,7 +11,6 @@ import (
 
 func init() {
 	accesscontrol.Repos = localstore.Repos
-	repoupdater.Repos = Repos
 	repoupdater.MirrorRepos = MirrorRepos
 }
 

@@ -10,7 +10,10 @@ import (
 
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
+
+var mirrorRepoUpdateRate, _ = time.ParseDuration(env.Get("SRC_APP_MIRROR_REPO_UPDATE_RATE", "3s", "rate at which to update mirrored repositories"))
 
 // FIXME this dependency injection should be removed
 var MirrorRepos interface {
