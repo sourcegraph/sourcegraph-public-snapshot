@@ -161,7 +161,21 @@ func index(ctx context.Context, repoName string) error {
 	log.Printf("started indexing %s at %s", repoName, headCommit)
 	defer log.Printf("finished indexing %s at %s", repoName, headCommit)
 
-	// INDEXING HERE
+	// Global refs indexing.
+	//
+	// SECURITY: DO NOT REMOVE THIS CHECK! If a repository is private we must
+	// NOT index it because that could expose private repository information.
+	// and we do not have a good story for that yet.
+	if !repo.Private {
+		err = backend.Defs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+			RepoURI:  repo.URI,
+			RepoID:   repo.ID,
+			CommitID: string(headCommit),
+		})
+		if err != nil {
+			return fmt.Errorf("Defs.RefreshIndex failed: %s", err)
+		}
+	}
 
 	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
 		Repo:     repo.ID,

@@ -77,7 +77,7 @@ func init() {
 		}
 
 		// Start an in-process LSP proxy.
-		l, err := net.Listen("tcp", ":0")
+		l, err := net.Listen("tcp", ":4388")
 		if err != nil {
 			log.Fatal("LSP dev proxy: Listen:", err)
 		}

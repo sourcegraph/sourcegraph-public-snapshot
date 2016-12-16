@@ -233,8 +233,9 @@ export interface DefsGetOp {
 }
 
 export interface DefsRefreshIndexOp {
+	RepoURI?: string;
 	Repo?: number;
-	Force?: boolean;
+	CommitID?: string;
 }
 
 export interface DeprecatedDefFileRef {
