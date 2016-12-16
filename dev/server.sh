@@ -15,12 +15,17 @@ export WEBPACK_DEV_SERVER_ADDR=${WEBPACK_DEV_SERVER_ADDR:-127.0.0.1:8080}
 
 curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &)
 
-export DEBUG=true
-export SRC_APP_DISABLE_SUPPORT_SERVICES=true
+mkdir -p .bin
+export GOBIN=$PWD/.bin
+go install sourcegraph.com/sourcegraph/sourcegraph/cmd/...
+env SRC_REPOS_DIR=$HOME/.sourcegraph/repos ./.bin/gitserver &
 
-go install sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver
 . dev/langservers.lib.bash
 detect_dev_langservers
+
+export DEBUG=true
+export SRC_APP_DISABLE_SUPPORT_SERVICES=true
+export SRC_GIT_SERVERS=127.0.0.1:3178
 
 type ulimit > /dev/null && ulimit -n 10000
 exec "$PWD"/vendor/bin/rego \

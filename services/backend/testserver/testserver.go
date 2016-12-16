@@ -297,7 +297,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 
 	// FS
 	s.Config = append(s.Config, "SRC_REPOS_DIR="+reposDir)
-	s.Config = append(s.Config, "SRC_GIT_SERVERS=none")
 
 	// Graphstore
 	s.Config = append(s.Config, "SRC_GRAPHSTORE_ROOT="+reposDir)

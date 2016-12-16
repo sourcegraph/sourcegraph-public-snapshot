@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/neelance/chanrpc"
@@ -13,20 +14,29 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-// DefaultClient is the default Client. It is not connected to any gitservers by default.
-var DefaultClient = new(Client)
+var gitservers = env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers; a local gitserver process is used by default")
+
+// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
+var DefaultClient = NewClient(strings.Fields(gitservers))
+
+func NewClient(addrs []string) *Client {
+	client := &Client{}
+	for _, addr := range addrs {
+		client.connect(addr)
+	}
+	return client
+}
 
 // Client is a gitserver client.
 type Client struct {
 	servers [](chan<- *request)
 }
 
-// Connect connects the client to a remote gitserver.
-// It can be called multiple times to connect to a gitserver cluster.
-func (c *Client) Connect(addr string) {
+func (c *Client) connect(addr string) {
 	requestsChan := make(chan *request, 100)
 	c.servers = append(c.servers, requestsChan)
 

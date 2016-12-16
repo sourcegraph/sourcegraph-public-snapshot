@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	}
 	go (&gitserver.Server{InsecureSkipCheckVerifySSH: true}).Serve(l)
 
-	gitserver.DefaultClient.Connect(l.Addr().String())
+	gitserver.DefaultClient = gitserver.NewClient([]string{l.Addr().String()})
 
 	os.Exit(m.Run())
 }

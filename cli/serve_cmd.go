@@ -1,19 +1,15 @@
 package cli
 
 import (
-	"bufio"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -36,7 +32,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/graphstoreutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -66,9 +61,6 @@ var (
 
 	certFile = env.Get("SRC_TLS_CERT", "", "certificate file for TLS")
 	keyFile  = env.Get("SRC_TLS_KEY", "", "key file for TLS")
-
-	reposDir   = os.ExpandEnv(env.Get("SRC_REPOS_DIR", "$SGPATH/repos", "root dir containing repos"))
-	gitservers = env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers; a local gitserver process is used by default")
 
 	graphstoreRoot = os.ExpandEnv(env.Get("SRC_GRAPHSTORE_ROOT", "$SGPATH/repos", "root dir, HTTP VFS (http[s]://...), or S3 bucket (s3://...) in which to store graph data"))
 )
@@ -193,8 +185,6 @@ func Main() error {
 	}
 
 	backend.SetGraphStore(graphstoreutil.New(graphstoreRoot, nil))
-
-	runGitserver()
 
 	sm := http.NewServeMux()
 	newRouter := func() *mux.Router {
@@ -344,49 +334,4 @@ func initializeEventListeners() {
 			l.Start(listenerCtx)
 		}
 	}
-}
-
-// runGitserver either connects to gitservers specified in gitservers, if any.
-// Otherwise it starts a single local gitserver and connects to it.
-func runGitserver() {
-	if gitservers == "none" {
-		return
-	}
-
-	gitservers := strings.Fields(gitservers)
-	if len(gitservers) != 0 {
-		for _, addr := range gitservers {
-			gitserver.DefaultClient.Connect(addr)
-		}
-		return
-	}
-
-	stdoutReader, stdoutWriter := io.Pipe()
-	go func() {
-		cmd := exec.Command("gitserver")
-		cmd.Env = append(os.Environ(),
-			"SRC_AUTO_TERMINATE=true",
-			"SRC_REPOS_DIR="+os.ExpandEnv(reposDir),
-		)
-		_, err := cmd.StdinPipe() // keep stdin from closing
-		if err != nil {
-			log.Fatalf("git-server failed: %s", err)
-		}
-		cmd.Stdout = io.MultiWriter(os.Stdout, stdoutWriter)
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			log.Fatalf("git-server failed: %s", err)
-		}
-		log.Fatal("git-server has exited")
-	}()
-
-	r := bufio.NewReader(stdoutReader)
-	line, err := r.ReadString('\n')
-	if err != nil {
-		log.Fatalf("git-server stdout read failed: %s", err)
-	}
-	addr := line[strings.LastIndexByte(line, ' ')+1 : len(line)-1]
-	go io.Copy(ioutil.Discard, stdoutReader) // drain pipe
-
-	gitserver.DefaultClient.Connect(addr)
 }
