@@ -123,6 +123,52 @@ index 71ba74893..f05d17a87 100644
  }
  
  export let IContextKeyService = createDecorator<IContextKeyService>('contextKeyService');
+diff --git a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+index f4fb6eb0d..5a004276c 100644
+--- a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
++++ b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+@@ -83,37 +83,9 @@ export class InstantiationService implements IInstantiationService {
+ 
+ 		let canceledError: Error;
+ 
+-		return new TPromise((c, e, p) => {
+-			require([descriptor.moduleName], (_module?: any) => {
+-				if (canceledError) {
+-					e(canceledError);
+-				}
+-
+-				if (!_module) {
+-					return e(illegalArgument('module not found: ' + descriptor.moduleName));
+-				}
+-
+-				let ctor: Function;
+-				if (!descriptor.ctorName) {
+-					ctor = _module;
+-				} else {
+-					ctor = _module[descriptor.ctorName];
+-				}
+-
+-				if (typeof ctor !== 'function') {
+-					return e(illegalArgument('not a function: ' + descriptor.ctorName || descriptor.moduleName));
+-				}
+-
+-				try {
+-					args.unshift.apply(args, descriptor.staticArguments()); // instead of spread in ctor call
+-					c(this._createInstance(new SyncDescriptor<T>(ctor), args));
+-				} catch (error) {
+-					return e(error);
+-				}
+-			}, e);
+-		}, () => {
+-			canceledError = canceled();
+-		});
++		// HACK: Remove an unused dynamic import that Webpack
++		// complains about.
++		throw new Error("require call is incompatible with webpack");
+ 	}
+ 
+ 	private _createInstance<T>(desc: SyncDescriptor<T>, args: any[]): T {
+
 diff --git a/ui/node_modules/vscode/src/vs/base/common/platform.ts b/ui/node_modules/vscode/src/vs/base/common/platform.ts
 index 3075beb0a..de6365bbe 100644
 --- a/ui/node_modules/vscode/src/vs/base/common/platform.ts

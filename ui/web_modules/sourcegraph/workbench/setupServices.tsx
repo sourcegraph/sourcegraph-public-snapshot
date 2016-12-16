@@ -46,7 +46,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(ILifecycleService, LifecycleService);
 	set(IEnvironmentService, EnvironmentService);
 	set(IWindowService, WindowService);
-	set(IWindowsService, WindowsService);
+	set(IWindowsService, DummyService);
 	set(IIntegrityService, IntegrityService);
 	set(IBackupService, BackupService);
 	set(IMessageService, WorkbenchMessageService);
@@ -64,9 +64,9 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	return services;
 }
 
-class LifecycleService {
+class DummyService {}
 
-	_serviceBrand: any;
+class LifecycleService {
 
 	willShutdown: boolean = false;
 
@@ -82,14 +82,10 @@ class LifecycleService {
 
 class EnvironmentService {
 
-	_serviceBrand: any;
-
 	appSettingsHome: string = "app-settings-home";
 }
 
 class WindowService {
-
-	_serviceBrand: any;
 
 	getCurrentWindowId(): number {
 		return 1;
@@ -97,15 +93,7 @@ class WindowService {
 
 }
 
-class WindowsService {
-
-	_serviceBrand: any;
-
-}
-
 class IntegrityService {
-
-	_serviceBrand: any;
 
 	isPure(): TPromise<IntegrityTestResult> {
 		return TPromise.wrap({
@@ -117,16 +105,12 @@ class IntegrityService {
 
 class BackupService {
 
-	_serviceBrand: any;
-
 	getBackupPath(): TPromise<string> {
 		return TPromise.wrap("some backup path");
 	}
 }
 
 class ThemeService {
-
-	_serviceBrand: any;
 
 	onDidColorThemeChange(): Event<string> {
 		return {} as any;

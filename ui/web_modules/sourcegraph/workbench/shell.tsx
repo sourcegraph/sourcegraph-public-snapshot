@@ -52,7 +52,7 @@ export class Shell extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		return <div className={"vs-dark"} style={{ height: "100%" }} ref={this.domRef}></div>;
+		return <div className="vs-dark" style={{ height: "100%" }} ref={this.domRef}></div>;
 	}
 
 }
