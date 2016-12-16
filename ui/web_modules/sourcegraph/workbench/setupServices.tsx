@@ -64,7 +64,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	return services;
 }
 
-class DummyService {}
+class DummyService { }
 
 class LifecycleService {
 
