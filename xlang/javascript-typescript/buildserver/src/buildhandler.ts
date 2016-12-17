@@ -43,6 +43,16 @@ interface HasURI {
 
 const yarnGlobalDir = "/tmp/tsjs-yarn-global/";
 
+/**
+ * BuildHandler implements the LanguageHandler interface, providing
+ * handler methods for LSP operations. It wraps a TypeScriptService
+ * instance (which also implements the LanguageHandler
+ * interface). Before calling the corresponding method on the
+ * TypeScriptService instance, a BuildHandler method will do the
+ * appropriate dependency resolution and fetching. It then rewrites
+ * file URIs in the response from the TypeScriptService that refer to
+ * files that correspond to fetched dependencies.
+ */
 export class BuildHandler implements LanguageHandler {
 	private remoteFs: FileSystem;
 	private ls: TypeScriptService;

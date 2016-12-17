@@ -2,10 +2,12 @@ import { FileSystem, FileInfo } from 'javascript-typescript-langserver/src/fs';
 import * as filepath from 'path';
 import * as fs from 'fs';
 
-// LayeredFileSystem is a layered file system that builds a composite
-// virtual FS made from the ordered layering of its constituent file
-// systems. File systems earlier in the list take precendence over
-// ones later in the list.
+/**
+ * LayeredFileSystem is a layered file system that builds a composite
+ * virtual FS made from the ordered layering of its constituent file
+ * systems. File systems earlier in the list take precendence over
+ * ones later in the list.
+ */
 export class LayeredFileSystem implements FileSystem {
 	filesystems: FileSystem[];
 
@@ -68,10 +70,12 @@ export class LayeredFileSystem implements FileSystem {
 	}
 }
 
-// LocalRootedFileSystem is a FileSystem implementation backed by the
-// local file system. It differs from the LocalFileSystem class in the
-// language server repository in that it exposes a chrooted filesystem
-// (but don't rely on it to enforce security).
+/**
+ * LocalRootedFileSystem is a FileSystem implementation backed by the
+ * local file system. It differs from the LocalFileSystem class in the
+ * language server repository in that it exposes a chrooted filesystem
+ * (but don't rely on it to enforce security).
+ */
 export class LocalRootedFileSystem implements FileSystem {
 
 	private root: string;
@@ -111,7 +115,9 @@ export class LocalRootedFileSystem implements FileSystem {
 
 }
 
-
+/**
+ * readFile wraps a call to FileSystem.readFile in a Promise.
+ */
 export async function readFile(fs: FileSystem, path: string): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		fs.readFile(path, (err, result) => {
@@ -124,6 +130,9 @@ export async function readFile(fs: FileSystem, path: string): Promise<string> {
 	});
 }
 
+/**
+ * readDir wraps a call to FileSystem.readDir in a Promise.
+ */
 export async function readDir(fs: FileSystem, path: string): Promise<FileInfo[]> {
 	return new Promise<FileInfo[]>((resolve, reject) => {
 		fs.readDir(path, (err, result) => {
@@ -136,6 +145,9 @@ export async function readDir(fs: FileSystem, path: string): Promise<FileInfo[]>
 	});
 }
 
+/**
+ * walkDirs walks the file tree rooted at root in a FileSystem instance (fs), calling the visit function on each directory.
+ */
 export async function walkDirs(fs: FileSystem, root: string, visit: (path: string, dirEntries: FileInfo[]) => Promise<void>): Promise<void> {
 	const dirEntries = await readDir(fs, root);
 	await visit(root, dirEntries);
