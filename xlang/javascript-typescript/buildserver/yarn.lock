@@ -654,11 +654,11 @@ escape-html@~1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/escape-html/-/escape-html-1.0.3.tgz#0258eae4d3d0c0974de1c169188ef0051d1d1988"
 
-escape-string-regexp@1.0.2:
+escape-string-regexp@1.0.2, escape-string-regexp@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.2.tgz#4dbc2fe674e71949caf3fb2695ce7f2dc1d9a8d1"
 
-escape-string-regexp@^1.0.0, escape-string-regexp@^1.0.2, escape-string-regexp@^1.0.5:
+escape-string-regexp@^1.0.0, escape-string-regexp@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
 
@@ -1421,9 +1421,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-"javascript-typescript-langserver@git://github.com/sourcegraph/javascript-typescript-langserver#build":
+"javascript-typescript-langserver@git+https://github.com/sourcegraph/javascript-typescript-langserver#build":
   version "1.0.0"
-  resolved "git://github.com/sourcegraph/javascript-typescript-langserver#0c0af0ff69c19a0ba7ee8cb14246681925e98041"
+  resolved "git+https://github.com/sourcegraph/javascript-typescript-langserver#0c0af0ff69c19a0ba7ee8cb14246681925e98041"
   dependencies:
     "@types/async" "^2.0.32"
     "@types/node" "^6.0.46"
