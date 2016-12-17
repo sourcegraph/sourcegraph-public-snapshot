@@ -12,7 +12,7 @@
         "@types/temp": "^0.8.29",
         "chai": "^3.4.34",
         "commander": "^2.9.0",
-        "javascript-typescript-langserver": "git://github.com/sourcegraph/javascript-typescript-langserver#build",
+        "javascript-typescript-langserver": "git+https://github.com/sourcegraph/javascript-typescript-langserver#build",
         "mkdirp": "^0.5.1",
         "rimraf": "^2.5.4",
         "semver": "^5.3.0",
