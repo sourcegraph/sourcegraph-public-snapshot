@@ -118,5 +118,7 @@ type Hunk {
 	name: String!
 	email: String!
 	date: String!
+	message: String!
+	gravatarHash: String!
 }
 `

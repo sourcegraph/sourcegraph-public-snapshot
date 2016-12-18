@@ -12,9 +12,7 @@ interface Props {
 }
 
 const sx = Object.assign(
-	{
-		color: colors.coolGray3(),
-	},
+	{ color: colors.coolGray3() },
 	typography.size[7],
 );
 
@@ -29,8 +27,8 @@ export function User(props: Props): JSX.Element {
 
 	return <div style={style}>
 		<FlexContainer items="center">
-			<div style={{ marginRight: simple ? whitespace[2] : whitespace[3], marginTop: whitespace[1], float: "left", lineHeight: 0 }}>
-				<Avatar img={avatar} size={simple ? "small" : "medium"} />
+			<div style={{ marginRight: simple ? whitespace[2] : whitespace[3], float: "left", lineHeight: 0 }}>
+				<Avatar img={avatar} size={simple ? "tiny" : "medium"} />
 			</div>
 			<div>
 				<div>{nickname}</div>

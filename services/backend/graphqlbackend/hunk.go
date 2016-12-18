@@ -1,9 +1,16 @@
 package graphqlbackend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+import (
+	"crypto/md5"
+	"fmt"
+	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+)
 
 type authorResolver struct {
-	author *vcs.Signature
+	author       *vcs.Signature
+	gravatarHash string
 }
 
 type hunkResolver struct {
@@ -40,4 +47,18 @@ func (r *hunkResolver) Email() string {
 
 func (r *hunkResolver) Date() string {
 	return r.hunk.Author.Date.String()
+}
+
+func (r *hunkResolver) Message() string {
+	return r.hunk.Message
+}
+
+func (r *hunkResolver) GravatarHash() string {
+	if r.hunk.Author.Email != "" {
+		h := md5.New()
+		h.Write([]byte(strings.ToLower(r.hunk.Author.Email)))
+		return fmt.Sprintf("%x", h.Sum(nil))
+	}
+
+	return ""
 }

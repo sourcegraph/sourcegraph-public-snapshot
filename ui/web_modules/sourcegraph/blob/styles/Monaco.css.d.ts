@@ -28,4 +28,5 @@ export const violet: string;
 export const blue: string;
 export const cyan: string;
 export const green: string;
+export const fadein: string;
 

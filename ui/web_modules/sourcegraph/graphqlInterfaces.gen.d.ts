@@ -89,6 +89,8 @@ declare namespace GQL {
 		name: string;
 		email: string;
 		date: string;
+		message: string;
+		gravatarHash: string;
 	}
 
 	/*

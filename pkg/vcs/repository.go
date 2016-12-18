@@ -107,7 +107,8 @@ type Hunk struct {
 	StartByte int // 0-indexed start byte position (inclusive)
 	EndByte   int // 0-indexed end byte position (exclusive)
 	CommitID
-	Author Signature
+	Author  Signature
+	Message string
 }
 
 var (

@@ -651,6 +651,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 			// git-blame parser above.
 			hunk.CommitID = commit.ID
 			hunk.Author = commit.Author
+			hunk.Message = commit.Message
 		}
 
 		// Consume remaining lines in hunk
