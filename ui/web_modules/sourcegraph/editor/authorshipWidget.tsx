@@ -42,7 +42,7 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 			<a onClick={() => openCommit(props)} {...merge(
 				{ color: colors.coolGray3(), fontFamily: typography.fontStack.code },
 				typography.small,
-			) }>Commit {rev.substr(0, 6)}</a>
+			) }>{rev.substr(0, 6)}</a>
 		</div>
 	</Panel>;
 };

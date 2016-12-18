@@ -2,7 +2,7 @@ import * as React from "react";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import { IEditorMouseEvent } from "vs/editor/browser/editorBrowser.d";
+import { IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser.d";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { Position } from "vs/editor/common/core/position";
@@ -146,6 +146,9 @@ export class Editor implements IDisposable {
 				this._editor.getModel().getLineCount()
 			);
 		}, "");
+		this._editor.addCommand(KeyCode.Escape, () => {
+			this._removeWidgetForID(AuthorshipWidgetID);
+		}, "");
 
 		let editorMenuItems = MenuRegistry.getMenuItems(MenuId.EditorContext);
 		let commandOrder = {
@@ -190,16 +193,6 @@ export class Editor implements IDisposable {
 		}).bind(this));
 	}
 
-	_removeWidgetForID(widgetID: string): void {
-		if (!this._editor || (!this._editor as any).contentWidget) {
-			return;
-		}
-		const contentWidget = (this._editor as any).contentWidgets[widgetID];
-		if (contentWidget) {
-			this._editor.removeContentWidget(contentWidget.widget);
-		}
-	}
-
 	onCursorSelectionChanged(listener: (e: ICursorSelectionChangedEvent) => void): void {
 		this._editor.onDidChangeCursorSelection(listener);
 	}
@@ -235,9 +228,33 @@ export class Editor implements IDisposable {
 		Features.codeLens.toggle();
 
 		this._editor.updateOptions({ codeLens: visible });
+		if (!visible) {
+			this._removeWidgetForID(AuthorshipWidgetID);
+		}
 
 		const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
 		AnalyticsConstants.Events.AuthorsToggle_Clicked.logEvent({ visible, repo, rev, path });
+	}
+
+	// TODO: Abstract editor functions into editor helper class - MKing 12/18/2016
+	private _removeWidgetForID(widgetID: string): void {
+		let widget = this._getWidgetForID(widgetID);
+		if (widget) {
+			this._editor.removeContentWidget(widget);
+		}
+	}
+
+	// TODO: Abstract editor functions into editor helper class - MKing 12/18/2016
+	private _getWidgetForID(widgetID: string): IContentWidget | null {
+		if (!this._editor || (!this._editor as any).contentWidget) {
+			return null;
+		}
+		const contentWidget = (this._editor as any).contentWidgets[widgetID];
+		if (contentWidget && contentWidget.widget) {
+			return contentWidget.widget;
+		}
+
+		return null;
 	}
 
 	public layout(): void {
@@ -250,4 +267,5 @@ export class Editor implements IDisposable {
 			disposable.dispose();
 		});
 	}
+
 }
