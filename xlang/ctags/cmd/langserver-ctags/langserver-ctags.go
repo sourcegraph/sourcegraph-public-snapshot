@@ -77,13 +77,13 @@ func run() error {
 				return err
 			}
 			ctx = ctags.InitCtx(ctx)
-			jsonrpc2.NewConn(ctx, conn, handler)
+			jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), handler)
 		}
 
 	case "stdio":
 		log.Println("reading on stdin, writing on stdout")
 		ctx = ctags.InitCtx(ctx)
-		<-jsonrpc2.NewConn(ctx, stdrwc{}, handler, jsonrpc2.LogMessages(logger)).DisconnectNotify()
+		<-jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), handler, jsonrpc2.LogMessages(logger)).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 

@@ -59,7 +59,7 @@ func init() {
 					if err != nil {
 						log.Fatal("Builtin Go lang server: Accept:", err)
 					}
-					jsonrpc2.NewConn(context.Background(), conn, gobuildserver.NewHandler())
+					jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler())
 				}
 			}()
 		}
