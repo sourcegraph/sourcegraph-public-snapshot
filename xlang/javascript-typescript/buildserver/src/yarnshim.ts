@@ -1,3 +1,10 @@
+/**
+ * @module yarnshim provides a programmatic interface to the
+ * buildhandler to call yarn. It is concurrency-safe (its functions
+ * can be called from multiple processes referencing the same global
+ * yarn directory and/or node_modules directories).
+ */
+
 import * as path from 'path';
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
@@ -17,6 +24,7 @@ const registries = require('yarn/lib/registries').registries;
 const parsePacakgeName = require('yarn/lib/util/parse-package-name').default;
 
 const semver = require('semver');
+const lockfile = require('proper-lockfile');
 
 /*
  * info mimics `yarn info` to return metadata about the specified package.
@@ -81,8 +89,8 @@ export async function infoAlt(remoteFs: FileSystem, cwd: string, globaldir: stri
 		modulesFolder: path.join(overlaydir, "node_modules"),
 		ignoreScripts: true,
 	});
-	const lockfile = await Lockfile.fromDirectory(config.cwd, reporter);
-	const inst = new Install({}, config, reporter, lockfile);
+	const lf = await Lockfile.fromDirectory(config.cwd, reporter);
+	const inst = new Install({}, config, reporter, lf);
 
 	const {
 		requests: depRequests,
@@ -152,8 +160,10 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		modulesFolder: path.join(overlaydir, "node_modules"),
 		ignoreScripts: true,
 	});
-	const lockfile = await Lockfile.fromDirectory(config.cwd, reporter);
-	const inst = new Install({}, config, reporter, lockfile);
+	const globalLockfile = path.join(globaldir, ".lock");
+	const overlayLockfile = path.join(overlaydir, ".lock");
+	const lf = await Lockfile.fromDirectory(config.cwd, reporter);
+	const inst = new Install({}, config, reporter, lf);
 
 	const {
 		requests: depRequests,
@@ -199,20 +209,48 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 	console.error("resolve", patterns.length, (resolveEnd - resolveStart) / 1000.0);
 
 	// fetch
-	const fetchStart = new Date().getTime();
-	inst.markIgnored(ignorePatterns);
-	await inst.fetcher.init();
-	const fetchEnd = new Date().getTime();
-	console.error("fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0)
+	await runWithLockfile(globalLockfile, async () => {
+		const fetchStart = new Date().getTime();
+		inst.markIgnored(ignorePatterns);
+		await inst.fetcher.init();
+		const fetchEnd = new Date().getTime();
+		console.error("fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0)
+	});
 
 	// link
-	const linkStart = new Date().getTime();
-	inst.linker.resolvePeerModules();
-	await inst.linker.copyModules(patterns);
-	const linkEnd = new Date().getTime();
-	console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0)
+	await runWithLockfile(overlayLockfile, async () => {
+		const linkStart = new Date().getTime();
+		inst.linker.resolvePeerModules();
+		await inst.linker.copyModules(patterns);
+		const linkEnd = new Date().getTime();
+		console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0)
+	});
 
 	return Promise.resolve();
+}
+
+async function runWithLockfile(lf: string, run: () => Promise<void>): Promise<void> {
+	await new Promise<void>((resolve, reject) => {
+		lockfile.lock(lf, { realpath: false }, async (err: any, release: () => void) => {
+			try {
+				if (err) {
+					await new Promise<void>((resolve, reject) => {
+						setTimeout(() => {
+							return resolve();
+						}, 200);
+					});
+					await runWithLockfile(lf, run);
+				} else {
+					await run();
+					release();
+				}
+			} catch (e) {
+				release();
+				return reject(e);
+			}
+			return resolve();
+		});
+	});
 }
 
 /*
