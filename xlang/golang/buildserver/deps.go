@@ -42,106 +42,88 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		span.Finish()
 	}()
 
-	// getBuildContext returns a build context whose underlying VFS is
-	// immutable. This means that the VFS does not reflect any changes
-	// made to the HandlerShared's VFS (e.g., after a dep is
-	// fetched). As a result, callers should call getBuildContext to
-	// get a new build context whenever they need to access files/dirs
-	// that might've just been added. (Using immutability lets us
-	// avoid locking for every single VFS op, which yields much better
-	// perf.)
-	getBuildContext := func() *build.Context {
-		return h.OverlayBuildContext(ctx, &build.Context{
-			GOOS:     goos,
-			GOARCH:   goarch,
-			GOPATH:   gopath,
-			GOROOT:   goroot,
-			Compiler: gocompiler,
-		}, false)
-	}
+	bctx := h.OverlayBuildContext(ctx, &build.Context{
+		GOOS:     goos,
+		GOARCH:   goarch,
+		GOPATH:   gopath,
+		GOROOT:   goroot,
+		Compiler: gocompiler,
+	}, false)
 
-	bpkg, err := langserver.ContainingPackage(getBuildContext(), h.FilePath(fileURI))
+	bpkg, err := langserver.ContainingPackage(bctx, h.FilePath(fileURI))
 	if err != nil && !isMultiplePackageError(err) {
 		return err
 	}
 
-	// Separate mutexes for each VFS source URL.
-	var urlMusMu sync.Mutex
-	urlMus := map[string]*sync.Mutex{}
-	urlMu := func(path string) *sync.Mutex {
-		urlMusMu.Lock()
-		mu, ok := urlMus[path]
-		if !ok {
-			mu = new(sync.Mutex)
-			urlMus[path] = mu
-		}
-		urlMusMu.Unlock()
-		return mu
-	}
-
 	err = doDeps(bpkg, 0, func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
-		// If the package exists in the repo, or is vendored, or has
-		// already been fetched, this will succeed.
-		pkg, err := getBuildContext().Import(path, srcDir, mode)
-		if isMultiplePackageError(err) {
-			err = nil
-		}
-		if err == nil {
-			return pkg, nil
-		}
-
-		// If this package resolves to the same repo, then use any
-		// imported package, even if it has errors. The errors would
-		// be caused by the repo itself, not our dep fetching.
-		//
-		// TODO(sqs): if a package example.com/a imports
-		// example.com/a/b and example.com/a/b lives in a separate
-		// repo, then this will break. This is the case for some
-		// azul3d packages, but it's rare.
-		if langserver.PathHasPrefix(path, h.rootImportPath) {
-			if pkg != nil {
-				return pkg, nil
-			}
-			return nil, fmt.Errorf("package %q is inside of workspace root but failed to import: %s", path, err)
-		}
-
-		// Otherwise, it's an external dependency. Fetch the package
-		// and try again.
-		d, err := resolveImportPath(http.DefaultClient, path)
-		if err != nil {
-			return nil, err
-		}
-
-		// If this package resolves to the same repo, then don't fetch
-		// it; it is already on disk. If we fetch it, we might end up
-		// with multiple conflicting versions of the workspace's repo
-		// overlaid on each other.
-		if langserver.PathHasPrefix(d.projectRoot, h.rootImportPath) {
-			return nil, fmt.Errorf("package %q is inside of workspace root, refusing to fetch remotely", path)
-		}
-
-		urlMu := urlMu(d.cloneURL)
-		urlMu.Lock()
-		defer urlMu.Unlock()
-
-		// Check again after waiting.
-		pkg, err = getBuildContext().Import(path, srcDir, mode)
-		if err == nil {
-			return pkg, nil
-		}
-
-		// If not, we hold the lock and we will fetch the dep.
-		if err := h.fetchDep(ctx, d); err != nil {
-			return nil, err
-		}
-
-		pkg, err = getBuildContext().Import(path, srcDir, mode)
-		if isMultiplePackageError(err) {
-			err = nil
-		}
-		return pkg, err
+		return h.findPackage(ctx, bctx, path, srcDir, mode)
 	})
 	return err
+}
+
+// findPackage is a langserver.FindPackageFunc which integrates with the build
+// server. It will fetch dependencies just in time.
+func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode) (*build.Package, error) {
+	// If the package exists in the repo, or is vendored, or has
+	// already been fetched, this will succeed.
+	pkg, err := bctx.Import(path, srcDir, mode)
+	if isMultiplePackageError(err) {
+		err = nil
+	}
+	if err == nil {
+		return pkg, nil
+	}
+
+	// If this package resolves to the same repo, then use any
+	// imported package, even if it has errors. The errors would
+	// be caused by the repo itself, not our dep fetching.
+	//
+	// TODO(sqs): if a package example.com/a imports
+	// example.com/a/b and example.com/a/b lives in a separate
+	// repo, then this will break. This is the case for some
+	// azul3d packages, but it's rare.
+	if langserver.PathHasPrefix(path, h.rootImportPath) {
+		if pkg != nil {
+			return pkg, nil
+		}
+		return nil, fmt.Errorf("package %q is inside of workspace root but failed to import: %s", path, err)
+	}
+
+	// Otherwise, it's an external dependency. Fetch the package
+	// and try again.
+	d, err := resolveImportPath(http.DefaultClient, path)
+	if err != nil {
+		return nil, err
+	}
+
+	// If this package resolves to the same repo, then don't fetch
+	// it; it is already on disk. If we fetch it, we might end up
+	// with multiple conflicting versions of the workspace's repo
+	// overlaid on each other.
+	if langserver.PathHasPrefix(d.projectRoot, h.rootImportPath) {
+		return nil, fmt.Errorf("package %q is inside of workspace root, refusing to fetch remotely", path)
+	}
+
+	urlMu := h.depURLMu(d.cloneURL)
+	urlMu.Lock()
+	defer urlMu.Unlock()
+
+	// Check again after waiting.
+	pkg, err = bctx.Import(path, srcDir, mode)
+	if err == nil {
+		return pkg, nil
+	}
+
+	// If not, we hold the lock and we will fetch the dep.
+	if err := h.fetchDep(ctx, d); err != nil {
+		return nil, err
+	}
+
+	pkg, err = bctx.Import(path, srcDir, mode)
+	if isMultiplePackageError(err) {
+		err = nil
+	}
+	return pkg, err
 }
 
 func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
@@ -293,6 +275,16 @@ func allPackageImportsSorted(pkg *build.Package) []string {
 func isMultiplePackageError(err error) bool {
 	_, ok := err.(*build.MultiplePackageError)
 	return ok
+}
+
+// FetchCommonDeps will fetch our common used dependencies. This is to avoid
+// impacting the first ever typecheck we do in a repo since it will have to
+// fetch the dependency from the internet.
+func FetchCommonDeps() {
+	// github.com/golang/go
+	d, _ := resolveStaticImportPath("time")
+	u, _ := url.Parse(d.cloneURL)
+	_, _ = NewDepRepoVFS(u, d.rev)
 }
 
 // NewDepRepoVFS returns a virtual file system interface for accessing

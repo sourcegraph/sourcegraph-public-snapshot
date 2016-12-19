@@ -42,6 +42,9 @@ func run() error {
 		go debugserver.Start(*profbind)
 	}
 
+	// PERF: Hide latency of fetching golang/go from the first typecheck
+	go buildserver.FetchCommonDeps()
+
 	switch *mode {
 	case "tcp":
 		lis, err := net.Listen("tcp", *addr)

@@ -220,7 +220,7 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 	if !ok {
 		typecheckCacheTotal.WithLabelValues("miss").Inc()
 		res.fset = token.NewFileSet()
-		res.prog, diags, res.err = typecheck(res.fset, bctx, bpkg)
+		res.prog, diags, res.err = typecheck(ctx, res.fset, bctx, bpkg, h.FindPackage)
 		h.mu.Lock()
 		h.cache[k] = res
 		h.mu.Unlock()
@@ -231,7 +231,11 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 }
 
 // TODO(sqs): allow typechecking just a specific file not in a package, too
-func typecheck(fset *token.FileSet, bctx *build.Context, bpkg *build.Package) (*loader.Program, diagnostics, error) {
+func typecheck(ctx context.Context, fset *token.FileSet, bctx *build.Context, bpkg *build.Package, findPackage FindPackageFunc) (*loader.Program, diagnostics, error) {
+	if findPackage == nil {
+		findPackage = defaultFindPackageFunc
+	}
+
 	var typeErrs []error
 	conf := loader.Config{
 		Fset: fset,
@@ -254,7 +258,7 @@ func typecheck(fset *token.FileSet, bctx *build.Context, bpkg *build.Package) (*
 			// MultipleGoErrors. This occurs, e.g., when you have a
 			// main.go with "// +build ignore" that imports the
 			// non-main package in the same dir.
-			bpkg, err := bctx.Import(importPath, fromDir, mode)
+			bpkg, err := findPackage(ctx, bctx, importPath, fromDir, mode)
 			if err != nil && !isMultiplePackageError(err) {
 				return bpkg, err
 			}

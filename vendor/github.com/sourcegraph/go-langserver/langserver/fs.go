@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	opentracing "github.com/opentracing/opentracing-go"
 
@@ -129,4 +131,62 @@ func (h *HandlerShared) readOverlayFile(uri string) (contents []byte, found bool
 	defer h.overlayFSMu.Unlock()
 	contents, found = h.overlayFS[uriToOverlayPath(uri)]
 	return
+}
+
+// AtomicFS wraps a ctxvfs.NameSpace but is safe for concurrent calls to Bind
+// while doing FS operations. It is optimized for "ReadMostly" use-case. IE
+// Bind is a relatively rare call compared to actual FS operations.
+type AtomicFS struct {
+	mu sync.Mutex   // serialize calls to Bind (ie only used by writers)
+	v  atomic.Value // stores the ctxvfs.NameSpace
+}
+
+// NewAtomicFS returns an AtomicFS with an empty wrapped ctxvfs.NameSpace
+func NewAtomicFS() *AtomicFS {
+	fs := &AtomicFS{}
+	fs.v.Store(make(ctxvfs.NameSpace))
+	return fs
+}
+
+// Bind wraps ctxvfs.NameSpace.Bind
+func (a *AtomicFS) Bind(old string, newfs ctxvfs.FileSystem, new string, mode ctxvfs.BindMode) {
+	// We do copy-on-write
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	fs1 := a.v.Load().(ctxvfs.NameSpace)
+	fs2 := make(ctxvfs.NameSpace)
+	for k, v := range fs1 {
+		fs2[k] = v
+	}
+	fs2.Bind(old, newfs, new, mode)
+	a.v.Store(fs2)
+}
+
+func (*AtomicFS) String() string {
+	return "atomicfs"
+}
+
+// Open wraps ctxvfs.NameSpace.Open
+func (a *AtomicFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeekCloser, error) {
+	fs := a.v.Load().(ctxvfs.NameSpace)
+	return fs.Open(ctx, path)
+}
+
+// Stat wraps ctxvfs.NameSpace.Stat
+func (a *AtomicFS) Stat(ctx context.Context, path string) (os.FileInfo, error) {
+	fs := a.v.Load().(ctxvfs.NameSpace)
+	return fs.Stat(ctx, path)
+}
+
+// Lstat wraps ctxvfs.NameSpace.Lstat
+func (a *AtomicFS) Lstat(ctx context.Context, path string) (os.FileInfo, error) {
+	fs := a.v.Load().(ctxvfs.NameSpace)
+	return fs.Lstat(ctx, path)
+}
+
+// ReadDir wraps ctxvfs.NameSpace.ReadDir
+func (a *AtomicFS) ReadDir(ctx context.Context, path string) ([]os.FileInfo, error) {
+	fs := a.v.Load().(ctxvfs.NameSpace)
+	return fs.ReadDir(ctx, path)
 }
