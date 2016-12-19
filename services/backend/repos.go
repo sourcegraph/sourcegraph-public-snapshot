@@ -21,6 +21,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/google"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -728,4 +729,19 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 		}
 	}
 	return false
+}
+
+var indexerAddr = env.Get("SRC_INDEXER", "127.0.0.1:3179", "The address of the indexer service.")
+
+func (s *repos) RefreshIndex(ctx context.Context, repo string) (err error) {
+	if Mocks.Repos.RefreshIndex != nil {
+		return Mocks.Repos.RefreshIndex(ctx, repo)
+	}
+
+	resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + repo)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }

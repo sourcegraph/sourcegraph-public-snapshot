@@ -26,6 +26,9 @@ func repositoryByID(ctx context.Context, id graphql.ID) (nodeResolver, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
+		return nil, err
+	}
 	return &repositoryResolver{repo: repo}, nil
 }
 

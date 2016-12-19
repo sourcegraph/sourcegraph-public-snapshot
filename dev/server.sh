@@ -18,6 +18,7 @@ curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &)
 mkdir -p .bin
 env GOBIN=$PWD/.bin go install sourcegraph.com/sourcegraph/sourcegraph/cmd/...
 env SRC_REPOS_DIR=$HOME/.sourcegraph/repos ./.bin/gitserver &
+env SRC_GIT_SERVERS=127.0.0.1:3178 ./.bin/indexer &
 
 . dev/langservers.lib.bash
 detect_dev_langservers

@@ -73,6 +73,9 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 		}
 		return nil, err
 	}
+	if err := backend.Repos.RefreshIndex(ctx, repo.URI); err != nil {
+		return nil, err
+	}
 	return &repositoryResolver{repo: repo}, nil
 }
 

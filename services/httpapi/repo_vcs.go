@@ -9,6 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
@@ -16,6 +17,9 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 	repoRev := routevar.ToRepoRev(mux.Vars(r))
 	res, err := resolveLocalRepoRev(r.Context(), repoRev)
 	if err != nil {
+		return err
+	}
+	if err := backend.Repos.RefreshIndex(r.Context(), repoRev.Repo); err != nil {
 		return err
 	}
 
