@@ -16,8 +16,7 @@ export WEBPACK_DEV_SERVER_ADDR=${WEBPACK_DEV_SERVER_ADDR:-127.0.0.1:8080}
 curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && npm start &)
 
 mkdir -p .bin
-export GOBIN=$PWD/.bin
-go install sourcegraph.com/sourcegraph/sourcegraph/cmd/...
+env GOBIN=$PWD/.bin go install sourcegraph.com/sourcegraph/sourcegraph/cmd/...
 env SRC_REPOS_DIR=$HOME/.sourcegraph/repos ./.bin/gitserver &
 
 . dev/langservers.lib.bash
