@@ -68,6 +68,7 @@ func main() {
 		resp.Write([]byte("OK"))
 	})
 
+	fmt.Println("indexer: listening on :3179")
 	log.Fatal(http.ListenAndServe(":3179", nil))
 }
 
