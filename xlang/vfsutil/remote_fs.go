@@ -3,12 +3,10 @@ package vfsutil
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/ctxvfs"
@@ -52,11 +50,7 @@ type fsPathCache struct {
 
 // call sends a request to the LSP proxy with tracing information.
 func (fs *RemoteProxyFS) call(ctx context.Context, method, path string, result interface{}) (err error) {
-	t0 := time.Now()
 	span := opentracing.SpanFromContext(ctx)
-	defer func() {
-		span.LogEventWithPayload(method+": "+path, fmt.Sprintf("took %s, error: %v", time.Since(t0), err))
-	}()
 	return fs.Conn.Call(ctx, method, path, result, addTraceMeta(span))
 }
 
