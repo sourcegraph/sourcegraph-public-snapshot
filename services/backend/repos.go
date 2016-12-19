@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	pathpkg "path"
@@ -713,32 +712,4 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 		}
 	}
 	return false
-}
-
-func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (err error) {
-	if Mocks.Repos.EnableWebhook != nil {
-		return Mocks.Repos.EnableWebhook(ctx, op)
-	}
-
-	ctx, done := trace(ctx, "Repos", "EnableWebhook", op, &err)
-	defer done()
-
-	if !github.HasAuthedUser(ctx) {
-		return errors.New("Unauthed user")
-	}
-
-	ctx = github.NewContextWithAuthedClient(ctx)
-	if err := github.ReposFromContext(ctx).CreateHook(ctx, op.URI, &gogithub.Hook{
-		Name:   gogithub.String("web"),
-		Events: []string{"push", "pull_request"},
-		Config: map[string]interface{}{
-			"url":          conf.AppURL.String() + "/.api/webhook/callback",
-			"content_type": "json",
-		},
-		Active: gogithub.Bool(true),
-	}); err != nil {
-		return err
-	}
-
-	return nil
 }

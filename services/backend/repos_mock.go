@@ -27,7 +27,6 @@ type MockRepos struct {
 	ListCommits                 func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
 	ListBranches                func(v0 context.Context, v1 *sourcegraph.ReposListBranchesOp) (*sourcegraph.BranchList, error)
 	ListTags                    func(v0 context.Context, v1 *sourcegraph.ReposListTagsOp) (*sourcegraph.TagList, error)
-	EnableWebhook               func(v0 context.Context, v1 *sourcegraph.RepoWebhookOptions) error
 	ListDeps                    func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
 	ListCommitters              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
 	GetSrclibDataVersionForPath func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
