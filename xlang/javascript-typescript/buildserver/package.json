@@ -3,7 +3,7 @@
     "name": "javascript-typescript-buildserver",
     "scripts": {
         "test": "./node_modules/.bin/mocha -r ts-node/register src/test/**/*.ts && node ./build/src/yarnshim-test.js",
-		"test-ls": "./node_modules/.bin/mocha -r ts-node/register src/test/**/*.ts",
+        "test-ls": "./node_modules/.bin/mocha -r ts-node/register src/test/**/*.ts",
         "test-yarnshim": "node ./build/src/yarnshim-test.js"
     },
     "dependencies": {
