@@ -333,7 +333,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if shouldFetchDeps {
 			for _, uri := range urisInRequest {
 				h.fetchAndSendDepsOnce(uri).Do(func() {
-					if err := h.fetchTransitiveDepsOfFile(ctx, uri); err != nil {
+					if err := h.fetchTransitiveDepsOfFile(ctx, uri, nil, newDepCache()); err != nil {
 						log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
 					}
 				})
@@ -350,7 +350,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 						continue
 					}
 					h.fetchAndSendDepsOnce(d).Do(func() {
-						if err := h.fetchTransitiveDepsOfFile(ctx, d); err != nil {
+						if err := h.fetchTransitiveDepsOfFile(ctx, d, nil, newDepCache()); err != nil {
 							log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
 						}
 					})
