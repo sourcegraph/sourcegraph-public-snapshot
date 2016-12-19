@@ -738,10 +738,14 @@ func (s *repos) RefreshIndex(ctx context.Context, repo string) (err error) {
 		return Mocks.Repos.RefreshIndex(ctx, repo)
 	}
 
-	resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + repo)
-	if err != nil {
-		return err
-	}
-	resp.Body.Close()
+	go func() {
+		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + repo)
+		if err != nil {
+			log15.Error("RefreshIndex failed", "error", err)
+			return
+		}
+		resp.Body.Close()
+	}()
+
 	return nil
 }
