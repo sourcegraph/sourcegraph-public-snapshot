@@ -519,6 +519,9 @@ func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) e
 	cmd.Opt = &opt
 	_, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
+		if vcs.IsRepoNotExist(err) {
+			return err
+		}
 		return fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
 	}
 	return nil
