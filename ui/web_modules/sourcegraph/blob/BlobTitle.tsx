@@ -77,6 +77,7 @@ export class BlobTitle extends React.Component<Props, {}> {
 			height: layout.editorToolbarHeight,
 			zIndex: 1,
 			padding: `${whitespace[2]} ${whitespace[3]}`,
+			width: "100%",
 		}}>
 			<div>
 				<Heading level={6} color="white" compact={true}>

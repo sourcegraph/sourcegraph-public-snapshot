@@ -97,6 +97,7 @@ module.exports = {
 		],
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 		alias: {
+			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
 			"electron": "sourcegraph/workbench/overrides/electron",
 			"vs/workbench/parts/files/browser/explorerViewlet": "sourcegraph/workbench/overrides/explorerViewlet",
 			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",
@@ -106,7 +107,7 @@ module.exports = {
 			"vs/workbench/browser/labels": "sourcegraph/workbench/overrides/labels",
 			"native-keymap": "sourcegraph/workbench/overrides/native-keymap",
 			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
-			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
+			"vs/workbench/browser/parts/editor/noTabsTitleControl": "sourcegraph/workbench/overrides/titleControl",
 		},
 	},
 	devtool: devtool,

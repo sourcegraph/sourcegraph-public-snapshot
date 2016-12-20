@@ -18,7 +18,7 @@ export function setFile(file: URI, provider: IWorkspaceProvider): void {
 	const path = file.path + "/" + file.fragment;
 	const dirs = drop(path.split("/"));
 	const base = dirs.pop();
-	this.setValue(base, dirs.join("/"));
+	this.setValue(base);
 };
 
 export const IconLabel = vs.IconLabel;

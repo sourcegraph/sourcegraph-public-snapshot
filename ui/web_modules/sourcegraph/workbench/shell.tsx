@@ -17,13 +17,13 @@ interface State { };
 // Shell loads the workbench and calls init on it. It transmits data from the
 // React UI layer into the Workbench interface. It is primarily controlled by
 // React Router. It uses code splitting to minimize bundle size.
+@autobind
 export class Shell extends React.Component<Props, State> {
 	workbench: Workbench;
 	services: ServiceCollection;
 
 	private mounted: boolean = false;
 
-	@autobind
 	domRef(domElement: HTMLDivElement): void {
 		if (!domElement) {
 			this.mounted = false;
@@ -40,15 +40,25 @@ export class Shell extends React.Component<Props, State> {
 			}
 			const workspace = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
 			[this.workbench, this.services] = init(domElement, workspace);
+			this.layout();
 		});
 	}
 
 	componentWillMount(): void {
-		window.onresize = () => {
-			if (this.workbench) {
-				this.workbench.layout();
-			}
-		};
+		window.onresize = this.layout;
+	}
+
+	layout(): void {
+		if (!this.workbench) {
+			return;
+		}
+		if (window.innerWidth <= 768) {
+			// Mobile device, width less than 768px.
+			this.workbench.setSideBarHidden(true);
+		} else {
+			this.workbench.setSideBarHidden(false);
+		}
+		this.workbench.layout();
 	}
 
 	componentWillUnmount(): void {

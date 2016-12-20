@@ -6,6 +6,7 @@ import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/edi
 
 import { parseBlobURL, urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
+import { getResource } from "sourcegraph/workbench/utils";
 
 export function configureEditor(editor: EditorPart, resource: URI): void {
 	const stacks = editor.getStacksModel();
@@ -18,12 +19,7 @@ function editorOpened(input: IEditorInput): void {
 	if (!global.window) {
 		return;
 	}
-	let resource;
-	if (input["resource"]) {
-		resource = (input as any).resource;
-	} else {
-		throw "Couldn't find resource.";
-	}
+	const resource = getResource(input);
 	// TODO set workspace on workspace jump.
 	const oldParams = parseBlobURL(document.location.toString());
 	const currentURL = urlToBlob(oldParams.repo, oldParams.rev, oldParams.path);
