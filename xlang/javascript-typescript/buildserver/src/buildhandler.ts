@@ -2,6 +2,9 @@
 
 import * as fs from 'fs';
 import * as rimraf from 'rimraf';
+import * as temp from 'temp';
+import * as path from 'path';
+import * as os from 'os';
 
 import {
 	IConnection,
@@ -29,19 +32,19 @@ import {
 
 import { TypeScriptService } from 'javascript-typescript-langserver/src/typescript-service';
 import { LanguageHandler } from 'javascript-typescript-langserver/src/lang-handler';
-import * as rt from 'javascript-typescript-langserver/src/request-type';
 import { install, info, infoAlt } from './yarnshim';
 import { FileSystem, RemoteFileSystem } from 'javascript-typescript-langserver/src/fs';
 import { LayeredFileSystem, LocalRootedFileSystem, walkDirs } from './vfs';
-import * as temp from 'temp';
-import * as path from 'path';
 import { uri2path } from 'javascript-typescript-langserver/src/util';
+import * as rt from 'javascript-typescript-langserver/src/request-type';
 
 interface HasURI {
 	uri: string;
 }
 
-const yarnGlobalDir = "/tmp/tsjs-yarn-global/";
+const yarnGlobalDir = path.join(os.tmpdir(), "tsjs-yarn-global");
+
+console.error("Using", yarnGlobalDir, "as yarn global directory");
 
 /**
  * BuildHandler implements the LanguageHandler interface, providing
