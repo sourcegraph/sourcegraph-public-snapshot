@@ -112,14 +112,16 @@ export async function infoAlt(remoteFs: FileSystem, cwd: string, globaldir: stri
 	return Promise.reject("could not resolve package," + packageName + ",through alternative means");
 }
 
-const ghURLParser = /^(?:https:\/\/|git\+https:\/\/|git:\/\/)(github\.com(?:\/[^\/#]+){2})(?:\.git)?(?:#([^\s]+))?$/;
+const ghURLParser = /^(?:https:\/\/|git\+https:\/\/|git:\/\/)(?:www\.)?(github\.com(?:\/[^\/#]+){2})(?:#([^\s]+))?$/;
 
-function parseGitHubInfo(cloneURL: string): Info | null {
-	const [match, repoURI, version] = cloneURL.match(ghURLParser);
+export function parseGitHubInfo(cloneURL: string): Info | null {
+	let [match, repoURI, version] = cloneURL.match(ghURLParser);
 	if (!match) {
 		return null;
 	}
-
+	if (repoURI.endsWith(".git")) {
+		repoURI = repoURI.substring(0, repoURI.length - ".git".length);
+	}
 	return {
 		repository: {
 			type: "git",

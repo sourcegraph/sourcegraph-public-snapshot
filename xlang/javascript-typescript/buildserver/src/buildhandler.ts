@@ -32,7 +32,7 @@ import {
 
 import { TypeScriptService } from 'javascript-typescript-langserver/src/typescript-service';
 import { LanguageHandler } from 'javascript-typescript-langserver/src/lang-handler';
-import { install, info, infoAlt } from './yarnshim';
+import { install, info, infoAlt, parseGitHubInfo } from './yarnshim';
 import { FileSystem, RemoteFileSystem } from 'javascript-typescript-langserver/src/fs';
 import { LayeredFileSystem, LocalRootedFileSystem, walkDirs } from './vfs';
 import { uri2path } from 'javascript-typescript-langserver/src/util';
@@ -163,9 +163,12 @@ export class BuildHandler implements LanguageHandler {
 					try {
 						const pkginfo = await info(cwd, yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
 						if (pkginfo.repository && pkginfo.repository.url && pkginfo.repository.type === 'git') {
-							const pkgUri = cleanGitUrl(pkginfo.repository.url);
-							const pkgHead = pkginfo.gitHead;
-							result.uri = makeUri(pkgUri, pkgHead, subpath);
+							const pkgUrlInfo = parseGitHubInfo(pkginfo.repository.url);
+							if (pkgUrlInfo) {
+								const pkgUri = pkgUrlInfo.repository.url
+								const pkgHead = pkginfo.gitHead;
+								result.uri = makeUri(pkgUri, pkgHead, subpath);
+							}
 						}
 					} catch (e) {
 						try {
@@ -253,26 +256,6 @@ export class BuildHandler implements LanguageHandler {
 	didSave(params: DidSaveTextDocumentParams) {
 		return this.ls.didSave(params);
 	}
-}
-
-function cleanGitUrl(url: string): string {
-	if (url.startsWith("git+https://")) {
-		url = url.substr("git+https://".length);
-	}
-	if (url.startsWith("https://")) {
-		url = url.substr("https://".length);
-	}
-	if (url.startsWith("www.")) {
-		url = url.substr("www.".length);
-	}
-	if (!url.startsWith("git://")) {
-		url = "git://" + url;
-	}
-
-	if (url.endsWith(".git")) {
-		url = url.substr(0, url.length - ".git".length);
-	}
-	return url;
 }
 
 function makeUri(repoUri: string, version: string | null, path: string): string {
