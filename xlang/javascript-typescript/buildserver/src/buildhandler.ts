@@ -190,6 +190,9 @@ export class BuildHandler implements LanguageHandler {
 
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
 		let locs: Location[];
+		// First, attempt to get definition before dependencies
+		// fetching is finished. If it fails, wait for dependency
+		// fetching to finish and then retry.
 		try {
 			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
 			locs = await this.ls.getDefinition(params);
@@ -204,6 +207,9 @@ export class BuildHandler implements LanguageHandler {
 
 	async getHover(params: TextDocumentPositionParams): Promise<Hover> {
 		let hover: Hover;
+		// First, attempt to get hover info before dependencies
+		// fetching is finished. If it fails, wait for dependency
+		// fetching to finish and then retry.
 		try {
 			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
 			hover = await this.ls.getHover(params)
