@@ -1358,7 +1358,7 @@ is-obj@^1.0.0:
 
 is-posix-bracket@^0.1.0:
   version "0.1.1"
-  resolved "http://registry.npmjs.org/is-posix-bracket/-/is-posix-bracket-0.1.1.tgz#3334dc79774368e92f016e6fbc0a88f5cd6e6bc4"
+  resolved "https://registry.yarnpkg.com/is-posix-bracket/-/is-posix-bracket-0.1.1.tgz#3334dc79774368e92f016e6fbc0a88f5cd6e6bc4"
 
 is-primitive@^2.0.0:
   version "2.0.0"
@@ -1423,7 +1423,7 @@ jade@0.26.3:
 
 "javascript-typescript-langserver@git+https://github.com/sourcegraph/javascript-typescript-langserver#build":
   version "1.0.0"
-  resolved "git+https://github.com/sourcegraph/javascript-typescript-langserver#0c0af0ff69c19a0ba7ee8cb14246681925e98041"
+  resolved "git+https://github.com/sourcegraph/javascript-typescript-langserver#46638f702f35da44afb2b5f8c46585bf1ae29c49"
   dependencies:
     "@types/async" "^2.0.32"
     "@types/node" "^6.0.46"
@@ -2270,7 +2270,7 @@ regenerator-runtime@^0.10.0:
 
 regex-cache@^0.4.2:
   version "0.4.3"
-  resolved "https://registry.yarnpkg.com/regex-cache/-/regex-cache-0.4.3.tgz#9b1a6c35d4d0dfcef5711ae651e8e9d3d7114145"
+  resolved "http://registry.npmjs.org/regex-cache/-/regex-cache-0.4.3.tgz#9b1a6c35d4d0dfcef5711ae651e8e9d3d7114145"
   dependencies:
     is-equal-shallow "^0.1.3"
     is-primitive "^2.0.0"
