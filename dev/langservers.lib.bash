@@ -5,6 +5,7 @@ LS_ROOT="${HOME}/.sourcegraph/lang"
 detect_dev_langservers() {
 	# Go (builtin)
 	export LANGSERVER_GO=${LANGSERVER_GO-:builtin:}
+	export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-:builtin:}
 
 	CSS_LS_DIR="${LS_ROOT}/css-langserver"
 	if [[ -d "$CSS_LS_DIR" ]]; then
