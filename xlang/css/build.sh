@@ -14,7 +14,7 @@ fi
 npm install
 ./node_modules/.bin/tsc -p .
 
-cd ..
+cd ../..
 docker build -t $IMAGE:$TAG .
 gcloud docker -- push $IMAGE:$TAG
 
