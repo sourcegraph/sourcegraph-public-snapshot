@@ -7,6 +7,11 @@ import { Features } from "sourcegraph/util/features";
 
 export const modes = new Set<string>(["c", "go", "ruby", "javascript", "typescript"]);
 
+if (Features.langCSS.isEnabled()) {
+	modes.add("css");
+	modes.add("less");
+	modes.add("scss");
+}
 if (Features.langPHP.isEnabled()) {
 	modes.add("php");
 }

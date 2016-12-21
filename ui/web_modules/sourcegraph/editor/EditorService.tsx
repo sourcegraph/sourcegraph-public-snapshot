@@ -192,6 +192,12 @@ function getModeByFilename(path: string): string {
 	if (path.endsWith(".css")) {
 		return "css";
 	}
+	if (path.endsWith(".less")) {
+		return "less";
+	}
+	if (path.endsWith(".scss")) {
+		return "scss";
+	}
 	if (path.endsWith(".php")) {
 		return "php";
 	}
