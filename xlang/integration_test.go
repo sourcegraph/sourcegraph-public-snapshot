@@ -155,6 +155,13 @@ func TestIntegration(t *testing.T) {
 				"pkg/util/workqueue/queue.go:113:15": "struct field L sync.Locker",
 			},
 		},
+		"git://github.com/uber-go/atomic?3b8db5e93c4c02efbc313e17b2e796b0914a01fb": {
+			mode: "go",
+			wantDefinition: map[string]string{
+				// glide.lock specifies testify to something other than HEAD
+				"atomic_test.go:32:12": "git://github.com/stretchr/testify?d77da356e56a7428ad25149ca77381849a6a5232#require/require.go:58:6",
+			},
+		},
 	}
 	for rootPath, test := range tests {
 		root, err := uri.Parse(rootPath)
