@@ -298,7 +298,7 @@ async function fetchRequestFromRemoteFS(inst: Install, excludePatterns: string[]
 	// exclude package names that are in install args
 	const excludeNames: string[] = [];
 	for (const pattern of excludePatterns) {
-		// can't extract a package name from this
+		// can't extract a package name from inst
 		if (PackageRequest.getExoticResolver(pattern)) {
 			continue;
 		}
@@ -361,7 +361,7 @@ async function fetchRequestFromRemoteFS(inst: Install, excludePatterns: string[]
 
 	// inherit root flat flag
 	if (manifest.flat) {
-		this.flags.flat = true;
+		inst.flags.flat = true;
 	}
 
 	return {
@@ -403,9 +403,7 @@ interface Install {
 	lockfile: {
 		getLocked: any;
 	};
-	flags: {
-		ignoreOptional?: boolean;
-	};
+	flags: Flags;
 	rootPatternsToOrigin: { [key: string]: string; };
 	rootManifestRegistries: any[];
 	config: Config;
@@ -415,6 +413,27 @@ interface Install {
 	resolver: PackageResolver;
 
 	init: () => Promise<Array<string>>;
+}
+
+interface Flags {
+	// install
+	ignorePlatform: boolean;
+	ignoreEngines: boolean;
+	ignoreScripts: boolean;
+	ignoreOptional: boolean;
+	har: boolean;
+	force: boolean;
+	flat: boolean;
+	lockfile: boolean;
+	pureLockfile: boolean;
+	skipIntegrity: boolean;
+
+	// add
+	peer: boolean;
+	dev: boolean;
+	optional: boolean;
+	exact: boolean;
+	tilde: boolean;
 }
 
 interface InstallCwdRequest {
