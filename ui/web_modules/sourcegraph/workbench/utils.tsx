@@ -8,3 +8,5 @@ export function getResource(input: IEditorInput): URI {
 		throw "Couldn't find resource.";
 	}
 }
+
+export const NoopDisposer = { dispose: () => {/* */ } };

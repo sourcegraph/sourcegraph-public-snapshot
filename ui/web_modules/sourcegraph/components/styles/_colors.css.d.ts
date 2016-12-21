@@ -92,6 +92,7 @@ export const c_white_10: string;
 export const c_white_05: string;
 export const c_white_025: string;
 export const c_white_0125: string;
+export const c_cool_gray2: string;
 export const blue: string;
 export const blue_8: string;
 export const blue_5: string;

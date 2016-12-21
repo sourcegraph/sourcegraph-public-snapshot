@@ -1,4 +1,5 @@
 import Event from "vs/base/common/event";
+import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { DynamicStandaloneServices } from "vs/editor/browser/standalone/standaloneServices";
@@ -22,6 +23,7 @@ import { IThemeService } from "vs/workbench/services/themes/common/themeService"
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
 import { ConfigurationService } from "sourcegraph/workbench/config";
+import { NoopDisposer } from "sourcegraph/workbench/utils";
 
 // Setup services for the workbench. A lot of the ones required by Workbench
 // aren't necessary for Sourcegraph at this point. For instance,
@@ -31,7 +33,6 @@ import { ConfigurationService } from "sourcegraph/workbench/config";
 // Others, like ThemeService, will probably be implemented someday, so users
 // can customize color themes. When they are implemented, we can either use the
 // VSCode ones and override some methods, or we can write our own from scratch.
-
 export function setupServices(domElement: HTMLDivElement, workspace: URI): ServiceCollection {
 	const dynServices = new DynamicStandaloneServices(domElement, {});
 	const services = (dynServices as any)._serviceCollection;
@@ -70,8 +71,8 @@ class LifecycleService {
 
 	willShutdown: boolean = false;
 
-	onWillShutdown(): any {
-		//
+	onWillShutdown(): IDisposable {
+		return NoopDisposer;
 	}
 
 	onShutdown(): any {
@@ -83,6 +84,7 @@ class LifecycleService {
 class EnvironmentService {
 
 	appSettingsHome: string = "app-settings-home";
+
 }
 
 class WindowService {
@@ -113,7 +115,7 @@ class BackupService {
 class ThemeService {
 
 	onDidColorThemeChange(): Event<string> {
-		return {} as any;
+		return NoopDisposer as any;
 	}
 
 	getColorTheme(): string {

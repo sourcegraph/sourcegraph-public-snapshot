@@ -1,7 +1,7 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_20, c_black_10, c_purple from colors;
+@value c_cool_gray2, c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_20, c_black_10, c_purple from colors;
 
 @value font_size_7 from vars;
 
@@ -327,6 +327,7 @@
 /* File tree */
 :global .explorer-folders-view .monaco-tree-row {
 	line-height: 30px;
+	font-size: 1rem;
 }
 :global .vs-dark .explorer-folders-view .monaco-tree .monaco-tree-rows > .monaco-tree-row.has-children > .content:before {
 	background-image: url('data:image/svg+xml, <svg viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M10.656375,18.1633125 C10.3635,18.4569375 9.888375,18.4569375 9.59475,18.1640625 C9.3015,17.8711875 9.3015,17.3956875 9.594375,17.1028125 L14.696625,12.0065625 L9.594375,6.9099375 C9.3015,6.6166875 9.3015,6.1415625 9.59475,5.8486875 C9.888375,5.5554375 10.3635,5.5558125 10.656375,5.8494375 L16.289625,11.4759375 C16.582875,11.7684375 16.583625,12.2428125 16.291125,12.5356875 C16.290375,12.5360625 16.290375,12.5364375 16.289625,12.5368125 L10.656375,18.1633125 Z" id="Fill" fill="white"></path></svg>');
@@ -394,8 +395,7 @@
 :global .monaco-workbench > .part > .composite.title {
 	height: 65px;
 	box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 6px 0px;
-	background: rgb(52, 73, 102);
-	padding-left: 2rem;
+	background: c_cool_gray2;
 	position: relative;
 	z-index: 1;
 }
@@ -410,14 +410,40 @@
 	letter-spacing: 0px;
 	vertical-align: middle;
 	line-height: 65px;
-	color: white !important;
+	color: rgba(213,229,242,1) !important;
 	text-transform: initial !important;
 }
 
 :global .monaco-tree .monaco-tree-wrapper .monaco-tree-rows {
-	background: rgb(52, 73, 102)
+	background: c_cool_gray2;
+	color: rgba(213,229,242,1);
 }
 
 :global .monaco-sash.vertical {
 	display: none;
+}
+
+:global .monaco-workbench > .part.editor > .content > .one-editor-silo > .container > .title {
+	overflow: initial !important;
+}
+
+:global #workbench\.parts\.editor {
+	box-shadow: -2px 0 3px 0px rgba(0,0,0,0.1);
+}
+
+:global .monaco-menu-container .monaco-menu {
+	background: white;
+	border-radius: 3px;
+}
+
+:global .vs-dark .monaco-workbench .editor-one.monaco-editor-background {
+	background: c_cool_dark_gray;
+}
+
+:global .vs-dark .monaco-workbench .editor.part.empty.monaco-editor-background {
+	background: c_cool_dark_gray;
+}
+
+:global .monaco-workbench > .part.sidebar > .content {
+	background: c_cool_gray2;
 }

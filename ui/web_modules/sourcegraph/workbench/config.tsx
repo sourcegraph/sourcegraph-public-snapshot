@@ -1,3 +1,4 @@
+import { IDisposable } from "vs/base/common/lifecycle";
 import { IModelService } from "vs/editor/common/services/modelService";
 import { IModeService } from "vs/editor/common/services/modeService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
@@ -10,6 +11,7 @@ import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { layout } from "sourcegraph/components/utils";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
 import { Features } from "sourcegraph/util/features";
+import { NoopDisposer } from "sourcegraph/workbench/utils";
 
 // Set the height of files in the file tree explorer.
 (FileRenderer as any).ITEM_HEIGHT = 30;
@@ -68,7 +70,7 @@ export class ConfigurationService {
 		};
 	}
 
-	onDidUpdateConfiguration(): void {
-		//
+	onDidUpdateConfiguration(): IDisposable {
+		return NoopDisposer;
 	}
 }

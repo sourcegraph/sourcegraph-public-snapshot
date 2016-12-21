@@ -23,7 +23,10 @@ function editorOpened(input: IEditorInput): void {
 	// TODO set workspace on workspace jump.
 	const oldParams = parseBlobURL(document.location.toString());
 	const currentURL = urlToBlob(oldParams.repo, oldParams.rev, oldParams.path);
-	const {repo, rev, path} = URIUtils.repoParams(resource);
+	let {repo, rev, path} = URIUtils.repoParams(resource);
+	if (rev === "HEAD") {
+		rev = null;
+	}
 	const url = urlToBlob(repo, rev, path);
 	if (url === currentURL) {
 		return;
