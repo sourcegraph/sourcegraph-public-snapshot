@@ -4,8 +4,16 @@ import * as ReactDOM from "react-dom";
 import { Heading, Panel, User } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { URIUtils } from "sourcegraph/core/uri";
+import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Services } from "sourcegraph/workbench/services";
+import { CodeEditor } from "vs/editor/browser/codeEditor";
+import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IContentWidget, IContentWidgetPosition } from "vs/editor/browser/editorBrowser.d";
+import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
+import { CommandsRegistry } from "vs/platform/commands/common/commands";
+import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 
 export const AuthorshipWidgetID = "contentwidget.authorship.widget";
 
@@ -36,7 +44,9 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 				right: whitespace[3],
 				top: whitespace[3],
 			}}>
-				<Close color={colors.coolGray3()} width={14} />
+				<a>
+					<Close color={colors.coolGray3()} width={14} />
+				</a>
 			</div>
 			<Heading level={6} style={{ marginTop: whitespace[3] }}>{message}</Heading>
 			<a onClick={() => openCommit(props)} {...merge(
@@ -48,13 +58,10 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 };
 
 export class AuthorshipWidget implements IContentWidget {
-	private data: GQL.IHunk;
 	private domNode: HTMLElement;
-	private element: JSX.Element;
 
-	constructor(data: GQL.IHunk, element: JSX.Element) {
-		this.data = data;
-		this.element = element;
+	constructor(private blame: GQL.IHunk, private element: JSX.Element) {
+		//
 	};
 
 	getId(): string {
@@ -71,13 +78,49 @@ export class AuthorshipWidget implements IContentWidget {
 	}
 
 	getPosition(): IContentWidgetPosition {
-		const {data} = this;
 		return {
 			position: {
-				lineNumber: data.startLine,
-				column: data.startByte,
+				lineNumber: this.blame.startLine,
+				column: this.blame.startByte,
 			},
 			preference: [0],
 		};
 	};
+}
+
+let authorWidget: AuthorshipWidget;
+
+function showAuthorshipPopup(accessor: ServicesAccessor, args: GQL.IHunk): void {
+	removeWidget();
+
+	const editor = getEditorInstance();
+
+	const model = editor.getModel();
+	args.startByte = model.getLineFirstNonWhitespaceColumn(args.startLine);
+	const {repo, rev} = URIUtils.repoParams(editor.getModel().uri);
+
+	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={args} repo={repo} rev={rev || ""} onClose={removeWidget} />;
+	authorWidget = new AuthorshipWidget(args, authorshipCodeLensElement);
+
+	addListeners(editor);
+	editor.addContentWidget(authorWidget);
+	AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(args);
+}
+
+CommandsRegistry.registerCommand("codelens.authorship.commit", showAuthorshipPopup);
+
+export function removeWidget(): void {
+	if (!authorWidget) {
+		return;
+	}
+	const editor = getEditorInstance();
+	editor.removeContentWidget(authorWidget);
+}
+
+function addListeners(editor: ICodeEditor): void {
+	editor.onMouseUp((e: IEditorMouseEvent) => {
+		if (e.target.detail !== AuthorshipWidgetID) {
+			removeWidget();
+		}
+	});
 }

@@ -1,3 +1,4 @@
+import "sourcegraph/editor/authorshipWidget";
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
@@ -18,7 +19,7 @@ import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { configureEditor } from "sourcegraph/editor/config";
 import { configurePostStartup } from "sourcegraph/workbench/config";
-import { setupServices } from "sourcegraph/workbench/setupServices";
+import { setupServices } from "sourcegraph/workbench/services";
 
 // init creates the editor interface.
 export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {

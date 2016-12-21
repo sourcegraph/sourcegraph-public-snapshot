@@ -2,11 +2,13 @@ import * as React from "react";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import { IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser.d";
+import { CodeEditor } from "vs/editor/browser/codeEditor";
+import { ICodeEditor, IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { Position } from "vs/editor/common/core/position";
 import { ICursorSelectionChangedEvent, IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
+import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
@@ -23,6 +25,7 @@ import { createEditor } from "sourcegraph/editor/setup";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
+import { Services } from "sourcegraph/workbench/services";
 
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
@@ -268,4 +271,13 @@ export class Editor implements IDisposable {
 		});
 	}
 
+}
+
+export function getEditorInstance(): ICodeEditor {
+	const editorService = Services.get(ICodeEditorService) as ICodeEditorService;
+	const editor = editorService.getCodeEditor("vs.editor.ICodeEditor:1");
+	if (!(editor instanceof CodeEditor)) {
+		throw "Expected editor to be instance of code editor";
+	}
+	return editor;
 }

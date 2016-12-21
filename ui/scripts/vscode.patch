@@ -549,3 +549,35 @@ index 6b2b3aff4..b837561d7 100644
  				rejects.join('\n')
  			));
  		}
+diff --git a/ui/node_modules/vscode/src/vs/base/browser/dom.ts b/ui/node_modules/vscode/src/vs/base/browser/dom.ts
+index ab8b9e263..b668504ab 100644
+--- a/ui/node_modules/vscode/src/vs/base/browser/dom.ts
++++ b/ui/node_modules/vscode/src/vs/base/browser/dom.ts
+@@ -61,11 +61,13 @@ let lastStart: number, lastEnd: number;
+ function _findClassName(node: HTMLElement, className: string): void {
+ 
+ 	let classes = node.className;
++	if (<any>classes instanceof SVGAnimatedString) {
++		classes = (<any>classes).baseVal;
++	}
+ 	if (!classes) {
+ 		lastStart = -1;
+ 		return;
+ 	}
+-
+ 	className = className.trim();
+ 
+ 	let classesLen = classes.length,
+diff --git a/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts b/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
+index 48515ce0c..468cc8506 100644
+--- a/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
++++ b/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
+@@ -210,7 +210,7 @@ export class EditorGroupsControl implements IEditorGroupsControl, IVerticalSashL
+ 
+ 	private registerListeners(): void {
+ 		this.toDispose.push(this.stacks.onModelChanged(e => this.onStacksChanged(e)));
+-		this.toDispose.push(this.configurationService.onDidUpdateConfiguration(e => this.onConfigurationUpdated(e.config, true)));
++		this.toDispose.push(this.configurationService.onDidUpdateConfiguration(e => this.onConfigurationUpdated(e.config, false)));
+ 		this.extensionService.onReady().then(() => this.onExtensionsReady());
+ 	}
+ 

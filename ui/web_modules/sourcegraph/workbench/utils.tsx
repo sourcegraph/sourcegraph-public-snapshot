@@ -10,3 +10,9 @@ export function getResource(input: IEditorInput): URI {
 }
 
 export const NoopDisposer = { dispose: () => {/* */ } };
+
+export interface PathSpec {
+	repo: string;
+	rev: string | null;
+	path: string;
+}

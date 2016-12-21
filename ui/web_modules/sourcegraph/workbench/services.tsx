@@ -7,7 +7,7 @@ import { ITextModelResolverService } from "vs/editor/common/services/resolverSer
 import { IBackupService } from "vs/platform/backup/common/backup";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
-import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
+import { IInstantiationService, ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
@@ -22,8 +22,10 @@ import { TextModelResolverService } from "vs/workbench/services/textmodelResolve
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
-import { ConfigurationService } from "sourcegraph/workbench/config";
+import { ConfigurationService } from "sourcegraph/workbench/ConfigurationService";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
+
+export let Services: ServicesAccessor;
 
 // Setup services for the workbench. A lot of the ones required by Workbench
 // aren't necessary for Sourcegraph at this point. For instance,
@@ -61,6 +63,8 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 
 	const viewReg = (Registry.as(viewKey.Viewlets) as ViewletRegistry);
 	viewReg.setDefaultViewletId(VIEWLET_ID);
+
+	Services = services;
 
 	return services;
 }
