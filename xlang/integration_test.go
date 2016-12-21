@@ -49,15 +49,18 @@ func TestIntegration(t *testing.T) {
 			mode: "go",
 			pinDepReposToRev: map[string]string{
 				"https://github.com/stretchr/testify": "976c720a22c8eb4eb6a0b4348ad85ad12491a506",
-				"https://gopkg.in/check.v1.git":       "4f90aeace3a26ad7021961c297b22c42160c7b25",
-				"https://gopkg.in/yaml.v2.git":        "a5b47d31c556af34a302ce5d659e6fea44d90de0",
+				"https://github.com/go-check/check":   "4f90aeace3a26ad7021961c297b22c42160c7b25",
+				"https://github.com/go-yaml/yaml":     "a5b47d31c556af34a302ce5d659e6fea44d90de0",
 			},
 			wantHover: map[string]string{
 				"config/convert.go:262:26": "func ParseBase2Bytes(s string) (Base2Bytes, error)", // vendored
+				"config/vendor/github.com/coreos/ignition/config/vendor/github.com/coreos/go-semver/semver/semver_test.go:287:27": "func Marshal(in interface{}) (out []byte, err error)",
 			},
 			wantDefinition: map[string]string{
 				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6", // vendored TODO(sqs): really want the below result which has the non-vendored path as well, need to implement that
 				//"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 git://github.com/alecthomas/units#bytes.go:30:6", // vendored
+
+				"config/vendor/github.com/coreos/ignition/config/vendor/github.com/coreos/go-semver/semver/semver_test.go:287:27": "git://github.com/go-yaml/yaml?v2#yaml.go:138:6", // diff repo
 			},
 			wantXDefinition: map[string]string{
 				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 attr_package:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units attr_packageName:units name:ParseBase2Bytes vendor:true",

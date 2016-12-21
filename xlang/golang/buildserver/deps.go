@@ -163,6 +163,7 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 
 	h.HandlerShared.Mu.Lock()
 	h.FS.Bind(oldPath, fs, "/", ctxvfs.BindAfter)
+	h.deps = append(h.deps, d)
 	h.HandlerShared.Mu.Unlock()
 
 	return nil

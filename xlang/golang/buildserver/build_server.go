@@ -56,6 +56,7 @@ type BuildHandler struct {
 	mu                    sync.Mutex
 	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
 	depURLMus             map[string]*sync.Mutex
+	deps                  []*directory
 	pinnedDepsOnce        sync.Once
 	pinnedDeps            pinnedPkgs
 	langserver.HandlerCommon
@@ -117,6 +118,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	h.init = init
 	h.fetchAndSendDepsOnces = nil
 	h.depURLMus = nil
+	h.deps = nil
 	h.pinnedDepsOnce = sync.Once{}
 	h.pinnedDeps = nil
 	return nil
@@ -419,28 +421,31 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 		if gopathSrcDir := path.Join(gopath, "src"); langserver.PathHasPrefix(u.Path, gopathSrcDir) {
 			p := langserver.PathTrimPrefix(u.Path, gopathSrcDir) // "github.com/foo/bar/baz/qux.go"
 
-			// TODO(sqs) HACK to make
-			// golang.org/x/... work. Better way is to record
-			// where we fetched this from.
-			if strings.HasPrefix(p, "golang.org/x/") {
-				p = "github.com/golang/" + strings.TrimPrefix(p, "golang.org/x/")
+			// Go through the list of directories we have
+			// mounted. We make a copy instead of holding the lock
+			// in the for loop to avoid holding the lock for
+			// longer than necessary.
+			h.HandlerShared.Mu.Lock()
+			deps := make([]*directory, len(h.deps))
+			copy(deps, h.deps)
+			h.HandlerShared.Mu.Unlock()
+			var d *directory
+			for _, dep := range deps {
+				if strings.HasPrefix(p, dep.projectRoot) {
+					d = dep
+				}
 			}
-			if p == "google.golang.org/grpc" {
-				p = "github.com/google/grpc-go"
-			}
+			if d != nil {
+				rev := d.rev
+				if rev == "" {
+					rev = "HEAD"
+				}
 
-			// TODO(sqs): special-case github.com/ repos for now,
-			// implement others soon...need to know where the
-			// cutoff is between repo and subtree, which we
-			// compute in deps.go.
-			if strings.HasPrefix(p, "github.com/") {
-				parts := strings.SplitN(p, "/", 4)
-				if len(parts) >= 3 {
-					var path string
-					if len(parts) == 4 {
-						path = parts[3]
-					}
-					return fmt.Sprintf("git://%s/%s/%s?HEAD#%s", parts[0], parts[1], parts[2], path), nil
+				i := strings.Index(d.cloneURL, "://")
+				if i >= 0 {
+					repo := strings.TrimSuffix(d.cloneURL[i+len("://"):], "."+d.vcs)
+					path := strings.TrimPrefix(strings.TrimPrefix(p, d.projectRoot), "/")
+					return fmt.Sprintf("%s://%s?%s#%s", d.vcs, repo, rev, path), nil
 				}
 			}
 		}
