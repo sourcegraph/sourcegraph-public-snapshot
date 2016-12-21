@@ -41,7 +41,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 
@@ -264,13 +263,6 @@ func Main() error {
 
 	// Connection test
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", appURL))
-
-	// Start background repo updater worker.
-	repoUpdaterCtx, err := authenticateScopedContext(context.Background(), []string{"internal:repoupdater"})
-	if err != nil {
-		return err
-	}
-	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
 
 	select {}
 }

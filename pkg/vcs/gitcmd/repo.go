@@ -474,29 +474,6 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 	return diff, nil
 }
 
-// UpdateEverything updates all branches, tags, etc., to match the
-// default remote repository.
-func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: UpdateEverything")
-	span.SetTag("Opt", opt)
-	defer span.Finish()
-
-	r.editLock.Lock()
-	defer r.editLock.Unlock()
-
-	cmd := gitserver.DefaultClient.Command("git", "remote", "update", "--prune")
-	cmd.Repo = r.URL
-	cmd.Opt = &opt
-	_, stderr, err := cmd.DividedOutput(ctx)
-	if err != nil {
-		if vcs.IsRepoNotExist(err) {
-			return err
-		}
-		return fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
-	}
-	return nil
-}
-
 func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag(path, opt)

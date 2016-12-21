@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -16,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -1209,99 +1207,6 @@ func TestOpen(t *testing.T) {
 
 	dir := initGitRepository(t)
 	gitcmd.Open(dir)
-}
-
-func TestClone(t *testing.T) {
-	t.Parallel()
-
-	url := initGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty")
-	dir := path.Join(makeTmpDir(t, "git-clone"), "repo")
-	if err := gitserver.DefaultClient.Clone(context.Background(), dir, url, nil); err != nil {
-		t.Errorf("Clone(%q, %q): %s", url, dir, err)
-	}
-}
-
-func TestRepository_UpdateEverything(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		vcs, baseDir, headDir string
-
-		// newCmds should commit a file "newfile" in the repository
-		// root and tag the commit with "second". This is used to test
-		// that UpdateEverything picks up the new file from the
-		// mirror's origin.
-		newCmds []string
-	}{
-		{
-			vcs: "git", baseDir: initGitRepositoryWorkingCopy(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z --allow-empty", "git tag initial"), headDir: path.Join(makeTmpDir(t, "git-clone"), "repo"),
-			newCmds: []string{"touch newfile", "git add newfile", "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m newfile --author='a <a@a.com>' --date 2006-01-02T15:04:05Z", "git tag second"},
-		},
-	}
-
-	for _, test := range tests {
-		if err := gitserver.DefaultClient.Clone(context.Background(), test.headDir, test.baseDir, nil); err != nil {
-			t.Errorf("Clone(%q, %q): %s", test.baseDir, test.headDir, err)
-			continue
-		}
-
-		r := gitcmd.Open(test.headDir)
-
-		initial, err := r.ResolveRevision(ctx, "initial")
-		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "initial", err)
-			continue
-		}
-		fs1 := vcs.FileSystem(r, initial)
-
-		// newfile does not yet exist in either the mirror or origin.
-		_, err = fs1.Stat(ctx, "newfile")
-		if !os.IsNotExist(err) {
-			t.Errorf("%s: fs1.Stat(newfile): got err %v, want os.IsNotExist", test.vcs, err)
-			continue
-		}
-
-		// run the newCmds to create the new file in the origin repository (NOT
-		// the mirror repository; we want to test that UpdateEverything updates the
-		// mirror repository).
-		for _, cmd := range test.newCmds {
-			c := exec.Command("bash", "-c", cmd)
-			c.Dir = test.baseDir
-			out, err := c.CombinedOutput()
-			if err != nil {
-				t.Fatalf("%s: exec `%s` failed: %s. Output was:\n\n%s", test.vcs, cmd, err, out)
-			}
-		}
-		makeGitRepositoryBare(t, test.baseDir)
-
-		// update the mirror.
-		if err := r.UpdateEverything(ctx, vcs.RemoteOpts{}); err != nil {
-			t.Errorf("%s: UpdateEverything: %s", test.vcs, err)
-			continue
-		}
-
-		// reopen the mirror because the tags/commits changed (after
-		// UpdateEverything) and we currently have no way to reload the existing
-		// repository.
-		r = gitcmd.Open(test.headDir)
-
-		// newfile should exist in the mirror now.
-		second, err := r.ResolveRevision(ctx, "second")
-		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q): %s", test.vcs, "second", err)
-			continue
-		}
-		fs2 := vcs.FileSystem(r, second)
-		if err != nil {
-			t.Errorf("%s: FileSystem(%q): %s", test.vcs, second, err)
-			continue
-		}
-		_, err = fs2.Stat(ctx, "newfile")
-		if err != nil {
-			t.Errorf("%s: fs2.Stat(newfile): got err %v, want nil", test.vcs, err)
-			continue
-		}
-	}
 }
 
 // initGitRepository initializes a new Git repository and runs cmds in a new

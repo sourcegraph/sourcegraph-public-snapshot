@@ -28,7 +28,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
@@ -582,22 +581,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res 
 		return nil, err
 	}
 
-	repoMaybeEnqueueUpdate(ctx, repo)
-
 	return repo, nil
-}
-
-// repoMaybeEnqueueUpdate enqueues an update as the current user if the repo
-// is a Mirror.
-func repoMaybeEnqueueUpdate(ctx context.Context, repo *sourcegraph.Repo) {
-	if !repo.Mirror {
-		return
-	}
-	var asUser *sourcegraph.UserSpec
-	if actor := authpkg.ActorFromContext(ctx); actor.UID != "" {
-		asUser = actor.UserSpec()
-	}
-	repoupdater.Enqueue(repo.ID, asUser)
 }
 
 func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRepo) (*sourcegraph.Repo, error) {

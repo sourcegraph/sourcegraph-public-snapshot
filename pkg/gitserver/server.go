@@ -1,8 +1,6 @@
 package gitserver
 
 import (
-	"bytes"
-	"fmt"
 	"net"
 	"os/exec"
 	"path"
@@ -52,9 +50,6 @@ func (s *Server) processRequests(requests <-chan *request) {
 	for req := range requests {
 		if req.Exec != nil {
 			go s.handleExecRequest(req.Exec)
-		}
-		if req.Create != nil {
-			go s.handleCreateRequest(req.Create)
 		}
 	}
 }
@@ -173,81 +168,4 @@ var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 func init() {
 	prometheus.MustRegister(execRunning)
 	prometheus.MustRegister(execDuration)
-}
-
-// handleCreateRequest handles a create request.
-func (s *Server) handleCreateRequest(req *createRequest) {
-	start := time.Now()
-	status := ""
-
-	defer recoverAndLog()
-	defer close(req.ReplyChan)
-	defer func() { defer observeCreate(start, status) }()
-
-	dir := path.Join(s.ReposDir, req.Repo)
-	s.cloningMu.Lock()
-	if _, ok := s.cloning[dir]; ok {
-		s.cloningMu.Unlock()
-		req.ReplyChan <- &createReply{CloneInProgress: true}
-		status = "clone-in-progress"
-		return
-	}
-	if repoExists(dir) {
-		s.cloningMu.Unlock()
-		req.ReplyChan <- &createReply{RepoExist: true}
-		status = "repo-exists"
-		return
-	}
-
-	// We'll take this repo and start cloning it.
-	// Mark it as being cloned so no one else starts to.
-	s.cloning[dir] = struct{}{}
-	s.cloningMu.Unlock()
-
-	defer func() {
-		s.cloningMu.Lock()
-		delete(s.cloning, dir)
-		s.cloningMu.Unlock()
-	}()
-
-	if req.MirrorRemote != "" {
-		cmd := exec.Command("git", "clone", "--mirror", req.MirrorRemote, dir)
-
-		var outputBuf bytes.Buffer
-		cmd.Stdout = &outputBuf
-		cmd.Stderr = &outputBuf
-		if err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
-			req.ReplyChan <- &createReply{Error: fmt.Sprintf("cloning repository %s failed with output:\n%s", req.Repo, outputBuf.String())}
-			status = "clone-fail"
-			return
-		}
-		req.ReplyChan <- &createReply{}
-		status = "clone-success"
-		return
-	}
-
-	cmd := exec.Command("git", "init", "--bare", dir)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		req.ReplyChan <- &createReply{Error: fmt.Sprintf("initializing repository %s failed with output:\n%s", req.Repo, string(out))}
-		status = "init-fail"
-		return
-	}
-	status = "init-success"
-	req.ReplyChan <- &createReply{}
-}
-
-var createDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "create_duration_seconds",
-	Help:      "gitserver.Init and gitserver.Clone latencies in seconds.",
-	Buckets:   statsutil.UserLatencyBuckets,
-}, []string{"status"})
-
-func init() {
-	prometheus.MustRegister(createDuration)
-}
-
-func observeCreate(start time.Time, status string) {
-	createDuration.WithLabelValues(status).Observe(time.Since(start).Seconds())
 }

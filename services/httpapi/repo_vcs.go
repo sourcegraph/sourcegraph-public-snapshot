@@ -5,12 +5,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
 func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
@@ -31,22 +27,4 @@ func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.Header().Set("cache-control", cacheControl)
 	return writeJSON(w, res)
-}
-
-func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
-	var opt sourcegraph.MirrorReposRefreshVCSOp
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
-
-	repo, err := handlerutil.GetRepoID(r.Context(), mux.Vars(r))
-	if err != nil {
-		return err
-	}
-
-	actor := auth.ActorFromContext(r.Context())
-	repoupdater.Enqueue(repo, actor.UserSpec())
-	w.WriteHeader(http.StatusAccepted)
-	return nil
 }

@@ -6,9 +6,7 @@ import (
 	"path"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
 type treeResolver struct {
@@ -18,8 +16,6 @@ type treeResolver struct {
 }
 
 func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recursive bool) (*treeResolver, error) {
-	repoupdater.Enqueue(commit.RepoID, auth.ActorFromContext(ctx).UserSpec())
-
 	if recursive {
 		if path != "" {
 			return nil, errors.New("not implemented")

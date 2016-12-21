@@ -85,10 +85,6 @@ type Repository interface {
 	// MergeBase returns the merge base commit for the specified
 	// commits.
 	MergeBase(context.Context, CommitID, CommitID) (CommitID, error)
-
-	// UpdateEverything updates all branches, tags, etc., to match the
-	// default remote repository.
-	UpdateEverything(context.Context, RemoteOpts) error
 }
 
 // BlameOptions configures a blame.

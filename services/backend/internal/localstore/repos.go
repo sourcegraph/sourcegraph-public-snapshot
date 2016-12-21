@@ -17,8 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -499,16 +497,6 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 
 	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
 		return 0, legacyerr.Errorf(legacyerr.AlreadyExists, "repo already exists: %s", repo.URI)
-	}
-
-	// Create the filesystem repo where the git data lives. (The repo
-	// metadata, such as the existence, description, language, etc.,
-	// live in PostgreSQL.)
-	// A mirrored repo is automatically cloned by the repo updater instead of here.
-	if !newRepo.Mirror && !skipFS {
-		if err := gitserver.DefaultClient.Init(ctx, newRepo.URI); err != nil && err != vcs.ErrRepoExist {
-			return 0, err
-		}
 	}
 
 	var r dbRepo
