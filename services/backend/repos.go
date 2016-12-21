@@ -694,7 +694,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	}
 
 	// Not found in the cache, so compute it.
-	inv, err := s.getInventoryUncached(ctx, repoRev)
+	inv, err := s.GetInventoryUncached(ctx, repoRev)
 	if err != nil {
 		return nil, err
 	}
@@ -709,7 +709,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	return inv, nil
 }
 
-func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err

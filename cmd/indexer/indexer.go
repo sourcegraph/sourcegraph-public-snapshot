@@ -161,7 +161,7 @@ func index(ctx context.Context, repoName string) error {
 
 	// INDEXING HERE
 
-	inv, err := backend.Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{
+	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
 		Repo:     repo.ID,
 		CommitID: string(headCommit),
 	})
