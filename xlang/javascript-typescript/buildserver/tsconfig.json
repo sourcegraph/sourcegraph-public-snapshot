@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "ES6",
+        "lib": ["es2016"],
+        "types": ["node", "mocha", "chai"],
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "outDir": "build",
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"noImplicitAny": true
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}
