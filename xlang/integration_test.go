@@ -162,6 +162,13 @@ func TestIntegration(t *testing.T) {
 				"atomic_test.go:32:12": "git://github.com/stretchr/testify?d77da356e56a7428ad25149ca77381849a6a5232#require/require.go:58:6",
 			},
 		},
+		"git://github.com/sgtest/godep-include?d92076664c875c0134dbd475b81f88d97df2bc41": {
+			mode: "go",
+			wantDefinition: map[string]string{
+				// Godeps.json specifies testify to something other than HEAD
+				"foo.go:12:12": "git://github.com/stretchr/testify?d77da356e56a7428ad25149ca77381849a6a5232#require/require.go:58:6",
+			},
+		},
 	}
 	for rootPath, test := range tests {
 		root, err := uri.Parse(rootPath)

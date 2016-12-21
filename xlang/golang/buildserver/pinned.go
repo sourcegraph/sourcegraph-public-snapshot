@@ -1,6 +1,7 @@
 package buildserver
 
 import (
+	"encoding/json"
 	"sort"
 	"strings"
 
@@ -56,6 +57,26 @@ func loadGlideLock(yml []byte) pinnedPkgs {
 	}
 	for _, l := range lock.DevImports {
 		pkgs = append(pkgs, pinnedPkg{Pkg: l.Name + "/", Rev: l.Version})
+	}
+	sort.Sort(pkgs)
+	return pkgs
+}
+
+func loadGodeps(b []byte) pinnedPkgs {
+	deps := struct {
+		Deps []struct {
+			ImportPath string
+			Rev        string
+		}
+	}{}
+	err := json.Unmarshal(b, &deps)
+	if err != nil {
+		return nil
+	}
+
+	pkgs := make(pinnedPkgs, 0, len(deps.Deps))
+	for _, d := range deps.Deps {
+		pkgs = append(pkgs, pinnedPkg{Pkg: d.ImportPath + "/", Rev: d.Rev})
 	}
 	sort.Sort(pkgs)
 	return pkgs

@@ -56,7 +56,7 @@ type BuildHandler struct {
 	mu                    sync.Mutex
 	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
 	depURLMus             map[string]*sync.Mutex
-	deps                  []*directory
+	gopathDeps            []*directory
 	pinnedDepsOnce        sync.Once
 	pinnedDeps            pinnedPkgs
 	langserver.HandlerCommon
@@ -118,7 +118,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	h.init = init
 	h.fetchAndSendDepsOnces = nil
 	h.depURLMus = nil
-	h.deps = nil
+	h.gopathDeps = nil
 	h.pinnedDepsOnce = sync.Once{}
 	h.pinnedDeps = nil
 	return nil
@@ -426,8 +426,8 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 			// in the for loop to avoid holding the lock for
 			// longer than necessary.
 			h.HandlerShared.Mu.Lock()
-			deps := make([]*directory, len(h.deps))
-			copy(deps, h.deps)
+			deps := make([]*directory, len(h.gopathDeps))
+			copy(deps, h.gopathDeps)
 			h.HandlerShared.Mu.Unlock()
 			var d *directory
 			for _, dep := range deps {
