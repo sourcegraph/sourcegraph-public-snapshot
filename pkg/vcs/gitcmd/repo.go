@@ -506,7 +506,7 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 
 // UpdateEverything updates all branches, tags, etc., to match the
 // default remote repository.
-func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) (*vcs.UpdateResult, error) {
+func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: UpdateEverything")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -519,13 +519,12 @@ func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) (
 	cmd.Opt = &opt
 	_, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
+		if vcs.IsRepoNotExist(err) {
+			return err
+		}
+		return fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
 	}
-	result, err := parseRemoteUpdate(stderr)
-	if err != nil {
-		return nil, fmt.Errorf("parsing output of `git remote update` failed: %v", err)
-	}
-	return &result, nil
+	return nil
 }
 
 var blameCache = cache.Sync(lru.New(500))
@@ -651,6 +650,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 			// git-blame parser above.
 			hunk.CommitID = commit.ID
 			hunk.Author = commit.Author
+			hunk.Message = commit.Message
 		}
 
 		// Consume remaining lines in hunk

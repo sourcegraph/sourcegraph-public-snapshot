@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	pathpkg "path"
@@ -22,6 +21,7 @@ import (
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/google"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -55,6 +55,22 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 	}
 
 	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+		return nil, err
+	}
+
+	if repo.Blocked {
+		return nil, legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %s is blocked", repo.URI)
+	}
+
+	return repo, nil
+}
+
+func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo, err error) {
+	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
+	defer done()
+
+	repo, err := localstore.Repos.GetByURI(ctx, uri)
+	if err != nil {
 		return nil, err
 	}
 
@@ -614,7 +630,7 @@ func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRe
 	}, nil
 }
 
-func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (res *sourcegraph.Repo, err error) {
+func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error) {
 	if Mocks.Repos.Update != nil {
 		return Mocks.Repos.Update(ctx, op)
 	}
@@ -625,10 +641,10 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (res 
 	ts := time.Now()
 	update := localstore.RepoUpdate{ReposUpdateOp: op, UpdatedAt: &ts}
 	if err := localstore.Repos.Update(ctx, update); err != nil {
-		return nil, err
+		return err
 	}
 
-	return s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
+	return nil
 }
 
 func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
@@ -715,30 +731,21 @@ func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
 	return false
 }
 
-func (s *repos) EnableWebhook(ctx context.Context, op *sourcegraph.RepoWebhookOptions) (err error) {
-	if Mocks.Repos.EnableWebhook != nil {
-		return Mocks.Repos.EnableWebhook(ctx, op)
+var indexerAddr = env.Get("SRC_INDEXER", "127.0.0.1:3179", "The address of the indexer service.")
+
+func (s *repos) RefreshIndex(ctx context.Context, repo string) (err error) {
+	if Mocks.Repos.RefreshIndex != nil {
+		return Mocks.Repos.RefreshIndex(ctx, repo)
 	}
 
-	ctx, done := trace(ctx, "Repos", "EnableWebhook", op, &err)
-	defer done()
-
-	if !github.HasAuthedUser(ctx) {
-		return errors.New("Unauthed user")
-	}
-
-	ctx = github.NewContextWithAuthedClient(ctx)
-	if err := github.ReposFromContext(ctx).CreateHook(ctx, op.URI, &gogithub.Hook{
-		Name:   gogithub.String("web"),
-		Events: []string{"push", "pull_request"},
-		Config: map[string]interface{}{
-			"url":          conf.AppURL.String() + "/.api/webhook/callback",
-			"content_type": "json",
-		},
-		Active: gogithub.Bool(true),
-	}); err != nil {
-		return err
-	}
+	go func() {
+		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + repo)
+		if err != nil {
+			log15.Error("RefreshIndex failed", "error", err)
+			return
+		}
+		resp.Body.Close()
+	}()
 
 	return nil
 }

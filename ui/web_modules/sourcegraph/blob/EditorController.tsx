@@ -104,7 +104,7 @@ export class EditorController extends Container<Props, State> {
 		if (this._editor) {
 			this._editorPropsChanged(null, this.props);
 			this._editor.onDidOpenEditor(e => this._onEditorOpened(e));
-			this._editor.onCursorSelectionChanged(this.onCursorSelectionChanged);
+			this._editor.onCursorSelectionChanged(debounce(this.onCursorSelectionChanged.bind(this), 200, { leading: true, trailing: true }));
 		}
 	}
 

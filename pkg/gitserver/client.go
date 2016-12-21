@@ -78,7 +78,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 		return nil, errRPCFailed
 	}
 
-	if !reply.repoFound() {
+	if reply.RepoNotFound {
 		return nil, vcs.RepoNotExistError{}
 	}
 

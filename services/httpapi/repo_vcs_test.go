@@ -14,6 +14,9 @@ import (
 
 func TestRepoResolveRev_ok(t *testing.T) {
 	c := newTest()
+	backend.Mocks.Repos.RefreshIndex = func(ctx context.Context, repo string) error {
+		return nil
+	}
 
 	want := &sourcegraph.ResolvedRev{CommitID: "c"}
 

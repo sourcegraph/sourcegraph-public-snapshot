@@ -23,6 +23,8 @@ machine:
     GIT_PAGER:
   node:
     version: 6.6.0
+  php:
+    version: 7.0.7
 
 dependencies:
   pre:
@@ -30,11 +32,13 @@ dependencies:
       if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
         curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
       fi
+    - echo "memory_limit = -1" > /opt/circleci/php/$(phpenv global)/etc/conf.d/memory.ini
   cache_directories:
     - ~/cache
     - ~/.yarn
     - ~/.yarn-cache
     - ~/bin
+    - ~/.composer/cache
 
   override:
     - ./dev/ci/install-go.sh

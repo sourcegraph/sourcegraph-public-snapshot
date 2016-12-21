@@ -36,7 +36,6 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 		services,
 	);
 	workbench.startup();
-	workbench.layout();
 
 	const editor = workbench.getEditorPart();
 	configureEditor(editor, resource);

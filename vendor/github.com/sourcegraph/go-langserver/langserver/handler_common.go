@@ -19,7 +19,6 @@ type HandlerCommon struct {
 	RootFSPath string     // root path of the project's files in the (possibly virtual) file system, without the "file://" prefix (typically /src/github.com/foo/bar)
 	shutdown   bool
 	tracer     opentracing.Tracer
-	tracerOK   bool
 }
 
 func (h *HandlerCommon) Reset(rootURI string) error {

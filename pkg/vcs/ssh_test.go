@@ -106,18 +106,10 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 		// that UpdateEverything picks up the new file from the
 		// mirror's origin.
 		newCmds []string
-
-		wantUpdateResult *vcs.UpdateResult
 	}{
 		"git cmd": { // gitcmd
 			vcs: "git", baseDir: initGitRepositoryWorkingCopy(t, gitCommands...), headDir: path.Join(makeTmpDir(t, "git-update-ssh"), "repo"),
 			newCmds: []string{"git tag t0", "git checkout -b b0"},
-			wantUpdateResult: &vcs.UpdateResult{
-				Changes: []vcs.Change{
-					{Op: vcs.NewOp, Branch: "b0"},
-					{Op: vcs.NewOp, Branch: "t0"},
-				},
-			},
 		},
 	}
 
@@ -160,13 +152,9 @@ func TestRepository_UpdateEverything_ssh(t *testing.T) {
 			makeGitRepositoryBare(t, test.baseDir)
 
 			// update the mirror.
-			result, err := r.UpdateEverything(ctx, remoteOpts)
-			if err != nil {
+			if err := r.UpdateEverything(ctx, remoteOpts); err != nil {
 				t.Errorf("%s: UpdateEverything: %s", label, err)
 				return
-			}
-			if !reflect.DeepEqual(result, test.wantUpdateResult) {
-				t.Errorf("%s: got UpdateResult == %v, want %v", label, asJSON(result), asJSON(test.wantUpdateResult))
 			}
 
 			// r should now have the tag t0 we added to the base repo,

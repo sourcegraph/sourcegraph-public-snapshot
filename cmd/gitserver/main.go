@@ -24,7 +24,7 @@ func main() {
 	env.Lock()
 
 	go func() {
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
 		<-c
 		os.Exit(0)

@@ -438,3 +438,114 @@ index 269902194..664a7fa26 100644
  
  		this.registerListeners();
  	}
+diff --git a/ui/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts b/ui/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts
+index b0c11d520..d2f05dab8 100644
+--- a/ui/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts
++++ b/ui/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts
+@@ -289,12 +289,6 @@ class ScopedContextKeyService extends AbstractContextKeyService {
+ }
+ 
+ function findContextAttr(domNode: IContextKeyServiceTarget): number {
+-	while (domNode) {
+-		if (domNode.hasAttribute(KEYBINDING_CONTEXT_ATTR)) {
+-			return parseInt(domNode.getAttribute(KEYBINDING_CONTEXT_ATTR), 10);
+-		}
+-		domNode = domNode.parentElement;
+-	}
+ 	return 0;
+ }
+ 
+diff --git a/ui/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts b/ui/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
+index 6b2b3aff4..b837561d7 100644
+--- a/ui/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
++++ b/ui/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
+@@ -104,22 +104,12 @@ let keybindingType: IJSONSchema = {
+ 	}
+ };
+ 
+-let keybindingsExtPoint = ExtensionsRegistry.registerExtensionPoint<ContributedKeyBinding | ContributedKeyBinding[]>('keybindings', [], {
+-	description: nls.localize('vscode.extension.contributes.keybindings', "Contributes keybindings."),
+-	oneOf: [
+-		keybindingType,
+-		{
+-			type: 'array',
+-			items: keybindingType
+-		}
+-	]
+-});
+-
+ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 
+ 	private _cachedResolver: KeybindingResolver;
+ 	private _firstTimeComputingResolver: boolean;
+ 	private userKeybindings: ConfigWatcher<IUserFriendlyKeybinding[]>;
++	private readonly name: string = 'keybindings';
+ 
+ 	constructor(
+ 		domNode: HTMLElement,
+@@ -137,18 +127,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 
+ 		this.userKeybindings = new ConfigWatcher(environmentService.appKeybindingsPath, { defaultConfig: [] });
+ 		this.toDispose.push(toDisposable(() => this.userKeybindings.dispose()));
+-
+-		keybindingsExtPoint.setHandler((extensions) => {
+-			let commandAdded = false;
+-
+-			for (let extension of extensions) {
+-				commandAdded = this._handleKeybindingsExtensionPointUser(extension.description.isBuiltin, extension.value, extension.collector) || commandAdded;
+-			}
+-
+-			if (commandAdded) {
+-				this.updateResolver({ source: KeybindingSource.Default });
+-			}
+-		});
++		this.registerHandler();
+ 
+ 		this.toDispose.push(this.userKeybindings.onDidUpdateConfiguration(event => this.updateResolver({
+ 			source: KeybindingSource.User,
+@@ -166,6 +145,36 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 		keybindingsTelemetry(telemetryService, this);
+ 	}
+ 
++	private registerHandler(): void {
++		let points = ExtensionsRegistry.getExtensionPoints();
++		if (points.some(point => point.name === this.name)) {
++			return;
++		}
++
++		let keybindingsExtPoint = ExtensionsRegistry.registerExtensionPoint<ContributedKeyBinding | ContributedKeyBinding[]>('keybindings', [], {
++			description: nls.localize('vscode.extension.contributes.keybindings', "Contributes keybindings."),
++			oneOf: [
++				keybindingType,
++				{
++					type: 'array',
++					items: keybindingType
++				}
++			]
++		});
++
++		keybindingsExtPoint.setHandler((extensions) => {
++			let commandAdded = false;
++
++			for (let extension of extensions) {
++				commandAdded = this._handleKeybindingsExtensionPointUser(extension.description.isBuiltin, extension.value, extension.collector) || commandAdded;
++			}
++
++			if (commandAdded) {
++				this.updateResolver({ source: KeybindingSource.Default });
++			}
++		});
++	}
++
+ 	private _safeGetConfig(): IUserFriendlyKeybinding[] {
+ 		let rawConfig = this.userKeybindings.getConfig();
+ 		if (Array.isArray(rawConfig)) {
+@@ -264,7 +273,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 			collector.error(nls.localize(
+ 				'invalid.keybindings',
+ 				"Invalid `contributes.{0}`: {1}",
+-				keybindingsExtPoint.name,
++				this.name,
+ 				rejects.join('\n')
+ 			));
+ 		}

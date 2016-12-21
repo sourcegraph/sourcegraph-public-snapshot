@@ -18,31 +18,3 @@ type HTTPSConfig struct {
 	User string // User is the username provided to the vcs.
 	Pass string // Pass is the password provided to the vcs.
 }
-
-// UpdateResult is the result of parsing output of the remote update operation.
-type UpdateResult struct {
-	Changes []Change
-}
-
-// Operation that happened to a branch.
-type Operation uint8
-
-const (
-	// NewOp is a branch that was created.
-	NewOp Operation = iota
-
-	// FFUpdatedOp is a branch that was fast-forward updated.
-	FFUpdatedOp
-
-	// ForceUpdatedOp is a branch that was force updated.
-	ForceUpdatedOp
-
-	// DeletedOp is a branch that was deleted.
-	DeletedOp
-)
-
-// Change is a single entry in the update result, representing Op done on Branch.
-type Change struct {
-	Op     Operation
-	Branch string
-}

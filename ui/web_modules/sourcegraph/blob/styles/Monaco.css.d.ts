@@ -3,6 +3,7 @@
 
 export const colors: string;
 export const vars: string;
+export const c_cool_gray2: string;
 export const c_cool_gray: string;
 export const c_cool_mid_gray: string;
 export const c_cool_mid_gray_3: string;
@@ -28,4 +29,5 @@ export const violet: string;
 export const blue: string;
 export const cyan: string;
 export const green: string;
+export const fadein: string;
 

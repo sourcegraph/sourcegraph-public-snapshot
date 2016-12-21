@@ -19,9 +19,9 @@ func TestRefreshVCS(t *testing.T) {
 		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
 			return []*vcs.Branch{}, nil
 		},
-		UpdateEverything_: func(ctx context.Context, _ vcs.RemoteOpts) (*vcs.UpdateResult, error) {
+		UpdateEverything_: func(ctx context.Context, _ vcs.RemoteOpts) error {
 			updatedEverything = true
-			return &vcs.UpdateResult{Changes: []vcs.Change{}}, nil
+			return nil
 		},
 	})
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
@@ -45,15 +45,12 @@ func TestRefreshVCS_cloneRepo(t *testing.T) {
 	localstore.Mocks.Repos.MockGet(t, 1)
 	Mocks.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
-		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
-			return nil, vcs.RepoNotExistError{}
+		UpdateEverything_: func(ctx context.Context, _ vcs.RemoteOpts) error {
+			return vcs.RepoNotExistError{}
 		},
 	})
 	localstore.Mocks.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		cloned = true
-		return nil
-	}
-	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) error {
 		return nil
 	}
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
@@ -76,15 +73,12 @@ func TestRefreshVCS_cloneRepoExists(t *testing.T) {
 	localstore.Mocks.Repos.MockGet(t, 1)
 	Mocks.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
-		Branches_: func(ctx context.Context, _ vcs.BranchesOptions) ([]*vcs.Branch, error) {
-			return nil, vcs.RepoNotExistError{}
+		UpdateEverything_: func(ctx context.Context, _ vcs.RemoteOpts) error {
+			return vcs.RepoNotExistError{}
 		},
 	})
 	localstore.Mocks.RepoVCS.Clone = func(_ context.Context, _ int32, _ *localstore.CloneInfo) error {
 		return vcs.ErrRepoExist
-	}
-	Mocks.Async.RefreshIndexes = func(v0 context.Context, v1 *sourcegraph.AsyncRefreshIndexesOp) error {
-		return nil
 	}
 	calledInternalUpdate := localstore.Mocks.Repos.MockInternalUpdate(t)
 

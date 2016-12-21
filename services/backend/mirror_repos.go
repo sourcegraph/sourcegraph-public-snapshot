@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AaronO/go-git-http"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -14,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -96,7 +94,7 @@ func (s *mirrorRepos) RefreshVCS(ctx context.Context, op *sourcegraph.MirrorRepo
 		log15.Error("RefreshVCS: failed to open VCS", "error", err, "URI", repo.URI)
 		return err
 	}
-	if err := s.updateRepo(ctx, repo, vcsRepo, remoteOpts); err != nil {
+	if err := vcsRepo.UpdateEverything(ctx, remoteOpts); err != nil {
 		if !vcs.IsRepoNotExist(err) {
 			log15.Error("RefreshVCS: update repo failed unexpectedly", "error", err, "repo", repo.URI)
 			return err
@@ -148,128 +146,6 @@ func (s *mirrorRepos) cloneRepo(ctx context.Context, repo *sourcegraph.Repo, rem
 		return err
 	}
 
-	if !skipCloneRepoAsyncSteps {
-		go func() {
-			// Best effort, so we ignore the errors they return +
-			// kick them off in a goroutine to not block the clone
-			_ = Async.RefreshIndexes(ctx, &sourcegraph.AsyncRefreshIndexesOp{
-				Repo:   repo.ID,
-				Source: "clone",
-			})
-		}()
-	}
-
-	return nil
-}
-
-func (s *mirrorRepos) updateRepo(ctx context.Context, repo *sourcegraph.Repo, vcsRepo vcs.Repository, remoteOpts vcs.RemoteOpts) error {
-	// TODO: Need to detect new tags and copy git_transport.go in event publishing
-	// behavior.
-
-	// Grab the current revision of every branch.
-	branches, err := vcsRepo.Branches(ctx, vcs.BranchesOptions{})
-	if err != nil {
-		return err
-	}
-
-	// Update everything.
-	updateResult, err := vcsRepo.UpdateEverything(ctx, remoteOpts)
-	if err != nil {
-		return err
-	}
-
-	forcePushes := make(map[string]bool)
-	for _, change := range updateResult.Changes {
-		switch change.Op {
-		case vcs.NewOp, vcs.ForceUpdatedOp:
-			// Skip refs that aren't branches, such as GitHub
-			// "refs/pull/123/head" and "refs/pull/123/merge" refs
-			// that are created for each pull request. In the future
-			// we may want to handle these, but skipping them for now
-			// is good because otherwise when we add a new mirror
-			// repo, builds and notifications are triggered for all
-			// historical PRs.
-			if strings.HasPrefix(change.Branch, "refs/") {
-				continue
-			}
-
-			// Determine the event type, and if it's a force push mark for later to
-			// avoid additional work.
-			eventType := events.GitCreateBranchEvent
-			gitEventType := githttp.EventType(githttp.PUSH)
-			if change.Op == vcs.ForceUpdatedOp {
-				// Force push, remember for later.
-				forcePushes[change.Branch] = true
-				eventType = events.GitPushEvent
-				gitEventType = githttp.PUSH_FORCE
-			}
-
-			// Determine the new branch head revision.
-			head, err := vcsRepo.ResolveRevision(ctx, "refs/heads/"+change.Branch)
-			if err != nil {
-				return err
-			}
-
-			// Publish the event.
-			// TODO: what about GitPayload.ContentEncoding field?
-			events.Publish(eventType, events.GitPayload{
-				Actor: *authpkg.ActorFromContext(ctx).UserSpec(),
-				Repo:  repo.ID,
-				Event: githttp.Event{
-					Type:   gitEventType,
-					Commit: string(head),
-					Branch: change.Branch,
-					Last:   emptyGitCommitID,
-					// TODO: specify Dir, Tag, Error and Request fields somehow?
-				},
-			})
-		}
-	}
-
-	// Find all new commits on each branch.
-	for _, oldBranch := range branches {
-		if _, ok := forcePushes[oldBranch.Name]; ok {
-			// Already handled above.
-			continue
-		}
-
-		// Determine new branch head revision.
-		head, err := vcsRepo.ResolveRevision(ctx, "refs/heads/"+oldBranch.Name)
-		if err == vcs.ErrRevisionNotFound {
-			// Branch was deleted.
-			// TODO: what about GitPayload.ContentEncoding field?
-			events.Publish(events.GitDeleteBranchEvent, events.GitPayload{
-				Actor: *authpkg.ActorFromContext(ctx).UserSpec(),
-				Repo:  repo.ID,
-				Event: githttp.Event{
-					Type:   githttp.PUSH,
-					Commit: emptyGitCommitID,
-					Branch: oldBranch.Name,
-					// TODO: specify Dir, Tag, Error and Request fields somehow?
-				},
-			})
-			continue
-		} else if err != nil {
-			return err
-		}
-		if head == oldBranch.Head {
-			continue // No new commits.
-		}
-
-		// Publish an event for the new commits pushed.
-		// TODO: what about GitPayload.ContentEncoding field?
-		events.Publish(events.GitPushEvent, events.GitPayload{
-			Actor: *authpkg.ActorFromContext(ctx).UserSpec(),
-			Repo:  repo.ID,
-			Event: githttp.Event{
-				Type:   githttp.PUSH,
-				Commit: string(head),
-				Last:   string(oldBranch.Head),
-				Branch: oldBranch.Name,
-				// TODO: specify Dir, Tag, Error and Request fields somehow?
-			},
-		})
-	}
 	return nil
 }
 

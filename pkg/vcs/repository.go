@@ -88,7 +88,7 @@ type Repository interface {
 
 	// UpdateEverything updates all branches, tags, etc., to match the
 	// default remote repository.
-	UpdateEverything(context.Context, RemoteOpts) (*UpdateResult, error)
+	UpdateEverything(context.Context, RemoteOpts) error
 }
 
 // BlameOptions configures a blame.
@@ -107,7 +107,8 @@ type Hunk struct {
 	StartByte int // 0-indexed start byte position (inclusive)
 	EndByte   int // 0-indexed end byte position (exclusive)
 	CommitID
-	Author Signature
+	Author  Signature
+	Message string
 }
 
 var (

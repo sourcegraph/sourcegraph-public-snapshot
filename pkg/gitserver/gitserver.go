@@ -26,8 +26,6 @@ type execReply struct {
 	ProcessResult   <-chan *processResult
 }
 
-func (r *execReply) repoFound() bool { return !r.RepoNotFound }
-
 type processResult struct {
 	Error      string
 	ExitStatus int

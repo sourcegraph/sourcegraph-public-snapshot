@@ -2,13 +2,11 @@ package vfsutil
 
 import (
 	"context"
-	"fmt"
 	"os"
 	pathpkg "path"
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -39,11 +37,7 @@ type XRemoteFS struct {
 
 // call sends a request to the LSP proxy with tracing information.
 func (fs *XRemoteFS) call(ctx context.Context, method, label string, params, result interface{}) (err error) {
-	t0 := time.Now()
 	span := opentracing.SpanFromContext(ctx)
-	defer func() {
-		span.LogEventWithPayload(method+": "+label, fmt.Sprintf("took %s, error: %v", time.Since(t0), err))
-	}()
 	return fs.Conn.Call(ctx, method, params, result, addTraceMeta(span))
 }
 

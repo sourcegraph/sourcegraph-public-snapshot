@@ -1,16 +1,21 @@
+import * as React from "react";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
+import { IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser.d";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { Position } from "vs/editor/common/core/position";
 import { ICursorSelectionChangedEvent, IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
+import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { IEditor } from "vs/platform/editor/common/editor";
+import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { URIUtils } from "sourcegraph/core/uri";
+import { AuthorshipWidget, AuthorshipWidgetID, CodeLensAuthorWidget } from "sourcegraph/editor/authorshipWidget";
 import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes } from "sourcegraph/editor/modes";
@@ -141,6 +146,9 @@ export class Editor implements IDisposable {
 				this._editor.getModel().getLineCount()
 			);
 		}, "");
+		this._editor.addCommand(KeyCode.Escape, () => {
+			this._removeWidgetForID(AuthorshipWidgetID);
+		}, "");
 
 		let editorMenuItems = MenuRegistry.getMenuItems(MenuId.EditorContext);
 		let commandOrder = {
@@ -168,6 +176,21 @@ export class Editor implements IDisposable {
 		} else {
 			console.error("Didn't set textarea to readOnly");
 		}
+
+		CommandsRegistry.registerCommand("codelens.authorship.commit", (accessor: ServicesAccessor, args: GQL.IHunk) => {
+			Object.assign(args, { startByte: this._editor.getModel().getLineFirstNonWhitespaceColumn(args.startLine) });
+			const {repo, rev} = URIUtils.repoParams(this._editor.getModel().uri);
+			const authorshipCodeLensElement = <CodeLensAuthorWidget blame={args} repo={repo} rev={rev || ""} onClose={this._removeWidgetForID.bind(this, AuthorshipWidgetID)} />;
+			let authorWidget = new AuthorshipWidget(args, authorshipCodeLensElement);
+			this._editor.addContentWidget(authorWidget);
+			AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(args);
+		});
+
+		this._editor.onMouseUp(((e: IEditorMouseEvent) => {
+			if (e.target.detail !== AuthorshipWidgetID) {
+				this._removeWidgetForID(AuthorshipWidgetID);
+			}
+		}).bind(this));
 	}
 
 	onCursorSelectionChanged(listener: (e: ICursorSelectionChangedEvent) => void): void {
@@ -205,9 +228,33 @@ export class Editor implements IDisposable {
 		Features.codeLens.toggle();
 
 		this._editor.updateOptions({ codeLens: visible });
+		if (!visible) {
+			this._removeWidgetForID(AuthorshipWidgetID);
+		}
 
 		const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
 		AnalyticsConstants.Events.AuthorsToggle_Clicked.logEvent({ visible, repo, rev, path });
+	}
+
+	// TODO: Abstract editor functions into editor helper class - MKing 12/18/2016
+	private _removeWidgetForID(widgetID: string): void {
+		let widget = this._getWidgetForID(widgetID);
+		if (widget) {
+			this._editor.removeContentWidget(widget);
+		}
+	}
+
+	// TODO: Abstract editor functions into editor helper class - MKing 12/18/2016
+	private _getWidgetForID(widgetID: string): IContentWidget | null {
+		if (!this._editor || (!this._editor as any).contentWidget) {
+			return null;
+		}
+		const contentWidget = (this._editor as any).contentWidgets[widgetID];
+		if (contentWidget && contentWidget.widget) {
+			return contentWidget.widget;
+		}
+
+		return null;
 	}
 
 	public layout(): void {
@@ -220,4 +267,5 @@ export class Editor implements IDisposable {
 			disposable.dispose();
 		});
 	}
+
 }

@@ -6,7 +6,6 @@ import { Range } from "vs/editor/common/core/range";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import * as modes from "vs/editor/common/modes";
 import { Command, Definition, Hover, ICodeLensSymbol, Location, ReferenceContext } from "vs/editor/common/modes";
-import { CommandsRegistry } from "vs/platform/commands/common/commands";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { codeLensCache } from "sourcegraph/editor/EditorService";
@@ -131,16 +130,6 @@ export class HoverProvider implements modes.HoverProvider {
 }
 
 class AuthorshipContrib implements modes.CodeLensProvider {
-	constructor() {
-		// TODO check that this only registers itself once.
-		CommandsRegistry.registerCommand("codelens.authorship.commit", (accessor, args) => {
-			AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent({
-				commitURL: args,
-			});
-			window.open(`https://${args}`, "_newtab");
-		});
-	}
-
 	// Necessary implementation for the code lens to be rendered. The code lens is implemented inside of provideCodeLenses so it is only necessary
 	// to return the lens.
 	resolveCodeLens(model: IReadOnlyModel, codeLens: ICodeLensSymbol, token: CancellationToken): ICodeLensSymbol | Thenable<ICodeLensSymbol> {
@@ -152,7 +141,6 @@ class AuthorshipContrib implements modes.CodeLensProvider {
 		let blameData = this.getEditorBlameData(key);
 		let codeLenses: ICodeLensSymbol[] = [];
 		for (let i = 0; i < blameData.length; i++) {
-			const {repo, rev} = URIUtils.repoParams(model.uri);
 			const blameLine = blameData[i];
 			const timeSince = moment(blameLine.date, "YYYY-MM-DDThh:mmTZD").fromNow();
 			codeLenses.push({
@@ -160,8 +148,8 @@ class AuthorshipContrib implements modes.CodeLensProvider {
 				range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),
 				command: {
 					id: "codelens.authorship.commit",
-					title: `${blameLine.name} ${timeSince} - ${blameLine.rev.substr(0, 6)}`,
-					arguments: [`${repo}/commit/${blameLine.rev}#diff-${rev}`],
+					title: `${blameLine.name} - ${timeSince}`, // @chexee: Here is what you will need for the hover information on the title. - ${blameLine.rev.substr(0, 6)} - ${blameLine.message}`,
+					arguments: [blameLine],
 				} as Command,
 			});
 		}

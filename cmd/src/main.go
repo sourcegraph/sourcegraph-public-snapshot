@@ -13,10 +13,6 @@ import (
 	// Server
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cmd"
 
-	// Events
-	_ "sourcegraph.com/sourcegraph/sourcegraph/services/events"
-	_ "sourcegraph.com/sourcegraph/sourcegraph/services/events/listeners"
-
 	// External services
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 

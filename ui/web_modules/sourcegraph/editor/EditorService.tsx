@@ -119,6 +119,8 @@ export class EditorService implements IEditorService {
 												endLine
 												startByte
 												endByte
+												message
+												gravatarHash
 											}` : "";
 		return TPromise.wrap(
 			fetch(`/.api/graphql`, {

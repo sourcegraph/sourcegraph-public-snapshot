@@ -1,6 +1,6 @@
 .PHONY: all lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags deploy deploy-staging
 
-all: lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags
+all: lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags xlang-php
 
 lsp-proxy:
 	cmd/lsp-proxy/build.sh
@@ -13,6 +13,9 @@ xlang-javascript-typescript:
 
 xlang-ctags:
 	ctags/cmd/langserver-ctags/build.sh
+
+xlang-php:
+	php/build.sh
 
 deploy:
 	@echo "This is deprecated. To update staging environments use the deploy-staging target."

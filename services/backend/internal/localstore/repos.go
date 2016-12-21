@@ -49,26 +49,27 @@ func init() {
 
 // dbRepo DB-maps a sourcegraph.Repo object.
 type dbRepo struct {
-	ID            int32
-	URI           string
-	Owner         string
-	Name          string
-	Description   string
-	VCS           string
-	HTTPCloneURL  string `db:"http_clone_url"`
-	SSHCloneURL   string `db:"ssh_clone_url"`
-	HomepageURL   string `db:"homepage_url"`
-	DefaultBranch string `db:"default_branch"`
-	Language      string
-	Blocked       bool
-	Deprecated    bool
-	Fork          bool
-	Mirror        bool
-	Private       bool
-	CreatedAt     time.Time  `db:"created_at"`
-	UpdatedAt     *time.Time `db:"updated_at"`
-	PushedAt      *time.Time `db:"pushed_at"`
-	VCSSyncedAt   *time.Time `db:"vcs_synced_at"`
+	ID              int32
+	URI             string
+	Owner           string
+	Name            string
+	Description     string
+	VCS             string
+	HTTPCloneURL    string `db:"http_clone_url"`
+	SSHCloneURL     string `db:"ssh_clone_url"`
+	HomepageURL     string `db:"homepage_url"`
+	DefaultBranch   string `db:"default_branch"`
+	Language        string
+	Blocked         bool
+	Deprecated      bool
+	Fork            bool
+	Mirror          bool
+	Private         bool
+	CreatedAt       time.Time  `db:"created_at"`
+	UpdatedAt       *time.Time `db:"updated_at"`
+	PushedAt        *time.Time `db:"pushed_at"`
+	VCSSyncedAt     *time.Time `db:"vcs_synced_at"`
+	IndexedRevision *string    `db:"indexed_revision"`
 
 	OriginRepoID     *string `db:"origin_repo_id"`
 	OriginService    *int32  `db:"origin_service"` // values from Origin.ServiceType enum
@@ -77,21 +78,22 @@ type dbRepo struct {
 
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
-		ID:            r.ID,
-		URI:           r.URI,
-		Owner:         r.Owner,
-		Name:          r.Name,
-		Description:   r.Description,
-		HTTPCloneURL:  r.HTTPCloneURL,
-		SSHCloneURL:   r.SSHCloneURL,
-		HomepageURL:   r.HomepageURL,
-		DefaultBranch: r.DefaultBranch,
-		Language:      r.Language,
-		Blocked:       r.Blocked,
-		Deprecated:    r.Deprecated,
-		Fork:          r.Fork,
-		Mirror:        r.Mirror,
-		Private:       r.Private,
+		ID:              r.ID,
+		URI:             r.URI,
+		Owner:           r.Owner,
+		Name:            r.Name,
+		Description:     r.Description,
+		HTTPCloneURL:    r.HTTPCloneURL,
+		SSHCloneURL:     r.SSHCloneURL,
+		HomepageURL:     r.HomepageURL,
+		DefaultBranch:   r.DefaultBranch,
+		Language:        r.Language,
+		Blocked:         r.Blocked,
+		Deprecated:      r.Deprecated,
+		Fork:            r.Fork,
+		Mirror:          r.Mirror,
+		Private:         r.Private,
+		IndexedRevision: r.IndexedRevision,
 	}
 
 	r2.CreatedAt = &r.CreatedAt
@@ -136,6 +138,7 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 		r.OriginService = &service
 		r.OriginAPIBaseURL = gogithub.String(o.APIBaseURL)
 	}
+	r.IndexedRevision = r2.IndexedRevision
 }
 
 func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
@@ -600,6 +603,9 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	}
 	if op.Origin != nil {
 		updates = append(updates, `"origin_repo_id"=`+arg(op.Origin.ID), `"origin_service"=`+arg(op.Origin.Service), `"origin_api_base_url"=`+arg(op.Origin.APIBaseURL))
+	}
+	if op.IndexedRevision != "" {
+		updates = append(updates, `"indexed_revision"=`+arg(op.IndexedRevision))
 	}
 
 	if len(updates) > 0 {

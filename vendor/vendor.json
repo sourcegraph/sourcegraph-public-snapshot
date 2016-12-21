@@ -634,10 +634,10 @@
 			"revisionTime": "2016-09-28T03:47:51Z"
 		},
 		{
-			"checksumSHA1": "rMTdtYYWEbgdpsrUeB0yg1lJyWg=",
+			"checksumSHA1": "t2lUObHY/vTQWO4BJhpmNN8zaK0=",
 			"path": "github.com/sourcegraph/go-langserver/langserver",
-			"revision": "8209abaf9432ce1cd561ac940bb63aea49da6eb0",
-			"revisionTime": "2016-12-15T05:18:33Z"
+			"revision": "f981450c57d3ed7285af07e92e21197e8ebdbac9",
+			"revisionTime": "2016-12-19T04:30:30Z"
 		},
 		{
 			"checksumSHA1": "p55VwjJNq+CmLG02ZRh61q4T88M=",
@@ -664,10 +664,10 @@
 			"revisionTime": "2016-05-24T18:55:40Z"
 		},
 		{
-			"checksumSHA1": "p4qwsbU0ob+AnUEqRXyvXMF1QL0=",
+			"checksumSHA1": "50NhK2U/9faf9ppT9aXTgAVSWas=",
 			"path": "github.com/sourcegraph/jsonrpc2",
-			"revision": "9fdd802ab4655d2258cef1b05c81be8e0fe4e2ad",
-			"revisionTime": "2016-11-22T12:03:09Z"
+			"revision": "6e06d561ec88594028846aa2a4af17a9aa0c87c4",
+			"revisionTime": "2016-12-18T02:35:34Z"
 		},
 		{
 			"path": "github.com/sourcegraph/sitemap",

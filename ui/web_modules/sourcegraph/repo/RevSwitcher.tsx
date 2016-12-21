@@ -27,10 +27,6 @@ interface State extends Props {
 }
 
 class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
 	_input: any;
 	_debouncedSetQuery: any;
 	_wrapper: any;

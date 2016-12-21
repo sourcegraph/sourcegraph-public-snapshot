@@ -38,7 +38,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/events"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
@@ -225,16 +224,6 @@ func Main() error {
 	mw = append(mw, middleware.BlackHole)
 	mw = append(mw, middleware.SourcegraphComGoGetHandler)
 
-	// Start background workers that receive input from main app.
-	//
-	// It's safe (and better) to start this before starting the
-	// HTTP(S) web server to avoid a brief moment where the web server
-	// is started, but the listeners haven't started yet.
-	//
-	//
-	// Start event listeners.
-	initializeEventListeners()
-
 	srv := &http.Server{
 		Handler:      handlerutil.WithMiddleware(sm, mw...),
 		ReadTimeout:  75 * time.Second,
@@ -283,28 +272,6 @@ func Main() error {
 	}
 	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
 
-	// HACK(keegancsmith) async is the only user of this at the moment,
-	// but other background workers that need access to the store will
-	// likely pop up in the future. We need to make this less hacky
-	internalServerCtx := func(name string) (context.Context, error) {
-		ctx := context.Background()
-		scope := "internal:" + name
-		ctx = auth.WithActor(ctx, &auth.Actor{Scope: map[string]bool{scope: true}})
-		ctx, err = authenticateScopedContext(ctx, []string{scope})
-		if err != nil {
-			return nil, err
-		}
-		return ctx, nil
-	}
-
-	// Start background async workers. It is a service, so needs the
-	// stores setup in the context
-	asyncCtx, err := internalServerCtx("async")
-	if err != nil {
-		return err
-	}
-	backend.StartAsyncWorkers(asyncCtx)
-
 	select {}
 }
 
@@ -321,17 +288,4 @@ func authenticateScopedContext(ctx context.Context, scopes []string) (context.Co
 	}
 	ctx = github.NewContextWithAuthedClient(ctx)
 	return auth.WithActor(ctx, a), nil
-}
-
-// initializeEventListeners creates special scoped contexts and passes them to
-// event listeners.
-func initializeEventListeners() {
-	for _, l := range events.GetRegisteredListeners() {
-		listenerCtx, err := authenticateScopedContext(auth.WithActor(context.Background(), &auth.Actor{}), l.Scopes())
-		if err != nil {
-			log.Fatalf("Could not initialize listener context: %v", err)
-		} else {
-			l.Start(listenerCtx)
-		}
-	}
 }

@@ -42,6 +42,9 @@ func run() error {
 		go debugserver.Start(*profbind)
 	}
 
+	// PERF: Hide latency of fetching golang/go from the first typecheck
+	go buildserver.FetchCommonDeps()
+
 	switch *mode {
 	case "tcp":
 		lis, err := net.Listen("tcp", *addr)
@@ -56,12 +59,12 @@ func run() error {
 			if err != nil {
 				return err
 			}
-			jsonrpc2.NewConn(context.Background(), conn, buildserver.NewHandler())
+			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), buildserver.NewHandler())
 		}
 
 	case "stdio":
 		log.Println("xlang-go: reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), stdrwc{}, buildserver.NewHandler()).DisconnectNotify()
+		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), buildserver.NewHandler()).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 

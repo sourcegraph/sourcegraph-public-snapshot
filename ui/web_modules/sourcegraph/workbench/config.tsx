@@ -1,12 +1,23 @@
+import { IDisposable } from "vs/base/common/lifecycle";
 import { IModelService } from "vs/editor/common/services/modelService";
 import { IModeService } from "vs/editor/common/services/modeService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
+import { EditorGroupsControl } from "vs/workbench/browser/parts/editor/editorGroupsControl";
+import { FileRenderer } from "vs/workbench/parts/files/browser/views/explorerViewer";
 
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
+import { layout } from "sourcegraph/components/utils";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
 import { Features } from "sourcegraph/util/features";
+import { NoopDisposer } from "sourcegraph/workbench/utils";
+
+// Set the height of files in the file tree explorer.
+(FileRenderer as any).ITEM_HEIGHT = 30;
+
+// Set the height of the blob title.
+(EditorGroupsControl as any).EDITOR_TITLE_HEIGHT = layout.editorToolbarHeight;
 
 // Workbench overwrites a few services, so we add these services after startup.
 export function configurePostStartup(services: ServiceCollection): void {
@@ -59,7 +70,7 @@ export class ConfigurationService {
 		};
 	}
 
-	onDidUpdateConfiguration(): void {
-		//
+	onDidUpdateConfiguration(): IDisposable {
+		return NoopDisposer;
 	}
 }

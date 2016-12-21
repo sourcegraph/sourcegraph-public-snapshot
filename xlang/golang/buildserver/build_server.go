@@ -38,10 +38,14 @@ import (
 // git://github.com/golang/go?go1.7.1#src/fmt/print.go).
 func NewHandler() jsonrpc2.Handler {
 	shared := &langserver.HandlerShared{Shared: true}
-	return jsonrpc2.HandlerWithError((&BuildHandler{
+	h := &BuildHandler{
 		HandlerShared: shared,
 		lang:          &langserver.LangHandler{HandlerShared: shared},
-	}).handle)
+	}
+	// We want the langservers typechecker to use the buildservers package
+	// finder.
+	shared.FindPackage = h.findPackage
+	return jsonrpc2.HandlerWithError(h.handle)
 }
 
 // BuildHandler is a Go build server LSP/JSON-RPC handler that wraps a
@@ -51,6 +55,7 @@ type BuildHandler struct {
 
 	mu                    sync.Mutex
 	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
+	depURLMus             map[string]*sync.Mutex
 	langserver.HandlerCommon
 	*langserver.HandlerShared
 	init           *lspext.InitializeParams // set by "initialize" request
@@ -69,6 +74,21 @@ func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
 		h.fetchAndSendDepsOnces[fileURI] = once
 	}
 	return once
+}
+
+// Used to prevent concurrent fetches of a dependency
+func (h *BuildHandler) depURLMu(path string) *sync.Mutex {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.depURLMus == nil {
+		h.depURLMus = make(map[string]*sync.Mutex)
+	}
+	mu, ok := h.depURLMus[path]
+	if !ok {
+		mu = new(sync.Mutex)
+		h.depURLMus[path] = mu
+	}
+	return mu
 }
 
 const (
@@ -93,6 +113,8 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 		return err
 	}
 	h.init = init
+	h.fetchAndSendDepsOnces = nil
+	h.depURLMus = nil
 	return nil
 }
 
@@ -293,14 +315,23 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			return nil, nil
 		}
 
+		// All our textDocument methods fetch dependencies just in
+		// time, except documentSymbol.
+		shouldFetchDeps := true
+		if strings.HasPrefix(req.Method, "textDocument/") && req.Method != "textDocument/documentSymbol" {
+			shouldFetchDeps = false
+		}
+
 		// Fetch transitive dependencies for the named files, if this
 		// is a language analysis request.
-		for _, uri := range urisInRequest {
-			h.fetchAndSendDepsOnce(uri).Do(func() {
-				if err := h.fetchTransitiveDepsOfFile(ctx, uri); err != nil {
-					log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
-				}
-			})
+		if shouldFetchDeps {
+			for _, uri := range urisInRequest {
+				h.fetchAndSendDepsOnce(uri).Do(func() {
+					if err := h.fetchTransitiveDepsOfFile(ctx, uri); err != nil {
+						log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
+					}
+				})
+			}
 		}
 		if req.Method == "workspace/xreferences" {
 			// We need every transitive dependency, for every Go package in the

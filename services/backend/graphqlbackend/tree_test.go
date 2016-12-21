@@ -35,6 +35,9 @@ func TestTree(t *testing.T) {
 			},
 		}, nil
 	}
+	backend.Mocks.Repos.RefreshIndex = func(ctx context.Context, repo string) error {
+		return nil
+	}
 
 	graphql.RunTests(t, []*graphql.Test{
 		{
