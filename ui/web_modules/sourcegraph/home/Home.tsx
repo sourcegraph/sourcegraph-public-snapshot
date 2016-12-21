@@ -99,9 +99,11 @@ export class Home extends React.Component<HomeProps, {}> {
 						height: 100,
 						margin: ` 0 ${whitespace[5]}`,
 					}}>
-						<img title="TypeScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
 						<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go.svg`} />
+						<img title="TypeScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
 						<img title="JavaScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
+						<img title="C in beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/c.svg`} />
+
 					</FlexContainer>
 					<FlexContainer justify="around" style={{
 						height: 100,
@@ -110,21 +112,22 @@ export class Home extends React.Component<HomeProps, {}> {
 						width: "100%",
 					}}>
 
-						<img title="C coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/c.svg`} />
 						<img title="Java coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
 						<img title="Python coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
 						<img title="PHP coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />
 						<img title="Scala coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/scala.svg`} />
 					</FlexContainer>
 
-					<Heading level={4} align="center" style={{ fontWeight: "normal" }}>Support for Go, TypeScript, and JavaScript</Heading>
+					<Heading level={4} align="center" style={{ fontWeight: "normal" }}>
+						Support for Go, TypeScript, JavaScript, and C
+					</Heading>
 
 					<p style={{
 						color: colors.coolGray3(),
 						paddingLeft: whitespace[4],
 						paddingRight: whitespace[4],
 					}}>
-						JavaScript and TypeScript in beta. Partial support for C. Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
+						JavaScript, TypeScript, and C in beta. Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
 					</p>
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
 						<strong>
