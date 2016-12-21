@@ -6,11 +6,10 @@
  */
 
 import * as path from 'path';
-import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 
-import { FileSystem, FileInfo } from 'javascript-typescript-langserver/src/fs';
-import { readFile, readDir } from './vfs';
+import { FileSystem } from 'javascript-typescript-langserver/src/fs';
+import { readFile } from './vfs';
 
 
 const ConsoleReporter = require('yarn/lib/reporters').ConsoleReporter;
@@ -21,7 +20,6 @@ const normalizeManifest = require('yarn/lib/util/normalize-manifest').default;
 const PackageRequest = require('yarn/lib/package-request').default;
 const parsePackageName = require('yarn/lib/util/parse-package-name').default;
 const registries = require('yarn/lib/registries').registries;
-const parsePacakgeName = require('yarn/lib/util/parse-package-name').default;
 
 const semver = require('semver');
 const lockfile = require('proper-lockfile');
@@ -56,7 +54,7 @@ export async function info(cwd: string, globaldir: string, overlaydir: string, p
 	let result = await config.registries.npm.request(name);
 	if (!result) {
 		reporter.error(reporter.lang('infoFail'));
-		return;
+		return Promise.reject("failed to fetch metadata from NPM for package " + packageName);
 	}
 
 	result = clean(result);
@@ -92,12 +90,7 @@ export async function infoAlt(remoteFs: FileSystem, cwd: string, globaldir: stri
 	const lf = await Lockfile.fromDirectory(config.cwd, reporter);
 	const inst = new Install({}, config, reporter, lf);
 
-	const {
-		requests: depRequests,
-		patterns: rawPatterns,
-		ignorePatterns,
-		usedPatterns,
-	} = await fetchRequestFromRemoteFS(inst, [], remoteFs, overlaydir);
+	const { patterns: rawPatterns } = await fetchRequestFromRemoteFS(inst, [], remoteFs, overlaydir);
 
 	for (const pattern of rawPatterns) {
 		const pkginfo = parsePackageName(pattern);
@@ -115,10 +108,16 @@ export async function infoAlt(remoteFs: FileSystem, cwd: string, globaldir: stri
 const ghURLParser = /^(?:https:\/\/|git\+https:\/\/|git:\/\/)(?:www\.)?(github\.com(?:\/[^\/#]+){2})(?:#([^\s]+))?$/;
 
 export function parseGitHubInfo(cloneURL: string): Info | null {
-	let [match, repoURI, version] = cloneURL.match(ghURLParser);
+	const matchInfo = cloneURL.match(ghURLParser);
+	if (!matchInfo) {
+		return null;
+	}
+	let match = matchInfo[0];
 	if (!match) {
 		return null;
 	}
+	let repoURI = matchInfo[1];
+	let version = matchInfo[2];
 	if (repoURI.endsWith(".git")) {
 		repoURI = repoURI.substring(0, repoURI.length - ".git".length);
 	}
@@ -169,9 +168,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 
 	const {
 		requests: depRequests,
-		patterns: rawPatterns,
 		ignorePatterns,
-		usedPatterns,
 	} = await fetchRequestFromRemoteFS(inst, [], remoteFs, overlaydir);
 
 	// filter out packages that are covered by @types/* packages
@@ -196,8 +193,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 	const resolveStart = new Date().getTime();
 	const deps: DependencyRequestPattern[] = inst.prepareRequests(prunedDepRequests);
 	inst.resolver.flat = inst.flags.flat;
-	const seedPatterns = deps.map((dep): string => dep.pattern);
-	const resolvedPatterns = [];
+	const resolvedPatterns: string[] = [];
 	await Promise.all(deps.map(async (req): Promise<void> => {
 		try {
 			await inst.resolver.find(req);
@@ -258,9 +254,9 @@ async function runWithLockfile(lf: string, run: () => Promise<void>): Promise<vo
 /*
  * clean is a non-exported function copied over from src/cli/commands/info.js in the yarn repository.
  */
-function clean(object: any): any {
+function clean(object: { [key: string]: any }): any {
 	if (Array.isArray(object)) {
-		const result = [];
+		const result: { [key: string]: any }[] = [];
 		object.forEach((item) => {
 			item = clean(item);
 			if (item) {
@@ -269,7 +265,7 @@ function clean(object: any): any {
 		});
 		return result;
 	} else if (typeof object === 'object') {
-		const result = {};
+		const result: { [key: string]: any } = {};
 		for (const key in object) {
 			if (key.startsWith('_')) {
 				continue;
@@ -292,15 +288,15 @@ function clean(object: any): any {
 // yarn.cli.commands.Install.fetchRequestFromCwd using the VFS instead
 // of the current working directory of the local filesystem.
 async function fetchRequestFromRemoteFS(inst: Install, excludePatterns: string[] = [], fs: FileSystem, overlaydir: string): Promise<InstallCwdRequest> {
-	const patterns = [];
-	const deps = [];
+	const patterns: string[] = [];
+	const deps: any[] = [];
 	const manifest: Manifest = {};
 
-	const ignorePatterns = [];
-	const usedPatterns = [];
+	const ignorePatterns: string[] = [];
+	const usedPatterns: string[] = [];
 
 	// exclude package names that are in install args
-	const excludeNames = [];
+	const excludeNames: string[] = [];
 	for (const pattern of excludePatterns) {
 		// can't extract a package name from this
 		if (PackageRequest.getExoticResolver(pattern)) {
@@ -330,7 +326,7 @@ async function fetchRequestFromRemoteFS(inst: Install, excludePatterns: string[]
 		Object.assign(inst.resolutions, json.resolutions);
 		Object.assign(manifest, json);
 
-		const pushDeps = (depType, {hint, optional}, isUsed) => {
+		const pushDeps = (depType: string, {hint, optional}: { hint: string | null, optional: boolean }, isUsed: boolean) => {
 			const depMap = json[depType];
 			for (const name in depMap) {
 				if (excludeNames.indexOf(name) >= 0) {
@@ -410,7 +406,7 @@ interface Install {
 	flags: {
 		ignoreOptional?: boolean;
 	};
-	rootPatternsToOrigin: { [key: string]: number; };
+	rootPatternsToOrigin: { [key: string]: string; };
 	rootManifestRegistries: any[];
 	config: Config;
 	resolutions: any;

@@ -1358,7 +1358,7 @@ is-obj@^1.0.0:
 
 is-posix-bracket@^0.1.0:
   version "0.1.1"
-  resolved "https://registry.yarnpkg.com/is-posix-bracket/-/is-posix-bracket-0.1.1.tgz#3334dc79774368e92f016e6fbc0a88f5cd6e6bc4"
+  resolved "http://registry.npmjs.org/is-posix-bracket/-/is-posix-bracket-0.1.1.tgz#3334dc79774368e92f016e6fbc0a88f5cd6e6bc4"
 
 is-primitive@^2.0.0:
   version "2.0.0"
@@ -1423,7 +1423,7 @@ jade@0.26.3:
 
 "javascript-typescript-langserver@git+https://github.com/sourcegraph/javascript-typescript-langserver#build":
   version "1.0.0"
-  resolved "git+https://github.com/sourcegraph/javascript-typescript-langserver#46638f702f35da44afb2b5f8c46585bf1ae29c49"
+  resolved "git+https://github.com/sourcegraph/javascript-typescript-langserver#08fa84fc57f0d75856d5532f5237ff9e9ab8fa98"
   dependencies:
     "@types/async" "^2.0.32"
     "@types/node" "^6.0.46"

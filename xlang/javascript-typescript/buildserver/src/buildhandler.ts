@@ -1,29 +1,19 @@
 /// <reference path="../node_modules/vscode/thenable.d.ts" />
 
-import * as fs from 'fs';
 import * as rimraf from 'rimraf';
 import * as temp from 'temp';
 import * as path from 'path';
 import * as os from 'os';
 
 import {
-	IConnection,
-	createConnection,
 	InitializeParams,
 	InitializeResult,
-	TextDocuments,
 	TextDocumentPositionParams,
-	TextDocumentSyncKind,
-	Definition,
 	ReferenceParams,
-	Position,
 	Location,
 	Hover,
-	WorkspaceSymbolParams,
 	DocumentSymbolParams,
 	SymbolInformation,
-	RequestType,
-	Range,
 	DidOpenTextDocumentParams,
 	DidCloseTextDocumentParams,
 	DidChangeTextDocumentParams,
@@ -33,7 +23,7 @@ import {
 import { TypeScriptService } from 'javascript-typescript-langserver/src/typescript-service';
 import { LanguageHandler } from 'javascript-typescript-langserver/src/lang-handler';
 import { install, info, infoAlt, parseGitHubInfo } from './yarnshim';
-import { FileSystem, RemoteFileSystem } from 'javascript-typescript-langserver/src/fs';
+import { FileSystem } from 'javascript-typescript-langserver/src/fs';
 import { LayeredFileSystem, LocalRootedFileSystem, walkDirs } from './vfs';
 import { uri2path } from 'javascript-typescript-langserver/src/util';
 import * as rt from 'javascript-typescript-langserver/src/request-type';
@@ -153,7 +143,7 @@ export class BuildHandler implements LanguageHandler {
 		// if we can get the module package name heuristically
 		const cmp = p.substr(i + '/node_modules/'.length).split('/');
 		const subpath = path.posix.join(...cmp.slice(1));
-		let pkg: string;
+		let pkg: string | undefined;
 		if (cmp.length >= 2 && cmp[0] === "@types") {
 			pkg = cmp[0] + "/" + cmp[1];
 		} else if (cmp.length >= 1) {
@@ -176,17 +166,17 @@ export class BuildHandler implements LanguageHandler {
 				return { uri: uri, rewritten: false };
 			}
 		}
-		if (!(pkginfo.repository && pkginfo.repository.url && pkginfo.repository.type === 'git')) {
+		if (!pkginfo.repository || !pkginfo.repository.url || pkginfo.repository.type !== 'git') {
 			return { uri: uri, rewritten: false };
 		}
 
 		// if we can parse the git URL
 		const pkgUrlInfo = parseGitHubInfo(pkginfo.repository.url);
-		if (!pkgUrlInfo) {
+		if (!pkgUrlInfo || !pkgUrlInfo.repository) {
 			return { uri: uri, rewritten: false };
 		}
 
-		return { uri: makeUri(pkgUrlInfo.repository.url, pkginfo.gitHead, subpath), rewritten: true };
+		return { uri: makeUri(pkgUrlInfo.repository.url, subpath, pkginfo.gitHead), rewritten: true };
 	}
 
 	/*
@@ -212,7 +202,7 @@ export class BuildHandler implements LanguageHandler {
 	}
 
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
-		let locs: Location[];
+		let locs: Location[] = [];
 		// First, attempt to get definition before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
@@ -229,7 +219,7 @@ export class BuildHandler implements LanguageHandler {
 	}
 
 	async getHover(params: TextDocumentPositionParams): Promise<Hover> {
-		let hover: Hover;
+		let hover: Hover | null = null;
 		// First, attempt to get hover info before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
@@ -278,7 +268,7 @@ export class BuildHandler implements LanguageHandler {
 	}
 }
 
-function makeUri(repoUri: string, version: string | null, path: string): string {
+function makeUri(repoUri: string, path: string, version?: string): string {
 	const versionPart = version ? "?" + version : "";
 	if (path.startsWith("/")) {
 		path = path.substr(1);

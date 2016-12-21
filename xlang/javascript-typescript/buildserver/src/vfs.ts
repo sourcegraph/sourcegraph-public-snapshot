@@ -15,13 +15,13 @@ export class LayeredFileSystem implements FileSystem {
 		this.filesystems = filesystems;
 	}
 
-	readDir(path: string, callback: (err: Error, result?: FileInfo[]) => void) {
+	readDir(path: string, callback: (err: Error | null, result?: FileInfo[]) => void) {
 		this._readDir(path).then((result) => {
 			callback(null, result);
 		}, callback);
 	}
 
-	readFile(path: string, callback: (err: Error, result?: string) => void) {
+	readFile(path: string, callback: (err: Error | null, result?: string) => void) {
 		this._readFile(path).then((result) => {
 			callback(null, result);
 		}, callback);
@@ -29,7 +29,7 @@ export class LayeredFileSystem implements FileSystem {
 
 	private async _readDir(path: string): Promise<FileInfo[]> {
 		const finfo: FileInfo[] = [];
-		const foundNames = {};
+		const foundNames: { [key: string]: boolean } = {};
 		let oneSuccess = false;
 		for (let i = 0; i < this.filesystems.length; i++) {
 			const f = this.filesystems[i];
@@ -80,7 +80,7 @@ export class LocalRootedFileSystem implements FileSystem {
 		this.root = root
 	}
 
-	readDir(path: string, callback: (err: Error, result?: FileInfo[]) => void) {
+	readDir(path: string, callback: (err: Error | null, result?: FileInfo[]) => void) {
 		path = filepath.join(this.root, path);
 		fs.readdir(path, (err: Error, files: string[]) => {
 			if (err) {
@@ -106,7 +106,7 @@ export class LocalRootedFileSystem implements FileSystem {
 		});
 	}
 
-	readFile(path: string, callback: (err: Error, result?: string) => void) {
+	readFile(path: string, callback: (err: Error | null, result?: string) => void) {
 		path = filepath.join(this.root, path);
 		fs.readFile(path, (err: Error, buf: Buffer) => {
 			if (err) {

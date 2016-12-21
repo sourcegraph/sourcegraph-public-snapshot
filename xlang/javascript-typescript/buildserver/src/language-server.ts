@@ -1,9 +1,6 @@
 /// <reference path="../node_modules/vscode/thenable.d.ts" />
 
 import * as net from 'net';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
 import * as cluster from 'cluster';
 
 import { newConnection, registerLanguageHandler } from 'javascript-typescript-langserver/src/connection';
@@ -13,7 +10,7 @@ import { BuildHandler } from './buildhandler';
 
 const program = require('commander');
 
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', (err: Error) => {
 	console.error(err);
 });
 

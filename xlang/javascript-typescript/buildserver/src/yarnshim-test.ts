@@ -1,4 +1,4 @@
-import { install, info } from './yarnshim';
+import { install } from './yarnshim';
 import { InMemoryFileSystem } from 'javascript-typescript-langserver/src/project-manager';
 import { FileSystem, FileInfo } from 'javascript-typescript-langserver/src/fs';
 import * as path from 'path';
@@ -22,7 +22,7 @@ class InMemFileSystem implements FileSystem {
 		this.fs = new InMemoryFileSystem(root);
 	}
 
-	readDir(p: string, callback: (err: Error, result?: FileInfo[]) => void) {
+	readDir(p: string, callback: (err: Error | null, result?: FileInfo[]) => void) {
 		const entries = this.fs.getFileSystemEntries(p);
 		const fileInfo = [];
 		for (const name of entries.files) {
@@ -42,7 +42,7 @@ class InMemFileSystem implements FileSystem {
 		callback(null, fileInfo);
 	}
 
-	readFile(p: string, callback: (err: Error, result?: string) => void) {
+	readFile(p: string, callback: (err: Error | null, result?: string) => void) {
 		callback(null, this.fs.readFile(p));
 	}
 
@@ -105,7 +105,6 @@ async function main() {
 				process.exit(workersFailed);
 			}
 		});
-		cluster.on
 	} else {
 		console.error("running `yarn install`");
 		runInstall().then(() => {

@@ -1,16 +1,3 @@
-import * as net from 'net';
-import * as os from 'os';
-import * as fs from 'fs';
-
-import * as mocha from 'mocha';
-import * as chai from 'chai';
-
-import * as ts from 'typescript';
-
-import * as vscode from 'vscode-languageserver';
-
-import { FileInfo } from 'javascript-typescript-langserver/src/fs';
-import * as rt from 'javascript-typescript-langserver/src/request-type';
 import * as utils from 'javascript-typescript-langserver/src/test/test-utils';
 
 import { BuildHandler } from "../buildhandler";

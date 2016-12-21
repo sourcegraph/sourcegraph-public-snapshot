@@ -6,7 +6,12 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "sourceMap": true,
-        "outDir": "build"
+        "outDir": "build",
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"noImplicitAny": true
     },
     "exclude": [
         "node_modules"
