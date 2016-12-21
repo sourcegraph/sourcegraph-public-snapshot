@@ -1,10 +1,11 @@
 import "sourcegraph/components/styles/_normalize.css";
 
 import * as React from "react";
-import { PlainRoute } from "react-router";
+import { InjectedRouter, PlainRoute } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { GlobalNav } from "sourcegraph/app/GlobalNav";
+import { setRouter } from "sourcegraph/app/router";
 import * as styles from "sourcegraph/app/styles/App.css";
 import { withViewEventsLogged } from "sourcegraph/util/EventLogger";
 
@@ -22,6 +23,17 @@ interface Props {
 }
 
 export class App extends React.Component<Props, {}> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: { router: InjectedRouter };
+
+	constructor(props: Props, context: { router: InjectedRouter }) {
+		super(props, context);
+		setRouter(context.router);
+	}
+
 	render(): JSX.Element {
 		let className = styles.main_container;
 		if (!context.user && location.pathname === "/") {

@@ -17,7 +17,7 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { IOptions } from "vs/workbench/common/options";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { configureEditor } from "sourcegraph/editor/config";
+import { registerEditorCallbacks } from "sourcegraph/editor/config";
 import { configurePostStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
 
@@ -39,7 +39,7 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	workbench.startup();
 
 	const editor = workbench.getEditorPart();
-	configureEditor(editor, resource);
+	registerEditorCallbacks(editor);
 	configurePostStartup(services);
 	return [workbench, services];
 }

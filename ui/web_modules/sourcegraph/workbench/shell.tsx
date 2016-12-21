@@ -1,26 +1,22 @@
 import * as autobind from "autobind-decorator";
 import * as React from "react";
+
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
+import { getBlobPropsFromRouter } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
-import { updateEditor } from "sourcegraph/editor/config";
+import { syncEditorWithRouter } from "sourcegraph/editor/config";
 
-interface Props {
-	repo: string;
-	rev: string | null;
-	path: string;
-};
-
-interface State { };
-
-// Shell loads the workbench and calls init on it. It transmits data from the
-// React UI layer into the Workbench interface. It is primarily controlled by
-// React Router. It uses code splitting to minimize bundle size.
+// WorkbenchShell loads the workbench and calls init on it. It is a pure container and transmits no data from the
+// React UI layer into the Workbench interface. Synchronization of URL <-> workbench is handled by
+// adding a listener to the "sourcegraph/app/router" package, and by pushing updates to the singleton
+// router from that package.
 @autobind
-export class Shell extends React.Component<Props, State> {
+export class WorkbenchShell extends React.Component<{}, {}> {
 	workbench: Workbench;
 	services: ServiceCollection;
+	listener: number;
 
 	private mounted: boolean = false;
 
@@ -38,14 +34,26 @@ export class Shell extends React.Component<Props, State> {
 				// component unmounted before require finished.
 				return;
 			}
-			const workspace = URIUtils.pathInRepo(this.props.repo, this.props.rev, this.props.path);
-			[this.workbench, this.services] = init(domElement, workspace);
+			const {repo, rev, path} = getBlobPropsFromRouter();
+			const resource = URIUtils.pathInRepo(repo, rev, path);
+			[this.workbench, this.services] = init(domElement, resource);
 			this.layout();
 		});
 	}
 
 	componentWillMount(): void {
 		window.onresize = this.layout;
+		window.addEventListener("popstate", this.synchronizeEditor);
+	}
+
+	componentWillUnmount(): void {
+		window.onresize = () => void (0);
+		window.removeEventListener("popstate", this.synchronizeEditor);
+	}
+
+	synchronizeEditor(): void {
+		// Provides browser forward & back handling.
+		syncEditorWithRouter(this.services);
 	}
 
 	layout(): void {
@@ -59,18 +67,6 @@ export class Shell extends React.Component<Props, State> {
 			this.workbench.setSideBarHidden(false);
 		}
 		this.workbench.layout();
-	}
-
-	componentWillUnmount(): void {
-		window.onresize = () => void (0);
-	}
-
-	componentWillReceiveProps(nextProps: Props): void {
-		if (!this.mounted || !this.workbench) {
-			return;
-		}
-		const resource = URIUtils.pathInRepo(nextProps.repo, nextProps.rev, nextProps.path);
-		updateEditor(this.workbench.getEditorPart(), resource, this.services);
 	}
 
 	render(): JSX.Element {
