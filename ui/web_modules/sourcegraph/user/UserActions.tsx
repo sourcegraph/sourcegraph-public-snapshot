@@ -2,7 +2,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 
 export type Action =
 	SubmitBetaSubscription |
-	BetaSubscriptionCompleted
+	BetaSubscriptionCompleted;
 
 export class SubmitBetaSubscription {
 	email: string;

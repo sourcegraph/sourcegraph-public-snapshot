@@ -16,7 +16,7 @@ export type Props = {
 	onDismiss: () => void,
 	activateSearch: (eventProps?: any) => void,
 	showModal: boolean,
-}
+};
 
 // QuickOpenModal controls when and how to show the search modal.
 class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {

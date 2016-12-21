@@ -1,6 +1,0 @@
-node_modules
-npm-debug.log
-.DS_Store
-
-# Local SauceLabs test runner
-sauce.sh

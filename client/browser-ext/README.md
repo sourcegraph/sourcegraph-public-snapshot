@@ -21,7 +21,7 @@ sudo ln -sf /usr/local/n/versions/node/<VERSION>/bin/node /usr/bin/node
 
 ```bash
 $ npm install -g yarn
-$ yarn install
+$ yarn
 ```
 
 ## Development

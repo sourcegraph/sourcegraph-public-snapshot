@@ -1,7 +1,7 @@
 app
 =====
 
-Run `npm start` in this directory to recompile assets while developing the app.
+Run `yarn run start` in this directory to recompile assets while developing the app.
 
 ## Filesystem layout
 
@@ -18,7 +18,7 @@ To run all the tests for the UI code:
 
 ```
 cd sourcegraph/ui
-npm test
+yarn test
 ```
 
 To run a specific test:

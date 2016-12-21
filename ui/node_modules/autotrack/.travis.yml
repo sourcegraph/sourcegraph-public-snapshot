@@ -1,9 +1,0 @@
----
-language: node_js
-node_js:
-  - "6"
-
-env:
-  global:
-    - SAUCE_USERNAME=autotrack
-    - SAUCE_ACCESS_KEY=3256de84-6b60-4f8b-927f-a751ad917fc1

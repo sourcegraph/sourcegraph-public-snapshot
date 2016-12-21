@@ -30,6 +30,6 @@ fi
 ./node_modules/.bin/tsc
 
 # check for formatting errors
-npm run fmt-check
+yarn run fmt-check
 
 find ./web_modules -name '*.ts' -or -name '*.tsx' | grep -v '.gen.d.ts' | xargs ./node_modules/.bin/tslint

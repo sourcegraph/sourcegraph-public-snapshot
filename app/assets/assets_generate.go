@@ -26,9 +26,9 @@ func getMainBundleFilename(dir string) (string, error) {
 	}
 
 	if len(candidates) == 0 {
-		return "", fmt.Errorf("No output directories in %s. You must first run Webpack via `npm run build` in the ui directory to produce the output directory.", dir)
+		return "", fmt.Errorf("No output directories in %s. You must first run Webpack via `yarn run build` in the ui directory to produce the output directory.", dir)
 	} else if len(candidates) != 1 {
-		return "", fmt.Errorf("Multiple output directories in %s. There must be exactly one. Did `npm run build` not properly clean up %s before producing output?", dir, dir)
+		return "", fmt.Errorf("Multiple output directories in %s. There must be exactly one. Did `yarn run build` not properly clean up %s before producing output?", dir, dir)
 	}
 	return candidates[0], nil
 }

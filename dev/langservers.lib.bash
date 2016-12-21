@@ -56,10 +56,10 @@ install_langserver() {
 
 	case "$LS_NAME" in
 		css-langserver)
-			(cd "$LS_DIR/langserver" && npm install && node_modules/.bin/tsc)
+			(cd "$LS_DIR/langserver" && yarn && node_modules/.bin/tsc)
 			;;
 		javascript-typescript-langserver)
-			(cd "$LS_DIR" && yarn install && node_modules/.bin/tsc)
+			(cd "$LS_DIR" && yarn && node_modules/.bin/tsc)
 			;;
 		python-langserver)
 			(cd "$LS_DIR" && pip3 install -r requirements.txt)

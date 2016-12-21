@@ -1,6 +1,12 @@
 {
   "extends": ["tslint:latest", "tslint-react"],
-  "rules": {
+	"rules": {
+		"arrow-parens": false,
+		"trailing-comma": false,
+		"max-classes-per-file": false,
+		"prefer-for-of": false,
+		"array-type": false,
+		"ordered-imports": [true, {"named-imports-order": "lowercase-last"}],
 		"comment-format": [false],
 		"indent": [true, "tabs"],
 		"interface-name": [false],
@@ -17,6 +23,7 @@
 		"typedef": [true, "call-signature", "parameter", "property-declaration", "member-variable-declaration"],
 		"variable-name": [true, "check-format", "allow-leading-underscore", "allow-pascal-case", "ban-keywords"],
 
+		"jsx-wrap-multiline": false,
 		"jsx-no-multiline-js": false,
 		"jsx-curly-spacing": "never",
 		"jsx-no-lambda": false,

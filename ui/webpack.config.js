@@ -16,7 +16,7 @@ if (!production) {
 		try {
 			require("fsevents");
 		} catch (error) {
-			console.warn("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. Run 'npm run dep' to fix.");
+			console.warn("WARNING: fsevents not properly installed. This causes a high CPU load when webpack is idle. If you see this, run `yarn` in the ui directory. If it persists, post in #dev-chat or the Sourcegraph issue tracker.");
 		}
 	}
 }
@@ -93,8 +93,10 @@ module.exports = {
 		modules: [
 			`${__dirname}/web_modules`,
 			"node_modules",
-			`${__dirname}/node_modules/vscode/src`,
+			`${__dirname}/vendor/node_modules/vscode/src`,
+			`${__dirname}/vendor/node_modules`,
 		],
+		symlinks: false,
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 		alias: {
 			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
@@ -131,10 +133,10 @@ module.exports = {
 			{test: /\.(svg|png)$/, loader: "url-loader"},
 			{test: /\.(woff|eot|ttf)$/, loader: "url-loader?name=fonts/[name].[ext]"},
 			{test: /\.json$/, loader: "json-loader"},
-			{test: /\.css$/, include: `${__dirname}/node_modules/vscode`, loader: "style-loader!css-loader"}, // TODO(sqs): add ?sourceMap
+			{test: /\.css$/, include: `${__dirname}/vendor/node_modules/vscode`, loader: "style-loader!css-loader"}, // TODO(sqs): add ?sourceMap
 			{
 				test: /\.css$/,
-				exclude: `${__dirname}/node_modules/vscode`,
+				exclude: `${__dirname}/vendor/node_modules/vscode`,
 				use: [
 					'style-loader',
 					{
@@ -154,6 +156,9 @@ module.exports = {
 			/\.min\.js$/,
 			/typescriptServices\.js$/,
 		],
+	},
+	performance: {
+		hints: false,
 	},
 	devServer: {
 		contentBase: `${__dirname}/assets`,

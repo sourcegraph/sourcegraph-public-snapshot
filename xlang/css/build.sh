@@ -11,7 +11,7 @@ if [ ! -d "css-langserver" ]; then
 else
     cd css-langserver && git pull && cd langserver
 fi
-npm install
+yarn
 ./node_modules/.bin/tsc -p .
 
 cd ../..

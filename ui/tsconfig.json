@@ -6,10 +6,13 @@
     "baseUrl": ".",
     "paths": {
         "sourcegraph/*": ["web_modules/sourcegraph/*"],
-        "vs/*": ["node_modules/vscode/src/vs/*"]
+        "vs/*": ["vendor/node_modules/vscode/src/vs/*"],
+        "vscode/src/vs/*": ["vendor/node_modules/vscode/src/vs/*"],
+        "monaco-languages/*": ["vendor/node_modules/monaco-languages/*"],
+        "monaco-typescript/*": ["vendor/node_modules/monaco-languages/*"]
     },
     "lib": ["es2016", "dom"],
-    "types": ["mocha", "lodash"],
+    "types": ["mocha", "lodash", "flux/utils"],
     "jsx": "react",
     "relaySchema": "../api/schema.json",
     "sourceMap": true,
@@ -19,6 +22,7 @@
   },
   "exclude": [
     "node_modules",
+    "vendor/node_modules",
     "scripts"
   ]
 }

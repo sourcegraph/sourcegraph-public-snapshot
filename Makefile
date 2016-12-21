@@ -35,10 +35,7 @@ src: ${GOBIN}/src
 ${GOBIN}/src: $(shell /usr/bin/find . -type f -and -name '*.go' -not -path './vendor/*')
 	go install ./cmd/src
 
-dep: dist-dep app-dep
-
-app-dep:
-	cd ui && npm run dep
+dep: dist-dep ui-dep
 
 # non-critical credentials for dev environment
 export AUTH0_CLIENT_ID ?= onW9hT0c7biVUqqNNuggQtMLvxUWHWRC
@@ -64,13 +61,17 @@ ${GOBIN}/sgtool: $(wildcard dev/sgtool/*.go)
 
 dist-dep: libvfsgen ${GOBIN}/sgtool
 
+ui-dep:
+	cd ui && yarn
+	cd ui/scripts/tsmapimports && yarn
+
 dist: dist-dep app-dep
 	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
 
 generate:
 	# Ignore app/assets because its output is not checked into Git.
 	go list ./... | grep -v /vendor/ | grep -v app/assets | grep -v sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1 | xargs go generate
-	cd ui && npm run generate
+	cd ui && yarn run generate
 
 drop-entire-local-database:
 	psql -c "drop schema public cascade; create schema public;"
@@ -79,13 +80,13 @@ drop-test-dbs:
 	psql -A -t -c "select datname from pg_database where datname like 'sgtmp%' or datname like 'graphtmp%';" | xargs -P 10 -n 1 -t dropdb
 
 app/assets/bundle.js: app-dep
-	cd ui && npm run build
+	cd ui && yarn run build
 
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check src app/assets/bundle.js
-	cd ui && npm test
-	CDPATH= cd ui/scripts/tsmapimports && PATH=$$PATH:../../node_modules/.bin npm test
+	cd ui && yarn test
+	CDPATH= cd ui/scripts/tsmapimports && yarn test
 	go test -race ${TESTPKGS}
 
 check: ${GOBIN}/go-template-lint
