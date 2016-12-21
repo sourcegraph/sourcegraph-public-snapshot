@@ -322,29 +322,29 @@ diffChars('foo', 'bar');\n\
 					},
 				}
 			}, done);
-			it('cross-repo definition', async function (done: (err?: Error) => void) {
-				utils.definition({
-					textDocument: {
-						uri: 'file:///a.ts'
-					},
-					position: {
-						line: 0,
-						character: 9
-					}
-				}, {
-						uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
-						range: {
-							start: {
-								line: 0,
-								character: 13
-							},
-							end: {
-								line: 1,
-								character: 14
-							}
+		});
+		it('cross-repo definition', async function (done: (err?: Error) => void) {
+			utils.definition({
+				textDocument: {
+					uri: 'file:///a.ts'
+				},
+				position: {
+					line: 0,
+					character: 9
+				}
+			}, {
+					uri: 'file:///node_modules/diff/index.d.ts',
+					range: {
+						start: {
+							line: 0,
+							character: 13
+						},
+						end: {
+							line: 0,
+							character: 18
 						}
-					}, done);
-			});
+					}
+				}, done);
 		});
 		afterEach(function (done: () => void) {
 			utils.tearDown(done);
