@@ -10,11 +10,12 @@ type request struct {
 
 // execRequest is a request to execute a command inside a git repository.
 type execRequest struct {
-	Repo      string
-	Args      []string
-	Opt       *vcs.RemoteOpts
-	Stdin     <-chan []byte
-	ReplyChan chan<- *execReply
+	Repo           string
+	EnsureRevision string
+	Args           []string
+	Opt            *vcs.RemoteOpts
+	Stdin          <-chan []byte
+	ReplyChan      chan<- *execReply
 }
 
 type execReply struct {

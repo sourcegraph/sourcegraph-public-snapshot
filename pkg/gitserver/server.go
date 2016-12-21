@@ -13,6 +13,7 @@ import (
 	"github.com/neelance/chanrpc"
 	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
@@ -33,11 +34,17 @@ type Server struct {
 	// in the process of being cloned.
 	cloningMu sync.Mutex
 	cloning   map[string]struct{}
+
+	updateRepo        chan<- string
+	repoUpdateLocksMu sync.Mutex
+	repoUpdateLocks   map[string]*sync.Mutex
 }
 
 // Serve serves incoming gitserver requests on listener l.
 func (s *Server) Serve(l net.Listener) error {
 	s.cloning = make(map[string]struct{})
+	s.updateRepo = s.repoUpdateLoop()
+	s.repoUpdateLocks = make(map[string]*sync.Mutex)
 
 	s.registerMetrics()
 	requests := make(chan *request, 100)
@@ -112,6 +119,15 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		return
 	}
 
+	if req.EnsureRevision != "" {
+		cmd := exec.Command("git", "rev-parse", req.EnsureRevision)
+		cmd.Dir = dir
+		if err := cmd.Run(); err != nil {
+			// Revision not found, update before running actual command.
+			s.doRepoUpdate(req.Repo)
+		}
+	}
+
 	stdoutC, stdoutWRaw := chanrpcutil.NewWriter()
 	stderrC, stderrWRaw := chanrpcutil.NewWriter()
 	stdoutW := &writeCounter{w: stdoutWRaw}
@@ -149,6 +165,8 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
+
+	s.updateRepo <- req.Repo
 }
 
 var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -168,4 +186,42 @@ var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 func init() {
 	prometheus.MustRegister(execRunning)
 	prometheus.MustRegister(execDuration)
+}
+
+func (s *Server) repoUpdateLoop() chan<- string {
+	updateRepo := make(chan string)
+	lastCheckAt := make(map[string]time.Time)
+
+	go func() {
+		for repo := range updateRepo {
+			if t, ok := lastCheckAt[repo]; ok && time.Now().Before(t.Add(10*time.Second)) {
+				continue // git data still fresh
+			}
+			lastCheckAt[repo] = time.Now()
+
+			go s.doRepoUpdate(repo)
+		}
+	}()
+
+	return updateRepo
+}
+
+func (s *Server) doRepoUpdate(repo string) {
+	s.repoUpdateLocksMu.Lock()
+	l, ok := s.repoUpdateLocks[repo]
+	if !ok {
+		l = new(sync.Mutex)
+		s.repoUpdateLocks[repo] = l
+	}
+	s.repoUpdateLocksMu.Unlock()
+
+	l.Lock() // Prevent multiple updates in parallel. It works fine, but it wastes resources.
+	defer l.Unlock()
+
+	cmd := exec.Command("git", "remote", "update", "--prune")
+	cmd.Dir = path.Join(s.ReposDir, repo)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
+	}
 }

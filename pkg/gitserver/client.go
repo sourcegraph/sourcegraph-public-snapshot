@@ -72,7 +72,14 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 	sum := md5.Sum([]byte(c.Repo))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.servers))
 	replyChan := make(chan *execReply, 1)
-	c.client.servers[serverIndex] <- &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}}
+	c.client.servers[serverIndex] <- &request{Exec: &execRequest{
+		Repo:           c.Repo,
+		EnsureRevision: c.EnsureRevision,
+		Args:           c.Args[1:],
+		Opt:            c.Opt,
+		Stdin:          chanrpcutil.ToChunks(c.Input),
+		ReplyChan:      replyChan,
+	}}
 	reply, ok := <-replyChan
 	if !ok {
 		return nil, errRPCFailed
@@ -102,11 +109,12 @@ func init() {
 type Cmd struct {
 	client *Client
 
-	Args       []string
-	Repo       string
-	Opt        *vcs.RemoteOpts
-	Input      []byte
-	ExitStatus int
+	Args           []string
+	Repo           string
+	EnsureRevision string
+	Opt            *vcs.RemoteOpts
+	Input          []byte
+	ExitStatus     int
 }
 
 // Command creates a new Cmd. Command name must be 'git',

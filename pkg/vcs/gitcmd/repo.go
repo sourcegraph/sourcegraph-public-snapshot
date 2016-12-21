@@ -64,6 +64,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
 	cmd.Repo = r.URL
+	cmd.EnsureRevision = string(spec + "^0")
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
@@ -683,6 +684,7 @@ func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, nam
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = r.URL
+	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) || bytes.Contains(out, []byte("does not exist")) {
@@ -815,6 +817,7 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	args = append(args, "--", filepath.ToSlash(path))
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
+	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
