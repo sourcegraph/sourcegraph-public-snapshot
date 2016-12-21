@@ -24,6 +24,7 @@ import { Features } from "sourcegraph/util/features";
 import { Editor } from "sourcegraph/editor/Editor";
 import { EditorComponent } from "sourcegraph/editor/EditorComponent";
 import { IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
+import { IDisposable } from "vs/base/common/lifecycle";
 import { ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 
 export interface Props {
@@ -54,8 +55,9 @@ export class EditorController extends Container<Props, State> {
 		router: InjectedRouter,
 	};
 
-	private _editor?: Editor;
+	private _editor: Editor | null = null;
 	private _shortCircuitURLNavigationOnEditorOpened: number = 0;
+	private _editorListeners: IDisposable[] = [];
 
 	constructor(props: Props) {
 		super(props);
@@ -75,6 +77,8 @@ export class EditorController extends Container<Props, State> {
 
 	componentWillUnmount(): void {
 		super.componentWillUnmount();
+
+		this._editorListeners.forEach((disposable) => disposable.dispose());
 
 		global.document.removeEventListener("keydown", this._onKeyDownForFindInPage);
 		window.removeEventListener("resize", this._onResize);
@@ -100,11 +104,22 @@ export class EditorController extends Container<Props, State> {
 	}
 
 	_setEditor(editor: Editor | null): void {
-		this._editor = editor || undefined;
+		if (editor === this._editor) {
+			return; // nothing to do
+		}
+
+		if (this._editor) {
+			// Clear the previous EditorController's listeners.
+			this._editorListeners.forEach((disposable) => disposable.dispose());
+			this._editorListeners = [];
+		}
+
+		this._editor = editor;
+
 		if (this._editor) {
 			this._editorPropsChanged(null, this.props);
-			this._editor.onDidOpenEditor(e => this._onEditorOpened(e));
-			this._editor.onCursorSelectionChanged(debounce(this.onCursorSelectionChanged.bind(this), 200, { leading: true, trailing: true }));
+			this._editorListeners.push(this._editor.onDidOpenEditor(e => this._onEditorOpened(e)));
+			this._editorListeners.push(this._editor.onDidChangeCursorSelection(debounce(this.onCursorSelectionChanged.bind(this), 200, { leading: true, trailing: true })));
 		}
 	}
 

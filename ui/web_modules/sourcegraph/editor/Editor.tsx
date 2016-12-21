@@ -193,8 +193,8 @@ export class Editor implements IDisposable {
 		}).bind(this));
 	}
 
-	onCursorSelectionChanged(listener: (e: ICursorSelectionChangedEvent) => void): void {
-		this._editor.onDidChangeCursorSelection(listener);
+	onDidChangeCursorSelection(listener: (e: ICursorSelectionChangedEvent) => void): IDisposable {
+		return this._editor.onDidChangeCursorSelection(listener);
 	}
 
 	setInput(uri: URI, range?: IRange): Promise<IEditor> {
