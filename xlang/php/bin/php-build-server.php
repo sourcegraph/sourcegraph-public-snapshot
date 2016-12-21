@@ -1,6 +1,6 @@
 <?php
 
-use BuildServer\{ProtocolStreamReader, ProtocolStreamWriter};
+use LanguageServer\{ProtocolStreamReader, ProtocolStreamWriter};
 use Sourcegraph\BuildServer\BuildServer;
 use Sabre\Event\Loop;
 
