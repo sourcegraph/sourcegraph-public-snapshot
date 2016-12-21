@@ -18,17 +18,13 @@ export class LayeredFileSystem implements FileSystem {
 	readDir(path: string, callback: (err: Error, result?: FileInfo[]) => void) {
 		this._readDir(path).then((result) => {
 			callback(null, result);
-		}, (e) => {
-			callback(e);
-		})
+		}, callback);
 	}
 
 	readFile(path: string, callback: (err: Error, result?: string) => void) {
 		this._readFile(path).then((result) => {
 			callback(null, result);
-		}, (e) => {
-			callback(e);
-		});
+		}, callback);
 	}
 
 	private async _readDir(path: string): Promise<FileInfo[]> {
@@ -52,7 +48,7 @@ export class LayeredFileSystem implements FileSystem {
 				}
 			}
 		}
-		return Promise.resolve(finfo);
+		return finfo;
 	}
 
 	private async _readFile(path: string): Promise<string> {
@@ -90,16 +86,23 @@ export class LocalRootedFileSystem implements FileSystem {
 			if (err) {
 				return callback(err)
 			}
-			let ret: FileInfo[] = [];
-			files.forEach((f) => {
-				const stats: fs.Stats = fs.statSync(filepath.join(path, f));
-				ret.push({
-					name: f,
-					size: stats.size,
-					dir: stats.isDirectory()
+
+			Promise.all(
+				files.map((f) => {
+					return new Promise<FileInfo>((resolve, reject) => {
+						fs.stat(filepath.join(path, f), (err: NodeJS.ErrnoException, stats: fs.Stats) => {
+							if (err) {
+								return reject(err);
+							}
+							return resolve({
+								name: f,
+								size: stats.size,
+								dir: stats.isDirectory()
+							});
+						});
+					})
 				})
-			});
-			return callback(null, ret)
+			).then((fileInfos) => callback(null, fileInfos), callback);
 		});
 	}
 
@@ -109,7 +112,7 @@ export class LocalRootedFileSystem implements FileSystem {
 			if (err) {
 				return callback(err)
 			}
-			return callback(null, buf.toString())
+			return callback(null, buf.toString()); // assumes UTF-8 encoding
 		});
 	}
 
@@ -119,30 +122,14 @@ export class LocalRootedFileSystem implements FileSystem {
  * readFile wraps a call to FileSystem.readFile in a Promise.
  */
 export async function readFile(fs: FileSystem, path: string): Promise<string> {
-	return new Promise<string>((resolve, reject) => {
-		fs.readFile(path, (err, result) => {
-			if (err) {
-				return reject(err);
-			} else {
-				return resolve(result);
-			}
-		});
-	});
+	return new Promise<string>((resolve, reject) => fs.readFile(path, (err, result) => err ? reject(err) : resolve(result)));
 }
 
 /**
  * readDir wraps a call to FileSystem.readDir in a Promise.
  */
 export async function readDir(fs: FileSystem, path: string): Promise<FileInfo[]> {
-	return new Promise<FileInfo[]>((resolve, reject) => {
-		fs.readDir(path, (err, result) => {
-			if (err) {
-				return reject(err);
-			} else {
-				return resolve(result);
-			}
-		});
-	});
+	return new Promise<FileInfo[]>((resolve, reject) => fs.readDir(path, (err, result) => err ? reject(err) : resolve(result)));
 }
 
 /**

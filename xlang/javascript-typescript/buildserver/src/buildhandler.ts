@@ -77,12 +77,7 @@ export class BuildHandler implements LanguageHandler {
 
 	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<InitializeResult> {
 		const yarndir = await new Promise<string>((resolve, reject) => {
-			temp.mkdir("tsjs-yarn", (err: any, dirPath: string) => {
-				if (err) {
-					return reject(err);
-				}
-				return resolve(dirPath);
-			});
+			temp.mkdir("tsjs-yarn", (err: any, dirPath: string) => err ? reject(err) : resolve(dirPath));
 		});
 		this.yarndir = yarndir;
 		this.yarnOverlayRoot = path.join(yarndir, "workspace");
@@ -113,13 +108,7 @@ export class BuildHandler implements LanguageHandler {
 
 	shutdown(): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
-			rimraf(this.yarndir, (err) => {
-				if (err) {
-					return reject(err);
-				} else {
-					return resolve();
-				}
-			});
+			rimraf(this.yarndir, (err) => err ? reject(err) : resolve());
 		});
 	}
 
@@ -142,7 +131,6 @@ export class BuildHandler implements LanguageHandler {
 				break;
 			}
 		}
-		return Promise.resolve();
 	}
 
 	private async rewriteURI(uri: string): Promise<{ uri: string, rewritten: boolean }> {
@@ -206,7 +194,7 @@ export class BuildHandler implements LanguageHandler {
 	 */
 	private async rewriteURIs(result: any): Promise<void> {
 		if (!result) {
-			return Promise.resolve();
+			return;
 		}
 
 		if ((<HasURI>result).uri) {
@@ -220,9 +208,7 @@ export class BuildHandler implements LanguageHandler {
 			for (const e of result) {
 				await this.rewriteURIs(e);
 			}
-			return Promise.resolve();
 		}
-		return Promise.resolve();
 	}
 
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
