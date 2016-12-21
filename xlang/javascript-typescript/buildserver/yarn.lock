@@ -1423,7 +1423,7 @@ jade@0.26.3:
 
 "javascript-typescript-langserver@git+https://github.com/sourcegraph/javascript-typescript-langserver#build":
   version "1.0.0"
-  resolved "git+https://github.com/sourcegraph/javascript-typescript-langserver#08fa84fc57f0d75856d5532f5237ff9e9ab8fa98"
+  resolved "git+https://github.com/sourcegraph/javascript-typescript-langserver#46fc482da47c31d198b6ef50171120a6fd68a8a6"
   dependencies:
     "@types/async" "^2.0.32"
     "@types/node" "^6.0.46"
