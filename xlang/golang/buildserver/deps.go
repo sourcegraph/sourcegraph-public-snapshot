@@ -114,6 +114,11 @@ func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, pat
 		return pkg, nil
 	}
 
+	// We may have a specific rev to use (from glide.lock)
+	if rev := h.pinnedDep(ctx, d.importPath); rev != "" {
+		d.rev = rev
+	}
+
 	// If not, we hold the lock and we will fetch the dep.
 	if err := h.fetchDep(ctx, d); err != nil {
 		return nil, err
@@ -161,6 +166,24 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 	h.HandlerShared.Mu.Unlock()
 
 	return nil
+}
+
+func (h *BuildHandler) pinnedDep(ctx context.Context, pkg string) string {
+	h.pinnedDepsOnce.Do(func() {
+		h.HandlerShared.Mu.Lock()
+		fs := h.FS
+		root := h.RootFSPath
+		h.HandlerShared.Mu.Unlock()
+
+		// We assume glide.lock is in the top-level dir of the
+		// repo. This assumption may not be valid in the future.
+		yml, err := ctxvfs.ReadFile(ctx, fs, path.Join(root, "glide.lock"))
+		if err != nil {
+			return
+		}
+		h.pinnedDeps = loadGlideLock(yml)
+	})
+	return h.pinnedDeps.Find(pkg)
 }
 
 func doDeps(pkg *build.Package, mode build.ImportMode, importPackage func(path, srcDir string, mode build.ImportMode) (*build.Package, error)) error {

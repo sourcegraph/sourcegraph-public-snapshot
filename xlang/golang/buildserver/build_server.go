@@ -56,6 +56,8 @@ type BuildHandler struct {
 	mu                    sync.Mutex
 	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
 	depURLMus             map[string]*sync.Mutex
+	pinnedDepsOnce        sync.Once
+	pinnedDeps            pinnedPkgs
 	langserver.HandlerCommon
 	*langserver.HandlerShared
 	init           *lspext.InitializeParams // set by "initialize" request
@@ -115,6 +117,8 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	h.init = init
 	h.fetchAndSendDepsOnces = nil
 	h.depURLMus = nil
+	h.pinnedDepsOnce = sync.Once{}
+	h.pinnedDeps = nil
 	return nil
 }
 
