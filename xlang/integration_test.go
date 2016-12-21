@@ -2,6 +2,7 @@ package xlang_test
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
 	"strings"
@@ -184,7 +185,8 @@ func TestIntegration(t *testing.T) {
 						// those to be stable. Branches like "master"
 						// are not stable and are not OK to hardcode
 						// here.
-						t.Fatalf("must specify pinDepReposToRev in integration test definition so that test analysis is deterministic/stable (and not dependent on the mutable git rev spec %q for repo %q)", rev, cloneURL)
+						// We panic since t.Fatal does not interact nicely with subtests
+						panic(fmt.Sprintf("must specify pinDepReposToRev in integration test definition so that test analysis is deterministic/stable (and not dependent on the mutable git rev spec %q for repo %q)", rev, cloneURL))
 					}
 					return orig(cloneURL, rev)
 				}
