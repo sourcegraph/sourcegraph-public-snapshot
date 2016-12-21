@@ -34,7 +34,7 @@ var (
 // external sourcegraph server process optionally letting you
 // configure command line flags for the server. It also has helper
 // methods for creating CLI commands to perform client operations on
-// the corresponding server and HTTP/gRPC clients to interact with the
+// the corresponding server and HTTP clients to interact with the
 // server. The server it spawns is self contained, using randomly
 // assigned ports and temporary directories that it cleans up after
 // Close() is called.

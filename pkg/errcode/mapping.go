@@ -14,7 +14,7 @@ func codeToHTTP(code legacyerr.Code) int {
 	return http.StatusInternalServerError
 }
 
-// HTTPToCode returns the most appropriate gRPC error code for the
+// HTTPToCode returns the most appropriate gRPC/legacy error code for the
 // HTTP status. For example, HTTP 404 is mapped to codes.NotFound.
 func HTTPToCode(statusCode int) legacyerr.Code {
 	for g, h := range codeToHTTPMap {
@@ -25,9 +25,9 @@ func HTTPToCode(statusCode int) legacyerr.Code {
 	return legacyerr.Unknown
 }
 
-// codeToHTTPMap is a 1-to-1 mapping of gRPC error codes to HTTP
+// codeToHTTPMap is a 1-to-1 mapping of gRPC/legacy error codes to HTTP
 // status codes. NOTE: If you change this so it's not 1-to-1, you will
-// need to update the way that HTTP codes are mapped to gRPC error
+// need to update the way that HTTP codes are mapped to gRPC/legacy error
 // codes in code that uses this mapping, to ensure determinism.
 //
 // Callers should use the funcs grpcToHTTP or httpToCode to map error

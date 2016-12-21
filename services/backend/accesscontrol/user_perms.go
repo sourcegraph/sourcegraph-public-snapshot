@@ -206,10 +206,9 @@ func getRepo(ctx context.Context, repoIDOrURI interface{}) (repoID int32, repoUR
 //
 // Note that this function allows the caller to retrieve any user's
 // access levels.  This is meant for trusted server code living
-// outside the scope of gRPC requests to verify user permissions. For
+// outside the scope of a user request to verify user permissions. For
 // all other cases, VerifyUserHasWriteAccess or
-// VerifyUserHasAdminAccess should be used to authorize a user for
-// gRPC operations.
+// VerifyUserHasAdminAccess should be used to authorize a user.
 func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method string, repo interface{}) error {
 	if skip(ctx) {
 		return nil
@@ -334,9 +333,9 @@ func VerifyUserHasReadAccessToDefRepoRefs(ctx context.Context, method string, re
 //
 // Note that this function allows the caller to retrieve any user's
 // access levels.  This is meant for trusted server code living
-// outside the scope of gRPC requests to verify user permissions. For
+// outside the scope of user requests to verify user permissions. For
 // all other cases, VerifyUserHasWriteAccess should be used to
-// authorize a user for gRPC operations.
+// authorize a user.
 func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method string, repo interface{}) error {
 	if skip(ctx) {
 		return nil
@@ -378,9 +377,9 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 //
 // Note that this function allows the caller to retrieve any user's
 // access levels.  This is meant for trusted server code living
-// outside the scope of gRPC requests to verify user permissions. For
+// outside the scope of user requests to verify user permissions. For
 // all other cases, VerifyUserHasAdminAccess should be used to
-// authorize a user for gRPC operations.
+// authorize a user.
 func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method string) error {
 	if skip(ctx) {
 		return nil

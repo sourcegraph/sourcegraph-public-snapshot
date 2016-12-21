@@ -1,7 +1,4 @@
 // Package router contains the URL router for the HTTP API.
-//
-// NOTE: It will likely be replaced with a codegenned router as part
-// of the gRPC gateway transition.
 package router
 
 import (

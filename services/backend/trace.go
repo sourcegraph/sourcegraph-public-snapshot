@@ -18,14 +18,14 @@ import (
 var metricLabels = []string{"method", "success"}
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
-	Subsystem: "grpc",
+	Subsystem: "backend",
 	Name:      "client_request_duration_seconds",
-	Help:      "Total time spent on grpc endpoints.",
+	Help:      "Total time spent on backend endpoints.",
 	Buckets:   statsutil.UserLatencyBuckets,
 }, metricLabels)
 var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
-	Subsystem: "grpc",
+	Subsystem: "backend",
 	Name:      "client_requests",
 	Help:      "Current number of requests running for a method.",
 }, []string{"method"})
@@ -66,7 +66,7 @@ func trace(ctx context.Context, server, method string, arg interface{}, err *err
 		if err != nil && *err != nil {
 			errStr = (*err).Error()
 		}
-		log15.Debug("TRACE gRPC", "rpc", name, "uid", uid, "trace", traceutil.SpanURL(span), "error", errStr, "duration", elapsed)
+		log15.Debug("TRACE backend", "rpc", name, "uid", uid, "trace", traceutil.SpanURL(span), "error", errStr, "duration", elapsed)
 	}
 
 	return ctx, done
