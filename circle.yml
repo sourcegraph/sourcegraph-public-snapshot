@@ -36,7 +36,7 @@ dependencies:
   cache_directories:
     - ~/cache
     - ~/.yarn
-    - ~/.yarn-cache
+    - ~/.cache/yarn
     - ~/bin
     - ~/.composer/cache
 
