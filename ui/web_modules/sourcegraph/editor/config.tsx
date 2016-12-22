@@ -34,4 +34,3 @@ function editorOpened(input: IEditorInput): void {
 	}
 	router.push(urlToBlob(repo, rev, path));
 }
-
