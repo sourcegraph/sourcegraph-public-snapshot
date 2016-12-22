@@ -11,6 +11,7 @@ if [ ! -d "css-langserver" ]; then
 else
     cd css-langserver && git pull && cd langserver
 fi
+
 yarn
 ./node_modules/.bin/tsc -p .
 
