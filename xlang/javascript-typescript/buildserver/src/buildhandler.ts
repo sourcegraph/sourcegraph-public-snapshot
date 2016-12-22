@@ -112,6 +112,8 @@ export class BuildHandler implements LanguageHandler {
 				if (!this.managedModuleInit.has(d)) {
 					const installAndRefresher = install(this.remoteFs, d, yarnGlobalDir, path.join(this.yarnOverlayRoot, d)).then(() => {
 						return this.ls.projectManager.refreshModuleStructureAt(d);
+					}, (err) => {
+						this.managedModuleInit.delete(d);
 					});
 					this.managedModuleInit.set(d, installAndRefresher);
 				}

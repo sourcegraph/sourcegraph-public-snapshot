@@ -12,7 +12,7 @@ import { FileSystem } from 'javascript-typescript-langserver/src/fs';
 import { readFile } from './vfs';
 
 
-const ConsoleReporter = require('yarn/lib/reporters').ConsoleReporter;
+const EventReporter = require('yarn/lib/reporters').EventReporter;
 const Config = require('yarn/lib/config').default;
 const Install = require('yarn/lib/cli/commands/install').Install;
 const Lockfile = require('yarn/lib/lockfile/wrapper').default;
@@ -28,7 +28,7 @@ const lockfile = require('proper-lockfile');
  * info mimics `yarn info` to return metadata about the specified package.
  */
 export async function info(cwd: string, globaldir: string, overlaydir: string, packageName: string): Promise<Info> {
-	const reporter = new ConsoleReporter({
+	const reporter = new EventReporter({
 		emoji: false,
 		verbose: false,
 		noProgress: true,
@@ -73,7 +73,7 @@ export async function info(cwd: string, globaldir: string, overlaydir: string, p
  * the package is a direct git dependency that doesn't exist in npm.
  */
 export async function infoAlt(remoteFs: FileSystem, cwd: string, globaldir: string, overlaydir: string, packageName: string): Promise<Info> {
-	const reporter = new ConsoleReporter({
+	const reporter = new EventReporter({
 		emoji: false,
 		verbose: false,
 		noProgress: true,
@@ -147,7 +147,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		});
 	});
 
-	const reporter = new ConsoleReporter({
+	const reporter = new EventReporter({
 		emoji: false,
 		verbose: false,
 		noProgress: true,
@@ -194,6 +194,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 	const deps: DependencyRequestPattern[] = inst.prepareRequests(prunedDepRequests);
 	inst.resolver.flat = inst.flags.flat;
 	const resolvedPatterns: string[] = [];
+
 	await Promise.all(deps.map(async (req): Promise<void> => {
 		try {
 			await inst.resolver.find(req);
@@ -202,7 +203,14 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 			console.error("warning: could not resolve dep: ", req);
 		}
 	}));
-	const patterns: any[] = await inst.flatten(inst.preparePatterns(resolvedPatterns));
+
+	// Note: if `--flat` is set, a yarn install will try to flatten
+	// the patterns here via `inst.flatten`. We do not do so here,
+	// because it may require manual conflict resolution and it also
+	// attempts to re-read the manifest from disk at config.cwd (which
+	// will fail, the files only exist in the VFS, not on local disk).
+	const patterns = resolvedPatterns;
+
 	const resolveEnd = new Date().getTime();
 	console.error("resolve", patterns.length, (resolveEnd - resolveStart) / 1000.0);
 
