@@ -53,7 +53,7 @@ export class WorkbenchShell extends React.Component<{}, {}> {
 
 	synchronizeEditor(): void {
 		// Provides browser forward & back handling.
-		syncEditorWithRouter(this.services);
+		syncEditorWithRouter();
 	}
 
 	layout(): void {

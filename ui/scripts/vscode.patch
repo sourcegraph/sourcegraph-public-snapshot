@@ -564,3 +564,112 @@ index 48515ce0c..468cc8506 100644
  		this.extensionService.onReady().then(() => this.onExtensionsReady());
  	}
  
+diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts b/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts
+index 32cc3f6..9677a77 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts
+@@ -35,6 +35,13 @@ export interface IWorkspaceContextService {
+ 	 * Given a workspace relative path, returns the resource with the absolute path.
+ 	 */
+ 	toResource: (workspaceRelativePath: string) => URI;
++
++	/**
++	 * Sets the workspace object. This may happen to e.g. handle cross-repo j2d.
++	 */
++	setWorkspace(workspace: IWorkspace): void;
++
++	onWorkspaceUpdated(listener: (workspace: IWorkspace) => void): void;
+ }
+ 
+ export interface IWorkspace {
+@@ -63,9 +70,11 @@ export class WorkspaceContextService implements IWorkspaceContextService {
+ 	public _serviceBrand: any;
+ 
+ 	private workspace: IWorkspace;
++	private listeners: ((IWorkspace) => void)[];
+ 
+ 	constructor(workspace: IWorkspace) {
+ 		this.workspace = workspace;
++		this.listeners = [];
+ 	}
+ 
+ 	public getWorkspace(): IWorkspace {
+@@ -95,4 +104,13 @@ export class WorkspaceContextService implements IWorkspaceContextService {
+ 
+ 		return null;
+ 	}
++
++	public setWorkspace(workspace: IWorkspace): void {
++		this.workspace = workspace;
++		this.listeners.forEach(listener => listener(workspace));
++	}
++
++	public onWorkspaceUpdated(listener: (workspace: IWorkspace) => void): void {
++		this.listeners.push(listener);
++	}
+ }
+\ No newline at end of file
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
+index 13582f3..c85e518 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
+@@ -101,6 +101,14 @@ export class ExplorerView extends CollapsibleViewletView {
+ 
+ 		this.resourceContext = instantiationService.createInstance(ResourceContextKey);
+ 		this.folderContext = new RawContextKey<boolean>('explorerResourceIsFolder', undefined).bindTo(contextKeyService);
++
++		contextService.onWorkspaceUpdated((workspace) => {
++			const workspaceUpdated = this.workspace.resource.toString() !== workspace.resource.toString();
++			this.workspace = workspace;
++			if (workspaceUpdated) {
++				this.refresh(workspaceUpdated);
++			}
++		});
+ 	}
+ 
+ 	public renderHeader(container: HTMLElement): void {
+@@ -618,7 +626,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 	/**
+ 	 * Refresh the contents of the explorer to get up to date data from the disk about the file structure.
+ 	 */
+-	public refresh(): TPromise<void> {
++	public refresh(workspaceUpdated?: boolean): TPromise<void> {
+ 		if (!this.explorerViewer || this.explorerViewer.getHighlight()) {
+ 			return TPromise.as(null);
+ 		}
+@@ -638,7 +646,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 			}
+ 		}
+ 
+-		return this.doRefresh().then(() => {
++		return this.doRefresh(workspaceUpdated).then(() => {
+ 			if (resourceToFocus) {
+ 				return this.select(resourceToFocus, true);
+ 			}
+@@ -647,7 +655,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 		});
+ 	}
+ 
+-	private doRefresh(): TPromise<void> {
++	private doRefresh(workspaceUpdated?: boolean): TPromise<void> {
+ 		const root = this.getInput();
+ 		const targetsToResolve: URI[] = [];
+ 		let targetsToExpand: URI[] = [];
+@@ -657,7 +665,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 		}
+ 
+ 		// First time refresh: Receive target through active editor input or selection and also include settings from previous session
+-		if (!root) {
++		if (!root || workspaceUpdated) {
+ 			const activeResource = this.getActiveEditorInputResource();
+ 			if (activeResource) {
+ 				targetsToResolve.push(activeResource);
+@@ -682,7 +690,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 			const modelStat = FileStat.create(stat, options.resolveTo);
+ 
+ 			// First time refresh: The stat becomes the input of the viewer
+-			if (!root) {
++			if (!root || workspaceUpdated) {
+ 				explorerPromise = this.explorerViewer.setInput(modelStat).then(() => {
+ 
+ 					// Make sure to expand all folders that where expanded in the previous session
