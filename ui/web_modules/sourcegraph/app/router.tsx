@@ -1,4 +1,4 @@
-import { Location } from "History";
+import { Location } from "history";
 import { InjectedRouter, RouterState } from "react-router";
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 
