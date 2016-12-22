@@ -52,6 +52,7 @@
 :global .monaco-menu .monaco-action-bar.vertical .action-label {
 	color: c_cool_dark_gray;
 	font-size: 0.9rem;
+	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
 }
 
 :global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item {
@@ -209,11 +210,17 @@
 :global div.monaco-editor.vs-dark,
 :global div.monaco-editor.vs-dark .token {color: c_cool_pale_gray}
 :global div.monaco-editor.vs-dark,
-:global div.monaco-editor.vs-dark .monaco-editor-background { background-color: c_cool_dark_gray; }
+:global div.monaco-editor.vs-dark .monaco-editor-background {
+	background-color: c_cool_dark_gray;
+	margin-left: 5px;
+}
 
 :global div.monaco-editor.vs-dark .token.comment { font-style: italic; }
 
-:global div.monaco-editor.vs-dark .line-numbers { color: c_cool_gray; }
+:global div.monaco-editor.vs-dark .line-numbers {
+	color: c_cool_gray;
+	cursor: default !important;
+}
 :global div.monaco-editor.vs-dark .line-numbers:hover { color: c_cool_mid_gray; }
 
 :global div.monaco-editor.vs-dark .token.terminal,

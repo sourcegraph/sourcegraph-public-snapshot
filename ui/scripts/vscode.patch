@@ -438,23 +438,6 @@ index 269902194..664a7fa26 100644
  
  		this.registerListeners();
  	}
-diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts b/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts
-index b0c11d520..d2f05dab8 100644
---- a/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts
-+++ b/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/browser/contextKeyService.ts
-@@ -289,12 +289,6 @@ class ScopedContextKeyService extends AbstractContextKeyService {
- }
- 
- function findContextAttr(domNode: IContextKeyServiceTarget): number {
--	while (domNode) {
--		if (domNode.hasAttribute(KEYBINDING_CONTEXT_ATTR)) {
--			return parseInt(domNode.getAttribute(KEYBINDING_CONTEXT_ATTR), 10);
--		}
--		domNode = domNode.parentElement;
--	}
- 	return 0;
- }
- 
 diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
 index 6b2b3aff4..b837561d7 100644
 --- a/ui/vendor/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
@@ -549,10 +532,10 @@ index 6b2b3aff4..b837561d7 100644
  				rejects.join('\n')
  			));
  		}
-diff --git a/ui/node_modules/vscode/src/vs/base/browser/dom.ts b/ui/node_modules/vscode/src/vs/base/browser/dom.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts b/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts
 index ab8b9e263..b668504ab 100644
---- a/ui/node_modules/vscode/src/vs/base/browser/dom.ts
-+++ b/ui/node_modules/vscode/src/vs/base/browser/dom.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts
 @@ -61,11 +61,13 @@ let lastStart: number, lastEnd: number;
  function _findClassName(node: HTMLElement, className: string): void {
  
@@ -568,10 +551,10 @@ index ab8b9e263..b668504ab 100644
  	className = className.trim();
  
  	let classesLen = classes.length,
-diff --git a/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts b/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
 index 48515ce0c..468cc8506 100644
---- a/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
-+++ b/ui/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
 @@ -210,7 +210,7 @@ export class EditorGroupsControl implements IEditorGroupsControl, IVerticalSashL
  
  	private registerListeners(): void {

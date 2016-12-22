@@ -274,6 +274,7 @@ export class Editor implements IDisposable {
 }
 
 export function getEditorInstance(): ICodeEditor {
+	// TODO update this when a new editor is created.
 	const editorService = Services.get(ICodeEditorService) as ICodeEditorService;
 	const editor = editorService.getCodeEditor("vs.editor.ICodeEditor:1");
 	if (!(editor instanceof CodeEditor)) {

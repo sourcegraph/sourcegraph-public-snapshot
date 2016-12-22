@@ -2,7 +2,7 @@ import Event from "vs/base/common/event";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
-import { DynamicStandaloneServices } from "vs/editor/browser/standalone/standaloneServices";
+import { StaticServices } from "vs/editor/browser/standalone/standaloneServices";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IBackupService } from "vs/platform/backup/common/backup";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
@@ -12,6 +12,8 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
 import { IMessageService } from "vs/platform/message/common/message";
+import { OpenerService } from "vs/platform/opener/browser/openerService";
+import { IOpenerService } from "vs/platform/opener/common/opener";
 import { Registry } from "vs/platform/platform";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
 import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
@@ -23,6 +25,7 @@ import { IThemeService } from "vs/workbench/services/themes/common/themeService"
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
 import { ConfigurationService } from "sourcegraph/workbench/ConfigurationService";
+import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
 
 export let Services: ServicesAccessor;
@@ -36,14 +39,14 @@ export let Services: ServicesAccessor;
 // can customize color themes. When they are implemented, we can either use the
 // VSCode ones and override some methods, or we can write our own from scratch.
 export function setupServices(domElement: HTMLDivElement, workspace: URI): ServiceCollection {
-	const dynServices = new DynamicStandaloneServices(domElement, {});
-	const services = (dynServices as any)._serviceCollection;
-	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
+	const [services, instantiationService] = StaticServices.init({});
 
 	const set = (identifier, impl) => {
 		const instance = instantiationService.createInstance(impl);
 		services.set(identifier, instance);
 	};
+
+	standaloneServices(services);
 
 	set(IUntitledEditorService, UntitledEditorService);
 	set(ILifecycleService, LifecycleService);
@@ -56,6 +59,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(IThemeService, ThemeService);
 	set(ITextModelResolverService, TextModelResolverService);
 	set(IConfigurationService, ConfigurationService);
+	set(IOpenerService, OpenerService);
 
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource: workspace,
