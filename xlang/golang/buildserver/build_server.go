@@ -247,6 +247,80 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		conn.Close()
 		return nil, nil
 
+	case req.Method == "workspace/xdependencies":
+		// The same as h.fetchAndSendDepsOnce except it operates locally to the
+		// request.
+		fetchAndSendDepsOnces := make(map[string]*sync.Once) // key is file URI
+		localFetchAndSendDepsOnce := func(fileURI string) *sync.Once {
+			once, ok := fetchAndSendDepsOnces[fileURI]
+			if !ok {
+				once = new(sync.Once)
+				fetchAndSendDepsOnces[fileURI] = once
+			}
+			return once
+		}
+
+		var (
+			mu           sync.Mutex
+			dupAvoidance = make(map[string]struct{})
+			references   []lspext.DependencyReference
+		)
+		emitRef := func(path string, r goDependencyReference) {
+			mu.Lock()
+			_, seen := dupAvoidance[path+r.absolute]
+			dupAvoidance[path+r.absolute] = struct{}{}
+			mu.Unlock()
+			if seen {
+				return
+			}
+
+			// If the _reference_ to a definition is made from inside a
+			// vendored package, or from outside of the repository itself,
+			// exclude it.
+			if langserver.IsVendorDir(path) || !langserver.PathHasPrefix(path, h.RootFSPath) {
+				return
+			}
+
+			// If the package being referenced is defined in the repo, and
+			// it is NOT a vendor package, then exclude it.
+			if !r.vendor && langserver.PathHasPrefix(filepath.Join(gopath, "src", r.absolute), h.RootFSPath) {
+				return
+			}
+
+			newURI, err := h.rewriteURIFromLangServer("file://" + path)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			mu.Lock()
+			references = append(references, lspext.DependencyReference{
+				Attributes: r.attributes(),
+				Hints: map[string]interface{}{
+					"dir": newURI,
+				},
+			})
+			mu.Unlock()
+		}
+
+		// We need every transitive dependency, for every Go package in the
+		// repository.
+		var (
+			w  = ctxvfs.Walk(ctx, h.RootFSPath, h.FS)
+			dc = newDepCache()
+		)
+		for w.Step() {
+			if path.Ext(w.Path()) == ".go" {
+				d := path.Dir(w.Path())
+				localFetchAndSendDepsOnce(d).Do(func() {
+					if err := h.fetchTransitiveDepsOfFile(ctx, d, emitRef, dc); err != nil {
+						log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
+					}
+				})
+			}
+		}
+		return references, nil
+
 	default:
 		// Pass the request onto the lang server.
 
