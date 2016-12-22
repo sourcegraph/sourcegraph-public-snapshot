@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -38,6 +39,7 @@ func init() {
 func main() {
 	env.Lock()
 	traceutil.InitTracer()
+	gitserver.DefaultClient.NoCreds = true
 
 	go func() {
 		c := make(chan os.Signal, 1)

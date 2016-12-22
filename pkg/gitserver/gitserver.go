@@ -14,6 +14,7 @@ type execRequest struct {
 	EnsureRevision string
 	Args           []string
 	Opt            *vcs.RemoteOpts
+	NoCreds        bool // sender is not able to provide credentials, do not attempt clone/update
 	Stdin          <-chan []byte
 	ReplyChan      chan<- *execReply
 }

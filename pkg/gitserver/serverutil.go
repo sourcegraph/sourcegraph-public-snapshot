@@ -15,7 +15,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
-func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
+func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) ([]byte, error) {
+	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
+
 	if opt != nil && opt.SSH != nil {
 		gitSSHWrapper, gitSSHWrapperDir, keyFile, err := s.makeGitSSHWrapper(opt.SSH.PrivateKey)
 		defer func() {
@@ -26,7 +28,7 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
 			}
 		}()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		defer os.Remove(gitSSHWrapper)
 		if gitSSHWrapperDir != "" {
@@ -36,9 +38,9 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
 	}
 
 	if opt != nil && opt.HTTPS != nil {
-		gitPassHelperDir, err := s.makeGitPassHelper(opt.HTTPS.User, opt.HTTPS.Pass)
+		gitPassHelperDir, err := makeGitPassHelper(opt.HTTPS.User, opt.HTTPS.Pass)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if gitPassHelperDir != "" {
 			defer os.RemoveAll(gitPassHelperDir)
@@ -47,9 +49,11 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) error {
 		env := environ(os.Environ())
 		env.Set("PATH", gitPassHelperDir+string(filepath.ListSeparator)+os.Getenv("PATH"))
 		cmd.Env = env
+	} else {
+		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 	}
 
-	return cmd.Run()
+	return cmd.CombinedOutput()
 }
 
 // makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the
@@ -71,12 +75,12 @@ func (s *Server) makeGitSSHWrapper(privKey []byte) (sshWrapper, sshWrapperDir, k
 		return "", "", keyFile, err
 	}
 
-	tmpFile, tmpFileDir, err := s.gitSSHWrapper(keyFile, otherOpt)
+	tmpFile, tmpFileDir, err := gitSSHWrapper(keyFile, otherOpt)
 	return tmpFile, tmpFileDir, keyFile, err
 }
 
 // gitSSHWrapper makes system-dependent SSH wrapper.
-func (*Server) gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, tempDir string, err error) {
+func gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile string, tempDir string, err error) {
 	// TODO(sqs): encrypt and store the key in the env so that
 	// attackers can't decrypt if they have disk access after our
 	// process dies
@@ -107,7 +111,7 @@ func (*Server) gitSSHWrapper(keyFile string, otherOpt string) (sshWrapperFile st
 // makeGitPassHelper writes a git credential helper that supplies username and password over stdout.
 // Its name is "git-credential-gitserver-helper" and it's located inside gitPassHelperDir.
 // If err is nil, the caller is responsible for removing gitPassHelperDir after it's done using it.
-func (*Server) makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
+func makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
 	tempDir, err := ioutil.TempDir("", "gitserver_")
 	if err != nil {
 		return "", err

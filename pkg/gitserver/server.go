@@ -17,6 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // Server is a gitserver server.
@@ -35,9 +36,14 @@ type Server struct {
 	cloningMu sync.Mutex
 	cloning   map[string]struct{}
 
-	updateRepo        chan<- string
+	updateRepo        chan<- updateRepoRequest
 	repoUpdateLocksMu sync.Mutex
 	repoUpdateLocks   map[string]*sync.Mutex
+}
+
+type updateRepoRequest struct {
+	repo string
+	opt  *vcs.RemoteOpts
 }
 
 // Serve serves incoming gitserver requests on listener l.
@@ -113,7 +119,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		return
 	}
 	if !repoExists(dir) {
-		if strings.HasPrefix(req.Repo, "github.com/") {
+		if strings.HasPrefix(req.Repo, "github.com/") && !req.NoCreds {
 			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
 			s.cloningMu.Unlock()
 
@@ -126,7 +132,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 
 				origin := "https://" + req.Repo + ".git"
 				cmd := exec.Command("git", "clone", "--mirror", origin, dir)
-				if output, err := cmd.CombinedOutput(); err != nil {
+				if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
 					log15.Error("clone failed", "error", err, "output", string(output))
 					return
 				}
@@ -151,7 +157,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		cmd.Dir = dir
 		if err := cmd.Run(); err != nil {
 			// Revision not found, update before running actual command.
-			s.doRepoUpdate(req.Repo)
+			s.doRepoUpdate(req.Repo, req.Opt)
 		}
 	}
 
@@ -193,7 +199,9 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
-	s.updateRepo <- req.Repo
+	if !req.NoCreds {
+		s.updateRepo <- updateRepoRequest{req.Repo, req.Opt}
+	}
 }
 
 var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -215,25 +223,25 @@ func init() {
 	prometheus.MustRegister(execDuration)
 }
 
-func (s *Server) repoUpdateLoop() chan<- string {
-	updateRepo := make(chan string)
+func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
+	updateRepo := make(chan updateRepoRequest, 10)
 	lastCheckAt := make(map[string]time.Time)
 
 	go func() {
-		for repo := range updateRepo {
-			if t, ok := lastCheckAt[repo]; ok && time.Now().Before(t.Add(10*time.Second)) {
+		for req := range updateRepo {
+			if t, ok := lastCheckAt[req.repo]; ok && time.Now().Before(t.Add(10*time.Second)) {
 				continue // git data still fresh
 			}
-			lastCheckAt[repo] = time.Now()
+			lastCheckAt[req.repo] = time.Now()
 
-			go s.doRepoUpdate(repo)
+			go s.doRepoUpdate(req.repo, req.opt)
 		}
 	}()
 
 	return updateRepo
 }
 
-func (s *Server) doRepoUpdate(repo string) {
+func (s *Server) doRepoUpdate(repo string, opt *vcs.RemoteOpts) {
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
 	if !ok {
@@ -247,8 +255,7 @@ func (s *Server) doRepoUpdate(repo string) {
 
 	cmd := exec.Command("git", "remote", "update", "--prune")
 	cmd.Dir = path.Join(s.ReposDir, repo)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
+	if output, err := s.runWithRemoteOpts(cmd, opt); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
 	}
 }

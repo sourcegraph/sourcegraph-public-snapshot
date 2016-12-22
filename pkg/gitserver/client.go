@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -34,6 +35,7 @@ func NewClient(addrs []string) *Client {
 // Client is a gitserver client.
 type Client struct {
 	servers [](chan<- *request)
+	NoCreds bool
 }
 
 func (c *Client) connect(addr string) {
@@ -50,6 +52,8 @@ func (c *Client) connect(addr string) {
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
+	c.Repo = strings.ToLower(c.Repo)
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
 		if errRes != nil {
@@ -61,12 +65,22 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 	span.SetTag("request", "Exec")
 	span.SetTag("repo", c.Repo)
 	span.SetTag("args", c.Args[1:])
-	span.SetTag("opt", c.Opt)
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
 		return nil, err
+	}
+
+	opt := &vcs.RemoteOpts{}
+	if strings.HasPrefix(c.Repo, "github.com/") {
+		actor := auth.ActorFromContext(ctx)
+		if actor.GitHubToken != "" {
+			opt.HTTPS = &vcs.HTTPSConfig{
+				User: "x-oauth-token", // User is unused by GitHub, but provide a non-empty value to satisfy git.
+				Pass: actor.GitHubToken,
+			}
+		}
 	}
 
 	sum := md5.Sum([]byte(c.Repo))
@@ -76,7 +90,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 		Repo:           c.Repo,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
-		Opt:            c.Opt,
+		Opt:            opt,
+		NoCreds:        c.client.NoCreds,
 		Stdin:          chanrpcutil.ToChunks(c.Input),
 		ReplyChan:      replyChan,
 	}}
@@ -112,7 +127,6 @@ type Cmd struct {
 	Args           []string
 	Repo           string
 	EnsureRevision string
-	Opt            *vcs.RemoteOpts
 	Input          []byte
 	ExitStatus     int
 }
