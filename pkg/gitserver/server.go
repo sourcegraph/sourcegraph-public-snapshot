@@ -105,19 +105,46 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	dir := path.Join(s.ReposDir, req.Repo)
 	s.cloningMu.Lock()
 	_, cloneInProgress := s.cloning[dir]
-	s.cloningMu.Unlock()
 	if cloneInProgress {
+		s.cloningMu.Unlock()
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{CloneInProgress: true}
 		status = "clone-in-progress"
 		return
 	}
 	if !repoExists(dir) {
+		if strings.HasPrefix(req.Repo, "github.com/") {
+			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
+			s.cloningMu.Unlock()
+
+			go func() {
+				defer func() {
+					s.cloningMu.Lock()
+					delete(s.cloning, dir)
+					s.cloningMu.Unlock()
+				}()
+
+				origin := "https://" + req.Repo + ".git"
+				cmd := exec.Command("git", "clone", "--mirror", origin, dir)
+				if output, err := cmd.CombinedOutput(); err != nil {
+					log15.Error("clone failed", "error", err, "output", string(output))
+					return
+				}
+			}()
+
+			chanrpcutil.Drain(req.Stdin)
+			req.ReplyChan <- &execReply{CloneInProgress: true}
+			status = "clone-in-progress"
+			return
+		}
+
+		s.cloningMu.Unlock()
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{RepoNotFound: true}
 		status = "repo-not-found"
 		return
 	}
+	s.cloningMu.Unlock()
 
 	if req.EnsureRevision != "" {
 		cmd := exec.Command("git", "rev-parse", req.EnsureRevision)
@@ -146,7 +173,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		ProcessResult: processResultChan,
 	}
 
-	if err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
+	if err := cmd.Run(); err != nil {
 		errStr = err.Error()
 	}
 	if cmd.ProcessState != nil { // is nil if process failed to start
