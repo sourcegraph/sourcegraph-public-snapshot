@@ -1,4 +1,4 @@
-import { hover, media, style } from "glamor";
+import { media, style } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { InjectedRouter } from "react-router";

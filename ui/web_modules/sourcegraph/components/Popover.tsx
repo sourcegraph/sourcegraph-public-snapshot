@@ -1,7 +1,7 @@
 import * as classNames from "classnames";
 import * as React from "react";
 
-import { Component, EventListener } from "sourcegraph/Component";
+import { EventListener } from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/popover.css";
 
 interface Props {

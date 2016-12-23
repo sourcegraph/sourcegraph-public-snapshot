@@ -1,7 +1,7 @@
 import "sourcegraph/components/styles/_normalize.css";
 
 import * as React from "react";
-import { InjectedRouter, PlainRoute } from "react-router";
+import { PlainRoute } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { GlobalNav } from "sourcegraph/app/GlobalNav";

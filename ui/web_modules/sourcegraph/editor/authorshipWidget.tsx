@@ -7,11 +7,8 @@ import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { Services } from "sourcegraph/workbench/services";
-import { CodeEditor } from "vs/editor/browser/codeEditor";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IContentWidget, IContentWidgetPosition } from "vs/editor/browser/editorBrowser.d";
-import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 

@@ -18,6 +18,7 @@
     "sourceMap": true,
     "strictNullChecks": true,
     "experimentalDecorators": true,
+    "noUnusedLocals": true,
     "noEmit": true
   },
   "exclude": [

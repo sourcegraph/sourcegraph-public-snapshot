@@ -1,6 +1,5 @@
 import "sourcegraph/editor/authorshipWidget";
 import "sourcegraph/editor/contrib";
-import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
 import "sourcegraph/workbench/overrides/instantiationService";
@@ -14,7 +13,6 @@ import "vs/workbench/parts/files/browser/files.contribution";
 import URI from "vs/base/common/uri";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
-import { IOptions } from "vs/workbench/common/options";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { registerEditorCallbacks } from "sourcegraph/editor/config";
