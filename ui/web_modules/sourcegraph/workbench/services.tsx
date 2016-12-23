@@ -46,7 +46,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 		services.set(identifier, instance);
 	};
 
-	standaloneServices(services);
+	standaloneServices(domElement, services);
 
 	set(IUntitledEditorService, UntitledEditorService);
 	set(ILifecycleService, LifecycleService);

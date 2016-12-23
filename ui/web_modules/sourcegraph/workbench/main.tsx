@@ -33,21 +33,12 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 		parent,
 		domElement,
 		{ resource: workspace },
-		options(resource),
+		{},
 		services,
 	);
 	workbench.startup();
 
-	const editor = workbench.getEditorPart();
-	registerEditorCallbacks(editor);
+	registerEditorCallbacks();
 	configurePostStartup(services);
 	return [workbench, services];
-}
-
-function options(resource: URI): IOptions {
-	return {
-		filesToOpen: [
-			{ resource },
-		],
-	};
 }

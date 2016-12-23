@@ -4,7 +4,7 @@ import * as React from "react";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { getBlobPropsFromRouter } from "sourcegraph/app/router";
+import { addRouterListener, getBlobPropsFromRouter, removeRouterListener } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
 import { syncEditorWithRouter } from "sourcegraph/editor/config";
 
@@ -38,22 +38,18 @@ export class WorkbenchShell extends React.Component<{}, {}> {
 			const resource = URIUtils.pathInRepo(repo, rev, path);
 			[this.workbench, this.services] = init(domElement, resource);
 			this.layout();
+			syncEditorWithRouter();
 		});
 	}
 
 	componentWillMount(): void {
 		window.onresize = this.layout;
-		window.addEventListener("popstate", this.synchronizeEditor);
+		this.listener = addRouterListener(syncEditorWithRouter);
 	}
 
 	componentWillUnmount(): void {
 		window.onresize = () => void (0);
-		window.removeEventListener("popstate", this.synchronizeEditor);
-	}
-
-	synchronizeEditor(): void {
-		// Provides browser forward & back handling.
-		syncEditorWithRouter();
+		removeRouterListener(this.listener);
 	}
 
 	layout(): void {

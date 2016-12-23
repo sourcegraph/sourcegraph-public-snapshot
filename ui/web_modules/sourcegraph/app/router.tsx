@@ -1,6 +1,8 @@
 import { Location } from "history";
 import { InjectedRouter, RouterState } from "react-router";
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
+import { IRange } from "vs/editor/common/editorCommon";
 
 export type Router = InjectedRouter & RouterState;
 
@@ -126,4 +128,12 @@ export function getBlobPropsFromRouter(): RouterBlobProps {
 	}
 
 	return { repo, rev, path };
+}
+
+export function getSelectionFromRouter(): IRange {
+	let rop = RangeOrPosition.parse(window.location.hash.substr(2));
+	if (!rop) {
+		rop = RangeOrPosition.fromOneIndexed(1);
+	}
+	return rop.toMonacoRangeAllowEmpty();
 }

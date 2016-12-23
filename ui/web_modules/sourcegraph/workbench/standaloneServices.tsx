@@ -31,17 +31,17 @@ import { IStorageService, NullStorageService } from "vs/platform/storage/common/
 import { ITelemetryService, NullTelemetryService } from "vs/platform/telemetry/common/telemetry";
 import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
-export function standaloneServices(services: any): void {
+export function standaloneServices(container: HTMLElement, services: ServiceCollection): void {
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 
-	const set = (identifier, impl) => {
-		const instance = instantiationService.createInstance(impl);
+	const set = (identifier, impl, arg?) => {
+		const instance = instantiationService.createInstance(impl, arg);
 		services.set(identifier, instance);
 	};
 
 	set(IContextKeyService, ContextKeyService);
 	set(ICommandService, StandaloneCommandService);
-	set(IContextViewService, ContextViewService);
+	set(IContextViewService, ContextViewService, container);
 	set(IContextMenuService, ContextMenuService);
 	set(IMenuService, MenuService);
 }
