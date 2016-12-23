@@ -7,7 +7,7 @@ import { ITextModelResolverService } from "vs/editor/common/services/resolverSer
 import { IBackupService } from "vs/platform/backup/common/backup";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
-import { IInstantiationService, ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
+import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";

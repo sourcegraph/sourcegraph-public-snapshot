@@ -2,7 +2,6 @@ import * as React from "react";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import { CodeEditor } from "vs/editor/browser/codeEditor";
 import { ICodeEditor, IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";

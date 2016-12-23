@@ -10,7 +10,6 @@ import { ICodeEditor, IEditorMouseEvent, IMouseTarget } from "vs/editor/browser/
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import * as editorCommon from "vs/editor/common/editorCommon";
 import { DefinitionProviderRegistry } from "vs/editor/common/modes";
-import { IEditorService } from "vs/platform/editor/common/editor";
 
 @editorContribution
 export class GotoDefinitionWithClickEditorContribution implements editorCommon.IEditorContribution {
@@ -18,7 +17,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 
 	constructor(
 		private editor: ICodeEditor,
-		@IEditorService private editorService: IEditorService
 	) {
 		this.editor = editor;
 		this.toUnhook.push(this.editor.onMouseUp((e: IEditorMouseEvent) => this.onEditorMouseUp(e)));

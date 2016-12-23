@@ -1,11 +1,9 @@
 import * as throttle from "lodash/throttle";
-import { ICodeEditor, IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
+import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { IModelChangedEvent } from "vs/editor/common/editorCommon";
 import { ICursorSelectionChangedEvent } from "vs/editor/common/editorCommon";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
-import { IEditorInput } from "vs/platform/editor/common/editor";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 
 import { getBlobPropsFromRouter, getSelectionFromRouter, router } from "sourcegraph/app/router";
@@ -13,7 +11,6 @@ import { urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
 import { Services } from "sourcegraph/workbench/services";
-import { getResource } from "sourcegraph/workbench/utils";
 
 // forceSyncInProgress tells us if openEditor was called from syncEditorWithRouter or if
 // it was called internally by VSCode. In the internal case, we want to update

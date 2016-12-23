@@ -1,4 +1,3 @@
-import { Location } from "history";
 import { InjectedRouter, RouterState } from "react-router";
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
