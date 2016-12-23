@@ -240,7 +240,7 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 
 			rootPath := vcs + "://" + repo.URI + "?" + repo.DefaultBranch
 			var refs []lspext.ReferenceInformation
-			err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, "workspace/xreferences", lspext.WorkspaceReferencesParams{Query: location.Symbol, Hints: ref.Hints}, &refs)
+			err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, "workspace/xreferences", lspext.WorkspaceReferencesParams{Query: location.Symbol}, &refs)
 			if err != nil {
 				run.Error(errors.Wrap(err, "LSP Call workspace/xreferences"))
 				return
