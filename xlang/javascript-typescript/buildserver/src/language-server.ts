@@ -1,6 +1,6 @@
 import { BuildHandler } from './buildhandler';
-import * as server from 'javascript-typescript-langserver/src/server';
-import * as util from 'javascript-typescript-langserver/src/util';
+import * as server from 'javascript-typescript-langserver/lib/server';
+import * as util from 'javascript-typescript-langserver/lib/util';
 const program = require('commander');
 
 const defaultLspPort = 2089;

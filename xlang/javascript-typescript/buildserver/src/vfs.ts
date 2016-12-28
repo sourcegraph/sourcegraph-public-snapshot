@@ -1,4 +1,4 @@
-import { FileSystem, FileInfo } from 'javascript-typescript-langserver/src/fs';
+import { FileSystem, FileInfo } from 'javascript-typescript-langserver/lib/fs';
 import * as filepath from 'path';
 import * as fs from 'fs';
 

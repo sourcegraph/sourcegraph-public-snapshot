@@ -6,7 +6,7 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "sourceMap": true,
-        "outDir": "build",
+        "outDir": "lib",
 		"allowUnreachableCode": false,
 		"allowUnusedLabels": false,
 		"noImplicitReturns": true,

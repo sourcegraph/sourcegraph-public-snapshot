@@ -1,12 +1,12 @@
-import * as utils from 'javascript-typescript-langserver/src/test/test-utils';
+import * as utils from 'javascript-typescript-langserver/lib/test/test-utils';
 
 import { BuildHandler } from "../buildhandler";
 
 // forcing strict mode
-import * as util from 'javascript-typescript-langserver/src/util';
+import * as util from 'javascript-typescript-langserver/lib/util';
 util.setStrict(true);
 
-import { testWithLangHandler } from 'javascript-typescript-langserver/src/test/language-server-test';
+import { testWithLangHandler } from 'javascript-typescript-langserver/lib/test/language-server-test';
 
 // Run language-server tests with build handler
 testWithLangHandler(() => new BuildHandler());

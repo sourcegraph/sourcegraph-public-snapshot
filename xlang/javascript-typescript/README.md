@@ -17,5 +17,5 @@ make serve-dev
 And in another terminal, start the JavaScript/TypeScript langserver process:
 
 ```
-node ./langserver/build/language-server.js -p 2088 --strict
+node ./langserver/lib/language-server.js -p 2088 --strict
 ```

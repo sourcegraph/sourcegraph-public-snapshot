@@ -1,6 +1,6 @@
 import { install } from './yarnshim';
-import { InMemoryFileSystem } from 'javascript-typescript-langserver/src/project-manager';
-import { FileSystem, FileInfo } from 'javascript-typescript-langserver/src/fs';
+import { InMemoryFileSystem } from 'javascript-typescript-langserver/lib/project-manager';
+import { FileSystem, FileInfo } from 'javascript-typescript-langserver/lib/fs';
 import * as path from 'path';
 import * as cluster from 'cluster';
 import * as process from 'process';

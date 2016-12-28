@@ -20,13 +20,13 @@ import {
 	DidSaveTextDocumentParams
 } from 'vscode-languageserver';
 
-import { TypeScriptService } from 'javascript-typescript-langserver/src/typescript-service';
-import { LanguageHandler } from 'javascript-typescript-langserver/src/lang-handler';
+import { TypeScriptService } from 'javascript-typescript-langserver/lib/typescript-service';
+import { LanguageHandler } from 'javascript-typescript-langserver/lib/lang-handler';
 import { install, info, infoAlt, parseGitHubInfo } from './yarnshim';
-import { FileSystem } from 'javascript-typescript-langserver/src/fs';
+import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { LayeredFileSystem, LocalRootedFileSystem, walkDirs } from './vfs';
-import { uri2path } from 'javascript-typescript-langserver/src/util';
-import * as rt from 'javascript-typescript-langserver/src/request-type';
+import { uri2path } from 'javascript-typescript-langserver/lib/util';
+import * as rt from 'javascript-typescript-langserver/lib/request-type';
 
 interface HasURI {
 	uri: string;

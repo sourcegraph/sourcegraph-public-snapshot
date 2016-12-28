@@ -8,7 +8,7 @@
 import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 
-import { FileSystem } from 'javascript-typescript-langserver/src/fs';
+import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { readFile } from './vfs';
 
 
