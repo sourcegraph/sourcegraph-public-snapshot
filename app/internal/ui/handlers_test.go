@@ -16,9 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testutil/srclibtest"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 func newTest() *httptestutil.Client {
@@ -87,12 +85,6 @@ var urls = map[string]struct {
 }
 
 func metaDiff(a, b meta) string { return strings.Join(pretty.Diff(a, b), "\n") }
-
-func init() {
-	graph.RegisterMakeDefFormatter("t", func(*graph.Def) graph.DefFormatter {
-		return srclibtest.Formatter{}
-	})
-}
 
 func TestRepo_OK(t *testing.T) {
 	c := newTest()
