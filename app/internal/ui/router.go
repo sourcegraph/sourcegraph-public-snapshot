@@ -56,6 +56,7 @@ func newRouter() *mux.Router {
 		"reset",
 		"security",
 		"styleguide",
+		"twittercasestudy",
 		"terms",
 		"tools",
 		"tools/editor",

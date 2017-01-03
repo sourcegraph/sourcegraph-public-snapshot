@@ -138,6 +138,9 @@
 		margin-bottom: 0 !important; /* cancel media query composed rule above */
 		flex: 0 0 150px;
 	}
+	.sprinkle_blue, .sprinkle_purple, .sprinkle_orange {
+		opacity: .2;
+	}
 }
 .plan_panel {
 	composes: pt3 pb2 ph3 mb2 br3 from base;
@@ -172,4 +175,128 @@
 }
 .details_cumulative {
 	font-weight: normal;
+}
+
+
+.case_hero {
+	background-image: -webkit-linear-gradient(270deg, #003f66, #0091ea);
+    background-image: linear-gradient(180deg, #003f66, #0091ea);
+}
+
+.logos {
+    display: flex;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -webkit-align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
+}
+
+.add_icon {
+    height: 32px;
+    margin-right: 32px;
+    margin-left: 32px;
+}
+
+.drop_capped:first-letter {
+    float: left;
+	font-weight: 800;
+    font-size: 3.35rem;
+    line-height: 1.25;
+    padding-top: 0;
+    padding-right: 16px;
+    padding-left: 0;
+}
+
+
+.explainer {
+	display: flex;
+	position: relative;
+}
+
+.case_code {
+	text-align: left;
+	font-family: "Courier";
+	width: 75%;
+}
+
+.search_illustration {
+	position: absolute;
+	right: 0;
+	width: 25%;
+}
+
+.span_purple {
+  color: #a0f;
+}
+
+.span_blue {
+  color: #0091ea;
+}
+
+.span_orange {
+  color: #ff3d00;
+}
+
+.span_green {
+  color: #00bfa5;
+}
+
+.repo_illustration {
+	margin: auto;
+	max-width: 800px;
+	width: 100%;
+	text-align: center;
+	overflow: hidden;
+}
+
+.scene {
+	list-style: none;
+	position: relative;
+    display: flex;
+    margin: 0;
+	padding: 0;
+    -webkit-box-pack: justify;
+    -webkit-justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+	align-items: center;
+}
+
+.download_button {
+    display: flex;
+	margin: 0 auto;
+}
+
+.button_icon {
+	height: 24px;
+	margin-right: 8px;
+}
+
+.pos_rel {
+	position: relative;
+}
+
+.sprinkle_blue {
+	position: absolute;
+    left: -440px;
+    top: 320px;
+	z-index: -1;
+}
+
+.sprinkle_purple {
+	position: absolute;
+    top: 640px;
+    right: -400px;
+	z-index: -1;
+}
+
+.sprinkle_orange {
+    position: absolute;
+    right: 120px;
+    bottom: 0;
+	z-index: -1;
 }
