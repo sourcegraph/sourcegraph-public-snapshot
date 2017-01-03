@@ -631,24 +631,6 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err 
 	return nil
 }
 
-func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
-	if Mocks.Repos.GetConfig != nil {
-		return Mocks.Repos.GetConfig(ctx, repo)
-	}
-
-	ctx, done := trace(ctx, "Repos", "GetConfig", repo, &err)
-	defer done()
-
-	conf, err := localstore.RepoConfigs.Get(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
-	if conf == nil {
-		conf = &sourcegraph.RepoConfig{}
-	}
-	return conf, nil
-}
-
 var inventoryCache = rcache.New("inv", 604800)
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {

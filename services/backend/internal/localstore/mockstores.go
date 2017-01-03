@@ -11,7 +11,6 @@ type MockStores struct {
 	DeprecatedGlobalRefs DeprecatedMockGlobalRefs
 	Graph                srcstore.MockMultiRepoStore
 	Queue                MockQueue
-	RepoConfigs          MockRepoConfigs
 	RepoVCS              MockRepoVCS
 	Repos                MockRepos
 }
