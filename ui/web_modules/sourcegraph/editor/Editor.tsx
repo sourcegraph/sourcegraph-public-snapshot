@@ -59,7 +59,7 @@ export class Editor implements IDisposable {
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
 			fontSize: 15,
-			lineHeight: Features.authorsToggle.isEnabled() ? 24 : 21,
+			lineHeight: 21,
 			theme: "vs-dark",
 			renderLineHighlight: "line",
 			codeLens: Features.codeLens.isEnabled(),
@@ -184,12 +184,12 @@ export class Editor implements IDisposable {
 			const {repo, rev} = URIUtils.repoParams(this._editor.getModel().uri);
 			const authorshipCodeLensElement = <CodeLensAuthorWidget blame={args} repo={repo} rev={rev || ""} onClose={this._removeWidgetForID.bind(this, AuthorshipWidgetID)} />;
 			let authorWidget = new AuthorshipWidget(args, authorshipCodeLensElement);
-			this._toggleAuthorshipWidget(authorWidget, AuthorshipWidgetID);
+			this._editor.addContentWidget(authorWidget);
 			AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(args);
 		});
 
 		this._editor.onMouseUp(((e: IEditorMouseEvent) => {
-			if (e.target.detail === null) {
+			if (e.target.detail !== AuthorshipWidgetID) {
 				this._removeWidgetForID(AuthorshipWidgetID);
 			}
 		}).bind(this));
@@ -226,14 +226,16 @@ export class Editor implements IDisposable {
 		return this._editorService.onDidOpenEditor(listener);
 	}
 
-	toggleAuthors(): void {
+	toggleAuthors(visible: boolean): void {
 		Features.codeLens.toggle();
-		const visible = Features.codeLens.isEnabled();
 
 		this._editor.updateOptions({ codeLens: visible });
 		if (!visible) {
 			this._removeWidgetForID(AuthorshipWidgetID);
 		}
+
+		const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
+		AnalyticsConstants.Events.AuthorsToggle_Clicked.logEvent({ visible, repo, rev, path });
 	}
 
 	// TODO: Abstract editor functions into editor helper class - MKing 12/18/2016
@@ -241,14 +243,6 @@ export class Editor implements IDisposable {
 		let widget = this._getWidgetForID(widgetID);
 		if (widget) {
 			this._editor.removeContentWidget(widget);
-		}
-	}
-
-	private _toggleAuthorshipWidget(authorWidget: any, AuthorshipWidgetID: string): void {
-		if ((this._editor as any).contentWidgets[AuthorshipWidgetID]) {
-			this._removeWidgetForID(AuthorshipWidgetID);
-		} else {
-			this._editor.addContentWidget(authorWidget);
 		}
 	}
 

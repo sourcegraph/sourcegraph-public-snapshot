@@ -265,9 +265,9 @@ export class EditorController extends Container<Props, State> {
 		this.context.router.push(url);
 	}
 
-	toggleAuthors(): void {
+	toggleAuthors(visible: boolean): void {
 		if (this._editor && Features.authorsToggle.isEnabled()) {
-			this._editor.toggleAuthors();
+			this._editor.toggleAuthors(visible);
 		}
 	};
 
@@ -299,7 +299,7 @@ export class EditorController extends Container<Props, State> {
 						routes={this.props.routes}
 						routeParams={this.props.params}
 						toast={this.state.toast}
-						toggleAuthors={() => this.toggleAuthors()}
+						toggleAuthors={(visible) => this.toggleAuthors(visible)}
 						/>
 					<EditorComponent editorRef={this._setEditor} style={{ display: "flex", flex: "auto", width: "100%" }} />
 				</FlexContainer>

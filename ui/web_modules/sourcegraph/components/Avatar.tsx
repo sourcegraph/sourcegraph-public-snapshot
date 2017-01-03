@@ -15,7 +15,7 @@ export function Avatar({img, size, style, title}: Props): JSX.Element {
 
 	switch (size) {
 		case "tiny":
-			avatarSize = "19px";
+			avatarSize = "1.58rem";
 			break;
 		case "small":
 			avatarSize = "2rem";

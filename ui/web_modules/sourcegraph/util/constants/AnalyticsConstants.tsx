@@ -175,7 +175,7 @@ export const Events = {
 	CodeLensVisibility_Toggled: new LoggableEvent("ToggleCodeLensVisibility", EventCategories.CodeView, EventActions.Toggle),
 	CodeLensCommit_Clicked: new LoggableEvent("ClickedCodeLensCommit", EventCategories.CodeView, EventActions.Click),
 	CodeLensCommitRedirect_Clicked: new LoggableEvent("ClickedCodeLensCommitRedirect", EventCategories.CodeView, EventActions.Click),
-	AuthorsToggle: new LoggableEvent("AuthorshipToggled", EventCategories.CodeView, EventActions.Toggle),
+	AuthorsToggle_Clicked: new LoggableEvent("ClickedAuthorsToggle", EventCategories.CodeView, EventActions.Click),
 
 	// Quick open/search
 	QuickopenItem_Selected: new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),

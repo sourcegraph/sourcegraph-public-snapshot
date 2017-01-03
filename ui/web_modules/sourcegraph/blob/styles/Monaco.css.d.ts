@@ -3,24 +3,20 @@
 
 export const colors: string;
 export const vars: string;
-export const c_cool_gray: string;
 export const c_cool_gray2: string;
-export const c_cool_gray_2: string;
-export const c_cool_gray_5: string;
+export const c_cool_gray: string;
 export const c_cool_mid_gray: string;
 export const c_cool_mid_gray_3: string;
 export const c_cool_mid_gray_5: string;
 export const c_cool_mid_gray_8: string;
 export const c_cool_pale_gray: string;
 export const c_cool_pale_gray_5: string;
-export const c_cool_pale_gray_8: string;
 export const c_cool_dark_gray: string;
 export const c_blue: string;
 export const c_blue_text: string;
 export const c_blue_2: string;
 export const c_blue_5: string;
 export const c_blue_8: string;
-export const c_black_30: string;
 export const c_black_20: string;
 export const c_black_10: string;
 export const c_purple: string;
@@ -33,4 +29,5 @@ export const violet: string;
 export const blue: string;
 export const cyan: string;
 export const green: string;
+export const fadein: string;
 

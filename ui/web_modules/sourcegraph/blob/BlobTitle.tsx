@@ -1,8 +1,7 @@
 import * as React from "react";
 import { RouteParams } from "sourcegraph/app/routeParams";
-import { AuthorsToggleButton } from "sourcegraph/blob/AuthorsToggleButton";
 import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAlert";
-import { Button, FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
+import { Button, FlexContainer, Heading, PathBreadcrumb, ToggleSwitch } from "sourcegraph/components";
 import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { RevSwitcher } from "sourcegraph/repo/RevSwitcher";
@@ -17,7 +16,7 @@ interface Props {
 	routes: Object[];
 	routeParams: RouteParams;
 	toast: string | null;
-	toggleAuthors: () => void;
+	toggleAuthors: (visible: boolean) => void;
 }
 
 function basename(path: string): string {
@@ -122,9 +121,17 @@ export class BlobTitle extends React.Component<Props, {}> {
 					</Button>
 				</a>
 
-				{Features.authorsToggle.isEnabled() &&
-					<AuthorsToggleButton shortcut="A" onClick={() => toggleAuthors()} />
-				}
+				{Features.authorsToggle.isEnabled() && <div
+					style={{ display: "inline-block" }}
+					{ ...layout.hide.sm}>
+					<ToggleSwitch
+						labels={true}
+						size="small"
+						defaultChecked={Features.codeLens.isEnabled()}
+						onChange={(visible) => toggleAuthors(visible)}
+						style={{ marginRight: whitespace[1], position: "relative", top: -2 }}
+						/> <strong>Show authors</strong>
+				</div>}
 
 				{!isSupported && !isIgnored && <UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />}
 				{toast && <div>{toast}</div>}
