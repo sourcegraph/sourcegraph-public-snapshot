@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/executil"
 
 	"gopkg.in/gorp.v1"
 
@@ -32,17 +29,6 @@ type Schema struct {
 	Map *gorp.DbMap
 }
 
-type Mode uint
-
-const (
-	// CreateDBIfNotExists makes Open create the database
-	// (using the PostgreSQL "createdb" program, which must be in your
-	// $PATH) if it does not exist. It will be created with the
-	// default options inherited from your PG* env vars (which likely
-	// means the $PGUSER will be the DB's owner, etc.).
-	CreateDBIfNotExists Mode = 1 << iota
-)
-
 var (
 	opened     map[string]*sql.DB // cache of Open dataSource -> DB
 	openedLock sync.Mutex         // protects opened
@@ -51,31 +37,19 @@ var (
 // open opens the DB identified by dataSource. If an existing *sql.DB
 // already exists for the same dataSource, the existing one is
 // returned instead of opening a new one.
-func open(dataSource string, mode Mode) (*sql.DB, error) {
+func open(dataSource string) (*sql.DB, error) {
 	openedLock.Lock()
 	defer openedLock.Unlock()
 	if db, present := opened[dataSource]; present {
 		return db, nil
 	}
 
-	triedCreate := false
-tryOpen:
 	db, err := sql.Open("postgres", dataSource)
 	if err != nil {
 		return nil, err
 	}
-	create := mode&CreateDBIfNotExists != 0
 	if err := db.Ping(); err != nil {
-		if !triedCreate && create && strings.Contains(err.Error(), "does not exist") {
-			// DB likely doesn't exist; try creating it.
-			if err2 := createdb(dataSource); err2 != nil {
-				return nil, fmt.Errorf("creating DB %s failed: %s (tried to create DB because Ping failed: %s)", dataSource, err2, err)
-			}
-			triedCreate = true
-			goto tryOpen
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	// Cache for next time.
@@ -86,28 +60,13 @@ tryOpen:
 	return db, nil
 }
 
-// createdb calls the PostgreSQL "createdb" program to create a new
-// PostgreSQL database using the info from ds.
-func createdb(ds string) error {
-	cmd := exec.Command("createdb")
-	if ds != "" {
-		overrides := getPGEnvsFromDataSource(ds)
-		executil.OverrideEnvAll(cmd, overrides)
-	}
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("createdb %q failed (%s) with output:\n%s", ds, err, out)
-	}
-	return nil
-}
-
 // Open creates a new DB handle with the given schema by connecting to
 // the database identified by dataSource (e.g., "dbname=mypgdb" or
 // blank to use the PG* env vars).
 //
 // Open assumes that the database already exists.
-func Open(dataSource string, schema Schema, mode Mode) (*Handle, error) {
-	db, err := open(dataSource, mode)
+func Open(dataSource string, schema Schema) (*Handle, error) {
+	db, err := open(dataSource)
 	if err != nil {
 		return nil, fmt.Errorf("%s (datasource=%q)", err, dataSource)
 	}
