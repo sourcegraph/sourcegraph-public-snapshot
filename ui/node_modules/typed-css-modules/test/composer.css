@@ -1,4 +1,0 @@
-.root {
-  composes: box from "./composee.css";
-  color: red;
-}

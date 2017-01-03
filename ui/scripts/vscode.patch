@@ -1,7 +1,7 @@
-diff --git a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css b/ui/vendor/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
 index 0931517a3..2b15e20a4 100644
---- a/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
-+++ b/ui/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
+--- a/ui/vendor/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
++++ b/ui/vendor/node_modules/vscode/src/vs/base/browser/ui/scrollbar/media/scrollbars.css
 @@ -72,7 +72,7 @@
  	left: 3px;
  	height: 3px;
@@ -11,10 +11,10 @@ index 0931517a3..2b15e20a4 100644
  }
  .monaco-scrollable-element > .shadow.left {
  	display: block;
-diff --git a/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts b/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts b/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
 index 648c36a37..e1fd59037 100644
---- a/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
-+++ b/ui/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
 @@ -194,7 +194,12 @@ export class SimpleWorkerClient<T> extends Disposable {
  		super();
  
@@ -29,10 +29,10 @@ index 648c36a37..e1fd59037 100644
  
  		this._worker = this._register(workerFactory.create(
  			'vs/base/common/worker/simpleWorker',
-diff --git a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts b/ui/vendor/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
 index 52bca4b7a..df6a7de55 100644
---- a/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
-+++ b/ui/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/worker/defaultWorkerFactory.ts
 @@ -19,7 +19,13 @@ function environment(name: string, fallback: any = false): any {
  }
  
@@ -48,10 +48,10 @@ index 52bca4b7a..df6a7de55 100644
  }
  var getWorkerUrl = getCrossOriginWorkerScriptUrl || defaultGetWorkerUrl;
  
-diff --git a/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts b/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/worker/workerMain.ts b/ui/vendor/node_modules/vscode/src/vs/base/worker/workerMain.ts
 index f80f9d44e..62cab872e 100644
---- a/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
-+++ b/ui/node_modules/vscode/src/vs/base/worker/workerMain.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/base/worker/workerMain.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/worker/workerMain.ts
 @@ -9,17 +9,12 @@
  	let MonacoEnvironment = (<any>self).MonacoEnvironment;
  	let monacoBaseUrl = MonacoEnvironment && MonacoEnvironment.baseUrl ? MonacoEnvironment.baseUrl : '../../../';
@@ -75,10 +75,10 @@ index f80f9d44e..62cab872e 100644
  			setTimeout(function () {
  				let messageHandler = ws.create((msg: any) => {
  					(<any>self).postMessage(msg);
-diff --git a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/common/editorCommon.ts b/ui/vendor/node_modules/vscode/src/vs/editor/common/editorCommon.ts
 index 09b38d10a..da61944b8 100644
---- a/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/common/editorCommon.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/common/editorCommon.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/common/editorCommon.ts
 @@ -3668,7 +3668,7 @@ export interface IEditor {
  	 * will not be destroyed.
  	 * It is safe to call setModel(null) to simply detach the current model from the editor.
@@ -88,10 +88,10 @@ index 09b38d10a..da61944b8 100644
  
  	/**
  	 * Change the decorations. All decorations added through this changeAccessor
-diff --git a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts b/ui/vendor/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
 index bbef60f8f..e424678d2 100644
---- a/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/common/services/editorSimpleWorker.ts
 @@ -21,7 +21,6 @@ import { computeLinks } from 'vs/editor/common/modes/linkComputer';
  import { BasicInplaceReplace } from 'vs/editor/common/modes/supports/inplaceReplaceSupport';
  import { IRawModelData } from 'vs/editor/common/services/editorSimpleWorkerCommon';
@@ -110,10 +110,10 @@ index bbef60f8f..e424678d2 100644
 -if (isWebWorker) {
 -	global.monaco = createMonacoBaseAPI();
 -}
-diff --git a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts b/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
 index 71ba74893..f05d17a87 100644
---- a/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
-+++ b/ui/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/platform/contextkey/common/contextkey.ts
 @@ -451,7 +451,7 @@ export interface IContextKeyServiceTarget {
  	setAttribute(attr: string, value: string): void;
  	removeAttribute(attr: string): void;
@@ -123,10 +123,10 @@ index 71ba74893..f05d17a87 100644
  }
  
  export let IContextKeyService = createDecorator<IContextKeyService>('contextKeyService');
-diff --git a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 index f4fb6eb0d..5a004276c 100644
---- a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
-+++ b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 @@ -83,37 +83,9 @@ export class InstantiationService implements IInstantiationService {
  
  		let canceledError: Error;
@@ -169,10 +169,10 @@ index f4fb6eb0d..5a004276c 100644
  
  	private _createInstance<T>(desc: SyncDescriptor<T>, args: any[]): T {
 
-diff --git a/ui/node_modules/vscode/src/vs/base/common/platform.ts b/ui/node_modules/vscode/src/vs/base/common/platform.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/common/platform.ts b/ui/vendor/node_modules/vscode/src/vs/base/common/platform.ts
 index 3075beb0a..de6365bbe 100644
---- a/ui/node_modules/vscode/src/vs/base/common/platform.ts
-+++ b/ui/node_modules/vscode/src/vs/base/common/platform.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/base/common/platform.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/common/platform.ts
 @@ -43,7 +43,9 @@ declare let self: any;
  export const LANGUAGE_DEFAULT = 'en';
  
@@ -184,10 +184,10 @@ index 3075beb0a..de6365bbe 100644
  	_isWindows = (process.platform === 'win32');
  	_isMacintosh = (process.platform === 'darwin');
  	_isLinux = (process.platform === 'linux');
-diff --git a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/common/model/textModel.ts b/ui/vendor/node_modules/vscode/src/vs/editor/common/model/textModel.ts
 index 8475280eb..fc508dcaf 100644
---- a/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/common/model/textModel.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/common/model/textModel.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/common/model/textModel.ts
 @@ -893,12 +893,7 @@ export class TextModel extends OrderGuaranteeEventEmitter implements editorCommo
  			return [];
  		}
@@ -202,10 +202,10 @@ index 8475280eb..fc508dcaf 100644
  
  		if (regex.multiline) {
  			return this._doFindMatchesMultiline(searchRange, regex, limitResultCount);
-diff --git a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
 index 2c1980787..726da1b83 100644
---- a/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/goToDeclaration/browser/goToDeclaration.ts
 @@ -368,7 +368,7 @@ class GotoDefinitionWithMouseEditorContribution implements editorCommon.IEditorC
  							source += '\n\u2026';
  						}
@@ -215,10 +215,10 @@ index 2c1980787..726da1b83 100644
  						hoverMessage = {
  							language,
  							value: source
-diff --git a/ui/node_modules/vscode/src/vs/editor/editor.main.ts b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/editor.main.ts b/ui/vendor/node_modules/vscode/src/vs/editor/editor.main.ts
 index 34afc07f3..3ce47776f 100644
---- a/ui/node_modules/vscode/src/vs/editor/editor.main.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/editor.main.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/editor.main.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/editor.main.ts
 @@ -10,17 +10,9 @@ import 'vs/editor/contrib/quickOpen/browser/quickOutline';
  import 'vs/editor/contrib/quickOpen/browser/gotoLine';
  import 'vs/editor/contrib/quickOpen/browser/quickCommand';
@@ -240,10 +240,10 @@ index 34afc07f3..3ce47776f 100644
 \ No newline at end of file
 +DefaultConfig.editor.glyphMargin = false;
 \ No newline at end of file
-diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts b/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
 index 37ca08de6..11fadd38a 100644
---- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneEditor.ts
 @@ -254,66 +254,3 @@ export function colorize(text: string, languageId: string, options: IColorizerOp
  export function colorizeModelLine(model: IModel, lineNumber: number, tabSize: number = 4): string {
  	return Colorizer.colorizeModelLine(model, lineNumber, tabSize);
@@ -311,10 +311,10 @@ index 37ca08de6..11fadd38a 100644
 -		Handler: editorCommon.Handler,
 -	};
 -}
-diff --git a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts b/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
 index 9bd1213b9..350eaa79a 100644
---- a/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/browser/standalone/standaloneLanguages.ts
 @@ -480,39 +480,3 @@ class SuggestAdapter {
  		});
  	}
@@ -355,10 +355,10 @@ index 9bd1213b9..350eaa79a 100644
 -		IndentAction: IndentAction
 -	};
 -}
-diff --git a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts b/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 index 5a004276c..95d84c875 100644
---- a/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
-+++ b/ui/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/platform/instantiation/common/instantiationService.ts
 @@ -98,7 +98,7 @@ export class InstantiationService implements IInstantiationService {
  		let serviceArgs = serviceDependencies.map(dependency => {
  			let service = this._getOrCreateServiceInstance(dependency.id);
@@ -368,10 +368,10 @@ index 5a004276c..95d84c875 100644
  			}
  			return service;
  		});
-diff --git a/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts b/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
 index cd5d7b479..75c607245 100644
---- a/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
-+++ b/ui/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
 @@ -8,7 +8,6 @@ import 'vs/css!./referencesWidget';
  import * as nls from 'vs/nls';
  import * as collections from 'vs/base/common/collections';
@@ -394,10 +394,10 @@ index cd5d7b479..75c607245 100644
  		} else {
  			this.setTitle(nls.localize('peekView.alternateTitle', "References"));
  		}
-diff --git a/ui/node_modules/vscode/src/vs/platform/product.ts b/ui/node_modules/vscode/src/vs/platform/product.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/product.ts b/ui/vendor/node_modules/vscode/src/vs/platform/product.ts
 index d7b5a2926..05f7d072d 100644
---- a/ui/node_modules/vscode/src/vs/platform/product.ts
-+++ b/ui/node_modules/vscode/src/vs/platform/product.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/platform/product.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/platform/product.ts
 @@ -54,9 +54,23 @@ export interface IProductConfiguration {
  	checksumFailMoreInfoUrl: string;
  }
@@ -425,10 +425,10 @@ index d7b5a2926..05f7d072d 100644
  
  if (process.env['VSCODE_DEV']) {
  	product.nameShort += ' Dev';
-diff --git a/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts b/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
 index 269902194..664a7fa26 100644
---- a/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
-+++ b/ui/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/activitybar/activitybarPart.ts
 @@ -74,7 +74,7 @@ export class ActivitybarPart extends Part implements IActivityBarService {
  		this.pinnedViewlets = this.memento[ActivitybarPart.PINNED_VIEWLETS] || this.viewletService.getViewlets().map(v => v.id);
  
@@ -438,3 +438,238 @@ index 269902194..664a7fa26 100644
  
  		this.registerListeners();
  	}
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
+index 6b2b3aff4..b837561d7 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/services/keybinding/electron-browser/keybindingService.ts
+@@ -104,22 +104,12 @@ let keybindingType: IJSONSchema = {
+ 	}
+ };
+ 
+-let keybindingsExtPoint = ExtensionsRegistry.registerExtensionPoint<ContributedKeyBinding | ContributedKeyBinding[]>('keybindings', [], {
+-	description: nls.localize('vscode.extension.contributes.keybindings', "Contributes keybindings."),
+-	oneOf: [
+-		keybindingType,
+-		{
+-			type: 'array',
+-			items: keybindingType
+-		}
+-	]
+-});
+-
+ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 
+ 	private _cachedResolver: KeybindingResolver;
+ 	private _firstTimeComputingResolver: boolean;
+ 	private userKeybindings: ConfigWatcher<IUserFriendlyKeybinding[]>;
++	private readonly name: string = 'keybindings';
+ 
+ 	constructor(
+ 		domNode: HTMLElement,
+@@ -137,18 +127,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 
+ 		this.userKeybindings = new ConfigWatcher(environmentService.appKeybindingsPath, { defaultConfig: [] });
+ 		this.toDispose.push(toDisposable(() => this.userKeybindings.dispose()));
+-
+-		keybindingsExtPoint.setHandler((extensions) => {
+-			let commandAdded = false;
+-
+-			for (let extension of extensions) {
+-				commandAdded = this._handleKeybindingsExtensionPointUser(extension.description.isBuiltin, extension.value, extension.collector) || commandAdded;
+-			}
+-
+-			if (commandAdded) {
+-				this.updateResolver({ source: KeybindingSource.Default });
+-			}
+-		});
++		this.registerHandler();
+ 
+ 		this.toDispose.push(this.userKeybindings.onDidUpdateConfiguration(event => this.updateResolver({
+ 			source: KeybindingSource.User,
+@@ -166,6 +145,36 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 		keybindingsTelemetry(telemetryService, this);
+ 	}
+ 
++	private registerHandler(): void {
++		let points = ExtensionsRegistry.getExtensionPoints();
++		if (points.some(point => point.name === this.name)) {
++			return;
++		}
++
++		let keybindingsExtPoint = ExtensionsRegistry.registerExtensionPoint<ContributedKeyBinding | ContributedKeyBinding[]>('keybindings', [], {
++			description: nls.localize('vscode.extension.contributes.keybindings', "Contributes keybindings."),
++			oneOf: [
++				keybindingType,
++				{
++					type: 'array',
++					items: keybindingType
++				}
++			]
++		});
++
++		keybindingsExtPoint.setHandler((extensions) => {
++			let commandAdded = false;
++
++			for (let extension of extensions) {
++				commandAdded = this._handleKeybindingsExtensionPointUser(extension.description.isBuiltin, extension.value, extension.collector) || commandAdded;
++			}
++
++			if (commandAdded) {
++				this.updateResolver({ source: KeybindingSource.Default });
++			}
++		});
++	}
++
+ 	private _safeGetConfig(): IUserFriendlyKeybinding[] {
+ 		let rawConfig = this.userKeybindings.getConfig();
+ 		if (Array.isArray(rawConfig)) {
+@@ -264,7 +273,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
+ 			collector.error(nls.localize(
+ 				'invalid.keybindings',
+ 				"Invalid `contributes.{0}`: {1}",
+-				keybindingsExtPoint.name,
++				this.name,
+ 				rejects.join('\n')
+ 			));
+ 		}
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts b/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts
+index ab8b9e263..b668504ab 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/browser/dom.ts
+@@ -61,11 +61,13 @@ let lastStart: number, lastEnd: number;
+ function _findClassName(node: HTMLElement, className: string): void {
+ 
+ 	let classes = node.className;
++	if (<any>classes instanceof SVGAnimatedString) {
++		classes = (<any>classes).baseVal;
++	}
+ 	if (!classes) {
+ 		lastStart = -1;
+ 		return;
+ 	}
+-
+ 	className = className.trim();
+ 
+ 	let classesLen = classes.length,
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
+index 48515ce0c..468cc8506 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/browser/parts/editor/editorGroupsControl.ts
+@@ -210,7 +210,7 @@ export class EditorGroupsControl implements IEditorGroupsControl, IVerticalSashL
+ 
+ 	private registerListeners(): void {
+ 		this.toDispose.push(this.stacks.onModelChanged(e => this.onStacksChanged(e)));
+-		this.toDispose.push(this.configurationService.onDidUpdateConfiguration(e => this.onConfigurationUpdated(e.config, true)));
++		this.toDispose.push(this.configurationService.onDidUpdateConfiguration(e => this.onConfigurationUpdated(e.config, false)));
+ 		this.extensionService.onReady().then(() => this.onExtensionsReady());
+ 	}
+ 
+diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts b/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts
+index 32cc3f6..9677a77 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/platform/workspace/common/workspace.ts
+@@ -35,6 +35,13 @@ export interface IWorkspaceContextService {
+ 	 * Given a workspace relative path, returns the resource with the absolute path.
+ 	 */
+ 	toResource: (workspaceRelativePath: string) => URI;
++
++	/**
++	 * Sets the workspace object. This may happen to e.g. handle cross-repo j2d.
++	 */
++	setWorkspace(workspace: IWorkspace): void;
++
++	onWorkspaceUpdated(listener: (workspace: IWorkspace) => void): void;
+ }
+ 
+ export interface IWorkspace {
+@@ -63,9 +70,11 @@ export class WorkspaceContextService implements IWorkspaceContextService {
+ 	public _serviceBrand: any;
+ 
+ 	private workspace: IWorkspace;
++	private listeners: ((IWorkspace) => void)[];
+ 
+ 	constructor(workspace: IWorkspace) {
+ 		this.workspace = workspace;
++		this.listeners = [];
+ 	}
+ 
+ 	public getWorkspace(): IWorkspace {
+@@ -95,4 +104,13 @@ export class WorkspaceContextService implements IWorkspaceContextService {
+ 
+ 		return null;
+ 	}
++
++	public setWorkspace(workspace: IWorkspace): void {
++		this.workspace = workspace;
++		this.listeners.forEach(listener => listener(workspace));
++	}
++
++	public onWorkspaceUpdated(listener: (workspace: IWorkspace) => void): void {
++		this.listeners.push(listener);
++	}
+ }
+\ No newline at end of file
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
+index 13582f3..c85e518 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
+@@ -101,6 +101,14 @@ export class ExplorerView extends CollapsibleViewletView {
+ 
+ 		this.resourceContext = instantiationService.createInstance(ResourceContextKey);
+ 		this.folderContext = new RawContextKey<boolean>('explorerResourceIsFolder', undefined).bindTo(contextKeyService);
++
++		contextService.onWorkspaceUpdated((workspace) => {
++			const workspaceUpdated = this.workspace.resource.toString() !== workspace.resource.toString();
++			this.workspace = workspace;
++			if (workspaceUpdated) {
++				this.refresh(workspaceUpdated);
++			}
++		});
+ 	}
+ 
+ 	public renderHeader(container: HTMLElement): void {
+@@ -618,7 +626,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 	/**
+ 	 * Refresh the contents of the explorer to get up to date data from the disk about the file structure.
+ 	 */
+-	public refresh(): TPromise<void> {
++	public refresh(workspaceUpdated?: boolean): TPromise<void> {
+ 		if (!this.explorerViewer || this.explorerViewer.getHighlight()) {
+ 			return TPromise.as(null);
+ 		}
+@@ -638,7 +646,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 			}
+ 		}
+ 
+-		return this.doRefresh().then(() => {
++		return this.doRefresh(workspaceUpdated).then(() => {
+ 			if (resourceToFocus) {
+ 				return this.select(resourceToFocus, true);
+ 			}
+@@ -647,7 +655,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 		});
+ 	}
+ 
+-	private doRefresh(): TPromise<void> {
++	private doRefresh(workspaceUpdated?: boolean): TPromise<void> {
+ 		const root = this.getInput();
+ 		const targetsToResolve: URI[] = [];
+ 		let targetsToExpand: URI[] = [];
+@@ -657,7 +665,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 		}
+ 
+ 		// First time refresh: Receive target through active editor input or selection and also include settings from previous session
+-		if (!root) {
++		if (!root || workspaceUpdated) {
+ 			const activeResource = this.getActiveEditorInputResource();
+ 			if (activeResource) {
+ 				targetsToResolve.push(activeResource);
+@@ -682,7 +690,7 @@ export class ExplorerView extends CollapsibleViewletView {
+ 			const modelStat = FileStat.create(stat, options.resolveTo);
+ 
+ 			// First time refresh: The stat becomes the input of the viewer
+-			if (!root) {
++			if (!root || workspaceUpdated) {
+ 				explorerPromise = this.explorerViewer.setInput(modelStat).then(() => {
+ 
+ 					// Make sure to expand all folders that where expanded in the previous session

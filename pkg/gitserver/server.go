@@ -1,8 +1,6 @@
 package gitserver
 
 import (
-	"bytes"
-	"fmt"
 	"net"
 	"os/exec"
 	"path"
@@ -15,9 +13,11 @@ import (
 	"github.com/neelance/chanrpc"
 	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // Server is a gitserver server.
@@ -35,11 +35,22 @@ type Server struct {
 	// in the process of being cloned.
 	cloningMu sync.Mutex
 	cloning   map[string]struct{}
+
+	updateRepo        chan<- updateRepoRequest
+	repoUpdateLocksMu sync.Mutex
+	repoUpdateLocks   map[string]*sync.Mutex
+}
+
+type updateRepoRequest struct {
+	repo string
+	opt  *vcs.RemoteOpts
 }
 
 // Serve serves incoming gitserver requests on listener l.
 func (s *Server) Serve(l net.Listener) error {
 	s.cloning = make(map[string]struct{})
+	s.updateRepo = s.repoUpdateLoop()
+	s.repoUpdateLocks = make(map[string]*sync.Mutex)
 
 	s.registerMetrics()
 	requests := make(chan *request, 100)
@@ -52,9 +63,6 @@ func (s *Server) processRequests(requests <-chan *request) {
 	for req := range requests {
 		if req.Exec != nil {
 			go s.handleExecRequest(req.Exec)
-		}
-		if req.Create != nil {
-			go s.handleCreateRequest(req.Create)
 		}
 	}
 }
@@ -103,18 +111,54 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	dir := path.Join(s.ReposDir, req.Repo)
 	s.cloningMu.Lock()
 	_, cloneInProgress := s.cloning[dir]
-	s.cloningMu.Unlock()
 	if cloneInProgress {
+		s.cloningMu.Unlock()
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{CloneInProgress: true}
 		status = "clone-in-progress"
 		return
 	}
 	if !repoExists(dir) {
+		if strings.HasPrefix(req.Repo, "github.com/") && !req.NoCreds {
+			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
+			s.cloningMu.Unlock()
+
+			go func() {
+				defer func() {
+					s.cloningMu.Lock()
+					delete(s.cloning, dir)
+					s.cloningMu.Unlock()
+				}()
+
+				origin := "https://" + req.Repo + ".git"
+				cmd := exec.Command("git", "clone", "--mirror", origin, dir)
+				if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
+					log15.Error("clone failed", "error", err, "output", string(output))
+					return
+				}
+			}()
+
+			chanrpcutil.Drain(req.Stdin)
+			req.ReplyChan <- &execReply{CloneInProgress: true}
+			status = "clone-in-progress"
+			return
+		}
+
+		s.cloningMu.Unlock()
 		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &execReply{RepoNotFound: true}
 		status = "repo-not-found"
 		return
+	}
+	s.cloningMu.Unlock()
+
+	if req.EnsureRevision != "" {
+		cmd := exec.Command("git", "rev-parse", req.EnsureRevision)
+		cmd.Dir = dir
+		if err := cmd.Run(); err != nil {
+			// Revision not found, update before running actual command.
+			s.doRepoUpdate(req.Repo, req.Opt)
+		}
 	}
 
 	stdoutC, stdoutWRaw := chanrpcutil.NewWriter()
@@ -135,7 +179,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		ProcessResult: processResultChan,
 	}
 
-	if err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
+	if err := cmd.Run(); err != nil {
 		errStr = err.Error()
 	}
 	if cmd.ProcessState != nil { // is nil if process failed to start
@@ -154,6 +198,10 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
+
+	if !req.NoCreds {
+		s.updateRepo <- updateRepoRequest{req.Repo, req.Opt}
+	}
 }
 
 var execRunning = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -175,79 +223,39 @@ func init() {
 	prometheus.MustRegister(execDuration)
 }
 
-// handleCreateRequest handles a create request.
-func (s *Server) handleCreateRequest(req *createRequest) {
-	start := time.Now()
-	status := ""
+func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
+	updateRepo := make(chan updateRepoRequest, 10)
+	lastCheckAt := make(map[string]time.Time)
 
-	defer recoverAndLog()
-	defer close(req.ReplyChan)
-	defer func() { defer observeCreate(start, status) }()
+	go func() {
+		for req := range updateRepo {
+			if t, ok := lastCheckAt[req.repo]; ok && time.Now().Before(t.Add(10*time.Second)) {
+				continue // git data still fresh
+			}
+			lastCheckAt[req.repo] = time.Now()
 
-	dir := path.Join(s.ReposDir, req.Repo)
-	s.cloningMu.Lock()
-	if _, ok := s.cloning[dir]; ok {
-		s.cloningMu.Unlock()
-		req.ReplyChan <- &createReply{CloneInProgress: true}
-		status = "clone-in-progress"
-		return
-	}
-	if repoExists(dir) {
-		s.cloningMu.Unlock()
-		req.ReplyChan <- &createReply{RepoExist: true}
-		status = "repo-exists"
-		return
-	}
-
-	// We'll take this repo and start cloning it.
-	// Mark it as being cloned so no one else starts to.
-	s.cloning[dir] = struct{}{}
-	s.cloningMu.Unlock()
-
-	defer func() {
-		s.cloningMu.Lock()
-		delete(s.cloning, dir)
-		s.cloningMu.Unlock()
+			go s.doRepoUpdate(req.repo, req.opt)
+		}
 	}()
 
-	if req.MirrorRemote != "" {
-		cmd := exec.Command("git", "clone", "--mirror", req.MirrorRemote, dir)
-
-		var outputBuf bytes.Buffer
-		cmd.Stdout = &outputBuf
-		cmd.Stderr = &outputBuf
-		if err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
-			req.ReplyChan <- &createReply{Error: fmt.Sprintf("cloning repository %s failed with output:\n%s", req.Repo, outputBuf.String())}
-			status = "clone-fail"
-			return
-		}
-		req.ReplyChan <- &createReply{}
-		status = "clone-success"
-		return
-	}
-
-	cmd := exec.Command("git", "init", "--bare", dir)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		req.ReplyChan <- &createReply{Error: fmt.Sprintf("initializing repository %s failed with output:\n%s", req.Repo, string(out))}
-		status = "init-fail"
-		return
-	}
-	status = "init-success"
-	req.ReplyChan <- &createReply{}
+	return updateRepo
 }
 
-var createDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "create_duration_seconds",
-	Help:      "gitserver.Init and gitserver.Clone latencies in seconds.",
-	Buckets:   statsutil.UserLatencyBuckets,
-}, []string{"status"})
+func (s *Server) doRepoUpdate(repo string, opt *vcs.RemoteOpts) {
+	s.repoUpdateLocksMu.Lock()
+	l, ok := s.repoUpdateLocks[repo]
+	if !ok {
+		l = new(sync.Mutex)
+		s.repoUpdateLocks[repo] = l
+	}
+	s.repoUpdateLocksMu.Unlock()
 
-func init() {
-	prometheus.MustRegister(createDuration)
-}
+	l.Lock() // Prevent multiple updates in parallel. It works fine, but it wastes resources.
+	defer l.Unlock()
 
-func observeCreate(start time.Time, status string) {
-	createDuration.WithLabelValues(status).Observe(time.Since(start).Seconds())
+	cmd := exec.Command("git", "remote", "update", "--prune")
+	cmd.Dir = path.Join(s.ReposDir, repo)
+	if output, err := s.runWithRemoteOpts(cmd, opt); err != nil {
+		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
+	}
 }

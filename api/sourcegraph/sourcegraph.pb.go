@@ -117,11 +117,6 @@ type StreamResponse struct {
 	HasMore bool `json:"HasMore,omitempty" url:",omitempty"`
 }
 
-// RepoConfig describes a repository's config. This config is
-// Sourcegraph-specific and is persisted locally.
-type RepoConfig struct {
-}
-
 // Repo represents a source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.

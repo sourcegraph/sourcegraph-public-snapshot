@@ -1,7 +1,7 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_20, c_black_10, c_purple from colors;
+@value c_cool_gray2, c_cool_gray, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_20, c_black_10, c_purple from colors;
 
 @value font_size_7 from vars;
 
@@ -52,6 +52,7 @@
 :global .monaco-menu .monaco-action-bar.vertical .action-label {
 	color: c_cool_dark_gray;
 	font-size: 0.9rem;
+	font-family: 'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif;
 }
 
 :global .monaco-menu-container .monaco-menu .monaco-action-bar.vertical li.action-item {
@@ -124,8 +125,13 @@
 /* Code view */
 
 :global .monaco-editor.vs-dark .reference-zone-widget .preview .monaco-editor {
-	 background-color: c_black_10 !important;
- }
+	background-color: c_black_10 !important;
+}
+
+:global div.monaco-editor.vs-dark .monaco-editor-background {
+	margin-left: 5px;
+}
+
 
 /* Ref tree */
 
@@ -183,6 +189,8 @@
 
 /*
 	Sourcegraph Monaco theme based on vs-dark
+	---------------------------------------------------
+	Please reserve this section for the code theme. Any layout manipulation should be in a new section.
 */
 
 @value yellow: #FDBA86;
@@ -206,46 +214,73 @@
 	cursor: pointer;
 }
 
-:global div.monaco-editor.vs-dark,
-:global div.monaco-editor.vs-dark .token {color: c_cool_pale_gray}
-:global div.monaco-editor.vs-dark,
-:global div.monaco-editor.vs-dark .monaco-editor-background { background-color: c_cool_dark_gray; }
+:global div.monaco-editor.vs-dark .token {
+	color: c_cool_pale_gray;
+}
 
-:global div.monaco-editor.vs-dark .token.comment { font-style: italic; }
+:global div.monaco-editor.vs-dark,
+:global div.monaco-editor.vs-dark .monaco-editor-background {
+	background-color: c_cool_dark_gray;
+}
 
-:global div.monaco-editor.vs-dark .line-numbers { color: c_cool_gray; }
-:global div.monaco-editor.vs-dark .line-numbers:hover { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.comment {
+	font-style: italic;
+}
+
+:global div.monaco-editor.vs-dark .line-numbers {
+	color: c_cool_gray;
+	cursor: default !important;
+}
+:global div.monaco-editor.vs-dark .line-numbers:hover {
+	color: c_cool_mid_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.terminal,
 :global div.monaco-editor.vs-dark .token.metatag,
 :global div.monaco-editor.vs-dark .token.annotation,
 :global div.monaco-editor.vs-dark .token.constant,
 :global div.monaco-editor.vs-dark .token.literal,
-:global div.monaco-editor.vs-dark .token.error-token { color: red; }
+:global div.monaco-editor.vs-dark .token.error-token {
+	color: red;
+}
 
 :global div.monaco-editor.vs-dark .token.string.escape,
-:global div.monaco-editor.vs-dark .token.warn-token { color: orange; }
+:global div.monaco-editor.vs-dark .token.warn-token {
+	color: orange;
+}
 
 :global div.monaco-editor.vs-dark .token.delimiter,
 :global div.monaco-editor.vs-dark .token.comment,
-:global div.monaco-editor.vs-dark .token.comment.shebang { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.comment.shebang {
+	color: c_cool_mid_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.support,
-:global div.monaco-editor.vs-dark .token.support.type { color: c_cool_pale_gray; }
+:global div.monaco-editor.vs-dark .token.support.type {
+	color: c_cool_pale_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.string,
 :global div.monaco-editor.vs-dark .token.attribute.value,
 :global div.monaco-editor.vs-dark .token.support.property-value,
-:global div.monaco-editor.vs-dark .token.literal.hex { color: yellow; }
+:global div.monaco-editor.vs-dark .token.literal.hex {
+	color: yellow;
+}
 
-:global div.monaco-editor.vs-dark .token.identifier { color: c_cool_pale_gray; }
+:global div.monaco-editor.vs-dark .token.identifier {
+	color: c_cool_pale_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.comment.doc,
 :global div.monaco-editor.vs-dark .token.regexp,
-:global div.monaco-editor.vs-dark .token.constant.rgb-value { color: green; }
+:global div.monaco-editor.vs-dark .token.constant.rgb-value {
+	color: green;
+}
 
 :global div.monaco-editor.vs-dark .token.entity.name.selector,
-:global div.monaco-editor.vs-dark .token.info-token { color: cyan; }
+:global div.monaco-editor.vs-dark .token.info-token {
+	color: cyan;
+}
 
 :global div.monaco-editor.vs-dark .token.variable,
 :global div.monaco-editor.vs-dark .token.number,
@@ -255,75 +290,168 @@
 :global div.monaco-editor.vs-dark .token.constant.numeric,
 :global div.monaco-editor.vs-dark .token.tag,
 :global div.monaco-editor.vs-dark .token.variable.predefined,
-:global div.monaco-editor.vs-dark .token.debug-token { color: violet; }
+:global div.monaco-editor.vs-dark .token.debug-token {
+	color: violet;
+}
 
 :global div.monaco-editor.vs-dark .token.key,
 :global div.monaco-editor.vs-dark .token.punctuation,
-:global div.monaco-editor.vs-dark .token.attribute.name {	color: magenta; }
+:global div.monaco-editor.vs-dark .token.attribute.name {
+	color: magenta;
+}
 
 /* Keywords should come at the end in order to match cases like token.keyword.string */
 :global div.monaco-editor.vs-dark .token.keyword,
 :global div.monaco-editor.vs-dark .token.keyword.flow,
-:global div.monaco-editor.vs-dark .token.keyword.datatype { color: blue; }
+:global div.monaco-editor.vs-dark .token.keyword.datatype {
+	color: blue;
+}
 
 /* PHP */
 :global div.monaco-editor.vs-dark .token.metatag.php { font-weight: bold; }
 
 /* Ruby */
-:global div.monaco-editor.vs-dark .token.predefined.ruby { color: blue; }
+:global div.monaco-editor.vs-dark .token.predefined.ruby {
+	color: blue;
+}
 
 /* Markdown */
-:global div.monaco-editor.vs-dark .token.emphasis { font-style: italic;}
-:global div.monaco-editor.vs-dark .token.strong { font-weight: bold; }
-:global div.monaco-editor.vs-dark .token.header { color: blue ;}
+:global div.monaco-editor.vs-dark .token.emphasis {
+	font-style: italic;
+}
+
+:global div.monaco-editor.vs-dark .token.strong {
+	font-weight: bold;
+}
+
+:global div.monaco-editor.vs-dark .token.header {
+	color: blue ;
+}
 
 /* JSON */
-:global div.monaco-editor.vs-dark .token.string.key { color: cyan; }
-:global div.monaco-editor.vs-dark .token.string.value { color: yellow; }
+:global div.monaco-editor.vs-dark .token.string.key {
+	color: cyan;
+}
+
+:global div.monaco-editor.vs-dark .token.string.value {
+	color: yellow;
+}
 
 /* YAML */
-:global div.monaco-editor.vs-dark .token.string.yaml { color: yellow; }
+:global div.monaco-editor.vs-dark .token.string.yaml {
+	color: yellow;
+}
 
 /* C# */
-:global div.monaco-editor.vs-dark .token.type	{ color: blue; }
-:global div.monaco-editor.vs-dark .token.identifier.method { color: yellow; }
+:global div.monaco-editor.vs-dark .token.type	{
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.identifier.method {
+	color: yellow;
+}
 
 /* SQL */
-:global div.monaco-editor.vs-dark .token.string.sql { color: yellow; }
-:global div.monaco-editor.vs-dark .token.predefined.sql	{ color: magenta; }
-:global div.monaco-editor.vs-dark .token.operator.sql { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.string.sql {
+	color: yellow;
+}
+
+:global div.monaco-editor.vs-dark .token.predefined.sql	{
+	color: magenta;
+}
+
+:global div.monaco-editor.vs-dark .token.operator.sql {
+	color: c_cool_mid_gray;
+}
 
 /* HTML */
-:global div.monaco-editor.vs-dark .token.delimiter.html	{ color: c_cool_mid_gray_5; }
-:global div.monaco-editor.vs-dark .token.metatag.content.html { color: cyan; }
-:global div.monaco-editor.vs-dark .token.metatag.html { color: blue; }
-:global div.monaco-editor.vs-dark .token.string.html { color: yellow; }
+:global div.monaco-editor.vs-dark .token.delimiter.html	{
+	color: c_cool_mid_gray_5;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.content.html {
+	color: cyan;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.html {
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.string.html {
+	color: yellow;
+}
 
 /* XML */
-:global div.monaco-editor.vs-dark .token.delimiter.xml { color: c_cool_mid_gray_5; }
-:global div.monaco-editor.vs-dark .token.metatag.content.xml { color: cyan; }
-:global div.monaco-editor.vs-dark .token.metatag.xml { color: blue; }
+:global div.monaco-editor.vs-dark .token.delimiter.xml {
+	color: c_cool_mid_gray_5;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.content.xml {
+	color: cyan;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.xml {
+	color: blue;
+}
 
 /* CSS */
-:global div.monaco-editor.vs-dark .token.attribute.name.css { color: blue; }
-:global div.monaco-editor.vs-dark .token.attribute.value.css { color: c_cool_mid_gray_5; }
+:global div.monaco-editor.vs-dark .token.attribute.name.css {
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.attribute.value.css {
+	color: c_cool_mid_gray_5;
+}
+
 :global div.monaco-editor.vs-dark .token.delimiter.css,
-:global div.monaco-editor.vs-dark .token.punctuation.css { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.punctuation.css {
+	color: c_cool_mid_gray;
+}
 
 /* VSXML */
-:global div.monaco-editor.vs-dark .token.vs	{ color: green; }
-:global div.monaco-editor.vs-dark .token.tag.vs { color: blue; }
-:global div.monaco-editor.vs-dark .token.delimiter.vs { color: c_cool_mid_gray; }
-:global div.monaco-editor.vs-dark .token.attribute.name.vs { color: c_cool_mid_gray; }
-:global div.monaco-editor.vs-dark .token.attribute.value.vs { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.vs	{
+	color: green;
+}
+
+:global div.monaco-editor.vs-dark .token.tag.vs {
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.delimiter.vs {
+	color: c_cool_mid_gray;
+}
+
+:global div.monaco-editor.vs-dark .token.attribute.name.vs {
+	color: c_cool_mid_gray;
+}
+
+:global div.monaco-editor.vs-dark .token.attribute.value.vs {
+	color: c_cool_mid_gray;
+}
 
 /* Jade */
 :global div.monaco-editor.vs-dark .token.tag.id.jade,
-:global div.monaco-editor.vs-dark .token.tag.class.jade { color: violet; }
+:global div.monaco-editor.vs-dark .token.tag.class.jade {
+	color: violet;
+}
 
 :global div.monaco-editor.vs-dark .token.interpolation.jade,
-:global div.monaco-editor.vs-dark .token.interpolation.delimiter.jade { color: magenta; }
+:global div.monaco-editor.vs-dark .token.interpolation.delimiter.jade {
+	color: magenta;
+}
 
+/* File tree */
+:global .explorer-folders-view .monaco-tree-row {
+	line-height: 30px;
+	font-size: 1rem;
+}
+
+:global .vs-dark .explorer-folders-view .monaco-tree .monaco-tree-rows > .monaco-tree-row.has-children > .content:before {
+	background-image: url('data:image/svg+xml, <svg viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M10.656375,18.1633125 C10.3635,18.4569375 9.888375,18.4569375 9.59475,18.1640625 C9.3015,17.8711875 9.3015,17.3956875 9.594375,17.1028125 L14.696625,12.0065625 L9.594375,6.9099375 C9.3015,6.6166875 9.3015,6.1415625 9.59475,5.8486875 C9.888375,5.5554375 10.3635,5.5558125 10.656375,5.8494375 L16.289625,11.4759375 C16.582875,11.7684375 16.583625,12.2428125 16.291125,12.5356875 C16.290375,12.5360625 16.290375,12.5364375 16.289625,12.5368125 L10.656375,18.1633125 Z" id="Fill" fill="white"></path></svg>');
+}
+:global .vs-dark .explorer-folders-view .monaco-tree .monaco-tree-rows > .monaco-tree-row.expanded > .content:before {
+	background-image: url('data:image/svg+xml, <svg viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M12.5240625,16.27845 C12.2315625,16.571325 11.7568125,16.5717 11.4639375,16.278825 C11.4635625,16.278825 11.4631875,16.278825 11.4631875,16.27845 L5.8366875,10.64895 C5.5396875,10.359825 5.5329375,9.8847 5.8220625,9.5877 C6.1111875,9.291075 6.5863125,9.2847 6.8833125,9.57345 L6.8975625,9.5877 L11.9934375,14.686575 L17.0896875,9.5877 C17.3788125,9.290325 17.8535625,9.28395 18.1509375,9.5727 C18.4483125,9.86145 18.4546875,10.336575 18.1659375,10.633575 C18.1610625,10.638825 18.1561875,10.644075 18.1509375,10.64895 L12.5240625,16.27845 Z" id="Fill" fill="white"></path></svg>');
+}
 
 :global div.monaco-editor .codelens-decoration {
 	overflow: hidden;
@@ -379,4 +507,60 @@
 	-moz-animation: fadein 0.2s linear;
 	-o-animation: fadein 0.2s linear;
 	animation: fadein 0.2s linear;
+}
+
+:global .monaco-workbench > .part > .composite.title {
+	height: 65px;
+	box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 6px 0px;
+	background: c_cool_gray2;
+	position: relative;
+	z-index: 1;
+}
+
+:global .monaco-workbench > .part > .composite.title > .title-actions {
+	display: none;
+}
+
+:global .monaco-workbench > .part > .composite.title > .title-label > span {
+	font-size: 1.25rem;
+	font-weight: 800;
+	letter-spacing: 0px;
+	vertical-align: middle;
+	line-height: 65px;
+	color: rgba(213,229,242,1) !important;
+	text-transform: initial !important;
+}
+
+:global .monaco-tree .monaco-tree-wrapper .monaco-tree-rows {
+	background: c_cool_gray2;
+	color: rgba(213,229,242,1);
+}
+
+:global .monaco-sash.vertical {
+	display: none;
+}
+
+:global .monaco-workbench > .part.editor > .content > .one-editor-silo > .container > .title {
+	overflow: initial !important;
+}
+
+:global #workbench\.parts\.editor {
+	box-shadow: -2px 0 3px 0px rgba(0,0,0,0.1);
+}
+
+:global .monaco-menu-container .monaco-menu {
+	background: white;
+	border-radius: 3px;
+}
+
+:global .vs-dark .monaco-workbench .editor-one.monaco-editor-background {
+	background: c_cool_dark_gray;
+}
+
+:global .vs-dark .monaco-workbench .editor.part.empty.monaco-editor-background {
+	background: c_cool_dark_gray;
+}
+
+:global .monaco-workbench > .part.sidebar > .content {
+	background: c_cool_gray2;
 }

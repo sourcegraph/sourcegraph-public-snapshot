@@ -46,88 +46,98 @@ func TestResolveImportPath(t *testing.T) {
 			rev:         runtime.Version(),
 		}},
 		{"github.com/foo/bar", &directory{
-			importPath:   "github.com/foo/bar",
-			resolvedPath: "github.com/foo/bar.git",
-			projectRoot:  "github.com/foo/bar",
-			cloneURL:     "https://github.com/foo/bar",
-			vcs:          "git",
+			importPath:  "github.com/foo/bar",
+			projectRoot: "github.com/foo/bar",
+			cloneURL:    "https://github.com/foo/bar",
+			vcs:         "git",
 		}},
 		{"github.com/foo/bar/baz", &directory{
-			importPath:   "github.com/foo/bar/baz",
-			resolvedPath: "github.com/foo/bar/baz.git",
-			projectRoot:  "github.com/foo/bar",
-			cloneURL:     "https://github.com/foo/bar",
-			vcs:          "git",
+			importPath:  "github.com/foo/bar/baz",
+			projectRoot: "github.com/foo/bar",
+			cloneURL:    "https://github.com/foo/bar",
+			vcs:         "git",
 		}},
 		{"github.com/foo/bar/baz/bam", &directory{
-			importPath:   "github.com/foo/bar/baz/bam",
-			resolvedPath: "github.com/foo/bar/baz/bam.git",
-			projectRoot:  "github.com/foo/bar",
-			cloneURL:     "https://github.com/foo/bar",
-			vcs:          "git",
+			importPath:  "github.com/foo/bar/baz/bam",
+			projectRoot: "github.com/foo/bar",
+			cloneURL:    "https://github.com/foo/bar",
+			vcs:         "git",
 		}},
 		{"golang.org/x/foo", &directory{
-			importPath:   "github.com/golang/foo",
-			resolvedPath: "github.com/golang/foo.git",
-			projectRoot:  "golang.org/x/foo",
-			cloneURL:     "https://github.com/golang/foo",
-			vcs:          "git",
+			importPath:  "github.com/golang/foo",
+			projectRoot: "golang.org/x/foo",
+			cloneURL:    "https://github.com/golang/foo",
+			vcs:         "git",
 		}},
 		{"golang.org/x/foo/bar", &directory{
-			importPath:   "github.com/golang/foo/bar",
-			resolvedPath: "github.com/golang/foo/bar.git",
-			projectRoot:  "golang.org/x/foo",
-			cloneURL:     "https://github.com/golang/foo",
-			vcs:          "git",
+			importPath:  "github.com/golang/foo/bar",
+			projectRoot: "golang.org/x/foo",
+			cloneURL:    "https://github.com/golang/foo",
+			vcs:         "git",
 		}},
 		{"github.com/foo", nil},
 
 		// dynamic (see client setup below)
 		{"alice.org/pkg", &directory{
-			importPath:   "alice.org/pkg",
-			projectRoot:  "alice.org/pkg",
-			cloneURL:     "https://github.com/alice/pkg",
-			resolvedPath: "github.com/alice/pkg",
-			vcs:          "git",
+			importPath:  "alice.org/pkg",
+			projectRoot: "alice.org/pkg",
+			cloneURL:    "https://github.com/alice/pkg",
+			vcs:         "git",
 		}},
 		{"alice.org/pkg/sub", &directory{
-			importPath:   "alice.org/pkg/sub",
-			projectRoot:  "alice.org/pkg",
-			cloneURL:     "https://github.com/alice/pkg",
-			resolvedPath: "github.com/alice/pkg/sub",
-			vcs:          "git",
+			importPath:  "alice.org/pkg/sub",
+			projectRoot: "alice.org/pkg",
+			cloneURL:    "https://github.com/alice/pkg",
+			vcs:         "git",
 		}},
 		{"alice.org/pkg/http", &directory{
-			importPath:   "alice.org/pkg/http",
-			projectRoot:  "alice.org/pkg",
-			cloneURL:     "https://github.com/alice/pkg",
-			resolvedPath: "github.com/alice/pkg/http",
-			vcs:          "git",
+			importPath:  "alice.org/pkg/http",
+			projectRoot: "alice.org/pkg",
+			cloneURL:    "https://github.com/alice/pkg",
+			vcs:         "git",
 		}},
 		{"alice.org/pkg/ignore", &directory{
-			importPath:   "alice.org/pkg/ignore",
-			projectRoot:  "alice.org/pkg",
-			cloneURL:     "https://github.com/alice/pkg",
-			resolvedPath: "github.com/alice/pkg/ignore",
-			vcs:          "git",
+			importPath:  "alice.org/pkg/ignore",
+			projectRoot: "alice.org/pkg",
+			cloneURL:    "https://github.com/alice/pkg",
+			vcs:         "git",
 		}},
 		{"alice.org/pkg/mismatch", nil},
 		{"alice.org/pkg/multiple", nil},
 		{"alice.org/pkg/notfound", nil},
 
 		{"bob.com/pkg", &directory{
-			importPath:   "bob.com/pkg",
-			projectRoot:  "bob.com/pkg",
-			cloneURL:     "https://vcs.net/bob/pkg.git",
-			resolvedPath: "vcs.net/bob/pkg.git",
-			vcs:          "git",
+			importPath:  "bob.com/pkg",
+			projectRoot: "bob.com/pkg",
+			cloneURL:    "https://vcs.net/bob/pkg.git",
+			vcs:         "git",
 		}},
 		{"bob.com/pkg/sub", &directory{
-			importPath:   "bob.com/pkg/sub",
-			projectRoot:  "bob.com/pkg",
-			cloneURL:     "https://vcs.net/bob/pkg.git",
-			resolvedPath: "vcs.net/bob/pkg.git/sub",
-			vcs:          "git",
+			importPath:  "bob.com/pkg/sub",
+			projectRoot: "bob.com/pkg",
+			cloneURL:    "https://vcs.net/bob/pkg.git",
+			vcs:         "git",
+		}},
+
+		{"gopkg.in/yaml.v2", &directory{
+			importPath:  "gopkg.in/yaml.v2",
+			projectRoot: "gopkg.in/yaml.v2",
+			cloneURL:    "https://github.com/go-yaml/yaml",
+			vcs:         "git",
+			rev:         "v2",
+		}},
+		{"gopkg.in/stretchr/testify.v1/assert", &directory{
+			importPath:  "gopkg.in/stretchr/testify.v1/assert",
+			projectRoot: "gopkg.in/stretchr/testify.v1",
+			cloneURL:    "https://github.com/stretchr/testify",
+			vcs:         "git",
+			rev:         "v1.1.4",
+		}},
+		{"honnef.co/go/staticcheck/cmd/staticcheck", &directory{
+			importPath:  "honnef.co/go/staticcheck/cmd/staticcheck",
+			projectRoot: "honnef.co/go/staticcheck",
+			cloneURL:    "https://github.com/dominikh/go-staticcheck",
+			vcs:         "git",
 		}},
 
 		{"golang.org/x", nil},
@@ -166,6 +176,22 @@ func TestResolveImportPath(t *testing.T) {
 		"https://bob.com/pkg": `<head> <meta name="go-import" content="bob.com/pkg git https://vcs.net/bob/pkg.git">`,
 		// Package at in sub-directory of a Git repo.
 		"https://bob.com/pkg/sub": `<head> <meta name="go-import" content="bob.com/pkg git https://vcs.net/bob/pkg.git">`,
+
+		// Some popular entries
+		"https://gopkg.in/yaml.v2": `<head>
+<meta name="go-import" content="gopkg.in/yaml.v2 git https://gopkg.in/yaml.v2">
+<meta name="go-source" content="gopkg.in/yaml.v2 _ https://github.com/go-yaml/yaml/tree/v2{/dir} https://github.com/go-yaml/yaml/blob/v2{/dir}/{file}#L{line}">
+</head>`,
+		"https://gopkg.in/stretchr/testify.v1/assert": `<head>
+<meta name="go-import" content="gopkg.in/stretchr/testify.v1 git https://gopkg.in/stretchr/testify.v1">
+<meta name="go-source" content="gopkg.in/stretchr/testify.v1 _ https://github.com/stretchr/testify/tree/v1.1.4{/dir} https://github.com/stretchr/testify/blob/v1.1.4{/dir}/{file}#L{line}">
+</head>`,
+		"https://gopkg.in/stretchr/testify.v1": `<head>
+<meta name="go-import" content="gopkg.in/stretchr/testify.v1 git https://gopkg.in/stretchr/testify.v1">
+<meta name="go-source" content="gopkg.in/stretchr/testify.v1 _ https://github.com/stretchr/testify/tree/v1.1.4{/dir} https://github.com/stretchr/testify/blob/v1.1.4{/dir}/{file}#L{line}">
+</head>`,
+		"https://honnef.co/go/staticcheck/cmd/staticcheck": `<head> <meta name="go-import" content="honnef.co/go/staticcheck git https://github.com/dominikh/go-staticcheck"> </head>`,
+		"https://honnef.co/go/staticcheck":                 `<head> <meta name="go-import" content="honnef.co/go/staticcheck git https://github.com/dominikh/go-staticcheck"> </head>`,
 	}
 	client := &http.Client{Transport: testTransport(pages)}
 

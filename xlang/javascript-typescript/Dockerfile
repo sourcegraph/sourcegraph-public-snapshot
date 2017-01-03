@@ -2,9 +2,10 @@
 
 FROM node:6.9-slim
 
-ADD javascript-typescript-langserver/src /src
-ADD javascript-typescript-langserver/build /build
-ADD javascript-typescript-langserver/node_modules /node_modules
+ADD buildserver/src /buildserver/src
+ADD buildserver/lib /buildserver/lib
+ADD buildserver/node_modules /buildserver/node_modules
 
+WORKDIR /buildserver
 EXPOSE 2088
-CMD ["node", "--max_old_space_size=4096", "/build/language-server.js", "-p", "2088", "--strict"]
+CMD ["node", "--max_old_space_size=4096", "./lib/language-server.js", "-p", "2088", "--strict"]

@@ -52,12 +52,12 @@ function toFileStat(resource: URI, files: string[]): IFileStat {
 	const childrenOfResource = files.filter(x => x.startsWith(path) && x !== path);
 	const dirComponents = childrenOfResource.map(x => {
 		x = x.substr(path.length);
-		return x.split("/")[0] || x;
+		return x.split("/")[0] || x.split("/")[1];
 	});
 	const uniqDirs = uniq(dirComponents);
 	const childStats = uniqDirs.map(dir => toFileStat(
-		URIUtils.pathInRepo(repo, rev, path + dir),
-		files,
+		URIUtils.pathInRepo(repo, rev, path + "/" + dir),
+		childrenOfResource,
 	));
 	return {
 		hasChildren: childStats.length > 0,

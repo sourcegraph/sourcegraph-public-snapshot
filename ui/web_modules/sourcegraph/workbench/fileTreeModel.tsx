@@ -10,7 +10,7 @@ export type Node = {
 	id: string;
 	children: Node[];
 	parent?: Node;
-}
+};
 
 export function makeTree(files: GQL.IFile[], repo: string): Node {
 	let root = { label: "", id: "", children: [], repo: repo };

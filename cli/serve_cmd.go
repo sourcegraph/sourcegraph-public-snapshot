@@ -41,7 +41,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 
@@ -50,8 +49,8 @@ var (
 	trace          = env.Get("SRC_LOG_TRACE", "HTTP", "space separated list of trace logs to show. Options: all, HTTP, build, github")
 	traceThreshold = env.Get("SRC_LOG_TRACE_THRESHOLD", "", "show traces that take longer than this")
 
-	httpAddr  = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app, REST API, and gRPC API")
-	httpsAddr = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app, REST API, and gRPC API")
+	httpAddr  = env.Get("SRC_HTTP_ADDR", ":3080", "HTTP listen address for app and HTTP API")
+	httpsAddr = env.Get("SRC_HTTPS_ADDR", ":3443", "HTTPS (TLS) listen address for app and HTTP API")
 
 	profBindAddr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address")
 
@@ -265,18 +264,11 @@ func Main() error {
 	// Connection test
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", appURL))
 
-	// Start background repo updater worker.
-	repoUpdaterCtx, err := authenticateScopedContext(context.Background(), []string{"internal:repoupdater"})
-	if err != nil {
-		return err
-	}
-	repoupdater.RepoUpdater.Start(repoUpdaterCtx)
-
 	select {}
 }
 
 // authenticateScopedContext adds a token with the specified scope to the given
-// context. This context can only make gRPC calls that are permitted for the given
+// context. This context can only make API calls that are permitted for the given
 // scope. See the accesscontrol package for information about different scopes.
 func authenticateScopedContext(ctx context.Context, scopes []string) (context.Context, error) {
 	scopeMap := make(map[string]bool)

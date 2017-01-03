@@ -1,14 +1,13 @@
-import * as moment from "moment";
 import { CancellationToken } from "vs/base/common/cancellation";
 import { onLanguage, registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
 import { Range } from "vs/editor/common/core/range";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import * as modes from "vs/editor/common/modes";
-import { Command, Definition, Hover, ICodeLensSymbol, Location, ReferenceContext } from "vs/editor/common/modes";
+import { Definition, Hover, Location, ReferenceContext } from "vs/editor/common/modes";
 
 import { URIUtils } from "sourcegraph/core/uri";
-import { codeLensCache } from "sourcegraph/editor/EditorService";
+import { AuthorshipCodeLens } from "sourcegraph/editor/authorshipCodeLens";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes as supportedModes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -18,7 +17,7 @@ supportedModes.forEach(mode => {
 		registerHoverProvider(mode, new HoverProvider());
 		registerDefinitionProvider(mode, new DefinitionProvder());
 		registerReferenceProvider(mode, new ReferenceProvider());
-		registerCodeLensProvider(mode, new AuthorshipContrib());
+		registerCodeLensProvider(mode, new AuthorshipCodeLens());
 	});
 });
 
@@ -129,42 +128,6 @@ export class HoverProvider implements modes.HoverProvider {
 
 }
 
-class AuthorshipContrib implements modes.CodeLensProvider {
-	// Necessary implementation for the code lens to be rendered. The code lens is implemented inside of provideCodeLenses so it is only necessary
-	// to return the lens.
-	resolveCodeLens(model: IReadOnlyModel, codeLens: ICodeLensSymbol, token: CancellationToken): ICodeLensSymbol | Thenable<ICodeLensSymbol> {
-		return codeLens;
-	}
-
-	provideCodeLenses(model: IReadOnlyModel, token: CancellationToken): ICodeLensSymbol[] | Thenable<ICodeLensSymbol[]> {
-		const key = model.uri.toString(true);
-		let blameData = this.getEditorBlameData(key);
-		let codeLenses: ICodeLensSymbol[] = [];
-		for (let i = 0; i < blameData.length; i++) {
-			const blameLine = blameData[i];
-			const timeSince = moment(blameLine.date, "YYYY-MM-DDThh:mmTZD").fromNow();
-			codeLenses.push({
-				id: `${blameLine.rev}${blameLine.startLine}-${blameLine.endLine}`,
-				range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),
-				command: {
-					id: "codelens.authorship.commit",
-					title: `${blameLine.name} - ${timeSince}`, // @chexee: Here is what you will need for the hover information on the title. - ${blameLine.rev.substr(0, 6)} - ${blameLine.message}`,
-					arguments: [blameLine],
-				} as Command,
-			});
-		}
-		return Promise.resolve(codeLenses);
-	}
-
-	private getEditorBlameData(key: string): GQL.IHunk[] {
-		let cachedLens = codeLensCache.get(key);
-		if (cachedLens) {
-			return cachedLens;
-		}
-		return [];
-	}
-
-}
 type result = Thenable<Definition | null>;
 
 export class DefinitionProvder implements modes.DefinitionProvider {

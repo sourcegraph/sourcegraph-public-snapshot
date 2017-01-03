@@ -2,11 +2,12 @@ import * as React from "react";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import { IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser.d";
+import { ICodeEditor, IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { Position } from "vs/editor/common/core/position";
 import { ICursorSelectionChangedEvent, IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
+import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
@@ -23,6 +24,7 @@ import { createEditor } from "sourcegraph/editor/setup";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
+import { Services } from "sourcegraph/workbench/services";
 
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
@@ -193,8 +195,8 @@ export class Editor implements IDisposable {
 		}).bind(this));
 	}
 
-	onCursorSelectionChanged(listener: (e: ICursorSelectionChangedEvent) => void): void {
-		this._editor.onDidChangeCursorSelection(listener);
+	onDidChangeCursorSelection(listener: (e: ICursorSelectionChangedEvent) => void): IDisposable {
+		return this._editor.onDidChangeCursorSelection(listener);
 	}
 
 	setInput(uri: URI, range?: IRange): Promise<IEditor> {
@@ -268,4 +270,21 @@ export class Editor implements IDisposable {
 		});
 	}
 
+}
+
+let EditorInstance: ICodeEditor | null = null;
+
+export function getEditorInstance(): ICodeEditor {
+	if (EditorInstance === null) {
+		throw "getEditorInstance called before editor instance has been set.";
+	}
+	return EditorInstance;
+}
+
+export function updateEditorInstance(editor: ICodeEditor): void {
+	if (EditorInstance) {
+		const editorService = Services.get(ICodeEditorService) as ICodeEditorService;
+		editorService.removeCodeEditor(EditorInstance);
+	}
+	EditorInstance = editor;
 }

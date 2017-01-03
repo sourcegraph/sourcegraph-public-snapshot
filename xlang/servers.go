@@ -142,12 +142,19 @@ func (w *prefixWriter) Write(p []byte) (int, error) {
 func InMemoryPeerConns() (io.ReadWriteCloser, io.ReadWriteCloser) {
 	sr, cw := io.Pipe()
 	cr, sw := io.Pipe()
-	return readWriteNoopCloser{sr, sw}, readWriteNoopCloser{cr, cw}
+	return &pipeReadWriteCloser{sr, sw}, &pipeReadWriteCloser{cr, cw}
 }
 
-type readWriteNoopCloser struct {
-	io.Reader
-	io.Writer
+type pipeReadWriteCloser struct {
+	*io.PipeReader
+	*io.PipeWriter
 }
 
-func (readWriteNoopCloser) Close() error { return nil }
+func (c *pipeReadWriteCloser) Close() error {
+	err1 := c.PipeReader.Close()
+	err2 := c.PipeWriter.Close()
+	if err1 != nil {
+		return err1
+	}
+	return err2
+}

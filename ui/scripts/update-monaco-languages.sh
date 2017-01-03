@@ -4,7 +4,7 @@ CLONE_URL=https://github.com/Microsoft/monaco-languages.git
 CLONE_DIR=/tmp/sourcegraph-monaco-languages
 REV=${1:-db5dfea6bcb61e046e15eb2e6eb177d1a1025673} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
-VENDOR_DIR="$REPO_DIR"/ui/node_modules/monaco-languages
+VENDOR_DIR="$REPO_DIR"/ui/vendor/node_modules/monaco-languages
 
 source "$REPO_DIR"/ui/scripts/lib.bash
 
@@ -23,7 +23,7 @@ for file in $(find "$VENDOR_DIR" -name '*.ts'); do
 	$sedi 's|^var monaco.*$||g' "$file"
 done
 
-tsc -p "$REPO_DIR"/ui/scripts/tsmapimports
+cd "$REPO_DIR"/ui/scripts/tsmapimports && yarn run compile
 find "$VENDOR_DIR"/src -name '*.ts' | xargs node "$REPO_DIR"/ui/scripts/tsmapimports/index.js "$REPO_DIR"/ui/scripts/monaco-to-vscode.tsmapimports.json
 
 patch --no-backup-if-mismatch --quiet --directory "$REPO_DIR" -p1 < "$REPO_DIR"/ui/scripts/monaco-languages.patch

@@ -9,6 +9,7 @@ import Redbox from "redbox-react";
 import { Router, applyRouterMiddleware, browserHistory as history, match } from "react-router";
 import { rootRoute } from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
+import { routerUpdated } from "sourcegraph/app/router";
 import { hashLinkScroll, shouldUpdateScroll } from "sourcegraph/app/routerScrollBehavior";
 import "sourcegraph/util/actionLogger";
 import { EventLogger } from "sourcegraph/util/EventLogger";
@@ -64,7 +65,10 @@ function matchWithRedirectHandling(recursed: boolean): void {
 				<AppContainer errorReporter={Redbox}>
 					<Router
 						key={hotReloadCounter}
-						onUpdate={hashLinkScroll}
+						onUpdate={() => {
+							hashLinkScroll();
+							routerUpdated();
+						} }
 						{...renderProps as any}
 						render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />
 				</AppContainer>,

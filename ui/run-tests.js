@@ -43,7 +43,13 @@ Module.prototype.require = function(modulePath) {
 		modulePath = require("path").resolve("web_modules", modulePath);
 	}
 	if (modulePath.startsWith("vs/")) {
-		modulePath = require("path").resolve("node_modules/vscode/src", modulePath);
+		modulePath = require("path").resolve("vendor/node_modules/vscode/src", modulePath);
+	}
+	if (modulePath.startsWith("monaco-languages/")) {
+		modulePath = require("path").resolve("vendor/node_modules/monaco-languages", modulePath);
+	}
+	if (modulePath.startsWith("monaco-typescript/")) {
+		modulePath = require("path").resolve("vendor/node_modules/monaco-typescript", modulePath);
 	}
 
 	var m = Module._load(modulePath, this);

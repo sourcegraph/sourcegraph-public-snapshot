@@ -1,7 +1,7 @@
-diff --git a/ui/node_modules/monaco-typescript/lib/typescriptServices.js b/ui/node_modules/monaco-typescript/lib/typescriptServices.js
+diff --git a/ui/vendor/node_modules/monaco-typescript/lib/typescriptServices.js b/ui/vendor/node_modules/monaco-typescript/lib/typescriptServices.js
 index 5a6e37b..8dfbe22 100644
---- a/ui/node_modules/monaco-typescript/lib/typescriptServices.js
-+++ b/ui/node_modules/monaco-typescript/lib/typescriptServices.js
+--- a/ui/vendor/node_modules/monaco-typescript/lib/typescriptServices.js
++++ b/ui/vendor/node_modules/monaco-typescript/lib/typescriptServices.js
 @@ -61634,5 +61634,5 @@ var toolsVersion = "2.0";
  /* tslint:enable:no-unused-variable */
  
@@ -9,10 +9,10 @@ index 5a6e37b..8dfbe22 100644
 -define([], function() { return ts; });
 +
  // END MONACOCHANGE
-diff --git a/ui/node_modules/monaco-typescript/src/mode.ts b/ui/node_modules/monaco-typescript/src/mode.ts
+diff --git a/ui/vendor/node_modules/monaco-typescript/src/mode.ts b/ui/vendor/node_modules/monaco-typescript/src/mode.ts
 index 7fc3913..bc41ca7 100644
---- a/ui/node_modules/monaco-typescript/src/mode.ts
-+++ b/ui/node_modules/monaco-typescript/src/mode.ts
+--- a/ui/vendor/node_modules/monaco-typescript/src/mode.ts
++++ b/ui/vendor/node_modules/monaco-typescript/src/mode.ts
 @@ -69,6 +66,9 @@ function setupMode(defaults:LanguageServiceDefaultsImpl, modeId:string, language
  		return client.getLanguageServiceWorker(...[first].concat(more));
  	};
@@ -31,10 +31,10 @@ index 7fc3913..bc41ca7 100644
  	disposables.push(setLanguageConfiguration(modeId, richEditConfiguration));
  	disposables.push(setTokensProvider(modeId, createTokenizationSupport(language)));
  
-diff --git a/ui/node_modules/monaco-typescript/src/monaco.contribution.ts b/ui/node_modules/monaco-typescript/src/monaco.contribution.ts
+diff --git a/ui/vendor/node_modules/monaco-typescript/src/monaco.contribution.ts b/ui/vendor/node_modules/monaco-typescript/src/monaco.contribution.ts
 index 126f56e..4b501e6 100644
---- a/ui/node_modules/monaco-typescript/src/monaco.contribution.ts
-+++ b/ui/node_modules/monaco-typescript/src/monaco.contribution.ts
+--- a/ui/vendor/node_modules/monaco-typescript/src/monaco.contribution.ts
++++ b/ui/vendor/node_modules/monaco-typescript/src/monaco.contribution.ts
 @@ -15,7 +15,7 @@ declare var require:<T>(moduleId:[string], callback:(module:T)=>void)=>void;
  
  // --- TypeScript configuration and defaults ---------
@@ -71,10 +71,10 @@ index 126f56e..4b501e6 100644
  }
  
  register({
-diff --git a/ui/node_modules/monaco-typescript/tsconfig.json b/ui/node_modules/monaco-typescript/tsconfig.json
+diff --git a/ui/vendor/node_modules/monaco-typescript/tsconfig.json b/ui/vendor/node_modules/monaco-typescript/tsconfig.json
 index b02af73..4674a72 100644
---- a/ui/node_modules/monaco-typescript/tsconfig.json
-+++ b/ui/node_modules/monaco-typescript/tsconfig.json
+--- a/ui/vendor/node_modules/monaco-typescript/tsconfig.json
++++ b/ui/vendor/node_modules/monaco-typescript/tsconfig.json
 @@ -1,5 +1,7 @@
  {
    "compilerOptions": {

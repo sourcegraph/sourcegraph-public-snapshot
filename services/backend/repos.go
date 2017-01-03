@@ -28,7 +28,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
@@ -582,22 +581,7 @@ func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res 
 		return nil, err
 	}
 
-	repoMaybeEnqueueUpdate(ctx, repo)
-
 	return repo, nil
-}
-
-// repoMaybeEnqueueUpdate enqueues an update as the current user if the repo
-// is a Mirror.
-func repoMaybeEnqueueUpdate(ctx context.Context, repo *sourcegraph.Repo) {
-	if !repo.Mirror {
-		return
-	}
-	var asUser *sourcegraph.UserSpec
-	if actor := authpkg.ActorFromContext(ctx); actor.UID != "" {
-		asUser = actor.UserSpec()
-	}
-	repoupdater.Enqueue(repo.ID, asUser)
 }
 
 func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRepo) (*sourcegraph.Repo, error) {
@@ -647,24 +631,6 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err 
 	return nil
 }
 
-func (s *repos) GetConfig(ctx context.Context, repo *sourcegraph.RepoSpec) (res *sourcegraph.RepoConfig, err error) {
-	if Mocks.Repos.GetConfig != nil {
-		return Mocks.Repos.GetConfig(ctx, repo)
-	}
-
-	ctx, done := trace(ctx, "Repos", "GetConfig", repo, &err)
-	defer done()
-
-	conf, err := localstore.RepoConfigs.Get(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
-	if conf == nil {
-		conf = &sourcegraph.RepoConfig{}
-	}
-	return conf, nil
-}
-
 var inventoryCache = rcache.New("inv", 604800)
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
@@ -694,7 +660,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	}
 
 	// Not found in the cache, so compute it.
-	inv, err := s.getInventoryUncached(ctx, repoRev)
+	inv, err := s.GetInventoryUncached(ctx, repoRev)
 	if err != nil {
 		return nil, err
 	}
@@ -709,7 +675,7 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 	return inv, nil
 }
 
-func (s *repos) getInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err

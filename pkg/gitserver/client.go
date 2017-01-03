@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -34,6 +35,7 @@ func NewClient(addrs []string) *Client {
 // Client is a gitserver client.
 type Client struct {
 	servers [](chan<- *request)
+	NoCreds bool
 }
 
 func (c *Client) connect(addr string) {
@@ -50,6 +52,8 @@ func (c *Client) connect(addr string) {
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
+	c.Repo = strings.ToLower(c.Repo)
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
 		if errRes != nil {
@@ -61,7 +65,6 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 	span.SetTag("request", "Exec")
 	span.SetTag("repo", c.Repo)
 	span.SetTag("args", c.Args[1:])
-	span.SetTag("opt", c.Opt)
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -69,10 +72,29 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 		return nil, err
 	}
 
+	opt := &vcs.RemoteOpts{}
+	if strings.HasPrefix(c.Repo, "github.com/") {
+		actor := auth.ActorFromContext(ctx)
+		if actor.GitHubToken != "" {
+			opt.HTTPS = &vcs.HTTPSConfig{
+				User: "x-oauth-token", // User is unused by GitHub, but provide a non-empty value to satisfy git.
+				Pass: actor.GitHubToken,
+			}
+		}
+	}
+
 	sum := md5.Sum([]byte(c.Repo))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.servers))
 	replyChan := make(chan *execReply, 1)
-	c.client.servers[serverIndex] <- &request{Exec: &execRequest{Repo: c.Repo, Args: c.Args[1:], Opt: c.Opt, Stdin: chanrpcutil.ToChunks(c.Input), ReplyChan: replyChan}}
+	c.client.servers[serverIndex] <- &request{Exec: &execRequest{
+		Repo:           c.Repo,
+		EnsureRevision: c.EnsureRevision,
+		Args:           c.Args[1:],
+		Opt:            opt,
+		NoCreds:        c.client.NoCreds,
+		Stdin:          chanrpcutil.ToChunks(c.Input),
+		ReplyChan:      replyChan,
+	}}
 	reply, ok := <-replyChan
 	if !ok {
 		return nil, errRPCFailed
@@ -102,11 +124,11 @@ func init() {
 type Cmd struct {
 	client *Client
 
-	Args       []string
-	Repo       string
-	Opt        *vcs.RemoteOpts
-	Input      []byte
-	ExitStatus int
+	Args           []string
+	Repo           string
+	EnsureRevision string
+	Input          []byte
+	ExitStatus     int
 }
 
 // Command creates a new Cmd. Command name must be 'git',
@@ -162,60 +184,4 @@ func (c *Cmd) Output(ctx context.Context) ([]byte, error) {
 func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 	stdout, stderr, err := c.DividedOutput(ctx)
 	return append(stdout, stderr...), err
-}
-
-// Init creates a new empty repository remotely.
-func (c *Client) Init(ctx context.Context, repo string) error {
-	return c.create(ctx, repo, "", nil)
-}
-
-// Clone performs a clone operation remotely.
-func (c *Client) Clone(ctx context.Context, repo string, remote string, opt *vcs.RemoteOpts) error {
-	if remote == "" {
-		return errors.New("empty remote")
-	}
-	return c.create(ctx, repo, remote, opt)
-}
-
-// create creates a new repository in the gitserver cluster by initializing an empty repository
-// if mirrorRemote is empty or clones the given remote otherwise, using opt for authentication.
-// The gitserver is selected pseudo-randomly.
-//
-// A nil error is returned if the new repository was created successfully, but vcs.ErrRepoExist
-// is returned if there was already an existing repository in its place, causing create to be noop.
-// If the repository is in process of being cloned, vcs.RepoNotExistError{CloneInProgress: true} is returned.
-func (c *Client) create(ctx context.Context, repo string, mirrorRemote string, opt *vcs.RemoteOpts) error {
-	// "github.com/sourcegraphtest/AlwaysCloningTest" is a special repository for triggering
-	// an infinite "Cloning this repository" response. It exists to aid development and testing
-	// of various features that need to handle the case of repositories being cloned.
-	if repo == "github.com/sourcegraphtest/AlwaysCloningTest" {
-		return vcs.RepoNotExistError{CloneInProgress: true}
-	}
-
-	sum := md5.Sum([]byte(repo))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.servers))
-
-	replyChan := make(chan *createReply, 1)
-	c.servers[serverIndex] <- &request{Create: &createRequest{
-		Repo:         repo,
-		MirrorRemote: mirrorRemote,
-		Opt:          opt,
-		ReplyChan:    replyChan,
-	}}
-
-	reply, ok := <-replyChan
-	if !ok {
-		return errors.New("gitserver: create failed")
-	}
-	if reply.Error != "" {
-		return errors.New(reply.Error)
-	}
-	if reply.CloneInProgress {
-		return vcs.RepoNotExistError{CloneInProgress: true}
-	}
-	if reply.RepoExist {
-		return vcs.ErrRepoExist
-	}
-	// Repo did not exist and was successfully created.
-	return nil
 }

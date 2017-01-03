@@ -30,8 +30,6 @@ type MockRepository struct {
 
 	Committers_ func(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error)
 
-	UpdateEverything_ func(context.Context, vcs.RemoteOpts) error
-
 	Search_ func(context.Context, vcs.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
 }
 
@@ -91,10 +89,6 @@ func (r MockRepository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.C
 
 func (r MockRepository) Committers(ctx context.Context, opt vcs.CommittersOptions) ([]*vcs.Committer, error) {
 	return r.Committers_(ctx, opt)
-}
-
-func (r MockRepository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) error {
-	return r.UpdateEverything_(ctx, opt)
 }
 
 func (r MockRepository) Search(ctx context.Context, commit vcs.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {

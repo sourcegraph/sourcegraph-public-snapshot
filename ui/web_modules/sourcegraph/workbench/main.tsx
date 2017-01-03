@@ -1,5 +1,5 @@
+import "sourcegraph/editor/authorshipWidget";
 import "sourcegraph/editor/contrib";
-import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
 import "sourcegraph/workbench/overrides/instantiationService";
@@ -13,12 +13,11 @@ import "vs/workbench/parts/files/browser/files.contribution";
 import URI from "vs/base/common/uri";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
-import { IOptions } from "vs/workbench/common/options";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { configureEditor } from "sourcegraph/editor/config";
+import { registerEditorCallbacks } from "sourcegraph/editor/config";
 import { configurePostStartup } from "sourcegraph/workbench/config";
-import { setupServices } from "sourcegraph/workbench/setupServices";
+import { setupServices } from "sourcegraph/workbench/services";
 
 // init creates the editor interface.
 export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
@@ -32,22 +31,12 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 		parent,
 		domElement,
 		{ resource: workspace },
-		options(resource),
+		{},
 		services,
 	);
 	workbench.startup();
-	workbench.layout();
 
-	const editor = workbench.getEditorPart();
-	configureEditor(editor, resource);
+	registerEditorCallbacks();
 	configurePostStartup(services);
 	return [workbench, services];
-}
-
-function options(resource: URI): IOptions {
-	return {
-		filesToOpen: [
-			{ resource },
-		],
-	};
 }

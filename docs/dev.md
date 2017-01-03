@@ -81,7 +81,7 @@ docker-machine start default
 eval $(docker-machine env)
 ```
 
-Then run the following commands (**NOTE: Node.js must be installed for the this step**):
+Then run the following commands (**NOTE: Node.js and [Yarn](https://yarnpkg.com/en/docs/install) must be installed for the this step**):
 
 ```
 make dep

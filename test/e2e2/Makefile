@@ -12,7 +12,7 @@ dep: .env/bin/python .env/bin/pip
 	.env/bin/pip install -r requirements.txt
 
 dep-browser-ext:
-	cd ./browser-ext && yarn install && yarn run build
+	cd ./browser-ext && yarn && yarn run build
 
 .env/bin/python .env/bin/pip:
 	virtualenv -p python2 .env || virtualenv -p python .env

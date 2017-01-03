@@ -8,11 +8,7 @@ export TAG=${TAG-latest}
 set -x
 type yarn > /dev/null 2>&1 || npm install -g yarn
 
-if [ ! -d "javascript-typescript-langserver" ]; then
-    git clone https://github.com/sourcegraph/javascript-typescript-langserver javascript-typescript-langserver && cd javascript-typescript-langserver
-else
-    cd javascript-typescript-langserver && git pull
-fi
+cd ./buildserver
 yarn
 ./node_modules/.bin/tsc -p .
 

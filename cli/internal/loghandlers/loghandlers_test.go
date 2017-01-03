@@ -9,13 +9,13 @@ import (
 
 func TestNotNoisey(t *testing.T) {
 	keep := []log15.Record{
-		mkRecord(log15.LvlDebug, "TRACE gRPC", "rpc", "Annotations.List", "spanID", "SPANID"),
-		mkRecord(log15.LvlDebug, "TRACE gRPC", "rpc", "RepoTree.Get", "spanID", "SPANID", "duration", time.Second),
+		mkRecord(log15.LvlDebug, "TRACE backend", "rpc", "Annotations.List", "spanID", "SPANID"),
+		mkRecord(log15.LvlDebug, "TRACE backend", "rpc", "RepoTree.Get", "spanID", "SPANID", "duration", time.Second),
 		mkRecord(log15.LvlWarn, "repoUpdater: RefreshVCS:", "err", "error"),
 	}
 	noisey := []log15.Record{mkRecord(log15.LvlDebug, "repoUpdater: RefreshVCS:", "err", "error")}
 	for _, rpc := range noiseyRPC {
-		noisey = append(noisey, mkRecord(log15.LvlDebug, "TRACE gRPC", "rpc", rpc))
+		noisey = append(noisey, mkRecord(log15.LvlDebug, "TRACE backend", "rpc", rpc))
 	}
 
 	for _, r := range keep {
@@ -31,7 +31,7 @@ func TestNotNoisey(t *testing.T) {
 }
 
 var traces = []log15.Record{
-	mkRecord(log15.LvlDebug, "TRACE gRPC", "rpc", "RepoTree.Get", "duration", time.Second),
+	mkRecord(log15.LvlDebug, "TRACE backend", "rpc", "RepoTree.Get", "duration", time.Second),
 	mkRecord(log15.LvlDebug, "TRACE HTTP", "routename", "repo.resolve", "duration", time.Second/3),
 	mkRecord(log15.LvlDebug, "TRACE HTTP", "routename", "repo.resolve", "duration", 2*time.Second),
 }

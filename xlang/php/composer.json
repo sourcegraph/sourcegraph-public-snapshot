@@ -1,0 +1,54 @@
+{
+    "authors": [
+        {
+            "name": "Felix Becker",
+            "email": "felix.b@outlook.com"
+        }
+    ],
+    "type": "project",
+    "bin": ["bin/php-build-server.php"],
+    "scripts": {
+        "parse-stubs": "LanguageServer\\ComposerScripts::parseStubs"
+    },
+    "require": {
+        "php": ">=7.0",
+        "felixfbecker/language-server": "dev-master",
+        "composer/composer": "^1.2",
+        "sabre/event": "^5.0"
+    },
+    "repositories": [
+        {
+            "type": "package",
+            "package": {
+                "name": "JetBrains/phpstorm-stubs",
+                "version": "dev-master",
+                "dist": {
+                    "url": "https://github.com/JetBrains/phpstorm-stubs/archive/master.zip",
+                    "type": "zip"
+                },
+                "source": {
+                    "url": "https://github.com/JetBrains/phpstorm-stubs",
+                    "type": "git",
+                    "reference": "master"
+                }
+            }
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Sourcegraph\\BuildServer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sourcegraph\\BuildServer\\Tests\\": "tests/",
+            "LanguageServer\\Tests\\": "vendor/felixfbecker/language-server/tests/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.5",
+        "phpunit/php-code-coverage": "^4.0"
+    }
+}

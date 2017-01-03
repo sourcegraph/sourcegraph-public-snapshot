@@ -712,9 +712,6 @@ export interface Repo {
 	IndexedRevision?: string;
 }
 
-export interface RepoConfig {
-}
-
 export interface RepoList {
 	Repos?: Repo[];
 }

@@ -113,7 +113,7 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 	statusCode := errcode.HTTPToCode(resp.StatusCode)
 
 	// Calling out to github could result in some HTTP status codes that don't directly map to
-	// gRPC status sourcegraph. If github returns anything in the 400 range that isn't known to us,
+	// error status on sourcegraph. If github returns anything in the 400 range that isn't known to us,
 	// we don't want to indicate a server-side error (which would happen if we don't convert
 	// to 404 here).
 	if statusCode == legacyerr.Unknown && resp.StatusCode >= 400 && resp.StatusCode < 500 {

@@ -6,6 +6,15 @@ detect_dev_langservers() {
 	# Go (builtin)
 	export LANGSERVER_GO=${LANGSERVER_GO-:builtin:}
 
+	CSS_LS_DIR="${LS_ROOT}/css-langserver"
+	if [[ -d "$CSS_LS_DIR" ]]; then
+		export LANGSERVER_CSS=${LANGSERVER_CSS-"$CSS_LS_DIR"/bin/css-langserver-stdio}
+		export LANGSERVER_LESS=${LANGSERVER_LESS-"$CSS_LS_DIR"/bin/css-langserver-stdio}
+		export LANGSERVER_SCSS=${LANGSERVER_SCSS-"$CSS_LS_DIR"/bin/css-langserver-stdio}
+	else
+		echo '# To add css/less/scss language support, run `dev/install-langserver.sh css-langserver`'
+	fi
+
 	# JavaScript/TypeScript
 	JSTS_LS_DIR="${LS_ROOT}/javascript-typescript-langserver"
 	if [[ -d "$JSTS_LS_DIR" ]]; then
@@ -46,8 +55,11 @@ install_langserver() {
 	fi
 
 	case "$LS_NAME" in
+		css-langserver)
+			(cd "$LS_DIR/langserver" && yarn && node_modules/.bin/tsc)
+			;;
 		javascript-typescript-langserver)
-			(cd "$LS_DIR" && yarn install && node_modules/.bin/tsc)
+			(cd "$LS_DIR" && yarn && node_modules/.bin/tsc)
 			;;
 		python-langserver)
 			(cd "$LS_DIR" && pip3 install -r requirements.txt)

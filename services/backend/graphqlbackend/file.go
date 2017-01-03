@@ -4,11 +4,9 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 )
 
 type fileResolver struct {
@@ -22,8 +20,6 @@ func (r *fileResolver) Name() string {
 }
 
 func (r *fileResolver) Content(ctx context.Context) (string, error) {
-	repoupdater.Enqueue(r.commit.RepoID, auth.ActorFromContext(ctx).UserSpec())
-
 	file, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
 		Entry: sourcegraph.TreeEntrySpec{
 			RepoRev: sourcegraph.RepoRevSpec{

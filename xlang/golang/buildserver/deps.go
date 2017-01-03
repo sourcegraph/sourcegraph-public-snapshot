@@ -114,6 +114,11 @@ func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, pat
 		return pkg, nil
 	}
 
+	// We may have a specific rev to use (from glide.lock)
+	if rev := h.pinnedDep(ctx, d.importPath); rev != "" {
+		d.rev = rev
+	}
+
 	// If not, we hold the lock and we will fetch the dep.
 	if err := h.fetchDep(ctx, d); err != nil {
 		return nil, err
@@ -150,7 +155,8 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 	}
 
 	var oldPath string
-	if _, isStdlib := stdlibPackagePaths[d.importPath]; isStdlib {
+	_, isStdlib := stdlibPackagePaths[d.importPath]
+	if isStdlib {
 		oldPath = goroot // stdlib
 	} else {
 		oldPath = path.Join(gopath, "src", d.projectRoot) // non-stdlib
@@ -158,9 +164,41 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 
 	h.HandlerShared.Mu.Lock()
 	h.FS.Bind(oldPath, fs, "/", ctxvfs.BindAfter)
+	if !isStdlib {
+		h.gopathDeps = append(h.gopathDeps, d)
+	}
 	h.HandlerShared.Mu.Unlock()
 
 	return nil
+}
+
+func (h *BuildHandler) pinnedDep(ctx context.Context, pkg string) string {
+	h.pinnedDepsOnce.Do(func() {
+		h.HandlerShared.Mu.Lock()
+		fs := h.FS
+		root := h.RootFSPath
+		h.HandlerShared.Mu.Unlock()
+
+		// We assume glide.lock is in the top-level dir of the
+		// repo. This assumption may not be valid in the future.
+		yml, err := ctxvfs.ReadFile(ctx, fs, path.Join(root, "glide.lock"))
+		if err == nil && len(yml) > 0 {
+			h.pinnedDeps = loadGlideLock(yml)
+			return
+		}
+
+		// Next we try load from Godeps. Note: We will mount the wrong
+		// dependencies in these two strange cases:
+		// 1. Different revisions for pkgs in the same repo.
+		// 2. Using a pkg not in Godeps, but another pkg from the same repo is in Godeps
+		// In both cases, we use the revision for the pkg we first try and fetch.
+		b, err := ctxvfs.ReadFile(ctx, fs, path.Join(root, "Godeps/Godeps.json"))
+		if err == nil && len(b) > 0 {
+			h.pinnedDeps = loadGodeps(b)
+			return
+		}
+	})
+	return h.pinnedDeps.Find(pkg)
 }
 
 func doDeps(pkg *build.Package, mode build.ImportMode, importPackage func(path, srcDir string, mode build.ImportMode) (*build.Package, error)) error {

@@ -592,12 +592,9 @@ func startProxy(t testing.TB, proxy *xlang.Proxy) (addr string, done func()) {
 	if err != nil {
 		t.Fatal("Listen:", err)
 	}
-	go func() {
-		if err := proxy.Serve(context.Background(), l); err != nil {
-			t.Fatal("proxy.Serve:", err)
-		}
-	}()
+	go proxy.Serve(context.Background(), l)
 	return l.Addr().String(), func() {
+		l.Close()
 		if err := proxy.Close(context.Background()); err != nil && err.Error() != "jsonrpc2: connection is closed" {
 			t.Fatal("proxy.Close:", err)
 		}

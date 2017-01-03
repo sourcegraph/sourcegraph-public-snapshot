@@ -16,13 +16,15 @@ machine:
     PGSSLMODE: disable
     REDIS_MASTER_ENDPOINT: ":6379"
     LONG_VERSION: $(printf %05d $CIRCLE_BUILD_NUM)_$(date +%Y-%m-%d)_${CIRCLE_SHA1:0:7}
-    YARN_VERSION: 0.17.8
+    YARN_VERSION: 0.18.1
     PATH: "${PATH}:${HOME}/.yarn/bin"
 
     # Don't block on `git diff` invocations of `less`.
     GIT_PAGER:
   node:
     version: 6.6.0
+  php:
+    version: 7.0.7
 
 dependencies:
   pre:
@@ -30,17 +32,21 @@ dependencies:
       if [[ ! -e ~/.yarn/bin/yarn || $(yarn --version) != "${YARN_VERSION}" ]]; then
         curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version $YARN_VERSION
       fi
+    - echo "memory_limit = -1" > /opt/circleci/php/$(phpenv global)/etc/conf.d/memory.ini
   cache_directories:
     - ~/cache
     - ~/.yarn
-    - ~/.yarn-cache
+    - ~/.cache/yarn
     - ~/bin
+    - ~/.composer/cache
 
   override:
     - ./dev/ci/install-go.sh
     - ./dev/ci/install-test-tools.sh
     - ./dev/ci/install-checkup.sh
     - ./dev/ci/install-ctags.sh
+    - (cd ui && yarn)
+    - (cd ui/scripts/tsmapimports && yarn)
 
     - git config --global user.email "ci@example.com"
     - git config --global user.name "CI User"

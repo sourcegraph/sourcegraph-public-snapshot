@@ -14,11 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/alecthomas/binary"
-	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/cache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -67,6 +64,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
 	cmd.Repo = r.URL
+	cmd.EnsureRevision = string(spec + "^0")
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
@@ -316,8 +314,6 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 	return strings.HasPrefix(output, "fatal: Invalid revision range "+obj)
 }
 
-var commitLogCache = cache.Sync(lru.New(500))
-
 // commitLog returns a list of commits, and total number of commits
 // starting from Head until Base or beginning of branch (unless NoTotal is true).
 //
@@ -344,16 +340,6 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
-	}
-
-	// Only cache when we're fetching immutable data.
-	var cacheKey string
-	if len(opt.Head) == 40 && (len(opt.Base) == 0 || len(opt.Base) == 40) && opt.NoTotal {
-		cacheKey = r.URL + "|" + fmt.Sprintf("%q", args)
-
-		if commits, found := commitLogCache.Get(cacheKey); found {
-			return commits.([]*vcs.Commit), 0, nil
-		}
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
@@ -425,10 +411,6 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 		}
 	}
 
-	if cacheKey != "" {
-		commitLogCache.Add(cacheKey, commits)
-	}
-
 	return commits, total, nil
 }
 
@@ -437,21 +419,11 @@ func parseUint(s string) (uint, error) {
 	return uint(n), err
 }
 
-var diffCache = cache.Sync(lru.New(100))
-
 func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
 	ensureAbsCommit(base)
 	ensureAbsCommit(head)
 	if opt == nil {
 		opt = &vcs.DiffOptions{}
-	}
-	optData, err := binary.Marshal(opt)
-	if err != nil {
-		return nil, err
-	}
-	cacheKey := r.URL + "|" + string(base) + "|" + string(head) + "|" + string(optData)
-	if diff, found := diffCache.Get(cacheKey); found {
-		return diff.(*vcs.Diff), nil
 	}
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Diff")
@@ -500,34 +472,8 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 		return nil, fmt.Errorf("exec `git diff` failed: %s. Output was:\n\n%s", err, out)
 	}
 	diff := &vcs.Diff{Raw: string(out)}
-	diffCache.Add(cacheKey, diff)
 	return diff, nil
 }
-
-// UpdateEverything updates all branches, tags, etc., to match the
-// default remote repository.
-func (r *Repository) UpdateEverything(ctx context.Context, opt vcs.RemoteOpts) error {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: UpdateEverything")
-	span.SetTag("Opt", opt)
-	defer span.Finish()
-
-	r.editLock.Lock()
-	defer r.editLock.Unlock()
-
-	cmd := gitserver.DefaultClient.Command("git", "remote", "update", "--prune")
-	cmd.Repo = r.URL
-	cmd.Opt = &opt
-	_, stderr, err := cmd.DividedOutput(ctx)
-	if err != nil {
-		if vcs.IsRepoNotExist(err) {
-			return err
-		}
-		return fmt.Errorf("exec `git remote update` failed: %v. Stderr was:\n\n%s", err, string(stderr))
-	}
-	return nil
-}
-
-var blameCache = cache.Sync(lru.New(500))
 
 func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
@@ -555,19 +501,6 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
-
-	// Only cache when we're fetching immutable data (head is an
-	// absolute commit ID, base is empty or an absolute commit
-	// ID). Also, it's probably not worth caching blames of mere
-	// regions of a file.
-	var cacheKey string
-	if len(opt.NewestCommit) == 40 && (len(opt.OldestCommit) == 0 || len(opt.OldestCommit) == 40) && opt.StartLine == 0 && opt.EndLine == 0 {
-		cacheKey = r.URL + "|" + fmt.Sprintf("%q", args)
-
-		if hunks, found := blameCache.Get(cacheKey); found {
-			return hunks.([]*vcs.Hunk), nil
-		}
-	}
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
@@ -663,10 +596,6 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 		hunks = append(hunks, hunk)
 	}
 
-	if cacheKey != "" {
-		blameCache.Add(cacheKey, hunks)
-	}
-
 	return hunks, nil
 }
 
@@ -750,17 +679,12 @@ func (r *Repository) ReadFile(ctx context.Context, commit vcs.CommitID, name str
 	return b, nil
 }
 
-var readFileBytesCache = cache.Sync(lru.New(1000))
-
 func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, name string) ([]byte, error) {
 	ensureAbsCommit(commit)
-	cacheKey := r.URL + "|" + string(commit) + "|" + name
-	if data, found := readFileBytesCache.Get(cacheKey); found {
-		return data.([]byte), nil
-	}
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = r.URL
+	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) || bytes.Contains(out, []byte("does not exist")) {
@@ -780,7 +704,6 @@ func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, nam
 		}
 		return nil, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
 	}
-	readFileBytesCache.Add(cacheKey, out)
 	return out, nil
 }
 
@@ -870,15 +793,9 @@ func (r *Repository) ReadDir(ctx context.Context, commit vcs.CommitID, path stri
 	return r.lsTree(ctx, commit, filepath.Clean(util.Rel(path))+"/", recurse)
 }
 
-var lsTreeCache = cache.Sync(lru.New(10000))
-
 // lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
 func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	ensureAbsCommit(commit)
-	cacheKey := r.URL + "|" + string(commit) + "|" + path + "|" + strconv.FormatBool(recurse)
-	if fis, found := lsTreeCache.Get(cacheKey); found {
-		return fis.([]os.FileInfo), nil
-	}
 
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
@@ -900,6 +817,7 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	args = append(args, "--", filepath.ToSlash(path))
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = r.URL
+	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
@@ -986,7 +904,6 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	}
 	util.SortFileInfosByName(fis)
 
-	lsTreeCache.Add(cacheKey, fis)
 	return fis, nil
 }
 

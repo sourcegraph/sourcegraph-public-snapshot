@@ -101,6 +101,8 @@
 @value c_white_025 rgba( 255, 255, 255, .025 );
 @value c_white_0125 rgba( 255, 255, 255, .0125 );
 
+@value c_cool_gray2 rgba(52, 73, 102, 1);
+
 /* Colors */
 .blue { color: c_blue_text; }
 .blue_8 { color: c_blue_8; }

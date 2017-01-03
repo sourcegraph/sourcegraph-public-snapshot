@@ -83,6 +83,9 @@ type serverProxyConnStats struct {
 	// ErrorCounts is the total number of calls proxied to the server that
 	// failed per LSP method.
 	ErrorCounts map[string]int
+
+	// NOTE: If you add a new field here, please ensure `Stats()` works
+	// correctly under concurrent read/writes.
 }
 
 var (
@@ -569,6 +572,14 @@ func (c *serverProxyConn) incMethodErrorStat(method string) {
 func (c *serverProxyConn) Stats() serverProxyConnStats {
 	c.mu.Lock()
 	s := c.stats
+	s.Counts = make(map[string]int)
+	s.ErrorCounts = make(map[string]int)
+	for k, v := range c.stats.Counts {
+		s.Counts[k] = v
+	}
+	for k, v := range c.stats.ErrorCounts {
+		s.ErrorCounts[k] = v
+	}
 	c.mu.Unlock()
 	return s
 }

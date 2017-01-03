@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"os/exec"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 )
 
@@ -91,14 +93,6 @@ func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle,
 	panic("unreachable")
 }
 
-func newPristineDBs(datasource string, schema *dbutil2.Schema) *dbutil2.Handle {
-	dbh, err := dbutil2.Open(datasource, *schema, dbutil2.CreateDBIfNotExists)
-	if err != nil {
-		log.Fatal("testdb: open DB:", err)
-	}
-	return dbh
-}
-
 // backgroundDBPool creates DBs and schemas in the background so
 // that there is always a pool of DBs ready to be used by the
 // tests. Without this background process, pristineDBs has to wait on
@@ -144,11 +138,15 @@ func (b *backgroundDBPool) start(poolName string, schema *dbutil2.Schema) {
 
 	for id := 0; id < *poolSize; id++ {
 		go func(id int) {
-			datasource := "dbname=sgtmp-" + poolName + "-" + label + "-" + strconv.Itoa(id)
-			dbh := newPristineDBs(datasource, b.schema)
+			dbname := "sgtmp-" + poolName + "-" + label + "-" + strconv.Itoa(id)
+			exec.Command("createdb", dbname).Run() // ignore error
+			dbh, err := dbutil2.Open("dbname="+dbname, *b.schema)
+			if err != nil {
+				log.Fatal("testdb: open DB:", err)
+			}
 			b.prepareDBs(id, dbh, *dropSchema, *createSchema, *truncate)
 			if *verbose {
-				b.vlog.Printf("opened new DB (%s)", datasource)
+				b.vlog.Printf("opened new DB (%s)", dbname)
 			}
 			b.readyDBs <- dbh
 		}(id)

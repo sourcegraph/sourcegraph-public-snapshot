@@ -59,14 +59,14 @@ func GlobalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
 
 	if globalAppDBH == nil || globalGraphDBH == nil {
 		var err error
-		globalAppDBH, err = openDB(getAppDBDataSource(), AppSchema, 0)
+		globalAppDBH, err = openDB(getAppDBDataSource(), AppSchema)
 		if err != nil {
 			return nil, nil, err
 		}
 		registerPrometheusCollector(globalAppDBH.DbMap.Db, "_app")
 		configureConnectionPool(globalAppDBH.DbMap.Db)
 
-		globalGraphDBH, err = openDB(getGraphDBDataSource(), GraphSchema, 0)
+		globalGraphDBH, err = openDB(getGraphDBDataSource(), GraphSchema)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -118,8 +118,8 @@ func graphDBH(ctx context.Context) gorp.SqlExecutor {
 // openDB opens and returns the DB handle for the DB. Use DB unless
 // you need access to the low-level DB handle or need to handle
 // errors.
-func openDB(dataSource string, schema dbutil2.Schema, mode dbutil2.Mode) (*dbutil2.Handle, error) {
-	dbh, err := dbutil2.Open(dataSource, schema, mode)
+func openDB(dataSource string, schema dbutil2.Schema) (*dbutil2.Handle, error) {
+	dbh, err := dbutil2.Open(dataSource, schema)
 	if err != nil {
 		return nil, fmt.Errorf("open DB (%s): %s", dataSource, err)
 	}

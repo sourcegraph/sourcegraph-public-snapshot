@@ -15,8 +15,8 @@ export class TextModelResolverService implements ITextModelResolverService {
 	private contentProvider: ITextModelContentProvider;
 
 	constructor(
-		@IModelService private modelService: IModelService,
-		@IModeService private modeService: IModeService,
+		@IModelService modelService: IModelService,
+		@IModeService modeService: IModeService,
 	) {
 		this.contentProvider = new TextModelContentProvider(
 			modelService,

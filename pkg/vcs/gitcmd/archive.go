@@ -35,6 +35,7 @@ func (r *Repository) Archive(ctx context.Context, commitID vcs.CommitID) (zipDat
 	// thoroughly.
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(commitID))
 	cmd.Repo = r.URL
+	cmd.EnsureRevision = string(commitID)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, stderr)

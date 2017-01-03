@@ -1,4 +1,4 @@
-import { hover, media, style } from "glamor";
+import { media, style } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { InjectedRouter } from "react-router";
@@ -91,7 +91,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				<div style={{
 					margin: "auto",
 					marginBottom: whitespace[2],
-					maxWidth: 420,
+					maxWidth: 480,
 					textAlign: "center",
 				}}>
 
@@ -99,9 +99,11 @@ export class Home extends React.Component<HomeProps, {}> {
 						height: 100,
 						margin: ` 0 ${whitespace[5]}`,
 					}}>
-						<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go2.svg`} />
-						<img title="TypeScript supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
-						<img title="C supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/c.svg`} />
+						<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go.svg`} />
+						<img title="TypeScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
+						<img title="JavaScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
+						<img title="C in beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/c.svg`} />
+
 					</FlexContainer>
 					<FlexContainer justify="around" style={{
 						height: 100,
@@ -111,20 +113,21 @@ export class Home extends React.Component<HomeProps, {}> {
 					}}>
 
 						<img title="Java coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
-						<img title="JavaScript coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
 						<img title="Python coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
 						<img title="PHP coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />
 						<img title="Scala coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/scala.svg`} />
 					</FlexContainer>
 
-					<Heading level={4} align="center" style={{ fontWeight: "normal" }}>Support for Go, TypeScript, and C</Heading>
+					<Heading level={4} align="center" style={{ fontWeight: "normal" }}>
+						Support for Go, TypeScript, JavaScript, and C
+					</Heading>
 
 					<p style={{
 						color: colors.coolGray3(),
 						paddingLeft: whitespace[4],
 						paddingRight: whitespace[4],
 					}}>
-						Partial support for JavaScript.	Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
+						JavaScript, TypeScript, and C in beta. Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
 					</p>
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
 						<strong>
@@ -165,11 +168,11 @@ export class Home extends React.Component<HomeProps, {}> {
 							<Heading align="left" level={4} underline="purple" style={{ flex: "0 0 240px" }} >
 								Used by developers everywhere
 								</Heading>
-							<FlexContainer justify="end" style={{ flex: "1 1 60%" }}>
-								<img style={{ marginBottom: "10px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} />
-								<img style={{ marginBottom: "9px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} />
-								<img style={{ marginBottom: "7px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} />
-								<img style={{ marginBottom: "5px" }} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} />
+							<FlexContainer justify="end" style={{ flex: "1 1 60%", marginTop: whitespace[4] }}>
+								<img style={{ marginTop: "1px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
+								<img style={{ marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} height="32" {...layout.hide.sm} />
+								<img style={{ marginTop: "5px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} height="24" {...layout.hide.sm} />
+								<img style={{ marginTop: "8px" }} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} height="17" {...layout.hide.sm} />
 							</FlexContainer>
 						</FlexContainer>
 

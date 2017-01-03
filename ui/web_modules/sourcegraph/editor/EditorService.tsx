@@ -32,7 +32,7 @@ export class EditorService implements IEditorService {
 	// is keyed on model ID.
 	private _savedState: Map<string, IEditorViewState> = new Map();
 
-	private _onDidOpenEditor: (e: IEditorOpenedEvent) => void;
+	private _onDidOpenEditor: undefined | ((e: IEditorOpenedEvent) => void);
 
 	public setEditor(editor: editorCommon.IEditor): void {
 		this.editor = new SimpleEditor(editor);
@@ -44,7 +44,9 @@ export class EditorService implements IEditorService {
 			throw new Error("onDidOpenEditor listener already set");
 		}
 		this._onDidOpenEditor = listener;
-		return { dispose(): void { this._onDidOpenEditor = null; } };
+		return {
+			dispose: (): void => { this._onDidOpenEditor = undefined; },
+		};
 	}
 
 	public openEditor(data: IResourceInput, sideBySide?: boolean): TPromise<IEditor> {
@@ -191,6 +193,12 @@ function getModeByFilename(path: string): string {
 	}
 	if (path.endsWith(".css")) {
 		return "css";
+	}
+	if (path.endsWith(".less")) {
+		return "less";
+	}
+	if (path.endsWith(".scss")) {
+		return "scss";
 	}
 	if (path.endsWith(".php")) {
 		return "php";

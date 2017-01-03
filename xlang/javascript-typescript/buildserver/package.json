@@ -1,0 +1,31 @@
+{
+    "version": "0.0.1",
+    "name": "javascript-typescript-buildserver",
+    "scripts": {
+        "test": "./node_modules/.bin/mocha -r ts-node/register src/test/**/*.ts && node ./lib/yarnshim-test.js",
+        "test-ls": "./node_modules/.bin/mocha -r ts-node/register src/test/**/*.ts",
+        "test-yarnshim": "node ./lib/yarnshim-test.js"
+    },
+    "dependencies": {
+        "@types/chai": "^3.4.34",
+        "@types/mkdirp": "^0.3.29",
+        "@types/mocha": "^2.2.33",
+        "@types/rimraf": "^0.0.28",
+        "@types/temp": "^0.8.29",
+        "chai": "^3.4.34",
+        "commander": "^2.9.0",
+        "javascript-typescript-langserver": "git+https://github.com/sourcegraph/javascript-typescript-langserver",
+        "mkdirp": "^0.5.1",
+        "proper-lockfile": "^2.0.0",
+        "rimraf": "^2.5.4",
+        "semver": "^5.3.0",
+        "temp": "^0.8.3",
+        "typescript": "2.1.1",
+        "vscode-languageserver": "^2.6.2",
+        "yarn": "v0.18.0"
+    },
+    "devDependencies": {
+        "mocha": "^2.2.33",
+        "ts-node": "^1.6.1"
+    }
+}

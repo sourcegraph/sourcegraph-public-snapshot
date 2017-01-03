@@ -4,9 +4,11 @@
   "description": "TypeScript import remapper: replaces all instances of a selector with something else and adds an import",
   "main": "index.js",
   "devDependencies": {
-    "@types/node": "^6.0.45"
+    "@types/node": "^6.0.45",
+    "typescript": "^2.1.0"
   },
   "scripts": {
-    "test": "tsc && TEST=1 node index.js"
+    "compile": "yarn && tsc -p .",
+    "test": "tsc -p . && TEST=1 node index.js"
   }
 }

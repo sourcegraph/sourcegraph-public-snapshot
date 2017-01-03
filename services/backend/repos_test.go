@@ -433,24 +433,3 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 		}
 	}
 }
-
-func TestRepos_GetConfig(t *testing.T) {
-	var s repos
-	ctx := testContext()
-
-	wantRepoConfig := &sourcegraph.RepoConfig{}
-
-	localstore.Mocks.Repos.MockGetByURI(t, "r", 1)
-	calledConfigsGet := localstore.Mocks.RepoConfigs.MockGet_Return(t, 1, wantRepoConfig)
-
-	conf, err := s.GetConfig(ctx, &sourcegraph.RepoSpec{ID: 1})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !*calledConfigsGet {
-		t.Error("!calledConfigsGet")
-	}
-	if !reflect.DeepEqual(conf, wantRepoConfig) {
-		t.Errorf("got %+v, want %+v", conf, wantRepoConfig)
-	}
-}

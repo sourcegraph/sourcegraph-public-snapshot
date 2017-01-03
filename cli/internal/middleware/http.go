@@ -23,20 +23,6 @@ func stripPort(s string) string {
 	return s
 }
 
-// SetTLS causes downstream handlers to treat this HTTP
-// request as having come via TLS. It is necessary because connection
-// muxing (which enables a single port to serve both Web and gRPC)
-// does not set the http.Request TLS field (since TLS occurs before
-// muxing).
-func SetTLS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("x-forwarded-proto") == "" {
-			r.Header.Set("x-forwarded-proto", "https")
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func StrictTransportSecurity(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("strict-transport-security", "max-age=8640000")

@@ -3,7 +3,7 @@
 default: build
 
 install:
-	yarn install
+	yarn
 
 build: install
 	yarn run build

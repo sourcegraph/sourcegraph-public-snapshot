@@ -34,7 +34,6 @@ Use the standard rendering of names in prose. For example:
 * Go, not Golang.
 * GitHub, not Github.
 * OS X, not OSX.
-* gRPC, not grpc or GRPC.
 * Bitbucket, not BitBucket.
 * JIRA, not Jira.
 * Docker, not docker. (If you are referring to the `docker` CLI tool,

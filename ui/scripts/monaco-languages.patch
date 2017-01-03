@@ -1,7 +1,7 @@
-diff --git a/ui/node_modules/monaco-languages/src/monaco.contribution.ts b/ui/node_modules/monaco-languages/src/monaco.contribution.ts
+diff --git a/ui/vendor/node_modules/monaco-languages/src/monaco.contribution.ts b/ui/vendor/node_modules/monaco-languages/src/monaco.contribution.ts
 index d1ad9d8..538b1b5 100644
---- a/ui/node_modules/monaco-languages/src/monaco.contribution.ts
-+++ b/ui/node_modules/monaco-languages/src/monaco.contribution.ts
+--- a/ui/vendor/node_modules/monaco-languages/src/monaco.contribution.ts
++++ b/ui/vendor/node_modules/monaco-languages/src/monaco.contribution.ts
 @@ -24,9 +24,9 @@ let languageDefinitions:{[languageId:string]:ILang} = {};
  function _loadLanguage(languageId:string): TPromise<void> {
  	let module = languageDefinitions[languageId].module;
@@ -14,10 +14,10 @@ index d1ad9d8..538b1b5 100644
 -		}, e);
 +		});
  	});
-diff --git a/ui/node_modules/monaco-languages/tsconfig.json b/ui/node_modules/monaco-languages/tsconfig.json
+diff --git a/ui/vendor/node_modules/monaco-languages/tsconfig.json b/ui/vendor/node_modules/monaco-languages/tsconfig.json
 index 3534ffb..bdae2a2 100644
---- a/ui/node_modules/monaco-languages/tsconfig.json
-+++ b/ui/node_modules/monaco-languages/tsconfig.json
+--- a/ui/vendor/node_modules/monaco-languages/tsconfig.json
++++ b/ui/vendor/node_modules/monaco-languages/tsconfig.json
 @@ -1,5 +1,7 @@
  {
    "compilerOptions": {

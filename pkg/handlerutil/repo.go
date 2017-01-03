@@ -26,8 +26,7 @@ import (
 // repository page template. It is returned by GetRepoFromRequest. See also
 // RepoRevCommon.
 type RepoCommon struct {
-	Repo       *sourcegraph.Repo
-	RepoConfig *sourcegraph.RepoConfig
+	Repo *sourcegraph.Repo
 }
 
 // RepoRevCommon holds all of the commit-specific information
@@ -43,7 +42,8 @@ type RepoRevCommon struct {
 // URLMovedError, NoVCSDataError, which callers should ideally check
 // for.
 func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon, vc *RepoRevCommon, err error) {
-	rc, err = GetRepoCommon(ctx, vars)
+	rc = &RepoCommon{}
+	rc.Repo, err = GetRepo(ctx, vars)
 	if err != nil {
 		return
 	}
@@ -69,20 +69,6 @@ func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoC
 		return
 	}
 
-	return
-}
-
-// GetRepoCommon returns the repository and RepoSpec based on the
-// route vars. Callers should ideally handle the custom error type
-// URLMovedError.
-func GetRepoCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon, err error) {
-	rc = &RepoCommon{}
-	rc.Repo, err = GetRepo(ctx, vars)
-	if err != nil {
-		return
-	}
-
-	rc.RepoConfig, err = backend.Repos.GetConfig(ctx, &sourcegraph.RepoSpec{ID: rc.Repo.ID})
 	return
 }
 

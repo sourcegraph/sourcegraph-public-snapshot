@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -14,13 +15,12 @@ import (
 
 // directory represents a directory on a version control service.
 type directory struct {
-	importPath   string // the Go import path for this package
-	projectRoot  string // import path prefix for all packages in the project
-	resolvedPath string // import path after resolving go-import meta tags, if any
-	cloneURL     string // the VCS clone URL
-	repoPrefix   string // the path to this directory inside the repo, if set
-	vcs          string // one of "git", "hg", "svn", etc.
-	rev          string // the VCS revision specifier, if any
+	importPath  string // the Go import path for this package
+	projectRoot string // import path prefix for all packages in the project
+	cloneURL    string // the VCS clone URL
+	repoPrefix  string // the path to this directory inside the repo, if set
+	vcs         string // one of "git", "hg", "svn", etc.
+	rev         string // the VCS revision specifier, if any
 }
 
 var errNoMatch = errors.New("no match")
@@ -54,11 +54,10 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 		}
 		repo := parts[0] + "/" + parts[1] + "/" + parts[2]
 		return &directory{
-			importPath:   importPath,
-			resolvedPath: importPath + ".git",
-			projectRoot:  repo,
-			cloneURL:     "https://" + repo,
-			vcs:          "git",
+			importPath:  importPath,
+			projectRoot: repo,
+			cloneURL:    "https://" + repo,
+			vcs:         "git",
 		}, nil
 
 	case strings.HasPrefix(importPath, "golang.org/x/"):
@@ -72,15 +71,19 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 	return nil, errNoMatch
 }
 
+// gopkgSrcTemplate matches the go-source dir templates specified by the
+// popular gopkg.in
+var gopkgSrcTemplate = regexp.MustCompile(`https://(github.com/[^/]*/[^/]*)/tree/([^/]*)\{/dir\}`)
+
 func resolveDynamicImportPath(client *http.Client, importPath string) (*directory, error) {
-	metaProto, im, err := fetchMeta(client, importPath)
+	metaProto, im, sm, err := fetchMeta(client, importPath)
 	if err != nil {
 		return nil, err
 	}
 
 	if im.prefix != importPath {
 		var imRoot *importMeta
-		metaProto, imRoot, err = fetchMeta(client, im.prefix)
+		metaProto, imRoot, _, err = fetchMeta(client, im.prefix)
 		if err != nil {
 			return nil, err
 		}
@@ -101,10 +104,19 @@ func resolveDynamicImportPath(client *http.Client, importPath string) (*director
 	repo := strings.TrimSuffix(clonePath, "."+im.vcs)
 	dirName := importPath[len(im.prefix):]
 
-	resolvedPath := repo + dirName
-	dir, err := resolveStaticImportPath(resolvedPath)
-	if err == errNoMatch {
-		resolvedPath = repo + "." + im.vcs + dirName
+	var dir *directory
+	if sm != nil {
+		m := gopkgSrcTemplate.FindStringSubmatch(sm.dirTemplate)
+		if len(m) > 0 {
+			dir, err = resolveStaticImportPath(m[1] + dirName)
+			if dir != nil {
+				dir.rev = m[2]
+			}
+		}
+	}
+
+	if dir == nil {
+		dir, err = resolveStaticImportPath(repo + dirName)
 	}
 
 	if dir == nil {
@@ -112,7 +124,6 @@ func resolveDynamicImportPath(client *http.Client, importPath string) (*director
 	}
 	dir.importPath = importPath
 	dir.projectRoot = im.prefix
-	dir.resolvedPath = resolvedPath
 	if dir.cloneURL == "" {
 		dir.cloneURL = metaProto + "://" + repo + "." + im.vcs
 	}
@@ -129,7 +140,15 @@ type importMeta struct {
 	repo   string // root of the VCS repo containing a scheme and not containing a .vcs qualifier
 }
 
-func fetchMeta(client *http.Client, importPath string) (scheme string, im *importMeta, err error) {
+// sourceMeta represents the values in a go-source meta tag.
+type sourceMeta struct {
+	prefix       string
+	projectURL   string
+	dirTemplate  string
+	fileTemplate string
+}
+
+func fetchMeta(client *http.Client, importPath string) (scheme string, im *importMeta, sm *sourceMeta, err error) {
 	uri := importPath
 	if !strings.Contains(uri, "/") {
 		// Add slash for root of domain.
@@ -146,15 +165,15 @@ func fetchMeta(client *http.Client, importPath string) (scheme string, im *impor
 		scheme = "http"
 		resp, err = client.Get(scheme + "://" + uri)
 		if err != nil {
-			return scheme, nil, err
+			return scheme, nil, nil, err
 		}
 	}
 	defer resp.Body.Close()
-	im, err = parseMeta(scheme, importPath, resp.Body)
-	return scheme, im, err
+	im, sm, err = parseMeta(scheme, importPath, resp.Body)
+	return scheme, im, sm, err
 }
 
-func parseMeta(scheme, importPath string, r io.Reader) (im *importMeta, err error) {
+func parseMeta(scheme, importPath string, r io.Reader) (im *importMeta, sm *sourceMeta, err error) {
 	errorMessage := "go-import meta tag not found"
 
 	d := xml.NewDecoder(r)
@@ -178,7 +197,7 @@ metaScan:
 				continue metaScan
 			}
 			nameAttr := attrValue(t.Attr, "name")
-			if nameAttr != "go-import" {
+			if nameAttr != "go-import" && nameAttr != "go-source" {
 				continue metaScan
 			}
 			fields := strings.Fields(attrValue(t.Attr, "content"))
@@ -192,26 +211,46 @@ metaScan:
 				// site to use a single error page for multiple repositories.
 				continue metaScan
 			}
-			if len(fields) != 3 {
-				errorMessage = "go-import meta tag content attribute does not have three fields"
-				continue metaScan
-			}
-			if im != nil {
-				im = nil
-				errorMessage = "more than one go-import meta tag found"
-				break metaScan
-			}
-			im = &importMeta{
-				prefix: prefix,
-				vcs:    fields[1],
-				repo:   fields[2],
+			switch nameAttr {
+			case "go-import":
+				if len(fields) != 3 {
+					errorMessage = "go-import meta tag content attribute does not have three fields"
+					continue metaScan
+				}
+				if im != nil {
+					im = nil
+					errorMessage = "more than one go-import meta tag found"
+					break metaScan
+				}
+				im = &importMeta{
+					prefix: prefix,
+					vcs:    fields[1],
+					repo:   fields[2],
+				}
+			case "go-source":
+				if sm != nil {
+					// Ignore extra go-source meta tags.
+					continue metaScan
+				}
+				if len(fields) != 4 {
+					continue metaScan
+				}
+				sm = &sourceMeta{
+					prefix:       prefix,
+					projectURL:   fields[1],
+					dirTemplate:  fields[2],
+					fileTemplate: fields[3],
+				}
 			}
 		}
 	}
 	if im == nil {
-		return nil, fmt.Errorf("%s at %s://%s", errorMessage, scheme, importPath)
+		return nil, nil, fmt.Errorf("%s at %s://%s", errorMessage, scheme, importPath)
 	}
-	return im, nil
+	if sm != nil && sm.prefix != im.prefix {
+		sm = nil
+	}
+	return im, sm, nil
 }
 
 func attrValue(attrs []xml.Attr, name string) string {

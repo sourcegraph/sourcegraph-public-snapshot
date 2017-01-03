@@ -133,3 +133,7 @@ class PeekExternalReferences extends EditorAction {
 			.catch(err => err);
 	}
 }
+
+// Suppress tsc noUnusedLocals errors. These are used via the @editorAction decorator.
+FindExternalReferencesAction; // tslint:disable-line no-unused-expression
+PeekExternalReferences; // tslint:disable-line no-unused-expression

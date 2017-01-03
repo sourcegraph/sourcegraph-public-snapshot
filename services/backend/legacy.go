@@ -5,13 +5,11 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/repoupdater"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 func init() {
 	accesscontrol.Repos = localstore.Repos
-	repoupdater.MirrorRepos = MirrorRepos
 }
 
 func SetGraphStore(graph srcstore.MultiRepoStoreImporterIndexer) {

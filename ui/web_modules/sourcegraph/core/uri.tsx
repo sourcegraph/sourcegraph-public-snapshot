@@ -13,9 +13,6 @@ export class URIUtils {
 	// convention.
 	static pathInRepo(repo: string, rev: string | null, path: string): URI {
 		if (!rev) {
-			if ((global as any).console.debug) {
-				console.debug("Created URI without a rev; using HEAD.", { repo, rev, path }); // tslint:disable-line no-console
-			}
 			rev = "HEAD";
 		}
 		return URI.parse(`git:\/\/${repo}`).with({

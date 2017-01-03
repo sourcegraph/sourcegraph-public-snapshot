@@ -106,7 +106,7 @@ func HandleError(resp http.ResponseWriter, req *http.Request, status int, err er
 		}
 	}()
 
-	// Display internal grpc error descriptions with full text (so it's not escaped).
+	// Display internal error descriptions with full text (so it's not escaped).
 	if legacyerr.ErrCode(err) == legacyerr.Internal {
 		err = fmt.Errorf("internal error:\n\n%s", legacyerr.ErrorDesc(err))
 	}
