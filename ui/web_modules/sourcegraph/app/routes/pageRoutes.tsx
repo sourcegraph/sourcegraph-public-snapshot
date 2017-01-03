@@ -8,7 +8,6 @@ import { PricingPage } from "sourcegraph/page/PricingPage";
 import { PrivacyPage } from "sourcegraph/page/PrivacyPage";
 import { SecurityPage } from "sourcegraph/page/SecurityPage";
 import { TermsPage } from "sourcegraph/page/TermsPage";
-import { TwitterCaseStudyPage } from "sourcegraph/page/TwitterCaseStudyPage";
 
 export const pageRoutes: any[] = [
 	{
@@ -80,14 +79,6 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: DocsPage,
-			});
-		},
-	},
-	{
-		path: rel.twittercasestudy,
-		getComponents: (location, callback) => {
-			callback(null, {
-				main: TwitterCaseStudyPage,
 			});
 		},
 	},

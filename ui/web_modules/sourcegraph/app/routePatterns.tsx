@@ -2,9 +2,7 @@ import { PlainRoute } from "react-router";
 import { matchPattern } from "react-router/lib/PatternUtils";
 import { Location } from "sourcegraph/Location";
 
-export type RouteName = (
-	"styleguide" |
-	"twittercasestudy" |
+export type RouteName = "styleguide" |
 	"home" |
 	"integrations" |
 	"tool" |
@@ -25,8 +23,7 @@ export type RouteName = (
 	"security" |
 	"pricing" |
 	"terms" |
-	"privacy"
-);
+	"privacy";
 
 export const rel = {
 	// NOTE: If you add a top-level route (e.g., "/about"), add it to the
@@ -41,7 +38,6 @@ export const rel = {
 	terms: "terms",
 	privacy: "privacy",
 	styleguide: "styleguide",
-	twittercasestudy: "twittercasestudy",
 	integrations: "integrations",
 	settings: "settings",
 	login: "login",
@@ -67,7 +63,6 @@ export const abs = {
 	terms: rel.terms,
 	privacy: rel.privacy,
 	styleguide: rel.styleguide,
-	twittercasestudy: rel.twittercasestudy,
 	home: rel.home,
 	integrations: rel.integrations,
 	settings: rel.settings,

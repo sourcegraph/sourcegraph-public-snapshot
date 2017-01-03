@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { colors, whitespace } from "sourcegraph/components/utils";
 
 export function Footer(): JSX.Element {
-	return <div style={{ backgroundColor: "#f0f5fb" }}>
+	return <div style={{ backgroundColor: colors.coolGray4(0.2) }}>
 		<div style={{
 			padding: whitespace[3],
 			textAlign: "center",
