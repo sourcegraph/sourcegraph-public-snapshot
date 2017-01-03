@@ -10,7 +10,6 @@ var Mocks MockStores
 type MockStores struct {
 	DeprecatedGlobalRefs DeprecatedMockGlobalRefs
 	Graph                srcstore.MockMultiRepoStore
-	Queue                MockQueue
 	RepoVCS              MockRepoVCS
 	Repos                MockRepos
 }

@@ -6,7 +6,6 @@ var (
 	DeprecatedGlobalRefs = &deprecatedGlobalRefs{}
 	GlobalRefs           = &globalRefs{}
 	Graph                srcstore.MultiRepoStoreImporterIndexer
-	Queue                = &instrumentedQueue{}
 	RepoVCS              = &repoVCS{}
 	Repos                = &repos{}
 	UserInvites          = &userInvites{}
