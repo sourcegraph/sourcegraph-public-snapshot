@@ -29,27 +29,31 @@ function openCommit(props: Props): void {
 
 export function CodeLensAuthorWidget(props: Props): JSX.Element {
 	const { gravatarHash, name, rev, message } = props.blame;
-	return <Panel style={{ minWidth: 320, color: colors.text() }} hoverLevel="low">
+	return <Panel hoverLevel="low" style={{
+		minWidth: 320,
+		color: colors.text(),
+		marginLeft: -2,
+		marginTop: 4,
+	}}>
 		<div style={{ margin: whitespace[3] }}>
 			<User
 				avatar={`https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro`}
 				nickname={name}
 				simple={true} />
 			<div onClick={props.onClose.bind(this)} style={{
-				padding: whitespace[1],
+				cursor: "pointer",
+				padding: 1,
 				position: "absolute",
 				right: whitespace[3],
 				top: whitespace[3],
 			}}>
-				<a>
-					<Close color={colors.coolGray3()} width={14} />
-				</a>
+				<Close color={colors.coolGray3()} width={14} />
 			</div>
 			<Heading level={6} style={{ marginTop: whitespace[3] }}>{message}</Heading>
 			<a onClick={() => openCommit(props)} {...merge(
 				{ color: colors.coolGray3(), fontFamily: typography.fontStack.code },
 				typography.small,
-			) }>{rev.substr(0, 6)}</a>
+			) }>Commit {rev.substr(0, 6)}</a>
 		</div>
 	</Panel>;
 };
