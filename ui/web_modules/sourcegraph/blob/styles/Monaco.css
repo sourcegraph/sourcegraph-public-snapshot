@@ -125,8 +125,13 @@
 /* Code view */
 
 :global .monaco-editor.vs-dark .reference-zone-widget .preview .monaco-editor {
-	 background-color: c_black_10 !important;
- }
+	background-color: c_black_10 !important;
+}
+
+:global div.monaco-editor.vs-dark .monaco-editor-background {
+	margin-left: 5px;
+}
+
 
 /* Ref tree */
 
@@ -184,6 +189,8 @@
 
 /*
 	Sourcegraph Monaco theme based on vs-dark
+	---------------------------------------------------
+	Please reserve this section for the code theme. Any layout manipulation should be in a new section.
 */
 
 @value yellow: #FDBA86;
@@ -207,52 +214,73 @@
 	cursor: pointer;
 }
 
-:global div.monaco-editor.vs-dark,
-:global div.monaco-editor.vs-dark .token {color: c_cool_pale_gray}
+:global div.monaco-editor.vs-dark .token {
+	color: c_cool_pale_gray;
+}
+
 :global div.monaco-editor.vs-dark,
 :global div.monaco-editor.vs-dark .monaco-editor-background {
 	background-color: c_cool_dark_gray;
-	margin-left: 5px;
 }
 
-:global div.monaco-editor.vs-dark .token.comment { font-style: italic; }
+:global div.monaco-editor.vs-dark .token.comment {
+	font-style: italic;
+}
 
 :global div.monaco-editor.vs-dark .line-numbers {
 	color: c_cool_gray;
 	cursor: default !important;
 }
-:global div.monaco-editor.vs-dark .line-numbers:hover { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .line-numbers:hover {
+	color: c_cool_mid_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.terminal,
 :global div.monaco-editor.vs-dark .token.metatag,
 :global div.monaco-editor.vs-dark .token.annotation,
 :global div.monaco-editor.vs-dark .token.constant,
 :global div.monaco-editor.vs-dark .token.literal,
-:global div.monaco-editor.vs-dark .token.error-token { color: red; }
+:global div.monaco-editor.vs-dark .token.error-token {
+	color: red;
+}
 
 :global div.monaco-editor.vs-dark .token.string.escape,
-:global div.monaco-editor.vs-dark .token.warn-token { color: orange; }
+:global div.monaco-editor.vs-dark .token.warn-token {
+	color: orange;
+}
 
 :global div.monaco-editor.vs-dark .token.delimiter,
 :global div.monaco-editor.vs-dark .token.comment,
-:global div.monaco-editor.vs-dark .token.comment.shebang { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.comment.shebang {
+	color: c_cool_mid_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.support,
-:global div.monaco-editor.vs-dark .token.support.type { color: c_cool_pale_gray; }
+:global div.monaco-editor.vs-dark .token.support.type {
+	color: c_cool_pale_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.string,
 :global div.monaco-editor.vs-dark .token.attribute.value,
 :global div.monaco-editor.vs-dark .token.support.property-value,
-:global div.monaco-editor.vs-dark .token.literal.hex { color: yellow; }
+:global div.monaco-editor.vs-dark .token.literal.hex {
+	color: yellow;
+}
 
-:global div.monaco-editor.vs-dark .token.identifier { color: c_cool_pale_gray; }
+:global div.monaco-editor.vs-dark .token.identifier {
+	color: c_cool_pale_gray;
+}
 
 :global div.monaco-editor.vs-dark .token.comment.doc,
 :global div.monaco-editor.vs-dark .token.regexp,
-:global div.monaco-editor.vs-dark .token.constant.rgb-value { color: green; }
+:global div.monaco-editor.vs-dark .token.constant.rgb-value {
+	color: green;
+}
 
 :global div.monaco-editor.vs-dark .token.entity.name.selector,
-:global div.monaco-editor.vs-dark .token.info-token { color: cyan; }
+:global div.monaco-editor.vs-dark .token.info-token {
+	color: cyan;
+}
 
 :global div.monaco-editor.vs-dark .token.variable,
 :global div.monaco-editor.vs-dark .token.number,
@@ -262,80 +290,162 @@
 :global div.monaco-editor.vs-dark .token.constant.numeric,
 :global div.monaco-editor.vs-dark .token.tag,
 :global div.monaco-editor.vs-dark .token.variable.predefined,
-:global div.monaco-editor.vs-dark .token.debug-token { color: violet; }
+:global div.monaco-editor.vs-dark .token.debug-token {
+	color: violet;
+}
 
 :global div.monaco-editor.vs-dark .token.key,
 :global div.monaco-editor.vs-dark .token.punctuation,
-:global div.monaco-editor.vs-dark .token.attribute.name {	color: magenta; }
+:global div.monaco-editor.vs-dark .token.attribute.name {
+	color: magenta;
+}
 
 /* Keywords should come at the end in order to match cases like token.keyword.string */
 :global div.monaco-editor.vs-dark .token.keyword,
 :global div.monaco-editor.vs-dark .token.keyword.flow,
-:global div.monaco-editor.vs-dark .token.keyword.datatype { color: blue; }
+:global div.monaco-editor.vs-dark .token.keyword.datatype {
+	color: blue;
+}
 
 /* PHP */
 :global div.monaco-editor.vs-dark .token.metatag.php { font-weight: bold; }
 
 /* Ruby */
-:global div.monaco-editor.vs-dark .token.predefined.ruby { color: blue; }
+:global div.monaco-editor.vs-dark .token.predefined.ruby {
+	color: blue;
+}
 
 /* Markdown */
-:global div.monaco-editor.vs-dark .token.emphasis { font-style: italic;}
-:global div.monaco-editor.vs-dark .token.strong { font-weight: bold; }
-:global div.monaco-editor.vs-dark .token.header { color: blue ;}
+:global div.monaco-editor.vs-dark .token.emphasis {
+	font-style: italic;
+}
+
+:global div.monaco-editor.vs-dark .token.strong {
+	font-weight: bold;
+}
+
+:global div.monaco-editor.vs-dark .token.header {
+	color: blue ;
+}
 
 /* JSON */
-:global div.monaco-editor.vs-dark .token.string.key { color: cyan; }
-:global div.monaco-editor.vs-dark .token.string.value { color: yellow; }
+:global div.monaco-editor.vs-dark .token.string.key {
+	color: cyan;
+}
+
+:global div.monaco-editor.vs-dark .token.string.value {
+	color: yellow;
+}
 
 /* YAML */
-:global div.monaco-editor.vs-dark .token.string.yaml { color: yellow; }
+:global div.monaco-editor.vs-dark .token.string.yaml {
+	color: yellow;
+}
 
 /* C# */
-:global div.monaco-editor.vs-dark .token.type	{ color: blue; }
-:global div.monaco-editor.vs-dark .token.identifier.method { color: yellow; }
+:global div.monaco-editor.vs-dark .token.type	{
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.identifier.method {
+	color: yellow;
+}
 
 /* SQL */
-:global div.monaco-editor.vs-dark .token.string.sql { color: yellow; }
-:global div.monaco-editor.vs-dark .token.predefined.sql	{ color: magenta; }
-:global div.monaco-editor.vs-dark .token.operator.sql { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.string.sql {
+	color: yellow;
+}
+
+:global div.monaco-editor.vs-dark .token.predefined.sql	{
+	color: magenta;
+}
+
+:global div.monaco-editor.vs-dark .token.operator.sql {
+	color: c_cool_mid_gray;
+}
 
 /* HTML */
-:global div.monaco-editor.vs-dark .token.delimiter.html	{ color: c_cool_mid_gray_5; }
-:global div.monaco-editor.vs-dark .token.metatag.content.html { color: cyan; }
-:global div.monaco-editor.vs-dark .token.metatag.html { color: blue; }
-:global div.monaco-editor.vs-dark .token.string.html { color: yellow; }
+:global div.monaco-editor.vs-dark .token.delimiter.html	{
+	color: c_cool_mid_gray_5;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.content.html {
+	color: cyan;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.html {
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.string.html {
+	color: yellow;
+}
 
 /* XML */
-:global div.monaco-editor.vs-dark .token.delimiter.xml { color: c_cool_mid_gray_5; }
-:global div.monaco-editor.vs-dark .token.metatag.content.xml { color: cyan; }
-:global div.monaco-editor.vs-dark .token.metatag.xml { color: blue; }
+:global div.monaco-editor.vs-dark .token.delimiter.xml {
+	color: c_cool_mid_gray_5;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.content.xml {
+	color: cyan;
+}
+
+:global div.monaco-editor.vs-dark .token.metatag.xml {
+	color: blue;
+}
 
 /* CSS */
-:global div.monaco-editor.vs-dark .token.attribute.name.css { color: blue; }
-:global div.monaco-editor.vs-dark .token.attribute.value.css { color: c_cool_mid_gray_5; }
+:global div.monaco-editor.vs-dark .token.attribute.name.css {
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.attribute.value.css {
+	color: c_cool_mid_gray_5;
+}
+
 :global div.monaco-editor.vs-dark .token.delimiter.css,
-:global div.monaco-editor.vs-dark .token.punctuation.css { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.punctuation.css {
+	color: c_cool_mid_gray;
+}
 
 /* VSXML */
-:global div.monaco-editor.vs-dark .token.vs	{ color: green; }
-:global div.monaco-editor.vs-dark .token.tag.vs { color: blue; }
-:global div.monaco-editor.vs-dark .token.delimiter.vs { color: c_cool_mid_gray; }
-:global div.monaco-editor.vs-dark .token.attribute.name.vs { color: c_cool_mid_gray; }
-:global div.monaco-editor.vs-dark .token.attribute.value.vs { color: c_cool_mid_gray; }
+:global div.monaco-editor.vs-dark .token.vs	{
+	color: green;
+}
+
+:global div.monaco-editor.vs-dark .token.tag.vs {
+	color: blue;
+}
+
+:global div.monaco-editor.vs-dark .token.delimiter.vs {
+	color: c_cool_mid_gray;
+}
+
+:global div.monaco-editor.vs-dark .token.attribute.name.vs {
+	color: c_cool_mid_gray;
+}
+
+:global div.monaco-editor.vs-dark .token.attribute.value.vs {
+	color: c_cool_mid_gray;
+}
 
 /* Jade */
 :global div.monaco-editor.vs-dark .token.tag.id.jade,
-:global div.monaco-editor.vs-dark .token.tag.class.jade { color: violet; }
+:global div.monaco-editor.vs-dark .token.tag.class.jade {
+	color: violet;
+}
 
 :global div.monaco-editor.vs-dark .token.interpolation.jade,
-:global div.monaco-editor.vs-dark .token.interpolation.delimiter.jade { color: magenta; }
+:global div.monaco-editor.vs-dark .token.interpolation.delimiter.jade {
+	color: magenta;
+}
 
 /* File tree */
 :global .explorer-folders-view .monaco-tree-row {
 	line-height: 30px;
 	font-size: 1rem;
 }
+
 :global .vs-dark .explorer-folders-view .monaco-tree .monaco-tree-rows > .monaco-tree-row.has-children > .content:before {
 	background-image: url('data:image/svg+xml, <svg viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M10.656375,18.1633125 C10.3635,18.4569375 9.888375,18.4569375 9.59475,18.1640625 C9.3015,17.8711875 9.3015,17.3956875 9.594375,17.1028125 L14.696625,12.0065625 L9.594375,6.9099375 C9.3015,6.6166875 9.3015,6.1415625 9.59475,5.8486875 C9.888375,5.5554375 10.3635,5.5558125 10.656375,5.8494375 L16.289625,11.4759375 C16.582875,11.7684375 16.583625,12.2428125 16.291125,12.5356875 C16.290375,12.5360625 16.290375,12.5364375 16.289625,12.5368125 L10.656375,18.1633125 Z" id="Fill" fill="white"></path></svg>');
 }
