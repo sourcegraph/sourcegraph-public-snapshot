@@ -11,6 +11,8 @@ import { Features } from "sourcegraph/util/features";
 import { FileTree } from "sourcegraph/workbench/fileTree";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
+import { RepoMain } from "sourcegraph/repo/RepoMain";
+
 // WorkbenchComponent loads the VSCode workbench shell, or our home made file
 // tree and Editor, depending on configuration. To learn about VSCode, and the
 // way we use it, read README.vscode.md.
@@ -21,7 +23,11 @@ class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 		}
 		const files = this.props.root.repository.commit.commit.tree.files;
 		if (Features.workbench.isEnabled()) {
-			return <WorkbenchShell />;
+			return <div style={{ display: "flex", height: "100%" }}>
+				<RepoMain {...this.props} {...this.props.root} {...this.props.root.repository}>
+					<WorkbenchShell />
+				</RepoMain>
+			</div>;
 		}
 		return <div style={{
 			display: "flex",
@@ -47,7 +53,7 @@ class WorkbenchComponent extends React.Component<ControllerProps, {}> {
 	}
 }
 
-export const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
+const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 	initialVariables: {
 		repo: "",
 		rev: "",

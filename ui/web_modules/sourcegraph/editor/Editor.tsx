@@ -7,7 +7,6 @@ import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/bro
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
 import { Position } from "vs/editor/common/core/position";
 import { ICursorSelectionChangedEvent, IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
-import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
@@ -24,7 +23,6 @@ import { createEditor } from "sourcegraph/editor/setup";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
-import { Services } from "sourcegraph/workbench/services";
 
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
@@ -172,9 +170,10 @@ export class Editor implements IDisposable {
 
 		// Set the dom readonly property, so keyboard doesn't pop up on mobile.
 		const dom = this._editor.getDomNode();
-		const input = dom.getElementsByClassName("inputarea");
-		if (input.length === 1) {
-			input[0].setAttribute("readOnly", "true");
+		const elements = dom.getElementsByClassName("inputarea");
+		const input = elements[0];
+		if (elements.length === 1 && input instanceof HTMLTextAreaElement) {
+			input.readOnly = true;
 		} else {
 			console.error("Didn't set textarea to readOnly");
 		}
@@ -282,9 +281,5 @@ export function getEditorInstance(): ICodeEditor {
 }
 
 export function updateEditorInstance(editor: ICodeEditor): void {
-	if (EditorInstance) {
-		const editorService = Services.get(ICodeEditorService) as ICodeEditorService;
-		editorService.removeCodeEditor(EditorInstance);
-	}
 	EditorInstance = editor;
 }

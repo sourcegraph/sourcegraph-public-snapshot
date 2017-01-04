@@ -13,14 +13,17 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 export function standaloneServices(container: HTMLElement, services: ServiceCollection): void {
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 
-	const set = (identifier, impl, arg?) => {
-		const instance = instantiationService.createInstance(impl, arg);
+	const set = (identifier, impl) => {
+		const instance = instantiationService.createInstance(impl);
 		services.set(identifier, instance);
 	};
 
 	set(IContextKeyService, ContextKeyService);
 	set(ICommandService, StandaloneCommandService);
-	set(IContextViewService, ContextViewService, container);
+
+	const ctxView = instantiationService.createInstance(ContextViewService, container);
+	services.set(IContextViewService, ctxView);
+
 	set(IContextMenuService, ContextMenuService);
 	set(IMenuService, MenuService);
 }

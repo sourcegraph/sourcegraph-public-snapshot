@@ -673,3 +673,26 @@ index 13582f3..c85e518 100644
  				explorerPromise = this.explorerViewer.setInput(modelStat).then(() => {
  
  					// Make sure to expand all folders that where expanded in the previous session
+diff --git a/ui/vendor/node_modules/vscode/src/vs/platform/keybinding/common/keybinding.ts b/ui/vendor/node_modules/vscode/src/vs/platform/keybinding/common/keybinding.ts
+index d69203085..7ce637636 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/platform/keybinding/common/keybinding.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/platform/keybinding/common/keybinding.ts
+@@ -70,5 +70,6 @@ export interface IKeybindingService {
+ 	lookupKeybindings(commandId: string): Keybinding[];
+ 	customKeybindingsCount(): number;
+ 	resolve(keybinding: Keybinding, target: IContextKeyServiceTarget): IResolveResult;
++	dispose();
+ }
+ 
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
+index 8f9dbdbc8..31112f8f3 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/electron-browser/workbench.ts
+@@ -419,6 +419,7 @@ export class Workbench implements IPartService {
+ 		serviceCollection.set(IContextKeyService, this.contextKeyService);
+ 
+ 		this.keybindingService = this.instantiationService.createInstance(WorkbenchKeybindingService, <any>window);
++		this.toDispose.push(this.keybindingService);
+ 		serviceCollection.set(IKeybindingService, this.keybindingService);
+ 
+ 		// Context Menu

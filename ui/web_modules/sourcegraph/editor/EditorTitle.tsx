@@ -41,8 +41,10 @@ export class EditorTitle extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element {
-		// TODO(nicot) fix this once John makes the URL module.
-		const {repo, rev, path} = this.props.pathspec;
+		let {repo, rev, path} = this.props.pathspec;
+		if (rev === "HEAD") {
+			rev = null;
+		}
 		const params = getRouteParams(abs.blob, document.location.pathname);
 		return <BlobTitle
 			repo={repo}
