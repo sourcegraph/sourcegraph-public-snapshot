@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"strings"
+	"time"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
@@ -12,8 +12,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 var GraphQLSchema *graphql.Schema
@@ -66,7 +68,7 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 		return nil, nil
 	}
 
-	repo, err := resolveRepo(ctx, args.URI)
+	repo, err := ResolveRepo(ctx, args.URI)
 	if err != nil {
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil
@@ -79,7 +81,7 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 	return &repositoryResolver{repo: repo}, nil
 }
 
-func resolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+func ResolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{
 		Path:   uri,
 		Remote: true,
@@ -92,29 +94,32 @@ func resolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		return localstore.Repos.Get(ctx, res.Repo)
 	}
 
-	// repository exists only remotely, try to clone
-	var op *sourcegraph.ReposCreateOp
-	if res.RemoteRepo.Origin != nil {
-		op = &sourcegraph.ReposCreateOp{
-			Op: &sourcegraph.ReposCreateOp_Origin{
-				Origin: res.RemoteRepo.Origin,
-			},
-		}
-	} else {
-		// Non-GitHub repositories.
-		op = &sourcegraph.ReposCreateOp{
-			Op: &sourcegraph.ReposCreateOp_New{
-				New: &sourcegraph.ReposCreateOp_NewRepo{
-					URI:           strings.Replace(res.RemoteRepo.HTTPCloneURL, "https://", "", -1),
-					CloneURL:      res.RemoteRepo.HTTPCloneURL,
-					DefaultBranch: "master",
-					Mirror:        true,
-				},
-			},
-		}
+	// Repo does not exist in DB, create new entry.
+	ghRepo, err := github.ReposFromContext(ctx).Get(ctx, uri)
+	if err != nil {
+		return nil, err
 	}
 
-	repo, err := backend.Repos.Create(ctx, op)
+	// Purposefully set very few fields. We don't want to cache
+	// metadata, because it'll get stale, and fetching online from
+	// GitHub is quite easy and (with HTTP caching) performant.
+	ts := time.Now()
+	repo := &sourcegraph.Repo{
+		Owner:        ghRepo.Owner,
+		Name:         ghRepo.Name,
+		URI:          githubutil.RepoURI(ghRepo.Owner, ghRepo.Name),
+		HTTPCloneURL: ghRepo.HTTPCloneURL,
+		Description:  ghRepo.Description,
+		Fork:         ghRepo.Fork,
+		CreatedAt:    &ts,
+
+		// KLUDGE: set this to be true to avoid accidentally treating
+		// a private GitHub repo as public (the real value should be
+		// populated from GitHub on the fly).
+		Private: true,
+	}
+
+	repoID, err := localstore.Repos.Create(ctx, repo)
 	if err != nil {
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.AlreadyExists { // race condition
 			res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{
@@ -127,7 +132,7 @@ func resolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		}
 		return nil, err
 	}
-	return repo, nil
+	return localstore.Repos.Get(ctx, repoID)
 }
 
 func (r *rootResolver) RemoteRepositories(ctx context.Context) ([]*repositoryResolver, error) {

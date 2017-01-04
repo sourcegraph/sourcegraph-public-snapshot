@@ -20,7 +20,6 @@ export function RepositoryComponent(): JSX.Element {
 						pushedAt: "2016-11-10 19:17:31 +0000 UTC",
 						fork: false,
 						createdAt: "",
-						mirror: false,
 						__typename: "",
 						httpCloneURL: "https://sourcegraph.com/github.com/golang/go",
 						vcsSyncedAt: "",

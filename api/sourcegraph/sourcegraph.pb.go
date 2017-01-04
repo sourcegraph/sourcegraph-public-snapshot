@@ -31,30 +31,6 @@ var TreeEntryType_value = map[string]int32{
 	"SubmoduleEntry": 3,
 }
 
-// ServiceType indicates which service is running on an origin. A
-// repo whose origin service is GitHub, for example, should be
-// accessed using a GitHub API client.
-//
-// If there are multiple API versions for a service, separate
-// entries may be added per API version. In that case, the
-// APIBaseURL may need to differ as well. The API client code is
-// responsible for handling these cases.
-type Origin_ServiceType int32
-
-const (
-	// GitHub indicates that the origin is GitHub.com or a GitHub
-	// Enterprise server. If the latter, the origin base URL indicates
-	// the URL to the GitHub Enterprise server's API.
-	Origin_GitHub Origin_ServiceType = 0
-)
-
-var Origin_ServiceType_name = map[int32]string{
-	0: "GitHub",
-}
-var Origin_ServiceType_value = map[string]int32{
-	"GitHub": 0,
-}
-
 type ReposUpdateOp_BoolType int32
 
 const (
@@ -72,30 +48,6 @@ var ReposUpdateOp_BoolType_value = map[string]int32{
 	"NONE":  0,
 	"TRUE":  1,
 	"FALSE": 2,
-}
-
-// Origin represents the origin of a resource that canonically lives
-// on an external service (e.g., a repo hosted on GitHub).
-type Origin struct {
-	// ID is an identifier for the resource on its origin
-	// service. Although numeric IDs are used on many services (GitHub
-	// and Bitbucket, for example), this field is a string so that it
-	// supports non-numeric IDs (which are used on Google Cloud
-	// Platform and probably other services that Sourcegraph might
-	// support in the future).
-	//
-	// If the ID is numeric, this string is the base-10 string
-	// representation of the numeric ID (e.g., "1234"), with no
-	// leading 0s.
-	ID string `json:"ID,omitempty"`
-	// Service is the type service that the resource canonically lives
-	// on. It is used to determine which API client should be used to
-	// access it on the origin service (e.g., GitHub vs. Bitbucket).
-	Service Origin_ServiceType `json:""`
-	// APIBaseURL is the base URL to the API of the origin service for
-	// the resource. (E.g., "https://api.github.com" for
-	// GitHub.com-hosted repos.)
-	APIBaseURL string `json:"APIBaseURL,omitempty"`
 }
 
 // ListOptions specifies general pagination options for fetching a list of results.
@@ -152,11 +104,6 @@ type Repo struct {
 	Deprecated bool `json:"Deprecated,omitempty"`
 	// Fork is whether this repository is a fork.
 	Fork bool `json:"Fork,omitempty"`
-	// Mirror indicates whether this repo's canonical location is on
-	// another server. Mirror repos track their upstream. If this repo
-	// canonically lives on a repo hosting that can supply additional
-	// metadata (such as GitHub), the Origin field should be set.
-	Mirror bool `json:"Mirror,omitempty"`
 	// Private is whether this repository is private. Note: this field
 	// is currently only used when the repository is hosted on GitHub.
 	// All locally hosted repositories should be public. If Private is
@@ -176,9 +123,6 @@ type Repo struct {
 	// with the upstream. This field is only populated for mirror
 	// repositories.
 	VCSSyncedAt *time.Time `json:"VCSSyncedAt,omitempty"`
-	// Origin describes the repo's canonical location. It is only
-	// populated for mirror repos; for non-mirror repos, it is null.
-	Origin *Origin `json:"Origin,omitempty"`
 	// Permissions describes the actions that the current user (who
 	// retrieved this repository from the API) may perform on the
 	// repository. For public repositories retrieved by
@@ -328,81 +272,6 @@ type SrclibDataVersion struct {
 	CommitsBehind int32  `json:"CommitsBehind,omitempty"`
 }
 
-type ReposCreateOp struct {
-	// Types that are valid to be assigned to Op:
-	//	*ReposCreateOp_New
-	//	*ReposCreateOp_FromGitHubID
-	//	*ReposCreateOp_Origin
-	Op isReposCreateOp_Op
-}
-
-type isReposCreateOp_Op interface {
-	isReposCreateOp_Op()
-}
-
-type ReposCreateOp_New struct {
-	New *ReposCreateOp_NewRepo
-}
-type ReposCreateOp_FromGitHubID struct {
-	FromGitHubID int32
-}
-type ReposCreateOp_Origin struct {
-	Origin *Origin
-}
-
-func (*ReposCreateOp_New) isReposCreateOp_Op()          {}
-func (*ReposCreateOp_FromGitHubID) isReposCreateOp_Op() {}
-func (*ReposCreateOp_Origin) isReposCreateOp_Op()       {}
-
-func (m *ReposCreateOp) GetOp() isReposCreateOp_Op {
-	if m != nil {
-		return m.Op
-	}
-	return nil
-}
-
-func (m *ReposCreateOp) GetNew() *ReposCreateOp_NewRepo {
-	if x, ok := m.GetOp().(*ReposCreateOp_New); ok {
-		return x.New
-	}
-	return nil
-}
-
-func (m *ReposCreateOp) GetFromGitHubID() int32 {
-	if x, ok := m.GetOp().(*ReposCreateOp_FromGitHubID); ok {
-		return x.FromGitHubID
-	}
-	return 0
-}
-
-func (m *ReposCreateOp) GetOrigin() *Origin {
-	if x, ok := m.GetOp().(*ReposCreateOp_Origin); ok {
-		return x.Origin
-	}
-	return nil
-}
-
-type ReposCreateOp_NewRepo struct {
-	// URI is the desired URI of the new repository.
-	URI string `json:"URI,omitempty"`
-	// CloneURL is the clone URL of the repository for mirrored
-	// repositories. If blank, a new hosted repository is created
-	// (i.e., a repo whose origin is on the server). If Mirror is
-	// true, a clone URL must be provided.
-	CloneURL string `json:"CloneURL,omitempty"`
-	// DefaultBranch is the repository's default Git branch.
-	DefaultBranch string `json:"DefaultBranch,omitempty"`
-	// Mirror is a boolean value indicating whether the newly created
-	// repository should be a mirror. Mirror repositories are
-	// periodically updated to track their upstream (which is
-	// specified using the CloneURL field of this message).
-	Mirror bool `json:"Mirror,omitempty"`
-	// Description is the description of the repository.
-	Description string `json:"Description,omitempty"`
-	// Language is the primary programming language of the repository.
-	Language string `json:"Language,omitempty"`
-}
-
 // ReposUpdateOp is an operation to update a repository's metadata.
 type ReposUpdateOp struct {
 	// Repo is the repository to update.
@@ -425,8 +294,6 @@ type ReposUpdateOp struct {
 	DefaultBranch string `json:"DefaultBranch,omitempty"`
 	// Language, if non-empty, is the updated value of the language.
 	Language string `json:"Language,omitempty"`
-	// Origin is data about the repository origin (e.g., GitHub).
-	Origin *Origin `json:"Origin,omitempty"`
 	// Blocked, if non-empty, updates whether this repository is blocked.
 	Blocked ReposUpdateOp_BoolType `json:"Blocked,omitempty"`
 	// Deprecated, if non-empty, updates whether this repository is deprecated.

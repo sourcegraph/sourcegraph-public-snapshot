@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	pathpkg "path"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,10 +15,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth/google"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -330,9 +326,6 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 			}
 		}
 	}
-	if !repo.Mirror && repo.HTTPCloneURL == "" { // artifact of self-hosted repositories
-		repo.HTTPCloneURL = conf.AppURL.ResolveReference(approuter.Rel.URLToRepo(repo.URI)).String()
-	}
 	return nil
 }
 
@@ -429,15 +422,6 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 		}
 		updated = true
 	}
-	if ghrepo.Mirror != repo.Mirror {
-		repo.Mirror = ghrepo.Mirror
-		if ghrepo.Mirror {
-			updateOp.Mirror = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Mirror = sourcegraph.ReposUpdateOp_FALSE
-		}
-		updated = true
-	}
 	if ghrepo.Private != repo.Private {
 		repo.Private = ghrepo.Private
 		if ghrepo.Private {
@@ -459,26 +443,6 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 		updated = true
 	}
 
-	if ghrepo.Origin != nil {
-		if repo.Origin != nil {
-			if repo.Origin.ID != ghrepo.Origin.ID || repo.Origin.Service != ghrepo.Origin.Service || repo.Origin.APIBaseURL != ghrepo.Origin.APIBaseURL {
-				repo.Origin = ghrepo.Origin
-				updateOp.Origin = ghrepo.Origin
-				updated = true
-			}
-		} else {
-			repo.Origin = ghrepo.Origin
-			updateOp.Origin = ghrepo.Origin
-			updated = true
-		}
-	} else {
-		if repo.Origin != nil {
-			repo.Origin = nil
-			updateOp.Origin = &sourcegraph.Origin{}
-			updated = true
-		}
-	}
-
 	// The Permissions field should NOT be persisted, because it is
 	// specific to the current user who requested the repo. So, don't
 	// track updated.
@@ -488,130 +452,6 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 		return updateOp
 	}
 	return nil
-}
-
-func (s *repos) Create(ctx context.Context, op *sourcegraph.ReposCreateOp) (res *sourcegraph.Repo, err error) {
-	if Mocks.Repos.Create != nil {
-		return Mocks.Repos.Create(ctx, op)
-	}
-
-	ctx, done := trace(ctx, "Repos", "Create", op, &err)
-	defer done()
-
-	var repo *sourcegraph.Repo
-	switch {
-	case op.GetFromGitHubID() != 0:
-		var err error
-		repo, err = s.newRepoFromOrigin(ctx, &sourcegraph.Origin{
-			Service: sourcegraph.Origin_GitHub,
-			ID:      strconv.Itoa(int(op.GetFromGitHubID())),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-	case op.GetOrigin() != nil:
-		var err error
-		repo, err = s.newRepoFromOrigin(ctx, op.GetOrigin())
-		if err != nil {
-			return nil, err
-		}
-
-	// Intercept "github.com/..." repos, create them in the same manner as from GitHub repo ID.
-	case op.GetNew() != nil && strings.HasPrefix(strings.ToLower(op.GetNew().URI), "github.com/"):
-		op := op.GetNew()
-		if !op.Mirror {
-			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "github.com/ repos can only be mirrors")
-		}
-		if !(op.CloneURL == fmt.Sprintf("https://%s", op.URI) || op.CloneURL == fmt.Sprintf("https://%s.git", op.URI)) {
-			// Disallow creating GitHub mirrors via repo URI and clone URL unless they match.
-			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "github.com/ mirrors repos can only be created if the clone URL matches the repo URI")
-		}
-
-		// TODO: This is gross, but the current sourcegraph.Origin struct does not easily
-		//       permit better (I've tried). It can be improved/simplified, but it's a more
-		//       significant undertaking than what's in scope right now (so I'm purposefully
-		//       choosing a less than ideal solution for now). It's more okay because it only
-		//       happens when creating a GH repo via URI, which may get removed.
-		//
-		// Make a request to GH API simply to resolve the owner and repo into a GitHub repo ID,
-		// discard the rest of the metadata, then use that as origin, which in turn makes
-		// another call to GH API to fetch the same repo metadata.
-		// The goal here is to avoid multiple distinct code paths for GH repo creation, because the
-		// subtle business logic of how we process GH metadata changes, and it's easy for multiple
-		// code paths to diverge.
-		ghRepo, err := github.ReposFromContext(ctx).Get(ctx, op.URI)
-		if err != nil {
-			return nil, err
-		}
-		if ghRepo.Origin == nil {
-			return nil, fmt.Errorf("unexpected nil Origin from our GitHub repo store")
-		}
-		if ghRepo.Origin.Service != sourcegraph.Origin_GitHub {
-			return nil, fmt.Errorf("unexpected Origin.Service from our GitHub repo store: %v", ghRepo.Origin.Service)
-		}
-
-		repo, err = s.newRepoFromOrigin(ctx, &sourcegraph.Origin{
-			Service: sourcegraph.Origin_GitHub,
-			ID:      ghRepo.Origin.ID,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-	case op.GetNew() != nil:
-		var err error
-		repo, err = s.newRepo(ctx, op.GetNew())
-		if err != nil {
-			return nil, err
-		}
-
-	default:
-		return nil, legacyerr.Errorf(legacyerr.Unimplemented, "repo creation operation not supported")
-	}
-
-	repoID, err := localstore.Repos.Create(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-	repo.ID = repoID
-
-	repo, err = s.Get(ctx, &sourcegraph.RepoSpec{ID: repo.ID})
-	if err != nil {
-		return nil, err
-	}
-
-	return repo, nil
-}
-
-func (s *repos) newRepo(ctx context.Context, op *sourcegraph.ReposCreateOp_NewRepo) (*sourcegraph.Repo, error) {
-	if op.URI == "" {
-		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "repo URI must have at least one path component")
-	}
-	if op.Mirror {
-		if op.CloneURL == "" {
-			return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "creating a mirror repo requires a clone URL to be set")
-		}
-	}
-	if strings.HasPrefix(strings.ToLower(op.URI), "github.com/") {
-		return nil, legacyerr.Errorf(legacyerr.InvalidArgument, "newRepo is not allowed to create github.com/ repos")
-	}
-
-	if op.DefaultBranch == "" {
-		op.DefaultBranch = "master"
-	}
-
-	ts := time.Now()
-	return &sourcegraph.Repo{
-		Name:          pathpkg.Base(op.URI),
-		URI:           op.URI,
-		HTTPCloneURL:  op.CloneURL,
-		Language:      op.Language,
-		DefaultBranch: op.DefaultBranch,
-		Description:   op.Description,
-		Mirror:        op.Mirror,
-		CreatedAt:     &ts,
-	}, nil
 }
 
 func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error) {

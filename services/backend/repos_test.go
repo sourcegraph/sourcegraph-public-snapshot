@@ -24,13 +24,11 @@ func TestReposService_Get(t *testing.T) {
 	ctx = github.WithRepos(ctx, &githubRepos)
 
 	wantRepo := &sourcegraph.Repo{
-		ID:     1,
-		URI:    "github.com/u/r",
-		Mirror: true,
+		ID:  1,
+		URI: "github.com/u/r",
 	}
 	ghrepo := &sourcegraph.Repo{
-		URI:    "github.com/u/r",
-		Mirror: true,
+		URI: "github.com/u/r",
 	}
 
 	githubRepos.MockGet_Return(ctx, ghrepo)
@@ -63,7 +61,6 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 	wantRepo := &sourcegraph.Repo{
 		ID:      1,
 		URI:     "github.com/u/r",
-		Mirror:  true,
 		Private: true,
 	}
 
@@ -101,9 +98,8 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 	ctx = accesscontrol.WithInsecureSkip(ctx, false)
 
 	wantRepo := &sourcegraph.Repo{
-		ID:     1,
-		URI:    "github.com/u/r",
-		Mirror: true,
+		ID:  1,
+		URI: "github.com/u/r",
 	}
 
 	githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
@@ -148,7 +144,6 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 	wantRepo := &sourcegraph.Repo{
 		ID:          1,
 		URI:         "r",
-		Mirror:      true,
 		Permissions: &sourcegraph.RepoPermissions{Pull: true, Push: true},
 	}
 
@@ -169,88 +164,6 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 	}
 	if !reflect.DeepEqual(repo, wantRepo) {
 		t.Errorf("got %+v, want %+v", repo, wantRepo)
-	}
-}
-
-func TestRepos_Create_New(t *testing.T) {
-	var s repos
-	ctx := testContext()
-
-	wantRepo := &sourcegraph.Repo{
-		ID:   1,
-		URI:  "r",
-		Name: "r",
-	}
-
-	calledCreate := false
-	localstore.Mocks.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
-		calledCreate = true
-		if repo.URI != wantRepo.URI {
-			t.Errorf("got uri %#v, want %#v", repo.URI, wantRepo.URI)
-		}
-		return wantRepo.ID, nil
-	}
-	localstore.Mocks.Repos.MockGet(t, 1)
-
-	_, err := s.Create(ctx, &sourcegraph.ReposCreateOp{
-		Op: &sourcegraph.ReposCreateOp_New{New: &sourcegraph.ReposCreateOp_NewRepo{
-			URI: "r",
-		}},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !calledCreate {
-		t.Error("!calledCreate")
-	}
-}
-
-func TestRepos_Create_Origin(t *testing.T) {
-	var s repos
-	ctx := testContext()
-	var githubRepos githubmock.GitHubRepoGetter
-	ctx = github.WithRepos(ctx, &githubRepos)
-
-	wantRepo := &sourcegraph.Repo{
-		ID:  1,
-		URI: "github.com/a/b",
-		Origin: &sourcegraph.Origin{
-			ID:         "123",
-			Service:    sourcegraph.Origin_GitHub,
-			APIBaseURL: "https://api.github.com",
-		},
-	}
-
-	calledGet := false
-	githubRepos.GetByID_ = func(ctx context.Context, id int) (*sourcegraph.Repo, error) {
-		if want := 123; id != want {
-			t.Errorf("got id %d, want %d", id, want)
-		}
-		calledGet = true
-		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
-	}
-
-	calledCreate := false
-	localstore.Mocks.Repos.Create = func(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
-		calledCreate = true
-		if !reflect.DeepEqual(repo.Origin, wantRepo.Origin) {
-			t.Errorf("got repo origin %#v, want %#v", repo.Origin, wantRepo.Origin)
-		}
-		return wantRepo.ID, nil
-	}
-	localstore.Mocks.Repos.MockGet(t, 1)
-
-	_, err := s.Create(ctx, &sourcegraph.ReposCreateOp{
-		Op: &sourcegraph.ReposCreateOp_Origin{Origin: wantRepo.Origin},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !calledGet {
-		t.Error("!calledGet")
-	}
-	if !calledCreate {
-		t.Error("!calledCreate")
 	}
 }
 

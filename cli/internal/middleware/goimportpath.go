@@ -8,14 +8,8 @@ import (
 	"path"
 	"strings"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 // goImportMetaTag represents a go-import meta tag.
@@ -42,10 +36,9 @@ var goImportMetaTagTemplate = template.Must(template.New("").Parse(`<html><head>
 //
 // It implements the following mapping:
 //
-// 1. If the request is an existing hosted repository, it is served directly, and its clone URL is the import path.
-// 2. Otherwise, if the username (first path element) is "sourcegraph", consider it to be a vanity
+// 1. If the username (first path element) is "sourcegraph", consider it to be a vanity
 //    import path pointing to github.com/sourcegraph/<repo> as the clone URL.
-// 3. All other requests are served with 404 Not Found.
+// 2. All other requests are served with 404 Not Found.
 func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if req.URL.Query().Get("go-get") != "1" {
@@ -61,58 +54,9 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := req.Context()
-		pathElements := strings.Split(req.URL.Path[1:], "/")
-
-		// Check if the requested path or its prefix is a hosted repository.
-		//
-		// If there are 3 path elements, e.g., "/alpha/beta/gamma", start by checking
-		// repo path "alpha", then "alpha/beta", and finally "alpha/beta/gamma".
-		for i := 1; i <= len(pathElements); i++ {
-			repoPath := strings.Join(pathElements[:i], "/")
-
-			res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repoPath})
-			if legacyerr.ErrCode(err) == legacyerr.NotFound {
-				continue
-			} else if err != nil {
-				log15.Error("Error resolving repository for 'go get' handler.", "repoPath", repoPath, "err", err)
-				http.Error(w, "", errcode.HTTP(err))
-				return
-			}
-
-			repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: res.Repo})
-			if err == nil && repo.Mirror {
-				continue
-			} else if errcode.HTTP(err) == http.StatusNotFound {
-				continue
-			} else if err != nil {
-				// TODO: Distinguish between other known/expected errors vs unexpected errors,
-				//       and treat unexpected errors appropriately. Doing this requires Repos.Get
-				//       method to be documented to specify which known error types it can return.
-				log.Println("SourcegraphComGoGetHandler: backend.Repos.Get:", err)
-				http.Error(w, "error getting repository", http.StatusInternalServerError)
-				return
-			}
-
-			// Repo found. Serve a go-import meta tag.
-
-			appURL := conf.AppURL
-			scheme := appURL.Scheme
-			host := appURL.Host
-
-			goImportMetaTagTemplate.Execute(w, goImportMetaTag{
-				ImportPrefix: path.Join(host, repoPath),
-				VCS:          "git",
-				RepoRoot:     scheme + "://" + host + "/" + repoPath,
-			})
-			if err != nil {
-				log.Println("goImportMetaTagTemplate.Execute:", err)
-			}
-			return
-		}
-
 		// Handle "go get sourcegraph.com/{sourcegraph,sqs}/*" for all non-hosted repositories.
 		// It's a vanity import path that maps to "github.com/{sourcegraph,sqs}/*" clone URLs.
+		pathElements := strings.Split(req.URL.Path[1:], "/")
 		if len(pathElements) >= 2 && (pathElements[0] == "sourcegraph" || pathElements[0] == "sqs") {
 			host := conf.AppURL.Host
 

@@ -560,11 +560,6 @@ export interface OrgsList {
 	Orgs?: Org[];
 }
 
-export interface Origin {
-	ID?: string;
-	APIBaseURL?: string;
-}
-
 export interface Output {
 	Defs?: any[];
 	Refs?: any[];
@@ -696,13 +691,11 @@ export interface Repo {
 	Blocked?: boolean;
 	Deprecated?: boolean;
 	Fork?: boolean;
-	Mirror?: boolean;
 	Private?: boolean;
 	CreatedAt?: any;
 	UpdatedAt?: any;
 	PushedAt?: any;
 	VCSSyncedAt?: any;
-	Origin?: Origin;
 	Permissions?: RepoPermissions;
 	IndexedRevision?: string;
 }
@@ -799,9 +792,6 @@ export interface RepoWebhookOptions {
 	URI?: string;
 }
 
-export interface ReposCreateOp {
-}
-
 export interface ReposListCommitsOp {
 	Repo?: number;
 	Opt?: RepoListCommitsOptions;
@@ -828,7 +818,6 @@ export interface ReposUpdateOp {
 	HomepageURL?: string;
 	DefaultBranch?: string;
 	Language?: string;
-	Origin?: Origin;
 	Blocked?: any;
 	Deprecated?: any;
 	Fork?: any;

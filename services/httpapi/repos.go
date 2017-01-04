@@ -3,7 +3,6 @@ package httpapi
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -15,12 +14,11 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/graphqlbackend"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
@@ -69,32 +67,22 @@ func serveRepos(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
-	var opt struct {
-		// If true, then if the repo already exists, that's accepted as a success status rather than a conflict.
-		AcceptAlreadyExists bool
-	}
-	err := schemaDecoder.Decode(&opt, r.URL.Query())
-	if err != nil {
-		return err
-	}
-
-	var op sourcegraph.ReposCreateOp
-	if err := json.NewDecoder(r.Body).Decode(&op); err != nil {
-		if err == io.EOF {
-			return &errcode.HTTPErr{Status: http.StatusBadRequest}
+	// legacy support for Chrome extension
+	var data struct {
+		Op struct {
+			New struct {
+				URI string
+			}
 		}
+	}
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		return err
 	}
-
-	repo, err := backend.Repos.Create(r.Context(), &op)
-	if legacyerr.ErrCode(err) == legacyerr.AlreadyExists && opt.AcceptAlreadyExists {
-		// Write a success state empty object. Currently assuming caller
-		// doesn't need actual repo, it just wants to ensure it exists.
-		return writeJSON(w, struct{}{})
-	} else if err != nil {
+	if _, err := graphqlbackend.ResolveRepo(r.Context(), data.Op.New.URI); err != nil {
 		return err
 	}
-	return writeJSON(w, &repo)
+	w.Write([]byte("OK"))
+	return nil
 }
 
 func resolveLocalRepo(ctx context.Context, repoPath string) (int32, error) {

@@ -11,7 +11,6 @@ import (
 	"context"
 
 	"github.com/lib/pq"
-	gogithub "github.com/sourcegraph/go-github/github"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -89,7 +88,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		Blocked:         r.Blocked,
 		Deprecated:      r.Deprecated,
 		Fork:            r.Fork,
-		Mirror:          r.Mirror,
 		Private:         r.Private,
 		IndexedRevision: r.IndexedRevision,
 	}
@@ -98,13 +96,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2.UpdatedAt = r.UpdatedAt
 	r2.PushedAt = r.PushedAt
 	r2.VCSSyncedAt = r.VCSSyncedAt
-	if r.OriginRepoID != nil && r.OriginService != nil && r.OriginAPIBaseURL != nil {
-		r2.Origin = &sourcegraph.Origin{
-			ID:         *r.OriginRepoID,
-			Service:    sourcegraph.Origin_ServiceType(*r.OriginService),
-			APIBaseURL: *r.OriginAPIBaseURL,
-		}
-	}
 	return r2
 }
 
@@ -122,7 +113,6 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.Blocked = r2.Blocked
 	r.Deprecated = r2.Deprecated
 	r.Fork = r2.Fork
-	r.Mirror = r2.Mirror
 	r.Private = r2.Private
 	if r2.CreatedAt != nil {
 		r.CreatedAt = *r2.CreatedAt
@@ -130,12 +120,6 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.UpdatedAt = r2.UpdatedAt
 	r.PushedAt = r2.PushedAt
 	r.VCSSyncedAt = r2.VCSSyncedAt
-	if o := r2.Origin; o != nil {
-		r.OriginRepoID = gogithub.String(o.ID)
-		service := int32(o.Service)
-		r.OriginService = &service
-		r.OriginAPIBaseURL = gogithub.String(o.APIBaseURL)
-	}
 	r.IndexedRevision = r2.IndexedRevision
 }
 
@@ -482,14 +466,8 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 	}
 
 	if strings.HasPrefix(newRepo.URI, "github.com/") {
-		if !newRepo.Mirror {
-			return 0, legacyerr.Errorf(legacyerr.InvalidArgument, "cannot create hosted repo with URI prefix: 'github.com/'")
-		}
 		// Anyone can create GitHub mirrors.
 	} else if strings.HasPrefix(newRepo.URI, "source.developers.google.com/p/") {
-		if !newRepo.Mirror {
-			return 0, legacyerr.Errorf(legacyerr.InvalidArgument, "cannot create hosted repo with URI prefix: 'source.developers.google.com/p/'")
-		}
 		// Anyone can create GCP mirrors.
 	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
 		return 0, err
@@ -588,9 +566,6 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	}
 	if op.PushedAt != nil {
 		updates = append(updates, `"pushed_at"=`+arg(op.PushedAt))
-	}
-	if op.Origin != nil {
-		updates = append(updates, `"origin_repo_id"=`+arg(op.Origin.ID), `"origin_service"=`+arg(op.Origin.Service), `"origin_api_base_url"=`+arg(op.Origin.APIBaseURL))
 	}
 	if op.IndexedRevision != "" {
 		updates = append(updates, `"indexed_revision"=`+arg(op.IndexedRevision))

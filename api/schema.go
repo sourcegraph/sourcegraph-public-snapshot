@@ -101,7 +101,6 @@ type RemoteRepository {
 	httpCloneURL: String!
 	language: String!
 	fork: Boolean!
-	mirror: Boolean!
 	private: Boolean!
 	createdAt: String!
 	pushedAt: String!

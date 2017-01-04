@@ -3,7 +3,6 @@ package github
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"context"
 
@@ -39,7 +38,6 @@ func init() {
 
 type Repos interface {
 	Get(context.Context, string) (*sourcegraph.Repo, error)
-	GetByID(context.Context, int) (*sourcegraph.Repo, error)
 	Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error)
 	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
 	CreateHook(context.Context, string, *github.Hook) error
@@ -114,14 +112,6 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	return remoteRepo, nil
 }
 
-func (s *repos) GetByID(ctx context.Context, id int) (*sourcegraph.Repo, error) {
-	ghrepo, resp, err := client(ctx).repos.GetByID(id)
-	if err != nil {
-		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.GetByID #%d", id))
-	}
-	return toRepo(ghrepo), nil
-}
-
 func (s *repos) Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
 	res, _, err := client(ctx).search.Repositories(query, op)
 	if err != nil {
@@ -193,12 +183,7 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		return *b
 	}
 	repo := sourcegraph.Repo{
-		URI: "github.com/" + *ghrepo.FullName,
-		Origin: &sourcegraph.Origin{
-			ID:         strconv.Itoa(*ghrepo.ID),
-			Service:    sourcegraph.Origin_GitHub,
-			APIBaseURL: "https://api.github.com",
-		},
+		URI:           "github.com/" + *ghrepo.FullName,
 		Name:          *ghrepo.Name,
 		HTTPCloneURL:  strv(ghrepo.CloneURL),
 		DefaultBranch: strv(ghrepo.DefaultBranch),
@@ -206,7 +191,6 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 		Language:      strv(ghrepo.Language),
 		Private:       boolv(ghrepo.Private),
 		Fork:          boolv(ghrepo.Fork),
-		Mirror:        ghrepo.MirrorURL != nil,
 	}
 	if ghrepo.Owner != nil {
 		repo.Owner = strv(ghrepo.Owner.Login)

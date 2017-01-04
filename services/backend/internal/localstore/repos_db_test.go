@@ -75,31 +75,6 @@ func TestRepos_Get(t *testing.T) {
 	}
 }
 
-func TestRepos_Get_origin(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx, done := testContext()
-	defer done()
-
-	s := repos{}
-
-	wantOrigin := &sourcegraph.Origin{ID: "id", Service: sourcegraph.Origin_GitHub, APIBaseURL: "u"}
-	want := s.mustCreate(ctx, t, &sourcegraph.Repo{URI: "r", Origin: wantOrigin})
-
-	repo, err := s.Get(ctx, want[0].ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !jsonEqual(t, repo, want[0]) {
-		t.Errorf("got %v, want %v", repo, want[0])
-	}
-	if !reflect.DeepEqual(repo.Origin, wantOrigin) {
-		t.Errorf("got origin %v, want %v", repo.Origin, wantOrigin)
-	}
-}
-
 func TestRepos_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -234,7 +209,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{URI: "abc/def", Owner: "abc", Name: "def", DefaultBranch: "master"},
 		{URI: "def/ghi", Owner: "def", Name: "ghi", DefaultBranch: "master"},
 		{URI: "jkl/mno/pqr", Owner: "mno", Name: "pqr", DefaultBranch: "master"},
-		{URI: "github.com/abc/xyz", Owner: "abc", Name: "xyz", DefaultBranch: "master", Mirror: true},
+		{URI: "github.com/abc/xyz", Owner: "abc", Name: "xyz", DefaultBranch: "master"},
 	}
 	for _, repo := range createdRepos {
 		if created, err := s.Create(ctx, repo); err != nil {
@@ -429,13 +404,13 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 	githubRepos := &githubmock.GitHubRepoGetter{}
 	ctx = github.WithRepos(ctx, githubRepos)
 	calledListAccessible := githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
+		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master"},
 	})
 	githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		if uri == "github.com/is/privateButAccessible" {
-			return &sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}}, nil
+			return &sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master"}, nil
 		} else if uri == "github.com/is/public" {
-			return &sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}}, nil
+			return &sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master"}, nil
 		}
 		return nil, fmt.Errorf("unauthorized")
 	}
@@ -446,9 +421,9 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 	createRepos := []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "a/local", Private: false, DefaultBranch: "master"},
 		&sourcegraph.Repo{URI: "a/localPrivate", DefaultBranch: "master", Private: true},
-		&sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
-		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "123"}},
-		&sourcegraph.Repo{URI: "github.com/is/inaccessibleBecausePrivate", Private: true, DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}},
+		&sourcegraph.Repo{URI: "github.com/is/public", Private: false, DefaultBranch: "master"},
+		&sourcegraph.Repo{URI: "github.com/is/privateButAccessible", Private: true, DefaultBranch: "master"},
+		&sourcegraph.Repo{URI: "github.com/is/inaccessibleBecausePrivate", Private: true, DefaultBranch: "master"},
 	}
 	for _, repo := range createRepos {
 		if _, err := s.Create(ctx, repo); err != nil {
@@ -493,7 +468,7 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 	ctx = github.WithMockHasAuthedUser(ctx, true)
 
 	createRepos := []*sourcegraph.Repo{
-		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Mirror: true, Origin: &sourcegraph.Origin{ID: "456"}, Private: true},
+		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Private: true},
 	}
 	for _, repo := range createRepos {
 		if _, err := s.Create(ctx, repo); err != nil {
@@ -533,7 +508,7 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 
 	s := repos{}
 
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master", Mirror: true}); err != nil {
+	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -638,45 +613,6 @@ func TestRepos_Update_Description(t *testing.T) {
 	}
 	if want := "d"; repo.Description != want {
 		t.Errorf("got description %q, want %q", repo.Description, want)
-	}
-}
-
-// TestRepos_Update_Origin tests the behavior of Repos.Update to
-// update a repo's origin.
-func TestRepos_Update_Origin(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx, done := testContext()
-	defer done()
-
-	s := repos{}
-
-	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err := s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := ""; repo.Description != want {
-		t.Errorf("got description %q, want %q", repo.Description, want)
-	}
-
-	newOrigin := &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub, APIBaseURL: "https://api.github.com"}
-	if err := s.Update(ctx, RepoUpdate{ReposUpdateOp: &sourcegraph.ReposUpdateOp{Repo: repo.ID, Origin: newOrigin}}); err != nil {
-		t.Fatal(err)
-	}
-
-	repo, err = s.GetByURI(ctx, "a/b")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := newOrigin; !reflect.DeepEqual(newOrigin, repo.Origin) {
-		t.Errorf("got origin %+v, want %+v", repo.Origin, want)
 	}
 }
 

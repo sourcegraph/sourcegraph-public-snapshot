@@ -75,7 +75,7 @@ func TestRepos_Resolve_GitHub_NonRemote(t *testing.T) {
 	var calledGetGitHubRepo bool
 	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
-		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
+		return &sourcegraph.Repo{Name: "github.com/o/r"}, nil
 	}
 
 	if _, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "github.com/o/r", Remote: false}); legacyerr.ErrCode(err) != legacyerr.NotFound {
@@ -103,7 +103,7 @@ func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
 	var calledGetGitHubRepo bool
 	githubRepos.Get_ = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 		calledGetGitHubRepo = true
-		return &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}, nil
+		return &sourcegraph.Repo{Name: "github.com/o/r"}, nil
 	}
 
 	res, err := (&repos{}).Resolve(ctx, &sourcegraph.RepoResolveOp{Path: "github.com/o/r", Remote: true})
@@ -117,7 +117,7 @@ func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
 		t.Error("!calledGetGitHubRepo")
 	}
 
-	want := &sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.Repo{Origin: &sourcegraph.Origin{ID: "123", Service: sourcegraph.Origin_GitHub}}}
+	want := &sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.Repo{Name: "github.com/o/r"}}
 	if !reflect.DeepEqual(res, want) {
 		t.Errorf("got %#v, want %#v", res, want)
 	}

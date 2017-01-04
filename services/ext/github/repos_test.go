@@ -76,9 +76,6 @@ func testRepos_Get(t *testing.T, private bool) {
 	if !calledGet {
 		t.Error("!calledGet")
 	}
-	if want := "123"; repo.Origin.ID != want {
-		t.Errorf("got %s, want %s", repo.Origin.ID, want)
-	}
 
 	// Test that repo is not cached and fetched from client on second request.
 	calledGet = false
@@ -94,9 +91,6 @@ func testRepos_Get(t *testing.T, private bool) {
 	}
 	if !private && calledGet {
 		t.Error("calledGet, expected to hit cache")
-	}
-	if want := "123"; repo.Origin.ID != want {
-		t.Errorf("got %s, want %s", repo.Origin.ID, want)
 	}
 	if want := (&sourcegraph.RepoPermissions{Pull: true, Push: true}); !reflect.DeepEqual(repo.Permissions, want) {
 		t.Errorf("got perms %#v, want %#v", repo.Permissions, want)
@@ -321,63 +315,5 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	// The authed user should also be able to get public repo from the cache
 	if authedGet() {
 		t.Fatal("authed should not get from cache")
-	}
-}
-
-// TestRepos_GetByID_existing tests the behavior of Repos.GetByID when
-// called on a repo that exists (i.e., the successful outcome).
-func TestRepos_GetByID_existing(t *testing.T) {
-	githubcli.Config.GitHubHost = "github.com"
-	ctx := testContext(&minimalClient{
-		repos: mockGitHubRepos{
-			GetByID_: func(id int) (*github.Repository, *github.Response, error) {
-				return &github.Repository{
-					ID:       github.Int(123),
-					Name:     github.String("repo"),
-					FullName: github.String("owner/repo"),
-					Owner:    &github.User{ID: github.Int(1)},
-					CloneURL: github.String("https://github.com/owner/repo.git"),
-				}, nil, nil
-			},
-		},
-	})
-
-	repo, err := (&repos{}).GetByID(ctx, 123)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if repo == nil {
-		t.Error("repo == nil")
-	}
-	if want := "123"; repo.Origin.ID != want {
-		t.Errorf("got %s, want %s", repo.Origin.ID, want)
-	}
-}
-
-// TestRepos_GetByID_nonexistent tests the behavior of Repos.GetByID
-// when called on a repo that does not exist.
-func TestRepos_GetByID_nonexistent(t *testing.T) {
-	githubcli.Config.GitHubHost = "github.com"
-	ctx := testContext(&minimalClient{
-		repos: mockGitHubRepos{
-			GetByID_: func(id int) (*github.Repository, *github.Response, error) {
-				resp := &http.Response{
-					StatusCode: http.StatusNotFound,
-					Body:       ioutil.NopCloser(bytes.NewReader(nil)),
-					Request:    &http.Request{},
-					Header:     make(map[string][]string),
-				}
-				return nil, &github.Response{Response: resp}, github.CheckResponse(resp)
-			},
-		},
-	})
-
-	s := &repos{}
-	repo, err := s.GetByID(ctx, 456)
-	if legacyerr.ErrCode(err) != legacyerr.NotFound {
-		t.Fatal(err)
-	}
-	if repo != nil {
-		t.Error("repo != nil")
 	}
 }

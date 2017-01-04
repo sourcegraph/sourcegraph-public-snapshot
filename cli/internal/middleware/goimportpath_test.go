@@ -3,39 +3,13 @@ package middleware_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 
-	"context"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 func TestGoImportPath(t *testing.T) {
-	httptestutil.NewTest(nil)
-	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
-		ids := map[string]int32{"sourcegraph/sourcegraph": 1, "sourcegraph/srclib-go": 2}
-		if id := ids[op.Path]; id != 0 {
-			return &sourcegraph.RepoResolution{Repo: id}, nil
-		}
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
-	}
-	backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-		switch repo.ID {
-		case 1: // "sourcegraph/sourcegraph" hosted repo.
-			return &sourcegraph.Repo{}, nil
-		case 2: // "sourcegraph/srclib-go" mirror repo.
-			return &sourcegraph.Repo{Mirror: true}, nil
-		default:
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo not found: %d", repo.ID)
-		}
-	}
-
 	tests := []struct {
 		path       string
 		wantStatus int
@@ -44,7 +18,7 @@ func TestGoImportPath(t *testing.T) {
 		{
 			path:       "/sourcegraph/sourcegraph/usercontent",
 			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/sourcegraph git http://example.com/sourcegraph/sourcegraph">`,
+			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/sourcegraph git https://github.com/sourcegraph/sourcegraph">`,
 		},
 		{
 			path:       "/sourcegraph/srclib/ann",
@@ -92,36 +66,5 @@ func TestGoImportPath(t *testing.T) {
 		if test.wantBody != "" && !strings.Contains(rw.Body.String(), test.wantBody) {
 			t.Errorf("response body %q doesn't contain expected substring %q", rw.Body.String(), test.wantBody)
 		}
-	}
-}
-
-// Test the following behavior inside sourcegraphComGoGetHandler:
-//
-// 	If there are 3 path elements, e.g., "/alpha/beta/gamma", start by checking
-// 	repo path "alpha", then "alpha/beta", and finally "alpha/beta/gamma".
-func TestGoImportPath_repoCheckSequence(t *testing.T) {
-	var attemptedRepoPaths []string
-	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
-		attemptedRepoPaths = append(attemptedRepoPaths, op.Path)
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "")
-	}
-
-	rw := httptest.NewRecorder()
-
-	req, err := http.NewRequest("GET", "/alpha/beta/gamma?go-get=1", nil)
-	if err != nil {
-		panic(err)
-	}
-
-	middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
-
-	got := attemptedRepoPaths
-	want := []string{"alpha", "alpha/beta", "alpha/beta/gamma"}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("\ngot  %#v\nwant %#v", got, want)
-	}
-
-	if got, want := rw.Code, http.StatusNotFound; got != want {
-		t.Errorf("\ngot  %#v\nwant %#v", got, want)
 	}
 }

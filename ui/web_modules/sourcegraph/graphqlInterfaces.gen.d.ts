@@ -147,7 +147,6 @@ declare namespace GQL {
 		httpCloneURL: string;
 		language: string;
 		fork: boolean;
-		mirror: boolean;
 		private: boolean;
 		createdAt: string;
 		pushedAt: string;
