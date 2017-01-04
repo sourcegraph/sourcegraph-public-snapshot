@@ -458,28 +458,6 @@ type CommitList struct {
 	StreamResponse `json:""`
 }
 
-type ReposListBranchesOp struct {
-	Repo int32                    `json:"Repo,omitempty"`
-	Opt  *RepoListBranchesOptions `json:"Opt,omitempty"`
-}
-
-type RepoListBranchesOptions struct {
-	IncludeCommit     bool   `json:"IncludeCommit,omitempty"`
-	BehindAheadBranch string `json:"BehindAheadBranch,omitempty"`
-	ContainsCommit    string `json:"ContainsCommit,omitempty"`
-	ListOptions       `json:""`
-}
-
-type BranchList struct {
-	Branches       []*vcs.Branch `json:"Branches,omitempty"`
-	StreamResponse `json:""`
-}
-
-type ReposListTagsOp struct {
-	Repo int32                `json:"Repo,omitempty"`
-	Opt  *RepoListTagsOptions `json:"Opt,omitempty"`
-}
-
 type ReposListCommittersOp struct {
 	Repo int32                      `json:"Repo,omitempty"`
 	Opt  *RepoListCommittersOptions `json:"Opt,omitempty"`
@@ -492,15 +470,6 @@ type RepoListCommittersOptions struct {
 
 type CommitterList struct {
 	Committers     []*vcs.Committer `json:"Committers,omitempty"`
-	StreamResponse `json:""`
-}
-
-type RepoListTagsOptions struct {
-	ListOptions `json:""`
-}
-
-type TagList struct {
-	Tags           []*vcs.Tag `json:"Tags,omitempty"`
 	StreamResponse `json:""`
 }
 

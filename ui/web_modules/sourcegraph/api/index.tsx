@@ -69,11 +69,6 @@ export interface Branch {
 	Counts?: any;
 }
 
-export interface BranchList {
-	Branches?: any[];
-	HasMore?: boolean;
-}
-
 export interface BranchesOptions {
 	MergedInto?: string;
 	IncludeCommit?: boolean;
@@ -716,14 +711,6 @@ export interface RepoList {
 	Repos?: Repo[];
 }
 
-export interface RepoListBranchesOptions {
-	IncludeCommit?: boolean;
-	BehindAheadBranch?: string;
-	ContainsCommit?: string;
-	PerPage?: number;
-	Page?: number;
-}
-
 export interface RepoListCommitsOptions {
 	Head?: string;
 	Base?: string;
@@ -749,11 +736,6 @@ export interface RepoListOptions {
 	Owner?: string;
 	RemoteOnly?: boolean;
 	RemoteSearch?: boolean;
-	PerPage?: number;
-	Page?: number;
-}
-
-export interface RepoListTagsOptions {
 	PerPage?: number;
 	Page?: number;
 }
@@ -820,11 +802,6 @@ export interface RepoWebhookOptions {
 export interface ReposCreateOp {
 }
 
-export interface ReposListBranchesOp {
-	Repo?: number;
-	Opt?: RepoListBranchesOptions;
-}
-
 export interface ReposListCommitsOp {
 	Repo?: number;
 	Opt?: RepoListCommitsOptions;
@@ -833,11 +810,6 @@ export interface ReposListCommitsOp {
 export interface ReposListCommittersOp {
 	Repo?: number;
 	Opt?: RepoListCommittersOptions;
-}
-
-export interface ReposListTagsOp {
-	Repo?: number;
-	Opt?: RepoListTagsOptions;
 }
 
 export interface ReposResolveRevOp {
@@ -972,11 +944,6 @@ export interface SymbolInformation {
 export interface Tag {
 	Name?: string;
 	CommitID?: any;
-}
-
-export interface TagList {
-	Tags?: any[];
-	HasMore?: boolean;
 }
 
 export interface TextDocumentContentChangeEvent {

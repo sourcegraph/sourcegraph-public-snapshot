@@ -143,62 +143,6 @@ func (s *repos) ListCommits(ctx context.Context, op *sourcegraph.ReposListCommit
 	return &sourcegraph.CommitList{Commits: commits, StreamResponse: streamResponse}, nil
 }
 
-func (s *repos) ListBranches(ctx context.Context, op *sourcegraph.ReposListBranchesOp) (res *sourcegraph.BranchList, err error) {
-	if Mocks.Repos.ListBranches != nil {
-		return Mocks.Repos.ListBranches(ctx, op)
-	}
-
-	ctx, done := trace(ctx, "Repos", "ListBranches", op, &err)
-	defer done()
-
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
-	if err != nil {
-		return nil, err
-	}
-
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	branches, err := vcsrepo.Branches(ctx, vcs.BranchesOptions{
-		IncludeCommit:     op.Opt.IncludeCommit,
-		BehindAheadBranch: op.Opt.BehindAheadBranch,
-		ContainsCommit:    op.Opt.ContainsCommit,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &sourcegraph.BranchList{Branches: branches}, nil
-}
-
-func (s *repos) ListTags(ctx context.Context, op *sourcegraph.ReposListTagsOp) (res *sourcegraph.TagList, err error) {
-	if Mocks.Repos.ListTags != nil {
-		return Mocks.Repos.ListTags(ctx, op)
-	}
-
-	ctx, done := trace(ctx, "Repos", "ListTags", op, &err)
-	defer done()
-
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
-	if err != nil {
-		return nil, err
-	}
-
-	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	tags, err := vcsrepo.Tags(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sourcegraph.TagList{Tags: tags}, nil
-}
-
 func (s *repos) ListCommitters(ctx context.Context, op *sourcegraph.ReposListCommittersOp) (res *sourcegraph.CommitterList, err error) {
 	if Mocks.Repos.ListCommitters != nil {
 		return Mocks.Repos.ListCommitters(ctx, op)
