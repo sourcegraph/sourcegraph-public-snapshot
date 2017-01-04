@@ -311,7 +311,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				})
 			}
 		}
-		dc.references(emitRef)
+		dc.references(emitRef, 1)
 		return references, nil
 
 	default:

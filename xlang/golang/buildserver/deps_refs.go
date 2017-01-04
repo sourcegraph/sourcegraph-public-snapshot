@@ -55,7 +55,7 @@ func unvendoredPath(abs string) string {
 // references calls emitRef on each transitive package that has been seen by
 // the dependency cache. The parameters say that the Go package directory `path`
 // has imported the Go package described by r.
-func (d *depCache) references(emitRef func(path string, r goDependencyReference)) {
+func (d *depCache) references(emitRef func(path string, r goDependencyReference), depthLimit int) {
 	// Example import graph with edge cases:
 	//
 	//       '/' (root)
@@ -91,8 +91,12 @@ func (d *depCache) references(emitRef func(path string, r goDependencyReference)
 
 	// Prepare a function to walk every package node in the above example graph.
 	beganWalk := map[string]struct{}{}
-	var walk func(root, pkg string, parentDirs []string, emissions map[string]goDependencyReference, depth int)
+	var walk func(rootDir, pkgDir string, parentDirs []string, emissions map[string]goDependencyReference, depth int)
 	walk = func(rootDir, pkgDir string, parentDirs []string, emissions map[string]goDependencyReference, depth int) {
+		if depth >= depthLimit {
+			return
+		}
+
 		// The imports are recorded in parallel by goroutines in doDeps, so we
 		// must sort them in order to get a stable output order.
 		imports := d.seen[pkgDir]
