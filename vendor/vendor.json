@@ -712,6 +712,12 @@
 			"revisionTime": "2015-06-26T09:08:21Z"
 		},
 		{
+			"checksumSHA1": "c+f3dM/ZyIosR1rl+yO5pI2DCV4=",
+			"path": "go4.org/sort",
+			"revision": "09d86de304dc27e636298361bbfee4ac6ab04f21",
+			"revisionTime": "2016-11-18T21:00:15Z"
+		},
+		{
 			"checksumSHA1": "kALxprn17Sk/x2InsoTApX6bo50=",
 			"path": "golang.org/x/crypto/curve25519",
 			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
