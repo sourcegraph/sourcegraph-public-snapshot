@@ -9,7 +9,7 @@ export class ContextMenuService extends VSContextMenuService {
 		@ITelemetryService telemetryService: ITelemetryService,
 		@IContextViewService contextViewService: IContextViewService
 	) {
-		const element = document.getElementsByName("body")[0];
+		const element = document.querySelector("body") as HTMLElement;
 		super(element, telemetryService, messageService, contextViewService);
 	}
 }

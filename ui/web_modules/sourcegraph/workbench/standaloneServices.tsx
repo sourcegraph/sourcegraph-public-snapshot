@@ -21,7 +21,9 @@ export function standaloneServices(container: HTMLElement, services: ServiceColl
 	set(IContextKeyService, ContextKeyService);
 	set(ICommandService, StandaloneCommandService);
 
-	const ctxView = instantiationService.createInstance(ContextViewService, container);
+	// The ContextViewService must be aware of the entire window (for absolute element positioning), not just
+	// the workbench shell.
+	const ctxView = instantiationService.createInstance(ContextViewService, document.querySelector("body") as HTMLElement);
 	services.set(IContextViewService, ctxView);
 
 	set(IContextMenuService, ContextMenuService);
