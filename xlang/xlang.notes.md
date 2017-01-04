@@ -65,8 +65,8 @@ The proxy receives these requests and determines which workspace root directory 
 
 The proxy sends the following requests to the build server:
 
-* `--> initialize rootPath=vfs:///`
-* `--> textDocument/definition textDocument=vfs:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
+* `--> initialize rootPath=file:///`
+* `--> textDocument/definition textDocument=file:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
 
 The build server first determines the configuration and environment in which to run the language server. It scans the tsconfig.json file to see that the TypeScript SDK is version 2.0, and it performs dependency analysis to determine that the Editor.tsx file depends on 13 other files in the workspace, plus files from 5 external npm packages (that, unlike in reality, are not committed to the repository). Providing only certain dependencies' files is a huge win for performance and resource consumption.
 
@@ -74,18 +74,18 @@ To access the workspace file system while performing these operations, the build
 
 The build server then sends the following requests to the language server:
 
-* `--> initialize rootPath=vfs:/// typescript.sdk=2.0`
-* `--> textDocument/definition textDocument=vfs:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
+* `--> initialize rootPath=file:/// typescript.sdk=2.0`
+* `--> textDocument/definition textDocument=file:///ui/web_modules/sourcegraph/editor/Editor.tsx position=10:20`
 
 The language server receives these requests and behaves as a standard LSP server. It returns the following response to the build server:
 
-* `<-- textDocument/definition Location: uri=vfs:///ui/node_modules/react/lib/ReactClass.js range=30:40-45`
+* `<-- textDocument/definition Location: uri=file:///ui/node_modules/react/lib/ReactClass.js range=30:40-45`
 
 The build server receives this response and notices that it refers to a path inside an npm package (react@15.1.0). It performs some analysis on the definition location and then returns the following response to the proxy:
 
-* `<-- textDocument/definition Location[]: [uri=vfs:///ui/node_modules/react/lib/ReactClass.js range=30:40-45, uri=npm://react@15.1.0?file=lib/ReactMount.js&range=30:40-45&name=render&containerName=ReactMount]` (note the addition of the second Location)
+* `<-- textDocument/definition Location[]: [uri=file:///ui/node_modules/react/lib/ReactClass.js range=30:40-45, uri=npm://react@15.1.0?file=lib/ReactMount.js&range=30:40-45&name=render&containerName=ReactMount]` (note the addition of the second Location)
 
-The proxy receives this response and converts any `vfs:///` URIs back to `git://` URLs and sends the following response to the client:
+The proxy receives this response and converts any `file:///` URIs back to `git://` URLs and sends the following response to the client:
 
 * `<-- textDocument/definition Location[]: [uri=git://github.com/sourcegraph/sourcegraph?master#ui/node_modules/react/lib/ReactClass.js range=30:40-45, uri=npm://react@15.1.0?file=lib/ReactMount.js&range=30:40-45&name=render&containerName=ReactMount]` (note that the first Location is now a `git://` URL)
 
