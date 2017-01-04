@@ -1,3 +1,4 @@
+import * as autobind from "autobind-decorator";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { InjectedRouter } from "react-router";
@@ -8,6 +9,7 @@ import { Close, Flag } from "sourcegraph/components/symbols/Zondicons";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { fontStack } from "sourcegraph/components/utils/typography";
 import * as Dispatcher from "sourcegraph/Dispatcher";
+import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -95,6 +97,7 @@ const searchSx = {
 	width: 16,
 };
 
+@autobind
 export class TourOverlay extends React.Component<Props, State>  {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
@@ -135,9 +138,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	componentDidUpdate(prevProps: Props, prevState: State): void {
-		if (this.state.visibleAnnotation !== prevState.visibleAnnotation && (window as any).ed) {
-			this._coachmarksShouldUpdate();
-		}
+		this._coachmarksShouldUpdate();
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
@@ -159,38 +160,42 @@ export class TourOverlay extends React.Component<Props, State>  {
 		if (!tokenElements || tokenElements.length <= 0) {
 			// Correctly time the rendering of the tokens with the response from the async file response.
 			// This results in no delay and not prematurely trying to render on a token (which wouldn't exist)
-			window.requestAnimationFrame(this._tryForRenderedTokenIdentifier.bind(this));
-		} else if ((window as any).ed) {
-			let x = document.getElementsByClassName(coachmarkLanguageIdentifier);
-			if (x.length > 2) {
-				// Grab a random element that has been indexed and provides "code intelligence".
-				// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
-				// Render the first tooltip in the top half. Then render the second tooltip based on the second half of visible nodes.
-				let random = Math.random() * x.length / 2;
-				let refrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
-				let defRandom = x[Math.floor((random) + 1)];
-				let refRandom = x[Math.floor(refrandom + 1)];
+			window.requestAnimationFrame(this._tryForRenderedTokenIdentifier);
+			return;
+		}
+		const editor = getEditorInstance();
+		if (!editor) {
+			return;
+		}
+		let x = document.getElementsByClassName(coachmarkLanguageIdentifier);
+		if (x.length > 2) {
+			// Grab a random element that has been indexed and provides "code intelligence".
+			// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
+			// Render the first tooltip in the top half. Then render the second tooltip based on the second half of visible nodes.
+			let random = Math.random() * x.length / 2;
+			let refrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
+			let defRandom = x[Math.floor((random) + 1)];
+			let refRandom = x[Math.floor(refrandom + 1)];
 
-				// Build custom fields for coachmark.
-				let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
-				let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4], fontSize: 14 }} color="darkBlue" size="small">Install the Chrome extension</Button>;
+			// Build custom fields for coachmark.
+			let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
+			let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4], fontSize: 14 }} color="darkBlue" size="small">Install the Chrome extension</Button>;
 
-				let refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
-				let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="darkBlue" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
+			let refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
+			let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="darkBlue" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
-				this._coachmarks = [
-					this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", context.hasChromeExtensionInstalled() ? null : defActionCTA),
-					this._initCoachmarkAnnotation(refRandom, "ref-coachmark", "ref-mark", _refCoachmarkIndex, "View references and definitions", refSubtitle, "Enable these features for your private code", context.hasPrivateGitHubToken() ? null : refActionCTA),
-				];
+			this._coachmarks = [
+				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", context.hasChromeExtensionInstalled() ? null : defActionCTA),
+				this._initCoachmarkAnnotation(refRandom, "ref-coachmark", "ref-mark", _refCoachmarkIndex, "View references and definitions", refSubtitle, "Enable these features for your private code", context.hasPrivateGitHubToken() ? null : refActionCTA),
+			];
 
+			this._coachmarksShouldUpdate();
+
+			// Setup listener for the editor modifying the DOM. When lines are scrolled past they are removed from the view and therefore we have to re-add the tooltip
+			// when the user scrolls the line number back into the view.
+			editor.onDidScrollChange(e => {
 				this._coachmarksShouldUpdate();
-
-				// Setup listener for the editor modifying the DOM. When lines are scrolled past they are removed from the view and therefore we have to re-add the tooltip
-				// when the user scrolls the line number back into the view. (window as any).ed is a reference to the editor.
-				(window as any).ed.onDidScrollChange(e => {
-					this._coachmarksShouldUpdate();
-				});
-			}
+			});
 		}
 	};
 
@@ -235,6 +240,10 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_coachmarksShouldUpdate(): void {
+		const editor = getEditorInstance();
+		if (!editor) {
+			return;
+		}
 		let {visibleMarks} = this.state;
 		if (!this._coachmarks) {
 			return;
@@ -254,9 +263,13 @@ export class TourOverlay extends React.Component<Props, State>  {
 			}
 
 			// Get currently visible lines.
-			let lineView = (window as any).ed.getCompletelyVisibleLinesRangeInViewport();
+			if (!editor["getCompletelyVisibleLinesRangeInViewport"]) {
+				throw "Type Error: Expected editor instance to have concrete type CodeEditorWidget.";
+			}
+			let lineView = editor["getCompletelyVisibleLinesRangeInViewport"]();
+
 			// Check that the desired element is within the currently visible range.
-			if (coachmark.markLineNumber >= lineView["startLineNumber"] && coachmark.markLineNumber <= lineView["endLineNumber"]) {
+			if (coachmark.markLineNumber >= lineView.startLineNumber && coachmark.markLineNumber <= lineView.endLineNumber) {
 				// Lines are removed from the dom and added back when the user scrolls therefore we we have to find the same element.
 				// First grab all elements based on the same class. Then loop over each "token identifier" element and find it's parent's parent.
 				// Compare the line number with the original line number and element. If they are the same check if the coachmark is currently rendered.
@@ -428,7 +441,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		window.sessionStorage.setItem("tour", "");
 		delete this.props.location.query["tour"];
 		const newLoc = Object.assign({}, this.props.location, { query: this.props.location.query });
-		(this.context as any).router.replace(newLoc);
+		this.context.router.replace(newLoc);
 		this.setState({
 			visibleMarks: [],
 			visibleAnnotation: null,

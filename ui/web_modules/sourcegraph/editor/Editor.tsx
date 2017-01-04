@@ -68,8 +68,6 @@ export class Editor implements IDisposable {
 		// Reproduce issue by using "Find All References" to open the rift view and then right click again in the code outside of the view.
 		delete (this._editor.getRawConfiguration() as IEditorConstructionOptions).model;
 
-		(window as any).ed = this._editor; // for easier debugging via the JS console
-
 		// Warm up the LSP server immediately when the document loads
 		// instead of waiting until the user tries to hover.
 		this._editor.onDidChangeModel((e: IModelChangedEvent) => {
@@ -192,6 +190,8 @@ export class Editor implements IDisposable {
 				this._removeWidgetForID(AuthorshipWidgetID);
 			}
 		}).bind(this));
+
+		updateEditorInstance(this._editor);
 	}
 
 	onDidChangeCursorSelection(listener: (e: ICursorSelectionChangedEvent) => void): IDisposable {
