@@ -122,15 +122,13 @@ type RefLocationsOptions struct {
 	DepData map[string]interface{}
 }
 
-type RefLocation struct {
+type Dependency struct {
 	DepData map[string]interface{}
 	RepoID  int32
 	Hints   map[string]interface{}
 }
 
-// TODO(slimsag): The naming here is a misnomer because we're not returning
-// references but rather dependency references. Cleanup the naming here.
-func (g *globalDeps) RefLocations(ctx context.Context, op RefLocationsOptions) (refs []*RefLocation, err error) {
+func (g *globalDeps) Dependencies(ctx context.Context, op RefLocationsOptions) (refs []*Dependency, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.RefLocations")
 	defer func() {
 		if err != nil {
@@ -146,8 +144,6 @@ func (g *globalDeps) RefLocations(ctx context.Context, op RefLocationsOptions) (
 	if err != nil {
 		return nil, errors.New("marshaling op.DepData query")
 	}
-
-	// TODO(slimsag): handle pagination, when we care about it.
 
 	rows, err := globalGraphDBH.Db.Query(`select distinct on (repo_id) dep_data,repo_id,hints
 		FROM global_dep
@@ -168,7 +164,7 @@ func (g *globalDeps) RefLocations(ctx context.Context, op RefLocationsOptions) (
 		if err := rows.Scan(&depData, &repoID, &hints); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		r := &RefLocation{
+		r := &Dependency{
 			RepoID: repoID,
 		}
 		if err := json.Unmarshal([]byte(depData), &r.DepData); err != nil {

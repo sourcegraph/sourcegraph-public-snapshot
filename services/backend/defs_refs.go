@@ -196,7 +196,7 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 	// once we have a language server that uses it.
 	location := locations[0]
 
-	depRefs, err := localstore.GlobalDeps.RefLocations(ctx, localstore.RefLocationsOptions{
+	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.RefLocationsOptions{
 		Language: op.Language,
 		DepData:  subSelector(location.Symbol),
 	})
