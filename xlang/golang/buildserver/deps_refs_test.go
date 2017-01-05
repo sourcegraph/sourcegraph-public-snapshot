@@ -101,7 +101,7 @@ func referencesTest(t *testing.T, dc *depCache, want map[string][]goDependencyRe
 	emitRef := func(path string, r goDependencyReference) {
 		references[path] = append(references[path], r)
 	}
-	dc.references(emitRef)
+	dc.references(emitRef, 100)
 
 	r := func(abs string, depth int) goDependencyReference {
 		// TODO(slimsag): write unit tests for vendor / Pkg field
