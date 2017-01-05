@@ -1,16 +1,17 @@
 import { merge } from "glamor";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
+import { IContentWidget, IContentWidgetPosition } from "vs/editor/browser/editorBrowser.d";
+import { CommandsRegistry } from "vs/platform/commands/common/commands";
+import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
+
 import { Heading, Panel, User } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
-import { IContentWidget, IContentWidgetPosition } from "vs/editor/browser/editorBrowser.d";
-import { CommandsRegistry } from "vs/platform/commands/common/commands";
-import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 
 export const AuthorshipWidgetID = "contentwidget.authorship.widget";
 
@@ -21,35 +22,43 @@ interface Props {
 	onClose: () => void;
 }
 
-function openCommit(props: Props): void {
-	let url = `${props.repo}/commit/${props.blame.rev}#diff-${props.rev}`;
-	AnalyticsConstants.Events.CodeLensCommitRedirect_Clicked.logEvent({ url });
-	window.open(`https://${url}`, "_newtab");
-}
-
 export function CodeLensAuthorWidget(props: Props): JSX.Element {
 	const { gravatarHash, name, rev, message } = props.blame;
-	return <Panel style={{ minWidth: 320, color: colors.text() }} hoverLevel="low">
+
+	function openCommit(): void {
+		let url = `${props.repo}/commit/${props.blame.rev}#diff-${props.rev}`;
+		AnalyticsConstants.Events.CodeLensCommitRedirect_Clicked.logEvent({ url });
+		window.open(`https://${url}`, "_newtab");
+	}
+
+	return <Panel hoverLevel="low" style={{
+		minWidth: 320,
+		color: colors.text(),
+		marginLeft: -2,
+		marginTop: 4,
+	}}>
 		<div style={{ margin: whitespace[3] }}>
 			<User
 				avatar={`https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro`}
 				nickname={name}
 				simple={true} />
-			<div onClick={props.onClose.bind(this)} style={{
-				padding: whitespace[1],
+			<div onClick={props.onClose} style={{
+				cursor: "pointer",
+				padding: 1,
 				position: "absolute",
 				right: whitespace[3],
 				top: whitespace[3],
 			}}>
-				<a>
-					<Close color={colors.coolGray3()} width={14} />
-				</a>
+				<Close color={colors.coolGray3()} width={14} />
 			</div>
 			<Heading level={6} style={{ marginTop: whitespace[3] }}>{message}</Heading>
-			<a onClick={() => openCommit(props)} {...merge(
-				{ color: colors.coolGray3(), fontFamily: typography.fontStack.code },
-				typography.small,
-			) }>{rev.substr(0, 6)}</a>
+			<a
+				onClick={openCommit}
+				{...merge({
+					color: colors.coolGray3(),
+					fontFamily: typography.fontStack.code
+				}, typography.small,
+				) }>Commit {rev.substr(0, 6)}</a>
 		</div>
 	</Panel>;
 };

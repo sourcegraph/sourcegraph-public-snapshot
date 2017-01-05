@@ -37,8 +37,9 @@ const config = {
 	},
 };
 
-export function enableCodeLens(visible: true): void {
-	if (visible) {
+export function toggleCodeLens(): void {
+	const visible = Features.codeLens.isEnabled();
+	if (!visible) {
 		Features.codeLens.enable();
 	} else {
 		Features.codeLens.disable();

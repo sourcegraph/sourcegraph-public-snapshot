@@ -5,7 +5,7 @@ import { browserHistory } from "react-router";
 import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
-import { enableCodeLens } from "sourcegraph/workbench/ConfigurationService";
+import { toggleCodeLens } from "sourcegraph/workbench/ConfigurationService";
 import { PathSpec } from "sourcegraph/workbench/utils";
 
 interface Props {
@@ -52,7 +52,7 @@ export class EditorTitle extends React.Component<Props, {}> {
 			path={path}
 
 			routeParams={params}
-			toggleAuthors={enableCodeLens}
+			toggleAuthors={toggleCodeLens}
 			routes={[
 				{ path: "/*/-/blob/*" },
 			]}
