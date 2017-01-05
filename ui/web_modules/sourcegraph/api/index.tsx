@@ -691,14 +691,7 @@ export interface RepoListCommittersOptions {
 }
 
 export interface RepoListOptions {
-	Name?: string;
 	Query?: string;
-	URIs?: string[];
-	Sort?: string;
-	Direction?: string;
-	NoFork?: boolean;
-	Type?: string;
-	Owner?: string;
 	RemoteOnly?: boolean;
 	RemoteSearch?: boolean;
 	PerPage?: number;

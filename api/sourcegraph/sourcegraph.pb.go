@@ -141,26 +141,9 @@ type RepoPermissions struct {
 }
 
 type RepoListOptions struct {
-	// Name filters the repository list by name.
-	Name string `json:"Name,omitempty" url:",omitempty"`
 	// Query specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
 	Query string `json:"Query,omitempty" url:",omitempty"`
-	// URIs specifies a set of repository URIs to list.
-	URIs []string `json:"URIs,omitempty" url:",comma,omitempty"`
-	// Sort determines how the returned list of repositories is sorted.
-	Sort string `json:"Sort,omitempty" url:",omitempty"`
-	// Direction determines the sort direction.
-	Direction string `json:"Direction,omitempty" url:",omitempty"`
-	// NoFork excludes forks from the list of returned repositories.
-	NoFork bool `json:"NoFork,omitempty" url:",omitempty"`
-	// Type of repositories to list. Possible values are currently
-	// ones supported by the GitHub API, including: all, owner,
-	// public, private, member. Default is "all".
-	Type string `json:"Type,omitempty" url:",omitempty"`
-	// Owner filters the list of repositories to those with the
-	// specified owner.
-	Owner string `json:"Owner,omitempty" url:",omitempty"`
 	// RemoteOnly makes the endpoint return repositories hosted on
 	// GitHub that the currently authenticated user has access to.
 	//

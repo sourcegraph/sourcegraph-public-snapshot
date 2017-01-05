@@ -136,58 +136,13 @@ func TestRepos_List_pagination(t *testing.T) {
 		{perPage: 4, page: 2, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := s.List(ctx, &RepoListOp{Sort: "uri", Direction: "asc", ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
+		repos, err := s.List(ctx, &RepoListOp{ListOptions: sourcegraph.ListOptions{PerPage: test.perPage, Page: test.page}})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.exp) {
 			t.Errorf("for test case %v, got %v (want %v)", test, repos, test.exp)
 		}
-	}
-}
-
-func TestRepos_List_type(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	r1 := &sourcegraph.Repo{URI: "r1", Private: true}
-	r2 := &sourcegraph.Repo{URI: "r2"}
-
-	ctx, done := testContext()
-	defer done()
-
-	ctx = github.WithMockHasAuthedUser(ctx, false)
-
-	s := repos{}
-
-	s.mustCreate(ctx, t, r1, r2)
-
-	getRepoURIsByType := func(typ string) []string {
-		repos, err := s.List(ctx, &RepoListOp{Type: typ})
-		if err != nil {
-			t.Fatal(err)
-		}
-		uris := make([]string, len(repos))
-		for i, repo := range repos {
-			uris[i] = repo.URI
-		}
-		sort.Strings(uris)
-		return uris
-	}
-
-	if got, want := getRepoURIsByType("private"), []string{"r1"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("type %s: got %v, want %v", "enabled", got, want)
-	}
-	if got, want := getRepoURIsByType("public"), []string{"r2"}; !reflect.DeepEqual(got, want) {
-		t.Errorf("type %s: got %v, want %v", "disabled", got, want)
-	}
-	all := []string{"r1", "r2"}
-	if got := getRepoURIsByType("all"); !reflect.DeepEqual(got, all) {
-		t.Errorf("type %s: got %v, want %v", "all", got, all)
-	}
-	if got := getRepoURIsByType(""); !reflect.DeepEqual(got, all) {
-		t.Errorf("type %s: got %v, want %v", "empty", got, all)
 	}
 }
 
@@ -314,82 +269,6 @@ func TestRepos_List_sort(t *testing.T) {
 	}
 	if repos[0].URI != "owner/abc" || repos[1].URI != "fork/abc" {
 		t.Errorf("Expected forks to be ranked behind original repos.")
-	}
-}
-
-// TestRepos_List_URIs tests the behavior of Repos.List when called with
-// URIs.
-func TestRepos_List_URIs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx, done := testContext()
-	defer done()
-
-	ctx = github.WithMockHasAuthedUser(ctx, false)
-
-	s := repos{}
-
-	// Add some repos.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "c/d", DefaultBranch: "master"}); err != nil {
-		t.Fatal(err)
-	}
-
-	tests := []struct {
-		uris []string
-		want []string
-	}{
-		{[]string{"a/b"}, []string{"a/b"}},
-		{[]string{"x/y"}, nil},
-		{[]string{"a/b", "c/d"}, []string{"a/b", "c/d"}},
-		{[]string{"a/b", "x/y", "c/d"}, []string{"a/b", "c/d"}},
-	}
-	for _, test := range tests {
-		repos, err := s.List(ctx, &RepoListOp{URIs: test.uris})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got := sortedRepoURIs(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%v: got repos %q, want %q", test.uris, got, test.want)
-		}
-	}
-}
-
-func TestRepos_List_byOwner(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	ctx, done := testContext()
-	defer done()
-
-	ctx = github.WithMockHasAuthedUser(ctx, false)
-	s := repos{}
-	testRepos := []*sourcegraph.Repo{{URI: "a/r", Owner: "alice"}, {URI: "b/r", Owner: "bob"}}
-	s.mustCreate(ctx, t, testRepos...)
-
-	{
-		repos, err := s.List(ctx, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if reflect.DeepEqual(repos, testRepos) {
-			t.Errorf("expected %+v, got %+v", testRepos, repos)
-		}
-	}
-
-	{
-		repos, err := s.List(ctx, &RepoListOp{Owner: "alice"})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if reflect.DeepEqual(repos, testRepos[0:1]) {
-			t.Errorf("expected %+v, got %+v", testRepos[0:1], repos)
-		}
 	}
 }
 

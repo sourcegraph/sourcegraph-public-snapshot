@@ -202,33 +202,9 @@ func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{})
 }
 
 type RepoListOp struct {
-	// Name filters the repository list by name.
-	Name string
-
 	// Query specifies a search query for repositories. If specified, then the Sort and
 	// Direction options are ignored
 	Query string
-
-	// URIs specifies a set of repository URIs to list.
-	URIs []string
-
-	// Sort determines how the returned list of repositories is sorted.
-	Sort string
-
-	// Direction determines the sort direction.
-	Direction string
-
-	// NoFork excludes forks from the list of returned repositories.
-	NoFork bool
-
-	// Type of repositories to list. Possible values are currently
-	// ones supported by the GitHub API, including: all, owner,
-	// public, private, member. Default is "all".
-	Type string
-
-	// Owner filters the list of repositories to those with the
-	// specified owner.
-	Owner string
 
 	sourcegraph.ListOptions
 }
@@ -327,24 +303,6 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 
 		conds = append(conds, "(NOT blocked)")
 
-		if opt.NoFork {
-			conds = append(conds, "(NOT fork)")
-		}
-		if len(opt.URIs) > 0 {
-			if len(opt.URIs) == 1 && strings.Contains(opt.URIs[0], ",") {
-				// Workaround for https://github.com/sourcegraph/go-sourcegraph/issues/30.
-				opt.URIs = strings.Split(opt.URIs[0], ",")
-			}
-
-			uriBindVars := make([]string, len(opt.URIs))
-			for i, uri := range opt.URIs {
-				uriBindVars[i] = arg(uri)
-			}
-			conds = append(conds, "uri IN ("+strings.Join(uriBindVars, ",")+")")
-		}
-		if opt.Name != "" {
-			conds = append(conds, "lower(name)="+arg(strings.ToLower(opt.Name)))
-		}
 		if strings.Contains(opt.Query, "/") && len(queryTerms) >= 1 {
 			fields := queryTerms
 			if queryTerms[0] == "github.com" && len(fields) > 1 {
@@ -360,18 +318,6 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 				queryConds = append(queryConds, `name=`+arg(queryTerm), `owner=`+arg(queryTerm))
 			}
 			conds = append(conds, fmt.Sprintf(`(%s)`, strings.Join(queryConds, " OR ")))
-		}
-		switch opt.Type {
-		case "private":
-			conds = append(conds, `private`)
-		case "public":
-			conds = append(conds, `NOT private`)
-		case "", "all":
-		default:
-			return "", nil, legacyerr.Errorf(legacyerr.InvalidArgument, "invalid state")
-		}
-		if opt.Owner != "" {
-			conds = append(conds, `lower(owner)=`+arg(strings.ToLower(opt.Owner)))
 		}
 
 		if conds != nil {
@@ -405,34 +351,7 @@ func reposListSQL(opt *RepoListOp) (string, []interface{}, error) {
 	}
 	orderByTerms = append(orderByTerms, "private DESC", "name ASC")
 
-	sort := opt.Sort
-	if sort == "" {
-		sort = "id"
-	}
-
-	sortKeyToCol := map[string]string{
-		"id":      "repo.id",
-		"uri":     "repo.uri",
-		"path":    "repo.uri",
-		"name":    "repo.name",
-		"created": "repo.created_at",
-		"updated": "repo.updated_at",
-		"pushed":  "repo.pushed_at",
-	}
-	if sortCol, valid := sortKeyToCol[sort]; valid {
-		sort = sortCol
-	} else {
-		return "", nil, legacyerr.Errorf(legacyerr.InvalidArgument, "invalid sort: "+sort)
-	}
-
-	direction := opt.Direction
-	if direction == "" {
-		direction = "asc"
-	}
-	if direction != "asc" && direction != "desc" {
-		return "", nil, legacyerr.Errorf(legacyerr.InvalidArgument, "invalid direction: "+direction)
-	}
-	orderByTerms = append(orderByTerms, fmt.Sprintf("%s %s NULLS LAST", sort, direction))
+	orderByTerms = append(orderByTerms, "repo.id asc NULLS LAST")
 	orderBySQL = strings.Join(orderByTerms, ", ")
 
 	// LIMIT

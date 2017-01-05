@@ -116,7 +116,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	if opt.RemoteOnly {
-		ghRepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: opt.Type})
+		ghRepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{})
 		if err != nil {
 			log15.Warn("failed to fetch some remote repositories", "source", "GitHub", "error", err)
 			ghRepos = nil
@@ -130,14 +130,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	}
 
 	repos, err := localstore.Repos.List(ctx, &localstore.RepoListOp{
-		Name:        opt.Name,
 		Query:       opt.Query,
-		URIs:        opt.URIs,
-		Sort:        opt.Sort,
-		Direction:   opt.Direction,
-		NoFork:      opt.NoFork,
-		Type:        opt.Type,
-		Owner:       opt.Owner,
 		ListOptions: opt.ListOptions,
 	})
 	if err != nil {
@@ -156,7 +149,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 		var ghrepos []*sourcegraph.Repo
 		var err error
 		if ghquery == "" {
-			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Type: opt.Type})
+			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{})
 			ghrepos, repos = repos, ghrepos
 		} else {
 			ghrepos, err = github.ReposFromContext(ctx).Search(ctx, ghquery, nil)
