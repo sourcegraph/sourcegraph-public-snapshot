@@ -84,7 +84,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		DefaultBranch:   r.DefaultBranch,
 		Language:        r.Language,
 		Blocked:         r.Blocked,
-		Deprecated:      r.Deprecated,
 		Fork:            r.Fork,
 		Private:         r.Private,
 		IndexedRevision: r.IndexedRevision,
@@ -107,7 +106,6 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.DefaultBranch = r2.DefaultBranch
 	r.Language = r2.Language
 	r.Blocked = r2.Blocked
-	r.Deprecated = r2.Deprecated
 	r.Fork = r2.Fork
 	r.Private = r2.Private
 	if r2.CreatedAt != nil {
@@ -539,14 +537,8 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	if op.Blocked != sourcegraph.ReposUpdateOp_NONE {
 		updates = append(updates, `"blocked"=`+arg(op.Blocked == sourcegraph.ReposUpdateOp_TRUE))
 	}
-	if op.Deprecated != sourcegraph.ReposUpdateOp_NONE {
-		updates = append(updates, `"deprecated"=`+arg(op.Deprecated == sourcegraph.ReposUpdateOp_TRUE))
-	}
 	if op.Fork != sourcegraph.ReposUpdateOp_NONE {
 		updates = append(updates, `"fork"=`+arg(op.Fork == sourcegraph.ReposUpdateOp_TRUE))
-	}
-	if op.Mirror != sourcegraph.ReposUpdateOp_NONE {
-		updates = append(updates, `"mirror"=`+arg(op.Mirror == sourcegraph.ReposUpdateOp_TRUE))
 	}
 	if op.Private != sourcegraph.ReposUpdateOp_NONE {
 		updates = append(updates, `"private"=`+arg(op.Private == sourcegraph.ReposUpdateOp_TRUE))

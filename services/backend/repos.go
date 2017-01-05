@@ -394,15 +394,6 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 		}
 		updated = true
 	}
-	if ghrepo.Deprecated != repo.Deprecated {
-		repo.Deprecated = ghrepo.Deprecated
-		if ghrepo.Deprecated {
-			updateOp.Deprecated = sourcegraph.ReposUpdateOp_TRUE
-		} else {
-			updateOp.Deprecated = sourcegraph.ReposUpdateOp_FALSE
-		}
-		updated = true
-	}
 	if ghrepo.Fork != repo.Fork {
 		repo.Fork = ghrepo.Fork
 		if ghrepo.Fork {

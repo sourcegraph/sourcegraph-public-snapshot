@@ -668,7 +668,6 @@ export interface Repo {
 	DefaultBranch?: string;
 	Language?: string;
 	Blocked?: boolean;
-	Deprecated?: boolean;
 	Fork?: boolean;
 	Private?: boolean;
 	CreatedAt?: any;
@@ -795,9 +794,7 @@ export interface ReposUpdateOp {
 	DefaultBranch?: string;
 	Language?: string;
 	Blocked?: any;
-	Deprecated?: any;
 	Fork?: any;
-	Mirror?: any;
 	Private?: any;
 	IndexedRevision?: string;
 }

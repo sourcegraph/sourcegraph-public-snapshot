@@ -94,9 +94,6 @@ type Repo struct {
 	// Blocked is whether this repo has been blocked by an admin (and
 	// will not be returned via the external API).
 	Blocked bool `json:"Blocked,omitempty"`
-	// Deprecated repositories are labeled as such and hidden from global search
-	// results.
-	Deprecated bool `json:"Deprecated,omitempty"`
 	// Fork is whether this repository is a fork.
 	Fork bool `json:"Fork,omitempty"`
 	// Private is whether this repository is private. Note: this field
@@ -284,12 +281,8 @@ type ReposUpdateOp struct {
 	Language string `json:"Language,omitempty"`
 	// Blocked, if non-empty, updates whether this repository is blocked.
 	Blocked ReposUpdateOp_BoolType `json:"Blocked,omitempty"`
-	// Deprecated, if non-empty, updates whether this repository is deprecated.
-	Deprecated ReposUpdateOp_BoolType `json:"Deprecated,omitempty"`
 	// Fork, if non-empty, updates whether this repository is a fork.
 	Fork ReposUpdateOp_BoolType `json:"Fork,omitempty"`
-	// Mirror, if non-empty, updates whether this repository is a mirror.
-	Mirror ReposUpdateOp_BoolType `json:"Mirror,omitempty"`
 	// Private, if non-empty, updates whether this repository is private.
 	Private ReposUpdateOp_BoolType `json:"Private,omitempty"`
 	// IndexedRevision is the revision that the global index is currently based on.
