@@ -13,8 +13,9 @@
     "require": {
         "php": ">=7.0",
         "felixfbecker/language-server": "^4.1.2",
-        "composer/composer": "^1.2",
-        "sabre/event": "^5.0"
+        "composer/composer": "dev-public-add-plugin",
+        "sabre/event": "^5.0",
+        "hirak/prestissimo": "^0.3.5"
     },
     "repositories": [
         {
@@ -32,6 +33,10 @@
                     "reference": "master"
                 }
             }
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/felixfbecker/composer"
         }
     ],
     "minimum-stability": "dev",

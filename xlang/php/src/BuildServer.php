@@ -10,6 +10,7 @@ use LanguageServer\FilesFinder\{FilesFinder, FileSystemFilesFinder};
 use Sabre\Event\Promise;
 use Sabre\Uri;
 use Webmozart\PathUtil\Path;
+use Hirak\Prestissimo;
 use function Sabre\Event\coroutine;
 
 class BuildServer extends LanguageServer
@@ -34,6 +35,10 @@ class BuildServer extends LanguageServer
                 $composerFactory = new Composer\Factory;
                 $composer = $composerFactory->createComposer($io, "$dir/composer.json", true, $dir);
                 $installer = Composer\Installer::create($io, $composer);
+                // Prefer tarballs over git clones
+                $installer->setPreferDist(true);
+                // Download in parallel
+                $composer->getPluginManager()->addPlugin(new Prestissimo\Plugin);
                 $installer->run();
                 
                 // Get the composer.json directory

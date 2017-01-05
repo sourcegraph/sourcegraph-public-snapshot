@@ -5,7 +5,7 @@ cd $(dirname "${BASH_SOURCE[0]}")
 export IMAGE=us.gcr.io/sourcegraph-dev/xlang-php
 export TAG=${TAG-latest}
 
-composer install --prefer-dist
+composer install --prefer-dist --no-interaction --no-progress
 composer run-script parse-stubs
 
 docker build -t $IMAGE:$TAG .
