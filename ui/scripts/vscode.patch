@@ -613,7 +613,7 @@ diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/
 index 13582f3..c85e518 100644
 --- a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
 +++ b/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/browser/views/explorerView.ts
-@@ -101,6 +101,14 @@ export class ExplorerView extends CollapsibleViewletView {
+@@ -101,6 +101,11 @@ export class ExplorerView extends CollapsibleViewletView {
  
  		this.resourceContext = instantiationService.createInstance(ResourceContextKey);
  		this.folderContext = new RawContextKey<boolean>('explorerResourceIsFolder', undefined).bindTo(contextKeyService);
@@ -621,9 +621,6 @@ index 13582f3..c85e518 100644
 +		contextService.onWorkspaceUpdated((workspace) => {
 +			const workspaceUpdated = this.workspace.resource.toString() !== workspace.resource.toString();
 +			this.workspace = workspace;
-+			if (workspaceUpdated) {
-+				this.refresh(workspaceUpdated);
-+			}
 +		});
  	}
  
@@ -709,3 +706,16 @@ index 9b14994be..0e2e37552 100644
  	}
  
  	protected onSpace(tree: _.ITree, event: IKeyboardEvent): boolean {
+diff --git a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/common/explorerViewModel.ts b/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/common/explorerViewModel.ts
+index 35974c06d..3d195228d 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/common/explorerViewModel.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/workbench/parts/files/common/explorerViewModel.ts
+@@ -272,7 +272,7 @@ export class FileStat implements IFileStat {
+ 				return child;
+ 			}
+ 
+-			if (child.isDirectory && isParent(resource.fsPath, child.resource.fsPath)) {
++			if (child.isDirectory && resource.fragment.indexOf(child.resource.fragment) === 0) {
+ 				return child.find(resource);
+ 			}
+ 		}

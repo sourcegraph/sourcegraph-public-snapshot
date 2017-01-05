@@ -28,6 +28,9 @@ import { ConfigurationService } from "sourcegraph/workbench/ConfigurationService
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
 
+import { IStorageService } from "vs/platform/storage/common/storage";
+import { StorageService } from "vs/workbench/services/storage/common/storageService";
+
 export let Services: ServicesAccessor;
 
 // Setup services for the workbench. A lot of the ones required by Workbench
@@ -64,6 +67,9 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource: workspace,
 	}));
+
+	const storageService = instantiationService.createInstance((StorageService as any), window.localStorage, window.sessionStorage) as IStorageService;
+	services.set(IStorageService, storageService);
 
 	const viewReg = (Registry.as(viewKey.Viewlets) as ViewletRegistry);
 	viewReg.setDefaultViewletId(VIEWLET_ID);

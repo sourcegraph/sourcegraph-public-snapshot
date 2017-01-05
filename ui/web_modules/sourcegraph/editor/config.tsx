@@ -6,7 +6,9 @@ import { ICursorSelectionChangedEvent } from "vs/editor/common/editorCommon";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
+import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
 import { getBlobPropsFromRouter, getSelectionFromRouter, router } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
@@ -20,22 +22,21 @@ import { Services } from "sourcegraph/workbench/services";
 // syncEditorWithRouter, then we don't need to run editorOpened because the URL
 // is already up to date. This is necessary because the two functions are
 // cyclic, and we only want to run them once for each action.
-let forceSyncInProgress: boolean;
+let urlSyncInProgress: boolean;
 
 // syncEditorWithURL forces the editor model to match current URL blob properties.
 export function syncEditorWithRouter(): void {
 	const {repo, rev, path} = getBlobPropsFromRouter();
 	const resource = URIUtils.pathInRepo(repo, rev, path);
 	const editorService = Services.get(IWorkbenchEditorService) as IWorkbenchEditorService;
-	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
-	workspaceService.setWorkspace({ resource: resource.with({ fragment: "" }) });
-	if (forceSyncInProgress) {
+	if (urlSyncInProgress) {
 		return;
 	}
-	forceSyncInProgress = true;
+	urlSyncInProgress = true;
 	editorService.openEditor({ resource }).then(() => {
-		forceSyncInProgress = false;
+		updateFileTree(resource);
 		updateEditorAfterURLChange();
+		urlSyncInProgress = false;
 	});
 }
 
@@ -60,25 +61,38 @@ export function registerEditorCallbacks(): void {
 	editorService.onDidOpenEditor(editorOpened);
 }
 
-// editorOpened is called whenever a new editor is created or activated. E.g:
-//  - on page load
-//  - from file explorer
-//  - for a cross-file j2d
+// editorOpened is called whenever the view of the file changes from an action. E.g:
+//  - page load
+//  - file in explorer selected
+//  - jump to definition
 function editorOpened(resource: URI): void {
-	if (forceSyncInProgress) {
+	if (urlSyncInProgress) {
 		return;
 	}
+	urlSyncInProgress = true;
+	updateFileTree(resource);
 	let {repo, rev, path} = URIUtils.repoParams(resource);
 	if (rev === "HEAD") {
 		rev = null;
 	}
-
+	router.push(urlToBlob(repo, rev, path));
+	urlSyncInProgress = false;
+}
+function updateFileTree(resource: URI): void {
 	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
 	workspaceService.setWorkspace({ resource: resource.with({ fragment: "" }) });
 
-	forceSyncInProgress = true;
-	router.push(urlToBlob(repo, rev, path));
-	forceSyncInProgress = false;
+	const viewletService = Services.get(IViewletService) as IViewletService;
+	const viewlet = viewletService.getActiveViewlet();
+	if (viewlet) {
+		const view = viewlet["explorerView"];
+		if (!(view instanceof ExplorerView)) {
+			throw "Type Error: Expected viewlet to have type ExplorerView";
+		}
+		view.refresh(true).then(() => {
+			view.select(resource, true);
+		});
+	}
 }
 
 function updateEditor(editor: ICodeEditor): void {

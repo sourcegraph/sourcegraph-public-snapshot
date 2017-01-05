@@ -5,6 +5,8 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { EditorGroupsControl } from "vs/workbench/browser/parts/editor/editorGroupsControl";
 import { FileRenderer } from "vs/workbench/parts/files/browser/views/explorerViewer";
 
+import { IStorageService, StorageScope } from "vs/platform/storage/common/storage";
+
 import { layout } from "sourcegraph/components/utils";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
 
@@ -21,4 +23,9 @@ export function configurePostStartup(services: ServiceCollection): void {
 		services.get(IModelService) as IModelService,
 		services.get(IModeService) as IModeService,
 	));
+
+	const storageService = services.get(IStorageService) as IStorageService;
+	const key = "workbench.sidebar.width";
+	const sidebarWidth = storageService.getInteger(key, StorageScope.GLOBAL, 300);
+	storageService.store(key, sidebarWidth, StorageScope.GLOBAL);
 }
