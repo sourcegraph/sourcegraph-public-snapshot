@@ -1,31 +1,16 @@
 import { media } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
-import { Avatar, FlexContainer, Heading, LanguageLabel, Panel } from "sourcegraph/components";
+import { FlexContainer, Heading, LanguageLabel, Panel } from "sourcegraph/components";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
-	contributors?: GQL.IContributor[];
 	style?: React.CSSProperties;
 	repo: GQL.IRemoteRepository;
 }
 
-export function RepositoryCard({style, repo, contributors}: Props): JSX.Element {
-
-	const MAX_CONTRIBUTORS = 5;
-	const hasMoreContribs = contributors && contributors.length > MAX_CONTRIBUTORS;
-
-	let contributorAvatars;
-	if (contributors && contributors.length > 0) {
-		contributorAvatars = contributors.slice(0, MAX_CONTRIBUTORS).map((user, i) => {
-			return <Avatar size="tiny" img={user.avatarURL} key={i} title={user.login} style={{
-				marginRight: whitespace[2],
-				verticalAlign: "bottom",
-			}} />;
-		});
-	}
-
+export function RepositoryCard({style, repo}: Props): JSX.Element {
 	function trackRepoClick(): void {
 		AnalyticsConstants.Events.Repository_Clicked.logEvent({ repo });
 	}
@@ -45,15 +30,6 @@ export function RepositoryCard({style, repo, contributors}: Props): JSX.Element 
 					}
 				</Heading>
 				{repo.description && <div style={{ color: colors.coolGray3() }}>{repo.description}</div>}
-				{contributorAvatars && <div style={{ marginTop: whitespace[3] }}>
-					{contributorAvatars}
-					{hasMoreContribs && contributors &&
-						<span style={{ color: colors.coolGray3() }}>
-							+ {contributors.length - MAX_CONTRIBUTORS}
-							{contributors.length - MAX_CONTRIBUTORS === 1 ? " contributor" : " contributors"}
-						</span>
-					}
-				</div>}
 			</div>
 			{repo.language &&
 				<span style={{ alignSelf: "flex-end" }}

@@ -62,7 +62,6 @@ func newMinimalClient(isAuthedUser bool, userClient *github.Client, appClient *g
 type githubRepos interface {
 	Get(owner, repo string) (*github.Repository, *github.Response, error)
 	List(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error)
-	ListContributors(owner string, repository string, opt *github.ListContributorsOptions) ([]*github.Contributor, *github.Response, error)
 	CreateHook(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
 }
 

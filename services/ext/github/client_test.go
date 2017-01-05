@@ -11,10 +11,9 @@ func testContext(client *minimalClient) context.Context {
 }
 
 type mockGitHubRepos struct {
-	Get_              func(owner, repo string) (*github.Repository, *github.Response, error)
-	List_             func(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error)
-	ListContributors_ func(owner string, repository string, opt *github.ListContributorsOptions) ([]*github.Contributor, *github.Response, error)
-	CreateHook_       func(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
+	Get_        func(owner, repo string) (*github.Repository, *github.Response, error)
+	List_       func(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error)
+	CreateHook_ func(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
 }
 
 var _ githubRepos = (*mockGitHubRepos)(nil)
@@ -25,10 +24,6 @@ func (s mockGitHubRepos) Get(owner, repo string) (*github.Repository, *github.Re
 
 func (s mockGitHubRepos) List(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error) {
 	return s.List_(user, opt)
-}
-
-func (s mockGitHubRepos) ListContributors(owner string, repository string, opt *github.ListContributorsOptions) ([]*github.Contributor, *github.Response, error) {
-	return s.ListContributors_(owner, repository, opt)
 }
 
 func (s mockGitHubRepos) CreateHook(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error) {

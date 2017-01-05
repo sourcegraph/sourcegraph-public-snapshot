@@ -50,13 +50,6 @@ type Repository implements Node {
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
-	contributors: [Contributor!]!
-}
-
-type Contributor {
-	login:             String!
-	avatarURL:         String!
-	contributions:     Int!
 }
 
 type CommitState {
@@ -104,7 +97,6 @@ type RemoteRepository {
 	createdAt: String!
 	pushedAt: String!
 	vcsSyncedAt: String!
-	contributors: [Contributor!]!
 }
 
 type Hunk {

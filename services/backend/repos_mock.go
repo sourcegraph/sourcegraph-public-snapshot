@@ -18,7 +18,6 @@ type MockRepos struct {
 	Resolve                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
 	List                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
 	ListStarredRepos            func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
-	ListContributors            func(v0 context.Context, v1 *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error)
 	Update                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
 	GetCommit                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev                  func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
@@ -116,20 +115,6 @@ func (s *MockRepos) MockListStarredRepos(t *testing.T, wantRepos ...string) (cal
 			repos[i] = &sourcegraph.Repo{URI: repo}
 		}
 		return &sourcegraph.RepoList{Repos: repos}, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockListContributors(t *testing.T, wantContributors ...string) (called *bool) {
-	called = new(bool)
-	s.ListContributors = func(ctx context.Context, v1 *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error) {
-		*called = true
-		contributors := make([]*sourcegraph.Contributor, len(wantContributors))
-		for i, contributor := range wantContributors {
-			contributors[i] = &sourcegraph.Contributor{Login: contributor}
-		}
-		return contributors, nil
-
 	}
 	return
 }

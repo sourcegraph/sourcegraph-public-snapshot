@@ -22,44 +22,7 @@ export function RepositoryComponent(): JSX.Element {
 						createdAt: "",
 						__typename: "",
 						vcsSyncedAt: "",
-					} as GQL.IRemoteRepository}
-					contributors={[
-						{
-							avatarURL: "https://avatars.githubusercontent.com/u/8691941?v=3",
-							login: "jamescuddy",
-							contributions: 5,
-						},
-						{
-							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							login: "chexee",
-							contributions: 2,
-						},
-						{
-							avatarURL: "https://avatars.githubusercontent.com/u/8691941?v=3",
-							login: "jamescuddy",
-							contributions: 5,
-						},
-						{
-							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							login: "chexee",
-							contributions: 3,
-						},
-						{
-							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							login: "chexee",
-							contributions: 2,
-						},
-						{
-							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							login: "chexee",
-							contributions: 1,
-						},
-						{
-							avatarURL: "https://avatars.githubusercontent.com/u/285836?v=3",
-							login: "chexee",
-							contributions: 4,
-						},
-					] as GQL.IContributor[]} />
+					} as GQL.IRemoteRepository} />
 
 			</div>
 			<hr />

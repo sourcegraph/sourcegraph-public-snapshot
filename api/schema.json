@@ -198,65 +198,6 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
-						"name": "login",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "avatarURL",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "contributions",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "Int",
-								"ofType": null
-							}
-						}
-					}
-				],
-				"inputFields": null,
-				"interfaces": [],
-				"kind": "OBJECT",
-				"name": "Contributor",
-				"possibleTypes": null
-			},
-			{
-				"description": null,
-				"enumValues": null,
-				"fields": [
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
 						"name": "globalReferences",
 						"type": {
 							"kind": "NON_NULL",
@@ -1043,30 +984,6 @@
 								"ofType": null
 							}
 						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "contributors",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "LIST",
-								"name": null,
-								"ofType": {
-									"kind": "NON_NULL",
-									"name": null,
-									"ofType": {
-										"kind": "OBJECT",
-										"name": "Contributor",
-										"ofType": null
-									}
-								}
-							}
-						}
 					}
 				],
 				"inputFields": null,
@@ -1232,30 +1149,6 @@
 									"ofType": {
 										"kind": "SCALAR",
 										"name": "String",
-										"ofType": null
-									}
-								}
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "contributors",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "LIST",
-								"name": null,
-								"ofType": {
-									"kind": "NON_NULL",
-									"name": null,
-									"ofType": {
-										"kind": "OBJECT",
-										"name": "Contributor",
 										"ofType": null
 									}
 								}

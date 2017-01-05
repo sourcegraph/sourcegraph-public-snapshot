@@ -41,16 +41,6 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
-	interface IContributor {
-		__typename: string;
-		login: string;
-		avatarURL: string;
-		contributions: number;
-	}
-
-	/*
-	  description: null
-	*/
 	interface IDefinition {
 		__typename: string;
 		globalReferences: Array<IRefFields>;
@@ -150,7 +140,6 @@ declare namespace GQL {
 		createdAt: string;
 		pushedAt: string;
 		vcsSyncedAt: string;
-		contributors: Array<IContributor>;
 	}
 
 	/*
@@ -166,7 +155,6 @@ declare namespace GQL {
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;
-		contributors: Array<IContributor>;
 	}
 
 	/*

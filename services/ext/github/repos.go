@@ -301,20 +301,6 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 	return allRepos, nil
 }
 
-func ListGitHubContributors(ctx context.Context, repo *sourcegraph.Repo, opt *gogithub.ListContributorsOptions) ([]*sourcegraph.Contributor, error) {
-	ghContributors, resp, err := client(ctx).repos.ListContributors(repo.Owner, repo.Name, opt)
-	if err != nil {
-		return nil, checkResponse(ctx, resp, err, "github.repos.ListContributors")
-	}
-
-	var contribs []*sourcegraph.Contributor
-	for _, ghContrib := range ghContributors {
-		contribs = append(contribs, toContributor(ghContrib))
-	}
-
-	return contribs, nil
-}
-
 func toContributor(ghContrib *github.Contributor) *sourcegraph.Contributor {
 	strv := func(s *string) string {
 		if s == nil {
