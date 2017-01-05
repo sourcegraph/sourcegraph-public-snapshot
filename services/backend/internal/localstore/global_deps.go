@@ -19,12 +19,19 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-// TODO(slimsag): rename this service to "global deps" not "global refs" since
-// it really only serves that purpose.
-
-// dbGlobalDep represents the `global_dep` table.
+// dbGlobalDep provides access to the `global_dep` table. Each row in
+// the table represents a dependency relationship from a repository to
+// a package-manager-level package.
 //
-// TODO(slimsag): describe the schema in more detail here.
+// * The language column is the programming language in which the
+//   dependency occurs (the language of the repository and the package
+//   manager package)
+// * The dep_data column contains JSON describing the package manager package.
+//   Typically, this includes a name and version field.
+// * The repo_id column identifies the repository.
+// * The hints column contains JSON that contains additional hints that can
+//   be used to optimized requests related to the dependency (e.g., which
+//   directory in a repository contains the dependency).
 type dbGlobalDep struct{}
 
 func (*dbGlobalDep) CreateTable() string {
@@ -43,13 +50,13 @@ func (*dbGlobalDep) DropTable() string {
 	return `DROP TABLE IF EXISTS global_dep CASCADE;`
 }
 
-type globalRefs struct{}
+type globalDeps struct{}
 
 // UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
 //
 // SECURITY: It is the caller's responsibility to ensure the repository is NOT
 // a private one.
-func (g *globalRefs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
+func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
 	var errs []string
 	for _, language := range []string{"go"} { // TODO(slimsag): use inventory instead
 		if err := g.refreshIndexForLanguage(ctx, language, op); err != nil {
@@ -65,11 +72,7 @@ func (g *globalRefs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.Def
 	return nil
 }
 
-func (g *globalRefs) TotalRefs(ctx context.Context, source string) (int, error) {
-	return 0, errors.New("GlobalRefs.TotalRefs not implemented")
-}
-
-func (g *globalRefs) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
+func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -127,7 +130,7 @@ type RefLocation struct {
 
 // TODO(slimsag): The naming here is a misnomer because we're not returning
 // references but rather dependency references. Cleanup the naming here.
-func (g *globalRefs) RefLocations(ctx context.Context, op RefLocationsOptions) (refs []*RefLocation, err error) {
+func (g *globalDeps) RefLocations(ctx context.Context, op RefLocationsOptions) (refs []*RefLocation, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.RefLocations")
 	defer func() {
 		if err != nil {
@@ -183,7 +186,7 @@ func (g *globalRefs) RefLocations(ctx context.Context, op RefLocationsOptions) (
 }
 
 // updateGlobalDep updates the global_dep table.
-func (g *globalRefs) updateGlobalDep(ctx context.Context, tx *sql.Tx, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
+func (g *globalDeps) updateGlobalDep(ctx context.Context, tx *sql.Tx, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "updateGlobalDep "+language)
 	defer func() {
 		if err != nil {

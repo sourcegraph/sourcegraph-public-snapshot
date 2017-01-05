@@ -24,13 +24,11 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
-// subSelectors is a map of language-specific data selectors. The input data is
-// from the language's workspace/xdefinition request, and the output data
-// should be something that can be matched (using jsonb containment operator)
-// against the metadata output of the build server method workspace/xdependencies.
-//
-// TODO(slimsag): move to a plugin-based architecture. This will work for the
-// first ten or so languages.
+// subSelectors is a map of language-specific data selectors. The
+// input data is from the language server's workspace/xdefinition
+// request, and the output data should be something that can be
+// matched (using the jsonb containment operator) against the metadata
+// output of workspace/xdependencies.
 var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface{}{
 	"go": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
 		return map[string]interface{}{
@@ -146,12 +144,6 @@ func (s *defs) DeprecatedTotalRefs(ctx context.Context, repoURI string) (res int
 	return localstore.DeprecatedGlobalRefs.DeprecatedTotalRefs(ctx, repoURI)
 }
 
-func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
-	ctx, done := trace(ctx, "Defs", "TotalRefs", source, &err)
-	defer done()
-	return localstore.GlobalRefs.TotalRefs(ctx, source)
-}
-
 func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOptions) (res *sourcegraph.RefLocations, err error) {
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()
@@ -201,10 +193,10 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 	}
 
 	// TODO(slimsag): figure out how to handle multiple location responses here
-	// one we have a language server that uses it.
+	// once we have a language server that uses it.
 	location := locations[0]
 
-	depRefs, err := localstore.GlobalRefs.RefLocations(ctx, localstore.RefLocationsOptions{
+	depRefs, err := localstore.GlobalDeps.RefLocations(ctx, localstore.RefLocationsOptions{
 		Language: op.Language,
 		DepData:  subSelector(location.Symbol),
 	})
@@ -301,5 +293,5 @@ func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	defer done()
 
 	// Refresh global references indexes.
-	return localstore.GlobalRefs.UnsafeRefreshIndex(ctx, op)
+	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op)
 }

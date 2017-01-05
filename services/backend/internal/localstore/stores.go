@@ -4,7 +4,7 @@ import srcstore "sourcegraph.com/sourcegraph/srclib/store"
 
 var (
 	DeprecatedGlobalRefs = &deprecatedGlobalRefs{}
-	GlobalRefs           = &globalRefs{}
+	GlobalDeps           = &globalDeps{}
 	Graph                srcstore.MultiRepoStoreImporterIndexer
 	RepoVCS              = &repoVCS{}
 	Repos                = &repos{}
