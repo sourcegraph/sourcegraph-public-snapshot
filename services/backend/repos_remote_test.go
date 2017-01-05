@@ -117,7 +117,7 @@ func TestRepos_Resolve_GitHub_Remote(t *testing.T) {
 		t.Error("!calledGetGitHubRepo")
 	}
 
-	want := &sourcegraph.RepoResolution{RemoteRepo: &sourcegraph.Repo{Name: "github.com/o/r"}}
+	want := &sourcegraph.RepoResolution{}
 	if !reflect.DeepEqual(res, want) {
 		t.Errorf("got %#v, want %#v", res, want)
 	}

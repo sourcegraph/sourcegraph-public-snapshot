@@ -47,7 +47,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 			}
 
 			if op.Remote {
-				return &sourcegraph.RepoResolution{RemoteRepo: repo}, nil
+				return &sourcegraph.RepoResolution{}, nil
 			}
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "resolved repo not found locally: %s", op.Path)
 		} else if errcode.Code(err) != legacyerr.NotFound {
@@ -59,9 +59,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 		if op.Remote {
 			existsForUser := accesscontrol.VerifyActorHasGCPRepoAccess(ctx, auth.ActorFromContext(ctx), op.Path)
 			if existsForUser {
-				return &sourcegraph.RepoResolution{
-					RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
-				}, nil
+				return &sourcegraph.RepoResolution{}, nil
 			}
 		}
 		return nil, legacyerr.Errorf(legacyerr.NotFound, "resolved repo not found locally: %s", op.Path)
@@ -71,9 +69,7 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 	if op.Remote {
 		switch {
 		case strings.HasPrefix(op.Path, "gopkg.in/"):
-			return &sourcegraph.RepoResolution{
-				RemoteRepo: &sourcegraph.Repo{HTTPCloneURL: "https://" + op.Path},
-			}, nil
+			return &sourcegraph.RepoResolution{}, nil
 		}
 	}
 

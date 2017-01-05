@@ -652,25 +652,6 @@ export interface ReferenceParams {
 export interface RemoteOpts {
 }
 
-export interface RemoteRepo {
-	GitHubID?: number;
-	Owner?: string;
-	OwnerIsOrg?: boolean;
-	Name?: string;
-	VCS?: string;
-	HTTPCloneURL?: string;
-	DefaultBranch?: string;
-	Description?: string;
-	Language?: string;
-	UpdatedAt?: any;
-	PushedAt?: any;
-	Private?: boolean;
-	Fork?: boolean;
-	Mirror?: boolean;
-	Stars?: number;
-	Permissions?: RepoPermissions;
-}
-
 export interface RenameParams {
 	textDocument: any;
 	position: any;
@@ -745,7 +726,6 @@ export interface RepoPermissions {
 export interface RepoResolution {
 	Repo?: number;
 	CanonicalPath?: string;
-	RemoteRepo?: Repo;
 }
 
 export interface RepoResolveOp {

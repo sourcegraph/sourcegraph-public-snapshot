@@ -82,19 +82,6 @@ func (s *MockRepos) MockResolve_Local(t *testing.T, wantPath string, repoID int3
 	return
 }
 
-func (s *MockRepos) MockResolve_Remote(t *testing.T, wantPath string, resolved *sourcegraph.Repo) (called *bool) {
-	called = new(bool)
-	s.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
-		*called = true
-		if op.Path != wantPath {
-			t.Errorf("got repo %q, want %q", op.Path, wantPath)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo path %s resolution failed", wantPath)
-		}
-		return &sourcegraph.RepoResolution{RemoteRepo: resolved}, nil
-	}
-	return
-}
-
 func (s *MockRepos) MockResolve_NotFound(t *testing.T, wantPath string) (called *bool) {
 	called = new(bool)
 	s.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {

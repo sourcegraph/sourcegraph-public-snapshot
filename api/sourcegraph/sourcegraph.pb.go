@@ -261,9 +261,6 @@ type RepoResolution struct {
 	// redirect the user to the canonical repo path if users access a
 	// repo by a non-canonical path.
 	CanonicalPath string `json:"CanonicalPath,omitempty"`
-	// RemoteRepo holds metadata about the repo that exists on a
-	// remote service (such as GitHub).
-	RemoteRepo *Repo `json:"RemoteRepo,omitempty"`
 }
 
 // SrclibDataVersion specifies a srclib store version.
@@ -345,52 +342,6 @@ type MirrorReposRefreshVCSOp struct {
 	// AsUser is the user whose auth token will be used for refreshing this
 	// mirror repo. This can be used when refreshing a private repo mirror.
 	AsUser *UserSpec `json:"AsUser,omitempty"`
-}
-
-// RemoteRepo is a repo canonically stored on an external host, and
-// possibly mirrored on the local instance.
-type RemoteRepo struct {
-	// GitHubID is the repo's GitHub repository ID.
-	GitHubID int32 `json:"GitHubID,omitempty"`
-	// Owner is the login or org name of the repo's owner ("foo" in
-	// github.com/foo/bar).
-	Owner string `json:"Owner,omitempty"`
-	// OwnerIsOrg is true if the repo's owner is an org (not a user).
-	OwnerIsOrg bool `json:"OwnerIsOrg,omitempty"`
-	// Name is the repo's name ("bar" in github.com/foo/bar).
-	Name string `json:"Name,omitempty"`
-	// VCS is "git".
-	VCS string `json:"VCS,omitempty"`
-	// HTTPCloneURL is the repo's HTTP (preferably HTTPS) clone URL.
-	HTTPCloneURL string `json:"HTTPCloneURL,omitempty"`
-	// DefaultBranch is the default Git branch for the repo.
-	DefaultBranch string `json:"DefaultBranch,omitempty"`
-	// Description is the repo's description from GitHub.
-	Description string `json:"Description,omitempty"`
-	// Language is the repo's primary programming language, as
-	// reported by GitHub.
-	Language string `json:"Language,omitempty"`
-	// UpdatedAt is the date of the most recent update (push or
-	// metadata edit) to the repo on GitHub.
-	UpdatedAt *time.Time `json:"UpdatedAt,omitempty"`
-	// PushedAt is the date of the most recent git push to the repo.
-	PushedAt *time.Time `json:"PushedAt,omitempty"`
-	// Private is true for private repos.
-	Private bool `json:"Private,omitempty"`
-	// Fork is true for repos that were forked from another repo using
-	// GitHub's "fork" operation.
-	Fork bool `json:"Fork,omitempty"`
-	// Mirror is true for mirror repos (e.g., Apache Foundation
-	// open-source repo mirrors on GitHub.com).
-	Mirror bool `json:"Mirror,omitempty"`
-	// Stars is the number of stargazers of the GitHub repo.
-	Stars int32 `json:"Stars,omitempty"`
-	// Permissions describes the actions that the current user may
-	// perform on this remote repository on the remote service it came
-	// from. These permissions currently map directly to GitHub
-	// permissions but will be generalized/modified in the future to
-	// support more repo hosting services.
-	Permissions *RepoPermissions `json:"Permissions,omitempty"`
 }
 
 // EmailAddr is an email address associated with a user.
