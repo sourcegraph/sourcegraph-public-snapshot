@@ -134,10 +134,6 @@ func (r *repositoryResolver) Tags(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func (r *repositoryResolver) HTTPCloneURL() string {
-	return r.repo.HTTPCloneURL
-}
-
 func (r *repositoryResolver) Private() bool {
 	return r.repo.Private
 }

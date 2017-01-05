@@ -98,7 +98,6 @@ type RemoteRepository {
 	description: String!
 	owner: String!
 	name: String!
-	httpCloneURL: String!
 	language: String!
 	fork: Boolean!
 	private: Boolean!

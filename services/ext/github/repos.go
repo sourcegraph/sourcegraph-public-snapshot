@@ -185,7 +185,6 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	repo := sourcegraph.Repo{
 		URI:           "github.com/" + *ghrepo.FullName,
 		Name:          *ghrepo.Name,
-		HTTPCloneURL:  strv(ghrepo.CloneURL),
 		DefaultBranch: strv(ghrepo.DefaultBranch),
 		Description:   strv(ghrepo.Description),
 		Language:      strv(ghrepo.Language),

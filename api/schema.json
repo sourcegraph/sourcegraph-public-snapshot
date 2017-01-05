@@ -953,22 +953,6 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
-						"name": "httpCloneURL",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
 						"name": "language",
 						"type": {
 							"kind": "NON_NULL",

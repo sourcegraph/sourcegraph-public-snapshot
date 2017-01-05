@@ -664,8 +664,6 @@ export interface Repo {
 	Owner?: string;
 	Name?: string;
 	Description?: string;
-	HTTPCloneURL?: string;
-	SSHCloneURL?: string;
 	HomepageURL?: string;
 	DefaultBranch?: string;
 	Language?: string;
@@ -793,8 +791,6 @@ export interface ReposUpdateOp {
 	Owner?: string;
 	Name?: string;
 	Description?: string;
-	HTTPCloneURL?: string;
-	SSHCloneURL?: string;
 	HomepageURL?: string;
 	DefaultBranch?: string;
 	Language?: string;

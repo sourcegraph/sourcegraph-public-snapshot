@@ -21,7 +21,6 @@ export function RepositoryComponent(): JSX.Element {
 						fork: false,
 						createdAt: "",
 						__typename: "",
-						httpCloneURL: "https://sourcegraph.com/github.com/golang/go",
 						vcsSyncedAt: "",
 					} as GQL.IRemoteRepository}
 					contributors={[

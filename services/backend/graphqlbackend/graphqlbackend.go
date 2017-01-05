@@ -105,13 +105,12 @@ func ResolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	// GitHub is quite easy and (with HTTP caching) performant.
 	ts := time.Now()
 	repo := &sourcegraph.Repo{
-		Owner:        ghRepo.Owner,
-		Name:         ghRepo.Name,
-		URI:          githubutil.RepoURI(ghRepo.Owner, ghRepo.Name),
-		HTTPCloneURL: ghRepo.HTTPCloneURL,
-		Description:  ghRepo.Description,
-		Fork:         ghRepo.Fork,
-		CreatedAt:    &ts,
+		Owner:       ghRepo.Owner,
+		Name:        ghRepo.Name,
+		URI:         githubutil.RepoURI(ghRepo.Owner, ghRepo.Name),
+		Description: ghRepo.Description,
+		Fork:        ghRepo.Fork,
+		CreatedAt:   &ts,
 
 		// KLUDGE: set this to be true to avoid accidentally treating
 		// a private GitHub repo as public (the real value should be

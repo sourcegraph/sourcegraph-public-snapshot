@@ -370,16 +370,6 @@ func repoSetFromRemote(repo *sourcegraph.Repo, ghrepo *sourcegraph.Repo) *locals
 		updateOp.Description = ghrepo.Description
 		updated = true
 	}
-	if ghrepo.HTTPCloneURL != repo.HTTPCloneURL {
-		repo.HTTPCloneURL = ghrepo.HTTPCloneURL
-		updateOp.HTTPCloneURL = ghrepo.HTTPCloneURL
-		updated = true
-	}
-	if ghrepo.SSHCloneURL != repo.SSHCloneURL {
-		repo.SSHCloneURL = ghrepo.SSHCloneURL
-		updateOp.SSHCloneURL = ghrepo.SSHCloneURL
-		updated = true
-	}
 	if ghrepo.HomepageURL != repo.HomepageURL {
 		repo.HomepageURL = ghrepo.HomepageURL
 		updateOp.HomepageURL = ghrepo.HomepageURL

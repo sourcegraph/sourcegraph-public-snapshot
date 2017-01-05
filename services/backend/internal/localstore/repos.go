@@ -80,8 +80,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 		Owner:           r.Owner,
 		Name:            r.Name,
 		Description:     r.Description,
-		HTTPCloneURL:    r.HTTPCloneURL,
-		SSHCloneURL:     r.SSHCloneURL,
 		HomepageURL:     r.HomepageURL,
 		DefaultBranch:   r.DefaultBranch,
 		Language:        r.Language,
@@ -105,8 +103,6 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.Owner = r2.Owner
 	r.Name = r2.Name
 	r.Description = r2.Description
-	r.HTTPCloneURL = r2.HTTPCloneURL
-	r.SSHCloneURL = r2.SSHCloneURL
 	r.HomepageURL = r2.HomepageURL
 	r.DefaultBranch = r2.DefaultBranch
 	r.Language = r2.Language
@@ -530,12 +526,6 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 	}
 	if op.Description != "" {
 		updates = append(updates, `"description"=`+arg(op.Description))
-	}
-	if op.HTTPCloneURL != "" {
-		updates = append(updates, `"http_clone_url"=`+arg(op.HTTPCloneURL))
-	}
-	if op.SSHCloneURL != "" {
-		updates = append(updates, `"ssh_clone_url"=`+arg(op.SSHCloneURL))
 	}
 	if op.HomepageURL != "" {
 		updates = append(updates, `"homepage_url"=`+arg(op.HomepageURL))

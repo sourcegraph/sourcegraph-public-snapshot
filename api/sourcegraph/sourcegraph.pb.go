@@ -85,11 +85,6 @@ type Repo struct {
 	Name string `json:"Name,omitempty"`
 	// Description is a brief description of the repository.
 	Description string `json:"Description,omitempty"`
-	// HTTPCloneURL is the HTTPS clone URL of the repository (or the HTTP clone URL, if
-	// no HTTPS clone URL is available).
-	HTTPCloneURL string `json:"HTTPCloneURL,omitempty"`
-	// SSHCloneURL is the SSH clone URL if the repository, if any.
-	SSHCloneURL string `json:"SSHCloneURL,omitempty"`
 	// HomepageURL is the URL to the repository's homepage, if any.
 	HomepageURL string `json:"HomepageURL,omitempty"`
 	// DefaultBranch is the default git branch used (typically "master").
@@ -281,10 +276,6 @@ type ReposUpdateOp struct {
 	Name string `json:"Name,omitempty"`
 	// Description, if non-empty, is the updated value of the description.
 	Description string `json:"Description,omitempty"`
-	// HTTPCloneURL, if non-empty, is the updated value of the HTTP clone URL.
-	HTTPCloneURL string `json:"HTTPCloneURL,omitempty"`
-	// SSHCloneURL, if non-empty, is the updated value of the SSH clone URL.
-	SSHCloneURL string `json:"SSHCloneURL,omitempty"`
 	// HomepageURL, if non-empty, is the updated value of the homepage URL.
 	HomepageURL string `json:"HomepageURL,omitempty"`
 	// DefaultBranch, if non-empty, is the updated value of the default branch.
