@@ -8,6 +8,7 @@ import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { ExperimentManager } from "sourcegraph/util/ExperimentManager";
 import { Features } from "sourcegraph/util/features";
 import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util/inventory";
 
@@ -106,11 +107,13 @@ class EventLoggerClass {
 		const emails = context.emails && context.emails.EmailAddrs || null;
 
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
+		let optimizelyAttributes = { telligent_duid: this._getTelligentDuid() };
 
 		if (context.user) {
 			this._setTrackerLoginInfo(context.user.Login);
 			this.setIntercomProperty("user_id", context.user.UID.toString());
 			this.setUserProperty("internal_user_id", context.user.UID.toString());
+			optimizelyAttributes["user_id"] = context.user.Login;
 		}
 
 		if (context.intercomHash) {
@@ -150,7 +153,10 @@ class EventLoggerClass {
 			this.setUserProperty("emails", emails);
 			this.setIntercomProperty("email", primaryEmail);
 			if (this._fullStory) { this._fullStory.setUserVars({ email: primaryEmail }); }
+			optimizelyAttributes["email"] = primaryEmail;
 		}
+
+		ExperimentManager.setOptimizelyUserAttributes(optimizelyAttributes);
 	}
 
 	logout(): void {
@@ -161,6 +167,8 @@ class EventLoggerClass {
 		if (this._intercom) { this._intercom("shutdown"); }
 
 		if (this._fullStory) { this._fullStory.clearUserCookie(); }
+
+		ExperimentManager.logoutOptimizely();
 	}
 
 	// Responsible for setting the login information for all event trackers
@@ -218,7 +226,7 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		return Object.assign({}, platformProperties, { Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : "" });
+		return Object.assign({}, platformProperties, { Platform: this._currentPlatform, platformVersion: this._currentPlatformVersion, is_authed: context.user ? "true" : "false", path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : "" }, ExperimentManager.getOptimizelyMetadata());
 	}
 
 	// Use logViewEvent as the default way to log view events for Telligent and GA
@@ -252,6 +260,9 @@ class EventLoggerClass {
 		}
 
 		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
+
+		// Send event to ExperimentManager to determine if it should be tracked, and to send to Optimizely if so
+		ExperimentManager.logOptimizelyEvent(eventLabel);
 
 		if (global && global.window && global.window.ga) {
 			global.window.ga("send", {
@@ -345,6 +356,7 @@ class EventLoggerClass {
 						orgNames.push(orgs.Login);
 						if (orgs.Login === "sourcegraph") {
 							this.setUserProperty("is_employee", true);
+							ExperimentManager.setOptimizelyUserAttributes({ "is_employee": true });
 						}
 					}
 					this.setIntercomProperty("authed_orgs_github", orgNames);
