@@ -4,33 +4,52 @@ declare(strict_types = 1);
 namespace Sourcegraph\BuildServer;
 
 use LanguageServer\LanguageServer;
-use LanguageServer\Protocol\{
-    ServerCapabilities,
-    ClientCapabilities,
-    InitializeResult
-};
-use Sabre\Event\Promise;
 use Composer;
+use LanguageServer\ContentRetriever\{ContentRetriever, FileSystemContentRetriever};
+use LanguageServer\FilesFinder\{FilesFinder, FileSystemFilesFinder};
+use Sabre\Event\Promise;
+use Sabre\Uri;
+use Webmozart\PathUtil\Path;
+use function Sabre\Event\coroutine;
 
 class BuildServer extends LanguageServer
 {
-    /**
-     * Installs dependencies before calling the language server's initialize() method
-     *
-     * @param ClientCapabilities $capabilities The capabilities provided by the client (editor)
-     * @param string|null        $rootPath     The rootPath of the workspace. Is null if no folder is open.
-     * @param int|null           $processId    The process Id of the parent process that started the server. Is null if the process has not been started by another process. If the parent process is not alive then the server should exit (see exit notification) its process.
-     * @return Promise <InitializeResult>
-     */
-    public function initialize(ClientCapabilities $capabilities, string $rootPath = null, int $processId = null): Promise
+    protected function index(string $rootPath): Promise
     {
-        if ($rootPath && file_exists($rootPath . '/composer.json')) {
-            $io = new IO;
-            $composerFactory = new Composer\Factory;
-            $composer = $composerFactory->createComposer($io, $rootPath . '/composer.json', true, $rootPath);
-            $installer = Composer\Installer::create($io, $composer);
-            $installer->run();
-        }
-        return parent::initialize($capabilities, $rootPath, $processId);
+        return coroutine(function () use ($rootPath) {
+            $composerJsonFiles = yield $this->filesFinder->find(Path::makeAbsolute('**/composer.json', $rootPath));
+            if (!empty($composerJsonFiles)) {
+                $composerJsonFile = $composerJsonFiles[0];
+
+                // Create random temporary folder
+                $dir = sys_get_temp_dir() . '/phpbs' . time() . random_int(100000, 999999);
+                mkdir($dir);
+
+                // Write composer.json
+                file_put_contents("$dir/composer.json", yield $this->contentRetriever->retrieve($composerJsonFile));
+
+                // Install dependencies
+                fwrite(STDERR, "Installing dependencies to $dir\n");
+                $io = new IO;
+                $composerFactory = new Composer\Factory;
+                $composer = $composerFactory->createComposer($io, "$dir/composer.json", true, $dir);
+                $installer = Composer\Installer::create($io, $composer);
+                $installer->run();
+                
+                // Get the composer.json directory
+                $parts = Uri\parse($composerJsonFile);
+                $parts['path'] = dirname($parts['path']);
+                $composerJsonDir = Uri\build($parts);
+
+                // Read the generated composer.lock to get information about resolved dependencies
+                $composerLock = json_decode(file_get_contents("$dir/composer.lock"));
+
+                // Make filesFinder and contentRetriever aware of the dependencies installed in the temporary folder
+                $this->filesFinder = new DependencyAwareFilesFinder($this->filesFinder, $rootPath, $composerJsonDir, $dir, $composerLock);
+                $this->contentRetriever = new DependencyAwareContentRetriever($this->contentRetriever, $rootPath, $composerJsonDir, $dir, $composerLock);
+                $this->documentLoader->contentRetriever = $this->contentRetriever;
+            }
+            yield parent::index($rootPath);
+        });
     }
 }
