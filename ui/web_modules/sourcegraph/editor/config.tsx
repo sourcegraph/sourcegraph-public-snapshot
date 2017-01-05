@@ -1,18 +1,18 @@
 import * as throttle from "lodash/throttle";
+import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { ICursorSelectionChangedEvent } from "vs/editor/common/editorCommon";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
+import { IEditorService } from "vs/platform/editor/common/editor";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { EditorInput } from "vs/workbench/common/editor";
-import { EditorStacksModel } from "vs/workbench/common/editor/editorStacksModel";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
-import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
 
 import { getBlobPropsFromRouter, getSelectionFromRouter, router } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
+import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 
 // forceSyncInProgress is a mutex. We only want to open the editor to some
@@ -53,34 +53,21 @@ function updateEditorAfterURLChange(): void {
 
 // registerEditorCallbacks attaches custom Sourcegraph handling to the workbench editor lifecycle.
 export function registerEditorCallbacks(): void {
-	const editorService = Services.get(ICodeEditorService) as ICodeEditorService;
-	editorService.onCodeEditorAdd(updateEditor);
+	const codeEditorService = Services.get(ICodeEditorService) as ICodeEditorService;
+	codeEditorService.onCodeEditorAdd(updateEditor);
 
-	// A group is a set of editors. It is used in VSCode to display the left,
-	// right and center tab groups. A group has a stack of editors. We use the
-	// stack to determine which file is currently focused.
-	const groupService = Services.get(IEditorGroupService) as IEditorGroupService;
-	const stacks = groupService.getStacksModel();
-	if (!(stacks instanceof EditorStacksModel)) {
-		throw "Expected IEditorStacksModel to have concrete type EditorStacksModel";
-	}
-	stacks.onGroupActivated((group) => {
-		group.onEditorActivated(editorOpened);
-	});
+	const editorService = Services.get(IEditorService) as WorkbenchEditorService;
+	editorService.onDidOpenEditor(editorOpened);
 }
 
 // editorOpened is called whenever a new editor is created or activated. E.g:
 //  - on page load
 //  - from file explorer
 //  - for a cross-file j2d
-function editorOpened(input: EditorInput): void {
+function editorOpened(resource: URI): void {
 	if (forceSyncInProgress) {
 		return;
 	}
-	if (!input["resource"]) {
-		throw "Expected input to have resource attribute.";
-	}
-	const resource = input["resource"];
 	let {repo, rev, path} = URIUtils.repoParams(resource);
 	if (rev === "HEAD") {
 		rev = null;

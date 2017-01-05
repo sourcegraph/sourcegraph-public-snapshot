@@ -100,6 +100,7 @@ module.exports = {
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 		alias: {
 			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
+			"vs/workbench/services/editor/browser/editorService": "sourcegraph/workbench/overrides/editorService",
 			"electron": "sourcegraph/workbench/overrides/electron",
 			"vs/workbench/parts/files/browser/explorerViewlet": "sourcegraph/workbench/overrides/explorerViewlet",
 			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",
