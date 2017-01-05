@@ -92,7 +92,6 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2.CreatedAt = &r.CreatedAt
 	r2.UpdatedAt = r.UpdatedAt
 	r2.PushedAt = r.PushedAt
-	r2.VCSSyncedAt = r.VCSSyncedAt
 	return r2
 }
 
@@ -113,7 +112,6 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	}
 	r.UpdatedAt = r2.UpdatedAt
 	r.PushedAt = r2.PushedAt
-	r.VCSSyncedAt = r2.VCSSyncedAt
 	r.IndexedRevision = r2.IndexedRevision
 }
 
@@ -557,47 +555,6 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 		sql := `UPDATE repo SET ` + strings.Join(updates, ", ") + ` WHERE id=` + arg(op.Repo)
 		_, err := appDBH(ctx).Exec(sql, args...)
 		return err
-	}
-	return nil
-}
-
-// InternalRepoUpdate is an update of repo fields that are used by
-// internal Sourcegraph processes only. It is separate from RepoUpdate
-// so that internal updates can be performed by machine processes that
-// do not need to assume the privileges of the repo's owner (and can
-// merely have an internal token scope).
-type InternalRepoUpdate struct {
-	VCSSyncedAt *time.Time
-}
-
-// InternalUpdate performs an update of internal repository
-// fields. See InternalRepoUpdate for more information.
-func (s *repos) InternalUpdate(ctx context.Context, repo int32, op InternalRepoUpdate) error {
-	if Mocks.Repos.InternalUpdate != nil {
-		return Mocks.Repos.InternalUpdate(ctx, repo, op)
-	}
-
-	// SECURITY NOTE: If you add more fields and more UPDATE queries,
-	// each one should perform its own access checks, since updating
-	// different fields may require different levels of
-	// privilege. Here, we check for read access, which is the minimum
-	// privilege level that any InternalUpdate call must require.
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.InternalRepoUpdate", repo); err != nil {
-		return err
-	}
-
-	if op.VCSSyncedAt != nil {
-		// SECURITY NOTE: Even though this operation causes a DB
-		// write, we only require read access, since we are merely
-		// updating the date when the VCS data was synced.
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.InternalRepoUpdate", repo); err != nil {
-			return err
-		}
-
-		_, err := appDBH(ctx).Exec(`UPDATE repo SET "vcs_synced_at"=$1 WHERE id=$2`, op.VCSSyncedAt, repo)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

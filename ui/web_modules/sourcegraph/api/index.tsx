@@ -668,7 +668,6 @@ export interface Repo {
 	CreatedAt?: any;
 	UpdatedAt?: any;
 	PushedAt?: any;
-	VCSSyncedAt?: any;
 	Permissions?: RepoPermissions;
 	IndexedRevision?: string;
 }

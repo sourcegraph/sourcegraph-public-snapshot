@@ -96,7 +96,6 @@ type RemoteRepository {
 	private: Boolean!
 	createdAt: String!
 	pushedAt: String!
-	vcsSyncedAt: String!
 }
 
 type Hunk {

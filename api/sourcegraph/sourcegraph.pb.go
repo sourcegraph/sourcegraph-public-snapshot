@@ -111,10 +111,6 @@ type Repo struct {
 	UpdatedAt *time.Time `json:"UpdatedAt,omitempty"`
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	PushedAt *time.Time `json:"PushedAt,omitempty"`
-	// VCSSyncedAt is when this repository's VCS data was last synced
-	// with the upstream. This field is only populated for mirror
-	// repositories.
-	VCSSyncedAt *time.Time `json:"VCSSyncedAt,omitempty"`
 	// Permissions describes the actions that the current user (who
 	// retrieved this repository from the API) may perform on the
 	// repository. For public repositories retrieved by

@@ -139,7 +139,6 @@ declare namespace GQL {
 		private: boolean;
 		createdAt: string;
 		pushedAt: string;
-		vcsSyncedAt: string;
 	}
 
 	/*

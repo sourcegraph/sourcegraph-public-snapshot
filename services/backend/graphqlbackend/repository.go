@@ -137,14 +137,6 @@ func (r *repositoryResolver) Owner() string {
 	return r.repo.Owner
 }
 
-func (r *repositoryResolver) VCSSyncedAt() string {
-	if r.repo.VCSSyncedAt != nil {
-		return r.repo.VCSSyncedAt.String()
-	}
-
-	return ""
-}
-
 func (r *repositoryResolver) PushedAt() string {
 	if r.repo.PushedAt != nil {
 		return r.repo.PushedAt.String()
