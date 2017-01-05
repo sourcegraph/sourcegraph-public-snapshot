@@ -696,3 +696,16 @@ index 8f9dbdbc8..31112f8f3 100644
  		serviceCollection.set(IKeybindingService, this.keybindingService);
  
  		// Context Menu
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/parts/tree/browser/treeDefaults.ts b/ui/vendor/node_modules/vscode/src/vs/base/parts/tree/browser/treeDefaults.ts
+index 9b14994be..0e2e37552 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/base/parts/tree/browser/treeDefaults.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/parts/tree/browser/treeDefaults.ts
+@@ -360,7 +360,7 @@ export class DefaultController implements _.IController {
+ 		if (focus) {
+ 			tree.setSelection([focus], payload);
+ 		}
+-		return true;
++		return this.onLeftClick(tree, focus, event, 'keyboard');
+ 	}
+ 
+ 	protected onSpace(tree: _.ITree, event: IKeyboardEvent): boolean {
