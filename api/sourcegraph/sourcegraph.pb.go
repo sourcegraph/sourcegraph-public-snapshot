@@ -321,13 +321,6 @@ type CommitterList struct {
 	StreamResponse `json:""`
 }
 
-type MirrorReposRefreshVCSOp struct {
-	Repo int32 `json:"Repo,omitempty"`
-	// AsUser is the user whose auth token will be used for refreshing this
-	// mirror repo. This can be used when refreshing a private repo mirror.
-	AsUser *UserSpec `json:"AsUser,omitempty"`
-}
-
 // EmailAddr is an email address associated with a user.
 type EmailAddr struct {
 	// the email address (case-insensitively compared in the DB and API)

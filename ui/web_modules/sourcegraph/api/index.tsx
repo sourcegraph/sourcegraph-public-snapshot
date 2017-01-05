@@ -517,11 +517,6 @@ export interface MessageActionItem {
 	title: string;
 }
 
-export interface MirrorReposRefreshVCSOp {
-	Repo?: number;
-	AsUser?: UserSpec;
-}
-
 export interface None {
 }
 
