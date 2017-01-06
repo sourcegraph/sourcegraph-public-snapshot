@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
@@ -293,7 +294,7 @@ func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.R
 			// rather an optimization for us to save the data from
 			// github. As such we use an elevated context to allow the
 			// write.
-			if err := localstore.Repos.Update(elevatedActor(ctx), *update); err != nil {
+			if err := localstore.Repos.Update(accesscontrol.WithInsecureSkip(ctx, true), *update); err != nil {
 				log15.Error("Failed updating repo metadata from remote", "repo", repo.URI, "error", err)
 			}
 		}
