@@ -41,44 +41,35 @@ var Repos interface {
 // If the cmdline flag auth.restrict-write-access is set, this method
 // will check if the authenticated user has admin privileges.
 func VerifyUserHasReadAccess(ctx context.Context, method string, repo interface{}) error {
-	return VerifyActorHasReadAccess(ctx, auth.ActorFromContext(ctx), method, repo)
+	if skip(ctx) {
+		return nil
+	}
+
+	if repo != nil {
+		_, repoURI, err := getRepo(ctx, repo)
+		if err != nil {
+			return err
+		}
+		// TODO: getRepo above already indirectly performs this access check, but outside of
+		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
+		//       to optimize, just need to refactor this in a better way.
+		if !VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), method, repoURI) {
+			return ErrRepoNotFound
+		}
+	}
+	return nil
 }
 
 // VerifyUserHasWriteAccess checks if the user in the current context
 // is authorized to make write requests to this server.
 //
-// This method always returns nil when the user has write access,
-// and returns a non-nil error when access cannot be granted.
-// If the cmdline flag auth.restrict-write-access is set, this method
-// will check if the authenticated user has admin privileges.
+// There is currently no way to have write access, so this method always returns an error except
+// if the context is skipping permission checks.
 func VerifyUserHasWriteAccess(ctx context.Context, method string, repo interface{}) error {
-	return VerifyActorHasWriteAccess(ctx, auth.ActorFromContext(ctx), method, repo)
-}
-
-// VerifyUserHasWriteAccess checks if the user in the current context
-// is authorized to make admin requests to this server.
-func VerifyUserHasAdminAccess(ctx context.Context, method string) error {
-	return VerifyActorHasAdminAccess(ctx, auth.ActorFromContext(ctx), method)
-}
-
-// VerifyUserSelfOrAdmin checks if the user in the current context has
-// the given uid, or if the actor has admin access on the server.
-// This check should be used in cases where a request should succeed only
-// if the request is for the user's own information, or if the ctx actor is an admin.
-func VerifyUserSelfOrAdmin(ctx context.Context, method string, uid string) error {
-	if uid != "" && auth.ActorFromContext(ctx).UID == uid {
+	if skip(ctx) {
 		return nil
 	}
-
-	return VerifyUserHasAdminAccess(ctx, method)
-}
-
-// VerifyClientSelfOrAdmin checks if the client in the current context has
-// the given id, or if the actor has admin access on the server.
-// This check should be used in cases where a request should succeed only
-// if the request is for the client's own information, or if the ctx actor is an admin.
-func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string) error {
-	return VerifyUserHasAdminAccess(ctx, method)
+	return ErrRepoNotFound
 }
 
 // VerifyActorHasRepoURIAccess checks if the given actor is authorized to access
@@ -92,7 +83,7 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // Verify{User,Actor}Has{Read,Write}Access funcs. This func is
 // specially designed to avoid infinite loops with
 // (*localstore.repos).Get/GetByURI.
-func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoID int32, repoURI string) bool {
+func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoURI string) bool {
 	if skip(ctx) {
 		return true
 	}
@@ -196,34 +187,6 @@ func getRepo(ctx context.Context, repoIDOrURI interface{}) (repoID int32, repoUR
 	return
 }
 
-// VerifyActorHasReadAccess checks if the given actor is authorized to make
-// read requests to this server.
-//
-// Note that this function allows the caller to retrieve any user's
-// access levels.  This is meant for trusted server code living
-// outside the scope of a user request to verify user permissions. For
-// all other cases, VerifyUserHasWriteAccess or
-// VerifyUserHasAdminAccess should be used to authorize a user.
-func VerifyActorHasReadAccess(ctx context.Context, actor *auth.Actor, method string, repo interface{}) error {
-	if skip(ctx) {
-		return nil
-	}
-
-	if repo != nil {
-		repoID, repoURI, err := getRepo(ctx, repo)
-		if err != nil {
-			return err
-		}
-		// TODO: getRepo above already indirectly performs this access check, but outside of
-		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
-		//       to optimize, just need to refactor this in a better way.
-		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
-			return ErrRepoNotFound
-		}
-	}
-	return nil
-}
-
 // VerifyUserHasReadAccessAll verifies checks if the current actor
 // can access these repositories. This method implements a more
 // efficient way of verifying permissions on a set of repositories.
@@ -321,80 +284,6 @@ func VerifyUserHasReadAccessToDefRepoRefs(ctx context.Context, method string, re
 		final = append(final, repoRef)
 	}
 	return final, nil
-}
-
-// VerifyActorHasWriteAccess checks if the given actor is authorized to make
-// write requests to this server.
-//
-// Note that this function allows the caller to retrieve any user's
-// access levels.  This is meant for trusted server code living
-// outside the scope of user requests to verify user permissions. For
-// all other cases, VerifyUserHasWriteAccess should be used to
-// authorize a user.
-func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method string, repo interface{}) error {
-	if skip(ctx) {
-		return nil
-	}
-
-	repoID, repoURI, err := getRepo(ctx, repo)
-	if err != nil {
-		return err
-	}
-
-	// TODO: redesign the permissions model to avoid short-circuited "return nil"s.
-	// (because it makes modifying authorization logic more error-prone.)
-
-	if !actor.IsAuthenticated() {
-		return legacyerr.Errorf(legacyerr.Unauthenticated, "write operation (%s) denied: not authenticated", method)
-	}
-
-	if !inAuthenticatedWriteWhitelist(method) {
-		return legacyerr.Errorf(legacyerr.PermissionDenied, "write operation (%s) denied: user does not have write access", method)
-	}
-
-	if repoID != 0 && repoURI != "" {
-		// TODO: getRepo above already indirectly performs this access check, but outside of
-		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
-		//       to optimize, just need to refactor this in a better way.
-		if !VerifyActorHasRepoURIAccess(ctx, actor, method, repoID, repoURI) {
-			return ErrRepoNotFound
-		}
-	}
-
-	return nil
-}
-
-// VerifyActorHasAdminAccess checks if the given actor is authorized to make
-// admin requests to this server.
-//
-// Note that this function allows the caller to retrieve any user's
-// access levels.  This is meant for trusted server code living
-// outside the scope of user requests to verify user permissions. For
-// all other cases, VerifyUserHasAdminAccess should be used to
-// authorize a user.
-func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method string) error {
-	if skip(ctx) {
-		return nil
-	}
-
-	if !actor.IsAuthenticated() {
-		return legacyerr.Errorf(legacyerr.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
-	}
-
-	return legacyerr.Errorf(legacyerr.PermissionDenied, "admin operation (%s) denied: not authorized", method)
-}
-
-// inAuthenticatedWriteWhitelist reports if we always allow write access
-// for method to any authenticated user.
-func inAuthenticatedWriteWhitelist(method string) bool {
-	switch method {
-	case "MirrorRepos.cloneRepo":
-		// This is used for read-only users to be able to trigger mirror clones
-		// of public repositories, effectively "enabling" that repository.
-		return true
-	default:
-		return false
-	}
 }
 
 // Allow skipping access checks when testing other packages.

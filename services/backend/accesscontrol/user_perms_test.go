@@ -299,68 +299,6 @@ func TestVerifyUserHasReadAccessToDefRepoRefs(t *testing.T) {
 	}
 }
 
-func TestVerifyAccess(t *testing.T) {
-	var uid string
-	var ctx context.Context
-
-	// Test that UID 3 has no write/admin access, excluding to whitelisted methods
-	uid = "3"
-	ctx = asUID(uid)
-
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
-		t.Fatalf("user %v should not have write access; got access\n", uid)
-	}
-	if err := VerifyUserHasAdminAccess(ctx, "Repos.Create"); err == nil {
-		t.Fatalf("user %v should not have admin access; got access\n", uid)
-	}
-	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", nil); err != nil {
-		t.Fatalf("user %v should have MirrorRepos.cloneRepo access; got %v\n", uid, err)
-	}
-
-	// Test that unauthed context has no write/admin access
-	uid = ""
-	ctx = asUID(uid)
-
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
-		t.Fatalf("user %v should not have write access; got access\n", uid)
-	}
-	if err := VerifyUserHasAdminAccess(ctx, "Repos.Create"); err == nil {
-		t.Fatalf("user %v should not have admin access; got access\n", uid)
-	}
-	if err := VerifyUserHasWriteAccess(ctx, "MirrorRepos.cloneRepo", nil); err == nil {
-		t.Fatalf("user %v should not have MirrorRepos.cloneRepo access; got access\n", uid)
-	}
-
-	// Test that user has read access for their own data, but not other users'
-	// data
-	uid = "1"
-	uid2 := "3"
-
-	ctx = asUID(uid2)
-	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", uid2); err != nil {
-		t.Fatalf("user %v should have read access; got: %v\n", uid, err)
-	}
-	if err := VerifyUserSelfOrAdmin(ctx, "Users.ListEmails", uid); err == nil {
-		t.Fatalf("user %v should not have read access; got access\n", uid2)
-	}
-
-	// Test that for local auth, all authenticated users have write access,
-	// but unauthenticated users don't.
-	uid = ""
-	ctx = asUID(uid)
-
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
-		t.Fatalf("user %v should not have write access; got access\n", uid)
-	}
-
-	uid = "1234"
-	ctx = asUID(uid)
-
-	if err := VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err == nil {
-		t.Fatalf("user %v should not have write access; got access\n", uid)
-	}
-}
-
 func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 	ctx, mock := testContext()
 
@@ -443,7 +381,7 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 
 		actor := &auth.Actor{UID: "1"}
 		const repoID = 1
-		got := VerifyActorHasRepoURIAccess(ctx, actor, "Repos.GetByURI", repoID, test.repoURI)
+		got := VerifyActorHasRepoURIAccess(ctx, actor, "Repos.GetByURI", test.repoURI)
 		if calledGitHub != test.shouldCallGitHub {
 			if test.shouldCallGitHub {
 				t.Errorf("expected GitHub API to be called for permissions check, but it wasn't")

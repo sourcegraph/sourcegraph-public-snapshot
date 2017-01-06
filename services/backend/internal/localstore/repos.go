@@ -143,7 +143,7 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
 	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.Get
 	// TODO: Try to get rid of that loop, and have a way to use VerifyUserHasReadAccess here.
-	if !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.ID, repo.URI) {
+	if !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.URI) {
 		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
@@ -164,7 +164,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
 	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
 	// TODO: Try to get rid of that loop, and have a way to use VerifyUserHasReadAccess here.
-	if !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.ID, repo.URI) {
+	if !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.URI) {
 		return nil, accesscontrol.ErrRepoNotFound
 	}
 	return repo, nil
@@ -380,7 +380,7 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 		// Anyone can create GitHub mirrors.
 	} else if strings.HasPrefix(newRepo.URI, "source.developers.google.com/p/") {
 		// Anyone can create GCP mirrors.
-	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", nil); err != nil {
+	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", 0); err != nil {
 		return 0, err
 	}
 
