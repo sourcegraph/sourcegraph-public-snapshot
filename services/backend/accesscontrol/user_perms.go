@@ -34,12 +34,10 @@ var Repos interface {
 }
 
 // VerifyUserHasReadAccess checks if the user in the current context
-// is authorized to make write requests to this server.
+// is authorized to make read requests to this server.
 //
-// This method always returns nil when the user has write access,
+// This method always returns nil when the user has read access,
 // and returns a non-nil error when access cannot be granted.
-// If the cmdline flag auth.restrict-write-access is set, this method
-// will check if the authenticated user has admin privileges.
 func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) error {
 	if skip(ctx) {
 		return nil
