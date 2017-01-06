@@ -40,20 +40,20 @@ var Repos interface {
 // and returns a non-nil error when access cannot be granted.
 // If the cmdline flag auth.restrict-write-access is set, this method
 // will check if the authenticated user has admin privileges.
-func VerifyUserHasReadAccess(ctx context.Context, method string, repo interface{}) error {
+func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) error {
 	if skip(ctx) {
 		return nil
 	}
 
-	if repo != nil {
-		_, repoURI, err := getRepo(ctx, repo)
+	if repoID != 0 {
+		repo, err := Repos.Get(ctx, repoID)
 		if err != nil {
 			return err
 		}
-		// TODO: getRepo above already indirectly performs this access check, but outside of
+		// TODO: Repos.Get above already indirectly performs this access check, but outside of
 		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
 		//       to optimize, just need to refactor this in a better way.
-		if !VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), method, repoURI) {
+		if !VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), method, repo.URI) {
 			return ErrRepoNotFound
 		}
 	}
@@ -65,7 +65,7 @@ func VerifyUserHasReadAccess(ctx context.Context, method string, repo interface{
 //
 // There is currently no way to have write access, so this method always returns an error except
 // if the context is skipping permission checks.
-func VerifyUserHasWriteAccess(ctx context.Context, method string, repo interface{}) error {
+func VerifyUserHasWriteAccess(ctx context.Context, method string, repo int32) error {
 	if skip(ctx) {
 		return nil
 	}
@@ -165,26 +165,6 @@ func VerifyActorHasGCPRepoAccess(ctx context.Context, actor *auth.Actor, repoURI
 	}
 
 	return false
-}
-
-func getRepo(ctx context.Context, repoIDOrURI interface{}) (repoID int32, repoURI string, err error) {
-	repoURI, _ = repoIDOrURI.(string)
-	repoID, _ = repoIDOrURI.(int32)
-
-	var repoObj *sourcegraph.Repo
-	if repoID != 0 && repoURI == "" {
-		repoObj, err = Repos.Get(ctx, repoID)
-	} else if repoURI != "" && repoID == 0 {
-		repoObj, err = Repos.GetByURI(ctx, repoURI)
-	}
-	if err != nil {
-		return
-	}
-	if repoObj != nil {
-		repoID = repoObj.ID
-		repoURI = repoObj.URI
-	}
-	return
 }
 
 // VerifyUserHasReadAccessAll verifies checks if the current actor

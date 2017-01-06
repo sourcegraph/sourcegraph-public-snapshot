@@ -217,7 +217,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		return Mocks.Repos.List(ctx, opt)
 	}
 
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", nil); err != nil {
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Repos.List", 0); err != nil {
 		return nil, err
 	}
 	if opt == nil {
