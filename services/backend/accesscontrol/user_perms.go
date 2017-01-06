@@ -3,7 +3,6 @@ package accesscontrol
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	gogithub "github.com/sourcegraph/go-github/github"
@@ -95,10 +94,6 @@ func VerifyClientSelfOrAdmin(ctx context.Context, method string, clientID string
 // (*localstore.repos).Get/GetByURI.
 func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoID int32, repoURI string) bool {
 	if skip(ctx) {
-		return true
-	}
-
-	if verifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
 		return true
 	}
 
@@ -350,9 +345,6 @@ func VerifyActorHasWriteAccess(ctx context.Context, actor *auth.Actor, method st
 	// (because it makes modifying authorization logic more error-prone.)
 
 	if !actor.IsAuthenticated() {
-		if verifyScopeHasAccess(ctx, actor.Scope, method, repoID) {
-			return nil
-		}
 		return legacyerr.Errorf(legacyerr.Unauthenticated, "write operation (%s) denied: not authenticated", method)
 	}
 
@@ -386,51 +378,10 @@ func VerifyActorHasAdminAccess(ctx context.Context, actor *auth.Actor, method st
 	}
 
 	if !actor.IsAuthenticated() {
-		if verifyScopeHasAccess(ctx, actor.Scope, method, 0) {
-			return nil
-		}
 		return legacyerr.Errorf(legacyerr.Unauthenticated, "admin operation (%s) denied: not authenticated", method)
 	}
 
 	return legacyerr.Errorf(legacyerr.PermissionDenied, "admin operation (%s) denied: not authorized", method)
-}
-
-// Check if the actor is authorized with an access token
-// having a valid scope. This token is set in package cli on server
-// startup, and is only available to client commands spawned
-// in the server process.
-//
-// !!!!!!!!!!!!!!!!!!!! DANGER(security) !!!!!!!!!!!!!!!!!!!!!!
-// This does not check that the token is properly signed, since
-// that is done in server/internal/oauth2util/grpc_middleware.go
-// when parsing the request metadata and adding the actor to the
-// context. To avoid additional latency from expensive public key
-// operations, that check is not repeated here, but be careful
-// about refactoring that check.
-func verifyScopeHasAccess(ctx context.Context, scopes map[string]bool, method string, repo int32) bool {
-	if scopes == nil {
-		return false
-	}
-	for scope := range scopes {
-		switch {
-		case strings.HasPrefix(scope, "internal:"):
-			// internal server commands have default write access.
-			return true
-
-		case scope == "worker:build":
-			return true
-
-		case strings.HasPrefix(scope, "repo:"):
-			scopeRepo, err := strconv.Atoi(strings.TrimPrefix(scope, "repo:"))
-			if err != nil {
-				return false
-			}
-			if repo != 0 && int32(scopeRepo) == repo {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 // inAuthenticatedWriteWhitelist reports if we always allow write access

@@ -20,10 +20,6 @@ type Actor struct {
 	// it, as an optimization to avoid incurring the Users.Get call).
 	Login string `json:",omitempty"`
 
-	// Scope is a set of authorized scopes that the actor has
-	// access to on the given server.
-	Scope map[string]bool `json:",omitempty"`
-
 	// Email is the primary email address of the user.
 	Email string
 
@@ -49,19 +45,12 @@ type Actor struct {
 }
 
 func (a *Actor) String() string {
-	return fmt.Sprintf("Actor UID %s (scope=%v)", a.UID, a.Scope)
+	return fmt.Sprintf("Actor UID %s", a.UID)
 }
 
 // IsAuthenticated returns true if the Actor is derived from an authenticated user.
 func (a *Actor) IsAuthenticated() bool {
 	return a.UID != ""
-}
-
-// HasScope returns a boolean indicating whether this actor has the
-// given scope.
-func (a *Actor) HasScope(s string) bool {
-	hasScope, ok := a.Scope[s]
-	return ok && hasScope
 }
 
 func (a *Actor) UserSpec() *sourcegraph.UserSpec {

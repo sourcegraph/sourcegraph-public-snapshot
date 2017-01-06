@@ -28,7 +28,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -38,7 +37,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	srclib "sourcegraph.com/sourcegraph/srclib/cli"
@@ -265,19 +263,4 @@ func Main() error {
 	log15.Info(fmt.Sprintf("✱ Sourcegraph running at %s", appURL))
 
 	select {}
-}
-
-// authenticateScopedContext adds a token with the specified scope to the given
-// context. This context can only make API calls that are permitted for the given
-// scope. See the accesscontrol package for information about different scopes.
-func authenticateScopedContext(ctx context.Context, scopes []string) (context.Context, error) {
-	scopeMap := make(map[string]bool)
-	for _, s := range scopes {
-		scopeMap[s] = true
-	}
-	a := &auth.Actor{
-		Scope: scopeMap,
-	}
-	ctx = github.NewContextWithAuthedClient(ctx)
-	return auth.WithActor(ctx, a), nil
 }

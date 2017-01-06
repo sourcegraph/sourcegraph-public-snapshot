@@ -482,15 +482,6 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 	return inventory.Get(ctx, files)
 }
 
-func (s *repos) verifyScopeHasPrivateRepoAccess(scope map[string]bool) bool {
-	for k := range scope {
-		if strings.HasPrefix(k, "internal:") {
-			return true
-		}
-	}
-	return false
-}
-
 var indexerAddr = env.Get("SRC_INDEXER", "127.0.0.1:3179", "The address of the indexer service.")
 
 func (s *repos) RefreshIndex(ctx context.Context, repo string) (err error) {
