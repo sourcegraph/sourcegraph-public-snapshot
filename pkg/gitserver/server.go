@@ -14,11 +14,14 @@ import (
 	"github.com/neelance/chanrpc/chanrpcutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
+
+var defaultOrigin = env.Get("DEFAULT_ORIGIN", "", "the default origin to try for unknown repos")
 
 // Server is a gitserver server.
 type Server struct {
@@ -119,7 +122,15 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		return
 	}
 	if !repoExists(dir) {
-		if strings.HasPrefix(req.Repo, "github.com/") && !req.NoCreds {
+		var origin string
+		switch {
+		case strings.HasPrefix(req.Repo, "github.com/") && !req.NoCreds:
+			origin = "https://" + req.Repo + ".git"
+		case defaultOrigin != "":
+			origin = strings.Replace(defaultOrigin, "_REPO_", req.Repo, 1)
+		}
+
+		if origin != "" {
 			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
 			s.cloningMu.Unlock()
 
@@ -130,7 +141,6 @@ func (s *Server) handleExecRequest(req *execRequest) {
 					s.cloningMu.Unlock()
 				}()
 
-				origin := "https://" + req.Repo + ".git"
 				cmd := exec.Command("git", "clone", "--mirror", origin, dir)
 				if output, err := s.runWithRemoteOpts(cmd, req.Opt); err != nil {
 					log15.Error("clone failed", "error", err, "output", string(output))
