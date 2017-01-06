@@ -53,7 +53,7 @@ func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) e
 		// TODO: Repos.Get above already indirectly performs this access check, but outside of
 		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
 		//       to optimize, just need to refactor this in a better way.
-		if !VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), method, repo.URI) {
+		if repo.Private && !VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), method, repo.URI) {
 			return ErrRepoNotFound
 		}
 	}
