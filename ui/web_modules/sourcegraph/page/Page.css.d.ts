@@ -27,6 +27,9 @@ export const sidebox: string;
 export const plans: string;
 export const plan: string;
 export const plan_box: string;
+export const sprinkle_blue: string;
+export const sprinkle_purple: string;
+export const sprinkle_orange: string;
 export const plan_panel: string;
 export const currency: string;
 export const amount: string;
@@ -35,4 +38,5 @@ export const plan_cta_noop: string;
 export const details: string;
 export const details_list: string;
 export const details_cumulative: string;
+export const drop_capped: string;
 

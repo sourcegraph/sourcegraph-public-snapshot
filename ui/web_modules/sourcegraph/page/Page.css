@@ -138,6 +138,9 @@
 		margin-bottom: 0 !important; /* cancel media query composed rule above */
 		flex: 0 0 150px;
 	}
+	.sprinkle_blue, .sprinkle_purple, .sprinkle_orange {
+		opacity: .2;
+	}
 }
 .plan_panel {
 	composes: pt3 pb2 ph3 mb2 br3 from base;
@@ -172,4 +175,14 @@
 }
 .details_cumulative {
 	font-weight: normal;
+}
+
+.drop_capped:first-letter {
+    float: left;
+	font-weight: 800;
+    font-size: 3.35rem;
+    line-height: 1.25;
+    padding-top: 0;
+    padding-right: 16px;
+    padding-left: 0;
 }

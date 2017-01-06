@@ -12,13 +12,13 @@ interface Props {
 }
 
 export function Hero({color = "white", className, pattern, children, style}: Props): JSX.Element {
-	return <div className={classNames(pattern ? patternClasses[pattern] : null, className)} style={{
+	return <div className={classNames(pattern ? patternClasses[pattern] : null, className)} style={Object.assign({
 		backgroundColor: bgColors[color],
 		color: color === "white" || color === "transparent" ? "inherit" : colors.white(),
 		textAlign: "center",
 		paddingBottom: whitespace[4],
 		paddingTop: whitespace[4],
-	}}>{children}</div>;
+	}, style)}>{children}</div>;
 }
 
 const bgColors = {
