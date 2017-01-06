@@ -14,7 +14,7 @@
         "@types/temp": "^0.8.29",
         "chai": "^3.4.34",
         "commander": "^2.9.0",
-        "javascript-typescript-langserver": "1.0.1-d",
+        "javascript-typescript-langserver": "^1.0.2",
         "mkdirp": "^0.5.1",
         "proper-lockfile": "^2.0.0",
         "rimraf": "^2.5.4",
