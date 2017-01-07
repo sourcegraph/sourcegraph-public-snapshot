@@ -280,7 +280,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 
 			newURI, err := h.rewriteURIFromLangServer("file://" + path)
 			if err != nil {
-				log.Println(err)
+				log.Printf("error rewriting URI from language server: %s", err)
 				return
 			}
 
