@@ -58,7 +58,7 @@ export class ExperimentManagerClass {
 
 	constructor() {
 		// Build list of all active experiments
-		if (global && global.window && global.window.optimizely) {
+		if (global && global.window && global.window.optimizely && global.window.optimizely.get) {
 			const experimentDataList = global.window.optimizely.get("data").experiments;
 
 			global.window.optimizely.get("state").getActiveExperimentIds().forEach((experimentId) => {
