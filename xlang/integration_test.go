@@ -22,14 +22,15 @@ func TestIntegration(t *testing.T) {
 	}
 
 	tests := map[string]struct { // map key is rootPath
-		mode             string
-		ciBlacklist      bool
-		pinDepReposToRev map[string]string // so that file:line:col expectations are stable
-		wantHover        map[string]string
-		wantDefinition   map[string]string
-		wantXDefinition  map[string]string
-		wantReferences   map[string][]string
-		wantSymbols      map[string][]string
+		mode              string
+		ciBlacklist       bool
+		pinDepReposToRev  map[string]string // so that file:line:col expectations are stable
+		wantHover         map[string]string
+		wantDefinition    map[string]string
+		wantXDefinition   map[string]string
+		wantReferences    map[string][]string
+		wantSymbols       map[string][]string
+		wantXDependencies string
 	}{
 		"git://github.com/gorilla/mux?0a192a193177452756c362c20087ddafcf6829c4": {
 			mode: "go",
@@ -45,6 +46,7 @@ func TestIntegration(t *testing.T) {
 			wantXDefinition: map[string]string{
 				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6 attr_package:net/http attr_packageName:http name:Request",
 			},
+			wantXDependencies: "gorilla-mux.json",
 		},
 		"git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8": {
 			mode: "go",
@@ -98,6 +100,7 @@ func TestIntegration(t *testing.T) {
 			wantXDefinition: map[string]string{
 				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6 attr_package:github.com/gorilla/securecookie attr_packageName:securecookie name:SecureCookie",
 			},
+			wantXDependencies: "gorilla-csrf.json",
 		},
 		"git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171": {
 			// SHA is equivalent to go1.7.1 tag, but make sure we
@@ -133,6 +136,7 @@ func TestIntegration(t *testing.T) {
 				"dir:crypto/sha256 Sum256":     []string{}, // invalid dir
 				"dir:foo Sum256":               []string{}, // invalid dir
 			},
+			wantXDependencies: "golang-go.json",
 		},
 		"git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770": {
 			mode:        "go",
@@ -150,10 +154,14 @@ func TestIntegration(t *testing.T) {
 		"git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33": {
 			mode:        "go",
 			ciBlacklist: true, // skip on CI due to large repo size
+			pinDepReposToRev: map[string]string{
+				"https://github.com/kubernetes/client-go": "5fe6fc56cb38d04ef4af601a03599c984229dea2",
+			},
 			wantHover: map[string]string{
 				"pkg/ssh/ssh.go:49:38":               "func NewCounter(...",
 				"pkg/util/workqueue/queue.go:113:15": "struct field L sync.Locker",
 			},
+			wantXDependencies: "kubernetes-kubernetes.json",
 		},
 		"git://github.com/uber-go/atomic?3b8db5e93c4c02efbc313e17b2e796b0914a01fb": {
 			mode: "go",
@@ -228,7 +236,7 @@ func TestIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies)
 
 			if err := c.Close(); err != nil {
 				t.Fatal(err)

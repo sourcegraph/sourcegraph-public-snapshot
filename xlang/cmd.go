@@ -49,8 +49,14 @@ func init() {
 			if err != nil {
 				log.Fatal("Builtin Go lang server: Listen:", err)
 			}
-			if err := os.Setenv("LANGSERVER_GO", "tcp://"+l.Addr().String()); err != nil {
+			addr := "tcp://" + l.Addr().String()
+			if err := os.Setenv("LANGSERVER_GO", addr); err != nil {
 				log.Fatal("Set LANGSERVER_GO:", err)
+			}
+			if os.Getenv("LANGSERVER_GO_BG") == ":builtin:" {
+				if err := os.Setenv("LANGSERVER_GO_BG", addr); err != nil {
+					log.Fatal("Set LANGSERVER_GO_BG:", err)
+				}
 			}
 			go func() {
 				defer l.Close()
@@ -71,7 +77,7 @@ func init() {
 		}
 
 		// Start an in-process LSP proxy.
-		l, err := net.Listen("tcp", ":0")
+		l, err := net.Listen("tcp", ":4388")
 		if err != nil {
 			log.Fatal("LSP dev proxy: Listen:", err)
 		}

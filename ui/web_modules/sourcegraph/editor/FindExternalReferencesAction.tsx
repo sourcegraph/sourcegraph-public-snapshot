@@ -7,6 +7,7 @@ import { ReferencesController } from "vs/editor/contrib/referenceSearch/browser/
 import { ReferencesModel } from "vs/editor/contrib/referenceSearch/browser/referencesModel";
 import { PeekContext } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
 import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
+import { IEditorService } from "vs/platform/editor/common/editor";
 
 import * as BlobActions from "sourcegraph/blob/BlobActions";
 import { URIUtils } from "sourcegraph/core/uri";
@@ -79,10 +80,10 @@ class PeekExternalReferences extends EditorAction {
 	}
 
 	run(accessor: ServicesAccessor, editor: ICommonCodeEditor): void {
-		return this._getGlobalReferencesAtPosition(editor);
+		return this._getGlobalReferencesAtPosition(editor, accessor.get(IEditorService));
 	}
 
-	_getGlobalReferencesAtPosition(editor: ICommonCodeEditor): void {
+	_getGlobalReferencesAtPosition(editor: ICommonCodeEditor, editorService: IEditorService): void {
 		const controller = ReferencesController.get(editor);
 		const { repo, path } = URIUtils.repoParams(editor.getModel().uri);
 		const editorPosition = editor.getPosition();
@@ -124,9 +125,14 @@ class PeekExternalReferences extends EditorAction {
 				getMetaTitle: () => {
 					return "";
 				},
-				onGoto: () => {
+				onGoto: (ref) => {
 					controller.closeWidget();
-					return TPromise.as(editor);
+					return editorService.openEditor({
+						resource: ref.uri,
+						options: {
+							selection: ref.range
+						}
+					});
 				},
 			});
 		})

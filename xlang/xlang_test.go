@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strconv"
@@ -13,13 +17,14 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // lspTests runs all test suites for LSP functionality.
-func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string) {
+func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string) {
 	for pos, want := range wantHover {
 		tbRun(t, fmt.Sprintf("hover-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
 			hoverTest(t, ctx, c, root, pos, want)
@@ -47,6 +52,17 @@ func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI
 	for query, want := range wantSymbols {
 		tbRun(t, fmt.Sprintf("symbols(q=%q)", query), func(t testing.TB) {
 			symbolsTest(t, ctx, c, root, query, want)
+		})
+	}
+
+	if wantXDependencies != "" {
+		tbRun(t, fmt.Sprintf("xdependencies-"+wantXDependencies), func(t testing.TB) {
+			var deps []lspext.DependencyReference
+			err := c.Call(ctx, "workspace/xdependencies", struct{}{}, &deps)
+			if err != nil {
+				t.Fatal(err)
+			}
+			jsonTest(t, deps, "xdependencies-"+wantXDependencies)
 		})
 	}
 }
@@ -146,6 +162,36 @@ func symbolsTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.
 	}
 }
 
+func jsonTest(t testing.TB, gotData interface{}, testName string) {
+	got, err := json.MarshalIndent(gotData, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantFile := filepath.Join("testdata", "want-"+testName)
+	want, err := ioutil.ReadFile(wantFile)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+	if strings.TrimSpace(string(got)) != strings.TrimSpace(string(want)) {
+		gotFile := filepath.Join("testdata", "got-"+testName)
+		ioutil.WriteFile(gotFile, got, 0777)
+
+		cmd := exec.Command("git", "diff", "--color", "--no-index", wantFile, gotFile)
+		cmd.Dir, err = os.Getwd()
+		if err != nil {
+			t.Fatal(err)
+			return
+		}
+		diff, _ := cmd.CombinedOutput()
+		if len(diff) > 1024 { // roughly 20 lines
+			diff = []byte(string(diff[:1024]) + fmt.Sprintf("\x1B[0m ... (%d bytes omitted)", len(diff)-1024))
+		}
+		t.Error(string(diff))
+		t.Fatalf("\ngot  %s\nwant %s", gotFile, wantFile)
+	}
+}
+
 func parsePos(s string) (file string, line, char int, err error) {
 	parts := strings.Split(s, ":")
 	if len(parts) != 3 {
@@ -211,7 +257,7 @@ func callDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, cha
 }
 
 func callXDefinition(ctx context.Context, c *jsonrpc2.Conn, uri string, line, char int) (string, error) {
-	var res []lspext.SymbolLocationInformation
+	var res []lsext.SymbolLocationInformation
 	err := c.Call(ctx, "textDocument/xdefinition", lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: uri},
 		Position:     lsp.Position{Line: line, Character: char},

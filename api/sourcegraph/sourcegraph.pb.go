@@ -639,6 +639,14 @@ type RefLocations struct {
 	StreamResponse
 }
 
+func (r *RefLocations) Len() int      { return len(r.Locations) }
+func (r *RefLocations) Swap(i, j int) { r.Locations[i], r.Locations[j] = r.Locations[j], r.Locations[i] }
+func (r *RefLocations) Less(i, j int) bool {
+	x := r.Locations[i]
+	y := r.Locations[j]
+	return (x.Scheme + x.Host + x.Path + x.File) < (y.Scheme + y.Host + y.Path + y.File)
+}
+
 // RefLocation represents the location of a reference to a definition.
 type RefLocation struct {
 	// Scheme, Host, Path, Version, and File combined compose a URI at which a
@@ -740,12 +748,15 @@ type FileRange struct {
 }
 
 type DefsRefreshIndexOp struct {
-	// Repo is the repo whose graph data is to be re-indexed
-	// for global ref locations.
-	Repo int32 `json:"Repo,omitempty"`
-	// Force ensures we reindex, even if we have already indexed the latest
-	// commit for repo
-	Force bool `json:"Force,omitempty"`
+	// RepoURI is the URI of the repository whose data is to be re-indexed.
+	RepoURI string `json:"RepoURI,omitempty"`
+
+	// RepoID is the ID of the repository whose data is to be re-indexed.
+	RepoID int32 `json:"Repo,omitempty"`
+
+	// CommitID is the commit ID of the default repository branch which will
+	// be re-indexed.
+	CommitID string `json:"CommitID,omitempty"`
 }
 
 // ServerConfig describes the server's configuration.

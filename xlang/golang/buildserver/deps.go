@@ -20,6 +20,34 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
+type importKey struct {
+	path, srcDir string
+	mode         build.ImportMode
+}
+
+type importResult struct {
+	pkg *build.Package
+	err error
+}
+
+type depCache struct {
+	importCacheMu sync.Mutex
+	importCache   map[importKey]importResult
+
+	// A mapping of package path -> direct import records
+	collectReferences bool
+	seenMu            sync.Mutex
+	seen              map[string][]importRecord
+	entryPackageDirs  []string
+}
+
+func newDepCache() *depCache {
+	return &depCache{
+		importCache: map[importKey]importResult{},
+		seen:        map[string][]importRecord{},
+	}
+}
+
 // fetchTransitiveDepsOfFile fetches the transitive dependencies of
 // the named Go file. A Go file's dependencies are the imports of its
 // own package, plus all of its imports' imports, and so on.
@@ -27,7 +55,7 @@ import (
 // It adds fetched dependencies to its own file system overlay, and
 // the returned depFiles should be passed onto the language server to
 // add to its overlay.
-func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI string) (err error) {
+func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI string, dc *depCache) (err error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
 	span := parentSpan.Tracer().StartSpan("xlang-go: fetch transitive dependencies",
 		opentracing.Tags{"fileURI": fileURI},
@@ -55,7 +83,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		return err
 	}
 
-	err = doDeps(bpkg, 0, func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
+	err = doDeps(bpkg, 0, dc, func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
 		return h.findPackage(ctx, bctx, path, srcDir, mode)
 	})
 	return err
@@ -201,7 +229,7 @@ func (h *BuildHandler) pinnedDep(ctx context.Context, pkg string) string {
 	return h.pinnedDeps.Find(pkg)
 }
 
-func doDeps(pkg *build.Package, mode build.ImportMode, importPackage func(path, srcDir string, mode build.ImportMode) (*build.Package, error)) error {
+func doDeps(pkg *build.Package, mode build.ImportMode, dc *depCache, importPackage func(path, srcDir string, mode build.ImportMode) (*build.Package, error)) error {
 	// Separate mutexes for each package import path.
 	var musMu sync.Mutex
 	mus := map[string]*sync.Mutex{}
@@ -217,20 +245,10 @@ func doDeps(pkg *build.Package, mode build.ImportMode, importPackage func(path, 
 	}
 
 	gate := make(chan struct{}, runtime.GOMAXPROCS(0)) // I/O concurrency limit
-	type importKey struct {
-		path, srcDir string
-		mode         build.ImportMode
-	}
-	type importResult struct {
-		pkg *build.Package
-		err error
-	}
-	var importCacheMu sync.Mutex
-	importCache := map[importKey]importResult{}
 	cachedImportPackage := func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
-		importCacheMu.Lock()
-		res, ok := importCache[importKey{path, srcDir, mode}]
-		importCacheMu.Unlock()
+		dc.importCacheMu.Lock()
+		res, ok := dc.importCache[importKey{path, srcDir, mode}]
+		dc.importCacheMu.Unlock()
 		if ok {
 			return res.pkg, res.err
 		}
@@ -242,43 +260,46 @@ func doDeps(pkg *build.Package, mode build.ImportMode, importPackage func(path, 
 		mu.Lock() // only try to import a path once
 		defer mu.Unlock()
 
-		importCacheMu.Lock()
-		res, ok = importCache[importKey{path, srcDir, mode}]
-		importCacheMu.Unlock()
+		dc.importCacheMu.Lock()
+		res, ok = dc.importCache[importKey{path, srcDir, mode}]
+		dc.importCacheMu.Unlock()
 		if !ok {
 			res.pkg, res.err = importPackage(path, srcDir, mode)
-			importCacheMu.Lock()
-			importCache[importKey{path, srcDir, mode}] = res
-			importCacheMu.Unlock()
+			dc.importCacheMu.Lock()
+			dc.importCache[importKey{path, srcDir, mode}] = res
+			dc.importCacheMu.Unlock()
 		}
 		return res.pkg, res.err
 	}
-
-	var seenMu sync.Mutex
-	seen := map[string]struct{}{}
 
 	var errs errorList
 	var wg sync.WaitGroup
 	var do func(pkg *build.Package)
 	do = func(pkg *build.Package) {
-		for _, path := range allPackageImportsSorted(pkg) {
-			seenMu.Lock()
-			if _, seen := seen[path]; seen {
-				seenMu.Unlock()
-				continue
-			}
-			seen[path] = struct{}{}
-			seenMu.Unlock()
+		dc.seenMu.Lock()
+		if _, seen := dc.seen[pkg.Dir]; seen {
+			dc.seenMu.Unlock()
+			return
+		}
+		dc.seen[pkg.Dir] = []importRecord{}
+		dc.seenMu.Unlock()
 
+		for _, path := range allPackageImportsSorted(pkg) {
 			if path == "C" {
 				continue
 			}
 			wg.Add(1)
+			parentPkg := pkg
 			go func(path string) {
 				defer wg.Done()
 				pkg, err := cachedImportPackage(path, pkg.Dir, mode)
 				if err != nil {
 					errs.add(err)
+				}
+				if dc.collectReferences {
+					dc.seenMu.Lock()
+					dc.seen[parentPkg.Dir] = append(dc.seen[parentPkg.Dir], importRecord{pkg: parentPkg, imports: pkg})
+					dc.seenMu.Unlock()
 				}
 				if pkg != nil {
 					do(pkg)
@@ -287,6 +308,11 @@ func doDeps(pkg *build.Package, mode build.ImportMode, importPackage func(path, 
 		}
 	}
 	do(pkg)
+	if dc.collectReferences {
+		dc.seenMu.Lock()
+		dc.entryPackageDirs = append(dc.entryPackageDirs, pkg.Dir)
+		dc.seenMu.Unlock()
+	}
 	wg.Wait()
 	return errs.error()
 }

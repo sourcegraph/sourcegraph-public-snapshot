@@ -19,6 +19,29 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
+// DependencyReference represents a reference to a dependency. []DependencyReference
+// is the return type for the build server workspace/xdependencies method.
+type DependencyReference struct {
+	// Attributes describing the dependency that is being referenced. It is up
+	// to the language server to define the schema of this object.
+	Attributes map[string]interface{} `json:"attributes,omitempty"`
+
+	// Hints is treated as an opaque object and passed directly by Sourcegraph
+	// into the language server's workspace/xreferences method to help narrow
+	// down the search space for the references to the symbol.
+	//
+	// If a language server emits no hints, Sourcegraph will pass none as a
+	// parameter to workspace/xreferences which means it must search the entire
+	// repository (workspace) in order to find references. workspace/xdependencies
+	// should emit sufficient hints here for making all workspace/xreference
+	// queries complete in a reasonable amount of time (less than a few seconds
+	// for very large repositories). For example, one may include the
+	// containing "package" or other build-system level "code unit". Emitting
+	// the exact file is not recommended in general as that would produce more
+	// data for little performance gain in most situations.
+	Hints map[string]interface{} `json:"hints,omitempty"`
+}
+
 // TelemetryEventParams is a telemetry/event message sent from a
 // build/lang server back to the proxy. The information here is
 // forwarded to our opentracing system.

@@ -41,7 +41,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(func(w http.ResponseWriter, r *http.Request) error { return nil }))) // legacy
 	m.Get(apirouter.RepoResolveRev).Handler(httptrace.TraceRoute(handler(serveRepoResolveRev)))
 	m.Get(apirouter.RepoDefLanding).Handler(httptrace.TraceRoute(handler(serveRepoDefLanding)))
-	m.Get(apirouter.RepoShield).Handler(httptrace.TraceRoute(handler(serveRepoShield)))
 	m.Get(apirouter.Repos).Handler(httptrace.TraceRoute(handler(serveRepos)))
 
 	m.Get(apirouter.Orgs).Handler(httptrace.TraceRoute(handler(serveOrgs)))

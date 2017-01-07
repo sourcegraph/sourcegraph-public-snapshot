@@ -39,15 +39,16 @@ func init() {
 
 func TestProxy(t *testing.T) {
 	tests := map[string]struct {
-		rootPath        string
-		mode            string
-		fs              map[string]string
-		wantHover       map[string]string
-		wantDefinition  map[string]string
-		wantXDefinition map[string]string
-		wantReferences  map[string][]string
-		wantSymbols     map[string][]string
-		depFS           map[string]map[string]string // dep clone URL -> map VFS
+		rootPath          string
+		mode              string
+		fs                map[string]string
+		wantHover         map[string]string
+		wantDefinition    map[string]string
+		wantXDefinition   map[string]string
+		wantReferences    map[string][]string
+		wantSymbols       map[string][]string
+		wantXDependencies string
+		depFS             map[string]map[string]string // dep clone URL -> map VFS
 	}{
 		"go basic": {
 			rootPath: "git://test/pkg?master",
@@ -575,7 +576,7 @@ func yza() {}
 				t.Fatal("initialize:", err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies)
 		})
 	}
 }

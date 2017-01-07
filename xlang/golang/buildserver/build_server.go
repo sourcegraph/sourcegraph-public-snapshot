@@ -247,6 +247,73 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		conn.Close()
 		return nil, nil
 
+	case req.Method == "workspace/xdependencies":
+		// The same as h.fetchAndSendDepsOnce except it operates locally to the
+		// request.
+		fetchAndSendDepsOnces := make(map[string]*sync.Once) // key is file URI
+		localFetchAndSendDepsOnce := func(fileURI string) *sync.Once {
+			once, ok := fetchAndSendDepsOnces[fileURI]
+			if !ok {
+				once = new(sync.Once)
+				fetchAndSendDepsOnces[fileURI] = once
+			}
+			return once
+		}
+
+		var (
+			mu         sync.Mutex
+			references []lspext.DependencyReference
+		)
+		emitRef := func(path string, r goDependencyReference) {
+			// If the _reference_ to a definition is made from inside a
+			// vendored package, or from outside of the repository itself,
+			// exclude it.
+			if langserver.IsVendorDir(path) || !langserver.PathHasPrefix(path, h.RootFSPath) {
+				return
+			}
+
+			// If the package being referenced is defined in the repo, and
+			// it is NOT a vendor package, then exclude it.
+			if !r.vendor && langserver.PathHasPrefix(filepath.Join(gopath, "src", r.absolute), h.RootFSPath) {
+				return
+			}
+
+			newURI, err := h.rewriteURIFromLangServer("file://" + path)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			mu.Lock()
+			references = append(references, lspext.DependencyReference{
+				Attributes: r.attributes(),
+				Hints: map[string]interface{}{
+					"dir": newURI,
+				},
+			})
+			mu.Unlock()
+		}
+
+		// We need every transitive dependency, for every Go package in the
+		// repository.
+		var (
+			w  = ctxvfs.Walk(ctx, h.RootFSPath, h.FS)
+			dc = newDepCache()
+		)
+		dc.collectReferences = true
+		for w.Step() {
+			if path.Ext(w.Path()) == ".go" {
+				d := path.Dir(w.Path())
+				localFetchAndSendDepsOnce(d).Do(func() {
+					if err := h.fetchTransitiveDepsOfFile(ctx, d, dc); err != nil {
+						log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
+					}
+				})
+			}
+		}
+		dc.references(emitRef, 1)
+		return references, nil
+
 	default:
 		// Pass the request onto the lang server.
 
@@ -261,7 +328,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				return nil, err
 			}
 		}
-		lspext.WalkURIFields(params, nil, func(uri string) string {
+		rewriteURIFromClient := func(uri string) string {
 			if !strings.HasPrefix(uri, "file:///") {
 				panic("URI in LSP request must be a file:/// URI, got " + uri)
 			}
@@ -273,7 +340,8 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			newURI := "file://" + path
 			urisInRequest = append(urisInRequest, newURI) // collect
 			return newURI
-		})
+		}
+		lspext.WalkURIFields(params, nil, rewriteURIFromClient)
 		// Store back to req.Params to avoid 2 different versions of the data.
 		if req.Params != nil {
 			b, err := json.Marshal(params)
@@ -333,7 +401,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if shouldFetchDeps {
 			for _, uri := range urisInRequest {
 				h.fetchAndSendDepsOnce(uri).Do(func() {
-					if err := h.fetchTransitiveDepsOfFile(ctx, uri); err != nil {
+					if err := h.fetchTransitiveDepsOfFile(ctx, uri, newDepCache()); err != nil {
 						log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
 					}
 				})
@@ -350,7 +418,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 						continue
 					}
 					h.fetchAndSendDepsOnce(d).Do(func() {
-						if err := h.fetchTransitiveDepsOfFile(ctx, d); err != nil {
+						if err := h.fetchTransitiveDepsOfFile(ctx, d, newDepCache()); err != nil {
 							log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
 						}
 					})
