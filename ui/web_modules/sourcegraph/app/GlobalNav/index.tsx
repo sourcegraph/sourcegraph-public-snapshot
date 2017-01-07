@@ -132,7 +132,7 @@ export class GlobalNav extends Container<Props, State> {
 					</Link>
 					{context.user && <Tabs style={{ display: "inline-block", borderBottom: 0 }}>
 						<Link to="/" style={{ outline: "none" }}>
-							<TabItem active={isRootRoute(location)}>My repositories</TabItem>
+							<TabItem active={isRootRoute(location)}>Repositories</TabItem>
 						</Link>
 					</Tabs>}
 				</FlexContainer>
