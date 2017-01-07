@@ -36,6 +36,11 @@ func init() {
 	prometheus.MustRegister(queueLength)
 }
 
+type indexTask struct {
+	repo  string
+	force bool
+}
+
 func main() {
 	env.Lock()
 	traceutil.InitTracer()
@@ -66,7 +71,8 @@ func main() {
 			http.Error(resp, "missing repo parameter", http.StatusBadRequest)
 			return
 		}
-		enqueue <- repo
+		force, _ := strconv.ParseBool(req.URL.Query().Get("force"))
+		enqueue <- indexTask{repo: repo, force: force}
 		resp.Write([]byte("OK"))
 	})
 
@@ -76,37 +82,37 @@ func main() {
 
 // queueWithoutDuplicates provides a queue that ignores a new entry if it is already enqueued.
 // Sending to the dequeue channel blocks if no entry is available.
-func queueWithoutDuplicates(lengthGauge prometheus.Gauge) (enqueue chan<- string, dequeue chan<- (chan<- string)) {
-	var queue []string
-	set := make(map[string]struct{})
-	enqueueChan := make(chan string)
-	dequeueChan := make(chan (chan<- string))
+func queueWithoutDuplicates(lengthGauge prometheus.Gauge) (enqueue chan<- indexTask, dequeue chan<- (chan<- indexTask)) {
+	var queue []indexTask
+	set := make(map[indexTask]struct{})
+	enqueueChan := make(chan indexTask)
+	dequeueChan := make(chan (chan<- indexTask))
 
 	go func() {
 		for {
 			if len(queue) == 0 {
-				repo := <-enqueueChan
-				queue = append(queue, repo)
-				set[repo] = struct{}{}
+				task := <-enqueueChan
+				queue = append(queue, task)
+				set[task] = struct{}{}
 				lengthGauge.Set(float64(len(queue)))
 			}
 
 			select {
-			case repo := <-enqueueChan:
-				if _, ok := set[repo]; ok {
+			case task := <-enqueueChan:
+				if _, ok := set[task]; ok {
 					continue // duplicate, discard
 				}
 
-				queue = append(queue, repo)
-				set[repo] = struct{}{}
+				queue = append(queue, task)
+				set[task] = struct{}{}
 				lengthGauge.Set(float64(len(queue)))
 
 			case c := <-dequeueChan:
-				repo := queue[0]
+				task := queue[0]
 				queue = queue[1:]
-				delete(set, repo)
+				delete(set, task)
 				lengthGauge.Set(float64(len(queue)))
-				c <- repo
+				c <- task
 
 			}
 		}
@@ -115,35 +121,36 @@ func queueWithoutDuplicates(lengthGauge prometheus.Gauge) (enqueue chan<- string
 	return enqueueChan, dequeueChan
 }
 
-var currentJobs = make(map[string]struct{})
+var currentJobs = make(map[indexTask]struct{})
 var currentJobsMu sync.Mutex
 
-func worker(dequeue chan<- (chan<- string)) {
+func worker(dequeue chan<- (chan<- indexTask)) {
 	for {
-		c := make(chan string)
+		c := make(chan indexTask)
 		dequeue <- c
-		repo := <-c
+		task := <-c
 
 		currentJobsMu.Lock()
-		if _, ok := currentJobs[repo]; ok {
+		if _, ok := currentJobs[task]; ok {
 			currentJobsMu.Unlock()
 			return // in progress, discard
 		}
-		currentJobs[repo] = struct{}{}
+		currentJobs[task] = struct{}{}
 		currentJobsMu.Unlock()
 
 		ctx := accesscontrol.WithInsecureSkip(context.Background(), true) // not nice
-		if err := index(ctx, repo); err != nil {
-			log.Printf("error indexing %s: %s", repo, err)
+		if err := index(ctx, task); err != nil {
+			log.Printf("error indexing %v: %s", task, err)
 		}
 
 		currentJobsMu.Lock()
-		delete(currentJobs, repo)
+		delete(currentJobs, task)
 		currentJobsMu.Unlock()
 	}
 }
 
-func index(ctx context.Context, repoName string) error {
+func index(ctx context.Context, task indexTask) error {
+	repoName := task.repo
 	headCommit, err := gitcmd.Open(repoName).ResolveRevision(ctx, "HEAD")
 	if err != nil {
 		return fmt.Errorf("ResolveRevision failed: %s", err)
@@ -154,7 +161,7 @@ func index(ctx context.Context, repoName string) error {
 		return fmt.Errorf("Repos.GetByURI failed: %s", err)
 	}
 
-	if repo.IndexedRevision != nil && *repo.IndexedRevision == string(headCommit) {
+	if !task.force && repo.IndexedRevision != nil && *repo.IndexedRevision == string(headCommit) {
 		return nil // index is up-to-date
 	}
 
