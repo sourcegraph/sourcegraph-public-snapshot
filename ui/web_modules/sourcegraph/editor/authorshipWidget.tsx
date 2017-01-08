@@ -24,12 +24,7 @@ interface Props {
 
 export function CodeLensAuthorWidget(props: Props): JSX.Element {
 	const { gravatarHash, name, rev, message } = props.blame;
-
-	function openCommit(): void {
-		let url = `${props.repo}/commit/${props.blame.rev}#diff-${props.rev}`;
-		AnalyticsConstants.Events.CodeLensCommitRedirect_Clicked.logEvent({ url });
-		window.open(`https://${url}`, "_newtab");
-	}
+	const commitURL = `http://${props.repo}/commit/${props.blame.rev}#diff-${props.rev}`;
 
 	return <Panel hoverLevel="low" style={{
 		minWidth: 320,
@@ -53,12 +48,16 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 			</div>
 			<Heading level={6} style={{ marginTop: whitespace[3] }}>{message}</Heading>
 			<a
-				onClick={openCommit}
+				href={commitURL}
+				onClick={() => AnalyticsConstants.Events.CodeLensCommitRedirect_Clicked.logEvent({ commitURL })}
+				target="_blank"
 				{...merge({
 					color: colors.coolGray3(),
 					fontFamily: typography.fontStack.code
 				}, typography.small,
-				) }>Commit {rev.substr(0, 6)}</a>
+				) }>
+				Commit {rev.substr(0, 6)}
+			</a>
 		</div>
 	</Panel>;
 };

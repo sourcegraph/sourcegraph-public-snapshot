@@ -222,6 +222,7 @@ export class Editor implements IDisposable {
 
 	// An event emitted when the editor jumps to a new model or position therein.
 	public onDidOpenEditor(listener: (e: IEditorOpenedEvent) => void): IDisposable {
+		this._removeWidgetForID(AuthorshipWidgetID);
 		return this._editorService.onDidOpenEditor(listener);
 	}
 
