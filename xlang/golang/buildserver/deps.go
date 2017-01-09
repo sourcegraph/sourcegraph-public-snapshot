@@ -296,12 +296,12 @@ func doDeps(pkg *build.Package, mode build.ImportMode, dc *depCache, importPacka
 				if err != nil {
 					errs.add(err)
 				}
-				if dc.collectReferences {
-					dc.seenMu.Lock()
-					dc.seen[parentPkg.Dir] = append(dc.seen[parentPkg.Dir], importRecord{pkg: parentPkg, imports: pkg})
-					dc.seenMu.Unlock()
-				}
 				if pkg != nil {
+					if dc.collectReferences {
+						dc.seenMu.Lock()
+						dc.seen[parentPkg.Dir] = append(dc.seen[parentPkg.Dir], importRecord{pkg: parentPkg, imports: pkg})
+						dc.seenMu.Unlock()
+					}
 					do(pkg)
 				}
 			}(path)
