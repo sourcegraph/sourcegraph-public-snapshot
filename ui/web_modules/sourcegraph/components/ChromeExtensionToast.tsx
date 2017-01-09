@@ -2,10 +2,10 @@ import * as classNames from "classnames";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { CloseIcon } from "sourcegraph/components/Icons";
-import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { Toast } from "sourcegraph/components/Toast";
 import { Location } from "sourcegraph/Location";
+import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
 
@@ -58,9 +58,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 			return (
 				<Toast>
 					<a onClick={this._closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><CloseIcon /></a>
-					<LocationStateToggleLink href="/join" modalName="chrome" location={this.props.location}>
-						<p onClick={this._toastCTAClicked.bind(this)} style={{ textAlign: "center" }}>{ToastTitle}</p>
-					</LocationStateToggleLink>
+					<p style={{ textAlign: "center" }}><a onClick={this._toastCTAClicked.bind(this)}>{ToastTitle}</a></p>
 				</Toast>
 			);
 		}
@@ -69,12 +67,12 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	}
 
 	_toastCTAClicked(): void {
-		AnalyticsConstants.Events.ToastChromeCTA_Clicked.logEvent({ toastCopy: ToastTitle });
+		installChromeExtensionClicked("ChromeExtensionOnboarding");
 		this._dismissToast();
 	}
 
 	_closeClicked(): void {
-		AnalyticsConstants.Events.ToastChrome_Closed.logEvent({ toastCopy: ToastTitle });
+		AnalyticsConstants.Events.ToastChrome_Closed.logEvent({ pageName: "ChromeExtensionOnboarding" });
 		this._dismissToast();
 	}
 
