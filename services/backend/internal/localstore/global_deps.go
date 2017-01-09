@@ -145,7 +145,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op RefLocationsOptions) (
 		return nil, errors.New("marshaling op.DepData query")
 	}
 
-	rows, err := globalGraphDBH.Db.Query(`select distinct on (repo_id) dep_data,repo_id,hints
+	rows, err := globalGraphDBH.Db.Query(`select dep_data,repo_id,hints
 		FROM global_dep
 		WHERE language=$1
 		AND dep_data @> $2
