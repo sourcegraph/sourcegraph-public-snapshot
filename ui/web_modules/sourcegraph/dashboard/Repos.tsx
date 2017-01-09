@@ -53,7 +53,7 @@ export class Repos extends React.Component<Props, {}> {
 	}
 
 	_qualifiedName(repo: GQL.IRemoteRepository): string {
-		return (`${repo.owner}/${repo.name} ${repo.language}`).toLowerCase();
+		return (`${repo.uri} ${repo.language}`).toLowerCase();
 	}
 
 	_header(): JSX.Element {

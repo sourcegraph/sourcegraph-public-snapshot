@@ -69,15 +69,11 @@ const DashboardContainer = Relay.createContainer(DashboardComponent, {
 			fragment on Root {
 				remoteRepositories {
 					uri
-					name
-					owner
 					description
 					language
 				}
 				remoteStarredRepositories {
 					uri
-					name
-					owner
 					description
 					language
 				}

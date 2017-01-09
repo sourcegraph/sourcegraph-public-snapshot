@@ -132,8 +132,6 @@ declare namespace GQL {
 		__typename: string;
 		uri: string;
 		description: string;
-		owner: string;
-		name: string;
 		language: string;
 		fork: boolean;
 		private: boolean;

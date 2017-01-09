@@ -20,13 +20,19 @@ export function RepositoryCard({style, repo}: Props): JSX.Element {
 		style,
 	);
 
+	let title = repo.uri;
+	if (title.startsWith("github.com/")) {
+		title = title.substr(11);
+	}
+	title = title.replace(/\//g, " / ");
+
 	return <Panel hoverLevel="low" style={sx}>
 		<FlexContainer justify="between" wrap={true}>
 			<div style={{ flex: "1 1", marginRight: whitespace[2] }}>
 				<Heading level={6} style={{ marginTop: 0 }}>
 					{repo.uri
-						? <Link to={repo.uri} onClick={trackRepoClick}>{repo.owner} / {repo.name}</Link>
-						: <span>{repo.owner} / {repo.name}</span>
+						? <Link to={repo.uri} onClick={trackRepoClick}>{title}</Link>
+						: <span>{title}</span>
 					}
 				</Heading>
 				{repo.description && <div style={{ color: colors.coolGray3() }}>{repo.description}</div>}

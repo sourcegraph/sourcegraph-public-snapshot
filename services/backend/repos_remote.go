@@ -40,9 +40,9 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 	case strings.HasPrefix(strings.ToLower(op.Path), "github.com/"):
 		if repo, err := github.ReposFromContext(ctx).Get(ctx, op.Path); err == nil {
 			// If canonical location differs, try looking up locally at canonical location.
-			if canonicalPath := "github.com/" + repo.Owner + "/" + repo.Name; op.Path != canonicalPath {
-				if repo, err := localstore.Repos.GetByURI(ctx, canonicalPath); err == nil {
-					return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: canonicalPath}, nil
+			if op.Path != repo.URI {
+				if repo, err := localstore.Repos.GetByURI(ctx, repo.URI); err == nil {
+					return &sourcegraph.RepoResolution{Repo: repo.ID, CanonicalPath: repo.URI}, nil
 				}
 			}
 

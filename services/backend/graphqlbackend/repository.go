@@ -125,16 +125,8 @@ func (r *repositoryResolver) Language() string {
 	return r.repo.Language
 }
 
-func (r *repositoryResolver) Name() string {
-	return r.repo.Name
-}
-
 func (r *repositoryResolver) Fork() bool {
 	return r.repo.Fork
-}
-
-func (r *repositoryResolver) Owner() string {
-	return r.repo.Owner
 }
 
 func (r *repositoryResolver) PushedAt() string {

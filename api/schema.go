@@ -89,8 +89,6 @@ type Definition {
 type RemoteRepository {
 	uri: String!
 	description: String!
-	owner: String!
-	name: String!
 	language: String!
 	fork: Boolean!
 	private: Boolean!
