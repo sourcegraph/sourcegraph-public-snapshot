@@ -556,3 +556,8 @@
 :global .monaco-workbench > .part > .content .progress-container {
 	top: 63px !important; /* 65px - 2px, just below title bar */
 }
+
+:global .context-view.monaco-menu-container {
+	box-shadow: none !important;
+	border-radius: 3px;
+}

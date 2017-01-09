@@ -32,7 +32,6 @@ export class EditorTitle extends React.Component<Props, {}> {
 				repo={repo}
 				rev={rev}
 				path={path}
-
 				toggleAuthors={toggleCodeLens}
 				toast={BlobStore.toast}
 				/>

@@ -44,7 +44,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	}
 
 	componentWillUnmount(): void {
-		// Settimeout is necessary so we can wait for the page to redraw before
+		// setTimeout is necessary so we can wait for the page to redraw before
 		// we ask VSCode to redraw itself according to the new dimensions.
 		setTimeout(() => {
 			this.props.layoutChanged();
