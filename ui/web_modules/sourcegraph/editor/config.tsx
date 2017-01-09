@@ -78,20 +78,43 @@ function editorOpened(resource: URI): void {
 	router.push(urlToBlob(repo, rev, path));
 	urlSyncInProgress = false;
 }
-function updateFileTree(resource: URI): void {
-	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
-	workspaceService.setWorkspace({ resource: resource.with({ fragment: "" }) });
 
+async function updateFileTree(resource: URI): Promise<void> {
 	const viewletService = Services.get(IViewletService) as IViewletService;
 	const viewlet = viewletService.getActiveViewlet();
-	if (viewlet) {
-		const view = viewlet["explorerView"];
-		if (!(view instanceof ExplorerView)) {
-			throw "Type Error: Expected viewlet to have type ExplorerView";
-		}
-		view.refresh(true).then(() => {
-			view.select(resource, true);
-		});
+	if (!viewlet) {
+		return;
+	}
+
+	const view = viewlet["explorerView"];
+	if (!(view instanceof ExplorerView)) {
+		throw new Error("Type Error: Expected viewlet to have type ExplorerView");
+	}
+
+	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
+	const newWorkspace = resource.with({ fragment: "" });
+	if (workspaceService.getWorkspace().resource.toString() !== newWorkspace.toString()) {
+		workspaceService.setWorkspace({ resource: newWorkspace });
+		await view.refresh(true);
+	}
+
+	const privateView = view as any;
+	let root = privateView.getInput();
+	if (!root) {
+		await view.refresh();
+		root = privateView.getInput();
+	}
+	const fileStat = root.find(resource);
+	const treeModel = privateView.tree.model;
+	const chain = await treeModel.resolveUnknownParentChain(fileStat);
+	chain.forEach((item) => {
+		treeModel.expand(item);
+	});
+	await view.select(resource);
+	const scrollPos = privateView.tree.getRelativeTop(fileStat);
+	if (scrollPos > 1 || scrollPos < 0) {
+		// Item is scrolled off screen
+		await view.select(resource, true);
 	}
 }
 

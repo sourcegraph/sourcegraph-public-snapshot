@@ -2,8 +2,10 @@ import fuzzysearch from "fuzzysearch";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as Relay from "react-relay";
-import { Link } from "react-router";
+import { Link, PlainRoute } from "react-router";
 import { RouteParams } from "sourcegraph/app/routeParams";
+import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
+import { router } from "sourcegraph/app/router";
 import { Component, EventListener } from "sourcegraph/Component";
 import { Heading, Input, Menu } from "sourcegraph/components";
 import { Check, DownMenu } from "sourcegraph/components/symbols";
@@ -16,14 +18,14 @@ interface Props {
 	rev: string | null;
 
 	// to construct URLs
-	routes: any[];
-	routeParams: RouteParams;
 	style?: React.CSSProperties;
 }
 
 interface State extends Props {
 	open?: boolean;
 	query?: any;
+	routes: PlainRoute[];
+	routeParams: RouteParams;
 }
 
 class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State> {
@@ -38,8 +40,8 @@ class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State>
 
 			repo: props.repo,
 			rev: props.rev,
-			routes: props.routes,
-			routeParams: props.routeParams,
+			routes: router.routes,
+			routeParams: getRouteParams(abs.blob, document.location.pathname),
 		};
 		this._closeDropdown = this._closeDropdown.bind(this);
 		this._onToggleDropdown = this._onToggleDropdown.bind(this);

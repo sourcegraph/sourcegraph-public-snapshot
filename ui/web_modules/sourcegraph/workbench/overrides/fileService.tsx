@@ -1,10 +1,12 @@
-import * as uniq from "lodash/uniq";
+import * as mapKeys from "lodash/mapKeys";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IFileStat, IResolveFileOptions } from "vs/platform/files/common/files";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+
+let fileStatCache: Map<string, IFileStat> = new Map();
 
 // FileService provides files from Sourcegraph's API instead of a normal file
 // system. It is used to find the files in a Workspace, but not for retrieving
@@ -17,8 +19,14 @@ export class FileService {
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
 		return retrieveFilesAndDirs(resource).then(({root}) => {
+			const cachedStat = fileStatCache.get(resource.toString(true));
+			if (cachedStat) {
+				return cachedStat;
+			}
 			const files = root.repository.commit.commit.tree.files.map(file => file.name);
-			return toFileStat(resource, files);
+			const fileStat = toFileStat(resource, files);
+			fileStatCache.set(resource.toString(true), fileStat);
+			return fileStat;
 		});
 	}
 }
@@ -48,17 +56,35 @@ function retrieveFilesAndDirs(resource: URI): any {
 
 // Convert a list of files into a hierarchical file stat structure.
 function toFileStat(resource: URI, files: string[]): IFileStat {
-	const {repo, rev, path} = URIUtils.repoParams(resource);
-	const childrenOfResource = files.filter(x => x.startsWith(path) && x !== path);
-	const dirComponents = childrenOfResource.map(x => {
-		x = x.substr(path.length);
-		return x.split("/")[0] || x.split("/")[1];
+	let path = resource.fragment;
+	const directories: { [key: string]: string[] } = {};
+	const childFiles = [];
+	const childStats = [];
+	for (const candidate of files) {
+		const index = candidate.indexOf("/");
+		if (index === -1) {
+			childFiles.push(candidate);
+			continue;
+		}
+		const dir = candidate.substr(0, index);
+		if (!(directories[dir] instanceof Array)) {
+			directories[dir] = [];
+		}
+		directories[dir].push(candidate.substr(index + 1));
+	}
+	path += path ? "/" : "";
+	mapKeys(directories, (children, dir) => {
+		childStats.push(toFileStat(
+			resource.with({ fragment: path + dir }),
+			children,
+		));
 	});
-	const uniqDirs = uniq(dirComponents);
-	const childStats = uniqDirs.map(dir => toFileStat(
-		URIUtils.pathInRepo(repo, rev, path + "/" + dir),
-		childrenOfResource,
-	));
+	childFiles.forEach((file) => {
+		childStats.push(toFileStat(
+			resource.with({ fragment: path + file }),
+			[],
+		));
+	});
 	return {
 		hasChildren: childStats.length > 0,
 		isDirectory: childStats.length > 0,

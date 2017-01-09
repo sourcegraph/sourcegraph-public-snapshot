@@ -1,4 +1,5 @@
 import * as autobind from "autobind-decorator";
+import * as debounce from "lodash/debounce";
 import * as React from "react";
 
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
@@ -43,7 +44,7 @@ export class WorkbenchShell extends React.Component<{}, {}> {
 	}
 
 	componentWillMount(): void {
-		window.onresize = this.layout;
+		window.onresize = debounce(this.layout, 50);
 		this.listener = addRouterListener(syncEditorWithRouter);
 	}
 
@@ -66,7 +67,10 @@ export class WorkbenchShell extends React.Component<{}, {}> {
 	}
 
 	render(): JSX.Element {
-		return <div className="vs-dark" style={{ height: "100%" }} ref={this.domRef}></div>;
+		return <div className="vs-dark" style={{
+			height: "100%",
+			flex: "1 1 100%",
+		}} ref={this.domRef}></div>;
 	}
 
 }

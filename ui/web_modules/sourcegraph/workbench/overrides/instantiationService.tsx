@@ -14,14 +14,14 @@ const modules = {
 	const _this = this;
 	const ctor = modules[desc._ctorName];
 	if (!ctor) {
-		throw "Dynamic modules must be converted to static modules and included in this file.";
+		throw new Error("Dynamic modules must be converted to static modules and included in this file.");
 	}
 	return new TPromise((complete) => {
 		// This needs to be async so that the model provider and language
 		// providers can register themselves before the editor loads, otherwise
 		// the model will fail to resolve.
 		setTimeout(() => {
-			complete(_this.createInstance(ctor, args));
+			complete(_this.createInstance(ctor));
 		});
 	});
 };

@@ -1,7 +1,6 @@
 import * as autobind from "autobind-decorator";
 import * as React from "react";
 
-import { RouteParams } from "sourcegraph/app/routeParams";
 import { AuthorsToggleButton } from "sourcegraph/blob/AuthorsToggleButton";
 import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAlert";
 import { Button, FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
@@ -16,8 +15,6 @@ interface Props {
 	repo: string;
 	path: string;
 	rev: string | null;
-	routes: Object[];
-	routeParams: RouteParams;
 	toast: string | null;
 	toggleAuthors: () => void;
 }
@@ -68,7 +65,8 @@ export class BlobTitle extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element {
-		const {repo, path, rev, routes, routeParams, toggleAuthors, toast } = this.props;
+		const {repo, path, toggleAuthors, toast } = this.props;
+		const rev = this.props.rev || "master";
 
 		const extension = getPathExtension(path);
 		const isSupported = extension ? isSupportedExtension(extension) : false;
@@ -89,8 +87,6 @@ export class BlobTitle extends React.Component<Props, {}> {
 					<RevSwitcher
 						repo={repo}
 						rev={rev}
-						routes={routes}
-						routeParams={routeParams}
 						style={{ marginLeft: whitespace[1] }} />
 				</Heading>
 				<PathBreadcrumb

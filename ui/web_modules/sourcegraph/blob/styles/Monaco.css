@@ -136,7 +136,7 @@
 /* Ref tree */
 
 :global .monaco-editor.vs-dark .reference-zone-widget .ref-tree {
-	background-color: c_black_20 !important;
+	background-color: c_cool_gray2 !important;
 	color: white;
 }
 
@@ -521,7 +521,6 @@
 }
 
 :global .monaco-tree .monaco-tree-wrapper .monaco-tree-rows {
-	background: c_cool_gray2;
 	color: rgba(213,229,242,1);
 }
 
@@ -552,4 +551,8 @@
 
 :global .monaco-workbench > .part.sidebar > .content {
 	background: c_cool_gray2;
+}
+
+:global .monaco-workbench > .part > .content .progress-container {
+	top: 63px !important; /* 65px - 2px, just below title bar */
 }

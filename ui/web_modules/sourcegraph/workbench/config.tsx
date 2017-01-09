@@ -26,6 +26,5 @@ export function configurePostStartup(services: ServiceCollection): void {
 
 	const storageService = services.get(IStorageService) as IStorageService;
 	const key = "workbench.sidebar.width";
-	const sidebarWidth = storageService.getInteger(key, StorageScope.GLOBAL, 300);
-	storageService.store(key, sidebarWidth, StorageScope.GLOBAL);
+	storageService.store(key, 300, StorageScope.GLOBAL);
 }

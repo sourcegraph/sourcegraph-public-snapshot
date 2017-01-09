@@ -90,6 +90,9 @@ declare module "autobind-decorator" {
 // Electron namespace is required by VSCode.
 declare namespace Electron {
 	type CrashReporterStartOptions = any;
+	type BrowserWindow = any;
+	type ShowMessageBoxOptions = any;
+	type SaveDialogOptions = any;
 }
 
 /*---------------------------------------------------------------------------------------------

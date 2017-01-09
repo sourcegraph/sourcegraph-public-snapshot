@@ -298,8 +298,6 @@ export class EditorController extends Container<Props, State> {
 						repo={this.props.repo}
 						path={this.props.path}
 						rev={this.props.rev || (this.props.root.repository && this.props.root.repository.defaultBranch)}
-						routes={this.props.routes}
-						routeParams={this.props.params}
 						toast={this.state.toast}
 						toggleAuthors={this.toggleAuthors}
 						/>

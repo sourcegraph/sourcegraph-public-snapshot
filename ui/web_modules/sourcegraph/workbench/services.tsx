@@ -12,24 +12,24 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
 import { IMessageService } from "vs/platform/message/common/message";
-import { OpenerService } from "vs/platform/opener/browser/openerService";
-import { IOpenerService } from "vs/platform/opener/common/opener";
+import "vs/platform/opener/browser/opener.contribution";
 import { Registry } from "vs/platform/platform";
+import { IStorageService } from "vs/platform/storage/common/storage";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
 import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
 import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
 import { WorkbenchMessageService } from "vs/workbench/services/message/browser/messageService";
+import { StorageService } from "vs/workbench/services/storage/common/storageService";
+import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 import { TextModelResolverService } from "vs/workbench/services/textmodelResolver/common/textModelResolverService";
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
+import { IWindowIPCService } from "vs/workbench/services/window/electron-browser/windowService";
 
 import { ConfigurationService } from "sourcegraph/workbench/ConfigurationService";
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
-
-import { IStorageService } from "vs/platform/storage/common/storage";
-import { StorageService } from "vs/workbench/services/storage/common/storageService";
 
 export let Services: ServicesAccessor;
 
@@ -60,9 +60,10 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(IBackupService, BackupService);
 	set(IMessageService, WorkbenchMessageService);
 	set(IThemeService, ThemeService);
+	set(IWindowIPCService, DummyService);
+	set(ITextFileService, DummyService);
 	set(ITextModelResolverService, TextModelResolverService);
 	set(IConfigurationService, ConfigurationService);
-	set(IOpenerService, OpenerService);
 
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource: workspace,

@@ -715,7 +715,38 @@ index 35974c06d..3d195228d 100644
  			}
  
 -			if (child.isDirectory && isParent(resource.fsPath, child.resource.fsPath)) {
-+			if (child.isDirectory && resource.fragment.indexOf(child.resource.fragment) === 0) {
++			if (child.isDirectory && isParent(resource.fragment, child.resource.fragment)) {
  				return child.find(resource);
  			}
  		}
+diff --git a/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts b/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
+index 648c36a37..87e0edf71 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/base/common/worker/simpleWorker.ts
+@@ -8,7 +8,6 @@ import { transformErrorForSerialization } from 'vs/base/common/errors';
+ import { Disposable } from 'vs/base/common/lifecycle';
+ import { ErrorCallback, TPromise, ValueCallback } from 'vs/base/common/winjs.base';
+ import { ShallowCancelThenPromise } from 'vs/base/common/async';
+-import { isWeb } from 'vs/base/common/platform';
+ 
+ const INITIALIZE = '$initialize';
+ 
+@@ -26,17 +25,8 @@ export interface IWorkerFactory {
+ 	create(moduleId: string, callback: IWorkerCallback, onErrorCallback: (err: any) => void): IWorker;
+ }
+ 
+-let webWorkerWarningLogged = false;
+ export function logOnceWebWorkerWarning(err: any): void {
+-	if (!isWeb) {
+-		// running tests
+-		return;
+-	}
+-	if (!webWorkerWarningLogged) {
+-		webWorkerWarningLogged = true;
+-		console.warn('Could not create web worker(s). Falling back to loading web worker code in main thread, which might cause UI freezes. Please see https://github.com/Microsoft/monaco-editor#faq');
+-	}
+-	console.warn(err.message);
++	return;
+ }
+ 
+ interface IMessage {
