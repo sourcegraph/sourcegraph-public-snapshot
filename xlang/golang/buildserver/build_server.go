@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
@@ -408,21 +409,39 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			}
 		}
 		if req.Method == "workspace/xreferences" {
-			// We need every transitive dependency, for every Go package in the
-			// repository.
+			// Parse the parameters and if a dir hint is present, rewrite the
+			// URI.
+			var p lsext.WorkspaceReferencesParams
+			if err := json.Unmarshal(*req.Params, &p); err != nil {
+				return nil, err
+			}
+			dirHint, haveDirHint := p.Hints["dir"]
+			if haveDirHint {
+				dirHint = rewriteURIFromClient(dirHint.(string))
+				p.Hints["dir"] = dirHint
+				b, err := json.Marshal(p)
+				if err != nil {
+					return nil, err
+				}
+				req.Params = (*json.RawMessage)(&b)
+			}
+
+			// Fetch transitive dependencies for either a specific directory
+			// (the dir hint) OR every Go package in the repository.
 			w := ctxvfs.Walk(ctx, h.RootFSPath, h.FS)
 			for w.Step() {
-				if path.Ext(w.Path()) == ".go" {
-					d := path.Dir(w.Path())
-					if langserver.IsVendorDir(d) {
-						continue
-					}
-					h.fetchAndSendDepsOnce(d).Do(func() {
-						if err := h.fetchTransitiveDepsOfFile(ctx, d, newDepCache()); err != nil {
-							log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
-						}
-					})
+				d := path.Dir(w.Path())
+				if haveDirHint && "file://"+d != dirHint.(string) {
+					continue
 				}
+				if !haveDirHint && path.Ext(w.Path()) != ".go" {
+					continue
+				}
+				h.fetchAndSendDepsOnce(d).Do(func() {
+					if err := h.fetchTransitiveDepsOfFile(ctx, d, newDepCache()); err != nil {
+						log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
+					}
+				})
 			}
 		}
 
