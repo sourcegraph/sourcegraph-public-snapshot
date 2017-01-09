@@ -17,7 +17,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
-var disableSupportServices, _ = strconv.ParseBool(env.Get("SRC_APP_DISABLE_SUPPORT_SERVICES", "false", "disable 3rd party support services, including Zendesk, FullStory, Google Analytics"))
+var disableSupportServices, _ = strconv.ParseBool(env.Get("SRC_APP_DISABLE_SUPPORT_SERVICES", "false", "disable 3rd party support services, including Intercom, Google Analytics, etc"))
 var googleAnalyticsTrackingID = env.Get("GOOGLE_ANALYTICS_TRACKING_ID", "", "Google Analytics tracking ID (UA-########-#)")
 
 var FuncMap = htmpl.FuncMap{

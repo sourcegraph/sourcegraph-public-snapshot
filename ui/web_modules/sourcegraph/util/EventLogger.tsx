@@ -14,7 +14,6 @@ import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util
 
 class EventLoggerClass {
 	_intercom: any = null;
-	_fullStory: any = null;
 	_telligent: any = null;
 
 	_intercomSettings: any;
@@ -82,7 +81,6 @@ class EventLoggerClass {
 		}
 
 		if (global.window.Intercom) { this._intercom = global.window.Intercom; }
-		if (global.window.FS) { this._fullStory = global.window.FS; }
 
 		if (typeof window !== "undefined") {
 			this._intercomSettings = global.window.intercomSettings;
@@ -152,7 +150,6 @@ class EventLoggerClass {
 			this.setUserProperty("email", primaryEmail);
 			this.setUserProperty("emails", emails);
 			this.setIntercomProperty("email", primaryEmail);
-			if (this._fullStory) { this._fullStory.setUserVars({ email: primaryEmail }); }
 			optimizelyAttributes["email"] = primaryEmail;
 		}
 
@@ -165,8 +162,6 @@ class EventLoggerClass {
 		// Prevent the next user who logs in (e.g., on a public terminal) from
 		// seeing the previous user's Intercom messages.
 		if (this._intercom) { this._intercom("shutdown"); }
-
-		if (this._fullStory) { this._fullStory.clearUserCookie(); }
 
 		ExperimentManager.logoutOptimizely();
 	}
@@ -182,10 +177,6 @@ class EventLoggerClass {
 		}
 
 		this.setIntercomProperty("business_user_id", loginInfo);
-
-		if (this._fullStory) {
-			this._fullStory.identify(loginInfo);
-		}
 	}
 
 	/*
