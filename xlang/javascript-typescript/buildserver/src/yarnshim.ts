@@ -8,6 +8,8 @@
 import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 
+import * as rt from 'javascript-typescript-langserver/lib/request-type';
+
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { readFile } from './vfs';
 
@@ -233,12 +235,12 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 	});
 
 	const hoistedTree = await inst.linker.getFlatHoistedTree(patterns);
-	const pathToDep = new Map<string, Object>();
+	const pathToDep = new Map<string, rt.DependencyReference>();
 	for (const dep of hoistedTree) {
 		const rawloc = dep[0];
 		const pkg = dep[1];
 		const loc = path.join(path.sep, path.relative(overlaydir, rawloc));
-		pathToDep.set(loc, { 'name': pkg.pkg.name, 'version': pkg.pkg.version });
+		pathToDep.set(loc, { attributes: { name: <string>pkg.pkg.name, version: <string>pkg.pkg.version }, hints: {} });
 	}
 	return pathToDep;
 }

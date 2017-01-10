@@ -211,10 +211,14 @@ diffChars('foo', 'bar');\n\
 						}
 					}, {
 							symbol: {
+								containerKind: "",
 								containerName: "",
 								kind: "module",
-								name: "@types/diff",
-								version: "0.0.31",
+								name: "JsDiff",
+								package: {
+									name: "@types/diff",
+									version: "0.0.31",
+								},
 							},
 						}, err => err ? reject(err) : resolve());
 				});
@@ -229,10 +233,14 @@ diffChars('foo', 'bar');\n\
 						}
 					}, {
 							symbol: {
+								containerKind: "",
 								containerName: "",
 								kind: "module",
-								name: "@types/diff",
-								version: "0.0.31",
+								name: "\"/node_modules/@types/diff/index\"",
+								package: {
+									name: "@types/diff",
+									version: "0.0.31",
+								},
 							},
 						}, err => err ? reject(err) : resolve());
 				});
@@ -247,17 +255,25 @@ diffChars('foo', 'bar');\n\
 						}
 					}, [{
 						symbol: {
+							containerKind: "",
 							containerName: "diff",
 							kind: "function",
-							name: "@types/diff",
-							version: "0.0.31",
+							name: "diffChars",
+							package: {
+								name: "@types/diff",
+								version: "0.0.31",
+							},
 						},
 					}, {
 						symbol: {
+							containerKind: "",
 							containerName: "diff",
 							kind: "function",
-							name: "@types/diff",
-							version: "0.0.31",
+							name: "diffChars",
+							package: {
+								name: "@types/diff",
+								version: "0.0.31",
+							},
 						},
 					}], err => err ? reject(err) : resolve());
 				});
@@ -272,10 +288,14 @@ diffChars('foo', 'bar');\n\
 						}
 					}, {
 							symbol: {
+								containerKind: "",
 								containerName: "diff",
 								kind: "interface",
-								name: "@types/diff",
-								version: "0.0.31",
+								name: "IDiffResult",
+								package: {
+									name: "@types/diff",
+									version: "0.0.31",
+								},
 							},
 						}, err => err ? reject(err) : resolve());
 				});
@@ -290,10 +310,14 @@ diffChars('foo', 'bar');\n\
 						}
 					}, {
 							symbol: {
+								containerKind: "",
 								containerName: "",
 								kind: "module",
-								name: "@types/diff",
-								version: "0.0.31",
+								name: "\"/node_modules/@types/diff/index\"",
+								package: {
+									name: "@types/diff",
+									version: "0.0.31",
+								},
 							},
 						}, err => err ? reject(err) : resolve());
 				});
@@ -308,10 +332,14 @@ diffChars('foo', 'bar');\n\
 						}
 					}, {
 							symbol: {
+								containerKind: "",
 								containerName: "JsDiff",
 								kind: "function",
-								name: "@types/diff",
-								version: "0.0.31",
+								name: "diffChars",
+								package: {
+									name: "@types/diff",
+									version: "0.0.31",
+								},
 							},
 						}, err => err ? reject(err) : resolve());
 				});

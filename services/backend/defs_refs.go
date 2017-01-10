@@ -27,8 +27,9 @@ import (
 // subSelectors is a map of language-specific data selectors. The
 // input data is from the language server's workspace/xdefinition
 // request, and the output data should be something that can be
-// matched (using the jsonb containment operator) against the metadata
-// output of workspace/xdependencies.
+// matched (using the jsonb containment operator) against the
+// `attributes` field of `DependenceReference` (output of
+// workspace/xdependencies).
 var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface{}{
 	"go": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
 		return map[string]interface{}{
@@ -47,7 +48,7 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 	},
 	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
 		return map[string]interface{}{
-			"name": symbol["name"],
+			"name": symbol["package"].(map[string]interface{})["name"],
 		}
 	},
 }

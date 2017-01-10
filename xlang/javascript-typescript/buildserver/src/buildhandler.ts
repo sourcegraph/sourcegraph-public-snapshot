@@ -57,12 +57,12 @@ export class BuildHandler implements LanguageHandler {
 	// by the build handler. It excludes modules already vendored in
 	// the repository.
 	private managedModuleDirs: Set<string>;
-	private managedModuleInit: Map<string, Promise<Map<string, Object>>>;
+	private managedModuleInit: Map<string, Promise<Map<string, rt.DependencyReference>>>;
 
 	constructor() {
 		this.ls = new TypeScriptService();
 		this.managedModuleDirs = new Set<string>();
-		this.managedModuleInit = new Map<string, Promise<Map<string, Object>>>();
+		this.managedModuleInit = new Map<string, Promise<Map<string, rt.DependencyReference>>>();
 	}
 
 	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<InitializeResult> {
@@ -252,18 +252,34 @@ export class BuildHandler implements LanguageHandler {
 		}
 
 		// For symbols defined in dependencies, remove the location field and add in dependency package metadata.
-		await Promise.all(syms.map(async (sym) => {
-			const dep = await this.getDepContainingSymbol(sym);
-			if (!dep) return;
-			sym.location = undefined;
-			for (const k of Object.keys(dep.attributes)) {
-				sym.symbol[k] = dep.attributes[k];
-			}
-		}));
+		await Promise.all(syms.map(async (sym) => this.rewriteSymbol(sym)));
 
 		await this.rewriteURIs(syms);
-
 		return syms;
+	}
+
+	private async rewriteSymbol(sym: rt.SymbolLocationInformation): Promise<void> {
+		const dep = await this.getDepContainingSymbol(sym);
+		if (!dep) {
+			let moduleDir = this.getManagedModuleDir(sym.location.uri);
+			if (!moduleDir) {
+				return;
+			}
+			const pkgJson = JSON.parse(this.ls.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
+			let name = pkgJson['name'];
+			let version = pkgJson['version'];
+			if (name === 'definitely-typed') { // special case DefinitelyTyped
+				name = "@types/" + uri2path(sym.location.uri).split(path.sep)[1];
+				version = undefined;
+			}
+			if (name) {
+				sym.symbol.package = { name: name, version: version };
+			}
+			return;
+		}
+
+		sym.symbol.package = dep.attributes;
+		sym.location = undefined;
 	}
 
 	// getDepContainingSymbol returns the dependency that contains the
@@ -277,7 +293,7 @@ export class BuildHandler implements LanguageHandler {
 		const p = uri2path(sym.location.uri);
 		for (let d = p; true; d = path.dirname(d)) {
 			if (pathToDep.has(d)) {
-				return { attributes: pathToDep.get(d), hints: {} };
+				return pathToDep.get(d);
 			}
 
 			if (path.dirname(d) === d) {
@@ -320,8 +336,17 @@ export class BuildHandler implements LanguageHandler {
 		return this.ls.getDocumentSymbol(params);
 	}
 
-	getWorkspaceReference(params: rt.WorkspaceReferenceParams): Promise<rt.ReferenceInformation[]> {
-		return this.ls.getWorkspaceReference(params);
+	async getWorkspaceReference(params: rt.WorkspaceReferenceParams): Promise<rt.ReferenceInformation[]> {
+		// strip the `package` field, because this was not added by the language server
+		const pkgData = params.query.package;
+		params.query.package = undefined;
+
+		const refs = await this.ls.getWorkspaceReference(params);
+
+		for (const ref of refs) {
+			ref.symbol.package = pkgData;
+		}
+		return refs;
 	}
 
 	didOpen(params: DidOpenTextDocumentParams) {
