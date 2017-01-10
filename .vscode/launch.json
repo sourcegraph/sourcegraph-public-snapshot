@@ -9,6 +9,60 @@
             "webRoot": "${workspaceRoot}/ui",
             "url": "http://localhost:3080/*",
             "sourceMaps": true
+        },
+        {
+            "name": "gitserver",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/gitserver/main.go",
+            "env": {
+                "DEBUG": true,
+                "SRC_APP_DISABLE_SUPPORT_SERVICES": true,
+                "SRC_GIT_SERVERS": "127.0.0.1:3178",
+                "SRC_REPOS_DIR": "/Users/rothfels/.sourcegraph/repos"
+            },
+            "args": []
+        },
+        {
+            "name": "indexer",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/indexer/indexer.go",
+            "env": {
+                "DEBUG": true,
+                "SRC_APP_DISABLE_SUPPORT_SERVICES": true,
+                "SRC_GIT_SERVERS": "127.0.0.1:3178",
+                "LSP_PROXY": "127.0.0.1:4388"
+            },
+            "args": []
+        },
+        {
+            "name": "src",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/src/main.go",
+            "env": {
+                "DEBUG": true,
+                "SRC_APP_DISABLE_SUPPORT_SERVICES": true,
+                "SRC_GIT_SERVERS": "127.0.0.1:3178",
+                "WEBPACK_DEV_SERVER_URL": "http://localhost:8080",
+                "WEBPACK_DEV_SERVER_ADDRESS": "127.0.0.1:8080",
+                "SRC_SKIP_REQS": "Rlimit"
+            },
+            "args": []
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Sourcegraph Backend",
+            "configurations": [
+                "gitserver",
+                "indexer",
+                "src"
+            ]
         }
     ]
 }

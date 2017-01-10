@@ -79,3 +79,7 @@ eb-bundle.zip
 /vendor/.bin
 
 .gtm/
+
+cmd/src/debug
+cmd/gitserver/debug
+cmd/indexer/debug
