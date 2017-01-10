@@ -176,7 +176,11 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 	}
 
 	// Determine the rootPath.
-	rootPath := vcs + "://" + repo.URI + "?" + repo.DefaultBranch
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: repo.DefaultBranch})
+	if err != nil {
+		return nil, err
+	}
+	rootPath := vcs + "://" + repo.URI + "?" + rev.CommitID
 
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.
@@ -230,7 +234,14 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 			vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
 			span.LogEventWithPayload("xdependency", repo.URI)
 
-			rootPath := vcs + "://" + repo.URI + "?" + repo.DefaultBranch
+			// Determine the rootPath.
+			rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: repo.DefaultBranch})
+			if err != nil {
+				run.Error(errors.Wrap(err, "Repos.ResolveRev"))
+				return
+			}
+			rootPath := vcs + "://" + repo.URI + "?" + rev.CommitID
+
 			var refs []lspext.ReferenceInformation
 			err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, "workspace/xreferences", lspext.WorkspaceReferencesParams{Query: location.Symbol}, &refs)
 			if err != nil {
