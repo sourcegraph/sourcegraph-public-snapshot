@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/sourcegraph/ctxvfs"
 )
 
 func (h *LangHandler) defaultBuildContext() *build.Context {
@@ -39,10 +37,7 @@ func (h *HandlerShared) OverlayBuildContext(ctx context.Context, orig *build.Con
 	h.Mu.Lock()
 	fs := h.FS
 	h.Mu.Unlock()
-	return fsBuildContext(ctx, orig, fs)
-}
 
-func fsBuildContext(ctx context.Context, orig *build.Context, fs ctxvfs.FileSystem) *build.Context {
 	copy := *orig // make a copy
 	ctxt := &copy
 

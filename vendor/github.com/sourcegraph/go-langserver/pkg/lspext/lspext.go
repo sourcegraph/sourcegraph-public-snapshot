@@ -16,8 +16,10 @@ type WorkspaceReferencesParams struct {
 	// Query represents metadata about the symbol that is being searched for.
 	Query SymbolDescriptor `json:"query"`
 
-	// Files is an optional list of files to restrict the search to.
-	Files []string `json:"files,omitempty"`
+	// Hints provides optional hints about where the language server should
+	// look in order to find the symbol (this is an optimization). It is up to
+	// the language server to define the schema of this object.
+	Hints map[string]interface{} `json:"hints,omitempty"`
 }
 
 // ReferenceInformation represents information about a reference to programming
