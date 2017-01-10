@@ -72,6 +72,31 @@ func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.Def
 	return nil
 }
 
+func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) {
+	// Because global_dep only store Go package paths, not repository URIs, we
+	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
+	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
+	// but not custom import paths etc.
+	rows, err := globalGraphDBH.Db.Query(`select COUNT(repo_id)
+		FROM global_dep
+		WHERE language='go'
+		AND dep_data->>'depth' = '0'
+		AND dep_data->>'package' LIKE $1;
+	`, source+"%")
+	if err != nil {
+		return 0, errors.Wrap(err, "Query")
+	}
+	defer rows.Close()
+	var count int
+	for rows.Next() {
+		err := rows.Scan(&count)
+		if err != nil {
+			return 0, errors.Wrap(err, "Scan")
+		}
+	}
+	return count, nil
+}
+
 func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
 	defer func() {

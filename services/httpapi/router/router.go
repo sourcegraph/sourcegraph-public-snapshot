@@ -56,7 +56,7 @@ func New(base *mux.Router) *mux.Router {
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
 	repoRev.Path("/def-landing").Methods("GET").Name(RepoDefLanding)
-	repoRev.Path("/shield").Methods("GET").Name(RepoShield)
+	repo.Path("/shield").Methods("GET").Name(RepoShield)
 
 	return base
 }
