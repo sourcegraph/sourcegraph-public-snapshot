@@ -60,7 +60,7 @@ func main() {
 		accessToken := r.URL.Query().Get("access_token")
 		if auth := r.Header.Get("Authorization"); auth != "" {
 			fields := strings.Fields(auth)
-			if len(fields) == 2 && fields[0] == "token" {
+			if len(fields) == 2 && (fields[0] == "token" || fields[0] == "Bearer") {
 				accessToken = fields[1]
 			}
 		}
