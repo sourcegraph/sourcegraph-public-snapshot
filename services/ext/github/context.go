@@ -24,11 +24,9 @@ func WithMockHasAuthedUser(ctx context.Context, hasAuthedUser bool) context.Cont
 
 // NewContextWithClient creates a new child context with the specified
 // GitHub clients. The userClient is authenticated as the user (or no
-// user if there is none), and appClient is authenticated using the
-// OAuth2 application's client ID and secret (which is required for
-// certain GitHub API endpoints).
-func NewContextWithClient(ctx context.Context, isAuthedUser bool, userClient *github.Client, appClient *github.Client) context.Context {
-	return newContext(ctx, newMinimalClient(isAuthedUser, userClient, appClient))
+// user if there is none).
+func NewContextWithClient(ctx context.Context, isAuthedUser bool, userClient *github.Client) context.Context {
+	return newContext(ctx, newMinimalClient(isAuthedUser, userClient))
 }
 
 // NewContextWithAuthedClient creates a new child context with a
@@ -48,7 +46,7 @@ func NewContextWithAuthedClient(ctx context.Context) context.Context {
 	} else {
 		userClient = ghConf.UnauthedClient()
 	}
-	return NewContextWithClient(ctx, isAuthedUser, userClient, ghConf.ApplicationAuthedClient())
+	return NewContextWithClient(ctx, isAuthedUser, userClient)
 }
 
 func newContext(ctx context.Context, client *minimalClient) context.Context {

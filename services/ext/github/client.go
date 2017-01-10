@@ -12,12 +12,6 @@ import (
 )
 
 var (
-	rateLimitRemainingGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "github",
-		Name:      "rate_limit_remaining",
-		Help:      "Number of calls to GitHub's API remaining before hitting the rate limit.",
-	})
 	abuseDetectionMechanismCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "github",
@@ -27,8 +21,6 @@ var (
 )
 
 func init() {
-	rateLimitRemainingGauge.Set(5000)
-	prometheus.MustRegister(rateLimitRemainingGauge)
 	prometheus.MustRegister(abuseDetectionMechanismCounter)
 }
 
@@ -39,21 +31,14 @@ type minimalClient struct {
 	search   githubSearch
 	activity githubActivity
 
-	// These are authenticated as the OAuth2 client application using
-	// HTTP Basic auth, not as the user. (Some GitHub API endpoints
-	// require that.)
-	appAuthorizations githubAuthorizations
-
 	isAuthedUser bool // whether the client is using a GitHub user's auth token
 }
 
-func newMinimalClient(isAuthedUser bool, userClient *github.Client, appClient *github.Client) *minimalClient {
+func newMinimalClient(isAuthedUser bool, userClient *github.Client) *minimalClient {
 	return &minimalClient{
 		repos:    userClient.Repositories,
 		search:   userClient.Search,
 		activity: userClient.Activity,
-
-		appAuthorizations: appClient.Authorizations,
 
 		isAuthedUser: isAuthedUser,
 	}
@@ -78,10 +63,6 @@ type githubAuthorizations interface {
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
-	if resp != nil && resp.Request.Header.Get("Authorization") == "" { // do not track user rate limits
-		rateLimitRemainingGauge.Set(float64(resp.Remaining))
-	}
-
 	if err == nil {
 		return nil
 	}
