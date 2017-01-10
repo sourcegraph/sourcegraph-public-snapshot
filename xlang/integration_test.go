@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -31,6 +32,7 @@ func TestIntegration(t *testing.T) {
 		wantReferences    map[string][]string
 		wantSymbols       map[string][]string
 		wantXDependencies string
+		wantXReferences   map[*lsext.WorkspaceReferencesParams][]string
 	}{
 		"git://github.com/gorilla/mux?0a192a193177452756c362c20087ddafcf6829c4": {
 			mode: "go",
@@ -236,7 +238,7 @@ func TestIntegration(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies, test.wantXReferences)
 
 			if err := c.Close(); err != nil {
 				t.Fatal(err)

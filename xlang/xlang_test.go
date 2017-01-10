@@ -24,7 +24,7 @@ import (
 )
 
 // lspTests runs all test suites for LSP functionality.
-func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string) {
+func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string, wantXReferences map[*lsext.WorkspaceReferencesParams][]string) {
 	for pos, want := range wantHover {
 		tbRun(t, fmt.Sprintf("hover-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
 			hoverTest(t, ctx, c, root, pos, want)
@@ -64,6 +64,14 @@ func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI
 			}
 			jsonTest(t, deps, "xdependencies-"+wantXDependencies)
 		})
+	}
+
+	if wantXReferences != nil {
+		for params, want := range wantXReferences {
+			tbRun(t, fmt.Sprintf("xreferences"), func(t testing.TB) {
+				workspaceReferencesTest(t, ctx, c, root, *params, want)
+			})
+		}
 	}
 }
 
@@ -190,6 +198,32 @@ func jsonTest(t testing.TB, gotData interface{}, testName string) {
 		t.Error(string(diff))
 		t.Fatalf("\ngot  %s\nwant %s", gotFile, wantFile)
 	}
+}
+
+func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootPath *uri.URI, params lsext.WorkspaceReferencesParams, want []string) {
+	references, err := callWorkspaceReferences(ctx, c, params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(references, want) {
+		t.Errorf("\ngot  %q\nwant %q", references, want)
+	}
+}
+
+func callWorkspaceReferences(ctx context.Context, c *jsonrpc2.Conn, params lsext.WorkspaceReferencesParams) ([]string, error) {
+	var references []lsext.ReferenceInformation
+	err := c.Call(ctx, "workspace/xreferences", params, &references)
+	if err != nil {
+		return nil, err
+	}
+	refs := make([]string, len(references))
+	for i, r := range references {
+		locationURI := strings.TrimPrefix(r.Reference.URI, "file://")
+		start := r.Reference.Range.Start
+		end := r.Reference.Range.End
+		refs[i] = fmt.Sprintf("%s:%d:%d-%d:%d -> %v", locationURI, start.Line+1, start.Character+1, end.Line+1, end.Character+1, r.Symbol)
+	}
+	return refs, nil
 }
 
 func parsePos(s string) (file string, line, char int, err error) {
