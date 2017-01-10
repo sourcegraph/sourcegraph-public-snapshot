@@ -45,6 +45,11 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 			"name": symbol["package"].(map[string]interface{})["name"],
 		}
 	},
+	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
+		return map[string]interface{}{
+			"name": symbol["name"],
+		}
+	},
 }
 
 func (s *defs) DeprecatedListRefs(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefsOp) (res *sourcegraph.RefList, err error) {
