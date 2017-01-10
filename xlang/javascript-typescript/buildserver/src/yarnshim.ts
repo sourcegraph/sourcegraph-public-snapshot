@@ -134,9 +134,9 @@ export function parseGitHubInfo(cloneURL: string): Info | null {
  * install mimics `yarn install --ignore-scripts`, installing
  * dependencies into a temporary directory on disk. cwd should specify
  * the directory in remoteFs from which the package.json should be
- * read.
+ * read. Returns a map from local fs path to dependency metadata.
  */
-export async function install(remoteFs: FileSystem, cwd: string, globaldir: string, overlaydir: string): Promise<void> {
+export async function install(remoteFs: FileSystem, cwd: string, globaldir: string, overlaydir: string): Promise<Map<string, Object>> {
 	await new Promise<void>((resolve, reject) => {
 		mkdirp(overlaydir, (err) => {
 			if (err) {
@@ -232,7 +232,15 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0)
 	});
 
-	return Promise.resolve();
+	const hoistedTree = await inst.linker.getFlatHoistedTree(patterns);
+	const pathToDep = new Map<string, Object>();
+	for (const dep of hoistedTree) {
+		const rawloc = dep[0];
+		const pkg = dep[1];
+		const loc = path.join(path.sep, path.relative(overlaydir, rawloc));
+		pathToDep.set(loc, { 'name': pkg.pkg.name, 'version': pkg.pkg.version });
+	}
+	return pathToDep;
 }
 
 async function runWithLockfile(lf: string, run: () => Promise<void>): Promise<void> {

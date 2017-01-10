@@ -198,6 +198,129 @@ diffChars('foo', 'bar');\n\
 			}
 			done();
 		});
+		it('cross-repo xdefinition', async function (done: (err?: Error) => void) {
+			try {
+				await new Promise<void>((resolve, reject) => {
+					utils.xdefinition({
+						textDocument: {
+							uri: 'file:///a.ts'
+						},
+						position: {
+							line: 0,
+							character: 12
+						}
+					}, {
+							symbol: {
+								containerName: "",
+								kind: "module",
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						}, err => err ? reject(err) : resolve());
+				});
+				await new Promise<void>((resolve, reject) => {
+					utils.xdefinition({
+						textDocument: {
+							uri: 'file:///a.ts'
+						},
+						position: {
+							line: 0,
+							character: 23
+						}
+					}, {
+							symbol: {
+								containerName: "",
+								kind: "module",
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						}, err => err ? reject(err) : resolve());
+				});
+				await new Promise<void>((resolve, reject) => {
+					utils.xdefinition({
+						textDocument: {
+							uri: 'file:///a.ts'
+						},
+						position: {
+							line: 1,
+							character: 10
+						}
+					}, [{
+						symbol: {
+							containerName: "diff",
+							kind: "function",
+							name: "@types/diff",
+							version: "0.0.31",
+						},
+					}, {
+						symbol: {
+							containerName: "diff",
+							kind: "function",
+							name: "@types/diff",
+							version: "0.0.31",
+						},
+					}], err => err ? reject(err) : resolve());
+				});
+				await new Promise<void>((resolve, reject) => {
+					utils.xdefinition({
+						textDocument: {
+							uri: 'file:///a.ts'
+						},
+						position: {
+							line: 1,
+							character: 21
+						}
+					}, {
+							symbol: {
+								containerName: "diff",
+								kind: "interface",
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						}, err => err ? reject(err) : resolve());
+				});
+				await new Promise<void>((resolve, reject) => {
+					utils.xdefinition({
+						textDocument: {
+							uri: 'file:///a.ts'
+						},
+						position: {
+							line: 1,
+							character: 40
+						}
+					}, {
+							symbol: {
+								containerName: "",
+								kind: "module",
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						}, err => err ? reject(err) : resolve());
+				});
+				await new Promise<void>((resolve, reject) => {
+					utils.xdefinition({
+						textDocument: {
+							uri: 'file:///a.ts'
+						},
+						position: {
+							line: 3,
+							character: 0
+						}
+					}, {
+							symbol: {
+								containerName: "JsDiff",
+								kind: "function",
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						}, err => err ? reject(err) : resolve());
+				});
+			} catch (e) {
+				done(e);
+				return;
+			}
+			done();
+		});
 		afterEach(function (done: () => void) {
 			utils.tearDown(done);
 		});

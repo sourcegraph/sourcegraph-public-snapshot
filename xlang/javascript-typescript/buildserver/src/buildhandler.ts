@@ -57,12 +57,12 @@ export class BuildHandler implements LanguageHandler {
 	// by the build handler. It excludes modules already vendored in
 	// the repository.
 	private managedModuleDirs: Set<string>;
-	private managedModuleInit: Map<string, Promise<void>>;
+	private managedModuleInit: Map<string, Promise<Map<string, Object>>>;
 
 	constructor() {
 		this.ls = new TypeScriptService();
 		this.managedModuleDirs = new Set<string>();
-		this.managedModuleInit = new Map<string, Promise<void>>();
+		this.managedModuleInit = new Map<string, Promise<Map<string, Object>>>();
 	}
 
 	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<InitializeResult> {
@@ -102,38 +102,51 @@ export class BuildHandler implements LanguageHandler {
 		});
 	}
 
-	private async ensureDependenciesForFile(uri: string): Promise<void> {
-		if (!this.managedModuleInit) {
-			throw new Error("build handler is not yet initialized");
-		}
+	private getManagedModuleDir(uri: string): string | null {
 		const p = uri2path(uri);
 		for (let d = p; true; d = path.dirname(d)) {
 			if (this.managedModuleDirs.has(d)) {
-				if (!this.managedModuleInit.has(d)) {
-					const installAndRefresher = install(this.remoteFs, d, yarnGlobalDir, path.join(this.yarnOverlayRoot, d)).then(() => {
-						return this.ls.projectManager.refreshModuleStructureAt(d);
-					}, (err) => {
-						this.managedModuleInit.delete(d);
-					});
-					this.managedModuleInit.set(d, installAndRefresher);
-				}
-				return this.managedModuleInit.get(d);
+				return d;
 			}
+
 			if (path.dirname(d) === d) {
 				break;
 			}
 		}
+		return null;
+	}
+
+	private async ensureDependenciesForFile(uri: string): Promise<void> {
+		if (!this.managedModuleInit) {
+			throw new Error("build handler is not yet initialized");
+		}
+		const d = this.getManagedModuleDir(uri);
+		if (!d) {
+			return;
+		}
+
+		let ready = this.managedModuleInit.get(d);
+		if (!ready) {
+			ready = install(this.remoteFs, d, yarnGlobalDir, path.join(this.yarnOverlayRoot, d)).then(async (pathToDep) => {
+				await this.ls.projectManager.refreshModuleStructureAt(d);
+				return pathToDep;
+			}, (err) => {
+				this.managedModuleInit.delete(d);
+			});
+			this.managedModuleInit.set(d, ready);
+		}
+		await ready;
 	}
 
 	private async rewriteURI(uri: string): Promise<{ uri: string, rewritten: boolean }> {
-		// if uri is in a dependency module
+		// if uri is not in a dependency module, return untouched
 		const p = uri2path(uri);
 		const i = p.indexOf('/node_modules/');
 		if (i === -1) {
 			return { uri: uri, rewritten: false };
 		}
 
-		// if the dependency module is managed by this build handler
+		// if the dependency module is not managed by this build handler
 		let cwd = p.substring(0, i);
 		if (cwd === '') {
 			cwd = '/';
@@ -142,7 +155,7 @@ export class BuildHandler implements LanguageHandler {
 			return { uri: uri, rewritten: false };
 		}
 
-		// if we can get the module package name heuristically
+		// get the module package name heuristically, otherwise punt
 		const cmp = p.substr(i + '/node_modules/'.length).split('/');
 		const subpath = path.posix.join(...cmp.slice(1));
 		let pkg: string | undefined;
@@ -155,7 +168,7 @@ export class BuildHandler implements LanguageHandler {
 			return { uri: uri, rewritten: false };
 		}
 
-		// if we can fetch the package metadata and if the metadata contains a git URL
+		// fetch the package metadata and extract the git URL from metadata if it exists; otherwise punt
 		let pkginfo;
 		try {
 			pkginfo = await info(cwd, yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
@@ -172,7 +185,7 @@ export class BuildHandler implements LanguageHandler {
 			return { uri: uri, rewritten: false };
 		}
 
-		// if we can parse the git URL
+		// parse the git URL if possible, otherwise punt
 		const pkgUrlInfo = parseGitHubInfo(pkginfo.repository.url);
 		if (!pkgUrlInfo || !pkgUrlInfo.repository) {
 			return { uri: uri, rewritten: false };
@@ -200,6 +213,10 @@ export class BuildHandler implements LanguageHandler {
 			for (const e of result) {
 				await this.rewriteURIs(e);
 			}
+		} else if (typeof result === "object") {
+			for (const k in result) {
+				await this.rewriteURIs(result[k]);
+			}
 		}
 	}
 
@@ -216,8 +233,58 @@ export class BuildHandler implements LanguageHandler {
 			await this.ensureDependenciesForFile(params.textDocument.uri);
 			locs = await this.ls.getDefinition(params);
 		}
-		await this.rewriteURIs(locs)
+		await this.rewriteURIs(locs);
 		return locs;
+	}
+
+	async getXdefinition(params: TextDocumentPositionParams): Promise<rt.SymbolLocationInformation[]> {
+		let syms: rt.SymbolLocationInformation[] = [];
+		// First, attempt to get definition before dependencies
+		// fetching is finished. If it fails, wait for dependency
+		// fetching to finish and then retry.
+		try {
+			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
+			syms = await this.ls.getXdefinition(params);
+		} catch (e) { }
+		if (!syms || syms.length === 0) {
+			await this.ensureDependenciesForFile(params.textDocument.uri);
+			syms = await this.ls.getXdefinition(params);
+		}
+
+		// For symbols defined in dependencies, remove the location field and add in dependency package metadata.
+		await Promise.all(syms.map(async (sym) => {
+			const dep = await this.getDepContainingSymbol(sym);
+			if (!dep) return;
+			sym.location = undefined;
+			for (const k of Object.keys(dep.attributes)) {
+				sym.symbol[k] = dep.attributes[k];
+			}
+		}));
+
+		await this.rewriteURIs(syms);
+
+		return syms;
+	}
+
+	// getDepContainingSymbol returns the dependency that contains the
+	// symbol or null if the symbol is not defined in a dependency.
+	private async getDepContainingSymbol(sym: rt.SymbolLocationInformation): Promise<rt.DependencyReference | null> {
+		const moduledir = this.getManagedModuleDir(sym.location.uri);
+		if (!moduledir) {
+			return null;
+		}
+		const pathToDep = await this.managedModuleInit.get(moduledir);
+		const p = uri2path(sym.location.uri);
+		for (let d = p; true; d = path.dirname(d)) {
+			if (pathToDep.has(d)) {
+				return { attributes: pathToDep.get(d), hints: {} };
+			}
+
+			if (path.dirname(d) === d) {
+				break;
+			}
+		}
+		return null;
 	}
 
 	async getHover(params: TextDocumentPositionParams): Promise<Hover> {
@@ -239,6 +306,10 @@ export class BuildHandler implements LanguageHandler {
 
 	getReferences(params: ReferenceParams): Promise<Location[]> {
 		return this.ls.getReferences(params);
+	}
+
+	getDependencies(): Promise<rt.DependencyReference[]> {
+		return this.ls.getDependencies();
 	}
 
 	getWorkspaceSymbols(params: rt.WorkspaceSymbolParamsWithLimit): Promise<SymbolInformation[]> {
