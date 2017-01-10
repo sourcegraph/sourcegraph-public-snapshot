@@ -75,7 +75,7 @@ func (r *fileResolver) Definition(ctx context.Context,
 	refs, err := backend.Defs.RefLocations(ctx, sourcegraph.RefLocationsOptions{
 		RepoID:    r.commit.RepoID,
 		Language:  args.Language,
-		File:      r.name,
+		File:      r.path,
 		Line:      int(args.Line),
 		Character: int(args.Column),
 	})
