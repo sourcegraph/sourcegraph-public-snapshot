@@ -8,6 +8,7 @@ import random
 from urlparse import urlparse
 from colors import green, red, bold
 from slackclient import SlackClient
+from prometheus_client import Counter, start_http_server
 
 import requests
 
@@ -53,6 +54,8 @@ failure_msg_template = """:rotating_light: *TEST FAILED* :rotating_light:
 (For docs, see https://github.com/sourcegraph/sourcegraph/blob/master/test/e2e2/README.md)
 """
 
+test_results_counter = Counter("src_e2e_test_results", "Sourcegraph E2E Test Results", ["test", "browser", "success"])
+
 def failure_msg(test_name, owner, browser, url, sgurl, stack_trace, console_log):
     browser_log_title = "*Browser console* (only console.error for Firefox)"
     if browser == 'chrome':
@@ -86,6 +89,9 @@ def alert_alertmanager(alertname, exported_name, url, alertmgr_url, oauth_cookie
     except Exception as err:
         logf("[ERROR] failed to post Alertmanager alert: %s", err.message)
 
+def update_counter(test_name, browser, success):
+    test_results_counter.labels(test=test_name, browser=browser, success=success).inc()
+
 def slack_and_alertmgr(args):
     slack_cli, slack_ch, alertmgr_url, alertmgr_cookie = None, None, None, None
     if args.alert_on_err:
@@ -109,14 +115,19 @@ def get_browser_log(driver):
     return [e for e in driver.d.get_log('browser') if include(e)]
 
 def run_tests(args, tests):
+    start_http_server(6060) # expose prometheus metrics
+
     failed_tests = []
     slack_cli, slack_ch, alertmgr_url, alertmgr_cookie = slack_and_alertmgr(args)
 
     def success(test_name):
         logf('[%s](%s) %s' % (green("PASS"), args.browser, test_name))
+        update_counter(test_name, args.browser, "true")
 
     def fail(test_name, owner, exception, driver):
         logf('[%s](%s) %s' % (red("FAIL"), args.browser, test_name))
+        update_counter(test_name, args.browser, "false")
+
         traceback.print_exc(30)
         console_log_msgs = get_browser_log(driver)
         if len(console_log_msgs) > 0:
