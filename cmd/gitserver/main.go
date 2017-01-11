@@ -22,6 +22,7 @@ var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind addres
 
 func main() {
 	env.Lock()
+	env.HandleHelpFlag()
 
 	go func() {
 		c := make(chan os.Signal, 1)

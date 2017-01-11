@@ -43,6 +43,7 @@ type indexTask struct {
 
 func main() {
 	env.Lock()
+	env.HandleHelpFlag()
 	traceutil.InitTracer()
 	gitserver.DefaultClient.NoCreds = true
 

@@ -42,6 +42,7 @@ func init() {
 
 func main() {
 	env.Lock()
+	env.HandleHelpFlag()
 	traceutil.InitTracer()
 
 	go func() {

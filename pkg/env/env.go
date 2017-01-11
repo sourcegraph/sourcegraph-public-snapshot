@@ -51,3 +51,15 @@ func PrintHelp() {
 		log.Printf("  %-40s %s", name, descriptions[name])
 	}
 }
+
+// HandleHelpfFlag looks at the first CLI argument. If it is "help", "-h" or "--help", then it calls
+// PrintHelp and exits.
+func HandleHelpFlag() {
+	if len(os.Args) >= 2 {
+		switch os.Args[1] {
+		case "help", "-h", "--help":
+			PrintHelp()
+			os.Exit(0)
+		}
+	}
+}
