@@ -2,7 +2,6 @@ package buildserver
 
 import (
 	"fmt"
-	"runtime"
 
 	"github.com/sourcegraph/ctxvfs"
 )
@@ -22,7 +21,7 @@ const DefaultGoroot = %q
 const TheVersion = %q
 const Goexperiment=""
 const StackGuardMultiplier=1`,
-			goroot, runtime.Version())))
+			goroot, RuntimeVersion)))
 }
 
 var stdlibPackagePaths = map[string]struct{}{

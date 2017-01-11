@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -268,11 +267,11 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "a.go:1:53": "type int int",
 			},
 			wantDefinition: map[string]string{
-				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19",
-				// "a.go:1:53": "git://github.com/golang/go?" + runtime.Version() + "#src/builtin/builtin.go:TODO:TODO", // TODO(sqs): support builtins
+				"a.go:1:40": "git://github.com/golang/go?go1.7.1#src/fmt/print.go:1:19",
+				// "a.go:1:53": "git://github.com/golang/go?go1.7.1#src/builtin/builtin.go:TODO:TODO", // TODO(sqs): support builtins
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:40": "git://github.com/golang/go?" + runtime.Version() + "#src/fmt/print.go:1:19 attr_package:fmt attr_packageName:fmt name:Println",
+				"a.go:1:40": "git://github.com/golang/go?go1.7.1#src/fmt/print.go:1:19 attr_package:fmt attr_packageName:fmt name:Println",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/golang/go?go1.7.1": {

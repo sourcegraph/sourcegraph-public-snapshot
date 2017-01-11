@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -43,7 +42,7 @@ func TestResolveImportPath(t *testing.T) {
 			cloneURL:    "https://github.com/golang/go",
 			repoPrefix:  "src",
 			vcs:         "git",
-			rev:         runtime.Version(),
+			rev:         RuntimeVersion,
 		}},
 		{"github.com/foo/bar", &directory{
 			importPath:  "github.com/foo/bar",

@@ -17,6 +17,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
+func init() {
+	gobuildserver.RuntimeVersion = "go1.7.1"
+}
+
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skip long integration test")
@@ -203,14 +207,14 @@ func TestIntegration(t *testing.T) {
 				gobuildserver.NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					if pinRev, ok := test.pinDepReposToRev[cloneURL.String()]; ok {
 						rev = pinRev
-					} else if len(rev) != 40 && rev != "go1.7.1" {
+					} else if len(rev) != 40 && rev != gobuildserver.RuntimeVersion {
 						// It's OK to hardcode allowable Git tags
 						// (such as "goN.N.N") here, since we know
 						// those to be stable. Branches like "master"
 						// are not stable and are not OK to hardcode
 						// here.
 						// We panic since t.Fatal does not interact nicely with subtests
-						panic(fmt.Sprintf("must specify pinDepReposToRev in integration test definition so that test analysis is deterministic/stable (and not dependent on the mutable git rev spec %q for repo %q)", rev, cloneURL))
+						panic(fmt.Sprintf("TestIntegration/%s: must specify pinDepReposToRev in integration test definition so that test analysis is deterministic/stable (and not dependent on the mutable git rev spec %q for repo %q)", label, rev, cloneURL))
 					}
 					return orig(cloneURL, rev)
 				}

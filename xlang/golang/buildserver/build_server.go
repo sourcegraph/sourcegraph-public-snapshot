@@ -106,6 +106,10 @@ const (
 	goarch = "amd64"
 )
 
+// RuntimeVersion is the version of go stdlib to use. We allow it to be
+// different to runtime.Version for test data.
+var RuntimeVersion = runtime.Version()
+
 // reset clears all internal state in h.
 func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) error {
 	h.mu.Lock()
@@ -495,7 +499,7 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 				// analyzing).
 				return "file:///" + fileInGoStdlib, nil
 			}
-			return "git://github.com/golang/go?" + runtime.Version() + "#" + fileInGoStdlib, nil
+			return "git://github.com/golang/go?" + RuntimeVersion + "#" + fileInGoStdlib, nil
 		}
 
 		// Refers to a file in the same workspace?

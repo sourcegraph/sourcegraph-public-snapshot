@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"regexp"
-	"runtime"
 	"strings"
 )
 
@@ -42,7 +41,7 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 			cloneURL:    "https://github.com/golang/go",
 			repoPrefix:  "src",
 			vcs:         "git",
-			rev:         runtime.Version(),
+			rev:         RuntimeVersion,
 		}, nil
 	}
 
