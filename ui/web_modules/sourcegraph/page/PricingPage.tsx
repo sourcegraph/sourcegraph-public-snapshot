@@ -1,16 +1,15 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import { Hero, Heading, Panel, Button } from "sourcegraph/components";
-import * as styles from "sourcegraph/page/Page.css";
 import { Link } from "react-router";
-import * as base from "sourcegraph/components/styles/_base.css";
+
+import { context } from "sourcegraph/app/context";
+import { Button, Heading, Hero, Panel } from "sourcegraph/components";
 import { CheckIcon } from "sourcegraph/components/Icons";
 import { PageTitle } from "sourcegraph/components/PageTitle";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "sourcegraph/page/Page.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { context } from "sourcegraph/app/context";
 
-export function PricingPage(props: {}) {
+export function PricingPage(props: {}): JSX.Element {
 	return (
 		<div>
 			<PageTitle title="Pricing" />

@@ -3,7 +3,6 @@ import * as React from "react";
 import { Link } from "react-router";
 
 import { context } from "sourcegraph/app/context";
-import { Footer } from "sourcegraph/app/Footer";
 import { Button, FlexContainer, Heading, Hero } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { PageTitle } from "sourcegraph/components/PageTitle";
@@ -160,7 +159,7 @@ export function TwitterCaseStudyPage(): JSX.Element {
 
 				<p>Sourcegraph’s reception at Twitter has been overwhelmingly positive across the organization. “Sourcegraph is pretty amazing,” says Keenan. “It makes the Scala code so much easier to navigate. We're looking forward to getting this on Java, too.”</p>
 
-				<p>To learn more about how Sourcegraph can help your engineering team, visit us at sourcegraph.com.</p>
+				<p>To learn more about how Sourcegraph can help your engineering team, visit us at <Link to="/">sourcegraph.com</Link>.</p>
 
 				<Link target="_blank" to={`${context.assetsRoot}/img/tw-case/tw-case.pdf`}>
 					<Button color="blue" style={{
@@ -173,7 +172,7 @@ export function TwitterCaseStudyPage(): JSX.Element {
 						}}>
 							<img src={`${context.assetsRoot}/img/tw-case/tw-case-dl-icon.svg`} />
 						</div>
-						Download Case Study PDF
+						Download case study PDF
 					</Button>
 				</Link>
 
@@ -213,8 +212,6 @@ export function TwitterCaseStudyPage(): JSX.Element {
 			}}
 				{ ...media(layout.breakpoints.sm, { opacity: sprinkleMobileOpacity }) }
 				/>
-
-			<Footer />
 
 		</div>
 	);

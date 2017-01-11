@@ -2,6 +2,7 @@ import { media, style } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { InjectedRouter } from "react-router";
+
 import { context } from "sourcegraph/app/context";
 import { Footer } from "sourcegraph/app/Footer";
 import { BGContainer, Button, FlexContainer, Heading, Panel } from "sourcegraph/components";
@@ -167,12 +168,15 @@ export class Home extends React.Component<HomeProps, {}> {
 							maxWidth: 960,
 							padding: whitespace[4],
 						}}>
-						<FlexContainer wrap={true}>
+						<FlexContainer wrap={true} items="center">
 							<Heading align="left" level={4} underline="purple" style={{ flex: "0 0 240px" }} >
 								Used by developers everywhere
 								</Heading>
-							<FlexContainer justify="end" style={{ flex: "1 1 60%", marginTop: whitespace[4] }}>
-								<img style={{ marginTop: "1px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
+							<FlexContainer items="center" justify="end" style={{ flex: "1 1 60%" }}>
+								<Link to="/customers/twitter" style={{ height: 24, marginRight: whitespace[4] }}>
+									<img style={{ marginRight: whitespace[3] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
+									<span style={{ verticalAlign: "super" }}>Read the case study</span>
+								</Link>
 								<img style={{ marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} height="32" {...layout.hide.sm} />
 								<img style={{ marginTop: "5px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} height="24" {...layout.hide.sm} />
 								<img style={{ marginTop: "8px" }} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} height="17" {...layout.hide.sm} />

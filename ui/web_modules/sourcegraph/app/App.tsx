@@ -18,6 +18,7 @@ import { userSettingsRoutes } from "sourcegraph/app/routes/userSettingsRoutes";
 
 interface Props {
 	main: JSX.Element;
+	footer?: JSX.Element;
 	location: any;
 	params?: any;
 }
@@ -43,6 +44,7 @@ export class App extends React.Component<Props, {}> {
 			<div className={className}>
 				<GlobalNav params={this.props.params} location={this.props.location} />
 				{this.props.main}
+				{this.props.footer}
 			</div>
 		);
 	}

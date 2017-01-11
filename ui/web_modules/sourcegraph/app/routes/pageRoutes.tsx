@@ -1,3 +1,4 @@
+import { Footer } from "sourcegraph/app/Footer";
 import { rel } from "sourcegraph/app/routePatterns";
 import { AboutPage } from "sourcegraph/page/AboutPage";
 import { BetaPage } from "sourcegraph/page/BetaPage";
@@ -16,6 +17,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: AboutPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -24,6 +26,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: MasterPlanPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -32,6 +35,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: BetaPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -40,6 +44,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: ContactPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -48,6 +53,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: SecurityPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -56,6 +62,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: PricingPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -64,6 +71,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: TermsPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -72,6 +80,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: PrivacyPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -80,6 +89,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: DocsPage,
+				footer: Footer,
 			});
 		},
 	},
@@ -88,6 +98,7 @@ export const pageRoutes: any[] = [
 		getComponents: (location, callback) => {
 			callback(null, {
 				main: TwitterCaseStudyPage,
+				footer: Footer,
 			});
 		},
 	},

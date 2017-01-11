@@ -41,7 +41,7 @@ export const rel = {
 	terms: "terms",
 	privacy: "privacy",
 	styleguide: "styleguide",
-	twittercasestudy: "twittercasestudy",
+	twittercasestudy: "customers/twitter",
 	integrations: "integrations",
 	settings: "settings",
 	login: "login",

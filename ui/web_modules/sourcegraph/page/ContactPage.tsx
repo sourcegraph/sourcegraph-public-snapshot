@@ -1,12 +1,10 @@
-// tslint:disable: typedef ordered-imports
-
 import * as React from "react";
-import { Hero, Heading } from "sourcegraph/components";
-import * as styles from "sourcegraph/page/Page.css";
-import * as base from "sourcegraph/components/styles/_base.css";
+import { Heading, Hero } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
+import * as base from "sourcegraph/components/styles/_base.css";
+import * as styles from "sourcegraph/page/Page.css";
 
-export function ContactPage(props: {}, {}) {
+export function ContactPage(props: {}): JSX.Element {
 	return (
 		<div>
 			<PageTitle title="Contact" />

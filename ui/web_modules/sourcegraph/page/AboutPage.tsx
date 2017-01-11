@@ -1,7 +1,6 @@
 import * as React from "react";
 
 import { context } from "sourcegraph/app/context";
-import { Footer } from "sourcegraph/app/Footer";
 import { FlexContainer, Heading, Hero, User } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { PageTitle } from "sourcegraph/components/PageTitle";
@@ -126,8 +125,6 @@ export function AboutPage(): JSX.Element {
 				</div>}
 
 			</FlexContainer>
-
-			<Footer />
 
 		</div>
 	);
