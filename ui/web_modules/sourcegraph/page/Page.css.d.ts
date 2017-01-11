@@ -16,7 +16,6 @@ export const faqs_content: string;
 export const content: string;
 export const content_wide: string;
 export const p: string;
-export const cta: string;
 export const white: string;
 export const h: string;
 export const h5: string;

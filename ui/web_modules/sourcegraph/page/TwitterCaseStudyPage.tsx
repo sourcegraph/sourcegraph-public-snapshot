@@ -177,7 +177,11 @@ export function TwitterCaseStudyPage(): JSX.Element {
 					</Button>
 				</Link>
 
-				{!context.user && <div className={styles.cta}>
+				{!context.user && <div style={{
+					textAlign: "center",
+					paddingBottom: whitespace[4],
+					paddingTop: whitespace[3],
+				}}>
 					<GitHubAuthButton color="purple">
 						<strong>Sign up with GitHub</strong>
 					</GitHubAuthButton>
