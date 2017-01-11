@@ -27,6 +27,7 @@ describe('LSP', function () {
 						"install": "echo install should not run && exit 1"\n\
 					},\n\
 					"dependencies": {\n\
+						"typescript": "2.1.1",\n\
 						"diff": "3.0.1"\n\
 					},\n\
 					"devDependencies": {\n\
@@ -38,7 +39,14 @@ import { diffChars, IDiffResult } from 'diff';\n\
 \n\
 diffChars('foo', 'bar');\n\
 ",
+				'b.ts': "import * as ts from 'typescript';\n\
+\n\
+var s ts.SyntaxKind;\n\
+",
 			}, done);
+		});
+		after(function (done: () => void) {
+			utils.tearDown(done);
 		});
 		it('cross-repo definition', async function (done: (err?: Error) => void) {
 			try {
@@ -349,8 +357,27 @@ diffChars('foo', 'bar');\n\
 			}
 			done();
 		});
-		afterEach(function (done: () => void) {
-			utils.tearDown(done);
+		it('cross-repo xdefinition to non-DefinitelyTyped package', async function (done: (err?: Error) => void) {
+			utils.xdefinition({
+				textDocument: {
+					uri: 'file:///b.ts'
+				},
+				position: {
+					line: 2,
+					character: 9
+				}
+			}, {
+					symbol: {
+						containerKind: "",
+						containerName: "ts",
+						kind: "enum",
+						name: "SyntaxKind",
+						package: {
+							name: "typescript",
+							version: "2.1.1",
+						},
+					},
+				}, done);
 		});
 	});
 	describe('multiple package.json', function () {
@@ -383,6 +410,9 @@ diffChars('foo', 'bar');\n\
 				}\n',
 				},
 			}, done);
+		});
+		after(function (done: () => void) {
+			utils.tearDown(done);
 		});
 		it('cross-repo definition', async function (done: (err?: Error) => void) {
 			try {
@@ -438,9 +468,6 @@ diffChars('foo', 'bar');\n\
 			}
 			done();
 		});
-		afterEach(function (done: () => void) {
-			utils.tearDown(done);
-		});
 	});
 	describe('vendored dependencies', function () {
 		before(function (done: () => void) {
@@ -460,6 +487,9 @@ diffChars('foo', 'bar');\n\
 					},
 				}
 			}, done);
+		});
+		after(function (done: () => void) {
+			utils.tearDown(done);
 		});
 		it('cross-repo definition', async function (done: (err?: Error) => void) {
 			utils.definition({
@@ -484,9 +514,6 @@ diffChars('foo', 'bar');\n\
 					}
 				}, done);
 		});
-		afterEach(function (done: () => void) {
-			utils.tearDown(done);
-		});
 	});
 	describe('dependency installation should not run scripts (javascript-dep-npm\'s scripts will fail)', function () {
 		before(function (done: () => void) {
@@ -501,6 +528,9 @@ diffChars('foo', 'bar');\n\
 				}\n',
 				'a.ts': "import * as xyz from 'javascript-dep-npm';",
 			}, done);
+		});
+		after(function (done: () => void) {
+			utils.tearDown(done);
 		});
 		it('cross-repo definition', async function (done: (err?: Error) => void) {
 			try {
@@ -555,9 +585,6 @@ diffChars('foo', 'bar');\n\
 				return;
 			}
 			done();
-		});
-		afterEach(function (done: () => void) {
-			utils.tearDown(done);
 		});
 	});
 });
