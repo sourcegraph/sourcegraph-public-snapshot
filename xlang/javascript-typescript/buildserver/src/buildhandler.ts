@@ -125,15 +125,34 @@ export class BuildHandler implements LanguageHandler {
 			return;
 		}
 
-		let ready = this.managedModuleInit.get(d);
+		await this.initManagedModule(d);
+	}
+
+	// ensureDependenciesToPackage ensures that dependencies have been
+	// installed for all managed module directories that have a
+	// dependency that matches the properties in `pkg`. It does so by
+	// ensuring all dependencies anywhere have been installed. In the
+	// future, this could be optimized by selectively installing
+	// dependencies only for necessary module directories or optimized
+	// even more to install just that dependency in a given managed
+	// module directory.
+	private async ensureDependency(pkg?: rt.DependencyAttributes): Promise<void> {
+		if (!this.managedModuleInit) {
+			throw new Error("build handler is not yet initialized");
+		}
+		await Promise.all(Array.from(this.managedModuleDirs.values(), (d) => this.initManagedModule(d)));
+	}
+
+	private async initManagedModule(dir: string): Promise<void> {
+		let ready = this.managedModuleInit.get(dir);
 		if (!ready) {
-			ready = install(this.remoteFs, d, yarnGlobalDir, path.join(this.yarnOverlayRoot, d)).then(async (pathToDep) => {
-				await this.ls.projectManager.refreshModuleStructureAt(d);
+			ready = install(this.remoteFs, dir, yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
+				await this.ls.projectManager.refreshModuleStructureAt(dir);
 				return pathToDep;
 			}, (err) => {
-				this.managedModuleInit.delete(d);
+				this.managedModuleInit.delete(dir);
 			});
-			this.managedModuleInit.set(d, ready);
+			this.managedModuleInit.set(dir, ready);
 		}
 		await ready;
 	}
@@ -337,6 +356,8 @@ export class BuildHandler implements LanguageHandler {
 	}
 
 	async getWorkspaceReference(params: rt.WorkspaceReferenceParams): Promise<rt.ReferenceInformation[]> {
+		await this.ensureDependency(params.query.package);
+
 		// strip the `package` field, because this was not added by the language server
 		const pkgData = params.query.package;
 		params.query.package = undefined;

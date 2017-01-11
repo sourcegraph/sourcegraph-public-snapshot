@@ -42,6 +42,7 @@ diffChars('foo', 'bar');\n\
 				'b.ts': "import * as ts from 'typescript';\n\
 \n\
 var s ts.SyntaxKind;\n\
+var t = s;\n\
 ",
 			}, done);
 		});
@@ -378,6 +379,90 @@ var s ts.SyntaxKind;\n\
 						},
 					},
 				}, done);
+		});
+		it('workspace/xreferences', async function (done: (err?: Error) => void) {
+			utils.definition({
+				textDocument: {
+					uri: 'file:///a.ts'
+				},
+				position: {
+					line: 0,
+					character: 12
+				}
+			}, {
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					range: {
+						start: {
+							line: 8,
+							character: 0
+						},
+						end: {
+							line: 86,
+							character: 1
+						}
+					}
+				}, () => {
+					utils.workspaceReferences({
+						query: {
+							containerKind: "",
+							containerName: "diff",
+							kind: "function",
+							name: "diffChars",
+							package: {
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						}
+					}, [{
+						reference: {
+							range: {
+								end: {
+									character: 18,
+									line: 1,
+								},
+								start: {
+									character: 8,
+									line: 1,
+								},
+							},
+							uri: "file:///a.ts",
+						},
+						symbol: {
+							containerKind: "",
+							containerName: "diff",
+							kind: "function",
+							name: "diffChars",
+							package: {
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						},
+					}, {
+						reference: {
+							range: {
+								end: {
+									character: 18,
+									line: 1,
+								},
+								start: {
+									character: 8,
+									line: 1,
+								},
+							},
+							uri: "file:///a.ts",
+						},
+						symbol: {
+							containerKind: "",
+							containerName: "diff",
+							kind: "function",
+							name: "diffChars",
+							package: {
+								name: "@types/diff",
+								version: "0.0.31",
+							},
+						},
+					}], done);
+				});
 		});
 	});
 	describe('multiple package.json', function () {
