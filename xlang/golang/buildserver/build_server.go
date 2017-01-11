@@ -269,8 +269,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		var (
-			mu         sync.Mutex
-			references []lspext.DependencyReference
+			mu              sync.Mutex
+			finalReferences []*lspext.DependencyReference
+			references      = make(map[string]*lspext.DependencyReference)
 		)
 		emitRef := func(path string, r goDependencyReference) {
 			// If the _reference_ to a definition is made from inside a
@@ -293,13 +294,27 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			}
 
 			mu.Lock()
-			references = append(references, lspext.DependencyReference{
-				Attributes: r.attributes(),
-				Hints: map[string]interface{}{
-					"dir": newURI,
-				},
-			})
-			mu.Unlock()
+			defer mu.Unlock()
+
+			existing, ok := references[r.absolute]
+			if !ok {
+				// Create a new dependency reference.
+				ref := &lspext.DependencyReference{
+					Attributes: r.attributes(),
+					Hints: map[string]interface{}{
+						"dirs": []string{newURI},
+					},
+				}
+				finalReferences = append(finalReferences, ref)
+				references[r.absolute] = ref
+				return
+			}
+
+			// Append to the existing dependency reference's dirs list.
+			dirs := existing.Hints["dirs"].([]string)
+			dirs = append(dirs, newURI)
+			existing.Hints["dirs"] = dirs
+			return
 		}
 
 		// We need every transitive dependency, for every Go package in the
@@ -320,7 +335,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			}
 		}
 		dc.references(emitRef, 1)
-		return references, nil
+		return finalReferences, nil
 
 	default:
 		// Pass the request onto the lang server.
@@ -416,16 +431,20 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			}
 		}
 		if req.Method == "workspace/xreferences" {
-			// Parse the parameters and if a dir hint is present, rewrite the
-			// URI.
+			// Parse the parameters and if a dirs hint is present, rewrite the
+			// URIs.
 			var p lsext.WorkspaceReferencesParams
 			if err := json.Unmarshal(*req.Params, &p); err != nil {
 				return nil, err
 			}
-			dirHint, haveDirHint := p.Hints["dir"]
-			if haveDirHint {
-				dirHint = rewriteURIFromClient(dirHint.(string))
-				p.Hints["dir"] = dirHint
+			dirsHint, haveDirsHint := p.Hints["dirs"]
+			if haveDirsHint {
+				dirs := dirsHint.([]interface{})
+				for i, dir := range dirs {
+					dirs[i] = rewriteURIFromClient(dir.(string))
+				}
+				dirsHint = dirs
+				p.Hints["dirs"] = dirs
 				b, err := json.Marshal(p)
 				if err != nil {
 					return nil, err
@@ -437,12 +456,23 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			// (the dir hint) OR every Go package in the repository.
 			w := ctxvfs.Walk(ctx, h.RootFSPath, h.FS)
 			for w.Step() {
-				d := path.Dir(w.Path())
-				if haveDirHint && "file://"+d != dirHint.(string) {
+				if path.Ext(w.Path()) != ".go" {
 					continue
 				}
-				if !haveDirHint && path.Ext(w.Path()) != ".go" {
-					continue
+				d := path.Dir(w.Path())
+				if haveDirsHint {
+					// We have a dirs hint, ensure the directory we would fetch
+					// matches one of the directories.
+					found := false
+					for _, dir := range dirsHint.([]interface{}) {
+						if "file://"+d == dir.(string) {
+							found = true
+							break
+						}
+					}
+					if !found {
+						continue
+					}
 				}
 				h.fetchAndSendDepsOnce(d).Do(func() {
 					if err := h.fetchTransitiveDepsOfFile(ctx, d, newDepCache()); err != nil {
