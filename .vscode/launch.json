@@ -17,10 +17,12 @@
             "mode": "debug",
             "program": "${workspaceRoot}/cmd/gitserver/main.go",
             "env": {
-                "DEBUG": true,
-                "SRC_APP_DISABLE_SUPPORT_SERVICES": true,
                 "SRC_GIT_SERVERS": "127.0.0.1:3178",
-                "SRC_REPOS_DIR": "/Users/rothfels/.sourcegraph/repos"
+                "SRC_REPOS_DIR": "${env.HOME}/.sourcegraph/repos",
+                "AUTH0_CLIENT_ID": "onW9hT0c7biVUqqNNuggQtMLvxUWHWRC",
+                "AUTH0_CLIENT_SECRET": "cpse5jYzcduFkQY79eDYXSwI6xVUO0bIvc4BP6WpojdSiEEG6MwGrt8hj_uX3p5a",
+                "AUTH0_DOMAIN": "sourcegraph-dev.auth0.com",
+                "AUTH0_MANAGEMENT_API_TOKEN": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJSYW1KekRwRmN6SFZZNTBpcmFSb0JMdTNRVmFHTE1VRiIsInNjb3BlcyI6eyJ1c2VycyI6eyJhY3Rpb25zIjpbInJlYWQiLCJ1cGRhdGUiXX0sInVzZXJfaWRwX3Rva2VucyI6eyJhY3Rpb25zIjpbInJlYWQiXX0sInVzZXJzX2FwcF9tZXRhZGF0YSI6eyJhY3Rpb25zIjpbInVwZGF0ZSJdfX0sImlhdCI6MTQ3NzA5NDQxOSwianRpIjoiMTA3YzYyMTZjNWZjYzVjNGNkYjYzZTgxNjRjYjg3ODgifQ.ANOcIGeFPH7X_ppl-AXcv2m0zI7hWwqDlRwJ6h_rMdI"
             },
             "args": []
         },
@@ -31,10 +33,10 @@
             "mode": "debug",
             "program": "${workspaceRoot}/cmd/indexer/indexer.go",
             "env": {
-                "DEBUG": true,
                 "SRC_APP_DISABLE_SUPPORT_SERVICES": true,
                 "SRC_GIT_SERVERS": "127.0.0.1:3178",
-                "LSP_PROXY": "127.0.0.1:4388"
+                "LIGHTSTEP_PROJECT": "sourcegraph-dev",
+                "LIGHTSTEP_ACCESS_TOKEN": "d60b0b2477a7ccb05d7783917f648816"
             },
             "args": []
         },
@@ -49,8 +51,32 @@
                 "SRC_APP_DISABLE_SUPPORT_SERVICES": true,
                 "SRC_GIT_SERVERS": "127.0.0.1:3178",
                 "WEBPACK_DEV_SERVER_URL": "http://localhost:8080",
-                "WEBPACK_DEV_SERVER_ADDRESS": "127.0.0.1:8080",
-                "SRC_SKIP_REQS": "Rlimit"
+                "SRC_SKIP_REQS": "Rlimit",
+                "LANGSERVER_PHP": "tcp://localhost:2088",
+                "LANGSERVER_PHP_BG": "tcp://localhost:2088",
+                "AUTH0_CLIENT_ID": "onW9hT0c7biVUqqNNuggQtMLvxUWHWRC",
+                "AUTH0_CLIENT_SECRET": "cpse5jYzcduFkQY79eDYXSwI6xVUO0bIvc4BP6WpojdSiEEG6MwGrt8hj_uX3p5a",
+                "AUTH0_DOMAIN": "sourcegraph-dev.auth0.com",
+                "AUTH0_MANAGEMENT_API_TOKEN": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJSYW1KekRwRmN6SFZZNTBpcmFSb0JMdTNRVmFHTE1VRiIsInNjb3BlcyI6eyJ1c2VycyI6eyJhY3Rpb25zIjpbInJlYWQiLCJ1cGRhdGUiXX0sInVzZXJfaWRwX3Rva2VucyI6eyJhY3Rpb25zIjpbInJlYWQiXX0sInVzZXJzX2FwcF9tZXRhZGF0YSI6eyJhY3Rpb25zIjpbInVwZGF0ZSJdfX0sImlhdCI6MTQ3NzA5NDQxOSwianRpIjoiMTA3YzYyMTZjNWZjYzVjNGNkYjYzZTgxNjRjYjg3ODgifQ.ANOcIGeFPH7X_ppl-AXcv2m0zI7hWwqDlRwJ6h_rMdI",
+                "GITHUB_CLIENT_ID": "6f2a43bd8877ff5fd1d5",
+                "GITHUB_CLIENT_SECRET": "c5ff37d80e3736924cbbdf2922a50cac31963e43",
+                "LIGHTSTEP_PROJECT": "sourcegraph-dev",
+                "LIGHTSTEP_ACCESS_TOKEN": "d60b0b2477a7ccb05d7783917f648816",
+                "GITHUB_BASE_URL": "http://127.0.0.1:3180"
+            },
+            "args": []
+        },
+        {
+            "name": "github-proxy",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/github-proxy/github-proxy.go",
+            "env": {
+                "GITHUB_CLIENT_ID": "6f2a43bd8877ff5fd1d5",
+                "GITHUB_CLIENT_SECRET": "c5ff37d80e3736924cbbdf2922a50cac31963e43",
+                "LIGHTSTEP_PROJECT": "sourcegraph-dev",
+                "LIGHTSTEP_ACCESS_TOKEN": "d60b0b2477a7ccb05d7783917f648816"
             },
             "args": []
         }
@@ -59,6 +85,7 @@
         {
             "name": "Sourcegraph Backend",
             "configurations": [
+                "github-proxy",
                 "gitserver",
                 "indexer",
                 "src"

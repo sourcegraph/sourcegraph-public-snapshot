@@ -35,9 +35,11 @@ const plugins = [
 
 	// This file isn't actually used, but it contains a dynamic import that Webpack complains about.
 	new webpack.IgnorePlugin(/\/monaco\.contribution\.js$/),
-
-	new ProgressBarPlugin(),
 ];
+
+if (process.stdout.isTTY) {
+	plugins.push(new ProgressBarPlugin());
+}
 
 if (production) {
 	plugins.push(
@@ -167,8 +169,8 @@ module.exports = {
 		public: `${publicURL.hostname}:${publicURL.port}`,
 		port: parseInt(devServerAddr.port),
 		headers: {"Access-Control-Allow-Origin": "*"},
-		noInfo: true,
-		quiet: true,
+		noInfo: process.stdout.isTTY,
+		quiet: process.stdout.isTTY,
 		hot: !production,
 	},
 };
