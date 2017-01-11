@@ -115,18 +115,14 @@ def get_browser_log(driver):
     return [e for e in driver.d.get_log('browser') if include(e)]
 
 def run_tests(args, tests):
-    start_http_server(6060) # expose prometheus metrics
-
     failed_tests = []
     slack_cli, slack_ch, alertmgr_url, alertmgr_cookie = slack_and_alertmgr(args)
 
     def success(test_name):
         logf('[%s](%s) %s' % (green("PASS"), args.browser, test_name))
-        update_counter(test_name, args.browser, "true")
 
     def fail(test_name, owner, exception, driver):
         logf('[%s](%s) %s' % (red("FAIL"), args.browser, test_name))
-        update_counter(test_name, args.browser, "false")
 
         traceback.print_exc(30)
         console_log_msgs = get_browser_log(driver)
@@ -193,11 +189,13 @@ Type "continue" to continue.
                 driver.d.delete_all_cookies()
                 testfunc(driver)
                 success(testfunc.func_name)
+                update_counter(testfunc.func_name, args.browser, "true")
                 if args.interactive:
                     print("ENTER to continue ")
                     raw_input()
                 break # on success, don't retry
             except (E2EError, E2EFatal, Exception) as e:
+                update_counter(testfunc.func_name, args.browser, "false")
                 if i == args.tries_before_err - 1: # if this is the last attempt, signal failure
                     test_name = testfunc.func_name
                     fail(test_name, owner, e, driver)
@@ -245,6 +243,8 @@ def main():
         def die_msg():
             slack_cli.api_call("chat.postMessage", channel=slack_ch, text=":%s: *->* :skull: The end-to-end test %s for %s has died." % (animal_emoji, animal_name, args.browser.capitalize()))
         atexit.register(die_msg)
+
+    start_http_server(6060) # expose prometheus metrics
 
     if args.loop:
         logf("Looping forever...")
