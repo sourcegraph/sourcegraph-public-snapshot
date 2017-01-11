@@ -101,7 +101,13 @@ var (
 		Name:      "cumu_lsp_server_connections",
 		Help:      "Cumulative number of connections (initialized + uninitialized) to the LSP servers (total of open + previously closed since process startup).",
 	})
-	serverConnsMethodCalls = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	serverConnsMethodCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "cumu_lsp_server_method_calls",
+		Help:      "Total number of calls sent for a (method, mode).",
+	}, []string{"mode", "method"})
+	serverConnsTotalMethodCalls = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "lsp_server_method_calls",
@@ -128,6 +134,7 @@ func init() {
 	prometheus.MustRegister(serverConnsGauge)
 	prometheus.MustRegister(serverConnsCounter)
 	prometheus.MustRegister(serverConnsMethodCalls)
+	prometheus.MustRegister(serverConnsTotalMethodCalls)
 	prometheus.MustRegister(serverConnsFailedMethodCalls)
 	prometheus.MustRegister(serverConnsAliveDuration)
 }
@@ -231,7 +238,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 			Stats:      stats,
 		})
 		log.Printf("tracked removed serverProxyConn: %s", msg)
-		serverConnsMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
+		serverConnsTotalMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
 		serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
 		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
 	}
@@ -550,6 +557,7 @@ func (c *serverProxyConn) updateLastTime() {
 }
 
 func (c *serverProxyConn) incMethodStat(method string) {
+	serverConnsMethodCalls.WithLabelValues(c.id.mode, method).Inc()
 	c.mu.Lock()
 	c.stats.TotalCount++
 	if c.stats.Counts == nil {
