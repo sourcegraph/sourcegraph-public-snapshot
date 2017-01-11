@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
@@ -48,6 +49,7 @@ func TestProxy(t *testing.T) {
 		wantReferences    map[string][]string
 		wantSymbols       map[string][]string
 		wantXDependencies string
+		wantXReferences   map[*lsext.WorkspaceReferencesParams][]string
 		depFS             map[string]map[string]string // dep clone URL -> map VFS
 	}{
 		"go basic": {
@@ -171,6 +173,52 @@ func TestProxy(t *testing.T) {
 			wantSymbols: map[string][]string{
 				"":            []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
 				"is:exported": []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
+			},
+			wantXReferences: map[*lsext.WorkspaceReferencesParams][]string{
+				// Non-matching name query.
+				{Query: lsext.SymbolDescriptor{"name": "nope"}}: []string{},
+
+				// Matching against invalid field name.
+				{Query: lsext.SymbolDescriptor{"nope": "A"}}: []string{},
+
+				// Matching against an invalid dir hint.
+				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dir": "file:///src/test/pkg/d/d3"}}: []string{},
+
+				// Matching against a dir hint.
+				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dir": "file:///d2"}}: []string{
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> name:A package:test/pkg/d packageName:d recv: vendor:false",
+				},
+
+				// Matching against single field.
+				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}}: []string{
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> name:A package:test/pkg/d packageName:d recv: vendor:false",
+				},
+
+				// Matching against no fields.
+				{Query: lsext.SymbolDescriptor{}}: []string{
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> name:A package:test/pkg/d packageName:d recv: vendor:false",
+				},
+				{
+					Query: lsext.SymbolDescriptor{
+						"name":        "",
+						"package":     "test/pkg/d",
+						"packageName": "d",
+						"recv":        "",
+						"vendor":      false,
+					},
+				}: []string{"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> name: package:test/pkg/d packageName:d recv: vendor:false"},
+				{
+					Query: lsext.SymbolDescriptor{
+						"name":        "A",
+						"package":     "test/pkg/d",
+						"packageName": "d",
+						"recv":        "",
+						"vendor":      false,
+					},
+				}: []string{"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> name:A package:test/pkg/d packageName:d recv: vendor:false"},
 			},
 		},
 		"go multiple packages in dir": {
@@ -576,7 +624,7 @@ func yza() {}
 				t.Fatal("initialize:", err)
 			}
 
-			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies)
+			lspTests(t, ctx, c, root, test.wantHover, test.wantDefinition, test.wantXDefinition, test.wantReferences, test.wantSymbols, test.wantXDependencies, test.wantXReferences)
 		})
 	}
 }

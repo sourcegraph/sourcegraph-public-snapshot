@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
-	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -182,9 +181,10 @@ type typecheckKey struct {
 }
 
 type typecheckResult struct {
-	fset *token.FileSet
-	prog *loader.Program
-	err  error
+	ready chan struct{} // closed to broadcast readiness
+	fset  *token.FileSet
+	prog  *loader.Program
+	err   error
 }
 
 func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, bpkg *build.Package) (*token.FileSet, *loader.Program, diagnostics, error) {
@@ -198,34 +198,25 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 
 	k := typecheckKey{bpkg.ImportPath, bpkg.Dir, bpkg.Name}
 
-	// Acquire a per-K mutex. This prevents us from doing duplicate work to
-	// prepare K. It does not, however, protect against concurrent writes by
-	// multiple K's to h.cache (we use h.mu for that).
 	h.mu.Lock()
-	kmu, ok := h.cacheMus[k]
+	res, ok := h.cache[k]
 	if !ok {
-		kmu = new(sync.Mutex)
-		h.cacheMus[k] = kmu
+		res = &typecheckResult{ready: make(chan struct{})}
+		h.cache[k] = res
+		defer close(res.ready)
 	}
 	h.mu.Unlock()
 
-	kmu.Lock()
-	defer kmu.Unlock()
-
-	h.mu.Lock()
-	res, ok := h.cache[k]
-	h.mu.Unlock()
 	span.SetTag("cached", ok)
 	var diags diagnostics
-	if !ok {
+	if ok {
+		// cache hit, but wait until ready
+		typecheckCacheTotal.WithLabelValues("hit").Inc()
+		<-res.ready
+	} else {
 		typecheckCacheTotal.WithLabelValues("miss").Inc()
 		res.fset = token.NewFileSet()
 		res.prog, diags, res.err = typecheck(ctx, res.fset, bctx, bpkg, h.FindPackage)
-		h.mu.Lock()
-		h.cache[k] = res
-		h.mu.Unlock()
-	} else {
-		typecheckCacheTotal.WithLabelValues("hit").Inc()
 	}
 	return res.fset, res.prog, diags, res.err
 }

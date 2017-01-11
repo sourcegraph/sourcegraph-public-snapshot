@@ -72,7 +72,21 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		if IsVendorDir(bpkg.Dir) {
 			continue
 		}
+
+		// If a directory hint is present, only look for references created in
+		// that directory.
+		dir, ok := params.Hints["dir"]
+		if ok {
+			if "file://"+bpkg.Dir != dir.(string) {
+				continue
+			}
+		}
 		pkgs = append(pkgs, pkg)
+	}
+	if len(pkgs) == 0 {
+		// occurs when the directory hint is present and matches no directories
+		// at all.
+		return []lspext.ReferenceInformation{}, nil
 	}
 	prog, err := h.workspaceRefsTypecheck(ctx, bctx, conn, fset, pkgs)
 	if err != nil {
