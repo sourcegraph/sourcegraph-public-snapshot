@@ -62,12 +62,19 @@ type depCache struct {
 	seenMu            sync.Mutex
 	seen              map[string][]importRecord
 	entryPackageDirs  []string
+
+	// Cache for fetching Go meta tag results.
+	fetchMetaCacheImportMu *keyMutex
+	fetchMetaCacheMu       sync.RWMutex
+	fetchMetaCache         map[string]fetchMetaResult
 }
 
 func newDepCache() *depCache {
 	return &depCache{
 		importCache: map[importKey]importResult{},
 		seen:        map[string][]importRecord{},
+		fetchMetaCacheImportMu: newKeyMutex(),
+		fetchMetaCache:         map[string]fetchMetaResult{},
 	}
 }
 
@@ -100,7 +107,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 	}
 
 	err = doDeps(bpkg, 0, dc, func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
-		return h.findPackage(ctx, bctx, path, srcDir, mode)
+		return h.doFindPackage(ctx, bctx, path, srcDir, mode, dc)
 	})
 	return err
 }
@@ -178,6 +185,10 @@ func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Contex
 // findPackage is a langserver.FindPackageFunc which integrates with the build
 // server. It will fetch dependencies just in time.
 func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode) (*build.Package, error) {
+	return h.doFindPackage(ctx, bctx, path, srcDir, mode, newDepCache())
+}
+
+func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode, dc *depCache) (*build.Package, error) {
 	// If the package exists in the repo, or is vendored, or has
 	// already been fetched, this will succeed.
 	pkg, err := bctx.Import(path, srcDir, mode)
@@ -205,7 +216,7 @@ func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, pat
 
 	// Otherwise, it's an external dependency. Fetch the package
 	// and try again.
-	d, err := resolveImportPath(http.DefaultClient, path)
+	d, err := resolveImportPath(http.DefaultClient, path, dc)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +265,6 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 	if rev == "" {
 		rev = "HEAD"
 	}
-
 	cloneURL, err := url.Parse(d.cloneURL)
 	if err != nil {
 		return err
