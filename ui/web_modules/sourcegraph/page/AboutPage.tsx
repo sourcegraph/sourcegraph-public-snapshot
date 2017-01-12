@@ -94,7 +94,7 @@ export function AboutPage(): JSX.Element {
 								<img src={`${context.assetsRoot}/img/about/about-tw-icon.svg`} />
 							</a>
 						</div>
-						Beyang Liu is CTO and co-founder at Sourcegraph. Previous to Sourcegraph, Beyang worked as a software engineer at Palantir Technologies where he developed new products on a small, customer-facing team working with Fortune 100 clients. Beyang is a patent holder in machine learning and has contributed to many open-source projects. Beyang graduated from Stanford with a BS in Computer Science where he was a published research assistant and software development intern at Google.
+						Beyang Liu is CTO and co-founder of Sourcegraph. Previous to Sourcegraph, Beyang worked as a software engineer at Palantir Technologies where he developed new products on a small, customer-facing team working with Fortune 100 clients. Beyang is a patent holder in machine learning and has contributed to many open-source projects. Beyang graduated from Stanford with a BS in Computer Science where he was a published research assistant and software development intern at Google.
 					</div>
 				</FlexContainer>
 
