@@ -7,6 +7,7 @@ use LanguageServer\LanguageServer;
 use Composer;
 use LanguageServer\ContentRetriever\{ContentRetriever, FileSystemContentRetriever};
 use LanguageServer\FilesFinder\{FilesFinder, FileSystemFilesFinder};
+use LanguageServer\Protocol\ClientCapabilities;
 use Sabre\Event\Promise;
 use Sabre\Uri;
 use Webmozart\PathUtil\Path;
@@ -26,8 +27,11 @@ class BuildServer extends LanguageServer
                 $dir = sys_get_temp_dir() . '/phpbs' . time() . random_int(100000, 999999);
                 mkdir($dir);
 
+                $composerJsonContent = yield $this->contentRetriever->retrieve($composerJsonFile);
+                $this->composerJson = json_decode($composerJsonContent);
+
                 // Write composer.json
-                file_put_contents("$dir/composer.json", yield $this->contentRetriever->retrieve($composerJsonFile));
+                file_put_contents("$dir/composer.json", $composerJsonContent);
 
                 // Install dependencies
                 fwrite(STDERR, "Installing dependencies to $dir\n");
@@ -39,20 +43,36 @@ class BuildServer extends LanguageServer
                 $installer->setPreferDist(true);
                 // Download in parallel
                 $composer->getPluginManager()->addPlugin(new Prestissimo\Plugin);
-                $installer->run();
-                
-                // Get the composer.json directory
-                $parts = Uri\parse($composerJsonFile);
-                $parts['path'] = dirname($parts['path']);
-                $composerJsonDir = Uri\build($parts);
+                $code = $installer->run();
+                fwrite(STDERR, "Installer exited with $code\n");
+                if ($code === 0) {
+                    // Get the composer.json directory
+                    $parts = Uri\parse($composerJsonFile);
+                    $parts['path'] = dirname($parts['path']);
+                    $composerJsonDir = Uri\build($parts);
 
-                // Read the generated composer.lock to get information about resolved dependencies
-                $composerLock = json_decode(file_get_contents("$dir/composer.lock"));
+                    // Read the generated composer.lock to get information about resolved dependencies
+                    if (file_exists("$dir/composer.lock")) {
+                        $this->composerLock = json_decode(file_get_contents("$dir/composer.lock"));
 
-                // Make filesFinder and contentRetriever aware of the dependencies installed in the temporary folder
-                $this->filesFinder = new DependencyAwareFilesFinder($this->filesFinder, $rootPath, $composerJsonDir, $dir, $composerLock);
-                $this->contentRetriever = new DependencyAwareContentRetriever($this->contentRetriever, $rootPath, $composerJsonDir, $dir, $composerLock);
-                $this->documentLoader->contentRetriever = $this->contentRetriever;
+                        // Make filesFinder and contentRetriever aware of the dependencies installed in the temporary folder
+                        $this->filesFinder = new DependencyAwareFilesFinder($this->filesFinder, $rootPath, $composerJsonDir, $dir, $this->composerLock);
+                        $this->contentRetriever = new DependencyAwareContentRetriever($this->contentRetriever, $rootPath, $composerJsonDir, $dir, $this->composerLock);
+                        $this->documentLoader->contentRetriever = $this->contentRetriever;
+                        $this->textDocument = new Server\TextDocument(
+                            $this->documentLoader,
+                            $this->definitionResolver,
+                            $this->client,
+                            $this->globalIndex,
+                            $composerJsonDir,
+                            $rootPath,
+                            $this->composerJson,
+                            $this->composerLock
+                        );
+                    } else {
+                        fwrite(STDERR, "composer.lock not found\n");
+                    }
+                }
             }
             yield parent::index($rootPath);
         });

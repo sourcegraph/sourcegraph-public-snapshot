@@ -46,7 +46,7 @@ type SymbolLocationInformation struct {
 	// A concrete location at which the definition is located, if any.
 	Location lsp.Location `json:"location,omitempty"`
 	// Metadata about the definition.
-	Symbol SymbolDescriptor `json:"SymbolDescriptor"`
+	Symbol SymbolDescriptor `json:"symbol"`
 }
 
 // Contains tells if this SymbolDescriptor fully contains all of the keys and

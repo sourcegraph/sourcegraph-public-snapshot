@@ -12,7 +12,7 @@
     },
     "require": {
         "php": ">=7.0",
-        "felixfbecker/language-server": "^4.1.2",
+        "felixfbecker/language-server": "^4.2.0",
         "composer/composer": "^1.3.1",
         "sabre/event": "^5.0",
         "hirak/prestissimo": "^0.3.5"

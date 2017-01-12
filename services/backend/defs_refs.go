@@ -35,6 +35,16 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 			"package": symbol["package"],
 		}
 	},
+	"php": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
+		if _, ok := symbol["package"]; !ok {
+			// package can be missing if the symbol did not belong to a package, e.g. a project without
+			// a composer.json file. In this case, there are no external references to this symbol.
+			return nil
+		}
+		return map[string]interface{}{
+			"name": symbol["package"].(map[string]interface{})["name"],
+		}
+	},
 }
 
 func (s *defs) DeprecatedListRefs(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefsOp) (res *sourcegraph.RefList, err error) {

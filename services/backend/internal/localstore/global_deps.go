@@ -58,7 +58,7 @@ type globalDeps struct{}
 // a private one.
 func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
 	var errs []string
-	for _, language := range []string{"go"} { // TODO(slimsag): use inventory instead
+	for _, language := range []string{"go", "php"} { // TODO(slimsag): use inventory instead
 		if err := g.refreshIndexForLanguage(ctx, language, op); err != nil {
 			log15.Crit("refreshing index failed", "language", language, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", language, err))

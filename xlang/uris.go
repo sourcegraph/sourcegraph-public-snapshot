@@ -24,14 +24,6 @@ func relWorkspaceURI(root uri.URI, uriStr string) (*uri.URI, error) {
 	} else if u.FilePath() != "" && p != u.FilePath() {
 		return nil, fmt.Errorf("invalid file path in URI %q (raw file path %q != cleaned file path %q)", uriStr, u.FilePath(), p)
 	}
-	if *u.WithFilePath("") != *root.WithFilePath("") {
-		// SECURITY NOTE: This is a safety check against the user
-		// trying to specify one repository in the initialize request
-		// and refer to another repository's files in the another
-		// request. This is important, because we only perform the
-		// access check for the initialize request.
-		return nil, fmt.Errorf("file path %q in LSP proxy client request must be underneath root path %q", uriStr, &root)
-	}
 	return &uri.URI{URL: url.URL{Scheme: "file", Path: "/" + u.FilePath()}}, nil
 }
 

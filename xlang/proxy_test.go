@@ -12,7 +12,6 @@ import (
 	"os"
 	"reflect"
 	"sort"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -951,42 +950,5 @@ func TestProxy_propagation(t *testing.T) {
 
 	case <-time.After(time.Second):
 		t.Fatal("want diagnostics, got nothing before timeout")
-	}
-}
-
-// TestClientProxy_enforceAllURIsUnderneathRootPath tests that the
-// client proxy forbids the use of any URIs in requests that are not
-// underneath the initialize's rootPath. This is important for
-// security as otherwise there is a risk that code could be fetched
-// from other private repositories. This check is not the only
-// safeguard (and without this safeguard, it would still forbid access
-// to other repositories); this check is intended to increase the
-// number of mistakes we need to make to introduce a security
-// vulnerability.
-func TestClientProxy_enforceAllURIsUnderneathRootPath(t *testing.T) {
-	ctx := context.Background()
-
-	proxy := xlang.NewProxy()
-	addr, done := startProxy(t, proxy)
-	defer done()
-
-	c := dialProxy(t, addr, nil)
-
-	// Connect to the proxy.
-	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v"},
-		Mode:             "test",
-	}
-	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
-		t.Fatal(err)
-	}
-
-	// Send a request with a URI referring to a different repo from
-	// the one in initialize's rootPath.
-	if err := c.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://different-repo#myfile"},
-		Position:     lsp.Position{Line: 1, Character: 2},
-	}, nil); err == nil || !strings.Contains(err.Error(), "must be underneath root path") {
-		t.Fatalf("got error %v, want it to contain 'must be underneath root path'", err)
 	}
 }

@@ -72,19 +72,18 @@ class DependencyAwareFilesFinder implements FilesFinder
                 // Glob dependencies
                 coroutine(function () use ($glob) {
                     // Check if files inside the vendor path would match the glob
-                    $composerJsonDirPath = Uri\parse($this->composerJsonDir)['path'];
-                    $relativeComposerJsonDirPath = Path::makeRelative($composerJsonDirPath, $this->rootPath);
-                    $vendorPath = Path::join($composerJsonDirPath, 'vendor');
+                    $composerJsonDirParts = Uri\parse($this->composerJsonDir);
+                    $vendorPath = Path::join($composerJsonDirParts['path'], 'vendor');
                     if (!Glob::match($vendorPath, dirname($glob))) {
                         return [];
                     }
-                    $depsGlob = Path::makeAbsolute(Path::makeRelative($glob, $composerJsonDirPath), $this->dependencyDir);
+                    $depsGlob = Path::makeAbsolute(Path::makeRelative($glob, $composerJsonDirParts['path']), $this->dependencyDir);
                     $dependencyResults = yield $this->fileSystemFilesFinder->find($depsGlob);
                     $sourcegraphUris = [];
                     // Rewrite dependency temporary folder URIs to Sourcegraph repository URI
                     foreach ($dependencyResults as $dependencyUri) {
                         // Get package name from URI
-                        if (preg_match('/\/vendor\/(\w+\/\w+)\//', $dependencyUri, $matches) === 0) {
+                        if (preg_match('/\/vendor\/([^\/]+\/[^\/]+)\//', $dependencyUri, $matches) === 0) {
                             continue;
                         }
                         $packageName = $matches[1];
@@ -96,15 +95,11 @@ class DependencyAwareFilesFinder implements FilesFinder
                                 // Not supported atm
                                 break;
                             }
-                            // Example: https://github.com/felixfbecker/php-language-server.git
-                            $parts = Uri\parse($package->source->url);
-                            $parts['scheme'] = 'git';
-                            $parts['path'] = preg_replace('/\.git$/', '', $parts['path']);
-                            $parts['query'] = $package->source->reference;
                             $dependencyPath = Uri\parse($dependencyUri)['path'];
-                            $relativeDependencyPath = Path::makeRelative($dependencyPath, Path::join($this->dependencyDir, "vendor/$packageName"));
-                            $parts['fragment'] = trim(Path::join($relativeComposerJsonDirPath, $relativeDependencyPath), '/');
-                            $sourcegraphUris[] = Uri\build($parts);
+                            $relativeDependencyPath = Path::makeRelative($dependencyPath, $this->dependencyDir);
+                            $newUri = $composerJsonDirParts;
+                            $newUri['path'] = Path::join($newUri['path'], $relativeDependencyPath);
+                            $sourcegraphUris[] = Uri\build($newUri);
                             break;
                         }
                     }

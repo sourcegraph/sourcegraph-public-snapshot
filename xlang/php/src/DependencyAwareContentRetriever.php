@@ -61,29 +61,14 @@ class DependencyAwareContentRetriever implements ContentRetriever
 
     public function retrieve(string $uri): Promise
     {
-        $parts = Uri\parse($uri);
-        $composerJsonDirPath = Uri\parse($this->composerJsonDir)['path'];
-        // Check if requested file is a Sourcegraph repository URI
-        if ($parts['scheme'] !== 'file') {
-            // Rewrite URI from repository URI to temporary dependency folder
-            // Find the right package name
-            foreach ($this->composerLock->packages as $package) {
-                if (!isset($package->source) || $package->source->type !== 'git') {
-                    continue;
-                }
-                // Example: https://github.com/felixfbecker/php-language-server.git
-                $packageSourceUrlParts = Uri\parse($package->source->url);
-                $packageSourceUrlParts['path'] = preg_replace('/\.git$/', '', $packageSourceUrlParts['path']);
-                if (
-                    $packageSourceUrlParts['host'] === $parts['host']
-                    && $packageSourceUrlParts['path'] === $parts['path']
-                    && $package->source->reference === $parts['query']
-                ) {
-                    $workspacePath = Path::join($composerJsonDirPath, 'vendor', $package->name, $parts['fragment']);
-                    $relativeDependenciesPath = Path::makeRelative($workspacePath, $composerJsonDirPath);
-                    return $this->fileSystemContentRetriever->retrieve(pathToUri(Path::join($this->dependenciesDir, $relativeDependenciesPath)));
-                }
-            }
+        // Check if requested file is inside a dependency
+        if (strpos($uri, 'vendor') !== false) {
+            $path = Uri\parse($uri)['path'];
+            // Rewrite URI from vendor URI to temporary dependency folder
+            $composerJsonDirPath = Uri\parse($this->composerJsonDir)['path'];
+            $relativeDependenciesPath = Path::makeRelative($path, $composerJsonDirPath);
+            $dependenciesPath = Path::join($this->dependenciesDir, $relativeDependenciesPath);
+            return $this->fileSystemContentRetriever->retrieve(pathToUri($dependenciesPath));
         }
         return $this->wrappedContentRetriever->retrieve($uri);
     }

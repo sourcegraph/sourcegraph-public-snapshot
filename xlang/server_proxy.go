@@ -373,11 +373,15 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 		opentracing.Tags{"mode": c.id.mode, "rootPath": c.id.rootPath.String()},
 	)
 	defer span.Finish()
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	timeout := 30 * time.Second
+	if c.id.mode == "php" || c.id.mode == "php_bg" {
+		timeout = 3 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	rootPath := "/"
 	// TODO(keegancsmith) Make more servers follow rootPath spec
-	if c.id.mode != "php" {
+	if c.id.mode != "php" && c.id.mode != "php_bg" {
 		// Only our PHP server follows the spec for rootPath, other
 		// servers take a URI.
 		rootPath = "file:///"
