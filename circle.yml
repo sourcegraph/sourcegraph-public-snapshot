@@ -36,6 +36,7 @@ dependencies:
     - ./dev/ci/install-go.sh
     - ./dev/ci/install-test-tools.sh
     - ./dev/ci/install-checkup.sh
+    - ./dev/ci/add-gcloud-service-account.sh
     - (cd ui && yarn)
     - (cd ui/scripts/tsmapimports && yarn)
 
