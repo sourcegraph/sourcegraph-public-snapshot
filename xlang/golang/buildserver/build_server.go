@@ -54,7 +54,7 @@ type BuildHandler struct {
 
 	mu                    sync.Mutex
 	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
-	depURLMus             map[string]*sync.Mutex
+	depURLMutex           *keyMutex
 	gopathDeps            []*directory
 	pinnedDepsOnce        sync.Once
 	pinnedDeps            pinnedPkgs
@@ -78,21 +78,6 @@ func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
 		h.fetchAndSendDepsOnces[fileURI] = once
 	}
 	return once
-}
-
-// Used to prevent concurrent fetches of a dependency
-func (h *BuildHandler) depURLMu(path string) *sync.Mutex {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.depURLMus == nil {
-		h.depURLMus = make(map[string]*sync.Mutex)
-	}
-	mu, ok := h.depURLMus[path]
-	if !ok {
-		mu = new(sync.Mutex)
-		h.depURLMus[path] = mu
-	}
-	return mu
 }
 
 const (
@@ -124,7 +109,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	}
 	h.init = init
 	h.fetchAndSendDepsOnces = nil
-	h.depURLMus = nil
+	h.depURLMutex = newKeyMutex()
 	h.gopathDeps = nil
 	h.pinnedDepsOnce = sync.Once{}
 	h.pinnedDeps = nil

@@ -20,6 +20,29 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
+type keyMutex struct {
+	mu  sync.Mutex
+	mus map[string]*sync.Mutex
+}
+
+// get returns a mutex unique to the given key.
+func (k *keyMutex) get(key string) *sync.Mutex {
+	k.mu.Lock()
+	mu, ok := k.mus[key]
+	if !ok {
+		mu = &sync.Mutex{}
+		k.mus[key] = mu
+	}
+	k.mu.Unlock()
+	return mu
+}
+
+func newKeyMutex() *keyMutex {
+	return &keyMutex{
+		mus: map[string]*sync.Mutex{},
+	}
+}
+
 type importKey struct {
 	path, srcDir string
 	mode         build.ImportMode
@@ -195,7 +218,7 @@ func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, pat
 		return nil, fmt.Errorf("package %q is inside of workspace root, refusing to fetch remotely", path)
 	}
 
-	urlMu := h.depURLMu(d.cloneURL)
+	urlMu := h.depURLMutex.get(d.cloneURL)
 	urlMu.Lock()
 	defer urlMu.Unlock()
 
@@ -294,18 +317,7 @@ func (h *BuildHandler) pinnedDep(ctx context.Context, pkg string) string {
 
 func doDeps(pkg *build.Package, mode build.ImportMode, dc *depCache, importPackage func(path, srcDir string, mode build.ImportMode) (*build.Package, error)) error {
 	// Separate mutexes for each package import path.
-	var musMu sync.Mutex
-	mus := map[string]*sync.Mutex{}
-	mu := func(path string) *sync.Mutex {
-		musMu.Lock()
-		mu, ok := mus[path]
-		if !ok {
-			mu = new(sync.Mutex)
-			mus[path] = mu
-		}
-		musMu.Unlock()
-		return mu
-	}
+	importPathMutex := newKeyMutex()
 
 	gate := make(chan struct{}, runtime.GOMAXPROCS(0)) // I/O concurrency limit
 	cachedImportPackage := func(path, srcDir string, mode build.ImportMode) (*build.Package, error) {
@@ -319,7 +331,7 @@ func doDeps(pkg *build.Package, mode build.ImportMode, dc *depCache, importPacka
 		gate <- struct{}{} // limit I/O concurrency
 		defer func() { <-gate }()
 
-		mu := mu(path)
+		mu := importPathMutex.get(path)
 		mu.Lock() // only try to import a path once
 		defer mu.Unlock()
 
