@@ -29,6 +29,11 @@ type NamedType interface {
 	Description() string
 }
 
+type Scalar struct {
+	Name string
+	Desc string
+}
+
 type Object struct {
 	Name       string
 	Interfaces []*Interface
@@ -72,18 +77,21 @@ type InputObject struct {
 	common.InputMap
 }
 
+func (*Scalar) Kind() string      { return "SCALAR" }
 func (*Object) Kind() string      { return "OBJECT" }
 func (*Interface) Kind() string   { return "INTERFACE" }
 func (*Union) Kind() string       { return "UNION" }
 func (*Enum) Kind() string        { return "ENUM" }
 func (*InputObject) Kind() string { return "INPUT_OBJECT" }
 
+func (t *Scalar) TypeName() string      { return t.Name }
 func (t *Object) TypeName() string      { return t.Name }
 func (t *Interface) TypeName() string   { return t.Name }
 func (t *Union) TypeName() string       { return t.Name }
 func (t *Enum) TypeName() string        { return t.Name }
 func (t *InputObject) TypeName() string { return t.Name }
 
+func (t *Scalar) Description() string      { return t.Desc }
 func (t *Object) Description() string      { return t.Desc }
 func (t *Interface) Description() string   { return t.Desc }
 func (t *Union) Description() string       { return t.Desc }
@@ -98,10 +106,14 @@ type Field struct {
 }
 
 func New() *Schema {
-	return &Schema{
+	s := &Schema{
 		entryPointNames: make(map[string]string),
 		Types:           make(map[string]NamedType),
 	}
+	for n, t := range Meta.Types {
+		s.Types[n] = t
+	}
+	return s
 }
 
 func (s *Schema) Parse(schemaString string) error {
@@ -246,8 +258,11 @@ func parseSchema(s *Schema, l *lexer.Lexer) {
 			input := parseInputDecl(l)
 			input.Desc = desc
 			s.Types[input.Name] = input
+		case "scalar":
+			name := l.ConsumeIdent()
+			s.Types[name] = &Scalar{Name: name, Desc: desc}
 		default:
-			l.SyntaxError(fmt.Sprintf(`unexpected %q, expecting "schema", "type", "enum", "interface", "union" or "input"`, x))
+			l.SyntaxError(fmt.Sprintf(`unexpected %q, expecting "schema", "type", "enum", "interface", "union", "input" or "scalar"`, x))
 		}
 	}
 }
