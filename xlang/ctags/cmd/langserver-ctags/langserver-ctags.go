@@ -1,6 +1,6 @@
 package main
 
-//docker:install alpine-sdk autoconf automake
+//docker:install alpine-sdk autoconf automake graphviz
 //docker:run git clone https://github.com/universal-ctags/ctags && cd ctags && ./autogen.sh && ./configure LDFLAGS="-static" && make install && cd .. && rm -rf ctags
 
 import (

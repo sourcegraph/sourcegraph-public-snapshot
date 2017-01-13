@@ -1,5 +1,7 @@
 package main
 
+//docker:install graphviz
+
 import (
 	"context"
 	"flag"
