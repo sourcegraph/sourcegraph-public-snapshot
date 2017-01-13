@@ -4,9 +4,24 @@ declare(strict_types = 1);
 namespace Sourcegraph\BuildServer;
 
 use Composer\IO\BaseIO;
+use LanguageServer\LanguageClient;
+use LanguageServer\Protocol\MessageType;
 
 class IO extends BaseIO
 {
+    /**
+     * @var LanguageClient
+     */
+    private $client;
+
+    /**
+     * @param LanguageClient $client
+     */
+    public function __construct(LanguageClient $client)
+    {
+        $this->client = $client;
+    }
+
     /**
      * Is this input means interactive?
      *
@@ -24,7 +39,7 @@ class IO extends BaseIO
      */
     public function isVerbose()
     {
-        return true;
+        return false;
     }
 
     /**
@@ -34,7 +49,7 @@ class IO extends BaseIO
      */
     public function isVeryVerbose()
     {
-        return true;
+        return false;
     }
 
     /**
@@ -44,7 +59,7 @@ class IO extends BaseIO
      */
     public function isDebug()
     {
-        return true;
+        return false;
     }
 
     /**
@@ -54,7 +69,7 @@ class IO extends BaseIO
      */
     public function isDecorated()
     {
-        return true;
+        return false;
     }
 
     /**
@@ -66,13 +81,15 @@ class IO extends BaseIO
      */
     public function write($messages, $newline = true, $verbosity = self::NORMAL)
     {
-        if (is_array($messages)) {
-            $messages = implode("\n", $messages);
+        foreach (is_array($messages) ? $messages : [$messages] as $message) {
+            // Composer wraps messages in XML tags like <info> to indicate the log level
+            if (preg_match('/^<(\w+)>.*<\/\w+>$/', $message, $matches) && defined($c = MessageType::class . '::' . strtoupper($matches[1]))) {
+                $type = constant($c);
+            } else {
+                $type = MessageType::LOG;
+            }
+            $this->client->window->logMessage($type, strip_tags($message));
         }
-        if ($newline) {
-            $messages .= "\n";
-        }
-        fwrite(STDERR, $messages);
     }
 
     /**

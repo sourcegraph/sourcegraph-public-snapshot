@@ -7,7 +7,7 @@ use LanguageServer\LanguageServer;
 use Composer;
 use LanguageServer\ContentRetriever\{ContentRetriever, FileSystemContentRetriever};
 use LanguageServer\FilesFinder\{FilesFinder, FileSystemFilesFinder};
-use LanguageServer\Protocol\ClientCapabilities;
+use LanguageServer\Protocol\MessageType;
 use Sabre\Event\Promise;
 use Sabre\Uri;
 use Webmozart\PathUtil\Path;
@@ -34,8 +34,8 @@ class BuildServer extends LanguageServer
                 file_put_contents("$dir/composer.json", $composerJsonContent);
 
                 // Install dependencies
-                fwrite(STDERR, "Installing dependencies to $dir\n");
-                $io = new IO;
+                $this->client->window->logMessage(MessageType::INFO, "Installing dependencies to $dir\n");
+                $io = new IO($this->client);
                 $composerFactory = new Composer\Factory;
                 $composer = $composerFactory->createComposer($io, "$dir/composer.json", true, $dir);
                 $installer = Composer\Installer::create($io, $composer);
@@ -44,7 +44,7 @@ class BuildServer extends LanguageServer
                 // Download in parallel
                 $composer->getPluginManager()->addPlugin(new Prestissimo\Plugin);
                 $code = $installer->run();
-                fwrite(STDERR, "Installer exited with $code\n");
+                $this->client->window->logMessage(MessageType::LOG, "Installer exited with $code\n");
                 if ($code === 0) {
                     // Get the composer.json directory
                     $parts = Uri\parse($composerJsonFile);
@@ -70,7 +70,7 @@ class BuildServer extends LanguageServer
                             $this->composerLock
                         );
                     } else {
-                        fwrite(STDERR, "composer.lock not found\n");
+                        $this->client->window->logMessage(MessageType::WARNING, "composer.lock not found\n");
                     }
                 }
             }
