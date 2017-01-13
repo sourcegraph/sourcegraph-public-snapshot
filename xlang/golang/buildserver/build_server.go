@@ -43,9 +43,7 @@ func NewHandler() jsonrpc2.Handler {
 		HandlerShared: shared,
 		lang:          &langserver.LangHandler{HandlerShared: shared},
 	}
-	// We want the langservers typechecker to use the buildservers package
-	// finder.
-	shared.FindPackage = h.findPackage
+	shared.FindPackage = h.findPackageCached
 	return jsonrpc2.HandlerWithError(h.handle)
 }
 
@@ -60,6 +58,8 @@ type BuildHandler struct {
 	gopathDeps            []*directory
 	pinnedDepsOnce        sync.Once
 	pinnedDeps            pinnedPkgs
+	findPkgMu             sync.Mutex // guards findPkg
+	findPkg               map[findPkgKey]*findPkgValue
 	langserver.HandlerCommon
 	*langserver.HandlerShared
 	init           *lspext.InitializeParams // set by "initialize" request
@@ -114,6 +114,8 @@ var RuntimeVersion = runtime.Version()
 func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	h.findPkgMu.Lock()
+	defer h.findPkgMu.Unlock()
 	if err := h.HandlerCommon.Reset(rootURI); err != nil {
 		return err
 	}
@@ -126,6 +128,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	h.gopathDeps = nil
 	h.pinnedDepsOnce = sync.Once{}
 	h.pinnedDeps = nil
+	h.findPkg = nil
 	return nil
 }
 

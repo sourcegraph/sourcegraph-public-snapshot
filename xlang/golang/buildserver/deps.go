@@ -89,6 +89,76 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 	return err
 }
 
+type findPkgKey struct {
+	importPath string // e.g. "github.com/gorilla/mux"
+	fromDir    string // e.g. "/gopath/src/github.com/kubernetes/kubernetes"
+	mode       build.ImportMode
+}
+
+type findPkgValue struct {
+	ready chan struct{} // closed to broadcast readiness
+	bp    *build.Package
+	err   error
+}
+
+func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Context, p, srcDir string, mode build.ImportMode) (*build.Package, error) {
+	// bctx.FindPackage and loader.Conf does not have caching, and due to
+	// vendor we need to repeat work. So what we do is normalise the
+	// srcDir w.r.t. potential vendoring. This makes the assumption that
+	// the underlying FS for bctx is always the same, which is currently a
+	// correct assumption. That may have to be revisited with zap.
+	//
+	// Example: A project gh.com/p/r has a single vendor folder at
+	// /goroot/gh.com/p/r/vendor. Both gh.com/p/r/foo and
+	// gh.com/p/r/bar/baz use gh.com/gorilla/mux.
+	// loader will then call both
+	//
+	//   findPackage(..., "gh.com/gorilla/mux", "/gopath/src/gh.com/p/r/foo", ...)
+	//   findPackage(..., "gh.com/gorilla/mux", "/gopath/src/gh.com/p/r/bar/baz", ...)
+	//
+	// findPackage then starts from the directory and checks for any
+	// potential vendor directories which contains
+	// "gh.com/gorilla/mux". Given "/gopath/src/gh.com/p/r/foo" and
+	// "/gopath/src/gh.com/p/r/bar/baz" may have different vendor dirs to
+	// check, it can't cache this work.
+	//
+	// So instead of passing "/gopath/src/gh.com/p/r/bar/baz" we pass
+	// "/gopath/src/gh.com/p/r" because we know the first vendor dir to
+	// check is "/gopath/src/gh.com/p/r/vendor". This also means that
+	// "/gopath/src/gh.com/p/r/bar/baz" and "/gopath/src/gh.com/p/r/foo"
+	// get the same cache key findPkgKey{"gh.com/gorilla/mux", "/gopath/src/gh.com/p/r", 0}.
+	if !build.IsLocalImport(p) {
+		gopathSrc := path.Join(gopath, "src")
+		for !bctx.IsDir(path.Join(srcDir, "vendor", p)) && srcDir != gopathSrc && srcDir != goroot && srcDir != "/" {
+			srcDir = path.Dir(srcDir)
+		}
+	}
+
+	// We do single-flighting as well. conf.Loader does the same, but its
+	// single-flighting is based on srcDir before it is normalised.
+	k := findPkgKey{p, srcDir, mode}
+	h.findPkgMu.Lock()
+	if h.findPkg == nil {
+		h.findPkg = make(map[findPkgKey]*findPkgValue)
+	}
+	v, ok := h.findPkg[k]
+	if ok {
+		h.findPkgMu.Unlock()
+		<-v.ready
+
+		return v.bp, v.err
+	}
+
+	v = &findPkgValue{ready: make(chan struct{})}
+	h.findPkg[k] = v
+	h.findPkgMu.Unlock()
+
+	v.bp, v.err = h.findPackage(ctx, bctx, p, srcDir, mode)
+
+	close(v.ready)
+	return v.bp, v.err
+}
+
 // findPackage is a langserver.FindPackageFunc which integrates with the build
 // server. It will fetch dependencies just in time.
 func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode) (*build.Package, error) {
