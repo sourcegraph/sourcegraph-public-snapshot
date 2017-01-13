@@ -82,7 +82,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI 
 			pp := fset.Position(p)
 			return fmt.Sprintf("%d:%d", pp.Line, pp.Column)
 		}
-		return nil, nil, nil, nil, nil, &invalidNodeError{
+		return fset, nil, nodes, prog, pkg, &invalidNodeError{
 			Node: nodes[0],
 			msg:  fmt.Sprintf("invalid node: %s (%s-%s)", reflect.TypeOf(nodes[0]).Elem(), lineCol(nodes[0].Pos()), lineCol(nodes[0].End())),
 		}

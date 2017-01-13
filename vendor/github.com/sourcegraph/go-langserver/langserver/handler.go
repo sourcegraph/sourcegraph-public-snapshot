@@ -151,8 +151,9 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 			return nil, err
 		}
 
-		// Assume it's a file path if no the URI has no scheme.
-		if strings.HasPrefix(params.RootPath, "/") {
+		// HACK: RootPath is not a URI, but historically we treated it
+		// as such. Convert it to a file URI
+		if !strings.HasPrefix(params.RootPath, "file://") {
 			params.RootPath = "file://" + params.RootPath
 		}
 
@@ -176,12 +177,14 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync:             lsp.TDSKFull,
 				DefinitionProvider:           true,
+				DocumentFormattingProvider:   true,
 				DocumentSymbolProvider:       true,
 				HoverProvider:                true,
 				ReferencesProvider:           true,
 				WorkspaceSymbolProvider:      true,
 				XWorkspaceReferencesProvider: true,
 				XDefinitionProvider:          true,
+				SignatureHelpProvider:        &lsp.SignatureHelpOptions{TriggerCharacters: []string{"(", ","}},
 			},
 		}, nil
 
@@ -244,6 +247,26 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 			return nil, err
 		}
 		return h.handleTextDocumentSymbol(ctx, conn, req, params)
+
+	case "textDocument/signatureHelp":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params lsp.TextDocumentPositionParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		return h.handleTextDocumentSignatureHelp(ctx, conn, req, params)
+
+	case "textDocument/formatting":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params lsp.DocumentFormattingParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		return h.handleTextDocumentFormatting(ctx, conn, req, params)
 
 	case "workspace/symbol":
 		if req.Params == nil {

@@ -134,14 +134,14 @@ type MarkedString struct {
 
 type SignatureHelp struct {
 	Signatures      []SignatureInformation `json:"signatures"`
-	ActiveSignature int                    `json:"activeSignature,omitempty"`
-	ActiveParameter int                    `json:"activeParameter,omitempty"`
+	ActiveSignature int                    `json:"activeSignature"`
+	ActiveParameter int                    `json:"activeParameter"`
 }
 
 type SignatureInformation struct {
 	Label         string                 `json:"label"`
 	Documentation string                 `json:"documentation,omitempty"`
-	Paramaters    []ParameterInformation `json:"paramaters,omitempty"`
+	Parameters    []ParameterInformation `json:"parameters,omitempty"`
 }
 
 type ParameterInformation struct {
@@ -150,7 +150,7 @@ type ParameterInformation struct {
 }
 
 type ReferenceContext struct {
-	IncludeDeclaration bool `json:"IncludeDeclaration"`
+	IncludeDeclaration bool `json:"includeDeclaration"`
 }
 
 type ReferenceParams struct {

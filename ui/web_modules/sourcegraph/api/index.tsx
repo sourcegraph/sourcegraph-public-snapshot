@@ -636,7 +636,7 @@ export interface RefSet {
 }
 
 export interface ReferenceContext {
-	IncludeDeclaration: boolean;
+	includeDeclaration: boolean;
 }
 
 export interface ReferenceParams {
@@ -858,8 +858,8 @@ export interface Signature {
 
 export interface SignatureHelp {
 	signatures: any[];
-	activeSignature?: number;
-	activeParameter?: number;
+	activeSignature: number;
+	activeParameter: number;
 }
 
 export interface SignatureHelpOptions {
@@ -869,7 +869,7 @@ export interface SignatureHelpOptions {
 export interface SignatureInformation {
 	label: string;
 	documentation?: string;
-	paramaters?: any[];
+	parameters?: any[];
 }
 
 export interface SrclibDataVersion {

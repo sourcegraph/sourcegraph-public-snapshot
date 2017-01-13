@@ -81,12 +81,6 @@ func (h *HandlerShared) FilePath(uri string) string {
 	if !strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("bad uri %q (path %q MUST have leading slash; it can't be relative)", uri, path))
 	}
-	if strings.Contains(path, ":") {
-		panic(fmt.Sprintf("bad uri %q (path %q MUST NOT contain ':')", uri, path))
-	}
-	if strings.Contains(path, "@") {
-		panic(fmt.Sprintf("bad uri %q (path %q MUST NOT contain '@')", uri, path))
-	}
 	return path
 }
 

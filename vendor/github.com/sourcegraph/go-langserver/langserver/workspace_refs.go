@@ -14,7 +14,6 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/tools/go/buildutil"
 	"golang.org/x/tools/go/loader"
 
 	"github.com/neelance/parallel"
@@ -31,15 +30,6 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
-
-	var pkgPat string
-	if h.init.RootImportPath == "" {
-		// Go stdlib (empty root import path)
-		pkgPat = "..."
-	} else {
-		// All other Go packages.
-		pkgPat = h.init.RootImportPath + "/..."
-	}
 
 	var parallelism int
 	if envWorkspaceReferenceParallelism != "" {
@@ -60,7 +50,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		fset = token.NewFileSet()
 		pkgs []string
 	)
-	for pkg := range buildutil.ExpandPatterns(bctx, []string{pkgPat}) {
+	for _, pkg := range listPkgsUnderDir(bctx, rootPath) {
 		// Ignore any vendor package so we can avoid scanning it for dependency
 		// references, per the workspace/reference spec. This saves us a
 		// considerable amount of work.
