@@ -53,9 +53,11 @@ export class BuildHandler implements LanguageHandler {
 	private yarndir: string;
 	private yarnOverlayRoot: string;
 
-	// managedModuleConfig maps from directory to configuration for
-	// each module managed by the build handler. It excludes modules
-	// already vendored in the repository.
+	/**
+	 * managedModuleConfig maps from directory to configuration for
+	 * each module managed by the build handler. It excludes modules
+	 * already vendored in the repository.
+	 */
 	private managedModuleConfig: Map<string, any>;
 	private managedModuleInit: Map<string, Promise<Map<string, rt.DependencyReference>>>;
 	private puntWorkspaceSymbol = false;
@@ -133,14 +135,16 @@ export class BuildHandler implements LanguageHandler {
 		await this.initManagedModule(d);
 	}
 
-	// ensureDependenciesToPackage ensures that dependencies have been
-	// installed for all managed module directories that have a
-	// dependency that matches the properties in `pkg`. It does so by
-	// ensuring all dependencies anywhere have been installed. In the
-	// future, this could be optimized by selectively installing
-	// dependencies only for necessary module directories or optimized
-	// even more to install just that dependency in a given managed
-	// module directory.
+	/**
+	 * ensureDependenciesToPackage ensures that dependencies have been
+	 * installed for all managed module directories that have a
+	 * dependency that matches the properties in `pkg`. It does so by
+	 * ensuring all dependencies anywhere have been installed. In the
+	 * future, this could be optimized by selectively installing
+	 * dependencies only for necessary module directories or optimized
+	 * even more to install just that dependency in a given managed
+	 * module directory.
+	 */
 	private async ensureDependency(dependency: rt.DependencyAttributes, dependeeName?: string): Promise<void> {
 		if (!this.managedModuleInit) {
 			throw new Error("build handler is not yet initialized");
@@ -313,8 +317,10 @@ export class BuildHandler implements LanguageHandler {
 		sym.location = undefined;
 	}
 
-	// getDepContainingSymbol returns the dependency that contains the
-	// symbol or null if the symbol is not defined in a dependency.
+	/**
+	 * getDepContainingSymbol returns the dependency that contains the
+	 * symbol or null if the symbol is not defined in a dependency.
+	 */
 	private async getDepContainingSymbol(sym: rt.SymbolLocationInformation): Promise<rt.DependencyReference | null> {
 		const moduledir = this.getManagedModuleDir(sym.location.uri);
 		if (!moduledir) {
