@@ -23,61 +23,61 @@ class BuildServer extends LanguageServer
             if (!empty($composerJsonFiles)) {
                 $composerJsonFile = $composerJsonFiles[0];
 
-                // Create random temporary folder
-                $dir = sys_get_temp_dir() . '/phpbs' . time() . random_int(100000, 999999);
-                mkdir($dir);
-
-                $composerJsonContent = yield $this->contentRetriever->retrieve($composerJsonFile);
-                $this->composerJson = json_decode($composerJsonContent);
-
-                // Write composer.json
-                file_put_contents("$dir/composer.json", $composerJsonContent);
-
-                // Install dependencies
-                $this->client->window->logMessage(MessageType::INFO, "Installing dependencies to $dir\n");
-                $io = new IO($this->client);
-                $composerFactory = new Composer\Factory;
-                $composer = $composerFactory->createComposer($io, "$dir/composer.json", true, $dir);
-                $installer = Composer\Installer::create($io, $composer);
-                // Prefer tarballs over git clones
-                $installer->setPreferDist(true);
-                // Disable autoloader generation, it can cause exceptions
-                $installer->setDumpAutoloader(false);
-                // Disable script execution
-                $installer->setRunScripts(false);
-                // Download in parallel
-                $composer->getPluginManager()->addPlugin(new Prestissimo\Plugin);
                 try {
+                    // Create random temporary folder
+                    $dir = sys_get_temp_dir() . '/phpbs' . time() . random_int(100000, 999999);
+                    mkdir($dir);
+
+                    $composerJsonContent = yield $this->contentRetriever->retrieve($composerJsonFile);
+                    $this->composerJson = json_decode($composerJsonContent);
+
+                    // Write composer.json
+                    file_put_contents("$dir/composer.json", $composerJsonContent);
+
+                    // Install dependencies
+                    $this->client->window->logMessage(MessageType::INFO, "Installing dependencies to $dir\n");
+                    $io = new IO($this->client);
+                    $composerFactory = new Composer\Factory;
+                    $composer = $composerFactory->createComposer($io, "$dir/composer.json", true, $dir);
+                    $installer = Composer\Installer::create($io, $composer);
+                    // Prefer tarballs over git clones
+                    $installer->setPreferDist(true);
+                    // Disable autoloader generation, it can cause exceptions
+                    $installer->setDumpAutoloader(false);
+                    // Disable script execution
+                    $installer->setRunScripts(false);
+                    // Download in parallel
+                    $composer->getPluginManager()->addPlugin(new Prestissimo\Plugin);
                     $code = $installer->run();
                     $this->client->window->logMessage(MessageType::LOG, "Installer exited with $code");
+                    // Get the composer.json directory
+                    $parts = Uri\parse($composerJsonFile);
+                    $parts['path'] = dirname($parts['path']);
+                    $composerJsonDir = Uri\build($parts);
+
+                    // Read the generated composer.lock to get information about resolved dependencies
+                    if (file_exists("$dir/composer.lock")) {
+                        $this->composerLock = json_decode(file_get_contents("$dir/composer.lock"));
+
+                        // Make filesFinder and contentRetriever aware of the dependencies installed in the temporary folder
+                        $this->filesFinder = new DependencyAwareFilesFinder($this->filesFinder, $rootPath, $composerJsonDir, $dir, $this->composerLock);
+                        $this->contentRetriever = new DependencyAwareContentRetriever($this->contentRetriever, $rootPath, $composerJsonDir, $dir, $this->composerLock);
+                        $this->documentLoader->contentRetriever = $this->contentRetriever;
+                        $this->textDocument = new Server\TextDocument(
+                            $this->documentLoader,
+                            $this->definitionResolver,
+                            $this->client,
+                            $this->globalIndex,
+                            $composerJsonDir,
+                            $rootPath,
+                            $this->composerJson,
+                            $this->composerLock
+                        );
+                    } else {
+                        $this->client->window->logMessage(MessageType::WARNING, "composer.lock not found");
+                    }
                 } catch (\Exception $e) {
                     $this->client->window->logMessage(MessageType::ERROR, "Installation failed: " . (string)$e);
-                }
-                // Get the composer.json directory
-                $parts = Uri\parse($composerJsonFile);
-                $parts['path'] = dirname($parts['path']);
-                $composerJsonDir = Uri\build($parts);
-
-                // Read the generated composer.lock to get information about resolved dependencies
-                if (file_exists("$dir/composer.lock")) {
-                    $this->composerLock = json_decode(file_get_contents("$dir/composer.lock"));
-
-                    // Make filesFinder and contentRetriever aware of the dependencies installed in the temporary folder
-                    $this->filesFinder = new DependencyAwareFilesFinder($this->filesFinder, $rootPath, $composerJsonDir, $dir, $this->composerLock);
-                    $this->contentRetriever = new DependencyAwareContentRetriever($this->contentRetriever, $rootPath, $composerJsonDir, $dir, $this->composerLock);
-                    $this->documentLoader->contentRetriever = $this->contentRetriever;
-                    $this->textDocument = new Server\TextDocument(
-                        $this->documentLoader,
-                        $this->definitionResolver,
-                        $this->client,
-                        $this->globalIndex,
-                        $composerJsonDir,
-                        $rootPath,
-                        $this->composerJson,
-                        $this->composerLock
-                    );
-                } else {
-                    $this->client->window->logMessage(MessageType::WARNING, "composer.lock not found");
                 }
             }
             yield parent::index($rootPath);
