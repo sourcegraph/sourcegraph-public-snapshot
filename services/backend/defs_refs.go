@@ -27,8 +27,9 @@ import (
 // subSelectors is a map of language-specific data selectors. The
 // input data is from the language server's workspace/xdefinition
 // request, and the output data should be something that can be
-// matched (using the jsonb containment operator) against the metadata
-// output of workspace/xdependencies.
+// matched (using the jsonb containment operator) against the
+// `attributes` field of `DependenceReference` (output of
+// workspace/xdependencies).
 var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface{}{
 	"go": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
 		return map[string]interface{}{
@@ -41,6 +42,11 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 			// a composer.json file. In this case, there are no external references to this symbol.
 			return nil
 		}
+		return map[string]interface{}{
+			"name": symbol["package"].(map[string]interface{})["name"],
+		}
+	},
+	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
 		return map[string]interface{}{
 			"name": symbol["package"].(map[string]interface{})["name"],
 		}
@@ -216,7 +222,7 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 	// once we have a language server that uses it.
 	location := locations[0]
 
-	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.RefLocationsOptions{
+	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
 		Language: op.Language,
 		DepData:  subSelector(location.Symbol),
 	})
@@ -319,6 +325,11 @@ func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
 	defer done()
 
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{op.RepoID, op.CommitID})
+	if err != nil {
+		return err
+	}
+
 	// Refresh global references indexes.
-	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op)
+	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op, inv.Languages)
 }

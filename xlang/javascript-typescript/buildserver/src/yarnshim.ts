@@ -8,6 +8,8 @@
 import * as path from 'path';
 import * as mkdirp from 'mkdirp';
 
+import * as rt from 'javascript-typescript-langserver/lib/request-type';
+
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { readFile } from './vfs';
 
@@ -134,9 +136,9 @@ export function parseGitHubInfo(cloneURL: string): Info | null {
  * install mimics `yarn install --ignore-scripts`, installing
  * dependencies into a temporary directory on disk. cwd should specify
  * the directory in remoteFs from which the package.json should be
- * read.
+ * read. Returns a map from local fs path to dependency metadata.
  */
-export async function install(remoteFs: FileSystem, cwd: string, globaldir: string, overlaydir: string): Promise<void> {
+export async function install(remoteFs: FileSystem, cwd: string, globaldir: string, overlaydir: string): Promise<Map<string, Object>> {
 	await new Promise<void>((resolve, reject) => {
 		mkdirp(overlaydir, (err) => {
 			if (err) {
@@ -171,7 +173,6 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		ignorePatterns,
 	} = await fetchRequestFromRemoteFS(inst, [], remoteFs, overlaydir);
 
-	// filter out packages that are covered by @types/* packages
 	const prunedDepRequests = [];
 	{
 		const typeDepNames = new Set<string>();
@@ -181,11 +182,16 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 				typeDepNames.add(pkg.name.substr("@types/".length));
 			}
 		}
+		// filter out packages that are covered by @types/* packages
 		for (const dep of depRequests) {
 			const pkg = parsePackageName(dep.pattern);
-			if (pkg.name.startsWith("@types/") || !typeDepNames.has(pkg.name)) {
-				prunedDepRequests.push(dep);
+			if (pkg.name === 'types-publisher') {
+				continue;
 			}
+			if (!pkg.name.startsWith("@types/") && typeDepNames.has(pkg.name)) {
+				continue;
+			}
+			prunedDepRequests.push(dep);
 		}
 	}
 
@@ -220,7 +226,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		inst.markIgnored(ignorePatterns);
 		await inst.fetcher.init();
 		const fetchEnd = new Date().getTime();
-		console.error("fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0)
+		console.error("fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0);
 	});
 
 	// link
@@ -229,10 +235,18 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		inst.linker.resolvePeerModules();
 		await inst.linker.copyModules(patterns);
 		const linkEnd = new Date().getTime();
-		console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0)
+		console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0);
 	});
 
-	return Promise.resolve();
+	const hoistedTree = await inst.linker.getFlatHoistedTree(patterns);
+	const pathToDep = new Map<string, rt.DependencyReference>();
+	for (const dep of hoistedTree) {
+		const rawloc = dep[0];
+		const pkg = dep[1];
+		const loc = path.join(path.sep, path.relative(overlaydir, rawloc));
+		pathToDep.set(loc, { attributes: { name: <string>pkg.pkg.name, version: <string>pkg.pkg.version }, hints: {} });
+	}
+	return pathToDep;
 }
 
 async function runWithLockfile(lf: string, run: () => Promise<void>): Promise<void> {
@@ -243,7 +257,7 @@ async function runWithLockfile(lf: string, run: () => Promise<void>): Promise<vo
 					await new Promise<void>((resolve, reject) => {
 						setTimeout(() => {
 							return resolve();
-						}, 200);
+						}, 200 + Math.floor(Math.random() * 10));
 					});
 					await runWithLockfile(lf, run);
 				} else {
