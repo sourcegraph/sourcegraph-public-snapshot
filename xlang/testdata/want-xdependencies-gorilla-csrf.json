@@ -7,7 +7,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -18,7 +20,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -29,7 +33,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -40,7 +46,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -51,7 +59,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -62,7 +72,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -73,7 +85,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -84,7 +98,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -95,7 +111,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -106,7 +124,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -117,7 +137,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -128,7 +150,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -139,7 +163,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -150,7 +176,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -161,7 +189,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -172,7 +202,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -183,7 +215,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -194,7 +228,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   },
   {
@@ -205,7 +241,9 @@
       "vendor": false
     },
     "hints": {
-      "dir": "file:///"
+      "dirs": [
+        "file:///"
+      ]
     }
   }
 ]
