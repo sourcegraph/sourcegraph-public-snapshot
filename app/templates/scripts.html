@@ -11,6 +11,10 @@
 </script>
 <!-- End of Telligent scripts-->
 
+<!-- Start of Optimizely script -->
+<script ignore-csp src="https://cdn.optimizely.com/js/8155070806.js"></script>
+<!-- End of Optimizely script -->
+
 {{if not disableSupportServices}}
 
 	<!-- Don't load Intercom for SEO pages -->
@@ -25,10 +29,6 @@
 		<script ignore-csp>(function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',intercomSettings);}else{var d=document;var i=function(){i.c(arguments)};i.q=[];i.c=function(args){i.q.push(args)};w.Intercom=i;function l(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/wd8xxn47';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);}if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})()</script>
 		<!-- End of Intercom scripts -->
 	{{end}}
-
-	<!-- Start of Optimizely script -->
-	<script ignore-csp src="https://cdn.optimizely.com/js/8024992611.js"></script>
-	<!-- End of Optimizely script -->
 
 	<!-- Start of Google Analytics script -->
 	{{if googleAnalyticsTrackingID}}

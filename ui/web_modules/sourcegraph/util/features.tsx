@@ -1,4 +1,4 @@
-import { ExperimentManager } from "sourcegraph/util/ExperimentManager";
+import { experimentManager } from "sourcegraph/util/ExperimentManager";
 const enabled = "enabled";
 
 class Feature {
@@ -55,7 +55,7 @@ export const Features = {
 	actionLogDebug: new Feature("action-log-debug").disableBeta(),
 	experimentLogDebug: new Feature("experiment-log-debug").disableBeta(),
 
-	ExperimentManager,
+	experimentManager,
 };
 
 if (global.window) {

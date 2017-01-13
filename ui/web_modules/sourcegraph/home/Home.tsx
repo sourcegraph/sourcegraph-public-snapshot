@@ -15,7 +15,7 @@ import { FeatureCarousel } from "sourcegraph/home/FeatureCarousel";
 import { Nav } from "sourcegraph/home/Nav";
 import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { ExperimentManager, ExperimentName } from "sourcegraph/util/ExperimentManager";
+import { HomepageExperimentContent, homepageExperiment } from "sourcegraph/util/ExperimentManager";
 
 interface HomeProps { location: Location; }
 
@@ -41,7 +41,7 @@ export class Home extends React.Component<HomeProps, {}> {
 	}
 
 	render(): JSX.Element | null {
-		const experimentCopy = ExperimentManager.getExperimentContent(ExperimentName.HomepageCopy);
+		const experimentCopy = homepageExperiment.getContent() as HomepageExperimentContent;
 
 		return <div style={{
 			backgroundColor: "white",
