@@ -58,14 +58,12 @@ export class BuildHandler implements LanguageHandler {
 	 * each module managed by the build handler. It excludes modules
 	 * already vendored in the repository.
 	 */
-	private managedModuleConfig: Map<string, any>;
-	private managedModuleInit: Map<string, Promise<Map<string, rt.DependencyReference>>>;
+	private managedModuleConfig = new Map<string, any>();
+	private managedModuleInit = new Map<string, Promise<Map<string, rt.DependencyReference>>>();
 	private puntWorkspaceSymbol = false;
 
 	constructor() {
 		this.ls = new TypeScriptService();
-		this.managedModuleConfig = new Map<string, any>();
-		this.managedModuleInit = new Map<string, Promise<Map<string, rt.DependencyReference>>>();
 	}
 
 	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<InitializeResult> {
@@ -287,7 +285,7 @@ export class BuildHandler implements LanguageHandler {
 		}
 
 		// For symbols defined in dependencies, remove the location field and add in dependency package metadata.
-		await Promise.all(syms.map(async (sym) => this.rewriteSymbol(sym)));
+		await Promise.all(syms.map((sym) => this.rewriteSymbol(sym)));
 
 		await this.rewriteURIs(syms);
 		return syms;
