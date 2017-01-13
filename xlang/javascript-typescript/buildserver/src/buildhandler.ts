@@ -24,7 +24,7 @@ import { TypeScriptService } from 'javascript-typescript-langserver/lib/typescri
 import { LanguageHandler } from 'javascript-typescript-langserver/lib/lang-handler';
 import { install, info, infoAlt, parseGitHubInfo } from './yarnshim';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
-import { LayeredFileSystem, LocalRootedFileSystem, walkDirs } from './vfs';
+import { LayeredFileSystem, LocalRootedFileSystem, walkDirs, readFile } from './vfs';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as rt from 'javascript-typescript-langserver/lib/request-type';
 
@@ -58,6 +58,7 @@ export class BuildHandler implements LanguageHandler {
 	// the repository.
 	private managedModuleDirs: Set<string>;
 	private managedModuleInit: Map<string, Promise<Map<string, rt.DependencyReference>>>;
+	private puntWorkspaceSymbol = false;
 
 	constructor() {
 		this.ls = new TypeScriptService();
@@ -85,6 +86,10 @@ export class BuildHandler implements LanguageHandler {
 				}
 			}
 			if (foundPackageJson && !foundModulesDir) {
+				const config = JSON.parse(await readFile(remoteFs, path.join(p, 'package.json')));
+				if (config['name'] === 'definitely-typed') {
+					this.puntWorkspaceSymbol = true;
+				}
 				this.managedModuleDirs.add(p);
 			}
 		});
@@ -347,7 +352,10 @@ export class BuildHandler implements LanguageHandler {
 		return this.ls.getDependencies();
 	}
 
-	getWorkspaceSymbols(params: rt.WorkspaceSymbolParamsWithLimit): Promise<SymbolInformation[]> {
+	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParamsWithLimit): Promise<SymbolInformation[]> {
+		if (this.puntWorkspaceSymbol) {
+			return Promise.reject("workspace/symbol unsupported on this repository");
+		}
 		return this.ls.getWorkspaceSymbols(params);
 	}
 

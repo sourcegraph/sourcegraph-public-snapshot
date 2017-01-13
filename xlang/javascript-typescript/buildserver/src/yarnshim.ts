@@ -173,7 +173,6 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		ignorePatterns,
 	} = await fetchRequestFromRemoteFS(inst, [], remoteFs, overlaydir);
 
-	// filter out packages that are covered by @types/* packages
 	const prunedDepRequests = [];
 	{
 		const typeDepNames = new Set<string>();
@@ -183,11 +182,16 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 				typeDepNames.add(pkg.name.substr("@types/".length));
 			}
 		}
+		// filter out packages that are covered by @types/* packages
 		for (const dep of depRequests) {
 			const pkg = parsePackageName(dep.pattern);
-			if (pkg.name.startsWith("@types/") || !typeDepNames.has(pkg.name)) {
-				prunedDepRequests.push(dep);
+			if (pkg.name === 'types-publisher') {
+				continue;
 			}
+			if (!pkg.name.startsWith("@types/") && typeDepNames.has(pkg.name)) {
+				continue;
+			}
+			prunedDepRequests.push(dep);
 		}
 	}
 
@@ -222,7 +226,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		inst.markIgnored(ignorePatterns);
 		await inst.fetcher.init();
 		const fetchEnd = new Date().getTime();
-		console.error("fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0)
+		console.error("fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0);
 	});
 
 	// link
@@ -231,7 +235,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		inst.linker.resolvePeerModules();
 		await inst.linker.copyModules(patterns);
 		const linkEnd = new Date().getTime();
-		console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0)
+		console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0);
 	});
 
 	const hoistedTree = await inst.linker.getFlatHoistedTree(patterns);
@@ -253,7 +257,7 @@ async function runWithLockfile(lf: string, run: () => Promise<void>): Promise<vo
 					await new Promise<void>((resolve, reject) => {
 						setTimeout(() => {
 							return resolve();
-						}, 200);
+						}, 200 + Math.floor(Math.random() * 10));
 					});
 					await runWithLockfile(lf, run);
 				} else {
