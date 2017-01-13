@@ -135,9 +135,9 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 	return nil
 }
 
-// RefLocationsOptions specifies options for querying locations that reference
+// DependenciesOptions specifies options for querying locations that reference
 // a definition.
-type RefLocationsOptions struct {
+type DependenciesOptions struct {
 	// Language is the type of language whose references are being queried.
 	// e.g. "go" or "java".
 	Language string
@@ -153,8 +153,8 @@ type Dependency struct {
 	Hints   map[string]interface{}
 }
 
-func (g *globalDeps) Dependencies(ctx context.Context, op RefLocationsOptions) (refs []*Dependency, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.RefLocations")
+func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*Dependency, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.Dependencies")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
