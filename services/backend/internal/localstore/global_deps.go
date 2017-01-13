@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -52,16 +53,27 @@ func (*dbGlobalDep) DropTable() string {
 
 type globalDeps struct{}
 
+var globalDepEnabledLangs = map[string]struct{}{
+	"go":         struct{}{},
+	"php":        struct{}{},
+	"typescript": struct{}{},
+}
+
 // UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
 //
 // SECURITY: It is the caller's responsibility to ensure the repository is NOT
 // a private one.
-func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
+func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang) error {
 	var errs []string
-	for _, language := range []string{"go", "php", "typescript"} { // TODO(slimsag): use inventory instead
-		if err := g.refreshIndexForLanguage(ctx, language, op); err != nil {
-			log15.Crit("refreshing index failed", "language", language, "error", err)
-			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", language, err))
+	for _, lang := range langs {
+		langName := strings.ToLower(lang.Name)
+
+		if _, enabled := globalDepEnabledLangs[langName]; !enabled {
+			continue
+		}
+		if err := g.refreshIndexForLanguage(ctx, langName, op); err != nil {
+			log15.Crit("refreshing index failed", "language", langName, "error", err)
+			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", langName, err))
 		}
 	}
 	if len(errs) == 1 {

@@ -325,6 +325,11 @@ func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
 	defer done()
 
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{op.RepoID, op.CommitID})
+	if err != nil {
+		return err
+	}
+
 	// Refresh global references indexes.
-	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op)
+	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op, inv.Languages)
 }
