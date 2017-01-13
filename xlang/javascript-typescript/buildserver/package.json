@@ -2,6 +2,8 @@
     "version": "0.0.1",
     "name": "javascript-typescript-buildserver",
     "scripts": {
+        "fmt-check": "./node_modules/.bin/tsfmt --verify",
+        "fmt": "./node_modules/.bin/tsfmt -r",
         "test": "./node_modules/.bin/mocha -r ts-node/register src/test/**/*.ts && node ./lib/yarnshim-test.js",
         "test-ls": "./node_modules/.bin/mocha -r ts-node/register src/test/**/*.ts",
         "test-yarnshim": "node ./lib/yarnshim-test.js"
@@ -26,6 +28,7 @@
     },
     "devDependencies": {
         "mocha": "^2.2.33",
-        "ts-node": "^1.6.1"
+        "ts-node": "^1.6.1",
+        "typescript-formatter": "^4.0.1"
     }
 }
