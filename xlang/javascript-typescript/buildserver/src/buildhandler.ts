@@ -53,16 +53,16 @@ export class BuildHandler implements LanguageHandler {
 	private yarndir: string;
 	private yarnOverlayRoot: string;
 
-	// managedModuleDirs is the set of directories of modules managed
-	// by the build handler. It excludes modules already vendored in
-	// the repository.
-	private managedModuleDirs: Set<string>;
+	// managedModuleConfig maps from directory to configuration for
+	// each module managed by the build handler. It excludes modules
+	// already vendored in the repository.
+	private managedModuleConfig: Map<string, any>;
 	private managedModuleInit: Map<string, Promise<Map<string, rt.DependencyReference>>>;
 	private puntWorkspaceSymbol = false;
 
 	constructor() {
 		this.ls = new TypeScriptService();
-		this.managedModuleDirs = new Set<string>();
+		this.managedModuleConfig = new Map<string, any>();
 		this.managedModuleInit = new Map<string, Promise<Map<string, rt.DependencyReference>>>();
 	}
 
@@ -90,7 +90,7 @@ export class BuildHandler implements LanguageHandler {
 				if (config['name'] === 'definitely-typed') {
 					this.puntWorkspaceSymbol = true;
 				}
-				this.managedModuleDirs.add(p);
+				this.managedModuleConfig.set(p, config);
 			}
 		});
 
@@ -110,7 +110,7 @@ export class BuildHandler implements LanguageHandler {
 	private getManagedModuleDir(uri: string): string | null {
 		const p = uri2path(uri);
 		for (let d = p; true; d = path.dirname(d)) {
-			if (this.managedModuleDirs.has(d)) {
+			if (this.managedModuleConfig.has(d)) {
 				return d;
 			}
 
@@ -141,11 +141,18 @@ export class BuildHandler implements LanguageHandler {
 	// dependencies only for necessary module directories or optimized
 	// even more to install just that dependency in a given managed
 	// module directory.
-	private async ensureDependency(pkg?: rt.DependencyAttributes): Promise<void> {
+	private async ensureDependency(dependency: rt.DependencyAttributes, dependeeName?: string): Promise<void> {
 		if (!this.managedModuleInit) {
 			throw new Error("build handler is not yet initialized");
 		}
-		await Promise.all(Array.from(this.managedModuleDirs.values(), (d) => this.initManagedModule(d)));
+		await Promise.all(Array.from(this.managedModuleConfig.keys(), (d) => {
+			const config = this.managedModuleConfig.get(d);
+			if (!dependeeName || config['name'] === dependeeName) {
+				return this.initManagedModule(d);
+			} else {
+				return Promise.resolve();
+			}
+		}));
 	}
 
 	private async initManagedModule(dir: string): Promise<void> {
@@ -175,7 +182,7 @@ export class BuildHandler implements LanguageHandler {
 		if (cwd === '') {
 			cwd = '/';
 		}
-		if (!this.managedModuleDirs.has(cwd)) {
+		if (!this.managedModuleConfig.has(cwd)) {
 			return { uri: uri, rewritten: false };
 		}
 
@@ -364,7 +371,8 @@ export class BuildHandler implements LanguageHandler {
 	}
 
 	async getWorkspaceReference(params: rt.WorkspaceReferenceParams): Promise<rt.ReferenceInformation[]> {
-		await this.ensureDependency(params.query.package);
+		const dependeePackageName = params.hints ? params.hints.dependeePackageName : undefined;
+		await this.ensureDependency(params.query.package, dependeePackageName);
 
 		// strip the `package` field, because this was not added by the language server
 		const pkgData = params.query.package;
