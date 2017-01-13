@@ -62,7 +62,7 @@ class TextDocument extends \LanguageServer\Server\TextDocument
         return coroutine(function () use ($textDocument, $position) {
             $location = yield parent::definition($textDocument, $position);
             // Get package name from URI
-            if (preg_match('/\/vendor\/([^\/]+\/[^\/]+)\//', $location->uri, $matches)) {
+            if ($location && preg_match('/\/vendor\/([^\/]+\/[^\/]+)\//', $location->uri, $matches)) {
                 $packageName = $matches[1];
                 $composerJsonDirPath = Uri\parse($this->composerJsonDir)['path'];
                 $relativeComposerJsonDirPath = Path::makeRelative($composerJsonDirPath, $this->rootPath);
