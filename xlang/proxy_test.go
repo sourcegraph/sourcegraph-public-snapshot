@@ -179,11 +179,17 @@ func TestProxy(t *testing.T) {
 				// Matching against invalid field name.
 				{Query: lsext.SymbolDescriptor{"nope": "A"}}: []string{},
 
-				// Matching against an invalid dir hint.
-				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dir": "file:///src/test/pkg/d/d3"}}: []string{},
+				// Matching against an invalid dirs hint.
+				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///src/test/pkg/d/d3"}}}: []string{},
 
-				// Matching against a dir hint.
-				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dir": "file:///d2"}}: []string{
+				// Matching against a dirs hint with multiple dirs.
+				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2", "file:///invalid"}}}: []string{
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> name:A package:test/pkg/d packageName:d recv: vendor:false",
+				},
+
+				// Matching against a dirs hint.
+				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2"}}}: []string{
 					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> name: package:test/pkg/d packageName:d recv: vendor:false",
 					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},

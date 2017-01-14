@@ -63,11 +63,18 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 			continue
 		}
 
-		// If a directory hint is present, only look for references created in
-		// that directory.
-		dir, ok := params.Hints["dir"]
+		// If a dirs hint is present, only look for references created in those
+		// directories.
+		dirs, ok := params.Hints["dirs"]
 		if ok {
-			if "file://"+bpkg.Dir != dir.(string) {
+			found := false
+			for _, dir := range dirs.([]interface{}) {
+				if "file://"+bpkg.Dir == dir.(string) {
+					found = true
+					break
+				}
+			}
+			if !found {
 				continue
 			}
 		}
