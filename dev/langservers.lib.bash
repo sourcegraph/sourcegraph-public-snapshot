@@ -38,7 +38,7 @@ detect_dev_langservers() {
 	if [[ -d "$JAVA_LS_DIR" ]]; then
 		export LANGSERVER_JAVA=${LANGSERVER_JAVA-"$JAVA_LS_DIR"/bin/java-langserver}
 	else
-		echo '# To add Python language support, run `dev/install-langserver.sh java-langserver` or symlink '"$JAVA_LS_DIR"' to a local clone of java-langserver.'
+		echo '# To add Java language support, run `dev/install-langserver.sh java-langserver` or symlink '"$JAVA_LS_DIR"' to a local clone of java-langserver.'
 	fi
 
 	# PHP
