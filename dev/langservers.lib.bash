@@ -33,6 +33,14 @@ detect_dev_langservers() {
 		echo '# To add Python language support, run `dev/install-langserver.sh python-langserver` or symlink '"$PY_LS_DIR"' to a local clone of python-langserver.'
 	fi
 
+	# Java
+	JAVA_LS_DIR="${LS_ROOT}/java-langserver"
+	if [[ -d "$JAVA_LS_DIR" ]]; then
+		export LANGSERVER_JAVA=${LANGSERVER_JAVA-"$JAVA_LS_DIR"/bin/java-langserver}
+	else
+		echo '# To add Java language support, run `dev/install-langserver.sh java-langserver` or symlink '"$JAVA_LS_DIR"' to a local clone of java-langserver.'
+	fi
+
 	# PHP
 	if [[ -n "${LANGSERVER_PHP:+1}" ]]; then
 		# no-op, the user has already set the server
@@ -61,6 +69,9 @@ install_langserver() {
 			;;
 		javascript-typescript-langserver)
 			(cd "$LS_DIR" && yarn && node_modules/.bin/tsc)
+			;;
+		java-langserver)
+			(cd "$LS_DIR" && mvn clean compile assembly:single)
 			;;
 		python-langserver)
 			(cd "$LS_DIR" && pip3 install -r requirements.txt)
