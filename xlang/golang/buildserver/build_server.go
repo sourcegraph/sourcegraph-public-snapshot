@@ -410,6 +410,15 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				for i, dir := range dirs {
 					dirs[i] = rewriteURIFromClient(dir.(string))
 				}
+
+				// Arbitrarily chosen limit on the number of directories that
+				// may be searched by workspace/xreferences. Large repositories
+				// like kubernetes would simply take too long (>15s) to fetch
+				// their dependencies and typecheck them otherwise. This number
+				// was chosen as a 'sweet-spot' based on kubernetes solely.
+				if len(dirs) > 15 {
+					dirs = dirs[:15]
+				}
 				dirsHint = dirs
 				p.Hints["dirs"] = dirs
 				b, err := json.Marshal(p)
