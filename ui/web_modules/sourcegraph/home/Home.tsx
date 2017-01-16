@@ -106,7 +106,6 @@ export class Home extends React.Component<HomeProps, {}> {
 						<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go.svg`} />
 						<img title="TypeScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
 						<img title="JavaScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
-						<img title="C in beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/c.svg`} />
 
 					</FlexContainer>
 					<FlexContainer justify="around" style={{
@@ -123,7 +122,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					</FlexContainer>
 
 					<Heading level={4} align="center" style={{ fontWeight: "normal" }}>
-						Support for Go, TypeScript, JavaScript, and C
+						Support for Go, TypeScript, and JavaScript
 					</Heading>
 
 					<p style={{
@@ -131,7 +130,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						paddingLeft: whitespace[4],
 						paddingRight: whitespace[4],
 					}}>
-						JavaScript, TypeScript, and C in beta. Java, Python, Ruby, Scala, PHP, C++, and more coming soon...
+						JavaScript and TypeScript in beta. Java, Python, Ruby, Scala, PHP, C, C++, and more coming soon...
 					</p>
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
 						<strong>
