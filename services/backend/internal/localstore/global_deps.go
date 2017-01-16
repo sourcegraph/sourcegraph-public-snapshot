@@ -157,6 +157,10 @@ type DependenciesOptions struct {
 	// DepData is data that matches the output of xdependencies with a psql
 	// jsonb containment operator. It may be a subset of data.
 	DepData map[string]interface{}
+
+	// Limit limits the number of returned dependency references to the
+	// specified number.
+	Limit int
 }
 
 type Dependency struct {
@@ -186,8 +190,8 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 		FROM global_dep
 		WHERE language=$1
 		AND dep_data @> $2
-		LIMIT 4
-	`, op.Language, string(containmentQuery))
+		LIMIT $3
+	`, op.Language, string(containmentQuery), op.Limit)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}
