@@ -137,15 +137,17 @@ export function DocsPage(): JSX.Element {
 
 				<a id="languages_supported"></a>
 				<Heading level={3} underline="blue">Languages Supported</Heading>
-				<p className={styles.p}>Sourcegraph currently supports:</p>
+				<p className={styles.p}>Sourcegraph supports:</p>
 				<ul>
 					<li className={styles.p}>Go</li>
+					<li className={styles.p}>TypeScript [beta]</li>
+					<li className={styles.p}>JavaScript [beta]</li>
 				</ul>
-				<p className={styles.p}>In Beta:</p>
+				<p className={styles.p}>Coming soon:</p>
 				<ul>
-					<li className={styles.p}>TypeScript</li>
-					<li className={styles.p}>JavaScript</li>
-					<li className={styles.p}>C</li>
+					<li className={styles.p}>Java</li>
+					<li className={styles.p}>Python</li>
+					<li className={styles.p}>PHP</li>
 					<li className={styles.p}><a href="https://sourcegraph.com/beta" target="_blank">Don't see your language?</a></li>
 				</ul>
 				<br />
