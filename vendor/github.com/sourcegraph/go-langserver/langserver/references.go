@@ -31,7 +31,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 		return nil, err
 	}
 
-	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
+	bctx := h.BuildContext(ctx)
 	h.importGraphOnce.Do(func() {
 		// We ignore the errors since we are doing a best-effort analysis
 		_, rev, _ := importgraph.Build(bctx)

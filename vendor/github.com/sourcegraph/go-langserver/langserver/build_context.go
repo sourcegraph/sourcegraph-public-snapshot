@@ -1,7 +1,6 @@
 package langserver
 
 import (
-	"context"
 	"fmt"
 	"go/build"
 	"io"
@@ -10,10 +9,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"golang.org/x/net/context"
 )
 
-func (h *LangHandler) defaultBuildContext() *build.Context {
-	bctx := &build.Default
+// BuildContext creates a build.Context which uses the overlay FS and the InitializeParams.BuildContext overrides.
+func (h *LangHandler) BuildContext(ctx context.Context) *build.Context {
+	var bctx *build.Context
 	if override := h.init.BuildContext; override != nil {
 		bctx = &build.Context{
 			GOOS:        override.GOOS,
@@ -29,27 +31,25 @@ func (h *LangHandler) defaultBuildContext() *build.Context {
 			// our compiler should understand.
 			ReleaseTags: build.Default.ReleaseTags,
 		}
+	} else {
+		// make a copy since we will mutate it
+		copy := build.Default
+		bctx = &copy
 	}
-	return bctx
-}
 
-func (h *HandlerShared) OverlayBuildContext(ctx context.Context, orig *build.Context, useOSFileSystem bool) *build.Context {
 	h.Mu.Lock()
 	fs := h.FS
 	h.Mu.Unlock()
 
-	copy := *orig // make a copy
-	ctxt := &copy
-
-	ctxt.OpenFile = func(path string) (io.ReadCloser, error) {
+	bctx.OpenFile = func(path string) (io.ReadCloser, error) {
 		return fs.Open(ctx, path)
 	}
-	ctxt.IsDir = func(path string) bool {
+	bctx.IsDir = func(path string) bool {
 		fi, err := fs.Stat(ctx, path)
 		return err == nil && fi.Mode().IsDir()
 	}
-	ctxt.HasSubdir = func(root, dir string) (rel string, ok bool) {
-		if !ctxt.IsDir(dir) {
+	bctx.HasSubdir = func(root, dir string) (rel string, ok bool) {
+		if !bctx.IsDir(dir) {
 			return "", false
 		}
 		rel, err := filepath.Rel(root, dir)
@@ -58,10 +58,10 @@ func (h *HandlerShared) OverlayBuildContext(ctx context.Context, orig *build.Con
 		}
 		return rel, true
 	}
-	ctxt.ReadDir = func(path string) ([]os.FileInfo, error) {
+	bctx.ReadDir = func(path string) ([]os.FileInfo, error) {
 		return fs.ReadDir(ctx, path)
 	}
-	return ctxt
+	return bctx
 }
 
 // From: https://github.com/golang/tools/blob/b814a3b030588c115189743d7da79bce8b549ce1/go/buildutil/util.go#L84

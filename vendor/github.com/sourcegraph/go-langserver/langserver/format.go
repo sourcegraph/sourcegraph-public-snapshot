@@ -17,7 +17,7 @@ import (
 
 func (h *LangHandler) handleTextDocumentFormatting(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.DocumentFormattingParams) ([]lsp.TextEdit, error) {
 	filename := h.FilePath(params.TextDocument.URI)
-	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
+	bctx := h.BuildContext(ctx)
 	fset := token.NewFileSet()
 	file, err := buildutil.ParseFile(fset, bctx, nil, filepath.Dir(filename), filepath.Base(filename), parser.ParseComments)
 	if err != nil {
