@@ -239,6 +239,10 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 		// sooner.
 		minWorkspaceRefs        = 2
 		idealMaxAggregationTime = 2 * time.Second
+
+		// Regardless of whether or not results are found, timeout after this
+		// time period of waiting for results to aggregated.
+		aggregationTimeout = 10 * time.Second
 	)
 
 	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
@@ -312,10 +316,15 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 	}
 
 	allRefs := &sourcegraph.RefLocations{}
-
+	timeout := time.After(aggregationTimeout)
 aggregation:
 	for range depRefs {
 		select {
+		case <-timeout:
+			span.LogEvent("timed out waiting for results to aggregate")
+			span.SetTag("timeout", true)
+			return nil, errors.New("timed out waiting for workspace/xreferences")
+
 		case refs := <-results:
 			for _, ref := range refs {
 				refURI, err := url.Parse(ref.Reference.URI)
