@@ -24,13 +24,13 @@ type directory struct {
 
 var errNoMatch = errors.New("no match")
 
-func resolveImportPath(client *http.Client, importPath string, dc *depCache) (*directory, error) {
+func resolveImportPath(client *http.Client, importPath string) (*directory, error) {
 	if d, err := resolveStaticImportPath(importPath); err == nil {
 		return d, nil
 	} else if err != nil && err != errNoMatch {
 		return nil, err
 	}
-	return resolveDynamicImportPath(client, importPath, dc)
+	return resolveDynamicImportPath(client, importPath)
 }
 
 func resolveStaticImportPath(importPath string) (*directory, error) {
@@ -74,15 +74,15 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 // popular gopkg.in
 var gopkgSrcTemplate = regexp.MustCompile(`https://(github.com/[^/]*/[^/]*)/tree/([^/]*)\{/dir\}`)
 
-func resolveDynamicImportPath(client *http.Client, importPath string, dc *depCache) (*directory, error) {
-	metaProto, im, sm, err := fetchMeta(client, importPath, dc)
+func resolveDynamicImportPath(client *http.Client, importPath string) (*directory, error) {
+	metaProto, im, sm, err := fetchMeta(client, importPath)
 	if err != nil {
 		return nil, err
 	}
 
 	if im.prefix != importPath {
 		var imRoot *importMeta
-		metaProto, imRoot, _, err = fetchMeta(client, im.prefix, dc)
+		metaProto, imRoot, _, err = fetchMeta(client, im.prefix)
 		if err != nil {
 			return nil, err
 		}
@@ -147,58 +147,7 @@ type sourceMeta struct {
 	fileTemplate string
 }
 
-type fetchMetaResult struct {
-	scheme string
-	im     *importMeta
-	sm     *sourceMeta
-	err    error
-}
-
-func (c *fetchMetaResult) copy() fetchMetaResult {
-	cpy := *c
-	if c.im != nil {
-		imCpy := *c.im
-		cpy.im = &imCpy
-	}
-	if c.sm != nil {
-		smCpy := *c.sm
-		cpy.sm = &smCpy
-	}
-	return cpy
-}
-
-// fetchMeta performs exactly the same action as doFetchMeta, except it caches
-// results to the depCache so that the network is not hit needlessly.
-func fetchMeta(client *http.Client, importPath string, dc *depCache) (scheme string, im *importMeta, sm *sourceMeta, err error) {
-	// Lock importPath so that only one request for it is ever made.
-	importMu := dc.fetchMetaCacheImportMu.get(importPath)
-	importMu.Lock()
-	defer importMu.Unlock()
-
-	// Check for a cached result of the import path.
-	dc.fetchMetaCacheMu.RLock()
-	r, ok := dc.fetchMetaCache[importPath]
-	dc.fetchMetaCacheMu.RUnlock()
-	if ok {
-		r = r.copy()
-		return r.scheme, r.im, r.sm, r.err
-	}
-
-	// There is no cached result, so fetch it now.
-	scheme, im, sm, err = doFetchMeta(client, importPath, dc)
-
-	// Store the result in the cache for later.
-	dc.fetchMetaCacheMu.Lock()
-	r = fetchMetaResult{scheme: scheme, im: im, sm: sm, err: err}
-	dc.fetchMetaCache[importPath] = r
-	dc.fetchMetaCacheMu.Unlock()
-
-	// Return the result.
-	r = r.copy()
-	return r.scheme, r.im, r.sm, r.err
-}
-
-func doFetchMeta(client *http.Client, importPath string, dc *depCache) (scheme string, im *importMeta, sm *sourceMeta, err error) {
+func fetchMeta(client *http.Client, importPath string) (scheme string, im *importMeta, sm *sourceMeta, err error) {
 	uri := importPath
 	if !strings.Contains(uri, "/") {
 		// Add slash for root of domain.

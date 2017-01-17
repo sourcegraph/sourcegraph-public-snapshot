@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"go/build"
-	"net/http"
 	"net/url"
 	"path"
 	"runtime"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -62,19 +62,12 @@ type depCache struct {
 	seenMu            sync.Mutex
 	seen              map[string][]importRecord
 	entryPackageDirs  []string
-
-	// Cache for fetching Go meta tag results.
-	fetchMetaCacheImportMu *keyMutex
-	fetchMetaCacheMu       sync.RWMutex
-	fetchMetaCache         map[string]fetchMetaResult
 }
 
 func newDepCache() *depCache {
 	return &depCache{
 		importCache: map[importKey]importResult{},
 		seen:        map[string][]importRecord{},
-		fetchMetaCacheImportMu: newKeyMutex(),
-		fetchMetaCache:         map[string]fetchMetaResult{},
 	}
 }
 
@@ -216,7 +209,7 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 
 	// Otherwise, it's an external dependency. Fetch the package
 	// and try again.
-	d, err := resolveImportPath(http.DefaultClient, path, dc)
+	d, err := resolveImportPath(httputil.CachingClient, path)
 	if err != nil {
 		return nil, err
 	}
