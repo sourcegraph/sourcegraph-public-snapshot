@@ -14,7 +14,9 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -160,10 +162,19 @@ func referencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 }
 
 func symbolsTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, query string, want []string) {
+	wg := sync.WaitGroup{}
+	for i := 0; i < len(query)-1; i++ {
+		wg.Add(1)
+		go func(q string) {
+			_, _ = callSymbols(ctx, c, q)
+		}(query[:i])
+		time.Sleep(time.Millisecond * 10)
+	}
 	symbols, err := callSymbols(ctx, c, query)
 	if err != nil {
 		t.Fatal(err)
 	}
+	wg.Wait()
 	for i := range symbols {
 		symbols[i] = strings.TrimPrefix(symbols[i], "file:///")
 	}
