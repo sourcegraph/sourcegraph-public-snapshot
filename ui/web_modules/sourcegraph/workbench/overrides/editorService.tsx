@@ -7,9 +7,15 @@ import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorServi
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 	private _emitter: Emitter<URI> = new Emitter<URI>();
 
-	public openEditor(data: any, options: any, position?: any): TPromise<IEditor> {
+	public openEditor(data: any, options: any): TPromise<IEditor> {
 		this._emitter.fire(data.resource);
-		return super.openEditor(data, options, position);
+
+		// calling openEditor with a non-zero position, or options equal to
+		// true opens up another editor to the side.
+		if (typeof options === "boolean") {
+			options = false;
+		}
+		return super.openEditor(data, options, 0);
 	}
 
 	public onDidOpenEditor: Event<URI> = this._emitter.event;
