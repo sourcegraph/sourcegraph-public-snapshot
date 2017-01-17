@@ -1,6 +1,7 @@
 const webpack = require("webpack");
 const autoprefixer = require("autoprefixer");
 const url = require("url");
+const path = require("path");
 const UnusedFilesWebpackPlugin = require("unused-files-webpack-plugin").UnusedFilesWebpackPlugin;
 const ProgressBarPlugin = require("progress-bar-webpack-plugin");
 
@@ -93,10 +94,10 @@ module.exports = {
 	],
 	resolve: {
 		modules: [
-			`${__dirname}/web_modules`,
+			path.resolve(__dirname, 'web_modules'),
 			"node_modules",
-			`${__dirname}/vendor/node_modules/vscode/src`,
-			`${__dirname}/vendor/node_modules`,
+			path.resolve(__dirname, 'vendor/node_modules/vscode/src'),
+			path.resolve(__dirname, 'vendor/node_modules'),
 		],
 		symlinks: false,
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
@@ -117,7 +118,7 @@ module.exports = {
 	},
 	devtool: devtool,
 	output: {
-		path: `${__dirname}/assets`,
+		path: path.resolve(__dirname, 'assets'),
 		filename: production ? "[name].[hash].js" : "[name].js",
 		chunkFilename: "c-[chunkhash].js",
 	},
@@ -136,10 +137,10 @@ module.exports = {
 			{test: /\.(svg|png)$/, loader: "url-loader"},
 			{test: /\.(woff|eot|ttf)$/, loader: "url-loader?name=fonts/[name].[ext]"},
 			{test: /\.json$/, loader: "json-loader"},
-			{test: /\.css$/, include: `${__dirname}/vendor/node_modules/vscode`, loader: "style-loader!css-loader"}, // TODO(sqs): add ?sourceMap
+			{test: /\.css$/, include: path.resolve(__dirname, 'vendor/node_modules/vscode'), loader: "style-loader!css-loader"}, // TODO(sqs): add ?sourceMap
 			{
 				test: /\.css$/,
-				exclude: `${__dirname}/vendor/node_modules/vscode`,
+				exclude: path.resolve(__dirname, 'vendor/node_modules/vscode'),
 				use: [
 					'style-loader',
 					{
@@ -164,7 +165,7 @@ module.exports = {
 		hints: false,
 	},
 	devServer: {
-		contentBase: `${__dirname}/assets`,
+		contentBase: path.resolve(__dirname, 'assets'),
 		host: devServerAddr.hostname,
 		public: `${publicURL.hostname}:${publicURL.port}`,
 		port: parseInt(devServerAddr.port),
