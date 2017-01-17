@@ -4,7 +4,6 @@ import * as Relay from "react-relay";
 import { Route } from "react-router";
 
 import { RouteParams, Router, RouterLocation, getBlobPropsFromRouter, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
-import { EditorController } from "sourcegraph/blob/EditorController";
 import "sourcegraph/blob/styles/Monaco.css";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
@@ -12,8 +11,6 @@ import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
-import { Features } from "sourcegraph/util/features";
-import { FileTree } from "sourcegraph/workbench/fileTree";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
 interface Props {
@@ -43,31 +40,6 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 	render(): JSX.Element | null {
 		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
 			return null;
-		}
-		const files = this.props.root.repository.commit.commit.tree.files;
-		if (!Features.workbench.isEnabled()) {
-			return <div style={{
-				display: "flex",
-				flexDirection: "column",
-				flex: "auto",
-				width: "100%",
-			}}>
-				<ChromeExtensionToast location={this.props.location} />
-				<div style={{
-					display: "flex",
-					flexDirection: "row",
-					flex: "auto",
-					width: "100%",
-				}}>
-					<FileTree
-						files={files}
-						repo={this.props.repo}
-						rev={this.props.rev}
-						path={this.props.path} />
-					<EditorController {...this.props} />
-				</div>
-			</div>;
-
 		}
 		return <div style={{ display: "flex", height: "100%" }}>
 			<RepoMain {...this.props} repository={this.props.root.repository} commit={this.props.root.repository.commit}>

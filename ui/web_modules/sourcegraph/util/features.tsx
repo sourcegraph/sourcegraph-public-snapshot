@@ -48,7 +48,6 @@ export const Features = {
 	langPython: new Feature("lang-python"),
 	langJava: new Feature("lang-java"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
-	workbench: new Feature("vscode-workbench"),
 
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),
