@@ -67,6 +67,7 @@ export class WorkbenchShell extends React.Component<{}, {}> {
 	}
 
 	render(): JSX.Element {
+		this.layout();
 		return <div className="vs-dark" style={{
 			height: "100%",
 			flex: "1 1 100%",

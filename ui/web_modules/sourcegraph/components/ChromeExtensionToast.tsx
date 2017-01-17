@@ -18,7 +18,6 @@ interface State {
 
 interface Props {
 	location: Location;
-	layoutChanged: () => void;
 }
 
 export class ChromeExtensionToast extends React.Component<Props, State>  {
@@ -41,14 +40,6 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 		if (this.state.isVisible) {
 			EventLogger.logViewEvent("ViewChromeExtensionToast", this.props.location.pathname, { toastCopy: ToastTitle });
 		}
-	}
-
-	componentWillUnmount(): void {
-		// setTimeout is necessary so we can wait for the page to redraw before
-		// we ask VSCode to redraw itself according to the new dimensions.
-		setTimeout(() => {
-			this.props.layoutChanged();
-		}, 30);
 	}
 
 	render(): JSX.Element | null {

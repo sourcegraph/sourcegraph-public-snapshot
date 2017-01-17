@@ -36,13 +36,6 @@ export interface Props {
 // way we use it, read README.vscode.md.
 @autobind
 class WorkbenchComponent extends React.Component<Props, {}> {
-	private workbenchComponent: WorkbenchShell;
-
-	private layout(): void {
-		if (this.workbenchComponent) {
-			this.workbenchComponent.layout();
-		}
-	}
 
 	render(): JSX.Element | null {
 		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
@@ -56,7 +49,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 				flex: "auto",
 				width: "100%",
 			}}>
-				<ChromeExtensionToast location={this.props.location} layoutChanged={() => {/* */ } } />
+				<ChromeExtensionToast location={this.props.location} />
 				<div style={{
 					display: "flex",
 					flexDirection: "row",
@@ -77,8 +70,8 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			<RepoMain {...this.props} repository={this.props.root.repository} commit={this.props.root.repository.commit}>
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 				<OnboardingModals location={this.props.location} />
-				<ChromeExtensionToast location={this.props.location} layoutChanged={this.layout} />
-				<WorkbenchShell ref={(WorkbenchComponent) => this.workbenchComponent = WorkbenchComponent} />
+				<ChromeExtensionToast location={this.props.location} />
+				<WorkbenchShell />
 			</RepoMain>
 		</div>;
 	}
