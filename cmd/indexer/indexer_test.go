@@ -5,24 +5,24 @@ import "github.com/prometheus/client_golang/prometheus"
 
 func TestQueue(t *testing.T) {
 	enqueue, dequeue := queueWithoutDuplicates(prometheus.NewGauge(prometheus.GaugeOpts{}))
-	doDequeue := func() indexTask {
-		c := make(chan indexTask)
+	doDequeue := func() string {
+		c := make(chan string)
 		dequeue <- c
 		return <-c
 	}
 
-	enqueue <- indexTask{repo: "foo"}
-	enqueue <- indexTask{repo: "bar"}
-	enqueue <- indexTask{repo: "foo"}
-	enqueue <- indexTask{repo: "baz"}
+	enqueue <- "foo"
+	enqueue <- "bar"
+	enqueue <- "foo"
+	enqueue <- "baz"
 
-	if doDequeue() != (indexTask{repo: "foo"}) {
+	if doDequeue() != "foo" {
 		t.Fail()
 	}
-	if doDequeue() != (indexTask{repo: "bar"}) {
+	if doDequeue() != "bar" {
 		t.Fail()
 	}
-	if doDequeue() != (indexTask{repo: "baz"}) {
+	if doDequeue() != "baz" {
 		t.Fail()
 	}
 }
