@@ -54,7 +54,7 @@ type BuildHandler struct {
 
 	mu                    sync.Mutex
 	fetchAndSendDepsOnces map[string]*sync.Once // key is file URI
-	depURLMus             map[string]*sync.Mutex
+	depURLMutex           *keyMutex
 	gopathDeps            []*directory
 	pinnedDepsOnce        sync.Once
 	pinnedDeps            pinnedPkgs
@@ -78,21 +78,6 @@ func (h *BuildHandler) fetchAndSendDepsOnce(fileURI string) *sync.Once {
 		h.fetchAndSendDepsOnces[fileURI] = once
 	}
 	return once
-}
-
-// Used to prevent concurrent fetches of a dependency
-func (h *BuildHandler) depURLMu(path string) *sync.Mutex {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.depURLMus == nil {
-		h.depURLMus = make(map[string]*sync.Mutex)
-	}
-	mu, ok := h.depURLMus[path]
-	if !ok {
-		mu = new(sync.Mutex)
-		h.depURLMus[path] = mu
-	}
-	return mu
 }
 
 const (
@@ -124,7 +109,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	}
 	h.init = init
 	h.fetchAndSendDepsOnces = nil
-	h.depURLMus = nil
+	h.depURLMutex = newKeyMutex()
 	h.gopathDeps = nil
 	h.pinnedDepsOnce = sync.Once{}
 	h.pinnedDeps = nil
@@ -424,6 +409,15 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				dirs := dirsHint.([]interface{})
 				for i, dir := range dirs {
 					dirs[i] = rewriteURIFromClient(dir.(string))
+				}
+
+				// Arbitrarily chosen limit on the number of directories that
+				// may be searched by workspace/xreferences. Large repositories
+				// like kubernetes would simply take too long (>15s) to fetch
+				// their dependencies and typecheck them otherwise. This number
+				// was chosen as a 'sweet-spot' based on kubernetes solely.
+				if len(dirs) > 15 {
+					dirs = dirs[:15]
 				}
 				dirsHint = dirs
 				p.Hints["dirs"] = dirs

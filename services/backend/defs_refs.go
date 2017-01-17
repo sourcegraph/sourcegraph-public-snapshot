@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"path"
 	"sort"
-	"sync"
+	"time"
 
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -222,18 +222,49 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 	// once we have a language server that uses it.
 	location := locations[0]
 
+	const (
+		// Fetch up to 20 dependency references from the DB.
+		depRefsLimit = 20
+
+		// Up to 4 parallel workspace/xreferences requests at a time.
+		//
+		// It is important that multiple requests run in parallel here, because
+		// some requests may hit large repositories (like kubernetes) which take
+		// significantly longer to get results from.
+		parallelWorkspaceRefs = 4
+
+		// If we find minWorkspaceRefs and the xreferences requests aggregation
+		// overall is observed to have taken longer than idealMaxAggregationTime,
+		// we will return directly in order for the user to see (less) results
+		// sooner.
+		minWorkspaceRefs        = 2
+		idealMaxAggregationTime = 2 * time.Second
+
+		// Regardless of whether or not results are found, timeout after this
+		// time period of waiting for results to aggregated.
+		aggregationTimeout = 10 * time.Second
+	)
+
 	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
 		Language: op.Language,
 		DepData:  subSelector(location.Symbol),
+		Limit:    depRefsLimit,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(slimsag): handle pagination here when it is important to us
-	var mu sync.RWMutex
-	allRefs := &sourcegraph.RefLocations{}
-	run := parallel.NewRun(8)
+	// Now that we've gotten a list of potential repositories from the database
+	// we must ask a language server for references via workspace/xreferences.
+	//
+	// TODO(slimsag): handle pagination here when it is important to us.
+	var (
+		xreferencesStart                  = time.Now()
+		results                           = make(chan []lspext.ReferenceInformation, parallelWorkspaceRefs)
+		run                               = parallel.NewRun(parallelWorkspaceRefs)
+		xreferencesCtx, xreferencesCancel = context.WithCancel(ctx)
+	)
+	defer xreferencesCancel()
 	for _, ref := range depRefs {
 		ref := ref
 		// If the dependency reference is the repository we're searching in,
@@ -245,13 +276,23 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 		}
 
 		run.Acquire()
-		go func() {
-			defer run.Release()
+		go func() (err error) {
+			ctx := xreferencesCtx
+			var refs []lspext.ReferenceInformation
+
+			defer func() {
+				run.Release()
+				if err != nil {
+					// Flag the span as an error for metrics purposes.
+					ext.Error.Set(span, true)
+					span.SetTag("err", err)
+				}
+				results <- refs
+			}()
 
 			repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: ref.RepoID})
 			if err != nil {
-				run.Error(errors.Wrap(err, "Repos.Get"))
-				return
+				return errors.Wrap(err, "Repos.Get")
 			}
 			vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
 			span.LogEventWithPayload("xdependency", repo.URI)
@@ -259,25 +300,40 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 			// Determine the rootPath.
 			rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: repo.DefaultBranch})
 			if err != nil {
-				run.Error(errors.Wrap(err, "Repos.ResolveRev"))
-				return
+				return errors.Wrap(err, "Repos.ResolveRev")
 			}
 			rootPath := vcs + "://" + repo.URI + "?" + rev.CommitID
 
-			var refs []lspext.ReferenceInformation
-			err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, "workspace/xreferences", lspext.WorkspaceReferencesParams{Query: location.Symbol, Hints: ref.Hints}, &refs)
+			err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, "workspace/xreferences", lspext.WorkspaceReferencesParams{
+				Query: location.Symbol,
+				Hints: ref.Hints,
+			}, &refs)
 			if err != nil {
-				run.Error(errors.Wrap(err, "LSP Call workspace/xreferences"))
-				return
+				return errors.Wrap(err, "LSP Call workspace/xreferences")
 			}
 			span.LogEventWithPayload("xreferences for "+repo.URI, len(refs))
-			mu.Lock()
-			defer mu.Unlock()
+			return nil
+		}()
+	}
+
+	allRefs := &sourcegraph.RefLocations{}
+	timeout := time.After(aggregationTimeout)
+aggregation:
+	for range depRefs {
+		select {
+		case <-timeout:
+			span.LogEvent("timed out waiting for results to aggregate")
+			span.SetTag("timeout", true)
+			return nil, errors.New("timed out waiting for workspace/xreferences")
+
+		case refs := <-results:
 			for _, ref := range refs {
 				refURI, err := url.Parse(ref.Reference.URI)
 				if err != nil {
-					run.Error(errors.Wrap(err, "parsing workspace/xreferences Reference URI"))
-					return
+					// Flag the span as an error for metrics purposes.
+					ext.Error.Set(span, true)
+					span.SetTag("err", errors.Wrap(err, "parsing workspace/xreferences Reference URI"))
+					continue aggregation
 				}
 
 				allRefs.Locations = append(allRefs.Locations, &sourcegraph.RefLocation{
@@ -292,15 +348,13 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 					EndChar:   ref.Reference.Range.End.Character,
 				})
 			}
-		}()
-	}
-	if err := run.Wait(); err != nil {
-		// Flag the span as an error for metrics purposes, but still return
-		// results if we have any.
-		ext.Error.Set(span, true)
-		span.SetTag("err", err.Error())
-		if len(allRefs.Locations) == 0 {
-			return nil, err
+			if len(allRefs.Locations) > minWorkspaceRefs && time.Since(xreferencesStart) > idealMaxAggregationTime {
+				span.LogEvent(fmt.Sprintf("%v refs meets minWorkspaceRefs=%v AND idealMaxAggregationTime=%v met; returning results early", len(allRefs.Locations), minWorkspaceRefs, idealMaxAggregationTime))
+				span.SetTag("earlyExit", true)
+				xreferencesCancel()
+				break aggregation
+			}
+			span.LogEvent(fmt.Sprintf("got %v refs (new total: %v)", len(refs), len(allRefs.Locations)))
 		}
 	}
 
@@ -310,6 +364,7 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 	for _, l := range allRefs.Locations {
 		span.LogEvent(fmt.Sprintf("result %s://%s%s?%s#%s:%d:%d-%d:%d\n", l.Scheme, l.Host, l.Path, l.Version, l.File, l.StartLine, l.StartChar, l.EndLine, l.EndChar))
 	}
+	span.SetTag("referencesFound", len(allRefs.Locations))
 	return allRefs, nil
 }
 
