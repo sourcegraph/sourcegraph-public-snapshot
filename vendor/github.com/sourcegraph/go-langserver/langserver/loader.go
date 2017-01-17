@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
@@ -180,9 +181,10 @@ type typecheckKey struct {
 }
 
 type typecheckResult struct {
-	fset *token.FileSet
-	prog *loader.Program
-	err  error
+	ready chan struct{} // closed to broadcast readiness
+	fset  *token.FileSet
+	prog  *loader.Program
+	err   error
 }
 
 func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, bpkg *build.Package) (*token.FileSet, *loader.Program, diagnostics, error) {
@@ -194,19 +196,28 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 	ctx = opentracing.ContextWithSpan(ctx, span)
 	defer span.Finish()
 
-	var diags diagnostics
-	r := h.typecheckCache.Get(typecheckKey{bpkg.ImportPath, bpkg.Dir, bpkg.Name}, func() interface{} {
-		res := &typecheckResult{
-			fset: token.NewFileSet(),
-		}
-		res.prog, diags, res.err = typecheck(ctx, res.fset, bctx, bpkg, h.getFindPackageFunc())
-		return res
-	})
-	if r == nil {
-		// This can happen if we panic
-		return nil, nil, diags, nil
+	k := typecheckKey{bpkg.ImportPath, bpkg.Dir, bpkg.Name}
+
+	h.mu.Lock()
+	res, ok := h.cache[k]
+	if !ok {
+		res = &typecheckResult{ready: make(chan struct{})}
+		h.cache[k] = res
+		defer close(res.ready)
 	}
-	res := r.(*typecheckResult)
+	h.mu.Unlock()
+
+	span.SetTag("cached", ok)
+	var diags diagnostics
+	if ok {
+		// cache hit, but wait until ready
+		typecheckCacheTotal.WithLabelValues("hit").Inc()
+		<-res.ready
+	} else {
+		typecheckCacheTotal.WithLabelValues("miss").Inc()
+		res.fset = token.NewFileSet()
+		res.prog, diags, res.err = typecheck(ctx, res.fset, bctx, bpkg, h.getFindPackageFunc())
+	}
 	return res.fset, res.prog, diags, res.err
 }
 
@@ -300,4 +311,15 @@ func clearInfoFields(info *loader.PackageInfo) {
 func isMultiplePackageError(err error) bool {
 	_, ok := err.(*build.MultiplePackageError)
 	return ok
+}
+
+var typecheckCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "golangserver",
+	Subsystem: "typecheck",
+	Name:      "cache_request_total",
+	Help:      "Count of requests to cache.",
+}, []string{"type"})
+
+func init() {
+	prometheus.MustRegister(typecheckCacheTotal)
 }
