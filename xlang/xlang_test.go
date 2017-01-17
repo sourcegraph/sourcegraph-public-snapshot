@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,6 +23,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
+
+var update = flag.Bool("update", false, "update golden files on disk")
 
 // lspTests runs all test suites for LSP functionality.
 func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string, wantXReferences map[*lsext.WorkspaceReferencesParams][]string) {
@@ -182,6 +185,11 @@ func jsonTest(t testing.TB, gotData interface{}, testName string) {
 		return
 	}
 	if strings.TrimSpace(string(got)) != strings.TrimSpace(string(want)) {
+		if *update {
+			t.Logf("updating %s", wantFile)
+			ioutil.WriteFile(wantFile, got, 0777)
+			return
+		}
 		gotFile := filepath.Join("testdata", "got-"+testName)
 		ioutil.WriteFile(gotFile, got, 0777)
 

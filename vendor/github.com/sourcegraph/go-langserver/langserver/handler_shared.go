@@ -35,6 +35,14 @@ func defaultFindPackageFunc(ctx context.Context, bctx *build.Context, importPath
 	return bctx.Import(importPath, fromDir, mode)
 }
 
+// getFindPackageFunc is a helper which returns h.FindPackage if non-nil, otherwise defaultFindPackageFunc
+func (h *HandlerShared) getFindPackageFunc() FindPackageFunc {
+	if h.FindPackage != nil {
+		return h.FindPackage
+	}
+	return defaultFindPackageFunc
+}
+
 func (h *HandlerShared) Reset(overlayRootURI string, useOSFS bool) error {
 	h.Mu.Lock()
 	defer h.Mu.Unlock()

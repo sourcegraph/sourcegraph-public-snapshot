@@ -27,6 +27,19 @@
   },
   {
     "attributes": {
+      "absolute": "context",
+      "depth": 0,
+      "package": "context",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
       "absolute": "errors",
       "depth": 0,
       "package": "errors",
@@ -43,19 +56,6 @@
       "absolute": "fmt",
       "depth": 0,
       "package": "fmt",
-      "vendor": false
-    },
-    "hints": {
-      "dirs": [
-        "file:///"
-      ]
-    }
-  },
-  {
-    "attributes": {
-      "absolute": "github.com/gorilla/context",
-      "depth": 0,
-      "package": "github.com/gorilla/context",
       "vendor": false
     },
     "hints": {
@@ -160,6 +160,19 @@
       "absolute": "testing",
       "depth": 0,
       "package": "testing",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "time",
+      "depth": 0,
+      "package": "time",
       "vendor": false
     },
     "hints": {

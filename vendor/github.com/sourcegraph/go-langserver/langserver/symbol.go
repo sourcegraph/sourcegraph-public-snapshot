@@ -275,7 +275,7 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 	{
 		fs := token.NewFileSet()
 		rootPath := h.FilePath(h.init.RootPath)
-		bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
+		bctx := h.BuildContext(ctx)
 
 		par := parallel.NewRun(8)
 		for _, pkg := range listPkgsUnderDir(bctx, rootPath) {
@@ -313,7 +313,7 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 						return
 					}
 				}()
-				h.collectFromPkg(bctx, fs, pkg, rootPath, &results)
+				h.collectFromPkg(ctx, bctx, fs, pkg, rootPath, &results)
 			}(pkg)
 		}
 		_ = par.Wait()
@@ -353,10 +353,11 @@ func (h *LangHandler) setPkgSyms(pkg string, syms []lsp.SymbolInformation) {
 // collectFromPkg collects all the symbols from the specified package
 // into the results. It uses LangHandler's package symbol cache to
 // speed up repeated calls.
-func (h *LangHandler) collectFromPkg(bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
+func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
 	pkgSyms := h.getPkgSyms(pkg)
 	if pkgSyms == nil {
-		buildPkg, err := bctx.Import(pkg, rootPath, 0)
+		findPackage := h.getFindPackageFunc()
+		buildPkg, err := findPackage(ctx, bctx, pkg, rootPath, 0)
 		if err != nil {
 			maybeLogImportError(pkg, err)
 			return

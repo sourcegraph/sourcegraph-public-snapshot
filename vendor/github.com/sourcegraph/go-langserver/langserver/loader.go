@@ -41,7 +41,7 @@ func (h *LangHandler) typecheck(ctx context.Context, conn JSONRPC2Conn, fileURI 
 		return nil, nil, nil, nil, nil, fmt.Errorf("invalid position: %s:%d:%d (%s)", filename, position.Line, position.Character, why)
 	}
 
-	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
+	bctx := h.BuildContext(ctx)
 
 	bpkg, err := ContainingPackage(bctx, filename)
 	if mpErr, ok := err.(*build.MultiplePackageError); ok {
@@ -216,17 +216,13 @@ func (h *LangHandler) cachedTypecheck(ctx context.Context, bctx *build.Context, 
 	} else {
 		typecheckCacheTotal.WithLabelValues("miss").Inc()
 		res.fset = token.NewFileSet()
-		res.prog, diags, res.err = typecheck(ctx, res.fset, bctx, bpkg, h.FindPackage)
+		res.prog, diags, res.err = typecheck(ctx, res.fset, bctx, bpkg, h.getFindPackageFunc())
 	}
 	return res.fset, res.prog, diags, res.err
 }
 
 // TODO(sqs): allow typechecking just a specific file not in a package, too
 func typecheck(ctx context.Context, fset *token.FileSet, bctx *build.Context, bpkg *build.Package, findPackage FindPackageFunc) (*loader.Program, diagnostics, error) {
-	if findPackage == nil {
-		findPackage = defaultFindPackageFunc
-	}
-
 	var typeErrs []error
 	conf := loader.Config{
 		Fset: fset,

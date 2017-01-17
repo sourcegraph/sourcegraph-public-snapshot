@@ -29,7 +29,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 	// moderately sized repository more bearable (right now these are really bad).
 
 	rootPath := h.FilePath(h.init.RootPath)
-	bctx := h.OverlayBuildContext(ctx, h.defaultBuildContext(), !h.init.NoOSFileSystemAccess)
+	bctx := h.BuildContext(ctx)
 
 	var parallelism int
 	if envWorkspaceReferenceParallelism != "" {
@@ -47,14 +47,15 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 
 	// Perform typechecking.
 	var (
-		fset = token.NewFileSet()
-		pkgs []string
+		findPackage = h.getFindPackageFunc()
+		fset        = token.NewFileSet()
+		pkgs        []string
 	)
 	for _, pkg := range listPkgsUnderDir(bctx, rootPath) {
 		// Ignore any vendor package so we can avoid scanning it for dependency
 		// references, per the workspace/reference spec. This saves us a
 		// considerable amount of work.
-		bpkg, err := bctx.Import(pkg, rootPath, build.FindOnly)
+		bpkg, err := findPackage(ctx, bctx, pkg, rootPath, build.FindOnly)
 		if err != nil && !isMultiplePackageError(err) {
 			log.Printf("skipping possible package %s: %s", pkg, err)
 			continue
@@ -131,6 +132,7 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 	}()
 
 	// Configure the loader.
+	findPackage := h.getFindPackageFunc()
 	var typeErrs []error
 	conf := loader.Config{
 		Fset: fset,
@@ -149,7 +151,7 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 			// MultipleGoErrors. This occurs, e.g., when you have a
 			// main.go with "// +build ignore" that imports the
 			// non-main package in the same dir.
-			bpkg, err := bctx.Import(importPath, fromDir, mode)
+			bpkg, err := findPackage(ctx, bctx, importPath, fromDir, mode)
 			if err != nil && !isMultiplePackageError(err) {
 				return bpkg, err
 			}
@@ -195,6 +197,7 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 	span.SetTag("pkg", pkg)
 
 	// Compute workspace references.
+	findPackage := h.getFindPackageFunc()
 	cfg := &refs.Config{
 		FileSet:  fs,
 		Pkg:      pkg.Pkg,
@@ -202,7 +205,7 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 		Info:     &pkg.Info,
 	}
 	refsErr := cfg.Refs(func(r *refs.Ref) {
-		symDesc, err := defSymbolDescriptor(bctx, rootPath, r.Def)
+		symDesc, err := defSymbolDescriptor(ctx, bctx, rootPath, r.Def, findPackage)
 		if err != nil {
 			// Log the error, and flag it as one in the trace -- but do not
 			// halt execution (hopefully, it is limited to a small subset of
@@ -233,8 +236,8 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 	return nil
 }
 
-func defSymbolDescriptor(bctx *build.Context, rootPath string, def refs.Def) (lspext.SymbolDescriptor, error) {
-	defPkg, err := bctx.Import(def.ImportPath, rootPath, build.FindOnly)
+func defSymbolDescriptor(ctx context.Context, bctx *build.Context, rootPath string, def refs.Def, findPackage FindPackageFunc) (lspext.SymbolDescriptor, error) {
+	defPkg, err := findPackage(ctx, bctx, def.ImportPath, rootPath, build.FindOnly)
 	if err != nil {
 		return nil, err
 	}

@@ -412,24 +412,6 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			return nil, nil
 		}
 
-		// All our textDocument methods fetch dependencies just in
-		// time, except documentSymbol.
-		shouldFetchDeps := true
-		if strings.HasPrefix(req.Method, "textDocument/") && req.Method != "textDocument/documentSymbol" {
-			shouldFetchDeps = false
-		}
-
-		// Fetch transitive dependencies for the named files, if this
-		// is a language analysis request.
-		if shouldFetchDeps {
-			for _, uri := range urisInRequest {
-				h.fetchAndSendDepsOnce(uri).Do(func() {
-					if err := h.fetchTransitiveDepsOfFile(ctx, uri, newDepCache()); err != nil {
-						log.Printf("Warning: fetching deps for Go file %q: %s.", uri, err)
-					}
-				})
-			}
-		}
 		if req.Method == "workspace/xreferences" {
 			// Parse the parameters and if a dirs hint is present, rewrite the
 			// URIs.
@@ -450,35 +432,6 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 					return nil, err
 				}
 				req.Params = (*json.RawMessage)(&b)
-			}
-
-			// Fetch transitive dependencies for either a specific directory
-			// (the dir hint) OR every Go package in the repository.
-			w := ctxvfs.Walk(ctx, h.RootFSPath, h.FS)
-			for w.Step() {
-				if path.Ext(w.Path()) != ".go" {
-					continue
-				}
-				d := path.Dir(w.Path())
-				if haveDirsHint {
-					// We have a dirs hint, ensure the directory we would fetch
-					// matches one of the directories.
-					found := false
-					for _, dir := range dirsHint.([]interface{}) {
-						if "file://"+d == dir.(string) {
-							found = true
-							break
-						}
-					}
-					if !found {
-						continue
-					}
-				}
-				h.fetchAndSendDepsOnce(d).Do(func() {
-					if err := h.fetchTransitiveDepsOfFile(ctx, d, newDepCache()); err != nil {
-						log.Printf("Warning: fetching deps for dir %s: %s.", d, err)
-					}
-				})
 			}
 		}
 

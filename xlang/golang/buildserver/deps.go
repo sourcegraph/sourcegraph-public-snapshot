@@ -70,14 +70,7 @@ func (h *BuildHandler) fetchTransitiveDepsOfFile(ctx context.Context, fileURI st
 		span.Finish()
 	}()
 
-	bctx := h.OverlayBuildContext(ctx, &build.Context{
-		GOOS:     goos,
-		GOARCH:   goarch,
-		GOPATH:   gopath,
-		GOROOT:   goroot,
-		Compiler: gocompiler,
-	}, false)
-
+	bctx := h.lang.BuildContext(ctx)
 	bpkg, err := langserver.ContainingPackage(bctx, h.FilePath(fileURI))
 	if err != nil && !isMultiplePackageError(err) {
 		return err
