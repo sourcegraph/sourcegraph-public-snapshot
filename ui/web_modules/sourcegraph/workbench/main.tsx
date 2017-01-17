@@ -16,13 +16,15 @@ import { ServiceCollection } from "vs/platform/instantiation/common/serviceColle
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { registerEditorCallbacks } from "sourcegraph/editor/config";
-import { configurePostStartup } from "sourcegraph/workbench/config";
+import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
 
 // init creates the editor interface.
 export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
 	const workspace = resource.with({ fragment: "" });
-	const services = setupServices(domElement, workspace);
+	const services = setupServices(domElement);
+	configurePreStartup(services, workspace);
+
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 
 	const parent = domElement.parentElement;
