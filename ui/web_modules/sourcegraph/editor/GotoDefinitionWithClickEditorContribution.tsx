@@ -18,7 +18,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	constructor(
 		private editor: ICodeEditor,
 	) {
-		this.editor = editor;
 		this.toUnhook.push(this.editor.onMouseUp((e: IEditorMouseEvent) => this.onEditorMouseUp(e)));
 	}
 

@@ -750,3 +750,19 @@ index 648c36a37..87e0edf71 100644
  }
  
  interface IMessage {
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/contextmenu/browser/contextmenu.ts b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/contextmenu/browser/contextmenu.ts
+index a356d54f7..70868ff35 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/contextmenu/browser/contextmenu.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/contextmenu/browser/contextmenu.ts
+@@ -173,11 +173,6 @@ export class ContextMenuController implements IEditorContribution {
+ 			},
+ 
+ 			getActionItem: (action) => {
+-				var keybinding = this._keybindingFor(action);
+-				if (keybinding) {
+-					return new ActionItem(action, action, { label: true, keybinding: this._keybindingService.getLabelFor(keybinding) });
+-				}
+-
+ 				var customActionItem = <any>action;
+ 				if (typeof customActionItem.getActionItem === 'function') {
+ 					return customActionItem.getActionItem();
