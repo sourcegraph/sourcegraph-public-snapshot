@@ -264,6 +264,7 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 		run                               = parallel.NewRun(parallelWorkspaceRefs)
 		xreferencesCtx, xreferencesCancel = context.WithCancel(ctx)
 	)
+	defer xreferencesCancel()
 	for _, ref := range depRefs {
 		ref := ref
 		// If the dependency reference is the repository we're searching in,
