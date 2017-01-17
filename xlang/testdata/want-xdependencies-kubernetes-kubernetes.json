@@ -1018,7 +1018,6 @@
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/pborman/uuid",
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/spf13/pflag",
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/ugorji/go/codec",
-        "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/context",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2/hpack",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/idna",
@@ -2150,7 +2149,6 @@
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/pborman/uuid",
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/spf13/pflag",
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/ugorji/go/codec",
-        "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/context",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2/hpack",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/oauth2",
@@ -7791,7 +7789,6 @@
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/pborman/uuid",
         "file:///staging/src/k8s.io/client-go/_vendor/github.com/ugorji/go/codec",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/crypto/ssh/terminal",
-        "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/context",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2/hpack",
         "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/oauth2",
@@ -15043,6 +15040,20 @@
   },
   {
     "attributes": {
+      "absolute": "context",
+      "depth": 0,
+      "package": "context",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/context",
+        "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2"
+      ]
+    }
+  },
+  {
+    "attributes": {
       "absolute": "k8s.io/kubernetes/vendor/golang.org/x/net/http2/hpack",
       "depth": 0,
       "package": "golang.org/x/net/http2/hpack",
@@ -15060,6 +15071,19 @@
       "depth": 0,
       "package": "golang.org/x/net/lex/httplex",
       "vendor": true
+    },
+    "hints": {
+      "dirs": [
+        "file:///staging/src/k8s.io/client-go/_vendor/golang.org/x/net/http2"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "net/http/httptrace",
+      "depth": 0,
+      "package": "net/http/httptrace",
+      "vendor": false
     },
     "hints": {
       "dirs": [

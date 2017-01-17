@@ -14,6 +14,19 @@
   },
   {
     "attributes": {
+      "absolute": "context",
+      "depth": 0,
+      "package": "context",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
       "absolute": "crypto/rand",
       "depth": 0,
       "package": "crypto/rand",
@@ -56,19 +69,6 @@
       "absolute": "fmt",
       "depth": 0,
       "package": "fmt",
-      "vendor": false
-    },
-    "hints": {
-      "dirs": [
-        "file:///"
-      ]
-    }
-  },
-  {
-    "attributes": {
-      "absolute": "github.com/gorilla/context",
-      "depth": 0,
-      "package": "github.com/gorilla/context",
       "vendor": false
     },
     "hints": {
