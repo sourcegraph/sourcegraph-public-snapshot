@@ -41,7 +41,6 @@ func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI
 	}
 	for pos, want := range wantXDefinition {
 		tbRun(t, fmt.Sprintf("xdefinition-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
-			t.Skipf("xdefinition tests disabled due to unstable output")
 			xdefinitionTest(t, ctx, c, root, pos, want)
 		})
 	}
