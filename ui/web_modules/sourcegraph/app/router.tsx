@@ -1,136 +1,175 @@
+import { Location as HistoryLocation } from "history";
 import { InjectedRouter, RouterState } from "react-router";
-import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
-import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
+
 import { IRange } from "vs/editor/common/editorCommon";
 
-export type Router = InjectedRouter & RouterState;
+import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
+import { repoPath, repoRev } from "sourcegraph/repo";
 
-// Global singleton instance of React Router; should be initialized via setRouter()
-// during the application bootstrap.
-export let router: Router;
-export function setRouter(r: Router): void {
-	router = r;
+export type RouterLocation = Location & HistoryLocation;
+export type Router = InjectedRouter & RouterState & { params: RouteParams, location: RouterLocation };
+
+/**
+ * React components may use RouterContext as the type of context received w/
+ * the following declaration:
+ *
+ *     static contextTypes: React.ValidationMap<any> = {
+ *         router: React.PropTypes.object.isRequired,
+ *     };
+ *
+ *     context: RouterContext;
+ */
+export interface RouterContext {
+	router: Router;
 }
 
-// Listeners may subscribe to Router (i.e. URL) changes.
-// This should *only* be used for components that must
-// exist outside of the main application component hierarchy.
-// The only such components are those embedded beneath the
-// VS Code Workbench layer (<WorkbenchShell>).
-type Listener = (router: Router) => void;
+type Splat = string | string[];
 
-let listenerId = 0;
-const listenerMap = new Map<number, Listener>();
-
-export function addRouterListener(listener: Listener): number {
-	listenerId += 1;
-	listenerMap.set(listenerId, listener);
-	return listenerId;
+/**
+ * RouteParams includes the matched wildcard (*) arguments from a route pattern.
+ */
+export interface RouteParams {
+	// splat is the matched wildcard character(s) of the route's pattern
+	// e.g. "*/-/*" matched on "hello/-/world" will produce ["hello", "world"]
+	splat: Splat;
 }
 
-export function removeRouterListener(id: number): boolean {
-	return listenerMap.delete(id);
-}
+let r: Router; // global singleton, use with care
 
-export function routerUpdated(): void {
-	listenerMap.forEach((listener) => listener(router));
-}
-
-// routerSplat extract the "splat" argument from React's router, if defined.
-// It is an array with an entry matching each of the "*" globs of the
-// matched router pattern.
-function routerSplat(): string[] | undefined {
-	if (router.params) {
-		return router.params["splat"] as any; // TODO(john): the declaration files lie, sigh
+/**
+ * Global singleton instance of React Router, set by the application root.
+ *
+ * To receive an injected router in the rest of the React application, use the explicit
+ * React contextTypes syntax.
+ */
+export function setRouter(router: Router): void {
+	if (r) {
+		throw new Error("illegal invocation to setRouter when router has already been defined");
 	}
+	r = router;
 }
 
-// repoFromSplat returns the repo URI from the "splat" argument, if defined.
-// Assumes repoRev is the first arugment of the splat according to route definitions.
-function repoFromSplat(): string | undefined {
-	const splat = routerSplat();
-	if (splat && splat.length > 0) {
-		const repoRev = splat[0];
-		return repoRev.split("@")[0];
+/**
+ * Returns the application router for components that have been wrapped in
+ * workbench/RouterContext. These components are split from the React application hierarchy
+ * by the VS Code workbench, but we want them to operate with the same router.
+ *
+ * THIS SHOULD ONLY BE USED WITHIN WORKBENCH CONTEXT.
+ */
+export function __getRouterForWorkbenchOnly(): Router {
+	if (!r) {
+		throw new Error("application router hasn't been set");
 	}
+	return r;
 }
 
-// revFromSplat returns the repo URI from the "splat" argument, if defined.
-// Assumes repoRev is the first arugment of the splat according to route definitions.
-function revFromSplat(): string | undefined {
-	const splat = routerSplat();
-	if (splat && splat.length > 0) {
-		const repoRev = splat[0];
-		return repoRev.split("@")[1];
-	}
+/**
+ * repoRevFromSplat returns the "repo[@rev]" string from the "splat" parameter.
+ */
+export function repoRevFromRouteParams(params: RouteParams): string {
+	const {splat} = params;
+	return splat instanceof Array ? splat[0] : splat;
 }
 
-// pathFromSplat returns the blob path from the "splat" argument.
-// Assumes path is the second arugment of the splat according to route definitions, after repoRev.
-function pathFromSplat(): string | undefined {
-	const splat = routerSplat();
-	if (splat && splat.length > 1) {
-		return splat[1];
-	}
+/**
+ * repoFromSplat returns the repo URI from the "splat" parameter.
+ */
+export function repoFromRouteParams(params: RouteParams): string {
+	return repoPath(repoRevFromRouteParams(params));
 }
 
-// getRepoFromRouter returns repo URI from the URL, if defined.
-export function getRepoFromRouter(): string | undefined {
-	switch (getRoutePattern(router.routes)) {
+/**
+ * revFromSplat returns the repo URI from the "splat" parameter, if defined.
+ */
+export function revFromRouteParams(params: RouteParams): string | null {
+	return repoRev(repoRevFromRouteParams(params));
+}
+
+/**
+ * pathFromSplat returns the blob path from the "splat" parameter, if defined.
+ */
+export function pathFromRouteParams(params: RouteParams): string {
+	const {splat} = params;
+	const path = splat instanceof Array ? splat[1] : "";
+	return path === "" ? "/" : path;
+}
+
+/**
+ * getRepoFromRouter returns repo URI from the URL, if defined.
+ */
+export function getRepoFromRouter(router: Router): string | undefined {
+	const routePattern = getRoutePattern(router.routes);
+	switch (routePattern) {
 		case abs.repo:
 		case abs.tree:
 		case abs.blob:
-			return repoFromSplat();
+			return repoFromRouteParams(router.params);
 	}
 }
 
-// getRevFromRouter returns revision from the URL, if defined.
-export function getRevFromRouter(): string | undefined {
-	switch (getRoutePattern(router.routes)) {
+/**
+ * getRevFromRouter returns revision from the URL, if defined, or null for HEAD.
+ */
+export function getRevFromRouter(router: Router): string | null | undefined {
+	const routePattern = getRoutePattern(router.routes);
+	switch (routePattern) {
 		case abs.repo:
 		case abs.tree:
 		case abs.blob:
-			return revFromSplat();
+			return revFromRouteParams(router.params);
 	}
 }
 
-// getPathFromRouter returns blob path from the URL
-export function getPathFromRouter(): string | undefined {
-	switch (getRoutePattern(router.routes)) {
+/**
+ * getPathFromRouter returns blob path from the URL, if defined.
+ */
+export function getPathFromRouter(router: Router): string | undefined {
+	const routePattern = getRoutePattern(router.routes);
+	switch (routePattern) {
 		case abs.tree:
 		case abs.blob:
-			return pathFromSplat();
+			return pathFromRouteParams(router.params);
 	}
 }
 
-export interface RouterBlobProps {
+/**
+ * BlobRouteProps returns the matched route arguments for blob URLs.
+ */
+export interface BlobRouteProps {
 	repo: string;
 	rev: string | null;
 	path: string;
+	selection: IRange;
 }
 
-// getBlobPropsFromRouter returns repo, (rev), and path from the URL;
-// throws an exception if any required props are missing.
-export function getBlobPropsFromRouter(): RouterBlobProps {
+/**
+ * getBlobPropsFromRouter returns repo, (rev), path, and selection from the URL;
+ * throws an exception if any required props are missing.
+ */
+export function getBlobPropsFromRouter(router: Router): BlobRouteProps {
 	if (getRoutePattern(router.routes) !== abs.blob) {
 		throw new Error("not a blob route");
 	}
 
-	const repo = getRepoFromRouter();
+	const repo = getRepoFromRouter(router);
 	if (!repo) {
 		throw new Error("missing repo");
 	}
-	const rev = getRevFromRouter() || null;
-	const path = getPathFromRouter();
+	const rev = getRevFromRouter(router) || null;
+	const path = getPathFromRouter(router);
 	if (!path) {
 		throw new Error("missing path");
 	}
 
-	return { repo, rev, path };
+	return { repo, rev, path, selection: getSelectionFromRouter(router) };
 }
 
-export function getSelectionFromRouter(): IRange {
-	let rop = RangeOrPosition.parse(window.location.hash.substr(2));
+/**
+ * getSelectionFromRouter returns selection of the blob view from the URL hash part.
+ */
+export function getSelectionFromRouter(router: Router): IRange {
+	let rop = RangeOrPosition.parse(router.location.hash.substr(2));
 	if (!rop) {
 		rop = RangeOrPosition.fromOneIndexed(1);
 	}

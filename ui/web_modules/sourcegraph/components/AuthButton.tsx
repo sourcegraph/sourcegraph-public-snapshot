@@ -1,9 +1,9 @@
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
+import { RouterLocation } from "sourcegraph/app/router";
 import { Button } from "sourcegraph/components";
 import { GitHubIcon, GoogleIcon } from "sourcegraph/components/Icons";
 import { typography, whitespace } from "sourcegraph/components/utils";
-import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
@@ -13,8 +13,8 @@ interface Props {
 	eventObject: AnalyticsConstants.LoggableEvent;
 
 	scopes?: string;
-	returnTo?: string | Location;
-	newUserReturnTo?: string | Location;
+	returnTo?: string | RouterLocation;
+	newUserReturnTo?: string | RouterLocation;
 	color?: string;
 	outline?: boolean;
 	block?: boolean;

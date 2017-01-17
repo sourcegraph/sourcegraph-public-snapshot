@@ -2,11 +2,11 @@ import fuzzysearch from "fuzzysearch";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as Relay from "react-relay";
-import { Link, PlainRoute } from "react-router";
-import { RouteParams } from "sourcegraph/app/routeParams";
-import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
-import { router } from "sourcegraph/app/router";
-import { Component, EventListener } from "sourcegraph/Component";
+import { Link } from "react-router";
+
+import { getRoutePattern } from "sourcegraph/app/routePatterns";
+import { Router } from "sourcegraph/app/router";
+import { EventListener } from "sourcegraph/Component";
 import { Heading, Input, Menu } from "sourcegraph/components";
 import { Check, DownMenu } from "sourcegraph/components/symbols";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
@@ -21,27 +21,31 @@ interface Props {
 	style?: React.CSSProperties;
 }
 
+interface Context {
+	router: Router;
+}
+
 interface State extends Props {
 	open?: boolean;
 	query?: any;
-	routes: PlainRoute[];
-	routeParams: RouteParams;
 }
 
-class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State> {
+class RevSwitcherComponent extends React.Component<Props & { root: GQL.IRoot }, State> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: Context;
 	_input: any;
 	_debouncedSetQuery: any;
 	_wrapper: any;
 
-	constructor(props: Props & { root: GQL.IRoot }) {
-		super(props);
+	constructor(props: Props & { root: GQL.IRoot }, context: Context) {
+		super(props, context);
 		this.state = {
 			open: false,
-
 			repo: props.repo,
 			rev: props.rev,
-			routes: router.routes,
-			routeParams: getRouteParams(abs.blob, document.location.pathname),
 		};
 		this._closeDropdown = this._closeDropdown.bind(this);
 		this._onToggleDropdown = this._onToggleDropdown.bind(this);
@@ -51,10 +55,6 @@ class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State>
 		this._debouncedSetQuery = debounce((query) => {
 			this.setState(Object.assign({}, this.state, { query: query }));
 		}, 150, { leading: true, trailing: true });
-	}
-
-	reconcileState(state: State, props: Props): void {
-		Object.assign(state, props);
 	}
 
 	// abbrevRev shortens rev if it is an absolute commit ID.
@@ -94,7 +94,7 @@ class RevSwitcherComponent extends Component<Props & { root: GQL.IRoot }, State>
 
 	// If path is not present, it means this is the rev switcher on commits page.
 	_revSwitcherURL(rev: string | null): string {
-		return `${urlWithRev(this.state.routes, this.state.routeParams, rev)}${window.location.hash}`;
+		return `${urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, rev)}${window.location.hash}`;
 	}
 
 	_onToggleDropdown(ev: React.MouseEvent<HTMLElement>): void {

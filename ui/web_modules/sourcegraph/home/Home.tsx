@@ -1,10 +1,10 @@
 import { media, style } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
-import { InjectedRouter } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { Footer } from "sourcegraph/app/Footer";
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import { BGContainer, Button, FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
@@ -13,18 +13,17 @@ import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import { FeatureCarousel } from "sourcegraph/home/FeatureCarousel";
 import { Nav } from "sourcegraph/home/Nav";
-import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { HomepageExperimentContent, homepageExperiment } from "sourcegraph/util/ExperimentManager";
 
-interface HomeProps { location: Location; }
+interface HomeProps { location: RouterLocation; }
 
 export class Home extends React.Component<HomeProps, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	context: { router: InjectedRouter };
+	context: { router: Router };
 
 	constructor(props: HomeProps) {
 		super(props);

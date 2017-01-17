@@ -16,7 +16,7 @@
     "@types/react-addons-test-utils": "0.14.15",
     "@types/react-dom": "0.14.18",
     "@types/react-relay": "0.9.5",
-    "@types/react-router": "2.0.39",
+    "@types/react-router": "^2.0.44",
     "@types/utf8": "2.1.5",
     "@types/whatwg-fetch": "0.0.32",
     "autobind-decorator": "^1.3.4",

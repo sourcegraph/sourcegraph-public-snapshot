@@ -1,9 +1,10 @@
 import * as React from "react";
-import { InjectedRouter, Route } from "react-router";
+import { Route } from "react-router";
+
 import { context } from "sourcegraph/app/context";
 import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -405,7 +406,7 @@ export const EventLogger = new EventLoggerClass();
 // location's pathname changes.
 interface WithViewEventsLoggedProps {
 	routes: Route[];
-	location: Location;
+	location: RouterLocation;
 }
 
 export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(component: React.ComponentClass<{}>): React.ComponentClass<{}> {
@@ -415,7 +416,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 		};
 
 		context: {
-			router: InjectedRouter,
+			router: Router,
 		};
 
 		componentDidMount(): void {
@@ -512,7 +513,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			}
 		}
 
-		_logView(routes: Route[], location: Location): void {
+		_logView(routes: Route[], location: RouterLocation): void {
 			let eventProps: {
 				url: string;
 				referred_by_integration?: string;
@@ -572,11 +573,11 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 		}
 
 		render(): JSX.Element | null {
-			// This method fires a custom event to tell Optimize 360 to check if the current user should 
-			// receive any live A/B tests, and if so, to activate them. The Optimize 360 event handler is 
-			// idempotent, and only pings Google's remote server once per page load. By firing here, we 
+			// This method fires a custom event to tell Optimize 360 to check if the current user should
+			// receive any live A/B tests, and if so, to activate them. The Optimize 360 event handler is
+			// idempotent, and only pings Google's remote server once per page load. By firing here, we
 			// provide universal handling of live A/B tests, with no other frontend JavaScript code required
-			// TODO (Dan): turned off to prevent Optimize from firing after an event has ended 
+			// TODO (Dan): turned off to prevent Optimize from firing after an event has ended
 			// activateDefaultExperiments();
 
 			return React.createElement(component, this.props);

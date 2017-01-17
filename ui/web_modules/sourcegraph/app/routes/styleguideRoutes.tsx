@@ -1,12 +1,12 @@
+import { PlainRoute } from "react-router";
+
 import { rel } from "sourcegraph/app/routePatterns";
 import { StyleguideContainer } from "sourcegraph/styleguide/StyleguideContainer";
 
-export const styleguideRoutes: any[] = [
+export const styleguideRoutes: PlainRoute[] = [
 	{
-		getComponent: (location, callback) => {
-			callback(null, {
-				main: StyleguideContainer,
-			});
+		getComponents: (location, callback) => {
+			callback(null, { main: StyleguideContainer });
 		},
 		path: rel.styleguide,
 	},

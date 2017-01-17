@@ -1,8 +1,9 @@
-import { History } from "history";
 import * as React from "react";
-import { browserHistory } from "react-router";
+
 import URI from "vs/base/common/uri";
 import { IEditorInput } from "vs/platform/editor/common/editor";
+
+import { Router, __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 
 export function getResource(input: IEditorInput): URI {
 	if (input["resource"]) {
@@ -25,17 +26,15 @@ export class RouterContext extends React.Component<{}, {}> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	getChildContext(): { router: History } {
-		const router = browserHistory;
+	getChildContext(): { router: Router } {
+		const router = __getRouterForWorkbenchOnly();
 		router.setRouteLeaveHook = () => {
 			throw new Error("Cannot set route leave hook outside React Router hierarchy.");
 		};
 		router.isActive = () => {
 			throw new Error("Cannot access isActive outside React Router hierarchy.");
 		};
-		return {
-			router: browserHistory,
-		};
+		return { router };
 	}
 
 	render(): JSX.Element {

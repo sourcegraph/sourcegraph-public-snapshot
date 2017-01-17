@@ -1,10 +1,11 @@
 import * as React from "react";
+
+import { RouterLocation } from "sourcegraph/app/router";
 import { Heading, Panel } from "sourcegraph/components";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
-import { Location } from "sourcegraph/Location";
 import { OrgContainer } from "sourcegraph/org/OrgContainer";
 
-interface Props { location: Location; }
+interface Props { location: RouterLocation; }
 
 export function SettingsMain({location}: Props): JSX.Element {
 

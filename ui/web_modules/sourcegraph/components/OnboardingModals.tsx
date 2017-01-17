@@ -1,12 +1,12 @@
 import * as React from "react";
-import { InjectedRouter } from "react-router";
+
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import { LocationStateModal, setLocationModalState } from "sourcegraph/components/Modal";
 import { ChromeExtensionOnboarding } from "sourcegraph/dashboard/ChromeExtensionOnboarding";
 import { GitHubPrivateAuthOnboarding } from "sourcegraph/dashboard/GitHubPrivateAuthOnboarding";
-import { Location } from "sourcegraph/Location";
 
 interface Props {
-	location: Location;
+	location: RouterLocation;
 }
 
 export class OnboardingModals extends React.Component<Props, {}>  {
@@ -14,7 +14,7 @@ export class OnboardingModals extends React.Component<Props, {}>  {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	context: { router: InjectedRouter };
+	context: { router: Router };
 
 	_completeChromeStep(): void {
 		setLocationModalState(this.context.router, this.props.location, "github", true);

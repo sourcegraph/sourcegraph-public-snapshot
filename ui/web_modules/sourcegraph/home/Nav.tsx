@@ -1,15 +1,16 @@
 import { hover, merge } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
+
+import { RouterLocation } from "sourcegraph/app/router";
 import { Button, FlexContainer, Logo } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
-import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	context: any;
-	location: Location;
+	location: RouterLocation;
 	style?: React.CSSProperties;
 }
 

@@ -1,9 +1,10 @@
 import * as React from "react";
 import { Link } from "react-router";
+
+import { RouterLocation } from "sourcegraph/app/router";
 import { Heading } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { PageTitle } from "sourcegraph/components/PageTitle";
-import { Location } from "sourcegraph/Location";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
@@ -13,7 +14,7 @@ interface Props {
 
 	// returnTo is where the user should be redirected after an OAuth login flow,
 	// either a URL path or a Location object.
-	returnTo: string | Location;
+	returnTo: string | RouterLocation;
 };
 
 export function LoginForm(props: Props): JSX.Element {
@@ -32,7 +33,7 @@ export function LoginForm(props: Props): JSX.Element {
 }
 
 // Login is the standalone login page.
-function LoginComp(props: { location: any }): JSX.Element | null {
+function LoginComp(props: { location: any }): JSX.Element {
 	return (
 		<div className={styles.full_page}>
 			<PageTitle title="Sign In" />

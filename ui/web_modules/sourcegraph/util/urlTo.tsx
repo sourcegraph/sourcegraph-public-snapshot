@@ -1,18 +1,19 @@
 import { formatPattern } from "react-router/lib/PatternUtils";
-import { abs } from "sourcegraph/app/routePatterns";
-import { RouteName } from "sourcegraph/app/routePatterns";
-import { Location } from "sourcegraph/Location";
+
+import { RouteName, abs } from "sourcegraph/app/routePatterns";
+import { RouteParams } from "sourcegraph/app/router";
+import { RouterLocation } from "sourcegraph/app/router";
 
 // urlTo produces the full URL, given a route and route parameters. The
 // route names are defined in sourcegraph/app/routePatterns.
-export function urlTo(name: RouteName, params: {}): string {
+export function urlTo(name: RouteName, params: RouteParams): string {
 	return formatPattern(`/${abs[name]}`, params);
 }
 
 export type oauthProvider = "github" | "google";
 
 // urlToOAuth returns an OAuth initiate URL for given provider, scopes, returnTo.
-export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | Location | null, newUserReturnTo: string | Location | null): string {
+export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | RouterLocation | null, newUserReturnTo: string | RouterLocation | null): string {
 	scopes = scopes ? `scopes=${encodeURIComponent(scopes)}` : null;
 	if (returnTo && typeof returnTo !== "string") {
 		returnTo = `${returnTo.pathname}${returnTo.search}${returnTo.hash}`;

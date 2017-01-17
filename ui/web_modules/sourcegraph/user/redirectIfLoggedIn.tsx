@@ -1,27 +1,27 @@
-// tslint:disable: typedef ordered-imports
-
 import { History } from "history";
 import * as React from "react";
-import { InjectedRouter } from "react-router";
+
 import { context } from "sourcegraph/app/context";
+import { Router, RouterLocation } from "sourcegraph/app/router";
+
+interface Props {
+	location: RouterLocation;
+}
 
 // redirectIfLoggedIn wraps a component and issues a redirect
 // if there is an authenticated user. It is useful for wrapping
 // login, signup, etc., route components.
 //
 // TODO: remove queryObj overriding for onboarding step.
-export function redirectIfLoggedIn(url: Location | string, queryObj: History.Query, Component) {
-	type Props = any;
+export function redirectIfLoggedIn(url: Location | string, queryObj: History.Query, Component: React.ReactType): React.ComponentClass<Props> {
 
-	type State = any;
-
-	class RedirectIfLoggedIn extends React.Component<Props, State> {
+	class RedirectIfLoggedIn extends React.Component<Props, {}> {
 		static contextTypes: React.ValidationMap<any> = {
 			router: React.PropTypes.object.isRequired,
 		};
 
 		context: {
-			router: InjectedRouter;
+			router: Router;
 		};
 
 		componentWillMount(): void {

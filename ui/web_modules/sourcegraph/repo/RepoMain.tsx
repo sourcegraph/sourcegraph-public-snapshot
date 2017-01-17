@@ -1,6 +1,8 @@
 import * as React from "react";
-import { InjectedRouter, Route } from "react-router";
-import { RouteParams } from "sourcegraph/app/routeParams";
+import { Route } from "react-router";
+
+import { getRoutePattern } from "sourcegraph/app/routePatterns";
+import { RouteParams, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { Header } from "sourcegraph/components/Header";
 import { PageTitle } from "sourcegraph/components/PageTitle";
@@ -26,7 +28,7 @@ export class RepoMain extends React.Component<Props, {}> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	context: { router: InjectedRouter };
+	context: { router: Router };
 
 	_refreshInterval: number | null = null;
 
@@ -81,7 +83,7 @@ export class RepoMain extends React.Component<Props, {}> {
 			(el.tagName !== "TEXTAREA" || !isNonMonacoTextArea(el)) &&
 			el.tagName !== "SELECT") {
 			if (ev.keyCode === 89 /* y */ && this.props.commit.commit) {
-				let url = `${urlWithRev(this.props.routes, this.props.params, this.props.commit.commit.sha1)}${window.location.hash}`;
+				let url = `${urlWithRev(getRoutePattern(this.props.routes), this.props.params, this.props.commit.commit.sha1)}${window.location.hash}`;
 				this.context.router.push(url);
 				ev.preventDefault();
 				ev.stopPropagation();

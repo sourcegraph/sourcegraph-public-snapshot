@@ -1,10 +1,11 @@
 import { hover, media, select } from "glamor";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
-import { InjectedRouter, Link } from "react-router";
+import { Link } from "react-router";
 import { ITree } from "vs/base/parts/tree/browser/tree";
 import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 
+import { Router } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { FlexContainer, Heading } from "sourcegraph/components";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
@@ -30,7 +31,7 @@ export class FileTree extends React.Component<Props, {}> {
 	};
 
 	private treeImpl: ITree;
-	context: { router: InjectedRouter };
+	context: { router: Router };
 
 	// Element directly containing the FileTree
 	fileTreeEl: HTMLElement;

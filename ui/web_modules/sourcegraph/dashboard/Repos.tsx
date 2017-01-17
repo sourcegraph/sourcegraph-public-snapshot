@@ -1,17 +1,18 @@
 import * as debounce from "lodash/debounce";
 import * as React from "react";
+
 import { context } from "sourcegraph/app/context";
+import { RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, GitHubAuthButton, GoogleAuthButton, Heading, Input, Panel, RepositoryCard } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils";
 import { RepositoryTabs } from "sourcegraph/dashboard";
-import { Location } from "sourcegraph/Location";
 import { Features } from "sourcegraph/util/features";
 import { privateGitHubOAuthScopes, privateGoogleOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
 	repos: GQL.IRemoteRepository[] | null;
-	location?: Location;
+	location?: RouterLocation;
 	style?: React.CSSProperties;
 	type: RepositoryTabs;
 }

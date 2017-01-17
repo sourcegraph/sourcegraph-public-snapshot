@@ -1,14 +1,15 @@
 import { hover } from "glamor";
 import * as React from "react";
+
 import { Org } from "sourcegraph/api";
+import { RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, OrgLogo } from "sourcegraph/components";
 import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors, whitespace } from "sourcegraph/components/utils";
-import { Location } from "sourcegraph/Location";
 
 interface Props {
 	org: Org;
-	location?: Location;
+	location?: RouterLocation;
 }
 
 const AVATAR_PLACEHOLDER_URL = "https://avatars2.githubusercontent.com/u/10788623?v=3&s=400";

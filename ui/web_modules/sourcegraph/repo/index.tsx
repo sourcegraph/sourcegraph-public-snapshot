@@ -20,10 +20,6 @@ export function makeRepoRev(repo: string, rev: string | null): string {
 	return repo;
 }
 
-export function repoParam(splat: string[] | string): string {
-	return splat instanceof Array ? splat[0] : splat;
-}
-
 export function trimRepo(repo: string): string {
 	let res = repo;
 	if (res.indexOf("github.com/") !== -1) {

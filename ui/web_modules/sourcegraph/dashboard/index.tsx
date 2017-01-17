@@ -1,11 +1,12 @@
 import { media, style } from "glamor";
 import * as React from "react";
 import * as Relay from "react-relay";
+
+import { RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, PageTitle } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
 import { Repos } from "sourcegraph/dashboard/Repos";
 import { TabBar } from "sourcegraph/dashboard/TabBar";
-import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 export interface RepositoryTypes {
@@ -15,7 +16,7 @@ export interface RepositoryTypes {
 
 export type RepositoryTabs = "mine" | "starred";
 
-interface Props { location: Location; }
+interface Props { location: RouterLocation; }
 interface State { active: RepositoryTabs; }
 
 class DashboardComponent extends React.Component<Props & { root: GQL.IRoot }, State> {

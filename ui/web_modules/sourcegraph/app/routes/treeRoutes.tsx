@@ -1,42 +1,46 @@
-import { RouterState } from "react-router";
+import { PlainRoute } from "react-router";
+
 import { rel } from "sourcegraph/app/routePatterns";
+import { pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { urlToTree } from "sourcegraph/tree/routes";
 import { TreeMain } from "sourcegraph/tree/TreeMain";
 
-// canonicalizeTreeRoute redirects "/myrepo@myrev/-/tree/" to
+// canonicalizeTreeURL redirects "/myrepo@myrev/-/tree/" to
 // "/myrepo@myrev" and removes the slashes from
 // "/myrepo@myrev/-/tree/subdir/".
-function canonicalizeTreeRoute(nextRouterState: ReactRouter.RouterState, replace: Function): void {
-	let {params} = nextRouterState as any;
-	let path = params.splat[1];
+function canonicalizeTreeURL(nextState: ReactRouter.RouterState, replace: Function): void {
+	const repoRev = repoRevFromRouteParams(nextState.params as any);
+	const path = pathFromRouteParams(nextState.params as any);
 	if (path === "") {
-		replace(urlToRepo(params.splat[0]));
+		replace(urlToRepo(repoRev));
 	} else if (path.endsWith("/")) {
-		replace(nextRouterState, urlToTree(params.splat[0], "", path.replace(/\/+$/, "")));
+		replace(nextState, urlToTree(repoRev, "", path.replace(/\/+$/, "")));
 	}
 }
 
-export const treeRoutes = [
+export const treeRoutes: PlainRoute[] = [
 	{
 		path: rel.tree,
-		keepScrollPositionOnRouteChangeKey: "tree",
-		onEnter: (nextRouterState: RouterState, replace: Function) => {
-			canonicalizeTreeRoute(nextRouterState, replace);
+		onEnter: (nextState, replace) => {
+			canonicalizeTreeURL(nextState, replace);
 		},
-		onChange: (prevRouterState: RouterState, nextRouterState: RouterState, replace: Function) => {
-			canonicalizeTreeRoute(nextRouterState, replace);
-		},
-		getComponents: (location: Location, callback: Function) => {
+		getComponents: (location, callback) => {
 			callback(null, { main: TreeMain });
 		},
+		getIndexRoute: (location, callback) => callback(null, {
+			getComponents: (loc, cb) => {
+				cb(null, { main: TreeMain });
+			}
+		})
 	},
 
 	// Redirect "/myrepo@myrev/-/tree" to "/myrepo@mrev".
 	{
 		path: rel.tree.replace("/*", ""),
-		onEnter: (nextRouterState: any, replace: Function) => {
-			replace(urlToRepo(nextRouterState.params.splat));
+		onEnter: (nextState, replace) => {
+			replace(urlToRepo(nextState.params["splat"]));
 		},
 	},
+
 ];

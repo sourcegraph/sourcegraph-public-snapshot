@@ -3,8 +3,8 @@ import * as debounce from "lodash/debounce";
 import * as findIndex from "lodash/findIndex";
 import * as throttle from "lodash/throttle";
 import * as React from "react";
-import { InjectedRouter } from "react-router";
 
+import { Router } from "sourcegraph/app/router";
 import { EventListener } from "sourcegraph/Component";
 import { Input } from "sourcegraph/components/Input";
 import { Search as SearchIcon } from "sourcegraph/components/symbols";
@@ -112,7 +112,7 @@ export class Container extends React.Component<Props, State> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	context: { router: InjectedRouter };
+	context: { router: Router };
 	searchInput: HTMLElement;
 	delegate: SearchDelegate;
 	listeners: { remove: () => void }[];

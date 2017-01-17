@@ -2,8 +2,9 @@ import * as autobind from "autobind-decorator";
 import * as debounce from "lodash/debounce";
 import * as isEqual from "lodash/isEqual";
 import * as React from "react";
-import { InjectedRouter, Route } from "react-router";
-import { RouteParams } from "sourcegraph/app/routeParams";
+import { Route } from "react-router";
+
+import { RouteParams, Router, RouterLocation } from "sourcegraph/app/router";
 import { BlobStore } from "sourcegraph/blob/BlobStore";
 import { BlobTitle } from "sourcegraph/blob/BlobTitle";
 import { urlToBlob } from "sourcegraph/blob/routes";
@@ -14,7 +15,6 @@ import { colors } from "sourcegraph/components/utils/colors";
 import { Container } from "sourcegraph/Container";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { Location } from "sourcegraph/Location";
 import { trimRepo } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
 import { Store } from "sourcegraph/Store";
@@ -35,7 +35,7 @@ export interface Props {
 	routes: Route[];
 	params: RouteParams;
 	selection: RangeOrPosition | null;
-	location: Location;
+	location: RouterLocation;
 
 	relay: any;
 	root: GQL.IRoot;
@@ -53,7 +53,7 @@ export class EditorController extends Container<Props, State> {
 	};
 
 	context: {
-		router: InjectedRouter,
+		router: Router,
 	};
 
 	private _editor: Editor | null = null;

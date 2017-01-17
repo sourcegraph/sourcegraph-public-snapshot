@@ -1,8 +1,9 @@
 import * as autobind from "autobind-decorator";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { InjectedRouter } from "react-router";
+
 import { context } from "sourcegraph/app/context";
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import { Annotation, Boom, Button, Heading } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { Close, Flag } from "sourcegraph/components/symbols/Zondicons";
@@ -10,13 +11,12 @@ import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { fontStack } from "sourcegraph/components/utils/typography";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
-import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
 import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
-interface Props { location: Location; }
+interface Props { location: RouterLocation; }
 
 interface State {
 	visibleMarks: number[];
@@ -106,7 +106,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	_coachmarks: Array<Coachmark>;
 	_searchCoachmarkRef: any;
 
-	context: { router: InjectedRouter };
+	context: { router: Router };
 
 	constructor() {
 		super();

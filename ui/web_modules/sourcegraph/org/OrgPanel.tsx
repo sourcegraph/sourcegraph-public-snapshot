@@ -1,12 +1,12 @@
 import * as React from "react";
-import { InjectedRouter } from "react-router";
+
 import { Org, OrgMember } from "sourcegraph/api";
 import { context } from "sourcegraph/app/context";
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import { setLocationModalState } from "sourcegraph/components/Modal";
 import { Spinner } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import { OrgInviteModal } from "sourcegraph/org/OrgInviteModal";
 import { OrgMembersTable } from "sourcegraph/org/OrgMembersTable";
@@ -15,7 +15,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 interface Props {
 	org: Org;
 	members: OrgMember[] | null;
-	location: Location;
+	location: RouterLocation;
 }
 
 interface State {
@@ -28,7 +28,7 @@ export class OrgPanel extends React.Component<Props, State> {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	context: { router: InjectedRouter };
+	context: { router: Router };
 
 	constructor(props: Props) {
 		super(props);

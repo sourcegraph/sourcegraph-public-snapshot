@@ -32,6 +32,6 @@ export class NoTabsTitleControl extends TitleControl {
 	}
 
 	dispose(): void {
-		//
+		ReactDOM.unmountComponentAtNode(this.domElement);
 	}
 }

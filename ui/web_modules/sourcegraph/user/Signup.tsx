@@ -1,11 +1,12 @@
 import { History } from "history";
 import * as React from "react";
+
 import { context } from "sourcegraph/app/context";
+import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
 import { Heading } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { PageTitle } from "sourcegraph/components/PageTitle";
-import { Location } from "sourcegraph/Location";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
@@ -17,8 +18,8 @@ interface Props {
 
 	// returnTo is where the user should be redirected after an OAuth login flow,
 	// either a URL path or a Location object.
-	returnTo: string | Location;
-	newUserReturnTo: string | Location;
+	returnTo: string | RouterLocation;
+	newUserReturnTo: string | RouterLocation;
 	queryObj: History.Query;
 }
 

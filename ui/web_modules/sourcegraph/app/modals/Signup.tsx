@@ -1,14 +1,13 @@
 import * as React from "react";
-import { InjectedRouter } from "react-router";
 
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import { Location } from "sourcegraph/Location";
 import { SignupForm } from "sourcegraph/user/Signup";
 
 interface Props {
-	location: Location;
-	router: InjectedRouter;
+	location: RouterLocation;
+	router: Router;
 	shouldHide: boolean;
 }
 

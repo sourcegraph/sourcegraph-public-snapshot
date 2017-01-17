@@ -1,5 +1,6 @@
 import * as React from "react";
-import { InjectedRouter } from "react-router";
+
+import { Router } from "sourcegraph/app/router";
 
 function isLeftClickEvent(ev: MouseEvent): boolean { return ev.button === 0; }
 function isModifiedEvent(ev: MouseEvent): boolean { return Boolean(ev.metaKey || ev.altKey || ev.ctrlKey || ev.shiftKey); }
@@ -27,7 +28,7 @@ interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 // It can be used for showing modals, whose on/off state should not be
 // reflected in the URL. Something else will have to read the location state
 // to determine whether to show it.
-export function LocationStateToggleLink(props: Props, {router}: { router: InjectedRouter }): JSX.Element {
+export function LocationStateToggleLink(props: Props, {router}: { router: Router }): JSX.Element {
 
 	const {location, children, modalName} = props;
 	const other = Object.assign({}, props);

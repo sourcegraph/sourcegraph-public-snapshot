@@ -1,13 +1,14 @@
 import * as React from "react";
+
 import { Org, OrgMember } from "sourcegraph/api";
 import { context } from "sourcegraph/app/context";
+import { RouterLocation } from "sourcegraph/app/router";
 import { GitHubAuthButton, GridCol, GridRow, Heading, TabItem, Tabs } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
 import { Container } from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { Location } from "sourcegraph/Location";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import { OrgCard } from "sourcegraph/org/OrgCard";
 import { OrgPanel } from "sourcegraph/org/OrgPanel";
@@ -17,7 +18,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
-	location: Location;
+	location: RouterLocation;
 }
 
 interface State {

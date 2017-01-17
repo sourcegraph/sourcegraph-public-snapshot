@@ -1,15 +1,14 @@
 import { PlainRoute } from "react-router";
 import { matchPattern } from "react-router/lib/PatternUtils";
-import { Location } from "sourcegraph/Location";
+
+import { Router } from "sourcegraph/app/router";
 
 export type RouteName = (
 	"styleguide" |
 	"twittercasestudy" |
 	"home" |
-	"integrations" |
 	"tool" |
 	"settings" |
-	"commit" |
 	"repo" |
 	"tree" |
 	"blob" |
@@ -25,7 +24,8 @@ export type RouteName = (
 	"security" |
 	"pricing" |
 	"terms" |
-	"privacy"
+	"privacy" |
+	"integrations"
 );
 
 export const rel = {
@@ -42,16 +42,13 @@ export const rel = {
 	privacy: "privacy",
 	styleguide: "styleguide",
 	twittercasestudy: "customers/twitter",
-	integrations: "integrations",
 	settings: "settings",
 	login: "login",
 	signup: "join",
-	authext: "authext",
 
 	home: "",
 
 	repo: "*", // matches both "repo" and "repo@rev"
-	commit: "commit",
 	tree: "tree/*",
 	blob: "blob/*",
 };
@@ -69,14 +66,11 @@ export const abs = {
 	styleguide: rel.styleguide,
 	twittercasestudy: rel.twittercasestudy,
 	home: rel.home,
-	integrations: rel.integrations,
 	settings: rel.settings,
 	login: rel.login,
 	signup: rel.signup,
-	authext: "authext",
 
 	repo: rel.repo,
-	commit: `${rel.repo}/-/${rel.commit}`,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,
 };
@@ -102,6 +96,7 @@ export function getViewName(routes: PlainRoute[]): string | null {
 	return null;
 }
 
+// TODO(kingy): how is this being used? Can we consolidate w/ other changes?
 export function getRouteParams(pattern: string, pathname: string): any {
 	if (pathname.charAt(0) !== "/") { pathname = `/${pathname}`; }
 	const {paramNames, paramValues} = matchPattern(pattern, pathname);
@@ -122,6 +117,6 @@ export function getRouteParams(pattern: string, pathname: string): any {
 	return null;
 }
 
-export function isRootRoute(location: Location): boolean {
-	return rel.home === location.pathname.slice(1);
+export function isAtRoute(router: Router, absRoutePattern: string): boolean {
+	return getRoutePattern(router.routes) === absRoutePattern;
 };

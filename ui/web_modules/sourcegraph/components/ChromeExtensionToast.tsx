@@ -1,10 +1,10 @@
 import * as classNames from "classnames";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
+import { RouterLocation } from "sourcegraph/app/router";
 import { CloseIcon } from "sourcegraph/components/Icons";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { Toast } from "sourcegraph/components/Toast";
-import { Location } from "sourcegraph/Location";
 import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
@@ -17,7 +17,7 @@ interface State {
 }
 
 interface Props {
-	location: Location;
+	location: RouterLocation;
 }
 
 export class ChromeExtensionToast extends React.Component<Props, State>  {

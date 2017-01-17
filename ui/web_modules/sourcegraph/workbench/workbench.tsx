@@ -3,29 +3,27 @@ import * as React from "react";
 import * as Relay from "react-relay";
 import { Route } from "react-router";
 
-import { RouteParams } from "sourcegraph/app/routeParams";
+import { RouteParams, Router, RouterLocation, getBlobPropsFromRouter, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import { EditorController } from "sourcegraph/blob/EditorController";
 import "sourcegraph/blob/styles/Monaco.css";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
 import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
-import { Location } from "sourcegraph/Location";
-import { repoParam, repoPath, repoRev } from "sourcegraph/repo";
+import { repoPath, repoRev } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
-import { treeParam } from "sourcegraph/tree";
 import { Features } from "sourcegraph/util/features";
 import { FileTree } from "sourcegraph/workbench/fileTree";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
-export interface Props {
+interface Props {
 	repo: string;
 	rev: string | null;
 	path: string;
 	routes: Route[];
 	params: RouteParams;
 	selection: RangeOrPosition | null;
-	location: Location;
+	location: RouterLocation;
 
 	relay: any;
 	root: GQL.IRoot;
@@ -36,6 +34,11 @@ export interface Props {
 // way we use it, read README.vscode.md.
 @autobind
 class WorkbenchComponent extends React.Component<Props, {}> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: { router: Router };
 
 	render(): JSX.Element | null {
 		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
@@ -71,7 +74,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} />
-				<WorkbenchShell />
+				<WorkbenchShell { ...getBlobPropsFromRouter(this.context.router) } />
 			</RepoMain>
 		</div>;
 	}
@@ -108,8 +111,9 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 	},
 });
 
-export function Workbench(props: { params: any; location: Location, routes: Route[] }): JSX.Element {
-	const repoSplat = repoParam(props.params.splat);
+// TODO(john): make this use router context.
+export function Workbench(props: { params: any; location: RouterLocation, routes: Route[] }): JSX.Element {
+	const repoRevString = repoRevFromRouteParams(props.params);
 	let selection = null;
 	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
 		selection = RangeOrPosition.parse(props.location.hash.replace(/^#L/, ""));
@@ -124,9 +128,9 @@ export function Workbench(props: { params: any; location: Location, routes: Rout
 				`,
 			},
 			params: {
-				repo: repoPath(repoSplat),
-				rev: repoRev(repoSplat),
-				path: treeParam(props.params.splat),
+				repo: repoPath(repoRevString),
+				rev: repoRev(repoRevString),
+				path: pathFromRouteParams(props.params),
 				routes: props.routes,
 				params: props.params,
 				selection: selection,

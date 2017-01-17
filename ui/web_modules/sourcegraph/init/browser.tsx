@@ -3,21 +3,17 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { AppContainer } from "react-hot-loader";
 import * as Relay from "react-relay";
-import { useScroll } from "react-router-scroll";
 import Redbox from "redbox-react";
 
-import { Router, applyRouterMiddleware, browserHistory as history, match } from "react-router";
+import { Router, browserHistory as history, match } from "react-router";
 import { rootRoute } from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
-import { routerUpdated } from "sourcegraph/app/router";
-import { hashLinkScroll, shouldUpdateScroll } from "sourcegraph/app/routerScrollBehavior";
 import "sourcegraph/util/actionLogger";
 import { EventLogger } from "sourcegraph/util/EventLogger";
 import "sourcegraph/util/features";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
-import "sourcegraph/app/routeParams";
-import "sourcegraph/Location";
+import "sourcegraph/app/router";
 import "sourcegraph/user";
 
 // REQUIRED. Configures Sentry error monitoring.
@@ -65,12 +61,7 @@ function matchWithRedirectHandling(recursed: boolean): void {
 				<AppContainer errorReporter={Redbox}>
 					<Router
 						key={hotReloadCounter}
-						onUpdate={() => {
-							hashLinkScroll();
-							routerUpdated();
-						} }
-						{...renderProps as any}
-						render={applyRouterMiddleware(useScroll(shouldUpdateScroll))} />
+						{...renderProps} />
 				</AppContainer>,
 				rootEl,
 			);

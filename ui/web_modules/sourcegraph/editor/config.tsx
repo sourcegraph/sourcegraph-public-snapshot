@@ -2,7 +2,7 @@ import * as throttle from "lodash/throttle";
 import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
-import { ICursorSelectionChangedEvent } from "vs/editor/common/editorCommon";
+import { ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
@@ -10,39 +10,75 @@ import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerVie
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
-import { getBlobPropsFromRouter, getSelectionFromRouter, router } from "sourcegraph/app/router";
+import { BlobRouteProps, Router } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 
-// forceSyncInProgress is a mutex. We only want to open the editor to some
-// input if it has not already been done. If the change is a result of
-// syncEditorWithRouter, then we don't need to run editorOpened because the URL
-// is already up to date. This is necessary because the two functions are
-// cyclic, and we only want to run them once for each action.
-let urlSyncInProgress: boolean;
+/**
+ * The currently displayed resource.
+ *
+ * DEVELOPER NOTE:
+ *
+ * Workbench state reflects a resource identified by a URI. E.g.
+ *   git://github.com/gorilla/mux#mux.go
+ *
+ * In the example above, the "workspace" is github.com/gorilla/mux,
+ * and the "path" is mux.go.
+ *
+ * The current workbench state is partially managed by VS Code,
+ * and partially by the outer React application in which we embed it.
+ *
+ * For example, when a user does a J2D in the VS Code editor, VS Code
+ * will handle updating state. We *also* need to signal to the
+ * outer React application that VS Code state has changed. Some outer
+ * components may be interested in the fact that the user is now viewing
+ * a new file. We signal to the outer react application these facts through
+ * react-router, by updating the URL.
+ *
+ * But what about when the URL changes as the result of some action outside
+ * VS Code. For example, clicking some react component. Or hitting "back" in
+ * the browser? Usually when these happen, the application root will
+ * get signalled by react-route and receive the new URL properties, which it
+ * passes down to its children, recursively, letting them (re)draw. We do
+ * the same thing in spirit for VS Code, only since it is not a React component,
+ * we use a VS Code API to cause redrawing.
+ *
+ * Caveat:
+ *
+ * There is some (unexplained) sensitivity in this data flow diagram:
+ *
+ * React App (listening to URL changes via react-router): -----|
+ *                                                             |----> current state
+ * VS Code (listening to user actions, like J2D, hover): ------|
+ *
+ * If the two action sources are updating state at the same time it can cause problems, but *only
+ * observed when trying to open the same resource*. To workaround this, we track the the currently
+ * displayed resource.
+ */
+let currResource: URI;
 
-// syncEditorWithURL forces the editor model to match current URL blob properties.
-export function syncEditorWithRouter(): void {
-	const {repo, rev, path} = getBlobPropsFromRouter();
+/**
+ * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
+ */
+export function syncEditorWithRouterProps(blobProps: BlobRouteProps): void {
+	const {repo, rev, path} = blobProps;
 	const resource = URIUtils.pathInRepo(repo, rev, path);
 	const editorService = Services.get(IWorkbenchEditorService) as IWorkbenchEditorService;
-	if (urlSyncInProgress) {
+	if (currResource && currResource.toString() === resource.toString()) {
 		return;
 	}
-	urlSyncInProgress = true;
+	currResource = resource;
 	editorService.openEditor({ resource }).then(() => {
 		updateFileTree(resource);
-		updateEditorAfterURLChange();
-		urlSyncInProgress = false;
+		updateEditorAfterURLChange(blobProps.selection);
 	});
 }
 
-function updateEditorAfterURLChange(): void {
+function updateEditorAfterURLChange(sel: IRange): void {
 	// TODO restore serialized view state.
-	const sel = getSelectionFromRouter();
 	if (!sel) {
 		return;
 	}
@@ -52,31 +88,34 @@ function updateEditorAfterURLChange(): void {
 	editor.revealRangeInCenter(sel);
 }
 
-// registerEditorCallbacks attaches custom Sourcegraph handling to the workbench editor lifecycle.
-export function registerEditorCallbacks(): void {
+/**
+ * registerEditorCallbacks attaches custom Sourcegraph handling to the workbench editor lifecycle.
+ */
+export function registerEditorCallbacks(router: Router): void {
 	const codeEditorService = Services.get(ICodeEditorService) as ICodeEditorService;
 	codeEditorService.onCodeEditorAdd(updateEditor);
 
 	const editorService = Services.get(IEditorService) as WorkbenchEditorService;
-	editorService.onDidOpenEditor(editorOpened);
+	editorService.onDidOpenEditor(uri => editorOpened(uri, router));
 }
 
-// editorOpened is called whenever the view of the file changes from an action. E.g:
-//  - page load
-//  - file in explorer selected
-//  - jump to definition
-function editorOpened(resource: URI): void {
-	if (urlSyncInProgress) {
+/**
+ * editorOpened is called whenever the view of the file changes from an action. E.g:
+ *  - page load
+ *  - file in explorer selected
+ *  - jump to definition
+ */
+function editorOpened(resource: URI, router: Router): void {
+	if (currResource && currResource.toString() === resource.toString()) {
 		return;
 	}
-	urlSyncInProgress = true;
+	currResource = resource;
 	updateFileTree(resource);
 	let {repo, rev, path} = URIUtils.repoParams(resource);
 	if (rev === "HEAD") {
 		rev = null;
 	}
 	router.push(urlToBlob(repo, rev, path));
-	urlSyncInProgress = false;
 }
 
 async function updateFileTree(resource: URI): Promise<void> {

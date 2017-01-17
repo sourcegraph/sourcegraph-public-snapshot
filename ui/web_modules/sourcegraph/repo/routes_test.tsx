@@ -1,5 +1,7 @@
 import expect from "expect.js";
+
 import { rootRoute } from "sourcegraph/app/App";
+import { getRoutePattern } from "sourcegraph/app/routePatterns";
 import { repoRoutes } from "sourcegraph/app/routes/repoRoutes";
 import { urlWithRev } from "sourcegraph/repo/routes";
 
@@ -14,7 +16,7 @@ describe("urlWithRev", () => {
 	];
 	tests.forEach((test) => {
 		it(`should produce ${test.want}`, () => {
-			expect(urlWithRev(test.routes, test.routeParams, "newRev")).to.be(test.want);
+			expect(urlWithRev(getRoutePattern(test.routes), test.routeParams, "newRev")).to.be(test.want);
 		});
 	});
 });

@@ -1,14 +1,14 @@
 import * as React from "react";
-import { InjectedRouter } from "react-router";
+
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import { EventListener } from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { renderedOnBody } from "sourcegraph/util/renderedOnBody";
 
 interface Props {
 	onDismiss?: () => void;
-	location?: Location;
+	location?: RouterLocation;
 }
 
 interface State {
@@ -71,7 +71,7 @@ let RenderedModal = renderedOnBody(ModalComp);
 
 // setLocationModalState shows or hides a modal by setting the location.state.modal
 // property to modalName if shown is true and null otherwise.
-export function setLocationModalState(router: InjectedRouter, location: Location, modalName: string, visible: boolean): void {
+export function setLocationModalState(router: Router, location: RouterLocation, modalName: string, visible: boolean): void {
 	router.replace(Object.assign({},
 		location,
 		{
@@ -85,7 +85,7 @@ export function setLocationModalState(router: InjectedRouter, location: Location
 
 // dismissModal creates a function that dismisses the modal by setting
 // the location state's modal property to null.
-export function dismissModal(modalName: string, location: Location, router: InjectedRouter): any {
+export function dismissModal(modalName: string, location: RouterLocation, router: Router): any {
 	return () => {
 		// Log all modal dismissal events in a consistent way. Note that any additions of new "modalName"s will require new events to be created
 		const eventObject = AnalyticsConstants.getModalDismissedEventObject(modalName);
@@ -100,13 +100,13 @@ export function dismissModal(modalName: string, location: Location, router: Inje
 }
 
 interface LocationStateModalProps {
-	location: Location;
+	location: RouterLocation;
 	// modalName is the name of the modal (location.state.modal value) that this
 	// LocationStateToggleLink component toggles.
 	modalName: string;
 	onDismiss?: (e: any) => void;
 	children?: JSX.Element[];
-	router: InjectedRouter;
+	router: Router;
 	style?: React.CSSProperties;
 }
 

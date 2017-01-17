@@ -1,15 +1,14 @@
 import * as cloneDeep from "lodash/cloneDeep";
 import * as React from "react";
 import * as Relay from "react-relay";
-import { InjectedRouter, Route } from "react-router";
-import { RouteParams } from "sourcegraph/app/routeParams";
+import { Route } from "react-router";
+
+import { RouteParams, Router, RouterLocation, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import { GridCol, Panel } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, whitespace } from "sourcegraph/components/utils";
-import { Location } from "sourcegraph/Location";
-import { repoParam, repoPath, repoRev, trimRepo } from "sourcegraph/repo";
+import { repoPath, repoRev, trimRepo } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
-import { treeParam } from "sourcegraph/tree";
 import { RepoNavContext } from "sourcegraph/tree/RepoNavContext";
 import { TreeList } from "sourcegraph/tree/TreeList";
 
@@ -27,7 +26,7 @@ interface Props {
 };
 
 interface Context {
-	router: InjectedRouter;
+	router: Router;
 }
 
 export class TreeMainComponent extends React.Component<Props, {}> {
@@ -137,8 +136,8 @@ const TreeMainContainer = Relay.createContainer(TreeMainComponent, {
 	},
 });
 
-export const TreeMain = function (props: { params: any; location: Location, routes: Route[] }): JSX.Element {
-	const repoSplat = repoParam(props.params.splat);
+export const TreeMain = function (props: { params: any; location: RouterLocation, routes: Route[] }): JSX.Element {
+	const repoRevString = repoRevFromRouteParams(props.params);
 	return <Relay.RootContainer
 		Component={TreeMainContainer}
 		route={{
@@ -149,9 +148,9 @@ export const TreeMain = function (props: { params: any; location: Location, rout
 				`,
 			},
 			params: {
-				repo: repoPath(repoSplat),
-				rev: repoRev(repoSplat),
-				path: treeParam(props.params.splat),
+				repo: repoPath(repoRevString),
+				rev: repoRev(repoRevString),
+				path: pathFromRouteParams(props.params),
 				location: props.location,
 				routes: props.routes,
 				params: props.params,

@@ -15,7 +15,6 @@ import { IInstantiationService } from "vs/platform/instantiation/common/instanti
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { registerEditorCallbacks } from "sourcegraph/editor/config";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
 
@@ -38,7 +37,6 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	);
 	workbench.startup();
 
-	registerEditorCallbacks();
 	configurePostStartup(services);
 	return [workbench, services];
 }

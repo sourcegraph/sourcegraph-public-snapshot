@@ -1,7 +1,7 @@
 import { hover, keyframes } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
-import { InjectedRouter } from "react-router";
+
 import { context } from "sourcegraph/app/context";
 import "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
 import { GlobalNavStore, SetQuickOpenVisible } from "sourcegraph/app/GlobalNav/GlobalNavStore";
@@ -9,7 +9,8 @@ import { SearchCTA } from "sourcegraph/app/GlobalNav/SearchCTA";
 import { SignupOrLogin } from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
 import { BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
-import { isRootRoute } from "sourcegraph/app/routePatterns";
+import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
+import { RouterContext, RouterLocation, getRepoFromRouter, getRevFromRouter } from "sourcegraph/app/router";
 import { FlexContainer, Logo, TabItem, Tabs } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/index";
@@ -17,31 +18,30 @@ import { Container } from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { IntegrationsContainer } from "sourcegraph/home/IntegrationsContainer";
 import { DemoVideo } from "sourcegraph/home/modals/DemoVideo";
-import { Location } from "sourcegraph/Location";
 import { QuickOpenModal } from "sourcegraph/quickopen/Modal";
-import { repoParam, repoPath, repoRev } from "sourcegraph/repo";
 import { Store } from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
-	location: Location;
-	params: any;
-	role?: string;
+	location: RouterLocation;
 }
 
-interface State extends Props {
+interface State {
 	showSearch: boolean;
 }
 
 export class GlobalNav extends Container<Props, State> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: RouterContext;
 
 	constructor(props: Props) {
 		super(props);
 		this.onSearchDismiss = this.onSearchDismiss.bind(this);
 		this.activateSearch = this.activateSearch.bind(this);
-		this.state = Object.assign({}, props, {
-			showSearch: false,
-		});
+		this.state = { showSearch: false };
 	}
 
 	reconcileState(state: State, props: Props): void {
@@ -52,12 +52,6 @@ export class GlobalNav extends Container<Props, State> {
 	stores(): Store<any>[] {
 		return [GlobalNavStore];
 	}
-
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
-	context: { router: InjectedRouter };
 
 	onSearchDismiss(): void {
 		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(false));
@@ -70,7 +64,6 @@ export class GlobalNav extends Container<Props, State> {
 	}
 
 	render(): JSX.Element {
-		const {location, params} = this.props;
 
 		const hiddenNavRoutes = new Set([
 			"/",
@@ -79,13 +72,12 @@ export class GlobalNav extends Container<Props, State> {
 			"join",
 		]);
 
-		const dash = isRootRoute(location) && context.user;
-		const shouldHide = hiddenNavRoutes.has(location.pathname) && !dash;
+		const isHomeRoute = isAtRoute(this.context.router, abs.home);
+		const dash = isHomeRoute && context.user;
+		const shouldHide = hiddenNavRoutes.has(this.props.location.pathname) && !dash;
 
-		const revSpec = repoParam(params.splat);
-		const [repo, rev] = revSpec ?
-			[repoPath(revSpec), repoRev(revSpec)] :
-			[null, null];
+		const repo = getRepoFromRouter(this.context.router);
+		const rev = getRevFromRouter(this.context.router);
 
 		const sx = {
 			backgroundColor: colors.white(),
@@ -103,14 +95,19 @@ export class GlobalNav extends Container<Props, State> {
 		});
 
 		let modal = <div />;
-		if (location.state) {
-			const m = location.state.modal;
+		if (this.props.location.state) {
+			const m = this.props.location.state["modal"];
 			modal = <div>
-				{m === "login" && !context.user && <Login location={location} router={this.context.router} />}
-				{m === "join" && <Signup location={location} router={this.context.router} shouldHide={shouldHide} />}
-				{m === "menuBeta" && <BetaSignup location={location} router={this.context.router} />}
-				{m === "demo_video" && <DemoVideo location={location} router={this.context.router} />}
-				{m === "menuIntegrations" && <IntegrationsContainer location={location} router={this.context.router} />}
+				{m === "login" && !context.user &&
+					<Login location={this.props.location} router={this.context.router} />}
+				{m === "join" &&
+					<Signup location={this.props.location} router={this.context.router} shouldHide={shouldHide} />}
+				{m === "menuBeta" &&
+					<BetaSignup location={this.props.location} router={this.context.router} />}
+				{m === "demo_video" &&
+					<DemoVideo location={this.props.location} router={this.context.router} />}
+				{m === "menuIntegrations" &&
+					<IntegrationsContainer location={this.props.location} router={this.context.router} />}
 			</div>;
 		}
 		return <div
@@ -132,12 +129,13 @@ export class GlobalNav extends Container<Props, State> {
 					</Link>
 					{context.user && <Tabs style={{ display: "inline-block", borderBottom: 0 }}>
 						<Link to="/" style={{ outline: "none" }}>
-							<TabItem active={isRootRoute(location)}>Repositories</TabItem>
+							<TabItem active={isHomeRoute}>Repositories</TabItem>
 						</Link>
 					</Tabs>}
 				</FlexContainer>
 
-				<QuickOpenModal repo={repo} rev={rev}
+				{/* TODO(john): the `|| null` is not very nice, we should avoid that. */}
+				<QuickOpenModal repo={repo || null} rev={rev || null}
 					showModal={this.state.showSearch}
 					activateSearch={(eventProps) => this.activateSearch(eventProps)}
 					onDismiss={this.onSearchDismiss} />

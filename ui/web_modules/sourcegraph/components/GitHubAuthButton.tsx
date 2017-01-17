@@ -1,12 +1,13 @@
 import * as React from "react";
+
+import { RouterLocation } from "sourcegraph/app/router";
 import { AuthButton } from "sourcegraph/components/AuthButton";
-import { Location } from "sourcegraph/Location";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	scopes?: string;
-	returnTo?: string | Location;
-	newUserReturnTo?: string | Location;
+	returnTo?: string | RouterLocation;
+	newUserReturnTo?: string | RouterLocation;
 	color?: string;
 	outline?: boolean;
 	block?: boolean;

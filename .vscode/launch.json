@@ -2,7 +2,7 @@
     "version": "0.1.0",
     "configurations": [
         {
-            "name": "(ui) http://localhost:3080/*",
+            "name": "ui",
             "type": "chrome",
             "request": "attach",
             "port": 9222,
@@ -89,6 +89,16 @@
                 "gitserver",
                 "indexer",
                 "src"
+            ]
+        },
+        {
+            "name": "Sourcegraph",
+            "configurations": [
+                "github-proxy",
+                "gitserver",
+                "indexer",
+                "src",
+                "ui"
             ]
         }
     ]

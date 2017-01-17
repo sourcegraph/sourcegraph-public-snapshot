@@ -5,22 +5,20 @@ import { PlainRoute } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { GlobalNav } from "sourcegraph/app/GlobalNav";
+import { rel } from "sourcegraph/app/routePatterns";
 import { Router, setRouter } from "sourcegraph/app/router";
-import * as styles from "sourcegraph/app/styles/App.css";
-import { withViewEventsLogged } from "sourcegraph/util/EventLogger";
-
-import { homeRoutes } from "sourcegraph/app/routes/homeRoutes";
 import { pageRoutes } from "sourcegraph/app/routes/pageRoutes";
 import { repoRoutes } from "sourcegraph/app/routes/repoRoutes";
 import { styleguideRoutes } from "sourcegraph/app/routes/styleguideRoutes";
 import { userRoutes } from "sourcegraph/app/routes/userRoutes";
 import { userSettingsRoutes } from "sourcegraph/app/routes/userSettingsRoutes";
+import * as styles from "sourcegraph/app/styles/App.css";
+import { HomeRouter } from "sourcegraph/home/HomeRouter";
+import { withViewEventsLogged } from "sourcegraph/util/EventLogger";
 
 interface Props {
 	main: JSX.Element;
 	footer?: JSX.Element;
-	location: any;
-	params?: any;
 }
 
 export class App extends React.Component<Props, {}> {
@@ -37,12 +35,12 @@ export class App extends React.Component<Props, {}> {
 
 	render(): JSX.Element {
 		let className = styles.main_container;
-		if (!context.user && location.pathname === "/") {
+		if (!context.user && this.context.router.location.pathname === "/") {
 			className = styles.main_container_homepage;
 		}
 		return (
 			<div className={className}>
-				<GlobalNav params={this.props.params} location={this.props.location} />
+				<GlobalNav location={this.context.router.location} />
 				{this.props.main}
 				{this.props.footer}
 			</div>
@@ -54,13 +52,17 @@ export const rootRoute: PlainRoute = {
 	path: "/",
 	component: withViewEventsLogged(App),
 	getIndexRoute: (location, callback) => {
-		callback(null, homeRoutes);
+		callback(null, {
+			path: rel.home,
+			getComponents: (loc, cb) => {
+				cb(null, { main: HomeRouter });
+			},
+		});
 	},
 	getChildRoutes: (location, callback) => {
 		callback(null, [
 			...pageRoutes,
 			...styleguideRoutes,
-			...homeRoutes,
 			...userRoutes,
 			...userSettingsRoutes,
 			...repoRoutes,

@@ -56,9 +56,9 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-router@2.0.39":
-  version "2.0.39"
-  resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-2.0.39.tgz#b0ae3c3dd98670c010a2b62b3c1ef6a57dda804a"
+"@types/react-router@^2.0.44":
+  version "2.0.44"
+  resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-2.0.44.tgz#d44515f8f25e9d0f6d2a8f6ff3b3eb022432c69c"
   dependencies:
     "@types/history" "*"
     "@types/react" "*"

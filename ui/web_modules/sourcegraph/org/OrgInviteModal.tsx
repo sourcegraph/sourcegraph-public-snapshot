@@ -1,15 +1,15 @@
 import * as React from "react";
-import { InjectedRouter } from "react-router";
+
 import { Org, OrgMember } from "sourcegraph/api";
+import { Router, RouterLocation } from "sourcegraph/app/router";
 import { Button, Heading, Table, User } from "sourcegraph/components";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
-import { Location } from "sourcegraph/Location";
 
 interface Props {
-	location: Location;
+	location: RouterLocation;
 	org: Org;
 	member: OrgMember | null;
 	onInvite: ([]: Array<Object>) => void;
@@ -36,7 +36,7 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	context: { router: InjectedRouter };
+	context: { router: Router };
 	email: HTMLInputElement;
 
 	constructor() {

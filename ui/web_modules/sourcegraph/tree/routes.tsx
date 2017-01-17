@@ -13,5 +13,5 @@ export function urlToTree(repo: string, rev: string | null, path: string | strin
 	}
 
 	const pathStr = typeof path === "string" ? path : path.join("/");
-	return urlTo("tree", { splat: [makeRepoRev(repo, rev), pathStr] } as any);
+	return urlTo("tree", { splat: [makeRepoRev(repo, rev), pathStr] });
 }
