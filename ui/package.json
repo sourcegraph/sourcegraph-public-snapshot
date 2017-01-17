@@ -82,10 +82,6 @@
     "test-tsmapimports": "cd scripts/tsmapimports && yarn run test",
     "generate": "./generate.sh"
   },
-  "browser": {
-    "fs": false,
-    "child_process": false
-  },
   "resolutions": {
     "core-js": "2.4.1",
     "lodash": "4.17.2",
