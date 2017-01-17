@@ -1,4 +1,3 @@
-import * as mapKeys from "lodash/mapKeys";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IFileStat, IResolveFileOptions } from "vs/platform/files/common/files";
@@ -57,7 +56,7 @@ function retrieveFilesAndDirs(resource: URI): any {
 // Convert a list of files into a hierarchical file stat structure.
 function toFileStat(resource: URI, files: string[]): IFileStat {
 	let path = resource.fragment;
-	const directories: { [key: string]: string[] } = {};
+	const directories = new Map();
 	const childFiles = [];
 	const childStats = [];
 	for (const candidate of files) {
@@ -67,13 +66,13 @@ function toFileStat(resource: URI, files: string[]): IFileStat {
 			continue;
 		}
 		const dir = candidate.substr(0, index);
-		if (!(directories[dir] instanceof Array)) {
-			directories[dir] = [];
+		if (!directories.has(dir)) {
+			directories.set(dir, []);
 		}
-		directories[dir].push(candidate.substr(index + 1));
+		directories.get(dir).push(candidate.substr(index + 1));
 	}
 	path += path ? "/" : "";
-	mapKeys(directories, (children, dir) => {
+	directories.forEach((children, dir) => {
 		childStats.push(toFileStat(
 			resource.with({ fragment: path + dir }),
 			children,
