@@ -7,7 +7,7 @@ import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { BlobRouteProps, Router, getBlobPropsFromRouter } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
-import { registerEditorCallbacks, syncEditorWithRouterProps } from "sourcegraph/editor/config";
+import { registerEditorCallbacks, syncEditorWithRouterProps, unmountWorkbench } from "sourcegraph/editor/config";
 
 interface Props extends BlobRouteProps { }
 
@@ -62,6 +62,7 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 
 	componentWillUnmount(): void {
 		window.onresize = () => void (0);
+		unmountWorkbench();
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {

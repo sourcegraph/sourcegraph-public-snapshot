@@ -19,7 +19,7 @@ export class EditorTitle extends React.Component<Props, {}> {
 	}
 
 	componentWillUnmount(): void {
-		this.toDispose.remove();
+		// this.toDispose.remove();
 	}
 
 	render(): JSX.Element {

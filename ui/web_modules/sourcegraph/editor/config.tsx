@@ -58,7 +58,11 @@ import { Services } from "sourcegraph/workbench/services";
  * observed when trying to open the same resource*. To workaround this, we track the the currently
  * displayed resource.
  */
-let currResource: URI;
+let currResource: URI | null;
+
+export function unmountWorkbench(): void {
+	currResource = null;
+}
 
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
