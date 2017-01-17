@@ -514,11 +514,6 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if err := json.Unmarshal(*req.Params, &m); err != nil {
 			return nil, err
 		}
-		// lsp.Log is the equivalent to a debug log level. We are
-		// generally not interested in debug logs.
-		if m.Type == lsp.Log {
-			return nil, nil
-		}
 		log.Printf("window/logMessage(%d) %s: %s", m.Type, c.id, m.Message)
 		// Log to the span for the server, not for this specific
 		// request.
