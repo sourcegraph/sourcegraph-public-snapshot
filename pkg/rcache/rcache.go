@@ -2,7 +2,6 @@ package rcache
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -104,11 +103,7 @@ var (
 var redisMasterEndpoint = env.Get("REDIS_MASTER_ENDPOINT", ":6379", "redis used for caches")
 
 func init() {
-	hostname := os.Getenv("SRC_APP_URL")
-	if hostname == "" {
-		hostname, _ = os.Hostname()
-	}
-	globalPrefix = fmt.Sprintf("%s:%s", hostname, dataVersion)
+	globalPrefix = dataVersion
 
 	pool = &redis.Pool{
 		MaxIdle:     3,
