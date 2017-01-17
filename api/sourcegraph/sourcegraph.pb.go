@@ -121,7 +121,9 @@ type Repo struct {
 	// permissions for GitHub repositories; all other repositories
 	// report that all users have the Pull permission only.
 	Permissions *RepoPermissions `json:"Permissions,omitempty"`
-	// IndexedRevision is the revision that the global index is currently based on.
+	// IndexedRevision is the revision that the global index is currently based on. It is only used
+	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
+	// the indexer to reindex the next time it gets triggered for this repository.
 	IndexedRevision *string `json:"IndexedRevision,omitempty"`
 }
 
