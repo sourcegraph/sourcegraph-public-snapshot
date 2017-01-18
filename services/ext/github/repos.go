@@ -2,6 +2,7 @@ package github
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"context"
@@ -29,11 +30,18 @@ var (
 		Name:      "github_unauthed_api_requests",
 		Help:      "Counts uncached requests to the GitHub API, and information on their origin if available.",
 	}, []string{"source"})
+	nilRepoBugCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repos",
+		Name:      "github_nil_repo_bug_count",
+		Help:      "Counts the number of github nil repo bugs we encounter, see issue #3105",
+	})
 )
 
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
 	prometheus.MustRegister(reposGitHubRequestsCounter)
+	prometheus.MustRegister(nilRepoBugCounter)
 }
 
 type Repos interface {
@@ -165,6 +173,12 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 			src = "unknown"
 		}
 		reposGitHubRequestsCounter.WithLabelValues(src).Inc()
+	}
+	if ghrepo.FullName == nil || ghrepo.Name == nil {
+		// We've hit the "nil repo" panic bug,
+		// see: https://github.com/sourcegraph/sourcegraph/issues/3105
+		nilRepoBugCounter.Inc()
+		return nil, errors.New("github repo get response returned nil FullName/Name")
 	}
 	return toRepo(ghrepo), nil
 }
