@@ -3,8 +3,10 @@ package backend
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"path"
+	"runtime"
 	"sort"
 	"time"
 
@@ -277,6 +279,18 @@ func (s *defs) RefLocations(ctx context.Context, op sourcegraph.RefLocationsOpti
 
 		run.Acquire()
 		go func() (err error) {
+			// Prevent any uncaught panics from taking the entire server down.
+			defer func() {
+				if r := recover(); r != nil {
+					// Same as net/http
+					const size = 64 << 10
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					log.Printf("ignoring panic during Refs.RefLocations\n%s", buf)
+					return
+				}
+			}()
+
 			ctx := xreferencesCtx
 			var refs []lspext.ReferenceInformation
 
