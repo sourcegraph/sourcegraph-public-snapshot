@@ -54,6 +54,7 @@ var (
 
 	appURL     = env.Get("SRC_APP_URL", "http://<http-addr>", "publicly accessible URL to web app (e.g., what you type into your browser)")
 	enableHSTS = env.Get("SG_ENABLE_HSTS", "false", "enable HTTP Strict Transport Security")
+	corsOrigin = env.Get("CORS_ORIGIN", "", "value for the Access-Control-Allow-Origin header returned with all requests")
 
 	certFile = env.Get("SRC_TLS_CERT", "", "certificate file for TLS")
 	keyFile  = env.Get("SRC_TLS_KEY", "", "key file for TLS")
@@ -228,6 +229,11 @@ func Main() error {
 
 			// no cache by default
 			w.Header().Set("Cache-Control", "no-cache, max-age=0")
+
+			// CORS
+			if corsOrigin != "" {
+				w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
+			}
 
 			next.ServeHTTP(w, r)
 		})
