@@ -16,7 +16,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -89,7 +88,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) 
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
-	rows, err := globalGraphDBH.Db.Query(`select COUNT(repo_id)
+	rows, err := globalGraphDBH.Db.Query(`SELECT COUNT(repo_id)
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
@@ -110,7 +109,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) 
 }
 
 func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
+	span, ctx := opentracing.StartSpanFromContext(ctx, "globalDeps.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -128,14 +127,14 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 	// terms of resource usage with real user requests.
 	rootPath := vcs + "://" + op.RepoURI + "?" + op.CommitID
 	var deps []lspext.DependencyReference
-	err = xlang.UnsafeOneShotClientRequest(ctx, language+"_bg", rootPath, "workspace/xdependencies", map[string]string{}, &deps)
+	err = xlangCall(ctx, language+"_bg", rootPath, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/xdependencies")
 	}
 
 	err = dbutil.Transaction(ctx, globalGraphDBH.Db, func(tx *sql.Tx) error {
 		// Update the global_dep table.
-		err = g.updateGlobalDep(ctx, tx, language, deps, op.RepoID)
+		err = g.update(ctx, tx, language, deps, op.RepoID)
 		if err != nil {
 			return errors.Wrap(err, "update global_dep")
 		}
@@ -217,8 +216,8 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 }
 
 // updateGlobalDep updates the global_dep table.
-func (g *globalDeps) updateGlobalDep(ctx context.Context, tx *sql.Tx, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "updateGlobalDep "+language)
+func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "globalDeps.update "+language)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -266,7 +265,7 @@ func (g *globalDeps) updateGlobalDep(ctx context.Context, tx *sql.Tx, language s
 		if _, err := copy.Exec(
 			language,          // language
 			string(data),      // dep_data
-			indexRepo,         // ref_repo_id
+			indexRepo,         // repo_id
 			string(hintsData), // hints
 		); err != nil {
 			return errors.Wrap(err, "executing ref copy")

@@ -41,9 +41,11 @@ var (
 			`CREATE EXTENSION IF NOT EXISTS citext;`,
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
 			new(dbGlobalDep).CreateTable(),
+			new(dbPkgs).CreateTable(),
 		},
 		DropSQL: []string{
 			new(dbGlobalDep).DropTable(),
+			new(dbPkgs).DropTable(),
 		},
 		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
 	}

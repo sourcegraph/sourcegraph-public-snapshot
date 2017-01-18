@@ -42,6 +42,11 @@ type DependencyReference struct {
 	Hints map[string]interface{} `json:"hints,omitempty"`
 }
 
+type PackageInformation struct {
+	Package      map[string]interface{} `json:"package,omitempty"`
+	Dependencies []DependencyReference  `json:"dependencies,omitempty"`
+}
+
 // TelemetryEventParams is a telemetry/event message sent from a
 // build/lang server back to the proxy. The information here is
 // forwarded to our opentracing system.
