@@ -13,7 +13,7 @@ testWithLangHandler(() => new BuildHandler());
 
 // Run build-handler-specific tests
 describe('LSP BuildHandler', function () {
-	this.timeout(10000);
+	this.timeout(20000);
 
 	describe('single package.json at root', function () {
 		before(function (done: () => void) {
