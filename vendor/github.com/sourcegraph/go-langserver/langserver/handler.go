@@ -36,12 +36,8 @@ type LangHandler struct {
 	*HandlerShared
 	init *InitializeParams // set by "initialize" request
 
-	// cached symbols
-	pkgSymCacheMu sync.Mutex
-	pkgSymCache   map[string][]lsp.SymbolInformation
-
-	// cached typechecking results
-	cache map[typecheckKey]*typecheckResult
+	typecheckCache cache
+	symbolCache    cache
 
 	// cache the reverse import graph
 	importGraphOnce sync.Once
@@ -71,19 +67,24 @@ func (h *LangHandler) resetCaches(lock bool) {
 	if lock {
 		h.mu.Lock()
 	}
-	h.cache = map[typecheckKey]*typecheckResult{}
+
 	h.importGraphOnce = sync.Once{}
 	h.importGraph = nil
-	if lock {
-		h.mu.Unlock()
+
+	if h.typecheckCache == nil {
+		h.typecheckCache = newTypecheckCache()
+	} else {
+		h.typecheckCache.Purge()
+	}
+
+	if h.symbolCache == nil {
+		h.symbolCache = newSymbolCache()
+	} else {
+		h.symbolCache.Purge()
 	}
 
 	if lock {
-		h.pkgSymCacheMu.Lock()
-	}
-	h.pkgSymCache = nil
-	if lock {
-		h.pkgSymCacheMu.Unlock()
+		h.mu.Unlock()
 	}
 }
 

@@ -20,7 +20,6 @@ import (
 	"golang.org/x/tools/go/buildutil"
 
 	"github.com/neelance/parallel"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -242,8 +241,8 @@ func score(q Query, s lsp.SymbolInformation) (scor int) {
 // from the Go parser and doc packages.
 func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) lsp.SymbolInformation {
 	container = filepath.Base(container)
-	if f := strings.Fields(container); len(f) > 0 {
-		container = f[len(f)-1]
+	if i := strings.LastIndex(container, " "); i >= 0 {
+		container = container[i+1:]
 	}
 	return lsp.SymbolInformation{
 		Name:          name,
@@ -273,7 +272,6 @@ func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Co
 func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, query Query, limit int) ([]lsp.SymbolInformation, error) {
 	results := resultSorter{Query: query, results: make([]scoredSymbol, 0)}
 	{
-		fs := token.NewFileSet()
 		rootPath := h.FilePath(h.init.RootPath)
 		bctx := h.BuildContext(ctx)
 
@@ -299,11 +297,11 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 
 			par.Acquire()
 			go func(pkg string) {
-				defer par.Release()
 				// Prevent any uncaught panics from taking the
 				// entire server down. For an example see
 				// https://github.com/golang/go/issues/17788
 				defer func() {
+					par.Release()
 					if r := recover(); r != nil {
 						// Same as net/http
 						const size = 64 << 10
@@ -313,7 +311,7 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 						return
 					}
 				}()
-				h.collectFromPkg(ctx, bctx, fs, pkg, rootPath, &results)
+				h.collectFromPkg(ctx, bctx, pkg, rootPath, &results)
 			}(pkg)
 		}
 		_ = par.Wait()
@@ -326,59 +324,41 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 	return results.Results(), nil
 }
 
-// getPkgSyms returns the cached symbols for package pkg, if they
-// exist. Otherwise, it returns nil.
-func (h *LangHandler) getPkgSyms(pkg string) []lsp.SymbolInformation {
-	h.pkgSymCacheMu.Lock()
-	l, ok := h.pkgSymCache[pkg]
-	h.pkgSymCacheMu.Unlock()
-	if ok {
-		symbolCacheTotal.WithLabelValues("hit").Inc()
-	} else {
-		symbolCacheTotal.WithLabelValues("miss").Inc()
-	}
-	return l
-}
-
-// setPkgSyms updates the cached symbols for package pkg.
-func (h *LangHandler) setPkgSyms(pkg string, syms []lsp.SymbolInformation) {
-	h.pkgSymCacheMu.Lock()
-	if h.pkgSymCache == nil {
-		h.pkgSymCache = map[string][]lsp.SymbolInformation{}
-	}
-	h.pkgSymCache[pkg] = syms
-	h.pkgSymCacheMu.Unlock()
+type pkgSymResult struct {
+	ready   chan struct{} // closed to broadcast readiness
+	symbols []lsp.SymbolInformation
 }
 
 // collectFromPkg collects all the symbols from the specified package
 // into the results. It uses LangHandler's package symbol cache to
 // speed up repeated calls.
-func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, fs *token.FileSet, pkg string, rootPath string, results *resultSorter) {
-	pkgSyms := h.getPkgSyms(pkg)
-	if pkgSyms == nil {
+func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, pkg string, rootPath string, results *resultSorter) {
+	symbols := h.symbolCache.Get(pkg, func() interface{} {
 		findPackage := h.getFindPackageFunc()
 		buildPkg, err := findPackage(ctx, bctx, pkg, rootPath, 0)
 		if err != nil {
 			maybeLogImportError(pkg, err)
-			return
+			return nil
 		}
 
+		fs := token.NewFileSet()
 		astPkgs, err := parseDir(fs, bctx, buildPkg.Dir, nil, 0)
 		if err != nil {
 			log.Printf("failed to parse directory %s: %s", buildPkg.Dir, err)
-			return
+			return nil
 		}
 		astPkg := astPkgs[buildPkg.Name]
 		if astPkg == nil {
 			if !strings.HasPrefix(buildPkg.ImportPath, "github.com/golang/go/misc/cgo/") {
 				log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
 			}
-			return
+			return nil
 		}
 		// TODO(keegancsmith) Remove vendored doc/go once https://github.com/golang/go/issues/17788 is shipped
 		docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
 
 		// Emit decls
+		var pkgSyms []lsp.SymbolInformation
 		for _, t := range docPkg.Types {
 			if len(t.Decl.Specs) == 1 { // the type name is the first spec in type declarations
 				pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.Specs[0].Pos()))
@@ -419,10 +399,15 @@ func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, f
 		for _, v := range docPkg.Funcs {
 			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
 		}
-		h.setPkgSyms(pkg, pkgSyms)
+
+		return pkgSyms
+	})
+
+	if symbols == nil {
+		return
 	}
 
-	for _, sym := range pkgSyms {
+	for _, sym := range symbols.([]lsp.SymbolInformation) {
 		if results.Query.Filter == FilterExported && !ast.IsExported(sym.Name) {
 			continue
 		}
@@ -467,17 +452,6 @@ func maybeLogImportError(pkg string, err error) {
 	if !(isNoGoError || !isMultiplePackageError(err) || strings.HasPrefix(pkg, "github.com/golang/go/test/")) {
 		log.Printf("skipping possible package %s: %s", pkg, err)
 	}
-}
-
-var symbolCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "golangserver",
-	Subsystem: "symbol",
-	Name:      "cache_request_total",
-	Help:      "Count of requests to cache.",
-}, []string{"type"})
-
-func init() {
-	prometheus.MustRegister(symbolCacheTotal)
 }
 
 // listPkgsUnderDir is buildutil.ExpandPattern(ctxt, []string{dir +
