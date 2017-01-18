@@ -143,7 +143,7 @@ export class BuildHandler implements LanguageHandler {
 	 * even more to install just that dependency in a given managed
 	 * module directory.
 	 */
-	private async ensureDependency(dependency: rt.DependencyAttributes, dependeeName?: string): Promise<void> {
+	private async ensureDependency(dependency: rt.PackageDescriptor, dependeeName?: string): Promise<void> {
 		if (!this.managedModuleInit) {
 			throw new Error("build handler is not yet initialized");
 		}
@@ -361,6 +361,10 @@ export class BuildHandler implements LanguageHandler {
 
 	getDependencies(): Promise<rt.DependencyReference[]> {
 		return this.ls.getDependencies();
+	}
+
+	getPackages(): Promise<rt.PackageInformation[]> {
+		return this.ls.getPackages();
 	}
 
 	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParamsWithLimit): Promise<SymbolInformation[]> {
