@@ -9,7 +9,7 @@ set -o pipefail
 go install -race ./cmd/src
 
 i=0
-cmds=("./dev/gofmt.sh" "(cd ui; yarn run test)" "make check" "./dev/ci/run-checkup.sh" "(cd client/browser-ext; yarn && yarn run test && yarn run build && yarn run test)" "./xlang/php/test.sh" "(cd xlang/javascript-typescript/buildserver && yarn && ./node_modules/.bin/tsc && yarn run fmt-check && yarn test)")
+cmds=("./dev/gofmt.sh" "(cd ui; yarn run test)" "make check" "./dev/ci/run-checkup.sh" "(cd client/browser-ext; yarn && yarn run test && yarn run build && yarn run test)" "./xlang/php/test.sh" "(cd xlang/javascript-typescript/buildserver && yarn && ./node_modules/.bin/tsc && yarn run fmt-check && yarn test)" "go test -v -timeout 5m ./xlang")
 for cmd in "${cmds[@]}"; do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
@@ -20,7 +20,7 @@ done
 
 # Build a list of all pkgs for this node.
 pkgs=()
-for pkg in $(go list ./... | grep -v /vendor/ | sort); do
+for pkg in $(go list ./... | grep -v /vendor/ | grep -v '^sourcegraph.com/sourcegraph/sourcegraph/xlang$' | sort); do
 	if (( i % CIRCLE_NODE_TOTAL == CIRCLE_NODE_INDEX ))
 	then
 		pkgs+=("$pkg")
