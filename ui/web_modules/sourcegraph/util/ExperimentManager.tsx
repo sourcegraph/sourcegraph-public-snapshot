@@ -65,7 +65,7 @@ export class Experiment {
 			console.error(`cannot set variation, optimizely id missing from variation ${variation.name}: ${variation.optimizelyId}`);
 			return;
 		}
-		optimizely.optimizelyApiService.setVariation(this.optimizelyId, variation.optimizelyId);
+		optimizely.optimizelyApiService.setVariation(this.optimizelyId, variation.index);
 	}
 
 	private logToConsole(): void {

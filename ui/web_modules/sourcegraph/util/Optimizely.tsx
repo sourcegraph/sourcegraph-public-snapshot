@@ -103,11 +103,11 @@ class OptimizelyApiServiceClass {
 		return { experimentInfo: experimentInfo };
 	}
 
-	public setVariation(optimizelyId: string, variationId?: string): void {
+	public setVariation(optimizelyId: string, variationIndex?: number): void {
 		this.optimizely.push({
 			"type": "bucketVisitor",
 			"experimentId": optimizelyId,
-			"variationIndex": variationId,
+			"variationIndex": variationIndex,
 		});
 	}
 
