@@ -251,5 +251,8 @@ func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	}
 
 	// Refresh global references indexes.
-	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op, inv.Languages)
+	if err := localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op, inv.Languages); err != nil {
+		return err
+	}
+	return localstore.Pkgs.UnsafeRefreshIndex(ctx, op, inv.Languages)
 }

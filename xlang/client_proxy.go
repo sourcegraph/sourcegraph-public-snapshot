@@ -290,7 +290,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			HoverProvider:      true,
 		}, nil
 
-	case "textDocument/definition", "textDocument/xdefinition", "textDocument/hover", "textDocument/references", "textDocument/documentSymbol", "workspace/symbol", "workspace/xreferences", "workspace/xdependencies":
+	case "textDocument/definition", "textDocument/xdefinition", "textDocument/hover", "textDocument/references", "textDocument/documentSymbol", "workspace/symbol", "workspace/xreferences", "workspace/xdependencies", "workspace/packages":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
 		}
@@ -430,7 +430,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 	lspext.WalkURIFields(params, func(uri string) {
 		uris = append(uris, uri)
 	}, nil)
-	if len(uris) != 1 && method != "workspace/symbol" && method != "workspace/xreferences" && method != "workspace/xdependencies" {
+	if len(uris) != 1 && method != "workspace/symbol" && method != "workspace/xreferences" && method != "workspace/xdependencies" && method != "workspace/packages" {
 		return fmt.Errorf("expected exactly 1 document URI (got %d) in LSP params object %s", len(uris), pb)
 	}
 
