@@ -6,13 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 )
-
-func init() {
-	internal.Middleware = append(internal.Middleware, redirectsMiddleware)
-}
 
 // redirects is a mapping from old URL path to new destination
 // URL. Note that map keys are URL paths, not full URLs, so (e.g.) a
@@ -45,7 +40,7 @@ var redirects = map[string]string{
 // redirectsMiddleware sends an HTTP 301 Moved Permanently response
 // with the new destination URL if the request URL's path (minus
 // trailing slash) is in the redirects map.
-func redirectsMiddleware(next http.Handler) http.Handler {
+func RedirectsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		if path != "/" {

@@ -5,6 +5,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/oauth2client"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/redirects"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -14,9 +15,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
-
-	// Import for side effects.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/internal/redirects"
 )
 
 // NewHandler returns a new app handler that uses the provided app
@@ -33,8 +31,8 @@ func NewHandler(r *router.Router) http.Handler {
 		auth.CookieMiddleware,
 		githubAuthMiddleware,
 		eventsutil.AgentMiddleware,
+		redirects.RedirectsMiddleware,
 	}
-	mw = append(mw, internal.Middleware...)
 
 	m := http.NewServeMux()
 
