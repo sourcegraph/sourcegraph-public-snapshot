@@ -130,7 +130,7 @@ func doTestServer(t *testing.T, a *testserver.Server, ctx context.Context) {
 	}
 
 	// Test app server.
-	resp3, err := http.Get(a.AppURL + "/_/status")
+	resp3, err := http.Get(a.AppURL)
 	if err != nil {
 		t.Fatal(err)
 	}
