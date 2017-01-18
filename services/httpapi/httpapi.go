@@ -29,13 +29,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	}
 	m.StrictSlash(true)
 
-	// SECURITY NOTE: The HTTP API should not accept cookies as
-	// authentication. Doing so would open it up to CSRF
-	// attacks.
-	var mw []handlerutil.Middleware
-	mw = append(mw, httpapiauth.AuthorizationMiddleware)
-	mw = append(mw, eventsutil.AgentMiddleware)
-
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoCreate).Handler(httptrace.TraceRoute(handler(serveRepoCreate)))
 	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(func(w http.ResponseWriter, r *http.Request) error { return nil }))) // legacy
@@ -59,7 +52,14 @@ func NewHandler(m *mux.Router) http.Handler {
 		http.Error(w, "no route", http.StatusNotFound)
 	})
 
-	return handlerutil.WithMiddleware(m, mw...)
+	// SECURITY NOTE: The HTTP API should not accept cookies as
+	// authentication. Doing so would open it up to CSRF
+	// attacks.
+	var h http.Handler = m
+	h = eventsutil.AgentMiddleware(h)
+	h = httpapiauth.AuthorizationMiddleware(h)
+
+	return h
 }
 
 // handler is a wrapper func for API handlers.

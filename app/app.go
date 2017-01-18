@@ -11,7 +11,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
@@ -25,14 +24,6 @@ func NewHandler(r *router.Router) http.Handler {
 	}
 
 	auth.InitSessionStore(conf.AppURL.Scheme == "https")
-
-	mw := []handlerutil.Middleware{
-		httpapiauth.AuthorizationMiddleware,
-		auth.CookieMiddleware,
-		githubAuthMiddleware,
-		eventsutil.AgentMiddleware,
-		redirects.RedirectsMiddleware,
-	}
 
 	m := http.NewServeMux()
 
@@ -60,7 +51,14 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.GDDORefs).Handler(httptrace.TraceRoute(internal.Handler(serveGDDORefs)))
 
-	return handlerutil.WithMiddleware(m, mw...)
+	var h http.Handler = m
+	h = redirects.RedirectsMiddleware(h)
+	h = eventsutil.AgentMiddleware(h)
+	h = githubAuthMiddleware(h)
+	h = auth.CookieMiddleware(h)
+	h = httpapiauth.AuthorizationMiddleware(h)
+
+	return h
 }
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {

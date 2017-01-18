@@ -212,17 +212,29 @@ func Main() error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", conf.AppURL)
 	}
 
-	mw := []handlerutil.Middleware{middleware.NoCacheByDefault}
-	if v, _ := strconv.ParseBool(enableHSTS); v {
-		mw = append(mw, middleware.StrictTransportSecurity)
-	}
-	mw = append(mw, middleware.SecureHeader)
-	mw = append(mw, httptrace.Middleware)
-	mw = append(mw, middleware.BlackHole)
-	mw = append(mw, middleware.SourcegraphComGoGetHandler)
+	var h http.Handler = sm
+	h = middleware.SourcegraphComGoGetHandler(h)
+	h = middleware.BlackHole(h)
+	h = httptrace.Middleware(h)
+	h = (func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// headers for security
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-XSS-Protection", "1; mode=block")
+			w.Header().Set("X-Frame-Options", "DENY")
+			if v, _ := strconv.ParseBool(enableHSTS); v {
+				w.Header().Set("Strict-Transport-Security", "max-age=8640000")
+			}
+
+			// no cache by default
+			w.Header().Set("Cache-Control", "no-cache, max-age=0")
+
+			next.ServeHTTP(w, r)
+		})
+	})(h)
 
 	srv := &http.Server{
-		Handler:      handlerutil.WithMiddleware(sm, mw...),
+		Handler:      h,
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 60 * time.Second,
 	}

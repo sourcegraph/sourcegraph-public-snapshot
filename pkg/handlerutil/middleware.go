@@ -8,15 +8,6 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-type Middleware func(next http.Handler) http.Handler
-
-func WithMiddleware(h http.Handler, mw ...Middleware) http.Handler {
-	if len(mw) == 0 {
-		return h
-	}
-	return mw[0](WithMiddleware(h, mw[1:]...))
-}
-
 // NewHandlerWithCSRFProtection creates a new handler that uses the provided
 // handler. It additionally adds support for cross-site request forgery. To make
 // your forms compliant you will have to include a hidden input which contains
