@@ -62,6 +62,11 @@ type ServerCapabilities struct {
 	// XDefinitionProvider indicates the server provides support for
 	// textDocument/xdefinition. This is a Sourcegraph extension.
 	XDefinitionProvider bool `json:"xdefinitionProvider,omitempty"`
+
+	// XWorkspaceSymbolByProperties indicates the server provides support for
+	// querying symbols by properties with WorkspaceSymbolParams.symbol. This
+	// is a Sourcegraph extension.
+	XWorkspaceSymbolByProperties bool `json:"xworkspaceSymbolByProperties,omitempty"`
 }
 
 type CompletionOptions struct {

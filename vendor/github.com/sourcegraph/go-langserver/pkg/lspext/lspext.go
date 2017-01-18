@@ -8,6 +8,13 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
+// WorkspaceSymbolParams is the extension workspace/symbol parameter type.
+type WorkspaceSymbolParams struct {
+	Query  string           `json:"query,omitempty"`
+	Limit  int              `json:"limit"`
+	Symbol SymbolDescriptor `json:"symbol,omitempty"`
+}
+
 // WorkspaceReferencesParams is parameters for the `workspace/xreferences` extension
 //
 // See: https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-reference.md

@@ -167,7 +167,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 			go func() {
 				ctx, cancel := context.WithDeadline(ctx, time.Now().Add(30*time.Second))
 				defer cancel()
-				_, _ = h.handleWorkspaceSymbol(ctx, conn, req, lsp.WorkspaceSymbolParams{
+				_, _ = h.handleWorkspaceSymbol(ctx, conn, req, lspext.WorkspaceSymbolParams{
 					Query: "",
 					Limit: 100,
 				})
@@ -185,6 +185,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 				WorkspaceSymbolProvider:      true,
 				XWorkspaceReferencesProvider: true,
 				XDefinitionProvider:          true,
+				XWorkspaceSymbolByProperties: true,
 				SignatureHelpProvider:        &lsp.SignatureHelpOptions{TriggerCharacters: []string{"(", ","}},
 			},
 		}, nil
@@ -273,7 +274,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrp
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params lsp.WorkspaceSymbolParams
+		var params lspext.WorkspaceSymbolParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}

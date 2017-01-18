@@ -21,6 +21,7 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
@@ -31,6 +32,8 @@ type Query struct {
 	Filter    FilterType
 	File, Dir string
 	Tokens    []string
+
+	Symbol lspext.SymbolDescriptor
 }
 
 // String converts the query back into a logically equivalent, but not strictly
@@ -118,6 +121,11 @@ var keywords = map[string]lsp.SymbolKind{
 	"const":   lsp.SKConstant,
 }
 
+type symbolPair struct {
+	lsp.SymbolInformation
+	desc lspext.SymbolDescriptor
+}
+
 // resultSorter is a utility struct for collecting, filtering, and
 // sorting symbol results.
 type resultSorter struct {
@@ -130,7 +138,7 @@ type resultSorter struct {
 // It is used internally by resultSorter.
 type scoredSymbol struct {
 	score int
-	lsp.SymbolInformation
+	symbolPair
 }
 
 /*
@@ -156,7 +164,7 @@ func (s *resultSorter) Swap(i, j int) {
 
 // Collect is a thread-safe method that will record the passed-in
 // symbol in the list of results if its score > 0.
-func (s *resultSorter) Collect(si lsp.SymbolInformation) {
+func (s *resultSorter) Collect(si symbolPair) {
 	s.resultsMu.Lock()
 	score := score(s.Query, si)
 	if score > 0 {
@@ -177,11 +185,14 @@ func (s *resultSorter) Results() []lsp.SymbolInformation {
 
 // score returns 0 for results that aren't matches. Results that are matches are assigned
 // a positive score, which should be used for ranking purposes.
-func score(q Query, s lsp.SymbolInformation) (scor int) {
+func score(q Query, s symbolPair) (scor int) {
 	if q.Kind != 0 {
 		if q.Kind != s.Kind {
 			return 0
 		}
+	}
+	if q.Symbol != nil && !symbolContains(q.Symbol, s.desc) {
+		return -1
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
 	filename := strings.TrimPrefix(s.Location.URI, "file://")
@@ -239,17 +250,41 @@ func score(q Query, s lsp.SymbolInformation) (scor int) {
 
 // toSym returns a SymbolInformation value derived from values we get
 // from the Go parser and doc packages.
-func toSym(name, container string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) lsp.SymbolInformation {
-	container = filepath.Base(container)
-	if i := strings.LastIndex(container, " "); i >= 0 {
-		container = container[i+1:]
+func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) symbolPair {
+	container := recv
+	if container == "" {
+		container = filepath.Base(bpkg.ImportPath)
 	}
-	return lsp.SymbolInformation{
-		Name:          name,
-		Kind:          kind,
-		Location:      goRangeToLSPLocation(fs, pos, pos+token.Pos(len(name))-1),
-		ContainerName: container,
+	return symbolPair{
+		SymbolInformation: lsp.SymbolInformation{
+			Name:          name,
+			Kind:          kind,
+			Location:      goRangeToLSPLocation(fs, pos, pos+token.Pos(len(name))-1),
+			ContainerName: container,
+		},
+		// NOTE: fields must be kept in sync with workspace_refs.go:defSymbolDescriptor
+		desc: lspext.SymbolDescriptor{
+			"vendor":      IsVendorDir(bpkg.Dir),
+			"package":     path.Clean(bpkg.ImportPath),
+			"packageName": bpkg.Name,
+			"recv":        recv,
+			"name":        name,
+			"id":          fmt.Sprintf("%s:%s:%s:%s", path.Clean(bpkg.ImportPath), bpkg.Name, recv, name),
+		},
 	}
+}
+
+// symbolContains tells if a exactly contains b.
+//
+// The only exception is the `id` field, which is treated specially. Instead of
+// a byte-by-byte string comparison, idEqual is used.
+func symbolContains(a, b lspext.SymbolDescriptor) bool {
+	for k, v := range a {
+		if bv, ok := b[k]; !ok || bv != v {
+			return false
+		}
+	}
+	return true
 }
 
 // handleTextDocumentSymbol handles `textDocument/documentSymbol` requests for
@@ -261,8 +296,9 @@ func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn JSONRPC
 
 // handleSymbol handles `workspace/symbol` requests for the Go
 // language server.
-func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	q := ParseQuery(params.Query)
+	q.Symbol = params.Symbol
 	if q.Filter == FilterDir {
 		q.Dir = path.Join(h.init.RootImportPath, q.Dir)
 	}
@@ -358,46 +394,46 @@ func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, p
 		docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
 
 		// Emit decls
-		var pkgSyms []lsp.SymbolInformation
+		var pkgSyms []symbolPair
 		for _, t := range docPkg.Types {
 			if len(t.Decl.Specs) == 1 { // the type name is the first spec in type declarations
-				pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.Specs[0].Pos()))
+				pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg, "", lsp.SKClass, fs, t.Decl.Specs[0].Pos()))
 			} else { // in case there's some edge case where there's not 1 spec, fall back to the start of the declaration
-				pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg.ImportPath, lsp.SKClass, fs, t.Decl.TokPos))
+				pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg, "", lsp.SKClass, fs, t.Decl.TokPos))
 			}
 
 			for _, v := range t.Funcs {
-				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg, "", lsp.SKFunction, fs, v.Decl.Name.NamePos))
 			}
 			for _, v := range t.Methods {
 				if results.Query.Filter == FilterExported && (!ast.IsExported(v.Name) || !ast.IsExported(t.Name)) {
 					continue
 				}
-				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath+" "+t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
+				pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg, t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
 			}
 			for _, v := range t.Consts {
 				for _, name := range v.Names {
-					pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+					pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, v.Decl.TokPos))
 				}
 			}
 			for _, v := range t.Vars {
 				for _, name := range v.Names {
-					pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKField, fs, v.Decl.TokPos))
+					pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKField, fs, v.Decl.TokPos))
 				}
 			}
 		}
 		for _, v := range docPkg.Consts {
 			for _, name := range v.Names {
-				pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKConstant, fs, v.Decl.TokPos))
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, v.Decl.TokPos))
 			}
 		}
 		for _, v := range docPkg.Vars {
 			for _, name := range v.Names {
-				pkgSyms = append(pkgSyms, toSym(name, buildPkg.ImportPath, lsp.SKVariable, fs, v.Decl.TokPos))
+				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKVariable, fs, v.Decl.TokPos))
 			}
 		}
 		for _, v := range docPkg.Funcs {
-			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg.ImportPath, lsp.SKFunction, fs, v.Decl.Name.NamePos))
+			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg, "", lsp.SKFunction, fs, v.Decl.Name.NamePos))
 		}
 
 		return pkgSyms
@@ -407,7 +443,7 @@ func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, p
 		return
 	}
 
-	for _, sym := range symbols.([]lsp.SymbolInformation) {
+	for _, sym := range symbols.([]symbolPair) {
 		if results.Query.Filter == FilterExported && !ast.IsExported(sym.Name) {
 			continue
 		}
