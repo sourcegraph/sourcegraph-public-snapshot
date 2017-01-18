@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/srclib/graph"
@@ -623,48 +624,28 @@ type DeprecatedFileRef struct {
 	Score int16
 }
 
-// RefLocationsOptions specifies options for querying locations that reference
-// a definition.
-type RefLocationsOptions struct {
-	Language        string
-	RepoID          int32
+// DependencyReferencesOptions specifies options for querying dependency references.
+type DependencyReferencesOptions struct {
+	Language        string // e.g. "go"
+	RepoID          int32  // repository whose file:line:character describe the symbol of interest
 	File            string
 	Line, Character int
+
+	// Limit specifies the number of dependency references to return.
+	Limit int // e.g. 20
 }
 
-// RefLocations is a lists of reference locations to a definition.
-type RefLocations struct {
-	// Locations is the actual locations that reference a definition.
-	Locations []*RefLocation
-
-	// StreamResponse specifies if more results are available.
-	StreamResponse
+type DependencyReferences struct {
+	References []*DependencyReference
+	Location   lspext.SymbolLocationInformation
 }
 
-func (r *RefLocations) Len() int      { return len(r.Locations) }
-func (r *RefLocations) Swap(i, j int) { r.Locations[i], r.Locations[j] = r.Locations[j], r.Locations[i] }
-func (r *RefLocations) Less(i, j int) bool {
-	x := r.Locations[i]
-	y := r.Locations[j]
-	return (x.Scheme + x.Host + x.Path + x.File) < (y.Scheme + y.Host + y.Path + y.File)
-}
-
-// RefLocation represents the location of a reference to a definition.
-type RefLocation struct {
-	// Scheme, Host, Path, Version, and File combined compose a URI at which a
-	// reference to a definition has been made. For example:
-	//
-	//  <scheme>://<host><path>?<version>#<file>
-	// 	git://github.com/gorilla/mux?master#sub/pkg/main.go
-	//
-	// The scheme is limited to VCS protocol schemes (e.g. `git` or `svn`)
-	// which are viewable directly by Sourcegraph itself. No language-specific
-	// schemes like `npm` etc are applicable here.
-	Scheme, Host, Path, Version, File string
-
-	// Start and end line/character positions at which the reference begins and
-	// ends, respectively.
-	StartLine, StartChar, EndLine, EndChar int
+// DependencyReference effectively says that RepoID has made a reference to a
+// dependency.
+type DependencyReference struct {
+	DepData map[string]interface{} // includes additional information about the dependency, e.g. whether or not it is vendored for Go
+	RepoID  int32                  // the repository who made the reference to the dependency.
+	Hints   map[string]interface{} // hints which should be passed to workspace/xreferences in order to more quickly find the definition.
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.

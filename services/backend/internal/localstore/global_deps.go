@@ -163,13 +163,7 @@ type DependenciesOptions struct {
 	Limit int
 }
 
-type Dependency struct {
-	DepData map[string]interface{}
-	RepoID  int32
-	Hints   map[string]interface{}
-}
-
-func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*Dependency, err error) {
+func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.Dependencies")
 	defer func() {
 		if err != nil {
@@ -205,7 +199,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 		if err := rows.Scan(&depData, &repoID, &hints); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		r := &Dependency{
+		r := &sourcegraph.DependencyReference{
 			RepoID: repoID,
 		}
 		if err := json.Unmarshal([]byte(depData), &r.DepData); err != nil {
