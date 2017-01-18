@@ -117,6 +117,7 @@ func main() {
 		for k, v := range resp.Header {
 			w.Header()[k] = v
 		}
+		w.WriteHeader(resp.StatusCode)
 		io.Copy(w, resp.Body)
 		resp.Body.Close()
 	})
