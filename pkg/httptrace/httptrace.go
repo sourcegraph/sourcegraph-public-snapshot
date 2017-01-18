@@ -94,7 +94,7 @@ func Middleware(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "trace", traceutil.SpanURL(span), "code", code, "RemoteAddr", r.RemoteAddr, "UserAgent", r.UserAgent(), "duration", duration)
+		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "trace", traceutil.SpanURL(span), "code", code, "X-Forwarded-For", r.Header.Get("X-Forwarded-For"), "UserAgent", r.UserAgent(), "duration", duration)
 	})
 }
 

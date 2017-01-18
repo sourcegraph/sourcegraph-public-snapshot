@@ -212,7 +212,7 @@ func Main() error {
 		log15.Warn("TLS is disabled but app url scheme is https", "appURL", conf.AppURL)
 	}
 
-	mw := []handlerutil.Middleware{middleware.RealIP, middleware.NoCacheByDefault}
+	mw := []handlerutil.Middleware{middleware.NoCacheByDefault}
 	if v, _ := strconv.ParseBool(enableHSTS); v {
 		mw = append(mw, middleware.StrictTransportSecurity)
 	}

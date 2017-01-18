@@ -5,16 +5,6 @@ import (
 	"net/http"
 )
 
-// RealIP sets req.RemoteAddr from the X-Real-Ip header if it exists.
-func RealIP(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if s := r.Header.Get("X-Real-Ip"); s != "" && stripPort(r.RemoteAddr) == "127.0.0.1" {
-			r.RemoteAddr = s
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 // stripPort removes the port specification from an address.
 func stripPort(s string) string {
 	if h, _, err := net.SplitHostPort(s); err == nil {
