@@ -107,7 +107,7 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 						{this._exampleProps()}
 						<div className={classNames(styles.user_actions)}>
 							<div className={classNames(styles.inline_actions, base.pt3)} style={{ verticalAlign: "top" }}>
-								<GitHubLogo width={70} color={jsColors.coolGray3()} className={classNames(base.hidden_s)} style={{ marginRight: "-20px", verticalAlign: "top" }} />
+								<GitHubLogo width={70} color={jsColors.blueGray()} className={classNames(base.hidden_s)} style={{ marginRight: "-20px", verticalAlign: "top" }} />
 								<img width={70} className={classNames(base.hidden_s)} src={`${context.assetsRoot}/img/sourcegraph-mark.svg`}></img>
 							</div>
 							<div className={classNames(styles.inline_actions, base.pt2, base.pl3)} style={{ maxWidth: "340px" }}>

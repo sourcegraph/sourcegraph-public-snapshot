@@ -32,6 +32,17 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface ICommitInfo {
+		__typename: string;
+		rev: string;
+		author: ISignature | null;
+		committer: ISignature | null;
+		message: string;
+	}
+
+	/*
+	  description: null
+	*/
 	interface ICommitState {
 		__typename: string;
 		commit: ICommit | null;
@@ -63,6 +74,7 @@ declare namespace GQL {
 		name: string;
 		content: string;
 		blame: Array<IHunk>;
+		commits: Array<ICommitInfo>;
 		definition: IDefinition | null;
 	}
 
@@ -76,11 +88,8 @@ declare namespace GQL {
 		startByte: number;
 		endByte: number;
 		rev: string;
-		name: string;
-		email: string;
-		date: string;
+		author: ISignature | null;
 		message: string;
-		gravatarHash: string;
 	}
 
 	/*
@@ -94,6 +103,16 @@ declare namespace GQL {
 	interface INode {
 		__typename: string;
 		id: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IPerson {
+		__typename: string;
+		name: string;
+		email: string;
+		gravatarHash: string;
 	}
 
 	/*
@@ -162,6 +181,15 @@ declare namespace GQL {
 		repository: IRepository | null;
 		remoteRepositories: Array<IRemoteRepository>;
 		remoteStarredRepositories: Array<IRemoteRepository>;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ISignature {
+		__typename: string;
+		person: IPerson | null;
+		date: string;
 	}
 
 	/*

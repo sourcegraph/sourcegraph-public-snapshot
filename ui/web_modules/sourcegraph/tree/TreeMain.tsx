@@ -79,12 +79,12 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 				>
 				<PageTitle title={title} />
 				<div>
-					<Panel style={{ borderBottom: `1px solid ${colors.coolGray4(0.6)}` }}>
+					<Panel style={{ borderBottom: `1px solid ${colors.blueGrayL3(0.6)}` }}>
 						<div style={{
 							padding: `${whitespace[2]} ${whitespace[3]}`,
 						}}>
 							<RepoNavContext params={this.props.params} style={{
-								color: colors.coolGray3(),
+								color: colors.blueGray(),
 								marginRight: 4,
 							}} />
 						</div>

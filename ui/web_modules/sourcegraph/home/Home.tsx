@@ -60,7 +60,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						align="center" level={1} style={Object.assign({},
 							layout.container,
 							{
-								maxWidth: 640,
+								maxWidth: 680,
 								marginBottom: whitespace[5],
 								marginTop: whitespace[3],
 								padding: whitespace[3],
@@ -125,7 +125,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					</Heading>
 
 					<p style={{
-						color: colors.coolGray3(),
+						color: colors.blueGray(),
 						paddingLeft: whitespace[4],
 						paddingRight: whitespace[4],
 					}}>
@@ -134,7 +134,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
 						<strong>
 							Join the beta list
-							<ChevronRight color={colors.blueText()} width={7} style={{ marginLeft: 4 }} />
+							<ChevronRight color={colors.blue()} width={7} style={{ marginLeft: 4 }} />
 						</strong>
 					</LocationStateToggleLink>
 

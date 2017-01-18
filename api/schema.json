@@ -210,6 +210,73 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
+						"name": "rev",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "author",
+						"type": {
+							"kind": "OBJECT",
+							"name": "Signature",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "committer",
+						"type": {
+							"kind": "OBJECT",
+							"name": "Signature",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "message",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "CommitInfo",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
 						"name": "commit",
 						"type": {
 							"kind": "OBJECT",
@@ -408,6 +475,30 @@
 						}
 					},
 					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "commits",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "CommitInfo",
+										"ofType": null
+									}
+								}
+							}
+						}
+					},
+					{
 						"args": [
 							{
 								"defaultValue": null,
@@ -568,47 +659,11 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
-						"name": "name",
+						"name": "author",
 						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "email",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "date",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
+							"kind": "OBJECT",
+							"name": "Signature",
+							"ofType": null
 						}
 					},
 					{
@@ -617,22 +672,6 @@
 						"description": null,
 						"isDeprecated": false,
 						"name": "message",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "String",
-								"ofType": null
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "gravatarHash",
 						"type": {
 							"kind": "NON_NULL",
 							"name": null,
@@ -707,6 +746,65 @@
 						"ofType": null
 					}
 				]
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "name",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "email",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "gravatarHash",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Person",
+				"possibleTypes": null
 			},
 			{
 				"description": null,
@@ -1255,6 +1353,45 @@
 				"interfaces": [],
 				"kind": "OBJECT",
 				"name": "Root",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "person",
+						"type": {
+							"kind": "OBJECT",
+							"name": "Person",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "date",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Signature",
 				"possibleTypes": null
 			},
 			{

@@ -43,7 +43,7 @@ function EmailSubscribeForm({tabIndex, block, sx}: {
 			<div>
 				<div style={{ position: "absolute", left: "-5000px" }} aria-hidden="true"><input type="text" name="b_81d5d2fe17e49697663f46503_32642fc470" tabIndex={-1} value="" /></div>
 				<Input block={block} type="email" defaultValue="" name="EMAIL" id="mce-EMAIL" placeholder="Email address" style={{ marginBottom: whitespace[1] }} tabIndex={tabIndex} />
-				<Button type="submit" block={block} id="mc-embedded-subscribe" color="gray" tabIndex={tabIndex + 1}>Subscribe to updates</Button>
+				<Button type="submit" block={block} id="mc-embedded-subscribe" color="blueGray" tabIndex={tabIndex + 1}>Subscribe to updates</Button>
 			</div>
 		</form>
 	</div>;
@@ -90,7 +90,7 @@ export function MasterPlanPage(): JSX.Element {
 				<Affix offset={0}>
 					<Heading level={7} color="gray">Phase 1 goals</Heading>
 					<TLDR style={{
-						borderLeft: `1px solid ${colors.coolGray3(0.25)}`,
+						borderLeft: `1px solid ${colors.blueGray(0.25)}`,
 						listStyleType: "none",
 						paddingLeft: whitespace[4],
 					}} />

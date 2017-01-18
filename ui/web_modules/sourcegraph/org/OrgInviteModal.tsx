@@ -24,7 +24,7 @@ const sx = {
 };
 const rowBorderSx = {
 	borderBottomWidth: 1,
-	borderColor: colors.coolGray4(0.5),
+	borderColor: colors.blueGrayL3(0.5),
 	borderBottomStyle: "solid",
 };
 

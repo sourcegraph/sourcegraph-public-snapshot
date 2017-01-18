@@ -4,7 +4,7 @@ import { colors } from "sourcegraph/components/utils";
 
 const fillColors = [
 	colors.blue(),
-	colors.red1(),
+	colors.red(),
 	colors.green(),
 	colors.purple(),
 	colors.orange(),

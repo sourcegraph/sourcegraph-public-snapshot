@@ -15,7 +15,7 @@ export function Tabs({
 }: Props): JSX.Element {
 
 	const sx = Object.assign({
-		borderColor: colors.coolGray2(0.2),
+		borderColor: colors.blueGrayD1(0.2),
 		borderWidth: 0,
 		borderLeftWidth: direction === "vertical" ? 1 : 0,
 		borderBottomWidth: direction === "horizontal" ? 1 : 0,

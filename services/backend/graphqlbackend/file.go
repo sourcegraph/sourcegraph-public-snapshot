@@ -35,6 +35,47 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	return string(file.Contents), nil
 }
 
+func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, error) {
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	if err != nil {
+		return nil, err
+	}
+
+	commits, _, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
+		Head: vcs.CommitID(r.commit.DefaultBranch),
+		N:    20,
+		Path: r.path,
+	})
+	if err != nil {
+		return nil, err
+	}
+	commitsResolver := make([]*commitInfoResolver, len(commits))
+	for i, commit := range commits {
+		commitsResolver[i] = &commitInfoResolver{
+			rev: string(commit.ID),
+			author: &signatureResolver{
+				person: &personResolver{
+					name:         commit.Author.Name,
+					email:        commit.Author.Email,
+					gravatarHash: commit.Author.Email,
+				},
+				date: commit.Author.Date.String(),
+			},
+			committer: &signatureResolver{
+				person: &personResolver{
+					name:         commit.Author.Name,
+					email:        commit.Author.Email,
+					gravatarHash: commit.Author.Email,
+				},
+				date: commit.Committer.Date.String(),
+			},
+			message: commit.Message,
+		}
+	}
+
+	return commitsResolver, nil
+}
+
 func (r *fileResolver) Blame(ctx context.Context,
 	args *struct {
 		StartLine int32

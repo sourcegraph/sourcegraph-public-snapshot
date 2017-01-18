@@ -171,6 +171,7 @@ export const Events = {
 	CodeToken_Hovered: new LoggableEvent("Hovering", EventCategories.CodeView, EventActions.Hover),
 	CodeToken_Clicked: new LoggableEvent("BlobTokenClicked", EventCategories.CodeView, EventActions.Click),
 	OpenInCodeHost_Clicked: new LoggableEvent("OpenInCodeHostClicked", EventCategories.CodeView, EventActions.Click),
+	OpenInEditor_Clicked: new LoggableEvent("OpenInEditorClicked", EventCategories.CodeView, EventActions.Click),
 	FileTree_Navigated: new LoggableEvent("FileTreeActivated", EventCategories.CodeView, EventActions.Click),
 	CodeLensVisibility_Toggled: new LoggableEvent("ToggleCodeLensVisibility", EventCategories.CodeView, EventActions.Toggle),
 	CodeLensCommit_Clicked: new LoggableEvent("ClickedCodeLensCommit", EventCategories.CodeView, EventActions.Click),

@@ -105,7 +105,7 @@ export class OrgContainer extends Container<Props, State> {
 			<Heading level={5}>
 				{msgHeader}
 			</Heading>
-			<div style={{ color: colors.coolGray3() }}>
+			<div style={{ color: colors.blueGray() }}>
 				{msgBody}
 			</div>
 		</div>;

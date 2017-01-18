@@ -44,7 +44,7 @@ class DashboardComponent extends React.Component<Props & { root: GQL.IRoot }, St
 			<PageTitle title="Repositories" />
 
 			<div
-				{...style({ background: colors.coolGray2(), flex: "0 0 230px" }) }
+				{...style({ background: colors.blueGrayD1(), flex: "0 0 230px" }) }
 				{...media(layout.breakpoints.sm, layout.flexItem.autoSize) }>
 				<TabBar
 					setActive={(name) => this.setActive(name)}

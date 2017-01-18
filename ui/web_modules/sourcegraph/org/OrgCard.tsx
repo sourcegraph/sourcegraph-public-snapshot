@@ -20,7 +20,7 @@ export function OrgCard({org}: Props): JSX.Element {
 			<div
 				{...hover({ fill: colors.white() }) }
 				style={{
-					backgroundColor: colors.coolGray2(),
+					backgroundColor: colors.blueGrayD1(),
 					borderRadius: "50%",
 					position: "absolute",
 					padding: 3,

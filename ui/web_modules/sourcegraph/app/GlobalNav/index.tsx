@@ -81,8 +81,8 @@ export class GlobalNav extends Container<Props, State> {
 
 		const sx = {
 			backgroundColor: colors.white(),
-			borderBottom: `1px solid ${colors.coolGray3(0.3)}`,
-			boxShadow: `${colors.coolGray3(0.1)} 0px 1px 6px 0px`,
+			borderBottom: `1px solid ${colors.blueGray(0.3)}`,
+			boxShadow: `${colors.blueGray(0.1)} 0px 1px 6px 0px`,
 			display: shouldHide ? "none" : "block",
 			zIndex: 100,
 			paddingLeft: whitespace[2],

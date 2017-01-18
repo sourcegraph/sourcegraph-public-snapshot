@@ -6,12 +6,12 @@ const scale = [
 	[1.5, 1.6],
 	[1.25, 1.6],
 	[1, 1.5],
-	[0.9, 1.5],
+	[0.8125, 1.5],
 ];
 
-const unit = "rem";
+export const unit = "rem";
 
-const baseSizeMobile = "14px";
+export const baseSizeMobile = "14px";
 
 export const fontStack = {
 	sansSerif: "'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif",
@@ -65,13 +65,3 @@ export const size = [
 
 export const small = size[7];
 export const large = size[2];
-
-export const typography = {
-	size,
-	small,
-	large,
-	codeSize,
-	fontStack,
-	weight,
-	baseSizeMobile,
-};

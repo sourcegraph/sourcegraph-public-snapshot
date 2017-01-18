@@ -26,7 +26,7 @@ const bgColors = {
 	"white": colors.white(),
 	"purple": colors.purple(),
 	"blue": colors.blue(),
-	"dark": colors.coolGray2(),
+	"dark": colors.blueGrayD1(),
 	"green": colors.green(),
 };
 

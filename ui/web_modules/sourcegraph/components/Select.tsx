@@ -1,52 +1,66 @@
-import * as classNames from "classnames";
+import { css } from "glamor";
 import * as React from "react";
-import * as base from "sourcegraph/components/styles/_base.css";
-import * as styles from "sourcegraph/components/styles/select.css";
 import { Alert } from "sourcegraph/components/symbols";
 import { ChevronDown } from "sourcegraph/components/symbols/Zondicons";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	block?: boolean;
-	className?: string;
-	children?: any;
+	children?: React.ReactNode[];
+	containerSx?: React.CSSProperties;
 	label?: string;
 	placeholder?: string;
 	helperText?: string;
 	error?: boolean;
 	errorText?: string;
-	style?: any;
+	style?: React.CSSProperties;
 	defaultValue?: string;
 }
 
-type State = any;
-
-export class Select extends React.Component<Props, State> {
-	static defaultProps: any = {
-		block: true,
-	};
-
-	render(): JSX.Element | null {
-		const {style, block, className, placeholder, label, helperText, error, errorText, children, defaultValue} = this.props;
-		return (
-			<div className={className}>
-				{label && <div>{label} <br /></div>}
-				<select
-					required={true}
-					style={style}
-					defaultValue={defaultValue}
-					className={classNames(styles.select, error ? styles.border_red : styles.border_neutral, block ? styles.block : null)}
-					placeholder={placeholder ? placeholder : ""}>
-					{children}
-				</select>
-				<ChevronDown style={{ marginLeft: "-28px" }} width={11} className={styles.icon} />
-				{helperText && <em className={classNames(styles.small, styles.block, base.mt2)}>{helperText}</em>}
-				{errorText &&
-					<div className={classNames(styles.red, base.mv2)}>
-						<Alert width={16} className={classNames(base.mr2, styles.red_fill)} style={{ marginTop: "-4px" }} />
-						This is an error message.
-					</div>
-				}
+export function Select({block = true, containerSx, children, label, placeholder, helperText, error, errorText, style, defaultValue}: Props): JSX.Element {
+	const sx = css({
+		appearance: "none",
+		backgroundColor: "white",
+		borderColor: error ? colors.red() : colors.blueGray(),
+		borderRadius: 3,
+		borderWidth: 1,
+		boxSizing: "border-box",
+		marginTop: whitespace[2],
+		padding: "8px 38px 8px 15px",
+		transition: "all 0.25s ease-in-out",
+		fontFamily: "inherit",
+		fontWeight: "inherit",
+		outline: "none",
+		width: block ? "100%" : "",
+	});
+	return <div style={containerSx}>
+		{label && <div>{label} <br /></div>}
+		<select
+			{...sx}
+			style={style}
+			required={true}
+			defaultValue={defaultValue}
+			placeholder={placeholder ? placeholder : ""}>
+			{children}
+		</select>
+		<ChevronDown style={{ fill: colors.blueGray(), marginLeft: "-28px" }} width={11} />
+		{helperText && <em { ...css({
+			display: "block",
+			marginTop: whitespace[2],
+		}, typography.small) }> {helperText}</em>}
+		{errorText &&
+			<div style={{
+				color: colors.red(),
+				marginTop: whitespace[2],
+				marginBottom: whitespace[2],
+			}}>
+				<Alert width={16} style={{
+					fill: "currentColor",
+					marginRight: whitespace[2],
+					marginTop: -4
+				}} />
+				This is an error message.
 			</div>
-		);
-	}
+		}
+	</div>;
 }

@@ -65,16 +65,16 @@ interface SliderNavItemProps {
 
 function SliderNavItem({title, subtitle, active, onClick}: SliderNavItemProps): JSX.Element {
 	const sx = style({
-		backgroundImage: active ? `linear-gradient(270deg, ${colors.white()}, ${colors.blue5(0.25)} 100%)` : "transparent",
+		backgroundImage: active ? `linear-gradient(270deg, ${colors.white()}, ${colors.blueL3()} 100%)` : "transparent",
 		borderRadius: 3,
-		color: colors.coolGray2(0.75),
+		color: colors.blueGrayD1(0.75),
 		marginTop: whitespace[4],
 		paddingBottom: whitespace[2],
 		paddingLeft: whitespace[4],
 		paddingTop: whitespace[3],
 	});
 
-	return <a href="#" {...sx} {...hover({ color: colors.coolGray2(1) }) } onClick={onClick}>
+	return <a href="#" {...sx} {...hover({ color: colors.blueGrayD1(1) }) } onClick={onClick}>
 		<Heading level={5} color="blue">{title}</Heading>
 		<p style={{ marginTop: 0 }}>{subtitle}</p>
 	</a>;

@@ -66,13 +66,13 @@ export function TabItem({
 		select(" a",
 			active
 				? { color: inverted ? "white" : colors[color]() }
-				: { color: colors.coolGray3() }
+				: { color: colors.blueGray() }
 		),
 
 		select(" a:hover",
 			active
 				? { color: inverted ? "white" : colors[color]() }
-				: { color: inverted ? colors.coolGray4() : colors.coolGray2() }
+				: { color: inverted ? colors.blueGrayL3() : colors.blueGrayD1() }
 		)
 	);
 

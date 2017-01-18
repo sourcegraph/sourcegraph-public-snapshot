@@ -11,6 +11,8 @@ import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
+import { Features } from "sourcegraph/util/features";
+import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
 interface Props {
@@ -47,6 +49,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} />
 				<WorkbenchShell { ...getBlobPropsFromRouter(this.context.router) } />
+				{Features.projectWow.isEnabled() && <InfoPanelLifecycle />}
 			</RepoMain>
 		</div>;
 	}

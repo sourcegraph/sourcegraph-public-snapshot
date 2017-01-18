@@ -65,6 +65,24 @@ type Commit implements Node {
 	languages: [String!]!
 }
 
+type CommitInfo {
+	rev: String!
+	author: Signature
+	committer: Signature
+	message: String!
+}
+
+type Signature {
+	person: Person
+	date: String!
+}
+
+type Person {
+	name:  String!
+	email: String!
+	gravatarHash: String!
+}
+
 type Tree {
 	directories: [Directory]!
 	files: [File]!
@@ -79,6 +97,7 @@ type File {
 	name: String!
 	content: String!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
+	commits: [CommitInfo!]!
 	definition(line: Int!, column: Int!, language: String!): Definition
 }
 
@@ -102,10 +121,7 @@ type Hunk {
 	startByte: Int!
 	endByte: Int!
 	rev: String!
-	name: String!
-	email: String!
-	date: String!
+	author: Signature
 	message: String!
-	gravatarHash: String!
 }
 `

@@ -90,7 +90,7 @@ const flagSx = {
 };
 
 const searchSx = {
-	backgroundColor: colors.coolGray4(0.8),
+	backgroundColor: colors.blueGrayL3(0.8),
 	borderRadius: 3,
 	padding: whitespace[1],
 	height: 21,
@@ -179,10 +179,10 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 			// Build custom fields for coachmark.
 			let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
-			let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4], fontSize: 14 }} color="darkBlue" size="small">Install the Chrome extension</Button>;
+			let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4], fontSize: 14 }} color="blueGray" size="small">Install the Chrome extension</Button>;
 
 			let refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
-			let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="darkBlue" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
+			let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
 				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", context.hasChromeExtensionInstalled() ? null : defActionCTA),
@@ -309,7 +309,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				tooltipStyle={{ whitespace: "normal !important", zIndex: 102, backgroundColor: colors.blue() }}>
 
 				<span style={closeSx} onClick={() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null }))}>
-					<Close width={12} color={colors.coolGray2(0.5)} />
+					<Close width={12} color={colors.blueGrayD1(0.5)} />
 				</span>
 				<div style={headerSx}>
 					<Heading color="blue" level={6} style={{ marginTop: 0 }}>{coachmark.headingTitle}</Heading>
@@ -317,7 +317,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				</div>
 				{coachmark.actionCTA &&
 					<div style={{ padding: whitespace[4] }}>
-						<Flag width={15} style={flagSx} color={colors.blue2(0.9)} />
+						<Flag width={15} style={flagSx} color={colors.blue(0.9)} />
 						<strong style={actionSx}>{coachmark.actionTitle}</strong>
 						{coachmark.actionCTA}
 					</div>}
@@ -375,7 +375,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 					<span style={closeSx} onClick={
 						() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null }))
 					}>
-						<Close width={12} color={colors.coolGray2(0.5)} />
+						<Close width={12} color={colors.blueGrayD1(0.5)} />
 					</span>
 					<div style={Object.assign({},
 						headerSx,

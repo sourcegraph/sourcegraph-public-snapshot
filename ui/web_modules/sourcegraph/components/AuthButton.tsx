@@ -15,10 +15,10 @@ interface Props {
 	scopes?: string;
 	returnTo?: string | RouterLocation;
 	newUserReturnTo?: string | RouterLocation;
-	color?: string;
+	color?: "blue" | "green" | "orange" | "purple" | "red" | "blueGray";
 	outline?: boolean;
 	block?: boolean;
-	size?: string;
+	size?: "small" | "large";
 	className?: string;
 	tabIndex?: number;
 	pageName?: string;

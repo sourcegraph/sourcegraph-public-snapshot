@@ -12,7 +12,7 @@ interface Props {
 }
 
 const sx = Object.assign(
-	{ color: colors.coolGray3() },
+	{ color: colors.blueGray() },
 	typography.size[7],
 );
 

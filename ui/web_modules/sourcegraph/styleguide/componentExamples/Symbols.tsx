@@ -15,19 +15,19 @@ export class Symbols extends React.Component<{}, any> {
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 
-						<Alert color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Cone color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Dismiss color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<GitHubLogo color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Search color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Spinner color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Flag color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<ChevronDown color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Close color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Check color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<CheckCircle color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<Link color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
-						<UserAdd color={colors.coolGray2()} style={{ padding: whitespace[2] }} />
+						<Alert color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Cone color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Dismiss color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<GitHubLogo color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Search color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Spinner color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Flag color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<ChevronDown color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Close color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Check color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<CheckCircle color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<Link color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
+						<UserAdd color={colors.blueGrayD1()} style={{ padding: whitespace[2] }} />
 						<p>
 							These symbols are each individual components that share the same props api. See <Code>/components/symbols</Code> for component usage.
 						</p>
@@ -38,19 +38,19 @@ export class Symbols extends React.Component<{}, any> {
 						<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
 							{
 								`
-<Alert color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Cone color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Dismiss color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<GitHubLogo color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Search color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Spinner color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Flag color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<ChevronDown color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Close color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Check color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<CheckCircle color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<Link color={colors.coolGray2()} style={{padding: whitespace[2]}} />
-<UserAdd color={colors.coolGray2()} style={{padding: whitespace[2]}} />
+<Alert color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Cone color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Dismiss color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<GitHubLogo color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Search color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Spinner color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Flag color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<ChevronDown color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Close color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Check color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<CheckCircle color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<Link color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
+<UserAdd color={colors.blueGrayD1()} style={{padding: whitespace[2]}} />
 `
 							}
 						</pre>

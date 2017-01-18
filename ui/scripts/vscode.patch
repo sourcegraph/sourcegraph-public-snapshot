@@ -766,3 +766,34 @@ index a356d54f7..70868ff35 100644
  				var customActionItem = <any>action;
  				if (typeof customActionItem.getActionItem === 'function') {
  					return customActionItem.getActionItem();
+diff --git a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
+index ea86991b4..90f158087 100644
+--- a/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
++++ b/ui/vendor/node_modules/vscode/src/vs/editor/contrib/referenceSearch/browser/referencesWidget.ts
+@@ -162,7 +162,7 @@ class DecorationsManager implements IDisposable {
+ 	}
+ }
+ 
+-class DataSource implements tree.IDataSource {
++export class DataSource implements tree.IDataSource {
+ 
+ 	constructor(
+ 		@ITextModelResolverService private _textModelResolverService: ITextModelResolverService
+@@ -217,7 +217,7 @@ class DataSource implements tree.IDataSource {
+ 	}
+ }
+ 
+-class Controller extends DefaultController {
++export class Controller extends DefaultController {
+ 
+ 	static Events = {
+ 		FOCUSED: 'events/custom/focused',
+@@ -341,7 +341,7 @@ class Controller extends DefaultController {
+ 	}
+ }
+ 
+-class Renderer extends LegacyRenderer {
++export class Renderer extends LegacyRenderer {
+ 	private _contextService: IWorkspaceContextService;
+ 
+ 	constructor( @IWorkspaceContextService contextService: IWorkspaceContextService) {

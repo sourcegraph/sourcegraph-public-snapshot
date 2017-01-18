@@ -23,7 +23,7 @@ export class FormsComponent extends React.Component<{}, State> {
 					<div className={base.pa4}>
 
 						<Input placeholder="Placeholder text" block={true} label="Input label" helperText="This is optional helper text." className={base.mb4} />
-						<Select defaultValue="" label="Select label" className={base.mb4}>
+						<Select defaultValue="" label="Select label" containerSx={{ marginBottom: whitespace[4] }}>
 							<option value="" disabled={true}>Placeholder</option>
 							<option>Option 1</option>
 							<option>Option 2</option>
@@ -34,14 +34,14 @@ export class FormsComponent extends React.Component<{}, State> {
 
 						<Input placeholder="Placeholder text" block={true} error={true} label="Input label" errorText="This is an error." className={base.mb4} />
 
-						<Select defaultValue="" error={true} label="Select label" className={base.mb4}>
+						<Select defaultValue="" error={true} label="Select label" containerSx={{ marginBottom: whitespace[4] }}>
 							<option value="" disabled={true}>Placeholder</option>
 							<option>Option 1</option>
 							<option>Option 2</option>
 							<option>Option 3</option>
 						</Select>
 
-						<Select defaultValue="" error={true} label="Select label" errorText="This is an error" className={base.mb4}>
+						<Select defaultValue="" error={true} label="Select label" errorText="This is an error" containerSx={{ marginBottom: whitespace[4] }}>
 							<option value="" disabled={true}>Placeholder</option>
 							<option>Option 1</option>
 							<option>Option 2</option>

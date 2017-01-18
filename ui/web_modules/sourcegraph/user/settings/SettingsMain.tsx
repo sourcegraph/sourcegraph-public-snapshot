@@ -23,7 +23,7 @@ export function SettingsMain({location}: Props): JSX.Element {
 			marginLeft: whitespace[4],
 			marginRight: whitespace[4],
 		}}>Organization settings</Heading>
-		<hr style={{ borderColor: colors.coolGray4(0.7) }} />
+		<hr style={{ borderColor: colors.blueGrayL3(0.7) }} />
 		<OrgContainer location={location} />
 	</Panel>;
 }

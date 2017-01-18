@@ -2,12 +2,11 @@ import * as autobind from "autobind-decorator";
 import * as React from "react";
 
 import { AuthorsToggleButton } from "sourcegraph/blob/AuthorsToggleButton";
+import { CommitInfoBar } from "sourcegraph/blob/CommitInfoBar/CommitInfoBar";
+import { FileActionDownMenu } from "sourcegraph/blob/FileActionDownMenu";
 import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAlert";
-import { Button, FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
-import { GitHubLogo } from "sourcegraph/components/symbols";
+import { FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
-import { RevSwitcher } from "sourcegraph/repo/RevSwitcher";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { Features } from "sourcegraph/util/features";
 import { getPathExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
 
@@ -73,65 +72,49 @@ export class BlobTitle extends React.Component<Props, {}> {
 		const isIgnored = extension ? isIgnoredExtension(extension) : false;
 		const gitHubURL = `https://${repo}/blob/${rev}/${path}${convertToGitHubLineNumber(window.location.hash)}`;
 
-		return <FlexContainer justify="between" items="center" wrap={true} style={{
-			backgroundColor: colors.coolGray1(),
-			boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
-			height: layout.editorToolbarHeight,
-			zIndex: 1,
-			padding: `${whitespace[2]} ${whitespace[3]}`,
-			width: "100%",
-		}}>
-			<div>
-				<Heading level={6} color="white" compact={true}>
-					{basename(path)}
-					<RevSwitcher
+		return <div style={{ width: "100%" }}>
+			<FlexContainer justify="between" items="center" wrap={true} style={{
+				backgroundColor: colors.blueGrayD2(),
+				boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
+				height: layout.editorToolbarHeight,
+				padding: `${whitespace[2]} ${whitespace[3]}`,
+				width: "100%",
+			}}>
+				<div>
+					<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>
+						{basename(path)}
+					</Heading>
+					<PathBreadcrumb
 						repo={repo}
+						path={path}
 						rev={rev}
-						style={{ marginLeft: whitespace[1] }} />
-				</Heading>
-				<PathBreadcrumb
-					repo={repo}
-					path={path}
-					rev={rev}
-					linkSx={Object.assign({ color: colors.coolGray3() }, typography.size[7])}
-					linkHoverSx={{ color: `${colors.coolGray4()} !important` }}
-					style={{ marginBottom: 0 }} />
-			</div>
+						linkSx={Object.assign({ color: colors.blueGrayL1() }, typography.size[7])}
+						linkHoverSx={{ color: `${colors.blueGrayL3()} !important` }}
+						style={{ display: "inline-block", marginBottom: 0, paddingLeft: whitespace[2] }} />
+				</div>
+				<div>
+					<div style={Object.assign({
+						color: "white",
+						flex: "1 1",
+						paddingRight: whitespace[1],
+						textAlign: "right",
+					}, typography.size[7])}>
 
-			<div style={Object.assign({
-				color: "white",
-				flex: "1 1",
-				paddingRight: whitespace[1],
-				textAlign: "right",
-			}, typography.size[7])}>
+						{Features.authorsToggle.isEnabled() &&
+							<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
+						}
 
-				<a href={gitHubURL} onClick={() => AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path })} { ...layout.hide.sm }>
-					<Button size="small" style={{
-						backgroundColor: "transparent",
-						fontSize: "inherit",
-						marginRight: whitespace[3],
-						paddingLeft: whitespace[2],
-						paddingRight: whitespace[2],
-					}}>
-						<GitHubLogo width={16} style={{
-							marginRight: whitespace[2],
-							verticalAlign: "text-top",
-						}} />
-						View on GitHub
-					</Button>
-				</a>
+						<FileActionDownMenu eventProps={{ repo, rev, path }} githubURL={gitHubURL} editorURL={path} />
 
-				{Features.authorsToggle.isEnabled() &&
-					<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
-				}
+						{!isSupported && !isIgnored &&
+							<UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />
+						}
 
-				{!isSupported && !isIgnored &&
-					<UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />
-				}
-
-				{toast && <div>{toast}</div>}
-
-			</div>
-		</FlexContainer>;
+						{toast && <div>{toast}</div>}
+					</div>
+				</div>
+			</FlexContainer>
+			<CommitInfoBar repo={repo} rev={rev} path={path} />
+		</div>;
 	}
 };

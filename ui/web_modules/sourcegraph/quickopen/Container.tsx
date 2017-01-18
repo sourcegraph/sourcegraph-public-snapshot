@@ -31,7 +31,7 @@ const modalStyle = {
 	maxWidth: 515,
 	margin: "0 auto",
 	borderRadius: "0 0 3px 3px",
-	backgroundColor: colors.coolGray2(),
+	backgroundColor: colors.blueGrayD1(),
 	padding: 16,
 	display: "flex",
 	flexDirection: "column",
@@ -382,7 +382,7 @@ export class Container extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		const icon = this.loading() ? <LoadingIcon /> : <SearchIcon style={{ fill: colors.coolGray2() }} />;
+		const icon = this.loading() ? <LoadingIcon /> : <SearchIcon style={{ fill: colors.blueGrayD1() }} />;
 		const categories = resultsToArray(this.state.results);
 		return (
 			<div style={modalStyle}>

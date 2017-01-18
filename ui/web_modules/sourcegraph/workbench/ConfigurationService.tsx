@@ -31,9 +31,10 @@ const config = {
 		fontSize: 15,
 		lineHeight: 21,
 		theme: "vs-dark",
-		renderLineHighlight: "line",
+		renderLineHighlight: "none",
 		codeLens: Features.codeLens.isEnabled(),
 		glyphMargin: false,
+		hideCursorInOverviewRuler: true,
 	},
 };
 

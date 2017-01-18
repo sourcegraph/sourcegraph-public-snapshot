@@ -15,8 +15,8 @@ export function PricingPage(props: {}): JSX.Element {
 			<PageTitle title="Pricing" />
 			<Hero color="transparent" className={base.pv5 || ""}>
 				<div className={styles.container}>
-					<Heading level={1}>Pricing</Heading>
-					<Heading level={4} className={styles.subtitle || ""}>Sourcegraph is free to use for public and private code.</Heading>
+					<Heading level={2}>Pricing</Heading>
+					<Heading level={5} className={styles.subtitle || ""}>Sourcegraph is free to use for public and private code.</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>

@@ -5,7 +5,7 @@ export const base: string;
 export const colors: string;
 export const c_blue_1: string;
 export const c_cool_gray: string;
-export const c_cool_pale_gray_5: string;
+export const c_cool_mid_gray_2: string;
 export const container: string;
 export const menu_item: string;
 export const divider: string;

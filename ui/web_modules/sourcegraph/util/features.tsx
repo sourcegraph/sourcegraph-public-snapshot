@@ -48,6 +48,7 @@ export const Features = {
 	langPython: new Feature("lang-python"),
 	langJava: new Feature("lang-java"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
+	projectWow: new Feature("project_wow"),
 
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),

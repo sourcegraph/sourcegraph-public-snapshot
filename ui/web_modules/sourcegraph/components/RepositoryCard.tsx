@@ -35,7 +35,7 @@ export function RepositoryCard({style, repo}: Props): JSX.Element {
 						: <span>{title}</span>
 					}
 				</Heading>
-				{repo.description && <div style={{ color: colors.coolGray3() }}>{repo.description}</div>}
+				{repo.description && <div style={{ color: colors.blueGray() }}>{repo.description}</div>}
 			</div>
 			{repo.language &&
 				<span style={{ alignSelf: "flex-end" }}

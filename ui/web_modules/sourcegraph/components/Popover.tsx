@@ -1,12 +1,14 @@
-import * as classNames from "classnames";
+import { css } from "glamor";
 import * as React from "react";
 
 import { EventListener } from "sourcegraph/Component";
-import * as styles from "sourcegraph/components/styles/popover.css";
+import * as colors from "sourcegraph/components/utils/colors";
 
 interface Props {
 	left?: boolean; // position popover content to the left (default: right)
+	pointer?: boolean;
 	popoverClassName?: string;
+	popoverStyle?: any;
 	children?: React.ReactNode;
 }
 
@@ -60,12 +62,42 @@ export class Popover extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		if (!this.props.children) { return null; }
 		return (
-			<div className={styles.container} ref={this.setContainer}>
+			<div style={{ position: "relative", cursor: "pointer" }} ref={this.setContainer}>
 				{this.props.children && this.props.children[0]}
 				{this.state.visible &&
-					<div ref={this.setContent} className={classNames(this.props.left ? styles.popover_left : styles.popover_right, this.props.popoverClassName)}>
+					<div ref={this.setContent}
+						{...css(
+							{
+								borderRadius: 3,
+								minWidth: 100,
+								cursor: "initial",
+								position: "absolute",
+								top: "97%",
+								left: this.props.left ? "" : -8,
+								right: this.props.left ? -8 : "",
+								zIndex: 100,
+							},
+							this.props.pointer ? {
+								":before": {
+									content: `""`,
+									backgroundColor: "white",
+									borderLeft: `1px ${colors.blueGrayL1(0.2)} solid`,
+									borderTop: `1px ${colors.blueGrayL1(0.2)} solid`,
+									display: "block",
+									height: 8,
+									position: "absolute",
+									right: 16,
+									top: -4,
+									transform: "rotate(45deg) skew(-10deg, -10deg)",
+									width: 8,
+									zIndex: 101,
+								}
+							} : {},
+							this.props.popoverStyle,
+						) }>
 						{this.props.children[1]}
-					</div>}
+					</div>
+				}
 				<EventListener target={global.document} event="click" callback={this._onClick} />
 			</div>
 		);

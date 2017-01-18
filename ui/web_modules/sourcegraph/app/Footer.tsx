@@ -34,7 +34,7 @@ interface ItemProps {
 
 function Item({anchor, url, children, target}: ItemProps): JSX.Element {
 	const sx = style({
-		color: colors.coolGray3(),
+		color: colors.blueGray(),
 		display: "inline-block",
 		paddingLeft: whitespace[3],
 		paddingRight: whitespace[3],
@@ -42,7 +42,7 @@ function Item({anchor, url, children, target}: ItemProps): JSX.Element {
 		paddingBottom: whitespace[2],
 	});
 
-	const hoverSx = hover({ color: colors.coolGray2() });
+	const hoverSx = hover({ color: colors.blueGrayD1() });
 
 	if (anchor) {
 		return <a target={target} href={url} {...sx} {...hoverSx}>{children}</a>;

@@ -17,15 +17,21 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 	provideCodeLenses(model: IReadOnlyModel): ICodeLensSymbol[] | Thenable<ICodeLensSymbol[]> {
 		return this.getBlameData(model.uri).then((blameData) => {
 			let codeLenses: ICodeLensSymbol[] = [];
+			if (!blameData || blameData.length === 0) {
+				return codeLenses;
+			}
 			for (let i = 0; i < blameData.length; i++) {
 				const blameLine = blameData[i];
-				const timeSince = moment(blameLine.date, "YYYY-MM-DDThh:mmTZD").fromNow();
+				if (!blameLine.author || !blameLine.author.person) {
+					return codeLenses;
+				}
+				const timeSince = moment(blameLine.author.date, "YYYY-MM-DDThh:mmTZD").fromNow();
 				codeLenses.push({
 					id: `${blameLine.rev}${blameLine.startLine}-${blameLine.endLine}`,
 					range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),
 					command: {
 						id: "codelens.authorship.commit",
-						title: `${blameLine.name} - ${timeSince}`,
+						title: `${blameLine.author.person.name} - ${timeSince}`,
 						arguments: [blameLine],
 					} as Command,
 				});
@@ -48,16 +54,20 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 						commit {
 							file(path: $path) {
 								blame(startLine: 0, endLine: 0) {
-									name
-									email
 									rev
-									date
 									startLine
 									endLine
 									startByte
 									endByte
 									message
-									gravatarHash
+									author {
+										person {
+											name
+											email
+											gravatarHash
+										}
+										date
+									}
 								}
 							}
 						}

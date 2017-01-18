@@ -24,7 +24,7 @@ export function OrgMembersTable({members, inviteClicked, sentInvites}: Props): J
 
 	const rowSx = {
 		borderBottomWidth: 1,
-		borderColor: colors.coolGray4(0.5),
+		borderColor: colors.blueGrayL3(0.5),
 		borderBottomStyle: "solid",
 		paddingBottom: whitespace[2],
 		paddingTop: whitespace[2],

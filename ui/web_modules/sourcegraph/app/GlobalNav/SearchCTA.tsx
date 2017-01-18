@@ -9,18 +9,18 @@ export function SearchCTA(props: { style?: any, width: number, content?: string 
 	const sx = merge(
 		{
 			display: "inline-block",
-			color: colors.coolGray3(),
+			color: colors.blueGray(),
 			padding: whitespace[2],
 			marginRight: whitespace[2],
 		},
-		$(":hover", { color: colors.blueText() }),
-		$(":hover svg", { fill: colors.blueText() }),
+		$(":hover", { color: colors.blue() }),
+		$(":hover svg", { fill: colors.blue() }),
 		props.style ? props.style : {}
 	);
 
 	return (
 		<div id="SearchCTA-e2e-test" {...sx}>
-			<SearchIcon color={colors.coolGray3()} width={props.width} />
+			<SearchIcon color={colors.blueGray()} width={props.width} />
 			<div style={{ display: "inline", marginLeft: whitespace[2] }}>
 				{props.content ? props.content : "Search"}
 			</div>

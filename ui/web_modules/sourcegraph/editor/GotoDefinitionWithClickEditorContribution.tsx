@@ -2,6 +2,7 @@ import { urlToBlobLineCol } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Features } from "sourcegraph/util/features";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import * as platform from "vs/base/common/platform";
@@ -22,6 +23,10 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	}
 
 	private onEditorMouseUp(mouseEvent: IEditorMouseEvent): void {
+		if (Features.projectWow.isEnabled()) {
+			return;
+		}
+
 		if (!this.editor.getSelection().isEmpty()) {
 			// Don't interfere with text selection.
 			return;

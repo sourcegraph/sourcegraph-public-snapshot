@@ -1,7 +1,7 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple from colors;
+@value c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple, c_cool_dark_gray from colors;
 
 @value font_size_7 from vars;
 
@@ -11,12 +11,12 @@
 
 /* Make cursor look less like a text insertion cursor. */
 :global .monaco-editor .cursor {
-	opacity: 0.4;
+	width: 0px !important;
 }
 
 /* Highlight the line underneath the cursor. */
 :global .monaco-editor .current-line {
-	background-color: rgb(20, 41, 64);
+	background-color: c_black_20;
 	border: none !important;
 }
 
@@ -147,6 +147,11 @@
 	font-weight: bold;
 }
 
+:global .monaco-editor .reference-zone-widget .ref-tree span.referenceMatch img.avatarImg {
+	width: 15px;
+	height: 15px;
+}
+
 :global .monaco-editor .reference-zone-widget .ref-tree span.referenceMatch {
 	background-color: c_blue_2;
 	color: white;
@@ -194,13 +199,13 @@
 */
 
 @value yellow: #FDBA86;
-@value orange: #F78248;
-@value red: #F46B6C;
-@value magenta: #FF8DFE;
-@value violet: #D3BEFF;
-@value blue: #5BD2FC;
-@value cyan: #00FFE2;
-@value green: #4CDE90;
+@value orange: rgba(255, 130, 92, 1);
+@value red: rgba(255, 10, 59, 1);
+@value magenta: rgba(255, 133, 157, 1);
+@value violet: rgba(228, 173, 255, 1);
+@value blue: rgba(92, 192, 255, 1);
+@value cyan: rgba(104, 243, 224, 1);
+@value green: rgba(0, 191, 165, 1);
 
 /* Transition when link becomes a goto-def link */
 :global div.monaco-editor.vs-dark .goto-definition-link {
@@ -228,7 +233,7 @@
 }
 
 :global div.monaco-editor.vs-dark .line-numbers {
-	color: c_cool_gray;
+	color: c_cool_mid_gray_3;
 	cursor: default !important;
 }
 :global div.monaco-editor.vs-dark .line-numbers:hover {
@@ -499,7 +504,7 @@
 }
 
 :global .monaco-workbench > .part > .composite.title {
-	height: 65px;
+	height: 45px;
 	box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 6px 0px;
 	background: c_cool_gray2;
 	position: relative;
@@ -515,7 +520,7 @@
 	font-weight: 800;
 	letter-spacing: 0px;
 	vertical-align: middle;
-	line-height: 65px;
+	line-height: 45px;
 	color: rgba(213,229,242,1) !important;
 	text-transform: initial !important;
 }
@@ -554,10 +559,92 @@
 }
 
 :global .monaco-workbench > .part > .content .progress-container {
-	top: 63px !important; /* 65px - 2px, just below title bar */
+	top: 43px !important; /* 45px - 2px, just below title bar */
 }
 
 :global .context-view.monaco-menu-container {
 	box-shadow: none !important;
 	border-radius: 3px;
+}
+
+:global .ref-tree.inline {
+	height: 100%;
+}
+
+:global .monaco-editor.vs-dark	.bracket-match {
+	display: none
+}
+
+:global .monaco-workbench > .part > .title {
+	padding-left: 0px !important;
+	padding-right: 0px !important;
+}
+
+:global .sg-sidebar .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references {
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+:global .sg-sidebar .monaco-tree .monaco-tree-rows > .monaco-tree-row {
+	color: #233043;
+	cursor: pointer;
+	overflow: hidden !important;
+	width: 100%;
+	touch-action: none;
+	padding-left: 16px !important;
+	padding-right: 13px !important;
+	white-space: nowrap !important;
+	text-overflow: ellipsis !important;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function {
+	padding-top: 12px;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function .author-details > img {
+	display: inline-block;
+	vertical-align: middle;
+	width: 16px;
+	height: 16px;
+	border-radius: 8px;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function .author-details .name {
+	display: inline-block;
+	padding-left: 6px;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function .author-details {
+	padding-top: 10px;
+	color: #5d7eac;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function .file-details {
+	padding-top: 10px;
+	color: #5d7eac;
+}
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .divider-container {
+	padding-top: 10px;
+	width: 100%;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .divider-container > .divider {
+	width: 100%;
+	height: 1px;
+	background-color: rgba(201, 211, 227, 0.3);
+}
+
+:global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) {
+  background-color: #1893e7;
+  color: white;
+}
+
+:global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) .content > .sidebar-references > .code-content > .function .author-details {
+	color:  #ade0ff;
+}
+
+:global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) .content > .sidebar-references > .code-content > .function .file-details {
+	color:  #ade0ff;
 }

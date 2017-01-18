@@ -29,7 +29,7 @@ export function OrgLogo({size, img, style}: Props): JSX.Element {
 		{
 			display: "inline-block",
 			backgroundColor: "white",
-			borderColor: colors.coolGray4(0.8),
+			borderColor: colors.blueGrayL3(0.8),
 			borderRadius: "3px",
 			borderStyle: "solid",
 			borderWidth: 1,

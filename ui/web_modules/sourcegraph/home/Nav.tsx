@@ -17,10 +17,10 @@ interface Props {
 const navItemSx = {
 	marginTop: whitespace[2],
 	marginRight: whitespace[4],
-	color: colors.coolGray3(),
+	color: colors.blueGray(),
 };
 
-const navHover = hover({ color: colors.coolGray2() });
+const navHover = hover({ color: colors.blueGrayD1() });
 
 export function Nav({context, style, location}: Props): JSX.Element {
 

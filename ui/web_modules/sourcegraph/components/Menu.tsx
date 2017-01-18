@@ -4,9 +4,9 @@ import * as React from "react";
 import * as styles from "sourcegraph/components/styles/menu.css";
 
 interface Props {
-	children?: any;
+	children?: React.ReactNode[];
 	className?: string;
-	style?: any;
+	style?: React.CSSProperties;
 }
 
 export class Menu extends React.Component<Props, {}> {

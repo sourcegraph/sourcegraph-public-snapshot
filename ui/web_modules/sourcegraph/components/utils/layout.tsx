@@ -7,7 +7,7 @@ export const breakpoints = {
 	lg: "screen and (min-width: 64em)",
 };
 
-const hide = {
+export const hide = {
 	notSm: media(breakpoints.notSm, { display: "none" }),
 	sm: media(breakpoints.sm, { display: "none !important" }),
 	md: media(breakpoints.md, { display: "none !important" }),
@@ -32,19 +32,12 @@ export const container = {
 	maxWidth: 1280,
 };
 
-const editorToolbarHeight = 65;
+export const editorToolbarHeight = 45;
+export const editorCommitInfoBarHeight = 38;
+export const editorHeaderHeight = editorCommitInfoBarHeight + editorToolbarHeight;
 
 export const flexItem = {
 	autoSize: { flex: "1 1 auto" },
 	autoGrow: { flex: "1 0 auto" },
 	autoShrink: { flex: "0 1 auto" },
-};
-
-export const layout = {
-	breakpoints,
-	clearFix,
-	container,
-	editorToolbarHeight,
-	flexItem,
-	hide,
 };

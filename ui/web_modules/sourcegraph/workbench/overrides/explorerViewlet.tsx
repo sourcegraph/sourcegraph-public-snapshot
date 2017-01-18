@@ -68,17 +68,18 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 
 function Title({repo}: { repo: string }): JSX.Element {
 	return <FlexContainer items="center" style={{
-		background: colors.coolGray2(),
+		background: colors.blueGrayD1(),
 		minHeight: layout.editorToolbarHeight,
 		paddingLeft: whitespace[4],
 		margin: 0,
 		position: "relative",
 		zIndex: 1,
+		width: "100%",
 	}}>
 		<Heading level={5}>
 			<Link to={urlToRepo(repo)}
 				{...hover({ color: `${colors.white()} !important` }) }
-				style={{ color: colors.coolGray4() }}
+				style={{ color: colors.blueGrayL3() }}
 				>
 				{repo.replace(/^github.com\//, "")}
 			</Link>

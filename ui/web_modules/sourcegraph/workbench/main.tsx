@@ -2,6 +2,7 @@ import "sourcegraph/editor/authorshipWidget";
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
+import "sourcegraph/workbench/info/action";
 import "sourcegraph/workbench/overrides/instantiationService";
 
 import "vs/editor/common/editorCommon";

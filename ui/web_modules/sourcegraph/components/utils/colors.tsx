@@ -7,80 +7,57 @@
 const rgb = (r, g, b) => (a = 1) => `rgba(${r},${g},${b},${a})`;
 
 // Color definitions
-const blue1 = rgb(0, 82, 140);
-const blue2 = rgb(0, 146, 214);
-const blue3 = rgb(15, 182, 242);
-const blue4 = rgb(119, 209, 242);
-const blue5 = rgb(192, 235, 250);
+export const blueD2 = rgb(0, 63, 102);
+export const blueD1 = rgb(0, 113, 184);
+export const blue = rgb(0, 145, 234);
+export const blueL1 = rgb(92, 192, 255);
+export const blueL2 = rgb(173, 224, 255);
+export const blueL3 = rgb(235, 247, 255);
 
-const purple1 = rgb(123, 13, 172);
-const purple2 = rgb(177, 20, 247);
-const purple3 = rgb(206, 122, 255);
-const purple4 = rgb(232, 195, 250);
+export const purpleD2 = rgb(68, 0, 102);
+export const purpleD1 = rgb(122, 0, 184);
+export const purple = rgb(170, 0, 255);
+export const purpleL1 = rgb(201, 92, 255);
+export const purpleL2 = rgb(228, 173, 255);
+export const purpleL3 = rgb(248, 235, 255);
 
-const orange1 = rgb(230, 69, 0);
-const orange2 = rgb(248, 96, 18);
-const orange3 = rgb(255, 165, 120);
+export const orangeD2 = rgb(102, 24, 0);
+export const orangeD1 = rgb(184, 43, 0);
+export const orange = rgb(255, 61, 0);
+export const orangeL1 = rgb(255, 130, 92);
+export const orangeL2 = rgb(255, 192, 173);
+export const orangeL3 = rgb(255, 239, 235);
 
-const green1 = rgb(5, 128, 128);
-const green2 = rgb(10, 166, 148);
-const green3 = rgb(13, 206, 183);
+export const greenD2 = rgb(8, 94, 83);
+export const greenD1 = rgb(13, 156, 138);
+export const green = rgb(0, 191, 165);
+export const greenL1 = rgb(104, 243, 224);
+export const greenL2 = rgb(180, 249, 240);
+export const greenL3 = rgb(236, 253, 251);
 
-const yellow = rgb(265, 199, 112);
+export const yellowD2 = rgb(102, 85, 0);
+export const yellowD1 = rgb(184, 153, 0);
+export const yellow = rgb(255, 214, 0);
+export const yellowL1 = rgb(255, 228, 92);
+export const yellowL2 = rgb(255, 241, 173);
+export const yellowL3 = rgb(255, 252, 235);
 
-const red1 = rgb(246, 106, 106);
-const red2 = rgb(242, 73, 73);
+export const redD2 = rgb(102, 0, 20);
+export const redD1 = rgb(184, 0, 37);
+export const red = rgb(255, 10, 59);
+export const redL1 = rgb(255, 133, 157);
+export const redL2 = rgb(255, 173, 190);
+export const redL3 = rgb(255, 235, 239);
 
-const coolGray1 = rgb(26, 48, 77);
-const coolGray2 = rgb(52, 73, 102);
-const coolGray3 = rgb(119, 147, 174);
-const coolGray4 = rgb(213, 229, 242);
+export const blueGrayD2 = rgb(35, 48, 67);
+export const blueGrayD1 = rgb(62, 87, 121);
+export const blueGray = rgb(93, 126, 172);
+export const blueGrayL1 = rgb(147, 169, 200);
+export const blueGrayL2 = rgb(201, 212, 227);
+export const blueGrayL3 = rgb(242, 244, 248);
 
-const black = rgb(0, 0, 0);
-const white = rgb(255, 255, 255);
+export const black = rgb(0, 0, 0);
+export const white = rgb(255, 255, 255);
 
-export const colors = {
-	blue1,
-	blue2,
-	blue3,
-	blue4,
-	blue5,
-
-	purple1,
-	purple2,
-	purple3,
-	purple4,
-
-	orange1,
-	orange2,
-	orange3,
-
-	green1,
-	green2,
-	green3,
-
-	yellow,
-
-	red1,
-	red2,
-
-	coolGray1,
-	coolGray2,
-	coolGray3,
-	coolGray4,
-
-	black,
-	white,
-
-	// Nice names and aliases
-	blueText: blue2,
-	blue: blue3,
-	purple: purple2,
-	orange: orange2,
-	green: green3,
-	greenText: green2,
-	redText: red2,
-	text: coolGray1,
-	red: red2,
-	gray: coolGray3,
-};
+export const text = blueGrayD1;
+export const gray = blueGray;

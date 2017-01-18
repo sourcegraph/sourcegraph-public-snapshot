@@ -3,7 +3,7 @@ import { defaultFetch } from "sourcegraph/util/xhr";
 
 const fetch = singleflightFetch(defaultFetch);
 
-export function fetchGraphQLQuery(query: string, variables: Object): Promise<GQL.IQuery> {
+export function fetchGraphQLQuery(query: string, variables?: Object): Promise<GQL.IQuery> {
 	return fetch(`/.api/graphql`, {
 		method: "POST",
 		headers: {

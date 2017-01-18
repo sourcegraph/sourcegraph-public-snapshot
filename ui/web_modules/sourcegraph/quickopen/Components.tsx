@@ -1,26 +1,26 @@
+import { hover } from "glamor";
 import * as React from "react";
 
 import { Heading } from "sourcegraph/components/Heading";
-import { colors } from "sourcegraph/components/utils/colors";
-import { modal_result, view_more } from "sourcegraph/quickopen/Style.css";
+import { colors, typography } from "sourcegraph/components/utils";
 
-const smallFont = ".85rem";
-
-const ViewMore = ({expandCategory, type}) => <a style={{
+const ViewMore = ({expandCategory, type}) => <a style={Object.assign({
+	color: colors.blueL1(),
 	textTransform: "uppercase",
-	fontSize: smallFont,
 	fontWeight: "bold",
 	display: "block",
 	textAlign: "center",
 	marginTop: 16,
-}} className={view_more} onClick={expandCategory}>
+}, typography.small)} {...hover({ color: `${colors.blueL2()} !important` }) } onClick={expandCategory}>
 	View more {type}
 </a>;
 
 export const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate, scrollIntoView) => {
 	const oflow = { textOverflow: "ellipsis", overflow: "hidden" };
 	return (
-		<a key={itemIndex} data-class-name={selected ? "modal-result-selected modal-result" : "modal-result"} className={modal_result}
+		<a
+			key={itemIndex}
+			data-class-name={selected ? "modal-result-selected modal-result" : "modal-result"}
 			ref={node => {
 				if (scrollIntoView && node && selected) {
 					// Nonstandard, but improves experience in Chrome.
@@ -32,11 +32,13 @@ export const ResultRow = ({title, description, index, length}, categoryIndex, it
 			style={{
 				borderRadius: 3,
 				padding: "8px 20px",
-				backgroundColor: selected ? colors.blue2() : colors.coolGray1(.5),
+				border: "2px solid transparent",
+				backgroundColor: selected ? colors.blue() : colors.blueGrayD2(0.5),
 				display: "block",
-				color: selected ? colors.white() : colors.coolGray4(),
+				color: selected ? colors.white() : colors.blueGrayL3(),
 				marginBottom: 8,
 			}}
+			{...hover({ border: `2px solid ${colors.blue()} !important` }) }
 			onClick={() => delegate.select(categoryIndex, itemIndex)}>
 			{length ? <div style={oflow}>
 				<span>{title.substr(0, index)}</span>
@@ -46,7 +48,7 @@ export const ResultRow = ({title, description, index, length}, categoryIndex, it
 				<div style={oflow}>
 					{title}
 				</div>}
-			<div style={Object.assign({ fontSize: smallFont, color: selected ? colors.white(.7) : colors.coolGray3() }, oflow)}>
+			<div style={Object.assign({ color: selected ? colors.white(0.7) : colors.blueGrayL1() }, oflow, typography.small)}>
 				{description}
 			</div>
 		</a>
@@ -60,8 +62,7 @@ const ResultCategory = ({title, results, selected, delegate, categoryIndex, limi
 	}
 	results = results.slice(0, limit);
 	return <div>
-		<Heading color="gray"
-			level={7}>
+		<Heading level={7} style={{ color: colors.blueGrayL1() }}>
 			{title}
 		</Heading>
 		{results.map((result, index) =>
@@ -98,9 +99,9 @@ export const ResultCategories = ({categories, selection, delegate, limits, scrol
 	</div>;
 };
 
-export const Hint = () => <div style={{ color: colors.coolGray3(), margin: "8px auto", fontSize: smallFont }}>
+export const Hint = () => <div style={Object.assign({ color: colors.blueGrayL1(), margin: "8px auto" }, typography.small)}>
 	Press <span style={{
-		backgroundColor: colors.coolGray1(.5),
+		backgroundColor: colors.blueGrayD2(.5),
 		borderRadius: 3,
 		padding: "2px 5px",
 	}}>/</span> to open search from anywhere

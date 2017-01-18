@@ -113,16 +113,20 @@ export class EditorService implements IEditorService {
 
 		const {repo, rev, path} = URIUtils.repoParams(data.resource);
 		const blameBody = Features.authorsToggle.isEnabled() ? `blame(startLine: 0, endLine: 0) {
-												name
-												email
 												rev
-												date
 												startLine
 												endLine
 												startByte
 												endByte
 												message
-												gravatarHash
+												author {
+													person {
+														name
+														email
+														gravatarHash
+													}
+													date
+												}
 											}` : "";
 		return TPromise.wrap(
 			fetch(`/.api/graphql`, {

@@ -28,7 +28,7 @@ export class NoTabsTitleControl extends TitleControl {
 		const pathspec = URIUtils.repoParams(resource);
 		const component = <EditorTitle pathspec={pathspec} />;
 		ReactDOM.render(component, this.domElement);
-		this.domElement.style.height = `${layout.editorToolbarHeight}px`;
+		this.domElement.style.height = `${layout.editorHeaderHeight}px`;
 	}
 
 	dispose(): void {

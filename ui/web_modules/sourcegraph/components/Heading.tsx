@@ -27,7 +27,7 @@ export const Heading = (props: Props): any => {
 		white: colors.white(),
 		orange: colors.orange(),
 		green: colors.green(),
-		gray: colors.coolGray3(),
+		gray: colors.blueGray(),
 	};
 
 	const sx = Object.assign(

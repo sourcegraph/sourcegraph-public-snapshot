@@ -23,7 +23,12 @@ interface Props {
 }
 
 export function CodeLensAuthorWidget(props: Props): JSX.Element {
-	const { gravatarHash, name, rev, message } = props.blame;
+	if (!props.blame.author || !props.blame.author.person) {
+		return <div />;
+	}
+
+	const { rev, message } = props.blame;
+	const { gravatarHash, name } = props.blame.author.person;
 	const commitURL = `http://${props.repo}/commit/${props.blame.rev}#diff-${props.rev}`;
 
 	return <Panel hoverLevel="low" style={{
@@ -44,7 +49,7 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 				right: whitespace[3],
 				top: whitespace[3],
 			}}>
-				<Close color={colors.coolGray3()} width={14} />
+				<Close color={colors.blueGray()} width={14} />
 			</div>
 			<Heading level={6} style={{ marginTop: whitespace[3] }}>{message}</Heading>
 			<a
@@ -52,7 +57,7 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 				onClick={() => AnalyticsConstants.Events.CodeLensCommitRedirect_Clicked.logEvent({ commitURL })}
 				target="_blank"
 				{...merge({
-					color: colors.coolGray3(),
+					color: colors.blueGray(),
 					fontFamily: typography.fontStack.code
 				}, typography.small,
 				) }>
@@ -76,6 +81,7 @@ export class AuthorshipWidget implements IContentWidget {
 	getDomNode(): HTMLElement {
 		if (!this.domNode) {
 			let node = document.createElement("div");
+			node.style.marginTop = "-20px";
 			ReactDOM.render(this.element, node);
 			this.domNode = node;
 		}
@@ -88,7 +94,7 @@ export class AuthorshipWidget implements IContentWidget {
 				lineNumber: this.blame.startLine,
 				column: this.blame.startByte,
 			},
-			preference: [0],
+			preference: [1, 0],
 		};
 	};
 }

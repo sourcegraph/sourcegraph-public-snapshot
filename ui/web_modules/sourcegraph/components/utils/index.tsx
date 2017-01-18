@@ -1,4 +1,8 @@
-export { colors } from "sourcegraph/components/utils/colors";
-export { layout } from "sourcegraph/components/utils/layout";
-export { typography } from "sourcegraph/components/utils/typography";
+import * as utilColors from "sourcegraph/components/utils/colors";
+import * as utilLayout from "sourcegraph/components/utils/layout";
+import * as utilTypography from "sourcegraph/components/utils/typography";
+
+export let colors = utilColors;
+export let layout = utilLayout;
+export let typography = utilTypography;
 export { whitespace } from "sourcegraph/components/utils/whitespace";

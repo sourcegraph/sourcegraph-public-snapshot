@@ -20,7 +20,7 @@ export function TwitterCaseStudyPage(): JSX.Element {
 		}}>
 			<PageTitle title="Sourcegraph Case Study: Twitter" />
 			<Hero style={{
-				backgroundColor: colors.coolGray4(),
+				backgroundColor: colors.blueGrayL3(),
 			}}>
 				<FlexContainer justify="center" items="center" direction="top_bottom">
 					<img src={`${context.assetsRoot}/img/tw-case/tw-case-logos.svg`} />
@@ -74,7 +74,7 @@ export function TwitterCaseStudyPage(): JSX.Element {
 						fontFamily: "Courier",
 						width: "75%",
 					}}>
-						Sourcegraph is a <span style={{ color: colors.blue3() }}>fast</span>, <span style={{ color: colors.purple3() }}>semantic code search</span> and <span style={{ color: colors.orange2() }}>cross-reference engine</span>. It allows users to <strong>search for any function, type, or package and see how other developers use it,</strong> <span style={{ color: colors.green2() }}>globally</span>. It’s also massively scalable, with 2,000,000,000+ functions in its public code index (and growing).
+						Sourcegraph is a <span style={{ color: colors.blue() }}>fast</span>, <span style={{ color: colors.purple() }}>semantic code search</span> and <span style={{ color: colors.orange() }}>cross-reference engine</span>. It allows users to <strong>search for any function, type, or package and see how other developers use it,</strong> <span style={{ color: colors.greenD1() }}>globally</span>. It’s also massively scalable, with 2,000,000,000+ functions in its public code index (and growing).
 					</p>
 					<img src={`${context.assetsRoot}/img/tw-case/tw-case-search-example.png`} style={{
 						position: "absolute",

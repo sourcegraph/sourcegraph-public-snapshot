@@ -27,19 +27,19 @@ export function Panel({
 			borderRadius: "3px",
 			color: color !== "white" ? "white" : "inherit",
 			borderWidth: 1,
-			borderColor: colors.coolGray3(0.2),
+			borderColor: colors.blueGray(0.2),
 			borderStyle: "solid",
 		},
 		hoverLevel ? {
-			boxShadow: `0 ${hoverLevel === "high" ? "2px 20px" : "1px 4px"} 0 ${colors.coolGray1(0.08)}`,
+			boxShadow: `0 ${hoverLevel === "high" ? "2px 20px" : "1px 4px"} 0 ${colors.blueGrayD2(0.08)}`,
 		} : null,
 		style,
 	);
 
 	const hoverSx = gHover({
 		transition: "all 550ms cubic-bezier(0.175, 0.885, 0.320, 1)",
-		boxShadow: `0 ${hoverLevel === "high" ? "10px 35px" : "2px 6px"} 3px ${colors.coolGray1(0.05)}`,
-		borderColor: hoverBorder ? `${colors.coolGray3(0.4)} !important` : null,
+		boxShadow: `0 ${hoverLevel === "high" ? "10px 35px" : "2px 6px"} 3px ${colors.blueGrayD2(0.05)}`,
+		borderColor: hoverBorder ? `${colors.blueGray(0.4)} !important` : null,
 	});
 
 	return <div className={className} {...hoverSx} style={sx}>{children}</div>;

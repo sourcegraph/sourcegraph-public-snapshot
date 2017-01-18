@@ -46,11 +46,11 @@ export function Input(props: Props): JSX.Element {
 			appearance: "none",
 			borderRadius: 3,
 			backgroundColor: "white",
-			borderColor: props.error ? colors.red1() : colors.coolGray3(0.3),
+			borderColor: props.error ? colors.red() : colors.blueGray(0.3),
 			borderWidth: 1,
 			borderStyle: "solid",
 			boxSizing: "border-box",
-			color: colors.coolGray2(),
+			color: colors.blueGrayD1(),
 			display: props.block ? "block" : "inline-block",
 			paddingBottom: props.inputSize === "small" ? whitespace[1] : whitespace[2],
 			paddingLeft: props.inputSize === "small" ? "0.8rem" : whitespace[3],
@@ -63,7 +63,7 @@ export function Input(props: Props): JSX.Element {
 		props.inputSize === "small" ? typography.size[7] : null,
 	);
 
-	const placeholderSx = { color: colors.coolGray3(0.7) };
+	const placeholderSx = { color: colors.blueGray(0.7) };
 
 	const sx = Object.assign(
 		{
@@ -77,7 +77,7 @@ export function Input(props: Props): JSX.Element {
 		<input {...other} style={inputSx} ref={props.domRef} placeholder={props.placeholder}
 			{...style({
 				":focus": {
-					borderColor: `${colors.coolGray3(0.7)} !important`,
+					borderColor: `${colors.blueGray(0.7)} !important`,
 					outline: "none",
 				},
 				"::-webkit-input-placeholder": placeholderSx,
@@ -88,12 +88,12 @@ export function Input(props: Props): JSX.Element {
 			/>
 		{props.helperText && <em style={errorTextSx}>{props.helperText}</em>}
 		{props.errorText && <div style={{
-			color: colors.redText(),
+			color: colors.red(),
 			marginBottom: whitespace[2],
 			marginTop: whitespace[2],
 		}}>
 			<Alert width={16} style={{
-				fill: colors.redText(),
+				fill: colors.red(),
 				marginRight: whitespace[2],
 				marginTop: -4,
 			}} />

@@ -12,8 +12,9 @@ import (
 )
 
 type commitSpec struct {
-	RepoID   int32
-	CommitID string
+	DefaultBranch string
+	RepoID        int32
+	CommitID      string
 }
 
 type commitStateResolver struct {
