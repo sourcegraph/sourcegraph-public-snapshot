@@ -10,7 +10,7 @@ import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerVie
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
-import { BlobRouteProps, Router } from "sourcegraph/app/router";
+import { Router, getBlobPropsFromRouter } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
@@ -64,12 +64,19 @@ export function unmountWorkbench(): void {
 	currResource = null;
 }
 
+interface FileSpec {
+	repo: string;
+	commitID: string;
+	path: string;
+	selection: IRange;
+}
+
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
-export function syncEditorWithRouterProps(blobProps: BlobRouteProps): void {
-	const {repo, rev, path} = blobProps;
-	const resource = URIUtils.pathInRepo(repo, rev, path);
+export function syncEditorWithRouterProps(blobProps: FileSpec): void {
+	const {repo, commitID, path} = blobProps;
+	const resource = URIUtils.pathInRepo(repo, commitID, path);
 	const editorService = Services.get(IWorkbenchEditorService) as IWorkbenchEditorService;
 	if (currResource && currResource.toString() === resource.toString()) {
 		return;
@@ -113,12 +120,16 @@ function editorOpened(resource: URI, router: Router): void {
 	if (currResource && currResource.toString() === resource.toString()) {
 		return;
 	}
+	let {repo, rev, path} = URIUtils.repoParams(resource);
+	if (currResource) {
+		const oldParams = URIUtils.repoParams(currResource);
+		if (oldParams.rev === rev) {
+			// If the commit IDs are the same, keep the same cosmetic treeish.
+			rev = getBlobPropsFromRouter(router).rev;
+		}
+	}
 	currResource = resource;
 	updateFileTree(resource);
-	let {repo, rev, path} = URIUtils.repoParams(resource);
-	if (rev === "HEAD") {
-		rev = null;
-	}
 	router.push(urlToBlob(repo, rev, path));
 }
 
@@ -153,9 +164,10 @@ async function updateFileTree(resource: URI): Promise<void> {
 	chain.forEach((item) => {
 		treeModel.expand(item);
 	});
+	const oldSelection = privateView.tree.getSelection();
 	await view.select(resource);
 	const scrollPos = privateView.tree.getRelativeTop(fileStat);
-	if (scrollPos > 1 || scrollPos < 0) {
+	if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
 		// Item is scrolled off screen
 		await view.select(resource, true);
 	}

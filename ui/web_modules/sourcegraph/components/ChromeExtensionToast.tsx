@@ -18,6 +18,7 @@ interface State {
 
 interface Props {
 	location: RouterLocation;
+	layout: () => void;
 }
 
 export class ChromeExtensionToast extends React.Component<Props, State>  {
@@ -70,5 +71,9 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	_dismissToast(): void {
 		window.localStorage[ChromeExtensionToastKey] = "true";
 		this.setState({ isVisible: false });
+
+		// Call layout to let workbench draw itself according to the new
+		// dimensions.
+		this.props.layout();
 	}
 }

@@ -5,11 +5,18 @@ import * as React from "react";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { BlobRouteProps, Router, getBlobPropsFromRouter } from "sourcegraph/app/router";
+import { Router } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
 import { registerEditorCallbacks, syncEditorWithRouterProps, unmountWorkbench } from "sourcegraph/editor/config";
+import { init } from "sourcegraph/workbench/main";
+import { IRange } from "vs/editor/common/editorCommon";
 
-interface Props extends BlobRouteProps { }
+export interface Props {
+	repo: string;
+	path: string;
+	commitID: string;
+	selection: IRange;
+}
 
 // WorkbenchShell loads the workbench and calls init on it. It is a pure container and transmits no data from the
 // React UI layer into the Workbench interface. Synchronization of URL <-> workbench is handled by
@@ -26,34 +33,21 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 	services: ServiceCollection;
 	listener: number;
 
-	private mounted: boolean = false;
-
 	domRef(domElement: HTMLDivElement): void {
 		if (!domElement) {
-			this.mounted = false;
 			if (this.workbench) {
 				this.workbench.dispose();
 			}
 			return;
 		}
-		this.mounted = true;
 
-		// TODO(john): I don't think this is properly code-splitting, and it certainly won't
-		// if we're already importing a bunch of vscode paths from config.tsx. Reconsider.
-		require(["sourcegraph/workbench/main"], ({init}) => {
-			if (!this.mounted) {
-				// component unmounted before require finished.
-				return;
-			}
-			const blobProps = getBlobPropsFromRouter(this.context.router);
-			const {repo, rev, path} = blobProps;
-			const resource = URIUtils.pathInRepo(repo, rev, path);
-			[this.workbench, this.services] = init(domElement, resource);
-			registerEditorCallbacks(this.context.router);
+		const {repo, commitID, path} = this.props;
+		const resource = URIUtils.pathInRepo(repo, commitID, path);
+		[this.workbench, this.services] = init(domElement, resource);
+		registerEditorCallbacks(this.context.router);
 
-			this.layout();
-			syncEditorWithRouterProps(blobProps);
-		});
+		this.layout();
+		syncEditorWithRouterProps(this.props);
 	}
 
 	componentWillMount(): void {

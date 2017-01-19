@@ -43,12 +43,13 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
 			return null;
 		}
+		const commit = this.props.root.repository.commit.commit.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<RepoMain {...this.props} repository={this.props.root.repository} commit={this.props.root.repository.commit}>
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 				<OnboardingModals location={this.props.location} />
-				<ChromeExtensionToast location={this.props.location} />
-				<WorkbenchShell { ...getBlobPropsFromRouter(this.context.router) } />
+				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
+				<WorkbenchShell commitID={commit} { ...getBlobPropsFromRouter(this.context.router) } />
 				{Features.projectWow.isEnabled() && <InfoPanelLifecycle />}
 			</RepoMain>
 		</div>;
