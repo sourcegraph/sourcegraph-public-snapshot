@@ -80,7 +80,7 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 					uri
 					description
 					defaultBranch
-					symbols(id: $id, mode: $mode) @include(if: $isSymbolUrl) {
+					symbols(id: $id, mode: $mode, rev: $rev) @include(if: $isSymbolUrl) {
 						path
 						line
 						character

@@ -72,10 +72,11 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 func (r *repositoryResolver) Symbols(ctx context.Context, args *struct {
 	ID   string
 	Mode string
+	Rev  string
 }) ([]*symbolResolver, error) {
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,
-		Rev:  "",
+		Rev:  args.Rev,
 	})
 	if err != nil {
 		return nil, err

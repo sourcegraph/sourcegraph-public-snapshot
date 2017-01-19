@@ -50,7 +50,7 @@ type Repository implements Node {
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
-	symbols(id: String!, mode: String!): [Symbol!]!
+	symbols(id: String!, mode: String!, rev: String = ""): [Symbol!]!
 }
 
 type Symbol {

@@ -1494,6 +1494,16 @@
 										"ofType": null
 									}
 								}
+							},
+							{
+								"defaultValue": "",
+								"description": null,
+								"name": "rev",
+								"type": {
+									"kind": "SCALAR",
+									"name": "String",
+									"ofType": null
+								}
 							}
 						],
 						"deprecationReason": null,
