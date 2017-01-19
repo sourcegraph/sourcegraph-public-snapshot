@@ -161,7 +161,7 @@ export class BuildHandler implements LanguageHandler {
 		let ready = this.managedModuleInit.get(dir);
 		if (!ready) {
 			ready = install(this.remoteFs, dir, yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
-				await this.ls.projectManager.refreshModuleStructureAt(dir);
+				await this.ls.projectManager.refreshFileTree(dir, true);
 				return pathToDep;
 			}, (err) => {
 				this.managedModuleInit.delete(dir);
@@ -374,7 +374,7 @@ export class BuildHandler implements LanguageHandler {
 	}
 
 	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParams): Promise<SymbolInformation[]> {
-		if (this.puntWorkspaceSymbol) {
+		if (this.puntWorkspaceSymbol && (!params.symbol || !params.symbol['package'])) {
 			return Promise.reject("workspace/symbol unsupported on this repository");
 		}
 		return this.ls.getWorkspaceSymbols(params);
