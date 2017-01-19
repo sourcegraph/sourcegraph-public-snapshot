@@ -5,6 +5,7 @@ import { whitespace } from "sourcegraph/components/utils";
 import {
 	AffixComponent,
 	ButtonsComponent,
+	ColorsComponent,
 	FlexContainerComponent,
 	FormsComponent,
 	HeadingsComponent,
@@ -12,7 +13,6 @@ import {
 	LogoComponent,
 	PanelsComponent,
 	RepositoryComponent,
-	StepperComponent,
 	Symbols,
 	TableComponent,
 	TabsComponent,
@@ -61,6 +61,11 @@ export class ComponentsContainer extends React.Component<{}, any> {
 					<LogoComponent />
 				</div>
 
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
+					<a id="brand-colors"></a>
+					<ColorsComponent />
+				</div>
+
 				<Heading level={3} underline="purple" className={base.mt5}>Layout Components</Heading>
 				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="layout-flexcontainer"></a>
@@ -91,10 +96,6 @@ export class ComponentsContainer extends React.Component<{}, any> {
 				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-panels"></a>
 					<PanelsComponent />
-				</div>
-				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
-					<a id="components-stepper"></a>
-					<StepperComponent />
 				</div>
 				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-symbols"></a>

@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Link } from "react-router";
 import { Affix, FlexContainer, Heading, Hero, TabItem, Tabs } from "sourcegraph/components";
 import { whitespace } from "sourcegraph/components/utils/index";
 import { ComponentsContainer } from "sourcegraph/styleguide/ComponentsContainer";
@@ -29,58 +28,58 @@ export function StyleguideContainer(props: {}): JSX.Element {
 				<Affix offset={20} style={{ flex: "0 0 240px", order: 9999 }}>
 					<Tabs style={{ marginLeft: whitespace[5] }} direction="vertical">
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "principles" }}>Principles</Link>
+							<a href="#principles">Principles</a>
 						</TabItem>
 
 						<Heading level={7} style={navHeadingSx}>Brand</Heading>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "brand-voice" }}>Voice</Link>
+							<a href="#brand-voice">Voice</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "brand-logo" }}>Logo and Logotype</Link>
+							<a href="#brand-logo">Logo and Logotype</a>
+						</TabItem>
+						<TabItem direction="vertical" color="purple">
+							<a href="#brand-colors">Colors</a>
 						</TabItem>
 
 						<Heading level={7} style={navHeadingSx}>Layout Components</Heading>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "layout-flexcontainer" }}>FlexContainer</Link>
+							<a href="#layout-flexcontainer">FlexContainer</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "layout-affix" }}>Affix</Link>
+							<a href="#layout-affix">Affix</a>
 						</TabItem>
 
 						<Heading level={7} style={navHeadingSx}>UI Components</Heading>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-buttons" }}>Buttons</Link>
+							<a href="#components-buttons">Buttons</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-forms" }}>Forms</Link>
+							<a href="#components-forms">Forms</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-headings" }}>Headings</Link>
+							<a href="#components-headings">Headings</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-list" }}>Lists</Link>
+							<a href="#components-list">Lists</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-panels" }}>Panels</Link>
+							<a href="#components-panels">Panels</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-stepper" }}>Stepper</Link>
+							<a href="#components-symbols">Symbols</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-symbols" }}>Symbols</Link>
+							<a href="#components-table">Table</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-table" }}>Table</Link>
+							<a href="#components-tabs">Tabs</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-tabs" }}>Tabs</Link>
+							<a href="#components-user">User</a>
 						</TabItem>
 						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-user" }}>User</Link>
-						</TabItem>
-						<TabItem direction="vertical" color="purple">
-							<Link to={{ pathname: "styleguide", hash: "components-repository-card" }}>Repository Card</Link>
+							<a href="#components-repository-card">Repository Card</a>
 						</TabItem>
 					</Tabs>
 				</Affix>

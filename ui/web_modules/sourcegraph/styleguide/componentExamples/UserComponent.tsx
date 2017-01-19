@@ -11,10 +11,10 @@ export function UserComponent(): JSX.Element {
 			<div className={base.pa4}>
 
 				<Heading level={7} color="gray">User (detailed)</Heading>
-				<User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/200/300" />
+				<User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/g/200/200" />
 
 				<Heading level={7} style={{ marginTop: whitespace[3] }} color="gray">User (simple)</Heading>
-				<User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/200/300" simple={true} />
+				<User nickname="Trillian" email="tmcmillan@gmail.com" avatar="https://placekitten.com/g/200/200" simple={true} />
 
 			</div>
 			<hr />

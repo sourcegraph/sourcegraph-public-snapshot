@@ -11,7 +11,6 @@ export { Logo } from "sourcegraph/components/Logo";
 export { Heading } from "sourcegraph/components/Heading";
 export { Header } from "sourcegraph/components/Header";
 export { Panel } from "sourcegraph/components/Panel";
-export { Stepper } from "sourcegraph/components/Stepper";
 export { Icon } from "sourcegraph/components/Icon";
 export { CheckboxList } from "sourcegraph/components/CheckboxList";
 export { Emoji } from "sourcegraph/components/Emoji";

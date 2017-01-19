@@ -1,17 +1,18 @@
-import * as classNames from "classnames";
 import * as React from "react";
-
-import * as styles from "sourcegraph/components/styles/code_2.css";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
-	className?: string;
-	children?: any;
-	style?: any;
+	children?: React.ReactNode[];
+	style?: React.CSSProperties;
 }
 
-export class Code extends React.Component<Props, {}> {
-	render(): JSX.Element | null {
-		const {className, children, style} = this.props;
-		return <span className={classNames(className, styles.code)} style={style}>{children}</span>;
-	}
+export function Code({ children, style }: Props): JSX.Element {
+	return <span style={Object.assign({
+		backgroundColor: colors.blueGrayL3(),
+		borderRadius: 3,
+		color: colors.text(),
+		fontFamily: typography.fontStack.code,
+		padding: whitespace[1],
+		marginRight: whitespace[1],
+	}, typography.size[7], style)}>{children}</span>;
 }

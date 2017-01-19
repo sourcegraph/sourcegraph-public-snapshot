@@ -1,9 +1,0 @@
-@value base "./_base.css";
-@value colors "./_colors.css";
-@value typography "./_typography.css";
-
-.code {
-	composes: code f6 from typography;
-	composes: bg_cool_pale_gray cool_gray from colors;
-	composes: br2 pa1 mr1 from base;
-}
