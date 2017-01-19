@@ -8,6 +8,7 @@ import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { RouteParams, Router, RouterLocation, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import "sourcegraph/blob/styles/Monaco.css";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
+import { Header } from "sourcegraph/components/Header";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
 import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
@@ -43,7 +44,11 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 
 	render(): JSX.Element | null {
 		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
-			return null;
+			return (
+				<Header
+					title="404"
+					subtitle="Repository not found." />
+			);
 		}
 		if (this.props.isSymbolUrl && this.props.root.repository.symbols.length === 0) {
 			return null;
