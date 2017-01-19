@@ -5,7 +5,7 @@ import { Route } from "react-router";
 import { IRange } from "vs/editor/common/editorCommon";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
-import { RouteParams, Router, RouterLocation, getPathFromRouter, repoRevFromRouteParams } from "sourcegraph/app/router";
+import { RouteParams, Router, RouterLocation, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import "sourcegraph/blob/styles/Monaco.css";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
@@ -49,7 +49,6 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			return null;
 		}
 		const symbol = this.props.isSymbolUrl ? this.props.root.repository.symbols[0] : null; // Assume for now it's ok to take the first.
-		const commit = this.props.root.repository.commit.commit.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<RepoMain {...this.props} repository={this.props.root.repository} commit={this.props.root.repository.commit}>
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
@@ -57,8 +56,8 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
 				<WorkbenchShell
 					repo={this.props.repo}
-					commitID={commit}
-					path={symbol ? symbol.path : getPathFromRouter(this.context.router) !}
+					rev={this.props.rev}
+					path={symbol ? symbol.path : pathFromRouteParams(this.props.params)}
 					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
 				{Features.projectWow.isEnabled() && <InfoPanelLifecycle />}
 			</RepoMain>

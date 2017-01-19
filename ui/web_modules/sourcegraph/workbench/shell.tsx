@@ -1,29 +1,22 @@
 import * as autobind from "autobind-decorator";
 import * as debounce from "lodash/debounce";
+import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { Router } from "sourcegraph/app/router";
+import { BlobRouteProps, Router } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
 import { registerEditorCallbacks, syncEditorWithRouterProps, unmountWorkbench } from "sourcegraph/editor/config";
 import { init } from "sourcegraph/workbench/main";
-import { IRange } from "vs/editor/common/editorCommon";
-
-export interface Props {
-	repo: string;
-	path: string;
-	commitID: string;
-	selection: IRange;
-}
 
 // WorkbenchShell loads the workbench and calls init on it. It is a pure container and transmits no data from the
 // React UI layer into the Workbench interface. Synchronization of URL <-> workbench is handled by
 // adding a listener to the "sourcegraph/app/router" package, and by pushing updates to the singleton
 // router from that package.
 @autobind
-export class WorkbenchShell extends React.Component<Props, {}> {
+export class WorkbenchShell extends React.Component<BlobRouteProps, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -41,8 +34,8 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 			return;
 		}
 
-		const {repo, commitID, path} = this.props;
-		const resource = URIUtils.pathInRepo(repo, commitID, path);
+		const {repo, rev, path} = this.props;
+		const resource = URIUtils.pathInRepo(repo, rev, path);
 		[this.workbench, this.services] = init(domElement, resource);
 		registerEditorCallbacks(this.context.router);
 
@@ -59,8 +52,10 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 		unmountWorkbench();
 	}
 
-	componentWillReceiveProps(nextProps: Props): void {
-		syncEditorWithRouterProps(nextProps);
+	componentWillReceiveProps(nextProps: BlobRouteProps): void {
+		if (!isEqual(nextProps, this.props)) {
+			syncEditorWithRouterProps(nextProps);
+		}
 	}
 
 	layout(): void {

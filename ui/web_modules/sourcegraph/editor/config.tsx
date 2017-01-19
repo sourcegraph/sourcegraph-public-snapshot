@@ -10,7 +10,7 @@ import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerVie
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
-import { Router, getBlobPropsFromRouter } from "sourcegraph/app/router";
+import { BlobRouteProps, Router, getBlobPropsFromRouter } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
@@ -64,19 +64,12 @@ export function unmountWorkbench(): void {
 	currResource = null;
 }
 
-interface FileSpec {
-	repo: string;
-	commitID: string;
-	path: string;
-	selection: IRange;
-}
-
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
-export function syncEditorWithRouterProps(blobProps: FileSpec): void {
-	const {repo, commitID, path} = blobProps;
-	const resource = URIUtils.pathInRepo(repo, commitID, path);
+export function syncEditorWithRouterProps(blobProps: BlobRouteProps): void {
+	const {repo, rev, path} = blobProps;
+	const resource = URIUtils.pathInRepo(repo, rev, path);
 	const editorService = Services.get(IWorkbenchEditorService) as IWorkbenchEditorService;
 	if (currResource && currResource.toString() === resource.toString()) {
 		return;
