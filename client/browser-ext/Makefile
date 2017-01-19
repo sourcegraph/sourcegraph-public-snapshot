@@ -1,4 +1,4 @@
-.PHONY: install build bundle deploy deploy-e2e test-unit test-watch test-e2e test-all selenium-chrome fmt fmt-check
+.PHONY: install build bundle phabricator deploy deploy-e2e test-unit test-watch test-e2e test-all selenium-chrome fmt fmt-check
 
 default: build
 
@@ -11,6 +11,9 @@ build: install
 bundle: build
 	zip -r chrome-bundle.zip build/*
 	cd build && zip -r ../firefox-bundle.xpi *
+
+phabricator: build
+	cp build/js/phabricator.bundle.js ../../ui/assets/scripts
 
 test-unit:
 	yarn run test

@@ -60,6 +60,14 @@ Generate zipped artifacts (`chrome-bundle.zip` and `firefox-bundle.xpi`) to uplo
 $ make bundle
 ```
 
+## Update Phabricator plugin JavaScript
+
+Build the latest phabricator.bundle.js file, and copy to the Sourecgraph assets folder.
+
+```bash
+$ make phabricator
+```
+
 ## Deploy (chrome extension only)
 
 ```bash
@@ -68,3 +76,4 @@ $ make deploy
 
 To deploy the chrome extension with your Google Apps credentials, you must have `CHROME_WEBSTORE_CLIENT_SECRET` on your environment and
 be part of the "sg chrome ext devs" Google group. (You must also pay Google a one-time fee of $5...)
+
