@@ -5,6 +5,7 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IEditorContribution, IModel, IRange } from "vs/editor/common/editorCommon";
 
 import { send } from "sourcegraph/editor/lsp";
+import { Features } from "sourcegraph/util/features";
 import { provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
@@ -47,7 +48,7 @@ export class ReferenceAction implements IEditorContribution {
 	constructor(
 		private editor: ICodeEditor,
 	) {
-		if (editor instanceof EmbeddedCodeEditorWidget) {
+		if (editor instanceof EmbeddedCodeEditorWidget || !Features.projectWow.isEnabled()) {
 			return;
 		}
 		this.toDispose.push(this.editor.onDidChangeModel((e) => {

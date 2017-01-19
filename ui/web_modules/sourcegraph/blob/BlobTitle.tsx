@@ -114,7 +114,7 @@ export class BlobTitle extends React.Component<Props, {}> {
 					</div>
 				</div>
 			</FlexContainer>
-			<CommitInfoBar repo={repo} rev={rev} path={path} />
+			{Features.projectWow.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
 		</div>;
 	}
 };
