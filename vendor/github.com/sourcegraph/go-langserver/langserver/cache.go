@@ -23,12 +23,24 @@ var (
 	// LangHandlers in the same process.
 	cacheID int64
 
+	typecheckCacheSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "golangserver",
+		Subsystem: "typecheck",
+		Name:      "cache_size",
+		Help:      "Number of items in the typecheck cache",
+	})
 	typecheckCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "golangserver",
 		Subsystem: "typecheck",
 		Name:      "cache_request_total",
 		Help:      "Count of requests to cache.",
 	}, []string{"type"})
+	symbolCacheSize = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "golangserver",
+		Subsystem: "symbol",
+		Name:      "cache_size",
+		Help:      "Number of items in the symbol cache",
+	})
 	symbolCacheTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "golangserver",
 		Subsystem: "symbol",
@@ -38,7 +50,9 @@ var (
 )
 
 func init() {
+	prometheus.MustRegister(typecheckCacheSize)
 	prometheus.MustRegister(typecheckCacheTotal)
+	prometheus.MustRegister(symbolCacheSize)
 	prometheus.MustRegister(symbolCacheTotal)
 }
 
@@ -51,6 +65,7 @@ func newTypecheckCache() *boundedCache {
 	return &boundedCache{
 		id:      nextCacheID(),
 		c:       typecheckCache,
+		size:    typecheckCacheSize,
 		counter: typecheckCacheTotal,
 	}
 }
@@ -59,6 +74,7 @@ func newSymbolCache() *boundedCache {
 	return &boundedCache{
 		id:      nextCacheID(),
 		c:       symbolCache,
+		size:    symbolCacheSize,
 		counter: symbolCacheTotal,
 	}
 }
@@ -77,6 +93,7 @@ type boundedCache struct {
 	mu      sync.Mutex
 	id      int64
 	c       *lru.Cache
+	size    prometheus.Gauge
 	counter *prometheus.CounterVec
 }
 
@@ -97,6 +114,7 @@ func (c *boundedCache) Get(k interface{}, fill func() interface{}) interface{} {
 		v = &cacheValue{ready: make(chan struct{})}
 		c.c.Add(key, v)
 		c.mu.Unlock()
+		c.size.Set(float64(c.c.Len()))
 		c.counter.WithLabelValues("miss").Inc()
 
 		defer close(v.ready)
