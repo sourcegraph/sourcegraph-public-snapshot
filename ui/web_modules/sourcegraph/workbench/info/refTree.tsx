@@ -192,10 +192,15 @@ class Renderer extends LegacyRenderer {
 					strings.format(
 						`<div class="code-content">
 							<div class="function">
-								<span>{0}</span><span class="referenceMatch">{1}</span><span>{2}</span>
-							</div>
-							<div class="divider-container">
-								<div class="divider"/>
+								<code>
+									{0}
+								</code>
+								<code>
+									{1}
+								</code>
+								<code>
+									{2}
+								</code>
 							</div>
 						</div>`,
 						strings.escape(preview.before),

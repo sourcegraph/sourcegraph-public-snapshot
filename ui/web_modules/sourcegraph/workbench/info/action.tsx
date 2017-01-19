@@ -6,7 +6,7 @@ import { IEditorContribution, IModel, IRange } from "vs/editor/common/editorComm
 
 import { send } from "sourcegraph/editor/lsp";
 import { Features } from "sourcegraph/util/features";
-import { provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
+import { provideReferences } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
@@ -86,7 +86,7 @@ export class ReferenceAction implements IEditorContribution {
 			return;
 		}
 
-		refModel = await provideReferencesCommitInfo(refModel);
+		// refModel = await provideReferencesCommitInfo(refModel);
 
 		infoStore.dispatch({ hoverData, refModel });
 	}
