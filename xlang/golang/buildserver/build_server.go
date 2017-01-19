@@ -29,7 +29,7 @@ import (
 )
 
 // Debug if true will cause extra logging information to be printed
-var Debug = false
+var Debug = true
 
 // NewHandler creates a new build server wrapping a (also newly
 // created) Go language server. I.e., it creates a BuildHandler
@@ -163,7 +163,11 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 	}()
 
 	if Debug && h.init != nil {
-		log.Printf(">>> %s %s %s", h.init.OriginalRootPath, req.ID, req.Method)
+		var b []byte
+		if req.Params != nil {
+			b = []byte(*req.Params)
+		}
+		log.Printf(">>> %s %s %s %s", h.init.OriginalRootPath, req.ID, req.Method, string(b))
 		defer func(t time.Time) {
 			log.Printf("<<< %s %s %s %dms", h.init.OriginalRootPath, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
 		}(time.Now())
@@ -183,7 +187,11 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		if Debug {
-			log.Printf(">>> %s %s %s", params.OriginalRootPath, req.ID, req.Method)
+			var b []byte
+			if req.Params != nil {
+				b = []byte(*req.Params)
+			}
+			log.Printf(">>> %s %s %s %s", params.OriginalRootPath, req.ID, req.Method, string(b))
 			defer func(t time.Time) {
 				log.Printf("<<< %s %s %s %dms", params.OriginalRootPath, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
 			}(time.Now())
