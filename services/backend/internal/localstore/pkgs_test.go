@@ -3,12 +3,14 @@ package localstore
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"reflect"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -37,7 +39,7 @@ func TestPkgs_update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expPkgs := []PackageInfo{{
+	expPkgs := []sourcegraph.PackageInfo{{
 		RepoID: 1,
 		Lang:   "go",
 		Pkg:    map[string]interface{}{"name": "pkg"},
@@ -108,7 +110,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expPkgs := []PackageInfo{{
+	expPkgs := []sourcegraph.PackageInfo{{
 		RepoID: 1,
 		Lang:   "go",
 		Pkg: map[string]interface{}{
@@ -138,6 +140,19 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 	ctx, done := testContext()
 	defer done()
+	ctx = accesscontrol.WithInsecureMock(ctx, true) // use mock access controls
+	accesscontrol.Mocks = accesscontrol.MockPerms{
+		VerifyUserHasReadAccess: func(ctx context.Context, method string, repoID int32) error {
+			switch repoID {
+			case 1, 2, 3, 4:
+				return nil
+			case 5:
+				return fmt.Errorf("unauthorized")
+			}
+			t.Fatalf("unexpected VerifyUserHasReadAccess call: %s %d", method, repoID)
+			return fmt.Errorf("UNREACHABLE")
+		},
+	}
 
 	p := dbPkgs{}
 
@@ -154,6 +169,9 @@ func TestPkgs_ListPackages(t *testing.T) {
 				Attributes: map[string]interface{}{"name": "pkg2-dep", "version": "2.2.2"},
 			}},
 		}},
+		3: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
+		4: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
+		5: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
 	}
 
 	for repo, pkgs := range repoToPkgs {
@@ -168,12 +186,12 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 
 	{ // Test case 1
-		expPkgInfo := []PackageInfo{{
+		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 		}}
-		op := &ListPackagesOp{
+		op := &sourcegraph.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg1"},
 			Limit:    10,
@@ -187,12 +205,12 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 2
-		expPkgInfo := []PackageInfo{{
+		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
 			Pkg:    map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 		}}
-		op := &ListPackagesOp{
+		op := &sourcegraph.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 			Limit:    10,
@@ -206,10 +224,33 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 3
-		var expPkgInfo []PackageInfo
-		op := &ListPackagesOp{
+		var expPkgInfo []sourcegraph.PackageInfo
+		op := &sourcegraph.ListPackagesOp{
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg1", "version": "2"},
+			Limit:    10,
+		}
+		gotPkgInfo, err := p.ListPackages(ctx, op)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
+			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
+		}
+	}
+	{ // Test case 4, permissions: filter out unauthorized repository from results
+		expPkgInfo := []sourcegraph.PackageInfo{{
+			RepoID: 3,
+			Lang:   "go",
+			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
+		}, {
+			RepoID: 4,
+			Lang:   "go",
+			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
+		}}
+		op := &sourcegraph.ListPackagesOp{
+			Lang:     "go",
+			PkgQuery: map[string]interface{}{"name": "pkg3"},
 			Limit:    10,
 		}
 		gotPkgInfo, err := p.ListPackages(ctx, op)

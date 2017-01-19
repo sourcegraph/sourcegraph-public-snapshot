@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -102,7 +103,7 @@ type dbQueryer interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func (p *dbPkgs) get(ctx context.Context, db dbQueryer, whereSQL string, args ...interface{}) (packages []PackageInfo, err error) {
+func (p *dbPkgs) get(ctx context.Context, db dbQueryer, whereSQL string, args ...interface{}) (packages []sourcegraph.PackageInfo, err error) {
 	rows, err := db.Query(fmt.Sprintf("SELECT * FROM pkgs %s", whereSQL), args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
@@ -118,7 +119,7 @@ func (p *dbPkgs) get(ctx context.Context, db dbQueryer, whereSQL string, args ..
 		if err := rows.Scan(&repoID, &language, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		p := PackageInfo{
+		p := sourcegraph.PackageInfo{
 			RepoID: repoID,
 			Lang:   language,
 		}
@@ -207,19 +208,7 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 	return nil
 }
 
-type ListPackagesOp struct {
-	Lang     string
-	PkgQuery map[string]interface{}
-	Limit    int
-}
-
-type PackageInfo struct {
-	RepoID int32
-	Lang   string
-	Pkg    map[string]interface{}
-}
-
-func (p *dbPkgs) ListPackages(ctx context.Context, op *ListPackagesOp) (pkgs []PackageInfo, err error) {
+func (p *dbPkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.ListPackages")
 	defer func() {
 		if err != nil {
@@ -247,6 +236,7 @@ func (p *dbPkgs) ListPackages(ctx context.Context, op *ListPackagesOp) (pkgs []P
 	}
 	defer rows.Close()
 
+	var rawPkgs []sourcegraph.PackageInfo
 	for rows.Next() {
 		var (
 			pkg, lang string
@@ -255,17 +245,27 @@ func (p *dbPkgs) ListPackages(ctx context.Context, op *ListPackagesOp) (pkgs []P
 		if err := rows.Scan(&repoID, &lang, &pkg); err != nil {
 			return nil, errors.Wrap(err, "Scan")
 		}
-		r := PackageInfo{
+		r := sourcegraph.PackageInfo{
 			RepoID: repoID,
 			Lang:   lang,
 		}
 		if err := json.Unmarshal([]byte(pkg), &r.Pkg); err != nil {
 			return nil, errors.Wrap(err, "unmarshaling xdependencies metadata from sql scan")
 		}
-		pkgs = append(pkgs, r)
+		rawPkgs = append(rawPkgs, r)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "rows error")
 	}
+
+	if len(rawPkgs) > 0 {
+		pkgs = make([]sourcegraph.PackageInfo, 0, len(rawPkgs))
+	}
+	for _, pkg := range rawPkgs {
+		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "dpkgs.ListPackages", pkg.RepoID); err == nil {
+			pkgs = append(pkgs, pkg)
+		}
+	}
+
 	return pkgs, nil
 }
