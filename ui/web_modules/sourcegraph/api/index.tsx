@@ -238,6 +238,15 @@ export interface DefsRefreshIndexOp {
 	CommitID?: string;
 }
 
+export interface DependencyReference {
+}
+
+export interface DependencyReferences {
+}
+
+export interface DependencyReferencesOptions {
+}
+
 export interface DeprecatedDefFileRef {
 	Path?: string;
 	Count?: number;
@@ -620,16 +629,6 @@ export interface RefKey {
 export interface RefList {
 	Refs?: any[];
 	HasMore?: boolean;
-}
-
-export interface RefLocation {
-}
-
-export interface RefLocations {
-	HasMore?: boolean;
-}
-
-export interface RefLocationsOptions {
 }
 
 export interface RefSet {

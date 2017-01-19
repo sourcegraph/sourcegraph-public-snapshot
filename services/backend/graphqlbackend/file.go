@@ -106,42 +106,41 @@ func (r *fileResolver) Blame(ctx context.Context,
 	return hunksResolver, nil
 }
 
-func (r *fileResolver) Definition(ctx context.Context,
-	args *struct {
-		Line     int32
-		Column   int32
-		Language string
-	}) (*definitionResolver, error) {
-
-	refs, err := backend.Defs.RefLocations(ctx, sourcegraph.RefLocationsOptions{
+func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
+	Language  string
+	Line      int32
+	Character int32
+}) (*dependencyReferencesResolver, error) {
+	depRefs, err := backend.Defs.DependencyReferences(ctx, sourcegraph.DependencyReferencesOptions{
 		RepoID:    r.commit.RepoID,
 		Language:  args.Language,
 		File:      r.path,
 		Line:      int(args.Line),
-		Character: int(args.Column),
+		Character: int(args.Character),
+		Limit:     20,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	var globalRefs []*globalReferencesResolver
-	for _, ref := range refs.Locations {
-		globalRefs = append(globalRefs, &globalReferencesResolver{
-			refLocation: &refLocationResolver{
-				startLineNumber: int32(ref.StartLine),
-				startColumn:     int32(ref.StartChar),
-				endLineNumber:   int32(ref.EndLine),
-				endColumn:       int32(ref.EndChar),
-			},
-			uri: &uriResolver{
-				host:     ref.Host,
-				fragment: ref.File,
-				path:     ref.Path,
-				query:    ref.Version,
-				scheme:   ref.Scheme,
-			},
+	var depsResolver []*dependencyReferenceResolver
+	for _, dep := range depRefs.References {
+		depsResolver = append(depsResolver, &dependencyReferenceResolver{
+			dep: dep,
 		})
 	}
 
-	return &definitionResolver{globalReferences: globalRefs}, nil
+	return &dependencyReferencesResolver{
+		deps: depsResolver,
+		location: &locationResolver{
+			location: &lspLocationResolver{
+				uri:            depRefs.Location.Location.URI,
+				startLine:      int32(depRefs.Location.Location.Range.Start.Line),
+				startCharacter: int32(depRefs.Location.Location.Range.Start.Character),
+				endLine:        int32(depRefs.Location.Location.Range.End.Line),
+				endCharacter:   int32(depRefs.Location.Location.Range.End.Line),
+			},
+			symbol: depRefs.Location.Symbol,
+		},
+	}, nil
 }
