@@ -2,8 +2,10 @@ import * as autobind from "autobind-decorator";
 import * as React from "react";
 import * as Relay from "react-relay";
 import { Route } from "react-router";
+import { IRange } from "vs/editor/common/editorCommon";
 
-import { RouteParams, Router, RouterLocation, getBlobPropsFromRouter, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
+import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
+import { RouteParams, Router, RouterLocation, getPathFromRouter, repoRevFromRouteParams } from "sourcegraph/app/router";
 import "sourcegraph/blob/styles/Monaco.css";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
@@ -18,10 +20,10 @@ import { WorkbenchShell } from "sourcegraph/workbench/shell";
 interface Props {
 	repo: string;
 	rev: string | null;
-	path: string;
+	isSymbolUrl: boolean;
 	routes: Route[];
 	params: RouteParams;
-	selection: RangeOrPosition | null;
+	selection: IRange;
 	location: RouterLocation;
 
 	relay: any;
@@ -43,13 +45,21 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
 			return null;
 		}
+		if (this.props.isSymbolUrl && this.props.root.repository.symbols.length === 0) {
+			return null;
+		}
+		const symbol = this.props.isSymbolUrl ? this.props.root.repository.symbols[0] : null; // Assume for now it's ok to take the first.
 		const commit = this.props.root.repository.commit.commit.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<RepoMain {...this.props} repository={this.props.root.repository} commit={this.props.root.repository.commit}>
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
-				<WorkbenchShell commitID={commit} { ...getBlobPropsFromRouter(this.context.router) } />
+				<WorkbenchShell
+					repo={this.props.repo}
+					commitID={commit}
+					path={symbol ? symbol.path : getPathFromRouter(this.context.router) !}
+					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
 				{Features.projectWow.isEnabled() && <InfoPanelLifecycle />}
 			</RepoMain>
 		</div>;
@@ -60,7 +70,9 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 	initialVariables: {
 		repo: "",
 		rev: "",
-		path: "",
+		id: "",
+		mode: "",
+		isSymbolUrl: false
 	},
 	fragments: {
 		root: () => Relay.QL`
@@ -69,6 +81,11 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 					uri
 					description
 					defaultBranch
+					symbols(id: $id, mode: $mode) @include(if: $isSymbolUrl) {
+						path
+						line
+						character
+					}
 					commit(rev: $rev) {
 						commit {
 							sha1
@@ -90,9 +107,16 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 // TODO(john): make this use router context.
 export function Workbench(props: { params: any; location: RouterLocation, routes: Route[] }): JSX.Element {
 	const repoRevString = repoRevFromRouteParams(props.params);
-	let selection = null;
+	let rangeOrPosition: RangeOrPosition = RangeOrPosition.fromOneIndexed(1);
 	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
-		selection = RangeOrPosition.parse(props.location.hash.replace(/^#L/, ""));
+		rangeOrPosition = RangeOrPosition.parse(props.location.hash.replace(/^#L/, "")) || rangeOrPosition;
+	}
+	const isSymbolUrl = getRoutePattern(props.routes) === abs.symbol;
+	let id: string | null = null;
+	let mode: string | null = null;
+	if (isSymbolUrl) {
+		id = props.params.splat[1];
+		mode = props.params.mode;
 	}
 	return <Relay.RootContainer
 		Component={WorkbenchContainer}
@@ -106,10 +130,12 @@ export function Workbench(props: { params: any; location: RouterLocation, routes
 			params: {
 				repo: repoPath(repoRevString),
 				rev: repoRev(repoRevString),
-				path: pathFromRouteParams(props.params),
+				id,
+				mode,
+				isSymbolUrl,
 				routes: props.routes,
 				params: props.params,
-				selection: selection,
+				selection: rangeOrPosition.toMonacoRangeAllowEmpty(),
 				location: props.location,
 			},
 		}}

@@ -104,6 +104,7 @@ export function getRepoFromRouter(router: Router): string | undefined {
 		case abs.repo:
 		case abs.tree:
 		case abs.blob:
+		case abs.symbol:
 			return repoFromRouteParams(router.params);
 	}
 }
@@ -117,6 +118,7 @@ export function getRevFromRouter(router: Router): string | null | undefined {
 		case abs.repo:
 		case abs.tree:
 		case abs.blob:
+		case abs.symbol:
 			return revFromRouteParams(router.params);
 	}
 }

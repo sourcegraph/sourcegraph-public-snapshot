@@ -54,6 +54,8 @@
                 "SRC_SKIP_REQS": "Rlimit",
                 "LANGSERVER_PHP": "tcp://localhost:2088",
                 "LANGSERVER_PHP_BG": "tcp://localhost:2088",
+                "LANGSERVER_GO": ":builtin:",
+                "LANGSERVER_GO_BG": ":builtin:",
                 "AUTH0_CLIENT_ID": "onW9hT0c7biVUqqNNuggQtMLvxUWHWRC",
                 "AUTH0_CLIENT_SECRET": "cpse5jYzcduFkQY79eDYXSwI6xVUO0bIvc4BP6WpojdSiEEG6MwGrt8hj_uX3p5a",
                 "AUTH0_DOMAIN": "sourcegraph-dev.auth0.com",

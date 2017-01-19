@@ -51,6 +51,7 @@ export const rel = {
 	repo: "*", // matches both "repo" and "repo@rev"
 	tree: "tree/*",
 	blob: "blob/*",
+	symbol: "symbol/:mode/*"
 };
 
 export const abs = {
@@ -73,6 +74,7 @@ export const abs = {
 	repo: rel.repo,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,
+	symbol: `${rel.repo}/-/${rel.symbol}`
 };
 
 const routeNamesByPattern: { [key: string]: RouteName } = {};

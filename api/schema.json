@@ -1464,6 +1464,59 @@
 								}
 							}
 						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "id",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							},
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "mode",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "symbols",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "Symbol",
+										"ofType": null
+									}
+								}
+							}
+						}
 					}
 				],
 				"inputFields": null,
@@ -1611,6 +1664,65 @@
 				"interfaces": null,
 				"kind": "SCALAR",
 				"name": "String",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "path",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "line",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "character",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Symbol",
 				"possibleTypes": null
 			},
 			{

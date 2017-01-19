@@ -35,6 +35,10 @@ export class RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.lineNumber, r.column);
 	}
 
+	static fromLSPPosition(r: { line: number, character: number }): RangeOrPosition {
+		return RangeOrPosition.fromOneIndexed(r.line + 1, r.character + 1);
+	}
+
 	static fromMonacoRange(r: IRange): RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.startLineNumber, r.startColumn, r.endLineNumber, r.endColumn);
 	}

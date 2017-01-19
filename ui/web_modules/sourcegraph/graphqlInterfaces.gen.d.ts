@@ -203,6 +203,7 @@ declare namespace GQL {
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;
+		symbols: Array<ISymbol>;
 	}
 
 	/*
@@ -222,6 +223,16 @@ declare namespace GQL {
 		__typename: string;
 		person: IPerson | null;
 		date: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ISymbol {
+		__typename: string;
+		path: string;
+		line: number;
+		character: number;
 	}
 
 	/*

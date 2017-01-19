@@ -50,6 +50,13 @@ type Repository implements Node {
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
+	symbols(id: String!, mode: String!): [Symbol!]!
+}
+
+type Symbol {
+	path: String!
+	line: Int!
+	character: Int!
 }
 
 type CommitState {
