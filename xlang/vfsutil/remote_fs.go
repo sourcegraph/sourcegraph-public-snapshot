@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -102,6 +103,7 @@ func (fs *RemoteProxyFS) Open(ctx context.Context, path string) (ctxvfs.ReadSeek
 		c := fs.getCache(p)
 		if c.readFile == nil {
 			c.readFile = f
+			remoteProxyBytes.Add(float64(len(f)))
 		}
 	}
 	fs.mu.Unlock()
@@ -187,3 +189,14 @@ type nopCloser struct {
 }
 
 func (nc nopCloser) Close() error { return nil }
+
+var remoteProxyBytes = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "xlang",
+	Subsystem: "vfs",
+	Name:      "remote_bytes_total",
+	Help:      "Total number of bytes cached into memory by RemoteProxyFS.",
+})
+
+func init() {
+	prometheus.MustRegister(remoteProxyBytes)
+}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lspext2 "github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -111,7 +112,10 @@ func (fs *XRemoteFS) openSingleFile(ctx context.Context, path string) (string, e
 		text = res.Text
 
 		fs.mu.Lock()
-		fs.fileContents[path] = res.Text
+		if _, ok := fs.fileContents[path]; !ok {
+			fs.fileContents[path] = res.Text
+			xremoteBytes.Add(float64(len(res.Text)))
+		}
 		fs.mu.Unlock()
 	}
 	return text, nil
@@ -226,4 +230,15 @@ func (paths sortedPaths) ReadDir(path string) ([]os.FileInfo, error) {
 		return nil, &os.PathError{Op: "ReadDir", Path: path, Err: os.ErrNotExist}
 	}
 	return fis, nil
+}
+
+var xremoteBytes = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "xlang",
+	Subsystem: "vfs",
+	Name:      "xremote_bytes_total",
+	Help:      "Total number of bytes cached into memory by XRemoteFS.",
+})
+
+func init() {
+	prometheus.MustRegister(xremoteBytes)
 }

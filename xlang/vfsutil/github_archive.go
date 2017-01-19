@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -128,6 +129,7 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 			return err
 		}
 		span.LogEvent("fetched " + url)
+		ghBytes.Add(float64(len(body)))
 
 		// Cache on the file system.
 		if fs.save {
@@ -209,4 +211,15 @@ func (fs *GitHubRepoVFS) Close() error {
 
 func (fs *GitHubRepoVFS) String() string {
 	return fmt.Sprintf("GitHubRepoVFS{repo: %q, rev: %q}", fs.repo, fs.rev)
+}
+
+var ghBytes = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "xlang",
+	Subsystem: "vfs",
+	Name:      "github_bytes_total",
+	Help:      "Total number of bytes read into memory by GitHubRepoVFS.",
+})
+
+func init() {
+	prometheus.MustRegister(ghBytes)
 }
