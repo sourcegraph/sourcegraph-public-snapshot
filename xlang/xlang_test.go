@@ -166,6 +166,7 @@ func symbolsTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.
 	for i := 0; i < len(query)-1; i++ {
 		wg.Add(1)
 		go func(q string) {
+			defer wg.Done()
 			_, _ = callSymbols(ctx, c, q)
 		}(query[:i])
 		time.Sleep(time.Millisecond * 10)
