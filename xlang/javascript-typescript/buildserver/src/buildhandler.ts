@@ -301,17 +301,23 @@ export class BuildHandler implements LanguageHandler {
 			const pkgJson = JSON.parse(this.ls.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
 			let name = pkgJson['name'];
 			let version = pkgJson['version'];
+			let repoURL = pkgJson['repository'] ? pkgJson['repository']['url'] : undefined;
 			if (name === 'definitely-typed') { // special case DefinitelyTyped
 				name = "@types/" + uri2path(sym.location.uri).split(path.sep)[1];
 				version = undefined;
+				repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
 			}
 			if (name) {
-				sym.symbol.package = { name: name, version: version };
+				sym.symbol.package = { name, version, repoURL };
 			}
 			return;
 		}
 
 		sym.symbol.package = dep.attributes;
+		const pkgName = sym.symbol.package.name;
+		if (pkgName && pkgName.startsWith('@types/')) {
+			sym.symbol.package.repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
+		}
 		sym.location = undefined;
 	}
 
@@ -367,7 +373,7 @@ export class BuildHandler implements LanguageHandler {
 		return this.ls.getPackages();
 	}
 
-	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParamsWithLimit): Promise<SymbolInformation[]> {
+	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParams): Promise<SymbolInformation[]> {
 		if (this.puntWorkspaceSymbol) {
 			return Promise.reject("workspace/symbol unsupported on this repository");
 		}
