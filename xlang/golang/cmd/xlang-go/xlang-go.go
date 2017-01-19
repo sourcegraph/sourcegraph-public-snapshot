@@ -44,6 +44,8 @@ func run() error {
 		go debugserver.Start(*profbind)
 	}
 
+	buildserver.Debug = true
+
 	// PERF: Hide latency of fetching golang/go from the first typecheck
 	go buildserver.FetchCommonDeps()
 

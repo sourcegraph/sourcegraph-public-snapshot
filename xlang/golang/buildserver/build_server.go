@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -26,6 +27,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
+
+// Debug if true will cause extra logging information to be printed
+var Debug = false
 
 // NewHandler creates a new build server wrapping a (also newly
 // created) Go language server. I.e., it creates a BuildHandler
@@ -158,6 +162,13 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		span.Finish()
 	}()
 
+	if Debug && h.init != nil {
+		log.Println(">>>", h.init.OriginalRootPath, req.ID, req.Method)
+		defer func(t time.Time) {
+			log.Println("<<<", h.init.OriginalRootPath, req.ID, req.Method, time.Since(t))
+		}(time.Now())
+	}
+
 	switch {
 	case req.Method == "initialize":
 		if h.init != nil {
@@ -169,6 +180,13 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		var params lspext.InitializeParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
+		}
+
+		if Debug {
+			log.Println(">>>", params.OriginalRootPath, req.ID, req.Method)
+			defer func(t time.Time) {
+				log.Println("<<<", params.OriginalRootPath, req.ID, req.Method, time.Since(t))
+			}(time.Now())
 		}
 
 		// Determine the root import path of this workspace (e.g., "github.com/user/repo").
