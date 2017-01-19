@@ -832,6 +832,7 @@ export interface ServerCapabilities {
 	renameProvider?: boolean;
 	xworkspaceReferencesProvider?: boolean;
 	xdefinitionProvider?: boolean;
+	xworkspaceSymbolByProperties?: boolean;
 }
 
 export interface ServerConfig {
