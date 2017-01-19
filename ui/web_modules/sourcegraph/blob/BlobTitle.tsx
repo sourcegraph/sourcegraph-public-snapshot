@@ -1,5 +1,5 @@
-import * as autobind from "autobind-decorator";
 import * as React from "react";
+import * as Relay from "react-relay";
 
 import { AuthorsToggleButton } from "sourcegraph/blob/AuthorsToggleButton";
 import { CommitInfoBar } from "sourcegraph/blob/CommitInfoBar/CommitInfoBar";
@@ -42,30 +42,17 @@ function convertToGitHubLineNumber(hash: string): string {
 	return "";
 }
 
-@autobind
-export class BlobTitle extends React.Component<Props, {}> {
-	constructor(props: Props) {
-		super(props);
-		this.onEditorLineSelected = this.onEditorLineSelected.bind(this);
-	}
-
-	componentDidMount(): void {
-		window.document.addEventListener("editorLineSelected", this.onEditorLineSelected);
-	}
-
-	componentWillUnmount(): void {
-		window.document.removeEventListener("editorLineSelected", this.onEditorLineSelected);
-	}
-
-	onEditorLineSelected(): void {
-		// This component depends on knowing the URL, which may change via history.replaceState when editor cursor
-		// position/selection is updated; when it does, redraw the component to update the GitHub URL line selection.
-		this.forceUpdate();
-	}
-
+class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
 	render(): JSX.Element {
 		const {repo, path, toggleAuthors, toast } = this.props;
-		const rev = this.props.rev || "master";
+		let rev = this.props.rev;
+		if (rev === null) {
+			if (this.props.root.repository) {
+				rev = this.props.root.repository.defaultBranch;
+			} else {
+				rev = "master";
+			}
+		}
 
 		const extension = getPathExtension(path);
 		const isSupported = extension ? isSupportedExtension(extension) : false;
@@ -117,4 +104,34 @@ export class BlobTitle extends React.Component<Props, {}> {
 			{Features.projectWow.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
 		</div>;
 	}
+};
+
+const BlobTitleContainer = Relay.createContainer(BlobTitleComponent, {
+	initialVariables: {
+		repo: "",
+	},
+	fragments: {
+		root: () => Relay.QL`
+			fragment on Root {
+				repository(uri: $repo) {
+					defaultBranch
+				}
+			}
+		`,
+	},
+});
+
+export const BlobTitle = function (props: Props): JSX.Element {
+	return <Relay.RootContainer
+		Component={BlobTitleContainer}
+		route={{
+			name: "Root",
+			queries: {
+				root: () => Relay.QL`
+					query { root }
+				`,
+			},
+			params: props,
+		}}
+		/>;
 };
