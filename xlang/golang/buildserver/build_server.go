@@ -163,9 +163,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 	}()
 
 	if Debug && h.init != nil {
-		log.Println(">>>", h.init.OriginalRootPath, req.ID, req.Method)
+		log.Printf(">>> %s %s %s", h.init.OriginalRootPath, req.ID, req.Method)
 		defer func(t time.Time) {
-			log.Println("<<<", h.init.OriginalRootPath, req.ID, req.Method, time.Since(t))
+			log.Printf("<<< %s %s %s %dms", h.init.OriginalRootPath, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
 		}(time.Now())
 	}
 
@@ -183,9 +183,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		if Debug {
-			log.Println(">>>", params.OriginalRootPath, req.ID, req.Method)
+			log.Printf(">>> %s %s %s", params.OriginalRootPath, req.ID, req.Method)
 			defer func(t time.Time) {
-				log.Println("<<<", params.OriginalRootPath, req.ID, req.Method, time.Since(t))
+				log.Printf("<<< %s %s %s %dms", params.OriginalRootPath, req.ID, req.Method, time.Since(t).Nanoseconds()/int64(time.Millisecond))
 			}(time.Now())
 		}
 
