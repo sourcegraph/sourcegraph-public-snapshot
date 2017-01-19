@@ -43,7 +43,7 @@ export class Experiment {
 	}
 
 	/**
-	 * Bucket the user into a specific variation. This method can used from the browser console `features.ExperimentManager.HomepageCopy.setVariation(<variationName>)`
+	 * Bucket the user into a specific variation. This method can used from the browser console `features.experimentManager.getExperimentByName("HomepageCopy").setVariation("Previous")`
 	 */
 	public setVariation(variationName?: string): void {
 		let variation: Variation | undefined;
@@ -103,6 +103,10 @@ class ExperimentManagerClass {
 		if (optimizely.optimizelyApiService) {
 			optimizely.optimizelyApiService.linkExperimentIds(this.experiments);
 		}
+	}
+
+	public getExperimentByName(experimentName: string): Experiment | undefined {
+		return this.experiments.find(experiment => experiment.name === experimentName);
 	}
 
 	public logEvent(eventLabel: string): void {
