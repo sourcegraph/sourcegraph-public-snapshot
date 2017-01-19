@@ -214,7 +214,7 @@ class Util(object):
     @staticmethod
     def log_out(d):
         wd = d.d
-        wd.find_element_by_id("global-nav").find_element_by_css_selector('[class*="popover"]').click()
+        wd.find_element_by_id("global-nav").find_element_by_css_selector("sourcegraph-user-menu").click()
         wd.find_element_by_partial_link_text("Sign out").click()
 
     @staticmethod

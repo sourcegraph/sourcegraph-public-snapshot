@@ -24,7 +24,8 @@ export const UserMenu = (props): JSX.Element => {
 	return (
 		<div style={{ display: "inline-block", padding: whitespace[2] }}>
 			<Popover left={true}>
-				<FlexContainer items="center" style={{ lineHeight: "0", height: 29 }}>
+				{ /* CAUTION: If you change the sourcegraph-user-menu class, you may break an e2e test. */}
+				<FlexContainer className="sourcegraph-user-menu" items="center" style={{ lineHeight: "0", height: 29 }}>
 					{props.user.AvatarURL ? <Avatar size="small" img={props.user.AvatarURL} /> : <div>{props.user.Login}</div>}
 					<ChevronDown width={12} color={colors.blueGray()} style={{ marginLeft: "8px" }} />
 				</FlexContainer>
