@@ -125,7 +125,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 	// terms of resource usage with real user requests.
 	rootPath := vcs + "://" + op.RepoURI + "?" + op.CommitID
 	var deps []lspext.DependencyReference
-	err = xlangCall(ctx, language+"_bg", rootPath, "workspace/xdependencies", map[string]string{}, &deps)
+	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/xdependencies")
 	}

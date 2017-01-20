@@ -80,7 +80,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op 
 	// terms of resource usage with real user requests.
 	rootPath := vcs + "://" + op.RepoURI + "?" + op.CommitID
 	var pks []lspext.PackageInformation
-	err = xlangCall(ctx, language+"_bg", rootPath, "workspace/packages", map[string]string{}, &pks)
+	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/packages", map[string]string{}, &pks)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/packages")
 	}

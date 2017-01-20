@@ -62,7 +62,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	}
 	ctx, done := testContext()
 	defer done()
-	xlangDone := mockXlang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
+	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/packages":
 			res, ok := results.(*[]lspext.PackageInformation)
