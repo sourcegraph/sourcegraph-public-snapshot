@@ -19,35 +19,6 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
-// subSelectors is a map of language-specific data selectors. The
-// input data is from the language server's workspace/xdefinition
-// request, and the output data should be something that can be
-// matched (using the jsonb containment operator) against the
-// `attributes` field of `DependenceReference` (output of
-// workspace/xdependencies).
-var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface{}{
-	"go": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		return map[string]interface{}{
-			"package": symbol["package"],
-		}
-	},
-	"php": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		if _, ok := symbol["package"]; !ok {
-			// package can be missing if the symbol did not belong to a package, e.g. a project without
-			// a composer.json file. In this case, there are no external references to this symbol.
-			return nil
-		}
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
-	},
-	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
-	},
-}
-
 func (s *defs) DeprecatedListRefs(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefsOp) (res *sourcegraph.RefList, err error) {
 	if Mocks.Defs.ListRefs != nil {
 		return Mocks.Defs.ListRefs(ctx, op)
@@ -165,11 +136,6 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()
 
-	subSelector, ok := subSelectors[op.Language]
-	if !ok {
-		return nil, errors.New("language not supported")
-	}
-
 	span := opentracing.SpanFromContext(ctx)
 	span.SetTag("language", op.Language)
 	span.SetTag("repo_id", op.RepoID)
@@ -217,9 +183,14 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// once we have a language server that uses it.
 	location := locations[0]
 
+	pkgDescriptor, ok := xlang.SymbolPackageDescriptor(location.Symbol, op.Language)
+	if !ok {
+		return nil, err
+	}
+
 	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
 		Language: op.Language,
-		DepData:  subSelector(location.Symbol),
+		DepData:  pkgDescriptor,
 		Limit:    op.Limit,
 	})
 	if err != nil {

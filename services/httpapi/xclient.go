@@ -84,7 +84,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 
 		var rootPaths []string
 		// If we can extract the repository URL from the symbol metadata, do so
-		if repoURL := extractRepoURL(sym.Symbol); repoURL != "" {
+		if repoURL := xlang.SymbolRepoURL(sym.Symbol); repoURL != "" {
 			span.LogEvent("extracted repo directly from symbol metadata")
 
 			repoInfo, err := vcsurl.Parse(repoURL)
@@ -102,13 +102,13 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			}
 			rootPaths = append(rootPaths, string(repoInfo.VCS)+"://"+repoURI+"?"+rev.CommitID)
 		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
-			subSelector, exists := subSelectors[c.mode]
-			if !exists {
+			pkgDescriptor, ok := xlang.SymbolPackageDescriptor(sym.Symbol, c.mode)
+			if !ok {
 				continue
 			}
 
 			span.LogEvent("cross-repo jump to def")
-			pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{PkgQuery: subSelector(sym.Symbol), Lang: c.mode, Limit: 1})
+			pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{PkgQuery: pkgDescriptor, Lang: c.mode, Limit: 1})
 			if err != nil {
 				return errors.Wrap(err, "getting repo by package db query")
 			}
@@ -155,43 +155,4 @@ func (c *xclient) Notify(ctx context.Context, method string, params interface{},
 
 func (c *xclient) Close() error {
 	return c.Client.Close()
-}
-
-// TODO(beyang): copy-pasted from services/backend/defs_refs.go
-var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface{}{
-	"go": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		return map[string]interface{}{
-			"package": symbol["package"],
-		}
-	},
-	"php": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		if _, ok := symbol["package"]; !ok {
-			// package can be missing if the symbol did not belong to a package, e.g. a project without
-			// a composer.json file. In this case, there are no external references to this symbol.
-			return nil
-		}
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
-	},
-	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
-	},
-}
-
-// extractRepoURL returns the repository URL extracted from the
-// package metadata at the JSON path
-// `symDescriptor.package.repoURL`. If that does not exist, it returns
-// the empty string.
-func extractRepoURL(symDescriptor lspext.SymbolDescriptor) string {
-	pkgData := symDescriptor["package"]
-	if pkgData, ok := pkgData.(map[string]interface{}); ok {
-		repoURL := pkgData["repoURL"]
-		if repoURL, ok := repoURL.(string); ok {
-			return repoURL
-		}
-	}
-	return ""
 }
