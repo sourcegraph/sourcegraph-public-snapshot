@@ -35,7 +35,9 @@ type xclient struct {
 func (c *xclient) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error {
 	if method == "initialize" {
 		var init xlang.ClientProxyInitializeParams
-		json.Unmarshal(*params.(*json.RawMessage), &init)
+		if err := json.Unmarshal(*params.(*json.RawMessage), &init); err != nil {
+			return err
+		}
 		c.mode = init.Mode
 		var initResult lsp.InitializeResult
 		if err := c.Client.Call(ctx, method, params, &initResult, opt...); err != nil {
