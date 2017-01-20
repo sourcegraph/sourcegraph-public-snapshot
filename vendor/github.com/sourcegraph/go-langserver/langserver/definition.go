@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/go-langserver/langserver/internal/refs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
@@ -24,7 +23,7 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn JSONRPC2Conn, r
 	return locs, nil
 }
 
-func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lspext.SymbolLocationInformation, error) {
+func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]symbolLocationInformation, error) {
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.BuildContext(ctx)
 
@@ -59,10 +58,10 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, 
 		return nil, errors.New("definition not found")
 	}
 	findPackage := h.getFindPackageFunc()
-	locs := make([]lspext.SymbolLocationInformation, 0, len(nodes))
+	locs := make([]symbolLocationInformation, 0, len(nodes))
 	for _, node := range nodes {
 		// Determine location information for the node.
-		l := lspext.SymbolLocationInformation{
+		l := symbolLocationInformation{
 			Location: goRangeToLSPLocation(fset, node.Pos(), node.End()),
 		}
 		// LSP expects a range to be of the entire body, not just of the

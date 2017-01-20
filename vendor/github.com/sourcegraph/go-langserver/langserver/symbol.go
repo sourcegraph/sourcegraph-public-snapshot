@@ -123,7 +123,7 @@ var keywords = map[string]lsp.SymbolKind{
 
 type symbolPair struct {
 	lsp.SymbolInformation
-	desc lspext.SymbolDescriptor
+	desc symbolDescriptor
 }
 
 // resultSorter is a utility struct for collecting, filtering, and
@@ -191,7 +191,7 @@ func score(q Query, s symbolPair) (scor int) {
 			return 0
 		}
 	}
-	if q.Symbol != nil && !symbolContains(q.Symbol, s.desc) {
+	if q.Symbol != nil && !s.desc.Contains(q.Symbol) {
 		return -1
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
@@ -263,28 +263,15 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 			ContainerName: container,
 		},
 		// NOTE: fields must be kept in sync with workspace_refs.go:defSymbolDescriptor
-		desc: lspext.SymbolDescriptor{
-			"vendor":      IsVendorDir(bpkg.Dir),
-			"package":     path.Clean(bpkg.ImportPath),
-			"packageName": bpkg.Name,
-			"recv":        recv,
-			"name":        name,
-			"id":          fmt.Sprintf("%s:%s:%s:%s", path.Clean(bpkg.ImportPath), bpkg.Name, recv, name),
+		desc: symbolDescriptor{
+			Vendor:      IsVendorDir(bpkg.Dir),
+			Package:     path.Clean(bpkg.ImportPath),
+			PackageName: bpkg.Name,
+			Recv:        recv,
+			Name:        name,
+			ID:          fmt.Sprintf("%s:%s:%s:%s", path.Clean(bpkg.ImportPath), bpkg.Name, recv, name),
 		},
 	}
-}
-
-// symbolContains tells if a exactly contains b.
-//
-// The only exception is the `id` field, which is treated specially. Instead of
-// a byte-by-byte string comparison, idEqual is used.
-func symbolContains(a, b lspext.SymbolDescriptor) bool {
-	for k, v := range a {
-		if bv, ok := b[k]; !ok || bv != v {
-			return false
-		}
-	}
-	return true
 }
 
 // handleTextDocumentSymbol handles `textDocument/documentSymbol` requests for
@@ -385,9 +372,6 @@ func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, p
 		}
 		astPkg := astPkgs[buildPkg.Name]
 		if astPkg == nil {
-			if !strings.HasPrefix(buildPkg.ImportPath, "github.com/golang/go/misc/cgo/") {
-				log.Printf("didn't find build package name %q in parsed AST packages %v", buildPkg.ImportPath, astPkgs)
-			}
 			return nil
 		}
 		// TODO(keegancsmith) Remove vendored doc/go once https://github.com/golang/go/issues/17788 is shipped
