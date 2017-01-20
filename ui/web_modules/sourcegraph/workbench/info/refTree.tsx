@@ -213,15 +213,7 @@ class Renderer extends LegacyRenderer {
 				strings.format(
 					`<div class="code-content">
 							<div class="function">
-								<code>
-									{0}
-								</code>
-								<code>
-									{1}
-								</code>
-								<code>
-									{2}
-								</code>
+								<code>{0}</code><code>{1}</code><code>{2}</code>
 								{3}
 								<div class="file-details">
 									{4}: Line
