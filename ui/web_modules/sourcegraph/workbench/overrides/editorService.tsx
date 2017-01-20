@@ -28,7 +28,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		}
 
 		let url;
-		if (data.options.selection) {
+		if (data.options && data.options.selection) {
 			const { startLineNumber, startColumn } = data.options.selection;
 			url = urlToBlobLineCol(repo, rev, path, startLineNumber, startColumn);
 		} else {
