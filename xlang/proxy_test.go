@@ -71,10 +71,10 @@ func TestProxy(t *testing.T) {
 				"b.go:1:23": "git://test/pkg?master#a.go:1:17",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:17": "git://test/pkg?master#a.go:1:17 id:test/pkg:p::A name:A package:test/pkg packageName:p recv: vendor:false",
-				"a.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg:p::A name:A package:test/pkg packageName:p recv: vendor:false",
-				"b.go:1:17": "git://test/pkg?master#b.go:1:17 id:test/pkg:p::B name:B package:test/pkg packageName:p recv: vendor:false",
-				"b.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg:p::A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:17": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"b.go:1:17": "git://test/pkg?master#b.go:1:17 id:test/pkg/-/B name:B package:test/pkg packageName:p recv: vendor:false",
+				"b.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
 			},
 			wantReferences: map[string][]string{
 				"a.go:1:17": []string{
@@ -162,11 +162,11 @@ func TestProxy(t *testing.T) {
 				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:17":    "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false",
-				"a.go:1:23":    "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false",
-				"d2/b.go:1:39": "git://test/pkg?master#d/d2/b.go:1:39 id:test/pkg/d/d2:d2::B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
-				"d2/b.go:1:47": "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false",
-				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39 id:test/pkg/d/d2:d2::B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
+				"a.go:1:17":    "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+				"a.go:1:23":    "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+				"d2/b.go:1:39": "git://test/pkg?master#d/d2/b.go:1:39 id:test/pkg/d/d2/-/B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
+				"d2/b.go:1:47": "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39 id:test/pkg/d/d2/-/B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
 			},
 			wantSymbols: map[string][]string{
 				"":            []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
@@ -184,26 +184,26 @@ func TestProxy(t *testing.T) {
 
 				// Matching against a dirs hint with multiple dirs.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2", "file:///invalid"}}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d:d:: name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against a dirs hint.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2"}}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d:d:: name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against single field.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d:d:: name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against no fields.
 				{Query: lsext.SymbolDescriptor{}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d:d:: name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 				{
 					Query: lsext.SymbolDescriptor{
@@ -213,7 +213,7 @@ func TestProxy(t *testing.T) {
 						"recv":        "",
 						"vendor":      false,
 					},
-				}: []string{"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d:d:: name: package:test/pkg/d packageName:d recv: vendor:false"},
+				}: []string{"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false"},
 				{
 					Query: lsext.SymbolDescriptor{
 						"name":        "A",
@@ -222,7 +222,7 @@ func TestProxy(t *testing.T) {
 						"recv":        "",
 						"vendor":      false,
 					},
-				}: []string{"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d:d::A name:A package:test/pkg/d packageName:d recv: vendor:false"},
+				}: []string{"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false"},
 			},
 		},
 		"go multiple packages in dir": {
@@ -253,8 +253,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "main.go:3:52": "git://test/pkg?master#main.go:3:39", // B() -> func B()
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:17": "git://test/pkg?master#a.go:1:17 id:test/pkg:p::A name:A package:test/pkg packageName:p recv: vendor:false",
-				"a.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg:p::A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:17": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
 			},
 			wantSymbols: map[string][]string{
 				"":            []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
@@ -276,7 +276,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "a.go:1:53": "git://github.com/golang/go?go1.7.1#src/builtin/builtin.go:TODO:TODO", // TODO(sqs): support builtins
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:40": "git://github.com/golang/go?go1.7.1#src/fmt/print.go:1:19 id:fmt:fmt::Println name:Println package:fmt packageName:fmt recv: vendor:false",
+				"a.go:1:40": "git://github.com/golang/go?go1.7.1#src/fmt/print.go:1:19 id:fmt/-/Println name:Println package:fmt packageName:fmt recv: vendor:false",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/golang/go?go1.7.1": {
@@ -310,8 +310,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17",
 			},
 			wantXDefinition: map[string]string{
-				"a/a.go:1:17": "git://test/pkg?master#a/a.go:1:17 id:test/pkg/a:a::A name:A package:test/pkg/a packageName:a recv: vendor:false",
-				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17 id:test/pkg/a:a::A name:A package:test/pkg/a packageName:a recv: vendor:false",
+				"a/a.go:1:17": "git://test/pkg?master#a/a.go:1:17 id:test/pkg/a/-/A name:A package:test/pkg/a packageName:a recv: vendor:false",
+				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17 id:test/pkg/a/-/A name:A package:test/pkg/a packageName:a recv: vendor:false",
 			},
 			wantReferences: map[string][]string{
 				"a/a.go:1:17": []string{
@@ -342,7 +342,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24 id:test/pkg/vendor/github.com/v/vendored:vendored::V name:V package:test/pkg/vendor/github.com/v/vendored packageName:vendored recv: vendor:true",
+				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24 id:test/pkg/vendor/github.com/v/vendored/-/V name:V package:test/pkg/vendor/github.com/v/vendored packageName:vendored recv: vendor:true",
 			},
 			wantReferences: map[string][]string{
 				"vendor/github.com/v/vendored/v.go:1:24": []string{
@@ -400,7 +400,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19 id:github.com/d/dep:dep::D name:D package:github.com/d/dep packageName:dep recv: vendor:false",
+				"a.go:1:51": "git://github.com/d/dep?HEAD#d.go:1:19 id:github.com/d/dep/-/D name:D package:github.com/d/dep packageName:dep recv: vendor:false",
 			},
 			wantReferences: map[string][]string{
 				"a.go:1:51": []string{
@@ -427,7 +427,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32 id:github.com/d/dep/vendor/vendp:vendp:V:F name:F package:github.com/d/dep/vendor/vendp packageName:vendp recv:V vendor:true",
+				"a.go:1:55": "git://github.com/d/dep?HEAD#vendor/vendp/vp.go:1:32 id:github.com/d/dep/vendor/vendp/-/V/F name:F package:github.com/d/dep/vendor/vendp packageName:vendp recv:V vendor:true",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": map[string]string{
@@ -449,7 +449,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20 id:github.com/d/dep/subp:subp::D name:D package:github.com/d/dep/subp packageName:subp recv: vendor:false",
+				"a.go:1:57": "git://github.com/d/dep?HEAD#subp/d.go:1:20 id:github.com/d/dep/subp/-/D name:D package:github.com/d/dep/subp packageName:subp recv: vendor:false",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep?HEAD": {
@@ -472,8 +472,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32", // field D2
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:53": "git://github.com/d/dep1?HEAD#d1.go:1:48 id:github.com/d/dep1:dep1::D1 name:D1 package:github.com/d/dep1 packageName:dep1 recv: vendor:false",
-				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32 id:github.com/d/dep2:dep2:D2:D2 name:D2 package:github.com/d/dep2 packageName:dep2 recv:D2 vendor:false",
+				"a.go:1:53": "git://github.com/d/dep1?HEAD#d1.go:1:48 id:github.com/d/dep1/-/D1 name:D1 package:github.com/d/dep1 packageName:dep1 recv: vendor:false",
+				"a.go:1:58": "git://github.com/d/dep2?HEAD#d2.go:1:32 id:github.com/d/dep2/-/D2/D2 name:D2 package:github.com/d/dep2 packageName:dep2 recv:D2 vendor:false",
 			},
 			depFS: map[string]map[string]string{
 				"https://github.com/d/dep1?HEAD": {
@@ -497,7 +497,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:53": "git://github.com/golang/text?HEAD#dummy.go:1:20",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:53": "git://github.com/golang/text?HEAD#dummy.go:1:20 id:golang.org/x/text:text::F name:F package:golang.org/x/text packageName:text recv: vendor:false",
+				"a.go:1:53": "git://github.com/golang/text?HEAD#dummy.go:1:20 id:golang.org/x/text/-/F name:F package:golang.org/x/text packageName:text recv: vendor:false",
 			},
 			depFS: map[string]map[string]string{
 				// We override the Git cloning of this repo to use
@@ -541,10 +541,10 @@ var (
 				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2", // "bb = B"
 			},
 			wantXDefinition: map[string]string{
-				"a/a.go:5:5":  "git://test/foo?master#a/a.go:5:5 id:other/foo/a:a::A name:A package:other/foo/a packageName:a recv: vendor:false",
-				"a/a.go:5:11": "git://test/foo?master#b/b.go:4:2 id:other/foo/b:b::B name:B package:other/foo/b packageName:b recv: vendor:false",
-				"b/b.go:4:2":  "git://test/foo?master#b/b.go:4:2 id:other/foo/b:b::B name:B package:other/foo/b packageName:b recv: vendor:false",
-				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2 id:other/foo/b:b::B name:B package:other/foo/b packageName:b recv: vendor:false",
+				"a/a.go:5:5":  "git://test/foo?master#a/a.go:5:5 id:other/foo/a/-/A name:A package:other/foo/a packageName:a recv: vendor:false",
+				"a/a.go:5:11": "git://test/foo?master#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
+				"b/b.go:4:2":  "git://test/foo?master#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
+				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
 			},
 		},
 

@@ -249,15 +249,17 @@ func defSymbolDescriptor(ctx context.Context, bctx *build.Context, rootPath stri
 	switch {
 	case len(fields) == 0:
 		// reference to just a package
+		desc.ID = fmt.Sprintf("%s", desc.Package)
 	case len(fields) >= 2:
 		desc.Recv = fields[0]
 		desc.Name = fields[1]
+		desc.ID = fmt.Sprintf("%s/-/%s/%s", desc.Package, desc.Recv, desc.Name)
 	case len(fields) >= 1:
 		desc.Name = fields[0]
+		desc.ID = fmt.Sprintf("%s/-/%s", desc.Package, desc.Name)
 	default:
 		panic("invalid def.Path response from internal/refs")
 	}
-	desc.ID = fmt.Sprintf("%s:%s:%s:%s", desc.Package, desc.PackageName, desc.Recv, desc.Name)
 	return desc, nil
 }
 
