@@ -164,20 +164,30 @@ export const Events = {
 	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
 
 	// Code view
+	// Code view: Symbol events
 	CodeContextMenu_Initiated: new LoggableEvent("CodeContextMenuClicked", EventCategories.CodeView, EventActions.Click),
 	CodeReferences_Viewed: new LoggableEvent("ClickedViewReferences", EventCategories.CodeView, EventActions.Click),
 	CodeExternalReferences_Viewed: new LoggableEvent("ClickedViewExternalReferences", EventCategories.CodeView, EventActions.Click),
-	CodeGlobalReferences_Viewed: new LoggableEvent("ClickedViewGlobalReferences", EventCategories.CodeView, EventActions.Click),
 	CodeToken_Hovered: new LoggableEvent("Hovering", EventCategories.CodeView, EventActions.Hover),
 	CodeToken_Clicked: new LoggableEvent("BlobTokenClicked", EventCategories.CodeView, EventActions.Click),
+	// Code view: Header events
 	OpenInCodeHost_Clicked: new LoggableEvent("OpenInCodeHostClicked", EventCategories.CodeView, EventActions.Click),
 	OpenInEditor_Clicked: new LoggableEvent("OpenInEditorClicked", EventCategories.CodeView, EventActions.Click),
+	AuthorsToggle: new LoggableEvent("AuthorshipToggled", EventCategories.CodeView, EventActions.Toggle),
+	// Code view: FileTree events
 	FileTree_Navigated: new LoggableEvent("FileTreeActivated", EventCategories.CodeView, EventActions.Click),
-	CodeLensVisibility_Toggled: new LoggableEvent("ToggleCodeLensVisibility", EventCategories.CodeView, EventActions.Toggle),
+	// Code view: CodeLens events
 	CodeLensCommit_Clicked: new LoggableEvent("ClickedCodeLensCommit", EventCategories.CodeView, EventActions.Click),
 	CodeLensCommitRedirect_Clicked: new LoggableEvent("ClickedCodeLensCommitRedirect", EventCategories.CodeView, EventActions.Click),
-	AuthorsToggle: new LoggableEvent("AuthorshipToggled", EventCategories.CodeView, EventActions.Toggle),
-
+	// Code view: InfoPanel events
+	InfoPanel_Initiated: new LoggableEvent("InfoPanelInitiated", EventCategories.CodeView, EventActions.Toggle),
+	InfoPanel_Dismissed: new LoggableEvent("InfoPanelDismissed", EventCategories.CodeView, EventActions.Close),
+	InfoPanelJumpToDef_Clicked: new LoggableEvent("InfoPanelJumpToDefClicked", EventCategories.CodeView, EventActions.Click),
+	InfoPanelRef_Clicked: new LoggableEvent("InfoPanelRefClicked", EventCategories.CodeView, EventActions.Click),
+	// Code view: CommitInfoBar events
+	CommitInfoItem_Selected: new LoggableEvent("CommitInfoItemSelected", EventCategories.CodeView, EventActions.Click),
+	CommitInfo_Initiated: new LoggableEvent("CommitInfoInitiated", EventCategories.CodeView, EventActions.Toggle),
+	CommitInfo_Dismissed: new LoggableEvent("CommitInfoDismissed", EventCategories.CodeView, EventActions.Close),
 	// Quick open/search
 	QuickopenItem_Selected: new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),
 	Quickopen_Initiated: new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),

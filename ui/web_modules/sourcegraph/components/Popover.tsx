@@ -10,6 +10,7 @@ interface Props {
 	popoverClassName?: string;
 	popoverStyle?: any;
 	children?: React.ReactNode;
+	onClick?: (visible: boolean) => void;
 }
 
 type State = {
@@ -37,6 +38,7 @@ export class Popover extends React.Component<Props, State> {
 	}
 
 	_onClick(e: MouseEvent & { target: Node }): void {
+		const initiallyVisible = this.state.visible;
 		let container = this.container;
 		let content = this.content;
 		if (container && container.contains(e.target)) {
@@ -50,6 +52,7 @@ export class Popover extends React.Component<Props, State> {
 				visible: false,
 			} as State);
 		}
+		if (this.props.onClick && initiallyVisible !== this.state.visible) { this.props.onClick(this.state.visible); }
 	}
 
 	setContent(ref: HTMLElement): void {

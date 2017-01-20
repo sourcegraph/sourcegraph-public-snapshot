@@ -8,6 +8,7 @@ import { Commit } from "sourcegraph/blob/CommitInfoBar/Commit";
 import { Popover } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
 import { urlWithRev } from "sourcegraph/repo/routes";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	repo: string;
@@ -46,6 +47,7 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 		}
 		const commits = repository.commit.commit.file.commits;
 		const commitSelected = (commits[0].rev === this.props.rev || !this.props.rev) ? commits[0] : this.commitInfoForRev(this.props.rev, commits);
+		const eventProps = { repo: this.props.repo, path: this.props.path, rev: commitSelected.rev };
 
 		// Business Logic: Designs don't want the latest commit to show in the drop down
 		// if commitSelected === commits[0] (the latest commit)
@@ -59,7 +61,13 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 			boxShadow: `${colors.black(0.3)} 0 1px 6px 0px`,
 			borderRadius: 0,
 			width: "100%",
-		}}>
+		}} onClick={(visible) => {
+			if (visible) {
+				AnalyticsConstants.Events.CommitInfo_Initiated.logEvent(eventProps);
+			} else {
+				AnalyticsConstants.Events.CommitInfo_Dismissed.logEvent(eventProps);
+			}
+		} }>
 			<Commit commit={commitSelected} showChevron={true} hover={false} style={{ boxShadow: `${colors.black(0.3)} 0 1px 6px 0px` }} />
 			<div style={{
 				height: commitOffset.length > 5 ? layout.editorCommitInfoBarHeight * 5 : layout.editorCommitInfoBarHeight * commitOffset.length,
@@ -70,7 +78,8 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 						key={`${commit.rev}${commit.message}`}
 						style={{ width: "100%" }}
 						role="menu_item"
-						to={this.revSwitcherURL(commit.rev)}>
+						to={this.revSwitcherURL(commit.rev)}
+						onClick={(event) => AnalyticsConstants.Events.CommitInfoItem_Selected.logEvent(Object.assign({ selectedRev: commit.rev }, eventProps))}>
 						<Commit commit={commit} selected={commitSelected.rev === commit.rev} />
 					</Link>;
 				})}
