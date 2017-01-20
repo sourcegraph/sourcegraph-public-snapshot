@@ -29,7 +29,6 @@ export interface DefinitionData {
 }
 
 export interface ReferenceCommitInfo {
-	loc: Location;
 	hunk: GQL.IHunk;
 }
 
@@ -138,14 +137,7 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 			return;
 		}
 		hunk.author.date = TimeFromNowUntil(hunk.author.date, 14);
-		let commitInfo = {
-			loc: {
-				uri: reference.uri,
-				range: reference.range,
-			},
-			hunk: hunk,
-		} as ReferenceCommitInfo;
-		reference.commitInfo = commitInfo;
+		reference.commitInfo = { hunk };
 	});
 
 	return referencesModel;

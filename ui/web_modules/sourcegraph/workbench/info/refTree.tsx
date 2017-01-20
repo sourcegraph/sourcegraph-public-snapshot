@@ -226,8 +226,8 @@ class Renderer extends LegacyRenderer {
 						strings.escape(preview.after),
 						element.commitInfo.hunk.author.person.name,
 						element.commitInfo.hunk.author.date,
-						element.commitInfo.loc.uri.fragment,
-						element.commitInfo.loc.range.startLineNumber)).appendTo(container);
+						element.uri.fragment,
+						element.range.startLineNumber)).appendTo(container);
 			} else {
 				let fragment = element.uri.fragment;
 				let line = element.range.startLineNumber;
