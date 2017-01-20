@@ -168,8 +168,11 @@ func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language
 		language,
 		pkg
 	)
-	SELECT p.repo_id, p.language, p.pkg
-	FROM new_pkgs p;`)
+	SELECT p.repo_id,
+		p.language,
+		p.pkg
+	FROM new_pkgs p;
+	`)
 	if err != nil {
 		return errors.Wrap(err, "executing final insertion from temp table")
 	}
