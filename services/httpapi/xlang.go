@@ -125,7 +125,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	}
 
 	method = reqs[1].Method
-	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP HTTP gateway: "+method)
+	span, ctx := opentracing.StartSpanFromContext(ctx, fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -152,6 +152,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	if initParams.RootPath == "" {
 		return errors.New("invalid empty LSP root path in initialize request")
 	}
+	span.SetTag("RootPath", initParams.RootPath)
 	rootPathURI, err := uri.Parse(initParams.RootPath)
 	if err != nil {
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
@@ -159,6 +160,9 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	addRootPathFields(ev, rootPathURI)
 	if initParams.Mode != "" {
 		mode = initParams.Mode
+
+		// Update span operation name now that we have a mode.
+		span.SetOperationName(fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
 	}
 
 	// Check consistency against the URL. The URL route params are for
