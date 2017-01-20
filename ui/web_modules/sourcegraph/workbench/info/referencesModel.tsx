@@ -16,7 +16,7 @@ import { ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
 export class OneReference implements IDisposable {
 
 	private _id: string;
-	private _info: ReferenceCommitInfo;
+	private _commitInfo: ReferenceCommitInfo;
 	private _preview: FilePreview;
 	private _resolved: boolean;
 
@@ -69,12 +69,12 @@ export class OneReference implements IDisposable {
 		this._eventBus.emit("ref/changed", this);
 	}
 
-	public get info(): ReferenceCommitInfo {
-		return this._info;
+	public get commitInfo(): ReferenceCommitInfo {
+		return this._commitInfo;
 	}
 
-	public set info(value: ReferenceCommitInfo) {
-		this._info = value;
+	public set commitInfo(value: ReferenceCommitInfo) {
+		this._commitInfo = value;
 	};
 
 	public async resolve(textModelResolverService: ITextModelResolverService): Promise<OneReference> {

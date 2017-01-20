@@ -140,7 +140,10 @@ class Renderer extends LegacyRenderer {
 
 	public getHeight(tree: ITree, element: any): number {
 		if (element instanceof OneReference) {
-			return 100;
+			if (element.commitInfo) {
+				return 100;
+			}
+			return 71;
 		} else if (element instanceof FileReferences) {
 			return 50;
 		}
@@ -188,80 +191,53 @@ class Renderer extends LegacyRenderer {
 
 		if (element instanceof OneReference) {
 			const preview = element.preview.preview(element.range);
-			if (element.info && element.info.hunk.author && element.info.hunk.author.person) {
+
+			let authorInfo = "";
+			if (element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
 				let imgURL = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-				let gravatarHash = element.info.hunk.author.person.gravatarHash;
+				let gravatarHash = element.commitInfo.hunk.author.person.gravatarHash;
 				if (gravatarHash) {
 					imgURL = `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro`;
 				}
-
-				$(".sidebar-references").innerHtml(
-					strings.format(
-						`<div class="code-content">
-							<div class="function">
-								<code>
-									{0}
-								</code>
-								<code>
-									{1}
-								</code>
-								<code>
-									{2}
-								</code>
-								<div class="author-details">
-									<img src="${imgURL}" />
-									<div class="name">{3} {4}</div>
-								</div>
-								<div class="file-details">
-									{5}: Line
-									{6}
-								</div>
-							</div>
-							<div class="divider-container">
-								<div class="divider"/>
-							</div>
-						</div>`,
-						strings.escape(preview.before),
-						strings.escape(preview.inside),
-						strings.escape(preview.after),
-						element.info.hunk.author.person.name,
-						element.info.hunk.author.date,
-						element.info.loc.uri.fragment,
-						element.info.loc.range.startLineNumber)).appendTo(container);
-			} else {
-				let fragment = element.uri.fragment;
-				let line = element.range.startLineNumber;
-				$(".sidebar-references").innerHtml(
-					strings.format(
-						`<div class="code-content">
-							<div class="function">
-								<code>
-									{0}
-								</code>
-								<code>
-									{1}
-								</code>
-								<code>
-									{2}
-								</code>
-								<div class="author-details">
-									<div class="name">Blame Data Coming Soon...</div>
-								</div>
-								<div class="file-details">
-									{3}: Line
-									{4}
-								</div>
-							</div>
-							<div class="divider-container">
-								<div class="divider"/>
-							</div>
-						</div>`,
-						strings.escape(preview.before),
-						strings.escape(preview.inside),
-						strings.escape(preview.after),
-						fragment,
-						line)).appendTo(container);
+				authorInfo = strings.format(
+					`<div class="author-details">
+						<img src="${imgURL}" />
+						<div class="name">{0} {1}</div>
+					</div>`,
+					element.commitInfo.hunk.author.person.name,
+					element.commitInfo.hunk.author.date,
+				);
 			}
+
+			$(".sidebar-references").innerHtml(
+				strings.format(
+					`<div class="code-content">
+							<div class="function">
+								<code>
+									{0}
+								</code>
+								<code>
+									{1}
+								</code>
+								<code>
+									{2}
+								</code>
+								{3}
+								<div class="file-details">
+									{4}: Line
+									{5}
+								</div>
+							</div>
+							<div class="divider-container">
+								<div class="divider"/>
+							</div>
+						</div>`,
+					strings.escape(preview.before),
+					strings.escape(preview.inside),
+					strings.escape(preview.after),
+					authorInfo,
+					element.uri.fragment,
+					element.range.startLineNumber)).appendTo(container);
 		}
 
 		return null;
