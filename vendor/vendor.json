@@ -682,6 +682,12 @@
 			"revisionTime": "2017-01-20T09:41:25Z"
 		},
 		{
+			"checksumSHA1": "m7vjBiKUAdwtdqi0uiuDvoq6WRs=",
+			"path": "github.com/sourcegraph/go-vcsurl",
+			"revision": "2305ecca26ab74e3f819cb3875cd631f467e0c2b",
+			"revisionTime": "2016-11-14T16:56:20Z"
+		},
+		{
 			"checksumSHA1": "OIaAIaprbQzo/X4L70+ancPk+jM=",
 			"path": "github.com/sourcegraph/httpcache",
 			"revision": "16db777d8ebea60a3e746a7e0703eaaa53f85f7f",
