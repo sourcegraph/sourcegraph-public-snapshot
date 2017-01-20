@@ -6,7 +6,7 @@ import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { TimeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
-import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
+import { OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 
 import * as _ from "lodash";
 
@@ -89,8 +89,27 @@ export async function provideReferences(model: IReadOnlyModel, pos: { line: numb
 }
 
 export async function provideReferencesCommitInfo(referencesModel: ReferencesModel): Promise<ReferencesModel> {
+	// Blame is slow, so only blame the first N references in the first N repos.
+	//
+	// These parameters were chosen arbitrarily.
+	const maxReposToBlame = 6;
+	const maxReferencesToBlamePerRepo = 4;
+	const blameQuota = new Map<string, number>();
+	const shouldBlame = (reference: OneReference): boolean => {
+		const repo = `${reference.uri.authority}${reference.uri.path}`;
+		let quotaRemaining = blameQuota.get(repo);
+		if (quotaRemaining === undefined) {
+			if (blameQuota.size === maxReposToBlame) { return false; }
+			quotaRemaining = maxReferencesToBlamePerRepo;
+		}
+		if (quotaRemaining === 0) { return false; }
+		blameQuota.set(repo, quotaRemaining - 1);
+		return true;
+	};
+
 	let refModelQuery: string = "";
 	referencesModel.references.forEach(reference => {
+		if (!shouldBlame(reference)) { return; }
 		refModelQuery = refModelQuery +
 			`${reference.id.replace("#", "")}:repository(uri: "${reference.uri.authority}${reference.uri.path}") {
 				commit(rev: "${reference.uri.query}") {
@@ -132,6 +151,9 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 
 	referencesModel.references.forEach(reference => {
 		let dataByRefID = data.root[reference.id.replace("#", "")];
+		if (!dataByRefID) {
+			return; // likely means the blame was skipped by shouldBlame; continue without it
+		}
 		let hunk: GQL.IHunk = dataByRefID.commit.commit.file.blame[0];
 		if (!hunk || !hunk.author || !hunk.author.person) {
 			return;
