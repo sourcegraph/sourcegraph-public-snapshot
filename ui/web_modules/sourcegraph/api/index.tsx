@@ -504,6 +504,9 @@ export interface ListOptions {
 	Page?: number;
 }
 
+export interface ListPackagesOp {
+}
+
 export interface ListResponse {
 	Total?: number;
 }
@@ -570,6 +573,9 @@ export interface Output {
 	Refs?: any[];
 	Docs?: any[];
 	Anns?: any[];
+}
+
+export interface PackageInfo {
 }
 
 export interface ParameterInformation {
