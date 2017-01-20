@@ -53,11 +53,13 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		return c.Client.Call(ctx, method, params, result, opt...)
 	}
 
+	// Issue xdefinition request
 	var syms []lspext.SymbolLocationInformation
 	if err := c.Client.Call(ctx, "textDocument/xdefinition", params, &syms, opt...); err != nil {
 		return err
 	}
 	locs := make([]lsp.Location, 0, len(syms))
+	// For each symbol in the xdefinition result, compute the location(s) for that symbol
 	for _, sym := range syms {
 		if sym.Location != (lsp.Location{}) {
 			locs = append(locs, sym.Location)
@@ -65,6 +67,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		}
 
 		var rootPaths []string
+		// If we can extract the repository URL from the symbol metadata, do so
 		if repoURL := extractRepoURL(sym.Symbol); repoURL != "" {
 			repoInfo, err := vcsurl.Parse(repoURL)
 			if err != nil {
@@ -80,7 +83,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 				return err
 			}
 			rootPaths = append(rootPaths, string(repoInfo.VCS)+"://"+repoURI+"?"+rev.CommitID)
-		} else {
+		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
 			subSelector, exists := subSelectors[c.mode]
 			if !exists {
 				locs = append(locs, sym.Location)
@@ -105,6 +108,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			}
 		}
 
+		// Issue a workspace/symbol for each repository that provides a definition for the symbol
 		for _, rootPath := range rootPaths {
 			params := &lspext.WorkspaceSymbolParams{Symbol: sym.Symbol, Limit: 10}
 			var syms []lsp.SymbolInformation
