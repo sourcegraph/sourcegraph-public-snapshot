@@ -64,10 +64,10 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	defer done()
 	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
 		switch method {
-		case "workspace/packages":
+		case "workspace/xpackages":
 			res, ok := results.(*[]lspext.PackageInformation)
 			if !ok {
-				t.Fatalf("attempted to call workspace/packages with invalid return type %T", results)
+				t.Fatalf("attempted to call workspace/xpackages with invalid return type %T", results)
 			}
 			if rootPath != "git://github.com/my/repo?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
 				t.Fatalf("unexpected rootPath: %q", rootPath)
