@@ -64,7 +64,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 					rev={this.props.rev}
 					path={symbol ? symbol.path : pathFromRouteParams(this.props.params)}
 					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
-				{Features.projectWow.isEnabled() && <InfoPanelLifecycle />}
+				{Features.projectWow.isEnabled() && <InfoPanelLifecycle isSymbolUrl={this.props.isSymbolUrl} repo={this.props.root.repository} />}
 			</RepoMain>
 		</div>;
 	}

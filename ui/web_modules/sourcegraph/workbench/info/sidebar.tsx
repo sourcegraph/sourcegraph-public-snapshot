@@ -4,15 +4,18 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
 import { Location } from "vs/editor/common/modes";
+import { IModelService } from "vs/editor/common/services/modelService";
 
 import { FlexContainer, Loader } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
+import { renderSidePanelForData } from "sourcegraph/workbench/info/action";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
 import { sidebarWidth } from "sourcegraph/workbench/info/preview";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
+import { Services } from "sourcegraph/workbench/services";
 import { Disposables } from "sourcegraph/workbench/utils";
 import { MiniStore } from "sourcegraph/workbench/utils";
 
@@ -20,9 +23,14 @@ export const REFERENCES_SECTION_ID: string = "ReferencesSectionID";
 const TreeDomNodeID: string = "workbench.editors.stringEditor";
 const TreeSidebarClassName: string = "sg-sidebar";
 
+export interface InfoPanelProps {
+	isSymbolUrl: boolean;
+	repo: GQL.IRepository;
+}
+
 // Lifecycle methods for the InfoPanel. Doesn't render a node in the tree.
 @autobind
-export class InfoPanelLifecycle extends React.Component<{}, {}> {
+export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 	private toDispose: Disposables = new Disposables();
 	private node: HTMLDivElement | null;
 	private infoPaneExpanded: boolean;
@@ -35,6 +43,10 @@ export class InfoPanelLifecycle extends React.Component<{}, {}> {
 		this.info = null;
 	}
 
+	componentDidMount(): void {
+		this.openSideBarForSymbolURL(this.props);
+	}
+
 	componentWillMount(): void {
 		this.toDispose.add(infoStore.subscribe((info) => {
 			this.info = info;
@@ -44,6 +56,26 @@ export class InfoPanelLifecycle extends React.Component<{}, {}> {
 
 	componentWillUnmount(): void {
 		this.toDispose.dispose();
+	}
+
+	private openSideBarForSymbolURL(props: InfoPanelProps): void {
+		if (this.props.isSymbolUrl && this.props.repo && this.props.repo.symbols && this.props.repo.symbols.length > 0) {
+			const {line, character, path} = this.props.repo.symbols[0];
+			const lspParams = {
+				position: {
+					line,
+					character
+				},
+			};
+
+			this.toDispose.add(Services.get<IModelService>(IModelService).onModelAdded((editorModel) => {
+				if (`${editorModel.uri.authority}${editorModel.uri.path}` === this.props.repo.uri) {
+					if (editorModel.uri.fragment === path) {
+						renderSidePanelForData({ editorModel, lspParams });
+					}
+				}
+			}));
+		}
 	}
 
 	renderOutOfTreeDOMNode(): void {
