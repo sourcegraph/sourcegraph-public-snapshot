@@ -7,7 +7,6 @@ import * as os from 'os';
 
 import {
 	InitializeParams,
-	InitializeResult,
 	TextDocumentPositionParams,
 	ReferenceParams,
 	Location,
@@ -67,7 +66,7 @@ export class BuildHandler implements LanguageHandler {
 		this.ls = new TypeScriptService();
 	}
 
-	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<InitializeResult> {
+	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<rt.InitializeResult> {
 		const yarndir = await new Promise<string>((resolve, reject) => {
 			temp.mkdir("tsjs-yarn", (err: any, dirPath: string) => err ? reject(err) : resolve(dirPath));
 		});
