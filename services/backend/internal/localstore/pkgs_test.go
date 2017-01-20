@@ -125,7 +125,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 			"version": "2.2.2",
 		},
 	}}
-	gotPkgs, err := p.get(ctx, globalGraphDBH.Db, "ORDER BY lang ASC")
+	gotPkgs, err := p.get(ctx, globalGraphDBH.Db, "ORDER BY language ASC")
 	if err != nil {
 		t.Fatal(err)
 	}

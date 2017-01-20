@@ -27,11 +27,11 @@ type dbPkgs struct{}
 func (*dbPkgs) CreateTable() string {
 	return `CREATE table pkgs (
 		repo_id integer NOT NULL,
-		lang text NOT NULL,
+		language text NOT NULL,
 		pkg jsonb NOT NULL
 	);
 	CREATE INDEX pkg_pkg_idx ON pkgs USING gin (pkg jsonb_path_ops);
-	CREATE INDEX pkg_lang_idx on pkgs USING btree (lang);
+	CREATE INDEX pkg_lang_idx on pkgs USING btree (language);
 	CREATE INDEX pkg_repo_idx ON pkgs USING btree (repo_id);
 `
 }
@@ -148,7 +148,7 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 	// First, create a temporary table.
 	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_pkgs (
 		pkg jsonb NOT NULL,
-		lang text NOT NULL,
+		language text NOT NULL,
 		repo_id integer NOT NULL
 	) ON COMMIT DROP;`)
 	if err != nil {
@@ -159,7 +159,7 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 	// Copy the new deps into the temporary table.
 	copy, err := tx.Prepare(pq.CopyIn("new_pkgs",
 		"repo_id",
-		"lang",
+		"language",
 		"pkg",
 	))
 	if err != nil {
@@ -188,7 +188,7 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 	}
 	span.LogEvent("executed copy")
 
-	if _, err := tx.Exec(`DELETE FROM pkgs WHERE lang=$1 AND repo_id=$2`, language, indexRepo); err != nil {
+	if _, err := tx.Exec(`DELETE FROM pkgs WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
 		return errors.Wrap(err, "executing pkgs deletion")
 	}
 	span.LogEvent("executed pkgs deletion")
@@ -196,10 +196,10 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 	// Insert from temporary table into the real table.
 	_, err = tx.Exec(`INSERT INTO pkgs(
 		repo_id,
-		lang,
+		language,
 		pkg
 	)
-	SELECT p.repo_id, p.lang, p.pkg
+	SELECT p.repo_id, p.language, p.pkg
 	FROM new_pkgs p;`)
 	if err != nil {
 		return errors.Wrap(err, "executing final insertion from temp table")
@@ -228,7 +228,7 @@ func (p *dbPkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesO
 	rows, err := globalGraphDBH.Db.Query(`
 		SELECT *
 		FROM pkgs
-		WHERE lang=$1
+		WHERE language=$1
 		AND pkg @> $2
 		LIMIT $3`, op.Lang, string(containmentQuery), op.Limit)
 	if err != nil {
