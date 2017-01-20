@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -33,7 +35,17 @@ type xclient struct {
 // then that means the definition did not exist locally. The method will locate the definition in an
 // external repository and return that to the client as if it came from a single
 // `textDocument/definition` call.
-func (c *xclient) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error {
+func (c *xclient) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "xclient.Call")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+	span.SetTag("Method", method)
+
 	if method == "initialize" {
 		var init xlang.ClientProxyInitializeParams
 		if err := json.Unmarshal(*params.(*json.RawMessage), &init); err != nil {
@@ -54,6 +66,8 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		return c.Client.Call(ctx, method, params, result, opt...)
 	}
 
+	span.SetTag("LocationAbsent", "true")
+
 	// Issue xdefinition request
 	var syms []lspext.SymbolLocationInformation
 	if err := c.Client.Call(ctx, "textDocument/xdefinition", params, &syms, opt...); err != nil {
@@ -71,6 +85,8 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		var rootPaths []string
 		// If we can extract the repository URL from the symbol metadata, do so
 		if repoURL := extractRepoURL(sym.Symbol); repoURL != "" {
+			span.LogEvent("extracted repo directly from symbol metadata")
+
 			repoInfo, err := vcsurl.Parse(repoURL)
 			if err != nil {
 				return errors.Wrap(err, "extract repo URL from symbol metadata")
@@ -91,10 +107,12 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 				continue
 			}
 
+			span.LogEvent("cross-repo jump to def")
 			pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{PkgQuery: subSelector(sym.Symbol), Lang: c.mode, Limit: 1})
 			if err != nil {
 				return errors.Wrap(err, "getting repo by package db query")
 			}
+			span.LogEvent("listed repository packages")
 
 			for _, pkg := range pkgs {
 				repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{pkg.RepoID})
@@ -108,6 +126,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 				// TODO: store VCS type in *sourcegraph.Repo object.
 				rootPaths = append(rootPaths, "git://"+repo.URI+"?"+rev.CommitID)
 			}
+			span.LogEvent("resolved rootPaths")
 		}
 
 		// Issue a workspace/symbol for each repository that provides a definition for the symbol
@@ -121,6 +140,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 				locs = append(locs, sym.Location)
 			}
 		}
+		span.LogEvent("done issuing workspace/symbol requests")
 	}
 	locBytes, err := json.Marshal(locs)
 	if err != nil {
