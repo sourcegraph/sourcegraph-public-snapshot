@@ -140,7 +140,7 @@ export class GlobalNav extends Container<Props, State> {
 					activateSearch={(eventProps) => this.activateSearch(eventProps)}
 					onDismiss={this.onSearchDismiss} />
 				<FlexContainer items="center" style={{ paddingRight: "0.5rem" }}>
-					<a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={14} /></a>
+					<a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>
 					{context.user
 						? <UserMenu user={context.user} location={location} style={{ flex: "0 0 auto", marginTop: 4 }} />
 						: <SignupOrLogin user={context.user} location={location} />

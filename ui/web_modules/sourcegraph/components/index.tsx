@@ -36,7 +36,6 @@ export { Annotation } from "sourcegraph/components/Annotation";
 export { BGContainer } from "sourcegraph/components/BGContainer";
 export { TourOverlay } from "sourcegraph/components/TourOverlay";
 export { Boom } from "sourcegraph/components/Boom";
-export { ContextMenuIcon } from "sourcegraph/components/ContextMenuIcon";
 export { RepositoryCard } from "sourcegraph/components/RepositoryCard";
 export { LanguageLabel } from "sourcegraph/components/LanguageLabel";
 export { PageTitle } from "sourcegraph/components/PageTitle";

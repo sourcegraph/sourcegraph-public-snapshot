@@ -1,6 +1,6 @@
 import { $, merge } from "glamor";
 import * as React from "react";
-import { Search as SearchIcon } from "sourcegraph/components/symbols";
+import { Search } from "sourcegraph/components/symbols/Primaries";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/index";
 
@@ -20,8 +20,8 @@ export function SearchCTA(props: { style?: any, width: number, content?: string 
 
 	return (
 		<div id="SearchCTA-e2e-test" {...sx}>
-			<SearchIcon color={colors.blueGray()} width={props.width} />
-			<div style={{ display: "inline", marginLeft: whitespace[2] }}>
+			<Search color={colors.blueGray()} width={props.width} />
+			<div style={{ display: "inline", marginLeft: whitespace[1] }}>
 				{props.content ? props.content : "Search"}
 			</div>
 		</div>

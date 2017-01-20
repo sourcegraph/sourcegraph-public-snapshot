@@ -1088,6 +1088,10 @@ dashdash@^1.12.0, dashdash@^1.14.1:
   dependencies:
     assert-plus "^1.0.0"
 
+date-fns@^1.27.0:
+  version "1.27.0"
+  resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-1.27.0.tgz#527ab172c8c3a8847e7801019e26dd62166a68b3"
+
 date-now@1.0.1, date-now@^0.1.4:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/date-now/-/date-now-1.0.1.tgz#bb7d086438debe4182a485fb3df3fbfb99d6153c"
@@ -3167,7 +3171,7 @@ module-deps@^4.0.8:
     through2 "^2.0.0"
     xtend "^4.0.0"
 
-moment@2.x.x, moment@^2.17.0, moment@^2.17.1:
+moment@2.x.x, moment@^2.17.1:
   version "2.17.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.17.1.tgz#fed9506063f36b10f066c8b59a144d7faebe1d82"
 
@@ -4012,16 +4016,6 @@ react-hot-loader@3.0.0-beta.6:
     react-proxy "^3.0.0-alpha.0"
     redbox-react "^1.2.5"
     source-map "^0.4.4"
-
-react-icon-base@2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/react-icon-base/-/react-icon-base-2.0.3.tgz#f5d9083f64c903d3e983fc9b3f292314b0c0f262"
-
-react-icons@2.2.1:
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/react-icons/-/react-icons-2.2.1.tgz#354d725d60acf341d09fd50c6398ae7b97d7f157"
-  dependencies:
-    react-icon-base "2.0.3"
 
 react-proxy@^3.0.0-alpha.0:
   version "3.0.0-alpha.1"

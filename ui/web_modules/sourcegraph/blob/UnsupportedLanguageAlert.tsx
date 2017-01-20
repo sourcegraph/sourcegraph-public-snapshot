@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Panel } from "sourcegraph/components";
-import { Alert } from "sourcegraph/components/symbols";
+import { Warning } from "sourcegraph/components/symbols/Primaries";
 import { whitespace } from "sourcegraph/components/utils/index";
 
 interface Props {
@@ -22,7 +22,7 @@ export function UnsupportedLanguageAlert({ext, style}: Props): JSX.Element {
 	}, style);
 
 	return <Panel color="orange" style={sx}>
-		<Alert width={14} style={iconSx} />
+		<Warning width={18} style={iconSx} />
 		{ext
 			? <span>.{ext} files are</span>
 			: "This language is"

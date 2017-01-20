@@ -1,4 +1,3 @@
-import * as moment from "moment";
 import URI from "vs/base/common/uri";
 import { Range } from "vs/editor/common/core/range";
 import { IReadOnlyModel } from "vs/editor/common/editorCommon";
@@ -7,6 +6,7 @@ import * as modes from "vs/editor/common/modes";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { codeLensCache } from "sourcegraph/editor/EditorService";
+import { timeFromNow } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
 export class AuthorshipCodeLens implements modes.CodeLensProvider {
@@ -25,7 +25,7 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 				if (!blameLine.author || !blameLine.author.person) {
 					return codeLenses;
 				}
-				const timeSince = moment(blameLine.author.date, "YYYY-MM-DDThh:mmTZD").fromNow();
+				const timeSince = timeFromNow(blameLine.author.date);
 				codeLenses.push({
 					id: `${blameLine.rev}${blameLine.startLine}-${blameLine.endLine}`,
 					range: new Range(blameLine.startLine, 0, blameLine.endLine, Infinity),

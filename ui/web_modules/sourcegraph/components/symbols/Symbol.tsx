@@ -3,7 +3,7 @@ import * as React from "react";
 
 interface Props {
 	className?: string;
-	width?: number; // appended by "px"
+	width?: number;
 	style?: Object;
 	color?: any;
 	viewBox?: string;
@@ -16,7 +16,7 @@ export const Symbol = (props: Props) => {
 			display: "inline",
 			verticalAlign: "middle",
 			position: "relative",
-			top: -1,
+			top: -2,
 		},
 		props.style
 	);
@@ -24,7 +24,7 @@ export const Symbol = (props: Props) => {
 		{...style({ fill: props.color ? props.color : "currentColor" }) }
 		{...hover({ fill: "currentColor" }) }
 		className={props.className}
-		width={`${props.width ? props.width : 16}px`}
+		width={props.width ? props.width : 18}
 		style={sx}
 		viewBox={props.viewBox}>{props.children}</svg>;
 };

@@ -2,8 +2,8 @@ import * as classNames from "classnames";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
-import { CloseIcon } from "sourcegraph/components/Icons";
 import * as base from "sourcegraph/components/styles/_base.css";
+import { Close } from "sourcegraph/components/symbols/Primaries";
 import { Toast } from "sourcegraph/components/Toast";
 import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -49,7 +49,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 		if (isVisible) {
 			return (
 				<Toast>
-					<a onClick={this._closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><CloseIcon /></a>
+					<a onClick={this._closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><Close /></a>
 					<p style={{ textAlign: "center" }}><a onClick={this._toastCTAClicked.bind(this)}>{ToastTitle}</a></p>
 				</Toast>
 			);

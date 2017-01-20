@@ -7,9 +7,9 @@ import * as React from "react";
 import { Router } from "sourcegraph/app/router";
 import { EventListener } from "sourcegraph/Component";
 import { Input } from "sourcegraph/components/Input";
-import { Search as SearchIcon } from "sourcegraph/components/symbols";
-import { Spinner as LoadingIcon } from "sourcegraph/components/symbols";
-import { colors } from "sourcegraph/components/utils/index";
+import { Spinner } from "sourcegraph/components/symbols";
+import { Search as SearchIcon } from "sourcegraph/components/symbols/Primaries";
+import { colors } from "sourcegraph/components/utils";
 
 import { URIUtils } from "sourcegraph/core/uri";
 
@@ -382,7 +382,7 @@ export class Container extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		const icon = this.loading() ? <LoadingIcon /> : <SearchIcon style={{ fill: colors.blueGrayD1() }} />;
+		const icon = this.loading() ? <Spinner /> : <SearchIcon style={{ fill: colors.blueGrayD1() }} />;
 		const categories = resultsToArray(this.state.results);
 		return (
 			<div style={modalStyle}>

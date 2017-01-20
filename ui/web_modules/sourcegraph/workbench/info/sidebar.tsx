@@ -5,7 +5,7 @@ import { RefTree } from "sourcegraph/workbench/info/refTree";
 import { Location } from "vs/editor/common/modes";
 
 import { FlexContainer, Loader } from "sourcegraph/components";
-import { Close } from "sourcegraph/components/symbols/Zondicons";
+import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
@@ -125,7 +125,7 @@ class InfoPanel extends React.Component<Props, State> {
 				<FlexContainer style={{ backgroundColor: "#1893e7", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.16)" }}>
 					<code style={Object.assign({ color: "white", paddingLeft: whitespace[3], paddingTop: whitespace[3], paddingBottom: whitespace[3], paddingRight: whitespace[2] }, typography[3])}>{defData.funcName}</code>
 					<span onClick={() => infoStore.dispatch(null)} style={{ cursor: "pointer", marginLeft: "auto", paddingRight: whitespace[3], paddingTop: whitespace[3], }}>
-						<Close width={12} color={colors.blueGrayD1(0.5)} />
+						<Close width={18} color={colors.blueGrayD1(0.5)} />
 					</span>
 				</FlexContainer>
 			</div>

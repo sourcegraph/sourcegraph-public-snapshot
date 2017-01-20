@@ -4,11 +4,11 @@ import { Location } from "vs/editor/common/modes";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { TimeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
+import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 
-import * as _ from "lodash";
+import * as flatten from "lodash/flatten";
 
 export interface RefData {
 	language: string;
@@ -158,7 +158,7 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 		if (!hunk || !hunk.author || !hunk.author.person) {
 			return;
 		}
-		hunk.author.date = TimeFromNowUntil(hunk.author.date, 14);
+		hunk.author.date = timeFromNowUntil(hunk.author.date, 14);
 		reference.commitInfo = { hunk };
 	});
 
@@ -188,7 +188,7 @@ export async function provideGlobalReferences(object: any): Promise<any> {
 	});
 
 	const allReferences = await Promise.all(promises);
-	return _.flatten(allReferences).map(lsp.toMonacoLocation);
+	return flatten(allReferences).map(lsp.toMonacoLocation);
 }
 
 // TODO/Checkpoint: @Kingy to refine implementation for Project WOW

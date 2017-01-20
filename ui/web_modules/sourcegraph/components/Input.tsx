@@ -1,6 +1,6 @@
 import { style } from "glamor";
 import * as React from "react";
-import { Alert } from "sourcegraph/components/symbols";
+import { Warning } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props extends React.HTMLAttributes<HTMLInputElement> {
@@ -92,10 +92,9 @@ export function Input(props: Props): JSX.Element {
 			marginBottom: whitespace[2],
 			marginTop: whitespace[2],
 		}}>
-			<Alert width={16} style={{
+			<Warning width={18} style={{
 				fill: colors.red(),
 				marginRight: whitespace[2],
-				marginTop: -4,
 			}} />
 			{props.errorText}
 		</div>}
