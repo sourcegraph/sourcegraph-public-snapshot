@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -61,6 +62,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 	locs := make([]lsp.Location, 0, len(syms))
 	// For each symbol in the xdefinition result, compute the location(s) for that symbol
 	for _, sym := range syms {
+		// If a concrete location is already present, just use that
 		if sym.Location != (lsp.Location{}) {
 			locs = append(locs, sym.Location)
 			continue
@@ -71,39 +73,39 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		if repoURL := extractRepoURL(sym.Symbol); repoURL != "" {
 			repoInfo, err := vcsurl.Parse(repoURL)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
 			repoURI := string(repoInfo.RepoHost) + "/" + repoInfo.FullName
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
 			rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID})
 			if err != nil {
-				return err
+				return errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
 			rootPaths = append(rootPaths, string(repoInfo.VCS)+"://"+repoURI+"?"+rev.CommitID)
 		} else { // if we can't extract the repository URL directly, we have to consult the pkgs database
 			subSelector, exists := subSelectors[c.mode]
 			if !exists {
-				locs = append(locs, sym.Location)
 				continue
 			}
 
 			pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{PkgQuery: subSelector(sym.Symbol), Lang: c.mode, Limit: 100})
 			if err != nil {
-				return err
+				return errors.Wrap(err, "getting repo by package db query")
 			}
 
 			for _, pkg := range pkgs {
 				repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{pkg.RepoID})
 				if err != nil {
-					return err
+					return errors.Wrap(err, "fetch repo for package")
 				}
 				rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID})
 				if err != nil {
-					return err
+					return errors.Wrap(err, "resolve revision for package repo")
 				}
+				// TODO: store VCS type in *sourcegraph.Repo object.
 				rootPaths = append(rootPaths, "git://"+repo.URI+"?"+rev.CommitID)
 			}
 		}
@@ -113,7 +115,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			params := &lspext.WorkspaceSymbolParams{Symbol: sym.Symbol, Limit: 10}
 			var syms []lsp.SymbolInformation
 			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, "workspace/symbol", params, &syms); err != nil {
-				return err
+				return errors.Wrap(err, "resolving symbol to location")
 			}
 			for _, sym := range syms {
 				locs = append(locs, sym.Location)
@@ -122,7 +124,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 	}
 	locBytes, err := json.Marshal(locs)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "marshaling locations")
 	}
 	return json.Unmarshal(locBytes, result)
 }
