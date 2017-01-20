@@ -19,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-// dbGlobalDep provides access to the `global_dep` table. Each row in
+// globalDeps provides access to the `global_dep` table. Each row in
 // the table represents a dependency relationship from a repository to
 // a package-manager-level package.
 //
@@ -32,9 +32,15 @@ import (
 // * The hints column contains JSON that contains additional hints that can
 //   be used to optimized requests related to the dependency (e.g., which
 //   directory in a repository contains the dependency).
-type dbGlobalDep struct{}
+type globalDeps struct{}
 
-func (*dbGlobalDep) CreateTable() string {
+var globalDepEnabledLangs = map[string]struct{}{
+	"go":         struct{}{},
+	"php":        struct{}{},
+	"typescript": struct{}{},
+}
+
+func (*globalDeps) CreateTable() string {
 	return `CREATE table global_dep (
 		language text NOT NULL,
 		dep_data jsonb NOT NULL,
@@ -46,16 +52,8 @@ func (*dbGlobalDep) CreateTable() string {
 	CREATE INDEX global_dep_language ON global_dep USING btree (language);`
 }
 
-func (*dbGlobalDep) DropTable() string {
+func (*globalDeps) DropTable() string {
 	return `DROP TABLE IF EXISTS global_dep CASCADE;`
-}
-
-type globalDeps struct{}
-
-var globalDepEnabledLangs = map[string]struct{}{
-	"go":         struct{}{},
-	"php":        struct{}{},
-	"typescript": struct{}{},
 }
 
 // UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.

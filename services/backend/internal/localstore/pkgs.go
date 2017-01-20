@@ -22,9 +22,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-type dbPkgs struct{}
+type pkgs struct{}
 
-func (*dbPkgs) CreateTable() string {
+func (*pkgs) CreateTable() string {
 	return `CREATE table pkgs (
 		repo_id integer NOT NULL,
 		language text NOT NULL,
@@ -36,11 +36,11 @@ func (*dbPkgs) CreateTable() string {
 `
 }
 
-func (*dbPkgs) DropTable() string {
+func (*pkgs) DropTable() string {
 	return `DROP TABLE IF EXISTS pkgs CASCADE;`
 }
 
-func (p *dbPkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang) error {
+func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang) error {
 	var errs []string
 	for _, lang := range langs {
 		langName := strings.ToLower(lang.Name)
@@ -61,8 +61,8 @@ func (p *dbPkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRef
 	return nil
 }
 
-func (p *dbPkgs) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "dbPkgs.refreshIndexForLanguage "+language)
+func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -79,15 +79,15 @@ func (p *dbPkgs) refreshIndexForLanguage(ctx context.Context, language string, o
 	// This makes it such that indexing repositories does not interfere in
 	// terms of resource usage with real user requests.
 	rootPath := vcs + "://" + op.RepoURI + "?" + op.CommitID
-	var pkgs []lspext.PackageInformation
-	err = xlangCall(ctx, language+"_bg", rootPath, "workspace/packages", map[string]string{}, &pkgs)
+	var pks []lspext.PackageInformation
+	err = xlangCall(ctx, language+"_bg", rootPath, "workspace/packages", map[string]string{}, &pks)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/packages")
 	}
 
 	err = dbutil.Transaction(ctx, globalGraphDBH.Db, func(tx *sql.Tx) error {
 		// Update the pkgs table.
-		err = p.update(ctx, tx, op.RepoID, language, pkgs)
+		err = p.update(ctx, tx, op.RepoID, language, pks)
 		if err != nil {
 			return errors.Wrap(err, "pkgs.update")
 		}
@@ -103,8 +103,8 @@ type dbQueryer interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language string, pkgs []lspext.PackageInformation) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "dbPkgs.update "+language)
+func (p *pkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language string, pks []lspext.PackageInformation) (err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.update "+language)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -112,7 +112,7 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 		}
 		span.Finish()
 	}()
-	span.SetTag("pkgs", len(pkgs))
+	span.SetTag("pkgs", len(pks))
 
 	// First, create a temporary table.
 	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_pkgs (
@@ -137,7 +137,7 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 	defer copy.Close()
 	span.LogEvent("prepared copy in")
 
-	for _, r := range pkgs {
+	for _, r := range pks {
 		pkgData, err := json.Marshal(r.Package)
 		if err != nil {
 			return errors.Wrap(err, "marshaling package metadata to JSON")
@@ -177,8 +177,8 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 	return nil
 }
 
-func (p *dbPkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "dbPkgs.ListPackages")
+func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pks []sourcegraph.PackageInfo, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.ListPackages")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -229,13 +229,13 @@ func (p *dbPkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesO
 	}
 
 	if len(rawPkgs) > 0 {
-		pkgs = make([]sourcegraph.PackageInfo, 0, len(rawPkgs))
+		pks = make([]sourcegraph.PackageInfo, 0, len(rawPkgs))
 	}
 	for _, pkg := range rawPkgs {
 		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "dpkgs.ListPackages", pkg.RepoID); err == nil {
-			pkgs = append(pkgs, pkg)
+			pks = append(pks, pkg)
 		}
 	}
 
-	return pkgs, nil
+	return pks, nil
 }

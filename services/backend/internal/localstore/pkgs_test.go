@@ -24,9 +24,9 @@ func TestPkgs_update(t *testing.T) {
 	ctx, done := testContext()
 	defer done()
 
-	p := dbPkgs{}
+	p := pkgs{}
 
-	pkgs := []lspext.PackageInformation{{
+	pks := []lspext.PackageInformation{{
 		Package: map[string]interface{}{"name": "pkg"},
 		Dependencies: []lspext.DependencyReference{{
 			Attributes: map[string]interface{}{"name": "dep1"},
@@ -34,7 +34,7 @@ func TestPkgs_update(t *testing.T) {
 	}}
 
 	if err := dbutil.Transaction(ctx, globalGraphDBH.Db, func(tx *sql.Tx) error {
-		if err := p.update(ctx, tx, 1, "go", pkgs); err != nil {
+		if err := p.update(ctx, tx, 1, "go", pks); err != nil {
 			return err
 		}
 		return nil
@@ -105,7 +105,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	p := dbPkgs{}
+	p := pkgs{}
 
 	op := &sourcegraph.DefsRefreshIndexOp{RepoURI: "github.com/my/repo", RepoID: 1, CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
 	langs := []*inventory.Lang{{Name: "Go"}, {Name: "TypeScript"}}
@@ -157,7 +157,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		},
 	}
 
-	p := dbPkgs{}
+	p := pkgs{}
 
 	repoToPkgs := map[int32][]lspext.PackageInformation{
 		1: []lspext.PackageInformation{{
@@ -177,9 +177,9 @@ func TestPkgs_ListPackages(t *testing.T) {
 		5: []lspext.PackageInformation{{Package: map[string]interface{}{"name": "pkg3", "version": "3.3.1"}}},
 	}
 
-	for repo, pkgs := range repoToPkgs {
+	for repo, pks := range repoToPkgs {
 		if err := dbutil.Transaction(ctx, globalGraphDBH.Db, func(tx *sql.Tx) error {
-			if err := p.update(ctx, tx, repo, "go", pkgs); err != nil {
+			if err := p.update(ctx, tx, repo, "go", pks); err != nil {
 				return err
 			}
 			return nil
@@ -266,7 +266,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 }
 
-func (p *dbPkgs) getAll(ctx context.Context, db dbQueryer) (packages []sourcegraph.PackageInfo, err error) {
+func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []sourcegraph.PackageInfo, err error) {
 	rows, err := db.Query("SELECT * FROM pkgs ORDER BY language ASC")
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
