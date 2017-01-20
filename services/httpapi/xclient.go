@@ -21,16 +21,26 @@ import (
 type xclient struct {
 	*xlang.Client
 
-	mode string
+	hasXDefinition bool
+	mode           string
 }
 
 func (c *xclient) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error {
-	if method != "textDocument/definition" {
-		if method == "initialize" {
-			var init xlang.ClientProxyInitializeParams
-			json.Unmarshal(*params.(*json.RawMessage), &init)
-			c.mode = init.Mode
+	if method == "initialize" {
+		var init xlang.ClientProxyInitializeParams
+		json.Unmarshal(*params.(*json.RawMessage), &init)
+		c.mode = init.Mode
+		var initResult lsp.InitializeResult
+		if err := c.Client.Call(ctx, method, params, &initResult, opt...); err != nil {
+			return err
 		}
+		c.hasXDefinition = initResult.Capabilities.XDefinitionProvider
+		b, err := json.Marshal(initResult)
+		if err != nil {
+			return err
+		}
+		return json.Unmarshal(b, &result)
+	} else if method != "textDocument/definition" || !c.hasXDefinition {
 		return c.Client.Call(ctx, method, params, result, opt...)
 	}
 
