@@ -255,6 +255,14 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 	if container == "" {
 		container = filepath.Base(bpkg.ImportPath)
 	}
+
+	var id string
+	if recv == "" {
+		id = fmt.Sprintf("%s/-/%s", path.Clean(bpkg.ImportPath), name)
+	} else {
+		id = fmt.Sprintf("%s/-/%s/%s", path.Clean(bpkg.ImportPath), recv, name)
+	}
+
 	return symbolPair{
 		SymbolInformation: lsp.SymbolInformation{
 			Name:          name,
@@ -269,7 +277,7 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 			PackageName: bpkg.Name,
 			Recv:        recv,
 			Name:        name,
-			ID:          fmt.Sprintf("%s:%s:%s:%s", path.Clean(bpkg.ImportPath), bpkg.Name, recv, name),
+			ID:          id,
 		},
 	}
 }
