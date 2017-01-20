@@ -1,4 +1,5 @@
 import * as autobind from "autobind-decorator";
+import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
@@ -123,7 +124,7 @@ class InfoPanel extends React.Component<Props, State> {
 		return (
 			<div>
 				<FlexContainer style={{ backgroundColor: "#1893e7", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.16)" }}>
-					<code style={Object.assign({ color: "white", paddingLeft: whitespace[3], paddingTop: whitespace[3], paddingBottom: whitespace[3], paddingRight: whitespace[2] }, typography[3])}>{defData.funcName}</code>
+					<code style={Object.assign({ color: "white", paddingLeft: whitespace[3], paddingTop: whitespace[3], paddingBottom: whitespace[3], paddingRight: whitespace[2] }, typography[3])}>{truncate(defData.funcName, { length: 120 })}</code>
 					<span onClick={() => infoStore.dispatch(null)} style={{ cursor: "pointer", marginLeft: "auto", paddingRight: whitespace[3], paddingTop: whitespace[3], }}>
 						<Close width={18} color={colors.blueGrayD1(0.5)} />
 					</span>
