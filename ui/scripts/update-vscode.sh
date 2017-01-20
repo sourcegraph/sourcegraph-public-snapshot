@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CLONE_URL=https://github.com/Microsoft/vscode.git
+CLONE_URL="${2:-'git@github.com:sourcegraph/vscode.git'}"
 CLONE_DIR=/tmp/sourcegraph-vscode
-REV=${1:-d1e2255a2a40bbd30b2c60b599db11061f086367} # pin to commit ID, bump as needed
+REV=${1:-dd103475a5f73c70ddf00dbf9edb571350f60826} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
 VENDOR_DIR="$REPO_DIR"/ui/vendor/node_modules/vscode
 
@@ -34,10 +34,6 @@ rm "$VENDOR_DIR"/src/typings/mocha.d.ts
 # Webpack to work with vscode's custom "vs/css!" syntax.
 echo -n Munging imports...
 grep -rl 'css!' "$VENDOR_DIR" | xargs -n 1 $sedi 's|import '"'"'vs/css!\([^'"'"']*\)'"'"';|import '"'"'\1.css'"'"';|g'
-echo OK
-
-echo -n Applying Sourcegraph-specific patches...
-patch --no-backup-if-mismatch --quiet --directory "$REPO_DIR" -p1 < "$REPO_DIR"/ui/scripts/vscode.patch
 echo OK
 
 echo -n Compiling TypeScript...
