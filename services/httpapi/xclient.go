@@ -91,7 +91,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 				continue
 			}
 
-			pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{PkgQuery: subSelector(sym.Symbol), Lang: c.mode, Limit: 100})
+			pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{PkgQuery: subSelector(sym.Symbol), Lang: c.mode, Limit: 1})
 			if err != nil {
 				return errors.Wrap(err, "getting repo by package db query")
 			}
