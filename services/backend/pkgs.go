@@ -11,6 +11,9 @@ var Pkgs = &pkgs{}
 
 type pkgs struct{}
 
+// UnsafeRefreshIndex refreshes the package index for the specified repository. It does not check
+// permissions. Currently, the only caller is the indexer. Other callers should verify permissions
+// before calling this method.
 func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
 	if Mocks.Pkgs.UnsafeRefreshIndex != nil {
 		return Mocks.Pkgs.UnsafeRefreshIndex(ctx, op)
