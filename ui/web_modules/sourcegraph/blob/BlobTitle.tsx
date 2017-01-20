@@ -90,8 +90,10 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 						{Features.authorsToggle.isEnabled() &&
 							<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
 						}
-
-						<FileActionDownMenu eventProps={{ repo, rev, path }} githubURL={gitHubURL} editorURL={path} />
+						{	// if repo is not on github.com, then the one action in FileActionDownMenu doesn't make sense
+							repo.startsWith("github.com") &&
+							<FileActionDownMenu eventProps={{ repo, rev, path }} githubURL={gitHubURL} editorURL={path} />
+						}
 
 						{!isSupported && !isIgnored &&
 							<UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />
