@@ -180,7 +180,7 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
-	console.debug(`Post a GitHub issue\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=lang-${modeID}&labels[]=${encodeURIComponent("Component: xlang")}${assignee ? `&assignee=${assignee}` : ""}`);
+	console.debug(`Post a GitHub issue\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=lang-${modeID}&labels[]=${encodeURIComponent("Component: xlang")}&labels[]=${encodeURIComponent("Type: Bug")}${assignee ? `&assignee=${assignee}` : ""}`);
 	console.groupEnd();
 
 	// tslint:enable: no-console
