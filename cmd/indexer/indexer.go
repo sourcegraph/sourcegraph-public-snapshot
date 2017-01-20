@@ -178,6 +178,15 @@ func index(ctx context.Context, repoName string) error {
 		}
 	}
 
+	// Packages indexing
+	if err := backend.Pkgs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+		RepoURI:  repo.URI,
+		RepoID:   repo.ID,
+		CommitID: string(headCommit),
+	}); err != nil {
+		return fmt.Errorf("Pkgs.UnsafeRefreshIndex failed: %s", err)
+	}
+
 	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
 		Repo:     repo.ID,
 		CommitID: string(headCommit),

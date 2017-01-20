@@ -7,13 +7,13 @@ import * as os from 'os';
 
 import {
 	InitializeParams,
-	InitializeResult,
 	TextDocumentPositionParams,
 	ReferenceParams,
 	Location,
 	Hover,
 	DocumentSymbolParams,
 	SymbolInformation,
+	CompletionList,
 	DidOpenTextDocumentParams,
 	DidCloseTextDocumentParams,
 	DidChangeTextDocumentParams,
@@ -66,7 +66,7 @@ export class BuildHandler implements LanguageHandler {
 		this.ls = new TypeScriptService();
 	}
 
-	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<InitializeResult> {
+	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<rt.InitializeResult> {
 		const yarndir = await new Promise<string>((resolve, reject) => {
 			temp.mkdir("tsjs-yarn", (err: any, dirPath: string) => err ? reject(err) : resolve(dirPath));
 		});
@@ -143,7 +143,7 @@ export class BuildHandler implements LanguageHandler {
 	 * even more to install just that dependency in a given managed
 	 * module directory.
 	 */
-	private async ensureDependency(dependency: rt.DependencyAttributes, dependeeName?: string): Promise<void> {
+	private async ensureDependency(dependency: rt.PackageDescriptor, dependeeName?: string): Promise<void> {
 		if (!this.managedModuleInit) {
 			throw new Error("build handler is not yet initialized");
 		}
@@ -161,7 +161,7 @@ export class BuildHandler implements LanguageHandler {
 		let ready = this.managedModuleInit.get(dir);
 		if (!ready) {
 			ready = install(this.remoteFs, dir, yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
-				await this.ls.projectManager.refreshModuleStructureAt(dir);
+				await this.ls.projectManager.refreshFileTree(dir, true);
 				return pathToDep;
 			}, (err) => {
 				this.managedModuleInit.delete(dir);
@@ -253,6 +253,10 @@ export class BuildHandler implements LanguageHandler {
 		}
 	}
 
+	async getCompletions(params: TextDocumentPositionParams): Promise<CompletionList> {
+		return this.ls.getCompletions(params);
+	}
+
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
 		let locs: Location[] = [];
 		// First, attempt to get definition before dependencies
@@ -301,17 +305,23 @@ export class BuildHandler implements LanguageHandler {
 			const pkgJson = JSON.parse(this.ls.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
 			let name = pkgJson['name'];
 			let version = pkgJson['version'];
+			let repoURL = pkgJson['repository'] ? pkgJson['repository']['url'] : undefined;
 			if (name === 'definitely-typed') { // special case DefinitelyTyped
 				name = "@types/" + uri2path(sym.location.uri).split(path.sep)[1];
 				version = undefined;
+				repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
 			}
 			if (name) {
-				sym.symbol.package = { name: name, version: version };
+				sym.symbol.package = { name, version, repoURL };
 			}
 			return;
 		}
 
 		sym.symbol.package = dep.attributes;
+		const pkgName = sym.symbol.package.name;
+		if (pkgName && pkgName.startsWith('@types/')) {
+			sym.symbol.package.repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
+		}
 		sym.location = undefined;
 	}
 
@@ -363,8 +373,12 @@ export class BuildHandler implements LanguageHandler {
 		return this.ls.getDependencies();
 	}
 
-	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParamsWithLimit): Promise<SymbolInformation[]> {
-		if (this.puntWorkspaceSymbol) {
+	getPackages(): Promise<rt.PackageInformation[]> {
+		return this.ls.getPackages();
+	}
+
+	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParams): Promise<SymbolInformation[]> {
+		if (this.puntWorkspaceSymbol && (!params.symbol || !params.symbol['package'])) {
 			return Promise.reject("workspace/symbol unsupported on this repository");
 		}
 		return this.ls.getWorkspaceSymbols(params);

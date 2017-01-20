@@ -42,6 +42,23 @@ type DependencyReference struct {
 	Hints map[string]interface{} `json:"hints,omitempty"`
 }
 
+// PackageInformation is the metadata associated with a build-system-
+// or package-manager-level package. Sometimes, languages have
+// abstractions called "packages" as well, but this refers
+// specifically to packages as defined by the build system or package
+// manager. E.g., Python pip packages (NOT Python language packages or
+// modules), Go packages, Maven packages (NOT Java language packages),
+// npm modules (NOT JavaScript language modules).  PackageInformation
+// includes both attributes of the package itself and attributes of
+// the package's dependencies.
+type PackageInformation struct {
+	// Package is the set of attributes of the package
+	Package map[string]interface{} `json:"package,omitempty"`
+
+	// Dependencies is the list of dependency attributes
+	Dependencies []DependencyReference `json:"dependencies,omitempty"`
+}
+
 // TelemetryEventParams is a telemetry/event message sent from a
 // build/lang server back to the proxy. The information here is
 // forwarded to our opentracing system.

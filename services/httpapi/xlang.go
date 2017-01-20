@@ -46,7 +46,13 @@ func init() {
 	prometheus.MustRegister(xlangRequestDuration)
 }
 
-var xlangNewClient = func() (xlangClient, error) { return xlang.UnsafeNewDefaultClient() }
+var xlangNewClient = func() (xlangClient, error) {
+	c, err := xlang.UnsafeNewDefaultClient()
+	if err != nil {
+		return nil, err
+	}
+	return &xclient{Client: c}, nil
+}
 
 type xlangClient interface {
 	Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error

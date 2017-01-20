@@ -218,6 +218,7 @@ var t = s;\n\
 						package: {
 							name: "@types/diff",
 							version: "0.0.31",
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
 				}, done);
@@ -236,10 +237,11 @@ var t = s;\n\
 						containerKind: "",
 						containerName: "",
 						kind: "module",
-						name: "\"/node_modules/@types/diff/index\"",
+						name: "/node_modules/@types/diff/index",
 						package: {
 							name: "@types/diff",
 							version: "0.0.31",
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
 				}, done);
@@ -262,6 +264,7 @@ var t = s;\n\
 					package: {
 						name: "@types/diff",
 						version: "0.0.31",
+						repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 					},
 				},
 			}, {
@@ -273,6 +276,7 @@ var t = s;\n\
 					package: {
 						name: "@types/diff",
 						version: "0.0.31",
+						repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 					},
 				},
 			}], done);
@@ -295,6 +299,7 @@ var t = s;\n\
 						package: {
 							name: "@types/diff",
 							version: "0.0.31",
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
 				}, done);
@@ -313,10 +318,11 @@ var t = s;\n\
 						containerKind: "",
 						containerName: "",
 						kind: "module",
-						name: "\"/node_modules/@types/diff/index\"",
+						name: "/node_modules/@types/diff/index",
 						package: {
 							name: "@types/diff",
 							version: "0.0.31",
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
 				}, done);
@@ -339,6 +345,7 @@ var t = s;\n\
 						package: {
 							name: "@types/diff",
 							version: "0.0.31",
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
 				}, done);

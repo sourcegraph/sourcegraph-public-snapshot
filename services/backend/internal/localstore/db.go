@@ -40,10 +40,12 @@ var (
 		CreateSQL: []string{
 			`CREATE EXTENSION IF NOT EXISTS citext;`,
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
-			new(dbGlobalDep).CreateTable(),
+			new(globalDeps).CreateTable(),
+			new(pkgs).CreateTable(),
 		},
 		DropSQL: []string{
-			new(dbGlobalDep).DropTable(),
+			new(globalDeps).DropTable(),
+			new(pkgs).DropTable(),
 		},
 		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
 	}
