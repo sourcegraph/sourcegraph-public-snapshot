@@ -14,7 +14,7 @@ import { IEditorGroupService } from "vs/workbench/services/group/common/groupSer
 import { ExplorerViewlet as VSExplorerViewlet } from "vscode/src/vs/workbench/parts/files/browser/explorerViewlet";
 
 import { FlexContainer, Heading } from "sourcegraph/components";
-import { colors, layout, whitespace } from "sourcegraph/components/utils";
+import { colors, layout } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { RouterContext } from "sourcegraph/workbench/utils";
@@ -70,17 +70,33 @@ function Title({repo}: { repo: string }): JSX.Element {
 	return <FlexContainer items="center" style={{
 		background: colors.blueGrayD1(),
 		minHeight: layout.editorToolbarHeight,
-		paddingLeft: whitespace[4],
 		margin: 0,
 		position: "relative",
 		zIndex: 1,
 		width: "100%",
 	}}>
-		<Heading level={5}>
+		<div style={{
+			flex: "0 1 20px",
+		}}></div>
+		<Heading level={5} style={{
+			flex: "0 0 auto",
+			maxWidth: "100%",
+			whiteSpace: "nowrap",
+			lineHeight: "auto",
+			height: "100%",
+			marginTop: 24,
+			marginBottom: 0,
+		}}>
 			<Link to={urlToRepo(repo)}
 				{...hover({ color: `${colors.white()} !important` }) }
-				style={{ color: colors.blueGrayL3() }}
-				>
+				style={{
+					color: colors.blueGrayL3(),
+					maxWidth: "100%",
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					display: "inline-block",
+					height: "100%",
+				}}>
 				{repo.replace(/^github.com\//, "")}
 			</Link>
 		</Heading>
