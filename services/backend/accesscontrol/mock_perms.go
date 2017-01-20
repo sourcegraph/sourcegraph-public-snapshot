@@ -7,8 +7,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
+// Mocks are the currently mocked permissions checking functions. If
+// any fields are defined, those will take precedence over the actual
+// permissions checking functions. This should only be used in tests.
 var Mocks MockPerms
 
+// MockPerms provides stubs for mocking permissions checking functions.
 type MockPerms struct {
 	VerifyUserHasReadAccess              func(ctx context.Context, method string, repoID int32) error
 	VerifyUserHasWriteAccess             func(ctx context.Context, method string, repo int32) error

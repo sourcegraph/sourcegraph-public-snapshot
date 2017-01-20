@@ -42,9 +42,15 @@ type DependencyReference struct {
 	Hints map[string]interface{} `json:"hints,omitempty"`
 }
 
+// PackageInformation is the metadata associated with a build-system-
+// or package-manager-level package. It includes both attributes of
+// the package itself and attributes of the package's dependencies.
 type PackageInformation struct {
-	Package      map[string]interface{} `json:"package,omitempty"`
-	Dependencies []DependencyReference  `json:"dependencies,omitempty"`
+	// Package is the set of attributes of the package
+	Package map[string]interface{} `json:"package,omitempty"`
+
+	// Dependencies is the list of dependency attributes
+	Dependencies []DependencyReference `json:"dependencies,omitempty"`
 }
 
 // TelemetryEventParams is a telemetry/event message sent from a
