@@ -51,6 +51,9 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 		}
 	},
 	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
+		if _, ok := symbol["package"]; !ok {
+			return nil
+		}
 		return map[string]interface{}{
 			"name": symbol["package"].(map[string]interface{})["name"],
 		}
