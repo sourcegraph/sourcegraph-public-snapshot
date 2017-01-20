@@ -103,37 +103,6 @@ type dbQueryer interface {
 	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
 
-func (p *dbPkgs) get(ctx context.Context, db dbQueryer, whereSQL string, args ...interface{}) (packages []sourcegraph.PackageInfo, err error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT * FROM pkgs %s", whereSQL), args...)
-	if err != nil {
-		return nil, errors.Wrap(err, "query")
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var (
-			repoID   int32
-			language string
-			pkg      string
-		)
-		if err := rows.Scan(&repoID, &language, &pkg); err != nil {
-			return nil, errors.Wrap(err, "Scan")
-		}
-		p := sourcegraph.PackageInfo{
-			RepoID: repoID,
-			Lang:   language,
-		}
-		if err := json.Unmarshal([]byte(pkg), &p.Pkg); err != nil {
-			return nil, errors.Wrap(err, "unmarshaling package metadata from SQL scan")
-		}
-		packages = append(packages, p)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "rows error")
-	}
-	return packages, nil
-}
-
 func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language string, pkgs []lspext.PackageInformation) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "dbPkgs.update "+language)
 	defer func() {
@@ -230,6 +199,7 @@ func (p *dbPkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesO
 		FROM pkgs
 		WHERE language=$1
 		AND pkg @> $2
+		ORDER BY repo_id ASC
 		LIMIT $3`, op.Lang, string(containmentQuery), op.Limit)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")

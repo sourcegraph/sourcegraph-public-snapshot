@@ -3,9 +3,12 @@ package localstore
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/pkg/errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
@@ -44,7 +47,7 @@ func TestPkgs_update(t *testing.T) {
 		Lang:   "go",
 		Pkg:    map[string]interface{}{"name": "pkg"},
 	}}
-	gotPkgs, err := p.get(ctx, globalGraphDBH.Db, "")
+	gotPkgs, err := p.getAll(ctx, globalGraphDBH.Db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +128,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 			"version": "2.2.2",
 		},
 	}}
-	gotPkgs, err := p.get(ctx, globalGraphDBH.Db, "ORDER BY language ASC")
+	gotPkgs, err := p.getAll(ctx, globalGraphDBH.Db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,4 +264,35 @@ func TestPkgs_ListPackages(t *testing.T) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
 		}
 	}
+}
+
+func (p *dbPkgs) getAll(ctx context.Context, db dbQueryer) (packages []sourcegraph.PackageInfo, err error) {
+	rows, err := db.Query("SELECT * FROM pkgs ORDER BY language ASC")
+	if err != nil {
+		return nil, errors.Wrap(err, "query")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			repoID   int32
+			language string
+			pkg      string
+		)
+		if err := rows.Scan(&repoID, &language, &pkg); err != nil {
+			return nil, errors.Wrap(err, "Scan")
+		}
+		p := sourcegraph.PackageInfo{
+			RepoID: repoID,
+			Lang:   language,
+		}
+		if err := json.Unmarshal([]byte(pkg), &p.Pkg); err != nil {
+			return nil, errors.Wrap(err, "unmarshaling package metadata from SQL scan")
+		}
+		packages = append(packages, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "rows error")
+	}
+	return packages, nil
 }
