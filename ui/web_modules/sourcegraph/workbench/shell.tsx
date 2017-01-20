@@ -8,7 +8,7 @@ import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { BlobRouteProps, Router } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
-import { registerEditorCallbacks, syncEditorWithRouterProps, unmountWorkbench } from "sourcegraph/editor/config";
+import { registerEditorCallbacks, syncEditorWithRouterProps } from "sourcegraph/editor/config";
 import { init } from "sourcegraph/workbench/main";
 
 // WorkbenchShell loads the workbench and calls init on it. It is a pure container and transmits no data from the
@@ -49,7 +49,6 @@ export class WorkbenchShell extends React.Component<BlobRouteProps, {}> {
 
 	componentWillUnmount(): void {
 		window.onresize = () => void (0);
-		unmountWorkbench();
 	}
 
 	componentWillReceiveProps(nextProps: BlobRouteProps): void {
