@@ -145,7 +145,7 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 			},
 			hunk: hunk,
 		} as ReferenceCommitInfo;
-		reference.info = commitInfo;
+		reference.commitInfo = commitInfo;
 	});
 
 	return referencesModel;

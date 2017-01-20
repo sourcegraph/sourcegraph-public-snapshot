@@ -188,9 +188,9 @@ class Renderer extends LegacyRenderer {
 
 		if (element instanceof OneReference) {
 			const preview = element.preview.preview(element.range);
-			if (element.info && element.info.hunk.author && element.info.hunk.author.person) {
+			if (element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
 				let imgURL = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-				let gravatarHash = element.info.hunk.author.person.gravatarHash;
+				let gravatarHash = element.commitInfo.hunk.author.person.gravatarHash;
 				if (gravatarHash) {
 					imgURL = `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro`;
 				}
@@ -224,10 +224,10 @@ class Renderer extends LegacyRenderer {
 						strings.escape(preview.before),
 						strings.escape(preview.inside),
 						strings.escape(preview.after),
-						element.info.hunk.author.person.name,
-						element.info.hunk.author.date,
-						element.info.loc.uri.fragment,
-						element.info.loc.range.startLineNumber)).appendTo(container);
+						element.commitInfo.hunk.author.person.name,
+						element.commitInfo.hunk.author.date,
+						element.commitInfo.loc.uri.fragment,
+						element.commitInfo.loc.range.startLineNumber)).appendTo(container);
 			} else {
 				let fragment = element.uri.fragment;
 				let line = element.range.startLineNumber;
