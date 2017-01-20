@@ -25,6 +25,13 @@ type xclient struct {
 	mode           string
 }
 
+// Call transparently wraps xlang.Client.Call *except* for `textDocument/definition` if the language
+// server is a textDocument/xdefinition provider. In that case, this method invokes
+// `textDocument/xdefinition` instead. If the result contains a non-zero `Location` field, then that
+// is returned to the client as if it came from `textDocument/definition`. If the location is zero,
+// then that means the definition did not exist locally. The method will locate the definition in an
+// external repository and return that to the client as if it came from a single
+// `textDocument/definition` call.
 func (c *xclient) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error {
 	if method == "initialize" {
 		var init xlang.ClientProxyInitializeParams
