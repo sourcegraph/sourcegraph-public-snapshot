@@ -231,9 +231,6 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		return nil, errors.Wrap(err, "rows error")
 	}
 
-	if len(rawPkgs) > 0 {
-		pks = make([]sourcegraph.PackageInfo, 0, len(rawPkgs))
-	}
 	for _, pkg := range rawPkgs {
 		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "dpkgs.ListPackages", pkg.RepoID); err == nil {
 			pks = append(pks, pkg)
