@@ -5,7 +5,7 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 
 import { Features } from "sourcegraph/util/features";
-import { DefinitionData, fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences } from "sourcegraph/util/RefsBackend";
+import { DefinitionData, fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
@@ -107,7 +107,7 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 		return;
 	}
 
-	// refModel = await provideReferencesCommitInfo(refModel);
+	refModel = await provideReferencesCommitInfo(refModel);
 
 	infoStore.dispatch({ defData, refModel });
 
@@ -129,10 +129,10 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 	}
 
 	// Now go and fetch all the commit info for the new refs that we just got!
-	// refModel = await provideReferencesCommitInfo(refModel);
-	// if (!refModel) {
-	// 	return;
-	// }
+	refModel = await provideReferencesCommitInfo(refModel);
+	if (!refModel) {
+		return;
+	}
 
 	infoStore.dispatch({ defData, refModel });
 }
