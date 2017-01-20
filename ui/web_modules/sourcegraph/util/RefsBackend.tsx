@@ -1,6 +1,4 @@
-import URI from "vs/base/common/uri";
-import { TPromise } from "vs/base/common/winjs.base";
-import { ICommonCodeEditor, IReadOnlyModel } from "vs/editor/common/editorCommon";
+import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
 import { URIUtils } from "sourcegraph/core/uri";
@@ -9,6 +7,8 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 import { TimeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
+
+import * as _ from "lodash";
 
 export interface RefData {
 	language: string;
@@ -19,9 +19,54 @@ export interface RefData {
 	column: number;
 }
 
+export interface DefinitionData {
+	definition: {
+		uri: string;
+		range: IRange;
+	};
+	docString: string;
+	funcName: string;
+}
+
 export interface ReferenceCommitInfo {
 	loc: Location;
 	hunk: GQL.IHunk;
+}
+
+export async function provideDefinition(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<DefinitionData | null> {
+	const hoverInfo = await lsp.send(model, "textDocument/hover", {
+		textDocument: { uri: model.uri.toString(true) },
+		position: pos,
+		context: { includeDeclaration: false },
+	});
+
+	if (!hoverInfo || !hoverInfo.result || !hoverInfo.result.contents) {
+		return null;
+	}
+	const [{value: funcName}, docs] = hoverInfo.result.contents;
+	const docString = docs ? docs.value : "";
+
+	const defResponse = await lsp.send(model, "textDocument/definition", {
+		textDocument: { uri: model.uri.toString(true) },
+		position: pos,
+		context: { includeDeclaration: false },
+	});
+
+	if (!defResponse.result || !defResponse.result[0]) {
+		return null;
+	}
+
+	const defFirst = defResponse.result[0];
+	let definition = {
+		uri: defFirst.uri,
+		range: {
+			startLineNumber: defFirst.range.start.line,
+			startColumn: defFirst.range.start.character,
+			endLineNumber: defFirst.range.end.line,
+			endColumn: defFirst.range.end.character,
+		}
+	};
+	return { funcName, docString, definition };
 }
 
 export async function provideReferences(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<Location[]> {
@@ -106,40 +151,59 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 	return referencesModel;
 }
 
-export async function provideGlobalReferences(editor: ICommonCodeEditor): TPromise<ReferencesModel> {
-	const { repo, path } = URIUtils.repoParams(editor.getModel().uri);
-	const editorPosition = editor.getPosition();
-	let model = editor.getModel();
-	let refData: RefData = {
-		language: model.getModeIdAtPosition(editorPosition.lineNumber, editorPosition.column),
-		repo: repo,
-		version: model.uri.query,
-		file: path,
-		line: editorPosition.lineNumber - 1,
-		column: editorPosition.column - 1,
-	};
-	// Why is this not an LSP request?
-	const globalRefs = await fetchGlobalReferences(refData);
-	let globalRefLocs: Location[] = [];
-	globalRefs.forEach(ref => {
-		if (!ref.refLocation || !ref.uri) {
-			return;
-		}
-		globalRefLocs.push({
-			range: {
-				startLineNumber: ref.refLocation.startLineNumber + 1,
-				startColumn: ref.refLocation.startColumn + 1,
-				endLineNumber: ref.refLocation.endLineNumber + 1,
-				endColumn: ref.refLocation.endColumn + 1,
-			},
-			uri: URI.from(ref.uri),
+// TODO/Checkpoint: @Kingy to refine implementation for Project WOW
+export async function provideGlobalReferences(object: any): Promise<any> {
+	const references = object.Data.References;
+	const repoData = object.RepoData;
+	if (!references) {
+		return;
+	}
+
+	let promises = references.map(reference => {
+		let newModel = repoData[reference.RepoID];
+		let repoURI = URIUtils.pathInRepo(newModel.URI, newModel.DefaultBranch, "");
+		return lsp.sendExt(repoURI.toString(), newModel.Language.toLowerCase(), "workspace/xreferences", {
+			query: object.Data.Location.symbol,
+			hints: reference.Hints,
+		}).then(resp => {
+			return resp.result.map(ref => {
+				let loc: lsp.Location = ref.reference;
+				return loc;
+			});
 		});
 	});
 
-	return TPromise.as(new ReferencesModel(globalRefLocs));
+	const allReferences = await Promise.all(promises);
+	return _.flatten(allReferences).map(lsp.toMonacoLocation);
 }
 
-// TODO: @Kingy to implement for Project WOW
-async function fetchGlobalReferences(ref: RefData): Promise<Array<GQL.IRefFields>> {
-	return [];
+// TODO/Checkpoint: @Kingy to refine implementation for Project WOW
+export async function fetchDependencyReferencesReferences(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<any> {
+	let refModelQuery =
+		`repository(uri: "${model.uri.authority}${model.uri.path}") {
+			commit(rev: "${model.uri.query}") {
+				commit {
+					file(path: "${model.uri.fragment}") {
+						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.line}, Character: ${pos.character}) {
+							data
+						}
+					}
+				}
+			}
+		}`;
+
+	const query =
+		`query {
+			root {
+				${refModelQuery}
+			}
+		}`;
+
+	let data = await fetchGraphQLQuery(query);
+	if (!data.root.repository || !data.root.repository.commit.commit || !data.root.repository.commit.commit.file ||
+		!data.root.repository.commit.commit.file.dependencyReferences || !data.root.repository.commit.commit.file.dependencyReferences.data.length) {
+		return null;
+	}
+	let object = JSON.parse(data.root.repository.commit.commit.file.dependencyReferences.data);
+	return object;
 }

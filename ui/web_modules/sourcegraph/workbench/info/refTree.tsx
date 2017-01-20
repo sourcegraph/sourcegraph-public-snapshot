@@ -1,6 +1,10 @@
 import * as React from "react";
+import { CountBadge } from "vs/base/browser/ui/countBadge/countBadge";
+import { FileLabel } from "vs/base/browser/ui/iconLabel/iconLabel";
+import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
+import * as nls from "vs/nls";
 import { IEditorService } from "vs/platform/editor/common/editor";
 
 import { getEditorInstance } from "sourcegraph/editor/Editor";
@@ -10,7 +14,7 @@ import { Disposables } from "sourcegraph/workbench/utils";
 import { Location } from "vs/editor/common/modes";
 
 import * as autobind from "autobind-decorator";
-import { $ } from "vs/base/browser/builder";
+import { $, Builder } from "vs/base/browser/builder";
 import * as strings from "vs/base/common/strings";
 import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 import { Controller } from "vs/editor/contrib/referenceSearch/browser/referencesWidget";
@@ -137,7 +141,10 @@ class Renderer extends LegacyRenderer {
 	public getHeight(tree: ITree, element: any): number {
 		if (element instanceof OneReference) {
 			return 100;
+		} else if (element instanceof FileReferences) {
+			return 50;
 		}
+
 		return 0;
 	}
 
@@ -146,14 +153,48 @@ class Renderer extends LegacyRenderer {
 	protected render(tree: ITree, element: FileReferences | OneReference, container: HTMLElement): IElementCallback | any {
 		dom.clearNode(container);
 
+		if (element instanceof FileReferences || element instanceof FileReferences) {
+			const fileReferencesContainer: Builder = $(".reference-file");
+			// tslint:disable
+			let workspaceURI = URI.from({
+				scheme: element.uri.scheme,
+				authority: element.uri.authority,
+				path: element.uri.path,
+				query: element.uri.query,
+				fragment: element.uri.path,
+			});
+			new LeftRightWidget(fileReferencesContainer, (left: HTMLElement) => {
+				new FileLabel(left, workspaceURI, this._contextService);
+				return null as any;
+
+			}, (right: HTMLElement) => {
+
+				const len = element.children.length;
+				const badge = new CountBadge(right, len);
+
+				if (element.failure) {
+					badge.setTitleFormat("Failed to resolve file.");
+				} else if (len > 1) {
+					badge.setTitleFormat(nls.localize('referencesCount', "{0} references", len));
+				} else {
+					badge.setTitleFormat(nls.localize('referenceCount', "{0} reference", len));
+				}
+
+				return badge as any;
+			});
+
+			fileReferencesContainer.appendTo(container);
+		}
+
 		if (element instanceof OneReference) {
-			const preview = element.parent.preview.preview(element.range);
+			const preview = element.preview.preview(element.range);
 			if (element.info && element.info.hunk.author && element.info.hunk.author.person) {
 				let imgURL = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
 				let gravatarHash = element.info.hunk.author.person.gravatarHash;
 				if (gravatarHash) {
 					imgURL = `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro`;
 				}
+
 				$(".sidebar-references").innerHtml(
 					strings.format(
 						`<div class="code-content">
@@ -188,6 +229,8 @@ class Renderer extends LegacyRenderer {
 						element.info.loc.uri.fragment,
 						element.info.loc.range.startLineNumber)).appendTo(container);
 			} else {
+				let fragment = element.uri.fragment;
+				let line = element.range.startLineNumber;
 				$(".sidebar-references").innerHtml(
 					strings.format(
 						`<div class="code-content">
@@ -201,14 +244,55 @@ class Renderer extends LegacyRenderer {
 								<code>
 									{2}
 								</code>
+								<div class="author-details">
+									<div class="name">Blame Data Coming Soon...</div>
+								</div>
+								<div class="file-details">
+									{3}: Line
+									{4}
+								</div>
+							</div>
+							<div class="divider-container">
+								<div class="divider"/>
 							</div>
 						</div>`,
 						strings.escape(preview.before),
 						strings.escape(preview.inside),
-						strings.escape(preview.after))).appendTo(container);
+						strings.escape(preview.after),
+						fragment,
+						line)).appendTo(container);
 			}
 		}
 
 		return null;
+	}
+}
+
+export interface IRenderer {
+	(container: HTMLElement): IDisposable;
+}
+
+export class LeftRightWidget {
+
+	private $el: Builder;
+	private toDispose: IDisposable[];
+
+	constructor(container: Builder, renderLeftFn: IRenderer, renderRightFn: IRenderer);
+	constructor(container: HTMLElement, renderLeftFn: IRenderer, renderRightFn: IRenderer);
+	constructor(container: any, renderLeftFn: IRenderer, renderRightFn: IRenderer) {
+		this.$el = $(".monaco-left-right-widget").appendTo(container);
+		this.$el.padding("13px");
+
+		this.toDispose = [
+			renderRightFn($(".right").appendTo(this.$el).getHTMLElement()),
+			renderLeftFn($("span.left").appendTo(this.$el).getHTMLElement())
+		].filter(x => !!x);
+	}
+
+	public dispose(): void {
+		if (this.$el) {
+			this.$el.destroy();
+			this.$el = null as any;
+		}
 	}
 }

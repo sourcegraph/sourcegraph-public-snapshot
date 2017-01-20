@@ -2,22 +2,12 @@ import { IDisposable } from "vs/base/common/lifecycle";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
-import { IEditorContribution, IModel, IRange } from "vs/editor/common/editorCommon";
+import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 
-import { send } from "sourcegraph/editor/lsp";
 import { Features } from "sourcegraph/util/features";
-import { provideReferences } from "sourcegraph/util/RefsBackend";
+import { DefinitionData, fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
-
-export interface HoverData {
-	definition: {
-		uri: string;
-		range: IRange;
-	};
-	docString: string;
-	funcName: string;
-}
 
 interface Props {
 	editorModel: IModel;
@@ -26,7 +16,6 @@ interface Props {
 			line: number,
 			character: number
 		},
-		textDocument: { uri: string };
 	};
 };
 
@@ -72,49 +61,7 @@ export class ReferenceAction implements IEditorContribution {
 			return;
 		}
 
-		// Load all data for the sidepane in chunks to prevent locking the UI on larger reference / commit fetches.
-		const hoverData: HoverData | null = await this.fetchHoverData(props);
-		if (!hoverData) {
-			return;
-		}
-		infoStore.dispatch({ hoverData });
-
-		let refModel = await resolveLocalReferences(props);
-
-		if (!refModel) {
-			infoStore.dispatch({ refModel: null, hoverData: hoverData });
-			return;
-		}
-
-		// refModel = await provideReferencesCommitInfo(refModel);
-
-		infoStore.dispatch({ hoverData, refModel });
-	}
-
-	private async fetchHoverData(props: Props): Promise<HoverData | null> {
-		const hoverInfo = await send(props.editorModel, "textDocument/hover", props.lspParams);
-		if (!hoverInfo || !hoverInfo.result || !hoverInfo.result.contents) {
-			return null;
-		}
-		const [{value: funcName}, docs] = hoverInfo.result.contents;
-		const docString = docs ? docs.value : "";
-
-		const defResponse = await send(props.editorModel, "textDocument/definition", props.lspParams);
-		if (!defResponse.result || !defResponse.result[0]) {
-			return null;
-		}
-
-		const defFirst = defResponse.result[0];
-		let definition = {
-			uri: defFirst.uri,
-			range: {
-				startLineNumber: defFirst.range.start.line,
-				startColumn: defFirst.range.start.character,
-				endLineNumber: defFirst.range.end.line,
-				endColumn: defFirst.range.end.character,
-			}
-		};
-		return { funcName, docString, definition };
+		renderSidePanelForData(props);
 	}
 
 	private getParamsForMouseEvent(mouseEvent: IEditorMouseEvent): Props | null {
@@ -135,9 +82,6 @@ export class ReferenceAction implements IEditorContribution {
 					line: pos.lineNumber - 1,
 					character: pos.column - 1,
 				},
-				textDocument: {
-					uri: model.uri.toString(true),
-				}
 			}
 		};
 
@@ -145,10 +89,50 @@ export class ReferenceAction implements IEditorContribution {
 	}
 }
 
-async function resolveLocalReferences(props: Props): Promise<ReferencesModel | null> {
+export async function renderSidePanelForData(props: Props): Promise<void> {
+	const defData: DefinitionData | null = await provideDefinition(props.editorModel, props.lspParams.position);
+	if (!defData) {
+		return;
+	}
+	infoStore.dispatch({ defData });
+
 	const referenceInfo = await provideReferences(props.editorModel, props.lspParams.position);
 	if (!referenceInfo || referenceInfo.length === 0) {
-		return null;
+		return;
 	}
-	return new ReferencesModel(referenceInfo);
+
+	let refModel = new ReferencesModel(referenceInfo);
+	if (!refModel) {
+		infoStore.dispatch({ refModel: null, defData: defData });
+		return;
+	}
+
+	// refModel = await provideReferencesCommitInfo(refModel);
+
+	infoStore.dispatch({ defData, refModel });
+
+	const depRefs = await fetchDependencyReferencesReferences(props.editorModel, props.lspParams.position);
+	if (!depRefs) {
+		return;
+	}
+
+	const globalRefsModel = await provideGlobalReferences(depRefs);
+	if (!globalRefsModel) {
+		return;
+	}
+
+	let concatArray = globalRefsModel.concat(referenceInfo);
+	refModel = new ReferencesModel(concatArray);
+
+	if (!refModel) {
+		return;
+	}
+
+	// Now go and fetch all the commit info for the new refs that we just got!
+	// refModel = await provideReferencesCommitInfo(refModel);
+	// if (!refModel) {
+	// 	return;
+	// }
+
+	infoStore.dispatch({ defData, refModel });
 }

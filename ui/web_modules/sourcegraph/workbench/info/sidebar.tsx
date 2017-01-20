@@ -2,13 +2,12 @@ import * as autobind from "autobind-decorator";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
-import URI from "vs/base/common/uri";
 import { Location } from "vs/editor/common/modes";
 
 import { FlexContainer, Loader } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Zondicons";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
-import { HoverData } from "sourcegraph/workbench/info/action";
+import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
 import { sidebarWidth } from "sourcegraph/workbench/info/preview";
@@ -81,7 +80,7 @@ interface State {
 }
 
 export interface Props {
-	hoverData: HoverData;
+	defData: DefinitionData;
 	refModel?: ReferencesModel | null;
 };
 
@@ -120,11 +119,11 @@ class InfoPanel extends React.Component<Props, State> {
 		});
 	}
 
-	private sidebarFunctionHeader(hoverData: HoverData): JSX.Element {
+	private sidebarFunctionHeader(defData: DefinitionData): JSX.Element {
 		return (
 			<div>
 				<FlexContainer style={{ backgroundColor: "#1893e7", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.16)" }}>
-					<code style={Object.assign({ color: "white", paddingLeft: whitespace[3], paddingTop: whitespace[3], paddingBottom: whitespace[3], paddingRight: whitespace[2] }, typography[3])}>{hoverData.funcName}</code>
+					<code style={Object.assign({ color: "white", paddingLeft: whitespace[3], paddingTop: whitespace[3], paddingBottom: whitespace[3], paddingRight: whitespace[2] }, typography[3])}>{defData.funcName}</code>
 					<span onClick={() => infoStore.dispatch(null)} style={{ cursor: "pointer", marginLeft: "auto", paddingRight: whitespace[3], paddingTop: whitespace[3], }}>
 						<Close width={12} color={colors.blueGrayD1(0.5)} />
 					</span>
@@ -134,13 +133,12 @@ class InfoPanel extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		const { hoverData, refModel } = this.props;
-		const uri = URI.parse(hoverData.definition.uri);
+		const { defData, refModel } = this.props;
 		return <div>
 			<div style={style}>
-				{this.sidebarFunctionHeader(hoverData)}
+				{this.sidebarFunctionHeader(defData)}
 				<DefinitionDocumentationHeader
-					hoverData={hoverData} />
+					defData={defData} />
 				<div style={{ paddingTop: whitespace[2] }}>
 					<div style={{ width: "100%", height: "1px", backgroundColor: "rgba(201, 211, 227, 0.3)" }} />
 				</div>
@@ -163,34 +161,6 @@ class InfoPanel extends React.Component<Props, State> {
 				<div style={{ paddingTop: whitespace[2] }}>
 					<div style={{ width: "100%", height: "1px", backgroundColor: "rgba(201, 211, 227, 0.3)" }} />
 				</div>
-				<FlexContainer justify="between" items="center" style={{ height: 35, padding: whitespace[2] }}>
-					<span style={Object.assign({},
-						{
-							marginTop: "10px",
-							fontSize: "11px",
-							fontWeight: "bold",
-							fontStyle: "normal",
-							fontStretch: "normal",
-							color: colors.blueGray(),
-						},
-						typography[1])}>
-						{uri.path}
-					</span>
-					<div style={Object.assign({
-						marginTop: 8,
-						width: 50,
-						height: 22,
-						backgroundColor: "#00bfa5",
-						borderRadius: "3px",
-						textAlign: "center",
-						color: "white",
-					})}>
-						Local
-					</div>
-				</FlexContainer>
-				<div style={{ paddingTop: whitespace[2] }}>
-					<div style={{ width: "100%", height: "1px", backgroundColor: "rgba(201, 211, 227, 0.3)" }} />
-				</div>
 				{refModel === undefined && <div style={{ textAlign: "center" }}><Loader /></div>}
 				{refModel === null && <div style={{ textAlign: "center" }}>No references</div>}
 				{refModel && <RefTree
@@ -202,7 +172,6 @@ class InfoPanel extends React.Component<Props, State> {
 				hidePreview={this.refsFocused} />
 		</div>;
 	}
-
 }
 
 export const infoStore = new MiniStore<Props | null>();

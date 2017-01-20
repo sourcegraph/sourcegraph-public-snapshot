@@ -8,11 +8,11 @@ import { urlToBlobLine } from "sourcegraph/blob/routes";
 import { FlexContainer } from "sourcegraph/components";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import { HoverData } from "sourcegraph/workbench/info/action";
+import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { RouterContext } from "sourcegraph/workbench/utils";
 
 interface Props {
-	hoverData: HoverData;
+	defData: DefinitionData;
 }
 
 interface State {
@@ -38,12 +38,12 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 	}
 
 	render(): JSX.Element | null {
-		const { hoverData } = this.props;
-		const uri = URI.parse(hoverData.definition.uri);
+		const { defData } = this.props;
+		const uri = URI.parse(defData.definition.uri);
 		const {repo, rev, path} = URIUtils.repoParams(uri);
-		const line = hoverData.definition.range.startLineNumber;
+		const line = defData.definition.range.startLineNumber;
 		const url = urlToBlobLine(repo, rev, path, line);
-		const fullDocString = marked(hoverData.docString, { sanitize: true });
+		const fullDocString = marked(defData.docString, { sanitize: true });
 		let renderedDocString = fullDocString;
 		if (fullDocString.length >= DocStringLength) {
 			if (this.state.showingFullDocString) {
