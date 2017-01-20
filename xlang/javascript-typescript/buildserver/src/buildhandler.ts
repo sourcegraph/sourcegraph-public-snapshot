@@ -14,6 +14,7 @@ import {
 	Hover,
 	DocumentSymbolParams,
 	SymbolInformation,
+	CompletionList,
 	DidOpenTextDocumentParams,
 	DidCloseTextDocumentParams,
 	DidChangeTextDocumentParams,
@@ -251,6 +252,10 @@ export class BuildHandler implements LanguageHandler {
 				await this.rewriteURIs(result[k]);
 			}
 		}
+	}
+
+	async getCompletions(params: TextDocumentPositionParams): Promise<CompletionList> {
+		return this.ls.getCompletions(params);
 	}
 
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
