@@ -109,7 +109,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) 
 }
 
 func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "globalDeps.refreshIndexForLanguage "+language)
+	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -217,7 +217,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 
 // updateGlobalDep updates the global_dep table.
 func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "globalDeps.update "+language)
+	span, ctx := opentracing.StartSpanFromContext(ctx, "updateGlobalDep "+language)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

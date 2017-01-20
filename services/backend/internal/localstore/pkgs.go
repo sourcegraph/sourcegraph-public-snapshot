@@ -135,7 +135,7 @@ func (p *dbPkgs) get(ctx context.Context, db dbQueryer, whereSQL string, args ..
 }
 
 func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, language string, pkgs []lspext.PackageInformation) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "updatePkg "+language)
+	span, ctx := opentracing.StartSpanFromContext(ctx, "dbPkgs.update "+language)
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -209,7 +209,7 @@ func (p *dbPkgs) update(ctx context.Context, tx *sql.Tx, indexRepo int32, langua
 }
 
 func (p *dbPkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.ListPackages")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "dbPkgs.ListPackages")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
