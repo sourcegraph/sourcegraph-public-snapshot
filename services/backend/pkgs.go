@@ -11,6 +11,21 @@ var Pkgs = &pkgs{}
 
 type pkgs struct{}
 
+func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
+	if Mocks.Pkgs.UnsafeRefreshIndex != nil {
+		return Mocks.Pkgs.UnsafeRefreshIndex(ctx, op)
+	}
+
+	ctx, done := trace(ctx, "Pkgs", "UnsafeRefreshIndex", op, &err)
+	defer done()
+
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{op.RepoID, op.CommitID})
+	if err != nil {
+		return err
+	}
+	return localstore.Pkgs.UnsafeRefreshIndex(ctx, op, inv.Languages)
+}
+
 func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
 	if Mocks.Pkgs.ListPackages != nil {
 		return Mocks.Pkgs.ListPackages(ctx, op)
@@ -19,5 +34,6 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 }
 
 type MockPkgs struct {
-	ListPackages func(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error)
+	UnsafeRefreshIndex func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
+	ListPackages       func(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error)
 }

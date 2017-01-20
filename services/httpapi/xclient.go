@@ -35,6 +35,9 @@ type xclient struct {
 // then that means the definition did not exist locally. The method will locate the definition in an
 // external repository and return that to the client as if it came from a single
 // `textDocument/definition` call.
+//
+// SECURITY NOTE: Call also verifies permissions for cross-repo jumps. Any changes to this method
+// should preserve this property.
 func (c *xclient) Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "xclient.Call")
 	defer func() {
@@ -92,6 +95,8 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 				return errors.Wrap(err, "extract repo URL from symbol metadata")
 			}
 			repoURI := string(repoInfo.RepoHost) + "/" + repoInfo.FullName
+			// SECURITY NOTE: The LSP proxy DOES NOT check permissions, so this line is a necessary
+			// security check
 			repo, err := backend.Repos.GetByURI(ctx, repoURI)
 			if err != nil {
 				return errors.Wrap(err, "extract repo URL from symbol metadata")
