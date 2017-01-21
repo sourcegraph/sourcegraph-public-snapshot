@@ -627,7 +627,12 @@
 :global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function .file-details {
 	padding-top: 10px;
 	color: #5d7eac;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	direction: rtl;
+	text-align: left;
 }
+
 :global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .divider-container {
 	padding-top: 10px;
 	width: 100%;

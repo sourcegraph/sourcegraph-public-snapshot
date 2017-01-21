@@ -216,9 +216,7 @@ class Renderer extends LegacyRenderer {
 							<div class="function">
 								<code>{0}</code><code>{1}</code><code>{2}</code>
 								{3}
-								<div class="file-details">
-									{4}: Line
-									{5}
+								<div class="file-details">{4} - Line: {5}
 								</div>
 							</div>
 							<div class="divider-container">
