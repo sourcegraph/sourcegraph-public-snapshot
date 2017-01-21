@@ -141,7 +141,7 @@
 }
 
 :global .vs-dark .monaco-tree .focused,
-:global .vs-dark .monaco-tree .seleced {
+:global .vs-dark .monaco-tree .selected {
 	background-color: c_blue_text !important;
 	color: white;
 	font-weight: bold;
@@ -501,6 +501,11 @@
 	background-color: c_cool_gray_2;
 	height: 24px !important;
 	min-width: 120px;
+}
+
+:global .monaco-workbench-container {
+	/* Default position:absolute causes https://github.com/sourcegraph/sourcegraph/issues/3277. */
+	position: fixed !important;
 }
 
 :global .monaco-workbench > .part > .composite.title {
