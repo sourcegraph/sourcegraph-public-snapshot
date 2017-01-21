@@ -4,12 +4,12 @@ import { Link } from "react-router";
 import { marked } from "vs/base/common/marked/marked";
 import URI from "vs/base/common/uri";
 
-import { urlToBlobLine } from "sourcegraph/blob/routes";
+import { urlToBlobLineCol } from "sourcegraph/blob/routes";
 import { FlexContainer } from "sourcegraph/components";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
-import { RouterContext } from "sourcegraph/workbench/utils";
+import { RouterContext, prettifyRev } from "sourcegraph/workbench/utils";
 
 interface Props {
 	defData: DefinitionData;
@@ -40,9 +40,10 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 	render(): JSX.Element | null {
 		const { defData } = this.props;
 		const uri = URI.parse(defData.definition.uri);
-		const {repo, rev, path} = URIUtils.repoParams(uri);
-		const line = defData.definition.range.startLineNumber;
-		const url = urlToBlobLine(repo, rev, path, line);
+		let {repo, rev, path} = URIUtils.repoParams(uri);
+		rev = prettifyRev(rev);
+		const {startLineNumber, startColumn} = defData.definition.range;
+		const url = urlToBlobLineCol(repo, rev, path, startLineNumber + 1, startColumn + 1);
 		const fullDocString = marked(defData.docString, { sanitize: true });
 		let renderedDocString = fullDocString;
 		if (fullDocString.length >= DocStringLength) {

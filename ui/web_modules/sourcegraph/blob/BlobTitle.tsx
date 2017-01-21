@@ -9,6 +9,7 @@ import { FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { Features } from "sourcegraph/util/features";
 import { getPathExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
+import { prettifyRev } from "sourcegraph/workbench/utils";
 
 interface Props {
 	repo: string;
@@ -45,7 +46,7 @@ function convertToGitHubLineNumber(hash: string): string {
 class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
 	render(): JSX.Element {
 		const {repo, path, toggleAuthors, toast } = this.props;
-		let rev = this.props.rev;
+		let rev = prettifyRev(this.props.rev);
 		if (rev === null) {
 			if (this.props.root.repository) {
 				rev = this.props.root.repository.defaultBranch;

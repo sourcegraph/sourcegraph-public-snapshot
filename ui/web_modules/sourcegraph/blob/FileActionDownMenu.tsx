@@ -12,7 +12,7 @@ const openInGitHubKeyCode: number = 71;
 const openInGitHubKey: string = "G";
 
 interface Props {
-	eventProps: { repo: string, rev: string, path: string };
+	eventProps: { repo: string, rev: string | null, path: string };
 	githubURL: string;
 	editorURL: string;
 }
