@@ -1,3 +1,5 @@
+import { Position } from "vscode-languageserver-types";
+
 import { IPosition, IRange } from "vs/editor/common/editorCommon";
 
 // RangeOrPosition represents a range or position.
@@ -35,7 +37,7 @@ export class RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.lineNumber, r.column);
 	}
 
-	static fromLSPPosition(r: { line: number, character: number }): RangeOrPosition {
+	static fromLSPPosition(r: Position): RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.line + 1, r.character + 1);
 	}
 

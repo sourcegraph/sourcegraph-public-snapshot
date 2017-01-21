@@ -68,7 +68,8 @@
     "react-router": "3.0.0",
     "react-router-scroll": "0.4.1",
     "string_score": "0.1.22",
-    "url": "0.11.0"
+    "url": "0.11.0",
+    "vscode-languageserver-types": "^1.0.4"
   },
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",

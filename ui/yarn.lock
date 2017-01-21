@@ -5739,6 +5739,10 @@ vm-browserify@0.0.4, vm-browserify@^0.0.4, vm-browserify@~0.0.1:
   dependencies:
     indexof "0.0.1"
 
+vscode-languageserver-types@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-1.0.4.tgz#439a52f040c89cf6599d88ed9a1b5a9abdca11b7"
+
 warning@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/warning/-/warning-3.0.0.tgz#32e5377cb572de4ab04753bdf8821c01ed605b7c"

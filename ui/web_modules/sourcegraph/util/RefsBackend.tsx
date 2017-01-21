@@ -1,6 +1,9 @@
+import { Definition, Hover, Position } from "vscode-languageserver-types";
+
 import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -32,47 +35,79 @@ export interface ReferenceCommitInfo {
 	hunk: GQL.IHunk;
 }
 
-export async function provideDefinition(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<DefinitionData | null> {
-	const hoverInfoP = lsp.send(model, "textDocument/hover", {
+function cacheKey(model: IReadOnlyModel, pos: Position): string {
+	const word = model.getWordAtPosition(RangeOrPosition.fromLSPPosition(pos).toMonacoPosition());
+	return `${model.uri.toString(true)}:${pos.line}:${word.startColumn}:${word.endColumn}`;
+}
+
+const hoverCache = new Map<string, Promise<Hover>>();
+const defCache = new Map<string, Promise<Definition>>();
+const referencesCache = new Map<string, Promise<Location[]>>();
+
+export async function provideDefinition(model: IReadOnlyModel, pos: Position): Promise<DefinitionData | null> {
+	const key = cacheKey(model, pos);
+
+	const hoverCacheHit = hoverCache.get(key);
+	const hoverInfoP = hoverCacheHit ? hoverCacheHit : lsp.send(model, "textDocument/hover", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
+	}).then(resp => {
+		if (resp.result) {
+			hoverCache.set(key, hoverInfoP);
+		}
+		return resp.result as Hover;
 	});
 
-	const defResponseP = lsp.send(model, "textDocument/definition", {
+	const defCacheHit = defCache.get(key);
+	const defResponseP = defCacheHit ? defCacheHit : lsp.send(model, "textDocument/definition", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
+	}).then(resp => {
+		if (resp.result) {
+			defCache.set(key, defResponseP);
+		}
+		return resp.result as Definition;
 	});
 
 	const hoverInfo = await hoverInfoP;
 	const defResponse = await defResponseP;
 
-	if (!hoverInfo || !hoverInfo.result || !hoverInfo.result.contents) {
-		return null;
-	}
-	const [{value: funcName}, docs] = hoverInfo.result.contents;
-	const docString = docs ? docs.value : "";
-
-	if (!defResponse.result || !defResponse.result[0]) {
+	if (!hoverInfo || !hoverInfo.contents || !defResponse || !defResponse[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
 		return null;
 	}
 
-	const defFirst = defResponse.result[0];
+	let docString: string;
+	let funcName: string;
+	if (hoverInfo.contents instanceof Array) {
+		const [first, second] = hoverInfo.contents;
+		// TODO(nico): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
+		funcName = first instanceof String ? first : first.value;
+		docString = second ? (second instanceof String ? second : second.value) : "";
+	} else {
+		funcName = hoverInfo.contents instanceof String ? hoverInfo.contents : hoverInfo.contents.value;
+		docString = "";
+	}
+
+	const firstDef = defResponse[0]; // TODO: handle disambiguating multiple declarations
 	let definition = {
-		uri: defFirst.uri,
+		uri: firstDef.uri,
 		range: {
-			startLineNumber: defFirst.range.start.line,
-			startColumn: defFirst.range.start.character,
-			endLineNumber: defFirst.range.end.line,
-			endColumn: defFirst.range.end.character,
+			startLineNumber: firstDef.range.start.line,
+			startColumn: firstDef.range.start.character,
+			endLineNumber: firstDef.range.end.line,
+			endColumn: firstDef.range.end.character,
 		}
 	};
 	return { funcName, docString, definition };
 }
 
-export async function provideReferences(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<Location[]> {
-	return lsp.send(model, "textDocument/references", {
+export async function provideReferences(model: IReadOnlyModel, pos: Position): Promise<Location[]> {
+	const key = cacheKey(model, pos);
+
+	const referencesCacheHit = referencesCache.get(key);
+	const referencesPromise = referencesCacheHit ? referencesCacheHit : lsp.send(model, "textDocument/references", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
@@ -82,6 +117,7 @@ export async function provideReferences(model: IReadOnlyModel, pos: { line: numb
 			if (!resp || Object.keys(resp).length === 0) {
 				return null;
 			}
+			referencesCache.set(key, referencesPromise);
 
 			const {repo, rev, path} = URIUtils.repoParams(model.uri);
 			AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
@@ -89,6 +125,8 @@ export async function provideReferences(model: IReadOnlyModel, pos: { line: numb
 			const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 			return locs.map(lsp.toMonacoLocation);
 		});
+
+	return referencesPromise;
 }
 
 export async function provideReferencesCommitInfo(referencesModel: ReferencesModel): Promise<ReferencesModel> {
