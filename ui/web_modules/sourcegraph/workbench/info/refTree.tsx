@@ -121,6 +121,7 @@ export class RefTree extends React.Component<Props, State> {
 		return <div style={{
 			zIndex: 1,
 			flex: "1 1 100%",
+			height: "100%", // Necessary for Safari to render the child element at 100% height.
 		}} ref={this.treeDiv}>
 
 		</div>;
