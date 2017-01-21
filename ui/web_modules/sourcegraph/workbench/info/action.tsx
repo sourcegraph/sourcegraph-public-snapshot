@@ -5,7 +5,7 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 
 import { Features } from "sourcegraph/util/features";
-import { DefinitionData, fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
+import { fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
@@ -90,13 +90,15 @@ export class ReferenceAction implements IEditorContribution {
 }
 
 export async function renderSidePanelForData(props: Props): Promise<void> {
-	const defData: DefinitionData | null = await provideDefinition(props.editorModel, props.lspParams.position);
+	const defDataP = provideDefinition(props.editorModel, props.lspParams.position);
+	const referenceInfoP = provideReferences(props.editorModel, props.lspParams.position);
+	const defData = await defDataP;
 	if (!defData) {
 		return;
 	}
 	infoStore.dispatch({ defData });
 
-	const referenceInfo = await provideReferences(props.editorModel, props.lspParams.position);
+	const referenceInfo = await referenceInfoP;
 	if (!referenceInfo || referenceInfo.length === 0) {
 		return;
 	}

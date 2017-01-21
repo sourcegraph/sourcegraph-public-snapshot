@@ -33,23 +33,26 @@ export interface ReferenceCommitInfo {
 }
 
 export async function provideDefinition(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<DefinitionData | null> {
-	const hoverInfo = await lsp.send(model, "textDocument/hover", {
+	const hoverInfoP = lsp.send(model, "textDocument/hover", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
 	});
+
+	const defResponseP = lsp.send(model, "textDocument/definition", {
+		textDocument: { uri: model.uri.toString(true) },
+		position: pos,
+		context: { includeDeclaration: false },
+	});
+
+	const hoverInfo = await hoverInfoP;
+	const defResponse = await defResponseP;
 
 	if (!hoverInfo || !hoverInfo.result || !hoverInfo.result.contents) {
 		return null;
 	}
 	const [{value: funcName}, docs] = hoverInfo.result.contents;
 	const docString = docs ? docs.value : "";
-
-	const defResponse = await lsp.send(model, "textDocument/definition", {
-		textDocument: { uri: model.uri.toString(true) },
-		position: pos,
-		context: { includeDeclaration: false },
-	});
 
 	if (!defResponse.result || !defResponse.result[0]) {
 		return null;

@@ -108,7 +108,7 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	private updateTree(model: ReferencesModel): void {
-		if (this.tree) {
+		if (this.tree && this.tree.getInput() !== model) {
 			this.tree.setInput(model);
 		}
 	}
@@ -122,6 +122,7 @@ export class RefTree extends React.Component<Props, State> {
 		return <div style={{
 			zIndex: 1,
 			flex: "1 1 100%",
+			height: "100%",
 		}} ref={this.treeDiv}>
 
 		</div>;
