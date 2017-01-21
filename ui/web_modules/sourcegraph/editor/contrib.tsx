@@ -115,7 +115,9 @@ export class HoverProvider implements modes.HoverProvider {
 					}
 				}
 
-				if (!Features.projectWow.isEnabled()) {
+				if (Features.projectWow.isEnabled()) {
+					contents.push("*Click to view references*");
+				} else {
 					contents.push("*Right-click to view references*");
 				}
 				return {
