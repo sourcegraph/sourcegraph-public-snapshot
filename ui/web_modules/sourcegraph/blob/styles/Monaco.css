@@ -141,7 +141,7 @@
 }
 
 :global .vs-dark .monaco-tree .focused,
-:global .vs-dark .monaco-tree .seleced {
+:global .vs-dark .monaco-tree .selected {
 	background-color: c_blue_text !important;
 	color: white;
 	font-weight: bold;
