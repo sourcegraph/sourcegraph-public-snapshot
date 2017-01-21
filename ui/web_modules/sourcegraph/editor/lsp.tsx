@@ -1,5 +1,6 @@
 import { context } from "sourcegraph/app/context";
 import { URIUtils } from "sourcegraph/core/uri";
+import { Features } from "sourcegraph/util/features";
 import { defaultFetch as fetch } from "sourcegraph/util/xhr";
 import URI from "vs/base/common/uri";
 import { Range } from "vs/editor/common/core/range";
@@ -145,9 +146,11 @@ function logLSPResponse(uri: URI, modeID: string, method: string, params: any, r
 		"color:#999;font-weight:normal;font-style:italic",
 		rttMsec
 	);
-	console.debug("LSP request params: %o", params);
-	console.debug("LSP response: %o", resp);
-	console.debug("Trace: %s", traceURL);
+	if (Features.trace.isEnabled()) {
+		console.debug("Trace: %s", traceURL);
+	}
+	console.debug("LSP request params: %O", params);
+	console.debug("LSP response: %O", resp);
 
 	const reproCmd = `curl --data '${JSON.stringify(reqBody).replace(/'/g, "\\'")}' ${window.location.protocol}//${window.location.host}/.api/xlang/${method}`;
 	console.debug("Repro command (public repos only):\n%c%s", "background-color:#333;color:#aaa", reproCmd);
@@ -180,7 +183,7 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
-	console.debug(`Post a GitHub issue\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=lang-${modeID}&labels[]=${encodeURIComponent("Component: xlang")}&labels[]=${encodeURIComponent("Type: Bug")}${assignee ? `&assignee=${assignee}` : ""}`);
+	console.debug(`Copy and send this URL to support@sourcegraph.com to report an issue:\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=lang-${modeID}&labels[]=${encodeURIComponent("Component: xlang")}&labels[]=${encodeURIComponent("Type: Bug")}${assignee ? `&assignee=${assignee}` : ""}`);
 	console.groupEnd();
 
 	// tslint:enable: no-console

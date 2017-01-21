@@ -50,6 +50,9 @@ export const Features = {
 	googleCloudPlatform: new Feature("google-cloud-platform"),
 	projectWow: new Feature("project_wow"),
 
+	// trace is whether to show trace URLs to LightStep in console log messages.
+	trace: new Feature("trace"),
+
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),
 	actionLogDebug: new Feature("action-log-debug").disableBeta(),
