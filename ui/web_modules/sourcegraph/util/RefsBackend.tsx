@@ -48,49 +48,49 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 	const key = cacheKey(model, pos);
 
 	const hoverCacheHit = hoverCache.get(key);
-	const hoverInfoP = hoverCacheHit ? hoverCacheHit : lsp.send(model, "textDocument/hover", {
+	const hoverPromise = hoverCacheHit ? hoverCacheHit : lsp.send(model, "textDocument/hover", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
 	}).then(resp => {
 		if (resp.result) {
-			hoverCache.set(key, hoverInfoP);
+			hoverCache.set(key, hoverPromise);
 		}
 		return resp.result as Hover;
 	});
 
 	const defCacheHit = defCache.get(key);
-	const defResponseP = defCacheHit ? defCacheHit : lsp.send(model, "textDocument/definition", {
+	const defPromise = defCacheHit ? defCacheHit : lsp.send(model, "textDocument/definition", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
 	}).then(resp => {
 		if (resp.result) {
-			defCache.set(key, defResponseP);
+			defCache.set(key, defPromise);
 		}
 		return resp.result as Definition;
 	});
 
-	const hoverInfo = await hoverInfoP;
-	const defResponse = await defResponseP;
+	const hover = await hoverPromise;
+	const def = await defPromise;
 
-	if (!hoverInfo || !hoverInfo.contents || !defResponse || !defResponse[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
+	if (!hover || !hover.contents || !def || !def[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
 		return null;
 	}
 
 	let docString: string;
 	let funcName: string;
-	if (hoverInfo.contents instanceof Array) {
-		const [first, second] = hoverInfo.contents;
+	if (hover.contents instanceof Array) {
+		const [first, second] = hover.contents;
 		// TODO(nico): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
 		funcName = first instanceof String ? first : first.value;
 		docString = second ? (second instanceof String ? second : second.value) : "";
 	} else {
-		funcName = hoverInfo.contents instanceof String ? hoverInfo.contents : hoverInfo.contents.value;
+		funcName = hover.contents instanceof String ? hover.contents : hover.contents.value;
 		docString = "";
 	}
 
-	const firstDef = defResponse[0]; // TODO: handle disambiguating multiple declarations
+	const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
 	let definition = {
 		uri: firstDef.uri,
 		range: {
