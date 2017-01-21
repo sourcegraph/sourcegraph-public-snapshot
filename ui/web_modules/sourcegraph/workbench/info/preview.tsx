@@ -30,30 +30,34 @@ export class Preview extends React.Component<Props, {}> {
 		if (!this.props.location) {
 			return <div></div>;
 		}
-		let element = document.getElementById(REFERENCES_SECTION_ID);
+
+		const globalNav = document.getElementById("global-nav");
+		const globalNavHeight = globalNav && globalNav.getBoundingClientRect() ? globalNav.getBoundingClientRect().height : 41;
+
+		const element = document.getElementById(REFERENCES_SECTION_ID);
 		let boundingRect;
 		if (element) {
 			boundingRect = element.getBoundingClientRect();
 		}
-		let top = (boundingRect as any).top - 40;
+		const top = (boundingRect as any).top - globalNavHeight;
 		return <div style={{
 			height: "100%",
 			position: "absolute",
 			width: "100%",
-			bottom: "0px",
+			bottom: 0,
 		}}>
-			<div style={{
-				height: `${top}px`,
-				background: "rgba(20, 20, 20, 0.46)",
-				zIndex: 1,
-			}}
-				onClick={this.props.hidePreview}
-				></div>
+			<div onClick={this.props.hidePreview} style={{
+				background: colors.black(0.45),
+				boxShadow: `inset 3px -2px 10px 0 ${colors.black(0.3)}`,
+				height: top,
+				position: "relative",
+				zIndex: 2
+			}}></div>
 			<div style={{
 				width: `calc(100% - ${sidebarWidth}px)`,
 				height: `calc(100% - ${top}px)`,
 				position: "absolute",
-				bottom: "0px",
+				bottom: 0,
 			}}>
 				<Title location={this.props.location} />
 				<EditorPreview location={this.props.location} />
@@ -78,9 +82,7 @@ function Title(props: EditorProps): JSX.Element {
 		<RouterContext>
 			<Link
 				to={url}
-				style={{
-					color: colors.white()
-				}}>
+				style={{ color: colors.white() }}>
 				{repo}/{path}
 			</Link>
 		</RouterContext>

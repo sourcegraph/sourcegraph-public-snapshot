@@ -65,7 +65,9 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 				boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
 				height: layout.editorToolbarHeight,
 				padding: `${whitespace[2]} ${whitespace[3]}`,
+				position: "relative",
 				width: "100%",
+				zIndex: 3,
 			}}>
 				<div>
 					<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>

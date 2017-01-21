@@ -53,7 +53,15 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 		// if commitSelected === commits[0] (the latest commit)
 		let commitOffset: Array<GQL.ICommitInfo> = this.props.rev !== commits[0].rev ? commits : repository.commit.commit.file.commits.slice(1);
 
-		return <Popover left={true} pointer={false} popoverStyle={{
+		const dropdownClickHandler = visible => {
+			if (visible) {
+				AnalyticsConstants.Events.CommitInfo_Initiated.logEvent(eventProps);
+			} else {
+				AnalyticsConstants.Events.CommitInfo_Dismissed.logEvent(eventProps);
+			}
+		};
+
+		const dropdownSx = {
 			zIndex: 1,
 			display: "block",
 			left: 0,
@@ -61,29 +69,39 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 			boxShadow: `${colors.black(0.3)} 0 1px 6px 0px`,
 			borderRadius: 0,
 			width: "100%",
-		}} onClick={(visible) => {
-			if (visible) {
-				AnalyticsConstants.Events.CommitInfo_Initiated.logEvent(eventProps);
-			} else {
-				AnalyticsConstants.Events.CommitInfo_Dismissed.logEvent(eventProps);
+		};
+
+		const dropdownHeight = commitOffset.length > 5 ? layout.editorCommitInfoBarHeight * 5 : layout.editorCommitInfoBarHeight * commitOffset.length;
+
+		const commitList = commitOffset.map(commit => {
+			function commitClickHandler(): void {
+				AnalyticsConstants.Events.CommitInfoItem_Selected.logEvent(Object.assign(
+					{ selectedRev: commit.rev },
+					eventProps
+				));
 			}
-		} }>
-			<Commit commit={commitSelected} showChevron={true} hover={false} style={{ boxShadow: `${colors.black(0.3)} 0 1px 6px 0px` }} />
-			<div style={{
-				height: commitOffset.length > 5 ? layout.editorCommitInfoBarHeight * 5 : layout.editorCommitInfoBarHeight * commitOffset.length,
-				overflow: "auto",
-			}}>
-				{commitOffset.map(commit => {
-					return <Link
-						key={`${commit.rev}${commit.message}`}
-						style={{ width: "100%" }}
-						role="menu_item"
-						to={this.revSwitcherURL(commit.rev)}
-						onClick={(event) => AnalyticsConstants.Events.CommitInfoItem_Selected.logEvent(Object.assign({ selectedRev: commit.rev }, eventProps))}>
-						<Commit commit={commit} selected={commitSelected.rev === commit.rev} />
-					</Link>;
-				})}
-			</div>
+			return <Link
+				key={`${commit.rev}${commit.message}`}
+				style={{ width: "100%" }}
+				role="menu_item"
+				to={this.revSwitcherURL(commit.rev)}
+				onClick={commitClickHandler}>
+				<Commit commit={commit} selected={commitSelected.rev === commit.rev} />
+			</Link>;
+		});
+
+		return <Popover
+			left={true}
+			pointer={false}
+			popoverStyle={dropdownSx}
+			onClick={dropdownClickHandler}
+			style={{ zIndex: 1 }}>
+			<Commit
+				commit={commitSelected}
+				showChevron={true}
+				hover={false}
+				style={{ boxShadow: `${colors.black(0.3)} 0 1px 6px 0px` }} />
+			<div style={{ height: dropdownHeight, overflow: "auto" }}>{commitList}</div>
 		</Popover>;
 	}
 };
