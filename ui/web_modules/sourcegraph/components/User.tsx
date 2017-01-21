@@ -27,8 +27,8 @@ export function User(props: Props): JSX.Element {
 
 	return <div style={style}>
 		<FlexContainer items="center">
-			<div style={{ marginRight: simple ? whitespace[1] : whitespace[3], float: "left", lineHeight: 0 }}>
-				<Avatar img={avatar} size={simple ? "tiny" : "medium"} style={{ marginRight: 2 }} />
+			<div style={{ marginRight: simple ? whitespace[2] : whitespace[3], float: "left", lineHeight: 0 }}>
+				<Avatar img={avatar} size={simple ? "tiny" : "large"} style={{ marginRight: 2 }} />
 			</div>
 			<div>
 				<div style={{ lineHeight: "19px" }}>{nickname}</div>

@@ -32,17 +32,17 @@ export class FeatureCarousel extends React.Component<Props, State> {
 			}}>
 				<SliderNavItem
 					title="View all references"
-					subtitle="Quickly understand forward and backward dependencies"
+					subtitle="See everywhere a function or package is used, and who's using it."
 					active={this.state.active === 0}
 					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 0 }); }} />
 				<SliderNavItem
 					title="Peek definition"
-					subtitle="Grok what code is doing without losing context"
+					subtitle="Grok what code is doing without losing context."
 					active={this.state.active === 1}
 					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 1 }); }} />
 				<SliderNavItem
 					title="Search by symbol"
-					subtitle="Jump to and search for symbols within a repository"
+					subtitle="Quickly jump to a variable or function anywhere in a repository."
 					active={this.state.active === 2}
 					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 2 }); }} />
 			</FlexContainer>
