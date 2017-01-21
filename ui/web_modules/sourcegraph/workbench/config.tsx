@@ -2,6 +2,7 @@ import URI from "vs/base/common/uri";
 import { IModelService } from "vs/editor/common/services/modelService";
 import { IModeService } from "vs/editor/common/services/modeService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
+import { ContextMenuController } from "vs/editor/contrib/contextmenu/browser/contextmenu";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Registry } from "vs/platform/platform";
@@ -15,6 +16,7 @@ import { StorageService } from "vs/workbench/services/storage/common/storageServ
 
 import { layout } from "sourcegraph/components/utils";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
+import { Features } from "sourcegraph/util/features";
 
 // Set the height of files in the file tree explorer.
 (FileRenderer as any).ITEM_HEIGHT = 30;
@@ -46,4 +48,8 @@ export function configurePostStartup(services: ServiceCollection): void {
 		services.get(IModelService) as IModelService,
 		services.get(IModeService) as IModeService,
 	));
+
+	if (Features.projectWow.isEnabled()) {
+		(ContextMenuController.prototype as any)._onContextMenu = () => { /* */ };
+	}
 }
