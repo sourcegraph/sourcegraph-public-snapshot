@@ -670,3 +670,15 @@
 	padding: 4px;
 	border-radius: 3px;
 }
+
+:global .sg-sidebar .monaco-tree > .monaco-scrollable-element {
+	position: absolute !important;
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+}
+
+:global .sg-sidebar .monaco-tree {
+	flex: 1 1 auto;
+}
