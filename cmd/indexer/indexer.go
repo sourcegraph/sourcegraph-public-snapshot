@@ -168,23 +168,29 @@ func index(ctx context.Context, repoName string) error {
 	// NOT index it because that could expose private repository information.
 	// and we do not have a good story for that yet.
 	if !repo.Private {
-		err = backend.Defs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-			RepoURI:  repo.URI,
-			RepoID:   repo.ID,
-			CommitID: string(headCommit),
-		})
-		if err != nil {
-			return fmt.Errorf("Defs.RefreshIndex failed: %s", err)
+		// Do not index forked repositories.
+		if !repo.Fork {
+			err = backend.Defs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+				RepoURI:  repo.URI,
+				RepoID:   repo.ID,
+				CommitID: string(headCommit),
+			})
+			if err != nil {
+				return fmt.Errorf("Defs.RefreshIndex failed: %s", err)
+			}
 		}
 	}
 
 	// Packages indexing
-	if err := backend.Pkgs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-		RepoURI:  repo.URI,
-		RepoID:   repo.ID,
-		CommitID: string(headCommit),
-	}); err != nil {
-		return fmt.Errorf("Pkgs.UnsafeRefreshIndex failed: %s", err)
+	// Do not index forked repositories.
+	if !repo.Fork {
+		if err := backend.Pkgs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+			RepoURI:  repo.URI,
+			RepoID:   repo.ID,
+			CommitID: string(headCommit),
+		}); err != nil {
+			return fmt.Errorf("Pkgs.UnsafeRefreshIndex failed: %s", err)
+		}
 	}
 
 	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
