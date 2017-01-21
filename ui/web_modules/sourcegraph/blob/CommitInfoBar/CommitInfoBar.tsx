@@ -51,7 +51,8 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 
 		// Business Logic: Designs don't want the latest commit to show in the drop down
 		// if commitSelected === commits[0] (the latest commit)
-		let commitOffset: Array<GQL.ICommitInfo> = this.props.rev !== commits[0].rev ? commits : repository.commit.commit.file.commits.slice(1);
+		let commitOffset: Array<GQL.ICommitInfo> = this.props.rev !== commits[0].rev ? commits :
+			repository.commit.commit.file.commits.slice(repository.commit.commit.file.commits.length > 1 ? 1 : 0);
 
 		return <Popover left={true} pointer={false} popoverStyle={{
 			zIndex: 1,
