@@ -8,7 +8,7 @@ import { IModelService } from "vs/editor/common/services/modelService";
 
 import { FlexContainer, Loader } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
-import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { renderSidePanelForData } from "sourcegraph/workbench/info/action";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
@@ -119,9 +119,9 @@ export interface Props {
 
 const style = {
 	position: "absolute",
-	top: 81,
+	top: layout.editorToolbarHeight,
 	background: "white",
-	height: "calc(100% - 81px)",
+	height: `calc(100% - ${layout.editorToolbarHeight}px)`,
 	width: sidebarWidth,
 	right: "0px",
 	overflowY: "hidden",
