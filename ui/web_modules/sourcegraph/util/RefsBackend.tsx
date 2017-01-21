@@ -230,6 +230,9 @@ export async function fetchDependencyReferencesReferences(model: IReadOnlyModel,
 	let currentRepo = _.remove(repos, function (repo: any): boolean {
 		return (repo as any).URI === `${model.uri.authority}${model.uri.path}`;
 	});
+	if (!currentRepo || !currentRepo.length) {
+		return object;
+	}
 
 	_.remove(object.Data.References, function (reference: any): boolean {
 		return reference.RepoID === currentRepo[0].ID;
