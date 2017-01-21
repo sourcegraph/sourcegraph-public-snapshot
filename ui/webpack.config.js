@@ -81,7 +81,7 @@ if (!production && !process.env.WEBPACK_SOURCEMAPS) {
 plugins.push(new webpack.LoaderOptionsPlugin({
 	options: {
 		context: __dirname,
-		postcss: [require("postcss-modules-values"), autoprefixer({remove: false})],
+		postcss: [require("postcss-modules-values"), autoprefixer({ remove: false })],
 	},
 }));
 
@@ -127,17 +127,17 @@ module.exports = {
 		rules: [
 			{
 				test: /\.tsx?$/,
-				loader: 'ts-loader?'+JSON.stringify({
+				loader: 'awesome-typescript-loader?' + JSON.stringify({
 					compilerOptions: {
 						noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
 					},
 					transpileOnly: true, // type checking is only done as part of linting or testing
 				}),
 			},
-			{test: /\.(svg|png)$/, loader: "url-loader"},
-			{test: /\.(woff|eot|ttf)$/, loader: "url-loader?name=fonts/[name].[ext]"},
-			{test: /\.json$/, loader: "json-loader"},
-			{test: /\.css$/, include: path.resolve(__dirname, 'vendor/node_modules/vscode'), loader: "style-loader!css-loader"}, // TODO(sqs): add ?sourceMap
+			{ test: /\.(svg|png)$/, loader: "url-loader" },
+			{ test: /\.(woff|eot|ttf)$/, loader: "url-loader?name=fonts/[name].[ext]" },
+			{ test: /\.json$/, loader: "json-loader" },
+			{ test: /\.css$/, include: path.resolve(__dirname, 'vendor/node_modules/vscode'), loader: "style-loader!css-loader" }, // TODO(sqs): add ?sourceMap
 			{
 				test: /\.css$/,
 				exclude: path.resolve(__dirname, 'vendor/node_modules/vscode'),
@@ -169,7 +169,7 @@ module.exports = {
 		host: devServerAddr.hostname,
 		public: `${publicURL.hostname}:${publicURL.port}`,
 		port: parseInt(devServerAddr.port),
-		headers: {"Access-Control-Allow-Origin": "*"},
+		headers: { "Access-Control-Allow-Origin": "*" },
 		noInfo: process.stdout.isTTY,
 		quiet: process.stdout.isTTY,
 		hot: !production,
