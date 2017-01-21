@@ -106,7 +106,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 					</div>
 				</div>
 			</FlexContainer>
-			{Features.projectWow.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
+			{Features.commitInfoBar.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
 		</div>;
 	}
 };

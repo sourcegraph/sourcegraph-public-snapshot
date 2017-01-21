@@ -50,6 +50,10 @@ export const Features = {
 	googleCloudPlatform: new Feature("google-cloud-platform"),
 	projectWow: new Feature("project_wow"),
 
+	// commitInfoBar shows the horizontal bar above the editor with
+	// the file's commit log.
+	commitInfoBar: new Feature("commitInfoBar").disableBeta(),
+
 	// trace is whether to show trace URLs to LightStep in console log messages.
 	trace: new Feature("trace"),
 
