@@ -103,17 +103,11 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 
 	const referenceInfo = await referenceInfoP;
 	if (!referenceInfo || referenceInfo.length === 0) {
-		return;
-	}
-
-	let refModel = new ReferencesModel(referenceInfo, props.editorModel.uri);
-	if (!refModel) {
 		infoStore.dispatch({ refModel: null, defData: defData });
 		return;
 	}
 
-	refModel = await provideReferencesCommitInfo(refModel);
-
+	let refModel = await provideReferencesCommitInfo(new ReferencesModel(referenceInfo, props.editorModel.uri));
 	infoStore.dispatch({ defData, refModel });
 
 	const depRefs = await fetchDependencyReferencesReferences(props.editorModel, props.lspParams.position);
