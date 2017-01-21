@@ -1,10 +1,6 @@
 import * as React from "react";
-import { CountBadge } from "vs/base/browser/ui/countBadge/countBadge";
-import { FileLabel } from "vs/base/browser/ui/iconLabel/iconLabel";
-import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
-import * as nls from "vs/nls";
 import { IEditorService } from "vs/platform/editor/common/editor";
 
 import { getEditorInstance } from "sourcegraph/editor/Editor";
@@ -30,6 +26,9 @@ import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
 
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
+import { WorkspaceBadge } from "sourcegraph/workbench/ui/badges/workspaceBadge";
+import { FileLabel } from "sourcegraph/workbench/ui/fileLabel";
+import { LeftRightWidget } from "sourcegraph/workbench/ui/leftRightWidget";
 import { scrollToLine } from "sourcegraph/workbench/utils";
 
 interface Props {
@@ -122,7 +121,6 @@ export class RefTree extends React.Component<Props, State> {
 		return <div style={{
 			zIndex: 1,
 			flex: "1 1 100%",
-			height: "100%",
 		}} ref={this.treeDiv}>
 
 		</div>;
@@ -131,12 +129,15 @@ export class RefTree extends React.Component<Props, State> {
 
 class Renderer extends LegacyRenderer {
 	private _contextService: IWorkspaceContextService;
+	private _editorURI: URI;
 
 	constructor(
 		@IWorkspaceContextService contextService: IWorkspaceContextService
 	) {
 		super();
 		this._contextService = contextService;
+		const editor = getEditorInstance();
+		this._editorURI = editor.getModel().uri;
 	}
 
 	public getHeight(tree: ITree, element: any): number {
@@ -152,8 +153,6 @@ class Renderer extends LegacyRenderer {
 		return 0;
 	}
 
-	// NOTE: This is a HUGE todo and will be cleaned up ASAP. Letting this sit here for now during code review, but no need to add comments
-	// around this function. Will provide an update once this is refactored and cleaned up. - Kingy (1/17/2017)
 	protected render(tree: ITree, element: FileReferences | OneReference, container: HTMLElement): IElementCallback | any {
 		dom.clearNode(container);
 
@@ -173,15 +172,15 @@ class Renderer extends LegacyRenderer {
 
 			}, (right: HTMLElement) => {
 
-				const len = element.children.length;
-				const badge = new CountBadge(right, len);
+				const workspace = workspaceURI.path === this._editorURI.path ? "Local" : "External";
+				const badge = new WorkspaceBadge(right, workspace);
 
 				if (element.failure) {
 					badge.setTitleFormat("Failed to resolve file.");
-				} else if (len > 1) {
-					badge.setTitleFormat(nls.localize('referencesCount', "{0} references", len));
+				} else if (workspace === "Local") {
+					badge.setTitleFormat("Local");
 				} else {
-					badge.setTitleFormat(nls.localize('referenceCount', "{0} reference", len));
+					badge.setTitleFormat("External");
 				}
 
 				return badge as any;
@@ -234,34 +233,5 @@ class Renderer extends LegacyRenderer {
 		}
 
 		return null;
-	}
-}
-
-export interface IRenderer {
-	(container: HTMLElement): IDisposable;
-}
-
-export class LeftRightWidget {
-
-	private $el: Builder;
-	private toDispose: IDisposable[];
-
-	constructor(container: Builder, renderLeftFn: IRenderer, renderRightFn: IRenderer);
-	constructor(container: HTMLElement, renderLeftFn: IRenderer, renderRightFn: IRenderer);
-	constructor(container: any, renderLeftFn: IRenderer, renderRightFn: IRenderer) {
-		this.$el = $(".monaco-left-right-widget").appendTo(container);
-		this.$el.padding("13px");
-
-		this.toDispose = [
-			renderRightFn($(".right").appendTo(this.$el).getHTMLElement()),
-			renderLeftFn($("span.left").appendTo(this.$el).getHTMLElement())
-		].filter(x => !!x);
-	}
-
-	public dispose(): void {
-		if (this.$el) {
-			this.$el.destroy();
-			this.$el = null as any;
-		}
 	}
 }

@@ -1,3 +1,5 @@
+import { Repo } from "sourcegraph/api/index";
+
 import Event, { fromEventEmitter } from "vs/base/common/event";
 import { EventEmitter } from "vs/base/common/eventEmitter";
 import { defaultGenerator } from "vs/base/common/idGenerator";
@@ -10,6 +12,8 @@ import { Range } from "vs/editor/common/core/range";
 import { IModel, IPosition, IRange } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/services/resolverService";
+
+import * as _ from "lodash";
 
 import { ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
 
@@ -236,7 +240,29 @@ export class ReferencesModel implements IDisposable {
 
 	onDidChangeReferenceRange: Event<OneReference> = fromEventEmitter<OneReference>(this._eventBus, "ref/changed");
 
-	constructor(references: Location[]) {
+	constructor(references: Location[], private _workspace: URI, private _tempFileReferences?: [Repo]) {
+		let newArrayOfLocs: FileReferences[] = [];
+		if (this._tempFileReferences) {
+			newArrayOfLocs = _.flatten(this._tempFileReferences.map(repository => {
+				let loc: Location = {
+					uri: URI.from({
+						scheme: this._workspace.scheme,
+						authority: this._workspace.authority,
+						path: (repository as any).URI.replace("github.com", ""),
+						fragment: "",
+						query: repository.DefaultBranch,
+					}),
+					range: {
+						startLineNumber: 0,
+						startColumn: 0,
+						endColumn: 0,
+						endLineNumber: 0,
+					},
+				};
+
+				return new FileReferences(this, loc.uri, loc.range);
+			}));
+		}
 
 		// grouping and sorting
 		references.sort(ReferencesModel._compareReferences);
@@ -278,9 +304,16 @@ export class ReferencesModel implements IDisposable {
 					tempGroup.push(reference);
 				}
 			}
+
 			group.children = tempGroup;
-			this._groups.push(group);
+			if (this._workspace && group.uri.path === this._workspace.path) {
+				this._groups.splice(0, 0, group);
+			} else {
+				this._groups.push(group);
+			}
 		}
+
+		this._groups = this._groups.concat(newArrayOfLocs);
 	}
 
 	public get empty(): boolean {

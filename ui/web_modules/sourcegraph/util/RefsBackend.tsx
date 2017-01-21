@@ -8,7 +8,7 @@ import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 
-import * as flatten from "lodash/flatten";
+import * as _ from "lodash";
 
 export interface RefData {
 	language: string;
@@ -191,7 +191,7 @@ export async function provideGlobalReferences(object: any): Promise<any> {
 	});
 
 	const allReferences = await Promise.all(promises);
-	return flatten(allReferences).map(lsp.toMonacoLocation);
+	return _.flatten(allReferences).map(lsp.toMonacoLocation);
 }
 
 // TODO/Checkpoint: @Kingy to refine implementation for Project WOW
@@ -222,5 +222,19 @@ export async function fetchDependencyReferencesReferences(model: IReadOnlyModel,
 		return null;
 	}
 	let object = JSON.parse(data.root.repository.commit.commit.file.dependencyReferences.data);
+	if (!object.RepoData || !object.Data || !object.Data.References) {
+		return null;
+	}
+	let repos = _.values(object.RepoData);
+
+	let currentRepo = _.remove(repos, function (repo: any): boolean {
+		return (repo as any).URI === `${model.uri.authority}${model.uri.path}`;
+	});
+
+	_.remove(object.Data.References, function (reference: any): boolean {
+		return reference.RepoID === currentRepo[0].ID;
+	});
+	delete object.RepoData[currentRepo[0].ID];
+
 	return object;
 }

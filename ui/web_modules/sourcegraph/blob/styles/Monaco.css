@@ -1,7 +1,7 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple, c_cool_dark_gray from colors;
+@value c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple, c_cool_dark_gray, c_green, c_orange_L1, c_blue_gray_L3 from colors;
 
 @value font_size_7 from vars;
 
@@ -645,4 +645,18 @@
 
 :global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) .content > .sidebar-references > .code-content > .function .file-details {
 	color:  #ade0ff;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .reference-file > .monaco-left-right-widget > .right > .workspace-references-badge-external  {
+	color: white;
+	background-color: c_orange_L1;
+	padding: 4px;
+	border-radius: 3px;
+}
+
+:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .reference-file > .monaco-left-right-widget > .right > .workspace-references-badge-local  {
+	color: white;
+	background-color: c_green;
+	padding: 4px;
+	border-radius: 3px;
 }

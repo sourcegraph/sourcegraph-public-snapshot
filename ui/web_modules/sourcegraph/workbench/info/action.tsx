@@ -1,9 +1,12 @@
+import * as _ from "lodash";
+
 import { IDisposable } from "vs/base/common/lifecycle";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 
+import { Repo } from "sourcegraph/api/index";
 import { Features } from "sourcegraph/util/features";
 import { fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
@@ -103,7 +106,7 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 		return;
 	}
 
-	let refModel = new ReferencesModel(referenceInfo);
+	let refModel = new ReferencesModel(referenceInfo, props.editorModel.uri);
 	if (!refModel) {
 		infoStore.dispatch({ refModel: null, defData: defData });
 		return;
@@ -117,6 +120,14 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 	if (!depRefs) {
 		return;
 	}
+	let repos = _.values(depRefs.RepoData) as [Repo];
+
+	refModel = new ReferencesModel(referenceInfo, props.editorModel.uri, repos);
+	if (!refModel) {
+		return;
+	}
+
+	infoStore.dispatch({ defData, refModel });
 
 	const globalRefsModel = await provideGlobalReferences(depRefs);
 	if (!globalRefsModel) {
@@ -124,13 +135,12 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 	}
 
 	let concatArray = globalRefsModel.concat(referenceInfo);
-	refModel = new ReferencesModel(concatArray);
+	refModel = new ReferencesModel(concatArray, props.editorModel.uri);
 
 	if (!refModel) {
 		return;
 	}
 
-	// Now go and fetch all the commit info for the new refs that we just got!
 	refModel = await provideReferencesCommitInfo(refModel);
 	if (!refModel) {
 		return;

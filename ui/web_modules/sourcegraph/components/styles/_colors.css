@@ -6,6 +6,7 @@
 @value c_blue_1 rgba(0, 145, 234, .1);
 @value c_dark_blue rgba(0, 113, 184, 1);
 @value c_dark_blue_5 rgba(0, 63, 102, .5);
+@value c_blue_gray_L3 = rgb(242, 244, 248);
 
 @value c_dark_blue_2 rgb(0, 113, 184);
 
@@ -19,6 +20,7 @@
 @value c_dark_purple_8 rgba(122, 0, 184, 0.8);
 
 @value c_orange rgba(255, 61, 0, 1);
+@value c_orange_L1 rgb(255, 130, 92);
 @value c_orange_8 rgba(255, 61, 0, .8);
 @value c_orange_5 rgba(255, 61, 0, .5);
 @value c_orange_2 rgba(255, 61, 0, .2);
