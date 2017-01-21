@@ -183,6 +183,9 @@ export async function provideGlobalReferences(object: any): Promise<any> {
 			query: object.Data.Location.symbol,
 			hints: reference.Hints,
 		}).then(resp => {
+			if (!resp.result) {
+				return [];
+			}
 			return resp.result.map(ref => {
 				let loc: lsp.Location = ref.reference;
 				return loc;
