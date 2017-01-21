@@ -14,7 +14,8 @@ import { IEditorGroupService } from "vs/workbench/services/group/common/groupSer
 import { ExplorerViewlet as VSExplorerViewlet } from "vscode/src/vs/workbench/parts/files/browser/explorerViewlet";
 
 import { FlexContainer, Heading } from "sourcegraph/components";
-import { colors, layout } from "sourcegraph/components/utils";
+import { List } from "sourcegraph/components/symbols/Primaries";
+import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { RouterContext } from "sourcegraph/workbench/utils";
@@ -69,34 +70,30 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 function Title({repo}: { repo: string }): JSX.Element {
 	return <FlexContainer items="center" style={{
 		background: colors.blueGrayD1(),
+		boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
 		minHeight: layout.editorToolbarHeight,
-		margin: 0,
 		position: "relative",
+		paddingLeft: whitespace[2],
+		paddingRight: whitespace[2],
 		zIndex: 1,
 		width: "100%",
 	}}>
-		<div style={{
-			flex: "0 1 20px",
-		}}></div>
-		<Heading level={5} style={{
-			flex: "0 0 auto",
+		<Heading level={6} compact={true} style={{
+			lineHeight: 0,
+			marginTop: 2,
 			maxWidth: "100%",
 			whiteSpace: "nowrap",
-			lineHeight: "auto",
-			height: "100%",
-			marginTop: 24,
-			marginBottom: 0,
 		}}>
 			<Link to={urlToRepo(repo)}
 				{...hover({ color: `${colors.white()} !important` }) }
 				style={{
-					color: colors.blueGrayL3(),
+					color: colors.blueGrayL2(),
 					maxWidth: "100%",
 					overflow: "hidden",
 					textOverflow: "ellipsis",
 					display: "inline-block",
-					height: "100%",
 				}}>
+				<List width={21} style={{ marginRight: whitespace[1] }} color={colors.blueGrayL1()} />
 				{repo.replace(/^github.com\//, "")}
 			</Link>
 		</Heading>

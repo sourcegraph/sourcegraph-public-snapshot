@@ -504,10 +504,8 @@
 }
 
 :global .monaco-workbench > .part > .composite.title {
-	height: 45px;
-	box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 6px 0px;
-	background: c_cool_gray2;
-	position: relative;
+	height: 45px; /* This value should match editorToolbarHeight in layout.tsx */
+	overflow: visible;
 	z-index: 1;
 }
 
