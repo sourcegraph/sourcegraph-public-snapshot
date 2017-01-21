@@ -503,6 +503,11 @@
 	min-width: 120px;
 }
 
+:global .monaco-workbench-container {
+	/* Default position:absolute causes https://github.com/sourcegraph/sourcegraph/issues/3277. */
+	position: fixed !important;
+}
+
 :global .monaco-workbench > .part > .composite.title {
 	height: 45px; /* This value should match editorToolbarHeight in layout.tsx */
 	overflow: visible;
