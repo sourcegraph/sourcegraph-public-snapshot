@@ -31,7 +31,10 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 		};
 	}
 
-	private onToggleExpand(): void {
+	private onToggleExpand(e: React.MouseEvent<HTMLDivElement>): void {
+		if ((e.target as any).dataset.toggle === undefined) {
+			return;
+		}
 		this.setState({
 			showingFullDocString: !this.state.showingFullDocString,
 		});
@@ -48,10 +51,10 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 		let renderedDocString = fullDocString;
 		if (fullDocString.length >= DocStringLength) {
 			if (this.state.showingFullDocString) {
-				renderedDocString = renderedDocString + `<a style="display: inline-block; padding-left: 5px;">   Hide...</a>`;
+				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;">   Hide...</a>`;
 			} else {
 				renderedDocString = renderedDocString.substr(0, DocStringLength);
-				renderedDocString = renderedDocString + `<a style="display: inline-block; padding-left: 5px;">   More...</a>`;
+				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;">   More...</a>`;
 			}
 		}
 		return <div>
