@@ -35,6 +35,7 @@ const config = {
 		codeLens: Features.codeLens.isEnabled(),
 		glyphMargin: false,
 		hideCursorInOverviewRuler: true,
+		selectionHighlight: false,
 	},
 };
 
