@@ -118,7 +118,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 		File:      r.path,
 		Line:      int(args.Line),
 		Character: int(args.Character),
-		Limit:     20,
+		Limit:     5,
 	})
 	if err != nil {
 		return nil, err
@@ -133,13 +133,16 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 		refMap[ref.RepoID] = repo
 	}
 
-	slcB, _ := json.Marshal(struct {
+	slcB, err := json.Marshal(struct {
 		Data     *sourcegraph.DependencyReferences
 		RepoData map[int32]interface{}
 	}{
 		Data:     depRefs,
 		RepoData: refMap,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return &dependencyReferencesResolver{
 		data: string(slcB),

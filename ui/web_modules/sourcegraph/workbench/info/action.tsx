@@ -110,6 +110,11 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 	let refModel = await provideReferencesCommitInfo(new ReferencesModel(referenceInfo, props.editorModel.uri));
 	infoStore.dispatch({ defData, refModel });
 
+	// Only fetch global refs for Go.
+	if (props.editorModel.getModeId() !== "go") {
+		return;
+	}
+
 	const depRefs = await fetchDependencyReferencesReferences(props.editorModel, props.lspParams.position);
 	if (!depRefs) {
 		return;
@@ -123,12 +128,12 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 
 	infoStore.dispatch({ defData, refModel });
 
-	const globalRefsModel = await provideGlobalReferences(depRefs);
+	const globalRefsModel = await provideGlobalReferences(props.editorModel, depRefs);
 	if (!globalRefsModel) {
 		return;
 	}
 
-	let concatArray = globalRefsModel.concat(referenceInfo);
+	let concatArray = referenceInfo.concat(globalRefsModel);
 	refModel = new ReferencesModel(concatArray, props.editorModel.uri);
 
 	if (!refModel) {

@@ -3,6 +3,7 @@ import { Definition, Hover, Position } from "vscode-languageserver-types";
 import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
+import { Repo } from "sourcegraph/api/index";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
@@ -29,6 +30,25 @@ export interface DefinitionData {
 	};
 	docString: string;
 	funcName: string;
+}
+
+export interface DepRefsData {
+	Data: {
+		Location: {
+			location: lsp.Location,
+			symbol: any,
+		};
+		References: [DepReference];
+	};
+	RepoData: { [id: number]: Repo };
+}
+
+interface DepReference {
+	DepData: any;
+	Hints: {
+		dirs: [string];
+	};
+	RepoID: number;
 }
 
 export interface ReferenceCommitInfo {
@@ -207,36 +227,48 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 }
 
 // TODO/Checkpoint: @Kingy to refine implementation for Project WOW
-export async function provideGlobalReferences(object: any): Promise<any> {
-	const references = object.Data.References;
-	const repoData = object.RepoData;
+export async function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Promise<Location[]> {
+	const references = depRefs.Data.References;
 	if (!references) {
-		return;
+		Promise.resolve([]);
 	}
+	const repoData = depRefs.RepoData;
+	const symbol = depRefs.Data.Location.symbol;
+	const modeID: string = model.getModeId();
 
-	let promises = references.map(reference => {
-		let newModel = repoData[reference.RepoID];
-		let repoURI = URIUtils.pathInRepo(newModel.URI, newModel.DefaultBranch, "");
-		return lsp.sendExt(repoURI.toString(), newModel.Language.toLowerCase(), "workspace/xreferences", {
-			query: object.Data.Location.symbol,
-			hints: reference.Hints,
-		}).then(resp => {
-			if (!resp.result) {
-				return [];
-			}
-			return resp.result.map(ref => {
-				let loc: lsp.Location = ref.reference;
-				return loc;
-			});
-		});
+	let promises = references.map((reference: DepReference) => {
+		const repo: Repo = repoData[reference.RepoID];
+		return fetchGlobalReferenceForDependency(reference, repo, modeID, symbol);
 	});
 
 	const allReferences = await Promise.all(promises);
-	return _.flatten(allReferences).map(lsp.toMonacoLocation);
+	return _.filter(_.flatten(allReferences), (loc => !(loc instanceof Error)));
+}
+
+function fetchGlobalReferenceForDependency(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
+	if (!repo.URI || !repo.DefaultBranch) {
+		return Promise.resolve([]);
+	}
+
+	let repoURI = URIUtils.pathInRepo(repo.URI, repo.DefaultBranch, "");
+	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
+		query: symbol,
+		hints: reference.Hints,
+	}).then(resp => {
+		if (!resp.result) {
+			return [];
+		}
+		return resp.result.map(ref => {
+			let loc: lsp.Location = ref.reference;
+			return lsp.toMonacoLocation(loc);
+		});
+	}).catch(err => {
+		return new Error(err);
+	});
 }
 
 // TODO/Checkpoint: @Kingy to refine implementation for Project WOW
-export async function fetchDependencyReferencesReferences(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<any> {
+export async function fetchDependencyReferencesReferences(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<DepRefsData | null> {
 	let refModelQuery =
 		`repository(uri: "${model.uri.authority}${model.uri.path}") {
 			commit(rev: "${model.uri.query}") {
