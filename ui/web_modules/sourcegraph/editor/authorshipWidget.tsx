@@ -69,9 +69,13 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 
 export class AuthorshipWidget implements IContentWidget {
 	private domNode: HTMLElement;
+	public static blame: GQL.IHunk;
 
-	constructor(private blame: GQL.IHunk, private element: JSX.Element) {
-		//
+	constructor(
+		private blame: GQL.IHunk,
+		private element: JSX.Element,
+	) {
+		AuthorshipWidget.blame = blame;
 	};
 
 	getId(): string {
@@ -101,21 +105,25 @@ export class AuthorshipWidget implements IContentWidget {
 
 let authorWidget: AuthorshipWidget;
 
-function showAuthorshipPopup(accessor: ServicesAccessor, args: GQL.IHunk): void {
+function showAuthorshipPopup(accessor: ServicesAccessor, blame: GQL.IHunk): void {
+	if (blame === AuthorshipWidget.blame) {
+		removeWidget();
+		return;
+	}
 	removeWidget();
 
 	const editor = getEditorInstance();
 
 	const model = editor.getModel();
-	args.startByte = model.getLineFirstNonWhitespaceColumn(args.startLine);
+	blame.startByte = model.getLineFirstNonWhitespaceColumn(blame.startLine);
 	const {repo, rev} = URIUtils.repoParams(editor.getModel().uri);
 
-	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={args} repo={repo} rev={rev || ""} onClose={removeWidget} />;
-	authorWidget = new AuthorshipWidget(args, authorshipCodeLensElement);
+	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={blame} repo={repo} rev={rev || ""} onClose={removeWidget} />;
+	authorWidget = new AuthorshipWidget(blame, authorshipCodeLensElement);
 
 	addListeners(editor);
 	editor.addContentWidget(authorWidget);
-	AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(args);
+	AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(blame);
 }
 
 CommandsRegistry.registerCommand("codelens.authorship.commit", showAuthorshipPopup);
