@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import { Subscription } from "rxjs-es";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
@@ -6,7 +6,6 @@ import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 
-import { Repo } from "sourcegraph/api/index";
 import { Features } from "sourcegraph/util/features";
 import { fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
@@ -28,6 +27,7 @@ const TokenIdentifierClassName: string = "identifier";
 @editorContribution
 export class ReferenceAction implements IEditorContribution {
 	private toDispose: IDisposable[] = [];
+	private globalFetchSubscription?: Promise<Subscription | undefined>;
 
 	public getId(): string {
 		return OpenInfoPanelID;
@@ -57,6 +57,9 @@ export class ReferenceAction implements IEditorContribution {
 		if (!mouseEvent.event.target.classList.contains(TokenIdentifierClassName)) {
 			// Hide side panel
 			infoStore.dispatch(null);
+			if (this.globalFetchSubscription) {
+				this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
+			}
 			return;
 		}
 		const props = this.getParamsForMouseEvent(mouseEvent);
@@ -64,7 +67,7 @@ export class ReferenceAction implements IEditorContribution {
 			return;
 		}
 
-		renderSidePanelForData(props);
+		this.globalFetchSubscription = renderSidePanelForData(props);
 	}
 
 	private getParamsForMouseEvent(mouseEvent: IEditorMouseEvent): Props | null {
@@ -92,7 +95,7 @@ export class ReferenceAction implements IEditorContribution {
 	}
 }
 
-export async function renderSidePanelForData(props: Props): Promise<void> {
+export async function renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
 	const defDataP = provideDefinition(props.editorModel, props.lspParams.position);
 	const referenceInfoP = provideReferences(props.editorModel, props.lspParams.position);
 	const defData = await defDataP;
@@ -119,31 +122,29 @@ export async function renderSidePanelForData(props: Props): Promise<void> {
 	if (!depRefs) {
 		return;
 	}
-	let repos = _.values(depRefs.RepoData) as [Repo];
 
-	refModel = new ReferencesModel(referenceInfo, props.editorModel.uri, repos);
+	refModel = new ReferencesModel(referenceInfo, props.editorModel.uri);
 	if (!refModel) {
 		return;
 	}
 
 	infoStore.dispatch({ defData, refModel });
 
-	const globalRefsModel = await provideGlobalReferences(props.editorModel, depRefs);
-	if (!globalRefsModel) {
-		return;
-	}
+	let concatArray = referenceInfo;
+	return provideGlobalReferences(props.editorModel, depRefs).subscribe(async refs => {
+		concatArray = concatArray.concat(refs);
 
-	let concatArray = referenceInfo.concat(globalRefsModel);
-	refModel = new ReferencesModel(concatArray, props.editorModel.uri);
+		refModel = new ReferencesModel(concatArray, props.editorModel.uri);
 
-	if (!refModel) {
-		return;
-	}
+		if (!refModel) {
+			return;
+		}
 
-	refModel = await provideReferencesCommitInfo(refModel);
-	if (!refModel) {
-		return;
-	}
+		refModel = await provideReferencesCommitInfo(refModel);
+		if (!refModel) {
+			return;
+		}
 
-	infoStore.dispatch({ defData, refModel });
+		infoStore.dispatch({ defData, refModel });
+	});
 }

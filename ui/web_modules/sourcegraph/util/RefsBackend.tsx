@@ -1,6 +1,5 @@
+import { Observable } from "rxjs-es";
 import { Definition, Hover, Position } from "vscode-languageserver-types";
-
-import * as Async from "bluebird";
 
 import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
@@ -228,23 +227,79 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 	return referencesModel;
 }
 
-// TODO/Checkpoint: @Kingy to refine implementation for Project WOW
-export async function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Promise<Location[]> {
-	const references = depRefs.Data.References;
+const MAX_GLOBAL_REFS_REPOS = 5;
+
+export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<Location[]> {
+	const dependents = depRefs.Data.References;
 	const repoData = depRefs.RepoData;
 	const symbol = depRefs.Data.Location.symbol;
 	const modeID = model.getModeId();
 
-	let promises = references.map(reference => {
-		const repo = repoData[reference.RepoID];
-		return fetchGlobalReferenceForDependency(reference, repo, modeID, symbol);
-	});
+	return new Observable<Location[]>(observer => {
+		let interval: number | null = null;
+		let unsubscribed = false;
+		let completed = false;
 
-	const allReferences = await Async.some(promises, promises.length > 5 ? 5 : promises.length);
-	return _.flatten(allReferences);
+		let countNonempty = 0;
+		function incrementCountIfNonempty(refs: Location[]): void {
+			if (refs && refs.length > 0) {
+				++countNonempty;
+			}
+		}
+
+		function complete(): void {
+			if (!completed) {
+				completed = true;
+			}
+			observer.complete();
+		}
+
+		function pollNext(count: number): Promise<void>[] {
+			if (dependents.length > 0 && countNonempty < MAX_GLOBAL_REFS_REPOS) {
+				const isLastDependent = dependents.length === 1;
+				const nextDependentsToPoll = dependents.splice(0, Math.min(count, dependents.length));
+				return nextDependentsToPoll.map(dependent => {
+					const repo = repoData[dependent.RepoID];
+					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(refs => {
+						incrementCountIfNonempty(refs);
+						if (!completed) {
+							observer.next(refs);
+						}
+						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
+							complete();
+						}
+					});
+				});
+			}
+
+			return [];
+		}
+
+		// Fetch references from the first two dependent repos right away, in parallel.
+		Promise.all(pollNext(2)).then(() => {
+			// Unsubscription may happen before we complete fetching the first 2 dependent repo refs.
+			// If so, bail before starting the interval poll.
+			if (unsubscribed) {
+				return;
+			}
+			if (countNonempty >= MAX_GLOBAL_REFS_REPOS || dependents.length === 0) {
+				complete();
+			}
+			// Every 2.5 seconds following, fetch refs for another dependent repo until
+			// there are no more dependent repos or we've fetched non-empty results from MAX_GLOBAL_REFS_REPOS.
+			interval = setInterval(() => pollNext(1), 2500);
+		});
+
+		return function unsubscribe(): void {
+			unsubscribed = true;
+			if (interval) {
+				clearInterval(interval);
+			}
+		};
+	});
 }
 
-function fetchGlobalReferenceForDependency(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
+function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
 	if (!repo.URI || !repo.DefaultBranch) {
 		return Promise.resolve([]);
 	}
