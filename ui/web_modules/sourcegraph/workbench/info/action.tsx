@@ -7,7 +7,7 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 
 import { Features } from "sourcegraph/util/features";
-import { fetchDependencyReferencesReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
+import { fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
@@ -118,7 +118,7 @@ export async function renderSidePanelForData(props: Props): Promise<Subscription
 		return;
 	}
 
-	const depRefs = await fetchDependencyReferencesReferences(props.editorModel, props.lspParams.position);
+	const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
 	if (!depRefs) {
 		return;
 	}

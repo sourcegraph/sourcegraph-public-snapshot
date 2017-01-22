@@ -228,6 +228,7 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 }
 
 const MAX_GLOBAL_REFS_REPOS = 5;
+const globalRefsObservables = new Map<string, Observable<Location[]>>();
 
 export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<Location[]> {
 	const dependents = depRefs.Data.References;
@@ -235,7 +236,13 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 	const symbol = depRefs.Data.Location.symbol;
 	const modeID = model.getModeId();
 
-	return new Observable<Location[]>(observer => {
+	const key = JSON.stringify(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
+	const cacheHit = globalRefsObservables.get(key);
+	if (cacheHit) {
+		return cacheHit;
+	}
+
+	const observable = new Observable<Location[]>(observer => {
 		let interval: number | null = null;
 		let unsubscribed = false;
 		let completed = false;
@@ -262,7 +269,7 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 					const repo = repoData[dependent.RepoID];
 					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(refs => {
 						incrementCountIfNonempty(refs);
-						if (!completed) {
+						if (!completed && refs.length > 0) {
 							observer.next(refs);
 						}
 						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
@@ -296,7 +303,10 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 				clearInterval(interval);
 			}
 		};
-	});
+	}).cache(MAX_GLOBAL_REFS_REPOS);
+
+	globalRefsObservables.set(key, observable);
+	return observable;
 }
 
 function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
@@ -308,19 +318,10 @@ function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Re
 	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
 		query: symbol,
 		hints: reference.Hints,
-	}).then(resp => {
-		if (!resp.result) {
-			return [];
-		}
-		return resp.result.map(ref => {
-			let loc: lsp.Location = ref.reference;
-			return lsp.toMonacoLocation(loc);
-		});
-	});
+	}).then(resp => !resp.result ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
 }
 
-// TODO/Checkpoint: @Kingy to refine implementation for Project WOW
-export async function fetchDependencyReferencesReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
+export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
 	let refModelQuery =
 		`repository(uri: "${model.uri.authority}${model.uri.path}") {
 			commit(rev: "${model.uri.query}") {
