@@ -50,9 +50,9 @@
     "typescript-formatter": "^4.0.1",
     "unused-files-webpack-plugin": "3.0.0",
     "url-loader": "0.5.7",
-    "webpack": "^2.2.0-rc.1",
+    "webpack": "2.2.0",
     "webpack-dev-middleware": "^1.9.0",
-    "webpack-dev-server": "^2.2.0-rc.0"
+    "webpack-dev-server": "2.2.0"
   },
   "dependencies": {
     "autotrack": "1.0.3",
