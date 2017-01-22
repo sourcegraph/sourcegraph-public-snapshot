@@ -173,8 +173,9 @@ export class TourOverlay extends React.Component<Props, State>  {
 			// Grab a random element that has been indexed and provides "code intelligence".
 			// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
 			// Render the first tooltip in the top half. Then render the second tooltip based on the second half of visible nodes.
+			let defrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
 			let refrandom = Math.random() * x.length / 2;
-			let defRandom = x[Math.floor((refrandom + x.length / 2) + 1)];
+			let defRandom = x[Math.floor((defrandom) + 1)];
 			let refRandom = x[Math.floor(refrandom + 1)];
 
 			const ctrl = platform.isMacintosh ? "⌘" : "Control";
