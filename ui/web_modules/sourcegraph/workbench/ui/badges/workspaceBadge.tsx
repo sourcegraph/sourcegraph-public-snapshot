@@ -1,7 +1,17 @@
 "use strict";
 
+import { css } from "glamor";
+import { colors, whitespace } from "sourcegraph/components/utils";
+
 import { $, Builder } from "vs/base/browser/builder";
 import * as strings from "vs/base/common/strings";
+
+const badgeSx = {
+	borderRadius: 3,
+	padding: `2px ${whitespace[2]}`,
+	color: "white",
+	fontWeight: "bold",
+};
 
 export class WorkspaceBadge {
 
@@ -12,7 +22,13 @@ export class WorkspaceBadge {
 	constructor(container: Builder, workspace: "Local" | "External", titleFormat?: string);
 	constructor(container: HTMLElement, workspace: "Local" | "External", titleFormat?: string);
 	constructor(container: any, workspace: "Local" | "External", titleFormat?: string) {
-		this.$el = $(`.workspace-references-badge-${workspace.toLowerCase()}`).appendTo(container);
+		const workspaceType = workspace.toLowerCase();
+		const badge = css({
+			backgroundColor: workspaceType === "local" ? colors.green() : colors.red(),
+		}, badgeSx );
+
+		this.$el = $(`.${badge}`).appendTo(container);
+
 		this.titleFormat = titleFormat || "";
 		this.setWorkspace(workspace);
 	}
