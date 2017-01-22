@@ -1,3 +1,4 @@
+import * as hash from "object-hash";
 import { Observable } from "rxjs-es";
 import { Definition, Hover, Position } from "vscode-languageserver-types";
 
@@ -236,7 +237,7 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 	const symbol = depRefs.Data.Location.symbol;
 	const modeID = model.getModeId();
 
-	const key = JSON.stringify(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
+	const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
 	const cacheHit = globalRefsObservables.get(key);
 	if (cacheHit) {
 		return cacheHit;

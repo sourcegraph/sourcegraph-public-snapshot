@@ -38,6 +38,10 @@
   version "2.2.33"
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.33.tgz#d79a0061ec270379f4d9e225f4096fb436669def"
 
+"@types/object-hash@^0.5.28":
+  version "0.5.28"
+  resolved "https://registry.yarnpkg.com/@types/object-hash/-/object-hash-0.5.28.tgz#80bc30f9ce9dae6bf2beac15aacf4f5ef131cdc1"
+
 "@types/react-addons-test-utils@0.14.15":
   version "0.14.15"
   resolved "https://registry.yarnpkg.com/@types/react-addons-test-utils/-/react-addons-test-utils-0.14.15.tgz#c786638e8ee197be0e7d4ac037d6146b39ef3e13"
@@ -3335,6 +3339,10 @@ oauth-sign@^0.8.2, oauth-sign@~0.8.1:
 object-assign@4.1.0, object-assign@^3.0.0, object-assign@^4.0.0, object-assign@^4.0.1, object-assign@^4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/object-assign/-/object-assign-4.1.0.tgz#7a3b3d0e98063d43f4c03f2e8ae6cd51a86883a0"
+
+object-hash@^1.1.5:
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/object-hash/-/object-hash-1.1.5.tgz#bdd844e030d0861b692ca175c6cab6868ec233d7"
 
 object-keys@^0.4.0, object-keys@^1.0.10, object-keys@^1.0.8:
   version "1.0.11"
