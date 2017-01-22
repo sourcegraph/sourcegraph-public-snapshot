@@ -5,7 +5,8 @@ import { marked } from "vs/base/common/marked/marked";
 import URI from "vs/base/common/uri";
 
 import { urlToBlobLineCol } from "sourcegraph/blob/routes";
-import { FlexContainer } from "sourcegraph/components";
+import { Button, FlexContainer } from "sourcegraph/components";
+import { ArrowRight } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
@@ -57,33 +58,22 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;">   More...</a>`;
 			}
 		}
-		return <div>
+		return <div style={{ padding: whitespace[3], paddingTop: 0 }}>
 			<div onClick={this.onToggleExpand} style={Object.assign({}, {
 				maxHeight: "40vh",
 				overflowY: "scroll",
-				paddingLeft: whitespace[3],
-				paddingRight: whitespace[3],
 				color: colors.blueGrayD1(),
-			}, typography[2])}
-				dangerouslySetInnerHTML={{ __html: renderedDocString }}>
+			}, typography[2])} dangerouslySetInnerHTML={{ __html: renderedDocString }}>
 			</div>
-			<div style={{ color: colors.blueGray(), paddingTop: whitespace[1], paddingLeft: whitespace[3], paddingRight: whitespace[3], paddingBottom: whitespace[2] }}>
-				{`Defined in ${repo.replace(/^github.com\//, "")}`}
+			<div style={{ color: colors.blueGray(), paddingTop: whitespace[1], paddingBottom: whitespace[2] }}>
+				Defined in {repo.replace(/^github.com\//, "")}
 			</div>
-			<FlexContainer content="stretch" justify="center" items="center">
+			<FlexContainer content="stretch" justify="between" items="center">
 				<RouterContext>
-					<Link style={{ display: "flex", flex: "1 1 auto" }} to={url}>
-						<button style={Object.assign({ fontWeight: typography.weight[2] }, {
-							color: "#1893e7", display: "flex",
-							flex: "1 1 auto",
-							height: "40px",
-							marginLeft: whitespace[3],
-							marginRight: whitespace[3],
-							borderRadius: "3px",
-							backgroundColor: "#ffffff",
-							justifyContent: "center",
-							border: "solid 1px #c9d4e3"
-						}, typography[3])}>Jump to definition →</button>
+					<Link style={{ flex: "1 0" }} to={url}>
+						<Button color="blueGray" outline={true} style={{ width: "100%" }}>
+							Jump to definition <ArrowRight width={18} />
+						</Button>
 					</Link>
 				</RouterContext>
 			</FlexContainer>

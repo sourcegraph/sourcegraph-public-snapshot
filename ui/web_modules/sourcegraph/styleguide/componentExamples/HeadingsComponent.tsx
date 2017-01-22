@@ -177,7 +177,7 @@ export class HeadingsComponent extends React.Component<{}, State> {
 								<td><Code>color</Code></td>
 								<td><Code>null</Code></td>
 								<td>
-									<Code>purple</Code>, <Code>blue</Code>, <Code>green</Code>, <Code>orange</Code>, <Code>coolGray3</Code>
+									<Code>purple</Code>, <Code>blue</Code>, <Code>green</Code>, <Code>orange</Code>, <Code>gray</Code>
 								</td>
 							</tr>
 							<tr>

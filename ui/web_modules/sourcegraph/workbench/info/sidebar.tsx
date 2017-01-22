@@ -1,4 +1,5 @@
 import * as autobind from "autobind-decorator";
+import { css } from "glamor";
 import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -6,9 +7,9 @@ import { RefTree } from "sourcegraph/workbench/info/refTree";
 import { Location } from "vs/editor/common/modes";
 import { IModelService } from "vs/editor/common/services/modelService";
 
-import { FlexContainer, Loader } from "sourcegraph/components";
+import { FlexContainer, Heading, Loader } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
-import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { renderSidePanelForData } from "sourcegraph/workbench/info/action";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
@@ -117,19 +118,6 @@ export interface Props {
 	refModel?: ReferencesModel | null;
 };
 
-const style = {
-	position: "absolute",
-	top: layout.editorToolbarHeight,
-	background: "white",
-	height: `calc(100% - ${layout.editorToolbarHeight}px)`,
-	width: sidebarWidth,
-	right: "0px",
-	overflowY: "hidden",
-	display: "flex",
-	flexDirection: "column",
-	color: "black",
-};
-
 @autobind
 class InfoPanel extends React.Component<Props, State> {
 
@@ -153,58 +141,69 @@ class InfoPanel extends React.Component<Props, State> {
 	}
 
 	private sidebarFunctionHeader(defData: DefinitionData): JSX.Element {
-		return (
-			<div>
-				<FlexContainer style={{ backgroundColor: "#1893e7", boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.16)" }}>
-					<code style={Object.assign({ color: "white", paddingLeft: whitespace[3], paddingTop: whitespace[3], paddingBottom: whitespace[3], paddingRight: whitespace[2] }, typography[3])}>{truncate(defData.funcName, { length: 120 })}</code>
-					<span onClick={() => infoStore.dispatch(null)} style={{ cursor: "pointer", marginLeft: "auto", paddingRight: whitespace[3], paddingTop: whitespace[3], }}>
-						<Close width={18} color={colors.blueGrayD1(0.5)} />
-					</span>
-				</FlexContainer>
+		return <FlexContainer justify="between" items="center" style={{
+			backgroundColor: colors.blue(),
+			boxShadow: `0 1px 2px 0 ${colors.black(0.3)}`,
+			flex: "0 0 auto",
+		}}>
+			<Heading color="white" level={6} compact={true} style={{
+				padding: whitespace[3],
+				fontFamily: typography.fontStack.code,
+				fontWeight: "normal",
+				wordBreak: "break-word",
+			}}>{truncate(defData.funcName, { length: 120 })}</Heading>
+			<div onClick={() => infoStore.dispatch(null)}
+				{...css(
+					{
+						alignSelf: "flex-start",
+						color: colors.blueGrayD1(),
+						cursor: "pointer",
+						padding: whitespace[3]
+					},
+					{ ":hover": { color: colors.blueGrayD2() } },
+				) }>
+				<Close width={18} />
 			</div>
-		);
+		</FlexContainer>;
 	}
 
 	render(): JSX.Element {
 		const { defData, refModel } = this.props;
+		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
+		// position child elements relative to editor container
+		(css as any).global(".editor-container", { position: "relative" });
 		return <div>
-			<div style={style}>
+			<FlexContainer direction="top_bottom" style={{
+				position: "absolute",
+				backgroundColor: "white",
+				height: "100%",
+				width: sidebarWidth,
+				top: 0,
+				right: 0,
+				overflowY: "hidden",
+			}}>
 				{this.sidebarFunctionHeader(defData)}
-				<DefinitionDocumentationHeader
-					defData={defData} />
-				<div style={{ paddingTop: whitespace[2] }}>
-					<div style={{ width: "100%", height: "1px", backgroundColor: "rgba(201, 211, 227, 0.3)" }} />
-				</div>
+				<DefinitionDocumentationHeader defData={defData} />
+				<hr style={dividerSx} />
 				<div id={REFERENCES_SECTION_ID}>
-					<FlexContainer items="center" style={{ height: 35, padding: whitespace[2] }}>
-						<span style={Object.assign({},
-							{
-								marginTop: "10px",
-								fontSize: "11px",
-								fontWeight: "bold",
-								fontStyle: "normal",
-								fontStretch: "normal",
-								color: colors.blueGray(),
-							},
-							typography[1])}>
-							REFERENCES:
-					</span>
+					<FlexContainer items="center" style={{ height: 35, padding: whitespace[3] }}>
+						<Heading level={7} color="gray" compact={true}>
+							References
+						</Heading>
 					</FlexContainer>
 				</div>
-				<div style={{ paddingTop: whitespace[2] }}>
-					<div style={{ width: "100%", height: "1px", backgroundColor: "rgba(201, 211, 227, 0.3)" }} />
-				</div>
+				<hr style={dividerSx} />
 				{refModel === undefined && <div style={{ textAlign: "center" }}><Loader /></div>}
 				{refModel === null && <div style={{ textAlign: "center" }}>No references</div>}
 				{refModel && <RefTree
 					model={refModel}
 					focus={this.focusResource} />}
-			</div>
+			</FlexContainer>
 			<Preview
 				location={this.state.previewLocation}
 				hidePreview={this.refsFocused} />
 		</div>;
 	}
-}
+};
 
 export const infoStore = new MiniStore<Props | null>();

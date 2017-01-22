@@ -69,14 +69,14 @@ export function Button(props: {
 	const outlineSx = css(
 		{
 			backgroundColor: "transparent",
-			borderColor: btnColor,
-			color: btnColor,
+			borderColor: color === "blueGray" ? colors.blueGrayL2(0.6) : btnColor,
+			color: color === "blueGray" ? colors.blue() : btnColor,
 		},
 		{
 			":hover": {
 				backgroundColor: "transparent",
-				borderColor: btnHoverColor,
-				color: btnHoverColor,
+				borderColor: color === "blueGray" ? colors.blueGrayL2() : btnHoverColor,
+				color: color === "blueGray" ? colors.blueD1() : btnHoverColor,
 			}
 		},
 		{
