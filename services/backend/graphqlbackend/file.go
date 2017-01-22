@@ -118,7 +118,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 		File:      r.path,
 		Line:      int(args.Line),
 		Character: int(args.Character),
-		Limit:     5,
+		Limit:     20,
 	})
 	if err != nil {
 		return nil, err
