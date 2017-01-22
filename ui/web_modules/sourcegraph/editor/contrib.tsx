@@ -1,5 +1,5 @@
 import { CancellationToken } from "vs/base/common/cancellation";
-import { onLanguage, registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
+import { getLanguages, onLanguage, registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
 import { Range } from "vs/editor/common/core/range";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
@@ -18,7 +18,12 @@ supportedModes.forEach(mode => {
 		registerHoverProvider(mode, new HoverProvider());
 		registerDefinitionProvider(mode, new DefinitionProvder());
 		registerReferenceProvider(mode, new ReferenceProvider());
-		registerCodeLensProvider(mode, new AuthorshipCodeLens());
+	});
+});
+
+getLanguages().forEach(({id}) => {
+	onLanguage(id, () => {
+		registerCodeLensProvider(id, new AuthorshipCodeLens());
 	});
 });
 
