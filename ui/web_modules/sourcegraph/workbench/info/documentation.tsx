@@ -20,7 +20,7 @@ interface State {
 	showingFullDocString: boolean;
 }
 
-const DocStringLength = 50;
+const DocStringLength = 200;
 
 @autobind
 export class DefinitionDocumentationHeader extends React.Component<Props, State> {
