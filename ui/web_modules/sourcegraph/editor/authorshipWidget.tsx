@@ -69,13 +69,12 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 
 export class AuthorshipWidget implements IContentWidget {
 	private domNode: HTMLElement;
-	public static blame: GQL.IHunk;
 
 	constructor(
-		private blame: GQL.IHunk,
+		public blame: GQL.IHunk,
 		private element: JSX.Element,
 	) {
-		AuthorshipWidget.blame = blame;
+		//
 	};
 
 	getId(): string {
@@ -103,10 +102,10 @@ export class AuthorshipWidget implements IContentWidget {
 	};
 }
 
-let authorWidget: AuthorshipWidget;
+let authorWidget: AuthorshipWidget | null = null;
 
 function showAuthorshipPopup(accessor: ServicesAccessor, blame: GQL.IHunk): void {
-	if (blame === AuthorshipWidget.blame) {
+	if (authorWidget && blame === authorWidget.blame) {
 		removeWidget();
 		return;
 	}
@@ -134,11 +133,14 @@ export function removeWidget(): void {
 	}
 	const editor = getEditorInstance();
 	editor.removeContentWidget(authorWidget);
+	authorWidget = null;
 }
 
 function addListeners(editor: ICodeEditor): void {
 	editor.onMouseUp((e: IEditorMouseEvent) => {
-		if (e.target.detail !== AuthorshipWidgetID) {
+		if (!e.target.detail
+			|| e.target.detail !== AuthorshipWidgetID
+			&& !e.target.detail.startsWith("codeLens")) {
 			removeWidget();
 		}
 	});
