@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/jsonrpc2"
@@ -83,6 +84,7 @@ func init() {
 		}
 		log15.Debug("Starting in-process LSP proxy.", "listen", l.Addr().String())
 		proxy := NewProxy()
+		proxy.Trace, _ = strconv.ParseBool(os.Getenv("LSP_PROXY_TRACE"))
 		if err := os.Setenv("LSP_PROXY", l.Addr().String()); err != nil {
 			log.Fatal("Set LSP_PROXY:", err)
 		}
