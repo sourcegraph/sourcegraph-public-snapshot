@@ -1,5 +1,7 @@
 import { Definition, Hover, Position } from "vscode-languageserver-types";
 
+import * as Async from "bluebird";
+
 import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
@@ -85,7 +87,7 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 		position: pos,
 		context: { includeDeclaration: false },
 	}).then(resp => {
-		if (resp.result) {
+		if (resp && resp.result) {
 			defCache.set(key, defPromise);
 		}
 		return resp.result as Definition;
@@ -229,20 +231,17 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 // TODO/Checkpoint: @Kingy to refine implementation for Project WOW
 export async function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Promise<Location[]> {
 	const references = depRefs.Data.References;
-	if (!references) {
-		Promise.resolve([]);
-	}
 	const repoData = depRefs.RepoData;
 	const symbol = depRefs.Data.Location.symbol;
-	const modeID: string = model.getModeId();
+	const modeID = model.getModeId();
 
-	let promises = references.map((reference: DepReference) => {
-		const repo: Repo = repoData[reference.RepoID];
+	let promises = references.map(reference => {
+		const repo = repoData[reference.RepoID];
 		return fetchGlobalReferenceForDependency(reference, repo, modeID, symbol);
 	});
 
-	const allReferences = await Promise.all(promises);
-	return _.filter(_.flatten(allReferences), (loc => !(loc instanceof Error)));
+	const allReferences = await Async.some(promises, promises.length > 5 ? 5 : promises.length);
+	return _.flatten(allReferences);
 }
 
 function fetchGlobalReferenceForDependency(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
@@ -262,13 +261,11 @@ function fetchGlobalReferenceForDependency(reference: DepReference, repo: Repo, 
 			let loc: lsp.Location = ref.reference;
 			return lsp.toMonacoLocation(loc);
 		});
-	}).catch(err => {
-		return new Error(err);
 	});
 }
 
 // TODO/Checkpoint: @Kingy to refine implementation for Project WOW
-export async function fetchDependencyReferencesReferences(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<DepRefsData | null> {
+export async function fetchDependencyReferencesReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
 	let refModelQuery =
 		`repository(uri: "${model.uri.authority}${model.uri.path}") {
 			commit(rev: "${model.uri.query}") {

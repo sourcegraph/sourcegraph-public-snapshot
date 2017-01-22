@@ -27,6 +27,9 @@ export class DataSource implements tree.IDataSource {
 			return true;
 		}
 		if (element instanceof FileReferences && !(element).failure) {
+			if (element.children.length === 0) {
+				return false;
+			}
 			tree.expand(element);
 			return true;
 		}

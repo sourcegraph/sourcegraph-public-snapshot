@@ -96,6 +96,7 @@ export class RefTree extends React.Component<Props, State> {
 		};
 
 		this.tree = new Tree(parent, config, options);
+
 		this.toDispose.add(this.tree);
 		this.toDispose.add(this.tree.addListener2(Controller.Events.SELECTED, (ref) => {
 			if (ref instanceof OneReference) {
