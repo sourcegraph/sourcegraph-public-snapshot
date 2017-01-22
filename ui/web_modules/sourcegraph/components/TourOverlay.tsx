@@ -1,6 +1,7 @@
 import * as autobind from "autobind-decorator";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import * as platform from "vs/base/common/platform";
 
 import { context } from "sourcegraph/app/context";
 import { Router, RouterLocation } from "sourcegraph/app/router";
@@ -172,21 +173,43 @@ export class TourOverlay extends React.Component<Props, State>  {
 			// Grab a random element that has been indexed and provides "code intelligence".
 			// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
 			// Render the first tooltip in the top half. Then render the second tooltip based on the second half of visible nodes.
-			let random = Math.random() * x.length / 2;
-			let refrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
-			let defRandom = x[Math.floor((random) + 1)];
+			let refrandom = Math.random() * x.length / 2;
+			let defRandom = x[Math.floor((refrandom + x.length / 2) + 1)];
 			let refRandom = x[Math.floor(refrandom + 1)];
 
+			const ctrl = platform.isMacintosh ? "⌘" : "Control";
 			// Build custom fields for coachmark.
-			let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
+			let defSubtitle = <p style={p}>
+				<strong>{ctrl} + Click</strong> this symbol to jump to the definition – even if it's defined in another repository.
+			</p>;
 			let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
 
-			let refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
+			let refSubtitle = <p style={p}>
+				Click this symbol to view its <strong>references</strong> in this repository and in any public code.
+			</p>;
 			let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
-				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", context.hasChromeExtensionInstalled() ? null : defActionCTA),
-				this._initCoachmarkAnnotation(refRandom, "ref-coachmark", "ref-mark", _refCoachmarkIndex, "View references and definitions", refSubtitle, "Enable these features for your private code", context.hasPrivateGitHubToken() ? null : refActionCTA),
+				this._initCoachmarkAnnotation(
+					defRandom,
+					"def-coachmark",
+					"def-mark",
+					_defCoachmarkIndex,
+					"Jump to definition",
+					defSubtitle,
+					"Jump to definition and hover documentation on GitHub",
+					context.hasChromeExtensionInstalled() ? null : defActionCTA
+				),
+				this._initCoachmarkAnnotation(
+					refRandom,
+					"ref-coachmark",
+					"ref-mark",
+					_refCoachmarkIndex,
+					"View references",
+					refSubtitle,
+					"Enable these features for your private code",
+					context.hasPrivateGitHubToken() ? null : refActionCTA
+				),
 			];
 
 			this._coachmarksShouldUpdate();
