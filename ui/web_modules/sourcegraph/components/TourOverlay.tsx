@@ -181,12 +181,12 @@ export class TourOverlay extends React.Component<Props, State>  {
 			const ctrl = platform.isMacintosh ? "⌘" : "Control";
 			// Build custom fields for coachmark.
 			let defSubtitle = <p style={p}>
-				<strong>{ctrl} + Click</strong> this symbol to jump to the definition – even if it's defined in another repository.
+				<strong>{ctrl} + Click</strong> any symbol to jump to the definition – even if it's defined in another repository.
 			</p>;
 			let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
 
 			let refSubtitle = <p style={p}>
-				Click this symbol to view its <strong>references</strong> in this repository and in any public code.
+				Click any symbol to view its <strong>references</strong> in this repository and in any public code.
 			</p>;
 			let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
