@@ -32,7 +32,7 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, 
 		// Invalid nodes means we tried to click on something which is
 		// not an ident (eg comment/string/etc). Return no locations.
 		if _, ok := err.(*invalidNodeError); ok {
-			return nil, nil
+			return []symbolLocationInformation{}, nil
 		}
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, 
 			//
 			// TODO(sqs): find a way to actually emit builtin locations
 			// (pointing to builtin/builtin.go).
-			return nil, nil
+			return []symbolLocationInformation{}, nil
 		}
 	}
 	if len(nodes) == 0 {
