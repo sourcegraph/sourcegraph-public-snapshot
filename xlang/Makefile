@@ -1,6 +1,6 @@
-.PHONY: all lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags xlang-php xlang-java deploy deploy-staging
+.PHONY: all lsp-proxy xlang-go xlang-javascript-typescript xlang-php xlang-java deploy deploy-staging
 
-all: lsp-proxy xlang-go xlang-javascript-typescript xlang-ctags xlang-php xlang-java
+all: lsp-proxy xlang-go xlang-javascript-typescript xlang-php xlang-java
 
 lsp-proxy:
 	cmd/lsp-proxy/build.sh
@@ -10,9 +10,6 @@ xlang-go:
 
 xlang-javascript-typescript:
 	javascript-typescript/build.sh
-
-xlang-ctags:
-	ctags/cmd/langserver-ctags/build.sh
 
 xlang-php:
 	php/build.sh
@@ -30,4 +27,4 @@ deploy:
 # Update the Docker images used for lsp-proxy or xlang-* on all staging
 # environments.
 deploy-staging: all
-	for ns in staging staging2 staging3 staging4; do echo $$ns:; kubectl --namespace=$$ns get pods -o name | grep -E '(lsp-proxy|xlang-go|xlang-typescript|xlang-ctags)' | xargs kubectl --namespace=$$ns delete; echo; done
+	for ns in staging staging2 staging3 staging4; do echo $$ns:; kubectl --namespace=$$ns get pods -o name | grep -E '(lsp-proxy|xlang-go|xlang-typescript)' | xargs kubectl --namespace=$$ns delete; echo; done
