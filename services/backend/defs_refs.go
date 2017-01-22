@@ -143,6 +143,21 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	span.SetTag("line", op.Line)
 	span.SetTag("character", op.Character)
 
+	// SECURITY: We first must call textDocument/xdefinition on a ref
+	// to figure out what to query the global deps database for. The
+	// ref might exist in a private repo, so we MUST check that the
+	// user has access to that private repo first prior to calling it
+	// in xlang (xlang has unlimited, unchecked access to gitserver).
+	//
+	// For example, if a user is browsing a private repository but
+	// looking for references to a public repository's symbol
+	// (fmt.Println), we support that, but we DO NOT support looking
+	// for references to a private repository's symbol ever (in fact,
+	// they are not even indexed by the global deps database).
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.DependencyReferences", op.RepoID); err != nil {
+		return nil, err
+	}
+
 	// Fetch repository information.
 	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
 	if err != nil {
@@ -150,13 +165,6 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	}
 	vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
 	span.SetTag("repo", repo.URI)
-
-	// SECURITY: DO NOT REMOVE THIS CHECK! If a repository is private we must
-	// ensure we do not leak its existence (or worse, LSP response info). We do
-	// not support private repository global references yet.
-	if repo.Private {
-		return nil, accesscontrol.ErrRepoNotFound
-	}
 
 	// Determine the rootPath.
 	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: repo.DefaultBranch})
