@@ -128,11 +128,6 @@
 	background-color: c_black_10 !important;
 }
 
-:global div.monaco-editor.vs-dark .monaco-editor-background {
-	margin-left: 5px;
-}
-
-
 /* Ref tree */
 
 :global .monaco-editor.vs-dark .reference-zone-widget .ref-tree {
@@ -681,4 +676,8 @@
 
 :global .sg-sidebar .monaco-tree {
 	flex: 1 1 auto;
+}
+
+:global #workbench\.editors\.stringEditor {
+	margin-left: 5px;
 }
