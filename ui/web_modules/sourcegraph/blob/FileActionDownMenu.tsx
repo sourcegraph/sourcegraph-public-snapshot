@@ -17,15 +17,38 @@ interface Props {
 	editorURL: string;
 }
 
+function convertToGitHubLineNumber(hash: string): string {
+	if (!hash || !hash.startsWith("#L")) {
+		return "";
+	}
+	let lines: string[] = hash.split("#L");
+	if (lines.length !== 2) {
+		return "";
+	}
+	lines = lines[1].split("-");
+	if (lines.length === 1) {
+		// single line
+		return `#L${lines[0]}`;
+	} else if (lines.length === 2) {
+		// line range
+		return `#L${lines[0]}-L${lines[1]}`;
+	}
+	return "";
+}
+
 @autobind
 export class FileActionDownMenu extends React.Component<Props, {}> {
+	private githubURL(): string {
+		return `${this.props.githubURL}${convertToGitHubLineNumber(window.location.hash)}`;
+	}
+
 	private fileActionEventListener(event: KeyboardEvent): void {
 		const eventTarget = event.target as Node;
 		if (eventTarget.nodeName === "INPUT" || isNonMonacoTextArea(eventTarget) || event.metaKey || event.ctrlKey) {
 			return;
 		} else if (event.keyCode === openInGitHubKeyCode || event.key === openInGitHubKey) {
 			AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps);
-			window.open(this.props.githubURL);
+			window.open(this.githubURL());
 			event.preventDefault();
 		}
 	}
@@ -38,7 +61,7 @@ export class FileActionDownMenu extends React.Component<Props, {}> {
 					<ChevronDown color={colors.blueGray()} style={{ marginLeft: 8, top: 0 }} />
 				</FlexContainer>
 				<Menu className={classNames(base.pa0, base.mr2)} style={{ width: 125 }}>
-					<a href={this.props.githubURL} onClick={() => AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps)} style={{ textAlign: "left" }} role="menu_item" target="_blank">
+					<a href={this.githubURL()} onClick={() => AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps)} style={{ textAlign: "left" }} role="menu_item" target="_blank">
 						View on GitHub
 						<Key shortcut={"G"} style={{ marginLeft: whitespace[2], float: "right" }} />
 					</a>
