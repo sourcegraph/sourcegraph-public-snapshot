@@ -650,22 +650,7 @@
 :global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) .content > .sidebar-references > .code-content > .function .file-details {
 	color:  #ade0ff;
 }
-
-:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .reference-file > .monaco-left-right-widget > .right > .workspace-references-badge-external  {
-	color: white;
-	background-color: c_orange_L1;
-	padding: 4px;
-	border-radius: 3px;
-}
-
-:global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .reference-file > .monaco-left-right-widget > .right > .workspace-references-badge-local  {
-	color: white;
-	background-color: c_green;
-	padding: 4px;
-	border-radius: 3px;
-}
-
-:global .sg-sidebar .monaco-tree > .monaco-scrollable-element {
+lobalglobal .sg-sidebar .monaco-tree > .monaco-scrollable-element {
 	position: absolute !important;
 	top: 0px;
 	bottom: 0px;
