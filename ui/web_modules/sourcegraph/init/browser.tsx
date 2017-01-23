@@ -3,6 +3,11 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as Relay from "react-relay";
 
+// The following 2 modules must be loaded in this order, because the
+// 1st sets a global configuration value that the 2nd uses.
+import "sourcegraph/init/worker";
+import "vs/base/worker/defaultWorkerFactory";
+
 import { Router, browserHistory as history, match } from "react-router";
 import { rootRoute } from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
