@@ -1,5 +1,6 @@
 import { css, insertGlobal } from "glamor";
 import * as React from "react";
+import * as ReactDOM from "react-dom";
 import URI from "vs/base/common/uri";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IEditorService } from "vs/platform/editor/common/editor";
@@ -25,6 +26,7 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 import * as dom from "vs/base/browser/dom";
 import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
 
+import { User } from "sourcegraph/components";
 import { List } from "sourcegraph/components/symbols/Primaries";
 import { colors, paddingMargin, whitespace } from "sourcegraph/components/utils";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
@@ -255,31 +257,33 @@ class Renderer extends LegacyRenderer {
 			const fileName = element.uri.fragment;
 			const lineNumber = element.range.startLineNumber
 			const fnSignature = strings.escape(preview.before.concat(preview.inside, preview.after));
+			const refContainer = $("div");
+			const hasAuthor = element && element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person;
 			let authorInfo;
 
-			if (element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
+			if (element && element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
 				const defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-				const gravatarHash = element.commitInfo.hunk.author.person.gravatarHash;
+				const gravatarHash = element.commitInfo.hunk.author.person.gravatarHash ;
 				const avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
 				const authorName = element.commitInfo.hunk.author.person.name;
 				const date = element.commitInfo.hunk.author.date;
-
-				authorInfo = `<div class="author-details">
-					<img src="${avatar}" />
-					<div class="name">${authorName} ${date}</div>
-				</div>`;
+				authorInfo = <div>
+					<User simple={true} nickname={authorName} avatar={avatar} style={{ display: "inline-block" }} />
+					{date}
+				</div>;
 			}
 
-			const reference = `<div class="code-content">
-				<div class="function">
-					<code>${fnSignature}</code>
-					${authorInfo}
-					<div class="file-details">${fileName} - Line: ${lineNumber}</div>
+			const reference = <div className="code-content">
+				<div className="function">
+					<code>{fnSignature}</code>
+					{hasAuthor && <div>{authorInfo}</div>}
+					<div className="file-details">{fileName} - Line: {lineNumber}</div>
 				</div>
 				<hr />
-			</div>`;
+			</div>;
 
-			$(".sidebar-references").innerHtml(reference).appendTo(container);
+			refContainer.appendTo(container);
+			ReactDOM.render( reference, refContainer.getHTMLElement() )
 		}
 
 		return null;
