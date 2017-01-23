@@ -6,7 +6,6 @@ import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
 import { Repo } from "sourcegraph/api/index";
-import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -57,44 +56,21 @@ export interface ReferenceCommitInfo {
 	hunk: GQL.IHunk;
 }
 
-function cacheKey(model: IReadOnlyModel, pos: Position): string {
-	const word = model.getWordAtPosition(RangeOrPosition.fromLSPPosition(pos).toMonacoPosition());
-	return `${model.uri.toString(true)}:${pos.line}:${word.startColumn}:${word.endColumn}`;
-}
-
-const hoverCache = new Map<string, Promise<Hover>>();
-const defCache = new Map<string, Promise<Definition>>();
-const referencesCache = new Map<string, Promise<Location[]>>();
-
 export async function provideDefinition(model: IReadOnlyModel, pos: Position): Promise<DefinitionData | null> {
-	const key = cacheKey(model, pos);
-
-	const hoverCacheHit = hoverCache.get(key);
-	const hoverPromise = hoverCacheHit ? hoverCacheHit : lsp.send(model, "textDocument/hover", {
+	const hoverPromise = lsp.send(model, "textDocument/hover", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
-	}).then(resp => {
-		if (resp.result) {
-			hoverCache.set(key, hoverPromise);
-			return resp.result;
-		}
 	});
 
-	const defCacheHit = defCache.get(key);
-	const defPromise = defCacheHit ? defCacheHit : lsp.send(model, "textDocument/definition", {
+	const defPromise = lsp.send(model, "textDocument/definition", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
-	}).then(resp => {
-		if (resp && resp.result) {
-			defCache.set(key, defPromise);
-			return resp.result as Definition;
-		}
 	});
 
-	const hover = await hoverPromise;
-	const def = await defPromise;
+	const hover: Hover = (await hoverPromise).result;
+	const def: Definition = (await defPromise).result;
 
 	if (!hover || !hover.contents || !def || !def[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
 		return null;
@@ -126,29 +102,22 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 }
 
 export async function provideReferences(model: IReadOnlyModel, pos: Position): Promise<Location[]> {
-	const key = cacheKey(model, pos);
-
-	const referencesCacheHit = referencesCache.get(key);
-	const referencesPromise = referencesCacheHit ? referencesCacheHit : lsp.send(model, "textDocument/references", {
+	const resp = await lsp.send(model, "textDocument/references", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
-	})
-		.then(resp => resp ? resp.result : null)
-		.then((resp: lsp.Location | lsp.Location[] | null) => {
-			if (!resp || Object.keys(resp).length === 0) {
-				return [];
-			}
-			referencesCache.set(key, referencesPromise);
+	});
+	const result = resp.result;
 
-			const { repo, rev, path } = URIUtils.repoParams(model.uri);
-			AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
+	if (!result || Object.keys(result).length === 0) {
+		return [];
+	}
 
-			const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
-			return locs.map(lsp.toMonacoLocation);
-		});
+	const { repo, rev, path } = URIUtils.repoParams(model.uri);
+	AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
-	return referencesPromise;
+	const locs: lsp.Location[] = result instanceof Array ? result : [result];
+	return locs.map(lsp.toMonacoLocation);
 }
 
 export async function provideReferencesCommitInfo(referencesModel: ReferencesModel): Promise<ReferencesModel> {

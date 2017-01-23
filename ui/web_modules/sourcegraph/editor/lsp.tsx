@@ -1,7 +1,7 @@
 import { context } from "sourcegraph/app/context";
 import { URIUtils } from "sourcegraph/core/uri";
 import { Features } from "sourcegraph/util/features";
-import { defaultFetch as fetch } from "sourcegraph/util/xhr";
+import { defaultFetch } from "sourcegraph/util/xhr";
 import URI from "vs/base/common/uri";
 import { Range } from "vs/editor/common/core/range";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
@@ -45,8 +45,8 @@ export function toMonacoRange(r: LSPRange): IRange {
 
 type LSPResponse = {
 	method: string;
-	result: any;
-	error: { code: number, message: string };
+	result?: any;
+	error?: { code: number, message: string };
 };
 
 // send sends an LSP request with the given method and params. Because
@@ -58,11 +58,29 @@ export function send(model: IReadOnlyModel, method: string, params: any): Promis
 	return sendExt(URIUtils.withoutFilePath(model.uri).toString(true), model.getModeId(), method, params);
 }
 
+const LSPCache = new Map<string, Response>();
+
+// WARNING: Caches responses that are errors.
+async function cachingFetch(url: string | Request, init?: RequestInit): Promise<Response> {
+	const key = JSON.stringify({
+		url,
+		init,
+	});
+
+	let response = LSPCache.get(key);
+	if (!response) {
+		response = await defaultFetch(url, init);
+	}
+
+	LSPCache.set(key, response);
+	return response.clone();
+}
+
 // sendExt mirrors the functionality of send, but is intended to be used by callers outside of Monaco.
-export function sendExt(uri: string, modeID: string, method: string, params: any): Promise<LSPResponse> {
+export async function sendExt(uri: string, modeID: string, method: string, params: any): Promise<LSPResponse> {
 	const t0 = Date.now();
 
-	const body = [
+	const request = [
 		{
 			id: 0,
 			method: "initialize",
@@ -77,48 +95,33 @@ export function sendExt(uri: string, modeID: string, method: string, params: any
 		{ method: "exit" },
 	];
 
-	type LSPResponseWithTraceURL = {
-		resp: LSPResponse;
-		traceURL: string; // Lightstep trace URL
-	};
-
 	// We duplicate the method in the URL and in the request body for
 	// easier browser network tab debugging.
-	return fetch(`/.api/xlang/${method}`, {
+	const serverResponse = await cachingFetch(`/.api/xlang/${method}`, {
 		method: "POST",
-		body: JSON.stringify(body),
-	})
-		.then((resp: Response): Promise<LSPResponseWithTraceURL> => {
-			const traceURL = resp.headers.get("x-trace");
+		body: JSON.stringify(request),
+	});
+	const traceURL = serverResponse.headers.get("x-trace");
 
-			if (resp.status >= 200 && resp.status <= 299) {
-				// Pass along the main request's response (not the
-				// initialize/shutdown responses).
-				return resp.json().then((resps: LSPResponse[]) => ({ resp: resps[1], traceURL }));
-			}
+	let response;
+	if (serverResponse.status >= 200 && serverResponse.status < 300) {
+		const resps = await serverResponse.json();
+		response = resps[1];
+	} else {
+		// Synthesize an LSP response object from the HTTP error,
+		// so that we can deal with errors from any source in a
+		// consistent way.
+		const text = await serverResponse.text();
+		response = {
+			error: {
+				code: serverResponse.status,
+				message: `HTTP error ${serverResponse.status} (${serverResponse.statusText}): ${text || "(empty HTTP response body)"}`,
+			},
+		};
+	}
+	logLSPResponse(URI.parse(uri), modeID, method, params, request, response, traceURL, Date.now() - t0);
 
-			// Synthesize an LSP response object from the HTTP error,
-			// so that we can deal with errors from any source in a
-			// consistent way.
-			return resp.text().then((text: string) => ({
-				resp: {
-					error: {
-						code: resp.status,
-						message: `HTTP error ${resp.status} (${resp.statusText}): ${text || "(empty HTTP response body)"}`,
-					},
-				},
-				traceURL,
-			}));
-		})
-		.then((respWithTrace: LSPResponseWithTraceURL): LSPResponse | null => {
-			logLSPResponse(URI.parse(uri), modeID, method, params, body, respWithTrace.resp, respWithTrace.traceURL, Date.now() - t0);
-
-			// Report LSP error.
-			if (respWithTrace.resp.error) {
-				return null;
-			}
-			return respWithTrace.resp;
-		});
+	return response;
 }
 
 const modeToIssueAssignee = {
