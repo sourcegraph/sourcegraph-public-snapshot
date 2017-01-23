@@ -17,7 +17,7 @@ import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { Disposables } from "sourcegraph/workbench/utils";
 import { MiniStore } from "sourcegraph/workbench/utils";
 
-export const REFERENCES_SECTION_ID: string = "ReferencesSectionID";
+export const REFERENCES_SECTION_ID: string = "references-section-header";
 const TreeDomNodeID: string = "workbench.editors.stringEditor";
 const TreeSidebarClassName: string = "sg-sidebar";
 
