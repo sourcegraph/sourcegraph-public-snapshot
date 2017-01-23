@@ -23,6 +23,11 @@ export class LeftRightWidget {
 		].filter(x => !!x);
 	}
 
+	public setClassNames(classNames: string): void {
+		const classList = this.$el.getHTMLElement().classList;
+		classList.add.apply(classList, arguments);
+	}
+
 	public dispose(): void {
 		if (this.$el) {
 			this.$el.destroy();
