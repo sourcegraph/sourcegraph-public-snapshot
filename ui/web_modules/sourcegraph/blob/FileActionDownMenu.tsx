@@ -1,6 +1,7 @@
 import * as autobind from "autobind-decorator";
 import * as classNames from "classnames";
 import * as React from "react";
+import { Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { FlexContainer, Key, Menu, Popover } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -38,8 +39,14 @@ function convertToGitHubLineNumber(hash: string): string {
 
 @autobind
 export class FileActionDownMenu extends React.Component<Props, {}> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: { router: Router };
+
 	private githubURL(): string {
-		return `${this.props.githubURL}${convertToGitHubLineNumber(window.location.hash)}`;
+		return `${this.props.githubURL}${convertToGitHubLineNumber(this.context.router.location.hash)}`;
 	}
 
 	private fileActionEventListener(event: KeyboardEvent): void {
@@ -53,6 +60,11 @@ export class FileActionDownMenu extends React.Component<Props, {}> {
 		}
 	}
 
+	private onViewGithubClick(): void {
+		AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps);
+		window.open(this.githubURL());
+	}
+
 	render(): JSX.Element {
 		// float required to fix Firefox issue.
 		return <div style={{ display: "inline-block", padding: whitespace[2], paddingRight: 0, float: "right" }}>
@@ -62,7 +74,7 @@ export class FileActionDownMenu extends React.Component<Props, {}> {
 					<ChevronDown color={colors.blueGray()} style={{ marginLeft: 8, top: 0 }} />
 				</FlexContainer>
 				<Menu className={classNames(base.pa0, base.mr2)} style={{ width: 125 }}>
-					<a href={this.githubURL()} onClick={() => AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps)} style={{ textAlign: "left" }} role="menu_item" target="_blank">
+					<a onClick={this.onViewGithubClick} style={{ textAlign: "left" }} role="menu_item" target="_blank">
 						View on GitHub
 						<Key shortcut={"G"} style={{ marginLeft: whitespace[2], float: "right" }} />
 					</a>
