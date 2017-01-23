@@ -26,7 +26,7 @@ import * as dom from "vs/base/browser/dom";
 import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
 
 import { List } from "sourcegraph/components/symbols/Primaries";
-import { colors, paddingMargin } from "sourcegraph/components/utils";
+import { colors, paddingMargin, whitespace } from "sourcegraph/components/utils";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
 import { WorkspaceBadge } from "sourcegraph/workbench/ui/badges/workspaceBadge";
@@ -205,7 +205,7 @@ class Renderer extends LegacyRenderer {
 
 			new LeftRightWidget(repositoryHeader, (left: HTMLElement) => {
 				const repoTitleContent = new FileLabel(left, workspaceURI, this._contextService);
-				repoTitleContent.setIcon(<List width={18} />);
+				repoTitleContent.setIcon(<List width={18} style={{ marginLeft: -2, color: colors.blueGrayL1() }} />);
 				return null as any;
 			}, (right: HTMLElement) => {
 
@@ -223,7 +223,10 @@ class Renderer extends LegacyRenderer {
 				}
 
 				return badge as any;
-			});
+			}).setClassNames(css({
+				paddingLeft: whitespace[2],
+				paddingRight: whitespace[2],
+			}));
 
 			const borderSx = `1px solid ${colors.blueGrayL1(0.2)}`;
 			const repoHeaderEl = repositoryHeader.getHTMLElement();
