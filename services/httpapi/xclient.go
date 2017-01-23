@@ -24,18 +24,16 @@ import (
 type xclient struct {
 	*xlang.Client
 
-	hasXDefinition bool
-	mode           string
+	hasXDefinitionAndXPackages bool
+	mode                       string
 }
 
-// hasXDefinition is the hardcoded list of languages that provide
-// textDocument/xdefinition.  We cannot rely on the value returned
-// from the LSP proxy, because that does not pass through the value of
-// the initialize result.
-var hasXDefinition = map[string]struct{}{
-	"go":         struct{}{},
+// hasXDefinitionAndXPackages is the hardcoded list of languages that provide
+// textDocument/xdefinition and workspace/xpackages. We cannot rely on the
+// value returned from the LSP proxy, because that does not pass through the
+// value of the initialize result.
+var hasXDefinitionAndXPackages = map[string]struct{}{
 	"typescript": struct{}{},
-	"php":        struct{}{},
 }
 
 // Call transparently wraps xlang.Client.Call *except* for `textDocument/definition` if the language
@@ -69,9 +67,9 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			// DEPRECATED: Use old Mode field if the new one is not set.
 			c.mode = init.Mode
 		}
-		_, c.hasXDefinition = hasXDefinition[c.mode]
+		_, c.hasXDefinitionAndXPackages = hasXDefinitionAndXPackages[c.mode]
 		return c.Client.Call(ctx, method, params, result, opt...)
-	} else if method != "textDocument/definition" || !c.hasXDefinition {
+	} else if method != "textDocument/definition" || !c.hasXDefinitionAndXPackages {
 		return c.Client.Call(ctx, method, params, result, opt...)
 	}
 
