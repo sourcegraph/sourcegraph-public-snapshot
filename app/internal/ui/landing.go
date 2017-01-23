@@ -44,7 +44,9 @@ func curlRepro(mode, rootPath, method string, params interface{}) string {
 		InitializeParams: lsp.InitializeParams{
 			RootPath: rootPath,
 		},
-		Mode: mode,
+		InitializationOptions: xlang.ClientProxyInitializationOptions{
+			Mode: mode,
+		},
 	})
 	req := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 1}, Method: method}
 	req.SetParams(params)

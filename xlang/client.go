@@ -136,6 +136,7 @@ func UnsafeOneShotClientRequest(ctx context.Context, mode, rootPath, method stri
 		InitializeParams: lsp.InitializeParams{
 			RootPath: rootPath,
 		},
+		InitializationOptions: ClientProxyInitializationOptions{Mode: mode},
 		Mode: mode,
 	}, nil)
 	if err != nil {

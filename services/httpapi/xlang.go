@@ -158,6 +158,16 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	if err := json.Unmarshal(*reqs[0].Params, &initParams); err != nil {
 		return fmt.Errorf("invalid jsonrpc2 initialize params: %s", err)
 	}
+	{
+		// DEPRECATED: Be compatible with both
+		// pre-Mode-field-migration LSP proxy servers and
+		// post-migration LSP proxy servers.
+		if initParams.InitializationOptions.Mode == "" {
+			initParams.InitializationOptions.Mode = initParams.Mode
+		} else {
+			initParams.Mode = initParams.InitializationOptions.Mode
+		}
+	}
 	if initParams.RootPath == "" {
 		return errors.New("invalid empty LSP root path in initialize request")
 	}
@@ -167,8 +177,8 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
 	}
 	addRootPathFields(ev, rootPathURI)
-	if initParams.Mode != "" {
-		mode = initParams.Mode
+	if initParams.InitializationOptions.Mode != "" {
+		mode = initParams.InitializationOptions.Mode
 
 		// Update span operation name now that we have a mode.
 		span.SetOperationName(fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))

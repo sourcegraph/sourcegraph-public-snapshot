@@ -64,7 +64,11 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		if err := json.Unmarshal(*params.(*json.RawMessage), &init); err != nil {
 			return err
 		}
-		c.mode = init.Mode
+		c.mode = init.InitializationOptions.Mode
+		if c.mode == "" {
+			// DEPRECATED: Use old Mode field if the new one is not set.
+			c.mode = init.Mode
+		}
 		_, c.hasXDefinition = hasXDefinition[c.mode]
 		return c.Client.Call(ctx, method, params, result, opt...)
 	} else if method != "textDocument/definition" || !c.hasXDefinition {

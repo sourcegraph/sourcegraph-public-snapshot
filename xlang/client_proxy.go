@@ -167,6 +167,18 @@ type clientProxyConn struct {
 // "typescript", for example.
 type ClientProxyInitializeParams struct {
 	lsp.InitializeParams
+	InitializationOptions ClientProxyInitializationOptions `json:"initializationOptions"`
+
+	// Mode is DEPRECATED; it was moved to the subfield
+	// initializationOptions.Mode. It is still here for backward
+	// compatibility until the xlang service is upgraded.
+	Mode string `json:"mode,omitempty"`
+}
+
+// ClientProxyInitializationOptions is the "initializationOptions"
+// field of the "initialize" request params sent from the client to
+// the LSP client proxy.
+type ClientProxyInitializationOptions struct {
 	Mode string `json:"mode"`
 }
 
@@ -259,11 +271,17 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
+		// DEPRECATED: Handle clients that send initialization params with the old Mode field.
+		if params.InitializationOptions.Mode == "" {
+			params.InitializationOptions.Mode = params.Mode
+			params.Mode = ""
+		}
+
 		rootPathURI, err := uri.Parse(params.RootPath)
 		if err != nil {
 			return nil, fmt.Errorf("invalid rootPath: %s", err)
 		}
-		if params.Mode == "" {
+		if params.InitializationOptions.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
 		if rootPathURI.Rev() == "" {
@@ -283,7 +301,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		c.init = &params
 		c.context.rootPath = *rootPathURI
-		c.context.mode = c.init.Mode
+		c.context.mode = c.init.InitializationOptions.Mode
 		return lsp.ServerCapabilities{
 			ReferencesProvider: true,
 			DefinitionProvider: true,
