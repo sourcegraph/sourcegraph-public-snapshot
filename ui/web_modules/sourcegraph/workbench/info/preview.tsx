@@ -1,4 +1,5 @@
 import * as autobind from "autobind-decorator";
+import { css } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
@@ -6,7 +7,9 @@ import { IEditorOptions } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
 import { urlToBlobLine } from "sourcegraph/blob/routes";
-import { colors } from "sourcegraph/components/utils";
+import { FlexContainer } from "sourcegraph/components";
+import { Close, PopOut } from "sourcegraph/components/symbols/Primaries";
+import { colors, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
@@ -22,7 +25,7 @@ interface Props {
 
 export const funcHeight = 60;
 export const sidebarWidth = 300;
-const titleHeight = 30;
+const titleHeight = 34;
 
 export class Preview extends React.Component<Props, {}> {
 	render(): JSX.Element {
@@ -58,7 +61,7 @@ export class Preview extends React.Component<Props, {}> {
 				position: "absolute",
 				bottom: 0,
 			}}>
-				<Title location={this.props.location} />
+				<Title location={this.props.location} onClickClose={this.props.hidePreview} />
 				<EditorPreview location={this.props.location} />
 			</div>
 		</div>;
@@ -67,25 +70,35 @@ export class Preview extends React.Component<Props, {}> {
 
 const prefix = "github.com/";
 
-function Title(props: EditorProps): JSX.Element {
-	let {repo, path, rev} = URIUtils.repoParams(props.location.uri);
-	const url = urlToBlobLine(repo, rev, path, props.location.range.startLineNumber);
+function Title({ location, onClickClose }: { location: Location; onClickClose: () => void }): JSX.Element {
+	let {repo, path, rev} = URIUtils.repoParams(location.uri);
+	const url = urlToBlobLine(repo, rev, path, location.range.startLineNumber);
 	repo = repo.startsWith(prefix) ? repo.substr(prefix.length) : repo;
-	return <div style={{
-		background: colors.blue(),
-		color: colors.white(),
+	return <FlexContainer justify="between" items="center" style={{
+		backgroundColor: colors.blue(),
 		height: titleHeight,
-		lineHeight: `${titleHeight}px`,
-		paddingLeft: 20,
+		paddingLeft: whitespace[3],
+		paddingRight: whitespace[3],
 	}}>
 		<RouterContext>
 			<Link
-				to={url}
-				style={{ color: colors.white() }}>
+				{...css(
+					{ color: colors.white(0.9), fontWeight: "bold" },
+					{ ":hover": { color: "white" } },
+				) }
+				to={url}>
 				{repo}/{path}
+				<PopOut width={18} style={{ marginLeft: whitespace[1] }} />
 			</Link>
 		</RouterContext>
-	</div>;
+		<span onClick={onClickClose}
+			{...css(
+				{ color: colors.blueD2(0.7), cursor: "pointer", marginTop: 2, marginRight: -4 },
+				{ ":hover": { color: colors.blueD2() } },
+			) }>
+			<Close width={20} />
+		</span>
+	</FlexContainer>;
 }
 
 interface EditorProps {
