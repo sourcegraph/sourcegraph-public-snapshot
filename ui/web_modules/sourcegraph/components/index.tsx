@@ -41,3 +41,4 @@ export { LanguageLabel } from "sourcegraph/components/LanguageLabel";
 export { PageTitle } from "sourcegraph/components/PageTitle";
 export { PathBreadcrumb } from "sourcegraph/components/PathBreadcrumb";
 export { Key } from "sourcegraph/components/Key";
+export { ReferenceCard } from "sourcegraph/components/ReferenceCard";

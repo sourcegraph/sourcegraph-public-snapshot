@@ -26,7 +26,7 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 import * as dom from "vs/base/browser/dom";
 import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
 
-import { User } from "sourcegraph/components";
+import { ReferenceCard } from "sourcegraph/components";
 import { List } from "sourcegraph/components/symbols/Primaries";
 import { colors, paddingMargin, whitespace } from "sourcegraph/components/utils";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
@@ -255,35 +255,35 @@ class Renderer extends LegacyRenderer {
 		if (element instanceof OneReference) {
 			const preview = element.preview.preview(element.range);
 			const fileName = element.uri.fragment;
-			const lineNumber = element.range.startLineNumber
+			const line = element.range.startLineNumber
 			const fnSignature = strings.escape(preview.before.concat(preview.inside, preview.after));
 			const refContainer = $("div");
-			const hasAuthor = element && element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person;
-			let authorInfo;
+			let defaultAvatar;
+			let gravatarHash;
+			let avatar;
+			let authorName;
+			let date;
 
 			if (element && element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
-				const defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-				const gravatarHash = element.commitInfo.hunk.author.person.gravatarHash ;
-				const avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
-				const authorName = element.commitInfo.hunk.author.person.name;
-				const date = element.commitInfo.hunk.author.date;
-				authorInfo = <div>
-					<User simple={true} nickname={authorName} avatar={avatar} style={{ display: "inline-block" }} />
-					{date}
-				</div>;
+				defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
+				gravatarHash = element.commitInfo.hunk.author.person.gravatarHash ;
+				avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
+				authorName = element.commitInfo.hunk.author.person.name;
+				date = element.commitInfo.hunk.author.date;
 			}
 
-			const reference = <div className="code-content">
-				<div className="function">
-					<code>{fnSignature}</code>
-					{hasAuthor && <div>{authorInfo}</div>}
-					<div className="file-details">{fileName} - Line: {lineNumber}</div>
-				</div>
-				<hr />
-			</div>;
-
 			refContainer.appendTo(container);
-			ReactDOM.render( reference, refContainer.getHTMLElement() )
+
+			ReactDOM.render(
+				<ReferenceCard
+					fnSignature={fnSignature}
+					authorName={authorName}
+					avatar={avatar}
+					date={date}
+					fileName={fileName}
+					line={line} />, 
+				refContainer.getHTMLElement(),
+			);
 		}
 
 		return null;
