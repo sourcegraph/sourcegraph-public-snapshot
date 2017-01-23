@@ -1,18 +1,6 @@
-export const languages = [
-	"C",
-	"C#",
-	"C++",
-	"Go",
-	"Java",
-	"JavaScript",
-	"TypeScript",
-	"Objective-C",
-	"PHP",
-	"Python",
-	"Ruby",
-	"Swift",
-	"Other language",
-];
+import { langNames } from "sourcegraph/Language";
+
+export const languages = langNames();
 
 export const editors = [
 	"Atom",
