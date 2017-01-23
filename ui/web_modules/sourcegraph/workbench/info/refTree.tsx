@@ -37,7 +37,7 @@ import { LeftRightWidget } from "sourcegraph/workbench/ui/leftRightWidget";
 import { scrollToLine } from "sourcegraph/workbench/utils";
 
 interface Props {
-	model?: ReferencesModel;
+	model: ReferencesModel;
 	focus(resource: Location): void;
 }
 
@@ -151,10 +151,6 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		if (!this.props.model) {
-			return <div></div>;
-		}
-
 		return <div ref={this.treeDiv} id={this.treeID} style={{
 			zIndex: 1,
 			flex: "1 1 100%",
@@ -225,7 +221,7 @@ class Renderer extends LegacyRenderer {
 				}
 
 				return badge as any;
-			}).setClassNames(css({
+			}).setClassNames((css as any)({
 				paddingLeft: whitespace[2],
 				paddingRight: whitespace[2],
 			}));
@@ -266,7 +262,7 @@ class Renderer extends LegacyRenderer {
 
 			if (element && element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
 				defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-				gravatarHash = element.commitInfo.hunk.author.person.gravatarHash ;
+				gravatarHash = element.commitInfo.hunk.author.person.gravatarHash;
 				avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
 				authorName = element.commitInfo.hunk.author.person.name;
 				date = element.commitInfo.hunk.author.date;
