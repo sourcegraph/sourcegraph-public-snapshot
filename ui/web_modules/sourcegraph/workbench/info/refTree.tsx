@@ -192,8 +192,10 @@ class Renderer extends LegacyRenderer {
 					badge.setTitleFormat("Failed to resolve file.");
 				} else if (workspace === "Local") {
 					badge.setTitleFormat("Local");
+					badge.setColor(colors.green());
 				} else {
 					badge.setTitleFormat("External");
+					badge.setClassNames(colors.orangeL2());
 				}
 
 				return badge as any;

@@ -1,33 +1,38 @@
 "use strict";
 
-import { css } from "glamor";
-import { colors, whitespace } from "sourcegraph/components/utils";
-
 import { $, Builder } from "vs/base/browser/builder";
 import * as strings from "vs/base/common/strings";
 
-const badgeSx = {
-	borderRadius: 3,
-	padding: `2px ${whitespace[2]}`,
-	color: "white",
-	fontWeight: "bold",
-};
+import "sourcegraph/workbench/styles/workspaceBadge.css";
 
 export class WorkspaceBadge {
 
 	private $el: Builder;
 	private workspace: "Local" | "External";
 	private titleFormat: string;
+	private color: string;
 
-	constructor(container: Builder, workspace: "Local" | "External", titleFormat?: string);
-	constructor(container: HTMLElement, workspace: "Local" | "External", titleFormat?: string);
-	constructor(container: any, workspace: "Local" | "External", titleFormat?: string) {
+	constructor(
+		container: Builder,
+		workspace: "Local" | "External",
+		titleFormat?: string,
+		color: string,
+	);
+	constructor(
+		container: HTMLElement,
+		workspace: "Local" | "External",
+		titleFormat?: string,
+		color: string,
+	);
+	constructor(
+		container: any,
+		workspace: "Local" | "External",
+		titleFormat?: string,
+		color: string,
+	) {
 		const workspaceType = workspace.toLowerCase();
-		const badge = css({
-			backgroundColor: workspaceType === "local" ? colors.green() : colors.red(),
-		}, badgeSx );
 
-		this.$el = $(`.${badge}`).appendTo(container);
+		this.$el = $(`.monaco-workspace-badge`).appendTo(container);
 
 		this.titleFormat = titleFormat || "";
 		this.setWorkspace(workspace);
@@ -41,6 +46,10 @@ export class WorkspaceBadge {
 	public setTitleFormat(titleFormat: string): void {
 		this.titleFormat = titleFormat;
 		this.render();
+	}
+
+	public setColor(color: classNames): void {
+		this.$el.currentElement.style.backgroundColor = color;
 	}
 
 	private render(): void {
