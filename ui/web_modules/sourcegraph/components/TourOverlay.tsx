@@ -15,6 +15,7 @@ import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
+import { Features } from "sourcegraph/util/features";
 import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props { location: RouterLocation; }
@@ -173,22 +174,29 @@ export class TourOverlay extends React.Component<Props, State>  {
 			// Grab a random element that has been indexed and provides "code intelligence".
 			// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
 			// Render the first tooltip in the top half. Then render the second tooltip based on the second half of visible nodes.
-			let defrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
-			let refrandom = Math.random() * x.length / 2;
-			let defRandom = x[Math.floor((defrandom) + 1)];
-			let refRandom = x[Math.floor(refrandom + 1)];
+			const defrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
+			const refrandom = Math.random() * x.length / 2;
+			const defRandom = x[Math.floor((defrandom) + 1)];
+			const refRandom = x[Math.floor(refrandom + 1)];
 
-			const ctrl = platform.isMacintosh ? "⌘" : "Control";
-			// Build custom fields for coachmark.
-			let defSubtitle = <p style={p}>
-				<strong>{ctrl} + Click</strong> any symbol to jump to the definition – even if it's defined in another repository.
-			</p>;
-			let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
+			let defSubtitle;
+			let refSubtitle;
+			if (Features.projectWow.isEnabled()) {
+				const ctrl = platform.isMacintosh ? "⌘" : "Control";
+				// Build custom fields for coachmark.
+				defSubtitle = <p style={p}>
+					<strong>{ctrl} + Click</strong> any symbol to jump to the definition – even if it's defined in another repository.
+				</p>;
+				refSubtitle = <p style={p}>
+					Click any symbol to view its <strong>references</strong> in this repository and in any public code.
+				</p>;
+			} else {
+				defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
+				refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
 
-			let refSubtitle = <p style={p}>
-				Click any symbol to view its <strong>references</strong> in this repository and in any public code.
-			</p>;
-			let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
+			}
+			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
+			const refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
 				this._initCoachmarkAnnotation(
