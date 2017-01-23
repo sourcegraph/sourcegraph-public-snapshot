@@ -144,33 +144,6 @@
 	font-weight: bold;
 }
 
-:global .monaco-editor .reference-zone-widget .ref-tree span.referenceMatch img.avatarImg {
-	width: 15px;
-	height: 15px;
-}
-
-:global .monaco-editor .reference-zone-widget .ref-tree span.referenceMatch {
-	background-color: c_blue_2;
-	color: white;
-	border-radius: 3px;
-	padding-left: 2px;
-	padding-right: 2px;
-}
-
-:global .vs-dark .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) {
-  background-color: c_blue_2;
-  color: white;
-}
-
-:global .vs-dark .reference-zone-widget div:focus {
-  outline: none;
-  box-shadow: inset 0 1px 0 1px c_blue_8;
-}
-
-:global .monaco-editor.vs-dark .reference-zone-widget .monaco-count-badge {
-	background-color: c_blue_2;
-}
-
 /*
 	Style scrollbar
 */
