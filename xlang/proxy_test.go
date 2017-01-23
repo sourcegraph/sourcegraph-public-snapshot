@@ -622,8 +622,8 @@ func yza() {}
 
 			// Prepare the connection.
 			if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-				InitializeParams: lsp.InitializeParams{RootPath: test.rootPath},
-				Mode:             test.mode,
+				InitializeParams:      lsp.InitializeParams{RootPath: test.rootPath},
+				InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}
@@ -776,8 +776,8 @@ func TestProxy_connections(t *testing.T) {
 
 	// C1 connects to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v", Capabilities: caps},
-		Mode:             "test",
+		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?v", Capabilities: caps},
+		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)
@@ -923,8 +923,8 @@ func TestProxy_propagation(t *testing.T) {
 
 	// Connect to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams: lsp.InitializeParams{RootPath: "test://test?v"},
-		Mode:             "test",
+		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?v"},
+		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)

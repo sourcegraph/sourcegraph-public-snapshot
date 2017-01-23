@@ -231,8 +231,8 @@ func TestIntegration(t *testing.T) {
 
 			// Prepare the connection.
 			if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-				InitializeParams: lsp.InitializeParams{RootPath: rootPath},
-				Mode:             test.mode,
+				InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+				InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}

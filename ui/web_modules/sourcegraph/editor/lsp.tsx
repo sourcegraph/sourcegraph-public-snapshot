@@ -68,7 +68,8 @@ export function sendExt(uri: string, modeID: string, method: string, params: any
 			method: "initialize",
 			params: {
 				rootPath: uri,
-				mode: modeID,
+				initializationOptions: { mode: modeID },
+				mode: modeID, // DEPRECATED: use old mode field if new one is not set
 			},
 		},
 		{ id: 1, method, params },
