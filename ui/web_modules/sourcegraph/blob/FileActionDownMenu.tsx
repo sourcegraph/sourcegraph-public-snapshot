@@ -54,7 +54,7 @@ export class FileActionDownMenu extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element {
-		return <div style={{ display: "inline-block", padding: whitespace[2], paddingRight: 0 }}>
+		return <div style={{ display: "inline-block", padding: whitespace[2], paddingRight: 0, float: "right" }}> // Float required to fix Firefox issue.
 			<Popover left={true}>
 				<FlexContainer items="center" style={{ lineHeight: "0", height: 29 }}>
 					<div>View</div>
