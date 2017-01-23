@@ -1,4 +1,4 @@
-import { hover } from "glamor";
+import { hover, insertGlobal } from "glamor";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Link } from "react-router";
@@ -68,8 +68,14 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 }
 
 function Title({repo}: { repo: string }): JSX.Element {
+
+	insertGlobal(".composite.title", {
+		opacity: "1 !important",
+		overflow: "visible !important",
+	});
+
 	return <FlexContainer items="center" style={{
-		background: colors.blueGrayD1(),
+		backgroundColor: colors.blueGrayD1(),
 		boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
 		minHeight: layout.editorToolbarHeight,
 		position: "relative",
@@ -93,7 +99,7 @@ function Title({repo}: { repo: string }): JSX.Element {
 					textOverflow: "ellipsis",
 					display: "inline-block",
 				}}>
-				<List width={21} style={{ marginRight: whitespace[1] }} color={colors.blueGrayL1()} />
+				<List width={21} style={{ opacity: 0.6, marginRight: whitespace[1] }} />
 				{repo.replace(/^github.com\//, "")}
 			</Link>
 		</Heading>

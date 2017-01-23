@@ -503,24 +503,19 @@
 	position: fixed !important;
 }
 
+:global .monaco-workbench > .part.sidebar.left {
+	background-color: c_cool_gray;
+}
+
 :global .monaco-workbench > .part > .composite.title {
-	height: 45px; /* This value should match editorToolbarHeight in layout.tsx */
-	overflow: visible;
-	z-index: 1;
+	height: 45px;
+	opacity: 0;
+	transition: opacity 500ms ease-in-out;
 }
 
-:global .monaco-workbench > .part > .composite.title > .title-actions {
-	display: none;
-}
-
+:global .monaco-workbench > .part > .composite.title > .title-actions,
 :global .monaco-workbench > .part > .composite.title > .title-label > span {
-	font-size: 1.25rem;
-	font-weight: 800;
-	letter-spacing: 0px;
-	vertical-align: middle;
-	line-height: 45px;
-	color: rgba(213,229,242,1) !important;
-	text-transform: initial !important;
+	display: none;
 }
 
 :global .monaco-tree .monaco-tree-wrapper .monaco-tree-rows {
