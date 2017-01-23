@@ -4308,9 +4308,9 @@ run-sequence@^1.2.2:
     chalk "*"
     gulp-util "*"
 
-rxjs-es@^5.0.0-beta.12:
-  version "5.0.0-beta.12"
-  resolved "https://registry.yarnpkg.com/rxjs-es/-/rxjs-es-5.0.0-beta.12.tgz#cf161b173f5086feec113b82c4d95187b2f11c43"
+rxjs@^5.0.3:
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.0.3.tgz#fc8bdf464ebf938812748e4196788f392fef9754"
   dependencies:
     symbol-observable "^1.0.1"
 

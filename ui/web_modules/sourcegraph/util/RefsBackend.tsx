@@ -1,5 +1,5 @@
 import * as hash from "object-hash";
-import { Observable } from "rxjs-es";
+import { Observable } from "rxjs";
 import { Definition, Hover, Position } from "vscode-languageserver-types";
 
 import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
@@ -304,7 +304,7 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 				clearInterval(interval);
 			}
 		};
-	}).cache(MAX_GLOBAL_REFS_REPOS);
+	}).publishReplay(MAX_GLOBAL_REFS_REPOS).refCount();
 
 	globalRefsObservables.set(key, observable);
 	return observable;

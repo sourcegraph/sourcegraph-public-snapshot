@@ -1,4 +1,4 @@
-import { Subscription } from "rxjs-es";
+import { Subscription } from "rxjs";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";

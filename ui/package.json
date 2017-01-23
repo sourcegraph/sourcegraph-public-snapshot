@@ -69,7 +69,7 @@
     "react-relay": "0.9.3",
     "react-router": "3.0.0",
     "react-router-scroll": "0.4.1",
-    "rxjs-es": "^5.0.0-beta.12",
+    "rxjs": "^5.0.3",
     "string_score": "0.1.22",
     "url": "0.11.0",
     "vscode-languageserver-types": "^1.0.4"
