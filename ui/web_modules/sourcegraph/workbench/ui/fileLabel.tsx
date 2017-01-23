@@ -1,5 +1,8 @@
 "use strict";
 
+import * as ReactDOM from "react-dom";
+import { whitespace } from "sourcegraph/components/utils";
+
 import * as dom from "vs/base/browser/dom";
 import { HighlightedLabel } from "vs/base/browser/ui/highlightedlabel/highlightedLabel";
 import { IMatch } from "vs/base/common/filters";
@@ -14,9 +17,9 @@ export interface IIconLabelCreationOptions {
 
 export interface IIconLabelOptions {
 	title?: string;
+	matches?: IMatch[];
 	extraClasses?: string[];
 	italic?: boolean;
-	matches?: IMatch[];
 }
 
 export class IconLabel {
@@ -49,6 +52,16 @@ export class IconLabel {
 
 	public get descriptionElement(): HTMLElement {
 		return this.descriptionNode;
+	}
+
+	public setIcon(icon: JSX.Element): void {
+		if (this.labelNode instanceof HighlightedLabel) {
+			return;
+		}
+		const iconContainer = document.createElement("span");
+		iconContainer.style.marginRight = whitespace[1];
+		this.domNode.insertBefore(iconContainer, this.labelNode);
+		ReactDOM.render(icon, iconContainer);
 	}
 
 	public setValue(label?: string, description?: string, options?: IIconLabelOptions): void {
@@ -96,15 +109,17 @@ export class FileLabel extends IconLabel {
 	constructor(container: HTMLElement, file: uri, provider: IWorkspaceProvider) {
 		super(container);
 
-		this.setFile(file, provider);
+		this.setRepoName(file, provider, container);
 	}
 
-	public setFile(file: uri, provider: IWorkspaceProvider): void {
+	public setRepoName(file: uri, provider: IWorkspaceProvider, container: HTMLElement): void {
 		const path = getPath(file);
 		const parent = paths.dirname(path);
-
-		this.setValue(paths.basename(path), parent && parent !== "." ? getPathLabel(parent, provider) : "", { title: path });
+		const repoOwner = parent && parent !== "." ? getPathLabel(parent, provider).substring(1) : "";
+		const repoName = paths.basename(path);
+		this.setValue(`${repoOwner}/${repoName}`, "", { title: path });
 	}
+
 }
 
 function getPath(arg1: uri | IWorkspaceProvider): string {
