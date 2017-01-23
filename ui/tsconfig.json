@@ -12,7 +12,10 @@
         "monaco-typescript/*": ["vendor/node_modules/monaco-languages/*"]
     },
     "lib": ["es2016", "dom"],
-    "types": ["mocha", "lodash", "flux/utils"],
+    "types": [
+        "mocha", "lodash", "flux/utils",
+        "../vendor/node_modules/vscode/src/vs/monaco"
+    ],
     "jsx": "react",
     "relaySchema": "../api/schema.json",
     "sourceMap": true,

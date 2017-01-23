@@ -2,7 +2,7 @@
 
 CLONE_URL="${2:-'git@github.com:sourcegraph/vscode.git'}"
 CLONE_DIR=/tmp/sourcegraph-vscode
-REV=${1:-c981b3ac82f20360ae49dcf29d134022132a7d70} # pin to commit ID, bump as needed
+REV=${1:-4abb7c9812ba70cd2786173bbd5869ce769e15fb} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
 VENDOR_DIR="$REPO_DIR"/ui/vendor/node_modules/vscode
 
@@ -40,11 +40,5 @@ echo -n Compiling TypeScript...
 node_modules/.bin/tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
 echo OK
-
-# Remove dependency on Monaco, to avoid people accidentally using
-# monaco.d.ts types (which virtually all are aliases to types defined
-# elsewhere in vscode, and having two names for the same type can be
-# confusing).
-rm "$VENDOR_DIR"/src/vs/monaco.d.ts
 
 echo 'Done! Updated vscode in' "$VENDOR_DIR"
