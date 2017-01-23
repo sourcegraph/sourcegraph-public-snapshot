@@ -45,7 +45,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 
 	render(): JSX.Element | null {
 
-		let {isVisible} = this.state;
+		let { isVisible } = this.state;
 		if (isVisible) {
 			return (
 				<Toast>

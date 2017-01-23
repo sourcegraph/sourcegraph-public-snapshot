@@ -9,7 +9,7 @@ export function fetchContent(resource: URI): TPromise<string> {
 	if (contentCache.has(resourceKey)) {
 		return TPromise.wrap(contentCache.get(resource.toString()));
 	}
-	const {repo, rev, path} = URIUtils.repoParams(resource);
+	const { repo, rev, path } = URIUtils.repoParams(resource);
 	return TPromise.wrap(fetchGraphQLQuery(`query Content($repo: String, $rev: String, $path: String) {
 			root {
 				repository(uri: $repo) {
@@ -35,7 +35,7 @@ export function fetchContent(resource: URI): TPromise<string> {
 const contentCache = new Map<string, string>();
 
 export async function fetchContentAndResolveRev(resource: URI): Promise<{ content: string, commit: string }> {
-	const {repo, rev, path} = URIUtils.repoParams(resource);
+	const { repo, rev, path } = URIUtils.repoParams(resource);
 	const resp = await fetchGraphQLQuery(`query Content($repo: String, $rev: String, $path: String) {
 			root {
 				repository(uri: $repo) {

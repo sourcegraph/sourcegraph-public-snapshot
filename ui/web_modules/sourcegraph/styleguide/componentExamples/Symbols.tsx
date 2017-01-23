@@ -51,7 +51,7 @@ export function Symbols(): JSX.Element {
 	);
 }
 
-function SymbolTile({symbol, size, name}: { symbol: any; size: number; name: string; }): JSX.Element {
+function SymbolTile({ symbol, size, name }: { symbol: any; size: number; name: string; }): JSX.Element {
 	return <Panel hoverLevel="low" style={{
 		display: "inline-block",
 		flex: "0 0 23%",

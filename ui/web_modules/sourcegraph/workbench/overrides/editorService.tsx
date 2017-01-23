@@ -15,7 +15,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 	private _emitter: Emitter<URI> = new Emitter<URI>();
 
 	public openEditor(data: any, options?: any): TPromise<IEditor> {
-		let {repo, rev, path} = URIUtils.repoParams(data.resource);
+		let { repo, rev, path } = URIUtils.repoParams(data.resource);
 		rev = prettifyRev(rev);
 		const router = __getRouterForWorkbenchOnly();
 
@@ -42,7 +42,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		}
 
 		// Set the resource revision to the commit hash
-		return TPromise.wrap(fetchContentAndResolveRev(data.resource)).then(({content, commit}) => {
+		return TPromise.wrap(fetchContentAndResolveRev(data.resource)).then(({ content, commit }) => {
 			data.resource = data.resource.with({ query: commit });
 			updateFileTree(data.resource);
 			return super.openEditor(data, options, 0);

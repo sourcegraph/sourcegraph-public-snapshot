@@ -23,7 +23,7 @@ export class EditorTitle extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element {
-		let {repo, rev, path} = this.props.pathspec;
+		let { repo, rev, path } = this.props.pathspec;
 		if (rev === "HEAD") {
 			rev = null;
 		}
@@ -34,7 +34,7 @@ export class EditorTitle extends React.Component<Props, {}> {
 				path={path}
 				toggleAuthors={toggleCodeLens}
 				toast={BlobStore.toast}
-				/>
+			/>
 		</RouterContext>;
 	}
 }

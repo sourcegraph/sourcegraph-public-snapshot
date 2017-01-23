@@ -15,7 +15,7 @@ const langColors = {
 	"TypeScript": "#0D79C9",
 };
 
-export function LanguageLabel({language, style}: Props): JSX.Element {
+export function LanguageLabel({ language, style }: Props): JSX.Element {
 
 	const sx = Object.assign(
 		{ whiteSpace: "nowrap" },

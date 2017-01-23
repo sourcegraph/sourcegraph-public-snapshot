@@ -101,7 +101,7 @@ export function getViewName(routes: PlainRoute[]): string | null {
 // TODO(kingy): how is this being used? Can we consolidate w/ other changes?
 export function getRouteParams(pattern: string, pathname: string): any {
 	if (pathname.charAt(0) !== "/") { pathname = `/${pathname}`; }
-	const {paramNames, paramValues} = matchPattern(pattern, pathname);
+	const { paramNames, paramValues } = matchPattern(pattern, pathname);
 
 	if (paramValues !== null) {
 		return paramNames.reduce((memo, paramName, index) => {

@@ -130,7 +130,7 @@ export function AboutPage(): JSX.Element {
 	);
 };
 
-export function ValueCol({img, children}: {
+export function ValueCol({ img, children }: {
 	img: string,
 	children?: React.ReactNode[],
 }): JSX.Element {

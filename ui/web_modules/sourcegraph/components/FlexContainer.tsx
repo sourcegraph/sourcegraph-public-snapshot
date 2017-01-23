@@ -24,7 +24,7 @@ export class FlexContainer extends React.Component<Props, {}> {
 	};
 
 	render(): JSX.Element | null {
-		const {direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children, style} = this.props;
+		const { direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children, style } = this.props;
 
 		return (
 			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)} style={style}>

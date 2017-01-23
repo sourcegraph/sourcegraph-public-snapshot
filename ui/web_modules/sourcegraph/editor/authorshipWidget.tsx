@@ -115,7 +115,7 @@ function showAuthorshipPopup(accessor: ServicesAccessor, blame: GQL.IHunk): void
 
 	const model = editor.getModel();
 	blame.startByte = model.getLineFirstNonWhitespaceColumn(blame.startLine);
-	const {repo, rev} = URIUtils.repoParams(editor.getModel().uri);
+	const { repo, rev } = URIUtils.repoParams(editor.getModel().uri);
 
 	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={blame} repo={repo} rev={rev || ""} onClose={() => removeWidget(editor)} />;
 	authorWidget = new AuthorshipWidget(blame, authorshipCodeLensElement);

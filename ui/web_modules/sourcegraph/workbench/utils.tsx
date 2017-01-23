@@ -109,7 +109,7 @@ export function scrollToLine(editor: ICodeEditor, line: number): void {
 export function prettifyRev(newRevision: string | null): string | null {
 	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
 	const workspace = workspaceService.getWorkspace();
-	const {rev} = URIUtils.repoParams(workspace.resource);
+	const { rev } = URIUtils.repoParams(workspace.resource);
 
 	if (rev === newRevision) {
 		const router = __getRouterForWorkbenchOnly();

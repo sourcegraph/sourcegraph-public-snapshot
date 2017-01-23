@@ -68,7 +68,7 @@ export function __getRouterForWorkbenchOnly(): Router {
  * repoRevFromSplat returns the "repo[@rev]" string from the "splat" parameter.
  */
 export function repoRevFromRouteParams(params: RouteParams): string {
-	const {splat} = params;
+	const { splat } = params;
 	return splat instanceof Array ? splat[0] : splat;
 }
 
@@ -90,7 +90,7 @@ export function revFromRouteParams(params: RouteParams): string | null {
  * pathFromSplat returns the blob path from the "splat" parameter, if defined.
  */
 export function pathFromRouteParams(params: RouteParams): string {
-	const {splat} = params;
+	const { splat } = params;
 	const path = splat instanceof Array ? splat[1] : "";
 	return path === "" ? "/" : path;
 }

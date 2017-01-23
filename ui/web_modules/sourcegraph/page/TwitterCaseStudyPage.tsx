@@ -195,7 +195,7 @@ export function TwitterCaseStudyPage(): JSX.Element {
 				zIndex: -1,
 			}}
 				{ ...media(layout.breakpoints.sm, { opacity: sprinkleMobileOpacity }) }
-				/>
+			/>
 			<img src={`${context.assetsRoot}/img/tw-case/tw-case-purple-sprinkle.svg`} style={{
 				position: "absolute",
 				top: 720,
@@ -203,7 +203,7 @@ export function TwitterCaseStudyPage(): JSX.Element {
 				zIndex: -1,
 			}}
 				{ ...media(layout.breakpoints.sm, { opacity: sprinkleMobileOpacity }) }
-				/>
+			/>
 			<img src={`${context.assetsRoot}/img/tw-case/tw-case-orange-sprinkle.svg`} style={{
 				position: "absolute",
 				right: 120,
@@ -211,7 +211,7 @@ export function TwitterCaseStudyPage(): JSX.Element {
 				zIndex: -1,
 			}}
 				{ ...media(layout.breakpoints.sm, { opacity: sprinkleMobileOpacity }) }
-				/>
+			/>
 
 		</div>
 	);

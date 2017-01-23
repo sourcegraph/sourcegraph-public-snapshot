@@ -34,7 +34,7 @@ export function ColorsComponent(): JSX.Element {
 	</div>;
 }
 
-function Color({label, hex, rgb}: { label: string; hex: string; rgb: string; }): JSX.Element {
+function Color({ label, hex, rgb }: { label: string; hex: string; rgb: string; }): JSX.Element {
 	return <Panel hoverLevel="low" style={{
 		display: "inline-block",
 		flex: "0 0 32%",

@@ -26,7 +26,7 @@ function basename(path: string): string {
 
 class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
 	render(): JSX.Element {
-		const {repo, path, toggleAuthors, toast } = this.props;
+		const { repo, path, toggleAuthors, toast } = this.props;
 		let rev = prettifyRev(this.props.rev);
 		if (rev === null) {
 			if (this.props.root.repository) {
@@ -119,5 +119,5 @@ export const BlobTitle = function (props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-		/>;
+	/>;
 };

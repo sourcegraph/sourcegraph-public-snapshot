@@ -17,7 +17,7 @@ export class FileService {
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
-		return retrieveFilesAndDirs(resource).then(({root}) => {
+		return retrieveFilesAndDirs(resource).then(({ root }) => {
 			const cachedStat = fileStatCache.get(resource.toString(true));
 			if (cachedStat) {
 				return cachedStat;
@@ -31,7 +31,7 @@ export class FileService {
 }
 
 function retrieveFilesAndDirs(resource: URI): any {
-	const {repo, rev} = URIUtils.repoParams(resource);
+	const { repo, rev } = URIUtils.repoParams(resource);
 	return fetchGraphQLQuery(`query Files($repo: String!, $rev: String!) {
 			root {
 				repository(uri: $repo) {
@@ -57,8 +57,8 @@ function retrieveFilesAndDirs(resource: URI): any {
 function toFileStat(resource: URI, files: string[]): IFileStat {
 	let path = resource.fragment;
 	const directories = new Map();
-	const childFiles = [];
-	const childStats = [];
+	const childFiles: string[] = [];
+	const childStats: IFileStat[] = [];
 	for (const candidate of files) {
 		const index = candidate.indexOf("/");
 		if (index === -1) {

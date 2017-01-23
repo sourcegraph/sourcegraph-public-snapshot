@@ -85,7 +85,7 @@ class OptimizelyApiServiceClass {
 
 		const variationIdsMap = state.getVariationMap() || {};
 		const activeExperimentIds = state.getActiveExperimentIds() || [];
-		const experimentInfo = [];
+		const experimentInfo: any[] = [];
 
 		// Loop over all active experiments - track each experiment
 		activeExperimentIds.forEach((id) => {

@@ -23,7 +23,7 @@ export class TabsComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						} }>
+						}}>
 							Colors
 						</a>
 					</TabItem>
@@ -32,7 +32,7 @@ export class TabsComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						} }>
+						}}>
 							Sizes
 						</a>
 					</TabItem>
@@ -41,7 +41,7 @@ export class TabsComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 2 });
 							e.preventDefault();
-						} }>
+						}}>
 							Orientation
 						</a>
 					</TabItem>

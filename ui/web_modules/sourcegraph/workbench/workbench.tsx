@@ -143,5 +143,5 @@ export function Workbench(props: { params: any; location: RouterLocation, routes
 				location: props.location,
 			},
 		}}
-		/>;
+	/>;
 };

@@ -23,7 +23,7 @@ export class TableComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						} }>
+						}}>
 							Default
 						</a>
 					</TabItem>
@@ -32,7 +32,7 @@ export class TableComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						} }>
+						}}>
 							Bordered
 						</a>
 					</TabItem>

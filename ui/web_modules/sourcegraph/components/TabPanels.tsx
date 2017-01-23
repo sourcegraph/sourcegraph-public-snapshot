@@ -25,7 +25,7 @@ export class TabPanels extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element | null {
-		const {className, styles} = this.props;
+		const { className, styles } = this.props;
 		return (
 			<div className={className} style={styles}>
 				{this._childrenWithProps()}

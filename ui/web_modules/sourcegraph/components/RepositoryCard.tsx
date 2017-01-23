@@ -10,7 +10,7 @@ interface Props {
 	repo: GQL.IRemoteRepository;
 }
 
-export function RepositoryCard({style, repo}: Props): JSX.Element {
+export function RepositoryCard({ style, repo }: Props): JSX.Element {
 	function trackRepoClick(): void {
 		AnalyticsConstants.Events.Repository_Clicked.logEvent({ repo });
 	}

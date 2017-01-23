@@ -8,7 +8,7 @@ interface Props {
 	style?: React.CSSProperties;
 }
 
-export function UnsupportedLanguageAlert({ext, style}: Props): JSX.Element {
+export function UnsupportedLanguageAlert({ ext, style }: Props): JSX.Element {
 
 	const iconSx = {
 		fill: "white",

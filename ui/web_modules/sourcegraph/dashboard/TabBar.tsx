@@ -9,7 +9,7 @@ interface Props {
 	setActive: (active: RepositoryTabs) => void;
 }
 
-export function TabBar({active, style, setActive}: Props): JSX.Element {
+export function TabBar({ active, style, setActive }: Props): JSX.Element {
 
 	const sx = Object.assign({
 		boxSizing: "border-box",

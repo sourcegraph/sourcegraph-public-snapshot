@@ -153,5 +153,5 @@ export const CommitInfoBar = function (props: { repo: string, rev: string, path:
 			},
 			params: props,
 		}}
-		/>;
+	/>;
 };

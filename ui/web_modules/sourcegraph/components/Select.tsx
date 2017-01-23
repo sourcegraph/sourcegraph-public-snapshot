@@ -16,7 +16,7 @@ interface Props {
 	defaultValue?: string;
 }
 
-export function Select({block = true, containerSx, children, label, placeholder, helperText, error, errorText, style, defaultValue}: Props): JSX.Element {
+export function Select({ block = true, containerSx, children, label, placeholder, helperText, error, errorText, style, defaultValue }: Props): JSX.Element {
 	const sx = css({
 		appearance: "none",
 		backgroundColor: "white",

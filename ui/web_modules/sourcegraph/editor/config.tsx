@@ -20,7 +20,7 @@ import { Services } from "sourcegraph/workbench/services";
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
 export function syncEditorWithRouterProps(blobProps: BlobRouteProps): void {
-	const {repo, rev, path} = blobProps;
+	const { repo, rev, path } = blobProps;
 	const resource = URIUtils.pathInRepo(repo, rev, path);
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	editorService.openEditorWithoutURLChange({ resource }).then(() => {

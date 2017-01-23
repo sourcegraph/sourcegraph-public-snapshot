@@ -141,7 +141,7 @@ export async function provideReferences(model: IReadOnlyModel, pos: Position): P
 			}
 			referencesCache.set(key, referencesPromise);
 
-			const {repo, rev, path} = URIUtils.repoParams(model.uri);
+			const { repo, rev, path } = URIUtils.repoParams(model.uri);
 			AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 			const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];

@@ -19,7 +19,7 @@ export class Toast extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element {
-		let {children, style, className} = this.props;
+		let { children, style, className } = this.props;
 
 		return (
 			<div className={className} style={style}>

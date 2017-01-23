@@ -268,7 +268,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		if (!editor) {
 			return;
 		}
-		let {visibleMarks} = this.state;
+		let { visibleMarks } = this.state;
 		if (!this._coachmarks) {
 			return;
 		}
@@ -322,7 +322,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_renderCoachmarkAnnotationForContainer(coachmark: Coachmark, containerNode: any): void {
-		let {visibleAnnotation} = this.state;
+		let { visibleAnnotation } = this.state;
 		let refs = <div id={coachmark.markId} style={{ whitespace: "normal" }}>
 			<Annotation
 				color="purple"
@@ -474,7 +474,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	render(): JSX.Element | null {
-		let {visibleMarks, visibleAnnotation} = this.state;
+		let { visibleMarks, visibleAnnotation } = this.state;
 		return (<div style={{ zIndex: 101 }}>
 			{visibleMarks.indexOf(_searchCoachmarkIndex) !== -1 && this._renderSearchCoachmarkAnnotation(visibleAnnotation, _searchCoachmarkIndex)}
 			{visibleMarks.length > 0 && this._renderDismissButton()}

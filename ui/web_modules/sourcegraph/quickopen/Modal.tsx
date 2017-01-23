@@ -115,5 +115,5 @@ export const QuickOpenModal = function (props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-		/>;
+	/>;
 };

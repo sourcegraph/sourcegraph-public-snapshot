@@ -121,7 +121,7 @@ export class FilePreview implements IDisposable {
 	private get _model(): IModel { return this._modelReference.object.textEditorModel; }
 
 	public preview(range: IRange, n: number = 8): { before: string; inside: string; after: string } {
-		const {startLineNumber, startColumn, endColumn} = range;
+		const { startLineNumber, startColumn, endColumn } = range;
 		const word = this._model.getWordUntilPosition({ lineNumber: startLineNumber, column: startColumn - n });
 		const beforeRange = new Range(startLineNumber, word.startColumn, startLineNumber, startColumn);
 		const afterRange = new Range(startLineNumber, endColumn, startLineNumber, Number.MAX_VALUE);
@@ -289,7 +289,7 @@ export class ReferencesModel implements IDisposable {
 			}
 		}
 
-		let arrayOfChildren = [];
+		let arrayOfChildren: OneReference[] = [];
 		for (let group of this._groups) {
 			group.children.forEach(child => {
 				arrayOfChildren.push(child);
@@ -298,7 +298,7 @@ export class ReferencesModel implements IDisposable {
 
 		this._groups = [];
 		for (let group of realGroups) {
-			let tempGroup = [];
+			let tempGroup: OneReference[] = [];
 			for (let reference of arrayOfChildren) {
 				if (reference.uri.path === group.uri.path) {
 					tempGroup.push(reference);

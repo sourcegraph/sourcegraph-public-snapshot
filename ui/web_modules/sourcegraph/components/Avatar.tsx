@@ -9,7 +9,7 @@ interface Props {
 	title?: string;
 }
 
-export function Avatar({img, size, style, title}: Props): JSX.Element {
+export function Avatar({ img, size, style, title }: Props): JSX.Element {
 
 	let avatarSize;
 

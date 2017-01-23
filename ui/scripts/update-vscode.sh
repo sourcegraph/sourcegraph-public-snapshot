@@ -2,7 +2,7 @@
 
 CLONE_URL="${2:-'git@github.com:sourcegraph/vscode.git'}"
 CLONE_DIR=/tmp/sourcegraph-vscode
-REV=${1:-753289446fd16e79c5167fceef9c853e2a28bc02} # pin to commit ID, bump as needed
+REV=${1:-1f64884fe207f15e3cf5e2b485a0bb551968190c} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
 VENDOR_DIR="$REPO_DIR"/ui/vendor/node_modules/vscode
 
@@ -37,7 +37,7 @@ grep -rl 'css!' "$VENDOR_DIR" | xargs -n 1 $sedi 's|import '"'"'vs/css!\([^'"'"'
 echo OK
 
 echo -n Compiling TypeScript...
-tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
+node_modules/.bin/tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
 echo OK
 

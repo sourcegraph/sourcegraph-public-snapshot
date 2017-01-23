@@ -46,7 +46,7 @@
     "tslint": "^4.1.1",
     "tslint-react": "^2.2.0",
     "typed-css-modules": "0.1.13",
-    "typescript": "https://registry.npmjs.org/@sourcegraph/typescript/-/typescript-2.1.0.tgz",
+    "typescript": "https://registry.npmjs.org/@sourcegraph/typescript/-/typescript-2.2.0.tgz",
     "typescript-formatter": "^4.0.1",
     "unused-files-webpack-plugin": "3.0.0",
     "url-loader": "0.5.7",
