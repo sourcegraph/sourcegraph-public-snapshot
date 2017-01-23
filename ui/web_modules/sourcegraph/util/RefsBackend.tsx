@@ -323,6 +323,11 @@ function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Re
 }
 
 export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
+	// Only fetch global refs for Go.
+	if (model.getModeId() !== "go") {
+		return null;
+	}
+
 	let refModelQuery =
 		`repository(uri: "${model.uri.authority}${model.uri.path}") {
 			commit(rev: "${model.uri.query}") {

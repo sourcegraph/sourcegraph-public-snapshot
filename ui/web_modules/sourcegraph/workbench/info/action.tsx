@@ -2,9 +2,9 @@ import { Subscription } from "rxjs";
 
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
-import { TPromise } from "vs/base/common/winjs.base";
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
+import { Position } from "vs/editor/common/core/position";
 import * as editorCommon from "vs/editor/common/editorCommon";
 import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 import { EditorAction, IActionOptions, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
@@ -64,7 +64,7 @@ export class DefinitionAction extends EditorAction {
 		this._configuration = configuration;
 	}
 
-	public run(accessor: ServicesAccessor, editor: editorCommon.ICommonCodeEditor): TPromise<void> {
+	public run(accessor: ServicesAccessor, editor: editorCommon.ICommonCodeEditor): void {
 		const editorService = accessor.get(IEditorService);
 		const outerEditor = getOuterEditor(accessor, {});
 
@@ -76,7 +76,7 @@ export class DefinitionAction extends EditorAction {
 			}
 		});
 
-		return TPromise.as(this.onResult(editorService, editor, outerEditor));
+		this.onResult(editorService, editor, outerEditor);
 	}
 
 	async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
@@ -103,11 +103,6 @@ export class DefinitionAction extends EditorAction {
 			return;
 		}
 		this.dispatchInfo(id, defData, refModel);
-
-		// Only fetch global refs for Go.
-		if (props.editorModel.getModeId() !== "go") {
-			return;
-		}
 
 		const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
 		if (!depRefs || this._configuration.sideBarID !== id) {
@@ -167,7 +162,7 @@ export class DefinitionAction extends EditorAction {
 				}
 			}, true).then(nextEditor => {
 				this.prepareInfoStore(true, this._configuration.sideBarID);
-				this.openInPeek(editorService, editor);
+				this.openInSidebar(editor);
 			});
 
 			return;
@@ -176,21 +171,36 @@ export class DefinitionAction extends EditorAction {
 		if (ContextKeyExpr.and(ModeContextKeys.hasDefinitionProvider, PeekContext.notInPeekEditor)) {
 			this._configuration.sideBarID = editor.getModel().uri.toString() + editor.getPosition().lineNumber + ":" + editor.getPosition().column;
 			this.prepareInfoStore(true, this._configuration.sideBarID);
-			this.openInPeek(editorService, editor);
+			this.openInSidebar(editor);
 		}
 	}
 
-	private openInPeek(editorService: IEditorService, target: editorCommon.ICommonCodeEditor): void {
+	private openInSidebar(editor: editorCommon.ICommonCodeEditor): void {
+		const pos = editor.getPosition();
 		this.globalFetchSubscription = this.renderSidePanelForData({
-			editorModel: target.getModel(),
+			editorModel: editor.getModel(),
 			lspParams: {
 				position: {
-					line: target.getPosition().lineNumber - 1,
-					character: target.getPosition().column - 1,
+					line: pos.lineNumber - 1,
+					character: pos.column - 1,
 				},
 			},
 		});
+
+		this.highlightWord(editor, pos);
 	}
+
+	private highlightWord(editor: editorCommon.ICommonCodeEditor, position: Position): void {
+		const model = editor.getModel();
+		const word = model.getWordAtPosition(position);
+		editor.setSelection({
+			startLineNumber: position.lineNumber,
+			startColumn: word.startColumn,
+			endLineNumber: position.lineNumber,
+			endColumn: word.endColumn,
+		});
+	}
+
 }
 
 @editorAction
