@@ -5,7 +5,7 @@ import { IEditor } from "vs/platform/editor/common/editor";
 import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorService";
 
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
-import { urlToBlob, urlToBlobLineCol } from "sourcegraph/blob/routes";
+import { urlToBlob, urlToBlobRange } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
@@ -21,8 +21,10 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 
 		let url;
 		if (data.options && data.options.selection) {
-			const { startLineNumber, startColumn } = data.options.selection;
-			url = urlToBlobLineCol(repo, rev, path, startLineNumber, startColumn);
+			url = urlToBlobRange(
+				repo, rev, path,
+				data.options.selection,
+			);
 		} else {
 			url = urlToBlob(repo, rev, path);
 		}

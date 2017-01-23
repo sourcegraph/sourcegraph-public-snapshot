@@ -64,12 +64,8 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, 
 		l := symbolLocationInformation{
 			Location: goRangeToLSPLocation(fset, node.Pos(), node.End()),
 		}
-		// LSP expects a range to be of the entire body, not just of the
-		// identifier, so we pretend its just a position and not a range.
-		l.Location.Range.End = l.Location.Range.Start
 
 		// Determine metadata information for the node.
-
 		if def, err := refs.DefInfo(pkg.Pkg, &pkg.Info, pathEnclosingInterval, node.Pos()); err == nil {
 			symDesc, err := defSymbolDescriptor(ctx, bctx, rootPath, *def, findPackage)
 			if err != nil {

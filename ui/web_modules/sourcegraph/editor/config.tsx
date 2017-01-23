@@ -10,6 +10,7 @@ import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/edi
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
 import { BlobRouteProps, Router } from "sourcegraph/app/router";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
@@ -98,16 +99,8 @@ function updateEditor(editor: ICodeEditor): void {
 }
 
 function updateURLHash(e: ICursorSelectionChangedEvent): void {
-	const startLine = e.selection.startLineNumber;
-	const endLine = e.selection.endLineNumber;
-
-	let lineHash: string;
-	if (startLine !== endLine) {
-		lineHash = "#L" + startLine + "-" + endLine;
-	} else {
-		lineHash = "#L" + startLine;
-	}
-
+	const sel = RangeOrPosition.fromMonacoRange(e.selection);
+	const hash = `#L${sel.toString()}`;
 	// Circumvent react-router to avoid a jarring jump to the anchor position.
-	history.replaceState({}, "", window.location.pathname + lineHash);
+	history.replaceState({}, "", window.location.pathname + hash);
 }

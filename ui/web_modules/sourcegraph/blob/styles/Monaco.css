@@ -676,3 +676,7 @@
 :global #workbench\.editors\.stringEditor {
 	margin-left: 5px;
 }
+
+:global .monaco-editor.vs-dark .view-overlays .selected-text {
+	background-color: #0091ea !important;
+}

@@ -4,7 +4,7 @@ import { Link } from "react-router";
 import { marked } from "vs/base/common/marked/marked";
 import URI from "vs/base/common/uri";
 
-import { urlToBlobLineCol } from "sourcegraph/blob/routes";
+import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { Button, FlexContainer } from "sourcegraph/components";
 import { ArrowRight } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
@@ -46,8 +46,7 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 		const uri = URI.parse(defData.definition.uri);
 		let {repo, rev, path} = URIUtils.repoParams(uri);
 		rev = prettifyRev(rev);
-		const {startLineNumber, startColumn} = defData.definition.range;
-		const url = urlToBlobLineCol(repo, rev, path, startLineNumber + 1, startColumn + 1);
+		const url = urlToBlobRange(repo, rev, path, defData.definition.range);
 		const fullDocString = marked(defData.docString, { sanitize: true });
 		let renderedDocString = fullDocString;
 		if (fullDocString.length >= DocStringLength) {
