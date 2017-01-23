@@ -89,7 +89,8 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 			// Don't typecheck func bodies in dependency packages
 			// (except the package that defines the object), because
 			// we wouldn't return those refs anyway.
-			return users[strings.TrimSuffix(path, "_test")] && (pkgInWorkspace(path) || path == defpkg)
+			path = strings.TrimSuffix(path, "_test")
+			return users[path] && (pkgInWorkspace(path) || path == defpkg)
 		},
 	}
 	allowErrors(&lconf)
@@ -130,7 +131,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 			// because each go/loader Load invocation creates new
 			// objects, and we need to test for equality later when we
 			// look up refs.
-			if qobj == nil && info.Pkg.Path() == defpkg {
+			if qobj == nil && strings.TrimSuffix(info.Pkg.Path(), "_test") == defpkg {
 				// Find the object by its position (slightly ugly).
 				qobj = findObject(fset, &info.Info, objposn)
 				if qobj == nil {
