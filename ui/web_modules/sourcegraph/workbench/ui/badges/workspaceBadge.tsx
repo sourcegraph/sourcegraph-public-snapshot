@@ -10,28 +10,25 @@ export class WorkspaceBadge {
 	private $el: Builder;
 	private workspace: "Local" | "External";
 	private titleFormat: string;
-	private color: string;
 
 	constructor(
 		container: Builder,
 		workspace: "Local" | "External",
 		titleFormat?: string,
-		color: string,
+		color?: string,
 	);
 	constructor(
 		container: HTMLElement,
 		workspace: "Local" | "External",
 		titleFormat?: string,
-		color: string,
+		color?: string,
 	);
 	constructor(
 		container: any,
 		workspace: "Local" | "External",
 		titleFormat?: string,
-		color: string,
+		color?: string,
 	) {
-		const workspaceType = workspace.toLowerCase();
-
 		this.$el = $(`.monaco-workspace-badge`).appendTo(container);
 
 		this.titleFormat = titleFormat || "";
@@ -48,8 +45,8 @@ export class WorkspaceBadge {
 		this.render();
 	}
 
-	public setColor(color: classNames): void {
-		this.$el.currentElement.style.backgroundColor = color;
+	public setColor(color: string): void {
+		this.$el.getHTMLElement().style.backgroundColor = color;
 	}
 
 	private render(): void {

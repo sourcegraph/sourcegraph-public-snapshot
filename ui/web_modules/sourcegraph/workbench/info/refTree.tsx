@@ -195,7 +195,7 @@ class Renderer extends LegacyRenderer {
 					badge.setColor(colors.green());
 				} else {
 					badge.setTitleFormat("External");
-					badge.setClassNames(colors.orangeL2());
+					badge.setColor(colors.orangeL2());
 				}
 
 				return badge as any;
