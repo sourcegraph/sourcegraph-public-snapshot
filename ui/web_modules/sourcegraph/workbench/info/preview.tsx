@@ -9,11 +9,10 @@ import { urlToBlobLine } from "sourcegraph/blob/routes";
 import { colors } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
-import { REFERENCES_SECTION_ID, infoStore } from "sourcegraph/workbench/info/sidebar";
+import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
 import { Services } from "sourcegraph/workbench/services";
-import { Disposables, RouterContext, scrollToLine } from "sourcegraph/workbench/utils";
+import { Disposables, RouterContext } from "sourcegraph/workbench/utils";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
-import { IEditorService } from "vs/platform/editor/common/editor";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 
 interface Props {
@@ -118,19 +117,9 @@ class EditorPreview extends React.Component<EditorProps, {}> {
 		};
 
 		this.preview = instantiationService.createInstance(EmbeddedCodeEditorWidget, div, options, editor);
-		this.preview.onMouseUp(this.selectReference);
 		this.preview.layout();
 		this.toDispose.add(this.preview);
 		this.setContents();
-	}
-
-	private selectReference(): void {
-		const editorService = Services.get(IEditorService);
-		editorService.openEditor({ resource: this.props.location.uri }).then(() => {
-			const editor = getEditorInstance();
-			scrollToLine(editor, this.props.location.range.startLineNumber);
-			infoStore.dispatch(null);
-		});
 	}
 
 	private setContents(): void {

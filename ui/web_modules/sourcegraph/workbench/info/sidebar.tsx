@@ -5,18 +5,15 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
 import { Location } from "vs/editor/common/modes";
-import { IModelService } from "vs/editor/common/services/modelService";
 
 import { FlexContainer, Heading, Loader } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
-import { renderSidePanelForData } from "sourcegraph/workbench/info/action";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
 import { sidebarWidth } from "sourcegraph/workbench/info/preview";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
-import { Services } from "sourcegraph/workbench/services";
 import { Disposables } from "sourcegraph/workbench/utils";
 import { MiniStore } from "sourcegraph/workbench/utils";
 
@@ -34,22 +31,25 @@ export interface InfoPanelProps {
 export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 	private toDispose: Disposables = new Disposables();
 	private node: HTMLDivElement | null;
-	private infoPaneExpanded: boolean;
+	private infoPanel: { open: boolean, id: string };
 	private info: Props | null;
 
 	constructor() {
 		super();
 		this.node = null;
-		this.infoPaneExpanded = false;
+		this.infoPanel = { open: false, id: "" };
 		this.info = null;
-	}
-
-	componentDidMount(): void {
-		this.openSideBarForSymbolURL(this.props);
 	}
 
 	componentWillMount(): void {
 		this.toDispose.add(infoStore.subscribe((info) => {
+			if (info && info.prepareData) {
+				this.info = info;
+				this.infoPanel = { open: info.prepareData.open, id: info.id };
+				this.forceUpdate();
+				return;
+			}
+
 			this.info = info;
 			this.forceUpdate();
 		}));
@@ -57,26 +57,6 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 
 	componentWillUnmount(): void {
 		this.toDispose.dispose();
-	}
-
-	private openSideBarForSymbolURL(props: InfoPanelProps): void {
-		if (this.props.isSymbolUrl && this.props.repo && this.props.repo.symbols && this.props.repo.symbols.length > 0) {
-			const {line, character, path} = this.props.repo.symbols[0];
-			const lspParams = {
-				position: {
-					line,
-					character
-				},
-			};
-
-			this.toDispose.add(Services.get<IModelService>(IModelService).onModelAdded((editorModel) => {
-				if (`${editorModel.uri.authority}${editorModel.uri.path}` === this.props.repo.uri) {
-					if (editorModel.uri.fragment === path) {
-						renderSidePanelForData({ editorModel, lspParams });
-					}
-				}
-			}));
-		}
 	}
 
 	renderOutOfTreeDOMNode(): void {
@@ -94,10 +74,11 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 		node.className = TreeSidebarClassName;
 		parent.appendChild(node);
 
-		if (this.info === null) {
-			ReactDOM.render(<div></div>, node);
-		} else {
+		// Optimistically assume it's the correct data.
+		if (this.info && this.infoPanel.id === this.info.id && this.infoPanel.open) {
 			ReactDOM.render(<InfoPanel {...this.info} />, node);
+		} else {
+			ReactDOM.render(<div></div>, node);
 		}
 	}
 
@@ -114,8 +95,10 @@ interface State {
 }
 
 export interface Props {
-	defData: DefinitionData;
+	id: string;
+	defData: DefinitionData | null;
 	refModel?: ReferencesModel | null;
+	prepareData?: { open: boolean };
 };
 
 @autobind
@@ -140,7 +123,8 @@ class InfoPanel extends React.Component<Props, State> {
 		});
 	}
 
-	private sidebarFunctionHeader(defData: DefinitionData): JSX.Element {
+	private sidebarFunctionHeader(defData: DefinitionData | null): JSX.Element {
+		let funcName = defData ? defData.funcName : "";
 		return <FlexContainer justify="between" items="center" style={{
 			backgroundColor: colors.blue(),
 			boxShadow: `0 1px 2px 0 ${colors.black(0.3)}`,
@@ -151,8 +135,8 @@ class InfoPanel extends React.Component<Props, State> {
 				fontFamily: typography.fontStack.code,
 				fontWeight: "normal",
 				wordBreak: "break-word",
-			}}>{truncate(defData.funcName, { length: 120 })}</Heading>
-			<div onClick={() => infoStore.dispatch(null)}
+			}}>{truncate(funcName, { length: 120 })}</Heading>
+			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, id: "" })}
 				{...css(
 					{
 						alignSelf: "flex-start",
@@ -183,7 +167,7 @@ class InfoPanel extends React.Component<Props, State> {
 				overflowY: "hidden",
 			}}>
 				{this.sidebarFunctionHeader(defData)}
-				<DefinitionDocumentationHeader defData={defData} />
+				{defData && <DefinitionDocumentationHeader defData={defData} />}
 				<hr style={dividerSx} />
 				<div id={REFERENCES_SECTION_ID}>
 					<FlexContainer items="center" style={{ height: 35, padding: whitespace[3] }}>

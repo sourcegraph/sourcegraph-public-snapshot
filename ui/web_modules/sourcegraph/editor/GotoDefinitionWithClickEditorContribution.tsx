@@ -23,10 +23,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	}
 
 	private onEditorMouseUp(mouseEvent: IEditorMouseEvent): void {
-		if (Features.projectWow.isEnabled()) {
-			return;
-		}
-
 		if (!this.editor.getSelection().isEmpty()) {
 			// Don't interfere with text selection.
 			return;
@@ -77,6 +73,10 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 
 		// just run the corresponding action
 		this.editor.setPosition(target.position);
+		if (Features.projectWow.isEnabled()) {
+			return this.editor.getAction("editor.action.openSidePanel").run();
+		}
+
 		return this.editor.getAction("editor.action.goToDeclaration").run();
 	}
 

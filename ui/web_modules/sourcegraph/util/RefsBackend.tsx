@@ -77,8 +77,8 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 	}).then(resp => {
 		if (resp.result) {
 			hoverCache.set(key, hoverPromise);
+			return resp.result;
 		}
-		return resp.result as Hover;
 	});
 
 	const defCacheHit = defCache.get(key);
@@ -89,8 +89,8 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 	}).then(resp => {
 		if (resp && resp.result) {
 			defCache.set(key, defPromise);
+			return resp.result as Definition;
 		}
-		return resp.result as Definition;
 	});
 
 	const hover = await hoverPromise;
@@ -137,7 +137,7 @@ export async function provideReferences(model: IReadOnlyModel, pos: Position): P
 		.then(resp => resp ? resp.result : null)
 		.then((resp: lsp.Location | lsp.Location[] | null) => {
 			if (!resp || Object.keys(resp).length === 0) {
-				return null;
+				return [];
 			}
 			referencesCache.set(key, referencesPromise);
 

@@ -30,7 +30,6 @@ export class DataSource implements tree.IDataSource {
 			if (element.children.length === 0) {
 				return false;
 			}
-			tree.expand(element);
 			return true;
 		}
 	}

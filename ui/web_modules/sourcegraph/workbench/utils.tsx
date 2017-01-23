@@ -67,7 +67,6 @@ export class MiniStore<T>{
 			},
 		};
 	}
-
 }
 
 export interface Disposable {
