@@ -1,0 +1,7 @@
+:global .monaco-workspace-badge {
+	color: white;
+	font-weight: bold;
+	border-radius: 3px;
+	background-color: #555;
+	padding: 0.2rem 0.5rem;
+}
