@@ -37,7 +37,7 @@ grep -rl 'css!' "$VENDOR_DIR" | xargs -n 1 $sedi 's|import '"'"'vs/css!\([^'"'"'
 echo OK
 
 echo -n Compiling TypeScript...
-tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
+node_modules/.bin/tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
 echo OK
 
