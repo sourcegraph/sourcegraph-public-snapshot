@@ -40,9 +40,6 @@ class Feature {
 }
 
 export const Features = {
-	authorsToggle: new Feature("authors_toggle"),
-	codeLens: new Feature("code_lens"),
-	externalReferences: new Feature("external-references"),
 	langCSS: new Feature("lang-css"),
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),

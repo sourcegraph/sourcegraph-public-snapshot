@@ -71,7 +71,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 						textAlign: "right",
 					}, typography.size[7])}>
 
-						{Features.authorsToggle.isEnabled() &&
+						{Features.projectWow.isEnabled() &&
 							<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
 						}
 						{	// if repo is not on github.com, then the one action in FileActionDownMenu doesn't make sense

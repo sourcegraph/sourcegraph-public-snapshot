@@ -57,10 +57,10 @@ export class Editor implements IDisposable {
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
 			fontSize: 15,
-			lineHeight: Features.authorsToggle.isEnabled() ? 24 : 21,
+			lineHeight: Features.projectWow.isEnabled() ? 24 : 21,
 			theme: "vs-dark",
 			renderLineHighlight: "line",
-			codeLens: Features.codeLens.isEnabled(),
+			codeLens: Features.projectWow.isEnabled(),
 			glyphMargin: false,
 		});
 
@@ -224,16 +224,6 @@ export class Editor implements IDisposable {
 	public onDidOpenEditor(listener: (e: IEditorOpenedEvent) => void): IDisposable {
 		this._removeWidgetForID(AuthorshipWidgetID);
 		return this._editorService.onDidOpenEditor(listener);
-	}
-
-	toggleAuthors(): void {
-		Features.codeLens.toggle();
-		const visible = Features.codeLens.isEnabled();
-
-		this._editor.updateOptions({ codeLens: visible });
-		if (!visible) {
-			this._removeWidgetForID(AuthorshipWidgetID);
-		}
 	}
 
 	// TODO: Abstract editor functions into editor helper class - MKing 12/18/2016

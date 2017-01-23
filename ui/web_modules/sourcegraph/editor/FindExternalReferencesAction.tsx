@@ -17,7 +17,7 @@ const fetch = singleflightFetch(defaultFetch);
 @editorAction
 export class FindExternalReferencesAction extends EditorAction {
 	constructor() {
-		if (!Features.externalReferences.isEnabled()) {
+		if (!Features.projectWow.isEnabled()) {
 			super({
 				id: "editor.action.findExternalReferences",
 				label: "Find External References",

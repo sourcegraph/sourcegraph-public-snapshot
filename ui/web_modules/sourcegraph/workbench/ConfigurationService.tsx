@@ -2,12 +2,10 @@ import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import Event, { Emitter } from "vs/base/common/event";
 import { IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 
-import { removeWidget } from "sourcegraph/editor/authorshipWidget";
-import { getEditorInstance } from "sourcegraph/editor/Editor";
-import { Features } from "sourcegraph/util/features";
-
 const _onDidUpdateConfiguration = new Emitter<IConfigurationServiceEvent>();
 const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
+
+let codeLensEnabled = false;
 
 const config = {
 	workbench: {
@@ -33,7 +31,7 @@ const config = {
 		lineHeight: 21,
 		theme: "vs-dark",
 		renderLineHighlight: "none",
-		codeLens: Features.codeLens.isEnabled(),
+		codeLens: codeLensEnabled,
 		glyphMargin: false,
 		hideCursorInOverviewRuler: true,
 		selectionHighlight: false,
@@ -41,15 +39,13 @@ const config = {
 };
 
 export function toggleCodeLens(): void {
-	const visible = Features.codeLens.isEnabled();
-	if (!visible) {
-		Features.codeLens.enable();
-	} else {
-		Features.codeLens.disable();
-		removeWidget(getEditorInstance());
-	}
-	config.editor.codeLens = Features.codeLens.isEnabled();
+	codeLensEnabled = !codeLensEnabled;
+	config.editor.codeLens = codeLensEnabled;
 	_onDidUpdateConfiguration.fire({ config } as any);
+}
+
+export function isCodeLensEnabled(): boolean {
+	return codeLensEnabled;
 }
 
 export class ConfigurationService {

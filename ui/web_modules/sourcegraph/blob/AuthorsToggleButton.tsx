@@ -5,7 +5,7 @@ import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { Key, ToggleButton } from "sourcegraph/components";
 import { layout, typography, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { Features } from "sourcegraph/util/features";
+import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
 
 interface Props {
 	keyCode: number;
@@ -22,7 +22,7 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 	constructor(props: Props) {
 		super(props);
 		this.state = {
-			on: Features.codeLens.isEnabled(),
+			on: isCodeLensEnabled(),
 		};
 	}
 
