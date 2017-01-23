@@ -7,6 +7,7 @@ interface Props {
 	block?: boolean;
 	children?: React.ReactNode[];
 	containerSx?: React.CSSProperties;
+	name?: string;
 	label?: string;
 	placeholder?: string;
 	helperText?: string;
@@ -16,7 +17,7 @@ interface Props {
 	defaultValue?: string;
 }
 
-export function Select({ block = true, containerSx, children, label, placeholder, helperText, error, errorText, style, defaultValue }: Props): JSX.Element {
+export function Select({ block = true, containerSx, name, children, label, placeholder, helperText, error, errorText, style, defaultValue }: Props): JSX.Element {
 	const sx = css({
 		appearance: "none",
 		backgroundColor: "white",
@@ -36,6 +37,7 @@ export function Select({ block = true, containerSx, children, label, placeholder
 		{label && <div>{label} <br /></div>}
 		<select
 			{...sx}
+			name={name}
 			style={style}
 			required={true}
 			defaultValue={defaultValue}

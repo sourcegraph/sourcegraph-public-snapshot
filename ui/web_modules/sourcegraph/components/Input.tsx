@@ -31,6 +31,7 @@ export function Input(props: Props): JSX.Element {
 	delete other.error;
 	delete other.errorText;
 	delete other.style;
+	delete other.containerStyle;
 	delete other.inputSize;
 
 	const errorTextSx = Object.assign(
