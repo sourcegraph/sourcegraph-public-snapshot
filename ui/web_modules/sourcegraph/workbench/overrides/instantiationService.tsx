@@ -14,7 +14,7 @@ const modules = {
 	const _this = this;
 	const ctor = modules[desc._ctorName];
 	if (!ctor) {
-		throw new Error("Dynamic modules must be converted to static modules and included in this file.");
+		throw new Error(`Module ${desc.moduleName} constructor ${desc.ctorName} must be imported and added to the 'modules' object in this file. Dynamic imports are not supported.`);
 	}
 	return new TPromise((complete) => {
 		// This needs to be async so that the model provider and language
