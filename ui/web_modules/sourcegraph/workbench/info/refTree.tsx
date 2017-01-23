@@ -281,7 +281,7 @@ class Renderer extends LegacyRenderer {
 					avatar={avatar}
 					date={date}
 					fileName={fileName}
-					line={line} />, 
+					line={line} />,
 				refContainer.getHTMLElement(),
 			);
 		}
