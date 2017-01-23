@@ -4,6 +4,7 @@ import (
 	"net"
 	"os/exec"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -251,6 +252,8 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 	return updateRepo
 }
 
+var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
+
 func (s *Server) doRepoUpdate(repo string, opt *vcs.RemoteOpts) {
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
@@ -267,5 +270,51 @@ func (s *Server) doRepoUpdate(repo string, opt *vcs.RemoteOpts) {
 	cmd.Dir = path.Join(s.ReposDir, repo)
 	if output, err := s.runWithRemoteOpts(cmd, opt); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
+		return
+	}
+
+	headBranch := "master"
+
+	// try to fetch HEAD from origin
+	cmd = exec.Command("git", "remote", "show", "origin")
+	cmd.Dir = path.Join(s.ReposDir, repo)
+	output, err := s.runWithRemoteOpts(cmd, opt)
+	if err != nil {
+		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
+		return
+	}
+	submatches := headBranchPattern.FindSubmatch(output)
+	if len(submatches) == 2 {
+		submatch := string(submatches[1])
+		if submatch != "(unknown)" {
+			headBranch = string(submatch)
+		}
+	}
+
+	// check if branch pointed to by HEAD exists
+	cmd = exec.Command("git", "rev-parse", headBranch)
+	cmd.Dir = path.Join(s.ReposDir, repo)
+	if err := cmd.Run(); err != nil {
+		// branch does not exist, pick first branch
+		cmd := exec.Command("git", "branch")
+		cmd.Dir = path.Join(s.ReposDir, repo)
+		list, err := cmd.Output()
+		if err != nil {
+			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
+			return
+		}
+		lines := strings.Split(string(list), "\n")
+		branch := strings.TrimPrefix(strings.TrimPrefix(lines[0], "* "), "  ")
+		if branch != "" {
+			headBranch = branch
+		}
+	}
+
+	// set HEAD
+	cmd = exec.Command("git", "symbolic-ref", "HEAD", "refs/heads/"+headBranch)
+	cmd.Dir = path.Join(s.ReposDir, repo)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
+		return
 	}
 }
