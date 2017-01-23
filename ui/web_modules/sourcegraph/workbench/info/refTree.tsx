@@ -1,3 +1,4 @@
+import { css, insertGlobal } from "glamor";
 import * as React from "react";
 import URI from "vs/base/common/uri";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
@@ -24,6 +25,8 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 import * as dom from "vs/base/browser/dom";
 import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
 
+import { List } from "sourcegraph/components/symbols/Primaries";
+import { colors, paddingMargin } from "sourcegraph/components/utils";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
 import { WorkspaceBadge } from "sourcegraph/workbench/ui/badges/workspaceBadge";
@@ -45,10 +48,19 @@ export class RefTree extends React.Component<Props, State> {
 
 	private tree: Tree;
 	private toDispose: Disposables = new Disposables();
+	private treeID: string = "reference-tree";
 
 	state: State = {
 		previewResource: null,
 	};
+
+	componentDidMount(): void {
+		this.resetMonacoStyles(this.treeID);
+	}
+
+	componentDidUpdate(): void {
+		this.updateTree(this.props.model);
+	}
 
 	componentWillUnmount(): void {
 		this.toDispose.dispose();
@@ -123,19 +135,30 @@ export class RefTree extends React.Component<Props, State> {
 		}
 	}
 
+	private resetMonacoStyles(parentElementID: string): void {
+		insertGlobal(`#${parentElementID} .monaco-tree-row`, {
+			backgroundColor: "initial",
+			height: "initial !important",
+			paddingLeft: "initial !important",
+			overflow: "visible",
+		});
+		insertGlobal(`#${parentElementID} .monaco-tree:focus`, { outline: "none" });
+		insertGlobal(`#${parentElementID} .monaco-tree-row .content:before`, { display: "none" });
+		insertGlobal(`#${parentElementID} .monaco-tree-row.selected`, { backgroundColor: "initial" });
+		insertGlobal(`#${parentElementID} .monaco-tree-row:hover`, { backgroundColor: "initial" });
+	}
+
 	render(): JSX.Element {
 		if (!this.props.model) {
 			return <div></div>;
 		}
 
-		this.updateTree(this.props.model);
-		return <div style={{
+		return <div ref={this.treeDiv} id={this.treeID} style={{
 			zIndex: 1,
 			flex: "1 1 100%",
 			display: "flex",
 			flexDirection: "column",
-		}} ref={this.treeDiv}>
-
+		}}>
 		</div>;
 	}
 }
@@ -169,8 +192,8 @@ class Renderer extends LegacyRenderer {
 	protected render(tree: ITree, element: FileReferences | OneReference, container: HTMLElement): IElementCallback | any {
 		dom.clearNode(container);
 
-		if (element instanceof FileReferences) {
-			const fileReferencesContainer: Builder = $(".reference-file");
+		if (element instanceof FileReferences || element instanceof FileReferences) {
+			const repositoryHeader: Builder = $(".refs-repository-title");
 			// tslint:disable
 			let workspaceURI = URI.from({
 				scheme: element.uri.scheme,
@@ -179,10 +202,11 @@ class Renderer extends LegacyRenderer {
 				query: element.uri.query,
 				fragment: element.uri.path,
 			});
-			new LeftRightWidget(fileReferencesContainer, (left: HTMLElement) => {
-				new FileLabel(left, workspaceURI, this._contextService);
-				return null as any;
 
+			new LeftRightWidget(repositoryHeader, (left: HTMLElement) => {
+				const repoTitleContent = new FileLabel(left, workspaceURI, this._contextService);
+				repoTitleContent.setIcon(<List width={18} />);
+				return null as any;
 			}, (right: HTMLElement) => {
 
 				const workspace = workspaceURI.path === this._editorURI.path ? "Local" : "External";
@@ -195,13 +219,32 @@ class Renderer extends LegacyRenderer {
 					badge.setColor(colors.green());
 				} else {
 					badge.setTitleFormat("External");
-					badge.setColor(colors.orangeL2());
+					badge.setColor(colors.orangeL1());
 				}
 
 				return badge as any;
 			});
 
-			fileReferencesContainer.appendTo(container);
+			const borderSx = `1px solid ${colors.blueGrayL1(0.2)}`;
+			const repoHeaderEl = repositoryHeader.getHTMLElement();
+			repoHeaderEl.classList.add(
+				(css as any)(
+					paddingMargin.padding("x", 2),
+					{
+						backgroundColor: colors.blueGrayL3(),
+						borderBottom: borderSx,
+						borderTop: borderSx,
+						boxShadow: `0 2px 2px 0 ${colors.black(0.05)}`,
+						color: colors.text(),
+						display: "flex",
+						fontWeight: "bold",
+						alignItems: "center",
+						height: 36,
+					},
+				)
+			);
+
+			repositoryHeader.appendTo(container);
 		}
 
 		if (element instanceof OneReference) {

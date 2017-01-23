@@ -1,5 +1,5 @@
 import * as autobind from "autobind-decorator";
-import { css } from "glamor";
+import { css, insertGlobal } from "glamor";
 import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -167,7 +167,9 @@ class InfoPanel extends React.Component<Props, State> {
 		const { defData } = this.props;
 		const { refModel } = this.state;
 		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
+
 		// position child elements relative to editor container
+		insertGlobal(".editor-container", { position: "relative" });
 		return <div style={{ height: "100%" }}>
 			<FlexContainer direction="top_bottom" style={{
 				position: "absolute",
@@ -188,7 +190,6 @@ class InfoPanel extends React.Component<Props, State> {
 						</Heading>
 					</FlexContainer>
 				</div>
-				<hr style={dividerSx} />
 				{refModel === undefined && <div style={{ textAlign: "center" }}><Loader /></div>}
 				{refModel === null && <div style={{ textAlign: "center" }}>No references</div>}
 				{refModel && <RefTree
