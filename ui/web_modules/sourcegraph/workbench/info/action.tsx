@@ -76,8 +76,6 @@ export class DefinitionAction extends EditorAction {
 			}
 		});
 
-		this.highlightSymbol(editor);
-
 		return TPromise.as(this.onResult(editorService, editor, outerEditor));
 	}
 
@@ -192,20 +190,6 @@ export class DefinitionAction extends EditorAction {
 				},
 			},
 		});
-	}
-
-	private highlightSymbol(editor: editorCommon.ICommonCodeEditor): void {
-		const pos = editor.getPosition();
-		const model = editor.getModel();
-
-		const { startColumn, endColumn } = model.getWordAtPosition(pos);
-		const wordRange = {
-			startLineNumber: pos.lineNumber,
-			startColumn: startColumn,
-			endLineNumber: pos.lineNumber,
-			endColumn: endColumn,
-		};
-		editor.setSelection(wordRange);
 	}
 }
 
