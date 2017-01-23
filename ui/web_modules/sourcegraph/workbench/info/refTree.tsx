@@ -252,43 +252,34 @@ class Renderer extends LegacyRenderer {
 
 		if (element instanceof OneReference) {
 			const preview = element.preview.preview(element.range);
+			const fileName = element.uri.fragment;
+			const lineNumber = element.range.startLineNumber
+			const fnSignature = strings.escape(preview.before.concat(preview.inside, preview.after));
+			let authorInfo;
 
-			let authorInfo = "";
 			if (element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
-				let imgURL = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-				let gravatarHash = element.commitInfo.hunk.author.person.gravatarHash;
-				if (gravatarHash) {
-					imgURL = `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro`;
-				}
-				authorInfo = strings.format(
-					`<div class="author-details">
-						<img src="${imgURL}" />
-						<div class="name">{0} {1}</div>
-					</div>`,
-					element.commitInfo.hunk.author.person.name,
-					element.commitInfo.hunk.author.date,
-				);
+				const defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
+				const gravatarHash = element.commitInfo.hunk.author.person.gravatarHash;
+				const avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
+				const authorName = element.commitInfo.hunk.author.person.name;
+				const date = element.commitInfo.hunk.author.date;
+
+				authorInfo = `<div class="author-details">
+					<img src="${avatar}" />
+					<div class="name">${authorName} ${date}</div>
+				</div>`;
 			}
 
-			$(".sidebar-references").innerHtml(
-				strings.format(
-					`<div class="code-content">
-							<div class="function">
-								<code>{0}</code><code>{1}</code><code>{2}</code>
-								{3}
-								<div class="file-details">{4} - Line: {5}
-								</div>
-							</div>
-							<div class="divider-container">
-								<div class="divider"/>
-							</div>
-						</div>`,
-					strings.escape(preview.before),
-					strings.escape(preview.inside),
-					strings.escape(preview.after),
-					authorInfo,
-					element.uri.fragment,
-					element.range.startLineNumber)).appendTo(container);
+			const reference = `<div class="code-content">
+				<div class="function">
+					<code>${fnSignature}</code>
+					${authorInfo}
+					<div class="file-details">${fileName} - Line: ${lineNumber}</div>
+				</div>
+				<hr />
+			</div>`;
+
+			$(".sidebar-references").innerHtml(reference).appendTo(container);
 		}
 
 		return null;
