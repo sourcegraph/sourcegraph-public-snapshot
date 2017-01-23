@@ -3,6 +3,7 @@ import Event, { Emitter } from "vs/base/common/event";
 import { IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 
 import { removeWidget } from "sourcegraph/editor/authorshipWidget";
+import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { Features } from "sourcegraph/util/features";
 
 const _onDidUpdateConfiguration = new Emitter<IConfigurationServiceEvent>();
@@ -45,7 +46,7 @@ export function toggleCodeLens(): void {
 		Features.codeLens.enable();
 	} else {
 		Features.codeLens.disable();
-		removeWidget();
+		removeWidget(getEditorInstance());
 	}
 	config.editor.codeLens = Features.codeLens.isEnabled();
 	_onDidUpdateConfiguration.fire({ config } as any);

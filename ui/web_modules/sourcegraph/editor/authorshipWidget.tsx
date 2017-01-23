@@ -3,6 +3,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IContentWidget, IContentWidgetPosition } from "vs/editor/browser/editorBrowser.d";
+import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 
@@ -10,7 +11,6 @@ import { Heading, Panel, User } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 export const AuthorshipWidgetID = "contentwidget.authorship.widget";
@@ -105,43 +105,43 @@ export class AuthorshipWidget implements IContentWidget {
 let authorWidget: AuthorshipWidget | null = null;
 
 function showAuthorshipPopup(accessor: ServicesAccessor, blame: GQL.IHunk): void {
+	let editor = accessor.get(ICodeEditorService).getFocusedCodeEditor();
+
 	if (authorWidget && blame === authorWidget.blame) {
-		removeWidget();
+		removeWidget(editor);
 		return;
 	}
-	removeWidget();
-
-	const editor = getEditorInstance();
+	removeWidget(editor);
 
 	const model = editor.getModel();
 	blame.startByte = model.getLineFirstNonWhitespaceColumn(blame.startLine);
 	const {repo, rev} = URIUtils.repoParams(editor.getModel().uri);
 
-	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={blame} repo={repo} rev={rev || ""} onClose={removeWidget} />;
+	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={blame} repo={repo} rev={rev || ""} onClose={() => removeWidget(editor)} />;
 	authorWidget = new AuthorshipWidget(blame, authorshipCodeLensElement);
 
+	(editor as any).addContentWidget(authorWidget);
 	addListeners(editor);
-	editor.addContentWidget(authorWidget);
 	AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(blame);
 }
 
 CommandsRegistry.registerCommand("codelens.authorship.commit", showAuthorshipPopup);
 
-export function removeWidget(): void {
+export function removeWidget(editor: ICodeEditor | any): void {
 	if (!authorWidget) {
 		return;
 	}
-	const editor = getEditorInstance();
+
 	editor.removeContentWidget(authorWidget);
 	authorWidget = null;
 }
 
-function addListeners(editor: ICodeEditor): void {
+function addListeners(editor: ICodeEditor | any): void {
 	editor.onMouseUp((e: IEditorMouseEvent) => {
 		if (!e.target.detail
-			|| e.target.detail !== AuthorshipWidgetID
+			|| (typeof e.target.detail !== "string") || e.target.detail !== AuthorshipWidgetID
 			&& !e.target.detail.startsWith("codeLens")) {
-			removeWidget();
+			removeWidget(editor);
 		}
 	});
 }
