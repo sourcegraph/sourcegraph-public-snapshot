@@ -71,7 +71,7 @@ export class Preview extends React.Component<Props, {}> {
 const prefix = "github.com/";
 
 function Title({ location, onClickClose }: { location: Location; onClickClose: () => void }): JSX.Element {
-	let {repo, path, rev} = URIUtils.repoParams(location.uri);
+	let { repo, path, rev } = URIUtils.repoParams(location.uri);
 	const url = urlToBlobLine(repo, rev, path, location.range.startLineNumber);
 	repo = repo.startsWith(prefix) ? repo.substr(prefix.length) : repo;
 	return <FlexContainer justify="between" items="center" style={{

@@ -10,8 +10,8 @@ interface Props {
 	location: any;
 }
 
-function Tool({name, img, url, event}: { name: string, img: string, url: string, event: AnalyticsConstants.LoggableEvent }): JSX.Element {
-	return <a href={url} target="_blank" className={styles.tool} onClick={() => { if (event) { event.logEvent(); } } }>
+function Tool({ name, img, url, event }: { name: string, img: string, url: string, event: AnalyticsConstants.LoggableEvent }): JSX.Element {
+	return <a href={url} target="_blank" className={styles.tool} onClick={() => { if (event) { event.logEvent(); } }}>
 		<img className={styles.img} src={`${context.assetsRoot}${img}`}></img>
 		<div className={styles.caption}>{name}</div>
 	</a>;
@@ -33,7 +33,7 @@ export class Integrations extends React.Component<Props, {}> {
 							img={"/img/Dashboard/google-chrome.svg"}
 							url={"https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack"}
 							event={AnalyticsConstants.Events.ToolsModalDownloadCTA_Clicked}
-							/>
+						/>
 					</div>
 				</div>
 				{this.props.location.query.onboarding &&

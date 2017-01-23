@@ -67,7 +67,7 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 	}
 }
 
-function Title({repo}: { repo: string }): JSX.Element {
+function Title({ repo }: { repo: string }): JSX.Element {
 
 	insertGlobal(".composite.title", {
 		opacity: "1 !important",

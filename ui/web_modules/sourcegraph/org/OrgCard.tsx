@@ -14,7 +14,7 @@ interface Props {
 
 const AVATAR_PLACEHOLDER_URL = "https://avatars2.githubusercontent.com/u/10788623?v=3&s=400";
 
-export function OrgCard({org}: Props): JSX.Element {
+export function OrgCard({ org }: Props): JSX.Element {
 	return <FlexContainer items="center">
 		<div style={{ position: "relative" }}>
 			<div

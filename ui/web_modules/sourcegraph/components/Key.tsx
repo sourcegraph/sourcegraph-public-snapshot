@@ -6,7 +6,7 @@ interface Props {
 	shortcut: string;
 }
 
-export function Key({style, shortcut}: Props): JSX.Element {
+export function Key({ style, shortcut }: Props): JSX.Element {
 	return <span style={Object.assign({
 		backgroundColor: colors.black(0.3),
 		borderRadius: 3,

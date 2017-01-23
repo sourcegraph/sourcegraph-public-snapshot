@@ -158,7 +158,7 @@ function logLSPResponse(uri: URI, modeID: string, method: string, params: any, r
 	const locHash = params.textDocument && params.textDocument.uri && params.position ? `#L${params.position.line + 1}:${params.position.character + 1}` : "";
 	const pageURL = window.location.href.replace(/(#L[\d:-]*)?$/, locHash);
 
-	const {repo} = URIUtils.repoParams(uri);
+	const { repo } = URIUtils.repoParams(uri);
 	const issueTitle = `${err ? "Error in" : "Unexpected behavior from"} ${method} in ${repo}`;
 	const assignee = modeToIssueAssignee[modeID];
 	const issueBody = `I saw ${err ? "an error in" : "unexpected behavior from"} from LSP ${method} on a ${modeID} file at [${pageURL}](${pageURL}).

@@ -100,7 +100,7 @@ export interface SearchDelegate {
 // resultsToArray converts from a structured data type into one that can be used
 // by the view.
 function resultsToArray(results: Results): Category[] {
-	const {symbols, files, repos} = results;
+	const { symbols, files, repos } = results;
 	return [files, symbols, repos];
 }
 
@@ -287,7 +287,7 @@ export class Container extends React.Component<Props, State> {
 	updateResults(): void {
 		const query = this.state.input;
 		const repo = this.props.repo;
-		let {symbols, files, repos} = cloneDeep(this.state.results);
+		let { symbols, files, repos } = cloneDeep(this.state.results);
 
 		// Update symbols
 		if (repo && this.props.commitID) {
@@ -300,7 +300,7 @@ export class Container extends React.Component<Props, State> {
 						title = `${sym.containerName}.${sym.name}`;
 					}
 					const kind = symbolKindName(sym.kind);
-					const {path} = URIUtils.repoParamsExt(sym.location.uri);
+					const { path } = URIUtils.repoParamsExt(sym.location.uri);
 					const desc = `${kind ? kind : ""} in ${path}`;
 					let idx = title.toLowerCase().indexOf(query.toLowerCase());
 					const line = sym.location.range.start.line;
@@ -339,7 +339,7 @@ export class Container extends React.Component<Props, State> {
 		}
 		if (updatedRepos) {
 			if (updatedRepos.Repos) {
-				const repoResults = updatedRepos.Repos.map(({URI}) => ({ title: URI, URLPath: `/${URI}` }));
+				const repoResults = updatedRepos.Repos.map(({ URI }) => ({ title: URI, URLPath: `/${URI}` }));
 				repos.IsLoading = false;
 				repos.Results = repoResults;
 			} else {

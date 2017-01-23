@@ -11,7 +11,7 @@ interface Props {
 	style?: React.CSSProperties;
 }
 
-export function Hero({color = "white", className, pattern, children, style}: Props): JSX.Element {
+export function Hero({ color = "white", className, pattern, children, style }: Props): JSX.Element {
 	return <div className={classNames(pattern ? patternClasses[pattern] : null, className)} style={Object.assign({
 		backgroundColor: bgColors[color],
 		color: color === "white" || color === "transparent" ? "inherit" : colors.white(),

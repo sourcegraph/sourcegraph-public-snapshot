@@ -34,17 +34,17 @@ export class FeatureCarousel extends React.Component<Props, State> {
 					title="View all references"
 					subtitle="Quickly understand forward and backward dependencies"
 					active={this.state.active === 0}
-					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 0 }); } } />
+					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 0 }); }} />
 				<SliderNavItem
 					title="Peek definition"
 					subtitle="Grok what code is doing without losing context"
 					active={this.state.active === 1}
-					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 1 }); } } />
+					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 1 }); }} />
 				<SliderNavItem
 					title="Search by symbol"
 					subtitle="Jump to and search for symbols within a repository"
 					active={this.state.active === 2}
-					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 2 }); } } />
+					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 2 }); }} />
 			</FlexContainer>
 			<div style={{ flex: "1 1 60%", position: "relative", minHeight: 480 }}>
 				<img src={`${this.props.assetsURL}/img/Homepage/screen-placeholder.png`} width="100%" />
@@ -63,7 +63,7 @@ interface SliderNavItemProps {
 	onClick: () => void;
 }
 
-function SliderNavItem({title, subtitle, active, onClick}: SliderNavItemProps): JSX.Element {
+function SliderNavItem({ title, subtitle, active, onClick }: SliderNavItemProps): JSX.Element {
 	const sx = style({
 		backgroundImage: active ? `linear-gradient(270deg, ${colors.white()}, ${colors.blueL3()} 100%)` : "transparent",
 		borderRadius: 3,
@@ -86,7 +86,7 @@ interface SliderPanelProps {
 	active: boolean;
 }
 
-function SliderPanel({img, assetsURL, active}: SliderPanelProps): JSX.Element {
+function SliderPanel({ img, assetsURL, active }: SliderPanelProps): JSX.Element {
 	return <div style={{
 		maxHeight: 540,
 		opacity: active ? 1 : 0,

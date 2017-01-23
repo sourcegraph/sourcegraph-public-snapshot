@@ -95,7 +95,7 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 	}
 
 	render(): JSX.Element | null {
-		let {member, org} = this.props;
+		let { member, org } = this.props;
 		if (member === null) {
 			return null;
 		}

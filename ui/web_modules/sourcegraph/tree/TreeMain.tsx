@@ -76,7 +76,7 @@ export class TreeMainComponent extends React.Component<Props, {}> {
 				routes={this.props.routes}
 				params={this.props.params}
 				relay={this.props.relay}
-				>
+			>
 				<PageTitle title={title} />
 				<div>
 					<Panel style={{ borderBottom: `1px solid ${colors.blueGrayL3(0.6)}` }}>
@@ -156,5 +156,5 @@ export const TreeMain = function (props: { params: any; location: RouterLocation
 				params: props.params,
 			},
 		}}
-		/>;
+	/>;
 };

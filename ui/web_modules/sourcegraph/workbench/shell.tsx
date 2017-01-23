@@ -34,7 +34,7 @@ export class WorkbenchShell extends React.Component<BlobRouteProps, {}> {
 			return;
 		}
 
-		const {repo, rev, path} = this.props;
+		const { repo, rev, path } = this.props;
 		const resource = URIUtils.pathInRepo(repo, rev, path);
 		[this.workbench, this.services] = init(domElement, resource);
 		registerEditorCallbacks(this.context.router);

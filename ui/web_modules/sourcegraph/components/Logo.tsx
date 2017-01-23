@@ -10,7 +10,7 @@ interface Props {
 	style?: React.CSSProperties;
 }
 
-export function Logo({width, type, className, style}: Props): JSX.Element {
+export function Logo({ width, type, className, style }: Props): JSX.Element {
 	let logoImg = "sourcegraph-mark.svg";
 	if (type === "logotype") {
 		logoImg = "sourcegraph-logo.svg";

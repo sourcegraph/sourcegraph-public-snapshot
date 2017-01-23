@@ -21,7 +21,7 @@ supportedModes.forEach(mode => {
 	});
 });
 
-getLanguages().forEach(({id}) => {
+getLanguages().forEach(({ id }) => {
 	onLanguage(id, () => {
 		registerCodeLensProvider(id, new AuthorshipCodeLens());
 	});
@@ -57,7 +57,7 @@ export class ReferenceProvider implements modes.ReferenceProvider {
 					return null;
 				}
 
-				const {repo, rev, path} = URIUtils.repoParams(model.uri);
+				const { repo, rev, path } = URIUtils.repoParams(model.uri);
 				AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
@@ -88,7 +88,7 @@ export class HoverProvider implements modes.HoverProvider {
 					return { contents: [] }; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
 				}
 
-				const {repo, rev, path} = URIUtils.repoParams(model.uri);
+				const { repo, rev, path } = URIUtils.repoParams(model.uri);
 				AnalyticsConstants.Events.CodeToken_Hovered.logEvent({
 					repo: repo,
 					rev: rev || "",

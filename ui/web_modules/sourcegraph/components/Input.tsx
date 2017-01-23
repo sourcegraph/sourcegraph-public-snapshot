@@ -85,7 +85,7 @@ export function Input(props: Props): JSX.Element {
 				":-moz-placeholder": placeholderSx,
 				":-ms-input-placeholder": placeholderSx,
 			}) }
-			/>
+		/>
 		{props.helperText && <em style={errorTextSx}>{props.helperText}</em>}
 		{props.errorText && <div style={{
 			color: colors.red(),

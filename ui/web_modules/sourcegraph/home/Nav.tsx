@@ -22,7 +22,7 @@ const navItemSx = {
 
 const navHover = hover({ color: colors.blueGrayD1() });
 
-export function Nav({context, style, location}: Props): JSX.Element {
+export function Nav({ context, style, location }: Props): JSX.Element {
 
 	return <FlexContainer justify="between" wrap={true} style={style}>
 		<Logo type="logotype" width="195" />
@@ -39,7 +39,7 @@ export function Nav({context, style, location}: Props): JSX.Element {
 					location={location}
 					onToggle={(v) => v && AnalyticsConstants.Events.LoginModal_Initiated.logEvent({ page_name: location.pathname })}
 					{...merge(navItemSx, navHover) }
-					>Log in</LocationStateToggleLink>
+				>Log in</LocationStateToggleLink>
 			}
 
 			{!(context as any).signedIn &&
@@ -53,7 +53,7 @@ export function Nav({context, style, location}: Props): JSX.Element {
 						paddingTop: whitespace[2],
 						paddingBottom: whitespace[2],
 					}}
-					><Button color="orange" size="small" style={{ marginTop: whitespace[1] }}>Sign up</Button>
+				><Button color="orange" size="small" style={{ marginTop: whitespace[1] }}>Sign up</Button>
 				</LocationStateToggleLink>
 			}
 		</div>

@@ -44,7 +44,7 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 	render(): JSX.Element | null {
 		const { defData } = this.props;
 		const uri = URI.parse(defData.definition.uri);
-		let {repo, rev, path} = URIUtils.repoParams(uri);
+		let { repo, rev, path } = URIUtils.repoParams(uri);
 		rev = prettifyRev(rev);
 		const url = urlToBlobRange(repo, rev, path, defData.definition.range);
 		const fullDocString = marked(defData.docString, { sanitize: true });

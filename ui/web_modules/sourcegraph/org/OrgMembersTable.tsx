@@ -9,7 +9,7 @@ interface Props {
 	sentInvites: Array<String>;
 }
 
-export function OrgMembersTable({members, inviteClicked, sentInvites}: Props): JSX.Element {
+export function OrgMembersTable({ members, inviteClicked, sentInvites }: Props): JSX.Element {
 	function _inviteSelected(member: OrgMember): void {
 		if (sentInvites.indexOf(member.Login) === -1) {
 			inviteClicked(member);
@@ -51,7 +51,7 @@ export function OrgMembersTable({members, inviteClicked, sentInvites}: Props): J
 						<td style={memberCellSx} width="20%">
 							{!member.SourcegraphUser && (member.Invite || (sentInvites.indexOf(member.Login) > -1)
 								? "Invite sent"
-								: <Button size="small" color="blue" disabled={!(member.CanInvite || !member.Invite)} onClick={(e) => { _inviteSelected(member); } }>Invite</Button>)}
+								: <Button size="small" color="blue" disabled={!(member.CanInvite || !member.Invite)} onClick={(e) => { _inviteSelected(member); }}>Invite</Button>)}
 							{member.SourcegraphUser && "Member"}
 						</td>
 					</tr>

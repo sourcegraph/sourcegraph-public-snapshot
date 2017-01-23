@@ -7,7 +7,7 @@ interface Props {
 	itemStyle?: React.CSSProperties;
 }
 
-export function List({children, style, itemStyle}: Props): JSX.Element {
+export function List({ children, style, itemStyle }: Props): JSX.Element {
 	const sx = Object.assign(
 		{ paddingLeft: whitespace[4] },
 		style,

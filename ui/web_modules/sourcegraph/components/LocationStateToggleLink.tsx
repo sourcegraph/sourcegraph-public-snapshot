@@ -28,9 +28,9 @@ interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 // It can be used for showing modals, whose on/off state should not be
 // reflected in the URL. Something else will have to read the location state
 // to determine whether to show it.
-export function LocationStateToggleLink(props: Props, {router}: { router: Router }): JSX.Element {
+export function LocationStateToggleLink(props: Props, { router }: { router: Router }): JSX.Element {
 
-	const {location, children, modalName} = props;
+	const { location, children, modalName } = props;
 	const other = Object.assign({}, props);
 	delete other.location;
 	delete other.modalName;
