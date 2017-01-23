@@ -6,7 +6,7 @@ import { colors, paddingMargin } from "sourcegraph/components/utils";
 
 const rowSx = paddingMargin.margin("y", 1);
 
-export function ReferenceCard({ fnSignature,	authorName,	avatar,	date,	fileName,	line }: {
+export function ReferenceCard({ fnSignature, authorName, avatar, date, fileName, line }: {
 	fnSignature: string;
 	authorName?: string;
 	avatar?: string;
@@ -29,13 +29,13 @@ export function ReferenceCard({ fnSignature,	authorName,	avatar,	date,	fileName,
 				borderColor: colors.blueL2(0.7),
 			}
 		},
-	)}>
+	) }>
 		<code style={Object.assign({
 			color: colors.text(),
-			webkitFontSmoothing: "auto",
+			WebkitFontSmoothing: "auto",
 			fontSize: 14,
 			display: "block",
-		}, rowSx )}>{fnSignature}</code>
+		}, rowSx)}>{fnSignature}</code>
 		{authorName && <div style={rowSx}>
 			<User simple={true} nickname={`${authorName} · ${date}`} avatar={avatar} style={{ display: "inline-block" }} />
 		</div>}
