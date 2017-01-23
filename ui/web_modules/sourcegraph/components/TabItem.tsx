@@ -60,7 +60,7 @@ export function TabItem({
 		},
 
 		direction === "vertical" ? verticalSx : horizontalSx,
-		tabSize && size ? tabSize[size] : null,
+		tabSize && size ? tabSize[size] : {},
 		hideMobile ? layout.hide.sm : {},
 
 		select(" a",

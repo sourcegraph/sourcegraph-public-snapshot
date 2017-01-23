@@ -10,7 +10,7 @@ import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstan
 
 const PageName: string = "MasterPlanPage";
 
-function TLDR({style}: { style?: React.CSSProperties; }): JSX.Element {
+function TLDR({ style }: { style?: React.CSSProperties; }): JSX.Element {
 	const itemSx = {
 		paddingBottom: whitespace[2],
 		paddingTop: whitespace[2],
@@ -33,7 +33,7 @@ function TLDR({style}: { style?: React.CSSProperties; }): JSX.Element {
 // should be an odd number that is unique among all the calls to
 // emailSubscribeForm in this file.
 
-function EmailSubscribeForm({tabIndex, block, sx}: {
+function EmailSubscribeForm({ tabIndex, block, sx }: {
 	tabIndex?: number;
 	block?: boolean;
 	sx?: React.CSSProperties;
@@ -43,13 +43,13 @@ function EmailSubscribeForm({tabIndex, block, sx}: {
 			<div>
 				<div style={{ position: "absolute", left: "-5000px" }} aria-hidden="true"><input type="text" name="b_81d5d2fe17e49697663f46503_32642fc470" tabIndex={-1} value="" /></div>
 				<Input block={block} type="email" defaultValue="" name="EMAIL" id="mce-EMAIL" placeholder="Email address" style={{ marginBottom: whitespace[1] }} tabIndex={tabIndex} />
-				<Button type="submit" block={block} id="mc-embedded-subscribe" color="blueGray" tabIndex={tabIndex + 1}>Subscribe to updates</Button>
+				<Button type="submit" block={block} id="mc-embedded-subscribe" color="blueGray" tabIndex={(tabIndex || 0) + 1}>Subscribe to updates</Button>
 			</div>
 		</form>
 	</div>;
 }
 
-function SignInButton({block}: { block: boolean }): JSX.Element {
+function SignInButton({ block }: { block: boolean }): JSX.Element {
 	return <LocationStateToggleLink
 		href="/join"
 		modalName="join"
@@ -60,7 +60,7 @@ function SignInButton({block}: { block: boolean }): JSX.Element {
 			paddingTop: whitespace[2],
 			paddingBottom: whitespace[2],
 		}}
-		>
+	>
 		<Button block={block} color="blue">Try Sourcegraph</Button>
 	</LocationStateToggleLink>;
 }
@@ -86,7 +86,7 @@ export function MasterPlanPage(): JSX.Element {
 				paddingTop: whitespace[3],
 			}}
 				{ ...layout.hide.sm }
-				>
+			>
 				<Affix offset={0}>
 					<Heading level={7} color="gray">Phase 1 goals</Heading>
 					<TLDR style={{

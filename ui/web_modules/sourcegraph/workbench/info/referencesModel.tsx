@@ -289,7 +289,7 @@ export class ReferencesModel implements IDisposable {
 			}
 		}
 
-		let arrayOfChildren = [];
+		let arrayOfChildren: OneReference[] = [];
 		for (let group of this._groups) {
 			group.children.forEach(child => {
 				arrayOfChildren.push(child);
@@ -298,7 +298,7 @@ export class ReferencesModel implements IDisposable {
 
 		this._groups = [];
 		for (let group of realGroups) {
-			let tempGroup = [];
+			let tempGroup: OneReference[] = [];
 			for (let reference of arrayOfChildren) {
 				if (reference.uri.path === group.uri.path) {
 					tempGroup.push(reference);

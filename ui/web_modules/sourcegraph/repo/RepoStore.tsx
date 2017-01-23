@@ -43,7 +43,7 @@ class RepoStoreClass extends Store<any> {
 		this.symbols = deepFreeze({
 			content: {},
 			list(languages: string[], repo: string, rev: string | null, query: string) {
-				const langResults = [];
+				const langResults: any[] = [];
 				languagesToSearchModes(languages).forEach((mode) => langResults.push(this.content[keyForSymbols(mode, repo, rev, query)]));
 				const results = flatten(filter(langResults));
 				const loading = some(langResults, r => r === undefined);
