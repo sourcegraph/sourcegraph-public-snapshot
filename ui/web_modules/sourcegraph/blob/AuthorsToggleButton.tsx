@@ -58,7 +58,7 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 			position: "relative",
 		}, typography.size[7]);
 
-		return <div style={{ display: "inline-block" }} { ...layout.hide.sm}>
+		return <div style={{ display: "inline-block", marginTop: whitespace[2] }} { ...layout.hide.sm}>
 			<ToggleButton
 				size="small"
 				on={this.state.on}

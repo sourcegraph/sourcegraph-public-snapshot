@@ -42,10 +42,10 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 		const gitHubURL = `https://${repo}/blob/${rev}/${path}`;
 
 		return <div style={{ width: "100%" }}>
-			<FlexContainer justify="between" items="center" wrap={true} style={{
+			<FlexContainer justify="between" items="center" style={{
 				backgroundColor: colors.blueGrayD2(),
 				boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
-				height: layout.editorToolbarHeight,
+				minHeight: layout.editorToolbarHeight,
 				padding: `0 ${whitespace[3]}`,
 				position: "relative",
 				width: "100%",
