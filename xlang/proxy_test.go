@@ -184,26 +184,26 @@ func TestProxy(t *testing.T) {
 
 				// Matching against a dirs hint with multiple dirs.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2", "file:///invalid"}}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against a dirs hint.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2"}}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against single field.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against no fields.
 				{Query: lsext.SymbolDescriptor{}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 				{
 					Query: lsext.SymbolDescriptor{
@@ -213,7 +213,7 @@ func TestProxy(t *testing.T) {
 						"recv":        "",
 						"vendor":      false,
 					},
-				}: []string{"git://test/pkg?master#d/d2/b.go:1:20-1:20 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false"},
+				}: []string{"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false"},
 				{
 					Query: lsext.SymbolDescriptor{
 						"name":        "A",
@@ -222,7 +222,7 @@ func TestProxy(t *testing.T) {
 						"recv":        "",
 						"vendor":      false,
 					},
-				}: []string{"git://test/pkg?master#d/d2/b.go:1:47-1:47 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false"},
+				}: []string{"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false"},
 			},
 		},
 		"go multiple packages in dir": {

@@ -112,7 +112,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		}()
 	}
 
-	// workspaceRefsTypecheck is ran inside it's own goroutine because it can
+	// workspaceRefsTypecheck is ran inside its own goroutine because it can
 	// block for longer than our context deadline.
 	var err error
 	done := make(chan struct{})
@@ -262,7 +262,7 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 
 		results.resultsMu.Lock()
 		results.results = append(results.results, referenceInformation{
-			Reference: goRangeToLSPLocation(fs, r.Pos, r.Pos), // TODO: internal/refs doesn't generate end positions
+			Reference: goRangeToLSPLocation(fs, r.Start, r.End),
 			Symbol:    symDesc,
 		})
 		results.resultsMu.Unlock()

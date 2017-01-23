@@ -156,6 +156,9 @@ type ParameterInformation struct {
 
 type ReferenceContext struct {
 	IncludeDeclaration bool `json:"includeDeclaration"`
+
+	// Sourcegraph extension
+	XLimit int `json:"xlimit,omitempty"`
 }
 
 type ReferenceParams struct {

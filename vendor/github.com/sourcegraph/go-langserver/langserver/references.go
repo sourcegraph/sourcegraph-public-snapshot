@@ -26,7 +26,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 		// Invalid nodes means we tried to click on something which is
 		// not an ident (eg comment/string/etc). Return no information.
 		if _, ok := err.(*invalidNodeError); ok {
-			return nil, nil
+			return []lsp.Location{}, nil
 		}
 		return nil, err
 	}
@@ -54,6 +54,11 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 	}
 
 	if obj.Pkg() == nil {
+		if _, builtin := obj.(*types.Builtin); builtin {
+			// We don't support builtin references due to the massive number
+			// of references, so ignore the missing package error.
+			return []lsp.Location{}, nil
+		}
 		return nil, fmt.Errorf("no package found for object %s", obj)
 	}
 	defpkg := obj.Pkg().Path()
@@ -147,13 +152,13 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 	}
 
 	lconf.Load() // ignore error
-	if afterTypeCheckErr != nil {
-		// Only triggered by 1 specific error above (where we assign
-		// afterTypeCheckErr), not any general loader error.
-		return nil, afterTypeCheckErr
-	}
 
 	if qobj == nil {
+		if afterTypeCheckErr != nil {
+			// Only triggered by 1 specific error above (where we assign
+			// afterTypeCheckErr), not any general loader error.
+			return nil, afterTypeCheckErr
+		}
 		return nil, errors.New("query object not found during reloading")
 	}
 
@@ -164,6 +169,15 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 
 	locs := goRangesToLSPLocations(fset, refs)
 	sortBySharedDirWithURI(params.TextDocument.URI, locs)
+
+	// Technically we may be able to stop computing references sooner and
+	// save RAM/CPU, but currently that would have two drawbacks:
+	// * We can't stop the typechecking anyways
+	// * We may return results that are not as interesting since sortBySharedDirWithURI won't see everything.
+	if params.Context.XLimit > 0 && params.Context.XLimit < len(locs) {
+		locs = locs[:params.Context.XLimit]
+	}
+
 	return locs, nil
 }
 

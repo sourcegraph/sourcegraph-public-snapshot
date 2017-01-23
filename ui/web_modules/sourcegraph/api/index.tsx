@@ -642,6 +642,7 @@ export interface RefSet {
 
 export interface ReferenceContext {
 	includeDeclaration: boolean;
+	xlimit?: number;
 }
 
 export interface ReferenceParams {
