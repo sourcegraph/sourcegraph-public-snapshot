@@ -1,6 +1,8 @@
 import { $, Builder } from "vs/base/browser/builder";
 import { IDisposable } from "vs/base/common/lifecycle";
 
+import "sourcegraph/workbench/styles/leftRightWidget.css";
+
 export interface IRenderer {
 	(container: HTMLElement): IDisposable;
 }
@@ -14,11 +16,10 @@ export class LeftRightWidget {
 	constructor(container: HTMLElement, renderLeftFn: IRenderer, renderRightFn: IRenderer);
 	constructor(container: any, renderLeftFn: IRenderer, renderRightFn: IRenderer) {
 		this.$el = $(".monaco-left-right-widget").appendTo(container);
-		this.$el.padding("13px");
 
 		this.toDispose = [
-			renderRightFn($(".right").appendTo(this.$el).getHTMLElement()),
-			renderLeftFn($("span.left").appendTo(this.$el).getHTMLElement())
+			renderLeftFn($(".left-right-widget_left").appendTo(this.$el).getHTMLElement()),
+			renderRightFn($(".left-right-widget_right").appendTo(this.$el).getHTMLElement()),
 		].filter(x => !!x);
 	}
 
