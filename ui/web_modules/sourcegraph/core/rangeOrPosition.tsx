@@ -161,3 +161,10 @@ export class RangeOrPosition {
 		return o;
 	}
 }
+
+export interface AbsoluteLocation {
+	repo: string;
+	commitID: string;
+	path: string;
+	selection: IRange;
+}

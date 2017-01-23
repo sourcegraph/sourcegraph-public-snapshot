@@ -9,7 +9,8 @@ import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerVie
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
-import { BlobRouteProps, Router } from "sourcegraph/app/router";
+import { Router } from "sourcegraph/app/router";
+import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
@@ -19,12 +20,12 @@ import { Services } from "sourcegraph/workbench/services";
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
-export function syncEditorWithRouterProps(blobProps: BlobRouteProps): void {
-	const { repo, rev, path } = blobProps;
-	const resource = URIUtils.pathInRepo(repo, rev, path);
+export function syncEditorWithRouterProps(location: AbsoluteLocation): void {
+	const { repo, commitID, path, selection } = location;
+	const resource = URIUtils.pathInRepo(repo, commitID, path);
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	editorService.openEditorWithoutURLChange({ resource }).then(() => {
-		updateEditorAfterURLChange(blobProps.selection);
+		updateEditorAfterURLChange(selection);
 	});
 }
 

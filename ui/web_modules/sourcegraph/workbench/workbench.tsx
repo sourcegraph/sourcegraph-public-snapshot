@@ -54,6 +54,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			return null;
 		}
 		const symbol = this.props.isSymbolUrl ? this.props.root.repository.symbols[0] : null; // Assume for now it's ok to take the first.
+		const commitID = this.props.root.repository.commit.commit.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<RepoMain {...this.props} repository={this.props.root.repository} commit={this.props.root.repository.commit}>
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
@@ -61,7 +62,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
 				<WorkbenchShell
 					repo={this.props.repo}
-					rev={this.props.rev}
+					commitID={commitID}
 					path={symbol ? symbol.path : pathFromRouteParams(this.props.params)}
 					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
 				{Features.projectWow.isEnabled() && <InfoPanelLifecycle isSymbolUrl={this.props.isSymbolUrl} repo={this.props.root.repository} />}
