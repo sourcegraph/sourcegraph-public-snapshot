@@ -34,7 +34,6 @@ type xclient struct {
 // value of the initialize result.
 var hasXDefinitionAndXPackages = map[string]struct{}{
 	"typescript": struct{}{},
-	"php":        struct{}{},
 }
 
 // Call transparently wraps xlang.Client.Call *except* for `textDocument/definition` if the language
