@@ -1,5 +1,5 @@
 import { CancellationToken } from "vs/base/common/cancellation";
-import { onLanguage, registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
+import { getLanguages, onLanguage, registerCodeLensProvider, registerDefinitionProvider, registerHoverProvider, registerReferenceProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Position } from "vs/editor/common/core/position";
 import { Range } from "vs/editor/common/core/range";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
@@ -11,13 +11,19 @@ import { AuthorshipCodeLens } from "sourcegraph/editor/authorshipCodeLens";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes as supportedModes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Features } from "sourcegraph/util/features";
 
 supportedModes.forEach(mode => {
 	onLanguage(mode, () => {
 		registerHoverProvider(mode, new HoverProvider());
 		registerDefinitionProvider(mode, new DefinitionProvder());
 		registerReferenceProvider(mode, new ReferenceProvider());
-		registerCodeLensProvider(mode, new AuthorshipCodeLens());
+	});
+});
+
+getLanguages().forEach(({ id }) => {
+	onLanguage(id, () => {
+		registerCodeLensProvider(id, new AuthorshipCodeLens());
 	});
 });
 
@@ -34,11 +40,8 @@ function normalisePosition(model: IReadOnlyModel, position: IPosition): IPositio
 	};
 }
 
-function cacheKey(model: IReadOnlyModel, position: IPosition): string {
-	return `${model.uri.toString(true)}:${position.lineNumber}:${position.column}`;
-}
-
 export class ReferenceProvider implements modes.ReferenceProvider {
+
 	provideReferences(model: IReadOnlyModel, position: Position, context: ReferenceContext, token: CancellationToken): Location[] | Thenable<Location[]> {
 		return lsp.send(model, "textDocument/references", {
 			textDocument: { uri: model.uri.toString(true) },
@@ -51,27 +54,21 @@ export class ReferenceProvider implements modes.ReferenceProvider {
 					return null;
 				}
 
-				const {repo, rev, path} = URIUtils.repoParams(model.uri);
+				const { repo, rev, path } = URIUtils.repoParams(model.uri);
 				AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 				return locs.map(lsp.toMonacoLocation);
 			});
 	}
+
 }
 
 export class HoverProvider implements modes.HoverProvider {
-	// single-flight and caching on word boundaries
-	private hoverCache: Map<string, Thenable<Hover>> = new Map<string, Thenable<Hover>>();
 
 	provideHover(model: IReadOnlyModel, origPosition: Position): Thenable<Hover> {
 		const position = normalisePosition(model, origPosition);
 		const word = model.getWordAtPosition(position);
-		const key = cacheKey(model, position);
-		const cached = this.hoverCache.get(key);
-		if (cached) {
-			return cached;
-		}
 
 		const flight = lsp.send(model, "textDocument/hover", {
 			textDocument: { uri: model.uri.toString(true) },
@@ -82,7 +79,7 @@ export class HoverProvider implements modes.HoverProvider {
 					return { contents: [] }; // if null, strings, whitespace, etc. will show a perpetu-"Loading..." tooltip
 				}
 
-				const {repo, rev, path} = URIUtils.repoParams(model.uri);
+				const { repo, rev, path } = URIUtils.repoParams(model.uri);
 				AnalyticsConstants.Events.CodeToken_Hovered.logEvent({
 					repo: repo,
 					rev: rev || "",
@@ -114,14 +111,16 @@ export class HoverProvider implements modes.HoverProvider {
 					}
 				}
 
-				contents.push("*Right-click to view references*");
+				if (Features.projectWow.isEnabled()) {
+					contents.push("*Click to view references*");
+				} else {
+					contents.push("*Right-click to view references*");
+				}
 				return {
 					contents: contents,
 					range,
 				};
 			});
-
-		this.hoverCache.set(key, flight);
 
 		return flight;
 	}
@@ -132,16 +131,8 @@ type result = Thenable<Definition | null>;
 
 export class DefinitionProvder implements modes.DefinitionProvider {
 
-	private defCache: Map<String, result> = new Map<string, result>(); // "single-flight" and caching on word boundaries
-
 	provideDefinition(model: IReadOnlyModel, origPosition: Position, token: CancellationToken): result {
 		const position = normalisePosition(model, origPosition);
-		const key = cacheKey(model, position);
-		const cached = this.defCache.get(key);
-		if (cached) {
-			return cached;
-		}
-
 		const flight = lsp.send(model, "textDocument/definition", {
 			textDocument: { uri: model.uri.toString(true) },
 			position: lsp.toPosition(position),
@@ -161,7 +152,6 @@ export class DefinitionProvder implements modes.DefinitionProvider {
 				return translatedLocs;
 			});
 
-		this.defCache.set(key, flight);
 		return flight;
 	}
 

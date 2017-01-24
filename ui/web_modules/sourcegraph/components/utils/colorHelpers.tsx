@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import * as padStart from "lodash/padStart";
 
 export function rgbStringToHex(str: string, alpha: boolean): string {
 	const rgb = str.split(alpha ? "rgba(" : "rgb(")[1].split(")")[0].split(",");
@@ -8,5 +8,5 @@ export function rgbStringToHex(str: string, alpha: boolean): string {
 };
 
 export function rgbToHex(r: number, g: number, b: number): string {
-	return `#${[r, g, b].map(x => _.padStart(x.toString(16), 2, "0")).join("")}`;
+	return `#${[r, g, b].map(x => padStart(x.toString(16), 2, "0")).join("")}`;
 }

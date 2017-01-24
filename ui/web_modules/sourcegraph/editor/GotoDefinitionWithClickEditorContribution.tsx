@@ -23,10 +23,6 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 	}
 
 	private onEditorMouseUp(mouseEvent: IEditorMouseEvent): void {
-		if (Features.projectWow.isEnabled()) {
-			return;
-		}
-
 		if (!this.editor.getSelection().isEmpty()) {
 			// Don't interfere with text selection.
 			return;
@@ -77,6 +73,10 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 
 		// just run the corresponding action
 		this.editor.setPosition(target.position);
+		if (Features.projectWow.isEnabled()) {
+			return this.editor.getAction("editor.action.openSidePanel").run();
+		}
+
 		return this.editor.getAction("editor.action.goToDeclaration").run();
 	}
 
@@ -99,7 +99,7 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		if (model === null) {
 			return;
 		}
-		const {repo, rev, path} = URIUtils.repoParams(model.uri);
+		const { repo, rev, path } = URIUtils.repoParams(model.uri);
 		AnalyticsConstants.Events.CodeToken_Clicked.logEvent({
 			srcRepo: repo, srcRev: rev || "", srcPath: path,
 			language: model.getModeId(),
@@ -145,7 +145,7 @@ function checkResponse(result: any): lsp.Location | null {
 }
 
 function urlForLocation(loc: lsp.Location): string {
-	const {line, character} = loc.range.start;
-	const {repo, rev, path} = URIUtils.repoParamsExt(loc.uri);
+	const { line, character } = loc.range.start;
+	const { repo, rev, path } = URIUtils.repoParamsExt(loc.uri);
 	return urlToBlobLineCol(repo, rev, path, line + 1, character + 1);
 }

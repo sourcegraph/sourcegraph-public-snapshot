@@ -1,23 +1,24 @@
+import { Subscription } from "rxjs";
+
+import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
-import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
-import { IEditorContribution, IModel, IRange } from "vs/editor/common/editorCommon";
+import { Position } from "vs/editor/common/core/position";
+import * as editorCommon from "vs/editor/common/editorCommon";
+import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
+import { EditorAction, IActionOptions, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
+import { CommonEditorRegistry } from "vs/editor/common/editorCommonExtensions";
+import { PeekContext, getOuterEditor } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
+import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
+import { IEditorService } from "vs/platform/editor/common/editor";
+import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
-import { send } from "sourcegraph/editor/lsp";
-import { Features } from "sourcegraph/util/features";
-import { provideReferences } from "sourcegraph/util/RefsBackend";
+import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
-export interface HoverData {
-	definition: {
-		uri: string;
-		range: IRange;
-	};
-	docString: string;
-	funcName: string;
-}
+import ModeContextKeys = editorCommon.ModeContextKeys;
 
 interface Props {
 	editorModel: IModel;
@@ -26,12 +27,10 @@ interface Props {
 			line: number,
 			character: number
 		},
-		textDocument: { uri: string };
 	};
 };
 
 const OpenInfoPanelID: string = "editor.contrib.openInfoPanel";
-const TokenIdentifierClassName: string = "identifier";
 
 @editorContribution
 export class ReferenceAction implements IEditorContribution {
@@ -45,110 +44,188 @@ export class ReferenceAction implements IEditorContribution {
 		this.toDispose.forEach(disposable => disposable.dispose());
 	}
 
+}
+
+export class DefinitionActionConfig {
 	constructor(
-		private editor: ICodeEditor,
+		public sideBarID: string = "",
 	) {
-		if (editor instanceof EmbeddedCodeEditorWidget || !Features.projectWow.isEnabled()) {
-			return;
-		}
-		this.toDispose.push(this.editor.onDidChangeModel((e) => {
-			if (e.oldModelUrl !== null) {
-				infoStore.dispatch(null);
+		//
+	}
+}
+
+export class DefinitionAction extends EditorAction {
+
+	private _configuration: DefinitionActionConfig;
+	private globalFetchSubscription?: Promise<Subscription | undefined>;
+
+	constructor(configuration: DefinitionActionConfig, opts: IActionOptions) {
+		super(opts);
+		this._configuration = configuration;
+	}
+
+	public run(accessor: ServicesAccessor, editor: editorCommon.ICommonCodeEditor): void {
+		const editorService = accessor.get(IEditorService);
+		const outerEditor = getOuterEditor(accessor, {});
+
+		editor.onDidChangeModel(event => {
+			let oldModel = event.oldModelUrl;
+			let newModel = event.newModelUrl;
+			if (oldModel.toString() !== newModel.toString()) {
+				this.prepareInfoStore(false, "");
 			}
-		}));
-		this.toDispose.push(this.editor.onMouseUp((e: IEditorMouseEvent) => {
-			this.onEditorMouseUp(e);
-		}));
+		});
+
+		this.onResult(editorService, editor, outerEditor);
 	}
 
-	private async onEditorMouseUp(mouseEvent: IEditorMouseEvent): Promise<void> {
-		if (!mouseEvent.event.target.classList.contains(TokenIdentifierClassName)) {
-			// Hide side panel
-			infoStore.dispatch(null);
+	async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
+		const defPromise = provideDefinition(props.editorModel, props.lspParams.position);
+		const localRefsPromise = provideReferences(props.editorModel, props.lspParams.position);
+		const def = await defPromise;
+		const id = this._configuration.sideBarID;
+		if (!def) {
 			return;
 		}
-		const props = this.getParamsForMouseEvent(mouseEvent);
-		if (!props) {
+		this.prepareInfoStore(true, this._configuration.sideBarID);
+		this.dispatchInfo(id, def);
+
+		const localRefs = await localRefsPromise;
+		if (this._configuration.sideBarID !== id) {
 			return;
 		}
-
-		// Load all data for the sidepane in chunks to prevent locking the UI on larger reference / commit fetches.
-		const hoverData: HoverData | null = await this.fetchHoverData(props);
-		if (!hoverData) {
-			return;
-		}
-		infoStore.dispatch({ hoverData });
-
-		let refModel = await resolveLocalReferences(props);
-
-		if (!refModel) {
-			infoStore.dispatch({ refModel: null, hoverData: hoverData });
+		if (!localRefs || localRefs.length === 0) {
+			this.dispatchInfo(id, def, null);
 			return;
 		}
 
-		// refModel = await provideReferencesCommitInfo(refModel);
+		let refModel = new ReferencesModel(localRefs, props.editorModel.uri);
+		this.dispatchInfo(id, def, refModel);
 
-		infoStore.dispatch({ hoverData, refModel });
+		const localRefsWithCommitInfo = await provideReferencesCommitInfo(localRefs);
+		refModel = new ReferencesModel(localRefsWithCommitInfo, props.editorModel.uri);
+		if (this._configuration.sideBarID !== id) {
+			return;
+		}
+		this.dispatchInfo(id, def, refModel);
+
+		const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
+		if (!depRefs || this._configuration.sideBarID !== id) {
+			this.dispatchInfo(id, def, refModel, true);
+			return;
+		}
+
+		let localAndGlobalRefs = localRefsWithCommitInfo;
+		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refs => {
+			localAndGlobalRefs = localAndGlobalRefs.concat(refs);
+			refModel = new ReferencesModel(localAndGlobalRefs, props.editorModel.uri);
+			this.dispatchInfo(id, def, refModel);
+		}, () => null, () => this.dispatchInfo(id, def, refModel, true));
 	}
 
-	private async fetchHoverData(props: Props): Promise<HoverData | null> {
-		const hoverInfo = await send(props.editorModel, "textDocument/hover", props.lspParams);
-		if (!hoverInfo || !hoverInfo.result || !hoverInfo.result.contents) {
-			return null;
+	private prepareInfoStore(prepare: boolean, id: string): void {
+		if (!prepare && this.globalFetchSubscription) {
+			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
-		const [{value: funcName}, docs] = hoverInfo.result.contents;
-		const docString = docs ? docs.value : "";
-
-		const defResponse = await send(props.editorModel, "textDocument/definition", props.lspParams);
-		if (!defResponse.result || !defResponse.result[0]) {
-			return null;
-		}
-
-		const defFirst = defResponse.result[0];
-		let definition = {
-			uri: defFirst.uri,
-			range: {
-				startLineNumber: defFirst.range.start.line,
-				startColumn: defFirst.range.start.character,
-				endLineNumber: defFirst.range.end.line,
-				endColumn: defFirst.range.end.character,
-			}
-		};
-		return { funcName, docString, definition };
+		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, loadingComplete: true, id });
 	}
 
-	private getParamsForMouseEvent(mouseEvent: IEditorMouseEvent): Props | null {
-		if (!mouseEvent.event.target.classList.contains(TokenIdentifierClassName)) {
-			return null;
+	private dispatchInfo(id: string, defData: DefinitionData, refModel?: ReferencesModel | null, loadingComplete?: boolean): void {
+		if (id === this._configuration.sideBarID) {
+			infoStore.dispatch({ defData, refModel, loadingComplete, id });
+		} else if (this.globalFetchSubscription) {
+			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
+		}
+	}
+
+	private onResult(editorService: IEditorService, editor: editorCommon.ICommonCodeEditor, outerEditor: editorCommon.ICommonCodeEditor): void {
+		let position = editor.getPosition();
+		let model = editor.getModel();
+		let word = model.getWordAtPosition(position);
+		if (!word) {
+			return;
 		}
 
-		const pos = mouseEvent.target.position;
-		if (!pos) {
-			return null;
-		}
-		const model = this.editor.getModel();
+		this._configuration.sideBarID = model.uri.toString() + position.lineNumber + ":" + position.column;
 
-		const props: Props = {
-			editorModel: model,
+		if (editor instanceof EmbeddedCodeEditorWidget) {
+			const range = {
+				startLineNumber: position.lineNumber,
+				startColumn: word.startColumn,
+				endLineNumber: position.lineNumber,
+				endColumn: word.endColumn,
+			};
+			this.prepareInfoStore(true, this._configuration.sideBarID);
+			editorService.openEditor({
+				resource: model.uri,
+				options: {
+					selection: range,
+					revealIfVisible: true,
+				}
+			}, true).then(() => {
+				this.openInSidebar(editor);
+			});
+
+			return;
+		}
+
+		if (ContextKeyExpr.and(ModeContextKeys.hasDefinitionProvider, PeekContext.notInPeekEditor)) {
+			this.openInSidebar(editor);
+		}
+	}
+
+	private openInSidebar(editor: editorCommon.ICommonCodeEditor): void {
+		const pos = editor.getPosition();
+		this.globalFetchSubscription = this.renderSidePanelForData({
+			editorModel: editor.getModel(),
 			lspParams: {
 				position: {
 					line: pos.lineNumber - 1,
 					character: pos.column - 1,
 				},
-				textDocument: {
-					uri: model.uri.toString(true),
-				}
-			}
-		};
+			},
+		});
 
-		return props;
+		this.highlightWord(editor, pos);
+	}
+
+	private highlightWord(editor: editorCommon.ICommonCodeEditor, position: Position): void {
+		const model = editor.getModel();
+		const word = model.getWordAtPosition(position);
+		editor.setSelection({
+			startLineNumber: position.lineNumber,
+			startColumn: word.startColumn,
+			endLineNumber: position.lineNumber,
+			endColumn: word.endColumn,
+		});
+	}
+
+}
+
+@editorAction
+export class GoToDefinitionAction extends DefinitionAction {
+
+	public static ID: string = "editor.action.openSidePanel";
+
+	constructor() {
+		super(new DefinitionActionConfig(), {
+			id: GoToDefinitionAction.ID,
+			label: "Open Side Panel",
+			alias: "Open Side Panel",
+			precondition: ModeContextKeys.hasDefinitionProvider,
+		});
 	}
 }
 
-async function resolveLocalReferences(props: Props): Promise<ReferencesModel | null> {
-	const referenceInfo = await provideReferences(props.editorModel, props.lspParams.position);
-	if (!referenceInfo || referenceInfo.length === 0) {
-		return null;
-	}
-	return new ReferencesModel(referenceInfo);
+function closeActiveReferenceSearch(): void {
+	infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: "" });
 }
+
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: "closeSidePaneWidget",
+	weight: CommonEditorRegistry.commandWeight(-202),
+	primary: KeyCode.Escape,
+	secondary: [KeyMod.Shift | KeyCode.Escape | KeyCode.Delete], // tslint:disable-line
+	when: ContextKeyExpr.and(ContextKeyExpr.not("config.editor.stablePeek")),
+	handler: closeActiveReferenceSearch
+});

@@ -1,3 +1,5 @@
+import { Repo } from "sourcegraph/api/index";
+
 import Event, { fromEventEmitter } from "vs/base/common/event";
 import { EventEmitter } from "vs/base/common/eventEmitter";
 import { defaultGenerator } from "vs/base/common/idGenerator";
@@ -11,12 +13,16 @@ import { IModel, IPosition, IRange } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/services/resolverService";
 
-import { ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
+import * as _ from "lodash";
 
-export class OneReference {
+import { LocationWithCommitInfo, ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
+
+export class OneReference implements IDisposable {
 
 	private _id: string;
-	private _info: ReferenceCommitInfo;
+	private _commitInfo: ReferenceCommitInfo;
+	private _preview: FilePreview;
+	private _resolved: boolean;
 
 	constructor(
 		private _parent: FileReferences,
@@ -32,6 +38,14 @@ export class OneReference {
 
 	public get model(): FileReferences {
 		return this._parent;
+	}
+
+	public get preview(): FilePreview {
+		return this._preview;
+	}
+
+	public set parent(value: FileReferences) {
+		this._parent = value;
 	}
 
 	public get parent(): FileReferences {
@@ -59,13 +73,43 @@ export class OneReference {
 		this._eventBus.emit("ref/changed", this);
 	}
 
-	public get info(): ReferenceCommitInfo {
-		return this._info;
+	public get commitInfo(): ReferenceCommitInfo {
+		return this._commitInfo;
 	}
 
-	public set info(value: ReferenceCommitInfo) {
-		this._info = value;
+	public set commitInfo(value: ReferenceCommitInfo) {
+		this._commitInfo = value;
 	};
+
+	public async resolve(textModelResolverService: ITextModelResolverService): Promise<OneReference> {
+		if (this._resolved) {
+			return TPromise.as(this);
+		}
+
+		let modelReference = await textModelResolverService.createModelReference(this.uri);
+		if (!modelReference) {
+			// something went wrong... rutro.
+			this._resolved = true;
+			return this;
+		}
+
+		const model = modelReference.object;
+		if (!model) {
+			modelReference.dispose();
+			throw new Error();
+		}
+
+		this._preview = new FilePreview(modelReference);
+		this._resolved = true;
+		return this;
+	}
+
+	dispose(): void {
+		if (this._preview) {
+			this._preview.dispose();
+			this._preview = (null as any);
+		}
+	}
 }
 
 export class FilePreview implements IDisposable {
@@ -77,7 +121,7 @@ export class FilePreview implements IDisposable {
 	private get _model(): IModel { return this._modelReference.object.textEditorModel; }
 
 	public preview(range: IRange, n: number = 8): { before: string; inside: string; after: string } {
-		const {startLineNumber, startColumn, endColumn} = range;
+		const { startLineNumber, startColumn, endColumn } = range;
 		const word = this._model.getWordUntilPosition({ lineNumber: startLineNumber, column: startColumn - n });
 		const beforeRange = new Range(startLineNumber, word.startColumn, startLineNumber, startColumn);
 		const afterRange = new Range(startLineNumber, endColumn, startLineNumber, Number.MAX_VALUE);
@@ -122,6 +166,10 @@ export class FileReferences implements IDisposable {
 		return this._range;
 	}
 
+	public set children(value: OneReference[]) {
+		this._children = value;
+	}
+
 	public get children(): OneReference[] {
 		return this._children;
 	}
@@ -146,30 +194,34 @@ export class FileReferences implements IDisposable {
 		return this._loadFailure;
 	}
 
-	public resolve(textModelResolverService: ITextModelResolverService): TPromise<FileReferences> {
+	public async resolve(textModelResolverService: ITextModelResolverService): TPromise<FileReferences> {
 		if (this._resolved) {
 			return TPromise.as(this);
 		}
 
-		return textModelResolverService.createModelReference(this._uri).then(modelReference => {
-			const model = modelReference.object;
-
-			if (!model) {
-				modelReference.dispose();
-				throw new Error();
-			}
-
-			this._preview = new FilePreview(modelReference);
-			this._resolved = true;
-			return this;
-
-		}, err => {
+		let modelReference = await textModelResolverService.createModelReference(this._uri);
+		if (!modelReference) {
 			// something wrong here
 			this._children = [];
 			this._resolved = true;
-			this._loadFailure = err;
+			this._loadFailure = new Error();
 			return this;
-		});
+		}
+
+		const model = modelReference.object;
+		if (!model) {
+			modelReference.dispose();
+			throw new Error();
+		}
+
+		this._preview = new FilePreview(modelReference);
+		this._resolved = true;
+
+		for (const oneRef of this._children) {
+			await oneRef.resolve(textModelResolverService);
+		}
+
+		return this;
 	}
 
 	dispose(): void {
@@ -188,23 +240,85 @@ export class ReferencesModel implements IDisposable {
 
 	onDidChangeReferenceRange: Event<OneReference> = fromEventEmitter<OneReference>(this._eventBus, "ref/changed");
 
-	constructor(references: Location[]) {
+	constructor(references: LocationWithCommitInfo[], private _workspace: URI, private _tempFileReferences?: [Repo]) {
+		let newArrayOfLocs: FileReferences[] = [];
+		if (this._tempFileReferences) {
+			newArrayOfLocs = _.flatten(this._tempFileReferences.map(repository => {
+				let loc: Location = {
+					uri: URI.from({
+						scheme: this._workspace.scheme,
+						authority: this._workspace.authority,
+						path: (repository as any).URI.replace("github.com", ""),
+						fragment: "",
+						query: repository.DefaultBranch,
+					}),
+					range: {
+						startLineNumber: 0,
+						startColumn: 0,
+						endColumn: 0,
+						endLineNumber: 0,
+					},
+				};
+
+				return new FileReferences(this, loc.uri, loc.range);
+			}));
+		}
 
 		// grouping and sorting
 		references.sort(ReferencesModel._compareReferences);
 
 		let current: FileReferences | null = null;
+		// Make the real groups again.
+		let realGroups: FileReferences[] = [];
 		for (let ref of references) {
+			// We have a new repo! YAY!
+			if (!current || current.uri.path !== ref.uri.path) {
+				let temp = new FileReferences(this, ref.uri, ref.range);
+				realGroups.push(temp);
+			}
+			// Make the correct file reference and generate a real preview!
 			current = new FileReferences(this, ref.uri, ref.range);
 			this.groups.push(current);
 
 			// append, check for equality first!
 			if (current.children.length === 0
 				|| !Range.equalsRange(ref.range, current.children[current.children.length - 1].range)) {
-
 				let oneRef = new OneReference(current, ref.range, this._eventBus);
 				this._references.push(oneRef);
 				current.children.push(oneRef);
+			}
+		}
+
+		let arrayOfChildren: OneReference[] = [];
+		for (let group of this._groups) {
+			group.children.forEach(child => {
+				arrayOfChildren.push(child);
+			});
+		}
+
+		this._groups = [];
+		for (let group of realGroups) {
+			let tempGroup: OneReference[] = [];
+			for (let reference of arrayOfChildren) {
+				if (reference.uri.path === group.uri.path) {
+					tempGroup.push(reference);
+				}
+			}
+
+			group.children = tempGroup;
+			if (this._workspace && group.uri.path === this._workspace.path) {
+				this._groups.splice(0, 0, group);
+			} else {
+				this._groups.push(group);
+			}
+		}
+
+		this._groups = this._groups.concat(newArrayOfLocs);
+
+		for (let i = 0; i < references.length; ++i) {
+			const commitInfo = references[i].commitInfo;
+			if (commitInfo) {
+				this.references[i].commitInfo = commitInfo;
 			}
 		}
 	}
@@ -215,6 +329,10 @@ export class ReferencesModel implements IDisposable {
 
 	public get references(): OneReference[] {
 		return this._references;
+	}
+
+	public set groups(value: FileReferences[]) {
+		this._groups = value;
 	}
 
 	public get groups(): FileReferences[] {

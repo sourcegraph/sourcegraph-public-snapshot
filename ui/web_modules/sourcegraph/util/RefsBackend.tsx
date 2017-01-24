@@ -1,54 +1,145 @@
-import URI from "vs/base/common/uri";
-import { TPromise } from "vs/base/common/winjs.base";
-import { ICommonCodeEditor, IReadOnlyModel } from "vs/editor/common/editorCommon";
+import * as _ from "lodash";
+import * as hash from "object-hash";
+import { Observable } from "rxjs";
+import { Definition, Hover, Position } from "vscode-languageserver-types";
+
+import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
+import { Repo } from "sourcegraph/api/index";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { TimeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
+import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
-import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 
-export interface RefData {
-	language: string;
-	repo: string;
-	version: string;
-	file: string;
-	line: number;
-	column: number;
+export interface DefinitionData {
+	definition: {
+		uri: string;
+		range: IRange;
+	};
+	docString: string;
+	funcName: string;
+}
+
+export interface DepRefsData {
+	Data: {
+		Location: {
+			location: lsp.Location,
+			symbol: any,
+		};
+		References: [DepReference];
+	};
+	RepoData: { [id: number]: Repo };
+}
+
+interface DepReference {
+	DepData: any;
+	Hints: {
+		dirs: [string];
+	};
+	RepoID: number;
 }
 
 export interface ReferenceCommitInfo {
-	loc: Location;
 	hunk: GQL.IHunk;
 }
 
-export async function provideReferences(model: IReadOnlyModel, pos: { line: number, character: number }): Promise<Location[]> {
-	return lsp.send(model, "textDocument/references", {
+export async function provideDefinition(model: IReadOnlyModel, pos: Position): Promise<DefinitionData | null> {
+	const hoverPromise = lsp.send(model, "textDocument/hover", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
 		context: { includeDeclaration: false },
-	})
-		.then(resp => resp ? resp.result : null)
-		.then((resp: lsp.Location | lsp.Location[] | null) => {
-			if (!resp || Object.keys(resp).length === 0) {
-				return null;
-			}
+	});
 
-			const {repo, rev, path} = URIUtils.repoParams(model.uri);
-			AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
+	const defPromise = lsp.send(model, "textDocument/definition", {
+		textDocument: { uri: model.uri.toString(true) },
+		position: pos,
+		context: { includeDeclaration: false },
+	});
 
-			const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
-			return locs.map(lsp.toMonacoLocation);
-		});
+	const hover: Hover = (await hoverPromise).result;
+	const def: Definition = (await defPromise).result;
+
+	if (!hover || !hover.contents || !def || !def[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
+		return null;
+	}
+
+	let docString: string;
+	let funcName: string;
+	if (hover.contents instanceof Array) {
+		const [first, second] = hover.contents;
+		// TODO(nico): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
+		funcName = typeof first === "string" ? first : first.value;
+		docString = second ? (typeof second === "string" ? second : second.value) : "";
+	} else {
+		funcName = typeof hover.contents === "string" ? hover.contents : hover.contents.value;
+		docString = "";
+	}
+
+	const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
+	let definition = {
+		uri: firstDef.uri,
+		range: {
+			startLineNumber: firstDef.range.start.line,
+			startColumn: firstDef.range.start.character,
+			endLineNumber: firstDef.range.end.line,
+			endColumn: firstDef.range.end.character,
+		}
+	};
+	return { funcName, docString, definition };
 }
 
-export async function provideReferencesCommitInfo(referencesModel: ReferencesModel): Promise<ReferencesModel> {
+export async function provideReferences(model: IReadOnlyModel, pos: Position): Promise<Location[]> {
+	const resp = await lsp.send(model, "textDocument/references", {
+		textDocument: { uri: model.uri.toString(true) },
+		position: pos,
+		context: { includeDeclaration: false, xlimit: 100 },
+	});
+	const result = resp.result;
+
+	if (!result || Object.keys(result).length === 0) {
+		return [];
+	}
+
+	const { repo, rev, path } = URIUtils.repoParams(model.uri);
+	AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
+
+	const locs: lsp.Location[] = result instanceof Array ? result : [result];
+	return locs.map(lsp.toMonacoLocation);
+}
+
+export type LocationWithCommitInfo = Location & { commitInfo?: { hunk: GQL.IHunk } };
+
+export async function provideReferencesCommitInfo(references: Location[]): Promise<LocationWithCommitInfo[]> {
+	// Blame is slow, so only blame the first N references in the first N repos.
+	//
+	// These parameters were chosen arbitrarily.
+	const maxReposToBlame = 6;
+	const maxReferencesToBlamePerRepo = 4;
+	const blameQuota = new Map<string, number>();
+	const shouldBlame = (reference: Location): boolean => {
+		const repo = `${reference.uri.authority}${reference.uri.path}`;
+		let quotaRemaining = blameQuota.get(repo);
+		if (quotaRemaining === undefined) {
+			if (blameQuota.size === maxReposToBlame) { return false; }
+			quotaRemaining = maxReferencesToBlamePerRepo;
+		}
+		if (quotaRemaining === 0) { return false; }
+		blameQuota.set(repo, quotaRemaining - 1);
+		return true;
+	};
+
+	function refKey(reference: Location): string {
+		return `${reference.uri.toString()}:${RangeOrPosition.fromMonacoRange(reference.range).toString()}`.replace(/\W/g, ""); // alphanumeric
+	}
+
 	let refModelQuery: string = "";
-	referencesModel.references.forEach(reference => {
+	references.forEach(reference => {
+		if (!shouldBlame(reference)) { return; }
 		refModelQuery = refModelQuery +
-			`${reference.id.replace("#", "")}:repository(uri: "${reference.uri.authority}${reference.uri.path}") {
+			`${refKey(reference)}:repository(uri: "${reference.uri.authority}${reference.uri.path}") {
 				commit(rev: "${reference.uri.query}") {
 					commit {
 						file(path: "${reference.uri.fragment}") {
@@ -83,63 +174,165 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 
 	let data = await fetchGraphQLQuery(query);
 	if (!data.root) {
-		return referencesModel;
+		return references;
 	}
 
-	referencesModel.references.forEach(reference => {
-		let dataByRefID = data.root[reference.id.replace("#", "")];
+	return references.map(reference => {
+		let dataByRefID = data.root[refKey(reference)];
+		if (!dataByRefID) {
+			return reference; // likely means the blame was skipped by shouldBlame; continue without it
+		}
 		let hunk: GQL.IHunk = dataByRefID.commit.commit.file.blame[0];
 		if (!hunk || !hunk.author || !hunk.author.person) {
-			return;
+			return reference;
 		}
-		hunk.author.date = TimeFromNowUntil(hunk.author.date, 14);
-		let commitInfo = {
-			loc: {
-				uri: reference.uri,
-				range: reference.range,
-			},
-			hunk: hunk,
-		} as ReferenceCommitInfo;
-		reference.info = commitInfo;
+		hunk.author.date = timeFromNowUntil(hunk.author.date, 14);
+		return { ...reference, ...{ commitInfo: { hunk } } };
 	});
-
-	return referencesModel;
 }
 
-export async function provideGlobalReferences(editor: ICommonCodeEditor): TPromise<ReferencesModel> {
-	const { repo, path } = URIUtils.repoParams(editor.getModel().uri);
-	const editorPosition = editor.getPosition();
-	let model = editor.getModel();
-	let refData: RefData = {
-		language: model.getModeIdAtPosition(editorPosition.lineNumber, editorPosition.column),
-		repo: repo,
-		version: model.uri.query,
-		file: path,
-		line: editorPosition.lineNumber - 1,
-		column: editorPosition.column - 1,
-	};
-	// Why is this not an LSP request?
-	const globalRefs = await fetchGlobalReferences(refData);
-	let globalRefLocs: Location[] = [];
-	globalRefs.forEach(ref => {
-		if (!ref.refLocation || !ref.uri) {
-			return;
+const MAX_GLOBAL_REFS_REPOS = 5;
+const globalRefsObservables = new Map<string, Observable<LocationWithCommitInfo[]>>();
+
+export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<LocationWithCommitInfo[]> {
+	const dependents = depRefs.Data.References;
+	const repoData = depRefs.RepoData;
+	const symbol = depRefs.Data.Location.symbol;
+	const modeID = model.getModeId();
+
+	const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
+	const cacheHit = globalRefsObservables.get(key);
+	if (cacheHit) {
+		return cacheHit;
+	}
+
+	const observable = new Observable<LocationWithCommitInfo[]>(observer => {
+		let interval: number | null = null;
+		let unsubscribed = false;
+		let completed = false;
+
+		let countNonempty = 0;
+		function incrementCountIfNonempty(refs: Location[]): void {
+			if (refs && refs.length > 0) {
+				++countNonempty;
+			}
 		}
-		globalRefLocs.push({
-			range: {
-				startLineNumber: ref.refLocation.startLineNumber + 1,
-				startColumn: ref.refLocation.startColumn + 1,
-				endLineNumber: ref.refLocation.endLineNumber + 1,
-				endColumn: ref.refLocation.endColumn + 1,
-			},
-			uri: URI.from(ref.uri),
+
+		function complete(): void {
+			if (!completed) {
+				completed = true;
+			}
+			observer.complete();
+		}
+
+		function pollNext(count: number): Promise<void>[] {
+			if (dependents.length > 0 && countNonempty < MAX_GLOBAL_REFS_REPOS) {
+				const isLastDependent = dependents.length === 1;
+				const nextDependentsToPoll = dependents.splice(0, Math.min(count, dependents.length));
+				return nextDependentsToPoll.map(dependent => {
+					const repo = repoData[dependent.RepoID];
+					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(provideReferencesCommitInfo).then(refs => {
+						incrementCountIfNonempty(refs);
+						if (!completed && refs.length > 0) {
+							observer.next(refs);
+						}
+						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
+							complete();
+						}
+					});
+				});
+			}
+
+			return [];
+		}
+
+		// Fetch references from the first two dependent repos right away, in parallel.
+		Promise.all(pollNext(2)).then(() => {
+			// Unsubscription may happen before we complete fetching the first 2 dependent repo refs.
+			// If so, bail before starting the interval poll.
+			if (unsubscribed) {
+				return;
+			}
+			if (countNonempty >= MAX_GLOBAL_REFS_REPOS || dependents.length === 0) {
+				complete();
+			}
+			// Every 2.5 seconds following, fetch refs for another dependent repo until
+			// there are no more dependent repos or we've fetched non-empty results from MAX_GLOBAL_REFS_REPOS.
+			interval = setInterval(() => pollNext(1), 2500);
 		});
-	});
 
-	return TPromise.as(new ReferencesModel(globalRefLocs));
+		return function unsubscribe(): void {
+			unsubscribed = true;
+			if (interval) {
+				clearInterval(interval);
+			}
+		};
+	}).publishReplay(MAX_GLOBAL_REFS_REPOS).refCount();
+
+	globalRefsObservables.set(key, observable);
+	return observable;
 }
 
-// TODO: @Kingy to implement for Project WOW
-async function fetchGlobalReferences(ref: RefData): Promise<Array<GQL.IRefFields>> {
-	return [];
+function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
+	if (!repo.URI || !repo.DefaultBranch) {
+		return Promise.resolve([]);
+	}
+
+	let repoURI = URIUtils.pathInRepo(repo.URI, repo.DefaultBranch, "");
+	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
+		query: symbol,
+		hints: reference.Hints,
+	}).then(resp => (!resp || !resp.result) ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
+}
+
+export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
+	// Only fetch global refs for Go.
+	if (model.getModeId() !== "go") {
+		return null;
+	}
+
+	let refModelQuery =
+		`repository(uri: "${model.uri.authority}${model.uri.path}") {
+			commit(rev: "${model.uri.query}") {
+				commit {
+					file(path: "${model.uri.fragment}") {
+						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.line}, Character: ${pos.character}) {
+							data
+						}
+					}
+				}
+			}
+		}`;
+
+	const query =
+		`query {
+			root {
+				${refModelQuery}
+			}
+		}`;
+
+	let data = await fetchGraphQLQuery(query);
+	if (!data.root.repository || !data.root.repository.commit.commit || !data.root.repository.commit.commit.file ||
+		!data.root.repository.commit.commit.file.dependencyReferences || !data.root.repository.commit.commit.file.dependencyReferences.data.length) {
+		return null;
+	}
+	let object = JSON.parse(data.root.repository.commit.commit.file.dependencyReferences.data);
+	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 1) {
+		return null;
+	}
+	let repos = _.values(object.RepoData);
+
+	let currentRepo = _.remove(repos, function (repo: any): boolean {
+		return (repo as any).URI === `${model.uri.authority}${model.uri.path}`;
+	});
+	if (!currentRepo || !currentRepo.length) {
+		return object;
+	}
+
+	_.remove(object.Data.References, function (reference: any): boolean {
+		return reference.RepoID === currentRepo[0].ID;
+	});
+	delete object.RepoData[currentRepo[0].ID];
+
+	return object;
 }

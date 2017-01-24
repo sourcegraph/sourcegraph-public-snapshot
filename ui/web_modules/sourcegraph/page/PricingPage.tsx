@@ -3,9 +3,9 @@ import { Link } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { Button, Heading, Hero, Panel } from "sourcegraph/components";
-import { CheckIcon } from "sourcegraph/components/Icons";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
+import { Checkmark } from "sourcegraph/components/symbols/Primaries";
 import * as styles from "sourcegraph/page/Page.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
@@ -31,7 +31,7 @@ export function PricingPage(props: {}): JSX.Element {
 								onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "free", page_name: AnalyticsConstants.PAGE_PRICING })}>
 								<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up</Button>
 							</Link>}
-							{context.user && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><CheckIcon className={styles.icon} /> Your current plan</Button>}
+							{context.user && <Button block={true} outline={true} color="purple" className={styles.plan_cta_noop || ""}><Checkmark className={styles.icon} /> Your current plan</Button>}
 						</div>
 						<div className={styles.details}>
 							<Heading level={4} color="purple" underline="purple">

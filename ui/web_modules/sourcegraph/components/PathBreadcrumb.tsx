@@ -19,7 +19,7 @@ export function PathBreadcrumb({ repo, path, rev, linkSx, linkHoverSx, style, to
 	const linkHover = linkHoverSx ? hover(linkHoverSx) : null;
 
 	const repoParts = repo.split("/");
-	const repoLink = [];
+	const repoLink: (string | JSX.Element)[] = [];
 	repoParts.forEach((dir, i) => {
 		repoLink.push(dir);
 		if (i === repoParts.length - 1) {
@@ -35,7 +35,7 @@ export function PathBreadcrumb({ repo, path, rev, linkSx, linkHoverSx, style, to
 		to={urlToTree(repo, rev, [])}
 		style={linkSx}
 		{...linkHover}
-		>
+	>
 		{repoLink}
 	</Link>;
 

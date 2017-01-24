@@ -30,8 +30,11 @@ type Ref struct {
 	// Def is the definition being referenced.
 	Def Def
 
-	// Pos is the position of the reference.
-	Pos token.Pos
+	// Pos is the start of the reference.
+	Start token.Pos
+
+	// End is the end of the reference.
+	End token.Pos
 }
 
 type Config struct {
@@ -42,7 +45,7 @@ type Config struct {
 }
 
 func (c *Config) Refs(emit func(*Ref)) error {
-	ref := func(rootFile *ast.File, pos token.Pos) error {
+	ref := func(rootFile *ast.File, pos token.Pos, end token.Pos) error {
 		nodes, _ := astutil.PathEnclosingInterval(rootFile, pos, pos)
 		d, err := DefInfo(c.Pkg, c.Info, nodes, pos)
 		if err == errReceiverNotTopLevelNamedType {
@@ -57,8 +60,9 @@ func (c *Config) Refs(emit func(*Ref)) error {
 			}
 		}
 		emit(&Ref{
-			Def: *d,
-			Pos: pos,
+			Def:   *d,
+			Start: pos,
+			End:   end,
 		})
 		return nil
 	}
@@ -68,13 +72,13 @@ func (c *Config) Refs(emit func(*Ref)) error {
 		ast.Inspect(file, func(n ast.Node) bool {
 			switch n := n.(type) {
 			case *ast.ImportSpec:
-				if err := ref(file, n.Pos()); err != nil {
+				if err := ref(file, n.Pos(), n.End()); err != nil {
 					firstErr = err
 					return false
 				}
 
 			case *ast.SelectorExpr:
-				if err := ref(file, n.Sel.Pos()); err != nil {
+				if err := ref(file, n.Sel.Pos(), n.Sel.End()); err != nil {
 					firstErr = err
 					return false
 				}
@@ -92,7 +96,7 @@ func (c *Config) Refs(emit func(*Ref)) error {
 					if !ok {
 						continue
 					}
-					if err := ref(file, ident.Pos()); err != nil {
+					if err := ref(file, ident.Pos(), ident.End()); err != nil {
 						// Ignore "not a package-level definition errors",
 						// since these fall into an edge case (do not represent
 						// real errors for us).

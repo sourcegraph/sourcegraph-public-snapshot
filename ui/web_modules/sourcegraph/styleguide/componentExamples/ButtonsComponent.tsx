@@ -24,7 +24,7 @@ export class ButtonsComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						} }>
+						}}>
 							Colors and styles
 						</a>
 					</TabItem>
@@ -33,7 +33,7 @@ export class ButtonsComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						} }>
+						}}>
 							Sizes
 						</a>
 					</TabItem>
@@ -61,6 +61,16 @@ export class ButtonsComponent extends React.Component<{}, State> {
 								<Button color="red" outline={true} className={classNames(base.mb3, base.mr1)}>Submit</Button>
 								<Button color="orange" outline={true} className={classNames(base.mb3, base.mr1)}>Submit</Button>
 							</div>
+							<div className={base.pa4}>
+								<Heading level={7} className={base.mb3} color="blueGray">Tint-labeled</Heading>
+								<Button className={classNames(base.mb3, base.mr1)} tintLabel="For great measure">Submit</Button>
+								<Button color="blue" className={classNames(base.mb3, base.mr1)} tintLabel="3 recipients">Send</Button>
+								<Button color="purple" className={classNames(base.mb3, base.mr1)} tintLabel="Always free">Sign up</Button>
+								<Button color="green" className={classNames(base.mb3, base.mr1)} tintLabel="$100/month">Upgrade</Button>
+								<Button color="red" className={classNames(base.mb3, base.mr1)} tintLabel="7 unfixed errors">Deploy</Button>
+								<Button color="orange" className={classNames(base.mb3, base.mr1)} tintLabel="19 projects affected">Change</Button>
+								<Button disabled={true} className={classNames(base.mb3, base.mr1)} tintLabel="Queued">Delete repository</Button>
+							</div>
 							<hr />
 							<code>
 								<pre className={base.ph4} style={{ whiteSpace: "pre-wrap" }}>
@@ -79,7 +89,13 @@ export class ButtonsComponent extends React.Component<{}, State> {
 <Button color="green" outline={true}>Submit</Button>
 <Button color="red" outline={true}>Submit</Button>
 <Button color="orange" outline={true}>Submit</Button>
-	`
+<Button tintLabel="For great measure">Submit</Button>
+<Button color="blue" tintLabel="3 recipients">Send</Button>
+<Button color="purple" tintLabel="Always free">Sign up</Button>
+<Button color="green" tintLabel="$100/month">Upgrade</Button>
+<Button color="red" tintLabel="7 unfixed errors">Deploy</Button>
+<Button color="orange" tintLabel="19 projects affected">Change</Button>
+<Button disabled={true} tintLabel="Queued">Delete repository</Button>`
 									}
 								</pre>
 							</code>

@@ -1,7 +1,7 @@
 import { modes } from "sourcegraph/editor/modes";
 
 const ignoredExtensions = new Set<string>(["md"]);
-const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx", "c", "h"]);
+const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx"]);
 if (modes.has("css")) {
 	supportedExtensions.add("css");
 	supportedExtensions.add("less");

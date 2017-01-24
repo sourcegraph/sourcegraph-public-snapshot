@@ -5,7 +5,7 @@ import { Avatar, FlexContainer, Heading, Menu, Popover } from "sourcegraph/compo
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
-import { ChevronDown } from "sourcegraph/components/symbols/Zondicons";
+import { ChevronDown } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
@@ -27,7 +27,7 @@ export const UserMenu = (props): JSX.Element => {
 				{ /* CAUTION: If you change the sourcegraph-user-menu class, you may break an e2e test. */}
 				<FlexContainer className="sourcegraph-user-menu" items="center" style={{ lineHeight: "0", height: 29 }}>
 					{props.user.AvatarURL ? <Avatar size="small" img={props.user.AvatarURL} /> : <div>{props.user.Login}</div>}
-					<ChevronDown width={12} color={colors.blueGray()} style={{ marginLeft: "8px" }} />
+					<ChevronDown color={colors.blueGray()} style={{ marginLeft: 8 }} />
 				</FlexContainer>
 				<Menu className={base.pa0} style={{ position: "relative", zIndex: 100, width: "220px" }}>
 					<div className={classNames(base.pa0, base.mb2, base.mt3)}>
@@ -49,7 +49,7 @@ export const UserMenu = (props): JSX.Element => {
 						Contact
 					</a>
 					<hr role="divider" className={base.mt3} />
-					<a role="menu_item" href="/-/logout" onClick={(e) => { EventLogger.logout(); } }>Sign out</a>
+					<a role="menu_item" href="/-/logout" onClick={(e) => { EventLogger.logout(); }}>Sign out</a>
 					<hr role="divider" className={base.mt2} />
 					<div className={classNames(base.pv1, base.mb1, typography.tc)}>
 						<Link to="/security" className={classNames(typography.f7, typography.link_subtle, base.pr3)}>Security</Link>

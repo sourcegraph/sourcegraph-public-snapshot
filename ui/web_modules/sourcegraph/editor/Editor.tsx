@@ -57,10 +57,10 @@ export class Editor implements IDisposable {
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
 			fontSize: 15,
-			lineHeight: Features.authorsToggle.isEnabled() ? 24 : 21,
+			lineHeight: Features.projectWow.isEnabled() ? 24 : 21,
 			theme: "vs-dark",
 			renderLineHighlight: "line",
-			codeLens: Features.codeLens.isEnabled(),
+			codeLens: Features.projectWow.isEnabled(),
 			glyphMargin: false,
 		});
 
@@ -109,7 +109,7 @@ export class Editor implements IDisposable {
 				this._editor.setSelection(range);
 			}
 
-			const {repo, rev, path} = URIUtils.repoParams(this._editor.getModel().uri);
+			const { repo, rev, path } = URIUtils.repoParams(this._editor.getModel().uri);
 			AnalyticsConstants.Events.CodeContextMenu_Initiated.logEvent({
 				repo: repo,
 				rev: rev || "",
@@ -178,7 +178,7 @@ export class Editor implements IDisposable {
 
 		CommandsRegistry.registerCommand("codelens.authorship.commit", (accessor: ServicesAccessor, args: GQL.IHunk) => {
 			Object.assign(args, { startByte: this._editor.getModel().getLineFirstNonWhitespaceColumn(args.startLine) });
-			const {repo, rev} = URIUtils.repoParams(this._editor.getModel().uri);
+			const { repo, rev } = URIUtils.repoParams(this._editor.getModel().uri);
 			const authorshipCodeLensElement = <CodeLensAuthorWidget blame={args} repo={repo} rev={rev || ""} onClose={this._removeWidgetForID.bind(this, AuthorshipWidgetID)} />;
 			let authorWidget = new AuthorshipWidget(args, authorshipCodeLensElement);
 			this._toggleAuthorshipWidget(authorWidget, AuthorshipWidgetID, args);
@@ -224,16 +224,6 @@ export class Editor implements IDisposable {
 	public onDidOpenEditor(listener: (e: IEditorOpenedEvent) => void): IDisposable {
 		this._removeWidgetForID(AuthorshipWidgetID);
 		return this._editorService.onDidOpenEditor(listener);
-	}
-
-	toggleAuthors(): void {
-		Features.codeLens.toggle();
-		const visible = Features.codeLens.isEnabled();
-
-		this._editor.updateOptions({ codeLens: visible });
-		if (!visible) {
-			this._removeWidgetForID(AuthorshipWidgetID);
-		}
 	}
 
 	// TODO: Abstract editor functions into editor helper class - MKing 12/18/2016

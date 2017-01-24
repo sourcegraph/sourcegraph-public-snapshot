@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -46,7 +47,13 @@ func init() {
 	prometheus.MustRegister(xlangRequestDuration)
 }
 
-var xlangNewClient = func() (xlangClient, error) { return xlang.UnsafeNewDefaultClient() }
+var xlangNewClient = func() (xlangClient, error) {
+	c, err := xlang.UnsafeNewDefaultClient()
+	if err != nil {
+		return nil, err
+	}
+	return &xclient{Client: c}, nil
+}
 
 type xlangClient interface {
 	Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error
@@ -67,6 +74,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	method := "unknown"
 	mode := "unknown"
 	ev := honey.Event("xlang")
+	emptyResponse := true
 	defer func() {
 		duration := time.Now().Sub(start)
 
@@ -96,6 +104,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 				status = "usererror"
 			}
 			ev.AddField("success", status)
+			ev.AddField("empty", emptyResponse)
 			ev.AddField("method", method)
 			ev.AddField("mode", mode)
 			ev.AddField("duration_ms", duration.Seconds()*1000)
@@ -125,7 +134,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	}
 
 	method = reqs[1].Method
-	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP HTTP gateway: "+method)
+	span, ctx := opentracing.StartSpanFromContext(ctx, fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -145,20 +154,37 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	if reqs[0].Params == nil {
 		return errors.New("invalid jsonrpc2 initialize request: empty params")
 	}
+	if reqs[3].ID != (jsonrpc2.ID{}) {
+		return errors.New("invalid jsonrpc2 exit request: id should NOT be present")
+	}
 	var initParams xlang.ClientProxyInitializeParams
 	if err := json.Unmarshal(*reqs[0].Params, &initParams); err != nil {
 		return fmt.Errorf("invalid jsonrpc2 initialize params: %s", err)
 	}
+	{
+		// DEPRECATED: Be compatible with both
+		// pre-Mode-field-migration LSP proxy servers and
+		// post-migration LSP proxy servers.
+		if initParams.InitializationOptions.Mode == "" {
+			initParams.InitializationOptions.Mode = initParams.Mode
+		} else {
+			initParams.Mode = initParams.InitializationOptions.Mode
+		}
+	}
 	if initParams.RootPath == "" {
 		return errors.New("invalid empty LSP root path in initialize request")
 	}
+	span.SetTag("RootPath", initParams.RootPath)
 	rootPathURI, err := uri.Parse(initParams.RootPath)
 	if err != nil {
 		return fmt.Errorf("invalid LSP root path %q: %s", initParams.RootPath, err)
 	}
 	addRootPathFields(ev, rootPathURI)
-	if initParams.Mode != "" {
-		mode = initParams.Mode
+	if initParams.InitializationOptions.Mode != "" {
+		mode = initParams.InitializationOptions.Mode
+
+		// Update span operation name now that we have a mode.
+		span.SetOperationName(fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
 	}
 
 	// Check consistency against the URL. The URL route params are for
@@ -237,10 +263,37 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 				resps[i].Error = e
 			} else if err != nil {
 				return err
+			} else if err == nil && i == 1 {
+				// We want to mark whether or not we've gotten a result or not
+				// in the response.
+				var result interface{}
+				if resps[i].Result == nil {
+					emptyResponse = true // nil result
+				} else if err := json.Unmarshal(*resps[i].Result, &result); err != nil {
+					emptyResponse = true // unmarshal error
+				} else {
+					emptyResponse = isEmpty(result) // empty unmarshaled result
+				}
 			}
+
 		}
 	}
 	return writeJSON(w, resps)
+}
+
+// isEmpty tells if v is nil or an empty slice or map. In all other cases, it
+// returns false.
+func isEmpty(v interface{}) bool {
+	vv := reflect.ValueOf(v)
+	if vv.IsNil() {
+		return true
+	}
+	switch vv.Kind() {
+	case reflect.Slice, reflect.Map:
+		return vv.Len() == 0
+	default:
+		return false
+	}
 }
 
 func addRootPathFields(ev *libhoney.Event, u *uri.URI) {

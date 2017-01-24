@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -113,6 +114,7 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 }) (*dependencyReferencesResolver, error) {
 	depRefs, err := backend.Defs.DependencyReferences(ctx, sourcegraph.DependencyReferencesOptions{
 		RepoID:    r.commit.RepoID,
+		CommitID:  r.commit.CommitID,
 		Language:  args.Language,
 		File:      r.path,
 		Line:      int(args.Line),
@@ -123,24 +125,27 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	var depsResolver []*dependencyReferenceResolver
-	for _, dep := range depRefs.References {
-		depsResolver = append(depsResolver, &dependencyReferenceResolver{
-			dep: dep,
-		})
+	refMap := make(map[int32]interface{}, len(depRefs.References))
+	for _, ref := range depRefs.References {
+		repo, err := localstore.Repos.Get(ctx, ref.RepoID)
+		if err != nil {
+			return nil, err
+		}
+		refMap[ref.RepoID] = repo
+	}
+
+	slcB, err := json.Marshal(struct {
+		Data     *sourcegraph.DependencyReferences
+		RepoData map[int32]interface{}
+	}{
+		Data:     depRefs,
+		RepoData: refMap,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return &dependencyReferencesResolver{
-		deps: depsResolver,
-		location: &locationResolver{
-			location: &lspLocationResolver{
-				uri:            depRefs.Location.Location.URI,
-				startLine:      int32(depRefs.Location.Location.Range.Start.Line),
-				startCharacter: int32(depRefs.Location.Location.Range.Start.Character),
-				endLine:        int32(depRefs.Location.Location.Range.End.Line),
-				endCharacter:   int32(depRefs.Location.Location.Range.End.Line),
-			},
-			symbol: depRefs.Location.Symbol,
-		},
+		data: string(slcB),
 	}, nil
 }

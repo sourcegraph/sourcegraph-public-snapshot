@@ -1,3 +1,5 @@
+import { Position } from "vscode-languageserver-types";
+
 import { IPosition, IRange } from "vs/editor/common/editorCommon";
 
 // RangeOrPosition represents a range or position.
@@ -35,7 +37,7 @@ export class RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.lineNumber, r.column);
 	}
 
-	static fromLSPPosition(r: { line: number, character: number }): RangeOrPosition {
+	static fromLSPPosition(r: Position): RangeOrPosition {
 		return RangeOrPosition.fromOneIndexed(r.line + 1, r.character + 1);
 	}
 
@@ -109,6 +111,11 @@ export class RangeOrPosition {
 		return this.toMonacoRangeAllowEmpty();
 	}
 
+	toZeroIndexedRange(): IRange {
+		const range = this.toMonacoRangeAllowEmpty();
+		return { startLineNumber: range.startLineNumber - 1, startColumn: range.startColumn - 1, endLineNumber: range.endLineNumber - 1, endColumn: range.endColumn - 1 };
+	}
+
 	toMonacoRangeAllowEmpty(): IRange {
 		const startColumn = typeof this.startCol === "number" ? this.startCol + 1 : 1;
 		let endColumn: number | undefined;
@@ -158,4 +165,11 @@ export class RangeOrPosition {
 		}
 		return o;
 	}
+}
+
+export interface AbsoluteLocation {
+	repo: string;
+	commitID: string;
+	path: string;
+	selection: IRange;
 }

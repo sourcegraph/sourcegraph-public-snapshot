@@ -8,6 +8,7 @@ import { Commit } from "sourcegraph/blob/CommitInfoBar/Commit";
 import { Popover } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
 import { urlWithRev } from "sourcegraph/repo/routes";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
 	repo: string;
@@ -46,12 +47,22 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 		}
 		const commits = repository.commit.commit.file.commits;
 		const commitSelected = (commits[0].rev === this.props.rev || !this.props.rev) ? commits[0] : this.commitInfoForRev(this.props.rev, commits);
+		const eventProps = { repo: this.props.repo, path: this.props.path, rev: commitSelected.rev };
 
 		// Business Logic: Designs don't want the latest commit to show in the drop down
 		// if commitSelected === commits[0] (the latest commit)
-		let commitOffset: Array<GQL.ICommitInfo> = this.props.rev !== commits[0].rev ? commits : repository.commit.commit.file.commits.slice(1);
+		let commitOffset: Array<GQL.ICommitInfo> = this.props.rev !== commits[0].rev ? commits :
+			repository.commit.commit.file.commits.slice(repository.commit.commit.file.commits.length > 1 ? 1 : 0);
 
-		return <Popover left={true} pointer={false} popoverStyle={{
+		const dropdownClickHandler = visible => {
+			if (visible) {
+				AnalyticsConstants.Events.CommitInfo_Initiated.logEvent(eventProps);
+			} else {
+				AnalyticsConstants.Events.CommitInfo_Dismissed.logEvent(eventProps);
+			}
+		};
+
+		const dropdownSx = {
 			zIndex: 1,
 			display: "block",
 			left: 0,
@@ -59,22 +70,39 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 			boxShadow: `${colors.black(0.3)} 0 1px 6px 0px`,
 			borderRadius: 0,
 			width: "100%",
-		}}>
-			<Commit commit={commitSelected} showChevron={true} hover={false} style={{ boxShadow: `${colors.black(0.3)} 0 1px 6px 0px` }} />
-			<div style={{
-				height: commitOffset.length > 5 ? layout.editorCommitInfoBarHeight * 5 : layout.editorCommitInfoBarHeight * commitOffset.length,
-				overflow: "auto",
-			}}>
-				{commitOffset.map(commit => {
-					return <Link
-						key={`${commit.rev}${commit.message}`}
-						style={{ width: "100%" }}
-						role="menu_item"
-						to={this.revSwitcherURL(commit.rev)}>
-						<Commit commit={commit} selected={commitSelected.rev === commit.rev} />
-					</Link>;
-				})}
-			</div>
+		};
+
+		const dropdownHeight = commitOffset.length > 5 ? layout.editorCommitInfoBarHeight * 5 : layout.editorCommitInfoBarHeight * commitOffset.length;
+
+		const commitList = commitOffset.map(commit => {
+			function commitClickHandler(): void {
+				AnalyticsConstants.Events.CommitInfoItem_Selected.logEvent(Object.assign(
+					{ selectedRev: commit.rev },
+					eventProps
+				));
+			}
+			return <Link
+				key={`${commit.rev}${commit.message}`}
+				style={{ width: "100%" }}
+				role="menu_item"
+				to={this.revSwitcherURL(commit.rev)}
+				onClick={commitClickHandler}>
+				<Commit commit={commit} selected={commitSelected.rev === commit.rev} />
+			</Link>;
+		});
+
+		return <Popover
+			left={true}
+			pointer={false}
+			popoverStyle={dropdownSx}
+			onClick={dropdownClickHandler}
+			style={{ zIndex: 1 }}>
+			<Commit
+				commit={commitSelected}
+				showChevron={true}
+				hover={false}
+				style={{ boxShadow: `${colors.black(0.3)} 0 1px 6px 0px` }} />
+			<div style={{ height: dropdownHeight, overflow: "auto" }}>{commitList}</div>
 		</Popover>;
 	}
 };
@@ -125,5 +153,5 @@ export const CommitInfoBar = function (props: { repo: string, rev: string, path:
 			},
 			params: props,
 		}}
-		/>;
+	/>;
 };

@@ -1,3 +1,4 @@
+import { experimentEventNames } from "sourcegraph/util/constants/AnalyticsConstants";
 import * as optimizely from "sourcegraph/util/Optimizely";
 
 export class Variation {
@@ -92,9 +93,6 @@ export const homepageExperiment = new Experiment("HomepageCopy", [new Variation(
 });
 
 export const liveExperiments = [homepageExperiment];
-
-// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to Optimizely.
-const experimentEventNames = new Set("SignupCompleted");
 
 // TODO(uforic): We can probably get rid of this.
 class ExperimentManagerClass {

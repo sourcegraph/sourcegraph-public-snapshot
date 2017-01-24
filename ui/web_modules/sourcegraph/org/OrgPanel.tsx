@@ -95,7 +95,7 @@ export class OrgPanel extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element | null {
-		let {members} = this.props;
+		let { members } = this.props;
 		if (!members) {
 			return <div style={{ padding: whitespace[4] }}><Spinner /> Loading organization members</div>;
 		}

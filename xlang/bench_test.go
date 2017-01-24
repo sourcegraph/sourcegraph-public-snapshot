@@ -132,8 +132,8 @@ func BenchmarkIntegration(b *testing.B) {
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-							InitializeParams: lsp.InitializeParams{RootPath: rootPath},
-							Mode:             test.mode,
+							InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+							InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
 						}, nil); err != nil {
 							b.Fatal(err)
 						}
@@ -174,8 +174,8 @@ func BenchmarkIntegration(b *testing.B) {
 						b.StartTimer()
 
 						if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-							InitializeParams: lsp.InitializeParams{RootPath: rootPath},
-							Mode:             test.mode,
+							InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+							InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
 						}, nil); err != nil {
 							b.Fatal(err)
 						}
@@ -268,8 +268,8 @@ func BenchmarkIntegrationShared(b *testing.B) {
 
 			do := func(c *jsonrpc2.Conn, rootPath string) {
 				if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-					InitializeParams: lsp.InitializeParams{RootPath: rootPath},
-					Mode:             "go",
+					InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+					InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "go"},
 				}, nil); err != nil {
 					b.Fatal(err)
 				}

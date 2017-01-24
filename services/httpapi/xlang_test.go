@@ -67,7 +67,7 @@ func TestXLang(t *testing.T) {
 	}
 
 	// First try on a private repo we can't access
-	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootPath":"git://your/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"id":3,"method":"exit"}]`, nil); err == nil {
+	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootPath":"git://your/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"method":"exit"}]`, nil); err == nil {
 		t.Error(err)
 	}
 	if calledValid {
@@ -78,7 +78,7 @@ func TestXLang(t *testing.T) {
 	}
 	calledUnauthed = false
 
-	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootPath":"git://my/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"id":3,"method":"exit"}]`, nil); err != nil {
+	if err := postJSON("someMethod", nil, `[{"id":0,"method":"initialize","params":{"rootPath":"git://my/repo?myrev"}},{"id":1,"method":"someMethod","params":{}},{"id":2,"method":"shutdown"},{"method":"exit"}]`, nil); err != nil {
 		t.Fatal(err)
 	}
 	if want := []string{"initialize", "someMethod", "shutdown", "exit"}; !reflect.DeepEqual(xc.methodsCalled, want) {

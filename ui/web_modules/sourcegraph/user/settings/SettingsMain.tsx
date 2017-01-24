@@ -7,7 +7,7 @@ import { OrgContainer } from "sourcegraph/org/OrgContainer";
 
 interface Props { location: RouterLocation; }
 
-export function SettingsMain({location}: Props): JSX.Element {
+export function SettingsMain({ location }: Props): JSX.Element {
 
 	const sx = Object.assign({}, layout.container, {
 		marginBottom: whitespace[4],

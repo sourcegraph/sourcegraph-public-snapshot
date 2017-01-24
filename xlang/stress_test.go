@@ -127,8 +127,8 @@ func BenchmarkStress(b *testing.B) {
 				// operation we do.
 				c := dialProxy(b, addr, nil)
 				if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-					InitializeParams: lsp.InitializeParams{RootPath: root.String()},
-					Mode:             test.mode,
+					InitializeParams:      lsp.InitializeParams{RootPath: root.String()},
+					InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
 				}, nil); err != nil {
 					b.Fatal(err)
 				}

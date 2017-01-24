@@ -79,6 +79,10 @@ export function setLocationModalState(router: Router, location: RouterLocation, 
 				location.state,
 				{ modal: visible ? modalName : null },
 			),
+			query: Object.assign({},
+				location.query,
+				{ modal: visible ? modalName : undefined },
+			),
 		})
 	);
 }
@@ -101,7 +105,7 @@ export function dismissModal(modalName: string, location: RouterLocation, router
 
 interface LocationStateModalProps {
 	location: RouterLocation;
-	// modalName is the name of the modal (location.state.modal value) that this
+	// modalName is the name of the modal (location.{state,query}.modal value) that this
 	// LocationStateToggleLink component toggles.
 	modalName: string;
 	onDismiss?: (e: any) => void;
@@ -114,8 +118,9 @@ interface LocationStateModalProps {
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
-export function LocationStateModal({location, modalName, children, onDismiss, style, router}: LocationStateModalProps): JSX.Element {
-	if (!location.state || !(location.state as any).modal || (location.state as any).modal !== modalName) {
+export function LocationStateModal({ location, modalName, children, onDismiss, style, router }: LocationStateModalProps): JSX.Element {
+	const currentModal = (location.state && location.state["modal"]) ? location.state["modal"] : location.query["modal"];
+	if (currentModal !== modalName) {
 		return <span />;
 	}
 

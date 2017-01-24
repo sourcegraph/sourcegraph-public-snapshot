@@ -18,6 +18,7 @@ export function Button(props: {
 	formNoValidate?: boolean,
 	id?: string,
 	tabIndex?: number,
+	tintLabel?: string,
 	style?: React.CSSProperties,
 }): JSX.Element {
 	const {
@@ -30,6 +31,7 @@ export function Button(props: {
 		onClick,
 		className,
 		children,
+		tintLabel,
 		style,
 	} = props;
 	const other = Object.assign({}, props);
@@ -40,8 +42,13 @@ export function Button(props: {
 	delete other.loading;
 	delete other.color;
 	delete other.onClick;
+	delete other.tintLabel;
 	delete other.children;
 	delete other.className;
+
+	if (tintLabel && outline) {
+		throw new Error("Button does not support outline AND tintLabel together");
+	}
 
 	const btnColor = colors[color]();
 	const btnHoverColor = color === "white" ? colors.blueD1() : colors[`${color}D1`]();
@@ -69,14 +76,14 @@ export function Button(props: {
 	const outlineSx = css(
 		{
 			backgroundColor: "transparent",
-			borderColor: btnColor,
-			color: btnColor,
+			borderColor: color === "blueGray" ? colors.blueGrayL2(0.6) : btnColor,
+			color: color === "blueGray" ? colors.blue() : btnColor,
 		},
 		{
 			":hover": {
 				backgroundColor: "transparent",
-				borderColor: btnHoverColor,
-				color: btnHoverColor,
+				borderColor: color === "blueGray" ? colors.blueGrayL2() : btnHoverColor,
+				color: color === "blueGray" ? colors.blueD1() : btnHoverColor,
 			}
 		},
 		{
@@ -104,27 +111,40 @@ export function Button(props: {
 		{ ":active": { color: btnActiveColor } }
 	);
 
+	const childSx = css(
+		{
+			paddingLeft: whitespace[3],
+			paddingRight: whitespace[3],
+			paddingTop: "0.45rem",
+			paddingBottom: "0.42rem",
+			transition: "all 0.4s",
+		},
+		outline ? outlineSx : {},
+	);
+
+	// The tintColor is always the hover color for now, but in the
+	// future we may want to differentiate between the two colors.
+	const tintColor = btnHoverColor;
+
 	return <button
 		{...(other as any) }
 		{...css(
 			{
-				backgroundColor: btnColor,
-				borderWidth: 2,
+				borderWidth: outline ? 2 : 0,
 				borderStyle: "solid",
 				borderColor: "transparent",
+				backgroundColor: btnColor,
 				color: "white",
 				textAlign: "center",
 				fontWeight: "bold",
 				outline: "none",
-				paddingLeft: whitespace[3],
-				paddingRight: whitespace[3],
-				paddingTop: "0.45rem",
-				paddingBottom: "0.42rem",
 				borderRadius: 4,
 				boxSizing: "border-box",
 				cursor: "pointer",
 				transition: "all 0.4s",
 				userSelect: "none",
+				padding: 0,
+				overflow: "hidden",
 
 				display: block ? "block" : "inline-block",
 				width: block ? "100%" : "auto",
@@ -147,7 +167,13 @@ export function Button(props: {
 		disabled={disabled}
 		style={style}
 		onClick={onClick}>
-		{loading && <Loader {...props} />}
-		{!loading && children}
+		<div>
+			{loading && <Loader {...props} />}
+			{!loading && <div {...childSx} >{children}</div>}
+			{tintLabel && <div {...childSx} style={{
+				whiteSpace: "nowrap",
+				backgroundColor: tintColor,
+			}}>{tintLabel}</div>}
+		</div>
 	</button>;
 }

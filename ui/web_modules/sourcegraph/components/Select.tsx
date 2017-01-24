@@ -1,13 +1,13 @@
 import { css } from "glamor";
 import * as React from "react";
-import { Alert } from "sourcegraph/components/symbols";
-import { ChevronDown } from "sourcegraph/components/symbols/Zondicons";
+import { ChevronDown, Warning } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	block?: boolean;
 	children?: React.ReactNode[];
 	containerSx?: React.CSSProperties;
+	name?: string;
 	label?: string;
 	placeholder?: string;
 	helperText?: string;
@@ -17,7 +17,7 @@ interface Props {
 	defaultValue?: string;
 }
 
-export function Select({block = true, containerSx, children, label, placeholder, helperText, error, errorText, style, defaultValue}: Props): JSX.Element {
+export function Select({ block = true, containerSx, name, children, label, placeholder, helperText, error, errorText, style, defaultValue }: Props): JSX.Element {
 	const sx = css({
 		appearance: "none",
 		backgroundColor: "white",
@@ -37,13 +37,14 @@ export function Select({block = true, containerSx, children, label, placeholder,
 		{label && <div>{label} <br /></div>}
 		<select
 			{...sx}
+			name={name}
 			style={style}
 			required={true}
 			defaultValue={defaultValue}
 			placeholder={placeholder ? placeholder : ""}>
 			{children}
 		</select>
-		<ChevronDown style={{ fill: colors.blueGray(), marginLeft: "-28px" }} width={11} />
+		<ChevronDown style={{ fill: colors.blueGray(), marginLeft: "-28px" }} width={18} />
 		{helperText && <em { ...css({
 			display: "block",
 			marginTop: whitespace[2],
@@ -54,10 +55,9 @@ export function Select({block = true, containerSx, children, label, placeholder,
 				marginTop: whitespace[2],
 				marginBottom: whitespace[2],
 			}}>
-				<Alert width={16} style={{
+				<Warning width={18} style={{
 					fill: "currentColor",
 					marginRight: whitespace[2],
-					marginTop: -4
 				}} />
 				This is an error message.
 			</div>

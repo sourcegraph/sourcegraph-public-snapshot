@@ -6,7 +6,7 @@ interface Props {
 	img: string;
 	size: "tiny" | "small" | "medium" | "large";
 }
-export function OrgLogo({size, img, style}: Props): JSX.Element {
+export function OrgLogo({ size, img, style }: Props): JSX.Element {
 	let imgSize: string;
 	switch (size) {
 		case "tiny":

@@ -9,6 +9,7 @@ import { FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { Features } from "sourcegraph/util/features";
 import { getPathExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
+import { prettifyRev } from "sourcegraph/workbench/utils";
 
 interface Props {
 	repo: string;
@@ -23,29 +24,10 @@ function basename(path: string): string {
 	return base || path;
 };
 
-function convertToGitHubLineNumber(hash: string): string {
-	if (!hash || !hash.startsWith("#L")) {
-		return "";
-	}
-	let lines: string[] = hash.split("#L");
-	if (lines.length !== 2) {
-		return "";
-	}
-	lines = lines[1].split("-");
-	if (lines.length === 1) {
-		// single line
-		return `#L${lines[0]}`;
-	} else if (lines.length === 2) {
-		// line range
-		return `#L${lines[0]}-L${lines[1]}`;
-	}
-	return "";
-}
-
 class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
 	render(): JSX.Element {
-		const {repo, path, toggleAuthors, toast } = this.props;
-		let rev = this.props.rev;
+		const { repo, path, toggleAuthors, toast } = this.props;
+		let rev = prettifyRev(this.props.rev);
 		if (rev === null) {
 			if (this.props.root.repository) {
 				rev = this.props.root.repository.defaultBranch;
@@ -57,15 +39,17 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 		const extension = getPathExtension(path);
 		const isSupported = extension ? isSupportedExtension(extension) : false;
 		const isIgnored = extension ? isIgnoredExtension(extension) : false;
-		const gitHubURL = `https://${repo}/blob/${rev}/${path}${convertToGitHubLineNumber(window.location.hash)}`;
+		const gitHubURL = `https://${repo}/blob/${rev}/${path}`;
 
 		return <div style={{ width: "100%" }}>
-			<FlexContainer justify="between" items="center" wrap={true} style={{
+			<FlexContainer justify="between" items="center" style={{
 				backgroundColor: colors.blueGrayD2(),
 				boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
-				height: layout.editorToolbarHeight,
-				padding: `${whitespace[2]} ${whitespace[3]}`,
+				minHeight: layout.editorToolbarHeight,
+				padding: `0 ${whitespace[3]}`,
+				position: "relative",
 				width: "100%",
+				zIndex: 3,
 			}}>
 				<div>
 					<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>
@@ -87,11 +71,13 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 						textAlign: "right",
 					}, typography.size[7])}>
 
-						{Features.authorsToggle.isEnabled() &&
+						{Features.projectWow.isEnabled() &&
 							<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
 						}
-
-						<FileActionDownMenu eventProps={{ repo, rev, path }} githubURL={gitHubURL} editorURL={path} />
+						{	// if repo is not on github.com, then the one action in FileActionDownMenu doesn't make sense
+							repo.startsWith("github.com") &&
+							<FileActionDownMenu eventProps={{ repo, rev, path }} githubURL={gitHubURL} editorURL={path} />
+						}
 
 						{!isSupported && !isIgnored &&
 							<UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />
@@ -101,7 +87,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 					</div>
 				</div>
 			</FlexContainer>
-			{Features.projectWow.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
+			{Features.commitInfoBar.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
 		</div>;
 	}
 };
@@ -133,5 +119,5 @@ export const BlobTitle = function (props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-		/>;
+	/>;
 };

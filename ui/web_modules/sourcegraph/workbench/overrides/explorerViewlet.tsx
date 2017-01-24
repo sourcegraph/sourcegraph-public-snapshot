@@ -1,4 +1,4 @@
-import { hover } from "glamor";
+import { hover, insertGlobal } from "glamor";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { Link } from "react-router";
@@ -14,10 +14,13 @@ import { IEditorGroupService } from "vs/workbench/services/group/common/groupSer
 import { ExplorerViewlet as VSExplorerViewlet } from "vscode/src/vs/workbench/parts/files/browser/explorerViewlet";
 
 import { FlexContainer, Heading } from "sourcegraph/components";
+import { List } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { RouterContext } from "sourcegraph/workbench/utils";
+
+import "sourcegraph/workbench/styles/tree.css";
 
 export class ExplorerViewlet extends VSExplorerViewlet {
 
@@ -66,21 +69,49 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 	}
 }
 
-function Title({repo}: { repo: string }): JSX.Element {
+insertGlobal(".composite.title", {
+	opacity: "1 !important",
+	overflow: "visible !important",
+});
+
+insertGlobal(".explorer-viewlet .monaco-tree-row:hover", {
+	backgroundColor: `${colors.blueGrayD2(0.5)} !important`,
+	color: "white !important",
+});
+
+insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .monaco-tree .selected", {
+	backgroundColor: `${colors.blue()} !important`,
+	color: "white !important",
+	fontWeight: "bold",
+});
+
+function Title({ repo }: { repo: string }): JSX.Element {
 	return <FlexContainer items="center" style={{
-		background: colors.blueGrayD1(),
+		backgroundColor: colors.blueGrayD1(),
+		boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
 		minHeight: layout.editorToolbarHeight,
-		paddingLeft: whitespace[4],
-		margin: 0,
 		position: "relative",
+		paddingLeft: whitespace[2],
+		paddingRight: whitespace[2],
 		zIndex: 1,
 		width: "100%",
 	}}>
-		<Heading level={5}>
+		<Heading level={6} compact={true} style={{
+			lineHeight: 0,
+			marginTop: 2,
+			maxWidth: "100%",
+			whiteSpace: "nowrap",
+		}}>
 			<Link to={urlToRepo(repo)}
 				{...hover({ color: `${colors.white()} !important` }) }
-				style={{ color: colors.blueGrayL3() }}
-				>
+				style={{
+					color: colors.blueGrayL2(),
+					maxWidth: "100%",
+					overflow: "hidden",
+					textOverflow: "ellipsis",
+					display: "inline-block",
+				}}>
+				<List width={21} style={{ opacity: 0.6, marginRight: whitespace[1] }} />
 				{repo.replace(/^github.com\//, "")}
 			</Link>
 		</Heading>

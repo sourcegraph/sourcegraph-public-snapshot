@@ -504,6 +504,9 @@ export interface ListOptions {
 	Page?: number;
 }
 
+export interface ListPackagesOp {
+}
+
 export interface ListResponse {
 	Total?: number;
 }
@@ -572,6 +575,9 @@ export interface Output {
 	Anns?: any[];
 }
 
+export interface PackageInfo {
+}
+
 export interface ParameterInformation {
 	label: string;
 	documentation?: string;
@@ -636,6 +642,7 @@ export interface RefSet {
 
 export interface ReferenceContext {
 	includeDeclaration: boolean;
+	xlimit?: number;
 }
 
 export interface ReferenceParams {

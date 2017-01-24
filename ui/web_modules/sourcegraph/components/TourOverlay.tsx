@@ -1,12 +1,13 @@
 import * as autobind from "autobind-decorator";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+import * as platform from "vs/base/common/platform";
 
 import { context } from "sourcegraph/app/context";
 import { Router, RouterLocation } from "sourcegraph/app/router";
 import { Annotation, Boom, Button, Heading } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
-import { Close, Flag } from "sourcegraph/components/symbols/Zondicons";
+import { Close, Flag } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { fontStack } from "sourcegraph/components/utils/typography";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -14,6 +15,7 @@ import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
+import { Features } from "sourcegraph/util/features";
 import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props { location: RouterLocation; }
@@ -59,8 +61,8 @@ const actionSx = Object.assign(
 		backgroundColor: colors.blue(),
 		color: colors.white(),
 		display: "inline-block",
-		paddingLeft: whitespace[3],
-		paddingBottom: whitespace[3],
+		paddingLeft: whitespace[2],
+		paddingBottom: whitespace[2],
 		width: 240,
 	},
 	typography.size[6],
@@ -172,21 +174,51 @@ export class TourOverlay extends React.Component<Props, State>  {
 			// Grab a random element that has been indexed and provides "code intelligence".
 			// Divide the total number of visible intelligent elements in half and pick a random node from the first half.
 			// Render the first tooltip in the top half. Then render the second tooltip based on the second half of visible nodes.
-			let random = Math.random() * x.length / 2;
-			let refrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
-			let defRandom = x[Math.floor((random) + 1)];
-			let refRandom = x[Math.floor(refrandom + 1)];
+			const defrandom = Math.random() * ((x.length - x.length / 2) - 1) + x.length / 2;
+			const refrandom = Math.random() * x.length / 2;
+			const defRandom = x[Math.floor((defrandom) + 1)];
+			const refRandom = x[Math.floor(refrandom + 1)];
 
-			// Build custom fields for coachmark.
-			let defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
-			let defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4], fontSize: 14 }} color="blueGray" size="small">Install the Chrome extension</Button>;
+			let defSubtitle;
+			let refSubtitle;
+			if (Features.projectWow.isEnabled()) {
+				const ctrl = platform.isMacintosh ? "⌘" : "Control";
+				// Build custom fields for coachmark.
+				defSubtitle = <p style={p}>
+					<strong>{ctrl} + Click</strong> any symbol to jump to the definition – even if it's defined in another repository.
+				</p>;
+				refSubtitle = <p style={p}>
+					Click any symbol to view its <strong>references</strong> in this repository and in any public code.
+				</p>;
+			} else {
+				defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
+				refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
 
-			let refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
-			let refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
+			}
+			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
+			const refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
-				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", context.hasChromeExtensionInstalled() ? null : defActionCTA),
-				this._initCoachmarkAnnotation(refRandom, "ref-coachmark", "ref-mark", _refCoachmarkIndex, "View references and definitions", refSubtitle, "Enable these features for your private code", context.hasPrivateGitHubToken() ? null : refActionCTA),
+				this._initCoachmarkAnnotation(
+					defRandom,
+					"def-coachmark",
+					"def-mark",
+					_defCoachmarkIndex,
+					"Jump to definition",
+					defSubtitle,
+					"Jump to definition and hover documentation on GitHub",
+					context.hasChromeExtensionInstalled() ? null : defActionCTA
+				),
+				this._initCoachmarkAnnotation(
+					refRandom,
+					"ref-coachmark",
+					"ref-mark",
+					_refCoachmarkIndex,
+					"View references",
+					refSubtitle,
+					"Enable these features for your private code",
+					context.hasPrivateGitHubToken() ? null : refActionCTA
+				),
 			];
 
 			this._coachmarksShouldUpdate();
@@ -244,7 +276,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		if (!editor) {
 			return;
 		}
-		let {visibleMarks} = this.state;
+		let { visibleMarks } = this.state;
 		if (!this._coachmarks) {
 			return;
 		}
@@ -298,7 +330,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_renderCoachmarkAnnotationForContainer(coachmark: Coachmark, containerNode: any): void {
-		let {visibleAnnotation} = this.state;
+		let { visibleAnnotation } = this.state;
 		let refs = <div id={coachmark.markId} style={{ whitespace: "normal" }}>
 			<Annotation
 				color="purple"
@@ -309,7 +341,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				tooltipStyle={{ whitespace: "normal !important", zIndex: 102, backgroundColor: colors.blue() }}>
 
 				<span style={closeSx} onClick={() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null }))}>
-					<Close width={12} color={colors.blueGrayD1(0.5)} />
+					<Close width={18} color={colors.blueGrayD1(0.5)} />
 				</span>
 				<div style={headerSx}>
 					<Heading color="blue" level={6} style={{ marginTop: 0 }}>{coachmark.headingTitle}</Heading>
@@ -317,7 +349,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				</div>
 				{coachmark.actionCTA &&
 					<div style={{ padding: whitespace[4] }}>
-						<Flag width={15} style={flagSx} color={colors.blue(0.9)} />
+						<Flag width={22} style={flagSx} color={colors.blueD1(0.9)} />
 						<strong style={actionSx}>{coachmark.actionTitle}</strong>
 						{coachmark.actionCTA}
 					</div>}
@@ -375,7 +407,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 					<span style={closeSx} onClick={
 						() => this.setState(Object.assign({}, this.state, { visibleAnnotation: null }))
 					}>
-						<Close width={12} color={colors.blueGrayD1(0.5)} />
+						<Close width={18} color={colors.blueGrayD1(0.5)} />
 					</span>
 					<div style={Object.assign({},
 						headerSx,
@@ -450,7 +482,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	render(): JSX.Element | null {
-		let {visibleMarks, visibleAnnotation} = this.state;
+		let { visibleMarks, visibleAnnotation } = this.state;
 		return (<div style={{ zIndex: 101 }}>
 			{visibleMarks.indexOf(_searchCoachmarkIndex) !== -1 && this._renderSearchCoachmarkAnnotation(visibleAnnotation, _searchCoachmarkIndex)}
 			{visibleMarks.length > 0 && this._renderDismissButton()}

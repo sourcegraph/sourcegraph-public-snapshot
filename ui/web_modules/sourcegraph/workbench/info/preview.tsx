@@ -1,19 +1,21 @@
 import * as autobind from "autobind-decorator";
+import { css } from "glamor";
 import * as React from "react";
-import { Link } from "react-router";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { IEditorOptions } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
-import { urlToBlobLine } from "sourcegraph/blob/routes";
-import { colors } from "sourcegraph/components/utils";
+import { urlToBlobRange } from "sourcegraph/blob/routes";
+import { FlexContainer } from "sourcegraph/components";
+import { Close, PopOut } from "sourcegraph/components/symbols/Primaries";
+import { colors, whitespace } from "sourcegraph/components/utils";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
-import { REFERENCES_SECTION_ID, infoStore } from "sourcegraph/workbench/info/sidebar";
+import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
 import { Services } from "sourcegraph/workbench/services";
-import { Disposables, RouterContext, scrollToLine } from "sourcegraph/workbench/utils";
+import { Disposables } from "sourcegraph/workbench/utils";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
-import { IEditorService } from "vs/platform/editor/common/editor";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 
 interface Props {
@@ -23,39 +25,44 @@ interface Props {
 
 export const funcHeight = 60;
 export const sidebarWidth = 300;
-const titleHeight = 30;
+const titleHeight = 34;
 
 export class Preview extends React.Component<Props, {}> {
 	render(): JSX.Element {
 		if (!this.props.location) {
 			return <div></div>;
 		}
-		let element = document.getElementById(REFERENCES_SECTION_ID);
+
+		const globalNav = document.getElementById("global-nav");
+		const globalNavHeight = globalNav && globalNav.getBoundingClientRect() ? globalNav.getBoundingClientRect().height : 41;
+
+		const element = document.getElementById(REFERENCES_SECTION_ID);
 		let boundingRect;
 		if (element) {
 			boundingRect = element.getBoundingClientRect();
 		}
-		let top = (boundingRect as any).top - 40;
+		const top = boundingRect ? boundingRect.top - globalNavHeight : 0;
+
 		return <div style={{
 			height: "100%",
 			position: "absolute",
 			width: "100%",
-			bottom: "0px",
+			bottom: 0,
 		}}>
-			<div style={{
-				height: `${top}px`,
-				background: "rgba(20, 20, 20, 0.46)",
-				zIndex: 1,
-			}}
-				onClick={this.props.hidePreview}
-				></div>
+			<div onClick={this.props.hidePreview} style={{
+				background: colors.black(0.45),
+				boxShadow: `inset 3px -2px 10px 0 ${colors.black(0.3)}`,
+				height: top,
+				position: "relative",
+				zIndex: 2,
+			}}></div>
 			<div style={{
 				width: `calc(100% - ${sidebarWidth}px)`,
 				height: `calc(100% - ${top}px)`,
 				position: "absolute",
-				bottom: "0px",
+				bottom: 0,
 			}}>
-				<Title location={this.props.location} />
+				<Title location={this.props.location} onClickClose={this.props.hidePreview} />
 				<EditorPreview location={this.props.location} />
 			</div>
 		</div>;
@@ -64,27 +71,32 @@ export class Preview extends React.Component<Props, {}> {
 
 const prefix = "github.com/";
 
-function Title(props: EditorProps): JSX.Element {
-	let {repo, path, rev} = URIUtils.repoParams(props.location.uri);
-	const url = urlToBlobLine(repo, rev, path, props.location.range.startLineNumber);
+function Title({ location, onClickClose }: { location: Location; onClickClose: () => void }): JSX.Element {
+	let { repo, path, rev } = URIUtils.repoParams(location.uri);
+	const url = urlToBlobRange(repo, rev, path, RangeOrPosition.fromMonacoRange(location.range).toZeroIndexedRange());
 	repo = repo.startsWith(prefix) ? repo.substr(prefix.length) : repo;
-	return <div style={{
-		background: colors.blue(),
-		color: colors.white(),
+	return <FlexContainer justify="between" items="center" style={{
+		backgroundColor: colors.blue(),
 		height: titleHeight,
-		lineHeight: `${titleHeight}px`,
-		paddingLeft: 20,
+		paddingLeft: whitespace[3],
+		paddingRight: whitespace[3],
 	}}>
-		<RouterContext>
-			<Link
-				to={url}
-				style={{
-					color: colors.white()
-				}}>
-				{repo}/{path}
-			</Link>
-		</RouterContext>
-	</div>;
+		<a target="_blank" href={url}
+			{...css(
+				{ color: colors.white(0.9), fontWeight: "bold" },
+				{ ":hover": { color: "white" } },
+			) } >
+			{repo}/{path}
+			<PopOut width={18} style={{ marginLeft: whitespace[1] }} />
+		</a>
+		<span onClick={onClickClose}
+			{...css(
+				{ color: colors.blueD2(0.7), cursor: "pointer", marginTop: 2, marginRight: -4 },
+				{ ":hover": { color: colors.blueD2() } },
+			) }>
+			<Close width={20} />
+		</span>
+	</FlexContainer>;
 }
 
 interface EditorProps {
@@ -116,19 +128,9 @@ class EditorPreview extends React.Component<EditorProps, {}> {
 		};
 
 		this.preview = instantiationService.createInstance(EmbeddedCodeEditorWidget, div, options, editor);
-		this.preview.onMouseUp(this.selectReference);
 		this.preview.layout();
 		this.toDispose.add(this.preview);
 		this.setContents();
-	}
-
-	private selectReference(): void {
-		const editorService = Services.get(IEditorService);
-		editorService.openEditor({ resource: this.props.location.uri }).then(() => {
-			const editor = getEditorInstance();
-			scrollToLine(editor, this.props.location.range.startLineNumber);
-			infoStore.dispatch(null);
-		});
 	}
 
 	private setContents(): void {

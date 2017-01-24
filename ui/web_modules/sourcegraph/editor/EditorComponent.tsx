@@ -57,7 +57,7 @@ export class EditorComponent extends React.Component<Props, any> {
 			}
 
 			this._prevContainer = container;
-			require(["sourcegraph/editor/Editor"], ({Editor}) => {
+			require(["sourcegraph/editor/Editor"], ({ Editor }) => {
 				if (!this._isMounted) { // component got unmounted before "require" finished
 					return;
 				}

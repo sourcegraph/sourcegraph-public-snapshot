@@ -2,7 +2,7 @@ import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
 import { Button } from "sourcegraph/components";
-import { GitHubIcon, GoogleIcon } from "sourcegraph/components/Icons";
+import { GitHubLogo, Google } from "sourcegraph/components/symbols";
 import { typography, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
@@ -23,6 +23,7 @@ interface Props {
 	tabIndex?: number;
 	pageName?: string;
 	img?: boolean;
+	tintLabel?: string;
 	style?: React.CSSProperties;
 	children?: React.ReactNode[];
 }
@@ -44,6 +45,7 @@ export function AuthButton(props: Props): JSX.Element {
 		tabIndex,
 		pageName = "",
 		img = true,
+		tintLabel,
 		style,
 		children,
 	} = props;
@@ -62,12 +64,13 @@ export function AuthButton(props: Props): JSX.Element {
 				color={color}
 				block={block}
 				size={size}
+				tintLabel={tintLabel}
 				className={className}
 				tabIndex={tabIndex}>
 				{img &&
 					<span style={{ marginRight: whitespace[2] }}>
-						{iconType === "github" && <GitHubIcon style={iconSx} />}
-						{iconType === "google" && <GoogleIcon style={iconSx} />}
+						{iconType === "github" && <GitHubLogo style={iconSx} />}
+						{iconType === "google" && <Google style={iconSx} />}
 					</span>
 				}
 				{children}

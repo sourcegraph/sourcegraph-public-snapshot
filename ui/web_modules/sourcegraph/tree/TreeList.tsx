@@ -3,9 +3,8 @@ import * as React from "react";
 import { Link } from "react-router";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { Header, Heading, Panel } from "sourcegraph/components";
-import { FileIcon, FolderIcon } from "sourcegraph/components/Icons";
-import { typography } from "sourcegraph/components/utils";
-import { whitespace } from "sourcegraph/components/utils/index";
+import { Document, Folder } from "sourcegraph/components/symbols/Primaries";
+import { typography, whitespace } from "sourcegraph/components/utils";
 import { urlToTree } from "sourcegraph/tree/routes";
 import * as styles from "sourcegraph/tree/styles/Tree.css";
 
@@ -30,7 +29,7 @@ export class TreeList extends React.Component<Props, {}> {
 				<Link className={classNames(styles.list_item, styles.parent_dir)}
 					to={urlToTree(this.props.repo, this.props.rev, this.props.path.substr(0, this.props.path.lastIndexOf("/")))}
 					key="$parent">
-					<FolderIcon className={styles.icon} />
+					<Folder className={styles.icon} />
 					..
 				</Link>
 			);
@@ -40,7 +39,7 @@ export class TreeList extends React.Component<Props, {}> {
 			<Link className={classNames(styles.list_item)}
 				to={urlToTree(this.props.repo, this.props.rev, this.props.path + "/" + dir.name)}
 				key={dir.name}>
-				<FolderIcon className={styles.icon} />
+				<Folder className={styles.icon} />
 				{dir.name}
 			</Link>
 		));
@@ -49,7 +48,7 @@ export class TreeList extends React.Component<Props, {}> {
 			<Link className={classNames(styles.list_item)}
 				to={urlToBlob(this.props.repo, this.props.rev, this.props.path + "/" + file.name)}
 				key={file.name}>
-				<FileIcon className={styles.icon} />
+				<Document className={styles.icon} />
 				{file.name}
 			</Link>
 		));

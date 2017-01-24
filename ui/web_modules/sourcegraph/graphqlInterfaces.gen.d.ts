@@ -52,20 +52,9 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
-	interface IDependencyReference {
-		__typename: string;
-		depData: string;
-		repoID: number;
-		hints: string;
-	}
-
-	/*
-	  description: null
-	*/
 	interface IDependencyReferences {
 		__typename: string;
-		deps: Array<IDependencyReference>;
-		location: ILocation;
+		data: string;
 	}
 
 	/*
@@ -86,7 +75,7 @@ declare namespace GQL {
 		content: string;
 		blame: Array<IHunk>;
 		commits: Array<ICommitInfo>;
-		dependencyReferences: IDependencyReferences | null;
+		dependencyReferences: IDependencyReferences;
 	}
 
 	/*
@@ -101,27 +90,6 @@ declare namespace GQL {
 		rev: string;
 		author: ISignature | null;
 		message: string;
-	}
-
-	/*
-	  description: null
-	*/
-	interface ILSPLocation {
-		__typename: string;
-		uri: string;
-		startLine: number;
-		startCharacter: number;
-		endLine: number;
-		endCharacter: number;
-	}
-
-	/*
-	  description: null
-	*/
-	interface ILocation {
-		__typename: string;
-		location: ILSPLocation;
-		symbol: string;
 	}
 
 	/*

@@ -3,8 +3,11 @@ import * as React from "react";
 import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { IEditorInput } from "vs/platform/editor/common/editor";
+import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
-import { Router, __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
+import { Router, __getRouterForWorkbenchOnly, getRevFromRouter } from "sourcegraph/app/router";
+import { URIUtils } from "sourcegraph/core/uri";
+import { Services } from "sourcegraph/workbench/services";
 
 export function getResource(input: IEditorInput): URI {
 	if (input["resource"]) {
@@ -64,7 +67,6 @@ export class MiniStore<T>{
 			},
 		};
 	}
-
 }
 
 export interface Disposable {
@@ -97,4 +99,21 @@ export function scrollToLine(editor: ICodeEditor, line: number): void {
 	const lineHeight = editor.getConfiguration().lineHeight;
 	const scrollPos = line * lineHeight;
 	(editor as any)._view.layoutProvider.setScrollPosition({ scrollTop: scrollPos });
+}
+
+/**
+ * prettifyRev takes a treeish and returns the cosmetic revision, if it is the
+ * same as the current workspace revision. This lets us avoid jump to def
+ * converting from a nice revision to an absolute commit hash.
+ */
+export function prettifyRev(newRevision: string | null): string | null {
+	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
+	const workspace = workspaceService.getWorkspace();
+	const { rev } = URIUtils.repoParams(workspace.resource);
+
+	if (rev === newRevision) {
+		const router = __getRouterForWorkbenchOnly();
+		return getRevFromRouter(router) || null;
+	}
+	return newRevision;
 }

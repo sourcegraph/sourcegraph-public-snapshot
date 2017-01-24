@@ -5,7 +5,7 @@ import "monaco-languages/out/monaco.contribution";
 import "monaco-typescript/out/monaco.contribution";
 import { Features } from "sourcegraph/util/features";
 
-export const modes = new Set<string>(["c", "go", "ruby", "javascript", "typescript"]);
+export const modes = new Set<string>(["go", "javascript", "typescript"]);
 
 if (Features.langCSS.isEnabled()) {
 	modes.add("css");

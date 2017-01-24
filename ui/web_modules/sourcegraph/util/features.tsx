@@ -40,15 +40,19 @@ class Feature {
 }
 
 export const Features = {
-	authorsToggle: new Feature("authors_toggle"),
-	codeLens: new Feature("code_lens"),
-	externalReferences: new Feature("external-references"),
 	langCSS: new Feature("lang-css"),
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),
 	langJava: new Feature("lang-java"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
 	projectWow: new Feature("project_wow"),
+
+	// commitInfoBar shows the horizontal bar above the editor with
+	// the file's commit log.
+	commitInfoBar: new Feature("commitInfoBar").disableBeta(),
+
+	// trace is whether to show trace URLs to LightStep in console log messages.
+	trace: new Feature("trace"),
 
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),
@@ -60,4 +64,18 @@ export const Features = {
 
 if (global.window) {
 	(window as any).features = Features;
+
+	// Make it so that visiting https://sourcegraph.com/#feature=NAME
+	// automatically enables the NAME feature in the user's
+	// localStorage, so we can share beta links with external users
+	// more easily.
+	if (document.location.hash) {
+		const m = document.location.hash.match(/^#feature=(.*)/);
+		if (m) {
+			const name = m[1];
+			Features[name].enable();
+			console.log("Enabling feature flag:", name); // tslint:disable-line no-console
+			document.location.hash = "";
+		}
+	}
 }

@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"golang.org/x/tools/go/loader"
 
@@ -23,7 +24,17 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceReferencesParams) ([]lspext.ReferenceInformation, error) {
+// workspaceReferencesTimeout is the timeout used for workspace/xreferences
+// calls.
+const workspaceReferencesTimeout = 15 * time.Second
+
+func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceReferencesParams) ([]referenceInformation, error) {
+	// TODO: Add support for the cancelRequest LSP method instead of using
+	// hard-coded timeouts like this here.
+	//
+	// See: https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#cancelRequest
+	ctx, cancel := context.WithTimeout(ctx, workspaceReferencesTimeout)
+	defer cancel()
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.BuildContext(ctx)
 
@@ -62,14 +73,14 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 	if len(pkgs) == 0 {
 		// occurs when the directory hint is present and matches no directories
 		// at all.
-		return []lspext.ReferenceInformation{}, nil
+		return []referenceInformation{}, nil
 	}
 
 	// Collect dependency references in the AfterTypeCheck phase. This enables
 	// us to begin looking at packages as they are typechecked, instead of
 	// waiting for all packages to be typechecked (which is IO bound).
 	var (
-		results = refResultSorter{results: make([]lspext.ReferenceInformation, 0)}
+		results = refResultSorter{results: make([]referenceInformation, 0)}
 		wg      sync.WaitGroup
 	)
 	afterTypeCheck := func(pkg *loader.PackageInfo, files []*ast.File) {
@@ -101,13 +112,37 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		}()
 	}
 
-	_, err := h.workspaceRefsTypecheck(ctx, bctx, conn, fset, pkgs, afterTypeCheck)
-	if err != nil {
-		return nil, err
-	}
+	// workspaceRefsTypecheck is ran inside its own goroutine because it can
+	// block for longer than our context deadline.
+	var err error
+	done := make(chan struct{})
+	go func() {
+		// Prevent any uncaught panics from taking the entire server down.
+		defer func() {
+			if r := recover(); r != nil {
+				// Same as net/http
+				const size = 64 << 10
+				buf := make([]byte, size)
+				buf = buf[:runtime.Stack(buf, false)]
+				log.Printf("ignoring panic serving %v for pkgs %v: %v\n%s", req.Method, pkgs, r, buf)
+				return
+			}
+		}()
 
-	// Wait for all worker goroutines to complete.
-	wg.Wait()
+		_, err = h.workspaceRefsTypecheck(ctx, bctx, conn, fset, pkgs, afterTypeCheck)
+
+		// Wait for all worker goroutines to complete.
+		wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		if err != nil {
+			return nil, err
+		}
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 
 	sort.Sort(&results) // sort to provide consistent results
 	return results.results, nil
@@ -149,7 +184,12 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 			}
 			return bpkg, nil
 		},
-		AfterTypeCheck: afterTypeCheck,
+		AfterTypeCheck: func(pkg *loader.PackageInfo, files []*ast.File) {
+			if err := ctx.Err(); err != nil {
+				return
+			}
+			afterTypeCheck(pkg, files)
+		},
 	}
 	for _, path := range pkgs {
 		conf.Import(path)
@@ -158,6 +198,10 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 	// Load and typecheck the packages.
 	prog, err = conf.Load()
 	if err != nil && prog == nil {
+		return nil, err
+	}
+
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
@@ -179,6 +223,9 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 // workspaceRefsFromPkg collects all the references made to dependencies from
 // the specified package and returns the results.
 func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, params lspext.WorkspaceReferencesParams, fs *token.FileSet, pkg *loader.PackageInfo, rootPath string, results *refResultSorter) (err error) {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	span, ctx := opentracing.StartSpanFromContext(ctx, "workspaceRefsFromPkg")
 	defer func() {
 		if err != nil {
@@ -214,8 +261,8 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 		}
 
 		results.resultsMu.Lock()
-		results.results = append(results.results, lspext.ReferenceInformation{
-			Reference: goRangeToLSPLocation(fs, r.Pos, r.Pos), // TODO: internal/refs doesn't generate end positions
+		results.results = append(results.results, referenceInformation{
+			Reference: goRangeToLSPLocation(fs, r.Start, r.End),
 			Symbol:    symDesc,
 		})
 		results.resultsMu.Unlock()
@@ -229,42 +276,44 @@ func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Cont
 	return nil
 }
 
-func defSymbolDescriptor(ctx context.Context, bctx *build.Context, rootPath string, def refs.Def, findPackage FindPackageFunc) (lspext.SymbolDescriptor, error) {
+func defSymbolDescriptor(ctx context.Context, bctx *build.Context, rootPath string, def refs.Def, findPackage FindPackageFunc) (*symbolDescriptor, error) {
 	defPkg, err := findPackage(ctx, bctx, def.ImportPath, rootPath, build.FindOnly)
 	if err != nil {
 		return nil, err
 	}
 
 	// NOTE: fields must be kept in sync with symbol.go:symbolEqual
-	desc := lspext.SymbolDescriptor{
-		"vendor":      IsVendorDir(defPkg.Dir),
-		"package":     defPkg.ImportPath,
-		"packageName": def.PackageName,
-		"recv":        "",
-		"name":        "",
-		"id":          "",
+	desc := &symbolDescriptor{
+		Vendor:      IsVendorDir(defPkg.Dir),
+		Package:     defPkg.ImportPath,
+		PackageName: def.PackageName,
+		Recv:        "",
+		Name:        "",
+		ID:          "",
 	}
 
 	fields := strings.Fields(def.Path)
 	switch {
 	case len(fields) == 0:
 		// reference to just a package
+		desc.ID = fmt.Sprintf("%s", desc.Package)
 	case len(fields) >= 2:
-		desc["recv"] = fields[0]
-		desc["name"] = fields[1]
+		desc.Recv = fields[0]
+		desc.Name = fields[1]
+		desc.ID = fmt.Sprintf("%s/-/%s/%s", desc.Package, desc.Recv, desc.Name)
 	case len(fields) >= 1:
-		desc["name"] = fields[0]
+		desc.Name = fields[0]
+		desc.ID = fmt.Sprintf("%s/-/%s", desc.Package, desc.Name)
 	default:
 		panic("invalid def.Path response from internal/refs")
 	}
-	desc["id"] = fmt.Sprintf("%s:%s:%s:%s", desc["package"], desc["packageName"], desc["recv"], desc["name"])
 	return desc, nil
 }
 
 // refResultSorter is a utility struct for collecting, filtering, and
 // sorting workspace reference results.
 type refResultSorter struct {
-	results   []lspext.ReferenceInformation
+	results   []referenceInformation
 	resultsMu sync.Mutex
 }
 

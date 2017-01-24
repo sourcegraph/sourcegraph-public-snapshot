@@ -30,7 +30,7 @@ export class CheckboxList extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element | null {
-		const {className, title, name, labels} = this.props;
+		const { className, title, name, labels } = this.props;
 		let checkboxes: any[] = [];
 		for (let label of labels) {
 			checkboxes.push(<span className={styles.checkbox} key={label}><label><input type="checkbox" name={name} defaultValue={label} defaultChecked={this._isDefaultValue(label)} /> {label}</label></span>);

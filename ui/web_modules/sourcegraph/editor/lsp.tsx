@@ -1,6 +1,8 @@
+import * as hash from "object-hash";
 import { context } from "sourcegraph/app/context";
 import { URIUtils } from "sourcegraph/core/uri";
-import { defaultFetch as fetch } from "sourcegraph/util/xhr";
+import { Features } from "sourcegraph/util/features";
+import { defaultFetch } from "sourcegraph/util/xhr";
 import URI from "vs/base/common/uri";
 import { Range } from "vs/editor/common/core/range";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
@@ -44,8 +46,8 @@ export function toMonacoRange(r: LSPRange): IRange {
 
 type LSPResponse = {
 	method: string;
-	result: any;
-	error: { code: number, message: string };
+	result?: any;
+	error?: { code: number, message: string };
 };
 
 // send sends an LSP request with the given method and params. Because
@@ -57,17 +59,34 @@ export function send(model: IReadOnlyModel, method: string, params: any): Promis
 	return sendExt(URIUtils.withoutFilePath(model.uri).toString(true), model.getModeId(), method, params);
 }
 
+const LSPCache = new Map<string, Promise<Response>>();
+
+// WARNING: Caches responses that are errors.
+async function cachingFetch(url: string | Request, init?: RequestInit): Promise<Response> {
+	const key = hash([url, init]);
+
+	let promise = LSPCache.get(key);
+	if (!promise) {
+		promise = defaultFetch(url, init);
+	}
+
+	LSPCache.set(key, promise);
+	const response = await promise;
+	return response.clone();
+}
+
 // sendExt mirrors the functionality of send, but is intended to be used by callers outside of Monaco.
-export function sendExt(uri: string, modeID: string, method: string, params: any): Promise<LSPResponse> {
+export async function sendExt(uri: string, modeID: string, method: string, params: any): Promise<LSPResponse> {
 	const t0 = Date.now();
 
-	const body = [
+	const request = [
 		{
 			id: 0,
 			method: "initialize",
 			params: {
 				rootPath: uri,
-				mode: modeID,
+				initializationOptions: { mode: modeID },
+				mode: modeID, // DEPRECATED: use old mode field if new one is not set
 			},
 		},
 		{ id: 1, method, params },
@@ -75,49 +94,42 @@ export function sendExt(uri: string, modeID: string, method: string, params: any
 		{ method: "exit" },
 	];
 
-	type LSPResponseWithTraceURL = {
-		resp: LSPResponse;
-		traceURL: string; // Lightstep trace URL
-	};
-
 	// We duplicate the method in the URL and in the request body for
 	// easier browser network tab debugging.
-	return fetch(`/.api/xlang/${method}`, {
+	const serverResponse = await cachingFetch(`/.api/xlang/${method}`, {
 		method: "POST",
-		body: JSON.stringify(body),
-	})
-		.then((resp: Response): Promise<LSPResponseWithTraceURL> => {
-			const traceURL = resp.headers.get("x-trace");
+		body: JSON.stringify(request),
+	});
+	const traceURL = serverResponse.headers.get("x-trace");
 
-			if (resp.status >= 200 && resp.status <= 299) {
-				// Pass along the main request's response (not the
-				// initialize/shutdown responses).
-				return resp.json().then((resps: LSPResponse[]) => ({ resp: resps[1], traceURL }));
-			}
+	let response;
+	if (serverResponse.status >= 200 && serverResponse.status < 300) {
+		const resps = await serverResponse.json();
+		response = resps[1];
+	} else {
+		// Synthesize an LSP response object from the HTTP error,
+		// so that we can deal with errors from any source in a
+		// consistent way.
+		const text = await serverResponse.text();
+		response = {
+			error: {
+				code: serverResponse.status,
+				message: `HTTP error ${serverResponse.status} (${serverResponse.statusText}): ${text || "(empty HTTP response body)"}`,
+			},
+		};
+	}
+	logLSPResponse(URI.parse(uri), modeID, method, params, request, response, traceURL, Date.now() - t0);
 
-			// Synthesize an LSP response object from the HTTP error,
-			// so that we can deal with errors from any source in a
-			// consistent way.
-			return resp.text().then((text: string) => ({
-				resp: {
-					error: {
-						code: resp.status,
-						message: `HTTP error ${resp.status} (${resp.statusText}): ${text || "(empty HTTP response body)"}`,
-					},
-				},
-				traceURL,
-			}));
-		})
-		.then((respWithTrace: LSPResponseWithTraceURL): LSPResponse | null => {
-			logLSPResponse(URI.parse(uri), modeID, method, params, body, respWithTrace.resp, respWithTrace.traceURL, Date.now() - t0);
-
-			// Report LSP error.
-			if (respWithTrace.resp.error) {
-				return null;
-			}
-			return respWithTrace.resp;
-		});
+	return response;
 }
+
+const modeToIssueAssignee = {
+	go: "keegancsmith",
+	typescript: "beyang",
+	javascript: "beyang",
+	java: "akhleung",
+	python: "renfredxh",
+};
 
 function logLSPResponse(uri: URI, modeID: string, method: string, params: any, reqBody: any, resp: LSPResponse, traceURL: string, rttMsec: number): void {
 	if (!(global as any).console || !(global as any).console.group || !(global as any).console.debug) {
@@ -137,9 +149,11 @@ function logLSPResponse(uri: URI, modeID: string, method: string, params: any, r
 		"color:#999;font-weight:normal;font-style:italic",
 		rttMsec
 	);
-	console.debug("LSP request params: %o", params);
-	console.debug("LSP response: %o", resp);
-	console.debug("Trace: %s", traceURL);
+	if (Features.trace.isEnabled()) {
+		console.debug("Trace: %s", traceURL);
+	}
+	console.debug("LSP request params: %O", params);
+	console.debug("LSP response: %O", resp);
 
 	const reproCmd = `curl --data '${JSON.stringify(reqBody).replace(/'/g, "\\'")}' ${window.location.protocol}//${window.location.host}/.api/xlang/${method}`;
 	console.debug("Repro command (public repos only):\n%c%s", "background-color:#333;color:#aaa", reproCmd);
@@ -147,8 +161,9 @@ function logLSPResponse(uri: URI, modeID: string, method: string, params: any, r
 	const locHash = params.textDocument && params.textDocument.uri && params.position ? `#L${params.position.line + 1}:${params.position.character + 1}` : "";
 	const pageURL = window.location.href.replace(/(#L[\d:-]*)?$/, locHash);
 
-	const {repo} = URIUtils.repoParams(uri);
+	const { repo } = URIUtils.repoParams(uri);
 	const issueTitle = `${err ? "Error in" : "Unexpected behavior from"} ${method} in ${repo}`;
+	const assignee = modeToIssueAssignee[modeID];
 	const issueBody = `I saw ${err ? "an error in" : "unexpected behavior from"} from LSP ${method} on a ${modeID} file at [${pageURL}](${pageURL}).
 
 **Repro:**
@@ -171,7 +186,7 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
-	console.debug(`Post a GitHub issue\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels=lang-${modeID}`);
+	console.debug(`Copy and send this URL to support@sourcegraph.com to report an issue:\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=lang-${modeID}&labels[]=${encodeURIComponent("Component: xlang")}&labels[]=${encodeURIComponent("Type: Bug")}${assignee ? `&assignee=${assignee}` : ""}`);
 	console.groupEnd();
 
 	// tslint:enable: no-console

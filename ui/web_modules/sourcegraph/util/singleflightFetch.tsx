@@ -41,7 +41,7 @@ export function singleflightFetch(fetch): any {
 		return f.then((resp) => {
 			const waitingList = done(key);
 			if (waitingList) {
-				waitingList.forEach(({resolve}) => {
+				waitingList.forEach(({ resolve }) => {
 					resolve(resp.clone());
 				});
 			}
@@ -49,7 +49,7 @@ export function singleflightFetch(fetch): any {
 		}).catch((err) => {
 			const waitingList = done(key);
 			if (waitingList) {
-				waitingList.forEach(({reject}) => {
+				waitingList.forEach(({ reject }) => {
 					reject(err);
 				});
 			}

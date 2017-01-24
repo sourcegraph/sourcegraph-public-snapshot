@@ -95,5 +95,5 @@ export const Dashboard = function (props: Props): JSX.Element {
 			},
 			params: props,
 		}}
-		/>;
+	/>;
 };

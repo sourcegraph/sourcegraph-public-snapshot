@@ -17,6 +17,7 @@ import * as optimizely from "sourcegraph/util/Optimizely";
 class EventLoggerClass {
 	_intercom: any = null;
 	_telligent: any = null;
+	_hubspot: any = null;
 
 	_intercomSettings: any;
 	userAgentIsBot: boolean;
@@ -82,6 +83,8 @@ class EventLoggerClass {
 			});
 		}
 
+		if (global.window._hsq) { this._hubspot = global.window._hsq; }
+
 		if (global.window.Intercom) { this._intercom = global.window.Intercom; }
 
 		if (typeof window !== "undefined") {
@@ -107,12 +110,14 @@ class EventLoggerClass {
 		const emails = context.emails && context.emails.EmailAddrs || null;
 
 		const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
-		let optimizelyAttributes = { telligent_duid: this._getTelligentDuid() };
+		const optimizelyAttributes = { telligent_duid: this._getTelligentDuid() };
+		const hubSpotAttributes = {};
 
 		if (context.user) {
 			this._setTrackerLoginInfo(context.user.Login);
 			this.setIntercomProperty("user_id", context.user.UID.toString());
 			this.setUserProperty("internal_user_id", context.user.UID.toString());
+			hubSpotAttributes["user_id"] = context.user.Login;
 			optimizelyAttributes["user_id"] = context.user.Login;
 		}
 
@@ -127,25 +132,30 @@ class EventLoggerClass {
 			if (user.Name) {
 				this.setIntercomProperty("name", user.Name);
 				this.setUserProperty("display_name", user.Name);
+				hubSpotAttributes["fullname"] = user.Name;
 			}
 
 			if (user.RegisteredAt) {
 				this.setUserProperty("registered_at_timestamp", user.RegisteredAt);
 				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
 				this.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
+				hubSpotAttributes["registered_at"] = new Date(user.RegisteredAt).toDateString();
 			}
 
 			if (user.Company) {
 				this.setUserProperty("company", user.Company);
 				this.setIntercomProperty("company", user.Company);
+				hubSpotAttributes["company"] = user.Company;
 			}
 
 			if (user.Location) {
 				this.setUserProperty("location", user.Location);
+				hubSpotAttributes["location"] = user.Location;
 			}
 
 			this.setUserProperty("is_private_code_user", context.hasPrivateGitHubToken() ? "true" : "false");
 			this.setUserProperty("is_github_organization_authed", context.hasOrganizationGitHubToken() ? "true" : "false");
+			hubSpotAttributes["is_private_code_user"] = context.hasPrivateGitHubToken() ? "true" : "false";
 		}
 
 		if (primaryEmail) {
@@ -153,10 +163,15 @@ class EventLoggerClass {
 			this.setUserProperty("emails", emails);
 			this.setIntercomProperty("email", primaryEmail);
 			optimizelyAttributes["email"] = primaryEmail;
+			hubSpotAttributes["email"] = primaryEmail;
+			hubSpotAttributes["emails"] = emails ? emails.map(email => { return email.Email; }).join(",") : "";
 		}
 
 		if (optimizely.optimizelyApiService) {
 			optimizely.optimizelyApiService.setUserAttributes(optimizelyAttributes);
+		}
+		if (this._hubspot) {
+			this.setHubSpotProperties(hubSpotAttributes);
 		}
 	}
 
@@ -271,6 +286,9 @@ class EventLoggerClass {
 		// Send event to ExperimentManager to determine if it should be tracked, and to send to Optimizely if so
 		experimentManager.logEvent(eventLabel);
 
+		// Log event on HubSpot (if a valid HubSpot event)
+		this.logHubSpotEvent(eventLabel);
+
 		if (global && global.window && global.window.ga) {
 			global.window.ga("send", {
 				hitType: "event",
@@ -309,6 +327,23 @@ class EventLoggerClass {
 				eventLabel: eventObject.label,
 				nonInteraction: true,
 			});
+		}
+	}
+
+	// sets current user's property value for hubspot
+	setHubSpotProperties(props: { email?: string, user_id?: string, fullname?: string, company?: string, location?: string, is_private_code_user?: string, emails?: string, authed_orgs_github?: string }): void {
+		if (this._hubspot) {
+			this._hubspot.push(["identify", props]);
+		}
+	}
+
+	// records HubSpot events for the current user
+	logHubSpotEvent(eventLabel: string): void {
+		if (this._hubspot && !this.userAgentIsBot) {
+			if (!AnalyticsConstants.hubSpotEventNames.has(eventLabel)) {
+				return;
+			}
+			this._hubspot.push(["trackEvent", { id: eventLabel }]);
 		}
 	}
 
@@ -368,6 +403,7 @@ class EventLoggerClass {
 							}
 						}
 					}
+					this.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
 					this.setIntercomProperty("authed_orgs_github", orgNames);
 					this.setUserProperty("authed_orgs_github", orgNames);
 					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({ "fetched_orgs_github": orgNames });

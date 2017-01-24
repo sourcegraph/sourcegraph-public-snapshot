@@ -8,8 +8,10 @@ interface Props {
 	left?: boolean; // position popover content to the left (default: right)
 	pointer?: boolean;
 	popoverClassName?: string;
-	popoverStyle?: any;
+	popoverStyle?: React.CSSProperties;
 	children?: React.ReactNode;
+	onClick?: (visible: boolean) => void;
+	style?: React.CSSProperties;
 }
 
 type State = {
@@ -37,6 +39,7 @@ export class Popover extends React.Component<Props, State> {
 	}
 
 	_onClick(e: MouseEvent & { target: Node }): void {
+		const initiallyVisible = this.state.visible;
 		let container = this.container;
 		let content = this.content;
 		if (container && container.contains(e.target)) {
@@ -50,6 +53,7 @@ export class Popover extends React.Component<Props, State> {
 				visible: false,
 			} as State);
 		}
+		if (this.props.onClick && initiallyVisible !== this.state.visible) { this.props.onClick(this.state.visible); }
 	}
 
 	setContent(ref: HTMLElement): void {
@@ -62,10 +66,10 @@ export class Popover extends React.Component<Props, State> {
 	render(): JSX.Element | null {
 		if (!this.props.children) { return null; }
 		return (
-			<div style={{ position: "relative", cursor: "pointer" }} ref={this.setContainer}>
+			<div style={Object.assign({ position: "relative", cursor: "pointer" }, this.props.style)} ref={this.setContainer}>
 				{this.props.children && this.props.children[0]}
 				{this.state.visible &&
-					<div ref={this.setContent}
+					<div ref={this.setContent} style={this.props.popoverStyle}
 						{...css(
 							{
 								borderRadius: 3,
@@ -93,7 +97,6 @@ export class Popover extends React.Component<Props, State> {
 									zIndex: 101,
 								}
 							} : {},
-							this.props.popoverStyle,
 						) }>
 						{this.props.children[1]}
 					</div>

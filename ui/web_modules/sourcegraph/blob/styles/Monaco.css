@@ -1,7 +1,7 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple, c_cool_dark_gray from colors;
+@value c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple, c_cool_dark_gray, c_green, c_orange_L1, c_blue_gray_L3 from colors;
 
 @value font_size_7 from vars;
 
@@ -128,50 +128,11 @@
 	background-color: c_black_10 !important;
 }
 
-:global div.monaco-editor.vs-dark .monaco-editor-background {
-	margin-left: 5px;
-}
-
-
 /* Ref tree */
 
 :global .monaco-editor.vs-dark .reference-zone-widget .ref-tree {
 	background-color: c_cool_gray2 !important;
 	color: white;
-}
-
-:global .vs-dark .monaco-tree .focused,
-:global .vs-dark .monaco-tree .seleced {
-	background-color: c_blue_text !important;
-	color: white;
-	font-weight: bold;
-}
-
-:global .monaco-editor .reference-zone-widget .ref-tree span.referenceMatch img.avatarImg {
-	width: 15px;
-	height: 15px;
-}
-
-:global .monaco-editor .reference-zone-widget .ref-tree span.referenceMatch {
-	background-color: c_blue_2;
-	color: white;
-	border-radius: 3px;
-	padding-left: 2px;
-	padding-right: 2px;
-}
-
-:global .vs-dark .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) {
-  background-color: c_blue_2;
-  color: white;
-}
-
-:global .vs-dark .reference-zone-widget div:focus {
-  outline: none;
-  box-shadow: inset 0 1px 0 1px c_blue_8;
-}
-
-:global .monaco-editor.vs-dark .reference-zone-widget .monaco-count-badge {
-	background-color: c_blue_2;
 }
 
 /*
@@ -503,26 +464,24 @@
 	min-width: 120px;
 }
 
+:global .monaco-workbench-container {
+	/* Default position:absolute causes https://github.com/sourcegraph/sourcegraph/issues/3277. */
+	position: fixed !important;
+}
+
+:global .monaco-workbench > .part.sidebar.left {
+	background-color: c_cool_gray;
+}
+
 :global .monaco-workbench > .part > .composite.title {
 	height: 45px;
-	box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 6px 0px;
-	background: c_cool_gray2;
-	position: relative;
-	z-index: 1;
+	opacity: 0;
+	transition: opacity 500ms ease-in-out;
 }
 
-:global .monaco-workbench > .part > .composite.title > .title-actions {
-	display: none;
-}
-
+:global .monaco-workbench > .part > .composite.title > .title-actions,
 :global .monaco-workbench > .part > .composite.title > .title-label > span {
-	font-size: 1.25rem;
-	font-weight: 800;
-	letter-spacing: 0px;
-	vertical-align: middle;
-	line-height: 45px;
-	color: rgba(213,229,242,1) !important;
-	text-transform: initial !important;
+	display: none;
 }
 
 :global .monaco-tree .monaco-tree-wrapper .monaco-tree-rows {
@@ -580,23 +539,6 @@
 	padding-right: 0px !important;
 }
 
-:global .sg-sidebar .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references {
-	text-overflow: ellipsis;
-	overflow: hidden;
-}
-
-:global .sg-sidebar .monaco-tree .monaco-tree-rows > .monaco-tree-row {
-	color: #233043;
-	cursor: pointer;
-	overflow: hidden !important;
-	width: 100%;
-	touch-action: none;
-	padding-left: 16px !important;
-	padding-right: 13px !important;
-	white-space: nowrap !important;
-	text-overflow: ellipsis !important;
-}
-
 :global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function {
 	padding-top: 12px;
 	text-overflow: ellipsis;
@@ -624,7 +566,12 @@
 :global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .function .file-details {
 	padding-top: 10px;
 	color: #5d7eac;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	direction: rtl;
+	text-align: left;
 }
+
 :global .monaco-tree .monaco-tree-rows > .monaco-tree-row > .content > .sidebar-references > .code-content > .divider-container {
 	padding-top: 10px;
 	width: 100%;
@@ -636,15 +583,10 @@
 	background-color: rgba(201, 211, 227, 0.3);
 }
 
-:global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) {
-  background-color: #1893e7;
-  color: white;
+:global .sg-sidebar .monaco-tree {
+	flex: 1 1 auto;
 }
 
-:global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) .content > .sidebar-references > .code-content > .function .author-details {
-	color:  #ade0ff;
-}
-
-:global .vs-dark .sg-sidebar .monaco-tree div.monaco-tree-row:hover:not(.highlighted):not(.selected):not(.focused) .content > .sidebar-references > .code-content > .function .file-details {
-	color:  #ade0ff;
+:global .monaco-editor.vs-dark .view-overlays .selected-text {
+	background-color: #0091ea !important;
 }

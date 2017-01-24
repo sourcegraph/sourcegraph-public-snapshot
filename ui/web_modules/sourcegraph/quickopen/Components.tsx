@@ -4,7 +4,7 @@ import * as React from "react";
 import { Heading } from "sourcegraph/components/Heading";
 import { colors, typography } from "sourcegraph/components/utils";
 
-const ViewMore = ({expandCategory, type}) => <a style={Object.assign({
+const ViewMore = ({ expandCategory, type }) => <a style={Object.assign({
 	color: colors.blueL1(),
 	textTransform: "uppercase",
 	fontWeight: "bold",
@@ -15,7 +15,7 @@ const ViewMore = ({expandCategory, type}) => <a style={Object.assign({
 	View more {type}
 </a>;
 
-export const ResultRow = ({title, description, index, length}, categoryIndex, itemIndex, selected, delegate, scrollIntoView) => {
+export const ResultRow = ({ title, description, index, length }, categoryIndex, itemIndex, selected, delegate, scrollIntoView) => {
 	const oflow = { textOverflow: "ellipsis", overflow: "hidden" };
 	return (
 		<a
@@ -28,7 +28,7 @@ export const ResultRow = ({title, description, index, length}, categoryIndex, it
 						(node as any).scrollIntoViewIfNeeded(false);
 					}
 				}
-			} }
+			}}
 			style={{
 				borderRadius: 3,
 				padding: "8px 20px",
@@ -55,7 +55,7 @@ export const ResultRow = ({title, description, index, length}, categoryIndex, it
 	);
 };
 
-const ResultCategory = ({title, results, selected, delegate, categoryIndex, limit, expandCategory, scrollIntoView}) => {
+const ResultCategory = ({ title, results, selected, delegate, categoryIndex, limit, expandCategory, scrollIntoView }) => {
 	const total = results.length;
 	if (total === 0) {
 		return <div></div>;
@@ -72,7 +72,7 @@ const ResultCategory = ({title, results, selected, delegate, categoryIndex, limi
 	</div>;
 };
 
-export const ResultCategories = ({categories, selection, delegate, limits, scrollIntoView}) => {
+export const ResultCategories = ({ categories, selection, delegate, limits, scrollIntoView }) => {
 	const loadingOrFound = categories.some(cat => cat.IsLoading || cat.Results.length > 0);
 	if (!loadingOrFound) {
 		return <div style={{ padding: "14px 0", color: colors.white(), textAlign: "center" }}>No results found</div>;

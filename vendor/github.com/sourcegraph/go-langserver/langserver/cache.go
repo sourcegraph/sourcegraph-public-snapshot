@@ -13,11 +13,11 @@ import (
 var (
 	// typecheckCache is a process level cache for storing typechecked
 	// values. Do not directly use this, instead use newTypecheckCache()
-	typecheckCache = newLRU("SRC_TYPECHECK_CACHE_SIZE", 1000)
+	typecheckCache = newLRU("SRC_TYPECHECK_CACHE_SIZE", 10)
 
 	// symbolCache is a process level cache for storing symbols found. Do
 	// not directly use this, instead use newSymbolCache()
-	symbolCache = newLRU("SRC_SYMBOL_CACHE_SIZE", 1000)
+	symbolCache = newLRU("SRC_SYMBOL_CACHE_SIZE", 500)
 
 	// cacheID is used to prevent key conflicts between different
 	// LangHandlers in the same process.

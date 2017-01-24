@@ -17,7 +17,7 @@ const fetch = singleflightFetch(defaultFetch);
 @editorAction
 export class FindExternalReferencesAction extends EditorAction {
 	constructor() {
-		if (!Features.externalReferences.isEnabled()) {
+		if (!Features.projectWow.isEnabled()) {
 			super({
 				id: "editor.action.findExternalReferences",
 				label: "Find External References",
@@ -36,7 +36,7 @@ export class FindExternalReferencesAction extends EditorAction {
 	}
 
 	private findExternalReferences(model: IReadOnlyModel, pos: IPosition): TPromise<void> {
-		const {repo, rev, path} = URIUtils.repoParams(model.uri);
+		const { repo, rev, path } = URIUtils.repoParams(model.uri);
 		AnalyticsConstants.Events.CodeExternalReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 		const line = pos.lineNumber - 1;

@@ -50,7 +50,7 @@ func TestIntegration(t *testing.T) {
 				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6", // stdlib
 			},
 			wantXDefinition: map[string]string{
-				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6 id:net/http:http::Request name:Request package:net/http packageName:http recv: vendor:false",
+				"mux.go:61:38": "git://github.com/golang/go?go1.7.1#src/net/http/request.go:76:6 id:net/http/-/Request name:Request package:net/http packageName:http recv: vendor:false",
 			},
 			wantXDependencies: "gorilla-mux.json",
 		},
@@ -72,7 +72,7 @@ func TestIntegration(t *testing.T) {
 				"config/vendor/github.com/coreos/ignition/config/vendor/github.com/coreos/go-semver/semver/semver_test.go:287:27": "git://github.com/go-yaml/yaml?v2#yaml.go:138:6", // diff repo
 			},
 			wantXDefinition: map[string]string{
-				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 id:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units:units::ParseBase2Bytes name:ParseBase2Bytes package:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units packageName:units recv: vendor:true",
+				"config/convert.go:262:26": "git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8#config/vendor/github.com/alecthomas/units/bytes.go:30:6 id:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units/-/ParseBase2Bytes name:ParseBase2Bytes package:github.com/coreos/fuze/config/vendor/github.com/alecthomas/units packageName:units recv: vendor:true",
 			},
 		},
 		"git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f": {
@@ -87,7 +87,7 @@ func TestIntegration(t *testing.T) {
 				"golint/golint.go:91:18": "git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f#lint.go:31:6", // diff pkg, same repo
 			},
 			wantXDefinition: map[string]string{
-				"golint/golint.go:91:18": "git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f#lint.go:31:6 id:github.com/golang/lint:lint::Linter name:Linter package:github.com/golang/lint packageName:lint recv: vendor:false",
+				"golint/golint.go:91:18": "git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f#lint.go:31:6 id:github.com/golang/lint/-/Linter name:Linter package:github.com/golang/lint packageName:lint recv: vendor:false",
 			},
 		},
 		"git://github.com/gorilla/csrf?a8abe8abf66db8f4a9750d76ba95b4021a354757": {
@@ -104,7 +104,7 @@ func TestIntegration(t *testing.T) {
 				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6", // diff repo
 			},
 			wantXDefinition: map[string]string{
-				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6 id:github.com/gorilla/securecookie:securecookie::SecureCookie name:SecureCookie package:github.com/gorilla/securecookie packageName:securecookie recv: vendor:false",
+				"csrf.go:57:28": "git://github.com/gorilla/securecookie?HEAD#securecookie.go:154:6 id:github.com/gorilla/securecookie/-/SecureCookie name:SecureCookie package:github.com/gorilla/securecookie packageName:securecookie recv: vendor:false",
 			},
 			wantXDependencies: "gorilla-csrf.json",
 		},
@@ -123,8 +123,8 @@ func TestIntegration(t *testing.T) {
 				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/bytes/buffer.go:17:6",     // stdlib type
 			},
 			wantXDefinition: map[string]string{
-				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/encoding/hex/hex.go:70:6 id:encoding/hex:hex::fromHexChar name:fromHexChar package:encoding/hex packageName:hex recv: vendor:false",
-				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/bytes/buffer.go:17:6 id:bytes:bytes::Buffer name:Buffer package:bytes packageName:bytes recv: vendor:false",
+				"src/encoding/hex/hex.go:70:12":  "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/encoding/hex/hex.go:70:6 id:encoding/hex/-/fromHexChar name:fromHexChar package:encoding/hex packageName:hex recv: vendor:false",
+				"src/encoding/hex/hex.go:104:18": "git://github.com/golang/go?f75aafdf56dd90eab75cfeac8cf69358f73ba171#src/bytes/buffer.go:17:6 id:bytes/-/Buffer name:Buffer package:bytes packageName:bytes recv: vendor:false",
 			},
 			wantReferences: map[string][]string{
 				"src/net/http/httptest/server.go:204:25": []string{ // httptest.Server
@@ -154,7 +154,7 @@ func TestIntegration(t *testing.T) {
 				"libmachine/provision/provisioner.go:107:50": "git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770#libmachine/drivers/utils.go:36:6",
 			},
 			wantXDefinition: map[string]string{
-				"libmachine/provision/provisioner.go:107:50": "git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770#libmachine/drivers/utils.go:36:6 id:github.com/docker/machine/libmachine/drivers:drivers::RunSSHCommandFromDriver name:RunSSHCommandFromDriver package:github.com/docker/machine/libmachine/drivers packageName:drivers recv: vendor:false",
+				"libmachine/provision/provisioner.go:107:50": "git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770#libmachine/drivers/utils.go:36:6 id:github.com/docker/machine/libmachine/drivers/-/RunSSHCommandFromDriver name:RunSSHCommandFromDriver package:github.com/docker/machine/libmachine/drivers packageName:drivers recv: vendor:false",
 			},
 		},
 		"git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33": {
@@ -231,8 +231,8 @@ func TestIntegration(t *testing.T) {
 
 			// Prepare the connection.
 			if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
-				InitializeParams: lsp.InitializeParams{RootPath: rootPath},
-				Mode:             test.mode,
+				InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
+				InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}

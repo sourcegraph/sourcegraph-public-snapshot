@@ -105,31 +105,11 @@ type File {
 	content: String!
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!
-	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences
+	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
 }
 
 type DependencyReferences {
-	deps: [DependencyReference!]!
-	location: Location!
-}
-
-type DependencyReference {
-	depData: String!
-	repoID: Int!
-	hints: String!
-}
-
-type Location {
-	location: LSPLocation!
-	symbol: String!
-}
-
-type LSPLocation {
-	uri: String!
-	startLine: Int!
-	startCharacter: Int!
-	endLine: Int!
-	endCharacter: Int!
+	data: String!
 }
 
 type RemoteRepository {

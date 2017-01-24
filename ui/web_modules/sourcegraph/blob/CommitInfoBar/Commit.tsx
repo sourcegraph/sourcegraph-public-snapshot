@@ -1,9 +1,9 @@
 import { css } from "glamor";
 import * as React from "react";
 import { Avatar, FlexContainer } from "sourcegraph/components";
-import { Check, ChevronDown } from "sourcegraph/components/symbols/Zondicons";
+import { Checkmark, ChevronDown } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
-import { TimeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
+import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 
 export function Commit({ commit, hover = true, showChevron = false, selected = false, style }: {
 	commit: GQL.ICommitInfo;
@@ -16,7 +16,7 @@ export function Commit({ commit, hover = true, showChevron = false, selected = f
 	if (!committer || !committer.person) {
 		return <span />;
 	}
-	const date = TimeFromNowUntil(committer.date, 14);
+	const date = timeFromNowUntil(committer.date, 14);
 	return <div style={style} {...css(
 		{
 			backgroundColor: colors.black(0.2),
@@ -60,12 +60,12 @@ export function Commit({ commit, hover = true, showChevron = false, selected = f
 				<span style={{ color: colors.blueGrayL1() }}>{date} @ {commit.rev.substr(0, 6)}</span>
 				{showChevron &&
 					<span style={{ color: colors.blueGrayL1() }}>
-						<ChevronDown width={12} color="currentColor" style={{ padding: whitespace[2] }} />
+						<ChevronDown width={18} color="currentColor" style={{ paddingRight: whitespace[2] }} />
 					</span>
 				}
 				{selected &&
 					<span style={{ color: colors.blueGrayL1() }}>
-						<Check width={12} color="currentColor" style={{ padding: whitespace[2] }} />
+						<Checkmark width={18} color="currentColor" style={{ paddingRight: whitespace[2] }} />
 					</span>
 				}
 			</FlexContainer>

@@ -32,7 +32,7 @@ interface ItemProps {
 	target?: string;
 }
 
-function Item({anchor, url, children, target}: ItemProps): JSX.Element {
+function Item({ anchor, url, children, target }: ItemProps): JSX.Element {
 	const sx = style({
 		color: colors.blueGray(),
 		display: "inline-block",

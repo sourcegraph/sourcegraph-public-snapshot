@@ -44,7 +44,7 @@ export class Affix extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element {
-		const {className, style, children} = this.props;
+		const { className, style, children } = this.props;
 		return <div className={className} style={style}>
 			<div ref={(el) => this._affix = el}>{children}</div>
 		</div>;

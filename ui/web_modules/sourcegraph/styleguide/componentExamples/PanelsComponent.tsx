@@ -24,7 +24,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 0 });
 							e.preventDefault();
-						} }>
+						}}>
 							Colors and styles
 						</a>
 					</TabItem>
@@ -33,7 +33,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 						<a href="#" onClick={(e) => {
 							this.setState({ activeExample: 1 });
 							e.preventDefault();
-						} }>
+						}}>
 							Hoverables
 						</a>
 					</TabItem>

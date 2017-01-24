@@ -8,7 +8,7 @@ import { Router, RouterLocation } from "sourcegraph/app/router";
 import { BGContainer, Button, FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
-import { ChevronRight } from "sourcegraph/components/symbols/Zondicons";
+import { ChevronRight } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import { FeatureCarousel } from "sourcegraph/home/FeatureCarousel";
@@ -134,7 +134,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
 						<strong>
 							Join the beta list
-							<ChevronRight color={colors.blue()} width={7} style={{ marginLeft: 4 }} />
+							<ChevronRight width={17} style={{ marginLeft: 2, top: 0 }} />
 						</strong>
 					</LocationStateToggleLink>
 
@@ -238,7 +238,7 @@ export class Home extends React.Component<HomeProps, {}> {
 
 interface TweetProps { children?: React.ReactNode[]; }
 
-function Tweet({children}: TweetProps): JSX.Element {
+function Tweet({ children }: TweetProps): JSX.Element {
 	return <div
 		{...style({ flex: "0 0 49%", maxWidth: "49%" }) }
 		{...media(layout.breakpoints.sm, { flex: "0 0 100%", maxWidth: "100%" }) }>{children}</div>;

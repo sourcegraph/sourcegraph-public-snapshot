@@ -19,35 +19,6 @@ import (
 	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
-// subSelectors is a map of language-specific data selectors. The
-// input data is from the language server's workspace/xdefinition
-// request, and the output data should be something that can be
-// matched (using the jsonb containment operator) against the
-// `attributes` field of `DependenceReference` (output of
-// workspace/xdependencies).
-var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface{}{
-	"go": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		return map[string]interface{}{
-			"package": symbol["package"],
-		}
-	},
-	"php": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		if _, ok := symbol["package"]; !ok {
-			// package can be missing if the symbol did not belong to a package, e.g. a project without
-			// a composer.json file. In this case, there are no external references to this symbol.
-			return nil
-		}
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
-	},
-	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
-	},
-}
-
 func (s *defs) DeprecatedListRefs(ctx context.Context, op *sourcegraph.DeprecatedDefsListRefsOp) (res *sourcegraph.RefList, err error) {
 	if Mocks.Defs.ListRefs != nil {
 		return Mocks.Defs.ListRefs(ctx, op)
@@ -165,17 +136,28 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()
 
-	subSelector, ok := subSelectors[op.Language]
-	if !ok {
-		return nil, errors.New("language not supported")
-	}
-
 	span := opentracing.SpanFromContext(ctx)
 	span.SetTag("language", op.Language)
 	span.SetTag("repo_id", op.RepoID)
+	span.SetTag("commit_id", op.CommitID)
 	span.SetTag("file", op.File)
 	span.SetTag("line", op.Line)
 	span.SetTag("character", op.Character)
+
+	// SECURITY: We first must call textDocument/xdefinition on a ref
+	// to figure out what to query the global deps database for. The
+	// ref might exist in a private repo, so we MUST check that the
+	// user has access to that private repo first prior to calling it
+	// in xlang (xlang has unlimited, unchecked access to gitserver).
+	//
+	// For example, if a user is browsing a private repository but
+	// looking for references to a public repository's symbol
+	// (fmt.Println), we support that, but we DO NOT support looking
+	// for references to a private repository's symbol ever (in fact,
+	// they are not even indexed by the global deps database).
+	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.DependencyReferences", op.RepoID); err != nil {
+		return nil, err
+	}
 
 	// Fetch repository information.
 	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
@@ -185,19 +167,8 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	vcs := "git" // TODO: store VCS type in *sourcegraph.Repo object.
 	span.SetTag("repo", repo.URI)
 
-	// SECURITY: DO NOT REMOVE THIS CHECK! If a repository is private we must
-	// ensure we do not leak its existence (or worse, LSP response info). We do
-	// not support private repository global references yet.
-	if repo.Private {
-		return nil, accesscontrol.ErrRepoNotFound
-	}
-
 	// Determine the rootPath.
-	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: repo.DefaultBranch})
-	if err != nil {
-		return nil, err
-	}
-	rootPath := vcs + "://" + repo.URI + "?" + rev.CommitID
+	rootPath := vcs + "://" + repo.URI + "?" + op.CommitID
 
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.
@@ -217,13 +188,26 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// once we have a language server that uses it.
 	location := locations[0]
 
-	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
-		Language: op.Language,
-		DepData:  subSelector(location.Symbol),
-		Limit:    op.Limit,
-	})
-	if err != nil {
-		return nil, err
+	// If the symbol is not referenceable according to language semantics, then
+	// there is no need to consult the database or perform roundtrips for
+	// workspace/xreferences requests.
+	var depRefs []*sourcegraph.DependencyReference
+	if !xlang.IsSymbolReferenceable(op.Language, location.Symbol) {
+		span.SetTag("nonreferencable", true)
+	} else {
+		pkgDescriptor, ok := xlang.SymbolPackageDescriptor(location.Symbol, op.Language)
+		if !ok {
+			return nil, err
+		}
+
+		depRefs, err = localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
+			Language: op.Language,
+			DepData:  pkgDescriptor,
+			Limit:    op.Limit,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	span.SetTag("# depRefs", len(depRefs))

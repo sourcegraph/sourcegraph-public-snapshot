@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CLONE_URL=https://github.com/Microsoft/vscode.git
+CLONE_URL="${2:-'git@github.com:sourcegraph/vscode.git'}"
 CLONE_DIR=/tmp/sourcegraph-vscode
-REV=${1:-d1e2255a2a40bbd30b2c60b599db11061f086367} # pin to commit ID, bump as needed
+REV=${1:-c981b3ac82f20360ae49dcf29d134022132a7d70} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
 VENDOR_DIR="$REPO_DIR"/ui/vendor/node_modules/vscode
 
@@ -36,12 +36,8 @@ echo -n Munging imports...
 grep -rl 'css!' "$VENDOR_DIR" | xargs -n 1 $sedi 's|import '"'"'vs/css!\([^'"'"']*\)'"'"';|import '"'"'\1.css'"'"';|g'
 echo OK
 
-echo -n Applying Sourcegraph-specific patches...
-patch --no-backup-if-mismatch --quiet --directory "$REPO_DIR" -p1 < "$REPO_DIR"/ui/scripts/vscode.patch
-echo OK
-
 echo -n Compiling TypeScript...
-tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
+node_modules/.bin/tsc --skipLibCheck -p "$VENDOR_DIR"/src --module commonjs --declaration
 cleanupSourceFiles
 echo OK
 

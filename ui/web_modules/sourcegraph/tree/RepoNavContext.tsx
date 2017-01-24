@@ -6,7 +6,7 @@ interface Props {
 	style?: React.CSSProperties;
 };
 
-export function RepoNavContext({params, style}: Props): JSX.Element {
+export function RepoNavContext({ params, style }: Props): JSX.Element {
 	const path = Array.isArray(params.splat) ? params.splat[1] : null;
 	const repo = Array.isArray(params.splat) ? params.splat[0] : params.splat;
 	// on the root of the tree, splat is a string

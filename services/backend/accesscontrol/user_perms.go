@@ -39,7 +39,9 @@ var Repos interface {
 // This method always returns nil when the user has read access,
 // and returns a non-nil error when access cannot be granted.
 func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) error {
-	if skip(ctx) {
+	if mock(ctx) {
+		return Mocks.VerifyUserHasReadAccess(ctx, method, repoID)
+	} else if skip(ctx) {
 		return nil
 	}
 
@@ -64,7 +66,9 @@ func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) e
 // There is currently no way to have write access, so this method always returns an error except
 // if the context is skipping permission checks.
 func VerifyUserHasWriteAccess(ctx context.Context, method string, repo int32) error {
-	if skip(ctx) {
+	if mock(ctx) {
+		return Mocks.VerifyUserHasWriteAccess(ctx, method, repo)
+	} else if skip(ctx) {
 		return nil
 	}
 	return ErrRepoNotFound
@@ -82,7 +86,9 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string, repo int32) er
 // specially designed to avoid infinite loops with
 // (*localstore.repos).Get/GetByURI.
 func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoURI string) bool {
-	if skip(ctx) {
+	if mock(ctx) {
+		return Mocks.VerifyActorHasRepoURIAccess(ctx, actor, method, repoURI)
+	} else if skip(ctx) {
 		return true
 	}
 
@@ -134,6 +140,12 @@ func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, repo
 // VerifyActorHasGCPRepoAccess checks if the given actor is authorized to access
 // the given GCP mirrored repository.
 func VerifyActorHasGCPRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
+	if mock(ctx) {
+		return Mocks.VerifyActorHasGCPRepoAccess(ctx, actor, repoURI)
+	} else if skip(ctx) {
+		return true
+	}
+
 	if !actor.GoogleConnected {
 		return false
 	}
@@ -184,7 +196,9 @@ func VerifyActorHasGCPRepoAccess(ctx context.Context, actor *auth.Actor, repoURI
 // determining the list of allowed repositories, the second return
 // value will be non-nil error.
 func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sourcegraph.Repo) (allowed []*sourcegraph.Repo, err error) {
-	if skip(ctx) {
+	if mock(ctx) {
+		return Mocks.VerifyUserHasReadAccessAll(ctx, method, repos)
+	} else if skip(ctx) {
 		return repos, nil
 	}
 
@@ -226,6 +240,12 @@ func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sou
 // in order to quickly filter the refs. The returned list is the ones the user
 // has access to.
 func VerifyUserHasReadAccessToDefRepoRefs(ctx context.Context, method string, repoRefs []*sourcegraph.DeprecatedDefRepoRef) ([]*sourcegraph.DeprecatedDefRepoRef, error) {
+	if mock(ctx) {
+		return Mocks.VerifyUserHasReadAccessToDefRepoRefs(ctx, method, repoRefs)
+	} else if skip(ctx) {
+		return repoRefs, nil
+	}
+
 	// Build a list of repos that we must check for access.
 	repos := make([]*sourcegraph.Repo, 0, len(repoRefs))
 	for _, r := range repoRefs {
@@ -278,5 +298,20 @@ func WithInsecureSkip(ctx context.Context, skip bool) context.Context {
 
 func skip(ctx context.Context) bool {
 	v, _ := ctx.Value(insecureSkip).(bool)
+	return v
+}
+
+// Allow mocking of access control checks
+const insecureMock contextKey = 1
+
+// WithInsecureMock replaces all access checks with mocks. It
+// supersedes WithInsecureSkip. It is INSECURE and should only be used
+// during testing.
+func WithInsecureMock(ctx context.Context, mock bool) context.Context {
+	return context.WithValue(ctx, insecureMock, mock)
+}
+
+func mock(ctx context.Context) bool {
+	v, _ := ctx.Value(insecureMock).(bool)
 	return v
 }

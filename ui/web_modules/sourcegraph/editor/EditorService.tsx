@@ -111,8 +111,8 @@ export class EditorService implements IEditorService {
 			return TPromise.as(existingModel);
 		}
 
-		const {repo, rev, path} = URIUtils.repoParams(data.resource);
-		const blameBody = Features.authorsToggle.isEnabled() ? `blame(startLine: 0, endLine: 0) {
+		const { repo, rev, path } = URIUtils.repoParams(data.resource);
+		const blameBody = Features.projectWow.isEnabled() ? `blame(startLine: 0, endLine: 0) {
 												rev
 												startLine
 												endLine
