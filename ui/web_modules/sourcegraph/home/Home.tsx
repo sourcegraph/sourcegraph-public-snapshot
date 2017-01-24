@@ -250,7 +250,7 @@ export class Home extends React.Component<HomeProps, {}> {
 							<div title="Alpha">CSS/Sass/Less<sup>&alpha;</sup></div>
 						</Heading>
 
-						<Heading level={6} style={{ fontWeight: "normal", lineHeight: 2.25, }}>and more coming soon…</Heading>
+						<Heading level={6} style={{ fontWeight: "normal", lineHeight: 2.25, }}>and more coming soon&hellip;</Heading>
 
 					</FlexContainer>
 

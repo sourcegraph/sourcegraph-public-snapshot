@@ -14,7 +14,7 @@ export function AboutPage(): JSX.Element {
 			<PageTitle title="About" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<FlexContainer style={{ margin: "auto", maxWidth: 640 }}>
-					<Heading level={3} color="white">The pace at which humans can write code is the only thing that stands between flying cars, a space station on Mars and a cure for cancer.</Heading>
+					<Heading level={3} color="white">The pace at which humans can write code is the only thing that stands between us and flying cars, a habitat on Mars and a cure for cancer.</Heading>
 				</FlexContainer>
 			</Hero>
 			<FlexContainer direction="top_bottom" style={{
@@ -36,7 +36,7 @@ export function AboutPage(): JSX.Element {
 
 				<FlexContainer>
 					<ValueCol img="img/about/about-hash-people.png">
-						<p><strong>#people</strong> come first.<br />Together we are advancing technological progress. We will attract, hire and retain the best teammates in the world and treat everyone in a first-class manner.</p>
+						<p><strong>#people</strong> come first.<br />Together we are advancing technology. We will attract, hire and retain the best teammates in the world and treat everyone in a first-class manner.</p>
 					</ValueCol>
 					<ValueCol img="img/about/about-hash-journey.png">
 						<p><strong>#journey</strong> is the collection of moments, experiences, and memories that the team shares as we make #progress: the light moments, the laughter, the team coming together to solve a problem, etc.</p>
@@ -71,7 +71,7 @@ export function AboutPage(): JSX.Element {
 								<img src={`${context.assetsRoot}/img/about/about-tw-icon.svg`} />
 							</a>
 						</div>
-						Quinn Slack is CEO and co-founder of Sourcegraph, code intelligence software that lets you ship better software faster. Prior to Sourcegraph, Quinn co-founded Blend Labs, an enterprise technology company with over 100 employees dedicated to improving home lending. At Palantir Technologies he created a technology platform to help two of the top five U.S. banks recover from the housing crisis. He was the first employee and developer at Bleacher Report after graduating from high school. Quinn graduated with a BS in Computer Science from Stanford.
+						Quinn Slack is CEO and co-founder of Sourcegraph. Prior to Sourcegraph, Quinn co-founded Blend Labs, an enterprise technology company with over 100 employees dedicated to improving home lending. At Palantir Technologies he created a technology platform to help two of the top five U.S. banks recover from the housing crisis. He was the first employee and developer at Bleacher Report after graduating from high school. Quinn graduated with a BS in Computer Science from Stanford.
 					</div>
 					<div style={{
 						paddingLeft: whitespace[3],
