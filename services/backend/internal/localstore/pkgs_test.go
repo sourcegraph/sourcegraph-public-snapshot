@@ -100,7 +100,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	p := pkgs{}
 
 	op := &sourcegraph.DefsRefreshIndexOp{RepoURI: "github.com/my/repo", RepoID: 1, CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
-	langs := []*inventory.Lang{{Name: "Go"}, {Name: "TypeScript"}}
+	langs := []*inventory.Lang{{Name: "TypeScript"}}
 	if err := p.UnsafeRefreshIndex(ctx, op, langs); err != nil {
 		t.Fatal(err)
 	}
