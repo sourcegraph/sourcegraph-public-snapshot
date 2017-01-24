@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -73,6 +74,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 	method := "unknown"
 	mode := "unknown"
 	ev := honey.Event("xlang")
+	emptyResponse := true
 	defer func() {
 		duration := time.Now().Sub(start)
 
@@ -102,6 +104,7 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 				status = "usererror"
 			}
 			ev.AddField("success", status)
+			ev.AddField("empty", emptyResponse)
 			ev.AddField("method", method)
 			ev.AddField("mode", mode)
 			ev.AddField("duration_ms", duration.Seconds()*1000)
@@ -260,10 +263,37 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 				resps[i].Error = e
 			} else if err != nil {
 				return err
+			} else if err == nil && i == 1 {
+				// We want to mark whether or not we've gotten a result or not
+				// in the response.
+				var result interface{}
+				if resps[i].Result == nil {
+					emptyResponse = true // nil result
+				} else if err := json.Unmarshal(*resps[i].Result, &result); err != nil {
+					emptyResponse = true // unmarshal error
+				} else {
+					emptyResponse = isEmpty(result) // empty unmarshaled result
+				}
 			}
+
 		}
 	}
 	return writeJSON(w, resps)
+}
+
+// isEmpty tells if v is nil or an empty slice or map. In all other cases, it
+// returns false.
+func isEmpty(v interface{}) bool {
+	vv := reflect.ValueOf(v)
+	if vv.IsNil() {
+		return true
+	}
+	switch vv.Kind() {
+	case reflect.Slice, reflect.Map:
+		return vv.Len() == 0
+	default:
+		return false
+	}
 }
 
 func addRootPathFields(ev *libhoney.Event, u *uri.URI) {
