@@ -28,14 +28,6 @@ type xclient struct {
 	mode                       string
 }
 
-// hasXDefinitionAndXPackages is the hardcoded list of languages that provide
-// textDocument/xdefinition and workspace/xpackages. We cannot rely on the
-// value returned from the LSP proxy, because that does not pass through the
-// value of the initialize result.
-var hasXDefinitionAndXPackages = map[string]struct{}{
-	"typescript": struct{}{},
-}
-
 // Call transparently wraps xlang.Client.Call *except* for `textDocument/definition` if the language
 // server is a textDocument/xdefinition provider. In that case, this method invokes
 // `textDocument/xdefinition` instead. If the result contains a non-zero `Location` field, then that
@@ -67,7 +59,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			// DEPRECATED: Use old Mode field if the new one is not set.
 			c.mode = init.Mode
 		}
-		_, c.hasXDefinitionAndXPackages = hasXDefinitionAndXPackages[c.mode]
+		_, c.hasXDefinitionAndXPackages = xlang.HasXDefinitionAndXPackages[c.mode]
 		return c.Client.Call(ctx, method, params, result, opt...)
 	} else if method != "textDocument/definition" || !c.hasXDefinitionAndXPackages {
 		return c.Client.Call(ctx, method, params, result, opt...)

@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -78,6 +79,11 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op 
 	// server explicitly for background tasks such as workspace/xdependencies.
 	// This makes it such that indexing repositories does not interfere in
 	// terms of resource usage with real user requests.
+	if _, ok := xlang.HasXDefinitionAndXPackages[language]; !ok {
+		// The language does not support xpackages, so there is no indexing to
+		// perform.
+		return nil
+	}
 	rootPath := vcs + "://" + op.RepoURI + "?" + op.CommitID
 	var pks []lspext.PackageInformation
 	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &pks)
