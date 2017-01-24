@@ -6,8 +6,9 @@ import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
 import { Location } from "vs/editor/common/modes";
 
-import { FlexContainer, Heading, Loader } from "sourcegraph/components";
-import { Close } from "sourcegraph/components/symbols/Primaries";
+import { FlexContainer, Heading, Panel } from "sourcegraph/components";
+import { Spinner } from "sourcegraph/components/symbols";
+import { Close, Report } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
@@ -190,8 +191,16 @@ class InfoPanel extends React.Component<Props, State> {
 						</Heading>
 					</FlexContainer>
 				</div>
-				{refModel === undefined && <div style={{ textAlign: "center" }}><Loader /></div>}
-				{refModel === null && <div style={{ textAlign: "center" }}>No references</div>}
+				{refModel === undefined && <div style={{ padding: whitespace[2], textAlign: "center" }}><Spinner /></div>}
+				{refModel === null && <Panel hover={false} hoverLevel="low" style={{
+					padding: whitespace[3],
+					margin: whitespace[3],
+					color: colors.text(),
+					textAlign: "center",
+				}}>
+					<Report width={36} color={colors.blueGrayL1()} /><br />
+					We couldn't find any references<br /> for this symbol
+				</Panel>}
 				{refModel && <RefTree
 					model={refModel}
 					focus={this.focusResource} />}
