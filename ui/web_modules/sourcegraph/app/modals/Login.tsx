@@ -12,7 +12,7 @@ interface Props {
 
 export const Login = (props: Props): JSX.Element => {
 	const sx = {
-		maxWidth: "380px",
+		maxWidth: "420px",
 		marginLeft: "auto",
 		marginRight: "auto",
 	};

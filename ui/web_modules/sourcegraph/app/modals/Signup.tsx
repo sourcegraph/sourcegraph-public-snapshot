@@ -15,12 +15,12 @@ const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go
 
 export const Signup = (props: Props): JSX.Element => {
 	const sx = {
-		maxWidth: "380px",
+		maxWidth: "420px",
 		marginLeft: "auto",
 		marginRight: "auto",
 	};
 
-	let newUserPath = props.location.pathname.indexOf("/-/blob/") !== -1 ? props.location.pathname : defaultOnboardingPath;
+	let newUserPath = props.location.pathname.includes("/-/blob/") ? props.location.pathname : defaultOnboardingPath;
 	return (
 		<LocationStateModal modalName="join" location={props.location} router={props.router}>
 			<div className={styles.modal} style={sx}>
