@@ -12,7 +12,7 @@ import { Disposables } from "sourcegraph/workbench/utils";
 import { Location } from "vs/editor/common/modes";
 
 import * as autobind from "autobind-decorator";
-import { $, Builder } from "vs/base/browser/builder";
+import { $ } from "vs/base/browser/builder";
 import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 import { Controller } from "vs/editor/contrib/referenceSearch/browser/referencesWidget";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
@@ -199,7 +199,7 @@ class Renderer extends LegacyRenderer {
 		dom.clearNode(container);
 
 		if (element instanceof FileReferences) {
-			const repositoryHeader: Builder = $(".refs-repository-title");
+			const repositoryHeader = $(".refs-repository-title");
 			// tslint:disable
 			let workspaceURI = URI.from({
 				scheme: element.uri.scheme,
@@ -209,11 +209,11 @@ class Renderer extends LegacyRenderer {
 				fragment: element.uri.path,
 			});
 
-			new LeftRightWidget(repositoryHeader, (left: HTMLElement) => {
+			new LeftRightWidget(repositoryHeader, left => {
 				const repoTitleContent = new FileLabel(left, workspaceURI, this._contextService);
 				repoTitleContent.setIcon(<List width={18} style={{ marginLeft: -2, color: colors.blueGrayL1() }} />);
 				return null as any;
-			}, (right: HTMLElement) => {
+			}, right => {
 
 				const workspace = workspaceURI.path === this._editorURI.path ? "Local" : "External";
 				const badge = new WorkspaceBadge(right, workspace);
