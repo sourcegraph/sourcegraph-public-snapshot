@@ -1,7 +1,6 @@
 import * as autobind from "autobind-decorator";
 import { css } from "glamor";
 import * as React from "react";
-import { Link } from "react-router";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { IEditorOptions } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
@@ -14,7 +13,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
 import { Services } from "sourcegraph/workbench/services";
-import { Disposables, RouterContext } from "sourcegraph/workbench/utils";
+import { Disposables } from "sourcegraph/workbench/utils";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 
@@ -80,16 +79,14 @@ function Title({ location, onClickClose }: { location: Location; onClickClose: (
 		paddingLeft: whitespace[3],
 		paddingRight: whitespace[3],
 	}}>
-		<RouterContext>
-			<a target="_blank" href={url}
-				{...css(
-					{ color: colors.white(0.9), fontWeight: "bold" },
-					{ ":hover": { color: "white" } },
-				) } >
-				{repo}/{path}
-				<PopOut width={18} style={{ marginLeft: whitespace[1] }} />
-			</a>
-		</RouterContext>
+		<a target="_blank" href={url}
+			{...css(
+				{ color: colors.white(0.9), fontWeight: "bold" },
+				{ ":hover": { color: "white" } },
+			) } >
+			{repo}/{path}
+			<PopOut width={18} style={{ marginLeft: whitespace[1] }} />
+		</a>
 		<span onClick={onClickClose}
 			{...css(
 				{ color: colors.blueD2(0.7), cursor: "pointer", marginTop: 2, marginRight: -4 },
