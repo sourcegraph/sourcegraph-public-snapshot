@@ -57,7 +57,7 @@ export function ReferenceCard({ fnSignature, authorName, avatar, date, fileName,
 			fontSize: 14,
 			display: "block",
 			width: "100%",
-			textOverflow: "ellipses",
+			textOverflow: "ellipsis",
 			overflow: "hidden",
 			wordWrap: "nowrap",
 		}, rowSx)}>{fnSignature}</code>
