@@ -1186,7 +1186,7 @@ func TestRepository_Archive(t *testing.T) {
 		for _, f := range zr.File {
 			r, err := f.Open()
 			if err != nil {
-				t.Error(err)
+				t.Errorf("%s: failed to open %q because %s", label, f.Name, err)
 				continue
 			}
 			contents, err := ioutil.ReadAll(r)
