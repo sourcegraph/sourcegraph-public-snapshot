@@ -158,6 +158,7 @@ export class RefTree extends React.Component<Props, State> {
 			flex: "1 1 100%",
 			display: "flex",
 			flexDirection: "column",
+			outline: "none",
 		}}>
 		</div>;
 	}
@@ -295,6 +296,7 @@ class Renderer extends LegacyRenderer {
 				refContainer.getHTMLElement(),
 			);
 		}
+
 
 		return null;
 	}

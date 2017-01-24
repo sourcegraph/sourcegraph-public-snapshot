@@ -103,7 +103,6 @@ export class DefinitionAction extends EditorAction {
 		if (!refModel) {
 			return;
 		}
-
 		this.dispatchInfo(id, defData, refModel);
 
 		refModel = await provideReferencesCommitInfo(new ReferencesModel(referenceInfo, props.editorModel.uri));
@@ -114,12 +113,13 @@ export class DefinitionAction extends EditorAction {
 
 		const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
 		if (!depRefs || this._configuration.sideBarID !== id) {
+			this.dispatchInfo(id, defData, refModel, true);
 			return;
 		}
 
 		let concatArray = referenceInfo;
-		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refs => {
-			concatArray = concatArray.concat(refs);
+		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refData => {
+			concatArray = concatArray.concat(refData.refs);
 
 			refModel = new ReferencesModel(concatArray, props.editorModel.uri);
 
@@ -128,6 +128,8 @@ export class DefinitionAction extends EditorAction {
 			}
 
 			this.dispatchInfo(id, defData, refModel);
+		}, () => null, () => {
+			this.dispatchInfo(id, defData, refModel, true);
 		});
 	}
 
@@ -135,12 +137,12 @@ export class DefinitionAction extends EditorAction {
 		if (!prepare && this.globalFetchSubscription) {
 			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
-		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, id });
+		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, loadingComplete: true, id });
 	}
 
-	private dispatchInfo(id: string, defData: DefinitionData, refModel?: ReferencesModel | null): void {
+	private dispatchInfo(id: string, defData: DefinitionData, refModel?: ReferencesModel | null, loadingComplete?: boolean): void {
 		if (id === this._configuration.sideBarID) {
-			infoStore.dispatch({ defData, refModel, id });
+			infoStore.dispatch({ defData, refModel, loadingComplete, id });
 		} else if (this.globalFetchSubscription) {
 			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
@@ -226,7 +228,7 @@ export class GoToDefinitionAction extends DefinitionAction {
 }
 
 function closeActiveReferenceSearch(): void {
-	infoStore.dispatch({ defData: null, prepareData: { open: false }, id: "" });
+	infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: "" });
 }
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({

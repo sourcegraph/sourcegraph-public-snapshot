@@ -16,12 +16,8 @@ import { OneReference, ReferencesModel } from "sourcegraph/workbench/info/refere
 import * as _ from "lodash";
 
 export interface RefData {
-	language: string;
-	repo: string;
-	version: string;
-	file: string;
-	line: number;
-	column: number;
+	refs: Location[];
+	loadingComplete: boolean;
 }
 
 export interface DefinitionData {
@@ -198,9 +194,9 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 }
 
 const MAX_GLOBAL_REFS_REPOS = 5;
-const globalRefsObservables = new Map<string, Observable<Location[]>>();
+const globalRefsObservables = new Map<string, Observable<RefData>>();
 
-export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<Location[]> {
+export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<RefData> {
 	const dependents = depRefs.Data.References;
 	const repoData = depRefs.RepoData;
 	const symbol = depRefs.Data.Location.symbol;
@@ -212,7 +208,7 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 		return cacheHit;
 	}
 
-	const observable = new Observable<Location[]>(observer => {
+	const observable = new Observable<RefData>(observer => {
 		let interval: number | null = null;
 		let unsubscribed = false;
 		let completed = false;
@@ -240,9 +236,10 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(refs => {
 						incrementCountIfNonempty(refs);
 						if (!completed && refs.length > 0) {
-							observer.next(refs);
+							observer.next({ refs, loadingComplete: completed });
 						}
 						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
+							observer.next({ refs, loadingComplete: true });
 							complete();
 						}
 					});

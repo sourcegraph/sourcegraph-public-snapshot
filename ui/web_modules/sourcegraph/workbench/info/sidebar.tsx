@@ -51,6 +51,13 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 				this.forceUpdate();
 				return;
 			}
+			if (info && info.loadingComplete !== undefined && this.infoPanelRef instanceof InfoPanel) {
+				this.infoPanelRef.setState({
+					loadingComplete: info.loadingComplete,
+				});
+
+				return;
+			}
 			if (info && info.refModel !== undefined && this.infoPanelRef && this.infoPanelRef instanceof InfoPanel) {
 				this.info = info;
 				const currentSelected = this.infoPanelRef.state.previewLocation;
@@ -103,8 +110,9 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 }
 
 interface State {
-	previewLocation: Location | null;
+	previewLocation?: Location | null;
 	refModel?: ReferencesModel | null;
+	loadingComplete?: boolean;
 }
 
 export interface Props {
@@ -112,6 +120,7 @@ export interface Props {
 	defData: DefinitionData | null;
 	refModel?: ReferencesModel | null;
 	prepareData?: { open: boolean };
+	loadingComplete?: boolean;
 };
 
 @autobind
@@ -149,7 +158,7 @@ class InfoPanel extends React.Component<Props, State> {
 				fontWeight: "normal",
 				wordBreak: "break-word",
 			}}>{truncate(funcName, { length: 120 })}</Heading>
-			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, id: "" })}
+			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: "" })}
 				{...css(
 					{
 						alignSelf: "flex-start",
@@ -166,9 +175,9 @@ class InfoPanel extends React.Component<Props, State> {
 
 	render(): JSX.Element {
 		const { defData } = this.props;
-		const { refModel } = this.state;
+		const { refModel, loadingComplete } = this.state;
 		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
-
+		// position child elements relative to editor container
 		return <div style={{ height: "100%" }}>
 			<FlexContainer direction="top_bottom" style={{
 				position: "absolute",
@@ -189,7 +198,6 @@ class InfoPanel extends React.Component<Props, State> {
 						</Heading>
 					</FlexContainer>
 				</div>
-				{refModel === undefined && <div style={{ padding: whitespace[2], textAlign: "center" }}><Spinner /></div>}
 				{refModel === null && <Panel hover={false} hoverLevel="low" style={{
 					padding: whitespace[3],
 					margin: whitespace[3],
@@ -202,9 +210,11 @@ class InfoPanel extends React.Component<Props, State> {
 				{refModel && <RefTree
 					model={refModel}
 					focus={this.focusResource} />}
+				<hr style={dividerSx} />
+				{refModel !== null && !loadingComplete && <div style={{ textAlign: "center", padding: `${whitespace[2]} 0` }}><Spinner /></div>}
 			</FlexContainer>
 			<Preview
-				location={this.state.previewLocation}
+				location={this.state.previewLocation || null}
 				hidePreview={this.refsFocused} />
 		</div>;
 	}
