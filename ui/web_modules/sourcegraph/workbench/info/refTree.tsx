@@ -29,7 +29,6 @@ import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
 import { WorkspaceBadge } from "sourcegraph/workbench/ui/badges/workspaceBadge";
 import { FileLabel } from "sourcegraph/workbench/ui/fileLabel";
 import { LeftRightWidget } from "sourcegraph/workbench/ui/leftRightWidget";
-import { scrollToLine } from "sourcegraph/workbench/utils";
 
 interface Props {
 	model?: ReferencesModel;
@@ -68,12 +67,6 @@ export class RefTree extends React.Component<Props, State> {
 		}
 	}
 
-	private scrollEditorForRef(): void {
-		const editor = getEditorInstance();
-		const line = editor.getSelection().startLineNumber - 5;
-		scrollToLine(editor, line);
-	}
-
 	private treeItemFocused(reference: FileReferences | OneReference): void {
 		if (!(reference instanceof OneReference)) {
 			return;
@@ -81,7 +74,6 @@ export class RefTree extends React.Component<Props, State> {
 
 		const modelService = Services.get(ITextModelResolverService);
 		modelService.createModelReference(reference.uri).then((ref) => {
-			this.scrollEditorForRef();
 			this.props.focus(reference);
 		});
 	}
