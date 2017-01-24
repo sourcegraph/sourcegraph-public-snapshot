@@ -11,7 +11,6 @@ import { AuthorshipCodeLens } from "sourcegraph/editor/authorshipCodeLens";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes as supportedModes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { Features } from "sourcegraph/util/features";
 
 supportedModes.forEach(mode => {
 	onLanguage(mode, () => {
@@ -111,11 +110,7 @@ export class HoverProvider implements modes.HoverProvider {
 					}
 				}
 
-				if (Features.projectWow.isEnabled()) {
-					contents.push("**Click to view references**");
-				} else {
-					contents.push("*Right-click to view references*");
-				}
+				contents.push("**Click to view references**");
 				return {
 					contents: contents,
 					range,

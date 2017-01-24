@@ -5,7 +5,6 @@ import { TitleControl } from "vs/workbench/browser/parts/editor/titleControl";
 import { layout } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { EditorTitle } from "sourcegraph/editor/EditorTitle";
-import { Features } from "sourcegraph/util/features";
 import { getResource } from "sourcegraph/workbench/utils";
 
 export class NoTabsTitleControl extends TitleControl {
@@ -29,7 +28,7 @@ export class NoTabsTitleControl extends TitleControl {
 		const pathspec = URIUtils.repoParams(resource);
 		const component = <EditorTitle pathspec={pathspec} />;
 		ReactDOM.render(component, this.domElement);
-		this.domElement.style.height = Features.projectWow.isEnabled() ? `${layout.editorHeaderHeight}px` : `${layout.editorToolbarHeight}px`;
+		this.domElement.style.height = `${layout.editorHeaderHeight}px`;
 	}
 
 	dispose(): void {

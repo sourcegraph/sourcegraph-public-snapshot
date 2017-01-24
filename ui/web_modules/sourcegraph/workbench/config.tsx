@@ -16,7 +16,6 @@ import { StorageService } from "vs/workbench/services/storage/common/storageServ
 
 import { layout } from "sourcegraph/components/utils";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
-import { Features } from "sourcegraph/util/features";
 
 // Set the height of files in the file tree explorer.
 (FileRenderer as any).ITEM_HEIGHT = 30;
@@ -49,7 +48,5 @@ export function configurePostStartup(services: ServiceCollection): void {
 		services.get(IModeService) as IModeService,
 	));
 
-	if (Features.projectWow.isEnabled()) {
-		(ContextMenuController.prototype as any)._onContextMenu = () => { /* */ };
-	}
+	(ContextMenuController.prototype as any)._onContextMenu = () => { /* */ };
 }

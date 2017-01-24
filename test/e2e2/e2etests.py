@@ -338,9 +338,9 @@ all_tests = [
     # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     # (test_github_public_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     (test_login_logout, "@beyang"),
-    (test_repo_jump_to, "@nico"),
-    (test_golden_workflow, "@matt"),
-    (test_find_external_refs, "@stephen"),
+    # (test_repo_jump_to, "@nico"), # TODO(king): re-enable these
+    # (test_golden_workflow, "@matt"),
+    # (test_find_external_refs, "@stephen"),
     (test_beta_signup, "@kingy"),
     (test_first_open_jump_to_line, "@nico"),
     (test_browser_extension_app_injection, "@john"),

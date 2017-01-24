@@ -1,5 +1,4 @@
 import { URIUtils } from "sourcegraph/core/uri";
-import { Features } from "sourcegraph/util/features";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
@@ -112,22 +111,22 @@ export class EditorService implements IEditorService {
 		}
 
 		const { repo, rev, path } = URIUtils.repoParams(data.resource);
-		const blameBody = Features.projectWow.isEnabled() ? `blame(startLine: 0, endLine: 0) {
-												rev
-												startLine
-												endLine
-												startByte
-												endByte
-												message
-												author {
-													person {
-														name
-														email
-														gravatarHash
-													}
-													date
-												}
-											}` : "";
+		const blameBody = `blame(startLine: 0, endLine: 0) {
+								rev
+								startLine
+								endLine
+								startByte
+								endByte
+								message
+								author {
+									person {
+										name
+										email
+										gravatarHash
+									}
+									date
+								}
+							}`;
 		return TPromise.wrap(
 			fetch(`/.api/graphql`, {
 				method: "POST",

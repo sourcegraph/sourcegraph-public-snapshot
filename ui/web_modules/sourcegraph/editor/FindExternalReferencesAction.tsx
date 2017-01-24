@@ -8,7 +8,6 @@ import { URIUtils } from "sourcegraph/core/uri";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { makeRepoRev } from "sourcegraph/repo";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { Features } from "sourcegraph/util/features";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
@@ -17,18 +16,16 @@ const fetch = singleflightFetch(defaultFetch);
 @editorAction
 export class FindExternalReferencesAction extends EditorAction {
 	constructor() {
-		if (!Features.projectWow.isEnabled()) {
-			super({
-				id: "editor.action.findExternalReferences",
-				label: "Find External References",
-				alias: "Find External References",
-				precondition: ContextKeyExpr.and(ModeContextKeys.hasReferenceProvider),
-				menuOpts: {
-					group: "navigation",
-					order: 1.4,
-				},
-			});
-		}
+		super({
+			id: "editor.action.findExternalReferences",
+			label: "Find External References",
+			alias: "Find External References",
+			precondition: ContextKeyExpr.and(ModeContextKeys.hasReferenceProvider),
+			menuOpts: {
+				group: "navigation",
+				order: 1.4,
+			},
+		});
 	}
 
 	public run(accessor: ServicesAccessor, editor: ICommonCodeEditor): void {

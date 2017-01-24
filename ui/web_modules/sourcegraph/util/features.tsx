@@ -45,7 +45,6 @@ export const Features = {
 	langPython: new Feature("lang-python"),
 	langJava: new Feature("lang-java"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
-	projectWow: new Feature("project_wow"),
 
 	// commitInfoBar shows the horizontal bar above the editor with
 	// the file's commit log.
