@@ -27,7 +27,7 @@ getLanguages().forEach(({ id }) => {
 	});
 });
 
-function normalisePosition(model: IReadOnlyModel, position: IPosition): IPosition {
+export function normalisePosition(model: IReadOnlyModel, position: IPosition): IPosition {
 	const word = model.getWordAtPosition(position);
 	if (!word) {
 		return position;
