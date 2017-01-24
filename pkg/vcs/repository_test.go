@@ -937,13 +937,11 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// file1 should also exist in the 2nd commit.
-		file1Info, err = fs2.Stat(ctx, "dir1/file1")
-		if err != nil {
+		if _, err := fs2.Stat(ctx, "dir1/file1"); err != nil {
 			t.Errorf("%s: fs2.Stat(dir1/file1): %s", label, err)
 			continue
 		}
-		_, err = fs2.Open(ctx, "dir1/file1")
-		if err != nil {
+		if _, err := fs2.Open(ctx, "dir1/file1"); err != nil {
 			t.Errorf("%s: fs2.Open(dir1/file1): %s", label, err)
 			continue
 		}
@@ -1187,6 +1185,10 @@ func TestRepository_Archive(t *testing.T) {
 		got := map[string]string{}
 		for _, f := range zr.File {
 			r, err := f.Open()
+			if err != nil {
+				t.Error(err)
+				continue
+			}
 			contents, err := ioutil.ReadAll(r)
 			r.Close()
 			if err != nil {
