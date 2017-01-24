@@ -104,7 +104,7 @@ export async function provideReferences(model: IReadOnlyModel, pos: Position): P
 	const resp = await lsp.send(model, "textDocument/references", {
 		textDocument: { uri: model.uri.toString(true) },
 		position: pos,
-		context: { includeDeclaration: false },
+		context: { includeDeclaration: false, xlimit: 100 },
 	});
 	const result = resp.result;
 
