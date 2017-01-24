@@ -1,4 +1,5 @@
 import { css, insertGlobal } from "glamor";
+import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI from "vs/base/common/uri";
@@ -51,7 +52,6 @@ export class RefTree extends React.Component<Props, State> {
 	private tree: Tree;
 	private toDispose: Disposables = new Disposables();
 	private treeID: string = "reference-tree";
-	private resizeTimeout: number;
 
 	state: State = {
 		previewResource: null,
@@ -59,6 +59,7 @@ export class RefTree extends React.Component<Props, State> {
 
 	componentDidMount(): void {
 		this.resetMonacoStyles();
+		this.onResize = debounce(this.onResize, 200);
 		window.addEventListener("resize", this.onResize, false);
 	}
 
@@ -72,8 +73,7 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	onResize(): void {
-		clearTimeout(this.resizeTimeout);
-		this.resizeTimeout = setTimeout(() => this.updateTree(this.props.model), 200);
+		this.tree.layout();
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
