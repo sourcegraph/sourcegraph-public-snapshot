@@ -153,7 +153,7 @@ class InfoPanel extends React.Component<Props, State> {
 				{...css(
 					{
 						alignSelf: "flex-start",
-						color: colors.blueGrayD1(),
+						color: colors.black(0.8),
 						cursor: "pointer",
 						padding: whitespace[3]
 					},

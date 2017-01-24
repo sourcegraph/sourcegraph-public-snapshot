@@ -6,7 +6,7 @@ import URI from "vs/base/common/uri";
 
 import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { Button, FlexContainer } from "sourcegraph/components";
-import { ArrowRight } from "sourcegraph/components/symbols/Primaries";
+import { ArrowRight, List } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
@@ -57,21 +57,29 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;">   More...</a>`;
 			}
 		}
-		return <div style={{ padding: whitespace[3], paddingTop: 0 }}>
+		return <div style={Object.assign({
+			color: colors.text(),
+			padding: whitespace[3],
+			paddingTop: 0,
+		}, typography.small)}>
 			<div onClick={this.onToggleExpand} style={Object.assign({}, {
 				maxHeight: "40vh",
 				overflowY: "scroll",
 				color: colors.blueGrayD1(),
 			}, typography[2])} dangerouslySetInnerHTML={{ __html: renderedDocString }}>
 			</div>
-			<div style={{ color: colors.blueGray(), paddingTop: whitespace[1], paddingBottom: whitespace[2] }}>
-				Defined in {repo.replace(/^github.com\//, "")}
-			</div>
+			<p style={{ color: colors.blueGray(), paddingTop: 0 }}>
+				Defined in
+				<Link to={`/${repo}`} style={{ paddingTop: whitespace[2], paddingBottom: whitespace[2] }}>
+					<List width={20} style={{ marginLeft: 4 }} />
+					{repo.replace(/^github.com\//, "")}
+				</Link>
+			</p>
 			<FlexContainer content="stretch" justify="between" items="center">
 				<RouterContext>
 					<Link style={{ flex: "1 0" }} to={url}>
 						<Button color="blueGray" outline={true} style={{ width: "100%" }}>
-							Jump to definition <ArrowRight width={18} />
+							Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
 						</Button>
 					</Link>
 				</RouterContext>
