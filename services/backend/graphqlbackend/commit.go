@@ -31,20 +31,15 @@ func (r *commitStateResolver) CloneInProgress() bool {
 }
 
 type commitResolver struct {
-	nodeBase
 	commit commitSpec
 }
 
-func commitByID(ctx context.Context, id graphql.ID) (nodeResolver, error) {
+func commitByID(ctx context.Context, id graphql.ID) (*commitResolver, error) {
 	var commit commitSpec
 	if err := relay.UnmarshalSpec(id, &commit); err != nil {
 		return nil, err
 	}
 	return &commitResolver{commit: commit}, nil
-}
-
-func (r *commitResolver) ToCommit() (*commitResolver, bool) {
-	return r, true
 }
 
 func (r *commitResolver) ID() graphql.ID {
