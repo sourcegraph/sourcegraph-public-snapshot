@@ -135,15 +135,6 @@
 	color: white;
 }
 
-/* TODO: (@chexee): move to viewlet file */
-
-:global .explorer-viewlet .monaco-tree .focused,
-:global .explorer-viewlet .monaco-tree .selected {
-	background-color: c_blue_text !important;
-	color: white;
-	font-weight: bold;
-}
-
 /*
 	Style scrollbar
 */

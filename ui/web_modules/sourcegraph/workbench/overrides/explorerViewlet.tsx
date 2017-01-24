@@ -20,6 +20,8 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { RouterContext } from "sourcegraph/workbench/utils";
 
+import "sourcegraph/workbench/styles/tree.css";
+
 export class ExplorerViewlet extends VSExplorerViewlet {
 
 	constructor(
@@ -67,13 +69,23 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 	}
 }
 
+insertGlobal(".composite.title", {
+	opacity: "1 !important",
+	overflow: "visible !important",
+});
+
+insertGlobal(".explorer-viewlet .monaco-tree-row:hover", {
+	backgroundColor: `${colors.blueGrayD2(0.5)} !important`,
+	color: "white !important",
+});
+
+insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .monaco-tree .selected", {
+	backgroundColor: `${colors.blue()} !important`,
+	color: "white !important",
+	fontWeight: "bold",
+});
+
 function Title({ repo }: { repo: string }): JSX.Element {
-
-	insertGlobal(".composite.title", {
-		opacity: "1 !important",
-		overflow: "visible !important",
-	});
-
 	return <FlexContainer items="center" style={{
 		backgroundColor: colors.blueGrayD1(),
 		boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
