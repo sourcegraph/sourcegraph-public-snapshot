@@ -61,7 +61,6 @@ export function send(model: IReadOnlyModel, method: string, params: any): Promis
 
 const LSPCache = new Map<string, Promise<Response>>();
 
-// WARNING: Caches responses that are errors.
 async function cachingFetch(url: string | Request, init?: RequestInit): Promise<Response> {
 	const key = hash([url, init]);
 
@@ -72,6 +71,9 @@ async function cachingFetch(url: string | Request, init?: RequestInit): Promise<
 
 	LSPCache.set(key, promise);
 	const response = await promise;
+	if (response.status < 200 || response.status >= 300) {
+		LSPCache.delete(key);
+	}
 	return response.clone();
 }
 
