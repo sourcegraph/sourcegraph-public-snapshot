@@ -167,10 +167,11 @@ export function Button(props: {
 		disabled={disabled}
 		style={style}
 		onClick={onClick}>
-		<div>
+		<div style={{ display: "flex" }}>
 			{loading && <Loader {...props} />}
-			{!loading && <div {...childSx} >{children}</div>}
+			{!loading && <div style={{ flex: "1" }} {...childSx} >{children}</div>}
 			{tintLabel && <div {...childSx} style={{
+				flex: "0",
 				whiteSpace: "nowrap",
 				backgroundColor: tintColor,
 			}}>{tintLabel}</div>}
