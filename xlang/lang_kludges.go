@@ -1,6 +1,10 @@
 package xlang
 
-import "github.com/sourcegraph/go-langserver/pkg/lspext"
+import (
+	"go/ast"
+
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
+)
 
 // SymbolPackageDescriptor extracts the package descriptor from the
 // symbol descriptor for supported languages. Returns true for the
@@ -26,6 +30,27 @@ func SymbolRepoURL(symDescriptor lspext.SymbolDescriptor) string {
 		}
 	}
 	return ""
+}
+
+// IsSymbolReferenceable tells if the SymbolDescriptor is referenceable
+// according to the language semantics defined by the mode.
+func IsSymbolReferenceable(mode string, symbolDescriptor lspext.SymbolDescriptor) bool {
+	switch mode {
+	case "go":
+		if name, ok := symbolDescriptor["name"]; ok {
+			if !ast.IsExported(name.(string)) {
+				return false
+			}
+		}
+		if recv, ok := symbolDescriptor["recv"]; ok {
+			if !ast.IsExported(recv.(string)) {
+				return false
+			}
+		}
+		return true
+	default:
+		return true
+	}
 }
 
 // subSelectors is a map of language-specific data selectors. The

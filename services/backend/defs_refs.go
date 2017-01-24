@@ -191,18 +191,26 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// once we have a language server that uses it.
 	location := locations[0]
 
-	pkgDescriptor, ok := xlang.SymbolPackageDescriptor(location.Symbol, op.Language)
-	if !ok {
-		return nil, err
-	}
+	// If the symbol is not referenceable according to language semantics, then
+	// there is no need to consult the database or perform roundtrips for
+	// workspace/xreferences requests.
+	var depRefs []*sourcegraph.DependencyReference
+	if !xlang.IsSymbolReferenceable(op.Language, location.Symbol) {
+		span.SetTag("nonreferencable", true)
+	} else {
+		pkgDescriptor, ok := xlang.SymbolPackageDescriptor(location.Symbol, op.Language)
+		if !ok {
+			return nil, err
+		}
 
-	depRefs, err := localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
-		Language: op.Language,
-		DepData:  pkgDescriptor,
-		Limit:    op.Limit,
-	})
-	if err != nil {
-		return nil, err
+		depRefs, err = localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
+			Language: op.Language,
+			DepData:  pkgDescriptor,
+			Limit:    op.Limit,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	span.SetTag("# depRefs", len(depRefs))
