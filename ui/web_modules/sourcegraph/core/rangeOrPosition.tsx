@@ -111,6 +111,11 @@ export class RangeOrPosition {
 		return this.toMonacoRangeAllowEmpty();
 	}
 
+	toZeroIndexedRange(): IRange {
+		const range = this.toMonacoRangeAllowEmpty();
+		return { startLineNumber: range.startLineNumber - 1, startColumn: range.startColumn - 1, endLineNumber: range.endLineNumber - 1, endColumn: range.endColumn - 1 };
+	}
+
 	toMonacoRangeAllowEmpty(): IRange {
 		const startColumn = typeof this.startCol === "number" ? this.startCol + 1 : 1;
 		let endColumn: number | undefined;

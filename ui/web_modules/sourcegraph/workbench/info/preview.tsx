@@ -5,10 +5,11 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IEditorOptions } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
-import { urlToBlobLine } from "sourcegraph/blob/routes";
+import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { FlexContainer } from "sourcegraph/components";
 import { Close, PopOut } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
@@ -71,7 +72,7 @@ const prefix = "github.com/";
 
 function Title({ location, onClickClose }: { location: Location; onClickClose: () => void }): JSX.Element {
 	let { repo, path, rev } = URIUtils.repoParams(location.uri);
-	const url = urlToBlobLine(repo, rev, path, location.range.startLineNumber);
+	const url = urlToBlobRange(repo, rev, path, RangeOrPosition.fromMonacoRange(location.range).toZeroIndexedRange());
 	repo = repo.startsWith(prefix) ? repo.substr(prefix.length) : repo;
 	return <FlexContainer justify="between" items="center" style={{
 		backgroundColor: colors.blue(),
