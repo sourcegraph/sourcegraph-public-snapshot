@@ -1,4 +1,5 @@
 import { css, insertGlobal } from "glamor";
+import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI from "vs/base/common/uri";
@@ -73,6 +74,8 @@ export class RefTree extends React.Component<Props, State> {
 
 	componentDidMount(): void {
 		this.resetMonacoStyles();
+		this.onResize = debounce(this.onResize, 200);
+		window.addEventListener("resize", this.onResize, false);
 	}
 
 	componentDidUpdate(): void {
@@ -81,6 +84,11 @@ export class RefTree extends React.Component<Props, State> {
 
 	componentWillUnmount(): void {
 		this.toDispose.dispose();
+		window.removeEventListener("resize", this.onResize);
+	}
+
+	onResize(): void {
+		this.tree.layout();
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
@@ -172,6 +180,7 @@ export class RefTree extends React.Component<Props, State> {
 			overflow: "visible",
 		});
 		insertGlobal(`#${this.treeID} .monaco-tree:focus`, { outline: "none" });
+		insertGlobal(`#${this.treeID} .monaco-scrollable-element`, { position: "absolute !important", top: 0, left: 0, bottom: 0, right: 0 });
 		insertGlobal(`#${this.treeID} .monaco-tree-row .content:before`, { display: "none" });
 		insertGlobal(`#${this.treeID} .monaco-tree-row.selected`, { backgroundColor: "initial" });
 		insertGlobal(`#${this.treeID} .monaco-tree-row:hover`, { backgroundColor: "initial" });
