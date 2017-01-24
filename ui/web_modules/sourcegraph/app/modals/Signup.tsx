@@ -3,15 +3,13 @@ import * as React from "react";
 import { Router, RouterLocation } from "sourcegraph/app/router";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import { SignupForm } from "sourcegraph/user/Signup";
+import { SignupForm, defaultOnboardingPath } from "sourcegraph/user/Signup";
 
 interface Props {
 	location: RouterLocation;
 	router: Router;
 	shouldHide: boolean;
 }
-
-const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go#L153";
 
 export const Signup = (props: Props): JSX.Element => {
 	const sx = {
@@ -20,7 +18,7 @@ export const Signup = (props: Props): JSX.Element => {
 		marginRight: "auto",
 	};
 
-	let newUserPath = props.location.pathname.indexOf("/-/blob/") !== -1 ? props.location.pathname : defaultOnboardingPath;
+	let newUserPath = props.location.pathname.indexOf("/-/blob/") !== -1 ? { pathname: props.location.pathname, hash: props.location.hash } : defaultOnboardingPath;
 	return (
 		<LocationStateModal modalName="join" location={props.location} router={props.router}>
 			<div className={styles.modal} style={sx}>

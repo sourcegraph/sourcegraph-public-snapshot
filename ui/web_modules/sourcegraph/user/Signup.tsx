@@ -11,7 +11,12 @@ import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-function addQueryObjToURL(base: RouterLocation, urlOrPathname: string | RouterLocation, queryObj: History.Query): RouterLocation {
+export interface PartialRouterLocation {
+	pathname: string;
+	hash: string;
+}
+
+function addQueryObjToURL(base: RouterLocation, urlOrPathname: string | PartialRouterLocation, queryObj: History.Query): RouterLocation {
 	if (typeof urlOrPathname === "string") {
 		urlOrPathname = { pathname: urlOrPathname } as RouterLocation;
 	}
@@ -24,7 +29,7 @@ interface Props {
 	// returnTo is where the user should be redirected after an OAuth login flow,
 	// either a URL path or a Location object.
 	returnTo: string | RouterLocation;
-	newUserReturnTo: string | RouterLocation;
+	newUserReturnTo: PartialRouterLocation;
 	queryObj: History.Query;
 }
 
@@ -51,8 +56,12 @@ export class SignupForm extends Component<Props, State> {
 	}
 }
 
+export const defaultOnboardingPath: PartialRouterLocation = {
+	pathname: "/github.com/sourcegraph/checkup/-/blob/checkup.go",
+	hash: "#L153",
+};
+
 function SignupComp(props: { location: any }): JSX.Element {
-	const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go#L153";
 	return (
 		<div className={styles.full_page}>
 			<PageTitle title="Sign Up" />
