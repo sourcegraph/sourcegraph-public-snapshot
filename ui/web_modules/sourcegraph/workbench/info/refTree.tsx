@@ -73,7 +73,7 @@ export class RefTree extends React.Component<Props, State> {
 
 	onResize(): void {
 		clearTimeout(this.resizeTimeout);
-		this.resizeTimeout = setTimeout(() => this.updateTree(this.props.model), 500);
+		this.resizeTimeout = setTimeout(() => this.updateTree(this.props.model), 200);
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
@@ -155,7 +155,7 @@ export class RefTree extends React.Component<Props, State> {
 			overflow: "visible",
 		});
 		insertGlobal(`#${this.treeID} .monaco-tree:focus`, { outline: "none" });
-		insertGlobal(`#${this.treeID} .monaco-scrollable-element`, { position: "absolute !important", top: 0, left: 0, bottom: 0, right: 0});
+		insertGlobal(`#${this.treeID} .monaco-scrollable-element`, { position: "absolute !important", top: 0, left: 0, bottom: 0, right: 0 });
 		insertGlobal(`#${this.treeID} .monaco-tree-row .content:before`, { display: "none" });
 		insertGlobal(`#${this.treeID} .monaco-tree-row.selected`, { backgroundColor: "initial" });
 		insertGlobal(`#${this.treeID} .monaco-tree-row:hover`, { backgroundColor: "initial" });
