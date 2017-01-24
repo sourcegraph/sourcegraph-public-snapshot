@@ -177,6 +177,7 @@ class InfoPanel extends React.Component<Props, State> {
 		const { defData } = this.props;
 		const { refModel, loadingComplete } = this.state;
 		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
+		const refsLoading = refModel !== null && !loadingComplete;
 		// position child elements relative to editor container
 		return <div style={{ height: "100%" }}>
 			<FlexContainer direction="top_bottom" style={{
@@ -194,7 +195,7 @@ class InfoPanel extends React.Component<Props, State> {
 				<div id={REFERENCES_SECTION_ID}>
 					<FlexContainer items="center" style={{ height: 35, padding: whitespace[3] }}>
 						<Heading level={7} color="gray" compact={true}>
-							References
+							References  {refsLoading && <Spinner style={{ marginLeft: whitespace[1] }} />}
 						</Heading>
 					</FlexContainer>
 				</div>
@@ -211,7 +212,6 @@ class InfoPanel extends React.Component<Props, State> {
 					model={refModel}
 					focus={this.focusResource} />}
 				<hr style={dividerSx} />
-				{refModel !== null && !loadingComplete && <div style={{ textAlign: "center", padding: `${whitespace[2]} 0` }}><Spinner /></div>}
 			</FlexContainer>
 			<Preview
 				location={this.state.previewLocation || null}
