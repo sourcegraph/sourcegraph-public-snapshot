@@ -16,6 +16,7 @@ interface Props {
 	tabIndex?: number;
 	pageName?: string;
 	img?: boolean;
+	tintLabel?: string;
 	style?: React.CSSProperties;
 	children?: React.ReactNode[];
 }
@@ -39,6 +40,7 @@ export function GitHubAuthButton(props: Props): JSX.Element {
 			tabIndex={props.tabIndex}
 			pageName={props.pageName}
 			img={props.img}
+			tintLabel={props.tintLabel}
 			style={props.style}>
 			{props.children}
 		</AuthButton>

@@ -23,6 +23,7 @@ interface Props {
 	tabIndex?: number;
 	pageName?: string;
 	img?: boolean;
+	tintLabel?: string;
 	style?: React.CSSProperties;
 	children?: React.ReactNode[];
 }
@@ -44,6 +45,7 @@ export function AuthButton(props: Props): JSX.Element {
 		tabIndex,
 		pageName = "",
 		img = true,
+		tintLabel,
 		style,
 		children,
 	} = props;
@@ -62,6 +64,7 @@ export function AuthButton(props: Props): JSX.Element {
 				color={color}
 				block={block}
 				size={size}
+				tintLabel={tintLabel}
 				className={className}
 				tabIndex={tabIndex}>
 				{img &&
