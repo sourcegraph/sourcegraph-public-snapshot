@@ -94,22 +94,22 @@ export class GlobalNav extends Container<Props, State> {
 			"100%": { transform: "rotate(180deg) scale(1)" },
 		});
 
-		let modal = <div />;
-		if (this.props.location.state) {
-			const m = this.props.location.state["modal"];
-			modal = <div>
-				{m === "login" && !context.user &&
+		const modalName = (this.props.location.state && this.props.location.state["modal"]) || this.props.location.query["modal"];
+		const modal = (
+			<div>
+				{modalName === "login" && !context.user &&
 					<Login location={this.props.location} router={this.context.router} />}
-				{m === "join" &&
+				{modalName === "join" &&
 					<Signup location={this.props.location} router={this.context.router} shouldHide={shouldHide} />}
-				{m === "menuBeta" &&
+				{modalName === "menuBeta" &&
 					<BetaSignup location={this.props.location} router={this.context.router} />}
-				{m === "demo_video" &&
+				{modalName === "demo_video" &&
 					<DemoVideo location={this.props.location} router={this.context.router} />}
-				{m === "menuIntegrations" &&
+				{modalName === "menuIntegrations" &&
 					<IntegrationsContainer location={this.props.location} router={this.context.router} />}
-			</div>;
-		}
+			</div>
+		);
+
 		return <div
 			{...layout.clearFix}
 			id="global-nav"
