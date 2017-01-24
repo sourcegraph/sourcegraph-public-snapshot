@@ -258,7 +258,7 @@ def test_browser_extension_hover_j2d_blob(d):
 
     # click and wait for page navigation
     retry(lambda: wd.find_element_by_id("text-node-17-6").click())
-    d.verify_new_tab_opened("https://sourcegraph.com/github.com/gorilla/mux@757bef944d0f21880861c2dd9c871ca543023cba/-/blob/mux.go#L17")
+    d.verify_new_tab_opened("https://sourcegraph.com/github.com/gorilla/mux@757bef944d0f21880861c2dd9c871ca543023cba/-/blob/mux.go#L17:1")
 
 def test_browser_extension_hover_j2d_unified_pull_request(d):
     wd = d.d
@@ -269,17 +269,17 @@ def test_browser_extension_hover_j2d_unified_pull_request(d):
         # addition
         "node": "text-node-17-5",
         "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
-        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17",
+        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17:1",
     }, {
         # deletion
         "node": "text-node-88-3",
         "hover": "func setVars(r *Request, val interface{})",
-        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326",
+        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326:1",
     }, {
         # unmodified
         "node": "text-node-24-6",
         "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
-        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L24",
+        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L24:1",
     }]
     for test in tests:
         # hover over a token, get a tooltip (may be "Loading...")
@@ -306,17 +306,17 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
         # addition
         "node": "text-node-17-5",
         "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
-        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17",
+        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17:1",
     }, {
         # deletion
         "node": "text-node-88-3",
         "hover": "func setVars(r *Request, val interface{})",
-        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326",
+        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326:1",
     }, {
         # unmodified
         "node": "text-node-18-6",
         "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
-        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L18",
+        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L18:1",
     }]
     for test in tests:
         # hover over a token, get a tooltip (may be "Loading...")
