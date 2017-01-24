@@ -1,5 +1,5 @@
 import * as autobind from "autobind-decorator";
-import { css, insertGlobal } from "glamor";
+import { css } from "glamor";
 import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
@@ -9,7 +9,7 @@ import { Location } from "vs/editor/common/modes";
 import { FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { Close, Report } from "sourcegraph/components/symbols/Primaries";
-import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
@@ -169,16 +169,14 @@ class InfoPanel extends React.Component<Props, State> {
 		const { refModel } = this.state;
 		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
 
-		// position child elements relative to editor container
-		insertGlobal(".editor-container", { position: "relative" });
 		return <div style={{ height: "100%" }}>
 			<FlexContainer direction="top_bottom" style={{
 				position: "absolute",
 				backgroundColor: "white",
 				width: sidebarWidth,
+				height: `calc(100% - ${layout.editorToolbarHeight}px)`,
 				bottom: 0,
 				right: 0,
-				top: 0,
 				overflowY: "hidden",
 			}}>
 				{this.sidebarFunctionHeader(defData)}

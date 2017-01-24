@@ -41,7 +41,7 @@ export class Preview extends React.Component<Props, {}> {
 		if (element) {
 			boundingRect = element.getBoundingClientRect();
 		}
-		const top = boundingRect ? boundingRect.top - globalNavHeight - titleHeight : 0;
+		const top = boundingRect ? boundingRect.top - globalNavHeight : 0;
 
 		return <div style={{
 			height: "100%",
