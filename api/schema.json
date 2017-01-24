@@ -1406,6 +1406,18 @@
 								}
 							}
 						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "currentUser",
+						"type": {
+							"kind": "OBJECT",
+							"name": "User",
+							"ofType": null
+						}
 					}
 				],
 				"inputFields": null,
@@ -1662,6 +1674,57 @@
 				"interfaces": [],
 				"kind": "OBJECT",
 				"name": "URI",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "uid",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "githubOrgs",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "User",
 				"possibleTypes": null
 			},
 			{

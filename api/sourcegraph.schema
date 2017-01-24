@@ -15,6 +15,7 @@ type Root {
 	repository(uri: String!): Repository
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
+	currentUser(): User
 }
 
 type RefFields {
@@ -126,4 +127,9 @@ type Hunk {
 	rev: String!
 	author: Signature
 	message: String!
+}
+
+type User {
+	uid: Int!
+	githubOrgs: [String!]!
 }
