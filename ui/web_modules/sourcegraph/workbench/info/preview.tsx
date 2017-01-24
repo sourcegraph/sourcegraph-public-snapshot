@@ -41,7 +41,8 @@ export class Preview extends React.Component<Props, {}> {
 		if (element) {
 			boundingRect = element.getBoundingClientRect();
 		}
-		const top = (boundingRect as any).top - globalNavHeight;
+		const top = boundingRect ? boundingRect.top - globalNavHeight - titleHeight : 0;
+
 		return <div style={{
 			height: "100%",
 			position: "absolute",
@@ -53,7 +54,7 @@ export class Preview extends React.Component<Props, {}> {
 				boxShadow: `inset 3px -2px 10px 0 ${colors.black(0.3)}`,
 				height: top,
 				position: "relative",
-				zIndex: 2
+				zIndex: 2,
 			}}></div>
 			<div style={{
 				width: `calc(100% - ${sidebarWidth}px)`,

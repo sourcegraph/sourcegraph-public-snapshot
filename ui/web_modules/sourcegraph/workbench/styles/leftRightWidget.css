@@ -1,0 +1,11 @@
+:global .monaco-left-right-widget {
+	align-items: center;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: space-between;
+	width: 100%;
+}
+
+:global .monaco-left-right-widget_left { order: 1 }
+:global .monaco-left-right-widget_right { order: 2 }

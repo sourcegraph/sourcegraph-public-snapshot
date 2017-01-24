@@ -1,14 +1,15 @@
 import * as autobind from "autobind-decorator";
-import { css } from "glamor";
+import { css, insertGlobal } from "glamor";
 import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
 import { Location } from "vs/editor/common/modes";
 
-import { FlexContainer, Heading, Loader } from "sourcegraph/components";
-import { Close } from "sourcegraph/components/symbols/Primaries";
-import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
+import { FlexContainer, Heading, Panel } from "sourcegraph/components";
+import { Spinner } from "sourcegraph/components/symbols";
+import { Close, Report } from "sourcegraph/components/symbols/Primaries";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
@@ -17,7 +18,7 @@ import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { Disposables } from "sourcegraph/workbench/utils";
 import { MiniStore } from "sourcegraph/workbench/utils";
 
-export const REFERENCES_SECTION_ID: string = "ReferencesSectionID";
+export const REFERENCES_SECTION_ID: string = "references-section-header";
 const TreeDomNodeID: string = "workbench.editors.stringEditor";
 const TreeSidebarClassName: string = "sg-sidebar";
 
@@ -167,15 +168,17 @@ class InfoPanel extends React.Component<Props, State> {
 		const { defData } = this.props;
 		const { refModel } = this.state;
 		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
+
 		// position child elements relative to editor container
+		insertGlobal(".editor-container", { position: "relative" });
 		return <div style={{ height: "100%" }}>
 			<FlexContainer direction="top_bottom" style={{
 				position: "absolute",
 				backgroundColor: "white",
-				height: `calc(100% - ${layout.editorToolbarHeight}px)`,
 				width: sidebarWidth,
 				bottom: 0,
 				right: 0,
+				top: 0,
 				overflowY: "hidden",
 			}}>
 				{this.sidebarFunctionHeader(defData)}
@@ -188,9 +191,16 @@ class InfoPanel extends React.Component<Props, State> {
 						</Heading>
 					</FlexContainer>
 				</div>
-				<hr style={dividerSx} />
-				{refModel === undefined && <div style={{ textAlign: "center" }}><Loader /></div>}
-				{refModel === null && <div style={{ textAlign: "center" }}>No references</div>}
+				{refModel === undefined && <div style={{ padding: whitespace[2], textAlign: "center" }}><Spinner /></div>}
+				{refModel === null && <Panel hover={false} hoverLevel="low" style={{
+					padding: whitespace[3],
+					margin: whitespace[3],
+					color: colors.text(),
+					textAlign: "center",
+				}}>
+					<Report width={36} color={colors.blueGrayL1()} /><br />
+					We couldn't find any references<br /> for this symbol
+				</Panel>}
 				{refModel && <RefTree
 					model={refModel}
 					focus={this.focusResource} />}

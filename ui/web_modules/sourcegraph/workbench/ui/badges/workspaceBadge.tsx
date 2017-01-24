@@ -3,16 +3,34 @@
 import { $, Builder } from "vs/base/browser/builder";
 import * as strings from "vs/base/common/strings";
 
+import "sourcegraph/workbench/styles/workspaceBadge.css";
+
 export class WorkspaceBadge {
 
 	private $el: Builder;
 	private workspace: "Local" | "External";
 	private titleFormat: string;
 
-	constructor(container: Builder, workspace: "Local" | "External", titleFormat?: string);
-	constructor(container: HTMLElement, workspace: "Local" | "External", titleFormat?: string);
-	constructor(container: any, workspace: "Local" | "External", titleFormat?: string) {
-		this.$el = $(`.workspace-references-badge-${workspace.toLowerCase()}`).appendTo(container);
+	constructor(
+		container: Builder,
+		workspace: "Local" | "External",
+		titleFormat?: string,
+		color?: string,
+	);
+	constructor(
+		container: HTMLElement,
+		workspace: "Local" | "External",
+		titleFormat?: string,
+		color?: string,
+	);
+	constructor(
+		container: any,
+		workspace: "Local" | "External",
+		titleFormat?: string,
+		color?: string,
+	) {
+		this.$el = $(`.monaco-workspace-badge`).appendTo(container);
+
 		this.titleFormat = titleFormat || "";
 		this.setWorkspace(workspace);
 	}
@@ -25,6 +43,10 @@ export class WorkspaceBadge {
 	public setTitleFormat(titleFormat: string): void {
 		this.titleFormat = titleFormat;
 		this.render();
+	}
+
+	public setColor(color: string): void {
+		this.$el.getHTMLElement().style.backgroundColor = color;
 	}
 
 	private render(): void {
