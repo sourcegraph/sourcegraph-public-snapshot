@@ -139,6 +139,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	span := opentracing.SpanFromContext(ctx)
 	span.SetTag("language", op.Language)
 	span.SetTag("repo_id", op.RepoID)
+	span.SetTag("commit_id", op.CommitID)
 	span.SetTag("file", op.File)
 	span.SetTag("line", op.Line)
 	span.SetTag("character", op.Character)
@@ -167,11 +168,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	span.SetTag("repo", repo.URI)
 
 	// Determine the rootPath.
-	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo.ID, Rev: repo.DefaultBranch})
-	if err != nil {
-		return nil, err
-	}
-	rootPath := vcs + "://" + repo.URI + "?" + rev.CommitID
+	rootPath := vcs + "://" + repo.URI + "?" + op.CommitID
 
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.
