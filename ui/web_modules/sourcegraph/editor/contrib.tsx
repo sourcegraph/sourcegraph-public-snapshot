@@ -40,11 +40,8 @@ function normalisePosition(model: IReadOnlyModel, position: IPosition): IPositio
 	};
 }
 
-function cacheKey(model: IReadOnlyModel, position: IPosition): string {
-	return `${model.uri.toString(true)}:${position.lineNumber}:${position.column}`;
-}
-
 export class ReferenceProvider implements modes.ReferenceProvider {
+
 	provideReferences(model: IReadOnlyModel, position: Position, context: ReferenceContext, token: CancellationToken): Location[] | Thenable<Location[]> {
 		return lsp.send(model, "textDocument/references", {
 			textDocument: { uri: model.uri.toString(true) },
@@ -64,20 +61,14 @@ export class ReferenceProvider implements modes.ReferenceProvider {
 				return locs.map(lsp.toMonacoLocation);
 			});
 	}
+
 }
 
 export class HoverProvider implements modes.HoverProvider {
-	// single-flight and caching on word boundaries
-	private hoverCache: Map<string, Thenable<Hover>> = new Map<string, Thenable<Hover>>();
 
 	provideHover(model: IReadOnlyModel, origPosition: Position): Thenable<Hover> {
 		const position = normalisePosition(model, origPosition);
 		const word = model.getWordAtPosition(position);
-		const key = cacheKey(model, position);
-		const cached = this.hoverCache.get(key);
-		if (cached) {
-			return cached;
-		}
 
 		const flight = lsp.send(model, "textDocument/hover", {
 			textDocument: { uri: model.uri.toString(true) },
@@ -131,8 +122,6 @@ export class HoverProvider implements modes.HoverProvider {
 				};
 			});
 
-		this.hoverCache.set(key, flight);
-
 		return flight;
 	}
 
@@ -142,16 +131,8 @@ type result = Thenable<Definition | null>;
 
 export class DefinitionProvder implements modes.DefinitionProvider {
 
-	private defCache: Map<String, result> = new Map<string, result>(); // "single-flight" and caching on word boundaries
-
 	provideDefinition(model: IReadOnlyModel, origPosition: Position, token: CancellationToken): result {
 		const position = normalisePosition(model, origPosition);
-		const key = cacheKey(model, position);
-		const cached = this.defCache.get(key);
-		if (cached) {
-			return cached;
-		}
-
 		const flight = lsp.send(model, "textDocument/definition", {
 			textDocument: { uri: model.uri.toString(true) },
 			position: lsp.toPosition(position),
@@ -171,7 +152,6 @@ export class DefinitionProvder implements modes.DefinitionProvider {
 				return translatedLocs;
 			});
 
-		this.defCache.set(key, flight);
 		return flight;
 	}
 
