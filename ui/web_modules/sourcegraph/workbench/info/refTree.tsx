@@ -60,7 +60,6 @@ export class RefTree extends React.Component<Props, State> {
 	componentDidMount(): void {
 		this.resetMonacoStyles();
 		window.addEventListener("resize", this.onResize, false);
-
 	}
 
 	componentDidUpdate(): void {
