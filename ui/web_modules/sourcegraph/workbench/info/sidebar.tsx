@@ -9,7 +9,7 @@ import { Location } from "vs/editor/common/modes";
 import { FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { Close, Report } from "sourcegraph/components/symbols/Primaries";
-import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
@@ -175,10 +175,10 @@ class InfoPanel extends React.Component<Props, State> {
 			<FlexContainer direction="top_bottom" style={{
 				position: "absolute",
 				backgroundColor: "white",
-				height: `calc(100% - ${layout.editorToolbarHeight}px)`,
 				width: sidebarWidth,
 				bottom: 0,
 				right: 0,
+				top: 0,
 				overflowY: "hidden",
 			}}>
 				{this.sidebarFunctionHeader(defData)}
