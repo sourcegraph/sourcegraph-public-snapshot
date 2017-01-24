@@ -37,7 +37,6 @@ the
 for example:
 
 ```
-PGHOST=pgsql.example.com
 PGPORT=5432
 PGUSER=sourcegraph
 PGPASSWORD=sourcegraph

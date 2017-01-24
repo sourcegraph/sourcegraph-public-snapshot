@@ -54,9 +54,9 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-relay@0.9.5":
-  version "0.9.5"
-  resolved "https://registry.yarnpkg.com/@types/react-relay/-/react-relay-0.9.5.tgz#1841b5b4cbde35e6bce8ba91d18140ab01fd25b9"
+"@types/react-relay@^0.9.10":
+  version "0.9.10"
+  resolved "https://registry.yarnpkg.com/@types/react-relay/-/react-relay-0.9.10.tgz#ebfafbd870ba4243d32204de6206ed6b61926977"
   dependencies:
     "@types/react" "*"
 

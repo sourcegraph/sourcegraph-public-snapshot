@@ -42,7 +42,7 @@ def test_github_private_auth_onboarding(d):
     # Go to home, click "Sign up"
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: d.find_button_by_partial_text("Continue with GitHub").click())
+    retry(lambda: d.find_button_by_partial_text("Private + public code").click())
 
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
@@ -73,7 +73,7 @@ def test_github_public_auth_onboarding(d):
     # Go to home, click "Sign up"
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: wd.find_element_by_link_text("sign in").click())
+    retry(lambda: wd.find_element_by_link_text("Public code only").click())
 
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)

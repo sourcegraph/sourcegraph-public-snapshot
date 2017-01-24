@@ -11,7 +11,7 @@ type PostListsMembersOptions struct {
 	MergeFields     map[string]interface{} `json:"merge_fields,omitempty"`
 	Interests       map[string]interface{} `json:"interests,omitempty"` // TODO: better type safety
 	Language        string                 `json:"language,omitempty"`
-	VIP             bool                   `json:"location,omitempty"`
+	VIP             bool                   `json:"vip,omitempty"`
 	Location        map[string]interface{} `json:"location,omitempty"` // TODO: better type safety
 	IPSignup        string                 `json:"ip_signup,omitempty"`
 	TimestampSignup string                 `json:"timestamp_signup,omitempty"`
@@ -37,7 +37,7 @@ type PostListsMembersResponse struct {
 	MemberRating    int                    `json:"member_rating,omitempty"`
 	LastChanged     string                 `json:"last_changed,omitempty"`
 	Language        string                 `json:"language,omitempty"`
-	VIP             bool                   `json:"location,omitempty"`
+	VIP             bool                   `json:"vip,omitempty"`
 	EmailClient     string                 `json:"email_client,omitempty"`
 	Location        map[string]interface{} `json:"location,omitempty"` // TODO: better type safety
 	ListID          string                 `json:"list_id,omitempty"`
@@ -62,7 +62,7 @@ type PutListsMembersOptions struct {
 	MergeFields     map[string]interface{} `json:"merge_fields,omitempty"`
 	Interests       map[string]interface{} `json:"interests,omitempty"` // TODO: better type safety
 	Language        string                 `json:"language,omitempty"`
-	VIP             bool                   `json:"location,omitempty"`
+	VIP             bool                   `json:"vip,omitempty"`
 	Location        map[string]interface{} `json:"location,omitempty"` // TODO: better type safety
 	IPSignup        string                 `json:"ip_signup,omitempty"`
 	TimestampSignup string                 `json:"timestamp_signup,omitempty"`
@@ -88,7 +88,7 @@ type PutListsMembersResponse struct {
 	MemberRating    int                    `json:"member_rating,omitempty"`
 	LastChanged     string                 `json:"last_changed,omitempty"`
 	Language        string                 `json:"language,omitempty"`
-	VIP             bool                   `json:"location,omitempty"`
+	VIP             bool                   `json:"vip,omitempty"`
 	EmailClient     string                 `json:"email_client,omitempty"`
 	Location        map[string]interface{} `json:"location,omitempty"`  // TODO: better type safety
 	LastNote        map[string]interface{} `json:"last_note,omitempty"` // TODO: better type safety

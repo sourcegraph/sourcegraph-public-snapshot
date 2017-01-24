@@ -65,7 +65,7 @@ type PackageInformation struct {
 type TelemetryEventParams struct {
 	Op        string            `json:"op"`             // the operation name
 	StartTime time.Time         `json:"startTime"`      // when the operation started
-	EndTime   time.Time         `json:"startTime"`      // when the operation ended
+	EndTime   time.Time         `json:"endTime"`        // when the operation ended
 	Tags      map[string]string `json:"tags,omitempty"` // other metadata
 }
 

@@ -15,7 +15,7 @@ const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go
 
 export const Signup = (props: Props): JSX.Element => {
 	const sx = {
-		maxWidth: "380px",
+		maxWidth: "420px",
 		marginLeft: "auto",
 		marginRight: "auto",
 	};

@@ -16,11 +16,10 @@ import (
 )
 
 type repositoryResolver struct {
-	nodeBase
 	repo *sourcegraph.Repo
 }
 
-func repositoryByID(ctx context.Context, id graphql.ID) (nodeResolver, error) {
+func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
 	var repoID int32
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
@@ -33,10 +32,6 @@ func repositoryByID(ctx context.Context, id graphql.ID) (nodeResolver, error) {
 		return nil, err
 	}
 	return &repositoryResolver{repo: repo}, nil
-}
-
-func (r *repositoryResolver) ToRepository() (*repositoryResolver, bool) {
-	return r, true
 }
 
 func (r *repositoryResolver) ID() graphql.ID {

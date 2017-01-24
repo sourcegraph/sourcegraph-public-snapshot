@@ -30,6 +30,7 @@ type minimalClient struct {
 	repos    githubRepos
 	search   githubSearch
 	activity githubActivity
+	orgs     GitHubOrgs
 
 	isAuthedUser bool // whether the client is using a GitHub user's auth token
 }
@@ -39,6 +40,7 @@ func newMinimalClient(isAuthedUser bool, userClient *github.Client) *minimalClie
 		repos:    userClient.Repositories,
 		search:   userClient.Search,
 		activity: userClient.Activity,
+		orgs:     userClient.Organizations,
 
 		isAuthedUser: isAuthedUser,
 	}
@@ -60,6 +62,10 @@ type githubActivity interface {
 
 type githubAuthorizations interface {
 	Revoke(clientID, token string) (*github.Response, error)
+}
+
+type GitHubOrgs interface {
+	List(user string, opt *github.ListOptions) ([]*github.Organization, *github.Response, error)
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {

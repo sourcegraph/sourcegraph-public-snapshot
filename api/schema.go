@@ -19,6 +19,7 @@ type Root {
 	repository(uri: String!): Repository
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
+	currentUser(): User
 }
 
 type RefFields {
@@ -131,4 +132,7 @@ type Hunk {
 	author: Signature
 	message: String!
 }
-`
+
+type User {
+	githubOrgs: [String!]!
+}`

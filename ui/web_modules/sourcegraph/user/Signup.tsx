@@ -1,17 +1,22 @@
 import { History } from "history";
 import * as React from "react";
 
-import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
 import { Heading } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
+import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { urlToOAuth } from "sourcegraph/util/urlTo";
+
+function addQueryObjToURL(base: RouterLocation, urlOrPathname: string | RouterLocation, queryObj: History.Query): RouterLocation {
+	if (typeof urlOrPathname === "string") {
+		urlOrPathname = { pathname: urlOrPathname } as RouterLocation;
+	}
+	return Object.assign({}, base, urlOrPathname, { query: queryObj });
+}
 
 interface Props {
 	location: any;
@@ -25,46 +30,29 @@ interface Props {
 
 type State = any;
 
-const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go#L153";
-
 export class SignupForm extends Component<Props, State> {
-	_submitForm(): void {
-		let form = document.getElementById("form");
-		if (form) {
-			// Log an auth event initiated
-			AnalyticsConstants.Events.OAuth2FlowGitHub_Initiated.logEvent();
-
-			(form as HTMLFormElement).submit();
-		}
-	}
-
 	render(): JSX.Element | null {
-		const redirQueryObj = Object.assign({}, this.props.location.query, this.props.queryObj);
-		const redirRouteObj = typeof this.props.returnTo === "string" ? { pathname: this.props.returnTo } : this.props.returnTo;
-		const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, { query: redirQueryObj });
-
-		const newUserRedirQueryObj = Object.assign({}, this.props.location.query, this.props.queryObj);
-		const newUserRedirRouteObj = typeof this.props.newUserReturnTo === "string" ? { pathname: this.props.newUserReturnTo } : this.props.newUserReturnTo;
-		const newUserRedirLocation = Object.assign({}, this.props.location || null, newUserRedirRouteObj, { query: newUserRedirQueryObj });
-
-		const publicCodeURL = urlToOAuth("github", "read:org,user:email", this.props.returnTo || null, newUserRedirLocation);
-
+		const newUserRedirLocation = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, Object.assign({}, this.props.queryObj, { modal: "afterPrivateCodeSignup" }));
 		return (
-			<div className={styles.form}>
-				<Heading level={3} align="center" underline="orange">Welcome to Sourcegraph</Heading>
-				<GitHubAuthButton newUserReturnTo={newUserRedirLocation} returnTo={redirLocation} tabIndex={1} key="1" block={true}>Continue with GitHub</GitHubAuthButton>
-				<form id="form" method="POST" action={publicCodeURL}>
-					<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
-					<p className={styles.mid_text}>
-						Or <a onClick={this._submitForm.bind(this)}>sign in</a> to view public code <i>only</i>. By continuing with GitHub, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
+			<div>
+				<div className={styles.form}>
+					<Heading level={3} align="center" underline="orange">Get started with Sourcegraph</Heading>
+					<GitHubAuthButton scopes="user:email" newUserReturnTo={newUserRedirLocation} returnTo={this.props.location} tabIndex={1} block={true} tintLabel="Always free">Public code only</GitHubAuthButton>
+					<GitHubAuthButton color="purple" newUserReturnTo={newUserRedirLocation} returnTo={this.props.location} tabIndex={2} block={true} tintLabel="14 days free">Private + public code</GitHubAuthButton>
+					<p style={{ textAlign: "center" }}>
+						By signing up, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
 					</p>
-				</form>
+					<p style={{ textAlign: "center" }}>
+						Already have an account? <LocationStateToggleLink href="/login" modalName="login" location={location}>Log in.</LocationStateToggleLink>
+					</p>
+				</div>
 			</div>
 		);
 	}
 }
 
 function SignupComp(props: { location: any }): JSX.Element {
+	const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go#L153";
 	return (
 		<div className={styles.full_page}>
 			<PageTitle title="Sign Up" />

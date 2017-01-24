@@ -42,6 +42,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.OrgInvites).Handler(httptrace.TraceRoute(handler(serveOrgInvites)))
 
 	m.Get(apirouter.BetaSubscription).Handler(httptrace.TraceRoute(handler(serveBetaSubscription)))
+	m.Get(apirouter.SubmitForm).Handler(httptrace.TraceRoute(handler(serveSubmitForm)))
 
 	m.Get(apirouter.XLang).Handler(httptrace.TraceRoute(handler(serveXLang)))
 

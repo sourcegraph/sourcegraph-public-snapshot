@@ -237,7 +237,6 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 							observer.next(refs);
 						}
 						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
-							observer.next(refs);
 							complete();
 						}
 					});

@@ -21,6 +21,7 @@ const (
 	Repos            = "repos"
 	RepoShield       = "repo.shield"
 	BetaSubscription = "beta-subscription"
+	SubmitForm       = "submit-form"
 	Orgs             = "orgs"
 	OrgMembers       = "org-members"
 	OrgInvites       = "org-invites"
@@ -39,6 +40,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 
 	base.Path("/beta-subscription").Methods("POST").Name(BetaSubscription)
+	base.Path("/submit-form").Methods("POST").Name(SubmitForm)
 	base.Path("/orgs").Methods("POST").Name(Orgs)
 	base.Path("/org-members").Methods("POST").Name(OrgMembers)
 	base.Path("/org-invites").Methods("POST").Name(OrgInvites)

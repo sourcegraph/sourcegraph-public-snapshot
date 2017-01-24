@@ -204,7 +204,7 @@ class Util(object):
     def log_in(d, username, password):
         wd = d.d
         wd.find_element_by_link_text("Log in").click()
-        d.find_button_by_partial_text("Continue with GitHub").click()
+        d.find_button_by_partial_text("Private + public code").click()
         wd.find_element_by_id("login_field").send_keys(username)
         wd.find_element_by_id("password").send_keys(password)
         d.active_elem().send_keys(Keys.ENTER)

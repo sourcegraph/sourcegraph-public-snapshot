@@ -22,7 +22,7 @@ func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	ctx, done := trace(ctx, "Pkgs", "UnsafeRefreshIndex", op, &err)
 	defer done()
 
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{op.RepoID, op.CommitID})
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: op.RepoID, CommitID: op.CommitID})
 	if err != nil {
 		return err
 	}

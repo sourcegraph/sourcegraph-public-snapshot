@@ -28,20 +28,22 @@ func init() {
 	}
 }
 
-type nodeResolver interface {
+type node interface {
 	ID() graphql.ID
-	ToRepository() (*repositoryResolver, bool)
-	ToCommit() (*commitResolver, bool)
 }
 
-type nodeBase struct{}
-
-func (*nodeBase) ToRepository() (*repositoryResolver, bool) {
-	return nil, false
+type nodeResolver struct {
+	node
 }
 
-func (*nodeBase) ToCommit() (*commitResolver, bool) {
-	return nil, false
+func (r *nodeResolver) ToRepository() (*repositoryResolver, bool) {
+	n, ok := r.node.(*repositoryResolver)
+	return n, ok
+}
+
+func (r *nodeResolver) ToCommit() (*commitResolver, bool) {
+	n, ok := r.node.(*commitResolver)
+	return n, ok
 }
 
 type queryResolver struct{}
@@ -50,12 +52,20 @@ func (r *queryResolver) Root() *rootResolver {
 	return &rootResolver{}
 }
 
-func (r *queryResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (nodeResolver, error) {
+func (r *queryResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*nodeResolver, error) {
 	switch relay.UnmarshalKind(args.ID) {
 	case "Repository":
-		return repositoryByID(ctx, args.ID)
+		n, err := repositoryByID(ctx, args.ID)
+		if err != nil {
+			return nil, err
+		}
+		return &nodeResolver{n}, nil
 	case "Commit":
-		return commitByID(ctx, args.ID)
+		n, err := commitByID(ctx, args.ID)
+		if err != nil {
+			return nil, err
+		}
+		return &nodeResolver{n}, nil
 	default:
 		return nil, errors.New("invalid id")
 	}
@@ -167,4 +177,8 @@ func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*reposi
 	}
 
 	return s, nil
+}
+
+func (r *rootResolver) CurrentUser(ctx context.Context) (*currentUserResolver, error) {
+	return currentUser(ctx)
 }

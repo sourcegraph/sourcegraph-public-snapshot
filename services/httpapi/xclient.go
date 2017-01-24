@@ -116,7 +116,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			span.LogEvent("listed repository packages")
 
 			for _, pkg := range pkgs {
-				repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{pkg.RepoID})
+				repo, err := backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: pkg.RepoID})
 				if err != nil {
 					return errors.Wrap(err, "fetch repo for package")
 				}
