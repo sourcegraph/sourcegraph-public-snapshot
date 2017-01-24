@@ -33,7 +33,8 @@ Use the standard rendering of names in prose. For example:
 * Sourcegraph, not sourcegraph or SourceGraph.
 * Go, not Golang.
 * GitHub, not Github.
-* OS X, not OSX.
+* OS X, not OSX (prefer macOS now).
+* macOS, not MacOS.
 * Bitbucket, not BitBucket.
 * JIRA, not Jira.
 * Docker, not docker. (If you are referring to the `docker` CLI tool,
