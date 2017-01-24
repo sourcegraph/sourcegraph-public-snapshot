@@ -15,7 +15,7 @@ import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/se
 
 import * as _ from "lodash";
 
-import { ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
+import { LocationWithCommitInfo, ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
 
 export class OneReference implements IDisposable {
 
@@ -240,7 +240,7 @@ export class ReferencesModel implements IDisposable {
 
 	onDidChangeReferenceRange: Event<OneReference> = fromEventEmitter<OneReference>(this._eventBus, "ref/changed");
 
-	constructor(references: Location[], private _workspace: URI, private _tempFileReferences?: [Repo]) {
+	constructor(references: LocationWithCommitInfo[], private _workspace: URI, private _tempFileReferences?: [Repo]) {
 		let newArrayOfLocs: FileReferences[] = [];
 		if (this._tempFileReferences) {
 			newArrayOfLocs = _.flatten(this._tempFileReferences.map(repository => {
@@ -314,6 +314,13 @@ export class ReferencesModel implements IDisposable {
 		}
 
 		this._groups = this._groups.concat(newArrayOfLocs);
+
+		for (let i = 0; i < references.length; ++i) {
+			const commitInfo = references[i].commitInfo;
+			if (commitInfo) {
+				this.references[i].commitInfo = commitInfo;
+			}
+		}
 	}
 
 	public get empty(): boolean {

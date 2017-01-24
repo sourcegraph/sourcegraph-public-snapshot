@@ -80,57 +80,47 @@ export class DefinitionAction extends EditorAction {
 	}
 
 	async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
-		const defDataP = provideDefinition(props.editorModel, props.lspParams.position);
-		const referenceInfoP = provideReferences(props.editorModel, props.lspParams.position);
-		const defData = await defDataP;
+		const defPromise = provideDefinition(props.editorModel, props.lspParams.position);
+		const localRefsPromise = provideReferences(props.editorModel, props.lspParams.position);
+		const def = await defPromise;
 		const id = this._configuration.sideBarID;
-		if (!defData) {
+		if (!def) {
 			return;
 		}
 		this.prepareInfoStore(true, this._configuration.sideBarID);
-		this.dispatchInfo(id, defData);
+		this.dispatchInfo(id, def);
 
-		const referenceInfo = await referenceInfoP;
+		const localRefs = await localRefsPromise;
 		if (this._configuration.sideBarID !== id) {
 			return;
 		}
-		if (!referenceInfo || referenceInfo.length === 0) {
-			this.dispatchInfo(id, defData, null);
+		if (!localRefs || localRefs.length === 0) {
+			this.dispatchInfo(id, def, null);
 			return;
 		}
 
-		let refModel = new ReferencesModel(referenceInfo, props.editorModel.uri);
-		if (!refModel) {
-			return;
-		}
-		this.dispatchInfo(id, defData, refModel);
+		let refModel = new ReferencesModel(localRefs, props.editorModel.uri);
+		this.dispatchInfo(id, def, refModel);
 
-		refModel = await provideReferencesCommitInfo(new ReferencesModel(referenceInfo, props.editorModel.uri));
+		const localRefsWithCommitInfo = await provideReferencesCommitInfo(localRefs);
+		refModel = new ReferencesModel(localRefsWithCommitInfo, props.editorModel.uri);
 		if (this._configuration.sideBarID !== id) {
 			return;
 		}
-		this.dispatchInfo(id, defData, refModel);
+		this.dispatchInfo(id, def, refModel);
 
 		const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
 		if (!depRefs || this._configuration.sideBarID !== id) {
-			this.dispatchInfo(id, defData, refModel, true);
+			this.dispatchInfo(id, def, refModel, true);
 			return;
 		}
 
-		let concatArray = referenceInfo;
-		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refData => {
-			concatArray = concatArray.concat(refData.refs);
-
-			refModel = new ReferencesModel(concatArray, props.editorModel.uri);
-
-			if (!refModel) {
-				return;
-			}
-
-			this.dispatchInfo(id, defData, refModel);
-		}, () => null, () => {
-			this.dispatchInfo(id, defData, refModel, true);
-		});
+		let localAndGlobalRefs = localRefsWithCommitInfo;
+		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refs => {
+			localAndGlobalRefs = localAndGlobalRefs.concat(refs);
+			refModel = new ReferencesModel(localAndGlobalRefs, props.editorModel.uri);
+			this.dispatchInfo(id, def, refModel);
+		}, () => null, () => this.dispatchInfo(id, def, refModel, true));
 	}
 
 	private prepareInfoStore(prepare: boolean, id: string): void {

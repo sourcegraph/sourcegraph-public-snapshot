@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import * as hash from "object-hash";
 import { Observable } from "rxjs";
 import { Definition, Hover, Position } from "vscode-languageserver-types";
@@ -6,19 +7,12 @@ import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 
 import { Repo } from "sourcegraph/api/index";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
-import { OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
-
-import * as _ from "lodash";
-
-export interface RefData {
-	refs: Location[];
-	loadingComplete: boolean;
-}
 
 export interface DefinitionData {
 	definition: {
@@ -116,14 +110,16 @@ export async function provideReferences(model: IReadOnlyModel, pos: Position): P
 	return locs.map(lsp.toMonacoLocation);
 }
 
-export async function provideReferencesCommitInfo(referencesModel: ReferencesModel): Promise<ReferencesModel> {
+export type LocationWithCommitInfo = Location & { commitInfo?: { hunk: GQL.IHunk } };
+
+export async function provideReferencesCommitInfo(references: Location[]): Promise<LocationWithCommitInfo[]> {
 	// Blame is slow, so only blame the first N references in the first N repos.
 	//
 	// These parameters were chosen arbitrarily.
 	const maxReposToBlame = 6;
 	const maxReferencesToBlamePerRepo = 4;
 	const blameQuota = new Map<string, number>();
-	const shouldBlame = (reference: OneReference): boolean => {
+	const shouldBlame = (reference: Location): boolean => {
 		const repo = `${reference.uri.authority}${reference.uri.path}`;
 		let quotaRemaining = blameQuota.get(repo);
 		if (quotaRemaining === undefined) {
@@ -135,11 +131,15 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 		return true;
 	};
 
+	function refKey(reference: Location): string {
+		return `${reference.uri.toString()}:${RangeOrPosition.fromMonacoRange(reference.range).toString()}`.replace(/\W/g, ""); // alphanumeric
+	}
+
 	let refModelQuery: string = "";
-	referencesModel.references.forEach(reference => {
+	references.forEach(reference => {
 		if (!shouldBlame(reference)) { return; }
 		refModelQuery = refModelQuery +
-			`${reference.id.replace("#", "")}:repository(uri: "${reference.uri.authority}${reference.uri.path}") {
+			`${refKey(reference)}:repository(uri: "${reference.uri.authority}${reference.uri.path}") {
 				commit(rev: "${reference.uri.query}") {
 					commit {
 						file(path: "${reference.uri.fragment}") {
@@ -174,29 +174,27 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 
 	let data = await fetchGraphQLQuery(query);
 	if (!data.root) {
-		return referencesModel;
+		return references;
 	}
 
-	referencesModel.references.forEach(reference => {
-		let dataByRefID = data.root[reference.id.replace("#", "")];
+	return references.map(reference => {
+		let dataByRefID = data.root[refKey(reference)];
 		if (!dataByRefID) {
-			return; // likely means the blame was skipped by shouldBlame; continue without it
+			return reference; // likely means the blame was skipped by shouldBlame; continue without it
 		}
 		let hunk: GQL.IHunk = dataByRefID.commit.commit.file.blame[0];
 		if (!hunk || !hunk.author || !hunk.author.person) {
-			return;
+			return reference;
 		}
 		hunk.author.date = timeFromNowUntil(hunk.author.date, 14);
-		reference.commitInfo = { hunk };
+		return { ...reference, ...{ commitInfo: { hunk } } };
 	});
-
-	return referencesModel;
 }
 
 const MAX_GLOBAL_REFS_REPOS = 5;
-const globalRefsObservables = new Map<string, Observable<RefData>>();
+const globalRefsObservables = new Map<string, Observable<LocationWithCommitInfo[]>>();
 
-export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<RefData> {
+export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<LocationWithCommitInfo[]> {
 	const dependents = depRefs.Data.References;
 	const repoData = depRefs.RepoData;
 	const symbol = depRefs.Data.Location.symbol;
@@ -208,7 +206,7 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 		return cacheHit;
 	}
 
-	const observable = new Observable<RefData>(observer => {
+	const observable = new Observable<LocationWithCommitInfo[]>(observer => {
 		let interval: number | null = null;
 		let unsubscribed = false;
 		let completed = false;
@@ -233,13 +231,13 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 				const nextDependentsToPoll = dependents.splice(0, Math.min(count, dependents.length));
 				return nextDependentsToPoll.map(dependent => {
 					const repo = repoData[dependent.RepoID];
-					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(refs => {
+					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(provideReferencesCommitInfo).then(refs => {
 						incrementCountIfNonempty(refs);
 						if (!completed && refs.length > 0) {
-							observer.next({ refs, loadingComplete: completed });
+							observer.next(refs);
 						}
 						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
-							observer.next({ refs, loadingComplete: true });
+							observer.next(refs);
 							complete();
 						}
 					});
