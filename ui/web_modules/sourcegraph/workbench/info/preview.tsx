@@ -81,15 +81,14 @@ function Title({ location, onClickClose }: { location: Location; onClickClose: (
 		paddingRight: whitespace[3],
 	}}>
 		<RouterContext>
-			<Link
+			<a target="_blank" href={url}
 				{...css(
 					{ color: colors.white(0.9), fontWeight: "bold" },
 					{ ":hover": { color: "white" } },
-				) }
-				to={url}>
+				) } >
 				{repo}/{path}
 				<PopOut width={18} style={{ marginLeft: whitespace[1] }} />
-			</Link>
+			</a>
 		</RouterContext>
 		<span onClick={onClickClose}
 			{...css(
