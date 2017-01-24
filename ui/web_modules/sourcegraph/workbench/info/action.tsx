@@ -87,6 +87,7 @@ export class DefinitionAction extends EditorAction {
 		if (!defData) {
 			return;
 		}
+		this.prepareInfoStore(true, this._configuration.sideBarID);
 		this.dispatchInfo(id, defData);
 
 		const referenceInfo = await referenceInfoP;
@@ -151,17 +152,24 @@ export class DefinitionAction extends EditorAction {
 	}
 
 	private onResult(editorService: IEditorService, editor: editorCommon.ICommonCodeEditor, outerEditor: editorCommon.ICommonCodeEditor): void {
+		let position = editor.getPosition();
+		let model = editor.getModel();
+		let word = model.getWordAtPosition(position);
+		if (!word) {
+			return;
+		}
+
+		this._configuration.sideBarID = model.uri.toString() + position.lineNumber + ":" + position.column;
+
 		if (editor instanceof EmbeddedCodeEditorWidget) {
-			this._configuration.sideBarID = editor.getModel().uri.toString() + editor.getPosition().lineNumber + ":" + editor.getPosition().column;
 			this.prepareInfoStore(true, this._configuration.sideBarID);
 			editorService.openEditor({
-				resource: editor.getModel().uri,
+				resource: model.uri,
 				options: {
 					selection: editor.getSelection(),
 					revealIfVisible: true,
 				}
 			}, true).then(nextEditor => {
-				this.prepareInfoStore(true, this._configuration.sideBarID);
 				this.openInSidebar(editor);
 			});
 
@@ -169,8 +177,6 @@ export class DefinitionAction extends EditorAction {
 		}
 
 		if (ContextKeyExpr.and(ModeContextKeys.hasDefinitionProvider, PeekContext.notInPeekEditor)) {
-			this._configuration.sideBarID = editor.getModel().uri.toString() + editor.getPosition().lineNumber + ":" + editor.getPosition().column;
-			this.prepareInfoStore(true, this._configuration.sideBarID);
 			this.openInSidebar(editor);
 		}
 	}

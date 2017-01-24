@@ -288,7 +288,7 @@ function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Re
 	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
 		query: symbol,
 		hints: reference.Hints,
-	}).then(resp => !resp.result ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
+	}).then(resp => (!resp || !resp.result) ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
 }
 
 export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
@@ -323,7 +323,7 @@ export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Posi
 		return null;
 	}
 	let object = JSON.parse(data.root.repository.commit.commit.file.dependencyReferences.data);
-	if (!object.RepoData || !object.Data || !object.Data.References) {
+	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 1) {
 		return null;
 	}
 	let repos = _.values(object.RepoData);

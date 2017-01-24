@@ -54,6 +54,13 @@ export class RefTree extends React.Component<Props, State> {
 		this.toDispose.dispose();
 	}
 
+	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
+		if (nextProps.model !== this.props.model) {
+			this.tree.setInput(nextProps.model);
+		}
+		return false;
+	}
+
 	private scrollEditorForRef(): void {
 		const editor = getEditorInstance();
 		const line = editor.getSelection().startLineNumber - 5;
@@ -162,7 +169,7 @@ class Renderer extends LegacyRenderer {
 	protected render(tree: ITree, element: FileReferences | OneReference, container: HTMLElement): IElementCallback | any {
 		dom.clearNode(container);
 
-		if (element instanceof FileReferences || element instanceof FileReferences) {
+		if (element instanceof FileReferences) {
 			const fileReferencesContainer: Builder = $(".reference-file");
 			// tslint:disable
 			let workspaceURI = URI.from({

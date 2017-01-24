@@ -30,6 +30,7 @@ export interface InfoPanelProps {
 @autobind
 export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 	private toDispose: Disposables = new Disposables();
+	private infoPanelRef: InfoPanel | HTMLElement;
 	private node: HTMLDivElement | null;
 	private infoPanel: { open: boolean, id: string };
 	private info: Props | null;
@@ -47,6 +48,16 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 				this.info = info;
 				this.infoPanel = { open: info.prepareData.open, id: info.id };
 				this.forceUpdate();
+				return;
+			}
+			if (info && info.refModel && this.infoPanelRef && this.infoPanelRef instanceof InfoPanel) {
+				this.info = info;
+				const currentSelected = this.infoPanelRef.state.previewLocation;
+				this.infoPanelRef.setState({
+					previewLocation: currentSelected,
+					refModel: info.refModel,
+				});
+
 				return;
 			}
 
@@ -76,9 +87,9 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 
 		// Optimistically assume it's the correct data.
 		if (this.info && this.infoPanel.id === this.info.id && this.infoPanel.open) {
-			ReactDOM.render(<InfoPanel {...this.info} />, node);
+			ReactDOM.render(<InfoPanel ref={(el) => this.infoPanelRef = el} {...this.info} />, node);
 		} else {
-			ReactDOM.render(<div></div>, node);
+			ReactDOM.render(<div ref={(el) => this.infoPanelRef = el}></div>, node);
 		}
 	}
 
@@ -92,6 +103,7 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 
 interface State {
 	previewLocation: Location | null;
+	refModel?: ReferencesModel | null;
 }
 
 export interface Props {
@@ -152,7 +164,8 @@ class InfoPanel extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		const { defData, refModel } = this.props;
+		const { defData } = this.props;
+		const { refModel } = this.state;
 		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
 		// position child elements relative to editor container
 		(css as any).global(".editor-container", { position: "relative" });
