@@ -1,3 +1,4 @@
+import * as mapValues from "lodash/mapValues";
 import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
@@ -23,7 +24,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		if (data.options && data.options.selection) {
 			url = urlToBlobRange(
 				repo, rev, path,
-				data.options.selection,
+				mapValues(data.options.selection, v => v - 1),
 			);
 		} else {
 			url = urlToBlob(repo, rev, path);

@@ -162,14 +162,20 @@ export class DefinitionAction extends EditorAction {
 		this._configuration.sideBarID = model.uri.toString() + position.lineNumber + ":" + position.column;
 
 		if (editor instanceof EmbeddedCodeEditorWidget) {
+			const range = {
+				startLineNumber: position.lineNumber,
+				startColumn: word.startColumn,
+				endLineNumber: position.lineNumber,
+				endColumn: word.endColumn,
+			};
 			this.prepareInfoStore(true, this._configuration.sideBarID);
 			editorService.openEditor({
 				resource: model.uri,
 				options: {
-					selection: editor.getSelection(),
+					selection: range,
 					revealIfVisible: true,
 				}
-			}, true).then(nextEditor => {
+			}, true).then(() => {
 				this.openInSidebar(editor);
 			});
 
