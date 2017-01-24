@@ -99,7 +99,14 @@ export class DefinitionAction extends EditorAction {
 			return;
 		}
 
-		let refModel = await provideReferencesCommitInfo(new ReferencesModel(referenceInfo, props.editorModel.uri));
+		let refModel = new ReferencesModel(referenceInfo, props.editorModel.uri);
+		if (!refModel) {
+			return;
+		}
+
+		this.dispatchInfo(id, defData, refModel);
+
+		refModel = await provideReferencesCommitInfo(new ReferencesModel(referenceInfo, props.editorModel.uri));
 		if (this._configuration.sideBarID !== id) {
 			return;
 		}
@@ -109,13 +116,6 @@ export class DefinitionAction extends EditorAction {
 		if (!depRefs || this._configuration.sideBarID !== id) {
 			return;
 		}
-
-		refModel = new ReferencesModel(referenceInfo, props.editorModel.uri);
-		if (!refModel) {
-			return;
-		}
-
-		this.dispatchInfo(id, defData, refModel);
 
 		let concatArray = referenceInfo;
 		return provideGlobalReferences(props.editorModel, depRefs).subscribe(async refs => {
