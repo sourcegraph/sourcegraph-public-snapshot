@@ -68,11 +68,12 @@ export class RefTree extends React.Component<Props, State> {
 		this.toDispose.dispose();
 	}
 
-	componentWillUpdate(nextProps: Props, nextState: State): void {
-		const expandedElements = this.tree.getExpandedElements();
+	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
+		let expandedElements = this.tree.getExpandedElements();
 		const scrollPosition = this.tree.getScrollPosition();
 
 		if (nextProps.model !== this.props.model) {
+			expandedElements = nextProps.model && nextProps.model.groups.length === 1 ? [nextProps.model.groups[0]] : expandedElements;
 			this.tree.setInput(nextProps.model).then(() => {
 				this.tree.toggleExpansionAll(expandedElements).then(() => {
 					this.tree.setScrollPosition(scrollPosition);
@@ -80,6 +81,7 @@ export class RefTree extends React.Component<Props, State> {
 				});
 			});
 		}
+		return false;
 	}
 
 	private treeItemFocused(reference: FileReferences | OneReference): void {
