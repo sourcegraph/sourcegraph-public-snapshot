@@ -48,9 +48,9 @@ export class FeatureCarousel extends React.Component<Props, State> {
 			</FlexContainer>
 			<div style={{ flex: "1 1 60%", position: "relative", minHeight: 480 }}>
 				<img src={`${this.props.assetsURL}/img/Homepage/screen-placeholder.png`} width="100%" />
-				<SliderPanel assetsURL={this.props.assetsURL} img="screen-refs.png" active={this.state.active === 0} />
-				<SliderPanel assetsURL={this.props.assetsURL} img="screen-def.png" active={this.state.active === 1} />
-				<SliderPanel assetsURL={this.props.assetsURL} img="screen-search.png" active={this.state.active === 2} />
+				<SliderPanel assetsURL={this.props.assetsURL} img="sg-home-feature-1-min.png" active={this.state.active === 0} />
+				<SliderPanel assetsURL={this.props.assetsURL} img="sg-home-feature-2-min.png" active={this.state.active === 1} />
+				<SliderPanel assetsURL={this.props.assetsURL} img="sg-home-feature-3-min.png" active={this.state.active === 2} />
 			</div>
 		</FlexContainer>;
 	}
