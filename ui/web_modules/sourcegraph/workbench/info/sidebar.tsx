@@ -8,7 +8,7 @@ import { Location } from "vs/editor/common/modes";
 
 import { FlexContainer, Heading, Loader } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
-import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
@@ -168,14 +168,13 @@ class InfoPanel extends React.Component<Props, State> {
 		const { refModel } = this.state;
 		const dividerSx = { width: "100%", borderColor: colors.blueGrayL2(0.3), margin: 0 };
 		// position child elements relative to editor container
-		(css as any).global(".editor-container", { position: "relative" });
-		return <div>
+		return <div style={{ height: "100%" }}>
 			<FlexContainer direction="top_bottom" style={{
 				position: "absolute",
 				backgroundColor: "white",
-				height: "100%",
+				height: `calc(100% - ${layout.editorToolbarHeight}px)`,
 				width: sidebarWidth,
-				top: 0,
+				bottom: 0,
 				right: 0,
 				overflowY: "hidden",
 			}}>
