@@ -13,7 +13,6 @@ import { Location } from "vs/editor/common/modes";
 
 import * as autobind from "autobind-decorator";
 import { $, Builder } from "vs/base/browser/builder";
-import * as strings from "vs/base/common/strings";
 import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 import { Controller } from "vs/editor/contrib/referenceSearch/browser/referencesWidget";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
@@ -192,7 +191,7 @@ class Renderer extends LegacyRenderer {
 	protected render(tree: ITree, element: FileReferences | OneReference, container: HTMLElement): IElementCallback | any {
 		dom.clearNode(container);
 
-		if (element instanceof FileReferences || element instanceof FileReferences) {
+		if (element instanceof FileReferences) {
 			const repositoryHeader: Builder = $(".refs-repository-title");
 			// tslint:disable
 			let workspaceURI = URI.from({
@@ -254,7 +253,7 @@ class Renderer extends LegacyRenderer {
 			const preview = element.preview.preview(element.range);
 			const fileName = element.uri.fragment;
 			const line = element.range.startLineNumber
-			const fnSignature = preview.before.concat(preview.inside, preview.after));
+			const fnSignature = preview.before.concat(preview.inside, preview.after);
 			const refContainer = $("div");
 			let defaultAvatar;
 			let gravatarHash;
