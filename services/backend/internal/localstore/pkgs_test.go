@@ -73,14 +73,6 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 				t.Fatalf("unexpected rootPath: %q", rootPath)
 			}
 			switch mode {
-			case "go_bg":
-				*res = []lspext.PackageInformation{{
-					Package: map[string]interface{}{
-						"name":    "gopkg",
-						"version": "1.1.1",
-					},
-					Dependencies: []lspext.DependencyReference{},
-				}}
 			case "typescript_bg":
 				*res = []lspext.PackageInformation{{
 					Package: map[string]interface{}{
@@ -114,13 +106,6 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	}
 
 	expPkgs := []sourcegraph.PackageInfo{{
-		RepoID: 1,
-		Lang:   "go",
-		Pkg: map[string]interface{}{
-			"name":    "gopkg",
-			"version": "1.1.1",
-		},
-	}, {
 		RepoID: 1,
 		Lang:   "typescript",
 		Pkg: map[string]interface{}{
