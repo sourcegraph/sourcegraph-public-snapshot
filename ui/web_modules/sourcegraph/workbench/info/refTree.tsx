@@ -59,7 +59,7 @@ export class RefTree extends React.Component<Props, State> {
 	};
 
 	componentDidMount(): void {
-		this.resetMonacoStyles(this.treeID);
+		this.resetMonacoStyles();
 	}
 
 	componentDidUpdate(): void {
@@ -139,17 +139,17 @@ export class RefTree extends React.Component<Props, State> {
 		}
 	}
 
-	private resetMonacoStyles(parentElementID: string): void {
-		insertGlobal(`#${parentElementID} .monaco-tree-row`, {
+	private resetMonacoStyles(): void {
+		insertGlobal(`#${this.treeID} .monaco-tree-row`, {
 			backgroundColor: "initial",
 			height: "initial !important",
 			paddingLeft: "initial !important",
 			overflow: "visible",
 		});
-		insertGlobal(`#${parentElementID} .monaco-tree:focus`, { outline: "none" });
-		insertGlobal(`#${parentElementID} .monaco-tree-row .content:before`, { display: "none" });
-		insertGlobal(`#${parentElementID} .monaco-tree-row.selected`, { backgroundColor: "initial" });
-		insertGlobal(`#${parentElementID} .monaco-tree-row:hover`, { backgroundColor: "initial" });
+		insertGlobal(`#${this.treeID} .monaco-tree:focus`, { outline: "none" });
+		insertGlobal(`#${this.treeID} .monaco-tree-row .content:before`, { display: "none" });
+		insertGlobal(`#${this.treeID} .monaco-tree-row.selected`, { backgroundColor: "initial" });
+		insertGlobal(`#${this.treeID} .monaco-tree-row:hover`, { backgroundColor: "initial" });
 	}
 
 	render(): JSX.Element {
@@ -254,7 +254,7 @@ class Renderer extends LegacyRenderer {
 			const preview = element.preview.preview(element.range);
 			const fileName = element.uri.fragment;
 			const line = element.range.startLineNumber
-			const fnSignature = strings.escape(preview.before.concat(preview.inside, preview.after));
+			const fnSignature = preview.before.concat(preview.inside, preview.after));
 			const refContainer = $("div");
 			let defaultAvatar;
 			let gravatarHash;

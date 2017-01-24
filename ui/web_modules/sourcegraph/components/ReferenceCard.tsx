@@ -61,7 +61,7 @@ export function ReferenceCard({ fnSignature, authorName, avatar, date, fileName,
 			textOverflow: "ellipsis",
 			overflow: "hidden",
 			wordWrap: "nowrap",
-		}, rowSx)} dangerouslySetInnerHTML={{ __html: fnSignature }}></code>
+		}, rowSx)}>{fnSignature}</code>
 		<div {...css({ color: colors.blueGrayD1() }) }>
 			{authorName && <div style={rowSx}>
 				<User simple={true} nickname={`${authorName} · ${date}`} avatar={avatar} style={{ display: "inline-block" }} />
