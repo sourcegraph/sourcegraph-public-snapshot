@@ -57,7 +57,7 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;">   More...</a>`;
 			}
 		}
-		return <div style={Object.assign({
+		return <RouterContext><div style={Object.assign({
 			color: colors.text(),
 			padding: whitespace[3],
 			paddingTop: 0,
@@ -76,14 +76,12 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				</Link>
 			</p>
 			<FlexContainer content="stretch" justify="between" items="center">
-				<RouterContext>
-					<Link style={{ flex: "1 0" }} to={url}>
-						<Button color="blueGray" outline={true} style={{ width: "100%" }}>
-							Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
-						</Button>
-					</Link>
-				</RouterContext>
+				<Link style={{ flex: "1 0" }} to={url}>
+					<Button color="blueGray" outline={true} style={{ width: "100%" }}>
+						Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
+					</Button>
+				</Link>
 			</FlexContainer>
-		</div >;
+		</div ></RouterContext>;
 	}
 }
