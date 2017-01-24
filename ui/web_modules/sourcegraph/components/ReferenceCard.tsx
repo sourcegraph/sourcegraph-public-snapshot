@@ -38,7 +38,7 @@ insertGlobal(`#reference-tree .monaco-tree-row.selected [data-${sx}]`, {
 	color: "white",
 });
 insertGlobal(`#reference-tree .monaco-tree-row.selected [data-${sx}]:hover`, {
-	borderColor: "white";
+	borderColor: "white",
 });
 insertGlobal(`#reference-tree .monaco-tree-row.selected [data-${sx}] div`, {
 	color: "white",
