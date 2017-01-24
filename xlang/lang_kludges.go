@@ -32,6 +32,14 @@ func SymbolRepoURL(symDescriptor lspext.SymbolDescriptor) string {
 	return ""
 }
 
+// HasXDefinitionAndXPackages is the hardcoded list of languages that provide
+// textDocument/xdefinition and workspace/xpackages. We cannot rely on the
+// value returned from the LSP proxy, because that does not pass through the
+// value of the initialize result.
+var HasXDefinitionAndXPackages = map[string]struct{}{
+	"typescript": struct{}{},
+}
+
 // IsSymbolReferenceable tells if the SymbolDescriptor is referenceable
 // according to the language semantics defined by the mode.
 func IsSymbolReferenceable(mode string, symbolDescriptor lspext.SymbolDescriptor) bool {
@@ -42,7 +50,7 @@ func IsSymbolReferenceable(mode string, symbolDescriptor lspext.SymbolDescriptor
 				return false
 			}
 		}
-		if recv, ok := symbolDescriptor["recv"]; ok {
+		if recv, ok := symbolDescriptor["recv"]; ok && recv.(string) != "" {
 			if !ast.IsExported(recv.(string)) {
 				return false
 			}

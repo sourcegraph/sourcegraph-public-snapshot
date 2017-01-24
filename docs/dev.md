@@ -6,7 +6,11 @@ reading the code at https://sourcegraph.com/sourcegraph/sourcegraph.
 ## Environment
 
 Before you can develop Sourcegraph you'll need to set up a
-development environment. Here's what you need:
+development environment.
+
+### Manual setup
+
+For Linux users or if you don't want to use Homebrew on macOS.
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 - [Go](https://golang.org/doc/install) (v1.7.0 or higher)
@@ -16,14 +20,33 @@ development environment. Here's what you need:
   - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
-- A test user account on GitHub
-  - this should be a separate GitHub user account for development whose username has the suffix `-test`
-  - get somebody to add you to the "sourcegraphtest" GitHub organization
-  - add a second profile to Chrome for your `*-test` GitHub user (https://cl.ly/3A3y1O040G3R),
-    or download [Chrome Canary](https://www.google.com/chrome/browser/canary.html) to use for development
 
 If you are new to Go, [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
 (a directory which contains all your projects).
+
+### Homebrew setup for macOS
+
+This is a streamlined setup for Mac machines.
+
+1. Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
+2. Install [Homebrew](http://homebrew.sh).
+3. Install Go, Node, PostgreSQL, Redis.
+
+    ```
+    brew install go node redis postgresql yarn
+    ```
+
+4. git and make are preinstalled. If you ever want to use a different (newer) version, you can install them with homebrew.
+
+    ```
+    brew install git
+    ```
+
+5. Configure PostgreSQL and Redis to start automatically
+
+    ```
+    brew services start postgresql redis
+    ```
 
 ### Optional (but recommended)
 
@@ -33,10 +56,22 @@ If you are new to Go, [set up your `GOPATH`](https://golang.org/doc/code.html#GO
   - [TSLint](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
   - [Debugger for Chrome](https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome)
 
+## SSH keys
+
+If you don't already have an SSH key on your machine (e.g. `~/.ssh/id_rsa`), [you should create one](https://help.github.com/articles/connecting-to-github-with-ssh/). This allows you to pull code from GitHub without typing in your password.
+
+## Create a test GitHub account
+
+This should be a separate GitHub user account for development whose username has the suffix `-test`
+
+- get somebody to add you to the "sourcegraphtest" GitHub organization
+- add a second profile to Chrome for your `*-test` GitHub user (https://cl.ly/3A3y1O040G3R),
+    or download [Chrome Canary](https://www.google.com/chrome/browser/canary.html) to use for development
+
 ## Get the code
 
 ```
-git clone https://github.com/sourcegraph/sourcegraph $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
+git clone git@github.com:sourcegraph/sourcegraph.git $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
 cd $GOPATH/src/sourcegraph.com/sourcegraph/sourcegraph
 go install ./cmd/src
 ```

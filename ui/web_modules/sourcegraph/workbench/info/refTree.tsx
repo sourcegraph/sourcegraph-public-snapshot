@@ -69,11 +69,18 @@ export class RefTree extends React.Component<Props, State> {
 		this.toDispose.dispose();
 	}
 
-	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
+	componentWillUpdate(nextProps: Props, nextState: State): void {
+		const expandedElements = this.tree.getExpandedElements();
+		const scrollPosition = this.tree.getScrollPosition();
+
 		if (nextProps.model !== this.props.model) {
-			this.tree.setInput(nextProps.model);
+			this.tree.setInput(nextProps.model).then(() => {
+				this.tree.toggleExpansionAll(expandedElements).then(() => {
+					this.tree.setScrollPosition(scrollPosition);
+					this.tree.layout();
+				});
+			});
 		}
-		return false;
 	}
 
 	private scrollEditorForRef(): void {

@@ -1,3 +1,4 @@
+import * as hash from "object-hash";
 import { context } from "sourcegraph/app/context";
 import { URIUtils } from "sourcegraph/core/uri";
 import { Features } from "sourcegraph/util/features";
@@ -58,21 +59,19 @@ export function send(model: IReadOnlyModel, method: string, params: any): Promis
 	return sendExt(URIUtils.withoutFilePath(model.uri).toString(true), model.getModeId(), method, params);
 }
 
-const LSPCache = new Map<string, Response>();
+const LSPCache = new Map<string, Promise<Response>>();
 
 // WARNING: Caches responses that are errors.
 async function cachingFetch(url: string | Request, init?: RequestInit): Promise<Response> {
-	const key = JSON.stringify({
-		url,
-		init,
-	});
+	const key = hash([url, init]);
 
-	let response = LSPCache.get(key);
-	if (!response) {
-		response = await defaultFetch(url, init);
+	let promise = LSPCache.get(key);
+	if (!promise) {
+		promise = defaultFetch(url, init);
 	}
 
-	LSPCache.set(key, response);
+	LSPCache.set(key, promise);
+	const response = await promise;
 	return response.clone();
 }
 
