@@ -9,6 +9,8 @@ import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
 import { Disposables } from "sourcegraph/workbench/utils";
+import { Builder } from "vs/base/browser/builder";
+import { IDisposable } from "vs/base/common/lifecycle";
 import { Location } from "vs/editor/common/modes";
 
 import * as autobind from "autobind-decorator";
@@ -45,6 +47,13 @@ interface State {
 	previewResource: Location | null;
 }
 
+// This set is used to keep track of which rows in the tree the user has 
+// expanded or closed. Due to race conditions caused by the loading state of 
+// the tree in VSCode, this hack is necessary to properly expand tree elements
+// during updates.
+let userToggledState: Set<string>;
+let firstToggleAdded: boolean;
+
 @autobind
 export class RefTree extends React.Component<Props, State> {
 
@@ -55,6 +64,12 @@ export class RefTree extends React.Component<Props, State> {
 	state: State = {
 		previewResource: null,
 	};
+
+	constructor() {
+		super();
+		userToggledState = new Set<string>();
+		firstToggleAdded = false;
+	}
 
 	componentDidMount(): void {
 		this.resetMonacoStyles();
@@ -69,13 +84,23 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
-		let expandedElements = this.tree.getExpandedElements();
+		let expandedElements = new Array<FileReferences>();
 		const scrollPosition = this.tree.getScrollPosition();
 
 		if (nextProps.model !== this.props.model) {
-			expandedElements = nextProps.model && nextProps.model.groups.length === 1 ? [nextProps.model.groups[0]] : expandedElements;
+			if (nextProps.model && nextProps.model.groups.length && !firstToggleAdded) {
+				userToggledState.add(nextProps.model.groups[0].uri.toString());
+				firstToggleAdded = true;
+			}
+			if (nextProps.model) {
+				for (let r of nextProps.model.groups) {
+					if (userToggledState.has(r.uri.toString())) {
+						expandedElements.push(r);
+					}
+				}
+			}
 			this.tree.setInput(nextProps.model).then(() => {
-				this.tree.toggleExpansionAll(expandedElements).then(() => {
+				this.tree.expandAll(expandedElements).then(() => {
 					this.tree.setScrollPosition(scrollPosition);
 					this.tree.layout();
 				});
@@ -260,6 +285,14 @@ class Renderer extends LegacyRenderer {
 			});
 
 			repositoryHeader.getHTMLElement().classList.add(refHeaderSx);
+			repositoryHeader.on("click", (e: Event, builder: Builder, unbind: IDisposable): void => {
+				const stateKey = element.uri.toString();
+				if (userToggledState.has(stateKey)) {
+					userToggledState.delete(stateKey);
+				} else {
+					userToggledState.add(stateKey);
+				}
+			});
 			repositoryHeader.appendTo(container);
 		}
 
