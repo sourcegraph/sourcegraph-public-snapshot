@@ -228,24 +228,36 @@ class Renderer extends LegacyRenderer {
 			}));
 
 			const borderSx = `1px solid ${colors.blueGrayL1(0.2)}`;
-			const repoHeaderEl = repositoryHeader.getHTMLElement();
-			repoHeaderEl.classList.add(
-				(css as any)(
-					paddingMargin.padding("x", 2),
-					{
-						backgroundColor: colors.blueGrayL3(),
-						borderBottom: borderSx,
-						borderTop: borderSx,
-						boxShadow: `0 2px 2px 0 ${colors.black(0.05)}`,
-						color: colors.text(),
-						display: "flex",
-						fontWeight: "bold",
-						alignItems: "center",
-						height: 36,
-					},
-				)
+			const refHeaderSx = (css as any)(
+				paddingMargin.padding("x", 2),
+				{
+					backgroundColor: colors.blueGrayL3(),
+					borderBottom: borderSx,
+					borderTop: borderSx,
+					boxShadow: `0 2px 2px 0 ${colors.black(0.05)}`,
+					color: colors.text(),
+					display: "flex",
+					fontWeight: "bold",
+					alignItems: "center",
+					height: 36,
+				},
 			);
 
+			insertGlobal(`.monaco-tree-row.has-children .${refHeaderSx}:before`, {
+				content: `""`,
+				height: 15,
+				width: 9,
+				marginLeft: 9,
+				transition: "all 300ms ease-in-out",
+				backgroundRepeat: "no-repeat",
+				backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNyIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMjQgMTUgNyAxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjUuNDcyIDI2LjE0NWMtLjI2LjI2LS42ODIuMjYtLjk0MyAwLS4yNjItLjI2LS4yNjItLjY4Mi0uMDAyLS45NDNsNC41MzYtNC41My00LjUzNi00LjUzYy0uMjYtLjI2LS4yNi0uNjgzIDAtLjk0My4yNjItLjI2Mi42ODQtLjI2Ljk0NCAwbDUuMDA4IDVjLjEyNS4xMjYuMTk2LjI5NS4xOTYuNDcycy0uMDcuMzQ3LS4xOTYuNDcybC01LjAwOCA1eiIgZmlsbD0iIzc3OTNBRSIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9zdmc+)",
+			});
+
+			insertGlobal(`.monaco-tree-row.has-children.expanded .${refHeaderSx}:before`, {
+				transform: "rotate(90deg)",
+			});
+
+			repositoryHeader.getHTMLElement().classList.add(refHeaderSx);
 			repositoryHeader.appendTo(container);
 		}
 
