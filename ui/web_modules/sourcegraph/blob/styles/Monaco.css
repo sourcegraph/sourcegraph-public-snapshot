@@ -135,11 +135,15 @@
 	color: white;
 }
 
-:global .vs-dark .monaco-tree .focused,
 :global .vs-dark .monaco-tree .selected {
 	background-color: c_blue_text !important;
 	color: white;
 	font-weight: bold;
+}
+
+:global .vs-dark .sg-sidebar .monaco-tree:not(.focused) .monaco-tree-rows .selected {
+	background-color: white !important;
+	font-weight: normal;
 }
 
 :global .monaco-editor .reference-zone-widget .ref-tree span.referenceMatch img.avatarImg {
