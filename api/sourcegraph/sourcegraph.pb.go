@@ -628,6 +628,7 @@ type DeprecatedFileRef struct {
 type DependencyReferencesOptions struct {
 	Language        string // e.g. "go"
 	RepoID          int32  // repository whose file:line:character describe the symbol of interest
+	CommitID        string
 	File            string
 	Line, Character int
 
