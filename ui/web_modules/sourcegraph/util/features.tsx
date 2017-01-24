@@ -64,4 +64,18 @@ export const Features = {
 
 if (global.window) {
 	(window as any).features = Features;
+
+	// Make it so that visiting https://sourcegraph.com/#feature=NAME
+	// automatically enables the NAME feature in the user's
+	// localStorage, so we can share beta links with external users
+	// more easily.
+	if (document.location.hash) {
+		const m = document.location.hash.match(/^#feature=(.*)/);
+		if (m) {
+			const name = m[1];
+			Features[name].enable();
+			console.log("Enabling feature flag:", name); // tslint:disable-line no-console
+			document.location.hash = "";
+		}
+	}
 }
