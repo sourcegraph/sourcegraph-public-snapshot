@@ -20,7 +20,7 @@ export class LeftRightWidget {
 		this.toDispose = [
 			renderLeftFn($(".left-right-widget_left").appendTo(this.$el).getHTMLElement()),
 			renderRightFn($(".left-right-widget_right").appendTo(this.$el).getHTMLElement()),
-		].filter(x => !!x);
+		].filter(x => Boolean(x));
 	}
 
 	public setClassNames(classNames: string): void {
