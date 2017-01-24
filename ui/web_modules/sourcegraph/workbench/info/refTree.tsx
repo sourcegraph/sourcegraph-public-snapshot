@@ -51,6 +51,7 @@ export class RefTree extends React.Component<Props, State> {
 	private tree: Tree;
 	private toDispose: Disposables = new Disposables();
 	private treeID: string = "reference-tree";
+	private resizeTimeout: number;
 
 	state: State = {
 		previewResource: null,
@@ -58,6 +59,8 @@ export class RefTree extends React.Component<Props, State> {
 
 	componentDidMount(): void {
 		this.resetMonacoStyles();
+		window.addEventListener("resize", this.onResize, false);
+
 	}
 
 	componentDidUpdate(): void {
@@ -66,6 +69,12 @@ export class RefTree extends React.Component<Props, State> {
 
 	componentWillUnmount(): void {
 		this.toDispose.dispose();
+		window.removeEventListener("resize", this.onResize);
+	}
+
+	onResize(): void {
+		clearTimeout(this.resizeTimeout);
+		this.resizeTimeout = setTimeout(() => this.updateTree(this.props.model), 500);
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
