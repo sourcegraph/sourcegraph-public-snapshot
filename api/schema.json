@@ -1685,22 +1685,6 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
-						"name": "uid",
-						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "Int",
-								"ofType": null
-							}
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
 						"name": "githubOrgs",
 						"type": {
 							"kind": "NON_NULL",

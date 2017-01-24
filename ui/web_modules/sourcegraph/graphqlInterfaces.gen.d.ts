@@ -230,7 +230,6 @@ declare namespace GQL {
 	*/
 	interface IUser {
 		__typename: string;
-		uid: number;
 		githubOrgs: Array<string>;
 	}
 }

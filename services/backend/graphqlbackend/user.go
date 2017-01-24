@@ -9,25 +9,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
-type userResolver struct {
-	uid string
-}
+type currentUserResolver struct{}
 
-func currentUser(ctx context.Context) (*userResolver, error) {
+func currentUser(ctx context.Context) (*currentUserResolver, error) {
 	actor := auth.ActorFromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
-	return &userResolver{
-		uid: actor.UID,
-	}, nil
+	return &currentUserResolver{}, nil
 }
 
-func (r *userResolver) UID() string {
-	return r.uid
-}
-
-func (r *userResolver) GitHubOrgs(ctx context.Context) ([]string, error) {
+func (r *currentUserResolver) GitHubOrgs(ctx context.Context) ([]string, error) {
 	orgs, _, err := github.OrgsFromContext(ctx).List("", &gogithub.ListOptions{PerPage: 100})
 	if err != nil {
 		return nil, err

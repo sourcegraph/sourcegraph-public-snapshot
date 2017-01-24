@@ -134,6 +134,5 @@ type Hunk {
 }
 
 type User {
-	uid: Int!
 	githubOrgs: [String!]!
 }`

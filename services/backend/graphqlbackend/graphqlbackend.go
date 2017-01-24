@@ -179,6 +179,6 @@ func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*reposi
 	return s, nil
 }
 
-func (r *rootResolver) CurrentUser(ctx context.Context) (*userResolver, error) {
+func (r *rootResolver) CurrentUser(ctx context.Context) (*currentUserResolver, error) {
 	return currentUser(ctx)
 }
