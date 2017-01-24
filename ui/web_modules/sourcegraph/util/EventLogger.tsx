@@ -286,6 +286,9 @@ class EventLoggerClass {
 		// Send event to ExperimentManager to determine if it should be tracked, and to send to Optimizely if so
 		experimentManager.logEvent(eventLabel);
 
+		// Log event on HubSpot (if a valid HubSpot event)
+		this.logHubSpotEvent(eventLabel);
+
 		if (global && global.window && global.window.ga) {
 			global.window.ga("send", {
 				hitType: "event",
@@ -331,6 +334,16 @@ class EventLoggerClass {
 	setHubSpotProperties(props: { email?: string, user_id?: string, fullname?: string, company?: string, location?: string, is_private_code_user?: string, emails?: string, authed_orgs_github?: string }): void {
 		if (this._hubspot) {
 			this._hubspot.push(["identify", props]);
+		}
+	}
+
+	// records HubSpot events for the current user
+	logHubSpotEvent(eventLabel: string): void {
+		if (this._hubspot && !this.userAgentIsBot) {
+			if (!AnalyticsConstants.hubSpotEventNames.has(eventLabel)) {
+				return;
+			}
+			this._hubspot.push(["trackEvent", { id: eventLabel }]);
 		}
 	}
 
