@@ -70,7 +70,7 @@ export function DocsPage(): JSX.Element {
 
 				<a id="find_references"></a>
 				<Heading level={5} className={styles.h5}>Find Local and External References</Heading>
-				<p className={styles.p}>After clicking a symbol and revealing the side panel, there is a references section half way down that panel. References to the symbol in the current repository are listed.</p>
+				<p className={styles.p}>After clicking a symbol, references to the symbol in the current repository are listed in the side panel.</p>
 				<p className={styles.p}>Click a reference and see that code appear over your current view. To dismiss it, simply click the '&times;' in the reference header, or click out of the reference view to go back to where you were.</p>
 				<a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go" target="_blank"><img src="https://storage.googleapis.com/sourcegraph-assets/find_local_references_2.png" width="100%" /></a>
 				<p className={styles.p}>External references are also listed in the side panel, below the local references. These are the all of the places the symbol is referenced across all publicly viewable code on Github.</p>
