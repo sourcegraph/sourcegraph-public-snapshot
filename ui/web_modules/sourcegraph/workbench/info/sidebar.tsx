@@ -50,7 +50,7 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 				this.forceUpdate();
 				return;
 			}
-			if (info && info.refModel && this.infoPanelRef && this.infoPanelRef instanceof InfoPanel) {
+			if (info && info.refModel !== undefined && this.infoPanelRef && this.infoPanelRef instanceof InfoPanel) {
 				this.info = info;
 				const currentSelected = this.infoPanelRef.state.previewLocation;
 				this.infoPanelRef.setState({
