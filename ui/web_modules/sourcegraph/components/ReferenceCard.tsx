@@ -13,6 +13,7 @@ const sx = css(
 		borderTop: "1px solid transparent",
 		borderBottom: `1px solid ${colors.blueGrayL1(0.2)}`,
 		color: colors.text(),
+		cursor: "pointer",
 		marginTop: -1,
 	},
 	{
