@@ -1,9 +1,9 @@
 import { EventLogger } from "sourcegraph/util/EventLogger";
 
 // Set of all Sourcegraph events (specifically, eventLabels) that should be sent to Optimizely.
-export const experimentEventNames = new Set("SignupCompleted");
+export const experimentEventNames = new Set(["SignupCompleted"]);
 // Set of all Sourcegraph events (specifically, eventLabels) that should be sent to HubSpot.
-export const hubSpotEventNames = new Set("SignupCompleted");
+export const hubSpotEventNames = new Set(["SignupCompleted"]);
 
 // Analytics Constants
 
