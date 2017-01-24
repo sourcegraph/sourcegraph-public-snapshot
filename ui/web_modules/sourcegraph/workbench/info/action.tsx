@@ -118,16 +118,11 @@ export class DefinitionAction extends EditorAction {
 		}
 
 		let concatArray = referenceInfo;
-		return provideGlobalReferences(props.editorModel, depRefs).subscribe(async refs => {
+		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refs => {
 			concatArray = concatArray.concat(refs);
 
 			refModel = new ReferencesModel(concatArray, props.editorModel.uri);
 
-			if (!refModel) {
-				return;
-			}
-
-			refModel = await provideReferencesCommitInfo(refModel);
 			if (!refModel) {
 				return;
 			}
