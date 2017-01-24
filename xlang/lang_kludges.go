@@ -42,7 +42,7 @@ func IsSymbolReferenceable(mode string, symbolDescriptor lspext.SymbolDescriptor
 				return false
 			}
 		}
-		if recv, ok := symbolDescriptor["recv"]; ok {
+		if recv, ok := symbolDescriptor["recv"]; ok && recv.(string) != "" {
 			if !ast.IsExported(recv.(string)) {
 				return false
 			}
