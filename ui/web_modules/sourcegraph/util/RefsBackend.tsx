@@ -1,4 +1,3 @@
-import * as hash from "object-hash";
 import { Observable } from "rxjs";
 import { Definition, Hover, Position } from "vscode-languageserver-types";
 
@@ -198,19 +197,12 @@ export async function provideReferencesCommitInfo(referencesModel: ReferencesMod
 }
 
 const MAX_GLOBAL_REFS_REPOS = 5;
-const globalRefsObservables = new Map<string, Observable<Location[]>>();
 
 export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<Location[]> {
 	const dependents = depRefs.Data.References;
 	const repoData = depRefs.RepoData;
 	const symbol = depRefs.Data.Location.symbol;
 	const modeID = model.getModeId();
-
-	const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
-	const cacheHit = globalRefsObservables.get(key);
-	if (cacheHit) {
-		return cacheHit;
-	}
 
 	const observable = new Observable<Location[]>(observer => {
 		let interval: number | null = null;
@@ -275,7 +267,6 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 		};
 	}).publishReplay(MAX_GLOBAL_REFS_REPOS).refCount();
 
-	globalRefsObservables.set(key, observable);
 	return observable;
 }
 
