@@ -6,7 +6,7 @@ import * as styles from "sourcegraph/page/Page.css";
 
 export function ContactPage(props: {}): JSX.Element {
 	return (
-		<div>
+		<div style={{ flex: 1 }}>
 			<PageTitle title="Contact" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>

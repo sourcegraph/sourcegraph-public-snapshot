@@ -41,7 +41,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 	}
 
 	return (
-		<div>
+		<div style={{ flex: 1 }}>
 			<PageTitle title="Pricing" />
 			<Hero color="transparent" className={base.pv5 || ""}>
 				<div className={styles.container}>
