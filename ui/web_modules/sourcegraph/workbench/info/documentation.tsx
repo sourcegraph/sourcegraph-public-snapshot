@@ -49,12 +49,13 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 		const url = urlToBlobRange(repo, rev, path, defData.definition.range);
 		const fullDocString = marked(defData.docString, { sanitize: true });
 		let renderedDocString = fullDocString;
+		const fonts = typography.fontStack.sansSerif;
 		if (fullDocString.length >= DocStringLength) {
 			if (this.state.showingFullDocString) {
-				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;">   Hide...</a>`;
+				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;" font-family:${fonts}>   Hide...</a>`;
 			} else {
 				renderedDocString = renderedDocString.substr(0, DocStringLength);
-				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px;">   More...</a>`;
+				renderedDocString = renderedDocString + `<a data-toggle style="display: inline-block; padding-left: 5px; font-family:${fonts}">   More...</a>`;
 			}
 		}
 		return <RouterContext><div style={Object.assign({
