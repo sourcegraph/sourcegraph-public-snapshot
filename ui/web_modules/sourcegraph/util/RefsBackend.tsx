@@ -137,7 +137,7 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 		return `${reference.uri.toString()}:${RangeOrPosition.fromMonacoRange(reference.range).toString()}`.replace(/\W/g, "_"); // graphql keys must be alphanumeric
 	}
 
-	let refModelQuery: string = "";
+	let refModelQuery = "";
 	references.forEach(reference => {
 		if (!shouldBlame(reference)) { return; }
 		refModelQuery = refModelQuery +

@@ -57,9 +57,9 @@ let firstToggleAdded: boolean;
 
 // The height of the tree elements must be explicitly defined and enforced, 
 // otherwise scrolling functionality will not work properly.
-const fileRefsHeight: number = 36;
-const refBaseHeight: number = 68;
-const refWithCommitInfoHeight: number = 95;
+const fileRefsHeight = 36;
+const refBaseHeight = 68;
+const refWithCommitInfoHeight = 95;
 
 @autobind
 export class RefTree extends React.Component<Props, State> {

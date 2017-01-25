@@ -9,8 +9,8 @@ import { ChevronDown } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-const openInGitHubKeyCode: number = 71;
-const openInGitHubKey: string = "G";
+const openInGitHubKeyCode = 71;
+const openInGitHubKey = "G";
 
 interface Props {
 	eventProps: { repo: string, rev: string | null, path: string };

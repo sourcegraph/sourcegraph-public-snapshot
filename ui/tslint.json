@@ -14,6 +14,7 @@
 		"member-access": false,
 		"member-ordering": [false],
 		"no-default-export": true,
+		"no-inferrable-types": [true, "ignore-params"],
 		"no-string-literal": false,
 		"object-literal-key-quotes": false,
 		"object-literal-shorthand": false,

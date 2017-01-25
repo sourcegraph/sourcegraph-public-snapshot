@@ -25,9 +25,9 @@ interface State {
 	viewedAnnotations: number[];
 }
 
-const _defCoachmarkIndex: number = 0;
-const _refCoachmarkIndex: number = 1;
-const _searchCoachmarkIndex: number = 2;
+const _defCoachmarkIndex = 0;
+const _refCoachmarkIndex = 1;
+const _searchCoachmarkIndex = 2;
 
 interface Coachmark {
 	markIndex: number;

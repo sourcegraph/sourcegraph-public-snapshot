@@ -30,7 +30,7 @@ interface Props {
 	};
 };
 
-const OpenInfoPanelID: string = "editor.contrib.openInfoPanel";
+const OpenInfoPanelID = "editor.contrib.openInfoPanel";
 
 @editorContribution
 export class ReferenceAction implements IEditorContribution {
