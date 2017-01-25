@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"reflect"
@@ -62,13 +61,6 @@ type xlangClient interface {
 }
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
-	return serveXLangMethod(r.Context(), w, r.Body, r.Header.Get("x-sourcegraph-client"))
-}
-
-// serveXLangMethod was split out from serveXLang to support the old
-// hover-info and jump-to-def httpapi endpoints. Once those are gone we
-// extract this back into serveXLang.
-func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader, client string) (err error) {
 	start := time.Now()
 	success := true
 	method := "unknown"
@@ -108,11 +100,12 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 			ev.AddField("method", method)
 			ev.AddField("mode", mode)
 			ev.AddField("duration_ms", duration.Seconds()*1000)
-			ev.AddField("client", client)
+			ev.AddField("client", r.Header.Get("x-sourcegraph-client"))
+			ev.AddField("user_agent", r.UserAgent())
 			if err != nil {
 				ev.AddField("error", err.Error())
 			}
-			if actor := auth.ActorFromContext(ctx); actor != nil {
+			if actor := auth.ActorFromContext(r.Context()); actor != nil {
 				ev.AddField("uid", actor.UID)
 				ev.AddField("login", actor.Login)
 				ev.AddField("email", actor.Email)
@@ -129,12 +122,12 @@ func serveXLangMethod(ctx context.Context, w http.ResponseWriter, body io.Reader
 
 	// Decode this early so we can print more useful log messages.
 	var reqs []jsonrpc2.Request
-	if err := json.NewDecoder(body).Decode(&reqs); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
 		return err
 	}
 
 	method = reqs[1].Method
-	span, ctx := opentracing.StartSpanFromContext(ctx, fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
+	span, ctx := opentracing.StartSpanFromContext(r.Context(), fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
