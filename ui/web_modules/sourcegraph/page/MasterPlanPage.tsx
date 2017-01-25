@@ -137,8 +137,7 @@ export function MasterPlanPage(): JSX.Element {
 							<Link to="/">Sourcegraph</Link> currently supports 4 languages on the web and <a onClick={() => installChromeExtensionClicked(PageName)}>Chrome extension</a>, with many more planned by the end of 2016.</p>
 						<List>
 							<li>Go &mdash; <Link target="_blank" to="/github.com/gorilla/websocket/-/blob/client.go">try it</Link></li>
-							<li>TypeScript (beta) &mdash; <Link target="_blank" to="/github.com/ReactiveX/rxjs@master/-/blob/src/scheduler/AsyncAction.ts#L23">try it</Link></li>
-							<li>JavaScript (beta) &mdash; <Link target="_blank" to="/github.com/swimlane/angular-data-table@master/-/blob/src/components/DataTableController.js#L33">try it</Link></li>
+							<li>TypeScript (alpha) &mdash; <Link target="_blank" to="/github.com/ReactiveX/rxjs@master/-/blob/src/scheduler/AsyncAction.ts#L23">try it</Link></li>
 						</List>
 						<p>
 							<Link to="/beta">Sign up for early access</Link> to other languages.
