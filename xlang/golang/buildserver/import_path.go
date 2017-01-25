@@ -107,7 +107,8 @@ func resolveDynamicImportPath(client *http.Client, importPath string) (*director
 	if sm != nil {
 		m := gopkgSrcTemplate.FindStringSubmatch(sm.dirTemplate)
 		if len(m) > 0 {
-			dir, err = resolveStaticImportPath(m[1] + dirName)
+			// We are doing best effort, so we ignore err
+			dir, _ = resolveStaticImportPath(m[1] + dirName)
 			if dir != nil {
 				dir.rev = m[2]
 			}
@@ -115,7 +116,8 @@ func resolveDynamicImportPath(client *http.Client, importPath string) (*director
 	}
 
 	if dir == nil {
-		dir, err = resolveStaticImportPath(repo + dirName)
+		// We are doing best effort, so we ignore err
+		dir, _ = resolveStaticImportPath(repo + dirName)
 	}
 
 	if dir == nil {

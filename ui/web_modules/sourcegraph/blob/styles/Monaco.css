@@ -30,6 +30,10 @@
 	background-color: c_cool_dark_gray;
 }
 
+:global .monaco-editor.vs-dark .monaco-editor-hover .hover-row:last-child {
+	color: white;
+}
+
 :global .monaco-editor .context-view {
 	z-index: 100;
 }

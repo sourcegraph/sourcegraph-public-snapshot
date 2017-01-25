@@ -5,8 +5,6 @@ import { IContextViewService } from "vs/platform/contextview/browser/contextView
 import { IMessageService } from "vs/platform/message/common/message";
 import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
 
-import { Features } from "sourcegraph/util/features";
-
 export class ContextMenuService extends VSContextMenuService {
 	constructor(
 		@IMessageService messageService: IMessageService,
@@ -20,10 +18,6 @@ export class ContextMenuService extends VSContextMenuService {
 	public showContextMenu(
 		delegate: IContextMenuDelegate
 	): void {
-		if (Features.projectWow.isEnabled()) {
-			// Disable.
-			return;
-		}
-		super.showContextMenu(delegate);
+		// Disable.
 	}
 }

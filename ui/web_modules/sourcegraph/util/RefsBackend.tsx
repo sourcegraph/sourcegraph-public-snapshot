@@ -110,7 +110,9 @@ export async function provideReferences(model: IReadOnlyModel, pos: Position): P
 	return locs.map(lsp.toMonacoLocation);
 }
 
-export type LocationWithCommitInfo = Location & { commitInfo?: { hunk: GQL.IHunk } };
+export interface LocationWithCommitInfo extends Location {
+	commitInfo?: { hunk: GQL.IHunk };
+}
 
 export async function provideReferencesCommitInfo(references: Location[]): Promise<LocationWithCommitInfo[]> {
 	// Blame is slow, so only blame the first N references in the first N repos.
@@ -132,7 +134,7 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 	};
 
 	function refKey(reference: Location): string {
-		return `${reference.uri.toString()}:${RangeOrPosition.fromMonacoRange(reference.range).toString()}`.replace(/\W/g, ""); // alphanumeric
+		return `${reference.uri.toString()}:${RangeOrPosition.fromMonacoRange(reference.range).toString()}`.replace(/\W/g, "_"); // graphql keys must be alphanumeric
 	}
 
 	let refModelQuery: string = "";
@@ -187,7 +189,7 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 			return reference;
 		}
 		hunk.author.date = timeFromNowUntil(hunk.author.date, 14);
-		return { ...reference, ...{ commitInfo: { hunk } } };
+		return { ...reference, commitInfo: { hunk } };
 	});
 }
 

@@ -8,7 +8,7 @@ import { GlobalNavStore, SetQuickOpenVisible } from "sourcegraph/app/GlobalNav/G
 import { SearchCTA } from "sourcegraph/app/GlobalNav/SearchCTA";
 import { SignupOrLogin } from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
-import { BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
+import { AfterPrivateCodeSignup, BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
 import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
 import { RouterContext, RouterLocation, getRepoFromRouter, getRevFromRouter } from "sourcegraph/app/router";
 import { FlexContainer, Logo, TabItem, Tabs } from "sourcegraph/components";
@@ -103,6 +103,8 @@ export class GlobalNav extends Container<Props, State> {
 					<Signup location={this.props.location} router={this.context.router} shouldHide={shouldHide} />}
 				{modalName === "menuBeta" &&
 					<BetaSignup location={this.props.location} router={this.context.router} />}
+				{modalName === "afterPrivateCodeSignup" &&
+					<AfterPrivateCodeSignup location={this.props.location} router={this.context.router} />}
 				{modalName === "demo_video" &&
 					<DemoVideo location={this.props.location} router={this.context.router} />}
 				{modalName === "menuIntegrations" &&

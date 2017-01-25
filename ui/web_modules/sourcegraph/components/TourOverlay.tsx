@@ -15,7 +15,6 @@ import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
-import { Features } from "sourcegraph/util/features";
 import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props { location: RouterLocation; }
@@ -181,20 +180,14 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 			let defSubtitle;
 			let refSubtitle;
-			if (Features.projectWow.isEnabled()) {
-				const ctrl = platform.isMacintosh ? "⌘" : "Control";
-				// Build custom fields for coachmark.
-				defSubtitle = <p style={p}>
-					<strong>{ctrl} + Click</strong> any symbol to jump to the definition – even if it's defined in another repository.
-				</p>;
-				refSubtitle = <p style={p}>
-					Click any symbol to view its <strong>references</strong> in this repository and in any public code.
-				</p>;
-			} else {
-				defSubtitle = <p style={p}>Click on any reference to an identifier and jump to its definition – even if it's in another repository.</p>;
-				refSubtitle = <p style={p}>Right click this or any other identifier to access <strong>references, peek definitions</strong>, and other useful actions.</p>;
-
-			}
+			const ctrl = platform.isMacintosh ? "⌘" : "Control";
+			// Build custom fields for coachmark.
+			defSubtitle = <p style={p}>
+				<strong>{ctrl} + Click</strong> any symbol to jump to the definition – even if it's defined in another repository.
+			</p>;
+			refSubtitle = <p style={p}>
+				Click any symbol to view its <strong>references</strong> in this repository and in any public code.
+			</p>;
 			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
 			const refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 

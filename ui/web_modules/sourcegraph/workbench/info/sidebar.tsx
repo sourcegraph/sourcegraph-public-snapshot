@@ -46,6 +46,14 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 	componentWillMount(): void {
 		this.toDispose.add(infoStore.subscribe((info) => {
 			if (info && info.prepareData) {
+				// Close preview when escape key is clicked - Don't dismiss sidepane.
+				if (!info.prepareData.open && !info.id && this.infoPanelRef instanceof InfoPanel && this.infoPanelRef.state.previewLocation) {
+					this.infoPanelRef.setState({
+						previewLocation: null,
+						refModel: this.infoPanelRef.state.refModel,
+					});
+					return;
+				}
 				this.info = info;
 				this.infoPanel = { open: info.prepareData.open, id: info.id };
 				this.forceUpdate();
@@ -158,7 +166,7 @@ class InfoPanel extends React.Component<Props, State> {
 				fontWeight: "normal",
 				wordBreak: "break-word",
 			}}>{truncate(funcName, { length: 120 })}</Heading>
-			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: "" })}
+			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: this.props.id })}
 				{...css(
 					{
 						alignSelf: "flex-start",
@@ -190,7 +198,7 @@ class InfoPanel extends React.Component<Props, State> {
 				overflowY: "hidden",
 			}}>
 				{this.sidebarFunctionHeader(defData)}
-				{defData && <DefinitionDocumentationHeader defData={defData} />}
+				{(defData && !this.state.previewLocation) && <DefinitionDocumentationHeader defData={defData} />}
 				<hr style={dividerSx} />
 				<div id={REFERENCES_SECTION_ID}>
 					<FlexContainer items="center" style={{ height: 35, padding: whitespace[3] }}>

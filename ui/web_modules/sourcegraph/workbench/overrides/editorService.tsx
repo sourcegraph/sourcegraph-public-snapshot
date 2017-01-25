@@ -20,7 +20,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		rev = prettifyRev(rev);
 		const router = __getRouterForWorkbenchOnly();
 
-		let url;
+		let url: string;
 		if (data.options && data.options.selection) {
 			url = urlToBlobRange(
 				repo, rev, path,
@@ -29,17 +29,23 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		} else {
 			url = urlToBlob(repo, rev, path);
 		}
-		router.push(url);
+		router.push({
+			pathname: url,
+			state: options,
+		});
 		return this.openEditorWithoutURLChange(data, options);
 	}
 
 	openEditorWithoutURLChange(data: any, options?: any): TPromise<IEditor> {
 		this._emitter.fire(data.resource);
+		const router = __getRouterForWorkbenchOnly();
 
 		// calling openEditor with a non-zero position, or options equal to
 		// true opens up another editor to the side.
 		if (typeof options === "boolean") {
 			options = false;
+		} else if (options === undefined) {
+			options = router.location.state;
 		}
 
 		// Set the resource revision to the commit hash

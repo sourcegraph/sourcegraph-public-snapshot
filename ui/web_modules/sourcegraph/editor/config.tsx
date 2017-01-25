@@ -4,7 +4,9 @@ import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
+import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
@@ -24,7 +26,9 @@ export function syncEditorWithRouterProps(location: AbsoluteLocation): void {
 	const { repo, commitID, path, selection } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	editorService.openEditorWithoutURLChange({ resource }).then(() => {
+	const resolverService = Services.get(ITextModelResolverService);
+	const editorInput = new ResourceEditorInput("", "", resource, resolverService);
+	editorService.openEditorWithoutURLChange(editorInput).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
 }

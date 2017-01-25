@@ -251,7 +251,7 @@ func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (res *
 		return Mocks.Repos.ListDeps(ctx, repos)
 	}
 
-	ctx, done := trace(ctx, "Repos", "ListDeps", repos, &err)
+	_, done := trace(ctx, "Repos", "ListDeps", repos, &err)
 	defer done()
 
 	repoFilters := []srcstore.UnitFilter{

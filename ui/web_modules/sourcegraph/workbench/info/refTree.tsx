@@ -1,4 +1,5 @@
 import { css, insertGlobal } from "glamor";
+import * as debounce from "lodash/debounce";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import URI from "vs/base/common/uri";
@@ -9,6 +10,8 @@ import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
 import { Disposables } from "sourcegraph/workbench/utils";
+import { Builder } from "vs/base/browser/builder";
+import { IDisposable } from "vs/base/common/lifecycle";
 import { Location } from "vs/editor/common/modes";
 
 import * as autobind from "autobind-decorator";
@@ -45,6 +48,19 @@ interface State {
 	previewResource: Location | null;
 }
 
+// This set is used to keep track of which rows in the tree the user has 
+// expanded or closed. Due to race conditions caused by the loading state of 
+// the tree in VSCode, this hack is necessary to properly expand tree elements
+// during updates.
+let userToggledState: Set<string>;
+let firstToggleAdded: boolean;
+
+// The height of the tree elements must be explicitly defined and enforced, 
+// otherwise scrolling functionality will not work properly.
+const fileRefsHeight: number = 36;
+const refBaseHeight: number = 68;
+const refWithCommitInfoHeight: number = 95;
+
 @autobind
 export class RefTree extends React.Component<Props, State> {
 
@@ -56,8 +72,16 @@ export class RefTree extends React.Component<Props, State> {
 		previewResource: null,
 	};
 
+	constructor() {
+		super();
+		userToggledState = new Set<string>();
+		firstToggleAdded = false;
+	}
+
 	componentDidMount(): void {
 		this.resetMonacoStyles();
+		this.onResize = debounce(this.onResize, 200);
+		window.addEventListener("resize", this.onResize, false);
 	}
 
 	componentDidUpdate(): void {
@@ -66,16 +90,31 @@ export class RefTree extends React.Component<Props, State> {
 
 	componentWillUnmount(): void {
 		this.toDispose.dispose();
+		window.removeEventListener("resize", this.onResize);
+	}
+
+	onResize(): void {
+		this.tree.layout();
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
-		let expandedElements = this.tree.getExpandedElements();
+		let expandedElements = new Array<FileReferences>();
 		const scrollPosition = this.tree.getScrollPosition();
 
 		if (nextProps.model !== this.props.model) {
-			expandedElements = nextProps.model && nextProps.model.groups.length === 1 ? [nextProps.model.groups[0]] : expandedElements;
+			if (nextProps.model && nextProps.model.groups.length && !firstToggleAdded) {
+				userToggledState.add(nextProps.model.groups[0].uri.toString());
+				firstToggleAdded = true;
+			}
+			if (nextProps.model) {
+				for (let r of nextProps.model.groups) {
+					if (userToggledState.has(r.uri.toString())) {
+						expandedElements.push(r);
+					}
+				}
+			}
 			this.tree.setInput(nextProps.model).then(() => {
-				this.tree.toggleExpansionAll(expandedElements).then(() => {
+				this.tree.expandAll(expandedElements).then(() => {
 					this.tree.setScrollPosition(scrollPosition);
 					this.tree.layout();
 				});
@@ -92,6 +131,7 @@ export class RefTree extends React.Component<Props, State> {
 		const modelService = Services.get(ITextModelResolverService);
 		modelService.createModelReference(reference.uri).then((ref) => {
 			this.props.focus(reference);
+			this.tree.layout();
 		});
 	}
 
@@ -147,6 +187,7 @@ export class RefTree extends React.Component<Props, State> {
 			overflow: "visible",
 		});
 		insertGlobal(`#${this.treeID} .monaco-tree:focus`, { outline: "none" });
+		insertGlobal(`#${this.treeID} .monaco-scrollable-element`, { position: "absolute !important", top: 0, left: 0, bottom: 0, right: 0 });
 		insertGlobal(`#${this.treeID} .monaco-tree-row .content:before`, { display: "none" });
 		insertGlobal(`#${this.treeID} .monaco-tree-row.selected`, { backgroundColor: "initial" });
 		insertGlobal(`#${this.treeID} .monaco-tree-row:hover`, { backgroundColor: "initial" });
@@ -180,11 +221,11 @@ class Renderer extends LegacyRenderer {
 	public getHeight(tree: ITree, element: any): number {
 		if (element instanceof OneReference) {
 			if (element.commitInfo) {
-				return 100;
+				return refWithCommitInfoHeight;
 			}
-			return 71;
+			return refBaseHeight;
 		} else if (element instanceof FileReferences) {
-			return 50;
+			return fileRefsHeight;
 		}
 
 		return 0;
@@ -241,7 +282,7 @@ class Renderer extends LegacyRenderer {
 					display: "flex",
 					fontWeight: "bold",
 					alignItems: "center",
-					height: 36,
+					height: fileRefsHeight,
 				},
 			);
 
@@ -260,6 +301,14 @@ class Renderer extends LegacyRenderer {
 			});
 
 			repositoryHeader.getHTMLElement().classList.add(refHeaderSx);
+			repositoryHeader.on("click", (e: Event, builder: Builder, unbind: IDisposable): void => {
+				const stateKey = element.uri.toString();
+				if (userToggledState.has(stateKey)) {
+					userToggledState.delete(stateKey);
+				} else {
+					userToggledState.add(stateKey);
+				}
+			});
 			repositoryHeader.appendTo(container);
 		}
 
@@ -269,6 +318,7 @@ class Renderer extends LegacyRenderer {
 			const line = element.range.startLineNumber
 			const fnSignature = preview.before.concat(preview.inside, preview.after);
 			const refContainer = $("div");
+			let height = refBaseHeight;
 			let defaultAvatar;
 			let gravatarHash;
 			let avatar;
@@ -281,6 +331,7 @@ class Renderer extends LegacyRenderer {
 				avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
 				authorName = element.commitInfo.hunk.author.person.name;
 				date = element.commitInfo.hunk.author.date;
+				height = refWithCommitInfoHeight;
 			}
 
 			refContainer.appendTo(container);
@@ -292,6 +343,7 @@ class Renderer extends LegacyRenderer {
 					avatar={avatar}
 					date={date}
 					fileName={fileName}
+					height={height}
 					line={line} />,
 				refContainer.getHTMLElement(),
 			);

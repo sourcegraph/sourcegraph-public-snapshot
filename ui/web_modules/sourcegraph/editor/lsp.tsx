@@ -61,7 +61,6 @@ export function send(model: IReadOnlyModel, method: string, params: any): Promis
 
 const LSPCache = new Map<string, Promise<Response>>();
 
-// WARNING: Caches responses that are errors.
 async function cachingFetch(url: string | Request, init?: RequestInit): Promise<Response> {
 	const key = hash([url, init]);
 
@@ -72,6 +71,9 @@ async function cachingFetch(url: string | Request, init?: RequestInit): Promise<
 
 	LSPCache.set(key, promise);
 	const response = await promise;
+	if (response.status < 200 || response.status >= 300) {
+		LSPCache.delete(key);
+	}
 	return response.clone();
 }
 
@@ -123,14 +125,6 @@ export async function sendExt(uri: string, modeID: string, method: string, param
 	return response;
 }
 
-const modeToIssueAssignee = {
-	go: "keegancsmith",
-	typescript: "beyang",
-	javascript: "beyang",
-	java: "akhleung",
-	python: "renfredxh",
-};
-
 function logLSPResponse(uri: URI, modeID: string, method: string, params: any, reqBody: any, resp: LSPResponse, traceURL: string, rttMsec: number): void {
 	if (!(global as any).console || !(global as any).console.group || !(global as any).console.debug) {
 		return;
@@ -163,7 +157,6 @@ function logLSPResponse(uri: URI, modeID: string, method: string, params: any, r
 
 	const { repo } = URIUtils.repoParams(uri);
 	const issueTitle = `${err ? "Error in" : "Unexpected behavior from"} ${method} in ${repo}`;
-	const assignee = modeToIssueAssignee[modeID];
 	const issueBody = `I saw ${err ? "an error in" : "unexpected behavior from"} from LSP ${method} on a ${modeID} file at [${pageURL}](${pageURL}).
 
 **Repro:**
@@ -186,7 +179,7 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
-	console.debug(`Copy and send this URL to support@sourcegraph.com to report an issue:\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=lang-${modeID}&labels[]=${encodeURIComponent("Component: xlang")}&labels[]=${encodeURIComponent("Type: Bug")}${assignee ? `&assignee=${assignee}` : ""}`);
+	console.debug(`Copy and send this URL to support@sourcegraph.com to report an issue:\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=${encodeURIComponent(`Component: lang-${modeID}`)}&labels[]=${encodeURIComponent("Type: Bug")}`);
 	console.groupEnd();
 
 	// tslint:enable: no-console

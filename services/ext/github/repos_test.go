@@ -174,8 +174,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	// An unauthed user won't be able to see the repo
 	mock.isAuthedUser = false
 	mock.repos = mockGetMissing
-	repo, err := s.Get(ctx, privateRepo)
-	if legacyerr.ErrCode(err) != legacyerr.NotFound {
+	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if !calledGetMissing {
@@ -184,8 +183,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 
 	// If we repeat the call, we should hit the cache
 	calledGetMissing = false
-	repo, err = s.Get(ctx, privateRepo)
-	if legacyerr.ErrCode(err) != legacyerr.NotFound {
+	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
@@ -196,7 +194,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	// it since the repo may not 404 for us
 	mock.isAuthedUser = true
 	mock.repos = mockGetPrivate
-	repo, err = s.Get(ctx, privateRepo)
+	repo, err := s.Get(ctx, privateRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,8 +206,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	calledGetMissing = false
 	mock.isAuthedUser = false
 	mock.repos = mockGetMissing
-	repo, err = s.Get(ctx, privateRepo)
-	if legacyerr.ErrCode(err) != legacyerr.NotFound {
+	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
@@ -222,8 +219,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		calledGetMissing = false
 		mock.isAuthedUser = true
 		mock.repos = mockGetMissing // Pretend that privateRepo is deleted now, so even authed user can't see it. Do this to ensure cached 404 value isn't used by authed user.
-		repo, err = s.Get(ctx, privateRepo)
-		if legacyerr.ErrCode(err) != legacyerr.NotFound {
+		if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 			t.Fatal(err)
 		}
 		if !calledGetMissing {

@@ -4,7 +4,6 @@ import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
-import { Position } from "vs/editor/common/core/position";
 import * as editorCommon from "vs/editor/common/editorCommon";
 import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
 import { EditorAction, IActionOptions, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
@@ -14,6 +13,7 @@ import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
+import { normalisePosition } from "sourcegraph/editor/contrib";
 import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
@@ -139,9 +139,9 @@ export class DefinitionAction extends EditorAction {
 	}
 
 	private onResult(editorService: IEditorService, editor: editorCommon.ICommonCodeEditor, outerEditor: editorCommon.ICommonCodeEditor): void {
-		let position = editor.getPosition();
-		let model = editor.getModel();
-		let word = model.getWordAtPosition(position);
+		const model = editor.getModel();
+		const position = normalisePosition(model, editor.getPosition());
+		const word = model.getWordAtPosition(position);
 		if (!word) {
 			return;
 		}
@@ -163,19 +163,18 @@ export class DefinitionAction extends EditorAction {
 					revealIfVisible: true,
 				}
 			}, true).then(() => {
-				this.openInSidebar(editor);
+				this.openInSidebar(editor, position);
 			});
 
 			return;
 		}
 
 		if (ContextKeyExpr.and(ModeContextKeys.hasDefinitionProvider, PeekContext.notInPeekEditor)) {
-			this.openInSidebar(editor);
+			this.openInSidebar(editor, position);
 		}
 	}
 
-	private openInSidebar(editor: editorCommon.ICommonCodeEditor): void {
-		const pos = editor.getPosition();
+	private openInSidebar(editor: editorCommon.ICommonCodeEditor, pos: editorCommon.IPosition): void {
 		this.globalFetchSubscription = this.renderSidePanelForData({
 			editorModel: editor.getModel(),
 			lspParams: {
@@ -189,7 +188,7 @@ export class DefinitionAction extends EditorAction {
 		this.highlightWord(editor, pos);
 	}
 
-	private highlightWord(editor: editorCommon.ICommonCodeEditor, position: Position): void {
+	private highlightWord(editor: editorCommon.ICommonCodeEditor, position: editorCommon.IPosition): void {
 		const model = editor.getModel();
 		const word = model.getWordAtPosition(position);
 		editor.setSelection({

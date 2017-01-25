@@ -14,7 +14,6 @@ import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
-import { Features } from "sourcegraph/util/features";
 import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
@@ -65,7 +64,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 					commitID={commitID}
 					path={symbol ? symbol.path : pathFromRouteParams(this.props.params)}
 					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
-				{Features.projectWow.isEnabled() && <InfoPanelLifecycle isSymbolUrl={this.props.isSymbolUrl} repo={this.props.root.repository} />}
+				<InfoPanelLifecycle isSymbolUrl={this.props.isSymbolUrl} repo={this.props.root.repository} />
 			</RepoMain>
 		</div>;
 	}

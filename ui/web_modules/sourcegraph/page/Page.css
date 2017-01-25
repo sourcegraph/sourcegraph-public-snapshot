@@ -78,8 +78,7 @@
 	margin-bottom: -15px;
 }
 .subtitle {
-	font-weight: normal;
-	font-size: 1.75rem;
+	font-size: 1.35rem;
 }
 .icon {
 	vertical-align: middle;
@@ -108,8 +107,12 @@
 }
 .plan {
 	min-width: 150px;
+	position: relative; /* needed to position aligned buttons at bottom of each plan column */
 }
 .plan_box {
+
+}
+.plan_footer {
 
 }
 @media screen and (min-width: 48em) {
@@ -119,8 +122,13 @@
 		composes: mh3 from base;
 	}
 	.plan_box {
-		composes: mb5 from base;
+		composes: mb3 from base;
 		margin-right: 0 !important; /* cancel media query composed rule below */
+	}
+	.plan_footer {
+		position: absolute;
+		top: 100%;
+		width: 100%;
 	}
 }
 @media screen and (max-width: 48em) {
@@ -133,14 +141,17 @@
 	.plan_box {
 		composes: mr4 from base;
 		margin-bottom: 0 !important; /* cancel media query composed rule above */
-		flex: 0 0 150px;
+		flex: 0 0 225px;
+	}
+	.plan_footer {
+		display: none;
 	}
 	.sprinkle_blue, .sprinkle_purple, .sprinkle_orange {
 		opacity: .2;
 	}
 }
 .plan_panel {
-	composes: pt3 pb2 ph3 mb2 br3 from base;
+	composes: pt3 pb3 ph3 mb2 br3 from base;
 	composes: tc from typography;
 }
 .currency {
@@ -152,6 +163,12 @@
 }
 .amount {
 	font-size: 4.5rem;
+}
+.amount_contact_us {
+	font-size: 1.5rem;
+}
+.amount_per {
+	font-size: 0.75rem;
 }
 .plan_cta {
 	composes: fw6 from typography;

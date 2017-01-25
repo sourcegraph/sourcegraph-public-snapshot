@@ -182,6 +182,7 @@ declare namespace GQL {
 		repository: IRepository | null;
 		remoteRepositories: Array<IRemoteRepository>;
 		remoteStarredRepositories: Array<IRemoteRepository>;
+		currentUser: IUser | null;
 	}
 
 	/*
@@ -222,5 +223,13 @@ declare namespace GQL {
 		path: string;
 		query: string;
 		scheme: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IUser {
+		__typename: string;
+		githubOrgs: Array<string>;
 	}
 }

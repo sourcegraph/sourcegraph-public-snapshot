@@ -42,7 +42,7 @@ def test_github_private_auth_onboarding(d):
     # Go to home, click "Sign up"
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: d.find_button_by_partial_text("Continue with GitHub").click())
+    retry(lambda: d.find_button_by_partial_text("Private + public code").click())
 
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
@@ -73,7 +73,7 @@ def test_github_public_auth_onboarding(d):
     # Go to home, click "Sign up"
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: wd.find_element_by_link_text("sign in").click())
+    retry(lambda: wd.find_element_by_link_text("Public code only").click())
 
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
@@ -119,32 +119,29 @@ def test_golden_workflow(d):
     d.hover_token("NewRouter")
     wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0]).text)
 
-    # Right click and peek
-    retry(lambda: d.right_click(d.find_token("NewRouter")))
-    retry(lambda: d.find_context_menu_option("Peek Definition").click())
-
-    # Click "NewRouter" token
+    # Open NewRouter in InfoBar
     retry(lambda: d.find_token("NewRouter").click())
 
-    # Dismiss peek view
-    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE))
+    # Wait until local and global refs load.
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 1)
+    retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 2)
 
-    # Right click and find refs
-    def rc():
-        retry(lambda: d.right_click(d.find_token("NewRouter")))
-        retry(lambda: d.find_context_menu_option("Find All References").click())
-        wait_for(lambda: len(d.find_references_menu_options()) > 0, 10)
-    retry(rc)
-
-    # Peek reference
-    retry(lambda: d.find_references_menu_options()[0].click())
-
-    # Jump to reference
-    wait_for(lambda: len(d.find_references_menu_options()) > 0)
-    retry(lambda: d.double_click(d.find_references_menu_options()[0]))
-
-    # Dismiss peek view
-    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE))
+    # Open preview and scroll downlist without affecting InfoBar
+    retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+    retry(lambda: d.active_elem().send_keys(Keys.RIGHT))
+    retry(lambda: d.active_elem().send_keys(Keys.DOWN))
+    
+    # Verify Infobar remained open
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+    
+    # Dismiss InfoBar
+    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
 
     # Jump to modal to "NewRouter"
     retry(lambda: d.active_elem().send_keys("/"))
@@ -155,25 +152,39 @@ def test_golden_workflow(d):
         wait_for(lambda: "mux.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
     retry(e)
 
-def test_find_external_refs(d):
+def test_global_refs(d):
     wd = d.d
 
     tests = [{
-        "repo": "github.com/go-gorp/gorp",
-        "symbol": "gorp.SqlExecutor",
-        "symbol_name": "SqlExecutor",
+        "repo_rev": "github.com/golang/go@go1.7.3", # non-default branch
+        "symbol": "context.Context",
+        "symbol_name": "Context",
+        "global_min": 5,
     }, {
-        "repo": "github.com/gorilla/mux",
-        "symbol": "mux.Router",
-        "symbol_name": "Router",
-    }, {
-        "repo": "github.com/golang/go",
+        "repo_rev": "github.com/golang/go",
         "symbol": "json.Marshal",
         "symbol_name": "Marshal",
+        "global_min": 5,
+    }, {
+        "repo_rev": "github.com/go-gorp/gorp",
+        "symbol": "gorp.SqlExecutor",
+        "symbol_name": "SqlExecutor",
+        "global_min": 5,
+    }, {
+        "repo_rev": "github.com/gorilla/mux",
+        "symbol": "mux.Router",
+        "symbol_name": "Router",
+        "global_min": 5,
+    }, {
+        "repo_rev": "github.com/docker/docker",
+        "symbol": "random.NewSource",
+        "symbol_name": "NewSource",
+        "global_min": 2,
     }]
+
     for test in tests:
         # Go to repo page
-        wd.get(d.sg_url("/%s" % test['repo']))
+        wd.get(d.sg_url("/%s" % test['repo_rev']))
         wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "FILES")) > 0)
 
         # Jump to symbol
@@ -183,23 +194,38 @@ def test_find_external_refs(d):
         wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
         Util.select_search_result_using_arrow_keys(d, test['symbol'])
 
-        # Right click, find external references
+        # Click the symbol.
         wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0, 5) # wait a little longer, to rule out VSCode start-up time
         def rc():
             retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
             retry(lambda: d.active_elem().send_keys(Keys.UP)) # cursor might steal the click if we don't move it out of the way
-            retry(lambda: d.right_click(d.find_token(test['symbol_name'])))
-            retry(lambda: d.find_context_menu_option("Find External References").click())
+            retry(lambda: d.find_token(test['symbol_name']).click())
         retry(rc)
 
-        # Description header
-        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "Description")) > 0)
+        # Wait for sidebar to appear.
+        wait_for(lambda: len(wd.find_elements_by_css_selector('[class="sg-sidebar"]')) > 0)
 
-        # Examples header
-        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "Examples")) > 0)
+        find_sidebar_elements_by_tag_name_and_partial_text = lambda tag, text: [e for e in wd.find_element_by_css_selector('[class="sg-sidebar"]').find_elements_by_tag_name(tag) if text in e.text]
 
-        # External repository references header
-        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("h2", "%s is referenced in" % test['symbol_name'])) > 0)
+        # Symbol signature
+        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", test["symbol_name"])) > 0)
+
+        # "Defined in" header
+        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
+
+        # Wait for references to load + un-expand the "Local" references
+        wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
+        wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+        wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+        wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45) # Wait for loading icon to disappear
+        wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 1)
+        retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+
+        # Local References
+        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
+
+        # External References
+        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > test["global_min"])
 
 def test_beta_signup(d):
     wd = d.d
@@ -258,7 +284,7 @@ def test_browser_extension_hover_j2d_blob(d):
 
     # click and wait for page navigation
     retry(lambda: wd.find_element_by_id("text-node-17-6").click())
-    d.verify_new_tab_opened("https://sourcegraph.com/github.com/gorilla/mux@757bef944d0f21880861c2dd9c871ca543023cba/-/blob/mux.go#L17")
+    d.verify_new_tab_opened("https://sourcegraph.com/github.com/gorilla/mux@757bef944d0f21880861c2dd9c871ca543023cba/-/blob/mux.go#L17:1")
 
 def test_browser_extension_hover_j2d_unified_pull_request(d):
     wd = d.d
@@ -269,17 +295,17 @@ def test_browser_extension_hover_j2d_unified_pull_request(d):
         # addition
         "node": "text-node-17-5",
         "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
-        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17",
+        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17:1",
     }, {
         # deletion
         "node": "text-node-88-3",
         "hover": "func setVars(r *Request, val interface{})",
-        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326",
+        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326:1",
     }, {
         # unmodified
         "node": "text-node-24-6",
         "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
-        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L24",
+        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L24:1",
     }]
     for test in tests:
         # hover over a token, get a tooltip (may be "Loading...")
@@ -306,17 +332,17 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
         # addition
         "node": "text-node-17-5",
         "hover": "var contextSet func(r *Request, key interface{}, val interface{}) *Request",
-        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17",
+        "j2d_location": "https://sourcegraph.com/github.com/captncraig/mux@acfc892941192f90aadd4f452a295bf39fc5f7ed/-/blob/mux.go#L17:1",
     }, {
         # deletion
         "node": "text-node-88-3",
         "hover": "func setVars(r *Request, val interface{})",
-        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326",
+        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L326:1",
     }, {
         # unmodified
         "node": "text-node-18-6",
         "hover": "func NewRouter() *Router\nNewRouter returns a new router instance.",
-        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L18",
+        "j2d_location": "https://sourcegraph.com/github.com/gorilla/mux@9c068cf16d982f8bd444b8c352acbeec34c4fe5b/-/blob/mux.go#L18:1",
     }]
     for test in tests:
         # hover over a token, get a tooltip (may be "Loading...")
@@ -340,7 +366,7 @@ all_tests = [
     (test_login_logout, "@beyang"),
     (test_repo_jump_to, "@nico"),
     (test_golden_workflow, "@matt"),
-    (test_find_external_refs, "@stephen"),
+    (test_global_refs, "@stephen"),
     (test_beta_signup, "@kingy"),
     (test_first_open_jump_to_line, "@nico"),
     (test_browser_extension_app_injection, "@john"),

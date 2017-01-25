@@ -13,6 +13,11 @@ GOBIN="$PWD"/vendor/bin go get sourcegraph.com/sourcegraph/sourcegraph/vendor/so
 export WEBPACK_DEV_SERVER_URL=${WEBPACK_DEV_SERVER_URL:-http://localhost:8080}
 export WEBPACK_DEV_SERVER_ADDR=${WEBPACK_DEV_SERVER_ADDR:-127.0.0.1:8080}
 
+function killWebpackDevServer {
+	killall -9 webpack-dev-server > /dev/null
+}
+trap killWebpackDevServer EXIT
+
 curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && yarn && yarn run start &)
 
 mkdir -p .bin

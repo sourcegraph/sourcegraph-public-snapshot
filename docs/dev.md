@@ -221,7 +221,7 @@ responsible (or ask).
 The Sourcegraph repository enforces some code standards via `make
 test`, which is also run in CI.
 
-Read more about our style in [docs/style.md](docs/style.md).
+Read more about our style in [docs/style.md](style.md).
 
 ## Windows notes
 

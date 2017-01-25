@@ -21,8 +21,8 @@ import * as lsp from "sourcegraph/editor/lsp";
 import { modes } from "sourcegraph/editor/modes";
 import { createEditor } from "sourcegraph/editor/setup";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
+import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
 
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/FindExternalReferencesAction";
@@ -57,10 +57,10 @@ export class Editor implements IDisposable {
 			wrappingColumn: 0,
 			fontFamily: code_font_face,
 			fontSize: 15,
-			lineHeight: Features.projectWow.isEnabled() ? 24 : 21,
+			lineHeight: 24,
 			theme: "vs-dark",
 			renderLineHighlight: "line",
-			codeLens: Features.projectWow.isEnabled(),
+			codeLens: isCodeLensEnabled(),
 			glyphMargin: false,
 		});
 

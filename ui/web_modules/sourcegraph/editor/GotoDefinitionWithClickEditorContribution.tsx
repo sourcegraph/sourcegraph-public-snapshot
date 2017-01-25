@@ -2,7 +2,6 @@ import { urlToBlobLineCol } from "sourcegraph/blob/routes";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { Features } from "sourcegraph/util/features";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import * as platform from "vs/base/common/platform";
@@ -73,11 +72,7 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 
 		// just run the corresponding action
 		this.editor.setPosition(target.position);
-		if (Features.projectWow.isEnabled()) {
-			return this.editor.getAction("editor.action.openSidePanel").run();
-		}
-
-		return this.editor.getAction("editor.action.goToDeclaration").run();
+		return this.editor.getAction("editor.action.openSidePanel").run();
 	}
 
 	public getId(): string {

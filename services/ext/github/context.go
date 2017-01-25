@@ -61,3 +61,7 @@ func client(ctx context.Context) *minimalClient {
 	}
 	return client
 }
+
+func OrgsFromContext(ctx context.Context) GitHubOrgs {
+	return client(ctx).orgs
+}

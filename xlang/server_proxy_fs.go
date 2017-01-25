@@ -42,6 +42,9 @@ func (c *serverProxyConn) handleFS(ctx context.Context, method, path string) (re
 	case "fs/readDirFiles":
 		dir, _ := filepath.Split(path)
 		ls, err := c.rootFS.ReadDir(ctx, dir)
+		if err != nil {
+			return nil, err
+		}
 		contents := make(map[string][]byte)
 		for _, f := range ls {
 			if f.IsDir() {
