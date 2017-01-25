@@ -131,6 +131,7 @@ export class RefTree extends React.Component<Props, State> {
 		const modelService = Services.get(ITextModelResolverService);
 		modelService.createModelReference(reference.uri).then((ref) => {
 			this.props.focus(reference);
+			this.tree.layout();
 		});
 	}
 
