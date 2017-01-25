@@ -40,10 +40,21 @@ class Context {
 		return Boolean(this.googleToken && this.googleToken.scope.includes("https://www.googleapis.com/auth/cloud-platform") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.email") && this.googleToken.scope.includes("https://www.googleapis.com/auth/userinfo.profile"));
 	}
 
+	/**
+	 * the chrome extension is detected when it creates a div with id `sourcegraph-app-background` on page.
+	 * for on-premise or testing instances of Sourcegraph, the chrome extension never runs, so this will return false.
+	 * proceed with caution, and think about using /util/shouldPromptToInstallBrowserExtension instead.
+	 */
 	hasChromeExtensionInstalled(): boolean {
 		return document.getElementById("sourcegraph-app-background") !== null;
 	}
+
+	isSourcegraphCloud(): boolean {
+		return SOURCEGRAPH_CLOUD_URL_PATTERN.test(this.appURL);
+	}
 }
+
+const SOURCEGRAPH_CLOUD_URL_PATTERN = /^https?:\/\/sourcegraph.com/i;
 
 export const context = new Context(global.__sourcegraphJSContext);
 

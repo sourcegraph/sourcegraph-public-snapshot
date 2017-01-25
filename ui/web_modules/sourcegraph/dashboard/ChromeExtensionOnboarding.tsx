@@ -12,6 +12,7 @@ import { EditorDemo } from "sourcegraph/dashboard/EditorDemo";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
+import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 
 interface Props {
 	location?: any;
@@ -68,25 +69,9 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 		return <EditorDemo repo="github.com/gorilla/mux" rev="master" path="mux.go" startLine={211} />;
 	}
 
-	_isBrowserSupported(): boolean {
-		const isChrome = navigator.userAgent.includes("Chrome");
-		const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-
-		if (isMobile || !isChrome) {
-			AnalyticsConstants.Events.ChromeExtensionUnsupportedBrowser_Failed.logEvent({ page_name: "ChromeExtensionOnboarding" });
-			return false;
-		}
-
-		return true;
-	}
-
-	_isChromeExtensionInstalled(): boolean {
-		// Check for a invisible element injected by the extension on https://(www.)?sourcegraph.com/*
-		return document.getElementById("sourcegraph-app-background") !== null;
-	}
-
 	render(): JSX.Element | null {
-		if (!this._isBrowserSupported() || this._isChromeExtensionInstalled()) {
+		const shouldDisplay = shouldPromptToInstallBrowserExtension();
+		if (!shouldDisplay) {
 			this._continueOnboarding();
 			return null;
 		}

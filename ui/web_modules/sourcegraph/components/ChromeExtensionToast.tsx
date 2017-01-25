@@ -1,6 +1,5 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { Close } from "sourcegraph/components/symbols/Primaries";
@@ -8,9 +7,10 @@ import { Toast } from "sourcegraph/components/Toast";
 import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
+import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 
-const ChromeExtensionToastKey = "chrome-extension-toast-dismissed";
-const ToastTitle = "Save time browsing code on GitHub with the Sourcegraph browser extension!";
+const TOAST_TITLE = "Save time browsing code on GitHub with the Sourcegraph browser extension!";
+const EXTENSION_TOAST_KEY = "chrome-extension-toast-dismissed";
 
 interface State {
 	isVisible: boolean;
@@ -30,27 +30,22 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	}
 
 	componentDidMount(): void {
-		let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-		let isChrome = /Chrome/i.test(navigator.userAgent);
-		if (window.localStorage[ChromeExtensionToastKey] || !isChrome || isMobile || context.hasChromeExtensionInstalled()) {
-			return;
+		const isVisible = shouldPromptToInstallBrowserExtension() && !Boolean(window.localStorage[EXTENSION_TOAST_KEY]);
+		if (isVisible) {
+			EventLogger.logViewEvent("ViewChromeExtensionToast", this.props.location.pathname, { toastCopy: TOAST_TITLE });
 		}
 		this.setState({
-			isVisible: !context.hasChromeExtensionInstalled(),
+			isVisible: isVisible,
 		});
-		if (this.state.isVisible) {
-			EventLogger.logViewEvent("ViewChromeExtensionToast", this.props.location.pathname, { toastCopy: ToastTitle });
-		}
 	}
 
 	render(): JSX.Element | null {
-
 		let { isVisible } = this.state;
 		if (isVisible) {
 			return (
 				<Toast>
-					<a onClick={this._closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><Close /></a>
-					<p style={{ textAlign: "center" }}><a onClick={this._toastCTAClicked.bind(this)}>{ToastTitle}</a></p>
+					<a onClick={this.closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><Close /></a>
+					<p style={{ textAlign: "center" }}><a onClick={this.toastCTAClicked.bind(this)}>{TOAST_TITLE}</a></p>
 				</Toast>
 			);
 		}
@@ -58,18 +53,18 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 		return null;
 	}
 
-	_toastCTAClicked(): void {
+	private toastCTAClicked(): void {
 		installChromeExtensionClicked("ChromeExtensionOnboarding");
-		this._dismissToast();
+		this.dismissToast();
 	}
 
-	_closeClicked(): void {
+	private closeClicked(): void {
 		AnalyticsConstants.Events.ToastChrome_Closed.logEvent({ pageName: "ChromeExtensionOnboarding" });
-		this._dismissToast();
+		this.dismissToast();
 	}
 
-	_dismissToast(): void {
-		window.localStorage[ChromeExtensionToastKey] = "true";
+	private dismissToast(): void {
+		window.localStorage[EXTENSION_TOAST_KEY] = "true";
 		this.setState({ isVisible: false });
 
 		// Call layout to let workbench draw itself according to the new
