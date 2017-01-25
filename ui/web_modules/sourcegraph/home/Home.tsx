@@ -223,7 +223,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						fontWeight: "normal",
 						marginTop: whitespace[3],
 					}}>
-						Free for public and personal private code
+						Free for public and open-source code
 					</Heading>
 
 					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
