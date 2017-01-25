@@ -78,8 +78,7 @@
 	margin-bottom: -15px;
 }
 .subtitle {
-	font-weight: normal;
-	font-size: 1.75rem;
+	font-size: 1.35rem;
 }
 .icon {
 	vertical-align: middle;
@@ -123,7 +122,7 @@
 		composes: mh3 from base;
 	}
 	.plan_box {
-		composes: mb5 from base;
+		composes: mb3 from base;
 		margin-right: 0 !important; /* cancel media query composed rule below */
 	}
 	.plan_footer {
@@ -142,7 +141,7 @@
 	.plan_box {
 		composes: mr4 from base;
 		margin-bottom: 0 !important; /* cancel media query composed rule above */
-		flex: 0 0 150px;
+		flex: 0 0 225px;
 	}
 	.plan_footer {
 		display: none;
@@ -152,7 +151,7 @@
 	}
 }
 .plan_panel {
-	composes: pt3 pb2 ph3 mb2 br3 from base;
+	composes: pt3 pb3 ph3 mb2 br3 from base;
 	composes: tc from typography;
 }
 .currency {
