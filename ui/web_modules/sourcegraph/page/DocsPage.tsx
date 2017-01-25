@@ -54,9 +54,9 @@ export function DocsPage(): JSX.Element {
 
 				<a id="definition_information"></a>
 				<Heading level={5} className={styles.h5}>Definition Information</Heading>
-				<p className={styles.p}>Hover over a symbol (i.e. function, struct, variable or package) and you'll see a popover that shows the definition informatino for that symbol.</p>
+				<p className={styles.p}>Hover over a symbol (i.e., function, struct, variable or package) and you'll see a popover that shows the definition informatino for that symbol.</p>
 				<img src="https://storage.googleapis.com/sourcegraph-assets/documentation_hover_information.png" width="100%" />
-				<p className={styles.p}>Click on a symbol and you'll get a view that includes the symbol's definition, any documentation provided, an ability to jump to where it's defined, and a list of where it's referenced both in the current repository, and every other publicly available repository on Github.</p>
+				<p className={styles.p}>Click on a symbol and you'll get a view that includes the symbol's definition, any documentation provided, an ability to jump to where it's defined, and a list of where it's referenced both in the current repository, and every other publicly available repository on GitHub.</p>
 				<img src="https://storage.googleapis.com/sourcegraph-assets/documentation_information_panel_expanded.png" width="100%" />
 
 				<br />
@@ -74,7 +74,7 @@ export function DocsPage(): JSX.Element {
 				<p className={styles.p}>After clicking a symbol, references to the symbol in the current repository are listed in the side panel.</p>
 				<p className={styles.p}>Click a reference and see that code appear over your current view. To dismiss it, simply click the '&times;' in the reference header, or click out of the reference view to go back to where you were.</p>
 				<img src="https://storage.googleapis.com/sourcegraph-assets/documentation_reference_panel_expanded.png" width="100%" />
-				<p className={styles.p}>External references are also listed in the side panel, below the local references. These are the all of the places the symbol is referenced across all publicly viewable code on Github.</p>
+				<p className={styles.p}>External references are also listed in the side panel, below the local references. These are the all of the places the symbol is referenced across all publicly viewable code on GitHub.</p>
 				<img src="https://storage.googleapis.com/sourcegraph-assets/documentation_global_references.png" width="100%" />
 				<br />
 				<br />
