@@ -63,7 +63,6 @@ export class Repos extends React.Component<Props, {}> {
 			marginBottom: whitespace[3],
 		};
 		return <header>
-			{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
 			<FlexContainer items="center" justify="center" wrap={true}>
 				{!context.hasPrivateGitHubToken() &&
 					<GitHubAuthButton scopes={privateGitHubOAuthScopes} style={btnSx} returnTo={this.props.location}>
