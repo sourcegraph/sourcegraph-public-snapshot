@@ -119,32 +119,29 @@ def test_golden_workflow(d):
     d.hover_token("NewRouter")
     wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0]).text)
 
-    # Right click and peek
-    retry(lambda: d.right_click(d.find_token("NewRouter")))
-    retry(lambda: d.find_context_menu_option("Peek Definition").click())
-
-    # Click "NewRouter" token
+    # Open NewRouter in InfoBar
     retry(lambda: d.find_token("NewRouter").click())
 
-    # Dismiss peek view
-    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE))
+    # Wait until local and global refs load.
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 1)
+    retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 2)
 
-    # Right click and find refs
-    def rc():
-        retry(lambda: d.right_click(d.find_token("NewRouter")))
-        retry(lambda: d.find_context_menu_option("Find All References").click())
-        wait_for(lambda: len(d.find_references_menu_options()) > 0, 10)
-    retry(rc)
-
-    # Peek reference
-    retry(lambda: d.find_references_menu_options()[0].click())
-
-    # Jump to reference
-    wait_for(lambda: len(d.find_references_menu_options()) > 0)
-    retry(lambda: d.double_click(d.find_references_menu_options()[0]))
-
-    # Dismiss peek view
-    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE))
+    # Open preview and scroll downlist without affecting InfoBar
+    retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+    retry(lambda: d.active_elem().send_keys(Keys.RIGHT))
+    retry(lambda: d.active_elem().send_keys(Keys.DOWN))
+    
+    # Verify Infobar remained open
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+    
+    # Dismiss InfoBar
+    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
 
     # Jump to modal to "NewRouter"
     retry(lambda: d.active_elem().send_keys("/"))
@@ -367,8 +364,8 @@ all_tests = [
     # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     # (test_github_public_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     (test_login_logout, "@beyang"),
-    # (test_repo_jump_to, "@nico"), # TODO(king): re-enable these
-    # (test_golden_workflow, "@matt"),
+    (test_repo_jump_to, "@nico"),
+    (test_golden_workflow, "@matt"),
     (test_global_refs, "@stephen"),
     (test_beta_signup, "@kingy"),
     (test_first_open_jump_to_line, "@nico"),
