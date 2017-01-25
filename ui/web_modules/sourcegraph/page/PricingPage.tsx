@@ -1,5 +1,4 @@
 import * as React from "react";
-import { Link } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
@@ -28,10 +27,10 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 		onToggle={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "organization", page_name: AnalyticsConstants.PAGE_PRICING })}>
 		<Button block={true} className={styles.plan_cta || ""} color="green">Start 14 days free</Button>
 	</LocationStateToggleLink>;
-	let enterprisePlanButton: JSX.Element = <Link to="/contact"
+	let enterprisePlanButton: JSX.Element = <a href="mailto:sales@sourcegraph.com"
 		onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "enterprise", page_name: AnalyticsConstants.PAGE_PRICING })}>
 		<Button block={true} className={styles.plan_cta || ""} color="blue">Contact us</Button>
-	</Link>;
+	</a>;
 
 	if (context.user) {
 		communityPlanButton = <div />;
@@ -110,7 +109,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 					</div>
 
 				</div>
-				<p className={styles.footer}>Plans are billed annually. Questions? <Link to="/contact">Contact us.</Link></p>
+				<p className={styles.footer}>Plans are billed annually. Questions? <a href="mailto:sales@sourcegraph.com">Contact us.</a></p>
 			</div>
 		</div>
 	);
