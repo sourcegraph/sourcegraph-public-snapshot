@@ -18,7 +18,8 @@ xlang-php:
 	php/build.sh
 
 xlang-java:
-	java/build.sh
+	@echo Java build disabled since repo is now private. If you want to build, please manually run
+	@echo java/build.sh
 
 deploy:
 	@echo "This is deprecated. To update staging environments use the deploy-staging target."
