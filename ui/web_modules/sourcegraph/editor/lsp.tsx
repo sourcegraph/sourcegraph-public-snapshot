@@ -125,14 +125,6 @@ export async function sendExt(uri: string, modeID: string, method: string, param
 	return response;
 }
 
-const modeToIssueAssignee = {
-	go: "keegancsmith",
-	typescript: "beyang",
-	javascript: "beyang",
-	java: "akhleung",
-	python: "renfredxh",
-};
-
 function logLSPResponse(uri: URI, modeID: string, method: string, params: any, reqBody: any, resp: LSPResponse, traceURL: string, rttMsec: number): void {
 	if (!(global as any).console || !(global as any).console.group || !(global as any).console.debug) {
 		return;
@@ -165,7 +157,6 @@ function logLSPResponse(uri: URI, modeID: string, method: string, params: any, r
 
 	const { repo } = URIUtils.repoParams(uri);
 	const issueTitle = `${err ? "Error in" : "Unexpected behavior from"} ${method} in ${repo}`;
-	const assignee = modeToIssueAssignee[modeID];
 	const issueBody = `I saw ${err ? "an error in" : "unexpected behavior from"} from LSP ${method} on a ${modeID} file at [${pageURL}](${pageURL}).
 
 **Repro:**
@@ -188,7 +179,7 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
-	console.debug(`Copy and send this URL to support@sourcegraph.com to report an issue:\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=${encodeURIComponent(`Component: lang-${modeID}`)}&labels[]=${encodeURIComponent("Type: Bug")}${assignee ? `&assignee=${assignee}` : ""}`);
+	console.debug(`Copy and send this URL to support@sourcegraph.com to report an issue:\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=${encodeURIComponent(`Component: lang-${modeID}`)}&labels[]=${encodeURIComponent("Type: Bug")}`);
 	console.groupEnd();
 
 	// tslint:enable: no-console
