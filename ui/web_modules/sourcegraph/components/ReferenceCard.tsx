@@ -44,13 +44,14 @@ insertGlobal(`#reference-tree .monaco-tree-row.selected [data-${sx}] div`, {
 	color: "white",
 });
 
-export function ReferenceCard({ fnSignature, authorName, avatar, date, fileName, line }: {
+export function ReferenceCard({ fnSignature, authorName, avatar, date, fileName, line, height }: {
 	fnSignature: string;
 	authorName?: string;
 	avatar?: string;
 	date?: string;
 	fileName: string;
 	line: number;
+	height: number;
 }): JSX.Element {
 	return <div {...sx}>
 		<code style={Object.assign({
@@ -61,6 +62,7 @@ export function ReferenceCard({ fnSignature, authorName, avatar, date, fileName,
 			textOverflow: "ellipsis",
 			overflow: "hidden",
 			wordWrap: "nowrap",
+			maxHeight: height,
 		}, rowSx)}>{fnSignature}</code>
 		<div {...css({ color: colors.blueGrayD1() }) }>
 			{authorName && <div style={rowSx}>

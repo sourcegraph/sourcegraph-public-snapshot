@@ -55,6 +55,12 @@ interface State {
 let userToggledState: Set<string>;
 let firstToggleAdded: boolean;
 
+// The height of the tree elements must be explicitly defined and enforced, 
+// otherwise scrolling functionality will not work properly.
+const fileRefsHeight: number = 36;
+const refBaseHeight: number = 68;
+const refWithCommitInfoHeight: number = 95;
+
 @autobind
 export class RefTree extends React.Component<Props, State> {
 
@@ -214,11 +220,11 @@ class Renderer extends LegacyRenderer {
 	public getHeight(tree: ITree, element: any): number {
 		if (element instanceof OneReference) {
 			if (element.commitInfo) {
-				return 100;
+				return refWithCommitInfoHeight;
 			}
-			return 71;
+			return refBaseHeight;
 		} else if (element instanceof FileReferences) {
-			return 50;
+			return fileRefsHeight;
 		}
 
 		return 0;
@@ -275,7 +281,7 @@ class Renderer extends LegacyRenderer {
 					display: "flex",
 					fontWeight: "bold",
 					alignItems: "center",
-					height: 36,
+					height: fileRefsHeight,
 				},
 			);
 
@@ -311,6 +317,7 @@ class Renderer extends LegacyRenderer {
 			const line = element.range.startLineNumber
 			const fnSignature = preview.before.concat(preview.inside, preview.after);
 			const refContainer = $("div");
+			let height = refBaseHeight;
 			let defaultAvatar;
 			let gravatarHash;
 			let avatar;
@@ -323,6 +330,7 @@ class Renderer extends LegacyRenderer {
 				avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
 				authorName = element.commitInfo.hunk.author.person.name;
 				date = element.commitInfo.hunk.author.date;
+				height = refWithCommitInfoHeight;
 			}
 
 			refContainer.appendTo(container);
@@ -334,6 +342,7 @@ class Renderer extends LegacyRenderer {
 					avatar={avatar}
 					date={date}
 					fileName={fileName}
+					height={height}
 					line={line} />,
 				refContainer.getHTMLElement(),
 			);
