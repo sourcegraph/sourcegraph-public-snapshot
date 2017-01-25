@@ -91,51 +91,176 @@ export class Home extends React.Component<HomeProps, {}> {
 
 			<BGContainer img={`${context.assetsRoot}/img/Homepage/bg-sourcesprinkles.svg`} position="center top" size="cover">
 
+				<Heading level={4} align="center" style={{ fontWeight: "normal" }}>
+					Language support:
+				</Heading>
+
 				<div style={{
 					margin: "auto",
 					marginBottom: whitespace[2],
-					maxWidth: 480,
+					maxWidth: 640,
 					textAlign: "center",
 				}}>
 
-					<FlexContainer justify="around" style={{
-						height: 100,
-						margin: ` 0 ${whitespace[5]}`,
-					}}>
-						<img title="Go supported" width="40" src={`${context.assetsRoot}/img/Homepage/logo/go.svg`} />
-						<img title="TypeScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/typescript.svg`} />
-						<img title="JavaScript in Beta" width="40" src={`${context.assetsRoot}/img/Homepage/logo/js.svg`} />
+					<FlexContainer justify="center">
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.greenL2(),
+							color: colors.greenD1(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							Go
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueL2(),
+							color: colors.blueD1(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div title="Beta">TypeScript<sup>&beta;</sup></div>
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.yellowL2(),
+							color: colors.yellowD1(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div title="Beta">JavaScript<sup>&beta;</sup></div>
+						</Heading>
 
 					</FlexContainer>
-					<FlexContainer justify="around" style={{
-						height: 100,
-						opacity: 0.5,
-						margin: "auto",
-						width: "100%",
-					}}>
 
-						<img title="Java coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/java.svg`} />
-						<img title="Python coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/python.svg`} />
-						<img title="PHP coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/php.svg`} />
-						<img title="Scala coming soon" width="24" src={`${context.assetsRoot}/img/Homepage/logo/scala.svg`} />
+					<FlexContainer justify="center" wrap={true}>
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div title="Beta">Java<sup>&beta;</sup></div>
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							Python
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div title="Alpha">PHP<sup>&alpha;</sup></div>
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							Ruby
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							Scala
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							C
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							C++
+						</Heading>
+
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.blueGrayL3(),
+							color: colors.blueGray(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div title="Alpha">CSS/Sass/Less<sup>&alpha;</sup></div>
+						</Heading>
+
+						<Heading level={6} style={{ fontWeight: "normal", lineHeight: 2.25, }}>and more coming soon&hellip;</Heading>
+
 					</FlexContainer>
 
-					<Heading level={4} align="center" style={{ fontWeight: "normal" }}>
-						Support for Go, TypeScript, and JavaScript
-					</Heading>
-
-					<p style={{
-						color: colors.blueGray(),
-						paddingLeft: whitespace[4],
-						paddingRight: whitespace[4],
-					}}>
-						JavaScript and TypeScript in beta. Java, Python, Ruby, Scala, PHP, C, C++, and more coming soon...
-					</p>
 					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
-						<strong>
-							Join the beta list
-							<ChevronRight width={17} style={{ marginLeft: 2, top: 0 }} />
-						</strong>
+						<div style={{ marginTop: whitespace[3] }}>
+							<strong>
+								Join the beta list
+								<ChevronRight color={colors.blue()} width={7} style={{ marginLeft: whitespace[1] }} />
+							</strong>
+						</div>
 					</LocationStateToggleLink>
 
 				</div>
