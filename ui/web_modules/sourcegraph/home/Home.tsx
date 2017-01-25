@@ -127,129 +127,11 @@ export class Home extends React.Component<HomeProps, {}> {
 							borderRadius: 20,
 							marginRight: whitespace[3],
 						}}>
-							<div title="Beta">TypeScript<sup>&beta;</sup></div>
+							<div title="Alpha">TypeScript<sup>&alpha;</sup></div>
 						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.yellowL2(),
-							color: colors.yellowD1(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							<div title="Beta">JavaScript<sup>&beta;</sup></div>
-						</Heading>
-
 					</FlexContainer>
 
 					<FlexContainer justify="center" wrap={true}>
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							<div title="Beta">Java<sup>&beta;</sup></div>
-						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							Python
-						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							<div title="Alpha">PHP<sup>&alpha;</sup></div>
-						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							Ruby
-						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							Scala
-						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							C
-						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							C++
-						</Heading>
-
-						<Heading level={5} style={{
-							paddingTop: whitespace[1],
-							paddingRight: whitespace[3],
-							paddingBottom: whitespace[1],
-							paddingLeft: whitespace[3],
-							backgroundColor: colors.blueGrayL3(),
-							color: colors.blueGray(),
-							borderRadius: 20,
-							marginRight: whitespace[3],
-						}}>
-							<div title="Alpha">CSS/Sass/Less<sup>&alpha;</sup></div>
-						</Heading>
-
 						<Heading level={6} style={{ fontWeight: "normal", lineHeight: 2.25, }}>and more coming soon&hellip;</Heading>
 
 					</FlexContainer>
@@ -341,7 +223,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						fontWeight: "normal",
 						marginTop: whitespace[3],
 					}}>
-						Free for public and personal private code
+						Free for public and open-source code
 					</Heading>
 
 					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
