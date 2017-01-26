@@ -8,7 +8,7 @@ import { colors, layout, typography, whitespace } from "sourcegraph/components/u
 import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-const PageName: string = "MasterPlanPage";
+const PageName = "MasterPlanPage";
 
 function TLDR({ style }: { style?: React.CSSProperties; }): JSX.Element {
 	const itemSx = {
