@@ -314,7 +314,7 @@ class Renderer extends LegacyRenderer {
 
 		if (element instanceof OneReference) {
 			const preview = element.preview.preview(element.range);
-			const fileName = element.uri.fragment;
+			const fileName = element.uri.fragment.split("/").pop()!;
 			const line = element.range.startLineNumber;
 			const fnSignature = preview.before.concat(preview.inside, preview.after);
 			const refContainer = $("div");
