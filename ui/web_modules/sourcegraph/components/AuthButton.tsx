@@ -58,9 +58,9 @@ export function AuthButton(props: Props): JSX.Element {
 	return (
 		<form method="POST" action={url} onSubmit={() => eventObject.logEvent({ page_name: pageName })}>
 			<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
-			{secondaryText ? <SplitButton {...btnProps} secondaryText={secondaryText}>
+			{secondaryText ? <SplitButton type="submit" {...btnProps} secondaryText={secondaryText}>
 				{icon} {children}
-			</SplitButton> : <Button {...btnProps}>	{icon} {children}</Button>}
+			</SplitButton> : <Button type="submit" {...btnProps}>	{icon} {children}</Button>}
 		</form>
 	);
 }
