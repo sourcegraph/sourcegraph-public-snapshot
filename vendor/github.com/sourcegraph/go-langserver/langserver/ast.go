@@ -37,7 +37,7 @@ func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool,
 
 func rangeForNode(fset *token.FileSet, node ast.Node) lsp.Range {
 	start := fset.Position(node.Pos())
-	end := fset.Position(node.End()) // node.End is exclusive, but we want inclusive
+	end := fset.Position(node.End()) // node.End is exclusive, and so is the LSP spec
 	return lsp.Range{
 		Start: lsp.Position{Line: start.Line - 1, Character: start.Column - 1},
 		End:   lsp.Position{Line: end.Line - 1, Character: end.Column - 1},
@@ -57,6 +57,8 @@ func goRangesToLSPLocations(fset *token.FileSet, nodes []*ast.Ident) []lsp.Locat
 	return locs
 }
 
+// goRangeToLSPLocation converts a token.Pos range into a lsp.Location. end is
+// exclusive.
 func goRangeToLSPLocation(fset *token.FileSet, pos token.Pos, end token.Pos) lsp.Location {
 	return lsp.Location{
 		URI:   "file://" + fset.Position(pos).Filename,

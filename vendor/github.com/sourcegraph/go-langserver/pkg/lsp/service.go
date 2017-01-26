@@ -1,5 +1,10 @@
 package lsp
 
+import (
+	"bytes"
+	"encoding/json"
+)
+
 type None struct{}
 
 type InitializeParams struct {
@@ -34,12 +39,67 @@ type TextDocumentSyncKind int
 
 const (
 	TDSKNone        TextDocumentSyncKind = 0
-	TDSKFull                             = 1
-	TDSKIncremental                      = 2
+	TDSKFull        TextDocumentSyncKind = 1
+	TDSKIncremental TextDocumentSyncKind = 2
 )
 
+type TextDocumentSyncOptions struct {
+	OpenClose         bool                 `json:"openClose,omitempty"`
+	Change            TextDocumentSyncKind `json:"change"`
+	WillSave          bool                 `json:"willSave,omitempty"`
+	WillSaveWaitUntil bool                 `json:"willSaveWaitUntil,omitempty"`
+	Save              *SaveOptions         `json:"save,omitempty"`
+}
+
+// TextDocumentSyncOptions holds either a TextDocumentSyncKind or
+// TextDocumentSyncOptions. The LSP API allows either to be specified
+// in the (ServerCapabilities).TextDocumentSync field.
+type TextDocumentSyncOptionsOrKind struct {
+	Kind    *TextDocumentSyncKind
+	Options *TextDocumentSyncOptions
+}
+
+// MarshalJSON implements json.Marshaler.
+func (v TextDocumentSyncOptionsOrKind) MarshalJSON() ([]byte, error) {
+	if v.Kind != nil {
+		return json.Marshal(v.Kind)
+	}
+	return json.Marshal(v.Options)
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (v *TextDocumentSyncOptionsOrKind) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("null")) {
+		*v = TextDocumentSyncOptionsOrKind{}
+		return nil
+	}
+	var kind TextDocumentSyncKind
+	if err := json.Unmarshal(data, &kind); err == nil {
+		// Create equivalent TextDocumentSyncOptions using the same
+		// logic as in vscode-languageclient. Also set the Kind field
+		// so that JSON-marshaling and unmarshaling are inverse
+		// operations (for backward compatibility, preserving the
+		// original input but accepting both).
+		*v = TextDocumentSyncOptionsOrKind{
+			Options: &TextDocumentSyncOptions{OpenClose: true, Change: kind},
+			Kind:    &kind,
+		}
+		return nil
+	}
+	var tmp TextDocumentSyncOptions
+	if err := json.Unmarshal(data, &tmp); err != nil {
+		return err
+	}
+	*v = TextDocumentSyncOptionsOrKind{Options: &tmp}
+	return nil
+}
+
+type SaveOptions struct {
+	IncludeText bool `json:"includeText"`
+}
+
 type ServerCapabilities struct {
-	TextDocumentSync                 int                              `json:"textDocumentSync,omitempty"`
+	TextDocumentSync                 TextDocumentSyncOptionsOrKind    `json:"textDocumentSync,omitempty"`
 	HoverProvider                    bool                             `json:"hoverProvider,omitempty"`
 	CompletionProvider               *CompletionOptions               `json:"completionProvider,omitempty"`
 	SignatureHelpProvider            *SignatureHelpOptions            `json:"signatureHelpProvider,omitempty"`
@@ -369,4 +429,8 @@ type DocumentOnTypeFormattingParams struct {
 	Position     Position               `json:"position"`
 	Ch           string                 `json:"ch"`
 	Options      FormattingOptions      `json:"formattingOptions"`
+}
+
+type CancelParams struct {
+	ID ID `json:"id"`
 }

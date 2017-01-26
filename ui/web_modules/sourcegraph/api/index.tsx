@@ -76,6 +76,10 @@ export interface BranchesOptions {
 	ContainsCommit?: string;
 }
 
+export interface CancelParams {
+	id: any;
+}
+
 export interface ClientCapabilities {
 	xfilesProvider?: boolean;
 	xcontentProvider?: boolean;
@@ -484,6 +488,9 @@ export interface Hover {
 export interface Hunk {
 }
 
+export interface ID {
+}
+
 export interface InitializeError {
 	retry: boolean;
 }
@@ -803,6 +810,10 @@ export interface ResolvedRev {
 export interface SSHConfig {
 }
 
+export interface SaveOptions {
+	includeText: boolean;
+}
+
 export interface SearchOptions {
 	Query?: string;
 	QueryType?: string;
@@ -821,7 +832,7 @@ export interface SearchResult {
 }
 
 export interface ServerCapabilities {
-	textDocumentSync?: number;
+	textDocumentSync?: any;
 	hoverProvider?: boolean;
 	completionProvider?: any;
 	signatureHelpProvider?: any;
@@ -923,6 +934,17 @@ export interface TextDocumentItem {
 export interface TextDocumentPositionParams {
 	textDocument: any;
 	position: any;
+}
+
+export interface TextDocumentSyncOptions {
+	openClose?: boolean;
+	change: any;
+	willSave?: boolean;
+	willSaveWaitUntil?: boolean;
+	save?: any;
+}
+
+export interface TextDocumentSyncOptionsOrKind {
 }
 
 export interface TextEdit {

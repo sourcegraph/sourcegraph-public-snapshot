@@ -10,7 +10,6 @@ import (
 	"go/types"
 	"log"
 	"path"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -176,14 +175,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 		// Prevent any uncaught panics from taking the entire server down.
 		defer func() {
 			close(done)
-			if r := recover(); r != nil {
-				// Same as net/http
-				const size = 64 << 10
-				buf := make([]byte, size)
-				buf = buf[:runtime.Stack(buf, false)]
-				log.Printf("ignoring panic serving %v", req.Method)
-				return
-			}
+			_ = panicf(recover(), "%v", req.Method)
 		}()
 
 		lconf.Load() // ignore error

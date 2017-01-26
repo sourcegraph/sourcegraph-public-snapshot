@@ -9,7 +9,6 @@ import (
 	"go/token"
 	"go/types"
 	"log"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -95,14 +94,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 			// Prevent any uncaught panics from taking the entire server down.
 			defer func() {
 				wg.Done()
-				if r := recover(); r != nil {
-					// Same as net/http
-					const size = 64 << 10
-					buf := make([]byte, size)
-					buf = buf[:runtime.Stack(buf, false)]
-					log.Printf("ignoring panic serving %v for pkg %v: %v\n%s", req.Method, pkg, r, buf)
-					return
-				}
+				_ = panicf(recover(), "%v for pkg %v", req.Method, pkg)
 			}()
 
 			err := h.workspaceRefsFromPkg(ctx, bctx, conn, params, fset, pkg, rootPath, &results)
@@ -119,14 +111,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 	go func() {
 		// Prevent any uncaught panics from taking the entire server down.
 		defer func() {
-			if r := recover(); r != nil {
-				// Same as net/http
-				const size = 64 << 10
-				buf := make([]byte, size)
-				buf = buf[:runtime.Stack(buf, false)]
-				log.Printf("ignoring panic serving %v for pkgs %v: %v\n%s", req.Method, pkgs, r, buf)
-				return
-			}
+			_ = panicf(recover(), "%v for pkg %v", req.Method, pkgs)
 		}()
 
 		_, err = h.workspaceRefsTypecheck(ctx, bctx, conn, fset, pkgs, afterTypeCheck)

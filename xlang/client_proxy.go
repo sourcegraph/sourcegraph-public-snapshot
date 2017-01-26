@@ -302,10 +302,14 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.init = &params
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
-		return lsp.ServerCapabilities{
-			ReferencesProvider: true,
-			DefinitionProvider: true,
-			HoverProvider:      true,
+		kind := lsp.TDSKFull
+		return lsp.InitializeResult{
+			Capabilities: lsp.ServerCapabilities{
+				TextDocumentSync:   lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
+				ReferencesProvider: true,
+				DefinitionProvider: true,
+				HoverProvider:      true,
+			},
 		}, nil
 
 	case "textDocument/definition", "textDocument/xdefinition", "textDocument/hover", "textDocument/references", "textDocument/documentSymbol", "workspace/symbol", "workspace/xreferences", "workspace/xdependencies", "workspace/xpackages":
