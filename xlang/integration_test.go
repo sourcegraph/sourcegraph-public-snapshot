@@ -167,6 +167,9 @@ func TestIntegration(t *testing.T) {
 				"pkg/ssh/ssh.go:49:38":               "func NewCounter(...",
 				"pkg/util/workqueue/queue.go:113:15": "struct field L sync.Locker",
 			},
+			wantSymbols: map[string][]string{
+				"kubectlAnn": []string{"git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33#pkg/kubectl/kubectl.go:constant:kubectl.kubectlAnnotationPrefix:30:0"},
+			},
 			wantXDependencies: "kubernetes-kubernetes.json",
 		},
 		"git://github.com/uber-go/atomic?3b8db5e93c4c02efbc313e17b2e796b0914a01fb": {
