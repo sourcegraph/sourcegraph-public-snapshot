@@ -242,6 +242,15 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		} else {
 			resps[i] = &jsonrpc2.Response{}
 			err := c.Call(ctx, req.Method, req.Params, &resps[i].Result)
+			if err == nil && resps[i].Result == nil {
+				// c.Call sets Result to Go nil if the response has a
+				// JSON "null" result (per the rules of
+				// json.Unmarshal). But a JSON-RPC 2.0 response
+				// requires either the "result" or "error" field, so
+				// we must prevent the "result" field from being
+				// omitted altogether.
+				resps[i].Result = &jsonNull
+			}
 			if e, ok := err.(*jsonrpc2.Error); ok {
 				// We do not mark the handler as failed, but
 				// we want to record that it failed in
@@ -268,15 +277,19 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 					emptyResponse = isEmpty(result) // empty unmarshaled result
 				}
 			}
-
 		}
 	}
 	return writeJSON(w, resps)
 }
 
+var jsonNull = json.RawMessage("null")
+
 // isEmpty tells if v is nil or an empty slice or map. In all other cases, it
 // returns false.
 func isEmpty(v interface{}) bool {
+	if v == nil {
+		return true
+	}
 	vv := reflect.ValueOf(v)
 	if vv.IsNil() {
 		return true

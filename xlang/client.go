@@ -95,7 +95,12 @@ func (c *Client) Call(ctx context.Context, method string, params, result interfa
 		io.Copy(saver, bytes.NewReader(tmpResult))
 		span.LogEventWithPayload("response", string(saver.Bytes()))
 	}
-	return json.Unmarshal(tmpResult, result)
+	if tmpResult != nil {
+		if err := json.Unmarshal(tmpResult, result); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Client) Notify(ctx context.Context, method string, params interface{}, opt ...jsonrpc2.CallOption) (err error) {
