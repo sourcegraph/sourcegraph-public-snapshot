@@ -300,6 +300,16 @@ class Renderer extends LegacyRenderer {
 				transform: "rotate(90deg)",
 			});
 
+			insertGlobal(`.monaco-tree-row.has-children .${refHeaderSx} .label-name`, {
+				width: 159,
+				verticalAlign: "top",
+				textAlign: "left",
+				display: "inline-block",
+				overflow: "hidden",
+				textOverflow: "ellipsis",
+				direction: "rtl",
+			});
+
 			repositoryHeader.getHTMLElement().classList.add(refHeaderSx);
 			repositoryHeader.on("click", (e: Event, builder: Builder, unbind: IDisposable): void => {
 				const stateKey = element.uri.toString();
