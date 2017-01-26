@@ -1,6 +1,6 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import { Button, Code, Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
+import { Button, Code, Heading, Panel, SplitButton, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
 
@@ -62,14 +62,13 @@ export class ButtonsComponent extends React.Component<{}, State> {
 								<Button color="orange" outline={true} className={classNames(base.mb3, base.mr1)}>Submit</Button>
 							</div>
 							<div className={base.pa4}>
-								<Heading level={7} className={base.mb3} color="blueGray">Tint-labeled</Heading>
-								<Button className={classNames(base.mb3, base.mr1)} tintLabel="For great measure">Submit</Button>
-								<Button color="blue" className={classNames(base.mb3, base.mr1)} tintLabel="3 recipients">Send</Button>
-								<Button color="purple" className={classNames(base.mb3, base.mr1)} tintLabel="Always free">Sign up</Button>
-								<Button color="green" className={classNames(base.mb3, base.mr1)} tintLabel="$100/month">Upgrade</Button>
-								<Button color="red" className={classNames(base.mb3, base.mr1)} tintLabel="7 unfixed errors">Deploy</Button>
-								<Button color="orange" className={classNames(base.mb3, base.mr1)} tintLabel="19 projects affected">Change</Button>
-								<Button disabled={true} className={classNames(base.mb3, base.mr1)} tintLabel="Queued">Delete repository</Button>
+								<Heading level={7} className={base.mb3} color="blueGray">Split Buttons</Heading>
+								<SplitButton className={classNames(base.mb3, base.mr1)} secondaryText="For great measure">Submit</SplitButton>
+								<SplitButton color="blue" className={classNames(base.mb3, base.mr1)} secondaryText="3 recipients">Send</SplitButton>
+								<SplitButton color="purple" className={classNames(base.mb3, base.mr1)} secondaryText="Always free">Sign up</SplitButton>
+								<SplitButton color="green" className={classNames(base.mb3, base.mr1)} secondaryText="$100/month">Upgrade</SplitButton>
+								<SplitButton color="red" className={classNames(base.mb3, base.mr1)} secondaryText="7 unfixed errors">Deploy</SplitButton>
+								<SplitButton color="orange" className={classNames(base.mb3, base.mr1)} secondaryText="19 projects affected">Change</SplitButton>
 							</div>
 							<hr />
 							<code>
@@ -89,13 +88,12 @@ export class ButtonsComponent extends React.Component<{}, State> {
 <Button color="green" outline={true}>Submit</Button>
 <Button color="red" outline={true}>Submit</Button>
 <Button color="orange" outline={true}>Submit</Button>
-<Button tintLabel="For great measure">Submit</Button>
-<Button color="blue" tintLabel="3 recipients">Send</Button>
-<Button color="purple" tintLabel="Always free">Sign up</Button>
-<Button color="green" tintLabel="$100/month">Upgrade</Button>
-<Button color="red" tintLabel="7 unfixed errors">Deploy</Button>
-<Button color="orange" tintLabel="19 projects affected">Change</Button>
-<Button disabled={true} tintLabel="Queued">Delete repository</Button>`
+<SplitButton secondaryText="For great measure">Submit</SplitButton>
+<SplitButton color="blue" secondaryText="3 recipients">Send</SplitButton>
+<SplitButton color="purple" secondaryText="Always free">Sign up</SplitButton>
+<SplitButton color="green" secondaryText="$100/month">Upgrade</SplitButton>
+<SplitButton color="red" secondaryText="7 unfixed errors">Deploy</SplitButton>
+<SplitButton color="orange" secondaryText="19 projects affected">Change</SplitButton>`
 									}
 								</pre>
 							</code>
@@ -127,7 +125,8 @@ export class ButtonsComponent extends React.Component<{}, State> {
 						</TabPanel>
 					</TabPanels>
 				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
+				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Button Properties</Heading>
+				<p>The Button component can also take in any native button attributes</p>.
 				<Panel hoverLevel="low" className={base.pa4}>
 					<Table style={{ width: "100%" }}>
 						<thead>
@@ -140,9 +139,9 @@ export class ButtonsComponent extends React.Component<{}, State> {
 						<tbody>
 							<tr>
 								<td><Code>color</Code></td>
-								<td><Code>default</Code></td>
+								<td><Code>blueGray</Code></td>
 								<td>
-									<Code>default</Code>, <Code>blue</Code>, <Code>purple</Code>, <Code>green</Code>, <Code>red</Code>, <Code>orange</Code>
+									<Code>blueGray</Code>, <Code>blue</Code>, <Code>purple</Code>, <Code>green</Code>, <Code>red</Code>, <Code>orange</Code>
 								</td>
 							</tr>
 							<tr>
@@ -156,7 +155,7 @@ export class ButtonsComponent extends React.Component<{}, State> {
 								<td><Code>size</Code></td>
 								<td><Code>null</Code></td>
 								<td>
-									<Code>small</Code>, <Code>large</Code>, <Code>null</Code>
+									<Code>tiny</Code>, <Code>small</Code>, <Code>large</Code>, <Code>null</Code>
 								</td>
 							</tr>
 							<tr>
@@ -176,6 +175,50 @@ export class ButtonsComponent extends React.Component<{}, State> {
 						</tbody>
 					</Table>
 				</Panel>
+				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>SplitButton Properties</Heading>
+				<p>The Button component can also take in any native button attributes</p>.
+				<Panel hoverLevel="low" className={base.pa4}>
+					<Table style={{ width: "100%" }}>
+						<thead>
+							<tr>
+								<td>Prop</td>
+								<td>Default value</td>
+								<td>Values</td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><Code>color</Code></td>
+								<td><Code>blueGray</Code></td>
+								<td>
+									<Code>blueGray</Code>, <Code>blue</Code>, <Code>purple</Code>, <Code>green</Code>, <Code>red</Code>, <Code>orange</Code>
+								</td>
+							</tr>
+							<tr>
+								<td><Code>size</Code></td>
+								<td><Code>null</Code></td>
+								<td>
+									<Code>tiny</Code>, <Code>small</Code>, <Code>large</Code>, <Code>null</Code>
+								</td>
+							</tr>
+							<tr>
+								<td><Code>block</Code></td>
+								<td><Code>null</Code></td>
+								<td>
+									<Code>true</Code>, <Code>false</Code>
+								</td>
+							</tr>
+							<tr>
+								<td><Code>secondaryText</Code></td>
+								<td><Code>null</Code></td>
+								<td>
+									<Code>string</Code>
+								</td>
+							</tr>
+						</tbody>
+					</Table>
+				</Panel>
+
 			</div>
 		);
 	}

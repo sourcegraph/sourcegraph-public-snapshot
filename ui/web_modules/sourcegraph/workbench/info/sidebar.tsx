@@ -165,6 +165,8 @@ class InfoPanel extends React.Component<Props, State> {
 				fontFamily: typography.fontStack.code,
 				fontWeight: "normal",
 				wordBreak: "break-word",
+				overflowWrap: "break-word",
+				overflow: "hidden",
 			}}>{truncate(funcName, { length: 120 })}</Heading>
 			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: this.props.id })}
 				{...css(

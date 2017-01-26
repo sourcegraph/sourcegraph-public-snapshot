@@ -7,6 +7,7 @@ import { Heading } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
+import { whitespace } from "sourcegraph/components/utils";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
@@ -42,8 +43,21 @@ export class SignupForm extends Component<Props, State> {
 			<div>
 				<div className={styles.form}>
 					<Heading level={3} align="center" underline="orange">Get started with Sourcegraph</Heading>
-					<GitHubAuthButton scopes="user:email" newUserReturnTo={newUserRedirLocation} returnTo={this.props.location} tabIndex={1} block={true} tintLabel="Always free">Public code only</GitHubAuthButton>
-					<GitHubAuthButton color="purple" newUserReturnTo={newUserRedirLocation} returnTo={this.props.location} tabIndex={2} block={true} tintLabel="14 days free">Private + public code</GitHubAuthButton>
+					<GitHubAuthButton
+						scopes="user:email"
+						newUserReturnTo={newUserRedirLocation}
+						returnTo={this.props.location}
+						tabIndex={1}
+						block={true}
+						style={{ marginBottom: whitespace[2] }}
+						secondaryText="Always free">Public code only</GitHubAuthButton>
+					<GitHubAuthButton
+						color="purple"
+						newUserReturnTo={newUserRedirLocation}
+						returnTo={this.props.location}
+						tabIndex={2}
+						block={true}
+						secondaryText="14 days free">Private + public code</GitHubAuthButton>
 					<p style={{ textAlign: "center" }}>
 						By signing up, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
 					</p>

@@ -1,13 +1,15 @@
+import * as omit from "lodash/omit";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
-import { Button } from "sourcegraph/components";
+import { Button, SplitButton } from "sourcegraph/components";
+import { ButtonProps } from "sourcegraph/components/Button";
 import { GitHubLogo, Google } from "sourcegraph/components/symbols";
 import { typography, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
-interface Props {
+export interface Props extends ButtonProps {
 	provider: oauthProvider;
 	iconType: "github" | "google";
 	eventObject: AnalyticsConstants.LoggableEvent;
@@ -15,17 +17,9 @@ interface Props {
 	scopes?: string;
 	returnTo?: string | RouterLocation;
 	newUserReturnTo?: string | RouterLocation;
-	color?: "blue" | "green" | "orange" | "purple" | "red" | "blueGray";
-	outline?: boolean;
-	block?: boolean;
-	size?: "small" | "large";
-	className?: string;
-	tabIndex?: number;
 	pageName?: string;
-	img?: boolean;
-	tintLabel?: string;
-	style?: React.CSSProperties;
-	children?: React.ReactNode[];
+
+	secondaryText?: string;
 }
 
 export function AuthButton(props: Props): JSX.Element {
@@ -33,48 +27,40 @@ export function AuthButton(props: Props): JSX.Element {
 		provider,
 		iconType,
 		eventObject,
-
 		scopes,
 		returnTo,
 		newUserReturnTo,
-		color = "blue",
-		outline,
-		block,
+		secondaryText,
 		size,
-		className,
-		tabIndex,
 		pageName = "",
-		img = true,
-		tintLabel,
-		style,
 		children,
 	} = props;
 
 	const url = urlToOAuth(provider, scopes || null, returnTo || null, newUserReturnTo || returnTo || null);
 	const iconSx = size === "small" ? typography.size[5] : typography.size[4];
 
+	const btnProps = omit(props, [
+		"provider",
+		"iconType",
+		"eventObject",
+		"scopes",
+		"returnTo",
+		"newUserReturnTo",
+		"secondaryText",
+		"pageName",
+	]);
+
+	const icon = <span style={{ marginRight: whitespace[2] }}>
+		{iconType === "github" && <GitHubLogo style={iconSx} />}
+		{iconType === "google" && <Google style={iconSx} />}
+	</span>;
+
 	return (
 		<form method="POST" action={url} onSubmit={() => eventObject.logEvent({ page_name: pageName })}>
 			<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
-			<Button
-				style={style}
-				type="submit"
-				outline={outline}
-				formNoValidate={true}
-				color={color}
-				block={block}
-				size={size}
-				tintLabel={tintLabel}
-				className={className}
-				tabIndex={tabIndex}>
-				{img &&
-					<span style={{ marginRight: whitespace[2] }}>
-						{iconType === "github" && <GitHubLogo style={iconSx} />}
-						{iconType === "google" && <Google style={iconSx} />}
-					</span>
-				}
-				{children}
-			</Button>
+			{secondaryText ? <SplitButton {...btnProps} secondaryText={secondaryText}>
+				{icon} {children}
+			</SplitButton> : <Button {...btnProps}>	{icon} {children}</Button>}
 		</form>
 	);
 }
