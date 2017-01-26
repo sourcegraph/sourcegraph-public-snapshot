@@ -54,11 +54,10 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 		const { shortcut } = this.props;
 
 		const toggleButtonSx = Object.assign({
-			marginRight: whitespace[1],
 			position: "relative",
 		}, typography.size[7]);
 
-		return <div style={{ display: "inline-block", marginTop: whitespace[2] }} { ...layout.hide.sm}>
+		return <div style={{ display: "inline-block", padding: whitespace[1], paddingRight: 0 }} { ...layout.hide.sm}>
 			<ToggleButton
 				size="small"
 				on={this.state.on}
