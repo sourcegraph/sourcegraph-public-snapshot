@@ -21,25 +21,22 @@ For Linux users or if you don't want to use Homebrew on macOS.
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 
-If you are new to Go, [set up your `GOPATH`](https://golang.org/doc/code.html#GOPATH)
-(a directory which contains all your projects).
-
 ### Homebrew setup for macOS
 
 This is a streamlined setup for Mac machines.
 
 1. Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
 2. Install [Homebrew](http://homebrew.sh).
-3. Install Go, Node, PostgreSQL, Redis.
+3. Install Go, Node, PostgreSQL, Redis, Git, Python.
 
     ```
-    brew install go node redis postgresql yarn
+    brew install go node redis postgresql yarn git python
     ```
 
-4. git and make are preinstalled. If you ever want to use a different (newer) version, you can install them with homebrew.
+4. Install virtualenv.
 
     ```
-    brew install git
+    pip install virtualenv
     ```
 
 5. Configure PostgreSQL and Redis to start automatically
@@ -80,8 +77,7 @@ Running the preceding commands will build and install the `src` binary in `$GOPA
 
 ## PostgreSQL
 
-[Install PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) then run through the
-steps to [initialize and configure your database](https://github.com/sourcegraph/sourcegraph/blob/master/docs/storage.md).
+[Initialize and configure your database](https://github.com/sourcegraph/sourcegraph/blob/master/docs/storage.md).
 
 ## Redis
 
@@ -96,7 +92,7 @@ sudo docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
 
 ## Build
 
-Make sure your `$GOPATH` is set and your `$PATH` includes `$GOPATH/bin`:
+Make sure your [`$GOPATH` is set](https://golang.org/doc/code.html#GOPATH) and your `$PATH` includes `$GOPATH/bin`:
 
 ```
 echo $GOPATH # should print something
@@ -171,7 +167,7 @@ If you use VSCode and have the "Debugger for Chrome" extension, these steps allo
 use the interactive visual debugger for our frontend codebase:
 
 - Quit Chrome
-- (optional, but recommended: set the env variable `WEBPACK_SOURCEMAPS=t` before running your dev server)
+- (optional, but recommended) set the env variable `WEBPACK_SOURCEMAPS=t` before running your dev server (fyi, this has the side effect of slowing down incremental builds 5s -> 15s).
 - Launch Chrome (Canary) from the command line with a remote debugging port:
   - Mac OS: `/Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --remote-debugging-port=9222`
   - Windows: `start chrome.exe –remote-debugging-port=9222`
