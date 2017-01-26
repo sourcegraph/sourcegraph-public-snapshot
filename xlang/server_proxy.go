@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -55,9 +56,10 @@ type serverProxyConn struct {
 	initOnce sync.Once
 	initErr  error // only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
 
-	mu     sync.Mutex
-	rootFS ctxvfs.FileSystem // the workspace's file system
-	stats  serverProxyConnStats
+	mu          sync.Mutex
+	rootFS      ctxvfs.FileSystem // the workspace's file system
+	stats       serverProxyConnStats
+	diagnostics map[diagnosticsKey][]lsp.Diagnostic // saved diagnostics
 }
 
 // serverProxyConnStats contains statistics for a proxied connection to a server.
@@ -523,6 +525,21 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		return nil, nil
 
 	case "textDocument/publishDiagnostics":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+
+		// Save for clients that connect later (who would not
+		// otherwise receive the diagnostics, since the lang server
+		// has no way to know to resend them).
+		if proxySaveDiagnostics {
+			var params lsp.PublishDiagnosticsParams
+			if err := json.Unmarshal(*req.Params, &params); err != nil {
+				return nil, err
+			}
+			c.saveDiagnostics(params)
+		}
+
 		// Forward to all clients.
 		c.clientBroadcast(ctx, req)
 
@@ -628,4 +645,27 @@ func (c *serverProxyConn) shutdownAndExit(ctx context.Context) error {
 	}
 
 	return errs.error()
+}
+
+var proxySaveDiagnostics, _ = strconv.ParseBool(env.Get("LSP_PROXY_SAVE_DIAGNOSTICS", "false", "save diagnostics published for each file to send to subsequently connected clients"))
+
+type diagnosticsKey struct {
+	serverID
+	documentURI string
+}
+
+// saveDiagnostics saves diagnostics to publish to clients that
+// connect after they were sent. The language server does not have any
+// way of resending diagnostics to newly connected clients, because
+// the LSP proxy abstracts client connections away from the language
+// server.
+//
+// Only the last diagnostics for a given file is valid.
+func (c *serverProxyConn) saveDiagnostics(diagnostics lsp.PublishDiagnosticsParams) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.diagnostics == nil {
+		c.diagnostics = map[diagnosticsKey][]lsp.Diagnostic{}
+	}
+	c.diagnostics[diagnosticsKey{serverID: c.id, documentURI: diagnostics.URI}] = diagnostics.Diagnostics
 }

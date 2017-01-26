@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 func TestWalkURIFields(t *testing.T) {
@@ -40,5 +42,22 @@ func TestWalkURIFields(t *testing.T) {
 		if string(gotObj) != wantObj {
 			t.Errorf("%s: got obj %q, want %q after updating URI pointers", objStr, gotObj, wantObj)
 		}
+	}
+}
+
+func TestWalkURIFields_struct(t *testing.T) {
+	v := lsp.PublishDiagnosticsParams{URI: "u1"}
+
+	var uris []string
+	collect := func(uri string) { uris = append(uris, uri) }
+	update := func(uri string) string { return "XXX" }
+	WalkURIFields(&v, collect, update)
+
+	if want := []string{"u1"}; !reflect.DeepEqual(uris, want) {
+		t.Errorf("got %v, want %v", uris, want)
+	}
+
+	if want := "XXX"; v.URI != want {
+		t.Errorf("got %q, want %q", v.URI, want)
 	}
 }

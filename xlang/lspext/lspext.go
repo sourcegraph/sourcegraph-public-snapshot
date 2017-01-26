@@ -14,6 +14,7 @@
 package lspext
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -122,6 +123,27 @@ func WalkURIFields(o interface{}, collect func(string), update func(string) stri
 		case []interface{}: // Location[]
 			for _, v := range o {
 				walk(v)
+			}
+		default: // structs with a "URI" field
+			rv := reflect.ValueOf(o)
+			if rv.Kind() == reflect.Ptr {
+				rv = rv.Elem()
+			}
+			if rv.Kind() == reflect.Struct {
+				if fv := rv.FieldByName("URI"); fv.Kind() == reflect.String {
+					if collect != nil {
+						collect(fv.String())
+					}
+					if update != nil {
+						fv.SetString(update(fv.String()))
+					}
+				}
+				for i := 0; i < rv.NumField(); i++ {
+					fv := rv.Field(i)
+					if fv.Kind() == reflect.Ptr || fv.Kind() == reflect.Struct || fv.Kind() == reflect.Array {
+						walk(fv.Interface())
+					}
+				}
 			}
 		}
 	}

@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -357,6 +359,32 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
+		if proxySaveDiagnostics && req.Method == "textDocument/didOpen" {
+			var params lsp.DidOpenTextDocumentParams
+			if req.Params == nil {
+				return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+			}
+			if err := json.Unmarshal(*req.Params, &params); err != nil {
+				return nil, err
+			}
+
+			// When the client opens a document, send over any diagnostics
+			// we received in the past.
+			relURI, err := relWorkspaceURI(c.context.rootPath, params.TextDocument.URI)
+			if err != nil {
+				return nil, err
+			}
+			if diags := c.proxy.getSavedDiagnostics(serverID{contextID: c.context, pathPrefix: ""}, relURI.String()); diags != nil {
+				diagnosticsParams := lsp.PublishDiagnosticsParams{
+					URI:         params.TextDocument.URI,
+					Diagnostics: diags,
+				}
+				if err := conn.Notify(ctx, "textDocument/publishDiagnostics", diagnosticsParams); err != nil {
+					log15.Error("LSP client proxy: error sending saved diagnostics", "context", c.context, "uri", params.TextDocument.URI, "err", err)
+				}
+			}
+		}
+
 		// Specifically forbid these methods so we don't accidentally
 		// allow them through. If we did, then any user of a shared
 		// workspace could modify the files used for analysis for all
@@ -402,7 +430,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var paramsObj interface{}
+		var paramsObj lsp.PublishDiagnosticsParams
 		if err := json.Unmarshal(*req.Params, &paramsObj); err != nil {
 			return nil, err
 		}
@@ -410,7 +438,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		// Rewrite paths from server->client and send rewritten
 		// notification to client.
 		var walkErr error
-		lspext.WalkURIFields(paramsObj, nil, func(uriStr string) string {
+		lspext.WalkURIFields(&paramsObj, nil, func(uriStr string) string {
 			newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
 			if err != nil {
 				walkErr = err

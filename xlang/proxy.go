@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/neelance/parallel"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 // NewProxy creates a new LSP proxy.
@@ -133,4 +134,22 @@ func (p *Proxy) Close(ctx context.Context) error {
 	p.mu.Unlock()
 
 	return par.Wait()
+}
+
+func (p *Proxy) getSavedDiagnostics(id serverID, documentURI string) []lsp.Diagnostic {
+	var c *serverProxyConn
+	p.mu.Lock()
+	for cc := range p.servers {
+		if cc.id == id {
+			c = cc
+			break
+		}
+	}
+	p.mu.Unlock()
+	if c == nil {
+		return nil
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.diagnostics[diagnosticsKey{serverID: c.id, documentURI: documentURI}]
 }
