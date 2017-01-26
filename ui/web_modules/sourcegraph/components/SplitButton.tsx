@@ -4,18 +4,13 @@ import * as omit from "lodash/omit";
 import * as React from "react";
 
 import { Button, FlexContainer } from "sourcegraph/components";
+import { ButtonProps } from "sourcegraph/components/Button";
 import { colors, whitespace } from "sourcegraph/components/utils";
 
 import { sizeSx } from "sourcegraph/components/Button";
 
-interface SplitButtonProps extends React.ClassAttributes<HTMLButtonElement> {
-	block?: boolean;
-	children?: React.ReactNode[];
-	size?: "tiny" | "small" | "large";
-	color?: "white" | "blue" | "green" | "orange" | "purple" | "red" | "blueGray";
-	className?: string;
+interface SplitButtonProps extends ButtonProps {
 	secondaryText?: string;
-	style?: React.CSSProperties;
 }
 
 export function SplitButton(props: SplitButtonProps): JSX.Element {
