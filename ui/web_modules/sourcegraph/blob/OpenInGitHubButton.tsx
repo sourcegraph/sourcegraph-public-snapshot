@@ -7,8 +7,8 @@ import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-const openInGitHubKeyCode: number = 71;
-const openInGitHubKey: string = "G";
+const openInGitHubKeyCode = 71;
+const openInGitHubKey = "G";
 const gitHubButtonSx = Object.assign({
 	backgroundColor: colors.blueGrayD1(),
 	fontSize: "inherit",
