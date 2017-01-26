@@ -67,19 +67,19 @@ func (c *Config) Refs(emit func(*Ref)) error {
 		return nil
 	}
 
-	var firstErr error
+	var errs []string
 	for _, file := range c.PkgFiles {
 		ast.Inspect(file, func(n ast.Node) bool {
 			switch n := n.(type) {
 			case *ast.ImportSpec:
 				if err := ref(file, n.Pos(), n.End()); err != nil {
-					firstErr = err
+					errs = append(errs, err.Error())
 					return false
 				}
 
 			case *ast.SelectorExpr:
 				if err := ref(file, n.Sel.Pos(), n.Sel.End()); err != nil {
-					firstErr = err
+					errs = append(errs, err.Error())
 					return false
 				}
 
@@ -101,7 +101,7 @@ func (c *Config) Refs(emit func(*Ref)) error {
 						// since these fall into an edge case (do not represent
 						// real errors for us).
 						if _, ok := err.(*notPackageLevelDef); !ok {
-							firstErr = err
+							errs = append(errs, err.Error())
 							return false
 						}
 					}
@@ -109,9 +109,9 @@ func (c *Config) Refs(emit func(*Ref)) error {
 			}
 			return true
 		})
-		if firstErr != nil {
-			return firstErr
-		}
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
 	}
 	return nil
 }
