@@ -4,8 +4,10 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/csrf"
@@ -22,6 +24,8 @@ import (
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
+var authEnabledEnvVar = env.Get("AUTH_ENABLED", "true", "require login for users to view repositories")
+var trackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
@@ -40,6 +44,8 @@ type JSContext struct {
 	GoogleToken       *sourcegraph.ExternalToken `json:"googleToken"`
 	SentryDSN         string                     `json:"sentryDSN"`
 	IntercomHash      string                     `json:"intercomHash"`
+	TrackingAppID     string                     `json:"trackingAppID"`
+	AuthEnabled       bool                       `json:"authEnabled"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -85,6 +91,12 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		}
 	}
 
+	var authEnabled, err = strconv.ParseBool(authEnabledEnvVar)
+	if err != nil {
+		log.Fatal(err)
+		authEnabled = true
+	}
+
 	return JSContext{
 		AppURL:            conf.AppURL.String(),
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
@@ -98,10 +110,12 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		Emails: &sourcegraph.EmailAddrList{
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
-		GitHubToken:  gitHubToken,
-		GoogleToken:  googleToken,
-		SentryDSN:    sentryDSNFrontend,
-		IntercomHash: intercomHMAC(actor.UID),
+		GitHubToken:   gitHubToken,
+		GoogleToken:   googleToken,
+		SentryDSN:     sentryDSNFrontend,
+		IntercomHash:  intercomHMAC(actor.UID),
+		AuthEnabled:   authEnabled,
+		TrackingAppID: trackingAppID,
 	}, nil
 }
 

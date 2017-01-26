@@ -10,17 +10,16 @@ import { colors, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
 
-export const UserMenu = (props): JSX.Element => {
-	//@TODO: Check if this works in staging
-	function handleIntercomToggle(): void {
-		global.window.Intercom("show");
-		AnalyticsConstants.Events.ContactIntercom_Clicked.logEvent({
-			page_name: location.pathname,
-			location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV,
-		}
-		);
+export function handleIntercomToggle(locationOnPage: string): void {
+	global.window.Intercom("show");
+	AnalyticsConstants.Events.ContactIntercom_Clicked.logEvent({
+		page_name: location.pathname,
+		location_on_page: locationOnPage,
 	}
+	);
+}
 
+export const UserMenu = (props): JSX.Element => {
 	return (
 		<div style={{ display: "inline-block", padding: whitespace[2] }}>
 			<Popover left={true}>
@@ -45,7 +44,7 @@ export const UserMenu = (props): JSX.Element => {
 					<a href="/docs" role="menu_item">
 						Docs
 					</a>
-					<a onClick={handleIntercomToggle} role="menu_item">
+					<a onClick={() => handleIntercomToggle(AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV)} role="menu_item">
 						Contact
 					</a>
 					<hr role="divider" className={base.mt3} />

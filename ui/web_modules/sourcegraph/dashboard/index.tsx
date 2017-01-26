@@ -1,7 +1,6 @@
 import { media, style } from "glamor";
 import * as React from "react";
 import * as Relay from "react-relay";
-
 import { RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, PageTitle } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
@@ -16,7 +15,7 @@ export interface RepositoryTypes {
 
 export type RepositoryTabs = "mine" | "starred";
 
-interface Props { location: RouterLocation; }
+export interface Props { location: RouterLocation; }
 interface State { active: RepositoryTabs; }
 
 class DashboardComponent extends React.Component<Props & { root: GQL.IRoot }, State> {
@@ -36,6 +35,7 @@ class DashboardComponent extends React.Component<Props & { root: GQL.IRoot }, St
 	}
 
 	render(): JSX.Element {
+
 		return <FlexContainer content="stretch" items="stretch" wrap={true} style={{
 			alignSelf: "stretch",
 			flex: "1 0",
@@ -44,7 +44,7 @@ class DashboardComponent extends React.Component<Props & { root: GQL.IRoot }, St
 			<PageTitle title="Repositories" />
 
 			<div
-				{...style({ background: colors.blueGrayD1(), flex: "0 0 230px" }) }
+				{...style({ backgroundColor: colors.blueGrayD1(), flex: "0 0 230px" }) }
 				{...media(layout.breakpoints.sm, layout.flexItem.autoSize) }>
 				<TabBar
 					setActive={(name) => this.setActive(name)}
@@ -61,31 +61,31 @@ class DashboardComponent extends React.Component<Props & { root: GQL.IRoot }, St
 	}
 }
 
-const DashboardContainer = Relay.createContainer(DashboardComponent, {
+const AuthDashboardContainer = Relay.createContainer(DashboardComponent, {
 	initialVariables: {
 		repositories: null,
 	},
 	fragments: {
 		root: () => Relay.QL`
-			fragment on Root {
-				remoteRepositories {
-					uri
-					description
-					language
+				fragment on Root {
+					remoteRepositories {
+						uri
+						description
+						language
+					}
+					remoteStarredRepositories {
+						uri
+						description
+						language
+					}
 				}
-				remoteStarredRepositories {
-					uri
-					description
-					language
-				}
-			}
-		`,
+			`,
 	},
 });
 
-export const Dashboard = function (props: Props): JSX.Element {
+export const AuthDashboard = function (props: Props): JSX.Element {
 	return <Relay.RootContainer
-		Component={DashboardContainer}
+		Component={AuthDashboardContainer}
 		route={{
 			name: "Root",
 			queries: {

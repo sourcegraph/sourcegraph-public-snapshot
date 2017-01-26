@@ -166,6 +166,11 @@ declare namespace GQL {
 		id: string;
 		uri: string;
 		description: string;
+		language: string;
+		fork: boolean;
+		private: boolean;
+		createdAt: string;
+		pushedAt: string;
 		commit: ICommitState;
 		latest: ICommitState;
 		defaultBranch: string;
@@ -180,6 +185,7 @@ declare namespace GQL {
 	interface IRoot {
 		__typename: string;
 		repository: IRepository | null;
+		repositories: Array<IRepository>;
 		remoteRepositories: Array<IRemoteRepository>;
 		remoteStarredRepositories: Array<IRemoteRepository>;
 		currentUser: IUser | null;

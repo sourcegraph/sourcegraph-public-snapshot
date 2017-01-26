@@ -19,6 +19,8 @@ class Context {
 		Version: string;
 		Date: string;
 	};
+	authEnabled: boolean;
+	trackingAppID: string | null;
 
 	constructor(ctx: any) {
 		Object.assign(this, ctx);
