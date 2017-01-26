@@ -1,7 +1,6 @@
 import * as autobind from "autobind-decorator";
 import * as classNames from "classnames";
 import * as React from "react";
-import { Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { FlexContainer, Key, Menu, Popover } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
@@ -39,14 +38,8 @@ function convertToGitHubLineNumber(hash: string): string {
 
 @autobind
 export class FileActionDownMenu extends React.Component<Props, {}> {
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
-	context: { router: Router };
-
 	private githubURL(): string {
-		return `${this.props.githubURL}${convertToGitHubLineNumber(this.context.router.location.hash)}`;
+		return `${this.props.githubURL}${convertToGitHubLineNumber(window.location.hash)}`; // We do not sync the line-number URL hash with react router due to UI issues. Use window.location as a source of truth instead.
 	}
 
 	private fileActionEventListener(event: KeyboardEvent): void {
