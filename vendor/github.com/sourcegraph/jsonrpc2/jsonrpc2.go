@@ -138,7 +138,8 @@ type Response struct {
 // property.
 func (r Response) MarshalJSON() ([]byte, error) {
 	if (r.Result == nil || len(*r.Result) == 0) && r.Error == nil {
-		return nil, errors.New("can't marshal *jsonrpc2.Response (must have result or error)")
+		log.Println("warning: can't marshal *jsonrpc2.Response (must have result or error)")
+		r.Result = &jsonNull
 	}
 	type tmpType Response // avoid infinite MarshalJSON recursion
 	b, err := json.Marshal(tmpType(r))
