@@ -141,8 +141,8 @@ export class GlobalNav extends Container<Props, State> {
 					onDismiss={this.onSearchDismiss} />
 				<FlexContainer items="center" style={{ paddingRight: "0.5rem" }}>
 					<a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>
-					{context.user &&
-						(context.authEnabled
+					{context.authEnabled &&
+						(context.user
 							? <UserMenu user={context.user} location={location} style={{ flex: "0 0 auto", marginTop: 4 }} />
 							: <SignupOrLogin user={context.user} location={location} />)
 					}

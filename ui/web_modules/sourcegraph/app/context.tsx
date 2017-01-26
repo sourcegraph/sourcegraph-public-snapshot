@@ -19,7 +19,16 @@ class Context {
 		Version: string;
 		Date: string;
 	};
+	/** 
+	 * authEnabled, set as AUTH_ENABLED as an env var and enabled by default, causes Sourcegraph to require GitHub.com authentication.
+	 * With authEnabled set to false, no sign in is required or possible, and repositories are pulled from local disk. Used for on-prem.
+	 */
 	authEnabled: boolean;
+	/** 
+	 * trackingAppID, set as "" by default server side, is required for the telligent environment to be set to production.
+	 * For Sourcegraph.com, it is SourcegraphWeb. For an on-premises deployment, it might be something like SgdevWeb.
+	 * It is stored in telligent as a field called appID.
+	 */
 	trackingAppID: string | null;
 
 	constructor(ctx: any) {
