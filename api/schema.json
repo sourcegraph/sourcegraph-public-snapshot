@@ -1142,6 +1142,86 @@
 						}
 					},
 					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "language",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "fork",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "private",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "createdAt",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "pushedAt",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
 						"args": [
 							{
 								"defaultValue": null,
@@ -1357,6 +1437,30 @@
 							"kind": "OBJECT",
 							"name": "Repository",
 							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "repositories",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "Repository",
+										"ofType": null
+									}
+								}
+							}
 						}
 					},
 					{

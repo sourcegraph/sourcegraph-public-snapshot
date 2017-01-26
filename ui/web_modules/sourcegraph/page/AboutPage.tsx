@@ -14,7 +14,7 @@ export function AboutPage(): JSX.Element {
 			<PageTitle title="About" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<FlexContainer style={{ margin: "auto", maxWidth: 640 }}>
-					<Heading level={3} color="white">The only thing between us and the cure to cancer and flying cars is the code yet to be written.</Heading>
+					<Heading level={3} color="white">The pace at which humans can write code is the only thing that stands between us and flying cars, a habitat on Mars and a cure for cancer.</Heading>
 				</FlexContainer>
 			</Hero>
 			<FlexContainer direction="top_bottom" style={{
@@ -36,13 +36,13 @@ export function AboutPage(): JSX.Element {
 
 				<FlexContainer>
 					<ValueCol img="img/about/about-hash-people.png">
-						<p><strong>#people</strong> come first.<br />Together we are advancing technological progress. We will attract, hire and retain the best teammates in the world and treat everyone in a first-class manner.</p>
+						<p><strong>#people</strong> come first.<br />Together we are advancing technology. We will attract, hire and retain the best teammates in the world and treat everyone in a first-class manner.</p>
 					</ValueCol>
 					<ValueCol img="img/about/about-hash-journey.png">
-						<p><strong>#journey</strong> is the collection of moments, experiences, and memories that the #team shares as we make #progress: the light moments, the laughter, the team coming together to solve a problem, etc.</p>
+						<p><strong>#journey</strong> is the collection of moments, experiences, and memories that the team shares as we make #progress: the light moments, the laughter, the team coming together to solve a problem, etc.</p>
 					</ValueCol>
 					<ValueCol img="img/about/about-hash-progress.png">
-						<p><strong>#progress</strong> is the continuous march toward achieving our mission as a #team: the milestones, the successes, the breakthroughs, etc.</p>
+						<p><strong>#progress</strong> is the continuous march toward achieving our mission as a team: the milestones, the successes, the breakthroughs, etc.</p>
 					</ValueCol>
 				</FlexContainer>
 
@@ -71,7 +71,7 @@ export function AboutPage(): JSX.Element {
 								<img src={`${context.assetsRoot}/img/about/about-tw-icon.svg`} />
 							</a>
 						</div>
-						Quinn Slack is CEO and co-founder of Sourcegraph, code intelligence software that lets you ship better software faster. Prior to Sourcegraph, Quinn co-founded Blend Labs, an enterprise technology company with over 100 employees dedicated to improving home lending. At Palantir Technologies he created a technology platform to help two of the top five U.S. banks recover from the housing crisis. He was the first employee and developer at Bleacher Report after graduating from high school. Quinn graduated with a BS in Computer Science from Stanford.
+						Quinn Slack is CEO and co-founder of Sourcegraph. Prior to Sourcegraph, Quinn co-founded Blend Labs, an enterprise technology company with over 100 employees dedicated to improving home lending. At Palantir Technologies he created a technology platform to help two of the top five U.S. banks recover from the housing crisis. He was the first employee and developer at Bleacher Report after graduating from high school. Quinn graduated with a BS in Computer Science from Stanford.
 					</div>
 					<div style={{
 						paddingLeft: whitespace[3],
@@ -108,10 +108,41 @@ export function AboutPage(): JSX.Element {
 				</Heading>
 
 				<FlexContainer wrap={true}>
-					<User nickname="Scott Raney" email="Redpoint Ventures" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-scott.png`} />
-					<User nickname="Daniel Friedland" email="Goldcrest Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-daniel.png`} />
-					<User nickname="Quinn Slack" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-quinn.png`} />
-					<User nickname="Beyang Liu" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-beyang.png`} />
+
+					<FlexContainer wrap={true} direction="top_bottom">
+						<User nickname="Scott Raney" email="Redpoint Ventures" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-scott.png`} />
+						<User nickname="Daniel Friedland" email="Goldcrest Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-daniel.png`} />
+					</FlexContainer>
+
+					<FlexContainer wrap={true} direction="top_bottom">
+						<User nickname="Quinn Slack" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-quinn.png`} />
+						<User nickname="Beyang Liu" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-beyang.png`} />
+					</FlexContainer>
+
+				</FlexContainer>
+
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>
+					Advisors and Supporters
+					</Heading>
+
+				<FlexContainer wrap={true}>
+
+					<FlexContainer wrap={true} direction="top_bottom">
+						<User nickname="Adam Ross" email="Goldcrest Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-adam.png`} />
+						<User nickname="Bear Douglas" email="Developer Evangelist" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-bear.jpg`} />
+						<User nickname="Jens Pillgram-Larsen" email="LinkedIn" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-jens.jpg`} />
+						<User nickname="James Waldrop" email="Fitbit" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-james.jpg`} />
+						<User nickname="Mark Striebeck" email="Google" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-mark.jpg`} />
+					</FlexContainer>
+
+					<FlexContainer wrap={true} direction="top_bottom">
+						<User nickname="Audrey Maclean" email="Entrepreneur" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-audrey.jpg`} />
+						<User nickname="Bill Malloy" email="Technologist & Financier" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-bill.jpg`} />
+						<User nickname="John Vrionis" email="Lightspeed Venture Partners" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-john.jpg`} />
+						<User nickname="Kevin Mahaffey" email="Lookout" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-kevin.jpg`} />
+						<User nickname="Peter Hubert" email="Lux Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-peter.jpg`} />
+					</FlexContainer>
+
 				</FlexContainer>
 
 				{!context.user && <div style={{

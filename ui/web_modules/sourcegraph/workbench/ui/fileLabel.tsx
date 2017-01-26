@@ -6,9 +6,7 @@ import { whitespace } from "sourcegraph/components/utils";
 import * as dom from "vs/base/browser/dom";
 import { HighlightedLabel } from "vs/base/browser/ui/highlightedlabel/highlightedLabel";
 import { IMatch } from "vs/base/common/filters";
-import { IWorkspaceProvider, getPathLabel } from "vs/base/common/labels";
-import * as paths from "vs/base/common/paths";
-import * as types from "vs/base/common/types";
+import { IWorkspaceProvider } from "vs/base/common/labels";
 import uri from "vs/base/common/uri";
 
 export interface IIconLabelCreationOptions {
@@ -108,30 +106,8 @@ export class FileLabel extends IconLabel {
 
 	constructor(container: HTMLElement, file: uri, provider: IWorkspaceProvider) {
 		super(container);
-
-		this.setRepoName(file, provider, container);
+		const path = file.path.replace(/^\//, "") || file.authority;
+		this.setValue(path, "", {});
 	}
 
-	public setRepoName(file: uri, provider: IWorkspaceProvider, container: HTMLElement): void {
-		const path = getPath(file);
-		const parent = paths.dirname(path);
-		const repoOwner = parent && parent !== "." ? getPathLabel(parent, provider).substring(1) : "";
-		const repoName = paths.basename(path);
-		this.setValue(`${repoOwner}/${repoName}`, "", { title: path });
-	}
-
-}
-
-function getPath(arg1: uri | IWorkspaceProvider): string {
-	if (!arg1) {
-		return "";
-	}
-
-	if (types.isFunction((arg1 as IWorkspaceProvider).getWorkspace)) {
-		const ws = (arg1 as IWorkspaceProvider).getWorkspace();
-
-		return ws ? ws.resource.fsPath : "";
-	}
-
-	return (arg1 as uri).fsPath;
 }

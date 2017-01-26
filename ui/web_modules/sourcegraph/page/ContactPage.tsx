@@ -6,7 +6,7 @@ import * as styles from "sourcegraph/page/Page.css";
 
 export function ContactPage(props: {}): JSX.Element {
 	return (
-		<div>
+		<div style={{ flex: 1 }}>
 			<PageTitle title="Contact" />
 			<Hero pattern="objects" color="dark" className={base.pv1}>
 				<div className={styles.container}>
@@ -33,8 +33,8 @@ export function ContactPage(props: {}): JSX.Element {
 					<li>YouTube: <a href="https://www.youtube.com/channel/UCOy2N25-AHqE43XupT9mwZQ/videos" target="_blank">Sourcegraph YouTube channel</a></li>
 				</ul>
 
-				<Heading level={4} underline="blue" className={styles.h5}>Other inquiries</Heading>
-				<p className={styles.p}>For enterprise account inquiries or anything else related to Sourcegraph, contact us at <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>.</p>
+				<Heading level={4} underline="blue" className={styles.h5}>Plans, pricing, and enterprise sales</Heading>
+				<p className={styles.p}>For enterprise accounts or any questions about getting Sourcegraph for your private code, contact us at <a href="mailto:sales@sourcegraph.com">sales@sourcegraph.com</a>.</p>
 
 				<Heading level={4} underline="blue" className={styles.h5}>In the real world</Heading>
 				<p className={styles.p}>Sourcegraph<br />121 2nd St, Suite 200<br />San Francisco CA, 94105, USA</p>

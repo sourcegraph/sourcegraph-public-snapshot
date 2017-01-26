@@ -15,6 +15,7 @@ import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/util/EventLogger";
+import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props { location: RouterLocation; }
@@ -189,29 +190,11 @@ export class TourOverlay extends React.Component<Props, State>  {
 				Click any symbol to view its <strong>references</strong> in this repository and in any public code.
 			</p>;
 			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
-			const refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" img={false} color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
+			const refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorize with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
-				this._initCoachmarkAnnotation(
-					defRandom,
-					"def-coachmark",
-					"def-mark",
-					_defCoachmarkIndex,
-					"Jump to definition",
-					defSubtitle,
-					"Jump to definition and hover documentation on GitHub",
-					context.hasChromeExtensionInstalled() ? null : defActionCTA
-				),
-				this._initCoachmarkAnnotation(
-					refRandom,
-					"ref-coachmark",
-					"ref-mark",
-					_refCoachmarkIndex,
-					"View references",
-					refSubtitle,
-					"Enable these features for your private code",
-					context.hasPrivateGitHubToken() ? null : refActionCTA
-				),
+				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", shouldPromptToInstallBrowserExtension() ? null : defActionCTA),
+				this._initCoachmarkAnnotation(refRandom, "ref-coachmark", "ref-mark", _refCoachmarkIndex, "View references and definitions", refSubtitle, "Enable these features for your private code", context.hasPrivateGitHubToken() ? null : refActionCTA),
 			];
 
 			this._coachmarksShouldUpdate();

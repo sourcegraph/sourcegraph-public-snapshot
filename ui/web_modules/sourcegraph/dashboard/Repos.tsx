@@ -14,7 +14,7 @@ interface Props {
 	repos: GQL.IRemoteRepository[] | null;
 	location?: RouterLocation;
 	style?: React.CSSProperties;
-	type: RepositoryTabs;
+	type?: RepositoryTabs;
 }
 
 export class Repos extends React.Component<Props, {}> {
@@ -63,23 +63,24 @@ export class Repos extends React.Component<Props, {}> {
 			marginBottom: whitespace[3],
 		};
 		return <header>
-			{!context.hasPrivateGitHubToken() && <p>Private code indexed on Sourcegraph is only available to you and those with permissions to the underlying GitHub repository.</p>}
-			<FlexContainer items="center" justify="center" wrap={true}>
-				{!context.hasPrivateGitHubToken() &&
-					<GitHubAuthButton scopes={privateGitHubOAuthScopes} style={btnSx} returnTo={this.props.location}>
-						Add private repositories
+			{context.authEnabled &&
+				<FlexContainer items="center" justify="center" wrap={true}>
+					{!context.hasPrivateGitHubToken() &&
+						<GitHubAuthButton scopes={privateGitHubOAuthScopes} style={btnSx} returnTo={this.props.location}>
+							Add private repositories
 					</GitHubAuthButton>
-				}
-				{Features.googleCloudPlatform.isEnabled() && !context.hasPrivateGoogleToken() &&
-					<GoogleAuthButton scopes={privateGoogleOAuthScopes} returnTo={this.props.location} style={btnSx} >
-						Add GCP repositories
+					}
+					{Features.googleCloudPlatform.isEnabled() && !context.hasPrivateGoogleToken() &&
+						<GoogleAuthButton scopes={privateGoogleOAuthScopes} returnTo={this.props.location} style={btnSx} >
+							Add GCP repositories
 					</GoogleAuthButton>
-				}
-			</FlexContainer>
+					}
+				</FlexContainer>
+			}
 		</header>;
 	}
 
-	_getTitle(title: string): string {
+	_getTitle(title: string | undefined): string {
 		if (title === "mine") { return "My repositories"; };
 		if (title === "starred") { return "Starred repositories"; };
 		return "Repositories";

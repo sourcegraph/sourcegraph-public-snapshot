@@ -2,7 +2,6 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { TitleControl } from "vs/workbench/browser/parts/editor/titleControl";
 
-import { layout } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { EditorTitle } from "sourcegraph/editor/EditorTitle";
 import { getResource } from "sourcegraph/workbench/utils";
@@ -28,7 +27,7 @@ export class NoTabsTitleControl extends TitleControl {
 		const pathspec = URIUtils.repoParams(resource);
 		const component = <EditorTitle pathspec={pathspec} />;
 		ReactDOM.render(component, this.domElement);
-		this.domElement.style.height = `${layout.editorHeaderHeight}px`;
+		this.domElement.style.height = "auto";
 	}
 
 	dispose(): void {

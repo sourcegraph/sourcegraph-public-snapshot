@@ -32,25 +32,25 @@ export class FeatureCarousel extends React.Component<Props, State> {
 			}}>
 				<SliderNavItem
 					title="View all references"
-					subtitle="Quickly understand forward and backward dependencies"
+					subtitle="See everywhere a function or package is used, and who's using it."
 					active={this.state.active === 0}
 					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 0 }); }} />
 				<SliderNavItem
-					title="Peek definition"
-					subtitle="Grok what code is doing without losing context"
+					title="View the authors of any file"
+					subtitle="See blame information inline with a simple toggle."
 					active={this.state.active === 1}
 					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 1 }); }} />
 				<SliderNavItem
 					title="Search by symbol"
-					subtitle="Jump to and search for symbols within a repository"
+					subtitle="Quickly jump to a variable or function anywhere in a repository."
 					active={this.state.active === 2}
 					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 2 }); }} />
 			</FlexContainer>
 			<div style={{ flex: "1 1 60%", position: "relative", minHeight: 480 }}>
 				<img src={`${this.props.assetsURL}/img/Homepage/screen-placeholder.png`} width="100%" />
-				<SliderPanel assetsURL={this.props.assetsURL} img="screen-refs.png" active={this.state.active === 0} />
-				<SliderPanel assetsURL={this.props.assetsURL} img="screen-def.png" active={this.state.active === 1} />
-				<SliderPanel assetsURL={this.props.assetsURL} img="screen-search.png" active={this.state.active === 2} />
+				<SliderPanel assetsURL={this.props.assetsURL} img="sg-home-feat-1-min.png" active={this.state.active === 0} />
+				<SliderPanel assetsURL={this.props.assetsURL} img="sg-home-feat-2-min.png" active={this.state.active === 1} />
+				<SliderPanel assetsURL={this.props.assetsURL} img="sg-home-feat-3-min.png" active={this.state.active === 2} />
 			</div>
 		</FlexContainer>;
 	}

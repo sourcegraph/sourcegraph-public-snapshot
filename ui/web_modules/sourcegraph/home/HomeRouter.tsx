@@ -1,8 +1,14 @@
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
-import { Dashboard } from "sourcegraph/dashboard";
+import { AuthDashboard } from "sourcegraph/dashboard";
+import { NoAuthDashboard } from "sourcegraph/dashboard/NoAuthDashboard";
 import { Home } from "sourcegraph/home/Home";
 
 export function HomeRouter(props: any): JSX.Element {
-	return context.user ? <Dashboard {...props} /> : <Home {...props} />;
+	if (!context.authEnabled) {
+		return <NoAuthDashboard {...props} />;
+	} else if (context.user) {
+		return <AuthDashboard {...props} />;
+	}
+	return <Home {...props} />;
 }

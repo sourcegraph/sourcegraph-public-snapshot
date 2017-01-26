@@ -144,10 +144,16 @@ func ResolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 	return localstore.Repos.Get(ctx, repoID)
 }
 
+func (r *rootResolver) Repositories(ctx context.Context) ([]*repositoryResolver, error) {
+	return listRepos(ctx, &sourcegraph.RepoListOptions{ListOptions: sourcegraph.ListOptions{PerPage: 100}})
+}
+
 func (r *rootResolver) RemoteRepositories(ctx context.Context) ([]*repositoryResolver, error) {
-	reposList, err := backend.Repos.List(ctx, &sourcegraph.RepoListOptions{
-		RemoteOnly: true,
-	})
+	return listRepos(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
+}
+
+func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*repositoryResolver, error) {
+	reposList, err := backend.Repos.List(ctx, opt)
 
 	if err != nil {
 		return nil, err

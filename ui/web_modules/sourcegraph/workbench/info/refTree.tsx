@@ -48,14 +48,14 @@ interface State {
 	previewResource: Location | null;
 }
 
-// This set is used to keep track of which rows in the tree the user has 
-// expanded or closed. Due to race conditions caused by the loading state of 
+// This set is used to keep track of which rows in the tree the user has
+// expanded or closed. Due to race conditions caused by the loading state of
 // the tree in VSCode, this hack is necessary to properly expand tree elements
 // during updates.
 let userToggledState: Set<string>;
 let firstToggleAdded: boolean;
 
-// The height of the tree elements must be explicitly defined and enforced, 
+// The height of the tree elements must be explicitly defined and enforced,
 // otherwise scrolling functionality will not work properly.
 const fileRefsHeight: number = 36;
 const refBaseHeight: number = 68;
@@ -236,7 +236,6 @@ class Renderer extends LegacyRenderer {
 
 		if (element instanceof FileReferences) {
 			const repositoryHeader = $(".refs-repository-title");
-			// tslint:disable
 			let workspaceURI = URI.from({
 				scheme: element.uri.scheme,
 				authority: element.uri.authority,
@@ -245,6 +244,7 @@ class Renderer extends LegacyRenderer {
 				fragment: element.uri.path,
 			});
 
+			// tslint:disable:no-new
 			new LeftRightWidget(repositoryHeader, left => {
 				const repoTitleContent = new FileLabel(left, workspaceURI, this._contextService);
 				repoTitleContent.setIcon(<List width={18} style={{ marginLeft: -2, color: colors.blueGrayL1() }} />);
@@ -314,8 +314,8 @@ class Renderer extends LegacyRenderer {
 
 		if (element instanceof OneReference) {
 			const preview = element.preview.preview(element.range);
-			const fileName = element.uri.fragment;
-			const line = element.range.startLineNumber
+			const fileName = element.uri.fragment.split("/").pop()!;
+			const line = element.range.startLineNumber;
 			const fnSignature = preview.before.concat(preview.inside, preview.after);
 			const refContainer = $("div");
 			let height = refBaseHeight;
@@ -348,7 +348,6 @@ class Renderer extends LegacyRenderer {
 				refContainer.getHTMLElement(),
 			);
 		}
-
 
 		return null;
 	}

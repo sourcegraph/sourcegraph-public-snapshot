@@ -20,11 +20,12 @@ class EventLoggerClass {
 	_hubspot: any = null;
 
 	_intercomSettings: any;
-	userAgentIsBot: boolean;
 	_dispatcherToken: any;
 	_currentPlatform: string = "Web";
 	_currentPlatformVersion: string = "";
 	_gaClientID: string;
+
+	CLOUD_TRACKING_APP_ID: string = "SourcegraphWeb";
 
 	constructor() {
 		this._intercomSettings = null;
@@ -57,18 +58,14 @@ class EventLoggerClass {
 			this._telligent = global.window.telligent;
 
 			let env = "development";
-			if (context.buildVars.Version !== "dev") {
-				switch (context.appURL) {
-					case "https://sourcegraph.com":
-						env = "production";
-						break;
-					default:
-						break;
-				}
+			let appId = "UnknownApp";
+			if (context.buildVars.Version !== "dev" && context.trackingAppID) {
+				env = "production";
+				appId = context.trackingAppID;
 			}
 
 			this._telligent("newTracker", "sg", "sourcegraph-logging.telligentdata.com", {
-				appId: "SourcegraphWeb",
+				appId: appId,
 				platform: "Web",
 				encodeBase64: false,
 				env: env,
@@ -90,8 +87,6 @@ class EventLoggerClass {
 		if (typeof window !== "undefined") {
 			this._intercomSettings = global.window.intercomSettings;
 		}
-
-		this.userAgentIsBot = Boolean(context.userAgentIsBot);
 
 		global.window.ga(function (tracker: any): any {
 			this._gaClientID = tracker.get("clientId");
@@ -126,7 +121,11 @@ class EventLoggerClass {
 			this.setUserProperty("user_hash", context.intercomHash);
 		}
 
-		if (this._intercom) { this._intercom("boot", this._intercomSettings); }
+		if (this._intercom) {
+			this._intercom("boot", this._intercomSettings);
+			this.setIntercomProperty("is_on_prem", context.trackingAppID !== this.CLOUD_TRACKING_APP_ID);
+			this.setIntercomProperty("tracking_app_id", context.trackingAppID);
+		}
 
 		if (user) {
 			if (user.Name) {
@@ -339,7 +338,7 @@ class EventLoggerClass {
 
 	// records HubSpot events for the current user
 	logHubSpotEvent(eventLabel: string): void {
-		if (this._hubspot && !this.userAgentIsBot) {
+		if (this._hubspot && !context.userAgentIsBot) {
 			if (!AnalyticsConstants.hubSpotEventNames.has(eventLabel)) {
 				return;
 			}
@@ -354,7 +353,7 @@ class EventLoggerClass {
 
 	// records intercom events for the current user
 	logIntercomEvent(eventName: string, eventProperties: any): void {
-		if (this._intercom && !this.userAgentIsBot) { this._intercom("trackEvent", eventName, eventProperties); }
+		if (this._intercom && !context.userAgentIsBot) { this._intercom("trackEvent", eventName, eventProperties); }
 	}
 
 	_dedupedArray(inputArray: Array<string>): Array<string> {

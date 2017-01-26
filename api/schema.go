@@ -17,6 +17,7 @@ type Query {
 
 type Root {
 	repository(uri: String!): Repository
+	repositories: [Repository!]!
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
 	currentUser(): User
@@ -46,6 +47,11 @@ type Repository implements Node {
 	id: ID!
 	uri: String!
 	description: String!
+	language: String!
+	fork: Boolean!
+	private: Boolean!
+	createdAt: String!
+	pushedAt: String!
 	commit(rev: String!): CommitState!
 	latest: CommitState!
 	defaultBranch: String!
@@ -58,6 +64,16 @@ type Symbol {
 	path: String!
 	line: Int!
 	character: Int!
+}
+
+type RemoteRepository {
+	uri: String!
+	description: String!
+	language: String!
+	fork: Boolean!
+	private: Boolean!
+	createdAt: String!
+	pushedAt: String!
 }
 
 type CommitState {
@@ -111,16 +127,6 @@ type File {
 
 type DependencyReferences {
 	data: String!
-}
-
-type RemoteRepository {
-	uri: String!
-	description: String!
-	language: String!
-	fork: Boolean!
-	private: Boolean!
-	createdAt: String!
-	pushedAt: String!
 }
 
 type Hunk {

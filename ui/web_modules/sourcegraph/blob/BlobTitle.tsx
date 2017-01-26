@@ -3,7 +3,7 @@ import * as Relay from "react-relay";
 
 import { AuthorsToggleButton } from "sourcegraph/blob/AuthorsToggleButton";
 import { CommitInfoBar } from "sourcegraph/blob/CommitInfoBar/CommitInfoBar";
-import { FileActionDownMenu } from "sourcegraph/blob/FileActionDownMenu";
+import { OpenInGitHubButton } from "sourcegraph/blob/OpenInGitHubButton";
 import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAlert";
 import { FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
@@ -39,7 +39,6 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 		const extension = getPathExtension(path);
 		const isSupported = extension ? isSupportedExtension(extension) : false;
 		const isIgnored = extension ? isIgnoredExtension(extension) : false;
-		const gitHubURL = `https://${repo}/blob/${rev}/${path}`;
 
 		return <div style={{ width: "100%" }}>
 			<FlexContainer justify="between" items="center" style={{
@@ -67,14 +66,12 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 					<div style={Object.assign({
 						color: "white",
 						flex: "1 1",
-						paddingRight: whitespace[1],
 						textAlign: "right",
 					}, typography.size[7])}>
 
 						<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
-						{	// if repo is not on github.com, then the one action in FileActionDownMenu doesn't make sense
-							repo.startsWith("github.com") &&
-							<FileActionDownMenu eventProps={{ repo, rev, path }} githubURL={gitHubURL} editorURL={path} />
+						{repo.startsWith("github.com") &&
+							<OpenInGitHubButton repo={repo} path={path} rev={rev} />
 						}
 
 						{!isSupported && !isIgnored &&

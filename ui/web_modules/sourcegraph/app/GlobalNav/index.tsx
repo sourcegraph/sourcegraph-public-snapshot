@@ -66,15 +66,13 @@ export class GlobalNav extends Container<Props, State> {
 	render(): JSX.Element {
 
 		const hiddenNavRoutes = new Set([
-			"/",
 			"/styleguide",
 			"login",
 			"join",
 		]);
 
 		const isHomeRoute = isAtRoute(this.context.router, abs.home);
-		const dash = isHomeRoute && context.user;
-		const shouldHide = hiddenNavRoutes.has(this.props.location.pathname) && !dash;
+		const shouldHide = hiddenNavRoutes.has(this.props.location.pathname) || (isHomeRoute && !context.user && context.authEnabled);
 
 		const repo = getRepoFromRouter(this.context.router);
 		const rev = getRevFromRouter(this.context.router);
@@ -143,9 +141,10 @@ export class GlobalNav extends Container<Props, State> {
 					onDismiss={this.onSearchDismiss} />
 				<FlexContainer items="center" style={{ paddingRight: "0.5rem" }}>
 					<a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>
-					{context.user
-						? <UserMenu user={context.user} location={location} style={{ flex: "0 0 auto", marginTop: 4 }} />
-						: <SignupOrLogin user={context.user} location={location} />
+					{context.user &&
+						(context.authEnabled
+							? <UserMenu user={context.user} location={location} style={{ flex: "0 0 auto", marginTop: 4 }} />
+							: <SignupOrLogin user={context.user} location={location} />)
 					}
 				</FlexContainer>
 			</FlexContainer>

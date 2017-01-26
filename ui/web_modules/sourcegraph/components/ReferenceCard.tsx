@@ -70,7 +70,7 @@ export function ReferenceCard({ fnSignature, authorName, avatar, date, fileName,
 			</div>}
 			<div style={rowSx}>
 				<Document style={{ opacity: 0.75, marginRight: 6 }} width={19} />
-				{fileName}: Line {line}
+				{fileName}{line && <span>: Line {line}</span>}
 			</div>
 		</div>
 	</div>;

@@ -78,6 +78,7 @@ export const PAGE_PRICING = "Pricing";
 // Page location constants are used to provide additional context around where on a page an event was fired from
 export const PAGE_LOCATION_GLOBAL_NAV = "GlobalNav";
 export const PAGE_LOCATION_DASHBOARD = "Dashboard";
+export const PAGE_LOCATION_DASHBOARD_SIDEBAR = "DashboardSidebar";
 
 // Integrations constants
 // Names for Sourcegraph integrations
@@ -146,6 +147,11 @@ export const Events = {
 	Repository_Added: new LoggableEvent("AddRepo", EventCategories.Repository, EventActions.Success),
 	RepositoryAuthedLanguagesGitHub_Fetched: new LoggableEvent("AuthedLanguagesGitHubFetched", EventCategories.Repository, EventActions.Fetch),
 	RepositoryAuthedReposGitHub_Fetched: new LoggableEvent("AuthedReposGitHubFetched", EventCategories.Repository, EventActions.Fetch),
+
+	// Repo page clicked
+	ReposPageDocsButton_Clicked: new LoggableEvent("ReposPageDocsButtonClicked", EventCategories.Dashboard, EventActions.Click),
+	ReposPageVideoButton_Clicked: new LoggableEvent("ReposPageVideoButtonClicked", EventCategories.Dashboard, EventActions.Click),
+	ReposPageContactButton_Clicked: new LoggableEvent("ReposPageContactButtonClicked", EventCategories.Dashboard, EventActions.Click),
 
 	// Onboarding
 	OnboardingRefsCoachCTA_Clicked: new LoggableEvent("ReferencesCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),

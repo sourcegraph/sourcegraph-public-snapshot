@@ -280,7 +280,11 @@ function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Re
 		return Promise.resolve([]);
 	}
 
-	let repoURI = URIUtils.pathInRepo(repo.URI, repo.DefaultBranch, "");
+	if (!repo.IndexedRevision) {
+		throw new Error("Repo must have indexed revision to fetch xreferences.");
+	}
+
+	let repoURI = URIUtils.pathInRepo(repo.URI, repo.IndexedRevision, "");
 	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
 		query: symbol,
 		hints: reference.Hints,

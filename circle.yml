@@ -36,6 +36,7 @@ dependencies:
     - ./dev/ci/install-go.sh
     - ./dev/ci/install-test-tools.sh
     - ./dev/ci/install-checkup.sh
+    - ./dev/ci/add-gcloud-service-account.sh
     - (cd ui && yarn)
     - (cd ui/scripts/tsmapimports && yarn)
 
@@ -55,7 +56,7 @@ deployment:
   master-branch:
     branch: master
     commands:
-      - ./dev/circle-build-docker-image.sh $LONG_VERSION:
+      - ./dev/ci/build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:latest
@@ -65,13 +66,15 @@ deployment:
   staging-branch:
     branch: [staging, staging2, staging3, staging4]
     commands:
-      - ./dev/circle-build-docker-image.sh $LONG_VERSION:
+      - ./dev/ci/build-docker-image.sh $LONG_VERSION:
           pwd: $REPO
       - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
 
   docker-images:
     branch: /docker-images\/.*/
     commands:
-      - make -f dev/ci/Makefile.docker ${CIRCLE_BRANCH:14} TAG=$LONG_VERSION:
+      - ./dev/ci/docker-images.sh ${CIRCLE_BRANCH:14}:
           pwd: $REPO
+          environment:
+            TAG: ${LONG_VERSION}
       - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
