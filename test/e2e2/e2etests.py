@@ -152,80 +152,52 @@ def test_golden_workflow(d):
         wait_for(lambda: "mux.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
     retry(e)
 
-def test_global_refs(d):
+def test_global_refs(d, test):
     wd = d.d
 
-    tests = [{
-        "repo_rev": "github.com/golang/go@go1.7.3", # non-default branch
-        "symbol": "context.Context",
-        "symbol_name": "Context",
-        "global_min": 5,
-    }, {
-        "repo_rev": "github.com/golang/go",
-        "symbol": "json.Marshal",
-        "symbol_name": "Marshal",
-        "global_min": 5,
-    }, {
-        "repo_rev": "github.com/go-gorp/gorp",
-        "symbol": "gorp.SqlExecutor",
-        "symbol_name": "SqlExecutor",
-        "global_min": 5,
-    }, {
-        "repo_rev": "github.com/gorilla/mux",
-        "symbol": "mux.Router",
-        "symbol_name": "Router",
-        "global_min": 5,
-    }, {
-        "repo_rev": "github.com/docker/docker",
-        "symbol": "random.NewSource",
-        "symbol_name": "NewSource",
-        "global_min": 2,
-    }]
+    # Go to repo page
+    wd.get(d.sg_url("/%s" % test['repo_rev']))
+    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "FILES")) > 0)
 
-    for test in tests:
-        # Go to repo page
-        wd.get(d.sg_url("/%s" % test['repo_rev']))
-        wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "FILES")) > 0)
+    # Jump to symbol
+    d.active_elem().send_keys("/")
+    d.active_elem().send_keys(test['symbol'])
+    Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
+    wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
+    Util.select_search_result_using_arrow_keys(d, test['symbol'])
 
-        # Jump to symbol
-        d.active_elem().send_keys("/")
-        d.active_elem().send_keys(test['symbol'])
-        Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
-        wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
-        Util.select_search_result_using_arrow_keys(d, test['symbol'])
+    # Click the symbol.
+    wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0, 5) # wait a little longer, to rule out VSCode start-up time
+    def rc():
+        retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
+        retry(lambda: d.active_elem().send_keys(Keys.UP)) # cursor might steal the click if we don't move it out of the way
+        retry(lambda: d.find_token(test['symbol_name']).click())
+    retry(rc)
 
-        # Click the symbol.
-        wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0, 5) # wait a little longer, to rule out VSCode start-up time
-        def rc():
-            retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
-            retry(lambda: d.active_elem().send_keys(Keys.UP)) # cursor might steal the click if we don't move it out of the way
-            retry(lambda: d.find_token(test['symbol_name']).click())
-        retry(rc)
+    # Wait for sidebar to appear.
+    wait_for(lambda: len(wd.find_elements_by_css_selector('[class="sg-sidebar"]')) > 0)
 
-        # Wait for sidebar to appear.
-        wait_for(lambda: len(wd.find_elements_by_css_selector('[class="sg-sidebar"]')) > 0)
+    find_sidebar_elements_by_tag_name_and_partial_text = lambda tag, text: [e for e in wd.find_element_by_css_selector('[class="sg-sidebar"]').find_elements_by_tag_name(tag) if text in e.text]
 
-        find_sidebar_elements_by_tag_name_and_partial_text = lambda tag, text: [e for e in wd.find_element_by_css_selector('[class="sg-sidebar"]').find_elements_by_tag_name(tag) if text in e.text]
+    # Symbol signature
+    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", test["symbol_name"])) > 0)
 
-        # Symbol signature
-        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", test["symbol_name"])) > 0)
+    # "Defined in" header
+    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
 
-        # "Defined in" header
-        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
+    # Wait for references to load + un-expand the "Local" references
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45) # Wait for loading icon to disappear
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 1)
+    retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
 
-        # Wait for references to load + un-expand the "Local" references
-        wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
-        wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
-        wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
-        wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45) # Wait for loading icon to disappear
-        wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 1)
-        retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+    # Local References
+    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
 
-        # Local References
-        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
-
-        # External References
-        wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > test["global_min"])
+    # External References
+    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > test["global_min"])
 
 def test_beta_signup(d):
     wd = d.d
@@ -366,7 +338,6 @@ all_tests = [
     (test_login_logout, "@beyang"),
     (test_repo_jump_to, "@nico"),
     (test_golden_workflow, "@matt"),
-    (test_global_refs, "@stephen"),
     (test_beta_signup, "@kingy"),
     (test_first_open_jump_to_line, "@nico"),
     (test_browser_extension_app_injection, "@john"),
@@ -374,3 +345,35 @@ all_tests = [
     (test_browser_extension_hover_j2d_unified_pull_request, "@john"),
     (test_browser_extension_hover_j2d_split_pull_request, "@john"),
 ]
+
+global_ref_tests = [{
+    "repo_rev": "github.com/golang/go@go1.7.3", # non-default branch
+    "symbol": "context.Context",
+    "symbol_name": "Context",
+    "global_min": 5,
+}, {
+    "repo_rev": "github.com/golang/go",
+    "symbol": "json.Marshal",
+    "symbol_name": "Marshal",
+    "global_min": 5,
+}, {
+    "repo_rev": "github.com/go-gorp/gorp",
+    "symbol": "gorp.SqlExecutor",
+    "symbol_name": "SqlExecutor",
+    "global_min": 5,
+}, {
+    "repo_rev": "github.com/gorilla/mux",
+    "symbol": "mux.Router",
+    "symbol_name": "Router",
+    "global_min": 5,
+}, {
+    "repo_rev": "github.com/docker/docker",
+    "symbol": "random.NewSource",
+    "symbol_name": "NewSource",
+    "global_min": 2,
+}]
+for test in global_ref_tests:
+    def test_global_refs_wrap(d):
+	return test_global_refs(d, test)
+    test_global_refs_wrap.func_name = test_global_refs.func_name + '_' + test['symbol_name'].lower()
+    all_tests.append((test_global_refs_wrap, '@stephen'))
