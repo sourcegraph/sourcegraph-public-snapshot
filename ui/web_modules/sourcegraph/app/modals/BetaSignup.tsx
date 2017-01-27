@@ -22,6 +22,7 @@ export const BetaSignup = (props: Props): JSX.Element => {
 		<div className={styles.modal} style={sx}>
 			<Heading level={4} align="center">Join our beta program</Heading>
 			<BetaInterestForm
+				location={this.props.location}
 				loginReturnTo="/beta"
 				onSubmit={dismissModal("menuBeta", props.location, props.router)} />
 		</div>

@@ -3,7 +3,6 @@ import * as React from "react";
 
 import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
-import { Heading } from "sourcegraph/components";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
@@ -31,7 +30,7 @@ interface Props {
 	// either a URL path or a Location object.
 	returnTo: string | RouterLocation;
 	newUserReturnTo: PartialRouterLocation;
-	queryObj: History.Query;
+	queryObj?: History.Query;
 }
 
 type State = any;
@@ -42,11 +41,10 @@ export class SignupForm extends Component<Props, State> {
 		return (
 			<div>
 				<div className={styles.form}>
-					<Heading level={3} align="center" underline="orange">Get started with Sourcegraph</Heading>
 					<GitHubAuthButton
 						scopes="user:email"
 						newUserReturnTo={newUserRedirLocation}
-						returnTo={this.props.location}
+						returnTo={this.props.returnTo}
 						tabIndex={1}
 						block={true}
 						style={{ marginBottom: whitespace[2] }}
@@ -54,7 +52,7 @@ export class SignupForm extends Component<Props, State> {
 					<GitHubAuthButton
 						color="purple"
 						newUserReturnTo={newUserRedirLocation}
-						returnTo={this.props.location}
+						returnTo={this.props.returnTo}
 						tabIndex={2}
 						block={true}
 						secondaryText="14 days free">Private + public code</GitHubAuthButton>

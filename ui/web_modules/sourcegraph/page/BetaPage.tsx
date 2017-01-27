@@ -1,11 +1,16 @@
 import * as React from "react";
+import { RouterLocation } from "sourcegraph/app/router";
 import { Heading, Hero } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import * as styles from "sourcegraph/page/Page.css";
 
-export function BetaPage(props: {}): JSX.Element {
+interface BetaPageProps {
+	location: RouterLocation;
+}
+
+export function BetaPage(props: BetaPageProps): JSX.Element {
 	return (
 		<div>
 			<PageTitle title="Beta" />
@@ -34,7 +39,7 @@ export function BetaPage(props: {}): JSX.Element {
 				<br />
 				<Heading level={3} underline="blue">Register for beta access</Heading>
 
-				<BetaInterestForm loginReturnTo="/beta" />
+				<BetaInterestForm loginReturnTo="/beta" location={props.location} />
 			</div>
 		</div>
 	);

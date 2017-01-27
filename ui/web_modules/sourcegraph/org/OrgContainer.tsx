@@ -95,7 +95,7 @@ export class OrgContainer extends Container<Props, State> {
 				<div style={{ marginTop: whitespace[4] }}>
 					<GitHubAuthButton pageName={"ViewOrgs"} scopes={privateGitHubOAuthScopes} returnTo={"/settings"}>
 						Add your orgs
-					</GitHubAuthButton>
+					</GitHubAuthButton> to start a 14-day trial.
 				</div>
 			</div>;
 		}

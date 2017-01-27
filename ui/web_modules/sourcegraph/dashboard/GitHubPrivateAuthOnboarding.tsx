@@ -52,7 +52,7 @@ export class GitHubPrivateAuthOnboarding extends React.Component<Props, State> {
 							</p>
 							<div className={classNames(base.pv5)}>
 								<img width={332} style={{ marginBottom: "-95px" }} src={`${context.assetsRoot}/img/Dashboard/OnboardingRepos.png`}></img>
-								<GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton>
+								<GitHubAuthButton pageName={"GitHubPrivateCodeOnboarding"} scopes={privateGitHubOAuthScopes} returnTo={this.props.location} className={styles.github_button}>Add private repositories</GitHubAuthButton> to start a 14-day trial.
 							</div>
 							<p>
 								<a onClick={this._skipClicked.bind(this)}>Skip</a>
