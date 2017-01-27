@@ -1,11 +1,12 @@
 import * as React from "react";
 
 import { context } from "sourcegraph/app/context";
-import { FlexContainer, Heading, Hero, User } from "sourcegraph/components";
-import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
+import { Button, FlexContainer, Heading, Hero, User } from "sourcegraph/components";
+import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
+import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 export function AboutPage(): JSX.Element {
 	const boardMemberSx = { marginBottom: whitespace[4], marginRight: whitespace[4] };
@@ -150,9 +151,11 @@ export function AboutPage(): JSX.Element {
 					marginTop: whitespace[5],
 					marginBottom: whitespace[5],
 				}}>
-					<GitHubAuthButton color="purple">
-						<strong>Sign up with GitHub</strong>
-					</GitHubAuthButton>
+					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+						<Button color="purple">
+							Sign up for free
+						</Button>
+					</LocationStateToggleLink>
 				</div>}
 
 			</FlexContainer>

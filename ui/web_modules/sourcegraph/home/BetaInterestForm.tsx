@@ -1,21 +1,23 @@
 import * as classNames from "classnames";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
+import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
 import { Button, CheckboxList, Input } from "sourcegraph/components";
-import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { editors, languages } from "sourcegraph/home/HomeUtils";
 import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
 import { langName } from "sourcegraph/Language";
+import { SignupForm } from "sourcegraph/user/Signup";
 import * as UserActions from "sourcegraph/user/UserActions";
 
 interface Props {
 	onSubmit?: () => void;
 	className?: string;
 	language?: string;
-	loginReturnTo?: string;
+	location: RouterLocation;
+	loginReturnTo: string;
 	style?: React.CSSProperties;
 }
 
@@ -110,11 +112,11 @@ export class BetaInterestForm extends Component<Props, State> {
 		}
 
 		if (!context.user) {
+			const newUserReturnTo = { pathname: this.props.loginReturnTo, hash: "" };
+
 			return (<div className={styles.cta}>
 				<p className={styles.p}>You must sign in to continue.</p>
-				<GitHubAuthButton returnTo={this.props.loginReturnTo} color="blue" className={base.mr3}>
-					<strong>Sign in with GitHub</strong>
-				</GitHubAuthButton>
+				<SignupForm newUserReturnTo={newUserReturnTo} returnTo={this.props.loginReturnTo} location={this.props.location}></SignupForm>
 			</div>);
 		}
 

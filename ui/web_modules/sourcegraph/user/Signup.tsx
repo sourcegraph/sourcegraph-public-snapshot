@@ -31,7 +31,7 @@ interface Props {
 	// either a URL path or a Location object.
 	returnTo: string | RouterLocation;
 	newUserReturnTo: PartialRouterLocation;
-	queryObj: History.Query;
+	queryObj?: History.Query;
 }
 
 type State = any;
@@ -46,7 +46,7 @@ export class SignupForm extends Component<Props, State> {
 					<GitHubAuthButton
 						scopes="user:email"
 						newUserReturnTo={newUserRedirLocation}
-						returnTo={this.props.location}
+						returnTo={this.props.returnTo}
 						tabIndex={1}
 						block={true}
 						style={{ marginBottom: whitespace[2] }}
@@ -54,7 +54,7 @@ export class SignupForm extends Component<Props, State> {
 					<GitHubAuthButton
 						color="purple"
 						newUserReturnTo={newUserRedirLocation}
-						returnTo={this.props.location}
+						returnTo={this.props.returnTo}
 						tabIndex={2}
 						block={true}
 						secondaryText="14 days free">Private + public code</GitHubAuthButton>

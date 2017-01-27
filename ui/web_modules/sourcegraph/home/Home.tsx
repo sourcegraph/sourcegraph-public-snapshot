@@ -160,7 +160,8 @@ export class Home extends React.Component<HomeProps, {}> {
 							<Heading level={4} align="center">Join the Sourcegraph beta</Heading>
 							<BetaInterestForm
 								style={{ width: "100%" }}
-								loginReturnTo="/"
+								location={this.props.location}
+								loginReturnTo="/beta"
 								onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
 						</Panel>
 					</LocationStateModal>
