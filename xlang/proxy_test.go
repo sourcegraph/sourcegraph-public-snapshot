@@ -769,6 +769,7 @@ func TestProxy_connections(t *testing.T) {
 	caps := lsp.ClientCapabilities{
 		XFilesProvider:   true,
 		XContentProvider: true,
+		XCacheProvider:   true,
 	}
 
 	// Start the test client C1.

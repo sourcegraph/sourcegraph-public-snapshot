@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -394,6 +395,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 			Capabilities: lsp.ClientCapabilities{
 				XFilesProvider:   true,
 				XContentProvider: true,
+				XCacheProvider:   true,
 			},
 		},
 		OriginalRootPath: c.id.rootPath.String(),
@@ -544,6 +546,28 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.clientBroadcast(ctx, req)
 
 		return nil, nil
+
+	case "xcache/get":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var p plspext.CacheGetParams
+		if err := json.Unmarshal(*req.Params, &p); err != nil {
+			return nil, err
+		}
+		return c.handleCacheGet(ctx, p)
+
+	case "xcache/set":
+		// notification, so ignore errors
+		if req.Params == nil {
+			return nil, nil
+		}
+		var p plspext.CacheSetParams
+		if err := json.Unmarshal(*req.Params, &p); err != nil {
+			return nil, nil
+		}
+		c.handleCacheSet(ctx, p)
+		return
 
 	case "textDocument/xcontent":
 		return c.handleTextDocumentContentExt(ctx, req)
