@@ -1,5 +1,4 @@
 import { css } from "glamor";
-import * as omit from "lodash/omit";
 import * as React from "react";
 
 import { Loader } from "sourcegraph/components/Loader";
@@ -46,17 +45,12 @@ export function Button(props: ButtonProps): JSX.Element {
 		block = false,
 		outline = false,
 		size,
-		disabled = false,
 		loading = false,
 		color = "blueGray",
-		onClick,
-		className,
 		children,
-		style,
 		type = "button",
+		...transferredProps,
 	} = props;
-
-	const transferredProps = omit(props, ["block", "outline", "size", "disabled", "loading", "color", "onClick", "children", "className"]);
 
 	const btnColor = colors[color]();
 	const btnHoverColor = color === "white" ? colors.blueD1() : colors[`${color}D1`]();
@@ -139,11 +133,7 @@ export function Button(props: ButtonProps): JSX.Element {
 				}
 			}
 		)
-		}
-		className={className}
-		disabled={disabled}
-		style={style}
-		onClick={onClick}>
+		}>
 		{loading && <Loader />}
 		{!loading && children}
 	</button>;

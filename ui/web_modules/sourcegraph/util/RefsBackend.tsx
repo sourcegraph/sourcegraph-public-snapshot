@@ -1,4 +1,5 @@
-import * as _ from "lodash";
+import * as remove from "lodash/remove";
+import * as values from "lodash/values";
 import * as hash from "object-hash";
 import { Observable } from "rxjs";
 import { Definition, Hover, Position } from "vscode-languageserver-types";
@@ -326,16 +327,16 @@ export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Posi
 	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 1) {
 		return null;
 	}
-	let repos = _.values(object.RepoData);
+	let repos = values(object.RepoData);
 
-	let currentRepo = _.remove(repos, function (repo: any): boolean {
+	let currentRepo = remove(repos, function (repo: any): boolean {
 		return (repo as any).URI === `${model.uri.authority}${model.uri.path}`;
 	});
 	if (!currentRepo || !currentRepo.length) {
 		return object;
 	}
 
-	_.remove(object.Data.References, function (reference: any): boolean {
+	remove(object.Data.References, function (reference: any): boolean {
 		return reference.RepoID === currentRepo[0].ID;
 	});
 	delete object.RepoData[currentRepo[0].ID];

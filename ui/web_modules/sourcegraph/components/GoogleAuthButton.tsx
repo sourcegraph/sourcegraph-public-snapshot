@@ -1,4 +1,3 @@
-import * as omit from "lodash/omit";
 import * as React from "react";
 
 import { RouterLocation } from "sourcegraph/app/router";
@@ -15,7 +14,10 @@ interface Props extends ButtonProps {
 }
 
 export function GoogleAuthButton(props: Props): JSX.Element {
-	const transferredProps = omit(props, ["provider", "iconType", "eventObject"]);
+	const {
+		children,
+		...transferredProps,
+	} = props;
 	return <AuthButton
 		provider="google"
 		iconType="google"

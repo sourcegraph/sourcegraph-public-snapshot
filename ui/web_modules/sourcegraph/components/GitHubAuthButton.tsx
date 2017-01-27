@@ -1,4 +1,3 @@
-import * as omit from "lodash/omit";
 import * as React from "react";
 
 import { RouterLocation } from "sourcegraph/app/router";
@@ -15,8 +14,11 @@ interface Props extends ButtonProps {
 }
 
 export function GitHubAuthButton(props: Props): JSX.Element {
-	const transferredProps = omit(props, ["scopes", "provider", "iconType", "eventObject"]);
-	const scopes = props.scopes || "read:org,repo,user:email";
+	const {
+		scopes = "read:org,repo,user:email",
+		children,
+		...transferredProps,
+	} = props;
 
 	return <AuthButton
 		provider="github"
@@ -24,6 +26,6 @@ export function GitHubAuthButton(props: Props): JSX.Element {
 		eventObject={AnalyticsConstants.Events.OAuth2FlowGitHub_Initiated}
 		scopes={scopes}
 		{...transferredProps}>
-		{props.children}
+		{children}
 	</AuthButton>;
 }

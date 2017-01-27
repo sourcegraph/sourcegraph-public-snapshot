@@ -1,6 +1,5 @@
 import * as classNames from "classnames";
 import { css } from "glamor";
-import * as omit from "lodash/omit";
 import * as React from "react";
 
 import { Button, FlexContainer } from "sourcegraph/components";
@@ -23,9 +22,8 @@ export function SplitButton(props: SplitButtonProps): JSX.Element {
 		secondaryText,
 		size,
 		style,
+		...transferredProps,
 	} = props;
-
-	const transferredProps = omit(props, ["secondaryText"]);
 
 	const btnHoverColor = colors[`${color}D1`]();
 	const secondaryColor = colors[`${color}D1`]();
@@ -48,11 +46,17 @@ export function SplitButton(props: SplitButtonProps): JSX.Element {
 			!block ? { display: "inline-block" } : {},
 			style,
 		)}>
-		<Button {...transferredProps} {...css({ flex: 2 }) } style={{
-			borderTopRightRadius: 0,
-			borderBottomRightRadius: 0,
-			margin: 0,
-		}}>
+		<Button
+			{...transferredProps}
+			{...css({ flex: 2 }) }
+			block={block}
+			color={color}
+			size={size}
+			style={{
+				borderTopRightRadius: 0,
+				borderBottomRightRadius: 0,
+				margin: 0,
+			}}>
 			{children}
 		</Button>
 		<div {...css(

@@ -13,7 +13,7 @@ import { IModel, IPosition, IRange } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/services/resolverService";
 
-import * as _ from "lodash";
+import * as flatten from "lodash/flatten";
 
 import { LocationWithCommitInfo, ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
 
@@ -243,7 +243,7 @@ export class ReferencesModel implements IDisposable {
 	constructor(references: LocationWithCommitInfo[], private _workspace: URI, private _tempFileReferences?: [Repo]) {
 		let newArrayOfLocs: FileReferences[] = [];
 		if (this._tempFileReferences) {
-			newArrayOfLocs = _.flatten(this._tempFileReferences.map(repository => {
+			newArrayOfLocs = flatten(this._tempFileReferences.map(repository => {
 				let loc: Location = {
 					uri: URI.from({
 						scheme: this._workspace.scheme,

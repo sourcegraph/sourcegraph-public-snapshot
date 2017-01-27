@@ -1,4 +1,3 @@
-import * as omit from "lodash/omit";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
@@ -31,24 +30,13 @@ export function AuthButton(props: Props): JSX.Element {
 		returnTo,
 		newUserReturnTo,
 		secondaryText,
-		size,
 		pageName = "",
 		children,
+		...btnProps
 	} = props;
 
 	const url = urlToOAuth(provider, scopes || null, returnTo || null, newUserReturnTo || returnTo || null);
-	const iconSx = size === "small" ? typography.size[5] : typography.size[4];
-
-	const btnProps = omit(props, [
-		"provider",
-		"iconType",
-		"eventObject",
-		"scopes",
-		"returnTo",
-		"newUserReturnTo",
-		"secondaryText",
-		"pageName",
-	]);
+	const iconSx = props.size === "small" ? typography.size[5] : typography.size[4];
 
 	const icon = <span style={{ marginRight: whitespace[2] }}>
 		{iconType === "github" && <GitHubLogo style={iconSx} />}
