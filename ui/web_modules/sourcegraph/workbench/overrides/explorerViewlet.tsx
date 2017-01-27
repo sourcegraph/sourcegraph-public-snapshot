@@ -20,8 +20,6 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { RouterContext } from "sourcegraph/workbench/utils";
 
-import "sourcegraph/workbench/styles/tree.css";
-
 export class ExplorerViewlet extends VSExplorerViewlet {
 
 	constructor(

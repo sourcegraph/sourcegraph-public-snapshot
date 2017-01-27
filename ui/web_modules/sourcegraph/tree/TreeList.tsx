@@ -6,6 +6,7 @@ import { Header, Heading, Panel } from "sourcegraph/components";
 import { Document, Folder } from "sourcegraph/components/symbols/Primaries";
 import { typography, whitespace } from "sourcegraph/components/utils";
 import { urlToTree } from "sourcegraph/tree/routes";
+
 import * as styles from "sourcegraph/tree/styles/Tree.css";
 
 interface Props {

@@ -37,8 +37,6 @@ import { WorkspaceBadge } from "sourcegraph/workbench/ui/badges/workspaceBadge";
 import { FileLabel } from "sourcegraph/workbench/ui/fileLabel";
 import { LeftRightWidget } from "sourcegraph/workbench/ui/leftRightWidget";
 
-import "sourcegraph/workbench/styles/tree.css";
-
 interface Props {
 	model: ReferencesModel;
 	focus(resource: Location): void;
