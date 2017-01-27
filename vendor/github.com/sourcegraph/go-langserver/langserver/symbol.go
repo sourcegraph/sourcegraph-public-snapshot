@@ -326,6 +326,15 @@ func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *
 			}
 
 			par.Acquire()
+
+			// If the context is cancelled, breaking the loop here
+			// will allow us to return partial results, and
+			// avoiding starting new computations.
+			if ctx.Err() != nil {
+				par.Release()
+				break
+			}
+
 			go func(pkg string) {
 				// Prevent any uncaught panics from taking the
 				// entire server down. For an example see

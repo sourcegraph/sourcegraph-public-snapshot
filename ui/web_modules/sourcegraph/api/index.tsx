@@ -83,6 +83,7 @@ export interface CancelParams {
 export interface ClientCapabilities {
 	xfilesProvider?: boolean;
 	xcontentProvider?: boolean;
+	xcacheProvider?: boolean;
 }
 
 export interface CodeActionContext {
