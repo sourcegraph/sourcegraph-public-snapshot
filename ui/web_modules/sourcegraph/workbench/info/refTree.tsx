@@ -1,41 +1,34 @@
-import { css, insertGlobal } from "glamor";
+import { insertGlobal } from "glamor";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
-import * as ReactDOM from "react-dom";
+
 import URI from "vs/base/common/uri";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IEditorService } from "vs/platform/editor/common/editor";
 
 import { getEditorInstance } from "sourcegraph/editor/Editor";
+import { ReferenceItem } from "sourcegraph/workbench/info/referenceItem";
+import { RepositoryHeader } from "sourcegraph/workbench/info/repositoryHeader";
+
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
 import { Disposables, scrollToLine } from "sourcegraph/workbench/utils";
-import { Builder } from "vs/base/browser/builder";
-import { IDisposable } from "vs/base/common/lifecycle";
 import { Location } from "vs/editor/common/modes";
 
 import * as autobind from "autobind-decorator";
-import { $ } from "vs/base/browser/builder";
 import { Tree } from "vs/base/parts/tree/browser/treeImpl";
 import { Controller } from "vs/editor/contrib/referenceSearch/browser/referencesWidget";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
+import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
 import { Services } from "sourcegraph/workbench/services";
 
-import { LegacyRenderer } from "vs/base/parts/tree/browser/treeDefaults";
-import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-
 import * as dom from "vs/base/browser/dom";
 import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
+import { LegacyRenderer } from "vs/base/parts/tree/browser/treeDefaults";
 
-import { ReferenceCard } from "sourcegraph/components";
-import { List } from "sourcegraph/components/symbols/Primaries";
-import { colors, paddingMargin, whitespace } from "sourcegraph/components/utils";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
-import { WorkspaceBadge } from "sourcegraph/workbench/ui/badges/workspaceBadge";
-import { FileLabel } from "sourcegraph/workbench/ui/fileLabel";
-import { LeftRightWidget } from "sourcegraph/workbench/ui/leftRightWidget";
 
 interface Props {
 	model: ReferencesModel;
@@ -236,127 +229,22 @@ class Renderer extends LegacyRenderer {
 		dom.clearNode(container);
 
 		if (element instanceof FileReferences) {
-			const repositoryHeader = $(".refs-repository-title");
-			let workspaceURI = URI.from({
-				scheme: element.uri.scheme,
-				authority: element.uri.authority,
-				path: element.uri.path,
-				query: element.uri.query,
-				fragment: element.uri.path,
-			});
-
-			// tslint:disable:no-new
-			new LeftRightWidget(repositoryHeader, left => {
-				const repoTitleContent = new FileLabel(left, workspaceURI, this._contextService);
-				repoTitleContent.setIcon(<List width={18} style={{ marginLeft: -2, color: colors.blueGrayL1() }} />);
-				return null as any;
-			}, right => {
-
-				const workspace = workspaceURI.path === this._editorURI.path ? "Local" : "External";
-				const badge = new WorkspaceBadge(right, workspace);
-
-				if (element.failure) {
-					badge.setTitleFormat("Failed to resolve file.");
-				} else if (workspace === "Local") {
-					badge.setTitleFormat("Local");
-					badge.setColor(colors.green());
-				} else {
-					badge.setTitleFormat("External");
-					badge.setColor(colors.orangeL1());
-				}
-
-				return badge as any;
-			}).setClassNames((css as any)({
-				paddingLeft: whitespace[2],
-				paddingRight: whitespace[2],
-			}));
-
-			const borderSx = `1px solid ${colors.blueGrayL1(0.2)}`;
-			const refHeaderSx = (css as any)(
-				paddingMargin.padding("x", 2),
-				{
-					backgroundColor: colors.blueGrayL3(),
-					borderBottom: borderSx,
-					borderTop: borderSx,
-					boxShadow: `0 2px 2px 0 ${colors.black(0.05)}`,
-					color: colors.text(),
-					display: "flex",
-					fontWeight: "bold",
-					alignItems: "center",
-					height: fileRefsHeight,
-				},
+			RepositoryHeader(
+				element,
+				container,
+				userToggledState,
+				firstToggleAdded,
+				fileRefsHeight,
+				this._contextService,
+				this._editorURI.path,
 			);
-
-			insertGlobal(`.monaco-tree-row.has-children .${refHeaderSx}:before`, {
-				content: `""`,
-				height: 15,
-				width: 9,
-				marginLeft: 9,
-				transition: "all 300ms ease-in-out",
-				backgroundRepeat: "no-repeat",
-				backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNyIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMjQgMTUgNyAxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjUuNDcyIDI2LjE0NWMtLjI2LjI2LS42ODIuMjYtLjk0MyAwLS4yNjItLjI2LS4yNjItLjY4Mi0uMDAyLS45NDNsNC41MzYtNC41My00LjUzNi00LjUzYy0uMjYtLjI2LS4yNi0uNjgzIDAtLjk0My4yNjItLjI2Mi42ODQtLjI2Ljk0NCAwbDUuMDA4IDVjLjEyNS4xMjYuMTk2LjI5NS4xOTYuNDcycy0uMDcuMzQ3LS4xOTYuNDcybC01LjAwOCA1eiIgZmlsbD0iIzc3OTNBRSIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9zdmc+)",
-			});
-
-			insertGlobal(`.monaco-tree-row.has-children.expanded .${refHeaderSx}:before`, {
-				transform: "rotate(90deg)",
-			});
-
-			insertGlobal(`.monaco-tree-row.has-children .${refHeaderSx} .label-name`, {
-				width: 159,
-				verticalAlign: "top",
-				textAlign: "left",
-				display: "inline-block",
-				overflow: "hidden",
-				textOverflow: "ellipsis",
-				direction: "rtl",
-			});
-
-			repositoryHeader.getHTMLElement().classList.add(refHeaderSx);
-			repositoryHeader.on("click", (e: Event, builder: Builder, unbind: IDisposable): void => {
-				const stateKey = element.uri.toString();
-				if (userToggledState.has(stateKey)) {
-					userToggledState.delete(stateKey);
-				} else {
-					userToggledState.add(stateKey);
-				}
-			});
-			repositoryHeader.appendTo(container);
-		}
-
-		if (element instanceof OneReference) {
-			const preview = element.preview.preview(element.range);
-			const fileName = element.uri.fragment.split("/").pop()!;
-			const line = element.range.startLineNumber;
-			const fnSignature = preview.before.concat(preview.inside, preview.after);
-			const refContainer = $("div");
-			let height = refBaseHeight;
-			let defaultAvatar;
-			let gravatarHash;
-			let avatar;
-			let authorName;
-			let date;
-
-			if (element && element.commitInfo && element.commitInfo.hunk.author && element.commitInfo.hunk.author.person) {
-				defaultAvatar = "https://secure.gravatar.com/avatar?d=mm&f=y&s=128";
-				gravatarHash = element.commitInfo.hunk.author.person.gravatarHash;
-				avatar = gravatarHash ? `https://secure.gravatar.com/avatar/${gravatarHash}?s=128&d=retro` : defaultAvatar;
-				authorName = element.commitInfo.hunk.author.person.name;
-				date = element.commitInfo.hunk.author.date;
-				height = refWithCommitInfoHeight;
-			}
-
-			refContainer.appendTo(container);
-
-			ReactDOM.render(
-				<ReferenceCard
-					fnSignature={fnSignature}
-					authorName={authorName}
-					avatar={avatar}
-					date={date}
-					fileName={fileName}
-					height={height}
-					line={line} />,
-				refContainer.getHTMLElement(),
+		} else if (element instanceof OneReference) {
+			ReferenceItem(
+				element,
+				container,
+				firstToggleAdded,
+				refBaseHeight,
+				refWithCommitInfoHeight,
 			);
 		}
 
