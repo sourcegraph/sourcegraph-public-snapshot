@@ -9,7 +9,7 @@ import { IEditorService } from "vs/platform/editor/common/editor";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 
-import { Disposables } from "sourcegraph/workbench/utils";
+import { Disposables, scrollToLine } from "sourcegraph/workbench/utils";
 import { Builder } from "vs/base/browser/builder";
 import { IDisposable } from "vs/base/common/lifecycle";
 import { Location } from "vs/editor/common/modes";
@@ -131,6 +131,9 @@ export class RefTree extends React.Component<Props, State> {
 			this.props.focus(reference);
 			this.tree.layout();
 		});
+
+		const editor = getEditorInstance();
+		scrollToLine(editor, editor.getSelection().startLineNumber);
 	}
 
 	private treeItemSelected(resource: URI): void {
