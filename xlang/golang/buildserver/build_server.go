@@ -391,7 +391,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// expect `dir:net/http` as any real/valid Go project will have package
 		// paths align with the directory structure.
 		if req.Method == "workspace/symbol" && strings.HasPrefix(h.init.OriginalRootPath, "git://github.com/golang/go") {
-			var wsparams lsp.WorkspaceSymbolParams
+			var wsparams lsext.WorkspaceSymbolParams
 			if err := json.Unmarshal(*req.Params, &wsparams); err != nil {
 				return nil, err
 			}
