@@ -4,10 +4,9 @@ import { Link } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { Button, FlexContainer, Heading, Hero } from "sourcegraph/components";
-import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
+import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 import * as styles from "sourcegraph/page/Page.css";
 
@@ -182,11 +181,9 @@ export function TwitterCaseStudyPage(): JSX.Element {
 					paddingBottom: whitespace[4],
 					paddingTop: whitespace[3],
 				}}>
-					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
-						<Button color="purple">
-							Sign up for free
-						</Button>
-					</LocationStateToggleLink>
+					<GitHubAuthButton color="purple">
+						<strong>Sign up with GitHub</strong>
+					</GitHubAuthButton>
 				</div>}
 
 			</div>

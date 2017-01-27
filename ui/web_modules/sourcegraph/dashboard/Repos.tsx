@@ -67,7 +67,7 @@ export class Repos extends React.Component<Props, {}> {
 				<FlexContainer items="center" justify="center" wrap={true}>
 					{!context.hasPrivateGitHubToken() &&
 						<GitHubAuthButton scopes={privateGitHubOAuthScopes} style={btnSx} returnTo={this.props.location}>
-							Add private repositories and start a 14-day trial
+							Add private repositories
 					</GitHubAuthButton>
 					}
 					{Features.googleCloudPlatform.isEnabled() && !context.hasPrivateGoogleToken() &&
