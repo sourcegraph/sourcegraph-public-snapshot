@@ -286,8 +286,8 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if params.InitializationOptions.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
-		if rootPathURI.Rev() == "" {
-			return nil, fmt.Errorf("invalid empty Git revision in rootPath %q", rootPathURI)
+		if len(rootPathURI.Rev()) != 40 {
+			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootPathURI)
 		}
 		if len(rootPathURI.Rev()) != 40 {
 			badRevCounter.Inc()

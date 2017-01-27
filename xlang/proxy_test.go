@@ -51,7 +51,7 @@ func TestProxy(t *testing.T) {
 		depFS             map[string]map[string]string // dep clone URL -> map VFS
 	}{
 		"go basic": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": "package p; func A() { A() }",
@@ -65,44 +65,44 @@ func TestProxy(t *testing.T) {
 				"b.go:1:23": "func A()",
 			},
 			wantDefinition: map[string]string{
-				"a.go:1:17": "git://test/pkg?master#a.go:1:17",
-				"a.go:1:23": "git://test/pkg?master#a.go:1:17",
-				"b.go:1:17": "git://test/pkg?master#b.go:1:17",
-				"b.go:1:23": "git://test/pkg?master#a.go:1:17",
+				"a.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
+				"a.go:1:23": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
+				"b.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:1:17",
+				"b.go:1:23": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:17": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
-				"a.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
-				"b.go:1:17": "git://test/pkg?master#b.go:1:17 id:test/pkg/-/B name:B package:test/pkg packageName:p recv: vendor:false",
-				"b.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:23": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"b.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:1:17 id:test/pkg/-/B name:B package:test/pkg packageName:p recv: vendor:false",
+				"b.go:1:23": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
 			},
 			wantReferences: map[string][]string{
 				"a.go:1:17": []string{
-					"git://test/pkg?master#a.go:1:17",
-					"git://test/pkg?master#a.go:1:23",
-					"git://test/pkg?master#b.go:1:23",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:23",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:1:23",
 				},
 				"a.go:1:23": []string{
-					"git://test/pkg?master#a.go:1:17",
-					"git://test/pkg?master#a.go:1:23",
-					"git://test/pkg?master#b.go:1:23",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:23",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:1:23",
 				},
-				"b.go:1:17": []string{"git://test/pkg?master#b.go:1:17"},
+				"b.go:1:17": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:1:17"},
 				"b.go:1:23": []string{
-					"git://test/pkg?master#a.go:1:17",
-					"git://test/pkg?master#a.go:1:23",
-					"git://test/pkg?master#b.go:1:23",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:23",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:1:23",
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?master#a.go:function:pkg.A:0:16", "git://test/pkg?master#b.go:function:pkg.B:0:16"},
-				"A":           []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
-				"B":           []string{"git://test/pkg?master#b.go:function:pkg.B:0:16"},
-				"is:exported": []string{"git://test/pkg?master#a.go:function:pkg.A:0:16", "git://test/pkg?master#b.go:function:pkg.B:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:pkg.B:0:16"},
+				"A":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16"},
+				"B":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:pkg.B:0:16"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:pkg.B:0:16"},
 			},
 		},
 		"go detailed": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": "package p; type T struct { F string }",
@@ -111,14 +111,14 @@ func TestProxy(t *testing.T) {
 			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
-				"T":           []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:pkg.T:0:16"},
+				"T":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:pkg.T:0:16"},
 				"F":           []string{}, // we don't return fields for now
-				"is:exported": []string{"git://test/pkg?master#a.go:class:pkg.T:0:16"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:pkg.T:0:16"},
 			},
 		},
 		"exported defs unexported type": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": "package p; type t struct { F string }",
@@ -128,7 +128,7 @@ func TestProxy(t *testing.T) {
 			},
 		},
 		"go xtest": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go":      "package p; var A int",
@@ -141,7 +141,7 @@ func TestProxy(t *testing.T) {
 			},
 		},
 		"go subdirectory in repo": {
-			rootPath: "git://test/pkg?master#d",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go":    "package d; func A() { A() }",
@@ -155,22 +155,22 @@ func TestProxy(t *testing.T) {
 				"d2/b.go:1:52": "func B()",
 			},
 			wantDefinition: map[string]string{
-				"a.go:1:17":    "git://test/pkg?master#d/a.go:1:17",
-				"a.go:1:23":    "git://test/pkg?master#d/a.go:1:17",
-				"d2/b.go:1:39": "git://test/pkg?master#d/d2/b.go:1:39",
-				"d2/b.go:1:47": "git://test/pkg?master#d/a.go:1:17",
-				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39",
+				"a.go:1:17":    "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:1:17",
+				"a.go:1:23":    "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:1:17",
+				"d2/b.go:1:39": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:39",
+				"d2/b.go:1:47": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:1:17",
+				"d2/b.go:1:52": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:39",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:17":    "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
-				"a.go:1:23":    "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
-				"d2/b.go:1:39": "git://test/pkg?master#d/d2/b.go:1:39 id:test/pkg/d/d2/-/B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
-				"d2/b.go:1:47": "git://test/pkg?master#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
-				"d2/b.go:1:52": "git://test/pkg?master#d/d2/b.go:1:39 id:test/pkg/d/d2/-/B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
+				"a.go:1:17":    "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+				"a.go:1:23":    "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+				"d2/b.go:1:39": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:39 id:test/pkg/d/d2/-/B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
+				"d2/b.go:1:47": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:1:17 id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+				"d2/b.go:1:52": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:39 id:test/pkg/d/d2/-/B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
-				"is:exported": []string{"git://test/pkg?master#d/a.go:function:d.A:0:16", "git://test/pkg?master#d/d2/b.go:function:d2.B:0:38"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:function:d.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:function:d2.B:0:38"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:function:d.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:function:d2.B:0:38"},
 			},
 			wantXReferences: map[*lsext.WorkspaceReferencesParams][]string{
 				// Non-matching name query.
@@ -184,26 +184,26 @@ func TestProxy(t *testing.T) {
 
 				// Matching against a dirs hint with multiple dirs.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2", "file:///invalid"}}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against a dirs hint.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}, Hints: map[string]interface{}{"dirs": []string{"file:///d2"}}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against single field.
 				{Query: lsext.SymbolDescriptor{"package": "test/pkg/d"}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 
 				// Matching against no fields.
 				{Query: lsext.SymbolDescriptor{}}: []string{
-					"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
-					"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false",
 				},
 				{
 					Query: lsext.SymbolDescriptor{
@@ -213,7 +213,7 @@ func TestProxy(t *testing.T) {
 						"recv":        "",
 						"vendor":      false,
 					},
-				}: []string{"git://test/pkg?master#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false"},
+				}: []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:20-1:32 -> id:test/pkg/d name: package:test/pkg/d packageName:d recv: vendor:false"},
 				{
 					Query: lsext.SymbolDescriptor{
 						"name":        "A",
@@ -222,11 +222,11 @@ func TestProxy(t *testing.T) {
 						"recv":        "",
 						"vendor":      false,
 					},
-				}: []string{"git://test/pkg?master#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false"},
+				}: []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:47-1:48 -> id:test/pkg/d/-/A name:A package:test/pkg/d packageName:d recv: vendor:false"},
 			},
 		},
 		"go multiple packages in dir": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": "package p; func A() { A() }",
@@ -244,25 +244,25 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				// "main.go:3:52": "func B()", // B()
 			},
 			wantDefinition: map[string]string{
-				"a.go:1:17": "git://test/pkg?master#a.go:1:17",
-				"a.go:1:23": "git://test/pkg?master#a.go:1:17",
+				"a.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
+				"a.go:1:23": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",
 				// Not parsing build-tag-ignored files:
 				//
-				// "main.go:3:39": "git://test/pkg?master#main.go:3:39", // B() -> func B()
-				// "main.go:3:47": "git://test/pkg?master#a.go:1:17",    // p.A() -> a.go func A()
-				// "main.go:3:52": "git://test/pkg?master#main.go:3:39", // B() -> func B()
+				// "main.go:3:39": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#main.go:3:39", // B() -> func B()
+				// "main.go:3:47": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17",    // p.A() -> a.go func A()
+				// "main.go:3:52": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#main.go:3:39", // B() -> func B()
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:17": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
-				"a.go:1:23": "git://test/pkg?master#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
+				"a.go:1:23": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
-				"is:exported": []string{"git://test/pkg?master#a.go:function:pkg.A:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16"},
 			},
 		},
 		"goroot": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": `package p; import "fmt"; var _ = fmt.Println; var x int`,
@@ -286,14 +286,14 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantSymbols: map[string][]string{
 				"": []string{
-					"git://test/pkg?master#a.go:variable:pkg._:0:25",
-					"git://test/pkg?master#a.go:variable:pkg.x:0:46",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:pkg._:0:25",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:pkg.x:0:46",
 				},
 				"is:exported": []string{},
 			},
 		},
 		"gopath": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a/a.go": `package a; func A() {}`,
@@ -305,31 +305,31 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"b/b.go:1:43": "func A()",
 			},
 			wantDefinition: map[string]string{
-				"a/a.go:1:17": "git://test/pkg?master#a/a.go:1:17",
-				// "b/b.go:1:20": "git://test/pkg?master#a", // TODO(sqs): make import paths hoverable
-				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17",
+				"a/a.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:1:17",
+				// "b/b.go:1:20": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a", // TODO(sqs): make import paths hoverable
+				"b/b.go:1:43": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:1:17",
 			},
 			wantXDefinition: map[string]string{
-				"a/a.go:1:17": "git://test/pkg?master#a/a.go:1:17 id:test/pkg/a/-/A name:A package:test/pkg/a packageName:a recv: vendor:false",
-				"b/b.go:1:43": "git://test/pkg?master#a/a.go:1:17 id:test/pkg/a/-/A name:A package:test/pkg/a packageName:a recv: vendor:false",
+				"a/a.go:1:17": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:1:17 id:test/pkg/a/-/A name:A package:test/pkg/a packageName:a recv: vendor:false",
+				"b/b.go:1:43": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:1:17 id:test/pkg/a/-/A name:A package:test/pkg/a packageName:a recv: vendor:false",
 			},
 			wantReferences: map[string][]string{
 				"a/a.go:1:17": []string{
-					"git://test/pkg?master#a/a.go:1:17",
-					"git://test/pkg?master#b/b.go:1:43",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:1:17",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:1:43",
 				},
 				"b/b.go:1:43": []string{ // calling "references" on call site should return same result as on decl
-					"git://test/pkg?master#a/a.go:1:17",
-					"git://test/pkg?master#b/b.go:1:43",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:1:17",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:1:43",
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?master#a/a.go:function:a.A:0:16", "git://test/pkg?master#b/b.go:variable:b._:0:32"},
-				"is:exported": []string{"git://test/pkg?master#a/a.go:function:a.A:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:a.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:variable:b._:0:32"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:a.A:0:16"},
 			},
 		},
 		"go vendored dep": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/v/vendored"; var _ = vendored.V`,
@@ -339,24 +339,24 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:61": "func V()",
 			},
 			wantDefinition: map[string]string{
-				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24",
+				"a.go:1:61": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:1:24",
 			},
 			wantXDefinition: map[string]string{
-				"a.go:1:61": "git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24 id:test/pkg/vendor/github.com/v/vendored/-/V name:V package:test/pkg/vendor/github.com/v/vendored packageName:vendored recv: vendor:true",
+				"a.go:1:61": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:1:24 id:test/pkg/vendor/github.com/v/vendored/-/V name:V package:test/pkg/vendor/github.com/v/vendored packageName:vendored recv: vendor:true",
 			},
 			wantReferences: map[string][]string{
 				"vendor/github.com/v/vendored/v.go:1:24": []string{
-					"git://test/pkg?master#vendor/github.com/v/vendored/v.go:1:24",
-					"git://test/pkg?master#a.go:1:61",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:1:24",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:61",
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?master#a.go:variable:pkg._:0:43", "git://test/pkg?master#vendor/github.com/v/vendored/v.go:function:vendored.V:0:23"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:pkg._:0:43", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:function:vendored.V:0:23"},
 				"is:exported": []string{},
 			},
 		},
 		"go vendor symbols with same name": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"z.go": `package pkg; func x() bool { return true }`,
@@ -365,30 +365,30 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantSymbols: map[string][]string{
 				"": []string{
-					"git://test/pkg?master#z.go:function:pkg.x:0:18",
-					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
-					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
 				},
 				"x": []string{
-					"git://test/pkg?master#z.go:function:pkg.x:0:18",
-					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
-					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
 				},
 				"pkg2.x": []string{
-					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
-					"git://test/pkg?master#z.go:function:pkg.x:0:18",
-					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
 				},
 				"pkg3.x": []string{
-					"git://test/pkg?master#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
-					"git://test/pkg?master#z.go:function:pkg.x:0:18",
-					"git://test/pkg?master#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
 				},
 				"is:exported": []string{},
 			},
 		},
 		"go external dep": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep"; var _ = dep.D; var _ = dep.D`,
@@ -404,8 +404,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantReferences: map[string][]string{
 				"a.go:1:51": []string{
-					"git://test/pkg?master#a.go:1:51",
-					"git://test/pkg?master#a.go:1:66",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:51",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:66",
 					// Do not include "refs" from the dependency
 					// package itself; only return results in the
 					// workspace.
@@ -418,7 +418,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 		},
 		"external dep with vendor": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": `package p; import "github.com/d/dep"; var _ = dep.D().F`,
@@ -437,7 +437,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 		},
 		"go external dep at subtree": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep/subp"; var _ = subp.D`,
@@ -458,7 +458,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 		},
 		"go nested external dep": { // a depends on dep1, dep1 depends on dep2
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep1"; var _ = dep1.D1().D2`,
@@ -485,7 +485,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 		},
 		"go external dep at vanity import path": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a.go": `package a; import "golang.org/x/text"; var _ = text.F`,
@@ -519,7 +519,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		// separate (HEAD) copy of the entire kubernetes repo at the
 		// k8s.io/kubernetes/... root.
 		"go packages with canonical import path different from its repo": {
-			rootPath: "git://test/foo?master",
+			rootPath: "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"a/a.go": `package a // import "other/foo/a"
@@ -535,21 +535,21 @@ var (
 )`,
 			},
 			wantDefinition: map[string]string{
-				"a/a.go:5:5":  "git://test/foo?master#a/a.go:5:5", // "var A"
-				"a/a.go:5:11": "git://test/foo?master#b/b.go:4:2", // "b.B"
-				"b/b.go:4:2":  "git://test/foo?master#b/b.go:4:2", // "B = 123"
-				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2", // "bb = B"
+				"a/a.go:5:5":  "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:5:5", // "var A"
+				"a/a.go:5:11": "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:4:2", // "b.B"
+				"b/b.go:4:2":  "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:4:2", // "B = 123"
+				"b/b.go:5:7":  "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:4:2", // "bb = B"
 			},
 			wantXDefinition: map[string]string{
-				"a/a.go:5:5":  "git://test/foo?master#a/a.go:5:5 id:other/foo/a/-/A name:A package:other/foo/a packageName:a recv: vendor:false",
-				"a/a.go:5:11": "git://test/foo?master#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
-				"b/b.go:4:2":  "git://test/foo?master#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
-				"b/b.go:5:7":  "git://test/foo?master#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
+				"a/a.go:5:5":  "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:5:5 id:other/foo/a/-/A name:A package:other/foo/a packageName:a recv: vendor:false",
+				"a/a.go:5:11": "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
+				"b/b.go:4:2":  "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
+				"b/b.go:5:7":  "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:4:2 id:other/foo/b/-/B name:B package:other/foo/b packageName:b recv: vendor:false",
 			},
 		},
 
 		"go symbols": {
-			rootPath: "git://test/pkg?master",
+			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
 			fs: map[string]string{
 				"abc.go": `package a
@@ -570,12 +570,12 @@ func yza() {}
 `,
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
-				"xyz":         []string{"git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5"},
-				"yza":         []string{"git://test/pkg?master#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?master#xyz.go:function:pkg.yza:2:5", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13"},
-				"abc":         []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5"},
-				"bcd":         []string{"git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5"},
-				"is:exported": []string{"git://test/pkg?master#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?master#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?master#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?master#bcd.go:class:pkg.YZA:2:5"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:pkg.yza:2:5"},
+				"xyz":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:pkg.yza:2:5"},
+				"yza":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:pkg.yza:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13"},
+				"abc":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5"},
+				"bcd":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5"},
 			},
 		},
 	}
@@ -776,7 +776,7 @@ func TestProxy_connections(t *testing.T) {
 
 	// C1 connects to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?v", Capabilities: caps},
+		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", Capabilities: caps},
 		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
@@ -792,7 +792,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	// Now C1 sends an actual request. The proxy should open a
 	// connection to S1, initialize it, and send the request.
 	if err := c1.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile"},
 		Position:     lsp.Position{Line: 1, Character: 2},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -800,7 +800,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	want := []testRequest{
 		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///", Capabilities: caps},
-			OriginalRootPath: "test://test?v",
+			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			Mode:             "test",
 		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
@@ -817,7 +817,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	// C1 sends another request. The server is already initialized, so
 	// just the single request needs to get sent.
 	if err := c1.Call(ctx, "textDocument/hover", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile2"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile2"},
 		Position:     lsp.Position{Line: 3, Character: 4},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -844,7 +844,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	// request, the proxy should transparently spin up a new server
 	// and reinitialize it appropriately.
 	if err := c1.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile3"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile3"},
 		Position:     lsp.Position{Line: 5, Character: 6},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -854,7 +854,7 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 		{"exit", nil},
 		{"initialize", lspext.InitializeParams{
 			InitializeParams: lsp.InitializeParams{RootPath: "file:///", Capabilities: caps},
-			OriginalRootPath: "test://test?v",
+			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			Mode:             "test",
 		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
@@ -923,7 +923,7 @@ func TestProxy_propagation(t *testing.T) {
 
 	// Connect to the proxy.
 	initParams := xlang.ClientProxyInitializeParams{
-		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?v"},
+		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
 		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
@@ -932,7 +932,7 @@ func TestProxy_propagation(t *testing.T) {
 
 	// Call something that triggers the server to return diagnostics.
 	if err := c.Call(ctx, "textDocument/definition", lsp.TextDocumentPositionParams{
-		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?v#myfile"},
+		TextDocument: lsp.TextDocumentIdentifier{URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile"},
 		Position:     lsp.Position{Line: 1, Character: 2},
 	}, nil); err != nil {
 		t.Fatal(err)
@@ -942,7 +942,7 @@ func TestProxy_propagation(t *testing.T) {
 	select {
 	case diags := <-recvDiags:
 		want := lsp.PublishDiagnosticsParams{
-			URI: "test://test?v#myfile",
+			URI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#myfile",
 			Diagnostics: []lsp.Diagnostic{
 				{
 					Range:   lsp.Range{Start: lsp.Position{Line: 1, Character: 1}, End: lsp.Position{Line: 1, Character: 1}},
