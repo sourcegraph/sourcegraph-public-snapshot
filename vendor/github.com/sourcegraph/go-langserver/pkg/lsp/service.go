@@ -25,6 +25,10 @@ type ClientCapabilities struct {
 	// XContentProvider indicates the client provides support for
 	// textDocument/xcontent. This is a Sourcegraph extension.
 	XContentProvider bool `json:"xcontentProvider,omitempty"`
+
+	// XCacheProvider indicates the client provides support for cache/get
+	// and cache/set.
+	XCacheProvider bool `json:"xcacheProvider,omitempty"`
 }
 
 type InitializeResult struct {
@@ -35,6 +39,10 @@ type InitializeError struct {
 	Retry bool `json:"retry"`
 }
 
+// TextDocumentSyncKind is a DEPRECATED way to describe how text
+// document syncing works. Use TextDocumentSyncOptions instead (or the
+// Options field of TextDocumentSyncOptionsOrKind if you need to
+// support JSON-(un)marshaling both).
 type TextDocumentSyncKind int
 
 const (
