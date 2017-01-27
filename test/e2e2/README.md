@@ -52,7 +52,7 @@ However, if you keep just a few things in mind, you should be fine:
 
 You can run the tests for a specific browser, test case, or Sourcegraph instance. For example,
 - If you want to run the tests against Firefox without VNC, run `make test NOVNC=1 BROWSER=firefox`.
-- If you want to run only the tests that match a query string against Chrome and open up a debugger on error, run `make test OPT="--filter=$query --pause-on-error"`.
+- If you want to run only the tests that match a query string against Chrome and open up a debugger on error, run `make test OPT="--filter=$query --pause-on-err"`.
 - If you want to run the tests against a local instance of Sourcegraph, run `make test SOURCEGRAPH_URL=http://localhost:3080`. Note: the local instance must be a production build and cannot be a development build. (The development build relies on a separate server to serve static assets and currently this separate server is unreachable from inside the Selenium Docker container.)
 
 Check out the `Makefile`'s "Demo recipes" section for other ways you can run the tests.
