@@ -43,7 +43,9 @@ function convertToGitHubLineNumber(hash: string): string {
 
 @autobind
 export class OpenInGitHubButton extends React.Component<Props, {}> {
-	private gitHubURL: string = `https://${this.props.repo}/blob/${this.props.rev}/${this.props.path}${convertToGitHubLineNumber(window.location.hash)}`;
+	private githubURL(): string {
+		return `https://${this.props.repo}/blob/${this.props.rev}/${this.props.path}${convertToGitHubLineNumber(window.location.hash)}`; // We do not sync the line-number URL hash with react router due to UI issues. Use window.location as a source of truth instead.
+	}
 
 	private openInGitHubKeyHandler(event: KeyboardEvent): void {
 		const { repo, rev, path } = this.props;
@@ -52,13 +54,18 @@ export class OpenInGitHubButton extends React.Component<Props, {}> {
 			return;
 		} else if (event.keyCode === openInGitHubKeyCode || event.key === openInGitHubKey) {
 			AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path });
-			window.open(this.gitHubURL);
+			window.open(this.githubURL());
 			event.preventDefault();
 		}
 	}
 
-	render(): JSX.Element {
+	private onViewGithubClick(): void {
 		const { repo, rev, path } = this.props;
+		AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path });
+		window.open(this.githubURL());
+	}
+
+	render(): JSX.Element {
 		// float required to fix Firefox issue.
 		return <div style={{
 			display: "inline-block",
@@ -68,9 +75,8 @@ export class OpenInGitHubButton extends React.Component<Props, {}> {
 			paddingRight: 0,
 		}}>
 			<a
-				href={this.gitHubURL}
 				target="new"
-				onClick={() => AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path })}
+				onClick={this.onViewGithubClick}
 				{ ...layout.hide.sm }>
 				<Button
 					size="small"
