@@ -237,13 +237,13 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 		} else if (github.isPrivateRepo() && this.state.resolvedRevs[this.props.repoURI].notFound) {
 			// Not signed in or not auth'd for private repos
-			return (<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph`}>
-				<a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`}
-					style={{ textDecoration: "none", color: "inherit" }}>
+			return (<a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`}
+				style={{ textDecoration: "none", color: "inherit" }}>
+				<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph`}>
 					<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />
 					Sourcegraph
-				</a>
-			</div>);
+				</div>
+			</a>);
 
 		} else if (this.state.resolvedRevs[this.props.repoURI].cloneInProgress) {
 			return (<div style={buttonStyle} className={className} aria-label={`Sourcegraph is analyzing ${this.props.repoURI.split("github.com/")[1]}`}>
@@ -252,11 +252,12 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			</div>);
 
 		} else {
-			return (<div style={buttonStyle} className={className} aria-label="View on Sourcegraph">
-				<a href={this.getBlobUrl()} style={{ textDecoration: "none", color: "inherit" }}><SourcegraphIcon style={iconStyle} />
+			return (<a href={this.getBlobUrl()} style={{ textDecoration: "none", color: "inherit" }}>
+				<div style={buttonStyle} className={className} aria-label="View on Sourcegraph">
+					<SourcegraphIcon style={iconStyle} />
 					Sourcegraph
-				</a>
-			</div>);
+				</div>
+			</a>);
 		}
 	}
 }
