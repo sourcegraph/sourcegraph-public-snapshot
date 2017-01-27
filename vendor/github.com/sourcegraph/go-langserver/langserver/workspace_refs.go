@@ -85,6 +85,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 	afterTypeCheck := func(pkg *loader.PackageInfo, files []*ast.File) {
 		_, interested := unvendoredPackages[pkg.Pkg.Path()]
 		if !interested {
+			clearInfoFields(pkg) // save memory
 			return
 		}
 
@@ -93,6 +94,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		go func() {
 			// Prevent any uncaught panics from taking the entire server down.
 			defer func() {
+				clearInfoFields(pkg) // save memory
 				wg.Done()
 				_ = panicf(recover(), "%v for pkg %v", req.Method, pkg)
 			}()
