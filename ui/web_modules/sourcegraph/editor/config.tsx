@@ -11,11 +11,14 @@ import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerVie
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
+import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { Router } from "sourcegraph/app/router";
+import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
+import { GoToDefinitionAction } from "sourcegraph/workbench/info/action";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 
@@ -42,6 +45,7 @@ function updateEditorAfterURLChange(sel: IRange): void {
 	const editor = getEditorInstance();
 	editor.setSelection(sel);
 	editor.revealRangeInCenter(sel);
+	editor.getAction(GoToDefinitionAction.ID).run();
 }
 
 /**
@@ -104,6 +108,12 @@ function updateEditor(editor: ICodeEditor): void {
 }
 
 function updateURLHash(e: ICursorSelectionChangedEvent): void {
+	const router = __getRouterForWorkbenchOnly();
+	const isSymbolUrl = getRoutePattern(router.routes) === abs.symbol;
+	if (isSymbolUrl) {
+		return;
+	}
+
 	const sel = RangeOrPosition.fromMonacoRange(e.selection);
 	const hash = `#L${sel.toString()}`;
 	// Circumvent react-router to avoid a jarring jump to the anchor position.
