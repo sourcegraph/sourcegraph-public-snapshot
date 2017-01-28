@@ -1,11 +1,12 @@
+import * as React from "react";
+import { render, unmountComponentAtNode } from "react-dom";
 import { useAccessToken } from "../../app/backend/xhr";
 import { Background } from "../../app/components/Background";
 import { BlobAnnotator } from "../../app/components/BlobAnnotator";
+import { ProjectsOverview } from "../../app/components/ProjectsOverview";
 import { EventLogger } from "../../app/utils/EventLogger";
 import * as github from "../../app/utils/github";
 import { getGitHubRoute, isGitHubURL, parseURL } from "../../app/utils/index";
-import * as React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
 
 function ejectComponent(mount: HTMLElement): void {
 	try {
@@ -24,6 +25,7 @@ function injectModules(): void {
 		}
 		injectBackgroundApp();
 		injectBlobAnnotators();
+		injectSourcegraphInternalTools();
 	});
 }
 
@@ -45,7 +47,7 @@ function injectBlobAnnotators(): void {
 		return;
 	}
 
-	const {repoURI, path, isDelta} = parseURL(window.location);
+	const { repoURI, path, isDelta } = parseURL(window.location);
 	if (!repoURI) {
 		console.error("cannot determine repo URI");
 		return;
@@ -76,6 +78,7 @@ function injectBlobAnnotators(): void {
 	}
 
 	const files = github.getFileContainers();
+	// tslint:disable-next-line
 	for (let i = 0; i < files.length; ++i) {
 		const file = files[i];
 		const mount = github.createBlobAnnotatorMount(file);
@@ -152,3 +155,17 @@ document.addEventListener("sourcegraph:identify", (ev: CustomEvent) => {
 		console.error("sourcegraph:identify missing details");
 	}
 });
+
+function injectSourcegraphInternalTools(): void {
+	if (document.getElementById("sourcegraph-projet-overview")) {
+		return;
+	}
+
+	if (window.location.href === "https://github.com/orgs/sourcegraph/projects") {
+		const container = document.querySelector("body > div:nth-child(6) > div.container > div.container-lg.border.rounded-1 > div.bg-gray.p-3.border-bottom");
+		let mount = document.createElement("span");
+		mount.id = "sourcegraph-projet-overview";
+		(container as Element).insertBefore(mount, (container as Element).firstChild);
+		render(<ProjectsOverview />, mount);
+	}
+}
