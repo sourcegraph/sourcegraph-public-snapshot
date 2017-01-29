@@ -51,12 +51,6 @@ if (production) {
 	);
 }
 
-if (!production) {
-	plugins.push(
-		new webpack.HotModuleReplacementPlugin()
-	);
-}
-
 plugins.push(new UnusedFilesWebpackPlugin({
 	pattern: "web_modules/**/*.*",
 	globOptions: {
@@ -172,12 +166,9 @@ module.exports = {
 		headers: { "Access-Control-Allow-Origin": "*" },
 		noInfo: process.stdout.isTTY,
 		quiet: process.stdout.isTTY,
-		hot: !production,
 	},
 };
 
 if (!production) {
-	module.exports.entry.unshift("webpack/hot/only-dev-server");
-	module.exports.entry.unshift("react-hot-loader/patch");
 	module.exports.entry.unshift(`webpack-dev-server/client?${publicURL.format()}`);
 }

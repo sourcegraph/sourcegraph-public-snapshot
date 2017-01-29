@@ -1,9 +1,7 @@
 import "core-js/shim";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { AppContainer } from "react-hot-loader";
 import * as Relay from "react-relay";
-import Redbox from "redbox-react";
 
 import { Router, browserHistory as history, match } from "react-router";
 import { rootRoute } from "sourcegraph/app/App";
@@ -32,8 +30,6 @@ __webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // tslint-
 
 const rootEl = document.getElementById("main") as HTMLElement;
 
-let hotReloadCounter = 0;
-
 // matchWithRedirectHandling calls the router match func. If the router issues
 // a redirect, it calls match recursively after replacing the location with the
 // new one.
@@ -58,11 +54,7 @@ function matchWithRedirectHandling(recursed: boolean): void {
 
 		setTimeout(() => {
 			ReactDOM.render(
-				<AppContainer errorReporter={Redbox}>
-					<Router
-						key={hotReloadCounter}
-						{...renderProps} />
-				</AppContainer>,
+				<Router		{...renderProps} />,
 				rootEl,
 			);
 		});
@@ -70,10 +62,3 @@ function matchWithRedirectHandling(recursed: boolean): void {
 }
 
 matchWithRedirectHandling(false);
-
-if (typeof global.module !== "undefined" && global.module.hot) {
-	global.module.hot.accept("sourcegraph/app/App", () => {
-		hotReloadCounter++;
-		matchWithRedirectHandling(false);
-	});
-}

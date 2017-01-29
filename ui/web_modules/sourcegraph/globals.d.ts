@@ -31,14 +31,6 @@ declare module "react-router-scroll" {
 	export function useScroll(arg: any): any;
 }
 
-declare module "react-hot-loader" {
-	export var AppContainer: any;
-}
-
-declare module "redbox-react" {
-	export default {} as any;
-}
-
 declare module "fs" {
 	export default {} as any;
 }
