@@ -125,8 +125,10 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	if !repoExists(dir) {
 		var origin string
 		switch {
-		case strings.HasPrefix(req.Repo, "github.com/") && !req.NoCreds:
-			origin = "https://" + req.Repo + ".git"
+		case strings.HasPrefix(req.Repo, "github.com/"):
+			if !req.NoCreds { // only try to clone if credentials are potentially available
+				origin = "https://" + req.Repo + ".git"
+			}
 		case defaultOrigin != "":
 			origin = strings.Replace(defaultOrigin, "_REPO_", req.Repo, 1)
 		}
