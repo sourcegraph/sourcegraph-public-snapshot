@@ -1,3 +1,5 @@
+import * as ReactDOM from "react-dom";
+
 import { $, Builder } from "vs/base/browser/builder";
 import { IDisposable } from "vs/base/common/lifecycle";
 
@@ -11,6 +13,7 @@ export class LeftRightWidget {
 
 	private $el: Builder;
 	private toDispose: IDisposable[];
+	private iconElement: HTMLElement | null;
 
 	constructor(container: Builder, renderLeftFn: IRenderer, renderRightFn: IRenderer);
 	constructor(container: HTMLElement, renderLeftFn: IRenderer, renderRightFn: IRenderer);
@@ -21,6 +24,16 @@ export class LeftRightWidget {
 			renderLeftFn($(".left-right-widget_left").appendTo(this.$el).getHTMLElement()),
 			renderRightFn($(".left-right-widget_right").appendTo(this.$el).getHTMLElement()),
 		].filter(x => Boolean(x));
+	}
+
+	public setIcon(icon: JSX.Element): void {
+		if (!this.iconElement) {
+			const widgetContainer = this.$el.getHTMLElement();
+			this.iconElement = document.createElement("span");
+			this.iconElement.setAttribute("class", "left-right-widget_icon");
+			widgetContainer.insertBefore(this.iconElement, widgetContainer.firstChild);
+		}
+		ReactDOM.render(icon, this.iconElement);
 	}
 
 	public setClassNames(classNames: string): void {

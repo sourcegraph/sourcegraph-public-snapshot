@@ -11,7 +11,7 @@ import { WorkspaceBadge } from "sourcegraph/workbench/ui/badges/workspaceBadge";
 import { FileLabel } from "sourcegraph/workbench/ui/fileLabel";
 import { LeftRightWidget } from "sourcegraph/workbench/ui/leftRightWidget";
 
-import { List } from "sourcegraph/components/symbols/Primaries";
+import { ChevronDown, List } from "sourcegraph/components/symbols/Primaries";
 import { colors, paddingMargin, whitespace } from "sourcegraph/components/utils";
 
 export function RepositoryHeader(
@@ -39,6 +39,12 @@ export function RepositoryHeader(
 			alignItems: "center",
 			height: fileRefsHeight,
 		},
+		{
+			":hover": {
+				borderColor: colors.blueGrayL2(),
+				color: colors.blue(),
+			}
+		}
 	).toString();
 
 	const rowSx = css({
@@ -55,9 +61,9 @@ export function RepositoryHeader(
 	});
 
 	// tslint:disable:no-new
-	new LeftRightWidget(repositoryHeader, left => {
+	const repoHeaderWidget = new LeftRightWidget(repositoryHeader, left => {
 		const repoTitleContent = new FileLabel(left, workspaceURI, contextService);
-		repoTitleContent.setIcon(<List width={18} style={{ marginLeft: -2, color: colors.blueGrayL1() }} />);
+		repoTitleContent.setIcon(<List width={18} style={{ marginLeft: -2, opacity: 0.8 }} />);
 		return null as any;
 	}, right => {
 
@@ -75,9 +81,13 @@ export function RepositoryHeader(
 		}
 
 		return badge as any;
-	}).setClassNames(rowSx);
+	});
 
-	setStyles(refHeaderSx);
+	repoHeaderWidget.setClassNames(rowSx);
+	repoHeaderWidget.setIcon(<ChevronDown />);
+
+	setGlobalStyles(refHeaderSx);
+
 	repositoryHeader.getHTMLElement().classList.add(refHeaderSx);
 	repositoryHeader.on("click", (e: Event, builder: Builder, unbind: IDisposable): void => {
 		const stateKey = element.uri.toString();
@@ -90,29 +100,32 @@ export function RepositoryHeader(
 	repositoryHeader.appendTo(container);
 }
 
-function setStyles(className: string): void {
+function setGlobalStyles(className: string): void {
 
-	insertGlobal(`.monaco-tree-row.has-children .${className}:before`, {
-		content: `""`,
-		height: 15,
-		width: 9,
-		marginLeft: 9,
-		transition: "all 300ms ease-in-out",
-		backgroundRepeat: "no-repeat",
-		backgroundImage: "url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNyIgaGVpZ2h0PSIxMiIgdmlld0JveD0iMjQgMTUgNyAxMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjUuNDcyIDI2LjE0NWMtLjI2LjI2LS42ODIuMjYtLjk0MyAwLS4yNjItLjI2LS4yNjItLjY4Mi0uMDAyLS45NDNsNC41MzYtNC41My00LjUzNi00LjUzYy0uMjYtLjI2LS4yNi0uNjgzIDAtLjk0My4yNjItLjI2Mi42ODQtLjI2Ljk0NCAwbDUuMDA4IDVjLjEyNS4xMjYuMTk2LjI5NS4xOTYuNDcycy0uMDcuMzQ3LS4xOTYuNDcybC01LjAwOCA1eiIgZmlsbD0iIzc3OTNBRSIgZmlsbC1ydWxlPSJldmVub2RkIi8+PC9zdmc+)",
-	});
+	const disclosureIconSx = {
+		default: { transition: "transform 200ms" },
+		closed: { transform: "rotate(-90deg)" },
+		open: { transform: "rotate(0deg)" },
+	};
 
-	insertGlobal(`.monaco-tree-row.has-children.expanded .${className}:before`, {
-		transform: "rotate(90deg)",
-	});
-
-	insertGlobal(`.monaco-tree-row.has-children .${className} .label-name`, {
-		width: 159,
+	const repoNameSx = {
+		width: 150,
 		verticalAlign: "top",
 		textAlign: "left",
 		display: "inline-block",
 		overflow: "hidden",
 		textOverflow: "ellipsis",
 		direction: "rtl",
-	});
+	};
+
+	const selectedSx = {
+		backgroundColor: colors.blue(),
+		color: "white",
+		boxShadow: `0 2px 7px ${colors.black(0.2)}`
+	};
+
+	insertGlobal(`.monaco-tree-row.has-children.expanded .left-right-widget_icon`, { ...disclosureIconSx.default, ...disclosureIconSx.open });
+	insertGlobal(`.monaco-tree-row.has-children .left-right-widget_icon`, { ...disclosureIconSx.default, ...disclosureIconSx.closed });
+	insertGlobal(`.monaco-tree-row.has-children.selected .${className}`, selectedSx);
+	insertGlobal(`.monaco-tree-row.has-children .${className} .label-name`, repoNameSx);
 }

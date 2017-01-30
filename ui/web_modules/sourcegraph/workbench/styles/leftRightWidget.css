@@ -7,5 +7,6 @@
 	width: 100%;
 }
 
-:global .monaco-left-right-widget_left { order: 1 }
-:global .monaco-left-right-widget_right { order: 2 }
+:global .monaco-left-right-widget .left-right-widget_icon { margin-right: 0.25rem }
+:global .monaco-left-right-widget .left-right-widget_left { flex: 3 auto; order: 1 }
+:global .monaco-left-right-widget .left-right-widget_right { order: 2 }
