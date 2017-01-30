@@ -79,10 +79,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 	// Collect dependency references in the AfterTypeCheck phase. This enables
 	// us to begin looking at packages as they are typechecked, instead of
 	// waiting for all packages to be typechecked (which is IO bound).
-	var (
-		results = refResultSorter{results: make([]referenceInformation, 0)}
-		wg      sync.WaitGroup
-	)
+	var results = refResultSorter{results: make([]referenceInformation, 0)}
 	afterTypeCheck := func(pkg *loader.PackageInfo, files []*ast.File) {
 		_, interested := unvendoredPackages[pkg.Pkg.Path()]
 		if !interested {
@@ -90,20 +87,16 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 			return
 		}
 
-		// Do not block the type-checker.
-		wg.Add(1)
-		go func() {
-			// Prevent any uncaught panics from taking the entire server down.
-			defer func() {
-				wg.Done()
-				_ = panicf(recover(), "%v for pkg %v", req.Method, pkg)
-			}()
-
-			err := h.workspaceRefsFromPkg(ctx, bctx, conn, params, fset, pkg, files, rootPath, &results)
-			if err != nil {
-				log.Printf("workspaceRefsFromPkg: %v: %v", pkg, err)
-			}
+		// Prevent any uncaught panics from taking the entire server down.
+		defer func() {
+			clearInfoFields(pkg) // save memory
+			_ = panicf(recover(), "%v for pkg %v", req.Method, pkg)
 		}()
+
+		err := h.workspaceRefsFromPkg(ctx, bctx, conn, params, fset, pkg, files, rootPath, &results)
+		if err != nil {
+			log.Printf("workspaceRefsFromPkg: %v: %v", pkg, err)
+		}
 	}
 
 	// workspaceRefsTypecheck is ran inside its own goroutine because it can
@@ -117,9 +110,6 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		}()
 
 		_, err = h.workspaceRefsTypecheck(ctx, bctx, conn, fset, pkgs, afterTypeCheck)
-
-		// Wait for all worker goroutines to complete.
-		wg.Wait()
 		close(done)
 	}()
 	select {

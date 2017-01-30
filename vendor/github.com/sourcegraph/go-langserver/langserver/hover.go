@@ -79,8 +79,6 @@ func (h *LangHandler) handleHover(ctx context.Context, conn JSONRPC2Conn, req *j
 		}
 
 		// Pull the comment out of the comment map for the file.
-		f := path[len(path)-1].(*ast.File)
-		cmap := ast.NewCommentMap(fset, f, f.Comments)
 		pathIndex := 1
 		switch v := o.(type) {
 		case *types.Var:
@@ -90,7 +88,23 @@ func (h *LangHandler) handleHover(ctx context.Context, conn JSONRPC2Conn, req *j
 		case *types.TypeName:
 			pathIndex = 2
 		}
-		return commentsToText(cmap[path[pathIndex]])
+		var doc *ast.CommentGroup
+		switch v := path[pathIndex].(type) {
+		case *ast.Field:
+			doc = v.Doc
+		case *ast.ValueSpec:
+			doc = v.Doc
+		case *ast.TypeSpec:
+			doc = v.Doc
+		case *ast.GenDecl:
+			doc = v.Doc
+		case *ast.FuncDecl:
+			doc = v.Doc
+		}
+		if doc == nil {
+			return ""
+		}
+		return doc.Text()
 	}
 
 	comments := findComments(o)
