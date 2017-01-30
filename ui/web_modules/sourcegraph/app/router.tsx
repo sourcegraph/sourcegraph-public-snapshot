@@ -10,6 +10,10 @@ import { repoPath, repoRev } from "sourcegraph/repo";
 export type RouterLocation = Location & HistoryLocation;
 export type Router = InjectedRouter & RouterState & { params: RouteParams, location: RouterLocation };
 
+export interface LocationProps {
+	location: RouterLocation;
+};
+
 /**
  * React components may use RouterContext as the type of context received w/
  * the following declaration:

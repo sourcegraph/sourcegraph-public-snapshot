@@ -23,6 +23,7 @@
 		"switch-default": false,
 		"typedef": [true, "call-signature", "parameter", "property-declaration", "member-variable-declaration"],
 		"variable-name": [true, "check-format", "allow-leading-underscore", "allow-pascal-case", "ban-keywords"],
+		"no-invalid-this": true,
 
 		"jsx-wrap-multiline": false,
 		"jsx-no-multiline-js": false,

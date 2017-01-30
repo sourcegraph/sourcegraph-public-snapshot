@@ -18,7 +18,7 @@ export function installChromeExtensionClicked(pageName: string): void {
 
 	if (!!global.chrome) {
 		AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({ page_name: pageName });
-		global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", successHandler.bind(this, pageName), failHandler.bind(this, pageName));
+		global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", successHandler.bind(null, pageName), failHandler.bind(null, pageName));
 	} else {
 		AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({ page_name: pageName });
 		window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");

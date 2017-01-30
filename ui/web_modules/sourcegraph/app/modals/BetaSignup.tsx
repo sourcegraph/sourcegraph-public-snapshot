@@ -1,13 +1,13 @@
 import * as React from "react";
 
-import { Router, RouterLocation } from "sourcegraph/app/router";
+import { Router } from "sourcegraph/app/router";
+import { LocationProps } from "sourcegraph/app/router";
 import { Heading } from "sourcegraph/components/index";
 import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 
-interface Props {
-	location: RouterLocation;
+interface Props extends LocationProps {
 	router: Router;
 }
 
@@ -22,7 +22,7 @@ export const BetaSignup = (props: Props): JSX.Element => {
 		<div className={styles.modal} style={sx}>
 			<Heading level={4} align="center">Join our beta program</Heading>
 			<BetaInterestForm
-				location={this.props.location}
+				location={props.location}
 				loginReturnTo="/beta"
 				onSubmit={dismissModal("menuBeta", props.location, props.router)} />
 		</div>

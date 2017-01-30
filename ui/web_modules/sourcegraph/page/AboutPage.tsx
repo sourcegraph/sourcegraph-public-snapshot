@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { context } from "sourcegraph/app/context";
+import { LocationProps } from "sourcegraph/app/router";
 import { Button, FlexContainer, Heading, Hero, User } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
@@ -8,7 +9,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-export function AboutPage({ location }: { location: Location }): JSX.Element {
+export function AboutPage({ location }: LocationProps): JSX.Element {
 	const boardMemberSx = { marginBottom: whitespace[4], marginRight: whitespace[4] };
 	return (
 		<div>

@@ -10,15 +10,17 @@ import URI from "vs/base/common/uri";
 
 export class FileLabel extends vs.FileLabel {
 	setFile(file: URI, provider: IWorkspaceProvider): void {
-		setFile.bind(this)(file, provider);
+		setFile(this, file, provider);
 	}
 }
 
-export function setFile(file: URI, provider: IWorkspaceProvider): void {
+export function setFile(
+	instance: { setValue: (value?: string) => void },
+	file: URI, provider: IWorkspaceProvider): void {
 	const path = file.path + "/" + file.fragment;
 	const dirs = drop(path.split("/"));
 	const base = dirs.pop();
-	this.setValue(base);
+	instance.setValue(base);
 };
 
 export const IconLabel = vs.IconLabel;

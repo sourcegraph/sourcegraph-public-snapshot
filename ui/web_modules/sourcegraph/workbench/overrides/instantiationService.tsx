@@ -11,7 +11,6 @@ const modules = {
 // Overrides create instance async. This is required so that Webpack can
 // statically bundle the modules.
 (InstantiationService.prototype as any)._createInstanceAsync = function (desc: any, args: any): any {
-	const _this = this;
 	const ctor = modules[desc._ctorName];
 	if (!ctor) {
 		throw new Error(`Module ${desc.moduleName} constructor ${desc.ctorName} must be imported and added to the 'modules' object in this file. Dynamic imports are not supported.`);
@@ -21,7 +20,7 @@ const modules = {
 		// providers can register themselves before the editor loads, otherwise
 		// the model will fail to resolve.
 		setTimeout(() => {
-			complete(_this.createInstance(ctor));
+			complete(this.createInstance(ctor)); //tslint:disable-line no-invalid-this
 		});
 	});
 };

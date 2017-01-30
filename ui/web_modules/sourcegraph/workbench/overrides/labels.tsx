@@ -7,7 +7,7 @@ import { setFile } from "sourcegraph/workbench/overrides/iconLabel";
 
 export class FileLabel extends vs.FileLabel {
 	setFile(file: URI, provider: IWorkspaceProvider): void {
-		setFile.bind(this)(file, provider);
+		setFile(this, file, provider);
 	}
 }
 
