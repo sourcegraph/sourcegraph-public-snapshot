@@ -33,7 +33,7 @@ class BuildServer extends LanguageServer
         $this->fs = new Filesystem;
     }
 
-    protected function index(string $rootPath): Promise
+    protected function beforeIndex(string $rootPath)
     {
         return coroutine(function () use ($rootPath) {
             $composerJsonFiles = yield $this->filesFinder->find(Path::makeAbsolute('**/composer.json', $rootPath));
@@ -97,7 +97,6 @@ class BuildServer extends LanguageServer
                     $this->client->window->logMessage(MessageType::ERROR, "Installation failed: " . (string)$e);
                 }
             }
-            yield parent::index($rootPath);
         });
     }
 
