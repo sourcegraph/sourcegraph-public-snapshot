@@ -8,7 +8,7 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
-export function AboutPage(): JSX.Element {
+export function AboutPage({ location }: { location: Location }): JSX.Element {
 	const boardMemberSx = { marginBottom: whitespace[4], marginRight: whitespace[4] };
 	return (
 		<div>
@@ -151,7 +151,7 @@ export function AboutPage(): JSX.Element {
 					marginTop: whitespace[5],
 					marginBottom: whitespace[5],
 				}}>
-					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="purple">
 							Sign up for free
 						</Button>
