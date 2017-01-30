@@ -30,8 +30,13 @@ func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	return writeJSON(w, &struct {
-		Value string
+		// Note: Named lowercase because the JSON is consumed by shields.io JS
+		// code.
+		Value string `json:"value"`
 	}{
-		Value: desc,
+		// Note: We're adding a prefixed space because otherwise the shields.io
+		// badge will be formatted badly (looks like `used by |12k projects`
+		// instead of `used by | 12k projects`).
+		Value: " " + desc,
 	})
 }
