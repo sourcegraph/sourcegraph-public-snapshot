@@ -425,7 +425,7 @@ func (s *repos) Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err 
 	return nil
 }
 
-var inventoryCache = rcache.New("inv", 604800)
+var inventoryCache = rcache.New("inv")
 
 func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {

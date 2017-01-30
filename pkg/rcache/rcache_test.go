@@ -38,7 +38,7 @@ func TestCache_namespace(t *testing.T) {
 
 	caches := make([]*Cache, len(cases))
 	for i, test := range cases {
-		caches[i] = New(test.prefix, 123)
+		caches[i] = New(test.prefix)
 		for _, entry := range test.entries {
 			caches[i].Set(entry.k, []byte(entry.v))
 		}
@@ -65,7 +65,7 @@ func TestCache_namespace(t *testing.T) {
 func TestCache_simple(t *testing.T) {
 	SetupForTest("TestCache_simple")
 
-	c := New("some_prefix", 123)
+	c := New("some_prefix")
 	_, ok := c.Get("a")
 	if ok {
 		t.Fatal("Initial Get should of found nothing")

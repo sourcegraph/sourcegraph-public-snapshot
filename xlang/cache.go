@@ -9,8 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
-// cache initially has a conservative TTL of a day
-var cache = rcache.New("xlang", 86400)
+var cache = rcache.New("xlang")
 
 var (
 	cacheGetTotal = prometheus.NewCounterVec(prometheus.CounterOpts{

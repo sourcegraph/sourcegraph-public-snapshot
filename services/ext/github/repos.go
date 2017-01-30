@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	reposGithubPublicCache        = rcache.New("gh_pub", 600)
+	reposGithubPublicCache        = rcache.NewWithTTL("gh_pub", 600)
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repos",

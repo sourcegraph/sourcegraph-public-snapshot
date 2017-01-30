@@ -18,7 +18,7 @@ const testGHCachePrefix = "__test__gh_pub"
 
 func resetCache(t *testing.T) {
 	rcache.SetupForTest(testGHCachePrefix)
-	reposGithubPublicCache = rcache.New(testGHCachePrefix, 1000)
+	reposGithubPublicCache = rcache.NewWithTTL(testGHCachePrefix, 1000)
 }
 
 // TestRepos_Get_existing_public tests the behavior of Repos.Get when called on a

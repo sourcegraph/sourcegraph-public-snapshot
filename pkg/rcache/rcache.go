@@ -29,7 +29,15 @@ type Cache struct {
 }
 
 // New creates a redis backed Cache
-func New(keyPrefix string, ttlSeconds int) *Cache {
+func New(keyPrefix string) *Cache {
+	return &Cache{
+		keyPrefix: keyPrefix,
+	}
+}
+
+// NewWithTTL creates a redis backed Cache which expires values after
+// ttlSeconds.
+func NewWithTTL(keyPrefix string, ttlSeconds int) *Cache {
 	return &Cache{
 		keyPrefix:  keyPrefix,
 		ttlSeconds: ttlSeconds,
@@ -54,9 +62,16 @@ func (r *Cache) Set(key string, b []byte) {
 	c := pool.Get()
 	defer c.Close()
 
-	_, err := c.Do("SETEX", r.rkey(key), r.ttlSeconds, b)
-	if err != nil {
-		log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
+	if r.ttlSeconds == 0 {
+		_, err := c.Do("SET", r.rkey(key), b)
+		if err != nil {
+			log15.Warn("failed to execute redis command", "cmd", "SET", "error", err)
+		}
+	} else {
+		_, err := c.Do("SETEX", r.rkey(key), r.ttlSeconds, b)
+		if err != nil {
+			log15.Warn("failed to execute redis command", "cmd", "SETEX", "error", err)
+		}
 	}
 }
 
