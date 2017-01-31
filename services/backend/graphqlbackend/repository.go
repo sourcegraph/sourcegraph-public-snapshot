@@ -5,14 +5,10 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 type repositoryResolver struct {
@@ -62,43 +58,6 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 	}
 
 	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch}}}, nil
-}
-
-func (r *repositoryResolver) Symbols(ctx context.Context, args *struct {
-	ID   string
-	Mode string
-	Rev  string
-}) ([]*symbolResolver, error) {
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: r.repo.ID,
-		Rev:  args.Rev,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var symbols []lsp.SymbolInformation
-	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
-	// SECURITY: this is safe because we've already verified that the user has access to the repository, at a higher resolver.
-	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, "git://"+r.repo.URI+"?"+rev.CommitID, "workspace/symbol", params, &symbols)
-	if err != nil {
-		return nil, err
-	}
-
-	var resolvers []*symbolResolver
-	for _, symbol := range symbols {
-		uri, err := uri.Parse(symbol.Location.URI)
-		if err != nil {
-			return nil, err
-		}
-		resolvers = append(resolvers, &symbolResolver{
-			path:      uri.Fragment,
-			line:      int32(symbol.Location.Range.Start.Line),
-			character: int32(symbol.Location.Range.Start.Character),
-		})
-	}
-
-	return resolvers, nil
 }
 
 func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {
