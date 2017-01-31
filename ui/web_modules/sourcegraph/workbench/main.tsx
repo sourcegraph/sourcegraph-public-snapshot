@@ -1,3 +1,5 @@
+import "sourcegraph/feedback/feedback.contribution";
+
 import "sourcegraph/editor/authorshipWidget";
 import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";

@@ -43,6 +43,7 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 
 	componentWillMount(): void {
 		window.onresize = debounce(this.layout, 50);
+		document.body.classList.add("monaco-shell", "vs-dark");
 	}
 
 	componentWillUnmount(): void {
@@ -70,7 +71,7 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 
 	render(): JSX.Element {
 		this.layout();
-		return <div className="vs-dark" style={{
+		return <div style={{
 			height: "100%",
 			flex: "1 1 100%",
 		}} ref={this.domRef}></div>;

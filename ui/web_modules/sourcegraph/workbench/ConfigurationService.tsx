@@ -15,6 +15,9 @@ const config = {
 		editor: {
 			enablePreview: false,
 		},
+		statusBar: {
+			visible: false,
+		},
 	},
 	explorer: {
 		openEditors: {
@@ -46,6 +49,11 @@ export function toggleCodeLens(): void {
 
 export function isCodeLensEnabled(): boolean {
 	return codeLensEnabled;
+}
+
+export function updateConfiguration(updater: (config: any) => void): void {
+	updater(config);
+	_onDidUpdateConfiguration.fire({ config } as any);
 }
 
 export class ConfigurationService {
