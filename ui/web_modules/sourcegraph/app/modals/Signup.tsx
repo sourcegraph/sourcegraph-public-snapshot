@@ -27,7 +27,6 @@ export const Signup = (props: Props): JSX.Element => {
 				<SignupForm
 					newUserReturnTo={newUserPath}
 					returnTo={props.shouldHide ? "/" : props.location.pathname}
-					queryObj={props.shouldHide ? { ob: "chrome" } : Object.assign({}, props.location.query)}
 					location={props.location} />
 			</div>
 		</LocationStateModal>

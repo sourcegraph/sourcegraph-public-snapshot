@@ -30,14 +30,13 @@ interface Props {
 	// either a URL path or a Location object.
 	returnTo: string | RouterLocation;
 	newUserReturnTo: PartialRouterLocation;
-	queryObj?: History.Query;
 }
 
 type State = any;
 
 export class SignupForm extends Component<Props, State> {
 	render(): JSX.Element | null {
-		const newUserRedirLocation = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, Object.assign({}, this.props.queryObj, { modal: "afterPrivateCodeSignup" }));
+		const newUserRedirLocation = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, { modal: "afterPrivateCodeSignup" });
 		return (
 			<div>
 				<div className={styles.form}>
@@ -77,11 +76,9 @@ function SignupComp(props: { location: any }): JSX.Element {
 	return (
 		<div className={styles.full_page}>
 			<PageTitle title="Sign Up" />
-			<SignupForm {...props}
-				returnTo="/" queryObj={{ ob: "chrome" }}
-				newUserReturnTo={defaultOnboardingPath} />
+			<SignupForm {...props} returnTo="/" newUserReturnTo={defaultOnboardingPath} />
 		</div>
 	);
 }
 
-export const Signup = redirectIfLoggedIn("/", { ob: "chrome" }, SignupComp);
+export const Signup = redirectIfLoggedIn("/", SignupComp);

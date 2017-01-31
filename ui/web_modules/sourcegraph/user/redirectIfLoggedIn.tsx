@@ -1,4 +1,3 @@
-import { History } from "history";
 import * as React from "react";
 
 import { context } from "sourcegraph/app/context";
@@ -8,12 +7,12 @@ interface Props {
 	location: RouterLocation;
 }
 
-// redirectIfLoggedIn wraps a component and issues a redirect
-// if there is an authenticated user. It is useful for wrapping
-// login, signup, etc., route components.
-//
-// TODO: remove queryObj overriding for onboarding step.
-export function redirectIfLoggedIn(url: Location | string, queryObj: History.Query, Component: React.ReactType): React.ComponentClass<Props> {
+/**
+ * redirectIfLoggedIn wraps a component and issues a redirect
+ * if there is an authenticated user. It is useful for wrapping
+ * login, signup, etc., route components.
+ */
+export function redirectIfLoggedIn(url: Location | string, Component: React.ReactType): React.ComponentClass<Props> {
 
 	class RedirectIfLoggedIn extends React.Component<Props, {}> {
 		static contextTypes: React.ValidationMap<any> = {
@@ -25,12 +24,16 @@ export function redirectIfLoggedIn(url: Location | string, queryObj: History.Que
 		};
 
 		componentWillMount(): void {
-			const redirQueryObj = Object.assign({}, queryObj, this.props.location.query || null);
 			const redirRouteObj = typeof url === "string" ? { pathname: url } : url;
-			const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj, { query: redirQueryObj });
+			const redirLocation = Object.assign({}, this.props.location || null, redirRouteObj);
 
 			if (context.user) {
-				this.context.router.replace(redirLocation);
+				if (!context.hasPrivateGitHubToken() && this.context.router.location.query["private"]) {
+					// short-circuit the redirect, we want to allow the user to upgrade their token
+					// TODO(john,dadlerj): this should be replaced with an upgrade page
+				} else {
+					this.context.router.replace(redirLocation);
+				}
 			}
 		}
 

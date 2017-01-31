@@ -1,9 +1,9 @@
+import * as React from "react";
 import * as backend from "../backend";
 import * as utils from "../utils";
 import { addAnnotations } from "../utils/annotations";
 import * as github from "../utils/github";
 import { SourcegraphIcon } from "./Icons";
-import * as React from "react";
 
 const className = "btn btn-sm tooltipped tooltipped-n";
 const buttonStyle = { marginRight: "5px" };
@@ -56,7 +56,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 		this.language = utils.getPathExtension(props.path);
 
-		const {isDelta, isPullRequest, isCommit, rev} = utils.parseURL(window.location);
+		const { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
 		this.isDelta = isDelta;
 		this.isPullRequest = isPullRequest;
 		this.isCommit = isCommit;
@@ -237,9 +237,9 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 		} else if (github.isPrivateRepo() && this.state.resolvedRevs[this.props.repoURI].notFound) {
 			// Not signed in or not auth'd for private repos
-			return (<a href={`https://sourcegraph.com/authext?rtg=${encodeURIComponent(window.location.href)}`}
+			return (<a href={`https://sourcegraph.com/login?private=true`} target="_none"
 				style={{ textDecoration: "none", color: "inherit" }}>
-				<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph`}>
+				<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph to access your private code`}>
 					<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />
 					Sourcegraph
 				</div>
