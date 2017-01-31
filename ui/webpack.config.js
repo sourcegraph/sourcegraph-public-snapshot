@@ -30,6 +30,8 @@ const plugins = [
 			NODE_ENV: JSON.stringify(process.env.NODE_ENV || "development"),
 		},
 		"process.getuid": "function() { return 0; }",
+
+		"require.toUrl": "(function(){throw new Error('require.toUrl is not supported')})",
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
 	new webpack.IgnorePlugin(/\_test\.js$/),
@@ -109,6 +111,12 @@ module.exports = {
 			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
 			"vs/workbench/browser/parts/editor/noTabsTitleControl": "sourcegraph/workbench/overrides/titleControl",
 		},
+	},
+	resolveLoader: {
+		modules: [
+			path.resolve(__dirname, "node_modules"),
+			path.resolve(__dirname, "web_loaders"),
+		],
 	},
 	devtool: devtool,
 	output: {
