@@ -20,6 +20,7 @@ type Root {
 	repositories: [Repository!]!
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
+	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser(): User
 }
 
@@ -57,10 +58,10 @@ type Repository implements Node {
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
-	symbols(id: String!, mode: String!, rev: String = ""): [Symbol!]!
 }
 
 type Symbol {
+	repository: Repository!
 	path: String!
 	line: Int!
 	character: Int!
@@ -141,4 +142,5 @@ type Hunk {
 
 type User {
 	githubOrgs: [String!]!
-}`
+}
+`
