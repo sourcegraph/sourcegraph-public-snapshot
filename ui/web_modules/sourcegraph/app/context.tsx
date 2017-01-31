@@ -80,3 +80,19 @@ export function mockUser(user: User | null, f: () => void): void {
 		context.user = prevUser;
 	}
 };
+
+export function mockUserAndGitHubToken(user: User | null, token: any, f: () => void): void {
+	testOnly();
+
+	let prevToken = context.gitHubToken;
+	let prevUser = context.user;
+
+	context.gitHubToken = token;
+	context.user = user;
+	try {
+		f();
+	} finally {
+		context.user = prevUser;
+		context.gitHubToken = prevToken;
+	}
+};
