@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 
 // Adapted from github.com/golang/gddo/gosrc.
@@ -24,8 +26,8 @@ type directory struct {
 var errNoMatch = errors.New("no match")
 
 // ResolveImportPathCloneURL returns the clone URL for a Go package import path.
-func ResolveImportPathCloneURL(client *http.Client, importPath string) (string, error) {
-	d, err := resolveImportPath(client, importPath)
+func ResolveImportPathCloneURL(importPath string) (string, error) {
+	d, err := resolveImportPath(httputil.CachingClient, importPath)
 	if err != nil {
 		return "", err
 	}

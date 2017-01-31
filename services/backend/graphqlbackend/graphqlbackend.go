@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
-	"net/http"
-
 	"sourcegraph.com/sourcegraph/sourcegraph/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
@@ -205,7 +203,7 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	}
 
 	importPath := strings.Split(args.ID, "/-/")[0]
-	cloneURL, err := buildserver.ResolveImportPathCloneURL(http.DefaultClient, importPath)
+	cloneURL, err := buildserver.ResolveImportPathCloneURL(importPath)
 	if err != nil {
 		return nil, err
 	}
@@ -226,18 +224,35 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  "",
-	})
-	if err != nil {
-		return nil, err
+	// Check that the user has permission to read this repo. Calling
+	// Repos.ResolveRev will fail if the user does not have access to the
+	// specified repo.
+	//
+	// SECURITY NOTE: The LSP client proxy DOES NOT check
+	// permissions. It accesses the gitserver directly and relies on
+	// its callers to check permissions.
+	checkedUserHasReadAccessToRepo := false // safeguard to make sure we don't accidentally delete the check below
+	var rev *sourcegraph.ResolvedRev
+	{
+		// SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring
+		// the user has permissions to access the repository.
+		rev, err = backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+			Repo: repo.ID,
+			Rev:  "",
+		})
+		if err != nil {
+			return nil, err
+		}
+		checkedUserHasReadAccessToRepo = true
+	}
+
+	if !checkedUserHasReadAccessToRepo {
+		return nil, fmt.Errorf("authorization check failed")
 	}
 
 	var symbols []lsp.SymbolInformation
 	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
 
-	// Note: ResolveRepo already checks for permissions
 	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, "git://"+repoURI+"?"+rev.CommitID, "workspace/symbol", params, &symbols)
 	if err != nil {
 		return nil, err
