@@ -1,34 +1,28 @@
+import * as autobind from "autobind-decorator";
 import { insertGlobal } from "glamor";
 import * as debounce from "lodash/debounce";
 import * as React from "react";
 
+import * as dom from "vs/base/browser/dom";
+import { IKeyboardEvent } from "vs/base/browser/keyboardEvent";
 import URI from "vs/base/common/uri";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
-import { IEditorService } from "vs/platform/editor/common/editor";
-
-import { getEditorInstance } from "sourcegraph/editor/Editor";
-import { ReferenceItem } from "sourcegraph/workbench/info/referenceItem";
-import { RepositoryHeader } from "sourcegraph/workbench/info/repositoryHeader";
-
-import { infoStore } from "sourcegraph/workbench/info/sidebar";
-
-import { Disposables, scrollToLine } from "sourcegraph/workbench/utils";
-import { Location } from "vs/editor/common/modes";
-
-import * as autobind from "autobind-decorator";
+import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
+import { LegacyRenderer } from "vs/base/parts/tree/browser/treeDefaults";
 import { Tree } from "vs/base/parts/tree/browser/treeImpl";
-import { Controller } from "vs/editor/contrib/referenceSearch/browser/referencesWidget";
+import { Location } from "vs/editor/common/modes";
+import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
+import { Controller as VSController } from "vs/editor/contrib/referenceSearch/browser/referencesWidget";
+import { IEditorService } from "vs/platform/editor/common/editor";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
-import { Services } from "sourcegraph/workbench/services";
-
-import * as dom from "vs/base/browser/dom";
-import { IElementCallback, ITree } from "vs/base/parts/tree/browser/tree";
-import { LegacyRenderer } from "vs/base/parts/tree/browser/treeDefaults";
-
+import { getEditorInstance } from "sourcegraph/editor/Editor";
+import { ReferenceItem } from "sourcegraph/workbench/info/referenceItem";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
+import { RepositoryHeader } from "sourcegraph/workbench/info/repositoryHeader";
+import { Services } from "sourcegraph/workbench/services";
+import { Disposables, scrollToLine } from "sourcegraph/workbench/utils";
 
 interface Props {
 	model: ReferencesModel;
@@ -129,12 +123,6 @@ export class RefTree extends React.Component<Props, State> {
 		scrollToLine(editor, editor.getSelection().startLineNumber);
 	}
 
-	private treeItemSelected(resource: URI): void {
-		const editorService = Services.get(IEditorService) as IEditorService;
-		editorService.openEditor({ resource });
-		infoStore.dispatch(null);
-	}
-
 	private treeDiv(parent: HTMLDivElement): void {
 		if (!parent) {
 			return;
@@ -155,11 +143,6 @@ export class RefTree extends React.Component<Props, State> {
 		this.tree = new Tree(parent, config, options);
 
 		this.toDispose.add(this.tree);
-		this.toDispose.add(this.tree.addListener2(Controller.Events.SELECTED, (ref) => {
-			if (ref instanceof OneReference) {
-				this.treeItemSelected(ref.uri);
-			}
-		}));
 		this.toDispose.add(this.tree.addListener2(Controller.Events.FOCUSED, this.treeItemFocused));
 		this.forceUpdate();
 	}
@@ -249,5 +232,29 @@ class Renderer extends LegacyRenderer {
 		}
 
 		return null;
+	}
+}
+
+/**
+ * Controller extends the default Controller. It adds the functionality of
+ *  pressing enter to jump to the selected reference. It avoids the behavior of
+ *  the default controller where double clicking an entry will jump to the
+ *  definition.
+ */
+class Controller extends VSController {
+	onEnter(tree: Tree, event: IKeyboardEvent): boolean {
+		const selections = tree.getSelection();
+		const reference = selections[0];
+		if (selections.length > 1 || !(reference instanceof OneReference)) {
+			return false;
+		}
+		const editorService = Services.get(IEditorService) as IEditorService;
+		editorService.openEditor({
+			resource: reference.uri,
+			options: {
+				selection: reference.range,
+			},
+		});
+		return true;
 	}
 }

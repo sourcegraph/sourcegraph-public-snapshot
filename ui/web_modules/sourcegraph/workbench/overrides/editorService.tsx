@@ -1,4 +1,3 @@
-import * as mapValues from "lodash/mapValues";
 import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
@@ -6,7 +5,8 @@ import { IEditor } from "vs/platform/editor/common/editor";
 import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorService";
 
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
-import { urlToBlob, urlToBlobRange } from "sourcegraph/blob/routes";
+import { urlToBlob } from "sourcegraph/blob/routes";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
@@ -20,18 +20,17 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		rev = prettifyRev(rev);
 		const router = __getRouterForWorkbenchOnly();
 
-		let url: string;
+		let hash: undefined | string = undefined;
 		if (data.options && data.options.selection) {
-			url = urlToBlobRange(
-				repo, rev, path,
-				mapValues(data.options.selection, v => v - 1),
-			);
-		} else {
-			url = urlToBlob(repo, rev, path);
+			const selection = RangeOrPosition.fromMonacoRange(data.options.selection);
+			hash = `#L${selection}`;
 		}
+
+		const url = urlToBlob(repo, rev, path);
 		router.push({
 			pathname: url,
 			state: options,
+			hash,
 		});
 		return this.openEditorWithoutURLChange(data, options);
 	}
