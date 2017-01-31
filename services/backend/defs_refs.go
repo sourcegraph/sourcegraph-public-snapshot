@@ -2,16 +2,19 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -120,10 +123,51 @@ func (s *defs) DeprecatedListRefLocations(ctx context.Context, op *sourcegraph.D
 	return localstore.DeprecatedGlobalRefs.DeprecatedGet(ctx, op)
 }
 
+// totalRefsCache is a redis cache to avoid some queries for popular
+// repositories (which can take ~1s) from causing any serious performance
+// issues when the request rate is high.
+var (
+	totalRefsCache        = rcache.NewWithTTL("totalrefs", 3600) // 1h
+	totalRefsCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "defs",
+		Name:      "totalrefs_cache_hit",
+		Help:      "Counts cache hits and misses for Defs.TotalRefs repo ref counts.",
+	}, []string{"type"})
+)
+
+func init() {
+	prometheus.MustRegister(totalRefsCacheCounter)
+}
+
 func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
 	ctx, done := trace(ctx, "Deps", "TotalRefs", source, &err)
 	defer done()
-	return localstore.GlobalDeps.TotalRefs(ctx, source)
+
+	// Check if value is in the cache.
+	jsonRes, ok := totalRefsCache.Get(source)
+	if ok {
+		totalRefsCacheCounter.WithLabelValues("hit").Inc()
+		if err := json.Unmarshal(jsonRes, &res); err != nil {
+			return 0, err
+		}
+		return res, nil
+	}
+
+	// Query value from the database.
+	totalRefsCacheCounter.WithLabelValues("miss").Inc()
+	res, err = localstore.GlobalDeps.TotalRefs(ctx, source)
+	if err != nil {
+		return 0, err
+	}
+
+	// Store value in the cache.
+	jsonRes, err = json.Marshal(res)
+	if err != nil {
+		return 0, err
+	}
+	totalRefsCache.Set(source, jsonRes)
+	return res, nil
 }
 
 func (s *defs) DeprecatedTotalRefs(ctx context.Context, repoURI string) (res int, err error) {
