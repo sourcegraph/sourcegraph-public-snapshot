@@ -138,8 +138,7 @@ type Response struct {
 // property.
 func (r Response) MarshalJSON() ([]byte, error) {
 	if (r.Result == nil || len(*r.Result) == 0) && r.Error == nil {
-		log.Println("warning: can't marshal *jsonrpc2.Response (must have result or error)")
-		r.Result = &jsonNull
+		return nil, errors.New("can't marshal *jsonrpc2.Response (must have result or error)")
 	}
 	type tmpType Response // avoid infinite MarshalJSON recursion
 	b, err := json.Marshal(tmpType(r))
@@ -333,6 +332,10 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (cc *call, er
 	c.sending.Lock()
 	defer c.sending.Unlock()
 
+	// m.request.ID could be changed, so we store a copy to correctly
+	// clean up pending
+	var id ID
+
 	c.mu.Lock()
 	if c.shutdown || c.closing {
 		c.mu.Unlock()
@@ -343,8 +346,12 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (cc *call, er
 	// responses.
 	if m.request != nil && wait {
 		cc = &call{request: m.request, seq: c.seq, done: make(chan error, 1)}
-		c.pending[ID{Num: c.seq}] = cc // use next seq as call ID
-		m.request.ID.Num = c.seq
+		if !m.request.ID.IsString && m.request.ID.Num == 0 {
+			// unset, use next seq as call ID
+			m.request.ID.Num = c.seq
+		}
+		id = m.request.ID
+		c.pending[id] = cc
 		c.seq++
 	}
 	c.mu.Unlock()
@@ -365,7 +372,7 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (cc *call, er
 		if err != nil {
 			if cc != nil {
 				c.mu.Lock()
-				delete(c.pending, ID{Num: cc.seq})
+				delete(c.pending, id)
 				c.mu.Unlock()
 			}
 		}

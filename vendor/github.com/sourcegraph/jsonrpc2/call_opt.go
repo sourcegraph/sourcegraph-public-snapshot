@@ -18,3 +18,13 @@ func Meta(meta interface{}) CallOption {
 		return r.SetMeta(meta)
 	})
 }
+
+// PickID returns a call option which sets the ID on a request. Care must be
+// taken to ensure there are no conflicts with any previously picked ID, nor
+// with the default sequence ID.
+func PickID(id ID) CallOption {
+	return callOptionFunc(func(r *Request) error {
+		r.ID = id
+		return nil
+	})
+}
