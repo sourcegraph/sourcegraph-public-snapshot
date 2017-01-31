@@ -22,7 +22,8 @@
     "strictNullChecks": true,
     "experimentalDecorators": true,
     "noUnusedLocals": true,
-    "noEmit": true
+    "noEmit": true,
+    "noImplicitReturns": true
   },
   "exclude": [
     "node_modules",

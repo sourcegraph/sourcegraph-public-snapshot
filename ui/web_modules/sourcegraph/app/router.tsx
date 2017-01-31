@@ -102,7 +102,7 @@ export function pathFromRouteParams(params: RouteParams): string {
 /**
  * getRepoFromRouter returns repo URI from the URL, if defined.
  */
-export function getRepoFromRouter(router: Router): string | undefined {
+export function getRepoFromRouter(router: Router): string | null {
 	const routePattern = getRoutePattern(router.routes);
 	switch (routePattern) {
 		case abs.repo:
@@ -111,12 +111,13 @@ export function getRepoFromRouter(router: Router): string | undefined {
 		case abs.symbol:
 			return repoFromRouteParams(router.params);
 	}
+	return null;
 }
 
 /**
  * getRevFromRouter returns revision from the URL, if defined, or null for HEAD.
  */
-export function getRevFromRouter(router: Router): string | null | undefined {
+export function getRevFromRouter(router: Router): string | null {
 	const routePattern = getRoutePattern(router.routes);
 	switch (routePattern) {
 		case abs.repo:
@@ -125,18 +126,20 @@ export function getRevFromRouter(router: Router): string | null | undefined {
 		case abs.symbol:
 			return revFromRouteParams(router.params);
 	}
+	return null;
 }
 
 /**
  * getPathFromRouter returns blob path from the URL, if defined.
  */
-export function getPathFromRouter(router: Router): string | undefined {
+export function getPathFromRouter(router: Router): string | null {
 	const routePattern = getRoutePattern(router.routes);
 	switch (routePattern) {
 		case abs.tree:
 		case abs.blob:
 			return pathFromRouteParams(router.params);
 	}
+	return null;
 }
 
 /**
