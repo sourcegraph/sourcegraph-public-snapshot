@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/resolveutil"
 )
 
 // isGoRepoPath returns whether pkg is (likely to be) a Go stdlib
@@ -39,17 +38,6 @@ func serveGDDORefs(w http.ResponseWriter, r *http.Request) error {
 
 	if repo == "" && isGoRepoPath(pkg) {
 		repo = "github.com/golang/go"
-	} else {
-		// Attempt to resolve custom import paths
-		resolvedRepo, err := resolveutil.ResolveCustomImportPath(repo)
-		if err == nil {
-			repo = resolvedRepo.RepoURI
-		}
-
-		resolvedPkg, err := resolveutil.ResolveCustomImportPath(pkg)
-		if err == nil {
-			pkg = resolvedPkg.CanonicalImportPath
-		}
 	}
 
 	if repo == "" || pkg == "" || def == "" {

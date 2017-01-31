@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -33,6 +34,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
+
+var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
 
 // curlRepro returns curl reproduction instructions for an xlang request.
 func curlRepro(mode, rootPath, method string, params interface{}) string {
@@ -185,21 +188,14 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 		span.Finish()
 	}()
 
-	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-	if err != nil {
-		if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
-			return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
-		}
-		return errors.Wrap(err, "GetRepoAndRev")
-	}
-
-	// We only serve using srclib for the time being.
 	legacyDefLandingCounter.Inc()
-	data, err := queryLegacyDefLandingData(r, repo)
-	if err != nil {
+
+	match := goSymbolReg.FindStringSubmatch(r.URL.Path)
+	if match == nil {
 		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
 	}
-	return tmpl.Exec(r, w, "deflanding.html", http.StatusOK, nil, data)
+	http.Redirect(w, r, "/go/"+match[1], http.StatusTemporaryRedirect)
+	return nil
 }
 
 func legacyGenerateSymbolEventProps(def *sourcegraph.Def) *defEventProps {

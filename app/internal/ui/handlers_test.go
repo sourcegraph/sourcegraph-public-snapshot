@@ -69,19 +69,21 @@ func TestCatchAll(t *testing.T) {
 }
 
 var urls = map[string]struct {
-	repo string // repo is necessary (but not sufficient) for this route
-	rev  string // rev is necessary (but not sufficient) for this route
-	tree string // tree is necessary (but not sufficient) for this route
-	blob string // blob is necessary (but not sufficient) for this route
+	repo       string // repo is necessary (but not sufficient) for this route
+	rev        string // rev is necessary (but not sufficient) for this route
+	tree       string // tree is necessary (but not sufficient) for this route
+	blob       string // blob is necessary (but not sufficient) for this route
+	mode       string // blob is necessary (but not sufficient) for this route
+	importPath string // blob is necessary (but not sufficient) for this route
+	symbolPath string // blob is necessary (but not sufficient) for this route
 
 	defUnitType, defUnit, defPath string // def is necessary (but not sufficient) for this route
 }{
-	"/r":                  {repo: "r"},
-	"/r@v":                {repo: "r", rev: "v"},
-	"/r@v/-/tree/d":       {repo: "r", rev: "v", tree: "d"},
-	"/r@v/-/blob/f":       {repo: "r", rev: "v", blob: "f"},
-	"/r@v/-/def/t/u/-/p":  {repo: "r", rev: "v", defUnitType: "t", defUnit: "u", defPath: "p"},
-	"/r@v/-/info/t/u/-/p": {repo: "r", rev: "v", defUnitType: "t", defUnit: "u", defPath: "p"},
+	"/r":            {repo: "r"},
+	"/r@v":          {repo: "r", rev: "v"},
+	"/r@v/-/tree/d": {repo: "r", rev: "v", tree: "d"},
+	"/r@v/-/blob/f": {repo: "r", rev: "v", blob: "f"},
+	"/m/i/-/s":      {mode: "m", importPath: "i", symbolPath: "s"},
 }
 
 func metaDiff(a, b meta) string { return strings.Join(pretty.Diff(a, b), "\n") }
