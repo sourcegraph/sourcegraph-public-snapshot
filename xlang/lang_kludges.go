@@ -38,6 +38,7 @@ func SymbolRepoURL(symDescriptor lspext.SymbolDescriptor) string {
 // value of the initialize result.
 var HasXDefinitionAndXPackages = map[string]struct{}{
 	"typescript": struct{}{},
+	"java":       struct{}{},
 }
 
 // IsSymbolReferenceable tells if the SymbolDescriptor is referenceable
@@ -89,6 +90,16 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 		}
 		return map[string]interface{}{
 			"name": symbol["package"].(map[string]interface{})["name"],
+		}
+	},
+	"java": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
+		if _, ok := symbol["package"].(map[string]interface{}); !ok {
+			return nil
+		}
+		pkg := symbol["package"].(map[string]interface{})
+		return map[string]interface{}{
+			"id":   pkg["id"],
+			"type": pkg["type"],
 		}
 	},
 }

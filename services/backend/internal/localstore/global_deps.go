@@ -41,6 +41,7 @@ var globalDepEnabledLangs = map[string]struct{}{
 	"go":         struct{}{},
 	"php":        struct{}{},
 	"typescript": struct{}{},
+	"java":       struct{}{},
 }
 
 func (g *globalDeps) CreateTable() string {
