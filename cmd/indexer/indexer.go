@@ -181,8 +181,11 @@ func index(ctx context.Context, repoName string) error {
 		}
 	}
 
-	// Packages indexing
-	// Do not index forked repositories.
+	// Packages indexing.
+	//
+	// Do not index forked repositories, but it's fine to index private
+	// repositories here because backend.Pkgs.ListPackages is responsible for
+	// authentication checks.
 	if !repo.Fork {
 		if err := backend.Pkgs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
 			RepoURI:  repo.URI,

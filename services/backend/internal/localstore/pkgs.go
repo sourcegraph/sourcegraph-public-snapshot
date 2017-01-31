@@ -237,6 +237,8 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		return nil, errors.Wrap(err, "rows error")
 	}
 
+	// SECURITY: DO NOT REMOVE THIS CHECK! Otherwise, private repository data
+	// would be leaked!
 	for _, pkg := range rawPkgs {
 		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "dpkgs.ListPackages", pkg.RepoID); err == nil {
 			pks = append(pks, pkg)
