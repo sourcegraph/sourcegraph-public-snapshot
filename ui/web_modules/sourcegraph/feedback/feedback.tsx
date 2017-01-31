@@ -86,7 +86,7 @@ export class FeedbackDropdown extends Dropdown {
 
 		this.feedbackForm = $form.getHTMLElement() as HTMLFormElement;
 
-		$("h2.title").text("Share your feedback.").appendTo($form);
+		$("h2.title").text("Share your feedback").appendTo($form);
 
 		this.invoke($("div.cancel").attr("tabindex", "0"), () => {
 			this.hide();
@@ -122,7 +122,7 @@ export class FeedbackDropdown extends Dropdown {
 			this.frownyInput.addClass("checked").attr("aria-checked", "true");
 		}
 
-		$("h3").text("Tell us why.")
+		$("h3").text("Tell us why:")
 			.appendTo($form);
 
 		this.feedbackDescriptionInput = $("textarea.feedback-description").attr({
