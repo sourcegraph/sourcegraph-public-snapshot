@@ -9,11 +9,5 @@ export const blobRoutes: PlainRoute[] = [
 		getComponents: (location, callback) => {
 			callback(null, { main: Workbench });
 		},
-	},
-	{
-		path: rel.symbol,
-		getComponents: (location, callback) => {
-			callback(null, { main: Workbench });
-		},
 	}
 ];

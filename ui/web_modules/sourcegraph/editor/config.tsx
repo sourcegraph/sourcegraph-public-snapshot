@@ -109,7 +109,7 @@ function updateEditor(editor: ICodeEditor): void {
 
 function updateURLHash(e: ICursorSelectionChangedEvent): void {
 	const router = __getRouterForWorkbenchOnly();
-	const isSymbolUrl = getRoutePattern(router.routes) === abs.symbol;
+	const isSymbolUrl = getRoutePattern(router.routes) === abs.goSymbol;
 	if (isSymbolUrl) {
 		return;
 	}

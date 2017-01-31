@@ -23,7 +23,6 @@ const TreeDomNodeID = "workbench.editors.stringEditor";
 const TreeSidebarClassName = "sg-sidebar";
 
 export interface InfoPanelProps {
-	isSymbolUrl: boolean;
 	repo: GQL.IRepository;
 }
 
