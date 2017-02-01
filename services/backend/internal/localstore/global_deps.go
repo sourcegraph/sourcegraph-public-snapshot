@@ -32,6 +32,9 @@ import (
 // * The hints column contains JSON that contains additional hints that can
 //   be used to optimized requests related to the dependency (e.g., which
 //   directory in a repository contains the dependency).
+//
+// `global_dep_private` is an almost identical table except it is exclusively
+// reserved for private repositories.
 type globalDeps struct{}
 
 var globalDepEnabledLangs = map[string]struct{}{
@@ -40,26 +43,37 @@ var globalDepEnabledLangs = map[string]struct{}{
 	"typescript": struct{}{},
 }
 
-func (*globalDeps) CreateTable() string {
-	return `CREATE table global_dep (
+func (g *globalDeps) CreateTable() string {
+	return g.eachTable(`CREATE table $TABLE (
 		language text NOT NULL,
 		dep_data jsonb NOT NULL,
 		repo_id integer NOT NULL,
 		hints jsonb
 	);
-	CREATE INDEX global_dep_idxgin ON global_dep USING gin (dep_data jsonb_path_ops);
-	CREATE INDEX global_dep_repo_id ON global_dep USING btree (repo_id);
-	CREATE INDEX global_dep_language ON global_dep USING btree (language);`
+	CREATE INDEX $TABLE_idxgin ON $TABLE USING gin (dep_data jsonb_path_ops);
+	CREATE INDEX $TABLE_repo_id ON $TABLE USING btree (repo_id);
+	CREATE INDEX $TABLE_language ON $TABLE USING btree (language);`)
 }
 
-func (*globalDeps) DropTable() string {
-	return `DROP TABLE IF EXISTS global_dep CASCADE;`
+func (g *globalDeps) DropTable() string {
+	return g.eachTable(`DROP TABLE IF EXISTS $TABLE CASCADE;`)
+}
+
+// eachTable appends the sql with "$TABLE" replaced by "global_dep" and
+// "global_dep_private", and a newline separating the SQL lines. The composed
+// SQL query is returned. It is obviously required that the input SQL end with
+// a proper semicolon.
+func (*globalDeps) eachTable(sql string) (composed string) {
+	for _, table := range []string{"global_dep", "global_dep_private"} {
+		composed += strings.Replace(sql, "$TABLE", table, -1) + "\n"
+	}
+	return
 }
 
 // UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
 //
-// SECURITY: It is the caller's responsibility to ensure the repository is NOT
-// a private one.
+// SECURITY: It is the caller's responsibility to ensure the repository
+// described by the op parameter is accurately specified as private or not.
 func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang) error {
 	var errs []string
 	for _, lang := range langs {
@@ -82,6 +96,11 @@ func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.Def
 }
 
 func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) {
+	// SECURITY: Note that we do not speak to global_dep_private here, because
+	// that could hint towards private repositories existing. We may decide to
+	// relax this constraint in the future, but we should be extremely careful
+	// in doing so.
+
 	// Because global_dep only store Go package paths, not repository URIs, we
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
@@ -130,11 +149,16 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 		return errors.Wrap(err, "LSP Call workspace/xdependencies")
 	}
 
+	table := "global_dep"
+	if op.Private {
+		table = "global_dep_private"
+	}
+
 	err = dbutil.Transaction(ctx, globalGraphDBH.Db, func(tx *sql.Tx) error {
-		// Update the global_dep table.
-		err = g.update(ctx, tx, language, deps, op.RepoID)
+		// Update the table.
+		err = g.update(ctx, tx, table, language, deps, op.RepoID)
 		if err != nil {
-			return errors.Wrap(err, "update global_dep")
+			return errors.Wrap(err, "update "+table)
 		}
 		return nil
 	})
@@ -214,7 +238,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 }
 
 // updateGlobalDep updates the global_dep table.
-func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
+func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, table, language string, deps []lspext.DependencyReference, indexRepo int32) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "updateGlobalDep "+language)
 	defer func() {
 		if err != nil {
@@ -224,9 +248,10 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, de
 		span.Finish()
 	}()
 	span.SetTag("deps", len(deps))
+	span.SetTag("table", table)
 
 	// First, create a temporary table.
-	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_global_dep (
+	_, err = tx.Exec(`CREATE TEMPORARY TABLE new_` + table + ` (
 	    language text NOT NULL,
 	    dep_data jsonb NOT NULL,
 	    repo_id integer NOT NULL,
@@ -238,7 +263,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, de
 	span.LogEvent("created temp table")
 
 	// Copy the new deps into the temporary table.
-	copy, err := tx.Prepare(pq.CopyIn("new_global_dep",
+	copy, err := tx.Prepare(pq.CopyIn("new_"+table,
 		"language",
 		"dep_data",
 		"repo_id",
@@ -275,13 +300,13 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, de
 	}
 	span.LogEvent("executed copy")
 
-	if _, err := tx.Exec(`DELETE FROM global_dep WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
-		return errors.Wrap(err, "executing global_dep deletion")
+	if _, err := tx.Exec(`DELETE FROM `+table+` WHERE language=$1 AND repo_id=$2`, language, indexRepo); err != nil {
+		return errors.Wrap(err, "executing table deletion")
 	}
-	span.LogEvent("executed global_dep deletion")
+	span.LogEvent("executed table deletion")
 
 	// Insert from temporary table into the real table.
-	_, err = tx.Exec(`INSERT INTO global_dep(
+	_, err = tx.Exec(`INSERT INTO ` + table + `(
 		language,
 		dep_data,
 		repo_id,
@@ -290,7 +315,7 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, de
 		d.dep_data,
 		d.repo_id,
 		d.hints
-	FROM new_global_dep d;`)
+	FROM new_` + table + ` d;`)
 	if err != nil {
 		return errors.Wrap(err, "executing final insertion from temp table")
 	}

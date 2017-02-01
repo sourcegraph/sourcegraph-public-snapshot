@@ -240,6 +240,7 @@ export interface DefsGetOp {
 export interface DefsRefreshIndexOp {
 	RepoURI?: string;
 	Repo?: number;
+	Private?: boolean;
 	CommitID?: string;
 }
 

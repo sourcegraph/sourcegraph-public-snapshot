@@ -263,8 +263,8 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 
 // UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
 //
-// SECURITY: It is the caller's responsibility to ensure the repository is NOT
-// a private one.
+// SECURITY: It is the caller's responsibility to ensure the repository
+// described by the op parameter is accurately specified as private or not.
 func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
 	if Mocks.Defs.RefreshIndex != nil {
 		return Mocks.Defs.RefreshIndex(ctx, op)
