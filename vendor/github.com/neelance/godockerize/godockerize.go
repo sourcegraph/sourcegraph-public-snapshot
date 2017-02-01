@@ -37,7 +37,15 @@ func main() {
 					&cli.StringFlag{
 						Name:  "base",
 						Usage: "base Docker image name",
-						Value: "alpine:3.4",
+						Value: "alpine:3.5",
+					},
+					&cli.StringSliceFlag{
+						Name:  "env",
+						Usage: "additional environment variables for the Dockerfile",
+					},
+					&cli.BoolFlag{
+						Name:  "dry-run",
+						Usage: "only print generated Dockerfile",
 					},
 				},
 				Action: doBuild,
@@ -71,7 +79,7 @@ func doBuild(c *cli.Context) error {
 	binname := path.Base(pkg.ImportPath)
 
 	fset := token.NewFileSet()
-	env := []string{}
+	env := c.StringSlice("env")
 	expose := []string{}
 	install := []string{"ca-certificates", "mailcap"} // mailcap is for /etc/mime.types
 	run := []string{}
@@ -130,13 +138,17 @@ func doBuild(c *cli.Context) error {
 	fmt.Println("godockerize: Generated Dockerfile:")
 	fmt.Print(dockerfile.String())
 
+	if c.Bool("dry-run") {
+		return nil
+	}
+
 	ioutil.WriteFile(filepath.Join(tmpdir, "Dockerfile"), dockerfile.Bytes(), 0777)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("godockerize: Building Go binary...")
-	cmd := exec.Command("go", "build", "-o", binname, pkg.ImportPath)
+	cmd := exec.Command("go", "build", "-tags", "dist", "-o", binname, pkg.ImportPath)
 	cmd.Dir = tmpdir
 	cmd.Env = []string{
 		"GOARCH=amd64",
