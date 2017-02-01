@@ -174,7 +174,7 @@ def test_global_refs(d, test):
 
     # Go to repo page
     wd.get(d.sg_url("/%s" % test['repo_rev']))
-    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("div", "FILES")) > 0)
+    wait_for(lambda: wd.find_element_by_id("directory_help_message"))
 
     # Jump to symbol
     d.active_elem().send_keys("/")
