@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
@@ -26,7 +27,11 @@ func DialProxy(dialCtx context.Context, addr string, h *ClientHandler, connOpt .
 // ClientHandler is a JSON-RPC 2.0 handler for the client that
 // communicates with the LSP proxy.
 type ClientHandler struct {
-	RecvDiagnostics func(uri string, diags []lsp.Diagnostic) // called when textDocument/publishDiagnostics is received
+	// RecvDiagnostics is called when textDocument/publishDiagnostics is received
+	RecvDiagnostics func(uri string, diags []lsp.Diagnostic)
+
+	// RecvPartialResult is called when $/partialResult is received
+	RecvPartialResult func(id lsp.ID, patch interface{})
 }
 
 func (h *ClientHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
@@ -41,6 +46,18 @@ func (h *ClientHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *js
 		}
 		if h.RecvDiagnostics != nil {
 			h.RecvDiagnostics(params.URI, params.Diagnostics)
+		}
+
+	case "$/partialResult":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params lspext.PartialResultParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		if h.RecvPartialResult != nil {
+			h.RecvPartialResult(params.ID, params.Patch)
 		}
 
 	default:

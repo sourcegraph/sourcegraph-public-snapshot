@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"go/build"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/ctxvfs"
@@ -51,10 +50,10 @@ func (h *HandlerShared) Reset(overlayRootURI string, useOSFS bool) error {
 	h.overlayFS = map[string][]byte{}
 	h.FS = NewAtomicFS()
 
-	if !strings.HasPrefix(overlayRootURI, "file:///") {
+	if !isURI(overlayRootURI) {
 		return fmt.Errorf("invalid overlay root URI %q: must be file:///", overlayRootURI)
 	}
-	h.OverlayMountPath = strings.TrimPrefix(overlayRootURI, "file://")
+	h.OverlayMountPath = uriToPath(overlayRootURI)
 	if useOSFS {
 		// The overlay FS takes precedence, but we fall back to the OS
 		// file system.

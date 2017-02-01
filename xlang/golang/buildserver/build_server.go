@@ -253,7 +253,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 		h.FS.Bind(h.OverlayMountPath, fs, "/", ctxvfs.BindBefore)
 		var langInitResp lsp.InitializeResult
-		if err := h.callLangServer(ctx, conn, req.Method, req.Notif, langInitParams, &langInitResp); err != nil {
+		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Notif, langInitParams, &langInitResp); err != nil {
 			return nil, err
 		}
 		return langInitResp, nil
@@ -456,7 +456,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		var result interface{}
-		if err := h.callLangServer(ctx, conn, req.Method, req.Notif, req.Params, &result); err != nil {
+		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Notif, req.Params, &result); err != nil {
 			return nil, err
 		}
 
@@ -554,15 +554,14 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 }
 
 // callLangServer sends the (usually modified) request to the wrapped
-// Go language server. It
+// Go language server.
 //
 // Although bypasses the JSON-RPC wire protocol ( just sending it
 // in-memory for simplicity/speed), it behaves in the same way as
-// though the peer language server were remote. The conn is nil (and
-// the request ID is zero'd out) to prevent the language server from
-// breaking this abstraction.
-func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, method string, notif bool, params, result interface{}) error {
+// though the peer language server were remote.
+func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, method string, id jsonrpc2.ID, notif bool, params, result interface{}) error {
 	req := jsonrpc2.Request{
+		ID:     id,
 		Method: method,
 		Notif:  notif,
 	}

@@ -194,7 +194,7 @@ func score(q Query, s symbolPair) (scor int) {
 		return -1
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
-	filename := strings.TrimPrefix(s.Location.URI, "file://")
+	filename := uriToPath(s.Location.URI)
 	isVendor := strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/")
 	if q.Filter == FilterExported && isVendor {
 		// is:exported excludes vendor symbols always.
@@ -284,7 +284,7 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 // handleTextDocumentSymbol handles `textDocument/documentSymbol` requests for
 // the Go language server.
 func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.DocumentSymbolParams) ([]lsp.SymbolInformation, error) {
-	f := strings.TrimPrefix(params.TextDocument.URI, "file://")
+	f := uriToPath(params.TextDocument.URI)
 	return h.handleSymbol(ctx, conn, req, Query{File: f}, 0)
 }
 

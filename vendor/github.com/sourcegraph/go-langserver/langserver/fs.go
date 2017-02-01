@@ -77,7 +77,7 @@ func (h *HandlerShared) HandleFileSystemRequest(ctx context.Context, req *jsonrp
 }
 
 func (h *HandlerShared) FilePath(uri string) string {
-	path := strings.TrimPrefix(uri, "file://")
+	path := uriToPath(uri)
 	if !strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("bad uri %q (path %q MUST have leading slash; it can't be relative)", uri, path))
 	}
@@ -99,7 +99,10 @@ func (h *HandlerShared) readFile(ctx context.Context, uri string) ([]byte, error
 }
 
 func uriToOverlayPath(uri string) string {
-	return strings.TrimPrefix(uri, "file:///")
+	if isURI(uri) {
+		return strings.TrimPrefix(uriToPath(uri), "/")
+	}
+	return uri
 }
 
 func (h *HandlerShared) addOverlayFile(uri string, contents []byte) {

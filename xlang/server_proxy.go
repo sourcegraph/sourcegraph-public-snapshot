@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
@@ -46,7 +47,8 @@ func (id serverID) String() string {
 type serverProxyConn struct {
 	conn *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the server
 
-	id serverID
+	id  serverID
+	seq uint64 // used for request IDs
 
 	// clientBroadcast is used to forward incoming requests from servers
 	// to clients.
@@ -89,6 +91,29 @@ type serverProxyConnStats struct {
 
 	// NOTE: If you add a new field here, please ensure `Stats()` works
 	// correctly under concurrent read/writes.
+}
+
+// serverRequestID helps tie back a jsonrpc2 request id to a client request.
+type serverRequestID struct {
+	// Seq is a sequence number related to the server
+	Seq uint64
+	// CRID is the client request we are proxying on behalf of
+	CRID clientRequestID
+}
+
+func (s serverRequestID) String() string {
+	// We don't just marshal the struct to:
+	// * have a consistent order fields are marshalled in
+	// * have a more concise ID
+	b, _ := json.Marshal(s.CRID.RID)
+	return fmt.Sprintf("%d:%d:%s", s.Seq, s.CRID.CID, string(b))
+}
+
+func serverRequestIDFromString(s string) (i serverRequestID) {
+	var rid string
+	fmt.Sscanf(s, "%d:%d:%s", &i.Seq, &i.CRID.CID, &rid)
+	_ = json.Unmarshal([]byte(rid), &i.CRID.RID)
+	return
 }
 
 var (
@@ -405,11 +430,11 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 
 // callServer sends an LSP request to the specified server
 // (establishing the connection first if necessary).
-func (p *Proxy) callServer(ctx context.Context, id serverID, method string, params, result interface{}) (err error) {
+func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid serverID, method string, params, result interface{}) (err error) {
 	var c *serverProxyConn
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
-		opentracing.Tags{"mode": id.mode, "rootPath": id.rootPath.String(), "method": method, "params": params},
+		opentracing.Tags{"mode": sid.mode, "rootPath": sid.rootPath.String(), "method": method, "params": params},
 	)
 	defer func() {
 		if err != nil {
@@ -422,14 +447,27 @@ func (p *Proxy) callServer(ctx context.Context, id serverID, method string, para
 		span.Finish()
 	}()
 
-	c, err = p.getServerConn(ctx, id)
+	c, err = p.getServerConn(ctx, sid)
 	if err != nil {
 		return err
 	}
 	c.updateLastTime()
 	c.incMethodStat(method)
 
-	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx))
+	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx), jsonrpc2.PickID(c.nextID(crid)))
+}
+
+// nextID returns a request ID for use in a c.conn.Call. It includes the
+// client request id to help tie back requests to the client we are requesting
+// on behalf of.
+func (c *serverProxyConn) nextID(crid clientRequestID) jsonrpc2.ID {
+	return jsonrpc2.ID{
+		Str: serverRequestID{
+			Seq:  atomic.AddUint64(&c.seq, 1),
+			CRID: crid,
+		}.String(),
+		IsString: true,
+	}
 }
 
 // traceFSRequests is whether to trace the LSP proxy's incoming
@@ -574,6 +612,14 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 	case "workspace/xfiles":
 		return c.handleWorkspaceFilesExt(ctx, req)
+
+	case "$/partialResult":
+		// The partialResult is for a specific client, but we
+		// broadcast this to all clients. It is expected
+		// clientBroadcast implementations will correctly filter out
+		// unrelated partialResults (by inspecting the ID)
+		c.clientBroadcast(ctx, req)
+		return
 	}
 
 	return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("server proxy handler: method not found: %q", req.Method)}

@@ -2,6 +2,7 @@ package langserver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/build"
@@ -19,6 +20,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/go-langserver/langserver/internal/refs"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -57,7 +59,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		if ok {
 			found := false
 			for _, dir := range dirs.([]interface{}) {
-				if "file://"+bpkg.Dir == dir.(string) {
+				if pathToURI(bpkg.Dir) == dir.(string) {
 					found = true
 					break
 				}
@@ -112,14 +114,69 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		_, err = h.workspaceRefsTypecheck(ctx, bctx, conn, fset, pkgs, afterTypeCheck)
 		close(done)
 	}()
-	select {
-	case <-done:
-		if err != nil {
-			return nil, err
+
+	streamUpdate := func() {}
+	streamTick := make(<-chan time.Time, 1)
+	if streamExperiment {
+		initial := json.RawMessage(`[{"op":"replace","path":"","value":[]}]`)
+		conn.Notify(ctx, "$/partialResult", &lspext.PartialResultParams{
+			ID: lsp.ID{
+				Num:      req.ID.Num,
+				Str:      req.ID.Str,
+				IsString: req.ID.IsString,
+			},
+			Patch: &initial,
+		})
+		t := time.NewTicker(time.Second)
+		defer t.Stop()
+		streamTick = t.C
+		streamPos := 0
+		streamUpdate = func() {
+			results.resultsMu.Lock()
+			partial := results.results
+			results.resultsMu.Unlock()
+			if len(partial) == streamPos {
+				// Everything currently in refs has already been sent.
+				return
+			}
+
+			patch := make([]xreferenceAddOp, 0, len(partial)-streamPos)
+			for ; streamPos < len(partial); streamPos++ {
+				patch = append(patch, xreferenceAddOp{
+					OP:    "add",
+					Path:  "/-",
+					Value: partial[streamPos],
+				})
+			}
+			conn.Notify(ctx, "$/partialResult", &lspext.PartialResultParams{
+				ID: lsp.ID{
+					Num:      req.ID.Num,
+					Str:      req.ID.Str,
+					IsString: req.ID.IsString,
+				},
+				// We use xreferencePatch so the build server can rewrite URIs
+				Patch: xreferencePatch(patch),
+			})
 		}
-	case <-ctx.Done():
-		return nil, ctx.Err()
 	}
+
+loop:
+	for {
+		select {
+		case <-done:
+			if err != nil {
+				return nil, err
+			}
+			break loop
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-streamTick:
+			streamUpdate()
+		}
+	}
+
+	// Send a final update
+	streamUpdate()
 
 	sort.Sort(&results) // sort to provide consistent results
 	return results.results, nil

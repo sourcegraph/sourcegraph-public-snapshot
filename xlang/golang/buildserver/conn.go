@@ -2,10 +2,15 @@ package buildserver
 
 import (
 	"context"
+	"encoding/json"
+
+	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/jsonrpc2"
 
+	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 )
 
 // jsonrpc2ConnImpl implements langserver.JSONRPC2Conn. See
@@ -26,6 +31,33 @@ func (c *jsonrpc2ConnImpl) Notify(ctx context.Context, method string, params int
 			return err
 		}
 		params.URI = newURI
+		return c.conn.Notify(ctx, method, params, opt...)
+
+	case "$/partialResult":
+		params := params.(*lspext.PartialResultParams)
+
+		if _, ok := params.Patch.(*json.RawMessage); ok {
+			// initial patch, just pass on since it is empty
+			return c.conn.Notify(ctx, method, params, opt...)
+		}
+
+		rewriter, ok := params.Patch.(langserver.RewriteURIer)
+		if !ok {
+			return errors.New("buildserver received partialResult which does not support RewriteURI")
+		}
+
+		var rewriteErr error
+		rewriter.RewriteURI(func(u string) string {
+			u, err := c.rewriteURI(u)
+			if err != nil {
+				rewriteErr = errors.Wrap(err, "buildserver failde to rewrite partialResult")
+			}
+			return u
+		})
+		if rewriteErr != nil {
+			return rewriteErr
+		}
+
 		return c.conn.Notify(ctx, method, params, opt...)
 
 	default:

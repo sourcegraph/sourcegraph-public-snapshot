@@ -35,6 +35,21 @@ func IsVendorDir(dir string) bool {
 	return strings.HasPrefix(dir, "vendor/") || strings.Contains(dir, "/vendor/")
 }
 
+// isURI tells if s denotes an URI
+func isURI(s string) bool {
+	return strings.HasPrefix(s, "file:///")
+}
+
+// pathToURI converts given absolute path to file URI
+func pathToURI(path string) string {
+	return "file://" + path
+}
+
+// uriToPath converts given file URI to path
+func uriToPath(uri string) string {
+	return strings.TrimPrefix(uri, "file://")
+}
+
 // panicf takes the return value of recover() and outputs data to the log with
 // the stack trace appended. Arguments are handled in the manner of
 // fmt.Printf. Arguments should format to a string which identifies what the

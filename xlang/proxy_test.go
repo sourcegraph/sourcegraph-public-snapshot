@@ -667,6 +667,10 @@ func dialProxy(t testing.TB, addr string, recvDiags chan<- lsp.PublishDiagnostic
 				recvDiags <- lsp.PublishDiagnosticsParams{URI: uri, Diagnostics: diags}
 			}
 		},
+		RecvPartialResult: func(id lsp.ID, patch interface{}) {
+			p, _ := json.Marshal(patch)
+			t.Logf("partialResult: %s %s", id.String(), string(p))
+		},
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()

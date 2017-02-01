@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -20,6 +21,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -35,6 +37,7 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	c := &clientProxyConn{
 		proxy: p,
 		last:  time.Now(),
+		id:    nextClientID(),
 	}
 	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(c.handle), connOpt...)
 
@@ -152,9 +155,33 @@ func (id contextID) String() string {
 	return fmt.Sprintf("context(%s mode=%s)", id.rootPath.String(), id.mode)
 }
 
+// clientID is used to uniquely identify a client connection in this
+// process. The main use is to tie-back jsonrpc2 responses from
+// servers with the client it was proxied on behalf of.
+type clientID uint64
+
+// clientIDSeq is used to generate clientIDs. Do not use this directly,
+// instead use nextClientID.
+var clientIDSeq uint64
+
+// nextClientID returns a new clientID which is unique to this process.
+func nextClientID() clientID {
+	return clientID(atomic.AddUint64(&clientIDSeq, 1))
+}
+
+// clientRequestID helps tie back a jsonrpc2 request id to a server_proxy back
+// to a client request.
+type clientRequestID struct {
+	// RID is ID of the original client request
+	RID jsonrpc2.ID
+	// CID is the client we are proxying on behalf of
+	CID clientID
+}
+
 type clientProxyConn struct {
 	proxy *Proxy         // the proxy that accepted this conn
 	conn  *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the client
+	id    clientID       // unique id for this connection
 
 	mu       sync.Mutex
 	context  contextID
@@ -338,7 +365,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 
 		var respObj interface{}
-		if err := c.callServer(ctx, req.Method, req.Params, &respObj); err != nil {
+		if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
 			// Machine parseable to assist us finding most common errors
 			msg, _ := json.Marshal(trackedError{
 				RootPath: c.context.rootPath.String(),
@@ -457,6 +484,62 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		}
 		return nil, nil
 
+	case "$/partialResult":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+
+		// Initially just unmarshal the ID, since we may return
+		// early. This helps us avoid unmarshalling a potentially
+		// large []lsp.Location.
+		idOnly := struct {
+			ID jsonrpc2.ID `json:"id"`
+		}{}
+		if err := json.Unmarshal(*req.Params, &idOnly); err != nil {
+			return nil, err
+		}
+		srid := serverRequestIDFromString(idOnly.ID.Str)
+		if srid.CRID.CID != c.id {
+			// This partialResult's clientID does not match our
+			// clientID. This partialResult is not for us so we
+			// ignore it.
+			return nil, nil
+		}
+
+		var paramsObj plspext.PartialResultParams
+		if err := json.Unmarshal(*req.Params, &paramsObj); err != nil {
+			return nil, err
+		}
+
+		// Rewrite ID so it is the same as the originating request
+		paramsObj.ID = lsp.ID{
+			Str:      srid.CRID.RID.Str,
+			Num:      srid.CRID.RID.Num,
+			IsString: srid.CRID.RID.IsString,
+		}
+
+		// Rewrite paths from server->client and send rewritten
+		// notification to client.
+		var walkErr error
+		lspext.WalkURIFields(paramsObj.Patch, nil, func(uriStr string) string {
+			newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
+			if err != nil {
+				walkErr = err
+				return ""
+			}
+			return newURI.String()
+		})
+		if walkErr != nil {
+			return nil, walkErr
+		}
+		if err := conn.Notify(ctx, req.Method, paramsObj); err != nil {
+			if err == jsonrpc2.ErrClosed || strings.Contains(err.Error(), "use of closed network connection") {
+				err = nil // suppress worthless "notification handling error" log messages when the client has hung up
+			}
+			return nil, err
+		}
+		return nil, nil
+
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("client handler for propagating server messages: method not found: %q", req.Method)}
 	}
@@ -467,7 +550,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 // file, it will choose a Go lang/build server). It rewrites any file
 // URIs to refer to file paths in the virtual workspace, not the
 // repository clone URL.
-func (c *clientProxyConn) callServer(ctx context.Context, method string, params, result interface{}) error {
+func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, method string, params, result interface{}) error {
 	pb, err := json.Marshal(params)
 	if err != nil {
 		return err
@@ -500,6 +583,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 	}
 
 	id := serverID{contextID: c.context, pathPrefix: ""}
+	crid := clientRequestID{RID: rid, CID: c.id}
 
 	// We try upto 3 times if we encounter ephemeral errors
 	backoffs := []time.Duration{0, 100 * time.Millisecond, 1 * time.Second}
@@ -509,7 +593,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, method string, params,
 			time.Sleep(b + time.Duration(rand.Int63n(50)-25)*time.Millisecond)
 			proxyRetryCounter.WithLabelValues(id.mode).Inc()
 		}
-		err = c.proxy.callServer(ctx, id, method, params, result)
+		err = c.proxy.callServer(ctx, crid, id, method, params, result)
 		if err == nil {
 			break
 		}

@@ -32,17 +32,6 @@ const documentReferencesTimeout = 15 * time.Second
 
 var streamExperiment = len(os.Getenv("STREAM_EXPERIMENT")) > 0
 
-// ReferenceAddOp is a JSON Patch operation used by
-// textDocument/References. It is exported so the build server can efficiently
-// interact with it. The only other patch operation is to create the empty
-// location list.
-type ReferenceAddOp struct {
-	// OP should always be "add"
-	OP    string       `json:"op"`
-	Path  string       `json:"path"`
-	Value lsp.Location `json:"value"`
-}
-
 func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	// TODO: Add support for the cancelRequest LSP method instead of using
 	// hard-coded timeouts like this here.
@@ -200,7 +189,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 	streamUpdate := func() {}
 	streamTick := make(<-chan time.Time, 1)
 	if streamExperiment {
-		initial := json.RawMessage(`[{"op":"add","path":"","value":[]}]`)
+		initial := json.RawMessage(`[{"op":"replace","path":"","value":[]}]`)
 		conn.Notify(ctx, "$/partialResult", &lspext.PartialResultParams{
 			ID: lsp.ID{
 				Num:      req.ID.Num,
@@ -222,9 +211,9 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 				return
 			}
 
-			patch := make([]ReferenceAddOp, 0, len(partial)-streamPos)
+			patch := make([]referenceAddOp, 0, len(partial)-streamPos)
 			for ; streamPos < len(partial); streamPos++ {
-				patch = append(patch, ReferenceAddOp{
+				patch = append(patch, referenceAddOp{
 					OP:    "add",
 					Path:  "/-",
 					Value: goRangeToLSPLocation(fset, partial[streamPos].Pos(), partial[streamPos].End()),
@@ -236,7 +225,8 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 					Str:      req.ID.Str,
 					IsString: req.ID.IsString,
 				},
-				Patch: patch,
+				// We use referencePatch so the build server can rewrite URIs
+				Patch: referencePatch(patch),
 			})
 		}
 	}
