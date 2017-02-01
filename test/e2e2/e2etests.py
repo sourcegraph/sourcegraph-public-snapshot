@@ -16,7 +16,7 @@ def test_direct_link_to_repo(d):
 
     wd.get(d.sg_url("/github.com/gorilla/muxy@65b4fd5d316b4b260db61f66726e4859fd0e4889"))
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
-    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 10)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 10, 5.0)
 
 
 def test_direct_link_to_directory(d):
@@ -24,7 +24,7 @@ def test_direct_link_to_directory(d):
 
     wd.get(d.sg_url("/github.com/gorilla/muxy@65b4fd5d316b4b260db61f66726e4859fd0e4889/-/tree/encoder"))
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
-    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 11)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 11, 5.0)
 
 
 def test_repo_jump_to(d):
