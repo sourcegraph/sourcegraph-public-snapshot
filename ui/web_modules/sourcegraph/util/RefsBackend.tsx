@@ -185,8 +185,12 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 		if (!dataByRefID) {
 			return reference; // likely means the blame was skipped by shouldBlame; continue without it
 		}
-		let hunk: GQL.IHunk = dataByRefID.commit.commit.file.blame[0];
-		if (!hunk || !hunk.author || !hunk.author.person) {
+		let blame = dataByRefID.commit.commit.file.blame;
+		if (!blame || !blame[0]) {
+			return reference;
+		}
+		let hunk: GQL.IHunk = blame[0];
+		if (!hunk.author || !hunk.author.person) {
 			return reference;
 		}
 		hunk.author.date = timeFromNowUntil(hunk.author.date, 14);
