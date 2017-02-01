@@ -10,6 +10,7 @@ import "sourcegraph/blob/styles/Monaco.css";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { Header } from "sourcegraph/components/Header";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
+import { PageTitle } from "sourcegraph/components/PageTitle";
 import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
@@ -40,6 +41,10 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 	};
 
 	context: { router: Router };
+
+	componentWillMount(): void {
+		document.title = "Sourcegraph";
+	}
 
 	render(): JSX.Element | null {
 		let repository: GQL.IRepository;
@@ -73,6 +78,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		}
 		const commitID = repository.commit.commit!.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
+			<BlobPageTitle repo={this.props.repo} path={path} />
 			<RepoMain {...this.props} repository={repository} commit={repository.commit}>
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 				<OnboardingModals location={this.props.location} />
@@ -86,6 +92,13 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			</RepoMain>
 		</div>;
 	}
+}
+
+function BlobPageTitle({ repo, path }: { repo: string, path: string }): JSX.Element {
+	const base = path.split("/").pop() || path;
+	repo = repo.replace(/^github.com\//, "");
+	const title = `${base} · ${repo}`;
+	return <PageTitle title={title} />;
 }
 
 const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
