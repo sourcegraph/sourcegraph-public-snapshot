@@ -2,19 +2,26 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import { Store } from "sourcegraph/Store";
 
 export type Action =
-	SetQuickOpenVisible;
+	SetQuickOpenVisible | SetShortcutMenuVisible;
 
 export class SetQuickOpenVisible {
-	quickOpenVisible: boolean;
-	constructor(quickOpenVisible: boolean) {
+	constructor(public quickOpenVisible: boolean) {
 		this.quickOpenVisible = quickOpenVisible;
+	}
+}
+
+export class SetShortcutMenuVisible {
+	constructor(public shortcutMenuVisisble: boolean) {
+		this.shortcutMenuVisisble = shortcutMenuVisisble;
 	}
 }
 
 class GlobalNavStoreClass extends Store<any> {
 	quickOpenVisible: boolean;
+	shortcutMenuVisible: boolean;
 	reset(): void {
 		this.quickOpenVisible = false;
+		this.shortcutMenuVisible = false;
 	}
 
 	toJSON(): any {
@@ -24,12 +31,12 @@ class GlobalNavStoreClass extends Store<any> {
 	}
 
 	__onDispatch(action: Action): void {
-		switch (action.constructor) {
-			case SetQuickOpenVisible:
-				this.quickOpenVisible = action.quickOpenVisible;
-				break;
-			default:
-				return; // don't emit change
+		if (action.constructor === SetQuickOpenVisible) {
+			this.quickOpenVisible = (action as SetQuickOpenVisible).quickOpenVisible;
+		} else if (action.constructor === SetShortcutMenuVisible) {
+			this.shortcutMenuVisible = (action as SetShortcutMenuVisible).shortcutMenuVisisble;
+		} else {
+			return;
 		}
 		this.__emitChange();
 	}

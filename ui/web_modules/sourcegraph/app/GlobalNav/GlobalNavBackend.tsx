@@ -5,6 +5,8 @@ export const GlobalNavBackend = {
 	__onDispatch(payload: GlobalNavStore.Action): void {
 		if (payload instanceof GlobalNavStore.SetQuickOpenVisible) {
 			setTimeout(() => Dispatcher.Stores.dispatch(payload));
+		} else if (payload instanceof GlobalNavStore.SetShortcutMenuVisible) {
+			setTimeout(() => Dispatcher.Stores.dispatch(payload));
 		}
 	},
 };

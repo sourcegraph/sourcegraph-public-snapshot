@@ -2,7 +2,7 @@ import * as autobind from "autobind-decorator";
 import * as classNames from "classnames";
 import * as React from "react";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
-import { FlexContainer, Key, Menu, Popover } from "sourcegraph/components";
+import { FlexContainer, Menu, Popover } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { ChevronDown } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
@@ -69,7 +69,6 @@ export class FileActionDownMenu extends React.Component<Props, {}> {
 				<Menu className={classNames(base.pa0, base.mr2)} style={{ width: 125 }}>
 					<a onClick={this.onViewGithubClick} style={{ textAlign: "left" }} role="menu_item" target="_blank">
 						View on GitHub
-						<Key shortcut={"G"} style={{ marginLeft: whitespace[2], float: "right" }} />
 					</a>
 				</Menu>
 			</Popover>

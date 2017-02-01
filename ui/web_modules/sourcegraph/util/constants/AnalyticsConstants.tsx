@@ -37,6 +37,7 @@ export const EventCategories = {
 	// Misc other
 	External: "External",
 	Unknown: "Unknown",
+	ShortcutMenu: "ShortcutMenu",
 
 	// Deprecated
 	Def: "Def",
@@ -209,6 +210,9 @@ export const Events = {
 	QuickopenItem_Selected: new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),
 	Quickopen_Initiated: new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),
 	Quickopen_Dismissed: new LoggableEvent("QuickOpenDismissed", EventCategories.QuickOpen, EventActions.Close),
+
+	ShortcutMenu_Initiated: new LoggableEvent("ShorcutMenuInitiated", EventCategories.ShortcutMenu, EventActions.Toggle),
+	ShortcutMenu_Dismissed: new LoggableEvent("ShorcutMenuDismissed", EventCategories.ShortcutMenu, EventActions.Close),
 
 	// Def info - implemented manually in static_event_logger.js
 	// 	TODO(dadlerj): delete these, or integrate this file with that logger

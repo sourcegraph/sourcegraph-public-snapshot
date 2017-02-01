@@ -20,15 +20,6 @@ export type Props = {
 
 // QuickOpenModal controls when and how to show the search modal.
 class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
-	constructor() {
-		super();
-		this.searchModalShortcuts = this.searchModalShortcuts.bind(this);
-		this.dismissModal = this.dismissModal.bind(this);
-	}
-
-	static logQuickOpenModalInitiatedEvent(eventProps?: any): void {
-		AnalyticsConstants.Events.Quickopen_Initiated.logEvent(eventProps);
-	}
 
 	_getEventProps(): any {
 		return {
@@ -37,12 +28,12 @@ class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot 
 		};
 	}
 
-	searchModalShortcuts(event: KeyboardEvent & Event): void {
+	searchModalShortcuts = (event: KeyboardEvent & Event): void => {
 		if (event.target.nodeName === "INPUT" || isNonMonacoTextArea(event.target) || event.metaKey || event.ctrlKey) {
 			return;
 		}
 		const SlashKeyCode = 191;
-		if (event.key === "/" || event.keyCode === SlashKeyCode) {
+		if (!event.shiftKey && (event.key === "/" || event.keyCode === SlashKeyCode)) {
 			if (!this.props.showModal) {
 				this.dismissModal(false);
 			}
@@ -51,7 +42,7 @@ class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot 
 		}
 	}
 
-	dismissModal(shouldLog: boolean): void {
+	dismissModal = (shouldLog: boolean): void => {
 		if (shouldLog) {
 			AnalyticsConstants.Events.Quickopen_Dismissed.logEvent(this._getEventProps());
 		}

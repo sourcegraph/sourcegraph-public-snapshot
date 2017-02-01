@@ -1,7 +1,7 @@
 import { hover } from "glamor";
 import * as React from "react";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
-import { Button, Key } from "sourcegraph/components";
+import { Button } from "sourcegraph/components";
 import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
@@ -36,7 +36,7 @@ export function OpenInGitHubButton({ repo, rev, path }: Props): JSX.Element {
 		const eventTarget = event.target as Node;
 		if (eventTarget.nodeName === "INPUT" || isNonMonacoTextArea(eventTarget) || event.metaKey || event.ctrlKey) {
 			return;
-		} else if (event.keyCode === openInGitHubKeyCode || event.key === openInGitHubKey) {
+		} else if (event.keyCode === openInGitHubKeyCode || event.key.toUpperCase() === openInGitHubKey) {
 			openInGitHub(event);
 		}
 	}
@@ -59,7 +59,6 @@ export function OpenInGitHubButton({ repo, rev, path }: Props): JSX.Element {
 				{...hover({ backgroundColor: `${colors.blueGray()} !important` }) }>
 				<GitHubLogo width={16} style={{ marginRight: whitespace[2] }} />
 				View on GitHub
-				<Key shortcut={openInGitHubKey} style={{ marginLeft: whitespace[2] }} />
 			</Button>
 		</a>
 		<EventListener

@@ -2,7 +2,7 @@ import * as autobind from "autobind-decorator";
 import * as React from "react";
 
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
-import { Key, ToggleButton } from "sourcegraph/components";
+import { ToggleButton } from "sourcegraph/components";
 import { layout, typography, whitespace } from "sourcegraph/components/utils";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
@@ -51,8 +51,6 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		const { shortcut } = this.props;
-
 		const toggleButtonSx = Object.assign({
 			position: "relative",
 		}, typography.size[7]);
@@ -64,7 +62,6 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 				style={toggleButtonSx}
 				onClick={this.showAuthorsClickHandler}>
 				Show authors
-				<Key shortcut={shortcut} style={{ marginLeft: whitespace[2] }} />
 			</ToggleButton>
 
 			<EventListener

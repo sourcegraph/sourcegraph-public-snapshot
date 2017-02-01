@@ -4,8 +4,9 @@ import { Link } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
-import { GlobalNavStore, SetQuickOpenVisible } from "sourcegraph/app/GlobalNav/GlobalNavStore";
-import { SearchCTA } from "sourcegraph/app/GlobalNav/SearchCTA";
+import { SearchCTA, ShortcutCTA } from "sourcegraph/app/GlobalNav/GlobalNavCTA";
+import { GlobalNavStore, SetQuickOpenVisible, SetShortcutMenuVisible } from "sourcegraph/app/GlobalNav/GlobalNavStore";
+import { ShortcutModalComponent } from "sourcegraph/app/GlobalNav/ShortcutMenu";
 import { SignupOrLogin } from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
 import { AfterPrivateCodeSignup, BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
@@ -21,6 +22,7 @@ import { DemoVideo } from "sourcegraph/home/modals/DemoVideo";
 import { QuickOpenModal } from "sourcegraph/quickopen/Modal";
 import { Store } from "sourcegraph/Store";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { isMobileUserAgent } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 
 interface Props {
 	location: RouterLocation;
@@ -28,6 +30,7 @@ interface Props {
 
 interface State {
 	showSearch: boolean;
+	showShortcut: boolean;
 }
 
 export class GlobalNav extends Container<Props, State> {
@@ -41,12 +44,13 @@ export class GlobalNav extends Container<Props, State> {
 		super(props);
 		this.onSearchDismiss = this.onSearchDismiss.bind(this);
 		this.activateSearch = this.activateSearch.bind(this);
-		this.state = { showSearch: false };
+		this.state = { showSearch: false, showShortcut: false };
 	}
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
 		state.showSearch = GlobalNavStore.quickOpenVisible;
+		state.showShortcut = GlobalNavStore.shortcutMenuVisible;
 	}
 
 	stores(): Store<any>[] {
@@ -57,10 +61,19 @@ export class GlobalNav extends Container<Props, State> {
 		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(false));
 	}
 
+	onShortcutDismiss(): void {
+		Dispatcher.Backends.dispatch(new SetShortcutMenuVisible(false));
+	}
+
 	activateSearch(eventProps?: any): void {
 		AnalyticsConstants.Events.Quickopen_Initiated.logEvent(eventProps);
 
 		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(true));
+	}
+
+	activateShortcutMenu(eventProps?: any): void {
+		AnalyticsConstants.Events.ShortcutMenu_Initiated.logEvent(eventProps);
+		Dispatcher.Backends.dispatch(new SetShortcutMenuVisible(true));
 	}
 
 	render(): JSX.Element {
@@ -135,11 +148,13 @@ export class GlobalNav extends Container<Props, State> {
 				</FlexContainer>
 
 				{/* TODO(john): the `|| null` is not very nice, we should avoid that. */}
+				{isMobileUserAgent(navigator.userAgent) ? null : <ShortcutModalComponent onDismiss={this.onShortcutDismiss} showModal={this.state.showShortcut} activateShortcut={this.activateShortcutMenu} />}
 				<QuickOpenModal repo={repo || null} rev={rev || null}
 					showModal={this.state.showSearch}
 					activateSearch={(eventProps) => this.activateSearch(eventProps)}
 					onDismiss={this.onSearchDismiss} />
 				<FlexContainer items="center" style={{ paddingRight: "0.5rem" }}>
+					{isMobileUserAgent(navigator.userAgent) ? null : <a onClick={() => this.activateShortcutMenu({})}><ShortcutCTA width={18} /></a>}
 					<a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>
 					{context.authEnabled &&
 						(context.user
