@@ -4,17 +4,20 @@ import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
+import URI from "vs/base/common/uri";
 import { Location } from "vs/editor/common/modes";
 
 import { FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { Close, Report } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
+import { URIUtils } from "sourcegraph/core/uri";
+import { Events, FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
 import { sidebarWidth } from "sourcegraph/workbench/info/preview";
-import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
+import { OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { Disposables } from "sourcegraph/workbench/utils";
 import { MiniStore } from "sourcegraph/workbench/utils";
 
@@ -24,6 +27,7 @@ const TreeSidebarClassName = "sg-sidebar";
 
 export interface InfoPanelProps {
 	repo: GQL.IRepository;
+	fileEventProps: FileEventProps;
 }
 
 // Lifecycle methods for the InfoPanel. Doesn't render a node in the tree.
@@ -47,12 +51,22 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 			if (info && info.prepareData) {
 				// Close preview when escape key is clicked - Don't dismiss sidepane.
 				if (!info.prepareData.open && !info.id && this.infoPanelRef instanceof InfoPanel && this.infoPanelRef.state.previewLocation) {
+					Events.InfoPanelRefPreview_Closed.logEvent(this.infoPanelRef.getEventProps());
 					this.infoPanelRef.setState({
 						previewLocation: null,
 						refModel: this.infoPanelRef.state.refModel,
 					});
 					return;
 				}
+
+				if (info.prepareData.open) {
+					// Log sidebar toggling opened
+					Events.InfoPanel_Initiated.logEvent(this.props.fileEventProps);
+				} else {
+					// Log sidebar toggling closed
+					Events.InfoPanel_Dismissed.logEvent(this.props.fileEventProps);
+				}
+
 				this.info = info;
 				this.infoPanel = { open: info.prepareData.open, id: info.id };
 				this.forceUpdate();
@@ -128,6 +142,7 @@ export interface Props {
 	refModel?: ReferencesModel | null;
 	prepareData?: { open: boolean };
 	loadingComplete?: boolean;
+	fileEventProps: FileEventProps;
 };
 
 @autobind
@@ -140,13 +155,28 @@ class InfoPanel extends React.Component<Props, State> {
 		};
 	}
 
+	getEventProps(): FileEventProps {
+		if (this.props.defData) {
+			const uri = URI.parse(this.props.defData.definition.uri);
+			const { repo, rev, path } = URIUtils.repoParams(uri);
+			return Object.assign({}, this.props.fileEventProps, { defRepo: repo, defRev: rev || "", defPath: path });
+		}
+		return this.props.fileEventProps;
+	}
+
 	private refsFocused(): void {
+		Events.InfoPanelRefPreview_Closed.logEvent(Object.assign({}, this.getEventProps()));
 		this.setState({
 			previewLocation: null,
 		});
 	}
 
-	private focusResource(loc: Location): void {
+	private focusResource(loc: OneReference): void {
+		if (loc.isCurrentWorkspace) {
+			Events.InfoPanelLocalRef_Toggled.logEvent(Object.assign({}, this.getEventProps(), { refRepo: `${loc.uri.authority}${loc.uri.path}`, refPath: loc.uri.fragment, refRev: loc.uri.query || "" }));
+		} else {
+			Events.InfoPanelExternalRef_Toggled.logEvent(Object.assign({}, this.getEventProps(), { refRepo: `${loc.uri.authority}${loc.uri.path}`, refPath: loc.uri.fragment, refRev: loc.uri.query || "" }));
+		}
 		this.setState({
 			previewLocation: loc,
 		});
@@ -167,7 +197,7 @@ class InfoPanel extends React.Component<Props, State> {
 				overflowWrap: "break-word",
 				overflow: "hidden",
 			}}>{truncate(funcName, { length: 120 })}</Heading>
-			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: this.props.id })}
+			<div onClick={() => infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: this.props.id, fileEventProps: this.getEventProps() })}
 				{...css(
 					{
 						alignSelf: "flex-start",
@@ -199,7 +229,7 @@ class InfoPanel extends React.Component<Props, State> {
 				overflowY: "hidden",
 			}}>
 				{this.sidebarFunctionHeader(defData)}
-				{(defData && !this.state.previewLocation) && <DefinitionDocumentationHeader defData={defData} />}
+				{(defData && !this.state.previewLocation) && <DefinitionDocumentationHeader defData={defData} eventProps={this.getEventProps()} />}
 				<hr style={dividerSx} />
 				<div id={REFERENCES_SECTION_ID}>
 					<FlexContainer items="center" style={{ height: 35, padding: whitespace[3] }}>
@@ -224,7 +254,8 @@ class InfoPanel extends React.Component<Props, State> {
 			</FlexContainer>
 			<Preview
 				location={this.state.previewLocation || null}
-				hidePreview={this.refsFocused} />
+				hidePreview={this.refsFocused}
+				fileEventProps={this.getEventProps()} />
 		</div>;
 	}
 };

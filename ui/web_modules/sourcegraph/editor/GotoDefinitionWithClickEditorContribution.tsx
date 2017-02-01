@@ -64,7 +64,7 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		if (model) {
 			const src = URIUtils.repoParams(model.uri);
 			AnalyticsConstants.Events.CodeToken_Clicked.logEvent({
-				srcRepo: src.repo, srcRev: src.rev || "", srcPath: src.path,
+				repo: src.repo, rev: src.rev || "", path: src.path,
 				language: model.getModeId(),
 			}
 			);
@@ -96,7 +96,7 @@ export class GotoDefinitionWithClickEditorContribution implements editorCommon.I
 		}
 		const { repo, rev, path } = URIUtils.repoParams(model.uri);
 		AnalyticsConstants.Events.CodeToken_Clicked.logEvent({
-			srcRepo: repo, srcRev: rev || "", srcPath: path,
+			repo, rev: rev || "", path,
 			language: model.getModeId(),
 		});
 		const params = {

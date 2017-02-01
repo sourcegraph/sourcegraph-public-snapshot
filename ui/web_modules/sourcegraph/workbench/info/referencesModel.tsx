@@ -56,6 +56,10 @@ export class OneReference implements IDisposable {
 		return this._parent.uri;
 	}
 
+	public get isCurrentWorkspace(): boolean {
+		return this._parent.parent.workspace.path === this._parent.uri.path;
+	}
+
 	public get name(): string {
 		return this._parent.name;
 	}
@@ -321,6 +325,10 @@ export class ReferencesModel implements IDisposable {
 				this.references[i].commitInfo = commitInfo;
 			}
 		}
+	}
+
+	public get workspace(): URI {
+		return this._workspace;
 	}
 
 	public get empty(): boolean {

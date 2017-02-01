@@ -12,6 +12,7 @@ import { colors, whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
+import { Events, FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
 import { Services } from "sourcegraph/workbench/services";
 import { Disposables } from "sourcegraph/workbench/utils";
@@ -21,6 +22,7 @@ import { IInstantiationService } from "vs/platform/instantiation/common/instanti
 interface Props {
 	location: Location | null;
 	hidePreview: () => void;
+	fileEventProps: FileEventProps;
 }
 
 export const funcHeight = 60;
@@ -62,7 +64,7 @@ export class Preview extends React.Component<Props, {}> {
 				position: "absolute",
 				bottom: 0,
 			}}>
-				<Title location={this.props.location} onClickClose={this.props.hidePreview} />
+				<Title location={this.props.location} onClickClose={this.props.hidePreview} fileEventProps={this.props.fileEventProps} />
 				<EditorPreview location={this.props.location} />
 			</div>
 		</div>;
@@ -71,7 +73,7 @@ export class Preview extends React.Component<Props, {}> {
 
 const prefix = "github.com/";
 
-function Title({ location, onClickClose }: { location: Location; onClickClose: () => void }): JSX.Element {
+function Title({ location, onClickClose, fileEventProps }: { location: Location; onClickClose: () => void; fileEventProps: FileEventProps }): JSX.Element {
 	let { repo, path, rev } = URIUtils.repoParams(location.uri);
 	const url = urlToBlobRange(repo, rev, path, RangeOrPosition.fromMonacoRange(location.range).toZeroIndexedRange());
 	repo = repo.startsWith(prefix) ? repo.substr(prefix.length) : repo;
@@ -81,7 +83,7 @@ function Title({ location, onClickClose }: { location: Location; onClickClose: (
 		paddingLeft: whitespace[3],
 		paddingRight: whitespace[3],
 	}}>
-		<a target="_blank" href={url}
+		<a target="_blank" href={url} onClick={() => Events.InfoPanelRefPreviewTitle_Clicked.logEvent(Object.assign({}, fileEventProps, { refRepo: repo, refRev: rev || "", refPath: path }))}
 			{...css(
 				{ color: colors.white(0.9), fontWeight: "bold" },
 				{ ":hover": { color: "white" } },

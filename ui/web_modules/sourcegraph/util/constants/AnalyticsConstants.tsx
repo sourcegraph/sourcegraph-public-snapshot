@@ -87,6 +87,21 @@ export const INTEGRATION_EDITOR_SUBLIME = "Sublime";
 export const INTEGRATION_EDITOR_EMACS = "Emacs";
 export const INTEGRATION_EDITOR_VIM = "VIM";
 
+export interface RepoEventProps {
+	repo: string;
+	rev: string | null;
+}
+export interface FileEventProps extends RepoEventProps {
+	path: string;
+}
+export interface SymbolEventProps extends FileEventProps {
+	symbol: string;
+	startLineNumber: number;
+	endLineNumber: number;
+	startColumn?: number;
+	endColumn?: number;
+}
+
 export class LoggableEvent {
 	label: string;
 	category: string;
@@ -202,6 +217,11 @@ export const Events = {
 	InfoPanel_Dismissed: new LoggableEvent("InfoPanelDismissed", EventCategories.CodeView, EventActions.Close),
 	InfoPanelJumpToDef_Clicked: new LoggableEvent("InfoPanelJumpToDefClicked", EventCategories.CodeView, EventActions.Click),
 	InfoPanelRef_Clicked: new LoggableEvent("InfoPanelRefClicked", EventCategories.CodeView, EventActions.Click),
+	InfoPanelLocalRef_Toggled: new LoggableEvent("InfoPanelLocalRefDisplayed", EventCategories.CodeView, EventActions.Toggle),
+	InfoPanelExternalRef_Toggled: new LoggableEvent("InfoPanelExternalRefDisplayed", EventCategories.CodeView, EventActions.Toggle),
+	InfoPanelRefPreview_Closed: new LoggableEvent("InfoPanelRefPreviewClosed", EventCategories.CodeView, EventActions.Close),
+	InfoPanelRefPreviewTitle_Clicked: new LoggableEvent("InfoPanelRefPreviewTitleClicked", EventCategories.CodeView, EventActions.Click),
+	InfoPanelComment_Toggled: new LoggableEvent("InfoPanelCommentToggled", EventCategories.CodeView, EventActions.Toggle),
 	// Code view: CommitInfoBar events
 	CommitInfoItem_Selected: new LoggableEvent("CommitInfoItemSelected", EventCategories.CodeView, EventActions.Click),
 	CommitInfo_Initiated: new LoggableEvent("CommitInfoInitiated", EventCategories.CodeView, EventActions.Toggle),

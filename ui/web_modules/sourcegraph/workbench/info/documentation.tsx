@@ -9,11 +9,13 @@ import { Button, FlexContainer } from "sourcegraph/components";
 import { ArrowRight, List } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
+import { Events, FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { RouterContext, prettifyRev } from "sourcegraph/workbench/utils";
 
 interface Props {
 	defData: DefinitionData;
+	eventProps: FileEventProps;
 }
 
 interface State {
@@ -36,6 +38,10 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 		if ((e.target as any).dataset.toggle === undefined) {
 			return;
 		}
+		const uri = URI.parse(this.props.defData.definition.uri);
+		let { repo, rev, path } = URIUtils.repoParams(uri);
+		rev = prettifyRev(rev);
+		Events.InfoPanelComment_Toggled.logEvent(Object.assign({}, this.props.eventProps, { defRepo: repo, defRev: rev || "", defPath: path }));
 		this.setState({
 			showingFullDocString: !this.state.showingFullDocString,
 		});
@@ -77,7 +83,7 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				</Link>
 			</p>
 			<FlexContainer content="stretch" justify="between" items="center">
-				<Link style={{ flex: "1 0" }} to={url}>
+				<Link style={{ flex: "1 0" }} to={url} onClick={() => Events.InfoPanelJumpToDef_Clicked.logEvent(Object.assign({}, this.props.eventProps, { defRepo: repo, defRev: rev || "", defPath: path }))}>
 					<Button color="blueGray" outline={true} style={{ width: "100%" }}>
 						Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
 					</Button>

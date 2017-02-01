@@ -82,7 +82,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 					commitID={commitID}
 					path={path}
 					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
-				<InfoPanelLifecycle repo={repository} />
+				<InfoPanelLifecycle repo={repository} fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
 			</RepoMain>
 		</div>;
 	}

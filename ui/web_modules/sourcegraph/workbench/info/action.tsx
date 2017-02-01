@@ -1,5 +1,6 @@
 import { Subscription } from "rxjs";
 
+import { FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { IDisposable } from "vs/base/common/lifecycle";
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
@@ -13,6 +14,7 @@ import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
+import { URIUtils } from "sourcegraph/core/uri";
 import { normalisePosition } from "sourcegraph/editor/contrib";
 import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
@@ -72,7 +74,8 @@ export class DefinitionAction extends EditorAction {
 			let oldModel = event.oldModelUrl;
 			let newModel = event.newModelUrl;
 			if (oldModel.toString() !== newModel.toString()) {
-				this.prepareInfoStore(false, "");
+				const eventProps = URIUtils.repoParams(newModel);
+				this.prepareInfoStore(false, "", eventProps);
 			}
 		});
 
@@ -87,31 +90,33 @@ export class DefinitionAction extends EditorAction {
 		if (!def) {
 			return;
 		}
-		this.prepareInfoStore(true, this._configuration.sideBarID);
-		this.dispatchInfo(id, def);
+
+		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
+		this.prepareInfoStore(true, this._configuration.sideBarID, fileEventProps);
+		this.dispatchInfo(id, def, fileEventProps);
 
 		const localRefs = await localRefsPromise;
 		if (this._configuration.sideBarID !== id) {
 			return;
 		}
 		if (!localRefs || localRefs.length === 0) {
-			this.dispatchInfo(id, def, null);
+			this.dispatchInfo(id, def, fileEventProps, null);
 			return;
 		}
 
 		let refModel = new ReferencesModel(localRefs, props.editorModel.uri);
-		this.dispatchInfo(id, def, refModel);
+		this.dispatchInfo(id, def, fileEventProps, refModel);
 
 		const localRefsWithCommitInfo = await provideReferencesCommitInfo(localRefs);
 		refModel = new ReferencesModel(localRefsWithCommitInfo, props.editorModel.uri);
 		if (this._configuration.sideBarID !== id) {
 			return;
 		}
-		this.dispatchInfo(id, def, refModel);
+		this.dispatchInfo(id, def, fileEventProps, refModel);
 
 		const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
 		if (!depRefs || this._configuration.sideBarID !== id) {
-			this.dispatchInfo(id, def, refModel, true);
+			this.dispatchInfo(id, def, fileEventProps, refModel, true);
 			return;
 		}
 
@@ -119,20 +124,20 @@ export class DefinitionAction extends EditorAction {
 		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refs => {
 			localAndGlobalRefs = localAndGlobalRefs.concat(refs);
 			refModel = new ReferencesModel(localAndGlobalRefs, props.editorModel.uri);
-			this.dispatchInfo(id, def, refModel);
-		}, () => null, () => this.dispatchInfo(id, def, refModel, true));
+			this.dispatchInfo(id, def, fileEventProps, refModel);
+		}, () => null, () => this.dispatchInfo(id, def, fileEventProps, refModel, true));
 	}
 
-	private prepareInfoStore(prepare: boolean, id: string): void {
+	private prepareInfoStore(prepare: boolean, id: string, fileEventProps: FileEventProps): void {
 		if (!prepare && this.globalFetchSubscription) {
 			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
-		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, loadingComplete: true, id });
+		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, loadingComplete: true, id, fileEventProps });
 	}
 
-	private dispatchInfo(id: string, defData: DefinitionData, refModel?: ReferencesModel | null, loadingComplete?: boolean): void {
+	private dispatchInfo(id: string, defData: DefinitionData, fileEventProps: FileEventProps, refModel?: ReferencesModel | null, loadingComplete?: boolean): void {
 		if (id === this._configuration.sideBarID) {
-			infoStore.dispatch({ defData, refModel, loadingComplete, id });
+			infoStore.dispatch({ defData, refModel, loadingComplete, id, fileEventProps });
 		} else if (this.globalFetchSubscription) {
 			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
@@ -140,6 +145,7 @@ export class DefinitionAction extends EditorAction {
 
 	private onResult(editorService: IEditorService, editor: editorCommon.ICommonCodeEditor, outerEditor: editorCommon.ICommonCodeEditor): void {
 		const model = editor.getModel();
+		const eventProps = URIUtils.repoParams(model.uri);
 		const position = normalisePosition(model, editor.getPosition());
 		const word = model.getWordAtPosition(position);
 		if (!word) {
@@ -155,7 +161,7 @@ export class DefinitionAction extends EditorAction {
 				endLineNumber: position.lineNumber,
 				endColumn: word.endColumn,
 			};
-			this.prepareInfoStore(true, this._configuration.sideBarID);
+			this.prepareInfoStore(true, this._configuration.sideBarID, eventProps);
 			editorService.openEditor({
 				resource: model.uri,
 				options: {
@@ -217,7 +223,7 @@ export class GoToDefinitionAction extends DefinitionAction {
 }
 
 function closeActiveReferenceSearch(): void {
-	infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: "" });
+	infoStore.dispatch({ defData: null, prepareData: { open: false }, loadingComplete: true, id: "", fileEventProps: { repo: "", rev: null, path: "" } });
 }
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({

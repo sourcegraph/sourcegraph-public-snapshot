@@ -1,3 +1,4 @@
+import { FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 import URI from "vs/base/common/uri";
 
 // A URI in Sourcegraph refers to a (file) path and revision in a
@@ -22,7 +23,7 @@ export class URIUtils {
 	}
 
 	// repoParams extracts the repo, rev, and path parameters
-	static repoParams(uri: URI): { repo: string, rev: string | null, path: string } {
+	static repoParams(uri: URI): FileEventProps {
 		if (uri.scheme !== "git") {
 			throw new Error(`expected git URI scheme in ${uri.toString()}`);
 		}
@@ -36,7 +37,7 @@ export class URIUtils {
 	// repoParamsExt mirrors the functionality of repoParams, but is
 	// meant to be called outside of Monaco (or when Monaco has not
 	// loaded).
-	static repoParamsExt(uri: string): { repo: string, rev: string | null, path: string } {
+	static repoParamsExt(uri: string): FileEventProps {
 		let a = document.createElement("a");
 		uri = uri.replace(/^git/, "http");
 		a.href = uri;

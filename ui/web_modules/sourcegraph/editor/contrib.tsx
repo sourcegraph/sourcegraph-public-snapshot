@@ -53,9 +53,6 @@ export class ReferenceProvider implements modes.ReferenceProvider {
 					return null;
 				}
 
-				const { repo, rev, path } = URIUtils.repoParams(model.uri);
-				AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
-
 				const locs: lsp.Location[] = resp instanceof Array ? resp : [resp];
 				return locs.map(lsp.toMonacoLocation);
 			});

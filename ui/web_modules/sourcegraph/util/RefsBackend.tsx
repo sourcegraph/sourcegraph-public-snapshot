@@ -11,7 +11,6 @@ import { Repo } from "sourcegraph/api/index";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
@@ -104,9 +103,6 @@ export async function provideReferences(model: IReadOnlyModel, pos: Position): P
 		return [];
 	}
 
-	const { repo, rev, path } = URIUtils.repoParams(model.uri);
-	AnalyticsConstants.Events.CodeReferences_Viewed.logEvent({ repo, rev: rev || "", path });
-
 	const locs: lsp.Location[] = result instanceof Array ? result : [result];
 	return locs.map(lsp.toMonacoLocation);
 }
@@ -182,7 +178,7 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 
 	return references.map(reference => {
 		let dataByRefID = data.root[refKey(reference)];
-		if (!dataByRefID) {
+		if (!dataByRefID || !dataByRefID.commit) {
 			return reference; // likely means the blame was skipped by shouldBlame; continue without it
 		}
 		let blame = dataByRefID.commit.commit.file.blame;
