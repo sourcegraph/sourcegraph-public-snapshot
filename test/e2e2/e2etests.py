@@ -126,10 +126,7 @@ def test_golden_workflow(d):
 
     # Get to NewRouter landing page (presumably after
     # clicking on a Google search result).
-    wd.get(d.sg_url("/github.com/gorilla/mux/-/info/GoPackage/github.com/gorilla/mux/-/NewRouter"))
-
-    # Click on second usage example
-    retry(lambda: wd.find_element_by_partial_link_text("r1 := NewRouter()").click())
+    wd.get(d.sg_url("/go/github.com/gorilla/mux/-/NewRouter"))
 
     # Hover over "NewRouter" token
     wait_for(lambda: len(d.find_tokens("NewRouter")) > 0)
