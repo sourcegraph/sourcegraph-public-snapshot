@@ -14,7 +14,7 @@ the entire viewport height.
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	height: 100vh;
+	height: 100%;
 }
 .main_content {
 	display: flex;
@@ -34,6 +34,11 @@ html {
 	line-height: 1.5;
 	background: c_cool_pale_gray_2;
 	background-size: cover;
+	height: 100%;
+}
+
+body {
+	height: 100%;
 }
 
 @media only screen and media_sm {
@@ -42,6 +47,6 @@ html {
 	}
 }
 
-.inner_main_content {
-	flex: 1 0 auto;
+:global #main {
+	height: 100%;
 }

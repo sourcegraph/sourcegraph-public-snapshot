@@ -6,8 +6,6 @@ import { RepoStore } from "sourcegraph/repo/RepoStore";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
-export const OriginGitHub = 0; // Origin.ServiceType enum value for GitHub origin
-
 const workspaceSymbolFlights = new Set<string>();
 
 export const RepoBackend = {
