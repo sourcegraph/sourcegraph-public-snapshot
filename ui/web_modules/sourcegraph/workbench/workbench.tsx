@@ -94,8 +94,11 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 	}
 }
 
-function BlobPageTitle({ repo, path }: { repo: string, path: string }): JSX.Element {
+function BlobPageTitle({ repo, path }: { repo: string | null, path: string }): JSX.Element {
 	const base = path.split("/").pop() || path;
+	if (!repo) {
+		return <PageTitle title={base} />;
+	}
 	repo = repo.replace(/^github.com\//, "");
 	const title = `${base} · ${repo}`;
 	return <PageTitle title={title} />;
