@@ -176,7 +176,7 @@ ${truncate(JSON.stringify(resp, null, 2), 300)}
 * Location: [${pageURL}](${pageURL})
 * User: ${context.user ? context.user.Login : "(anonymous)"}
 * User agent: \`${window.navigator.userAgent}\`
-* Deployed site version: ${context.buildVars.Version} (${context.buildVars.Date})
+* Deployed site version: ${context.version}
 * [Lightstep trace](${traceURL})
 * Round-trip time: ${rttMsec}ms`;
 	console.debug(`Copy and send this URL to support@sourcegraph.com to report an issue:\nhttps://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}&labels[]=${encodeURIComponent(`Component: lang-${modeID}`)}&labels[]=${encodeURIComponent("Type: Bug")}`);

@@ -36,7 +36,7 @@ type JSContext struct {
 	CSRFToken         string                     `json:"csrfToken"`
 	UserAgentIsBot    bool                       `json:"userAgentIsBot"`
 	AssetsRoot        string                     `json:"assetsRoot"`
-	BuildVars         buildvar.Vars              `json:"buildVars"`
+	Version           string                     `json:"version"`
 	Features          interface{}                `json:"features"`
 	User              *sourcegraph.User          `json:"user"`
 	Emails            *sourcegraph.EmailAddrList `json:"emails"`
@@ -104,7 +104,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		CSRFToken:         csrfToken,
 		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(req.Context())),
 		AssetsRoot:        assets.URL("/").String(),
-		BuildVars:         buildvar.Public,
+		Version:           buildvar.Version,
 		Features:          feature.Features,
 		User:              actor.User(),
 		Emails: &sourcegraph.EmailAddrList{

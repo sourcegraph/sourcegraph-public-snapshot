@@ -32,13 +32,6 @@ var FuncMap = htmpl.FuncMap{
 		return string(b), nil
 	},
 
-	"maxLen": func(maxLen int, s string) string {
-		if len(s) <= maxLen {
-			return s
-		}
-		return s[:maxLen]
-	},
-
 	"assetURL":                assets.URL,
 	"mainJavaScriptBundleURL": assets.MainJavaScriptBundleURL,
 
@@ -49,7 +42,7 @@ var FuncMap = htmpl.FuncMap{
 		return ""
 	},
 
-	"buildvar": func() buildvar.Vars { return buildvar.All },
+	"version": func() string { return buildvar.Version },
 
 	"dangerouslySetHTML": func(s string) htmpl.HTML { return htmpl.HTML(s) },
 

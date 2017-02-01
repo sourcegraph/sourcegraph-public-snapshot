@@ -39,10 +39,7 @@
 		{{if .Debug}}
 			<div ignore-csp id="debug" style="position:fixed;bottom:42px;left:0;padding:5px 8px;font-family:monospace;font-size:0.75em;background-color:#efefef;z-index:99999;color:#999">
 				<div ignore-csp class="verbose" style="display:none">
-				{{if not (eq buildvar.Version "dev")}}{{buildvar.Version}}<br>{{end}}
-				{{if buildvar.CommitID}}
-					@{{buildvar.CommitID|maxLen 7}} &nbsp;
-				{{end}}
+				{{if not (eq version "dev")}}{{version}}<br>{{end}}
 				</div>
 
 				<a href="{{urlToTrace .Ctx}}" target="_blank">...</a>

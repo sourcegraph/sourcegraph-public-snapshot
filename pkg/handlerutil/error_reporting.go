@@ -29,7 +29,7 @@ func init() {
 		ravenClient.DropHandler = func(pkt *raven.Packet) {
 			log.Println("WARNING: dropped error report because buffer is full:", pkt)
 		}
-		ravenClient.SetRelease(buildvar.All.Version)
+		ravenClient.SetRelease(buildvar.Version)
 	}
 }
 

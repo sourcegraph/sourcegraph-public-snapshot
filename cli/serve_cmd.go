@@ -2,7 +2,6 @@ package cli
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -94,12 +93,7 @@ func Main() error {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			log.Print("Build information:")
-			b, err := json.MarshalIndent(buildvar.All, "", "  ")
-			if err != nil {
-				return err
-			}
-			log.Print(string(b))
+			log.Printf("Version: %s", buildvar.Version)
 			log.Print()
 
 			env.PrintHelp()

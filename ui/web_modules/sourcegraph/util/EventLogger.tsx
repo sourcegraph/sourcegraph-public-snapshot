@@ -59,7 +59,7 @@ class EventLoggerClass {
 
 			let env = "development";
 			let appId = "UnknownApp";
-			if (context.buildVars.Version !== "dev" && context.trackingAppID) {
+			if (context.version !== "dev" && context.trackingAppID) {
 				env = "production";
 				appId = context.trackingAppID;
 			}

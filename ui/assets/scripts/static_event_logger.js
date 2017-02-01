@@ -15,7 +15,7 @@ var sourcegraphLogger;
 		this._gaClientID = null;
 
 		let env = "development";
-		if (this._jsContext.buildVars.Version !== "dev") {
+		if (this._jsContext.version !== "dev") {
 			switch (this._jsContext.appURL) {
 				case "https://sourcegraph.com":
 					env = "production";

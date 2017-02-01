@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/neelance/parallel"
 )
@@ -129,73 +128,7 @@ func (c *PackageCmd) Execute(args []string) error {
 }
 
 func (c *PackageCmd) getLDFlags() ([]string, error) {
-	buildvars := map[string]string{
-		"Version": c.Args.Version,
-		"dateStr": time.Now().Format(time.UnixDate),
-	}
-
-	commitID, err := cmdOutput("git", "rev-parse", "--verify", "HEAD")
-	if err != nil {
-		return nil, err
-	}
-	if commitID != "" {
-		buildvars["commitID"] = strings.TrimSpace(commitID)
-	}
-
-	status, err := cmdOutput("git", "status", "--porcelain")
-	if err != nil {
-		return nil, err
-	}
-	if status != "" {
-		if !c.IgnoreDirty {
-			diff, err := cmdOutput("git", "diff")
-			if err != nil {
-				return nil, err
-			}
-			if mb := 1024 * 1024; len(diff) > mb {
-				diff = diff[:mb] // Capped to 1MB in size at max
-			}
-			return nil, fmt.Errorf(`
-Aborting! Working directory is dirty, binary would be compromised!
-
-note: You can use --ignore-dirty to skip this check.
-note: git status --porcelain reported:
-
-%s
-
-note: git diff reports:
-
-%s
-`, status, diff)
-		}
-		buildvars["dirtyStr"] = "true"
-	}
-
-	uname, err := cmdOutput("uname", "-a")
-	if err != nil {
-		return nil, err
-	}
-	if uname != "" {
-		buildvars["host"] = strings.TrimSpace(uname)
-	}
-
-	if user := os.Getenv("USER"); user != "" {
-		buildvars["user"] = user
-	}
-
-	var ldflags []string
-	for name, val := range buildvars {
-		ldflags = append(ldflags, fmt.Sprintf("-X %q", fmt.Sprintf("sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar.%s=%s", name, val)))
-	}
-
-	// main ldflags
-	mainLDFlags := map[string]string{
-		"VERSION":    c.Args.Version,
-		"BUILD_DATE": time.Now().Format(time.RFC3339),
-	}
-	for name, val := range mainLDFlags {
-		ldflags = append(ldflags, fmt.Sprintf("-X %q", fmt.Sprintf("main.%s=%s", name, val)))
-	}
-
-	return ldflags, nil
+	return []string{
+		fmt.Sprintf("-X %q", fmt.Sprintf("sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar.Version=%s", c.Args.Version)),
+	}, nil
 }
