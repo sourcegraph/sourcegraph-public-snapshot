@@ -4,7 +4,7 @@ import { rel } from "sourcegraph/app/routePatterns";
 import { pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { urlToTree } from "sourcegraph/tree/routes";
-import { TreeMain } from "sourcegraph/tree/TreeMain";
+import { Workbench } from "sourcegraph/workbench/workbench";
 
 // canonicalizeTreeURL redirects "/myrepo@myrev/-/tree/" to
 // "/myrepo@myrev" and removes the slashes from
@@ -26,11 +26,11 @@ export const treeRoutes: PlainRoute[] = [
 			canonicalizeTreeURL(nextState, replace);
 		},
 		getComponents: (location, callback) => {
-			callback(null, { main: TreeMain });
+			callback(null, { main: Workbench });
 		},
 		getIndexRoute: (location, callback) => callback(null, {
 			getComponents: (loc, cb) => {
-				cb(null, { main: TreeMain });
+				cb(null, { main: Workbench });
 			}
 		})
 	},

@@ -39,6 +39,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 		const extension = getPathExtension(path);
 		const isSupported = extension ? isSupportedExtension(extension) : false;
 		const isIgnored = extension ? isIgnoredExtension(extension) : false;
+		const isRoot = path === "";
 
 		return <div style={{ width: "100%" }}>
 			<FlexContainer justify="between" items="center" style={{
@@ -50,37 +51,41 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 				width: "100%",
 				zIndex: 3,
 			}}>
-				<div>
-					<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>
-						{basename(path)}
-					</Heading>
-					<PathBreadcrumb
-						repo={repo}
-						path={path}
-						rev={rev}
-						linkSx={Object.assign({ color: colors.blueGrayL1() }, typography.size[7])}
-						linkHoverSx={{ color: `${colors.blueGrayL3()} !important` }}
-						style={{ display: "inline-block", marginBottom: 0, paddingLeft: whitespace[2] }} />
-				</div>
-				<div>
-					<div style={Object.assign({
-						color: "white",
-						flex: "1 1",
-						textAlign: "right",
-					}, typography.size[7])}>
+				{!isRoot &&
+					[
+						<div key="left">
+							<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>
+								{basename(path)}
+							</Heading>
+							<PathBreadcrumb
+								repo={repo}
+								path={path}
+								rev={rev}
+								linkSx={Object.assign({ color: colors.blueGrayL1() }, typography.size[7])}
+								linkHoverSx={{ color: `${colors.blueGrayL3()} !important` }}
+								style={{ display: "inline-block", marginBottom: 0, paddingLeft: whitespace[2] }} />
+						</div>,
+						<div key="right">
+							<div style={Object.assign({
+								color: "white",
+								flex: "1 1",
+								textAlign: "right",
+							}, typography.size[7])}>
 
-						<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
-						{repo.startsWith("github.com") &&
-							<OpenInGitHubButton repo={repo} path={path} rev={rev} />
-						}
+								<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
+								{repo.startsWith("github.com") &&
+									<OpenInGitHubButton repo={repo} path={path} rev={rev} />
+								}
 
-						{!isSupported && !isIgnored &&
-							<UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />
-						}
+								{!isSupported && !isIgnored &&
+									<UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />
+								}
 
-						{toast && <div>{toast}</div>}
-					</div>
-				</div>
+								{toast && <div>{toast}</div>}
+							</div>
+						</div>
+					]
+				}
 			</FlexContainer>
 			{Features.commitInfoBar.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
 		</div>;

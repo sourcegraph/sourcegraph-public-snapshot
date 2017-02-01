@@ -10,6 +10,23 @@ from colors import yellow
 
 from e2etypes import *
 
+
+def test_direct_link_to_repo(d):
+    wd = d.d
+
+    wd.get(d.sg_url("/github.com/golang/go@go1.7.5"))
+    wait_for(lambda: wd.find_element_by_id("directory_help_message"))
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 18)
+
+
+def test_direct_link_to_directory(d):
+    wd = d.d
+
+    wd.get(d.sg_url("/github.com/golang/go@go1.7.5/-/tree/api"))
+    wait_for(lambda: wd.find_element_by_id("directory_help_message"))
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 29)
+
+
 def test_repo_jump_to(d):
     wd = d.d
 
@@ -123,7 +140,7 @@ def test_golden_workflow(d):
     retry(lambda: d.find_token("NewRouter").click())
 
     # Wait until local and global refs load.
-    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45)
@@ -338,6 +355,8 @@ all_tests = [
     (test_login_logout, "@beyang"),
     (test_repo_jump_to, "@nico"),
     (test_golden_workflow, "@matt"),
+    (test_direct_link_to_repo, "@nick"),
+    (test_direct_link_to_directory, "@nick"),
     (test_beta_signup, "@kingy"),
     (test_first_open_jump_to_line, "@nico"),
     (test_browser_extension_app_injection, "@john"),

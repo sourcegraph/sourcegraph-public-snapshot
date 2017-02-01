@@ -1,10 +1,13 @@
 import * as throttle from "lodash/throttle";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
 import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
+import { IFileService } from "vs/platform/files/common/files";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
@@ -14,8 +17,9 @@ import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { Router } from "sourcegraph/app/router";
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
-import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
-import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
+import { FlexContainer } from "sourcegraph/components";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
 import { GoToDefinitionAction } from "sourcegraph/workbench/info/action";
@@ -25,7 +29,22 @@ import { Services } from "sourcegraph/workbench/services";
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
-export function syncEditorWithRouterProps(location: AbsoluteLocation): void {
+export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
+	const { repo, commitID, path } = location;
+	const resource = URIUtils.pathInRepo(repo, commitID, path);
+	const fileStat = await Services.get(IFileService).resolveFile(resource);
+	if (fileStat.isDirectory) {
+		renderDirectoryContent();
+		updateFileTree(resource);
+	} else {
+		renderFileEditor(location);
+	}
+}
+
+/**
+ * renderEditor opens the editor for a file.
+ */
+function renderFileEditor(location: AbsoluteLocation): void {
 	const { repo, commitID, path, selection } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
@@ -34,6 +53,51 @@ export function syncEditorWithRouterProps(location: AbsoluteLocation): void {
 	editorService.openEditorWithoutURLChange(editorInput).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
+}
+
+/**
+ * renderRootContent displays a welcome message when a user is viewing the root of or a directory in a repo.
+ */
+function renderDirectoryContent(): void {
+	// We don't need or want the editor to be open when displaying the content for a directory.
+	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
+	editorService.closeAllEditors();
+
+	const el = document.getElementById("workbench.parts.editor");
+	if (!el) {
+		throw new Error("Expected workbench.parts.editor element to exist.");
+	}
+	const container = el.firstChild;
+	if (!container) {
+		throw new Error("Expected workbench.parts.editor to have a child.");
+	}
+
+	const node = document.createElement("div");
+	node.style.width = "100%";
+	node.style.height = "100%";
+	container.appendChild(node);
+
+	const style = {
+		fontFamily: typography.fontStack.sansSerif,
+		color: colors.white(),
+		margin: whitespace[2],
+		textAlign: "center",
+	};
+
+	const keyboardShortcutStyle = {
+		backgroundColor: colors.blueGrayD1(),
+		borderRadius: "3px",
+		padding: "2px 5px",
+	};
+	const content = <FlexContainer direction="top_bottom" justify="center" items="center" style={{
+		width: "100%",
+		height: "100%",
+		padding: whitespace[2],
+		paddingBottom: whitespace[6],
+	}}>
+		<div id="directory_help_message" style={{ ...style, ...typography.size[4] }}>Start by going to a file or hit <span style={keyboardShortcutStyle}>/</span > to search for a symbol.</div>
+	</FlexContainer>;
+	ReactDOM.render(content, node);
 }
 
 function updateEditorAfterURLChange(sel: IRange): void {
@@ -87,6 +151,8 @@ export async function updateFileTree(resource: URI): Promise<void> {
 	chain.forEach((item) => {
 		treeModel.expand(item);
 	});
+	treeModel.expand(fileStat);
+
 	const oldSelection = privateView.tree.getSelection();
 	await view.select(resource);
 	const scrollPos = privateView.tree.getRelativeTop(fileStat);
