@@ -26,6 +26,7 @@ import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Edit
 import { GoToDefinitionAction } from "sourcegraph/workbench/info/action";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
+import { prettifyRev } from "sourcegraph/workbench/utils";
 
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
@@ -188,7 +189,8 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 		// When updating selection from a symbol URL, update router location
 		// to blob URL.
 		const uri = getEditorInstance().getModel().uri;
-		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, uri.query, uri.fragment, sel.toZeroIndexedRange()));
+		const prettyRev = prettifyRev(uri.query);
+		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, prettyRev || "", uri.fragment, sel.toZeroIndexedRange()));
 	} else {
 		const hash = `#L${sel.toString()}`;
 		// Circumvent react-router to avoid a jarring jump to the anchor position.
