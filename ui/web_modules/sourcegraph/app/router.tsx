@@ -108,7 +108,6 @@ export function getRepoFromRouter(router: Router): string | null {
 		case abs.repo:
 		case abs.tree:
 		case abs.blob:
-		case abs.symbol:
 			return repoFromRouteParams(router.params);
 	}
 	return null;
@@ -123,7 +122,6 @@ export function getRevFromRouter(router: Router): string | null {
 		case abs.repo:
 		case abs.tree:
 		case abs.blob:
-		case abs.symbol:
 			return revFromRouteParams(router.params);
 	}
 	return null;

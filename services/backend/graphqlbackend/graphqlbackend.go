@@ -3,11 +3,15 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	gogithub "github.com/sourcegraph/go-github/github"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -16,6 +20,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 var GraphQLSchema *graphql.Schema
@@ -183,6 +190,89 @@ func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*reposi
 	}
 
 	return s, nil
+}
+
+// Resolves symbols by a global symbol ID (use case for symbol URLs)
+func (r *rootResolver) Symbols(ctx context.Context, args *struct {
+	ID   string
+	Mode string
+}) ([]*symbolResolver, error) {
+
+	if args.Mode != "go" {
+		return []*symbolResolver{}, nil
+	}
+
+	importPath := strings.Split(args.ID, "/-/")[0]
+	cloneURL, err := buildserver.ResolveImportPathCloneURL(importPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
+		return nil, fmt.Errorf("non-github clone URL resolved for import path %s", importPath)
+	}
+
+	repoURI := strings.TrimPrefix(cloneURL, "https://")
+	repo, err := ResolveRepo(ctx, repoURI)
+	if err != nil {
+		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if err := backend.Repos.RefreshIndex(ctx, repoURI); err != nil {
+		return nil, err
+	}
+
+	// Check that the user has permission to read this repo. Calling
+	// Repos.ResolveRev will fail if the user does not have access to the
+	// specified repo.
+	//
+	// SECURITY NOTE: The LSP client proxy DOES NOT check
+	// permissions. It accesses the gitserver directly and relies on
+	// its callers to check permissions.
+	checkedUserHasReadAccessToRepo := false // safeguard to make sure we don't accidentally delete the check below
+	var rev *sourcegraph.ResolvedRev
+	{
+		// SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring
+		// the user has permissions to access the repository.
+		rev, err = backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+			Repo: repo.ID,
+			Rev:  "",
+		})
+		if err != nil {
+			return nil, err
+		}
+		checkedUserHasReadAccessToRepo = true
+	}
+
+	if !checkedUserHasReadAccessToRepo {
+		return nil, fmt.Errorf("authorization check failed")
+	}
+
+	var symbols []lsp.SymbolInformation
+	params := lspext.WorkspaceSymbolParams{Symbol: lspext.SymbolDescriptor{"id": args.ID}}
+
+	err = xlang.UnsafeOneShotClientRequest(ctx, args.Mode, "git://"+repoURI+"?"+rev.CommitID, "workspace/symbol", params, &symbols)
+	if err != nil {
+		return nil, err
+	}
+
+	var resolvers []*symbolResolver
+	for _, symbol := range symbols {
+		uri, err := uri.Parse(symbol.Location.URI)
+		if err != nil {
+			return nil, err
+		}
+		resolvers = append(resolvers, &symbolResolver{
+			path:      uri.Fragment,
+			line:      int32(symbol.Location.Range.Start.Line),
+			character: int32(symbol.Location.Range.Start.Character),
+			repo:      repo,
+		})
+	}
+
+	return resolvers, nil
 }
 
 func (r *rootResolver) CurrentUser(ctx context.Context) (*currentUserResolver, error) {

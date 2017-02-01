@@ -3,31 +3,6 @@ import { matchPattern } from "react-router/lib/PatternUtils";
 
 import { Router } from "sourcegraph/app/router";
 
-export type RouteName = (
-	"styleguide" |
-	"twittercasestudy" |
-	"home" |
-	"tool" |
-	"settings" |
-	"repo" |
-	"tree" |
-	"blob" |
-	"login" |
-	"signup" |
-	"forgot" |
-	"reset" |
-	"about" |
-	"plan" |
-	"beta" |
-	"docs" |
-	"contact" |
-	"security" |
-	"pricing" |
-	"terms" |
-	"privacy" |
-	"integrations"
-);
-
 export const rel = {
 	// NOTE: If you add a top-level route (e.g., "/about"), add it to the
 	// topLevel list in app/internal/ui/router.go.
@@ -45,6 +20,8 @@ export const rel = {
 	settings: "settings",
 	login: "login",
 	signup: "join",
+
+	symbolId: "*", // matches everything past $APP_URL/:mode/
 
 	home: "",
 
@@ -71,14 +48,16 @@ export const abs = {
 	login: rel.login,
 	signup: rel.signup,
 
+	goSymbol: `go/${rel.symbolId}`,
 	repo: rel.repo,
 	tree: `${rel.repo}/-/${rel.tree}`,
 	blob: `${rel.repo}/-/${rel.blob}`,
-	symbol: `${rel.repo}/-/${rel.symbol}`
 };
 
+export type RouteName = keyof typeof abs;
+
 const routeNamesByPattern: { [key: string]: RouteName } = {};
-for (let name of Object.keys(abs)) {
+for (const name of Object.keys(abs)) {
 	routeNamesByPattern[abs[name]] = name as RouteName;
 }
 

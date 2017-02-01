@@ -10,6 +10,7 @@ import { Router, setRouter } from "sourcegraph/app/router";
 import { pageRoutes } from "sourcegraph/app/routes/pageRoutes";
 import { repoRoutes } from "sourcegraph/app/routes/repoRoutes";
 import { styleguideRoutes } from "sourcegraph/app/routes/styleguideRoutes";
+import { symbolRoutes } from "sourcegraph/app/routes/symbolRoutes";
 import { userRoutes } from "sourcegraph/app/routes/userRoutes";
 import { userSettingsRoutes } from "sourcegraph/app/routes/userSettingsRoutes";
 import * as styles from "sourcegraph/app/styles/App.css";
@@ -65,6 +66,7 @@ export const rootRoute: PlainRoute = {
 			...styleguideRoutes,
 			...userRoutes,
 			...userSettingsRoutes,
+			...symbolRoutes,
 			...repoRoutes,
 		]);
 	},

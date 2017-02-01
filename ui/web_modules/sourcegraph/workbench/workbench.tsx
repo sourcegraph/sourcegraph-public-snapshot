@@ -42,29 +42,47 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 	context: { router: Router };
 
 	render(): JSX.Element | null {
-		if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
-			return (
-				<Header
-					title="404"
-					subtitle="Repository not found." />
-			);
+		let repository: GQL.IRepository;
+		let symbol: GQL.ISymbol | undefined;
+		let selection: IRange;
+		let path: string;
+		if (this.props.isSymbolUrl) {
+			if (!this.props.root.symbols || this.props.root.symbols.length === 0) {
+				return (
+					<Header
+						title="404"
+						subtitle="Symbol not found." />
+				);
+			}
+			// Assume that there is only one symbol for now
+			symbol = this.props.root.symbols[0];
+			repository = symbol.repository;
+			path = symbol.path;
+			selection = RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty();
+		} else {
+			if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
+				return (
+					<Header
+						title="404"
+						subtitle="Repository not found." />
+				);
+			}
+			repository = this.props.root.repository;
+			selection = this.props.selection;
+			path = pathFromRouteParams(this.props.params);
 		}
-		if (this.props.isSymbolUrl && this.props.root.repository.symbols.length === 0) {
-			return null;
-		}
-		const symbol = this.props.isSymbolUrl ? this.props.root.repository.symbols[0] : null; // Assume for now it's ok to take the first.
-		const commitID = this.props.root.repository.commit.commit.sha1;
+		const commitID = repository.commit.commit!.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
-			<RepoMain {...this.props} repository={this.props.root.repository} commit={this.props.root.repository.commit}>
+			<RepoMain {...this.props} repository={repository} commit={repository.commit}>
 				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
 				<WorkbenchShell
-					repo={this.props.repo}
+					repo={repository.uri}
 					commitID={commitID}
-					path={symbol ? symbol.path : pathFromRouteParams(this.props.params)}
+					path={path}
 					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
-				<InfoPanelLifecycle isSymbolUrl={this.props.isSymbolUrl} repo={this.props.root.repository} />
+				<InfoPanelLifecycle repo={repository} />
 			</RepoMain>
 		</div>;
 	}
@@ -81,15 +99,32 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 	fragments: {
 		root: () => Relay.QL`
 			fragment on Root {
-				repository(uri: $repo) {
+				symbols(id: $id, mode: $mode) @include(if: $isSymbolUrl) {
+					path
+					line
+					character
+					repository {
+						uri
+						description
+						defaultBranch
+						commit(rev: $rev) {
+							commit {
+								sha1
+								languages
+								tree(recursive: true) {
+									files {
+										name
+									}
+								}
+							}
+							cloneInProgress
+						}
+					}
+				}
+				repository(uri: $repo) @skip(if: $isSymbolUrl) {
 					uri
 					description
 					defaultBranch
-					symbols(id: $id, mode: $mode, rev: $rev) @include(if: $isSymbolUrl) {
-						path
-						line
-						character
-					}
 					commit(rev: $rev) {
 						commit {
 							sha1
@@ -110,17 +145,22 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 
 // TODO(john): make this use router context.
 export function Workbench(props: { params: any; location: RouterLocation, routes: Route[] }): JSX.Element {
-	const repoRevString = repoRevFromRouteParams(props.params);
 	let rangeOrPosition: RangeOrPosition = RangeOrPosition.fromOneIndexed(1);
 	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
 		rangeOrPosition = RangeOrPosition.parse(props.location.hash.replace(/^#L/, "")) || rangeOrPosition;
 	}
-	const isSymbolUrl = getRoutePattern(props.routes) === abs.symbol;
+	const isSymbolUrl = getRoutePattern(props.routes) === abs.goSymbol;
 	let id: string | null = null;
 	let mode: string | null = null;
+	let repo: string | null = null;
+	let rev: string | null = null;
 	if (isSymbolUrl) {
-		id = props.params.splat[1];
-		mode = props.params.mode;
+		id = props.params.splat;
+		mode = "go";
+	} else {
+		const repoRevString = repoRevFromRouteParams(props.params);
+		repo = repoPath(repoRevString);
+		rev = repoRev(repoRevString);
 	}
 	return <Relay.RootContainer
 		Component={WorkbenchContainer}
@@ -132,8 +172,8 @@ export function Workbench(props: { params: any; location: RouterLocation, routes
 				`,
 			},
 			params: {
-				repo: repoPath(repoRevString),
-				rev: repoRev(repoRevString),
+				repo,
+				rev,
 				id,
 				mode,
 				isSymbolUrl,

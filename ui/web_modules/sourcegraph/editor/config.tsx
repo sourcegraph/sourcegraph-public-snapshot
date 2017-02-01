@@ -4,7 +4,7 @@ import * as ReactDOM from "react-dom";
 import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
-import { ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
+import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IFileService } from "vs/platform/files/common/files";
@@ -17,6 +17,7 @@ import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { Router } from "sourcegraph/app/router";
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
+import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { FlexContainer } from "sourcegraph/components";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
@@ -101,7 +102,7 @@ function renderDirectoryContent(): void {
 }
 
 function updateEditorAfterURLChange(sel: IRange): void {
-	// TODO restore serialized view state.
+	// TODO restore scroll position.
 	if (!sel) {
 		return;
 	}
@@ -175,13 +176,22 @@ function updateEditor(editor: ICodeEditor): void {
 
 function updateURLHash(e: ICursorSelectionChangedEvent): void {
 	const router = __getRouterForWorkbenchOnly();
-	const isSymbolUrl = getRoutePattern(router.routes) === abs.symbol;
-	if (isSymbolUrl) {
+	const isSymbolUrl = getRoutePattern(router.routes) === abs.goSymbol;
+	if (isSymbolUrl && e.reason === CursorChangeReason.NotSet) {
+		// When landing at a symbol URL, don't update URL.
 		return;
 	}
 
 	const sel = RangeOrPosition.fromMonacoRange(e.selection);
-	const hash = `#L${sel.toString()}`;
-	// Circumvent react-router to avoid a jarring jump to the anchor position.
-	history.replaceState({}, "", window.location.pathname + hash);
+
+	if (isSymbolUrl) {
+		// When updating selection from a symbol URL, update router location
+		// to blob URL.
+		const uri = getEditorInstance().getModel().uri;
+		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, uri.query, uri.fragment, sel.toZeroIndexedRange()));
+	} else {
+		const hash = `#L${sel.toString()}`;
+		// Circumvent react-router to avoid a jarring jump to the anchor position.
+		history.replaceState({}, "", window.location.pathname + hash);
+	}
 }

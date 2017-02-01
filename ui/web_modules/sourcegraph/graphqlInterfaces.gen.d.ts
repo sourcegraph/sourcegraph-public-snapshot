@@ -176,7 +176,6 @@ declare namespace GQL {
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;
-		symbols: Array<ISymbol>;
 	}
 
 	/*
@@ -188,6 +187,7 @@ declare namespace GQL {
 		repositories: Array<IRepository>;
 		remoteRepositories: Array<IRemoteRepository>;
 		remoteStarredRepositories: Array<IRemoteRepository>;
+		symbols: Array<ISymbol>;
 		currentUser: IUser | null;
 	}
 
@@ -205,6 +205,7 @@ declare namespace GQL {
 	*/
 	interface ISymbol {
 		__typename: string;
+		repository: IRepository;
 		path: string;
 		line: number;
 		character: number;
