@@ -99,8 +99,11 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// (fmt.Println), we support that, but we DO NOT support looking
 	// for references to a private repository's symbol ever (in fact,
 	// they are not even indexed by the global deps database).
-
+	//
 	// 🚨 SECURITY: repository permissions are checked here 🚨
+	//
+	// The Repos.Get call here is responsible for ensuring the user has access
+	// to the repository.
 	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
 	if err != nil {
 		return nil, err

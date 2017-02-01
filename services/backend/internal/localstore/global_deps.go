@@ -5,17 +5,22 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
+
+	opentracing "github.com/opentracing/opentracing-go"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/lib/pq"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -33,8 +38,10 @@ import (
 //   be used to optimized requests related to the dependency (e.g., which
 //   directory in a repository contains the dependency).
 //
-// `global_dep_private` is an almost identical table except it is exclusively
-// reserved for private repositories.
+// `global_dep_private` is an identical table, except that instead of only
+// storing public repository data (like `global_dep` does), it only stores
+// private repository data. It includes all dependencies, public or private,
+// for all private repositories.
 type globalDeps struct{}
 
 var globalDepEnabledLangs = map[string]struct{}{
@@ -185,7 +192,71 @@ type DependenciesOptions struct {
 	Limit int
 }
 
+var mockListUserPrivateRepoIDs func(ctx context.Context) ([]int32, error)
+
+// listUserPrivateRepoIDs lists all of the private repository IDs that the user
+// in ctx has access to.
+//
+// 🚨 SECURITY: This function MUST return ONLY the private repositories accessible 🚨
+// by the user in ctx. Doing anything otherwise would introduce security holes.
+func listUserPrivateRepoIDs(ctx context.Context) (accessible []int32, err error) {
+	if mockListUserPrivateRepoIDs != nil {
+		return mockListUserPrivateRepoIDs(ctx)
+	}
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "listUserPrivateRepoIDs")
+	ghRepos, err := github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{Visibility: "private"})
+	if err != nil {
+		return nil, err
+	}
+	for _, r := range ghRepos {
+		// Because r describes a remote repository, it has no valid ID field.
+		// We must fetch it from the DB.
+		r, err = Repos.GetByURI(ctx, r.URI)
+		if err != nil {
+			if legacyerr.ErrCode(err) == legacyerr.NotFound {
+				continue // ignore repos that are not yet cloned
+			}
+			return nil, err
+		}
+		accessible = append(accessible, r.ID)
+	}
+	return accessible, nil
+}
+
 func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
+	privateRepoIDs, err := listUserPrivateRepoIDs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Note: using global_dep_private first so those results always show up
+	// first, as the user will always be more interested in their private code.
+	for _, table := range []string{"global_dep_private", "global_dep"} {
+		v, err := g.queryDependencies(ctx, table, op, privateRepoIDs)
+		if err != nil {
+			return nil, err
+		}
+		refs = append(refs, v...)
+	}
+
+	// 🚨 SECURITY: Verify that the user has access to the resulting dependency 🚨
+	// references. In general, this should not happen, but it can occur if e.g.
+	// a repository was once public but is now private. We simply remove them
+	// in that situation.
+	finalRefs := make([]*sourcegraph.DependencyReference, 0, len(refs))
+	for _, ref := range refs {
+		if _, err := Repos.Get(ctx, ref.RepoID); err != nil {
+			continue
+		}
+		finalRefs = append(finalRefs, ref)
+	}
+	return finalRefs, nil
+}
+
+// queryDependencies is invoked first for `global_dep_private` (private repos)
+// and then for `global_dep` (public repos). See the globalDeps type docstring
+// for more concrete information.
+func (g *globalDeps) queryDependencies(ctx context.Context, table string, op DependenciesOptions, privateRepoIDs []int32) (refs []*sourcegraph.DependencyReference, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "localstore.Dependencies")
 	defer func() {
 		if err != nil {
@@ -196,18 +267,41 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 	}()
 	span.SetTag("Language", op.Language)
 	span.SetTag("DepData", op.DepData)
+	span.SetTag("table", table)
 
 	containmentQuery, err := json.Marshal(op.DepData)
 	if err != nil {
 		return nil, errors.New("marshaling op.DepData query")
 	}
 
-	rows, err := appDBH(ctx).Db.Query(`select dep_data,repo_id,hints
-		FROM global_dep
+	optionalAndSQL := ""
+	switch table {
+	case "global_dep_private":
+		// Important: without this check we would produce a query like
+		// `repo_id IN ()` which is illegal / a syntax error in SQL.
+		if len(privateRepoIDs) == 0 {
+			return nil, nil
+		}
+		var privateRepoStrings []string
+		for _, repoID := range privateRepoIDs {
+			privateRepoStrings = append(privateRepoStrings, strconv.Itoa(int(repoID)))
+		}
+		privateRepos := strings.Join(privateRepoStrings, ", ")
+		optionalAndSQL = `AND repo_id IN (` + privateRepos + `)`
+	case "global_dep":
+		optionalAndSQL = ""
+	default:
+		panic(fmt.Sprintf("Defs.Dependencies: unexpected table %q", table))
+	}
+
+	sql := `select dep_data,repo_id,hints
+		FROM ` + table + `
 		WHERE language=$1
 		AND dep_data @> $2
+		` + optionalAndSQL + `
 		LIMIT $3
-	`, op.Language, string(containmentQuery), op.Limit)
+	`
+	rows, err := appDBH(ctx).Db.Query(sql, op.Language, string(containmentQuery), op.Limit)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}
