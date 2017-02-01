@@ -23,7 +23,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
@@ -93,7 +92,7 @@ func Main() error {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
-			log.Printf("Version: %s", buildvar.Version)
+			log.Printf("Version: %s", env.Version)
 			log.Print()
 
 			env.PrintHelp()

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 var Meta = &meta{}
@@ -14,7 +14,7 @@ type meta struct{}
 
 func (s *meta) Config(ctx context.Context) (*sourcegraph.ServerConfig, error) {
 	c := &sourcegraph.ServerConfig{
-		Version: buildvar.Version,
+		Version: env.Version,
 		AppURL:  conf.AppURL.String(),
 	}
 

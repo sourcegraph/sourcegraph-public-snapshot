@@ -10,6 +10,8 @@ import (
 var descriptions = make(map[string]string)
 var locked = false
 
+var Version = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
+
 // Get returns the value of the given environment variable. It also registers the description for
 // PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on
 // package initialization. Calls at a later point will cause a panic if Lock was called before.

@@ -11,7 +11,6 @@ import (
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -29,7 +28,7 @@ func init() {
 		ravenClient.DropHandler = func(pkt *raven.Packet) {
 			log.Println("WARNING: dropped error report because buffer is full:", pkt)
 		}
-		ravenClient.SetRelease(buildvar.Version)
+		ravenClient.SetRelease(env.Version)
 	}
 }
 

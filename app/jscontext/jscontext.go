@@ -14,7 +14,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
@@ -104,7 +103,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		CSRFToken:         csrfToken,
 		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(req.Context())),
 		AssetsRoot:        assets.URL("/").String(),
-		Version:           buildvar.Version,
+		Version:           env.Version,
 		Features:          feature.Features,
 		User:              actor.User(),
 		Emails: &sourcegraph.EmailAddrList{

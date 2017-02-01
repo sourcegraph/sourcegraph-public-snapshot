@@ -12,7 +12,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/buildvar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
@@ -42,7 +41,7 @@ var FuncMap = htmpl.FuncMap{
 		return ""
 	},
 
-	"version": func() string { return buildvar.Version },
+	"version": func() string { return env.Version },
 
 	"dangerouslySetHTML": func(s string) htmpl.HTML { return htmpl.HTML(s) },
 
