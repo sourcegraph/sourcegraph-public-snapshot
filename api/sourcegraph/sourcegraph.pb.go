@@ -738,6 +738,11 @@ type DefsRefreshIndexOp struct {
 	// RepoID is the ID of the repository whose data is to be re-indexed.
 	RepoID int32 `json:"Repo,omitempty"`
 
+	// Private is whether the repository is private or not. This determines
+	// where the data will be located (in global_dep or global_dep_private),
+	// and as such this MUST be correct or else security will be compromised.
+	Private bool `json:"Private,omitempty"`
+
 	// CommitID is the commit ID of the default repository branch which will
 	// be re-indexed.
 	CommitID string `json:"CommitID,omitempty"`

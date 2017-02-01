@@ -162,33 +162,28 @@ func index(ctx context.Context, repoName string) error {
 	log.Printf("started indexing %s at %s", repoName, headCommit)
 	defer log.Printf("finished indexing %s at %s", repoName, headCommit)
 
-	// Global refs indexing.
-	//
-	// SECURITY: DO NOT REMOVE THIS CHECK! If a repository is private we must
-	// NOT index it because that could expose private repository information.
-	// and we do not have a good story for that yet.
-	if !repo.Private {
-		// Do not index forked repositories.
-		if !repo.Fork {
-			err = backend.Defs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
-				RepoURI:  repo.URI,
-				RepoID:   repo.ID,
-				CommitID: string(headCommit),
-			})
-			if err != nil {
-				return fmt.Errorf("Defs.RefreshIndex failed: %s", err)
-			}
-		}
-	}
-
-	// Packages indexing
-	// Do not index forked repositories.
+	// Global refs & packages indexing. Neither index forks.
 	if !repo.Fork {
-		if err := backend.Pkgs.UnsafeRefreshIndex(ctx, &sourcegraph.DefsRefreshIndexOp{
+		op := &sourcegraph.DefsRefreshIndexOp{
 			RepoURI:  repo.URI,
 			RepoID:   repo.ID,
+			Private:  repo.Private,
 			CommitID: string(headCommit),
-		}); err != nil {
+		}
+
+		// Global refs stores and queries private repository data separately,
+		// so as long as repo.Private is accurate for repo.ID it is safe to
+		// index private repositories.
+		err = backend.Defs.UnsafeRefreshIndex(ctx, op)
+		if err != nil {
+			return fmt.Errorf("Defs.UnsafeRefreshIndex failed: %s", err)
+		}
+
+		// As part of package indexing, it's fine to index private repositories
+		// because backend.Pkgs.ListPackages is responsible for authentication
+		// checks.
+		err = backend.Pkgs.UnsafeRefreshIndex(ctx, op)
+		if err != nil {
 			return fmt.Errorf("Pkgs.UnsafeRefreshIndex failed: %s", err)
 		}
 	}
