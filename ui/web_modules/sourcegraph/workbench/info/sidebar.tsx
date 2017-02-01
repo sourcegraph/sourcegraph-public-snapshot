@@ -194,7 +194,7 @@ class InfoPanel extends React.Component<Props, State> {
 				position: "absolute",
 				backgroundColor: "white",
 				width: sidebarWidth,
-				height: `calc(100% - ${layout.editorToolbarHeight}px)`,
+				height: `calc(100% - ${layout.EDITOR_TITLE_HEIGHT}px)`,
 				bottom: 0,
 				right: 0,
 				overflowY: "hidden",

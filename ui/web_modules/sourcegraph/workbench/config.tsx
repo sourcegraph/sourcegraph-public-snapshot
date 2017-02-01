@@ -21,7 +21,7 @@ import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
 (FileRenderer as any).ITEM_HEIGHT = 30;
 
 // Set the height of the blob title.
-(EditorGroupsControl as any).EDITOR_TITLE_HEIGHT = layout.editorToolbarHeight;
+(EditorGroupsControl as any).EDITOR_TITLE_HEIGHT = layout.EDITOR_TITLE_HEIGHT;
 
 export function configurePreStartup(services: ServiceCollection, workspace: URI): void {
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
