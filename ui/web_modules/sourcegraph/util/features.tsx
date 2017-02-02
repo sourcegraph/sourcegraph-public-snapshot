@@ -93,6 +93,7 @@ export const Features = {
 	experimentLogDebug: new Feature("experiment-log-debug").disableBeta(),
 
 	experimentManager,
+	listEnabled,
 };
 
 export function listEnabled(): string[] {
