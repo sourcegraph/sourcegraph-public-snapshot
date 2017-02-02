@@ -341,6 +341,16 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			},
 		}, nil
 
+	case "initialized":
+		if err := ensureInitialized(); err != nil {
+			return nil, err
+		}
+
+		// This is a valid notification to send, but given in our
+		// situation we can have many clients for a single language
+		// server, it doesn't make sense to pass on.
+		return nil, nil
+
 	case "textDocument/definition", "textDocument/xdefinition", "textDocument/hover", "textDocument/references", "textDocument/documentSymbol", "workspace/symbol", "workspace/xreferences", "workspace/xdependencies", "workspace/xpackages":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
