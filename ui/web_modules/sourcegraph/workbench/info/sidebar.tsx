@@ -62,7 +62,7 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 				if (info.prepareData.open) {
 					// Log sidebar toggling opened
 					Events.InfoPanel_Initiated.logEvent(this.props.fileEventProps);
-				} else {
+				} else if (this.infoPanel && this.infoPanel.open) {
 					// Log sidebar toggling closed
 					Events.InfoPanel_Dismissed.logEvent(this.props.fileEventProps);
 				}
