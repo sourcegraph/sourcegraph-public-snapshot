@@ -12,9 +12,6 @@ import (
 	// App
 	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
 
-	// Server
-	_ "sourcegraph.com/sourcegraph/sourcegraph/services/backend/cmd"
-
 	// External services
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 
