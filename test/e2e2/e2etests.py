@@ -368,25 +368,10 @@ global_ref_tests = [{
     "symbol_name": "Context",
     "global_min": 5,
 }, {
-    "repo_rev": "github.com/golang/go",
-    "symbol": "json.Marshal",
-    "symbol_name": "Marshal",
-    "global_min": 5,
-}, {
-    "repo_rev": "github.com/go-gorp/gorp",
-    "symbol": "gorp.SqlExecutor",
-    "symbol_name": "SqlExecutor",
-    "global_min": 5,
-}, {
     "repo_rev": "github.com/gorilla/mux",
     "symbol": "mux.Router",
     "symbol_name": "Router",
     "global_min": 5,
-}, {
-    "repo_rev": "github.com/docker/docker",
-    "symbol": "random.NewSource",
-    "symbol_name": "NewSource",
-    "global_min": 2,
 }]
 for test in global_ref_tests:
     def test_global_refs_wrap(d):
