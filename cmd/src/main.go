@@ -8,12 +8,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-
-	// External services
-	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-
-	// Misc.
-	_ "sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
 func main() {
