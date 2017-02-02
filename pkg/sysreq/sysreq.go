@@ -2,7 +2,6 @@
 package sysreq
 
 import (
-	"os/exec"
 	"strings"
 	"sync"
 
@@ -96,15 +95,6 @@ func AddCheck(name string, fn CheckFunc) {
 }
 
 var checks = []check{
-	{
-		Name: "Git",
-		Check: func(ctx context.Context) (problem, fix string, err error) {
-			if _, err := exec.LookPath("git"); err != nil {
-				return "Git is not installed", "Install Git on your system and make sure it is in your $PATH.", err
-			}
-			return
-		},
-	},
 	{
 		Name:  "Rlimit",
 		Check: rlimitCheck,
