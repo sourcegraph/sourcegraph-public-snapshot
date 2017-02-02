@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/keegancsmith/tmpfriend"
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 
@@ -39,6 +40,9 @@ func run() error {
 			AccessToken: t,
 		}))
 	}
+
+	cleanup := tmpfriend.SetupOrNOOP()
+	defer cleanup()
 
 	if err := xlang.RegisterServersFromEnv(); err != nil {
 		return err
