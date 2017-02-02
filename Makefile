@@ -1,6 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep check dep dist dist-dep distclean drop-test-dbs generate install src test libvfsgen
+.PHONY: app-dep check dep distclean drop-test-dbs generate install src test
 
 SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
 
@@ -35,7 +35,7 @@ src: ${GOBIN}/src
 ${GOBIN}/src: $(shell /usr/bin/find . -type f -and -name '*.go' -not -path './vendor/*')
 	go install ./cmd/src
 
-dep: dist-dep ui-dep
+dep: ui-dep
 
 # non-critical credentials for dev environment
 export AUTH0_CLIENT_ID ?= onW9hT0c7biVUqqNNuggQtMLvxUWHWRC
@@ -50,23 +50,12 @@ export LIGHTSTEP_ACCESS_TOKEN ?= d60b0b2477a7ccb05d7783917f648816
 serve-dev:
 	@./dev/server.sh
 
-libvfsgen:
-	go get github.com/shurcooL/vfsgen
-
 ${GOBIN}/go-template-lint:
 	go install ./vendor/sourcegraph.com/sourcegraph/go-template-lint
-
-${GOBIN}/sgtool: $(wildcard dev/sgtool/*.go)
-	go install ./dev/sgtool
-
-dist-dep: libvfsgen ${GOBIN}/sgtool
 
 ui-dep:
 	cd ui && yarn
 	cd ui/scripts/tsmapimports && yarn
-
-dist: dist-dep app-dep
-	${GOBIN}/sgtool -v package $(PACKAGEFLAGS)
 
 generate:
 	# Ignore app/assets because its output is not checked into Git.

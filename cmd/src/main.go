@@ -1,6 +1,8 @@
 // src is the Sourcegraph server and API client program.
 package main // import "sourcegraph.com/sourcegraph/sourcegraph/cmd/src"
 
+//docker:install graphviz
+
 import (
 	"os"
 

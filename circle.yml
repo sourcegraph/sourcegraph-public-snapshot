@@ -56,9 +56,12 @@ deployment:
   master-branch:
     branch: master
     commands:
-      - ./dev/ci/build-docker-image.sh $LONG_VERSION:
+      - ./cmd/src/build.sh:
           pwd: $REPO
+          environment:
+            TAG: ${LONG_VERSION}
       - docker tag us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION us.gcr.io/sourcegraph-dev/sourcegraph:latest
+      - gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION
       - gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:latest
       - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=master" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
       - echo $LONG_VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build
@@ -66,8 +69,11 @@ deployment:
   staging-branch:
     branch: [staging, staging2, staging3, staging4]
     commands:
-      - ./dev/ci/build-docker-image.sh $LONG_VERSION:
+      - ./cmd/src/build.sh:
           pwd: $REPO
+          environment:
+            TAG: ${LONG_VERSION}
+      - gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION
       - curl http://deploy-bot.sourcegraph.com/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
 
   docker-images:
