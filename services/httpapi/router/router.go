@@ -18,7 +18,6 @@ const (
 	RepoCreate       = "repo.create"
 	RepoRefresh      = "repo.refresh"
 	RepoResolveRev   = "repo.resolve-rev"
-	RepoDefLanding   = "repo.def-landing"
 	Repos            = "repos"
 	RepoShield       = "repo.shield"
 	BetaSubscription = "beta-subscription"
@@ -59,7 +58,6 @@ func New(base *mux.Router) *mux.Router {
 	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
-	repoRev.Path("/def-landing").Methods("GET").Name(RepoDefLanding)
 	repo.Path("/shield").Methods("GET").Name(RepoShield)
 
 	return base

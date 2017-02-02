@@ -25,7 +25,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	srcstore "sourcegraph.com/sourcegraph/srclib/store"
 )
 
 var Repos = &repos{}
@@ -241,41 +240,6 @@ func listGCPRepos(client *http.Client, projects []*cloudresourcemanager.Project)
 		repos = append(repos, resp.Repos...)
 	}
 	return repos, nil
-}
-
-//  ListDeps lists dependencies for a given list of repo URIs.
-//
-// TODO properly support using repo IDs instead of URIs.
-func (s *repos) ListDeps(ctx context.Context, repos *sourcegraph.URIList) (res *sourcegraph.URIList, err error) {
-	if Mocks.Repos.ListDeps != nil {
-		return Mocks.Repos.ListDeps(ctx, repos)
-	}
-
-	_, done := trace(ctx, "Repos", "ListDeps", repos, &err)
-	defer done()
-
-	repoFilters := []srcstore.UnitFilter{
-		srcstore.ByRepos(repos.URIs...),
-	}
-	units, err := localstore.Graph.Units(repoFilters...)
-	if err != nil {
-		return nil, err
-	}
-
-	deps := make(map[string]struct{})
-	for _, u := range units {
-		for _, d := range u.Info.Dependencies {
-			deps[d.Name] = struct{}{}
-		}
-	}
-	uris := []string{}
-	for d, _ := range deps {
-		uris = append(uris, d)
-	}
-
-	return &sourcegraph.URIList{
-		URIs: uris,
-	}, nil
 }
 
 // setRepoFieldsFromRemote sets the fields of the repository from the

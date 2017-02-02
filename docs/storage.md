@@ -1,12 +1,12 @@
 +++
 title = "DB and storage"
-description = "Manage the PostgreSQL database and srclib data storage backend used by Sourcegraph"
+description = "Manage the PostgreSQL database used by Sourcegraph"
 +++
 
 Sourcegraph stores most data in a
 [PostgreSQL database](http://www.postgresql.org). Git repositories,
-build log files, srclib data, and uploaded user content (e.g., image
-attachments in issues) are stored on the filesystem.
+uploaded user content (e.g., image attachments in issues) are stored
+on the filesystem.
 
 # Initializing PostgreSQL
 

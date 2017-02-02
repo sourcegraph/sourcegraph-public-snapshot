@@ -1,4 +1,0 @@
-package transport contains a generic wrapper for http.RoundTripper
-
-It was shamelessly copied (slightly modified) from
-https://github.com/golang/oauth2/blob/95a9f97e5/transport.go

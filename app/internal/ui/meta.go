@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"net/url"
-	"path"
 	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
@@ -11,8 +10,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/textutil"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 // meta holds document metadata about the HTML page to be rendered in
@@ -81,47 +78,6 @@ func repoMeta(repo *sourcegraph.Repo) *meta {
 	}
 }
 
-func defMeta(def *sourcegraph.Def, repo string, includeFile bool) *meta {
-	var html string
-	if def.DocHTML != nil {
-		html = def.DocHTML.HTML
-	}
-	doc := strings.TrimSpace(textutil.TextFromHTML(html))
-	doc = strings.Replace(strings.Replace(strings.Replace(doc, "\n", " ", -1), "\t", " ", -1), "\r", "", -1)
-	if len(doc) > 200 {
-		doc = doc[:200] + "..."
-	}
-
-	f := graph.PrintFormatter(&def.Def)
-
-	var desc string
-	const maxLen = 80
-	if fullName := f.Name("dep") + f.NameAndTypeSeparator() + f.Type("dep"); len(fullName) <= maxLen {
-		desc = fullName
-	} else if name := f.Name("dep"); len(name) <= maxLen {
-		desc = name
-	} else {
-		// Might exceed maxLen, but we can't make it any shorter
-		// without losing key information.
-		desc = def.Name
-	}
-	if doc != "" {
-		desc += " — " + doc
-	}
-
-	var fileSuffix string
-	if includeFile {
-		fileSuffix = " · " + path.Base(def.File)
-	}
-
-	m := &meta{
-		Title:       repoPageTitle(repo, f.Name("dep")+fileSuffix),
-		ShortTitle:  f.Name("dep") + fileSuffix,
-		Description: fmt.Sprintf("%s usage examples and docs for %s", f.Language(), desc),
-	}
-	return m
-}
-
 func treeOrBlobMeta(path string, repo *sourcegraph.Repo) *meta {
 	var desc string
 	if repo.Description != "" {
@@ -183,14 +139,4 @@ func copyRouteVars(o map[string]string) map[string]string {
 		tmp[k] = v
 	}
 	return tmp
-}
-
-func shouldIndexDef(def *sourcegraph.Def) bool {
-	// Only index high-quality defs. We can make this more lenient
-	// later.
-	var docHTML string
-	if def.DocHTML != nil {
-		docHTML = def.DocHTML.HTML
-	}
-	return def.Exported && len(docHTML) > 20 && len(def.Name) >= 3 && (def.Kind == "func" || def.Kind == "type")
 }

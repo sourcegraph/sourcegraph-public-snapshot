@@ -1,13 +1,9 @@
 package localstore
 
-import srcstore "sourcegraph.com/sourcegraph/srclib/store"
-
 var (
-	DeprecatedGlobalRefs = &deprecatedGlobalRefs{}
-	GlobalDeps           = &globalDeps{}
-	Pkgs                 = &pkgs{}
-	Graph                srcstore.MultiRepoStoreImporterIndexer
-	RepoVCS              = &repoVCS{}
-	Repos                = &repos{}
-	UserInvites          = &userInvites{}
+	GlobalDeps  = &globalDeps{}
+	Pkgs        = &pkgs{}
+	RepoVCS     = &repoVCS{}
+	Repos       = &repos{}
+	UserInvites = &userInvites{}
 )

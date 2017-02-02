@@ -64,7 +64,6 @@ func New(base *mux.Router) *Router {
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 
-	addOldDefRedirectRoute(&Router{*base}, base)
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 

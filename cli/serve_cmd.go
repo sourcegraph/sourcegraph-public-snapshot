@@ -29,15 +29,12 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/graphstoreutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
-	srclib "sourcegraph.com/sourcegraph/srclib/cli"
 )
 
 var (
@@ -56,13 +53,7 @@ var (
 
 	certFile = env.Get("SRC_TLS_CERT", "", "certificate file for TLS")
 	keyFile  = env.Get("SRC_TLS_KEY", "", "key file for TLS")
-
-	graphstoreRoot = os.ExpandEnv(env.Get("SRC_GRAPHSTORE_ROOT", "$SGPATH/repos", "root dir, HTTP VFS (http[s]://...), or S3 bucket (s3://...) in which to store graph data"))
 )
-
-func init() {
-	srclib.CacheLocalRepo = false
-}
 
 func configureAppURL() (*url.URL, error) {
 	var hostPort string
@@ -156,8 +147,6 @@ func Main() error {
 		return err
 	}
 
-	log15.Debug("GraphStore", "at", graphstoreRoot)
-
 	for _, f := range cli.ServeInit {
 		f()
 	}
@@ -173,8 +162,6 @@ func Main() error {
 	if err != nil {
 		return err
 	}
-
-	backend.SetGraphStore(graphstoreutil.New(graphstoreRoot, nil))
 
 	sm := http.NewServeMux()
 	newRouter := func() *mux.Router {

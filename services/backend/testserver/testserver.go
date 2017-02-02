@@ -70,15 +70,8 @@ func (s *Server) allEnvConfig() []string {
 	}
 	env = append(env, s.serverEnvConfig()...)
 	env = append(env, s.dbEnvConfig()...)
-	env = append(env, s.srclibEnvConfig()...)
 	env = append(env, s.Config...)
 	return env
-}
-
-func (s *Server) srclibEnvConfig() []string {
-	return []string{
-		"SG_BUILD_LOG_DIR=" + filepath.Join(s.SGPATH, "build-logs"),
-	}
 }
 
 func (s *Server) serverEnvConfig() []string {

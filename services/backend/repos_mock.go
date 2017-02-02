@@ -14,19 +14,18 @@ import (
 )
 
 type MockRepos struct {
-	Get                         func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
-	Resolve                     func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
-	List                        func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListStarredRepos            func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
-	Update                      func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
-	GetCommit                   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
-	ResolveRev                  func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
-	ListCommits                 func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
-	ListDeps                    func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
-	ListCommitters              func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
-	GetSrclibDataVersionForPath func(v0 context.Context, v1 *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error)
-	GetInventory                func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	RefreshIndex                func(ctx context.Context, repo string) (err error)
+	Get              func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	Resolve          func(v0 context.Context, v1 *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error)
+	List             func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	ListStarredRepos func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
+	Update           func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
+	GetCommit        func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ResolveRev       func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
+	ListCommits      func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
+	ListDeps         func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
+	ListCommitters   func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	GetInventory     func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	RefreshIndex     func(ctx context.Context, repo string) (err error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
@@ -161,15 +160,6 @@ func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commi
 	s.GetCommit = func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*vcs.Commit, error) {
 		*called = true
 		return commit, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockGetSrclibDataVersionForPath_Current(t *testing.T) (called *bool) {
-	called = new(bool)
-	s.GetSrclibDataVersionForPath = func(ctx context.Context, entry *sourcegraph.TreeEntrySpec) (*sourcegraph.SrclibDataVersion, error) {
-		*called = true
-		return &sourcegraph.SrclibDataVersion{CommitID: entry.RepoRev.CommitID}, nil
 	}
 	return
 }

@@ -361,7 +361,6 @@ var GoRepos = []Repo{
 	{"github.com/uniqush/uniqush-push", "Uniqush is a free and open source software system which provides a unified push service for server side notification to apps on mobile devices."},
 	{"github.com/bradfitz/goimports", "(old repo) Tool to fix (add, remove) your Go imports automatically."},
 	{"github.com/digitalocean/doctl", "A command line tool for DigitalOcean services"},
-	{"github.com/sourcegraph/srclib", "srclib is a polyglot code analysis library, built for hackability. It consists of language analysis toolchains (currently for Go and Java, with Python, JavaScript, and Ruby in beta) with a common output format, and a CLI tool for running the analysis."},
 	{"github.com/ajvb/kala", "Modern Job Scheduler"},
 	{"github.com/leveros/leveros", "Serverless + Microservices = ♥"},
 	{"github.com/fsouza/go-dockerclient", "Go client for the Docker remote API."},

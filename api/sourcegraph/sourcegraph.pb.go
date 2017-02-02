@@ -3,11 +3,8 @@ package sourcegraph
 import (
 	"time"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/srclib/graph"
 )
 
 type TreeEntryType int32
@@ -237,12 +234,6 @@ type RepoResolution struct {
 	CanonicalPath string `json:"CanonicalPath,omitempty"`
 }
 
-// SrclibDataVersion specifies a srclib store version.
-type SrclibDataVersion struct {
-	CommitID      string `json:"CommitID,omitempty"`
-	CommitsBehind int32  `json:"CommitsBehind,omitempty"`
-}
-
 // ReposUpdateOp is an operation to update a repository's metadata.
 type ReposUpdateOp struct {
 	// Repo is the repository to update.
@@ -429,201 +420,6 @@ type ExternalToken struct {
 	Scope string `json:"scope,omitempty"`
 }
 
-// Def is a code def returned by the Sourcegraph API.
-type Def struct {
-	graph.Def  `json:""`
-	DocHTML    *htmlutil.HTML          `json:"DocHTML,omitempty"`
-	FmtStrings *graph.DefFormatStrings `json:"FmtStrings,omitempty"`
-	// StartLine and EndLine are populated if
-	// DefGetOptions.ComputeLineRange is true.
-	StartLine uint32 `json:"StartLine,omitempty"`
-	EndLine   uint32 `json:"EndLine,omitempty"`
-}
-
-// DefGetOptions specifies options for DefsService.Get.
-type DefGetOptions struct {
-	Doc bool `json:"Doc,omitempty" url:",omitempty"`
-	// ComputeLineRange is whether the server should compute the start
-	// and end line numbers (1-indexed). This incurs additional cost,
-	// so it's not always desired.
-	ComputeLineRange bool `json:"ComputeLineRange,omitempty" url:",omitempty"`
-}
-
-// DeprecatedDefListRefsOptions configures the scope of ref search for a def.
-type DeprecatedDefListRefsOptions struct {
-	Repo        int32    `json:"Repo,omitempty" url:",omitempty"`
-	CommitID    string   `json:"CommitID,omitempty" url:",omitempty"`
-	Files       []string `json:"Files,omitempty" url:",omitempty"`
-	ListOptions `json:""`
-}
-
-// DefSpec specifies a def.
-type DefSpec struct {
-	Repo     int32  `json:"Repo,omitempty"`
-	CommitID string `json:"CommitID,omitempty"`
-	UnitType string `json:"UnitType,omitempty"`
-	Unit     string `json:"Unit,omitempty"`
-	Path     string `json:"Path,omitempty"`
-}
-
-type DefsGetOp struct {
-	Def DefSpec        `json:"Def"`
-	Opt *DefGetOptions `json:"Opt,omitempty"`
-}
-
-type DeprecatedDefsListRefsOp struct {
-	Def DefSpec                       `json:"Def"`
-	Opt *DeprecatedDefListRefsOptions `json:"Opt,omitempty"`
-}
-
-type RefList struct {
-	Refs           []*graph.Ref `json:"Refs,omitempty"`
-	StreamResponse `json:""`
-}
-
-// DeprecatedDefListRefLocationsOptions holds the options for fetching
-// all locations referencing a def.
-type DeprecatedDefListRefLocationsOptions struct {
-	// Repos is the list of repos to restrict the results to.
-	// If empty, all repos are searched for references.
-	Repos []string `json:"Repos,omitempty" url:",omitempty"`
-	// ListOptions specifies options for paginating
-	// the result.
-	ListOptions `json:""`
-}
-
-// DeprecatedDefListRefLocationsOptions holds the options for fetching
-// all locations referencing the specified def.
-type DeprecatedDefsListRefLocationsOp struct {
-	// Def identifies the definition whose locations are requested.
-	Def DefSpec `json:"Def"`
-	// Opt controls the scope of the search for ref locations of this def.
-	Opt *DeprecatedDefListRefLocationsOptions `json:"Opt,omitempty"`
-}
-
-// DeprecatedRefLocationsList lists the repos and files that reference a def.
-type DeprecatedRefLocationsList struct {
-	// RepoRefs holds the repos and files referencing the def.
-	RepoRefs []*DeprecatedDefRepoRef `json:"RepoRefs,omitempty"`
-	// StreamResponse specifies if more results are available.
-	StreamResponse `json:""`
-	// TotalRepos is the total number of repos which reference the def.
-	TotalRepos int32 `json:"TotalRepos,omitempty"`
-}
-
-func (d *DeprecatedRefLocationsList) Convert() *DeprecatedRefLocations {
-	sourceRefs := make([]*DeprecatedSourceRef, len(d.RepoRefs))
-	for i, r := range d.RepoRefs {
-		sourceRefs[i] = r.Convert()
-	}
-	return &DeprecatedRefLocations{
-		SourceRefs:     sourceRefs,
-		StreamResponse: d.StreamResponse,
-		TotalSources:   int(d.TotalRepos),
-	}
-}
-
-// DeprecatedDefRepoRef identifies a repo and its files that reference a def.
-type DeprecatedDefRepoRef struct {
-	// Repo is the name of repo that references the def.
-	Repo string `json:"Repo,omitempty"`
-	// Count is the number of references to the def in the repo.
-	Count int32 `json:"Count,omitempty"`
-	// Score is the importance score of this repo for the def.
-	Score float32 `json:"Score,omitempty"`
-	// Files is the list of files in this repo referencing the def.
-	Files []*DeprecatedDefFileRef `json:"Files,omitempty"`
-}
-
-func (d *DeprecatedDefRepoRef) Convert() *DeprecatedSourceRef {
-	files := make([]*DeprecatedFileRef, len(d.Files))
-	for i, f := range d.Files {
-		files[i] = f.Convert()
-	}
-	return &DeprecatedSourceRef{Source: d.Repo, Refs: int(d.Count), Score: int16(d.Score), FileRefs: files}
-}
-
-// DeprecatedFilePosition represents a line:column in a file.
-type DeprecatedFilePosition struct {
-	Line   int32 `json:"Line,omitempty"`
-	Column int32 `json:"Column,omitempty"`
-}
-
-// DeprecatedDefFileRef identifies a file that references a def.
-type DeprecatedDefFileRef struct {
-	// Path is the path of this file.
-	Path string `json:"Path,omitempty"`
-	// Count is the number of references to the def in this file.
-	Count int32 `json:"Count,omitempty"`
-	// Positions is the locations in the file that the def is referenced.
-	Positions []*DeprecatedFilePosition `json:"Positions,omitempty"`
-	// Score is the importance score of this file for the def.
-	Score float32 `json:"Score,omitempty"`
-}
-
-func (d *DeprecatedDefFileRef) Convert() *DeprecatedFileRef {
-	// Use d.Count since d.Positions is not actually populated today. This at
-	// least gives us valid "N times in file X" counts.
-	positions := make([]lsp.Range, d.Count)
-	return &DeprecatedFileRef{File: d.Path, Positions: positions, Score: int16(d.Score)}
-}
-
-// DeprecatedRefLocations lists the sources and files that reference a def.
-type DeprecatedRefLocations struct {
-	// SourceRefs holds the sources and files referencing the def.
-	SourceRefs []*DeprecatedSourceRef
-	// StreamResponse specifies if more results are available.
-	StreamResponse
-	// TotalSources is the total number of sources which reference the def.
-	TotalSources int
-}
-
-// DeprecatedSourceRef identifies a source (e.g. a repo) and its files that reference a
-// def.
-type DeprecatedSourceRef struct {
-	// Scheme is the URI scheme for the source, e.g. "git"
-	Scheme string
-
-	// Source is the source that references the def (e.g. a repo URI).
-	Source string
-
-	// Version is the version of the source that references the def.
-	Version string
-
-	// Files is the number of files in the source that reference the def.
-	Files int
-
-	// Refs is the total number of references to the def in the source.
-	Refs int
-
-	// Score is the importance score of this source for the def.
-	Score int16
-
-	// FileRefs is the list of files in this source referencing the def.
-	FileRefs []*DeprecatedFileRef
-}
-
-// DeprecatedFileRef identifies a file that references a def.
-type DeprecatedFileRef struct {
-	// Scheme is the URI scheme for the source, e.g. "git"
-	Scheme string
-
-	// Source is the source that references the def (e.g. a repo URI).
-	Source string
-
-	// Version is the version of the source that references the def.
-	Version string
-
-	// File is the filepath that references the def.
-	File string
-
-	// Positions is the locations in the file that the def is referenced.
-	Positions []lsp.Range
-
-	// Score is the importance score of this file for the def.
-	Score int16
-}
-
 // DependencyReferencesOptions specifies options for querying dependency references.
 type DependencyReferencesOptions struct {
 	Language        string // e.g. "go"
@@ -808,66 +604,6 @@ type EventList struct {
 	Version string `json:"Version,omitempty"`
 	// AppURL holds the base URL of the Sourcegraph app.
 	AppURL string `json:"AppURL,omitempty"`
-}
-
-// An Annotation is metadata (such as a srclib ref) attached to a
-// portion of a file.
-type Annotation struct {
-	// URL is the location where more information about the
-	// annotation's topic may be found (e.g., for a srclib ref, it's
-	// the def's URL).
-	URL string `json:"URL,omitempty"`
-	// StartByte is the start of the byte range.
-	StartByte uint32 `json:"StartByte"`
-	// EndByte is the end of the byte range.
-	EndByte uint32 `json:"EndByte"`
-	// Class is the HTML class name that should be applied to this
-	// region.
-	Class string `json:"Class,omitempty"`
-	// Def is whether this annotation marks the definition of the
-	// item described in URL or URLs. For example, "Foo" in "func Foo() {}"
-	// would have its annotation with Def=true.
-	//
-	// Marking whether this annotation is a def lets us
-	// jump-to-definition here from other refs in the same file
-	// without needing to load the defs for those refs.
-	Def bool `json:"Def,omitempty"`
-	// WantInner indicates that this annotation, when being applied to
-	// the underlying text, should be inner (i.e., more deeply
-	// nested). Larger numbers mean greater precedence for being
-	// nested more deeply.
-	WantInner int32 `json:"WantInner,omitempty"`
-	// URLs can be set instead of URL if there are multiple URLs on an
-	// annotation.
-	URLs []string `json:"URLs,omitempty"`
-}
-
-// AnnotationList is a list of annotations.
-type AnnotationList struct {
-	Annotations    []*Annotation `json:"Annotations,omitempty"`
-	LineStartBytes []uint32      `json:"LineStartBytes,omitempty"`
-}
-
-// AnnotationsListOptions specifies options for Annotations.List.
-type AnnotationsListOptions struct {
-	// Entry specifies the file in a specific repository at a specific
-	// version.
-	Entry TreeEntrySpec `json:"Entry"`
-	// Range specifies the range within the file that annotations
-	// should be fetched for. If it is not set, then all of the file's
-	// annotations are returned.
-	Range *FileRange `json:"Range,omitempty"`
-}
-
-// AnnotationsGetDefAtPosOptions specifies options for Annotations.GetDefAtPos
-type AnnotationsGetDefAtPosOptions struct {
-	// Entry specifies the file in a specific repository at a specific
-	// version.
-	Entry TreeEntrySpec `json:"Entry"`
-	// Line specifies the line of the ref (zero based).
-	Line uint32 `json:"Line,omitempty"`
-	// Character specifies the character of the ref in the line (zero based).
-	Character uint32 `json:"Character,omitempty"`
 }
 
 // OrgListOptions holds the options for listing organization details

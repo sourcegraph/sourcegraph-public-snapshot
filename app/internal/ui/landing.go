@@ -23,15 +23,11 @@ import (
 
 	htmpl "html/template"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/ui/toprepos"
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/htmlutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
@@ -152,31 +148,6 @@ type snippet struct {
 	SourceURL string
 }
 
-type defLandingData struct {
-	tmpl.Common
-	Meta             meta
-	Description      *htmlutil.HTML
-	RefSnippets      []*snippet
-	ViewDefURL       string
-	DefName          string // e.g. "func NewRouter"
-	ShortDefName     string // e.g. "NewRouter"
-	DefFileURL       string
-	DefFileName      string
-	DefEventProps    *defEventProps
-	RefLocs          *sourcegraph.DeprecatedRefLocations
-	TruncatedRefLocs bool
-}
-
-type defEventProps struct {
-	DefLanguage  string `json:"def_language"`
-	DefScheme    string `json:"def_scheme"`
-	DefSource    string `json:"def_source"`
-	DefContainer string `json:"def_container"`
-	DefVersion   string `json:"def_version"`
-	DefFile      string `json:"def_file"`
-	DefName      string `json:"def_name"`
-}
-
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(r.Context(), "serveDefLanding")
 	r = r.WithContext(ctx)
@@ -196,148 +167,6 @@ func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 	http.Redirect(w, r, "/go/"+match[1], http.StatusTemporaryRedirect)
 	return nil
-}
-
-func legacyGenerateSymbolEventProps(def *sourcegraph.Def) *defEventProps {
-	return &defEventProps{
-		DefLanguage:  "go", // srclib def landing pages only ever had GoPackage unit types.
-		DefScheme:    "git",
-		DefSource:    def.Repo,
-		DefVersion:   "",
-		DefFile:      def.File,
-		DefContainer: def.Unit,
-		DefName:      def.Path,
-	}
-}
-
-func queryLegacyDefLandingData(r *http.Request, repo *sourcegraph.Repo) (res *defLandingData, err error) {
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), "queryLegacyDefLandingData")
-	r = r.WithContext(ctx)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
-
-	vars := mux.Vars(r)
-	// We don't support xlang yet on new commits for golang/go https://github.com/sourcegraph/sourcegraph/issues/2370
-	// DefLanding is pretty only ever used on the default branch, so used old version
-	if vars["Repo"] == "github.com/golang/go" {
-		vars["Rev"] = "@838eaa738f2bc07c3706b96f9e702cb80877dfe1"
-	}
-	def, _, err := handlerutil.GetDefCommon(r.Context(), vars, &sourcegraph.DefGetOptions{Doc: true, ComputeLineRange: true})
-	if err != nil {
-		return nil, err
-	}
-
-	defSpec := sourcegraph.DefSpec{
-		Repo:     repo.ID,
-		CommitID: def.DefKey.CommitID,
-		UnitType: def.DefKey.UnitType,
-		Unit:     def.DefKey.Unit,
-		Path:     def.DefKey.Path,
-	}
-
-	// get all caller repositories with counts (global refs)
-	const (
-		refLocRepoLimit = 3 // max 3 separate repos
-		refLocFileLimit = 5 // max 5 files per repo
-	)
-	refLocs, err := backend.Defs.DeprecatedListRefLocations(r.Context(), &sourcegraph.DeprecatedDefsListRefLocationsOp{
-		Def: defSpec,
-		Opt: &sourcegraph.DeprecatedDefListRefLocationsOptions{
-			// NOTE(mate): this has no effect at the moment
-			ListOptions: sourcegraph.ListOptions{PerPage: refLocRepoLimit},
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
-	// WORKAROUND(mate): because ListRefLocations ignores pagination options
-	truncLen := len(refLocs.RepoRefs)
-	if truncLen > refLocRepoLimit {
-		truncLen = refLocRepoLimit
-	}
-	refLocs.RepoRefs = refLocs.RepoRefs[:truncLen]
-	for _, repoRef := range refLocs.RepoRefs {
-		if len(repoRef.Files) > refLocFileLimit {
-			repoRef.Files = repoRef.Files[:refLocFileLimit]
-		}
-	}
-
-	// fetch definition
-	eventProps := legacyGenerateSymbolEventProps(def)
-	viewDefURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, int(def.StartLine))
-	defFileURL := approuter.Rel.URLToBlob(def.Repo, def.CommitID, def.File, 0)
-
-	// fetch example
-	refs, err := backend.Defs.DeprecatedListRefs(r.Context(), &sourcegraph.DeprecatedDefsListRefsOp{
-		Def: defSpec,
-		Opt: &sourcegraph.DeprecatedDefListRefsOptions{ListOptions: sourcegraph.ListOptions{PerPage: 3}},
-	})
-	if err != nil {
-		return nil, err
-	}
-	var refSnippets []*snippet
-	for _, ref := range refs.Refs {
-		opt := &sourcegraph.RepoTreeGetOptions{
-			ContentsAsString: true,
-			GetFileOptions: sourcegraph.GetFileOptions{
-				FileRange: sourcegraph.FileRange{
-					StartByte: int64(ref.Start),
-					EndByte:   int64(ref.End),
-				},
-				ExpandContextLines: 2,
-			},
-		}
-		refRepo, err := backend.Repos.Resolve(r.Context(), &sourcegraph.RepoResolveOp{Path: ref.Repo})
-		if err != nil {
-			return nil, err
-		}
-		refEntrySpec := sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{Repo: refRepo.Repo, CommitID: ref.CommitID},
-			Path:    ref.File,
-		}
-		refEntry, err := backend.RepoTree.Get(r.Context(), &sourcegraph.RepoTreeGetOp{Entry: refEntrySpec, Opt: opt})
-		if err != nil {
-			return nil, fmt.Errorf("could not get ref tree: %s", err)
-		}
-		refSnippets = append(refSnippets, &snippet{
-			Code:      htmpl.HTML(refEntry.ContentsString),
-			SourceURL: approuter.Rel.URLToBlob(ref.Repo, ref.CommitID, ref.File, int(refEntry.FileRange.StartLine+1)).String(),
-		})
-	}
-
-	m := defMeta(def, trimRepo(repo.URI), false)
-	m.SEO = true
-	// Don't noindex pages with a canonical URL. See
-	// https://www.seroundtable.com/archives/020151.html.
-	m.CanonicalURL = canonicalRepoURL(
-		conf.AppURL,
-		getRouteName(r),
-		mux.Vars(r),
-		r.URL.Query(),
-		repo.DefaultBranch,
-		def.CommitID,
-	)
-	canonRev := isCanonicalRev(mux.Vars(r), repo.DefaultBranch)
-	m.Index = allowRobots(repo) && shouldIndexDef(def) && canonRev
-
-	return &defLandingData{
-		Meta:             *m,
-		Description:      def.DocHTML,
-		RefSnippets:      refSnippets,
-		DefEventProps:    eventProps,
-		ViewDefURL:       viewDefURL.String(),
-		DefName:          def.FmtStrings.DefKeyword + " " + def.FmtStrings.Name.ScopeQualified,
-		ShortDefName:     def.Name,
-		DefFileURL:       defFileURL.String(),
-		DefFileName:      repo.URI + "/" + def.Def.File,
-		RefLocs:          refLocs.Convert(),
-		TruncatedRefLocs: refLocs.TotalRepos > int32(len(refLocs.RepoRefs)),
-	}, nil
 }
 
 var legacyDefLandingCounter = prometheus.NewCounter(prometheus.CounterOpts{
