@@ -113,12 +113,6 @@
 			"revisionTime": "2015-07-08T23:28:44Z"
 		},
 		{
-			"checksumSHA1": "VdXZPcDRHK1T7XjBu2KW8Mb8S6w=",
-			"path": "github.com/flynn/go-shlex",
-			"revision": "3f9db97f856818214da2e1057f8ad84803971cff",
-			"revisionTime": "2015-05-15T14:53:56Z"
-		},
-		{
 			"checksumSHA1": "nmc2qcdbg17Ny8tHeEDQuphV6jA=",
 			"path": "github.com/fsnotify/fsnotify",
 			"revision": "bd2828f9f176e52d7222e565abb2d338d3f3c103",
@@ -681,30 +675,6 @@
 			"revisionTime": "2016-11-18T21:00:15Z"
 		},
 		{
-			"checksumSHA1": "kALxprn17Sk/x2InsoTApX6bo50=",
-			"path": "golang.org/x/crypto/curve25519",
-			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
-			"revisionTime": "2016-05-16T23:05:56Z"
-		},
-		{
-			"checksumSHA1": "wGb//LjBPNxYHqk+dcLo7BjPXK8=",
-			"path": "golang.org/x/crypto/ed25519",
-			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
-			"revisionTime": "2016-05-16T23:05:56Z"
-		},
-		{
-			"checksumSHA1": "LXFcVx8I587SnWmKycSDEq9yvK8=",
-			"path": "golang.org/x/crypto/ed25519/internal/edwards25519",
-			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
-			"revisionTime": "2016-05-16T23:05:56Z"
-		},
-		{
-			"checksumSHA1": "3dxfePz1LkJB7x0nIiTI88o/fFY=",
-			"path": "golang.org/x/crypto/ssh",
-			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
-			"revisionTime": "2016-05-16T23:05:56Z"
-		},
-		{
 			"checksumSHA1": "N5fb5y92DFIP+wUhi1rSwPp9vyk=",
 			"path": "golang.org/x/crypto/ssh/terminal",
 			"revision": "5bcd134fee4dd1475da17714aac19c0aa0142e2f",
@@ -735,44 +705,8 @@
 			"revisionTime": "2016-05-25T13:11:03Z"
 		},
 		{
-			"checksumSHA1": "D0f++vGl+j3LDuoeCUxzaciz6wg=",
-			"path": "golang.org/x/net/http2",
-			"revision": "30db96677b74e24b967e23f911eb3364fc61a011",
-			"revisionTime": "2016-05-25T13:11:03Z"
-		},
-		{
-			"checksumSHA1": "EYNaHp7XdLWRydUCE0amEkKAtgk=",
-			"path": "golang.org/x/net/http2/hpack",
-			"revision": "30db96677b74e24b967e23f911eb3364fc61a011",
-			"revisionTime": "2016-05-25T13:11:03Z"
-		},
-		{
-			"checksumSHA1": "/k7k6eJDkxXx6K9Zpo/OwNm58XM=",
-			"path": "golang.org/x/net/internal/timeseries",
-			"revision": "30db96677b74e24b967e23f911eb3364fc61a011",
-			"revisionTime": "2016-05-25T13:11:03Z"
-		},
-		{
-			"checksumSHA1": "yhndhWXMs/VSEDLks4dNyFMQStA=",
-			"path": "golang.org/x/net/lex/httplex",
-			"revision": "30db96677b74e24b967e23f911eb3364fc61a011",
-			"revisionTime": "2016-05-25T13:11:03Z"
-		},
-		{
-			"checksumSHA1": "WpST9lFOHvWrjDVy0GJNqHe+R3E=",
-			"path": "golang.org/x/net/trace",
-			"revision": "30db96677b74e24b967e23f911eb3364fc61a011",
-			"revisionTime": "2016-05-25T13:11:03Z"
-		},
-		{
 			"checksumSHA1": "UtUkp2yqxAwGreQoHhrBR0Mttg4=",
 			"path": "golang.org/x/oauth2",
-			"revision": "c406a4cc4ba462e5dc2f16225c5bd9488f9cbe10",
-			"revisionTime": "2016-05-20T18:48:49Z"
-		},
-		{
-			"checksumSHA1": "Yokz/Wl4zeuOZG2ev8LuaLtMotE=",
-			"path": "golang.org/x/oauth2/github",
 			"revision": "c406a4cc4ba462e5dc2f16225c5bd9488f9cbe10",
 			"revisionTime": "2016-05-20T18:48:49Z"
 		},
@@ -825,20 +759,8 @@
 			"revisionTime": "2016-09-27T13:58:56Z"
 		},
 		{
-			"checksumSHA1": "uwKP1AVzd+lrTMlXVFjZXXHzB7U=",
-			"path": "golang.org/x/tools/go/vcs",
-			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",
-			"revisionTime": "2016-05-12T04:39:32Z"
-		},
-		{
 			"checksumSHA1": "2bj5Jq3+RmE2blLnFUfkASYGTlg=",
 			"path": "golang.org/x/tools/godoc/vfs",
-			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",
-			"revisionTime": "2016-05-12T04:39:32Z"
-		},
-		{
-			"checksumSHA1": "Qwc7VecyIh84Ol8n9J9DUwZQtII=",
-			"path": "golang.org/x/tools/godoc/vfs/mapfs",
 			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",
 			"revisionTime": "2016-05-12T04:39:32Z"
 		},
@@ -959,11 +881,6 @@
 			"path": "sourcegraph.com/sourcegraph/go-template-lint/tmplwalk",
 			"revision": "17cde5e36859a47336e707acd943627178ab4349",
 			"revisionTime": "2015-08-28T08:55:01Z"
-		},
-		{
-			"path": "sourcegraph.com/sqs/pbtypes",
-			"revision": "4d1b9dc7ffc3f7b555de9b02055fa616f0ebcd18",
-			"revisionTime": "2016-01-07T01:09:29-08:00"
 		},
 		{
 			"checksumSHA1": "isIOkjAlG6NK3lSgsV8+lyvg0aE=",
