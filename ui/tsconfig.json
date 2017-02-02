@@ -17,6 +17,10 @@
         "../vendor/node_modules/vscode/src/vs/vscode",
         "../vendor/node_modules/vscode/src/vs/monaco"
     ],
+    "typeRoots": [
+        "./node_modules/@types",
+        "./web_modules/@types"
+    ],
     "jsx": "react",
     "relaySchema": "../api/schema.json",
     "sourceMap": true,

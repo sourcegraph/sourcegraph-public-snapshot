@@ -71,7 +71,9 @@
     "rxjs": "^5.0.3",
     "string_score": "0.1.22",
     "url": "0.11.0",
-    "vscode-languageserver-types": "^1.0.4"
+    "vscode-jsonrpc": "3.0.3",
+    "vscode-languageclient": "https://registry.npmjs.org/@sourcegraph/vscode-languageclient/-/vscode-languageclient-3.0.3-fork1.tgz",
+    "vscode-languageserver-types": "3.0.3"
   },
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
@@ -183,6 +185,8 @@
     "vinyl": "2.0.1",
     "vinyl-fs": "2.4.4",
     "xtend": "4.0.1",
-    "@types/history": "2.0.41"
+    "@types/history": "2.0.41",
+    "vscode-jsonrpc": "3.0.3",
+    "vscode-languageserver-types": "3.0.3"
   }
 }

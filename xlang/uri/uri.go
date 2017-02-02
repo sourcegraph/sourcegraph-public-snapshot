@@ -52,6 +52,9 @@ func (u *URI) CloneURL() *url.URL {
 	}
 }
 
+// Repo returns the repository name (e.g., "github.com/foo/bar").
+func (u *URI) Repo() string { return u.Host + strings.TrimPrefix(u.Path, ".git") }
+
 // Rev returns the repository revision component of the URI (the raw
 // query string).
 func (u *URI) Rev() string { return u.RawQuery }

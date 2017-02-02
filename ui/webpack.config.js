@@ -144,6 +144,15 @@ module.exports = {
 					transpileOnly: true, // type checking is only done as part of linting or testing
 				}),
 			},
+			{
+				test: /node_modules\/vscode-languageclient/,
+				loader: 'awesome-typescript-loader?' + JSON.stringify({
+					compilerOptions: {
+						target: "es5",
+						allowJs: true,
+					}
+				}),
+			},
 			{ test: /\.(svg|png)$/, loader: "url-loader" },
 			{ test: /\.(woff|eot|ttf)$/, loader: "url-loader?name=fonts/[name].[ext]" },
 			{ test: /\.json$/, loader: "json-loader" },
@@ -164,11 +173,16 @@ module.exports = {
 					},
 					'postcss-loader',
 				]
-			}
+			},
+			{
+				test: /vscode-languageserver-types\//,
+				parser: { amd: true },
+			},
 		],
 		noParse: [
 			/\.min\.js$/,
 			/typescriptServices\.js$/,
+			/types\/lib\/main.js/, // vscode-languageserver-types uses "require"
 		],
 	},
 	performance: {

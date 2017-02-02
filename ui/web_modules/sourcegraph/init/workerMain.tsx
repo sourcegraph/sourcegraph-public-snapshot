@@ -11,6 +11,7 @@
 const staticRequires = {
 	"vs/editor/common/services/editorSimpleWorker": require("vs/editor/common/services/editorSimpleWorker"),
 	"vs/base/common/worker/simpleWorker": require("vs/base/common/worker/simpleWorker"),
+	"vs/workbench/parts/output/common/outputLinkComputer": require("vs/workbench/parts/output/common/outputLinkComputer"),
 };
 // Make self.require callable without clobbering self.require.config.
 self["require"] = function (moduleIds: string[], callback: (mod: any) => void): void {
@@ -19,7 +20,7 @@ self["require"] = function (moduleIds: string[], callback: (mod: any) => void): 
 	}
 	const m = staticRequires[moduleIds[0]];
 	if (!m) {
-		throw new Error("unable to load module: " + moduleIds[0]);
+		throw new Error(`unable to load module ${moduleIds[0]} - you must add it to the staticRequires map in workerMain.tsx`);
 	}
 	callback(m);
 };

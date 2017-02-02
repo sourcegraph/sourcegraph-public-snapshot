@@ -44,3 +44,23 @@ node run-tests.js ./web_modules/path/to/The_Test.js
   `react-icon-base/lib/index.js` to rename `this.props.className` to
   `this.props.class`. **NOTE:** You'll need to repeat this step if you ever update
   react-icon-base.
+
+
+### Hacking on vscode-languageclient
+
+The vscode-languageclient npm package that we use is pending upstream
+approval at
+https://github.com/Microsoft/vscode-languageserver-node/pull/148. Until
+it is merged upstream, our changes in that PR are published to the
+@sourcegraph/vscode-languageclient package.
+
+To make modifications to the package without requiring a
+npm-publish-yarn-install cycle, you can use npm/yarn's `link` feature
+to set up a symlink to your dev version:
+
+1. In your local clone of the vscode-languageserver-node repository, run `cd client && yarn link`.
+2. In the Sourcegraph `./ui` dir, run `yarn link vscode-languageclient`.
+3. Ensure that there is a `yarn run watch` process running in `vscode-languageserver-node/client` to produce the `vscode-languageserver-node/client/lib/**` files.
+
+Be sure to push, open a PR for, and npm-publish your changes to the
+vscode-languageclient package if you make any.

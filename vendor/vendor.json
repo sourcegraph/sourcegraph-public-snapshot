@@ -266,6 +266,12 @@
 			"revisionTime": "2016-09-01T06:18:54Z"
 		},
 		{
+			"checksumSHA1": "7VSeAa7CSmr5bWAQkLYYndZJQG4=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "c36f2fe5c330f0ac404b616b96c438b8616b1aaf",
+			"revisionTime": "2017-01-26T19:14:27Z"
+		},
+		{
 			"checksumSHA1": "d9PxF1XQGLMJZRct2R8qVM/eYlE=",
 			"path": "github.com/hashicorp/golang-lru",
 			"revision": "0a025b7e63adc15a622f29b0b2c4c3848243bbf6",
@@ -698,6 +704,12 @@
 			"path": "github.com/sourcegraph/jsonrpc2",
 			"revision": "4f06164e9a491d3f7463a62acc84a11a182ae413",
 			"revisionTime": "2017-01-31T09:16:41Z"
+		},
+		{
+			"checksumSHA1": "2lTZDrrWFhPz6rFvkdQLLNYM3s0=",
+			"path": "github.com/sourcegraph/jsonrpc2/websocket",
+			"revision": "cffa0925975a3c443e77c3ac7d5f9b109fb8d911",
+			"revisionTime": "2017-01-26T10:18:31Z"
 		},
 		{
 			"path": "github.com/sourcegraph/sitemap",

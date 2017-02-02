@@ -11,14 +11,17 @@ import { AuthorshipCodeLens } from "sourcegraph/editor/authorshipCodeLens";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes as supportedModes } from "sourcegraph/editor/modes";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Features } from "sourcegraph/util/features";
 
-supportedModes.forEach(mode => {
-	onLanguage(mode, () => {
-		registerHoverProvider(mode, new HoverProvider());
-		registerDefinitionProvider(mode, new DefinitionProvder());
-		registerReferenceProvider(mode, new ReferenceProvider());
+if (!Features.lspExtension.isEnabled()) {
+	supportedModes.forEach(mode => {
+		onLanguage(mode, () => {
+			registerHoverProvider(mode, new HoverProvider());
+			registerDefinitionProvider(mode, new DefinitionProvider());
+			registerReferenceProvider(mode, new ReferenceProvider());
+		});
 	});
-});
+}
 
 getLanguages().forEach(({ id }) => {
 	onLanguage(id, () => {
@@ -42,6 +45,8 @@ export function normalisePosition(model: IReadOnlyModel, position: IPosition): I
 export class ReferenceProvider implements modes.ReferenceProvider {
 
 	provideReferences(model: IReadOnlyModel, position: Position, context: ReferenceContext, token: CancellationToken): Location[] | Thenable<Location[]> {
+		lsp.assertNotLSPExtension();
+
 		return lsp.send(model, "textDocument/references", {
 			textDocument: { uri: model.uri.toString(true) },
 			position: lsp.toPosition(position),
@@ -63,6 +68,8 @@ export class ReferenceProvider implements modes.ReferenceProvider {
 export class HoverProvider implements modes.HoverProvider {
 
 	provideHover(model: IReadOnlyModel, origPosition: Position): Thenable<Hover> {
+		lsp.assertNotLSPExtension();
+
 		const position = normalisePosition(model, origPosition);
 		const word = model.getWordAtPosition(position);
 
@@ -121,9 +128,11 @@ export class HoverProvider implements modes.HoverProvider {
 
 type result = Thenable<Definition | null>;
 
-export class DefinitionProvder implements modes.DefinitionProvider {
+export class DefinitionProvider implements modes.DefinitionProvider {
 
 	provideDefinition(model: IReadOnlyModel, origPosition: Position, token: CancellationToken): result {
+		lsp.assertNotLSPExtension();
+
 		const position = normalisePosition(model, origPosition);
 		const flight = lsp.send(model, "textDocument/definition", {
 			textDocument: { uri: model.uri.toString(true) },

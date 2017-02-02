@@ -295,7 +295,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params ClientProxyInitializeParams
+		var params struct {
+			ClientProxyInitializeParams
+			RootURI string `json:"rootUri"`
+		}
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
@@ -304,6 +307,17 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if params.InitializationOptions.Mode == "" {
 			params.InitializationOptions.Mode = params.Mode
 			params.Mode = ""
+		}
+
+		// SECURITY: LSP introduced a rootUri field on
+		// InitializeParams and deprecated rootPath. Until we
+		// implement rootUri, ensure that it is not being sent to us,
+		// to avoid confusion. This also helps avoid an exploit where
+		// we check access to the rootPath but provide access to the
+		// rootUri, which would allow an attacker to bypass our access
+		// check.
+		if params.RootURI != "" {
+			return nil, fmt.Errorf("rootUri field is not yet supported (use rootPath only): got value %q", params.RootURI)
 		}
 
 		rootPathURI, err := uri.Parse(params.RootPath)
@@ -328,7 +342,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			// it sends 2 "initialize" requests).
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler is already initialized")}
 		}
-		c.init = &params
+		c.init = &params.ClientProxyInitializeParams
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		kind := lsp.TDSKFull

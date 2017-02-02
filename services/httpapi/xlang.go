@@ -199,8 +199,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// SECURITY NOTE: Do not delete this block. If you delete this
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
-		repo := rootPathURI.Host + strings.TrimSuffix(rootPathURI.Path, ".git") // of the form "github.com/foo/bar"
-		if _, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: repo}); err != nil {
+		if _, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: rootPathURI.Repo()}); err != nil {
 			return err
 		}
 		checkedUserHasReadAccessToRepo = true

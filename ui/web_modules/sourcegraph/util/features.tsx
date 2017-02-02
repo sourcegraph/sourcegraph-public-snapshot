@@ -79,6 +79,11 @@ export const Features = {
 	 */
 	extensions: new Feature("extensions").disableBeta(),
 
+	// lspExtension uses the vscode-languageclient vscode extension
+	// and a WebSocket instead of our custom, HTTP-based LSP adapter
+	// to connect to our language servers.
+	lspExtension: new Feature("lspExtension").disableBeta(),
+
 	// trace is whether to show trace URLs to LightStep in console log messages.
 	trace: new Feature("trace"),
 
@@ -98,6 +103,10 @@ export function bulkEnable(featureNames: string[]): void {
 	for (const name of featureNames) {
 		Features[name].enable();
 	}
+}
+
+if (Features.lspExtension.isEnabled() && !Features.extensions.isEnabled()) {
+	console.error("features.lspExtension requires features.extensions to also be enabled");
 }
 
 if (global.window) {

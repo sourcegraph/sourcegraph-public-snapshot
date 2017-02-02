@@ -3553,9 +3553,20 @@ vm-browserify@0.0.4:
   dependencies:
     indexof "0.0.1"
 
-vscode-languageserver-types@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-1.0.4.tgz#439a52f040c89cf6599d88ed9a1b5a9abdca11b7"
+vscode-jsonrpc@3.0.3, vscode-jsonrpc@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/vscode-jsonrpc/-/vscode-jsonrpc-3.0.3.tgz#a7c3665bad4a3462c7ee3e5add88f3f016b4f3e4"
+
+"vscode-languageclient@https://registry.npmjs.org/@sourcegraph/vscode-languageclient/-/vscode-languageclient-3.0.3-fork1.tgz":
+  version "3.0.3-fork1"
+  resolved "https://registry.npmjs.org/@sourcegraph/vscode-languageclient/-/vscode-languageclient-3.0.3-fork1.tgz#2ddfbc98fe7cba9ed0dce45a291ac213ed429b53"
+  dependencies:
+    vscode-jsonrpc "^3.0.3"
+    vscode-languageserver-types "^3.0.3"
+
+vscode-languageserver-types@3.0.3, vscode-languageserver-types@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.0.3.tgz#303b2a307c20952ff5c1f5a608f3c91146028d47"
 
 warning@^3.0.0:
   version "3.0.0"
