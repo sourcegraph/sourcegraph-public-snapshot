@@ -20,7 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
@@ -159,10 +158,6 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 					if err != nil {
 						log15.Warn(`Connection is "github", but UserID type isn't int; ignoring.`, "UserID", identity.UserID, "err", err)
 						continue
-					}
-					if legacyScope := backend.LegacyGitHubScope(githubUserID); len(legacyScope) > 0 {
-						firstTime = false
-						mergedScope = mergeScopes(mergedScope, legacyScope)
 					}
 				}
 			}
