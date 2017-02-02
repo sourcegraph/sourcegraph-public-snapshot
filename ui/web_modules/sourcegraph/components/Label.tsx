@@ -1,32 +1,27 @@
 import * as React from "react";
-
-import * as styles from "sourcegraph/components/styles/label.css";
+import * as icons from "sourcegraph/components/symbols/Primaries";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
 	className?: string;
-	style?: any;
-	color?: string;
-	children?: any;
+	style?: React.CSSProperties;
+	color?: "blue" | "purple" | "orange" | "green" | "yellow" | "red" | "gray";
+	text?: string;
+	icon?: string;
 }
 
-export class Label extends React.Component<Props, {}> {
-	render(): JSX.Element | null {
-		return (
-			<span className={this.props.className} style={this.props.style}>
-				<span className={colorClasses[this.props.color || ""] || styles.normal}>
-					{this.props.children}
-				</span>
-			</span>
-		);
-	}
+export function Label({
+	className,
+	style,
+	color = "blue",
+	text,
+	icon,
+}: Props): JSX.Element {
+	return <span className={className} style={Object.assign({
+		backgroundColor: colors[color](),
+		borderRadius: 3,
+		color: color === "yellow" ? colors.black(0.7) : "white",
+		display: "inline-block",
+		padding: `${whitespace[1]} ${whitespace[2]}`,
+	}, style)}>{icon && icons[icon]({ style: { top: -1 } })} {text}</span>;
 }
-
-const colorClasses = {
-	"normal": styles.normal,
-	"primary": styles.primary,
-	"success": styles.success,
-	"info": styles.info,
-	"warning": styles.warning,
-	"danger": styles.danger,
-	"purple": styles.purple,
-};

@@ -72,13 +72,13 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 								textAlign: "right",
 							}, typography.size[7])}>
 
+								{!isSupported && !isIgnored &&
+									<UnsupportedLanguageAlert ext={extension} style={{ marginRight: whitespace[1] }} />
+								}
+
 								<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
 								{repo.startsWith("github.com") &&
 									<OpenInGitHubButton repo={repo} path={path} rev={rev} />
-								}
-
-								{!isSupported && !isIgnored &&
-									<UnsupportedLanguageAlert ext={extension} style={{ marginLeft: whitespace[3] }} />
 								}
 
 								{toast && <div>{toast}</div>}
