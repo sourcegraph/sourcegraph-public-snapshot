@@ -8,10 +8,13 @@ window["MonacoEnvironment"] = {
 		source = source.replace("importScripts(\"\"", `importScripts(${JSON.stringify(document.head.dataset["webpackPublicPath"])}`);
 
 		// Provide dummy require options for the vscode loader.
-		(window as any).require = {
+		if (!window["require"]) {
+			window["require"] = {};
+		}
+		Object.assign(window["require"], {
 			config(config: any): void { /* noop */ },
 			getConfig(): any { return {}; },
-		};
+		});
 
 		// Return a blob URL containing the JavaScript source code
 		// that runs this Web Worker (plus add a dummy
@@ -22,6 +25,6 @@ window["MonacoEnvironment"] = {
 
 // http://stackoverflow.com/questions/10343913/how-to-create-a-web-worker-from-a-string
 const windowURL: any = (window as any).URL || (window as any).webkitURL;
-function makeBlobURL(content: string): string {
+export function makeBlobURL(content: string): string {
 	return windowURL.createObjectURL(new Blob([content]));
 }

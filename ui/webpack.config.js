@@ -31,7 +31,9 @@ const plugins = [
 		},
 		"process.getuid": "function() { return 0; }",
 
-		"require.toUrl": "(function(){throw new Error('require.toUrl is not supported')})",
+		// vscode uses require.toUrl to get various root paths. It appears to be
+		// harmless to override it in this way.
+		"require.toUrl": "(function(){ return '/'; })",
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
 	new webpack.IgnorePlugin(/\_test\.js$/),
@@ -110,6 +112,12 @@ module.exports = {
 			"native-keymap": "sourcegraph/workbench/overrides/native-keymap",
 			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
 			"vs/workbench/browser/parts/editor/noTabsTitleControl": "sourcegraph/workbench/overrides/titleControl",
+
+			// In the vscode source, this is "vs/platform/node/package", but here the "node" path component is omitted for some reason.
+			"vs/platform/package": "sourcegraph/workbench/overrides/package",
+			"gc-signals": "sourcegraph/workbench/overrides/gc-signals",
+			"vs/workbench/api/node/extHost.contribution": "sourcegraph/ext/extHost.contribution.override",
+			"vscode$": "sourcegraph/ext/vscode", // intercepts `import "vscode";` (as seen in vscode extensions) but not `import "vscode/foo";`
 		},
 	},
 	resolveLoader: {

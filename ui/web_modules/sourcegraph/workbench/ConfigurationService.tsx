@@ -1,6 +1,8 @@
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import Event, { Emitter } from "vs/base/common/event";
-import { IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
+import { TPromise } from "vs/base/common/winjs.base";
+import { IConfigurationKeys, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
+import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspaceConfigurationValue, IWorkspaceConfigurationValues } from "vs/workbench/services/configuration/common/configuration";
 
 const _onDidUpdateConfiguration = new Emitter<IConfigurationServiceEvent>();
 const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
@@ -14,6 +16,9 @@ const config = {
 		},
 		editor: {
 			enablePreview: false,
+		},
+		activityBar: {
+			visible: false,
 		},
 		statusBar: {
 			visible: false,
@@ -56,18 +61,49 @@ export function updateConfiguration(updater: (config: any) => void): void {
 	_onDidUpdateConfiguration.fire({ config } as any);
 }
 
-export class ConfigurationService {
-	onDidUpdateConfiguration: Event<IConfigurationServiceEvent> = onDidUpdateConfiguration;
-	getConfiguration(key: string): any {
-		return config;
+export class ConfigurationService implements IConfigurationService {
+	_serviceBrand: any;
+
+	getConfiguration<T>(section?: string): T {
+		if (!section) { return config as any; }
+		return getConfigurationValue<T>(config, section);
 	}
 
-	lookup(key: string): IConfigurationValue<any> {
+	lookup<T>(key: string): IConfigurationValue<T> {
+		const value = getConfigurationValue<T>(config, key);
 		return {
-			value: getConfigurationValue(config, key),
-			default: getConfigurationValue(config, key),
-			user: getConfigurationValue(config, key),
+			value: value,
+			default: value,
+			user: value,
 		};
 	}
 
+	keys(): IConfigurationKeys { return { default: [] as string[], user: [] as string[] }; }
+
+	reloadConfiguration<T>(section?: string): TPromise<T> { return TPromise.as({} as T); }
+
+	onDidUpdateConfiguration: Event<IConfigurationServiceEvent> = onDidUpdateConfiguration;
+}
+
+export class WorkspaceConfigurationService extends ConfigurationService implements IWorkspaceConfigurationService {
+	hasWorkspaceConfiguration(): boolean { return false; }
+
+	lookup<T>(key: string): IWorkspaceConfigurationValue<T> {
+		const value = super.lookup<T>(key);
+		return {
+			...value,
+			workspace: undefined as any,
+		};
+	}
+
+	keys(): IWorkspaceConfigurationKeys {
+		const keys = super.keys();
+		return {
+			default: keys.default,
+			user: keys.user,
+			workspace: [],
+		};
+	}
+
+	values(): IWorkspaceConfigurationValues { return {}; }
 }

@@ -73,7 +73,7 @@ export class DefinitionAction extends EditorAction {
 		editor.onDidChangeModel(event => {
 			let oldModel = event.oldModelUrl;
 			let newModel = event.newModelUrl;
-			if (oldModel.toString() !== newModel.toString()) {
+			if (!oldModel || (newModel && oldModel.toString() !== newModel.toString())) {
 				const eventProps = URIUtils.repoParams(newModel);
 				this.prepareInfoStore(false, "", eventProps);
 			}

@@ -1,5 +1,29 @@
 import { experimentManager } from "sourcegraph/util/ExperimentManager";
+import isWebWorker from "sourcegraph/util/isWebWorker";
+
 const enabled = "enabled";
+
+// storage is localStorage in the main thread and is
+// temporary/in-memory in Web Workers.
+let storage: {
+	getItem(name: string): string | null;
+	setItem(name: string, value: string): void;
+};
+if (isWebWorker) {
+	const data = new Map<string, string>();
+	storage = {
+		getItem(name: string): string | null {
+			const value = data.get(name);
+			if (value === undefined) { return null; }
+			return value;
+		},
+		setItem(name: string, value: string): void {
+			data.set(name, value);
+		},
+	};
+} else {
+	storage = localStorage;
+}
 
 class Feature {
 	private beta: boolean = true;
@@ -7,22 +31,21 @@ class Feature {
 	constructor(private name: string) { }
 
 	public isEnabled(): boolean {
-		if (!global.window) {
-			return false;
-		}
+		if (!storage) { return false; }
+
 		// if not explicitly enabled/disabled, return true if we have beta enabled
-		if (this.beta && localStorage.getItem(this.name) === null && Features.beta.isEnabled()) {
+		if (this.beta && storage.getItem(this.name) === null && Features.beta.isEnabled()) {
 			return true;
 		}
-		return localStorage[this.name] === enabled;
+		return storage.getItem(this.name) === enabled;
 	}
 
 	public enable(): void {
-		localStorage[this.name] = enabled;
+		storage.setItem(this.name, enabled);
 	}
 
 	public disable(): void {
-		localStorage[this.name] = "disabled";
+		storage.setItem(this.name, "disabled");
 	}
 
 	public toggle(): void {
@@ -50,6 +73,12 @@ export const Features = {
 	// the file's commit log.
 	commitInfoBar: new Feature("commitInfoBar"),
 
+	/**
+	 * extensions enables the vscode.d.ts extension API and runs an
+	 * extension host Web Worker where extension code runs.
+	 */
+	extensions: new Feature("extensions").disableBeta(),
+
 	// trace is whether to show trace URLs to LightStep in console log messages.
 	trace: new Feature("trace"),
 
@@ -60,6 +89,16 @@ export const Features = {
 
 	experimentManager,
 };
+
+export function listEnabled(): string[] {
+	return Object.keys(Features).filter(name => Features[name] instanceof Feature && Features[name].isEnabled());
+}
+
+export function bulkEnable(featureNames: string[]): void {
+	for (const name of featureNames) {
+		Features[name].enable();
+	}
+}
 
 if (global.window) {
 	(window as any).features = Features;

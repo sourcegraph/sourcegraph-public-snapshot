@@ -14,6 +14,7 @@
     "lib": ["es2016", "dom"],
     "types": [
         "mocha", "lodash", "flux/utils",
+        "../vendor/node_modules/vscode/src/vs/vscode",
         "../vendor/node_modules/vscode/src/vs/monaco"
     ],
     "jsx": "react",
