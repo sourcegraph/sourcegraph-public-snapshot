@@ -290,9 +290,6 @@ func newUnstartedServer(scheme string) (*Server, context.Context) {
 	// FS
 	s.Config = append(s.Config, "SRC_REPOS_DIR="+reposDir)
 
-	// Graphstore
-	s.Config = append(s.Config, "SRC_GRAPHSTORE_ROOT="+reposDir)
-
 	s.Ctx = context.Background()
 
 	// ID key
