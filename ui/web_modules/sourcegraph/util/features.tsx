@@ -3,8 +3,10 @@ import isWebWorker from "sourcegraph/util/isWebWorker";
 
 const enabled = "enabled";
 
-// storage is localStorage in the main thread and is
-// temporary/in-memory in Web Workers.
+/**
+ * storage is localStorage in the main thread and is
+ * temporary/in-memory in Web Workers.
+ */
 let storage: {
 	getItem(name: string): string | null;
 	setItem(name: string, value: string): void;
@@ -69,8 +71,10 @@ export const Features = {
 	langJava: new Feature("lang-java"),
 	googleCloudPlatform: new Feature("google-cloud-platform"),
 
-	// commitInfoBar shows the horizontal bar above the editor with
-	// the file's commit log.
+	/**
+	 * commitInfoBar shows the horizontal bar above the editor with
+	 * the file's commit log.
+	 */
 	commitInfoBar: new Feature("commitInfoBar"),
 
 	/**
@@ -79,12 +83,16 @@ export const Features = {
 	 */
 	extensions: new Feature("extensions").disableBeta(),
 
-	// lspExtension uses the vscode-languageclient vscode extension
-	// and a WebSocket instead of our custom, HTTP-based LSP adapter
-	// to connect to our language servers.
+	/**
+	 * lspExtension uses the vscode-languageclient vscode extension
+	 * and a WebSocket instead of our custom, HTTP-based LSP adapter
+	 * to connect to our language servers.
+	 */
 	lspExtension: new Feature("lspExtension").disableBeta(),
 
-	// trace is whether to show trace URLs to LightStep in console log messages.
+	/**
+	 * trace is whether to show trace URLs to LightStep in console log messages.
+	 */
 	trace: new Feature("trace"),
 
 	beta: new Feature("beta").disableBeta(),
