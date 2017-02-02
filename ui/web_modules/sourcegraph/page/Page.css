@@ -164,11 +164,8 @@
 .amount {
 	font-size: 4.5rem;
 }
-.amount_contact_us {
-	font-size: 1.5rem;
-}
 .amount_per {
-	font-size: 0.75rem;
+	font-size: 1.0rem;
 }
 .plan_cta {
 	composes: fw6 from typography;

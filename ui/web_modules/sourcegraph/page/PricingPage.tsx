@@ -46,7 +46,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 			<Hero color="transparent" className={base.pv5 || ""}>
 				<div className={styles.container}>
 					<Heading level={2}>Pricing</Heading>
-					<p style={{ marginTop: whitespace[2], marginBottom: whitespace[3] }} className={styles.subtitle || ""}>Sourcegraph is <span style={{ backgroundColor: colors.orangeL3(), color: colors.orange(), fontWeight: "bold" }}>always free for public and open-source code</span>. Start using it for private code with a paid plan.</p>
+					<p style={{ marginTop: whitespace[2], marginBottom: whitespace[3] }} className={styles.subtitle || ""}>Sourcegraph is <span style={{ backgroundColor: colors.greenL3(), color: colors.green(), fontWeight: "bold" }}>always free for public and open-source code</span>. Start using it for private code with a paid plan.</p>
 					{communityPlanButton}
 				</div>
 			</Hero>
@@ -56,7 +56,8 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 						<div className={styles.plan_box}>
 							<Panel color="purple" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Personal</Heading>
-								<Heading level={1} color="white" align="center" style={{ height: 90, }}><span className={styles.currency}>$</span><span className={styles.amount}>9</span><span className={styles.amount_per}>/month</span></Heading>
+								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>9</span></Heading>
+								<span className={styles.amount_per}>per month</span>
 							</Panel>
 							{personalPlanButton}
 						</div>
@@ -72,7 +73,8 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 						<div className={styles.plan_box}>
 							<Panel color="green" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Organization</Heading>
-								<Heading level={1} color="white" align="center" style={{ height: 90, }}><span className={styles.currency}>$</span><span className={styles.amount}>25</span><span className={styles.amount_per}>/user/month</span></Heading>
+								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>25</span></Heading>
+								<span className={styles.amount_per}>per user, per month</span>
 							</Panel>
 							{organizationPlanButton}
 						</div>
@@ -92,7 +94,8 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 						<div className={styles.plan_box}>
 							<Panel color="blue" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Enterprise</Heading>
-								<Heading level={1} color="white" align="center" style={{ height: 90, }}><span className={styles.amount_contact_us}>Contact us</span></Heading>
+								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>50</span></Heading>
+								<span className={styles.amount_per}>per user, per month</span>
 							</Panel>
 							{enterprisePlanButton}
 						</div>
@@ -109,7 +112,9 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 					</div>
 
 				</div>
-				<p className={styles.footer}>Plans are billed annually. Questions? <a href="mailto:sales@sourcegraph.com">Contact us.</a></p>
+				<p className={styles.footer}>
+					Plans are billed annually. Questions? <a href="mailto:sales@sourcegraph.com">Contact us.</a>
+				</p>
 			</div>
 		</div>
 	);

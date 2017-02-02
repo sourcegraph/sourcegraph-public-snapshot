@@ -33,7 +33,6 @@ export const sprinkle_orange: string;
 export const plan_panel: string;
 export const currency: string;
 export const amount: string;
-export const amount_contact_us: string;
 export const amount_per: string;
 export const plan_cta: string;
 export const plan_cta_noop: string;
