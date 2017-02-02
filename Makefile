@@ -1,6 +1,6 @@
 MAKEFLAGS+=--no-print-directory
 
-.PHONY: app-dep check dep distclean drop-test-dbs generate install src test
+.PHONY: check dep distclean drop-entire-local-database drop-test-dbs generate install serve-dev src test ui-dep
 
 SGX_OS_NAME := $(shell uname -o 2>/dev/null || uname -s)
 
@@ -58,7 +58,7 @@ ui-dep:
 	cd ui/scripts/tsmapimports && yarn
 
 generate:
-	# Ignore app/assets because its output is not checked into Git.
+	@# Ignore app/assets because its output is not checked into Git.
 	go list ./... | grep -v /vendor/ | grep -v app/assets | grep -v sourcegraph.com/sourcegraph/sourcegraph/pkg/google.golang.org/api/source/v1 | xargs go generate
 	cd ui && yarn run generate
 
