@@ -9,9 +9,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
-	// App
-	_ "sourcegraph.com/sourcegraph/sourcegraph/app/cmd"
-
 	// External services
 	_ "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 
