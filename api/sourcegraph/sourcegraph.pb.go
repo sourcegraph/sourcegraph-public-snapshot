@@ -544,19 +544,6 @@ type DefsRefreshIndexOp struct {
 	CommitID string `json:"CommitID,omitempty"`
 }
 
-// ServerConfig describes the server's configuration.
-//
-// DEV NOTE: There is some overlap with Go CLI flag structs. In the
-// future we may consolidate these.
-type ServerConfig struct {
-	// Version is the version of Sourcegraph that this server is
-	// running.
-	Version string `json:"Version,omitempty"`
-	// AppURL is the base URL of the user-facing web application
-	// (e.g., "https://sourcegraph.com").
-	AppURL string `json:"AppURL,omitempty"`
-}
-
 // UserEvent encodes any user initiated event on the local instance.
 type UserEvent struct {
 	Type    string `json:"Type,omitempty"`

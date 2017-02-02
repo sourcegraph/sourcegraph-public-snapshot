@@ -630,11 +630,6 @@ export interface ServerCapabilities {
 	xworkspaceSymbolByProperties?: boolean;
 }
 
-export interface ServerConfig {
-	Version?: string;
-	AppURL?: string;
-}
-
 export interface ShowMessageParams {
 	type: any;
 	message: string;
