@@ -149,10 +149,25 @@ func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
 type contextID struct {
 	rootPath uri.URI // the rootPath in the initialize request (typically the repo clone URL + "?REV")
 	mode     string  // the mode (i.e., "go" or "typescript")
+
+	// session is the unique ID identifying this session, used when it
+	// shouldn't be shared by all users viewing the same rootPath and
+	// mode (e.g., for Zap and/or when textDocument/didChange, etc.,
+	// should be enabled).
+	//
+	// SECURITY: The session isolation that this provides is dependent
+	// on how difficult to guess this value is. Currently it is chosen
+	// by the client (and only used for Zap). E.g., if the client
+	// picks "foo", then anyone else could probably guess "foo". If
+	// the client guesses a long unique string, then nobody will be
+	// able to guess it. When we expose isolated session functionality
+	// to users, we should guarantee that session is always chosen
+	// externally so that sufficiently unguessable values are used.
+	session string
 }
 
 func (id contextID) String() string {
-	return fmt.Sprintf("context(%s mode=%s)", id.rootPath.String(), id.mode)
+	return fmt.Sprintf("context(%s mode=%s session=%q)", id.rootPath.String(), id.mode, id.session)
 }
 
 // clientID is used to uniquely identify a client connection in this
@@ -209,6 +224,11 @@ type ClientProxyInitializeParams struct {
 // the LSP client proxy.
 type ClientProxyInitializationOptions struct {
 	Mode string `json:"mode"`
+
+	// Session, if set, causes this session to be isolated from other
+	// LSP sessions using the same workspace and mode. See
+	// (contextID).session for more information.
+	Session string `json:"session,omitempty"`
 }
 
 // LogTrackedErrors, if true, causes errors to be logged if they are
@@ -345,6 +365,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.init = &params.ClientProxyInitializeParams
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
+		c.context.session = c.init.InitializationOptions.Session
 		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
@@ -434,6 +455,18 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 					log15.Error("LSP client proxy: error sending saved diagnostics", "context", c.context, "uri", params.TextDocument.URI, "err", err)
 				}
 			}
+		}
+
+		// Only allow isolated sessions (not shared sessions) to
+		// modify file contents. The modified file contents will
+		// only be visible within this session and will not leak
+		// to other sessions.
+		if c.context.session != "" {
+			var respObj interface{}
+			if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
+				return nil, err
+			}
+			return respObj, nil
 		}
 
 		// Specifically forbid these methods so we don't accidentally

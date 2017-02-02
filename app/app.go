@@ -51,6 +51,8 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.GDDORefs).Handler(httptrace.TraceRoute(internal.Handler(serveGDDORefs)))
 
+	r.Get(router.ShowAuth).Handler(httptrace.TraceRoute(internal.Handler(serveShowAuth)))
+
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)
 	h = eventsutil.AgentMiddleware(h)

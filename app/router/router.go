@@ -30,6 +30,8 @@ const (
 
 	GDDORefs = "gddo.refs"
 
+	ShowAuth = "show-auth"
+
 	UI = "ui"
 )
 
@@ -63,6 +65,8 @@ func New(base *mux.Router) *Router {
 	base.Path("/-/google-oauth/receive").Methods("GET", "POST").Name(GoogleOAuth2Receive)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
+
+	base.Path("/-/show-auth").Methods("GET").Name(ShowAuth)
 
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)

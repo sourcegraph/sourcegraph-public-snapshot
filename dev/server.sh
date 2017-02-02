@@ -25,6 +25,7 @@ env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/..
 env SRC_REPOS_DIR=$HOME/.sourcegraph/repos ./.bin/gitserver &
 env SRC_GIT_SERVERS=127.0.0.1:3178 LSP_PROXY=127.0.0.1:4388 ./.bin/indexer &
 ./.bin/github-proxy &
+env SRC_GIT_SERVERS=127.0.0.1:3178 ./.bin/zap &
 
 . dev/langservers.lib.bash
 detect_dev_langservers

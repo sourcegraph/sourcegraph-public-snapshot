@@ -59,10 +59,10 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	return githubOAuth2Initiate(w, r, scopes, returnTo.String(), returnToNew.String())
+	return GitHubOAuth2Initiate(w, r, scopes, returnTo.String(), returnToNew.String())
 }
 
-func githubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string, returnToNew string) error {
+func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string, returnToNew string) error {
 	nonce := randstring.NewLen(32)
 	http.SetCookie(w, &http.Cookie{
 		Name:    "nonce",
@@ -170,7 +170,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		if len(scopeOfToken) < len(mergedScope) {
 			// The user has once granted us more permissions than we got with this token. Run oauth flow
 			// again to fetch token with all permissions. This should be non-interactive.
-			return githubOAuth2Initiate(w, r, mergedScope, returnTo, returnToNew)
+			return GitHubOAuth2Initiate(w, r, mergedScope, returnTo, returnToNew)
 		}
 		if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
 			// Wohoo, we got more permissions. Remember in user database.

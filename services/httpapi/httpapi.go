@@ -45,6 +45,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.SubmitForm).Handler(httptrace.TraceRoute(handler(serveSubmitForm)))
 
 	m.Get(apirouter.XLang).Handler(httptrace.TraceRoute(handler(serveXLang)))
+	m.Get(apirouter.Zap).Handler(httptrace.TraceRoute(http.HandlerFunc(serveZap)))
 
 	// SECURITY: The LSP endpoint specifically allows cookie authorization because the
 	// JavaScript WebSocket API does not allow us to set custom headers.

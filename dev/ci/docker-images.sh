@@ -12,6 +12,10 @@ case "$1" in
 	cd cmd/indexer && ./build.sh
 	;;
 
+    zap)
+	cd cmd/zap && ./build.sh
+	;;
+	
     xlang)
 	cd xlang && make all
 	;;
@@ -21,7 +25,7 @@ case "$1" in
 	;;
 
     *)
-	echo "Usage: $0 {gitserver|indexer|xlang-*|lsp-proxy}"
+	echo "Usage: $0 {gitserver|indexer|zap|xlang-*|lsp-proxy}"
 	exit 1
 
 esac
