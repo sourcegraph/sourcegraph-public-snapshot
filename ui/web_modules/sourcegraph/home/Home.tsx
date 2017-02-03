@@ -140,7 +140,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						<div style={{ marginTop: whitespace[3] }}>
 							<strong>
 								Join the beta list
-								<ChevronRight color={colors.blue()} width={7} style={{ marginLeft: whitespace[1] }} />
+								<ChevronRight width={16} />
 							</strong>
 						</div>
 					</LocationStateToggleLink>

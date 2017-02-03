@@ -16,7 +16,7 @@ export const Symbol = (props: Props) => {
 			display: "inline",
 			verticalAlign: "middle",
 			position: "relative",
-			top: -2,
+			top: -1,
 		},
 		props.style
 	);
