@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	logpkg "github.com/go-kit/kit/log"
+	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/gitutil"
 	"github.com/sourcegraph/zap/ws"
@@ -39,6 +40,8 @@ func (s ServerBackend) Create(ctx context.Context, log *logpkg.Context, repo, ba
 	if base == "" {
 		panic("empty base")
 	}
+
+	level.Debug(log).Log("create-repo", repo+"@"+base)
 
 	if ok, err := s.CanAccess(ctx, log, repo); err != nil {
 		return nil, fmt.Errorf("access check for repo %q: %s", repo, err)

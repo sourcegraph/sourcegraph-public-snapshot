@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	stdlog "log"
+	"os"
 	"runtime"
 	"sort"
 	"strings"
@@ -237,16 +238,18 @@ func newServerConn(ctx context.Context, server *Server, stream jsonrpc2.ObjectSt
 
 func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	// Prevent any uncaught panics from taking the entire server down.
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("unexpected panic: %v", r)
-			const size = 64 << 10 // copied from net/http
-			buf := make([]byte, size)
-			buf = buf[:runtime.Stack(buf, false)]
-			stdlog.Printf("panic serving %v: %v\n%s", req.Method, r, buf)
-			return
-		}
-	}()
+	if os.Getenv("NO_PANIC_HANDLER") == "" {
+		defer func() {
+			if r := recover(); r != nil {
+				err = fmt.Errorf("unexpected panic: %v", r)
+				const size = 64 << 10 // copied from net/http
+				buf := make([]byte, size)
+				buf = buf[:runtime.Stack(buf, false)]
+				stdlog.Printf("panic serving %v: %v\n%s", req.Method, r, buf)
+				return
+			}
+		}()
+	}
 
 	<-c.ready
 
