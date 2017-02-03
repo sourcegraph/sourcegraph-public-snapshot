@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -52,71 +51,43 @@ var (
 )
 
 var (
-	globalAppDBH   *dbutil2.Handle // global app DB handle
-	globalGraphDBH *dbutil2.Handle // global graph DB handle
-	dbLock         sync.Mutex      // protects globalDBH
+	globalAppDBH *dbutil2.Handle // global app DB handle
+	dbLock       sync.Mutex      // protects globalDBH
 )
 
-// GlobalDBs opens the app and graph DBs if they aren't already open,
-// and returns them. Subsequent calls return the same DB handles.
-func GlobalDBs() (*dbutil2.Handle, *dbutil2.Handle, error) {
+// GlobalDB opens the app DB if it isn't already open,
+// and returns it. Subsequent calls return the same DB handle.
+func GlobalDB() (*dbutil2.Handle, error) {
 	dbLock.Lock()
 	defer dbLock.Unlock()
 
-	if globalAppDBH == nil || globalGraphDBH == nil {
+	if globalAppDBH == nil {
 		var err error
-		globalAppDBH, err = openDB(getAppDBDataSource(), AppSchema)
+		globalAppDBH, err = openDB("", AppSchema)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		registerPrometheusCollector(globalAppDBH.DbMap.Db, "_app")
 		configureConnectionPool(globalAppDBH.DbMap.Db)
 
-		globalGraphDBH, err = openDB(getGraphDBDataSource(), GraphSchema)
-		if err != nil {
-			return nil, nil, err
-		}
-		// If graph db has the same data source as app db, they will share the
-		// underlying *sql.Db handle, so we do not re-register the prometheus
-		// metric or limit the connection pool again on the same db handle.
-		if globalGraphDBH.DbMap.Db != globalAppDBH.DbMap.Db {
-			registerPrometheusCollector(globalGraphDBH.DbMap.Db, "_graph")
-			configureConnectionPool(globalGraphDBH.DbMap.Db)
-		}
-
 		if _, err := globalAppDBH.Db.Query("select id from repo limit 0;"); err != nil {
 			if err := globalAppDBH.CreateSchema(); err != nil {
-				return nil, nil, err
-			}
-			if err := globalGraphDBH.CreateSchema(); err != nil {
-				return nil, nil, err
+				return nil, err
 			}
 		}
 	}
 
-	return globalAppDBH, globalGraphDBH, nil
+	return globalAppDBH, nil
 }
 
 // appDBH returns the app DB handle.
 func appDBH(ctx context.Context) gorp.SqlExecutor {
-	appDBH, _, err := GlobalDBs()
+	appDBH, err := GlobalDB()
 	if err != nil {
 		panic("DB not available: " + err.Error())
 	}
 	return traceutil.SQLExecutor{
 		SqlExecutor: appDBH,
-		Context:     ctx,
-	}
-}
-
-// graphDBH returns the graph DB handle.
-func graphDBH(ctx context.Context) gorp.SqlExecutor {
-	_, graphDBH, err := GlobalDBs()
-	if err != nil {
-		panic("DB not available: " + err.Error())
-	}
-	return traceutil.SQLExecutor{
-		SqlExecutor: graphDBH,
 		Context:     ctx,
 	}
 }
@@ -130,31 +101,6 @@ func openDB(dataSource string, schema dbutil2.Schema) (*dbutil2.Handle, error) {
 		return nil, fmt.Errorf("open DB (%s): %s", dataSource, err)
 	}
 	return dbh, nil
-}
-
-func getAppDBDataSource() string {
-	// libpq defaults to the PG* env variable values when
-	// data source is empty.
-	return ""
-}
-
-func getGraphDBDataSource() string {
-	graphDBEnv := map[string]string{
-		"host":     os.Getenv("SG_GRAPH_PGHOST"),
-		"port":     os.Getenv("SG_GRAPH_PGPORT"),
-		"user":     os.Getenv("SG_GRAPH_PGUSER"),
-		"password": os.Getenv("SG_GRAPH_PGPASSWORD"),
-		"dbname":   os.Getenv("SG_GRAPH_PGDATABASE"),
-		"sslmode":  os.Getenv("SG_GRAPH_PGSSLMODE"),
-	}
-
-	var dataSource []string
-	for k, v := range graphDBEnv {
-		if v != "" {
-			dataSource = append(dataSource, fmt.Sprintf("%s=%s", k, v))
-		}
-	}
-	return strings.Join(dataSource, " ")
 }
 
 func registerPrometheusCollector(db *sql.DB, dbNameSuffix string) {

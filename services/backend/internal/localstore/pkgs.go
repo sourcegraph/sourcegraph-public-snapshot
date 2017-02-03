@@ -91,7 +91,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op 
 		return errors.Wrap(err, "LSP Call workspace/xpackages")
 	}
 
-	err = dbutil.Transaction(ctx, globalGraphDBH.Db, func(tx *sql.Tx) error {
+	err = dbutil.Transaction(ctx, globalAppDBH.Db, func(tx *sql.Tx) error {
 		// Update the pkgs table.
 		err = p.update(ctx, tx, op.RepoID, language, pks)
 		if err != nil {
@@ -203,7 +203,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		return nil, errors.New("marshaling op.PkgQuery")
 	}
 
-	rows, err := globalGraphDBH.Db.Query(`
+	rows, err := globalAppDBH.Db.Query(`
 		SELECT *
 		FROM pkgs
 		WHERE language=$1

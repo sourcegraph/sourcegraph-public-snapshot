@@ -8,7 +8,7 @@ import (
 
 func init() {
 	sysreq.AddCheck("PostgreSQL", func(ctx context.Context) (problem, fix string, err error) {
-		if _, _, err := GlobalDBs(); err != nil {
+		if _, err := GlobalDB(); err != nil {
 			return "PostgreSQL is unavailable or misconfigured",
 				"Configure the PG* env vars to connect to a PostgreSQL 9.2+ database. See https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docs/storage.md for more information.",
 				err

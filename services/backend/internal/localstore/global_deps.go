@@ -106,7 +106,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) 
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
-	rows, err := globalGraphDBH.Db.Query(`SELECT COUNT(repo_id)
+	rows, err := globalAppDBH.Db.Query(`SELECT COUNT(repo_id)
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
@@ -155,7 +155,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 		table = "global_dep_private"
 	}
 
-	err = dbutil.Transaction(ctx, globalGraphDBH.Db, func(tx *sql.Tx) error {
+	err = dbutil.Transaction(ctx, globalAppDBH.Db, func(tx *sql.Tx) error {
 		// Update the table.
 		err = g.update(ctx, tx, table, language, deps, op.RepoID)
 		if err != nil {
@@ -202,7 +202,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 		return nil, errors.New("marshaling op.DepData query")
 	}
 
-	rows, err := globalGraphDBH.Db.Query(`select dep_data,repo_id,hints
+	rows, err := globalAppDBH.Db.Query(`select dep_data,repo_id,hints
 		FROM global_dep
 		WHERE language=$1
 		AND dep_data @> $2
