@@ -16,7 +16,7 @@ export interface PartialRouterLocation {
 	hash: string;
 }
 
-function addQueryObjToURL(base: RouterLocation, urlOrPathname: string | PartialRouterLocation, queryObj: History.Query): RouterLocation {
+export function addQueryObjToURL(base: RouterLocation, urlOrPathname: string | PartialRouterLocation, queryObj: History.Query): RouterLocation {
 	if (typeof urlOrPathname === "string") {
 		urlOrPathname = { pathname: urlOrPathname } as RouterLocation;
 	}
