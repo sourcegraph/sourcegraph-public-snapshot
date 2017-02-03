@@ -366,7 +366,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
-		kind := lsp.TDSKFull
+		kind := lsp.TDSKNone
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync:   lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
