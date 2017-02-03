@@ -30,20 +30,13 @@ def test_direct_link_to_directory(d):
 def test_repo_jump_to(d):
     wd = d.d
 
-    repo_queries = [
-        ("golang/go", "github.com/golang/go", "/github.com/golang/go"),
-        ("mux", "github.com/gorilla/mux", "/github.com/gorilla/mux"),
-        ("pat", "github.com/gorilla/pat", "/github.com/gorilla/pat"),
-    ]
-
     wd.get(d.sg_url('/github.com/gorilla/mux')) # start on a page with the jump modal active
-    for query, result_text, url_path in repo_queries:
-        d.active_elem().send_keys("/")
-        d.active_elem().send_keys(query)
-        Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=5)
-        wait_for(lambda: len(d.find_search_modal_results(result_text, exact_match=True)) > 0)
-        Util.select_search_result_using_arrow_keys(d, result_text, exact_match=True)
-        wait_for(lambda: wd.current_url == d.sg_url(url_path), text=('wd.current_url == "%s"' % d.sg_url(url_path)))
+    d.active_elem().send_keys("/")
+    d.active_elem().send_keys("golang/go")
+    wait_for(lambda: len(d.find_search_modal_results( "github.com/golang/go", exact_match=True)) > 0)
+    d.find_search_modal_results( "github.com/golang/go", exact_match=True)[0].click()
+
+    wait_for(lambda: wd.current_url == d.sg_url("/github.com/golang/go"), text=('wd.current_url == "%s"' % d.sg_url("/github.com/gorilla/mux")))
 
 def test_github_private_auth_onboarding(d):
     wd = d.d
@@ -178,7 +171,7 @@ def test_global_refs(d, test):
     d.active_elem().send_keys(test['symbol'])
     Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
     wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
-    Util.select_search_result_using_arrow_keys(d, test['symbol'])
+    d.find_search_modal_results(test['symbol'])[0].click()
 
     # Click the symbol.
     wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0, 5) # wait a little longer, to rule out VSCode start-up time

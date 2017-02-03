@@ -217,23 +217,6 @@ class Util(object):
         wd.find_element_by_id("global-nav").find_element_by_css_selector(".sourcegraph-user-menu").click()
         wd.find_element_by_partial_link_text("Sign out").click()
 
-    @staticmethod
-    def select_search_result_using_arrow_keys(d, result_text, exact_match=False):
-        for i in xrange(0, 5):
-            for i in xrange(0, 10):
-                def f():
-                    selected = d.find_search_modal_selected_result()
-                    if (exact_match and result_text == selected.text) or (not exact_match and result_text in selected.text):
-                        d.d.find_element_by_id("SearchInput-e2e-test").send_keys(Keys.ENTER)
-                        return True
-                    return False
-                if retry(f):
-                    return
-                d.d.find_element_by_id("SearchInput-e2e-test").send_keys(Keys.DOWN)
-            for i in xrange(0, 10): # network events might have changed the list, so try one more time from the top
-                d.d.find_element_by_id("SearchInput-e2e-test").send_keys(Keys.UP)
-        raise E2EError("did not find search result '%s'" % result_text)
-
     # wait_for_all_network_indicators_to_be_invisible_with_jiggle is a
     # kludge to address
     # https://github.com/sourcegraph/sourcegraph/issues/2391
