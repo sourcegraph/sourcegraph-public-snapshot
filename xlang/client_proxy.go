@@ -475,6 +475,11 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// users.
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler: text document modifications not allowed by client (%s)", req.Method)}
 
+	case "$/cancelRequest":
+		// We should forward this to all language servers, but this requires writing some logic to rewrite the ids.
+		// Since our language servers don't currently support cancellation it is fine to just not forward it for now.
+		return nil, nil
+
 	case "shutdown":
 		c.mu.Lock()
 		c.shutdown = true
