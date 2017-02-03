@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -29,8 +28,6 @@ var (
 
 type Repository struct {
 	URL string
-
-	editLock sync.RWMutex // protects ops that change repository data
 }
 
 func (r *Repository) String() string {
@@ -54,9 +51,6 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
 	defer span.Finish()
-
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 
 	if err := checkSpecArgSafety(spec); err != nil {
 		return "", err
@@ -104,9 +98,6 @@ func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
-
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 
 	f := make(branchFilter)
 	if opt.MergedInto != "" {
@@ -204,9 +195,6 @@ func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
-
 	refs, err := r.showRef(ctx, "--tags")
 	if err != nil {
 		return nil, err
@@ -259,7 +247,7 @@ func (r *Repository) showRef(ctx context.Context, arg string) ([][2]string, erro
 	return refs, nil
 }
 
-// getCommit returns the commit with the given id. The caller must be holding r.editLock.
+// getCommit returns the commit with the given id.
 func (r *Repository) getCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commit, error) {
 	if err := checkSpecArgSafety(string(id)); err != nil {
 		return nil, err
@@ -282,9 +270,6 @@ func (r *Repository) GetCommit(ctx context.Context, id vcs.CommitID) (*vcs.Commi
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
-
 	return r.getCommit(ctx, id)
 }
 
@@ -292,9 +277,6 @@ func (r *Repository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vc
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
-
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 
 	if err := checkSpecArgSafety(string(opt.Head)); err != nil {
 		return nil, 0, err
@@ -432,9 +414,6 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
-
 	if strings.HasPrefix(string(base), "-") || strings.HasPrefix(string(head), "-") {
 		// Protect against base or head that is interpreted as command-line option.
 		return nil, errors.New("diff revspecs must not start with '-'")
@@ -479,9 +458,6 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag(path, opt)
 	defer span.Finish()
-
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 
 	if opt == nil {
 		opt = &vcs.BlameOptions{}
@@ -605,9 +581,6 @@ func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.Comm
 	span.SetTag("B", b)
 	defer span.Finish()
 
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
-
 	cmd := gitserver.DefaultClient.Command("git", "merge-base", "--", string(a), string(b))
 	cmd.Repo = r.URL
 	out, err := cmd.CombinedOutput(ctx)
@@ -621,9 +594,6 @@ func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Committers")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
-
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 
 	if opt.Rev == "" {
 		opt.Rev = "HEAD"
@@ -670,8 +640,6 @@ func (r *Repository) ReadFile(ctx context.Context, commit vcs.CommitID, name str
 	}
 
 	name = util.Rel(name)
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 	b, err := r.readFileBytes(ctx, commit, name)
 	if err != nil {
 		return nil, err
@@ -717,9 +685,6 @@ func (r *Repository) Lstat(ctx context.Context, commit vcs.CommitID, path string
 		return nil, err
 	}
 
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
-
 	path = filepath.Clean(util.Rel(path))
 
 	if path == "." {
@@ -749,9 +714,6 @@ func (r *Repository) Stat(ctx context.Context, commit vcs.CommitID, path string)
 	}
 
 	path = util.Rel(path)
-
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 
 	fi, err := r.Lstat(ctx, commit, path)
 	if err != nil {
@@ -786,14 +748,12 @@ func (r *Repository) ReadDir(ctx context.Context, commit vcs.CommitID, path stri
 		return nil, err
 	}
 
-	r.editLock.RLock()
-	defer r.editLock.RUnlock()
 	// Trailing slash is necessary to ls-tree under the dir (not just
 	// to list the dir's tree entry in its parent dir).
 	return r.lsTree(ctx, commit, filepath.Clean(util.Rel(path))+"/", recurse)
 }
 
-// lsTree returns ls of tree at path. The caller must be holding r.editLock.RLock().
+// lsTree returns ls of tree at path.
 func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	ensureAbsCommit(commit)
 
