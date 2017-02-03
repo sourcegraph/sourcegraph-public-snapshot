@@ -102,6 +102,7 @@ export const Features = {
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),
 	actionLogDebug: new Feature("action-log-debug").disableBeta(),
 	experimentLogDebug: new Feature("experiment-log-debug").disableBeta(),
+	zapSelections: new Feature("zapSelections").disableBeta(),
 
 	experimentManager,
 	listEnabled,
