@@ -101,6 +101,9 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		Nickname    string `json:"nickname"`
 		Picture     string `json:"picture"`
 		Email       string `json:"email"`
+		Name        string `json:"name"`
+		Company     string `json:"company"`
+		Location    string `json:"location"`
 		AppMetadata struct {
 			GitHubScope               []string `json:"github_scope"`
 			GitHubAccessTokenOverride string   `json:"github_access_token_override"`
@@ -212,6 +215,9 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		q.Set("_event", "SignupCompleted")
 		q.Set("_signupChannel", "GitHubOAuth")
 		q.Set("_githubAuthed", "true")
+		q.Set("_githubCompany", info.Company)
+		q.Set("_githubName", info.Name)
+		q.Set("_githubLocation", info.Location)
 		returnToNewURL.RawQuery = q.Encode()
 		http.Redirect(w, r, returnToNewURL.String(), http.StatusSeeOther)
 	} else {
@@ -228,6 +234,9 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 		q.Set("_event", "CompletedGitHubOAuth2Flow")
 		q.Set("_githubAuthed", "true")
+		q.Set("_githubCompany", info.Company)
+		q.Set("_githubName", info.Name)
+		q.Set("_githubLocation", info.Location)
 		returnToURL.RawQuery = q.Encode()
 		http.Redirect(w, r, returnToURL.String(), http.StatusSeeOther)
 	}
