@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"go/ast"
+	"go/build"
 	"go/parser"
 	"go/token"
 	"go/types"
@@ -18,9 +19,9 @@ import (
 	"time"
 
 	"golang.org/x/tools/go/loader"
-	"golang.org/x/tools/refactor/importgraph"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/go-langserver/langserver/internal/tools"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
@@ -50,11 +51,14 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 		return nil, err
 	}
 
+	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.BuildContext(ctx)
 	h.importGraphOnce.Do(func() {
-		// We ignore the errors since we are doing a best-effort analysis
-		_, rev, _ := importgraph.Build(bctx)
-		h.importGraph = rev
+		findPackageWithCtx := h.getFindPackageFunc()
+		findPackage := func(bctx *build.Context, importPath, fromDir string, mode build.ImportMode) (*build.Package, error) {
+			return findPackageWithCtx(ctx, bctx, importPath, fromDir, mode)
+		}
+		h.importGraph = tools.BuildReverseImportGraph(bctx, findPackage, rootPath)
 	})
 
 	// NOTICE: Code adapted from golang.org/x/tools/cmd/guru

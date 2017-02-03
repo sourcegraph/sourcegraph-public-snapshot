@@ -20,6 +20,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/go-langserver/langserver/internal/refs"
+	"github.com/sourcegraph/go-langserver/langserver/internal/tools"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
@@ -46,7 +47,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRP
 		pkgs               []string
 		unvendoredPackages = map[string]struct{}{}
 	)
-	for _, pkg := range listPkgsUnderDir(bctx, rootPath) {
+	for _, pkg := range tools.ListPkgsUnderDir(bctx, rootPath) {
 		bpkg, err := findPackage(ctx, bctx, pkg, rootPath, build.FindOnly)
 		if err != nil && !isMultiplePackageError(err) {
 			log.Printf("skipping possible package %s: %s", pkg, err)
