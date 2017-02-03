@@ -278,9 +278,17 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 				const repoUri = prt0Uri[0];
 				const frevUri = (repoUri === repoRevSpec.repoURI ? repoRevSpec.rev : prt1Uri[0]) || "master"; // TODO(john): preserve rev branch
 				const pathUri = prt1Uri[1];
-				const lineUri = parseInt(json[1].result[0].range.start.line, 10) + 1;
+				const startLine = parseInt(json[1].result[0].range.start.line, 10) + 1;
+				const startChar = parseInt(json[1].result[0].range.start.character, 10) + 1;
 
-				j2dCache[cacheKey] = `https://sourcegraph.com/${repoUri}@${frevUri}/-/blob/${pathUri}${lineUri ? "#L" + lineUri : ""}`;
+				let lineAndCharEnding = "";
+				if (startLine && startChar) {
+					lineAndCharEnding = `#L${startLine}:${startChar}`;
+				} else if (startLine) {
+					lineAndCharEnding = `#L${startLine}`;
+				}
+
+				j2dCache[cacheKey] = `https://sourcegraph.com/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
 				cb(j2dCache[cacheKey]);
 			})).catch((err) => cb(null));
 	}
