@@ -96,11 +96,6 @@ export class EventListener extends React.Component<EventListenerProps, {}> {
 }
 
 export function isNonMonacoTextArea(n: Node): boolean {
-	if (Features.zap2Way.isEnabled()) {
-		// HACK(sqs): to prevent other keybindings from affecting editable monaco
-		return true;
-	}
-
 	if (n.nodeName !== "TEXTAREA") {
 		return false;
 	}
