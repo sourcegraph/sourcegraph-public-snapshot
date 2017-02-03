@@ -143,7 +143,7 @@ func (h *BuildHandler) findPackageCached(ctx context.Context, bctx *build.Contex
 	// check is "/gopath/src/gh.com/p/r/vendor". This also means that
 	// "/gopath/src/gh.com/p/r/bar/baz" and "/gopath/src/gh.com/p/r/foo"
 	// get the same cache key findPkgKey{"gh.com/gorilla/mux", "/gopath/src/gh.com/p/r", 0}.
-	if !build.IsLocalImport(p) {
+	if !build.IsLocalImport(p) && srcDir != "" {
 		gopathSrc := path.Join(gopath, "src")
 		for !bctx.IsDir(path.Join(srcDir, "vendor", p)) && srcDir != gopathSrc && srcDir != goroot && srcDir != "/" {
 			srcDir = path.Dir(srcDir)
