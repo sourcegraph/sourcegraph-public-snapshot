@@ -43,7 +43,7 @@ export function createExtensionAPI(
 				user: v,
 			});
 			return {
-				zap: value({ enable: true, share: { selections: false } }),
+				zap: value({ enable: true, share: { selections: Boolean(localStorage.getItem("zapSelections")) } }),
 			};
 		},
 	} as any,
