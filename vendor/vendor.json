@@ -252,10 +252,10 @@
 			"revisionTime": "2016-07-19T15:08:18Z"
 		},
 		{
-			"checksumSHA1": "QLl5eyUOL6zPk31Fj+Gz7FUVkvM=",
+			"checksumSHA1": "FzRIa779VhH0NFxiyOkhXPIXhI0=",
 			"path": "github.com/honeycombio/libhoney-go",
-			"revision": "49fbf1b63de2fd516c13f68794cd2a9f723b7293",
-			"revisionTime": "2016-11-10T05:19:52Z"
+			"revision": "7a3b7395daf1d2d1ccfcac3e6f7d8f22406509ba",
+			"revisionTime": "2017-01-07T00:26:07Z"
 		},
 		{
 			"path": "github.com/howeyc/gopass",
@@ -673,6 +673,12 @@
 			"path": "github.com/temoto/robotstxt-go",
 			"revision": "b8a039be43ce65409fe54b4bc09f2ae8a3925a54",
 			"revisionTime": "2015-06-26T09:08:21Z"
+		},
+		{
+			"checksumSHA1": "6NS7FWJl1FobB+Xfe4SzBGD+75g=",
+			"path": "go.uber.org/atomic",
+			"revision": "3b8db5e93c4c02efbc313e17b2e796b0914a01fb",
+			"revisionTime": "2016-12-15T19:56:52Z"
 		},
 		{
 			"checksumSHA1": "yy0yzurpFpQZS31Tj1WjBxLVCSE=",

@@ -1,22 +1,40 @@
-A Go library for sending data to Honeycomb (http://honeycomb.io)
-========================================================
+# libhoney [![Build Status](https://travis-ci.org/honeycombio/libhoney-go.svg?branch=master)](https://travis-ci.org/honeycombio/libhoney-go)
 
-[![Build Status](https://travis-ci.org/honeycombio/libhoney-go.svg?branch=master)](https://travis-ci.org/honeycombio/libhoney-go)
+Go library for sending events to [Honeycomb](https://honeycomb.io). (See here for more information about [using Honeycomb](https://honeycomb.io/intro/) and [its libraries](https://honeycomb.io/docs/send-data/sdks).)
 
-## Summary
+## Installation:
 
-libhoney is written to ease the process of sending data to Honeycomb from within
-your go code.
+```
+go get -v github.com/honeycombio/libhoney-go
+```
 
-For an overview of how to use a honeycomb library, see our documentation at
-https://honeycomb.io/docs/send-data/sdks/
+## Documentation
 
-For specifics on the go libhoney, check out the
-[godoc](https://godoc.org/github.com/honeycombio/libhoney-go)
+A godoc API reference is available at https://godoc.org/github.com/honeycombio/libhoney-go
 
 ## Example
 
-See the examples directory for sample code demonstrating how to use events,
+Honeycomb can calculate all sorts of statistics, so send the values you care about and let us crunch the averages, percentiles, lower/upper bounds, cardinality -- whatever you want -- for you.
+
+```go
+import "github.com/honeycombio/libhoney-go"
+
+// Call Init to configure libhoney
+libhoney.Init(libhoney.Config{
+  WriteKey: "YOUR_WRITE_KEY",
+  Dataset: "honeycomb-golang-example",
+})
+defer libhoney.Close() // Flush any pending calls to Honeycomb
+
+libhoney.SendNow(map[string]interface{}{
+  "duration_ms": 153.12,
+  "method": "get",
+  "hostname": "appserver15",
+  "payload_length": 27,
+})
+```
+
+See the [`examples` directory](examples/read_json_log.go) for sample code demonstrating how to use events,
 builders, fields, and dynamic fields.
 
 ## Contributions

@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -141,38 +143,6 @@ func (b *batch) Fire(notifier muster.Notifier) {
 
 // sendRequest sends an individual request to Honeycomb and returns
 func (b *batch) sendRequest(e *Event) {
-	start := time.Now().UTC()
-	if b.testNower != nil {
-		start = b.testNower.Now()
-	}
-	timestamp := e.Timestamp
-	blob, err := json.Marshal(e.data)
-	if err != nil {
-		// TODO add logging or something to raise this error
-		sd.Increment("json_marshal_errors")
-		return
-	}
-
-	userAgent := fmt.Sprintf("libhoney-go/%s", version)
-	if UserAgentAddition != "" {
-		userAgent = fmt.Sprintf("%s %s", userAgent, strings.TrimSpace(UserAgentAddition))
-	}
-
-	url := fmt.Sprintf("%s/1/events/%s", e.APIHost, e.Dataset)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(blob))
-	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("X-Honeycomb-Team", e.WriteKey)
-	req.Header.Add("X-Event-Time", timestamp.Format(time.RFC3339))
-	req.Header.Add("X-Honeycomb-SampleRate", strconv.Itoa(int(e.SampleRate)))
-
-	resp, err := b.httpClient.Do(req)
-
-	end := time.Now().UTC()
-	if b.testNower != nil {
-		end = b.testNower.Now()
-	}
-	dur := end.Sub(start)
 	evResp := Response{}
 	defer func() {
 		if b.blockOnResponses {
@@ -187,6 +157,50 @@ func (b *batch) sendRequest(e *Event) {
 			}
 		}
 	}()
+
+	start := time.Now().UTC()
+	if b.testNower != nil {
+		start = b.testNower.Now()
+	}
+	timestamp := e.Timestamp
+
+	url, err := url.Parse(e.APIHost)
+	if err != nil {
+		// TODO add logging or something to raise this error
+		sd.Increment("url_parse_errors")
+		evResp.Err = err
+		return
+	}
+
+	blob, err := json.Marshal(e.data)
+	if err != nil {
+		// TODO add logging or something to raise this error
+		sd.Increment("json_marshal_errors")
+		evResp.Err = err
+		return
+	}
+
+	userAgent := fmt.Sprintf("libhoney-go/%s", version)
+	if UserAgentAddition != "" {
+		userAgent = fmt.Sprintf("%s %s", userAgent, strings.TrimSpace(UserAgentAddition))
+	}
+
+	url.Path = path.Join(url.Path, "/1/events", e.Dataset)
+	req, err := http.NewRequest("POST", url.String(), bytes.NewBuffer(blob))
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("X-Honeycomb-Team", e.WriteKey)
+	req.Header.Add("X-Event-Time", timestamp.Format(time.RFC3339))
+	req.Header.Add("X-Honeycomb-SampleRate", strconv.Itoa(int(e.SampleRate)))
+
+	resp, err := b.httpClient.Do(req)
+
+	end := time.Now().UTC()
+	if b.testNower != nil {
+		end = b.testNower.Now()
+	}
+	dur := end.Sub(start)
+
 	evResp.Duration = dur
 	evResp.Metadata = e.Metadata
 	if err != nil {

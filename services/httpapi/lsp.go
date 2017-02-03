@@ -6,14 +6,20 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
+	"time"
 
+	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
+	"go.uber.org/atomic"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -44,10 +50,22 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 		span.Finish()
 	}()
 
-	actor := auth.ActorFromContext(ctx)
-	log15.Info("LSP: user connected", "login", actor.Login, "uid", actor.UID)
+	builder := honey.Builder("xlang")
+	builder.AddField("client", "ws")
+	builder.AddField("user_agent", r.UserAgent())
+	if actor := auth.ActorFromContext(ctx); actor != nil {
+		log15.Info("LSP: user connected", "login", actor.Login, "uid", actor.UID)
+		builder.AddField("uid", actor.UID)
+		builder.AddField("login", actor.Login)
+		builder.AddField("email", actor.Email)
+	}
 
-	proxy := newJSONRPC2Proxy(ctx)
+	proxy := &jsonrpc2Proxy{
+		httpCtx: ctx,
+		mode:    atomic.NewString(""),
+		builder: builder,
+		ready:   make(chan struct{}),
+	}
 
 	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2HandlerFunc(proxy.handleClientRequest))
 
@@ -98,21 +116,16 @@ func (h jsonrpc2HandlerFunc) Handle(ctx context.Context, conn *jsonrpc2.Conn, re
 type jsonrpc2Proxy struct {
 	httpCtx        context.Context
 	client, server *jsonrpc2.Conn //  connection to the client (typically a browser) and server (LSP proxy)
+	mode           *atomic.String
+	builder        *libhoney.Builder
 	ready          chan struct{}
-}
-
-func newJSONRPC2Proxy(httpCtx context.Context) *jsonrpc2Proxy {
-	return &jsonrpc2Proxy{
-		httpCtx: httpCtx,
-		ready:   make(chan struct{}),
-	}
 }
 
 func (p *jsonrpc2Proxy) start() {
 	close(p.ready)
 }
 
-func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, req *jsonrpc2.Request) {
+func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, req *jsonrpc2.Request) error {
 	<-p.ready
 
 	// SECURITY: If this is the "initialize" request, we MUST check
@@ -130,6 +143,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 			if req.Params == nil {
 				return &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 			}
+
 			var params struct {
 				xlang.ClientProxyInitializeParams
 				RootURI string `json:"rootUri"`
@@ -147,6 +161,8 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 				return err
 			}
 
+			p.mode.Store(params.InitializationOptions.Mode)
+
 			rootPathURI, err := uri.Parse(params.RootPath)
 			if err != nil {
 				return err
@@ -163,7 +179,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 			if err := from.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{Message: accessErr.Error()}); err != nil {
 				log15.Error("jsonrpc2Proxy: error sending access-check-failed reply", "method", req.Method, "accessErr", accessErr, "err", err)
 			}
-			return // SECURITY: Do not pass on unauthorized request to server.
+			return accessErr // SECURITY: Do not pass on unauthorized request to server.
 		}
 	}
 
@@ -171,29 +187,64 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 		if err := to.Notify(ctx, req.Method, req.Params); err != nil {
 			log15.Error("jsonrpc2Proxy: error sending notification", "method", req.Method)
 		}
-	} else {
-		var result json.RawMessage
-		if err := to.Call(ctx, req.Method, req.Params, &result); err == nil {
-			if err := from.Reply(ctx, req.ID, &result); err != nil {
-				log15.Error("jsonrpc2Proxy: error sending reply", "method", req.Method, "err", err)
-			}
-		} else {
-			log15.Error("jsonrpc2Proxy: error sending request", "method", req.Method, "err", err)
-			var respErr *jsonrpc2.Error
-			if e, ok := err.(*jsonrpc2.Error); ok {
-				respErr = e
-			} else {
-				respErr = &jsonrpc2.Error{Message: err.Error()}
-			}
-			if err := from.ReplyWithError(ctx, req.ID, respErr); err != nil {
-				log15.Error("jsonrpc2Proxy: error sending error reply", "method", req.Method, "payload", respErr, "err", err)
-			}
-		}
+		return nil
 	}
+
+	var result json.RawMessage
+	if err := to.Call(ctx, req.Method, req.Params, &result); err != nil {
+		log15.Error("jsonrpc2Proxy: error sending request", "method", req.Method, "err", err)
+		var respErr *jsonrpc2.Error
+		if e, ok := err.(*jsonrpc2.Error); ok {
+			respErr = e
+		} else {
+			respErr = &jsonrpc2.Error{Message: err.Error()}
+		}
+		if err := from.ReplyWithError(ctx, req.ID, respErr); err != nil {
+			log15.Error("jsonrpc2Proxy: error sending error reply", "method", req.Method, "payload", respErr, "err", err)
+		}
+		return respErr
+	}
+	if err := from.Reply(ctx, req.ID, &result); err != nil {
+		log15.Error("jsonrpc2Proxy: error sending reply", "method", req.Method, "err", err)
+	}
+	return nil
 }
 
 func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
-	p.roundTrip(ctx, conn, p.server, req)
+	start := time.Now()
+	err := p.roundTrip(ctx, conn, p.server, req)
+
+	if req.Notif {
+		// We don't need to measure notifications
+		return
+	}
+
+	duration := time.Since(start)
+	success := strconv.FormatBool(err == nil)
+	mode := p.mode.Load()
+	if mode == "" {
+		mode = "unknown"
+	}
+
+	labels := prometheus.Labels{
+		"success":   success,
+		"method":    req.Method,
+		"mode":      mode,
+		"transport": "ws",
+	}
+	xlangRequestDuration.With(labels).Observe(duration.Seconds())
+
+	if honey.Enabled() {
+		ev := p.builder.NewEvent()
+		ev.AddField("success", success)
+		ev.AddField("method", req.Method)
+		ev.AddField("mode", mode)
+		ev.AddField("duration_ms", duration.Seconds()*1000)
+		if err != nil {
+			ev.AddField("error", err.Error())
+		}
+		ev.Send()
+	}
 }
 
 func (p *jsonrpc2Proxy) handleServerRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {

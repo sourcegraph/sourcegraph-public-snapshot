@@ -26,6 +26,13 @@ func Event(dataset string) *libhoney.Event {
 	return ev
 }
 
+// Builder creates a builder for logging to a dataset.
+func Builder(dataset string) *libhoney.Builder {
+	b := libhoney.NewBuilder()
+	b.Dataset = dataset
+	return b
+}
+
 func init() {
 	if writeKey == "" {
 		return
