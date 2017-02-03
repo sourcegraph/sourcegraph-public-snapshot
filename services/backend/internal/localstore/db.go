@@ -45,9 +45,9 @@ var (
 	dbLock       sync.Mutex      // protects globalDBH
 )
 
-// GlobalDB opens the app DB if it isn't already open,
+// globalDB opens the app DB if it isn't already open,
 // and returns it. Subsequent calls return the same DB handle.
-func GlobalDB() (*dbutil2.Handle, error) {
+func globalDB() (*dbutil2.Handle, error) {
 	dbLock.Lock()
 	defer dbLock.Unlock()
 
@@ -72,7 +72,7 @@ func GlobalDB() (*dbutil2.Handle, error) {
 
 // appDBH returns the app DB handle.
 func appDBH(ctx context.Context) gorp.SqlExecutor {
-	appDBH, err := GlobalDB()
+	appDBH, err := globalDB()
 	if err != nil {
 		panic("DB not available: " + err.Error())
 	}
