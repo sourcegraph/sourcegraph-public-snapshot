@@ -15,6 +15,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -27,15 +28,15 @@ var (
 )
 
 type Repository struct {
-	URL string
+	*sourcegraph.Repo
 }
 
 func (r *Repository) String() string {
-	return fmt.Sprintf("git repo %s", r.URL)
+	return fmt.Sprintf("git repo %s", r.Repo.URI)
 }
 
-func Open(url string) *Repository {
-	return &Repository{URL: url}
+func Open(repo *sourcegraph.Repo) *Repository {
+	return &Repository{Repo: repo}
 }
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -57,7 +58,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	cmd.EnsureRevision = string(spec + "^0")
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
@@ -150,7 +151,7 @@ func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*
 // returns the list of branches if successful.
 func (r *Repository) branches(ctx context.Context, args ...string) ([]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
@@ -174,7 +175,7 @@ func (r *Repository) branchesBehindAhead(ctx context.Context, branch, base strin
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("refs/heads/%s...refs/heads/%s", base, branch))
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, err
@@ -218,7 +219,7 @@ func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func (r *Repository) showRef(ctx context.Context, arg string) ([][2]string, error) {
 	cmd := gitserver.DefaultClient.Command("git", "show-ref", arg)
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
@@ -325,7 +326,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		out = bytes.TrimSpace(out)
@@ -381,7 +382,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 			// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
 			cmd.Args = append(cmd.Args, "--", opt.Path)
 		}
-		cmd.Repo = r.URL
+		cmd.Repo = r.Repo
 		out, err = cmd.CombinedOutput(ctx)
 		if err != nil {
 			return nil, 0, fmt.Errorf("exec `git rev-list --count` failed: %s. Output was:\n\n%s", err, out)
@@ -441,7 +442,7 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 	if opt != nil {
 		cmd.Args = append(cmd.Args, opt.Paths...)
 	}
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		out = bytes.TrimSpace(out)
@@ -479,7 +480,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git blame` failed: %s. Output was:\n\n%s", err, out)
@@ -582,7 +583,7 @@ func (r *Repository) MergeBase(ctx context.Context, a, b vcs.CommitID) (vcs.Comm
 	defer span.Finish()
 
 	cmd := gitserver.DefaultClient.Command("git", "merge-base", "--", string(a), string(b))
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return "", fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
@@ -600,7 +601,7 @@ func (r *Repository) Committers(ctx context.Context, opt vcs.CommittersOptions) 
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "shortlog", "-sne", opt.Rev)
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git shortlog -sne` failed: %v", err)
@@ -651,7 +652,7 @@ func (r *Repository) readFileBytes(ctx context.Context, commit vcs.CommitID, nam
 	ensureAbsCommit(commit)
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -776,7 +777,7 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	}
 	args = append(args, "--", filepath.ToSlash(path))
 	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	cmd.EnsureRevision = string(commit)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
@@ -842,7 +843,7 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 		case "commit":
 			mode = mode | vcs.ModeSubmodule
 			cmd := gitserver.DefaultClient.Command("git", "config", "--get", "submodule."+name+".url")
-			cmd.Repo = r.URL
+			cmd.Repo = r.Repo
 			url := "" // url is not available if submodules are not initialized
 			if out, err := cmd.Output(ctx); err == nil {
 				url = string(bytes.TrimSpace(out))

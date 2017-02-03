@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -52,7 +53,7 @@ func (c *Client) connect(addr string) {
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
-	c.Repo = strings.ToLower(c.Repo)
+	repoURI := strings.ToLower(c.Repo.URI)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -73,7 +74,10 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 	}
 
 	opt := &vcs.RemoteOpts{}
-	if strings.HasPrefix(c.Repo, "github.com/") {
+	// SECURITY: Only send credentials to gitserver if we know that the repository is private. This
+	// is to avoid fetching private commits while our access checks still assume that the repository
+	// is public. In that case better fail fetching those commits until the DB got updated.
+	if strings.HasPrefix(repoURI, "github.com/") && !c.client.NoCreds && c.Repo.Private {
 		actor := auth.ActorFromContext(ctx)
 		if actor.GitHubToken != "" {
 			opt.HTTPS = &vcs.HTTPSConfig{
@@ -83,11 +87,11 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 		}
 	}
 
-	sum := md5.Sum([]byte(c.Repo))
+	sum := md5.Sum([]byte(repoURI))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.servers))
 	replyChan := make(chan *execReply, 1)
 	c.client.servers[serverIndex] <- &request{Exec: &execRequest{
-		Repo:           c.Repo,
+		Repo:           repoURI,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 		Opt:            opt,
@@ -125,7 +129,7 @@ type Cmd struct {
 	client *Client
 
 	Args           []string
-	Repo           string
+	Repo           *sourcegraph.Repo
 	EnsureRevision string
 	Input          []byte
 	ExitStatus     int

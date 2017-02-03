@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -20,7 +21,7 @@ import (
 // It is a var so that it can be mocked in tests.
 var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
-	return vcs.ArchiveFileSystem(gitcmd.Open(repo), rev), nil
+	return vcs.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev), nil
 }
 
 type AllFilesLister interface {

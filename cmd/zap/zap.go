@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	// Import for side effect of setting SGPATH env var.
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 
@@ -228,7 +229,7 @@ type gitserverExecutor struct {
 
 func (e gitserverExecutor) Exec(input []byte, args ...string) ([]byte, error) {
 	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = e.repoPath
+	cmd.Repo = &sourcegraph.Repo{URI: e.repoPath}
 	cmd.Input = input
 	stdout, stderr, err := cmd.DividedOutput(context.Background())
 	if err != nil {

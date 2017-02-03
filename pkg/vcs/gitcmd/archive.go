@@ -14,7 +14,7 @@ import (
 // Archive implements vcs.Archiver.
 func (r *Repository) Archive(ctx context.Context, commitID vcs.CommitID) (zipData []byte, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Archive")
-	span.SetTag("URL", r.URL)
+	span.SetTag("URL", r.Repo.URI)
 	span.SetTag("Commit", commitID)
 	defer func() {
 		if err == nil {
@@ -34,7 +34,7 @@ func (r *Repository) Archive(ctx context.Context, commitID vcs.CommitID) (zipDat
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.
 	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(commitID))
-	cmd.Repo = r.URL
+	cmd.Repo = r.Repo
 	cmd.EnsureRevision = string(commitID)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {

@@ -6,36 +6,53 @@ import (
 	"testing"
 
 	"github.com/neelance/chanrpc/chanrpcutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestExec(t *testing.T) {
 	type execTest struct {
+		context        context.Context
+		repo           *sourcegraph.Repo
 		reply          *execReply
 		expectedErr    error
 		expectedStdout []byte
 		expectedStderr []byte
+		expectedPass   string
 	}
 
 	tests := []*execTest{
 		{
+			context:     context.Background(),
+			repo:        &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
 			reply:       &execReply{RepoNotFound: true},
 			expectedErr: vcs.RepoNotExistError{},
 		},
 		{
+			context:        auth.WithActor(context.Background(), &auth.Actor{GitHubToken: "token"}),
+			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
 			reply:          &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
+			expectedPass:   "", // no pass, repo not private
 		},
 		{
+			context:        auth.WithActor(context.Background(), &auth.Actor{GitHubToken: "token"}),
+			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux", Private: true},
 			reply:          &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
+			expectedPass:   "token",
 		},
 		{
+			context:     context.Background(),
+			repo:        &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
 			expectedErr: errRPCFailed,
 		},
 		{
+			context:     context.Background(),
+			repo:        &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
 			reply:       &execReply{CloneInProgress: true},
 			expectedErr: vcs.RepoNotExistError{CloneInProgress: true},
 		},
@@ -47,6 +64,13 @@ func TestExec(t *testing.T) {
 
 		go func(test *execTest) {
 			req := <-server
+			pass := ""
+			if req.Exec.Opt.HTTPS != nil {
+				pass = req.Exec.Opt.HTTPS.Pass
+			}
+			if pass != test.expectedPass {
+				t.Errorf("expected pass %#v, got %#v", test.expectedPass, pass)
+			}
 			chanrpcutil.Drain(req.Exec.Stdin)
 			if test.reply != nil {
 				req.Exec.ReplyChan <- test.reply
@@ -54,7 +78,9 @@ func TestExec(t *testing.T) {
 			close(req.Exec.ReplyChan)
 		}(test)
 
-		stdout, stderr, err := client.Command("git", "test").DividedOutput(context.Background())
+		cmd := client.Command("git", "test")
+		cmd.Repo = test.repo
+		stdout, stderr, err := cmd.DividedOutput(test.context)
 		if err != test.expectedErr {
 			t.Errorf("expected error %#v, got %#v", test.expectedErr, err)
 		}

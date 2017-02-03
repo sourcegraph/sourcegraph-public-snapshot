@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -747,7 +748,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 		var commitID string
 		if test.commitID == "" {
-			commitID = computeCommitHash(test.repo.URL, true)
+			commitID = computeCommitHash(test.repo.Repo.URI, true)
 		} else {
 			commitID = string(test.commitID)
 		}
@@ -1208,7 +1209,7 @@ func TestOpen(t *testing.T) {
 	t.Parallel()
 
 	dir := initGitRepository(t)
-	gitcmd.Open(dir)
+	gitcmd.Open(&sourcegraph.Repo{URI: dir})
 }
 
 // initGitRepository initializes a new Git repository and runs cmds in a new
@@ -1256,7 +1257,7 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 // returns the repository.
 func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitcmd.Repository {
 	dir := initGitRepository(t, cmds...)
-	return gitcmd.Open(dir)
+	return gitcmd.Open(&sourcegraph.Repo{URI: dir})
 }
 
 func commitsEqual(a, b *vcs.Commit) bool {

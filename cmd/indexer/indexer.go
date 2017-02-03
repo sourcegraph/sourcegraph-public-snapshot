@@ -145,14 +145,14 @@ func worker(dequeue chan<- (chan<- string)) {
 }
 
 func index(ctx context.Context, repoName string) error {
-	headCommit, err := gitcmd.Open(repoName).ResolveRevision(ctx, "HEAD")
-	if err != nil {
-		return fmt.Errorf("ResolveRevision failed: %s", err)
-	}
-
 	repo, err := backend.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return fmt.Errorf("Repos.GetByURI failed: %s", err)
+	}
+
+	headCommit, err := gitcmd.Open(repo).ResolveRevision(ctx, "HEAD")
+	if err != nil {
+		return fmt.Errorf("ResolveRevision failed: %s", err)
 	}
 
 	if repo.IndexedRevision != nil && *repo.IndexedRevision == string(headCommit) {
