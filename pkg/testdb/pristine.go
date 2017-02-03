@@ -138,7 +138,7 @@ func (b *backgroundDBPool) start(poolName string, schema *dbutil2.Schema) {
 
 	for id := 0; id < *poolSize; id++ {
 		go func(id int) {
-			dbname := "sgtmp-" + poolName + "-" + label + "-" + strconv.Itoa(id)
+			dbname := "sgtmp-" + poolName + "-" + label + "-" + strconv.Itoa(id) + "-" + strconv.Itoa(os.Getpid())
 			exec.Command("createdb", dbname).Run() // ignore error
 			dbh, err := dbutil2.Open("dbname="+dbname, *b.schema)
 			if err != nil {
