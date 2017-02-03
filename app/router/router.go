@@ -15,6 +15,7 @@ const (
 
 	SitemapIndex = "sitemap-index"
 	RepoSitemap  = "repo.sitemap"
+	RepoBadge    = "repo.badge"
 
 	Logout = "logout"
 
@@ -71,11 +72,13 @@ func New(base *mux.Router) *Router {
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
-	base.PathPrefix("/").Methods("GET").Name(UI)
-
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/sitemap.xml").Methods("GET").Name(RepoSitemap)
+	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
+
+	// Must come last
+	base.PathPrefix("/").Methods("GET").Name(UI)
 
 	return &Router{*base}
 }
