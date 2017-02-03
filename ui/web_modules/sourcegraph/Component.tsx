@@ -1,7 +1,5 @@
 import * as React from "react";
 
-import { Features } from "sourcegraph/util/features";
-
 export class Component<P, S> extends React.Component<P, S> {
 	constructor(props: P) {
 		super(props);
