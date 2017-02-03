@@ -1,3 +1,5 @@
+#!/bin/bash
+
 set -euf -o pipefail
 
 function cleanupSourceFiles {
@@ -28,8 +30,7 @@ function fetchAndClean {
 		echo OK
 	else
 		echo -n Cloning to "$CLONE_DIR"...
-		git clone --branch patch --quiet --bare --single-branch \
-			"$CLONE_URL" "$CLONE_DIR"
+		git clone --branch patch --quiet --bare --single-branch "$CLONE_URL" "$CLONE_DIR"
 		echo OK
 	fi
 

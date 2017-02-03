@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CLONE_URL="${2:-'git@github.com:sourcegraph/vscode.git'}"
+CLONE_URL="${2:-git@github.com:sourcegraph/vscode.git}"
 CLONE_DIR=/tmp/sourcegraph-vscode
 REV=${1:-0238533f1bba81057a21f08e4ab513315c32a816} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
