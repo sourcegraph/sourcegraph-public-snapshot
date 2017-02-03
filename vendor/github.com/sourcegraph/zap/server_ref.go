@@ -286,8 +286,8 @@ func remoteTrackingRef(remote, ref string) string {
 
 func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string) {
 	// TODO(sqs) HACK: this is indicative of a design flaw
-	//s.reposMu.Lock()
-	//defer s.reposMu.Unlock()
+	// s.reposMu.Lock()
+	// defer s.reposMu.Unlock()
 	var matchingLocalRepos []*serverRepo
 	var matchingRemoteNames []string
 	for localRepoName2, localRepo := range s.repos {

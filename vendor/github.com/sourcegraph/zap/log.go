@@ -58,6 +58,7 @@ func (s *Server) baseLogger() *log.Context {
 	logger0 := term.NewLogger(w, log.NewLogfmtLogger, colorFn)
 	logger0 = level.New(logger0, logLevelConfig)
 	logger1 := log.NewContext(logger0)
+	logger1 = logger1.With("ts", log.DefaultTimestampUTC)
 	if s.ID != "" {
 		logger1 = logger1.With("server", s.ID)
 	}

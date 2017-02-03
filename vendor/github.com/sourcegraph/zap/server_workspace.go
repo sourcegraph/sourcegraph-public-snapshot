@@ -256,7 +256,9 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 		}
 	}
 	if err := loop(); err != nil {
-		level.Error(log).Log("ended-with-error", err)
+		if err != context.Canceled {
+			level.Error(log).Log("ended-with-error", err)
+		}
 	}
 	s.removeWorkspace(log, w, repo)
 }

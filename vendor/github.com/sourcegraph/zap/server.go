@@ -145,7 +145,7 @@ func NewServer(backend ServerBackend) *Server {
 		backend:       backend,
 		repos:         map[string]*serverRepo{},
 		readyToAccept: make(chan struct{}),
-		work:          make(chan func() error),
+		work:          make(chan func() error, 25),
 	}
 	s.remotes.parent = s
 	return s

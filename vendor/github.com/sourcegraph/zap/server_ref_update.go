@@ -48,7 +48,10 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, log *logpkg.Co
 	}
 
 	// Update the local tracking branch for this upstream branch, if any.
-	if refConfig, ok := repo.config.Refs[params.RefIdentifier.Ref]; ok && refConfig.Upstream == remote {
+	repo.mu.Lock()
+	refConfig, ok := repo.config.Refs[params.RefIdentifier.Ref]
+	repo.mu.Unlock()
+	if ok && refConfig.Upstream == remote {
 		ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
 		if ref == nil {
 			level.Warn(log).Log("upstream-configured-for-nonexistent-ref", params.RefIdentifier.Ref)
@@ -329,6 +332,8 @@ func (s *Server) broadcastRefUpdateDownstream(ctx context.Context, log *logpkg.C
 		panic("ctx == nil")
 	}
 
+	const sendTimeout = 5 * time.Second
+
 	sort.Sort(sortableRefs(updatedRefs))
 	for _, ref_ := range updatedRefs {
 		ref := ref_
@@ -351,23 +356,28 @@ func (s *Server) broadcastRefUpdateDownstream(ctx context.Context, log *logpkg.C
 					}
 
 					// TODO(sqs): handle closed conns
+					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
 					if err := c.conn.Call(ctx, "ref/update", params, nil); err == io.ErrUnexpectedEOF {
 						// This means the client connection no longer
 						// exists. Continue sending to the other watchers.
 					} else if err != nil {
+						cancel()
 						level.Warn(log).Log("watcher-broadcast-error", err, "id", c.init.ID)
 						if err := c.conn.Close(); err != nil {
 							level.Warn(log).Log("error-closing-watcher", err, "id", c.init.ID)
 						}
 						continue
 					}
+					cancel()
 				}
 
 				if senderIsWatching && sender != nil {
 					// Ack after the op has been sent to all clients.
 					ackParams := params
 					ackParams.Ack = true
+					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
 					err := sender.conn.Call(ctx, "ref/update", ackParams, nil)
+					cancel()
 					if err == io.ErrUnexpectedEOF {
 						// This means the sender disconnected.
 						err = nil
