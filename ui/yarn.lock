@@ -1846,6 +1846,13 @@ lcid@^1.0.0:
   dependencies:
     invert-kv "^1.0.0"
 
+libzap@^0.0.27:
+  version "0.0.27"
+  resolved "https://registry.yarnpkg.com/libzap/-/libzap-0.0.27.tgz#7b2c7c95d1dce1275c488216f5b30950a5f85287"
+  dependencies:
+    uuid "^3.0.1"
+    vscode-jsonrpc "3.0.1-alpha.7"
+
 load-json-file@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/load-json-file/-/load-json-file-1.1.0.tgz#956905708d58b4bab4c2261b04f59f31c99374c0"
@@ -2245,6 +2252,10 @@ once@^1.3.0, once@~1.3.3:
   resolved "https://registry.yarnpkg.com/once/-/once-1.4.0.tgz#583b1aa775961d4b113ac17d9c50baef9dd76bd1"
   dependencies:
     wrappy "1"
+
+open@^0.0.5:
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/open/-/open-0.0.5.tgz#42c3e18ec95466b6bf0dc42f3a2945c3f0cad8fc"
 
 opn@4.0.2:
   version "4.0.2"
@@ -3520,7 +3531,7 @@ utils-merge@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.0.tgz#0294fb922bb9375153541c4f7096231f287c8af8"
 
-uuid@^2.0.1, uuid@^2.0.2, uuid@^3.0.0:
+uuid@^2.0.1, uuid@^2.0.2, uuid@^3.0.0, uuid@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.0.1.tgz#6544bba2dfda8c1cf17e629a3a305e2bb1fee6c1"
 
@@ -3553,7 +3564,7 @@ vm-browserify@0.0.4:
   dependencies:
     indexof "0.0.1"
 
-vscode-jsonrpc@3.0.3, vscode-jsonrpc@^3.0.3:
+vscode-jsonrpc@3.0.1-alpha.7, vscode-jsonrpc@3.0.3, vscode-jsonrpc@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/vscode-jsonrpc/-/vscode-jsonrpc-3.0.3.tgz#a7c3665bad4a3462c7ee3e5add88f3f016b4f3e4"
 
@@ -3567,6 +3578,14 @@ vscode-jsonrpc@3.0.3, vscode-jsonrpc@^3.0.3:
 vscode-languageserver-types@3.0.3, vscode-languageserver-types@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.0.3.tgz#303b2a307c20952ff5c1f5a608f3c91146028d47"
+
+vscode-zap@^0.0.27:
+  version "0.0.27"
+  resolved "https://registry.yarnpkg.com/vscode-zap/-/vscode-zap-0.0.27.tgz#de49b1612d0bb3d6f27158e92149beb6bf4f1010"
+  dependencies:
+    libzap "^0.0.27"
+    open "^0.0.5"
+    vscode-jsonrpc "3.0.1-alpha.7"
 
 warning@^3.0.0:
   version "3.0.0"

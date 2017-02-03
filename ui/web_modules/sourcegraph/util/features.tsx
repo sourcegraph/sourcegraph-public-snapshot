@@ -95,6 +95,9 @@ export const Features = {
 	 */
 	trace: new Feature("trace"),
 
+	zap: new Feature("zap"),
+	zap2Way: new Feature("zap-2-way"),
+
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),
 	actionLogDebug: new Feature("action-log-debug").disableBeta(),
@@ -103,6 +106,14 @@ export const Features = {
 	experimentManager,
 	listEnabled,
 };
+
+if ((Features.zap.isEnabled() || Features.zap2Way.isEnabled()) && !Features.extensions.isEnabled()) {
+	console.error("features.zap and features.zap2Way require features.extensions to also be enabled"); // tslint:disable-line no-console
+}
+
+if (Features.zap2Way.isEnabled() && !Features.zap.isEnabled()) {
+	console.error("features.zap2Way requires features.zap to also be enabled"); // tslint:disable-line no-console
+}
 
 export function listEnabled(): string[] {
 	return Object.keys(Features).filter(name => Features[name] instanceof Feature && Features[name].isEnabled());

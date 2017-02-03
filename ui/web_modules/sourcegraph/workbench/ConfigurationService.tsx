@@ -31,6 +31,7 @@ const config = {
 	},
 	editor: {
 		readOnly: true,
+		tabSize: 4,
 		automaticLayout: true,
 		scrollBeyondLastLine: false,
 		wrappingColumn: 0,

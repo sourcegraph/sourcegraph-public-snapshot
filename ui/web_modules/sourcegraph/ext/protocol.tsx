@@ -17,4 +17,6 @@ export interface InitializationOptions {
 	 * Feature flags that should be enabled in the extension host.
 	 */
 	features: string[];
+
+	tmpZapRef: string | null; // TODO(sqs) HACK: pass this through
 }

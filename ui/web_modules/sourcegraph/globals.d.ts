@@ -7,7 +7,11 @@ declare var require: {
 };
 
 declare namespace process {
-	export var env: { NODE_ENV: string };
+	export var env: {
+		NODE_ENV: string,
+		ZAP_E2E_NAME?: string,
+		USER?: string,
+	};
 }
 
 declare namespace global {

@@ -4,6 +4,7 @@ import { IThreadService } from "vs/workbench/services/thread/common/threadServic
 import { registerContribution as registerExtHostContribution } from "sourcegraph/ext/extHost.contribution.override";
 import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
+import { currentZapRef } from "sourcegraph/ext/zap/url";
 import { makeBlobURL } from "sourcegraph/init/worker";
 import { listEnabled as listEnabledFeatures } from "sourcegraph/util/features";
 import { Services } from "sourcegraph/workbench/services";
@@ -32,6 +33,7 @@ export function init(workspace: URI): void {
 	const opts: InitializationOptions = {
 		workspace: workspace.toString(),
 		features: listEnabledFeatures(),
+		tmpZapRef: currentZapRef(),
 	};
 
 	// Add our current URL in the worker location's fragment so the

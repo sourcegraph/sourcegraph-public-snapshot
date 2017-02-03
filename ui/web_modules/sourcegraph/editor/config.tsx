@@ -193,7 +193,14 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, prettyRev || "", uri.fragment, sel.toZeroIndexedRange()));
 	} else {
 		const hash = `#L${sel.toString()}`;
+
+		let query = "";
+		// Keep query param for zap when selecting lines.
+		if (router.location.query["tmpZapRef"]) {
+			query = `?tmpZapRef=${router.location.query["tmpZapRef"]}`;
+		}
+
 		// Circumvent react-router to avoid a jarring jump to the anchor position.
-		history.replaceState({}, "", window.location.pathname + hash);
+		history.replaceState({}, "", window.location.pathname + query + hash);
 	}
 }

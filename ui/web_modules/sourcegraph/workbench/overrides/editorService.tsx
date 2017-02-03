@@ -31,6 +31,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 			pathname: url,
 			state: options,
 			hash,
+			query: router.location.query,
 		});
 		return this.openEditorWithoutURLChange(data, options);
 	}

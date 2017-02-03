@@ -42,9 +42,12 @@ func BareRepoDir(dir string) BareFSRepo {
 		Dir: dir,
 		BareRepo: BareRepo{
 			GitExecutor: gitExecutorFunc(func(input []byte, args ...string) ([]byte, error) {
-				var f func(*exec.Cmd)
-				if input != nil {
-					f = func(c *exec.Cmd) { c.Stdin = bytes.NewReader(input) }
+				f := func(c *exec.Cmd) {
+					c.Env = os.Environ()
+					c.Env = append(c.Env, "GIT_ASKPASS=true") // disable password prompt
+					if input != nil {
+						c.Stdin = bytes.NewReader(input)
+					}
 				}
 				out, err := execCustomGitCommand(dir, f, args...)
 				return []byte(out), err
@@ -293,7 +296,6 @@ func (r BareRepo) FileInfoForPath(treeish, path string) (mode, oid string, err e
 			return mode, oid, nil
 		}
 	}
-	panic(fmt.Sprintf("ERROR: %q", path))
 	return "", "", &os.PathError{Op: "gitFileInfoForPath (tree: " + treeish + ")", Path: path, Err: os.ErrNotExist}
 }
 

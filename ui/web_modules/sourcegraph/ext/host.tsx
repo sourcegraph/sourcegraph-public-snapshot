@@ -11,3 +11,8 @@ import { activate } from "sourcegraph/ext/lsp/extension";
 if (Features.lspExtension.isEnabled()) {
 	activate();
 }
+
+import { activate as activateZap } from "sourcegraph/ext/zap/extension";
+if (Features.zap.isEnabled()) {
+	activateZap();
+}

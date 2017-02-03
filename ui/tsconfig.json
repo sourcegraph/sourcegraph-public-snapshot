@@ -9,7 +9,9 @@
         "vs/*": ["vendor/node_modules/vscode/src/vs/*"],
         "vscode/src/vs/*": ["vendor/node_modules/vscode/src/vs/*"],
         "monaco-languages/*": ["vendor/node_modules/monaco-languages/*"],
-        "monaco-typescript/*": ["vendor/node_modules/monaco-languages/*"]
+        "monaco-typescript/*": ["vendor/node_modules/monaco-languages/*"],
+        "libzap/lib/*": ["libzap/src/*"],
+        "vscode-zap/out/src/*": ["vscode-zap/src/*"]
     },
     "lib": ["es2016", "dom"],
     "types": [

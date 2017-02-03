@@ -118,6 +118,11 @@ module.exports = {
 			"gc-signals": "sourcegraph/workbench/overrides/gc-signals",
 			"vs/workbench/api/node/extHost.contribution": "sourcegraph/ext/extHost.contribution.override",
 			"vscode$": "sourcegraph/ext/vscode", // intercepts `import "vscode";` (as seen in vscode extensions) but not `import "vscode/foo";`
+
+			// Make it easier to switch between "yarn link"-symlinked zap deps and
+			// the npm-published versions by always just compiling the .ts files.
+			"libzap/lib": "libzap/src",
+			"vscode-zap/out/src": "vscode-zap/src",
 		},
 	},
 	resolveLoader: {

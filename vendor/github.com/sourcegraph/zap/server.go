@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	stdlog "log"
 	"runtime"
 	"sort"
@@ -109,6 +110,8 @@ type ServerBackend interface {
 //
 type Server struct {
 	ID string
+
+	LogWriter io.Writer // where logs should be written to (os.Stderr by default)
 
 	backend ServerBackend
 
@@ -285,6 +288,21 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 	case "initialized":
 		return true, nil
+
+	case "repo/info":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params RepoInfoParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		log = log.With("repo", params.Repo)
+		repo, err := c.server.getRepo(ctx, log, params.Repo)
+		if err != nil {
+			return nil, err
+		}
+		return repo.config, nil
 
 	case "repo/configure":
 		if req.Params == nil {

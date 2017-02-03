@@ -28,8 +28,7 @@ export function fetchContent(resource: URI): TPromise<string> {
 				throw new Error("File content not available.");
 			}
 			return resp.root.repository.commit.commit.file.content;
-		})
-		.catch(err => err));
+		}));
 }
 
 const contentCache = new Map<string, string>();

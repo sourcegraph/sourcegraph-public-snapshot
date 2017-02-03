@@ -32,4 +32,4 @@ fi
 # check for formatting errors
 yarn run fmt-check
 
-find ./web_modules -name '*.ts' -or -name '*.tsx' | grep -v '.gen.d.ts' | xargs ./node_modules/.bin/tslint
+find ./web_modules -name '*.ts' -or -name '*.tsx' | grep -v '.gen.d.ts' | grep -v vscode.d.ts | xargs ./node_modules/.bin/tslint

@@ -119,6 +119,16 @@ const (
 // by a remote Zap server.
 type RemoteServerCapabilities struct{}
 
+// RepoInfoParams contains the parameters for the "repo/info" request.
+type RepoInfoParams struct {
+	Repo string `json:"repo"` // the repo to get info for
+}
+
+// RepoInfoResult describes the configuration for a repo.
+type RepoInfoResult struct {
+	RepoConfiguration
+}
+
 // RepoConfigureParams contains the parameters for the
 // "repo/configure" request.
 type RepoConfigureParams struct {
@@ -132,9 +142,9 @@ type RepoConfigureParams struct {
 // RepoRemoteConfiguration describes the configuration of a repository
 // remote.
 type RepoRemoteConfiguration struct {
-	Endpoint string `json:"endpoint"`          // the endpoint URL of the server that hosts the remote repository
-	Repo     string `json:"repo"`              // the name of the repo on the remote server
-	Refspec  string `json:"refspec,omitempty"` // the refspec describing which remote refs to sync
+	Endpoint string `json:"endpoint"` // the endpoint URL of the server that hosts the remote repository
+	Repo     string `json:"repo"`     // the name of the repo on the remote server
+	Refspec  string `json:"refspec"`  // the refspec describing which remote refs to sync
 }
 
 func (c RepoRemoteConfiguration) String() string {
@@ -371,7 +381,7 @@ type RefConfiguration struct {
 	// Overwrite, if set, indicates that if this ref diverges from its
 	// upstream, the server should clobber the upstream and replace
 	// the upstream with this ref's state.
-	Overwrite bool `json:"overwrite,omitempty"`
+	Overwrite bool `json:"overwrite"`
 }
 
 // RefInfoResult is the result from the remote "ref/info" request.

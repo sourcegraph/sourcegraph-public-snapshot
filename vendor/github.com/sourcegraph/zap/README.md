@@ -19,7 +19,7 @@ Then, in the directory of any repository you want to use Zap with:
 
 1. Tell Zap to start watching it: `zap init`
 1. Configure the upstream repository: `zap remote set origin ws://localhost:3080/.api/zap github.com/foo/bar` (replace the last two parameters, the URL and repo name, with the appropriate values)
-1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite master@sqs` (that is hardcoded, so use exactly that for now)
+1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite -create master@sqs` (that is hardcoded, so use exactly that for now)
 1. Open the repository in Visual Studio Code and on Sourcegraph side-by-side, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph
 
 Notes:
@@ -35,6 +35,13 @@ To use the Visual Studio Code extension:
 1. `cd ext/vscode && yarn`
 2. Open the `./ext/vscode` directory in VSCode
 3. Hit F5 (or go to the "Debug: Start Debugging" action in the launcher with the "Launch Extension" task chosen) to launch another instance with the extension running.
+
+#### Release
+
+This assumes you have run `lerna bootstrap` already.
+
+1. `make publish-npm` to release the libzap and vscode-zap npm packages
+1. `make publish-vscode` to release the vscode extension
 
 ## How it works
 

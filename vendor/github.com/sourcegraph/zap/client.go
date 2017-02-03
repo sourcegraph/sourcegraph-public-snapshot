@@ -97,6 +97,12 @@ func (c *Client) Initialize(ctx context.Context, params InitializeParams) (res *
 	return res, c.c.Call(ctx, "initialize", params, &res)
 }
 
+// RepoInfo sends the "repo/info" request to the server.
+func (c *Client) RepoInfo(ctx context.Context, params RepoInfoParams) (info *RepoInfoResult, err error) {
+	err = c.c.Call(ctx, "repo/info", params, &info)
+	return
+}
+
 // RepoConfigure sends the "repo/configure" request to the server.
 func (c *Client) RepoConfigure(ctx context.Context, params RepoConfigureParams) error {
 	return c.c.Call(ctx, "repo/configure", params, nil)
