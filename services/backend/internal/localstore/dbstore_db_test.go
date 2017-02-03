@@ -24,8 +24,7 @@ func testContext() (ctx context.Context, done func()) {
 
 	Mocks = MockStores{}
 
-	var appDBDone func()
-	globalAppDBH, appDBDone = testdb.NewHandle("app", &AppSchema)
-
-	return ctx, appDBDone
+	dbh, done := testdb.NewHandle("app", &AppSchema)
+	ctx = context.WithValue(ctx, dbhKey, dbh)
+	return ctx, done
 }

@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/gorp.v1"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 var (
@@ -70,16 +69,21 @@ func globalDB() (*dbutil2.Handle, error) {
 	return globalAppDBH, nil
 }
 
+type key int
+
+const dbhKey key = 0
+
 // appDBH returns the app DB handle.
-func appDBH(ctx context.Context) gorp.SqlExecutor {
-	appDBH, err := globalDB()
+func appDBH(ctx context.Context) *dbutil2.Handle {
+	dbh, ok := ctx.Value(dbhKey).(*dbutil2.Handle)
+	if ok {
+		return dbh
+	}
+	dbh, err := globalDB()
 	if err != nil {
 		panic("DB not available: " + err.Error())
 	}
-	return traceutil.SQLExecutor{
-		SqlExecutor: appDBH,
-		Context:     ctx,
-	}
+	return dbh
 }
 
 // openDB opens and returns the DB handle for the DB. Use DB unless
