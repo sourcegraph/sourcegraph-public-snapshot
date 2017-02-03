@@ -85,6 +85,15 @@ var (
 	listenURLStr = os.ExpandEnv(env.Get("ZAP_SERVER_LISTEN", "ws://${SGPATH}/zap", "zap server listen URL (ws:///abspath or ws://host:port)"))
 )
 
+var websocketUpgrader = websocket.Upgrader{
+	// We already do an origin check in httpapi websocket proxy, so we can accept
+	// requests here without checking. This is fine since this service should be
+	// deployed behind the firewall.
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
@@ -120,8 +129,6 @@ func main() {
 	})))))
 	select {}
 }
-
-var websocketUpgrader = websocket.Upgrader{}
 
 func listen(urlStr string) (string, net.Listener, error) {
 	u, err := url.Parse(urlStr)

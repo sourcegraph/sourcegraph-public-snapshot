@@ -280,6 +280,12 @@
 			"revisionTime": "2016-01-12T00:40:12+02:00"
 		},
 		{
+			"checksumSHA1": "SYAsHyJsoKXI9zWa/DTRvMWgGHM=",
+			"path": "github.com/koding/websocketproxy",
+			"revision": "870493fd19c48c3e71eaf5c5e03e07658f73bd26",
+			"revisionTime": "2015-11-28T20:04:38Z"
+		},
+		{
 			"checksumSHA1": "HIsIO4+e5awXjNSj/UJzbSePEZQ=",
 			"path": "github.com/kr/pretty",
 			"revision": "add1dbc86daf0f983cd4a48ceb39deb95c729b67",
