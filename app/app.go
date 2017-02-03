@@ -34,6 +34,7 @@ func NewHandler(r *router.Router) http.Handler {
 
 	r.Get(router.SitemapIndex).Handler(httptrace.TraceRoute(internal.Handler(serveSitemapIndex)))
 	r.Get(router.RepoSitemap).Handler(httptrace.TraceRoute(internal.Handler(serveRepoSitemap)))
+	r.Get(router.RepoBadge).Handler(httptrace.TraceRoute(internal.Handler(serveRepoBadge)))
 
 	r.Get(router.Logout).Handler(httptrace.TraceRoute(internal.Handler(serveLogout)))
 
