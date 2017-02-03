@@ -15,6 +15,7 @@ import (
 
 	// Import for side effect of setting SGPATH env var.
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/websocket"
@@ -107,6 +108,11 @@ func main() {
 		<-c
 		os.Exit(0)
 	}()
+
+	if profBindAddr != "" {
+		go debugserver.Start(profBindAddr)
+		stdlog.Printf("Profiler available on %s/pprof", profBindAddr)
+	}
 
 	addr, lis, err := listen(listenURLStr)
 	if err != nil {
