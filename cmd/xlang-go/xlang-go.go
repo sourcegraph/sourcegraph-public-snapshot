@@ -14,7 +14,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 )
 
 var (
@@ -44,10 +44,10 @@ func run() error {
 		go debugserver.Start(*profbind)
 	}
 
-	buildserver.Debug = true
+	gobuildserver.Debug = true
 
 	// PERF: Hide latency of fetching golang/go from the first typecheck
-	go buildserver.FetchCommonDeps()
+	go gobuildserver.FetchCommonDeps()
 
 	switch *mode {
 	case "tcp":
@@ -63,12 +63,12 @@ func run() error {
 			if err != nil {
 				return err
 			}
-			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), buildserver.NewHandler())
+			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler())
 		}
 
 	case "stdio":
 		log.Println("xlang-go: reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), buildserver.NewHandler()).DisconnectNotify()
+		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler()).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 

@@ -6,10 +6,10 @@ default:
 all: $(TARGETS)
 
 lsp-proxy:
-	cmd/lsp-proxy/build.sh
+	../cmd/lsp-proxy/build.sh
 
 xlang-go:
-	golang/cmd/xlang-go/build.sh
+	../cmd/xlang-go/build.sh
 
 xlang-javascript-typescript:
 	javascript-typescript/build.sh

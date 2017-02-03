@@ -2,9 +2,9 @@
 set -e
 cd $(dirname "${BASH_SOURCE[0]}")
 
-export IMAGE=us.gcr.io/sourcegraph-dev/lsp-proxy
+export IMAGE=us.gcr.io/sourcegraph-dev/xlang-go
 export TAG=${TAG-latest}
-export GOBIN="$PWD/../../../vendor/.bin"
+export GOBIN="$PWD/../../vendor/.bin"
 export PATH="$GOBIN:$PATH"
 
 set -x
@@ -12,4 +12,5 @@ go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/go
 godockerize build -t $IMAGE:$TAG .
 gcloud docker -- push $IMAGE:$TAG
 
+# Also push latest if on CI
 [ -z "$CI" ] || (docker tag $IMAGE:$TAG $IMAGE:latest && gcloud docker -- push $IMAGE:latest)

@@ -30,6 +30,5 @@ done
 
 if [ "${#pkgs[@]}" -gt "0" ]
 then
-	go install -race ./cmd/src
 	go test -race -v -timeout 5m "${pkgs[@]}"
 fi

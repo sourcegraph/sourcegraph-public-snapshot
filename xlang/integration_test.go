@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )

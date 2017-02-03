@@ -13,7 +13,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	srccli "sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
-	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 )
 
 // This file contains helper commands and server hooks for development.

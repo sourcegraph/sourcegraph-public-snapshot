@@ -21,7 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -203,7 +203,7 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	}
 
 	importPath := strings.Split(args.ID, "/-/")[0]
-	cloneURL, err := buildserver.ResolveImportPathCloneURL(importPath)
+	cloneURL, err := gobuildserver.ResolveImportPathCloneURL(importPath)
 	if err != nil {
 		return nil, err
 	}

@@ -21,7 +21,7 @@ import (
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/golang/buildserver"
+	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )

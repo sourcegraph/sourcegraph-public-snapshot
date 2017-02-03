@@ -1,4 +1,4 @@
-package buildserver
+package gobuildserver
 
 import (
 	"encoding/xml"
