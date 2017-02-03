@@ -3,7 +3,7 @@ import * as React from "react";
 
 import * as styles from "sourcegraph/components/styles/flexContainer.css";
 
-interface Props {
+interface Props extends React.DOMAttributes<HTMLElement> {
 	direction?: string; // left_right, right_left, top_bottom, bottom_top
 	wrap?: boolean;
 	justify?: string; // start, end, center, between, around
@@ -15,19 +15,20 @@ interface Props {
 }
 
 export class FlexContainer extends React.Component<Props, {}> {
-	static defaultProps: Props = {
-		direction: "left_right",
-		wrap: false,
-		justify: "start",
-		items: "stretch",
-		content: "stretch",
-	};
-
 	render(): JSX.Element | null {
-		const { direction = "left_right", wrap, justify = "start", items = "stretch", content = "stretch", className, children, style } = this.props;
+		const {
+			direction = "left_right",
+			wrap,
+			justify = "start",
+			items = "stretch",
+			content = "stretch",
+			className,
+			children,
+			...transferredProps,
+		} = this.props;
 
 		return (
-			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)} style={style}>
+			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)} {...transferredProps}>
 				{children}
 			</div>
 		);

@@ -22,6 +22,7 @@ export function SplitButton(props: SplitButtonProps): JSX.Element {
 		secondaryText,
 		size,
 		style,
+		onClick,
 		...transferredProps,
 	} = props;
 
@@ -34,6 +35,7 @@ export function SplitButton(props: SplitButtonProps): JSX.Element {
 	}).toString();
 
 	return <FlexContainer items="stretch"
+		onClick={onClick}
 		className={classNames(containerSx, className)}
 		style={Object.assign({
 			backgroundColor: secondaryColor,

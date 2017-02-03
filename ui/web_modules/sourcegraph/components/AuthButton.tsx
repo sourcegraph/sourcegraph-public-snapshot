@@ -22,6 +22,8 @@ export interface Props extends ButtonProps {
 }
 
 export function AuthButton(props: Props): JSX.Element {
+	let authForm: HTMLFormElement | null = null;
+
 	const {
 		provider,
 		iconType,
@@ -43,12 +45,17 @@ export function AuthButton(props: Props): JSX.Element {
 		{iconType === "google" && <Google style={iconSx} />}
 	</span>;
 
-	return (
-		<form method="POST" action={url} onSubmit={() => eventObject.logEvent({ page_name: pageName })}>
-			<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
-			{secondaryText ? <SplitButton type="submit" {...btnProps} secondaryText={secondaryText}>
-				{icon} {children}
-			</SplitButton> : <Button type="submit" {...btnProps}>	{icon} {children}</Button>}
-		</form>
-	);
+	const submitAuthForm = () => {
+		if (authForm) {
+			authForm.submit();
+		}
+	};
+
+	return <form method="POST" ref={el => authForm = el} action={url} onSubmit={() => eventObject.logEvent({ page_name: pageName })}>
+		<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
+		{secondaryText
+			? <SplitButton onClick={submitAuthForm} {...btnProps} secondaryText={secondaryText}>{icon} {children}</SplitButton>
+			: <Button onClick={submitAuthForm} {...btnProps}>{icon} {children}</Button>
+		}
+	</form>;
 }
