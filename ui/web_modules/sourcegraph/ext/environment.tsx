@@ -67,7 +67,7 @@ class BrowserEnvironment implements IEnvironment {
 
 		// self.location is the blob: URI, so we need to get the main page location.
 		let wsOrigin = self.location.origin.replace(/^https?:\/\//, (match) => {
-			return match === "http://" ? "ws://" : "https://";
+			return match === "http://" ? "ws://" : "wss://";
 		});
 		return webSocketStreamOpener(`${wsOrigin}/.api/zap`)();
 	}
