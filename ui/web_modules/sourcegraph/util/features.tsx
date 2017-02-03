@@ -96,7 +96,7 @@ export const Features = {
 	trace: new Feature("trace"),
 
 	zap: new Feature("zap"),
-	zap2Way: new Feature("zap-2-way"),
+	zap2Way: new Feature("zap-2-way").disableBeta(),
 
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),
