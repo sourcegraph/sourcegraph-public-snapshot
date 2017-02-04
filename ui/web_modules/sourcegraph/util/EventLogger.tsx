@@ -7,6 +7,7 @@ import { Router, RouterLocation } from "sourcegraph/app/router";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import { HubSpot } from "sourcegraph/tracking/HubSpotWrapper";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { experimentManager } from "sourcegraph/util/ExperimentManager";
@@ -17,7 +18,6 @@ import * as optimizely from "sourcegraph/util/Optimizely";
 class EventLoggerClass {
 	_intercom: any = null;
 	_telligent: any = null;
-	_hubspot: any = null;
 
 	_intercomSettings: any;
 	_dispatcherToken: any;
@@ -79,8 +79,6 @@ class EventLoggerClass {
 				},
 			});
 		}
-
-		if (global.window._hsq) { this._hubspot = global.window._hsq; }
 
 		if (global.window.Intercom) { this._intercom = global.window.Intercom; }
 
@@ -169,9 +167,7 @@ class EventLoggerClass {
 		if (optimizely.optimizelyApiService) {
 			optimizely.optimizelyApiService.setUserAttributes(optimizelyAttributes);
 		}
-		if (this._hubspot) {
-			this.setHubSpotProperties(hubSpotAttributes);
-		}
+		HubSpot.setHubSpotProperties(hubSpotAttributes);
 	}
 
 	logout(): void {
@@ -286,7 +282,7 @@ class EventLoggerClass {
 		experimentManager.logEvent(eventLabel);
 
 		// Log event on HubSpot (if a valid HubSpot event)
-		this.logHubSpotEvent(eventLabel);
+		HubSpot.logHubSpotEvent(eventLabel);
 
 		if (global && global.window && global.window.ga) {
 			global.window.ga("send", {
@@ -326,23 +322,6 @@ class EventLoggerClass {
 				eventLabel: eventObject.label,
 				nonInteraction: true,
 			});
-		}
-	}
-
-	// sets current user's property value for hubspot
-	setHubSpotProperties(props: { email?: string, user_id?: string, fullname?: string, company?: string, location?: string, is_private_code_user?: string, emails?: string, authed_orgs_github?: string }): void {
-		if (this._hubspot) {
-			this._hubspot.push(["identify", props]);
-		}
-	}
-
-	// records HubSpot events for the current user
-	logHubSpotEvent(eventLabel: string): void {
-		if (this._hubspot && !context.userAgentIsBot) {
-			if (!AnalyticsConstants.hubSpotEventNames.has(eventLabel)) {
-				return;
-			}
-			this._hubspot.push(["trackEvent", { id: eventLabel }]);
 		}
 	}
 
@@ -402,7 +381,7 @@ class EventLoggerClass {
 							}
 						}
 					}
-					this.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
+					HubSpot.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
 					this.setIntercomProperty("authed_orgs_github", orgNames);
 					this.setUserProperty("authed_orgs_github", orgNames);
 					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({ "fetched_orgs_github": orgNames });
