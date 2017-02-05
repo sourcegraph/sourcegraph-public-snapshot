@@ -6,17 +6,17 @@ interface HubSpotScript {
 }
 
 class HubSpotWrapper {
-	hubSpot: HubSpotScript | null;
-	constructor() {
+
+	private getHubspot(): HubSpotScript | null {
 		if (global && global.window && global.window._hsq) {
-			this.hubSpot = global.window._hsq;
-		} else {
-			console.error("Error loading HubSpot script. global.window._hsq not present.");
+			return global.window._hsq;
 		}
+		return null;
 	}
 
 	logHubSpotEvent(eventLabel: string): void {
-		if (!this.hubSpot) {
+		const hsq = this.getHubspot();
+		if (!hsq) {
 			return;
 		}
 		if (context.userAgentIsBot) {
@@ -25,14 +25,15 @@ class HubSpotWrapper {
 		if (!hubSpotEventNames.has(eventLabel)) {
 			return;
 		}
-		this.hubSpot.push(["trackEvent", { id: eventLabel }]);
+		hsq.push(["trackEvent", { id: eventLabel }]);
 	}
 
 	setHubSpotProperties(hubSpotAttributes: { email?: string, user_id?: string, fullname?: string, company?: string, location?: string, is_private_code_user?: string, emails?: string, authed_orgs_github?: string }): void {
-		if (!this.hubSpot) {
+		const hsq = this.getHubspot();
+		if (!hsq) {
 			return;
 		}
-		this.hubSpot.push(["identify", hubSpotAttributes]);
+		hsq.push(["identify", hubSpotAttributes]);
 	}
 
 }
