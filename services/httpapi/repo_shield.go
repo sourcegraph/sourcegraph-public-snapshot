@@ -10,26 +10,31 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
-// NOTE: Keep in sync with app/badge.go
-func badgeValue(r *http.Request) (string, error) {
+// NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
+func badgeValue(r *http.Request) (int, error) {
 	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
-		return "", errors.Wrap(err, "GetRepoAndRev")
+		return 0, errors.Wrap(err, "GetRepoAndRev")
 	}
 	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.URI)
 	if err != nil {
-		return "", errors.Wrap(err, "Defs.TotalRefs")
+		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}
+	return totalRefs, nil
+}
+
+// NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
+func badgeValueFmt(totalRefs int) string {
 	// Format e.g. "1,399" as "1.3k".
 	desc := fmt.Sprintf("%d projects", totalRefs)
-	if totalRefs > 1000 {
+	if totalRefs >= 1000 {
 		desc = fmt.Sprintf("%.1fk projects", float64(totalRefs)/1000.0)
 	}
 
 	// Note: We're adding a prefixed space because otherwise the shields.io
 	// badge will be formatted badly (looks like `used by |12k projects`
 	// instead of `used by | 12k projects`).
-	return " " + desc, nil
+	return " " + desc
 }
 
 func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
@@ -42,6 +47,6 @@ func serveRepoShield(w http.ResponseWriter, r *http.Request) error {
 		// code.
 		Value string `json:"value"`
 	}{
-		Value: value,
+		Value: badgeValueFmt(value),
 	})
 }
