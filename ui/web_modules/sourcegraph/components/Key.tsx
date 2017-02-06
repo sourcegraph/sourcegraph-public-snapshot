@@ -1,6 +1,6 @@
 import * as React from "react";
 import { blueGray, blueGrayL3 } from "sourcegraph/components/utils/colors";
-import { weight } from "sourcegraph/components/utils/typography";
+import { small, weight } from "sourcegraph/components/utils/typography";
 
 interface Props {
 	style?: React.CSSProperties;
@@ -18,9 +18,8 @@ const defaultKeyStyle = {
 	width: "23px",
 	height: "21.8px",
 	lineHeight: "21.8px",
-	fontSize: 13,
+	fontSize: small,
 	textAlign: "center",
-	verticalAlign: "middle",
 	fontWeight: weight[2],
 };
 

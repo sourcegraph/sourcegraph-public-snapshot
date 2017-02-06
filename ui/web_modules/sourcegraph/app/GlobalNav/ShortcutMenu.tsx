@@ -1,10 +1,10 @@
-import { css, focus, lastChild } from "glamor";
+import { $ as glamorSelector, css, focus, lastChild } from "glamor";
 import * as React from "react";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { Key } from "sourcegraph/components/Key";
 import { ModalComp } from "sourcegraph/components/Modal";
 import { Close } from "sourcegraph/components/symbols/Primaries";
-import { blueGrayD1, white } from "sourcegraph/components/utils/colors";
+import { black, blue, blueGrayD1, blueGrayL1, blueGrayL3, white } from "sourcegraph/components/utils/colors";
 import { weight } from "sourcegraph/components/utils/typography";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
@@ -20,26 +20,30 @@ const modalStyle = {
 	marginTop: "4.75rem",
 	maxWidth: "18rem",
 	borderRadius: 3,
-	boxShadow: "0  5px 8px rgba(0,0,0,.5)",
+	boxShadow: `0 5px 8px ${black(.5)}`,
 	color: blueGrayD1(),
 };
 
 const shortcutStyle = css(
 	lastChild({ marginBottom: 0 }),
 	{
-		marginBottom: 20,
+		marginBottom: "1rem",
 		display: "block"
 	},
 );
 
 const titleStyle = {
 	borderStyle: "solid",
-	borderColor: "#f2f4f8",
+	borderColor: blueGrayL3(),
 	borderWidth: "0px 0px 1px 0px",
 	fontWeight: weight[2] as number,
 	paddingLeft: "1.5rem",
 	paddingBottom: "1rem",
 };
+
+const xLinkStyle = css(
+	glamorSelector(":hover .inner", { color: blue() }),
+	{ float: "right", height: 56, width: 56, color: blueGrayL1() });
 
 export class ShortcutModalComponent extends React.Component<Props, {}> {
 
@@ -53,12 +57,6 @@ export class ShortcutModalComponent extends React.Component<Props, {}> {
 				this.dismissModal();
 			} else {
 				this.props.activateShortcut();
-				setTimeout(() => {
-					const inputField = document.getElementById("inputFieldHackShortcutMenu");
-					if (inputField) {
-						inputField.focus();
-					}
-				}, 1);
 			}
 			event.preventDefault();
 		}
@@ -69,23 +67,30 @@ export class ShortcutModalComponent extends React.Component<Props, {}> {
 		this.props.onDismiss();
 	}
 
+	componentDidUpdate(prevProps: Props, prevState: {}): void {
+		const inputField = document.getElementById("inputFieldHackShortcutMenu");
+		if (inputField) {
+			inputField.focus();
+		}
+	}
+
 	render(): JSX.Element {
 		return <div>
 			{this.props.showModal && <ModalComp onDismiss={() => this.dismissModal()}>
 				<div style={modalStyle}>
 					<div style={titleStyle}>
-						<span style={{ display: "inline-block", marginTop: "1.5rem" }}>Keyboard shortcuts</span>
+						<span style={{ display: "inline-block", marginTop: "1rem" }}>Keyboard shortcuts</span>
 						<InputFieldForAnts />
-						<a onClick={this.dismissModal} style={{ float: "right", height: 56, verticalAlign: "middle", width: 56 }}>
-							<Close width={24} color="#93a9c8" style={{ display: "block", margin: "auto", marginTop: "-6px", top: "50%" }} />
+						<a onClick={this.dismissModal} {...xLinkStyle}>
+							<Close className="inner" width={24} style={{ display: "block", margin: "auto", marginTop: "-8px", top: "50%" }} />
 						</a>
 					</div>
 					<div style={{ padding: "1.5rem" }}>
+						{shortcutElement("?", "Show keyboard shortcuts")}
 						{shortcutElement("/", "Open quick search")}
 						{shortcutElement("g", "View on GitHub")}
 						{shortcutElement("a", "Toggle authors")}
-						{shortcutElement("y", "Show full path in URL bar")}
-						{shortcutElement("?", "Show keyboard shortcuts")}
+						{shortcutElement("y", "Show commit hash in URL")}
 					</div>
 				</div>
 			</ModalComp>}

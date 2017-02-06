@@ -71,8 +71,8 @@ export class GlobalNav extends Container<Props, State> {
 		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(true));
 	}
 
-	activateShortcutMenu(eventProps?: any): void {
-		AnalyticsConstants.Events.ShortcutMenu_Initiated.logEvent(eventProps);
+	activateShortcutMenu(): void {
+		AnalyticsConstants.Events.ShortcutMenu_Initiated.logEvent();
 		Dispatcher.Backends.dispatch(new SetShortcutMenuVisible(true));
 	}
 
@@ -154,7 +154,7 @@ export class GlobalNav extends Container<Props, State> {
 					activateSearch={(eventProps) => this.activateSearch(eventProps)}
 					onDismiss={this.onSearchDismiss} />
 				<FlexContainer items="center" style={{ paddingRight: "0.5rem" }}>
-					{isMobileUserAgent(navigator.userAgent) ? null : <a onClick={() => this.activateShortcutMenu({})}><ShortcutCTA width={18} /></a>}
+					{isMobileUserAgent(navigator.userAgent) ? null : <a onClick={() => this.activateShortcutMenu()}><ShortcutCTA width={26} /></a>}
 					<a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>
 					{context.authEnabled &&
 						(context.user
