@@ -23,5 +23,5 @@
 .content_start { align-content: flex-start; }
 .content_end { align-content: flex-end; }
 .content_center { align-content: center; }
-.content_between { align-content: between; }
+.content_between { align-content: space-between; }
 .content_stretch { align-content: stretch; }
