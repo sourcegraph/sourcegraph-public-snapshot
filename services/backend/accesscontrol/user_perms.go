@@ -32,7 +32,7 @@ var Repos interface {
 func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) error {
 	if mock(ctx) {
 		return Mocks.VerifyUserHasReadAccess(ctx, method, repoID)
-	} else if skip(ctx) {
+	} else if Skip(ctx) {
 		return nil
 	}
 
@@ -51,20 +51,6 @@ func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) e
 	return nil
 }
 
-// VerifyUserHasWriteAccess checks if the user in the current context
-// is authorized to make write requests to this server.
-//
-// There is currently no way to have write access, so this method always returns an error except
-// if the context is skipping permission checks.
-func VerifyUserHasWriteAccess(ctx context.Context, method string, repo int32) error {
-	if mock(ctx) {
-		return Mocks.VerifyUserHasWriteAccess(ctx, method, repo)
-	} else if skip(ctx) {
-		return nil
-	}
-	return ErrRepoNotFound
-}
-
 // VerifyActorHasRepoURIAccess checks if the given actor is authorized to access
 // the given repository with repoURI. The access check is performed by delegating
 // the access check to external providers as necessary, based on the host of repoURI.
@@ -79,7 +65,7 @@ func VerifyUserHasWriteAccess(ctx context.Context, method string, repo int32) er
 func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoURI string) bool {
 	if mock(ctx) {
 		return Mocks.VerifyActorHasRepoURIAccess(ctx, actor, method, repoURI)
-	} else if skip(ctx) {
+	} else if Skip(ctx) {
 		return true
 	}
 
@@ -145,7 +131,7 @@ func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, repo
 func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sourcegraph.Repo) (allowed []*sourcegraph.Repo, err error) {
 	if mock(ctx) {
 		return Mocks.VerifyUserHasReadAccessAll(ctx, method, repos)
-	} else if skip(ctx) {
+	} else if Skip(ctx) {
 		return repos, nil
 	}
 
@@ -193,7 +179,7 @@ func WithInsecureSkip(ctx context.Context, skip bool) context.Context {
 	return context.WithValue(ctx, insecureSkip, skip)
 }
 
-func skip(ctx context.Context) bool {
+func Skip(ctx context.Context) bool {
 	v, _ := ctx.Value(insecureSkip).(bool)
 	return v
 }

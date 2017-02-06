@@ -368,8 +368,8 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 
 	if strings.HasPrefix(newRepo.URI, "github.com/") {
 		// Anyone can create GitHub mirrors.
-	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", 0); err != nil {
-		return 0, err
+	} else if !accesscontrol.Skip(ctx) {
+		return 0, legacyerr.Errorf(legacyerr.PermissionDenied, "permission denied: %s", newRepo.URI)
 	}
 
 	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
@@ -406,8 +406,8 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 		return Mocks.Repos.Update(ctx, op)
 	}
 
-	if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
-		return err
+	if !accesscontrol.Skip(ctx) {
+		return legacyerr.Errorf(legacyerr.PermissionDenied, "permission denied")
 	}
 
 	var args []interface{}

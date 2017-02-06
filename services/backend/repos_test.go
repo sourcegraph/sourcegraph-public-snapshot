@@ -109,8 +109,8 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
 	var calledUpdate bool
 	localstore.Mocks.Repos.Update = func(ctx context.Context, op localstore.RepoUpdate) error {
-		if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Update", op.Repo); err != nil {
-			return err
+		if !accesscontrol.Skip(ctx) {
+			return legacyerr.Errorf(legacyerr.PermissionDenied, "permission denied")
 		}
 		calledUpdate = true
 		if op.ReposUpdateOp.Repo != wantRepo.ID {
