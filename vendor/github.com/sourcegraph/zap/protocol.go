@@ -48,12 +48,6 @@ type ServerCapabilities struct {
 // ShowStatusParams holds parameters for the "window/showStatus"
 // request.
 type ShowStatusParams struct {
-	// Ref is the current Zap ref, for display purposes only. It MUST
-	// NOT be relied upon because it is not guaranteed to be
-	// consistent with the actual current ref; it is updated
-	// asynchronously from the source of truth.
-	Ref string `json:"ref,omitempty"`
-
 	Message string     `json:"message"` // the local status text
 	Type    StatusType `json:"type"`    // the local status type
 }
@@ -294,7 +288,8 @@ type RefPointer struct {
 }
 
 // RefUpdateDownstreamParams contains parameters for the "ref/update"
-// request sent from the server to the client (i.e., sent downstream).
+// request/notification sent from the server to the client (i.e., sent
+// downstream).
 type RefUpdateDownstreamParams struct {
 	RefIdentifier // the upstream (server) ref this update applies to
 
@@ -360,6 +355,29 @@ func (p RefUpdateDownstreamParams) validate() error {
 		return errors.New("exactly 1 of (state,op,delete) must be set when updating a ref")
 	}
 	return nil
+}
+
+// RefUpdateSymbolicParams contains the parameters for the
+// "ref/updateSymbolic" request/notification.
+type RefUpdateSymbolicParams struct {
+	RefIdentifier        // the symbolic ref to update
+	Target        string `json:"target"`              // the new target
+	OldTarget     string `json:"oldTarget,omitempty"` // for consistency, the old target (if any)
+
+	Ack bool `json:"ack,omitempty"` // if this is a server ack of the client's update
+}
+
+func (p RefUpdateSymbolicParams) String() string {
+	var buf bytes.Buffer
+	if p.Ack {
+		fmt.Fprint(&buf, "ack:")
+	}
+	if p.OldTarget != "" {
+		fmt.Fprintf(&buf, "%s🡒%s", p.OldTarget, p.Target)
+	} else {
+		fmt.Fprintf(&buf, "↦%s", p.Target)
+	}
+	return buf.String()
 }
 
 // RefConfigureParams contains the parameters for the "ref/configure"

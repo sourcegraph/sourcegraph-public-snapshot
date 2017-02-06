@@ -64,37 +64,59 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 		return &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: "repo is required"}
 	}
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.watchingRepos == nil {
-		c.watchingRepos = map[string]string{}
+	{
+		c.mu.Lock()
+		if c.watchingRepos == nil {
+			c.watchingRepos = map[string]string{}
+		}
+		level.Info(log).Log("set-watch-refspec", params.Refspec, "old", c.watchingRepos[params.Repo])
+		c.watchingRepos[params.Repo] = params.Refspec
+		c.mu.Unlock()
 	}
-	level.Info(log).Log("set-watch-refspec", params.Refspec, "old", c.watchingRepos[params.Repo])
-	c.watchingRepos[params.Repo] = params.Refspec
 
-	// Send over current state of all matched refs.
+	// Send over current state of all matched: for each non-symbolic
+	// ref, send a ref/update; for each symbolic ref, send a
+	// ref/updateSymbolic.
+	//
+	// From here on, clients will receive all future updates, so this
+	// means they always have the full state of the repository.
 	if refs := repo.refdb.List(params.Refspec); len(refs) > 0 {
 		for _, ref := range refs {
-			refName := ref.Name // use orig (symbolic/non-resolved) ref name
 			if ref.IsSymbolic() {
-				ref2, _ := repo.refdb.Resolve(ref.Name)
-				if ref2 == nil {
-					continue
-				}
-				ref = *ref2
+				// Send all symbolic refs last, so that when the
+				// client receives them, it has already received their
+				// target refs. This makes client implementation
+				// easier.
+				continue
 			}
 
-			log := log.With("update-ref-downstream-with-initial-state", refName)
+			log := log.With("update-ref-downstream-with-initial-state", ref.Name)
 			level.Debug(log).Log()
 			refObj := ref.Object.(serverRef)
 			// TODO(sqs): make this a request so we make sure it is
 			// received (to eliminate race conditions).
 			if err := c.conn.Notify(ctx, "ref/update", RefUpdateDownstreamParams{
-				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: refName},
+				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				State: &RefState{
 					RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 					History:     refObj.history(),
 				},
+			}); err != nil {
+				return err
+			}
+		}
+
+		// Now send symbolic refs (see above for why we send them last).
+		for _, ref := range refs {
+			if !ref.IsSymbolic() {
+				continue
+			}
+
+			log := log.With("update-symbolic-ref-with-initial-state", ref.Name)
+			level.Debug(log).Log()
+			if err := c.conn.Notify(ctx, "ref/updateSymbolic", RefUpdateSymbolicParams{
+				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
+				Target:        ref.Target,
 			}); err != nil {
 				return err
 			}

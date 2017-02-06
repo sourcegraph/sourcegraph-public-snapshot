@@ -19,7 +19,9 @@ class BrowserEnvironment implements IEnvironment {
 		return URIUtils.repoParams(this.rootURI as URI).repo;
 	}
 
-	get rev(): string {
+	private zapRefChangeEmitter: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
+	get onDidChangeZapRef(): vscode.Event<string> { return this.zapRefChangeEmitter.event; } // never fires TODO(sqs)
+	get zapRef(): string {
 		// TODO(sqs): hackily get the passed-through zap ref
 		return self["__tmpZapRef"] || "master@sqs";
 

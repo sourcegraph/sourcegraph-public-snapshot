@@ -172,7 +172,7 @@ func (p *Proxy) RecvFromUpstream(log *log.Context, op ot.WorkspaceOp) (ot.Worksp
 	defer p.mu.Unlock()
 
 	log = log.With("recv-from-upstream", fmt.Sprintf("@%d(upstream)", p.UpstreamRevNumber))
-	level.Debug(log).Log("op", op, "wait", p.Wait, "buf", p.Buf, "history-length", len(p.history))
+	level.Debug(log).Log("op", op, "wait", p.Wait, "buf", p.Buf, "history-length", len(p.history), "history", fmt.Sprint(p.history))
 
 	// Transform it so it can be appended to our view of the history.
 	var err error

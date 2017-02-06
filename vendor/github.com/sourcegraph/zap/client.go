@@ -13,7 +13,8 @@ import (
 type Client struct {
 	c *jsonrpc2.Conn
 
-	refUpdateCallback func(context.Context, RefUpdateDownstreamParams) error
+	refUpdateCallback         func(context.Context, RefUpdateDownstreamParams) error
+	refUpdateSymbolicCallback func(context.Context, RefUpdateSymbolicParams) error
 
 	// ShowStatus, if provided, is called when the status of the zap
 	// client changes. It can indicate that the client is operating as
@@ -42,6 +43,15 @@ func (c *Client) SetRefUpdateCallback(f func(context.Context, RefUpdateDownstrea
 	c.refUpdateCallback = f
 }
 
+// SetRefUpdateSymbolicCallback sets the function that is called when the
+// client receives a "ref/updateSymbolic" request from the server.
+func (c *Client) SetRefUpdateSymbolicCallback(f func(context.Context, RefUpdateSymbolicParams) error) {
+	if c.refUpdateSymbolicCallback != nil {
+		panic("refUpdateSymbolicCallback is already set")
+	}
+	c.refUpdateSymbolicCallback = f
+}
+
 func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	switch req.Method {
 	case "ref/update":
@@ -56,6 +66,20 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 			return nil, c.refUpdateCallback(ctx, params)
 		}
 		log.Println("warning: client received ref/update from server, but no callback is set")
+		return nil, nil
+
+	case "ref/updateSymbolic":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params RefUpdateSymbolicParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		if c.refUpdateSymbolicCallback != nil {
+			return nil, c.refUpdateSymbolicCallback(ctx, params)
+		}
+		log.Println("warning: client received ref/updateSymbolic from server, but no callback is set")
 		return nil, nil
 
 	case "window/showStatus":
@@ -121,6 +145,12 @@ func (c *Client) RefConfigure(ctx context.Context, params RefConfigureParams) er
 // RefUpdate sends the "ref/update" request to the server.
 func (c *Client) RefUpdate(ctx context.Context, params RefUpdateUpstreamParams) error {
 	return c.c.Call(ctx, "ref/update", params, nil)
+}
+
+// RefUpdateSymbolic sends the "ref/updateSymbolic" request to the
+// server.
+func (c *Client) RefUpdateSymbolic(ctx context.Context, params RefUpdateSymbolicParams) error {
+	return c.c.Call(ctx, "ref/updateSymbolic", params, nil)
 }
 
 // RefInfo sends the "ref/info" request to the server.

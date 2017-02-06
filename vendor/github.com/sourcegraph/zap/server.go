@@ -406,7 +406,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			remote := parts[0]
 			branch := parts[1]
 			if repoConfig, ok := repo.config.Remotes[remote]; !ok {
-				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q", params.Ref, remote)
+				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q (remotes: %+v)", params.Ref, remote, repo.config.Remotes)
 			} else if !refdb.MatchPattern(repoConfig.Refspec, branch) {
 				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but the remote %q refspec %q does not match the branch name", params.Ref, remote, repoConfig.Refspec)
 			}
@@ -494,6 +494,27 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			level.Error(log).Log("params", params, "err", err)
 			return nil, err
 		}
+		return nil, nil
+
+	case "ref/updateSymbolic":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params RefUpdateSymbolicParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		log = log.With("repo", params.Repo, "ref", params.Ref)
+		repo, err := c.server.getRepo(ctx, log, params.RefIdentifier.Repo)
+		if err != nil {
+			return nil, err
+		}
+		if err := c.server.handleSymbolicRefUpdate(ctx, log, c, repo, params); err != nil {
+			return nil, err
+		}
+		return nil, nil
+
+	case "shutdown", "exit":
 		return nil, nil
 
 	default:

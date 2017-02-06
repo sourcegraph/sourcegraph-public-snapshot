@@ -1,30 +1,27 @@
 # Zap: multiplayer, realtime coding
 
-Zap makes coding multiplayer and realtime. Think Google Docs meets Git.
-
-Zap lets you share your Git repository and editor state with any number of other editors and viewers. Each operation you perform (keystrokes, saving a file, creating a file, etc.) is replicated to all other participants. Conflicting edits are resolved immediately (just like how Google Docs does it).
+Zap lets you share your Git repository you have write access to and editor state with any number of other editors and viewers. Each operation you perform (keystrokes, saving a file, creating a file, etc.) is replicated to all other participants. Conflicting edits are resolved immediately, just like how Google Docs does it. Think Google Docs meets Git.
 
 ## Getting started
 
-These steps help you start using Zap on your local machine.
+These steps help you start using Zap on your repositories.
 
-First, choose a repository to try it out on. The repository should be public and available on your local Sourcegraph dev server. The https://github.com/sgtest/xyztest repository is a good sample. From here on, `$REPO` will refer to the repository's absolute directory (e.g., `/home/alice/src/github.com/sgtest/xyztest`).
-
-1. Install Zap: `go get -u github.com/sourcegraph/zap/cmd/zap` (if that fails due to lack of authentication, then run `cd $GOPATH/src/github.com/sourcegraph && git clone git@github.com:sourcegraph/zap.git && go get github.com/sourcegraph/zap/cmd/zap`)
+1. Clone the repository https://github.com/sgtest/xyztest to your local machine.
+1. Install Zap: `go get -v -u github.com/sourcegraph/zap/cmd/zap` (if that fails due to lack of authentication, then run `cd $GOPATH/src/github.com/sourcegraph && git clone git@github.com:sourcegraph/zap.git && go get github.com/sourcegraph/zap/cmd/zap`)
 1. Launch the Zap server: `zap server -v`
 1. Install the Visual Studio Code extension: Cmd/Ctrl-P for quick open, then `ext install sqs.vscode-zap`
-1. In your Visual Studio Code user settings, set `zap.web.url` to `http://localhost:3080`
 
-Then, in the directory of any repository you want to use Zap with:
+Then, in the directory of `sgtest/xyztest`, or any repository you want to use Zap on:
 
 1. Tell Zap to start watching it: `zap init`
-1. Configure the upstream repository: `zap remote set origin ws://localhost:3080/.api/zap github.com/foo/bar` (replace the last two parameters, the URL and repo name, with the appropriate values)
-1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite -create master@sqs` (that is hardcoded, so use exactly that for now)
-1. Open the repository in Visual Studio Code and on Sourcegraph side-by-side, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph
+1. Configure the upstream repository: `zap remote set origin wss://sourcegraph.com/.api/zap github.com/sgtest/xyztest` (replace the last two parameters, the URL and repo name, with the appropriate values)
+1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite -create master@sqs` (use your unix username in place of sqs)
+1. Open the repository in Visual Studio Code, hit alt + s to open Sourcegraph side-by-side, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph
 
 Notes:
 
-* On Sourcegraph, you must run `features.zap.enable()`
+* On Sourcegraph, you must run `features.zap.enable()` and `features.extensions.enable()`
+* You must open Visual Studio Code after running `zap server -v`
 
 ## Hacking
 

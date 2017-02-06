@@ -154,7 +154,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 				if err != nil {
 					return err
 				}
-				if err := s.parent.broadcastRefUpdateDownstream(ctx, log, w.Dir, []refdb.Ref{{Name: "HEAD"}}, nil, RefUpdateDownstreamParams{
+				if err := s.parent.broadcastRefUpdateDownstream(ctx, log, w.Dir, []refdb.Ref{*ref}, nil, RefUpdateDownstreamParams{
 					RefIdentifier: w.Ref("HEAD"),
 					Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 					Op:            &op,
@@ -223,7 +223,11 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 				if resetInfo.Ref == oldTarget {
 					return fmt.Errorf("HEAD symbolic ref already points to %v", resetInfo.Ref)
 				}
-				if err := s.parent.handleSymbolicRefUpdate(ctx, log, repo, w.Ref("HEAD"), resetInfo.Ref, oldTarget, newRefState); err != nil {
+				if err := s.parent.handleSymbolicRefUpdate(ctx, log, nil, repo, RefUpdateSymbolicParams{
+					RefIdentifier: w.Ref("HEAD"),
+					Target:        resetInfo.Ref,
+					OldTarget:     oldTarget,
+				}); err != nil {
 					return err
 				}
 
@@ -377,21 +381,8 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if params.WorkspaceIdentifier == (WorkspaceIdentifier{}) {
 			return nil, errWorkspaceIdentifierRequired
 		}
-
-		repo, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier)
-		if err != nil {
-			return nil, err
-		}
-		repo.mu.Lock()
-		defer repo.mu.Unlock()
-		ref, err := repo.refdb.Resolve("HEAD")
-		if err != nil {
-			if e, ok := err.(*refdb.RefNotExistsError); ok && e.Name == "HEAD" {
-				return &ShowStatusParams{Message: "No HEAD", Type: StatusTypeWarning}, nil
-			}
-			return nil, err
-		}
-		return &ShowStatusParams{Ref: ref.Name, Message: "Watching", Type: StatusTypeOK}, nil
+		// TODO(sqs): this is not fully implemented or useful yet
+		return &ShowStatusParams{Message: "Watching", Type: StatusTypeOK}, nil
 
 	case "workspace/checkout":
 		if req.Params == nil {
@@ -438,11 +429,11 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 
 		updateExternal := func(ctx context.Context) error {
 			if oldTarget != params.Ref {
-				newTargetRefState := &RefState{
-					RefBaseInfo: RefBaseInfo{GitBase: gitBase, GitBranch: gitBranch},
-					History:     history,
-				}
-				if err := ws.parent.handleSymbolicRefUpdate(ctx, log, repo, params.WorkspaceIdentifier.Ref("HEAD"), params.Ref, oldTarget, newTargetRefState); err != nil {
+				if err := ws.parent.handleSymbolicRefUpdate(ctx, log, c, repo, RefUpdateSymbolicParams{
+					RefIdentifier: params.WorkspaceIdentifier.Ref("HEAD"),
+					Target:        params.Ref,
+					OldTarget:     oldTarget,
+				}); err != nil {
 					return err
 				}
 			}

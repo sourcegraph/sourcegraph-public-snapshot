@@ -18,6 +18,8 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 	HashObject(typ, path string, data []byte) (string, error)
 	CreateTree(basePath string, entries []*gitutil.TreeEntry) (string, error)
 }, fbuf FileSystem, base string, op ot.WorkspaceOp) (string, error) {
+	panicOnSomeErrors := os.Getenv("WORKSPACE_APPLY_ERRORS_FATAL") != ""
+
 	tree, err := gitRepo.ListTreeFull(base)
 	if err != nil {
 		return "", err
@@ -63,6 +65,9 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 		if err := updateGitFile(stripFileOrBufferPath(f), data); err != nil {
 			return "", err
 		}
+		if err := fbuf.Remove(stripFileOrBufferPath(f)); err != nil {
+			return "", err
+		}
 	}
 	for dst, src := range op.Copy {
 		if isBufferPath(src) {
@@ -71,6 +76,13 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 		if isBufferPath(dst) {
 			data, _, _, err := gitRepo.ReadBlob(base, stripFileOrBufferPath(src))
 			if err != nil {
+				return "", err
+			}
+			if err := fbuf.Exists(stripFileOrBufferPath(dst)); !os.IsNotExist(err) {
+				err = fmt.Errorf("copy %q to %q: destination file %q already exists", src, dst, dst)
+				if panicOnSomeErrors {
+					panic(err)
+				}
 				return "", err
 			}
 			if err := fbuf.WriteFile(stripFileOrBufferPath(dst), data, 0666); err != nil {
@@ -206,7 +218,7 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 		level.Debug(log).Log("apply-edit-to", f, "edits", fmt.Sprint(edits), "pre-contents", string(doc))
 		if err := doc.Apply(edits); err != nil {
 			err := fmt.Errorf("apply OT edit to %s @ %s: %s (doc: %q, op: %v)", f, base, err, data, op)
-			if os.Getenv("WORKSPACE_APPLY_ERRORS_FATAL") != "" {
+			if panicOnSomeErrors {
 				panic(err)
 			}
 			return "", err

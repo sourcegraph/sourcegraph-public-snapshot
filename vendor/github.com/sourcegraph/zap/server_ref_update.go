@@ -19,8 +19,8 @@ import (
 )
 
 func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, log *logpkg.Context, params RefUpdateDownstreamParams, endpoint string) error {
-	s.recvMu.Lock()
-	defer s.recvMu.Unlock()
+	// s.recvMu.Lock()
+	// defer s.recvMu.Unlock()
 
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
@@ -145,7 +145,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Contex
 		}
 	}
 
-	return s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, refClosure, nil, params)
+	return s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, withoutSymbolicRefs(refClosure), nil, params)
 }
 
 func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, log *logpkg.Context, repo *serverRepo, ref refdb.Ref, params RefUpdateDownstreamParams, refConfig RefConfiguration) error {
@@ -229,7 +229,8 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 
 			oldRefObj := ref.Object.(serverRef)
 			otHandler := &ws.Proxy{
-				SendToUpstream:    oldRefObj.ot.SendToUpstream,
+				SendToUpstream: oldRefObj.ot.SendToUpstream,
+				// TODO(sqs)!!! upstreamrevnumber should be 0 not len(history) beacuse we call RecvFromUpstream below, which will increment the upstreamrevnumber
 				UpstreamRevNumber: len(params.State.History),
 			}
 			if !isWorkspaceHEAD {
@@ -271,7 +272,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 	// Don't broadcast acks to clients, since we already immediately
 	// ack clients.
 	if !params.Ack {
-		if err := s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, refClosure, nil, params); err != nil {
+		if err := s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, withoutSymbolicRefs(refClosure), nil, params); err != nil {
 			return err
 		}
 	}
@@ -337,6 +338,9 @@ func (s *Server) broadcastRefUpdateDownstream(ctx context.Context, log *logpkg.C
 	sort.Sort(sortableRefs(updatedRefs))
 	for _, ref_ := range updatedRefs {
 		ref := ref_
+		if ref.IsSymbolic() {
+			panic(fmt.Sprintf("broadcastRefUpdateDownstream unexpectedly got symbolic ref %q", ref.Name))
+		}
 		refID := RefIdentifier{Repo: repo, Ref: ref.Name}
 		if watchers := s.watchers(refID); len(watchers) > 0 {
 			level.Debug(log).Log("broadcast-to-downstream-ref", refID, "watchers", strings.Join(clientIDs(watchers), " "), "downstream-params", params)
@@ -393,11 +397,76 @@ func (s *Server) broadcastRefUpdateDownstream(ctx context.Context, log *logpkg.C
 	return nil
 }
 
-func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Context, repo *serverRepo, refID RefIdentifier, newTarget, oldTarget string, newTargetRefState *RefState) error {
-	s.recvMu.Lock()
-	defer s.recvMu.Unlock()
+// broadcastRefUpdateSymbolic broadcasts an update to a symbolic ref
+// to all of its watchers.
+func (s *Server) broadcastRefUpdateSymbolic(ctx context.Context, log *logpkg.Context, repo *serverRepo, sender *serverConn, params RefUpdateSymbolicParams) error {
+	const sendTimeout = 5 * time.Second
 
-	log = log.With("update-symbolic-ref", refID.Ref, "old", oldTarget, "new", newTarget)
+	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
+	sort.Sort(sortableRefs(refClosure))
+	for _, ref_ := range refClosure {
+		ref := ref_
+		refID := RefIdentifier{Repo: params.RefIdentifier.Repo, Ref: ref.Name}
+		if watchers := s.watchers(refID); len(watchers) > 0 {
+			level.Debug(log).Log("broadcast-symbolic-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "), "params", params)
+			s.work <- func() error {
+				// Send the update with the ref name that the client
+				// is watching as (e.g., "HEAD" not "master" if they
+				// are only watching HEAD).
+				params := params
+				params.RefIdentifier.Ref = ref.Name
+
+				senderIsWatching := false
+				for _, c := range watchers { // TODO(sqs): parallelize
+					if c == sender {
+						// We ack the sender below, so skip it here.
+						senderIsWatching = true
+						continue
+					}
+
+					// TODO(sqs): handle closed conns
+					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
+					if err := c.conn.Call(ctx, "ref/updateSymbolic", params, nil); err == io.ErrUnexpectedEOF {
+						// This means the client connection no longer
+						// exists. Continue sending to the other watchers.
+					} else if err != nil {
+						cancel()
+						level.Warn(log).Log("watcher-broadcast-error", err, "id", c.init.ID)
+						if err := c.conn.Close(); err != nil {
+							level.Warn(log).Log("error-closing-watcher", err, "id", c.init.ID)
+						}
+						continue
+					}
+					cancel()
+				}
+
+				if senderIsWatching && sender != nil {
+					// Ack after the op has been sent to all clients.
+					ackParams := params
+					ackParams.Ack = true
+					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
+					err := sender.conn.Call(ctx, "ref/updateSymbolic", ackParams, nil)
+					cancel()
+					if err == io.ErrUnexpectedEOF {
+						// This means the sender disconnected.
+						err = nil
+					}
+					if err != nil {
+						return fmt.Errorf("acking to sender %q: %s", sender.init.ID, err)
+					}
+				}
+				return nil
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Context, sender *serverConn, repo *serverRepo, params RefUpdateSymbolicParams) error {
+	// s.recvMu.Lock()
+	// defer s.recvMu.Unlock()
+
+	log = log.With("update-symbolic-ref", params.RefIdentifier.Ref, "old", params.OldTarget, "new", params.Target)
 	level.Info(log).Log()
 
 	timer := time.AfterFunc(1*time.Second, func() {
@@ -405,44 +474,40 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Contex
 	})
 	defer timer.Stop()
 
-	refClosure := repo.refdb.TransitiveClosureRefs(refID.Ref)
-
-	oldTargetRef := repo.refdb.Lookup(oldTarget)
-
-	newTargetRef := repo.refdb.Lookup(newTarget)
+	newTargetRef := repo.refdb.Lookup(params.Target)
 	if newTargetRef == nil {
 		return &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRefNotExists),
-			Message: fmt.Sprintf("update of symbolic ref %q to nonexistent ref %q", refID.Ref, newTarget),
+			Message: fmt.Sprintf("update of symbolic ref %q to nonexistent ref %q", params.RefIdentifier.Ref, params.Target),
 		}
 	}
 	if newTargetRef.IsSymbolic() {
-		panic(fmt.Sprintf("invalid update of symbolic ref %q target to symbolic ref %q (must be non-symbolic ref)", refID.Ref, newTarget))
+		return &jsonrpc2.Error{
+			Code:    int64(ErrorCodeSymbolicRefInvalid),
+			Message: fmt.Sprintf("invalid update of symbolic ref %q target to symbolic ref %q (must be non-symbolic ref)", params.RefIdentifier.Ref, params.Target),
+		}
 	}
 
 	var old *refdb.Ref
-	if oldTarget != "" {
-		old = &refdb.Ref{Name: refID.Ref, Target: oldTarget}
+	if params.OldTarget != "" {
+		old = &refdb.Ref{Name: params.RefIdentifier.Ref, Target: params.OldTarget}
 	}
-	if err := repo.refdb.Write(refdb.Ref{Name: refID.Ref, Target: newTarget}, true, old, refdb.RefLogEntry{}); err != nil {
+	if err := repo.refdb.Write(refdb.Ref{Name: params.RefIdentifier.Ref, Target: params.Target}, true, old, refdb.RefLogEntry{}); err != nil {
+		if _, ok := err.(*refdb.WrongOldRefValueError); ok {
+			return &jsonrpc2.Error{
+				Code:    int64(ErrorCodeRefUpdateInvalid),
+				Message: err.Error(),
+			}
+		}
 		return err
 	}
 
-	params := RefUpdateDownstreamParams{RefIdentifier: refID}
-	if oldTargetRef != nil {
-		o := oldTargetRef.Object.(serverRef)
-		params.Current = &RefBaseInfo{GitBase: o.gitBase, GitBranch: o.gitBranch}
-	}
-	if newTargetRef != nil {
-		params.State = newTargetRefState
-	}
-
-	return s.broadcastRefUpdateDownstream(ctx, log, refID.Repo, refClosure, nil, params)
+	return s.broadcastRefUpdateSymbolic(ctx, log, repo, sender, params)
 }
 
 func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.Context, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally bool) error {
-	s.recvMu.Lock()
-	defer s.recvMu.Unlock()
+	// s.recvMu.Lock()
+	// defer s.recvMu.Unlock()
 
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
@@ -470,6 +535,13 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
+
+	if ref := repo.refdb.Lookup(params.RefIdentifier.Ref); ref != nil && ref.IsSymbolic() && !params.Force {
+		return &jsonrpc2.Error{
+			Code:    int64(ErrorCodeRefUpdateInvalid),
+			Message: fmt.Sprintf("a force-update is required to overwrite symbolic ref %q with a non-symbolic ref", params.RefIdentifier.Ref),
+		}
+	}
 
 	ref, err := repo.refdb.Resolve(params.RefIdentifier.Ref)
 	if err != nil {
@@ -574,13 +646,6 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 			if err != nil {
 				return err
 			}
-			// TODO(sqs): should we consider not setting Apply from prevOT.Apply?
-			//
-			// if w := repo.workspace; w != nil {
-			// 	otHandler.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
-			// 		return w.Apply(ctx, log, op)
-			// 	}
-			// }
 			if prevOT := refObj.ot; prevOT != nil {
 				if otHandler.Apply == nil && prevOT.Apply != nil {
 					// TODO(sqs): this is hacky, mainly for when our
@@ -655,7 +720,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 		}
 		return &RefBaseInfo{GitBase: p.GitBase, GitBranch: p.GitBranch}
 	}
-	return s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, refClosure, sender, RefUpdateDownstreamParams{
+	return s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, withoutSymbolicRefs(refClosure), sender, RefUpdateDownstreamParams{
 		RefIdentifier: params.RefIdentifier,
 		Current:       toRefBaseInfo(params.Current),
 		State:         params.State,
@@ -682,3 +747,13 @@ type sortableRefs []refdb.Ref
 func (v sortableRefs) Len() int           { return len(v) }
 func (v sortableRefs) Swap(i, j int)      { v[i], v[j] = v[j], v[i] }
 func (v sortableRefs) Less(i, j int) bool { return v[i].Name < v[j].Name }
+
+func withoutSymbolicRefs(refs []refdb.Ref) []refdb.Ref {
+	x := refs[:0]
+	for _, ref := range refs {
+		if !ref.IsSymbolic() {
+			x = append(x, ref)
+		}
+	}
+	return x
+}

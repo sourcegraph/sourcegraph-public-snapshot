@@ -95,7 +95,7 @@ export const Features = {
 	 */
 	trace: new Feature("trace"),
 
-	zap: new Feature("zap"),
+	zap: new Feature("zap").disableBeta(),
 	zap2Way: new Feature("zap-2-way").disableBeta(),
 
 	beta: new Feature("beta").disableBeta(),

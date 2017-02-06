@@ -43,7 +43,7 @@ export function createExtensionAPI(
 				user: v,
 			});
 			return {
-				zap: value({ enable: true, share: { selections: initOpts.features.includes("zapSelections") } }),
+				zap: value({ enable: true, share: { selections: true } }),
 			};
 		},
 	} as any,
