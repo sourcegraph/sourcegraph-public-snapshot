@@ -22,12 +22,6 @@ var Repos interface {
 
 	// GetByURI a repository by its URI.
 	GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-
-	// UnsafeDangerousGetByURI is like GetByURI except it *does not* consult
-	// GitHub in order to determine if the user has access to the specified
-	// repository. It is the caller's responsibility to ensure the returned
-	// repo can be displayed to the user.
-	UnsafeDangerousGetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 // VerifyUserHasReadAccess checks if the user in the current context

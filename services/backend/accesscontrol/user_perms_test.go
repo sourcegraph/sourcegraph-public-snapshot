@@ -140,9 +140,8 @@ func TestUserHasReadAccessAll(t *testing.T) {
 }
 
 type MockRepos struct {
-	_Get                     func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
-	_GetByURI                func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-	_UnsafeDangerousGetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
+	_Get      func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
+	_GetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 func (m *MockRepos) Get(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
@@ -151,10 +150,6 @@ func (m *MockRepos) Get(ctx context.Context, repo int32) (*sourcegraph.Repo, err
 
 func (m *MockRepos) GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	return m._GetByURI(ctx, repo)
-}
-
-func (m *MockRepos) UnsafeDangerousGetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-	return m._UnsafeDangerousGetByURI(ctx, repo)
 }
 
 func TestVerifyActorHasRepoURIAccess(t *testing.T) {
