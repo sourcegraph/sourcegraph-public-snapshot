@@ -3,12 +3,11 @@ import * as React from "react";
 
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
-import { FlexContainer, GitHubAuthButton, GoogleAuthButton, Heading, Input, Panel, RepositoryCard } from "sourcegraph/components";
+import { FlexContainer, GitHubAuthButton, Heading, Input, Panel, RepositoryCard } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils";
 import { RepositoryTabs } from "sourcegraph/dashboard";
-import { Features } from "sourcegraph/util/features";
-import { privateGitHubOAuthScopes, privateGoogleOAuthScopes } from "sourcegraph/util/urlTo";
+import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
 	repos: GQL.IRemoteRepository[] | null;
@@ -69,11 +68,6 @@ export class Repos extends React.Component<Props, {}> {
 						<GitHubAuthButton scopes={privateGitHubOAuthScopes} style={btnSx} returnTo={this.props.location}>
 							Add private repositories and start a 14-day trial
 					</GitHubAuthButton>
-					}
-					{Features.googleCloudPlatform.isEnabled() && !context.hasPrivateGoogleToken() &&
-						<GoogleAuthButton scopes={privateGoogleOAuthScopes} returnTo={this.props.location} style={btnSx} >
-							Add GCP repositories
-					</GoogleAuthButton>
 					}
 				</FlexContainer>
 			}

@@ -375,8 +375,6 @@ func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, e
 
 	if strings.HasPrefix(newRepo.URI, "github.com/") {
 		// Anyone can create GitHub mirrors.
-	} else if strings.HasPrefix(newRepo.URI, "source.developers.google.com/p/") {
-		// Anyone can create GCP mirrors.
 	} else if err := accesscontrol.VerifyUserHasWriteAccess(ctx, "Repos.Create", 0); err != nil {
 		return 0, err
 	}

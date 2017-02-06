@@ -137,8 +137,6 @@ export const Events = {
 	ContactIntercom_Clicked: new LoggableEvent("ClickContactIntercom", EventCategories.Auth, EventActions.Click),
 	OAuth2FlowGitHub_Initiated: new LoggableEvent("InitiateGitHubOAuth2Flow", EventCategories.Auth, EventActions.Click),
 	OAuth2FlowGitHub_Completed: new LoggableEvent("CompletedGitHubOAuth2Flow", EventCategories.Auth, EventActions.Login),
-	OAuth2FlowGCP_Initiated: new LoggableEvent("InitiateGCPOAuth2Flow", EventCategories.Auth, EventActions.Click),
-	OAuth2FlowGCP_Completed: new LoggableEvent("CompletedGCPOAuth2Flow", EventCategories.Auth, EventActions.Login),
 	Signup_Completed: new LoggableEvent("SignupCompleted", EventCategories.Auth, EventActions.Signup),
 	Logout_Clicked: new LoggableEvent("LogoutClicked", EventCategories.Auth, EventActions.Logout),
 
@@ -186,9 +184,7 @@ export const Events = {
 	ChromeExtensionStep_Completed: new LoggableEvent("ChromeExtensionStepCompleted", EventCategories.Onboarding, EventActions.Success),
 
 	AuthGitHubStep_Completed: new LoggableEvent("GitHubStepCompleted", EventCategories.Onboarding, EventActions.Success),
-	AuthGCPStep_Completed: new LoggableEvent("GCPStepCompleted", EventCategories.Onboarding, EventActions.Success),
 	PrivateAuthGitHub_Skipped: new LoggableEvent("SkipGitHubPrivateAuth", EventCategories.Onboarding, EventActions.Click),
-	PrivateAuthGCP_Skipped: new LoggableEvent("SkipGCPPrivateAuth", EventCategories.Onboarding, EventActions.Click),
 
 	// ReEngagement
 	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),

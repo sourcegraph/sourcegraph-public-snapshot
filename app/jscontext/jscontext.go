@@ -40,7 +40,6 @@ type JSContext struct {
 	User              *sourcegraph.User          `json:"user"`
 	Emails            *sourcegraph.EmailAddrList `json:"emails"`
 	GitHubToken       *sourcegraph.ExternalToken `json:"gitHubToken"`
-	GoogleToken       *sourcegraph.ExternalToken `json:"googleToken"`
 	SentryDSN         string                     `json:"sentryDSN"`
 	IntercomHash      string                     `json:"intercomHash"`
 	TrackingAppID     string                     `json:"trackingAppID"`
@@ -83,13 +82,6 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		}
 	}
 
-	var googleToken *sourcegraph.ExternalToken
-	if actor.GoogleConnected {
-		googleToken = &sourcegraph.ExternalToken{
-			Scope: strings.Join(actor.GoogleScopes, ","), // the UI only cares about the scope
-		}
-	}
-
 	var authEnabled, err = strconv.ParseBool(authEnabledEnvVar)
 	if err != nil {
 		log.Fatal(err)
@@ -110,7 +102,6 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
 		GitHubToken:   gitHubToken,
-		GoogleToken:   googleToken,
 		SentryDSN:     sentryDSNFrontend,
 		IntercomHash:  intercomHMAC(actor.UID),
 		AuthEnabled:   authEnabled,

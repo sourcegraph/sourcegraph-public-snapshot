@@ -26,7 +26,6 @@ export { Code } from "sourcegraph/components/Code";
 export { List } from "sourcegraph/components/List";
 export { Select } from "sourcegraph/components/Select";
 export { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
-export { GoogleAuthButton } from "sourcegraph/components/GoogleAuthButton";
 export { GridCol } from "sourcegraph/components/GridCol";
 export { GridRow } from "sourcegraph/components/GridRow";
 export { User } from "sourcegraph/components/User";

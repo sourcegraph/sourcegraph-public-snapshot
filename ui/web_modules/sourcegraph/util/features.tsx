@@ -69,7 +69,6 @@ export const Features = {
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),
 	langJava: new Feature("lang-java"),
-	googleCloudPlatform: new Feature("google-cloud-platform"),
 
 	/**
 	 * commitInfoBar shows the horizontal bar above the editor with

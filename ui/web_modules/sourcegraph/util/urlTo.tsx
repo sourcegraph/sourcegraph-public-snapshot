@@ -45,5 +45,3 @@ export function urlToOAuth(provider: oauthProvider, scopes: string | null, retur
 }
 
 export const privateGitHubOAuthScopes = "read:org,repo,user:email";
-
-export const privateGoogleOAuthScopes = "https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/userinfo.email,https://www.googleapis.com/auth/userinfo.profile";

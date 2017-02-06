@@ -6,9 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
@@ -53,16 +51,6 @@ func (s *repos) Resolve(ctx context.Context, op *sourcegraph.RepoResolveOp) (res
 		} else if errcode.Code(err) != legacyerr.NotFound {
 			return nil, err
 		}
-
-	// See if it's a GCP repo.
-	case strings.HasPrefix(strings.ToLower(op.Path), "source.developers.google.com/p/"):
-		if op.Remote {
-			existsForUser := accesscontrol.VerifyActorHasGCPRepoAccess(ctx, auth.ActorFromContext(ctx), op.Path)
-			if existsForUser {
-				return &sourcegraph.RepoResolution{}, nil
-			}
-		}
-		return nil, legacyerr.Errorf(legacyerr.NotFound, "resolved repo not found locally: %s", op.Path)
 	}
 
 	// Try some remote aliases.
