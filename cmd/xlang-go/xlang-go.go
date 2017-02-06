@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/keegancsmith/tmpfriend"
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/jsonrpc2"
@@ -43,6 +44,9 @@ func run() error {
 	if *profbind != "" {
 		go debugserver.Start(*profbind)
 	}
+
+	cleanup := tmpfriend.SetupOrNOOP()
+	defer cleanup()
 
 	gobuildserver.Debug = true
 
