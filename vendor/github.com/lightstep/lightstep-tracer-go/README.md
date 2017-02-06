@@ -1,16 +1,9 @@
 # lightstep-tracer-go
 
-## Status
+[![Circle CI](https://circleci.com/gh/lightstep/lightstep-tracer-go.svg?style=shield)](https://circleci.com/gh/lightstep/lightstep-tracer-go)
+[![MIT license](http://img.shields.io/badge/license-MIT-blue.svg)](http://opensource.org/licenses/MIT)
 
-The LightStep OpenTracing library makes it easy to track and visualize trace
-data from OpenTracing-instrumented systems. The LightStep bindings are v0.9: we
-are unaware of significant stability bugs but there are still improvements to
-be made, especially regarding the OpenTracing Inject/Join functionality.
-
-## OpenTracing API Documentation
-
-For instrumentation documentation, see the [opentracing-go
-godocs](https://godoc.org/github.com/opentracing/opentracing-go).
+The LightStep distributed tracing library for Go.
 
 ## Installation
 
@@ -18,7 +11,7 @@ godocs](https://godoc.org/github.com/opentracing/opentracing-go).
 $ go get 'github.com/lightstep/lightstep-tracer-go'
 ```
 
-## Binding OpenTracing to LightStep's `Tracer`
+## Getting started
 
 To initialize the LightStep library in particular, either retain a reference to
 the LightStep `opentracing.Tracer` implementation and/or set the global
@@ -42,3 +35,6 @@ func main() {
     ...
 }
 ```
+
+For instrumentation documentation, see the [opentracing-go
+godocs](https://godoc.org/github.com/opentracing/opentracing-go).

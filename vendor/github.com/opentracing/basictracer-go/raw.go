@@ -30,5 +30,5 @@ type RawSpan struct {
 	Tags opentracing.Tags
 
 	// The span's "microlog".
-	Logs []opentracing.LogData
+	Logs []opentracing.LogRecord
 }

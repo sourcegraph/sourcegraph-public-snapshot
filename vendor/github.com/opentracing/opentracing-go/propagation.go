@@ -3,7 +3,6 @@ package opentracing
 import (
 	"errors"
 	"net/http"
-	"net/url"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -85,7 +84,7 @@ const (
 	//
 	//    carrier := opentracing.HTTPHeadersCarrier(httpReq.Header)
 	//    span, err := tracer.Extract(
-	//        "opName", opentracing.HTTPHeaders, carrier)
+	//        opentracing.HTTPHeaders, carrier)
 	//
 	HTTPHeaders
 )
@@ -142,26 +141,33 @@ func (c TextMapCarrier) Set(key, val string) {
 }
 
 // HTTPHeadersCarrier satisfies both TextMapWriter and TextMapReader.
+//
+// Example usage for server side:
+//
+//     carrier := opentracing.HttpHeadersCarrier(httpReq.Header)
+//     spanContext, err := tracer.Extract(opentracing.HttpHeaders, carrier)
+//
+// Example usage for client side:
+//
+//     carrier := opentracing.HTTPHeadersCarrier(httpReq.Header)
+//     err := tracer.Inject(
+//         span.Context(),
+//         opentracing.HttpHeaders,
+//         carrier)
+//
 type HTTPHeadersCarrier http.Header
 
 // Set conforms to the TextMapWriter interface.
 func (c HTTPHeadersCarrier) Set(key, val string) {
 	h := http.Header(c)
-	h.Add(key, url.QueryEscape(val))
+	h.Add(key, val)
 }
 
 // ForeachKey conforms to the TextMapReader interface.
 func (c HTTPHeadersCarrier) ForeachKey(handler func(key, val string) error) error {
 	for k, vals := range c {
 		for _, v := range vals {
-			rawV, err := url.QueryUnescape(v)
-			if err != nil {
-				// We don't know if there was an error escaping an
-				// OpenTracing-related header or something else; as such, we
-				// continue rather than return the error.
-				continue
-			}
-			if err = handler(k, rawV); err != nil {
+			if err := handler(k, v); err != nil {
 				return err
 			}
 		}

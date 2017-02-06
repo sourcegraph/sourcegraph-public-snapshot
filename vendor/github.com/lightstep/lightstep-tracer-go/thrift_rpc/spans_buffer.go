@@ -1,4 +1,4 @@
-package lightstep
+package thrift_rpc
 
 import "github.com/opentracing/basictracer-go"
 

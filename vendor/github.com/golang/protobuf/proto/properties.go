@@ -844,7 +844,29 @@ func RegisterType(x Message, name string) {
 }
 
 // MessageName returns the fully-qualified proto name for the given message type.
-func MessageName(x Message) string { return revProtoTypes[reflect.TypeOf(x)] }
+func MessageName(x Message) string {
+	type xname interface {
+		XXX_MessageName() string
+	}
+	if m, ok := x.(xname); ok {
+		return m.XXX_MessageName()
+	}
+	return revProtoTypes[reflect.TypeOf(x)]
+}
 
 // MessageType returns the message type (pointer to struct) for a named message.
 func MessageType(name string) reflect.Type { return protoTypes[name] }
+
+// A registry of all linked proto files.
+var (
+	protoFiles = make(map[string][]byte) // file name => fileDescriptor
+)
+
+// RegisterFile is called from generated code and maps from the
+// full file name of a .proto file to its compressed FileDescriptorProto.
+func RegisterFile(filename string, fileDescriptor []byte) {
+	protoFiles[filename] = fileDescriptor
+}
+
+// FileDescriptor returns the compressed FileDescriptorProto for a .proto file.
+func FileDescriptor(filename string) []byte { return protoFiles[filename] }

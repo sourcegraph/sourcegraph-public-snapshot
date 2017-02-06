@@ -8,7 +8,7 @@ This package is a Go platform API for OpenTracing.
 
 In order to understand the Go platform API, one must first be familiar with the
 [OpenTracing project](http://opentracing.io) and
-[terminology](http://opentracing.io/spec/) more generally.
+[terminology](http://opentracing.io/documentation/pages/spec.html) more specifically.
 
 ## API overview for those adding instrumentation
 
@@ -50,7 +50,10 @@ happily rely on it for `Span` propagation. To start a new (blocking child)
         ...
         span, ctx := opentracing.StartSpanFromContext(ctx, "operation_name")
         defer span.Finish()
-        span.LogEvent("xyz_called")
+        span.LogFields(
+            log.String("event", "soft error"),
+            log.String("type", "cache timeout"),
+            log.Int("waited.millis", 1500))
         ...
     }
 ```
@@ -65,7 +68,6 @@ reference.
         ...
         sp := opentracing.StartSpan("operation_name")
         defer sp.Finish()
-        sp.LogEvent("xyz_called")
         ...
     }
 ```
@@ -79,7 +81,6 @@ reference.
             "operation_name",
             opentracing.ChildOf(parentSpan.Context()))
         defer sp.Finish()
-        sp.LogEvent("xyz_called")
         ...
     }
 ```
@@ -96,7 +97,7 @@ reference.
             // outbound request.
             tracer.Inject(
                 span.Context(),
-                opentracing.TextMap,
+                opentracing.HTTPHeaders,
                 opentracing.HTTPHeadersCarrier(httpReq.Header))
 
             resp, err := httpClient.Do(httpReq)
@@ -113,7 +114,7 @@ reference.
         var serverSpan opentracing.Span
         appSpecificOperationName := ...
         wireContext, err := opentracing.GlobalTracer().Extract(
-            opentracing.TextMap,
+            opentracing.HTTPHeaders,
             opentracing.HTTPHeadersCarrier(req.Header))
         if err != nil {
             // Optionally record something about err here

@@ -6,6 +6,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/opentracing/opentracing-go/log"
 )
 
 // Span provides access to the essential details of the span, for use
@@ -28,6 +29,8 @@ type spanImpl struct {
 	event      func(SpanEvent)
 	sync.Mutex // protects the fields below
 	raw        RawSpan
+	// The number of logs dropped because of MaxLogsPerSpan.
+	numDroppedLogs int
 }
 
 var spanPool = &sync.Pool{New: func() interface{} {
@@ -88,6 +91,46 @@ func (s *spanImpl) SetTag(key string, value interface{}) opentracing.Span {
 	return s
 }
 
+func (s *spanImpl) LogKV(keyValues ...interface{}) {
+	fields, err := log.InterleavedKVToFields(keyValues...)
+	if err != nil {
+		s.LogFields(log.Error(err), log.String("function", "LogKV"))
+		return
+	}
+	s.LogFields(fields...)
+}
+
+func (s *spanImpl) appendLog(lr opentracing.LogRecord) {
+	maxLogs := s.tracer.options.MaxLogsPerSpan
+	if maxLogs == 0 || len(s.raw.Logs) < maxLogs {
+		s.raw.Logs = append(s.raw.Logs, lr)
+		return
+	}
+
+	// We have too many logs. We don't touch the first numOld logs; we treat the
+	// rest as a circular buffer and overwrite the oldest log among those.
+	numOld := (maxLogs - 1) / 2
+	numNew := maxLogs - numOld
+	s.raw.Logs[numOld+s.numDroppedLogs%numNew] = lr
+	s.numDroppedLogs++
+}
+
+func (s *spanImpl) LogFields(fields ...log.Field) {
+	lr := opentracing.LogRecord{
+		Fields: fields,
+	}
+	defer s.onLogFields(lr)
+	s.Lock()
+	defer s.Unlock()
+	if s.trim() || s.tracer.options.DropAllLogs {
+		return
+	}
+	if lr.Timestamp.IsZero() {
+		lr.Timestamp = time.Now()
+	}
+	s.appendLog(lr)
+}
+
 func (s *spanImpl) LogEvent(event string) {
 	s.Log(opentracing.LogData{
 		Event: event,
@@ -113,11 +156,28 @@ func (s *spanImpl) Log(ld opentracing.LogData) {
 		ld.Timestamp = time.Now()
 	}
 
-	s.raw.Logs = append(s.raw.Logs, ld)
+	s.appendLog(ld.ToLogRecord())
 }
 
 func (s *spanImpl) Finish() {
 	s.FinishWithOptions(opentracing.FinishOptions{})
+}
+
+// rotateLogBuffer rotates the records in the buffer: records 0 to pos-1 move at
+// the end (i.e. pos circular left shifts).
+func rotateLogBuffer(buf []opentracing.LogRecord, pos int) {
+	// This algorithm is described in:
+	//    http://www.cplusplus.com/reference/algorithm/rotate
+	for first, middle, next := 0, pos, pos; first != middle; {
+		buf[first], buf[next] = buf[next], buf[first]
+		first++
+		next++
+		if next == len(buf) {
+			next = middle
+		} else if first == middle {
+			middle = next
+		}
+	}
 }
 
 func (s *spanImpl) FinishWithOptions(opts opentracing.FinishOptions) {
@@ -129,20 +189,49 @@ func (s *spanImpl) FinishWithOptions(opts opentracing.FinishOptions) {
 
 	s.Lock()
 	defer s.Unlock()
-	if opts.BulkLogData != nil {
-		s.raw.Logs = append(s.raw.Logs, opts.BulkLogData...)
+
+	for _, lr := range opts.LogRecords {
+		s.appendLog(lr)
 	}
+	for _, ld := range opts.BulkLogData {
+		s.appendLog(ld.ToLogRecord())
+	}
+
+	if s.numDroppedLogs > 0 {
+		// We dropped some log events, which means that we used part of Logs as a
+		// circular buffer (see appendLog). De-circularize it.
+		numOld := (len(s.raw.Logs) - 1) / 2
+		numNew := len(s.raw.Logs) - numOld
+		rotateLogBuffer(s.raw.Logs[numOld:], s.numDroppedLogs%numNew)
+
+		// Replace the log in the middle (the oldest "new" log) with information
+		// about the dropped logs. This means that we are effectively dropping one
+		// more "new" log.
+		numDropped := s.numDroppedLogs + 1
+		s.raw.Logs[numOld] = opentracing.LogRecord{
+			// Keep the timestamp of the last dropped event.
+			Timestamp: s.raw.Logs[numOld].Timestamp,
+			Fields: []log.Field{
+				log.String("event", "dropped Span logs"),
+				log.Int("dropped_log_count", numDropped),
+				log.String("component", "basictracer"),
+			},
+		}
+	}
+
 	s.raw.Duration = duration
 
 	s.onFinish(s.raw)
 	s.tracer.options.Recorder.RecordSpan(s.raw)
 
-	// Last chance to get options before the span is possbily reset.
+	// Last chance to get options before the span is possibly reset.
 	poolEnabled := s.tracer.options.EnableSpanPool
 	if s.tracer.options.DebugAssertUseAfterFinish {
 		// This makes it much more likely to catch a panic on any subsequent
 		// operation since s.tracer is accessed on every call to `Lock`.
-		s.reset()
+		// We don't call `reset()` here to preserve the logs in the Span
+		// which are printed when the assertion triggers.
+		s.tracer = nil
 	}
 
 	if poolEnabled {

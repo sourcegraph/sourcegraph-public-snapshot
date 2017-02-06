@@ -11,7 +11,13 @@ import (
 const debugGoroutineIDTag = "_initial_goroutine"
 
 type errAssertionFailed struct {
-	msg string
+	span *spanImpl
+	msg  string
+}
+
+// Error implements the error interface.
+func (err *errAssertionFailed) Error() string {
+	return fmt.Sprintf("%s:\n%+v", err.msg, err.span)
 }
 
 func (s *spanImpl) Lock() {
@@ -22,9 +28,7 @@ func (s *spanImpl) Lock() {
 func (s *spanImpl) maybeAssertSanityLocked() {
 	if s.tracer == nil {
 		s.Mutex.Unlock()
-		panic(&errAssertionFailed{
-			msg: fmt.Sprintf("span used after Finish()"),
-		})
+		panic(&errAssertionFailed{span: s, msg: "span used after call to Finish()"})
 	}
 	if s.tracer.options.DebugAssertSingleGoroutine {
 		startID := curGoroutineID()
@@ -37,7 +41,8 @@ func (s *spanImpl) maybeAssertSanityLocked() {
 		if startID != curID {
 			s.Mutex.Unlock()
 			panic(&errAssertionFailed{
-				msg: fmt.Sprintf("span started on goroutine %d, but now running on %d", startID, curID),
+				span: s,
+				msg:  fmt.Sprintf("span started on goroutine %d, but now running on %d", startID, curID),
 			})
 		}
 	}

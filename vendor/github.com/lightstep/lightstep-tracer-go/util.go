@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -15,7 +14,7 @@ var (
 	seededGUIDLock    sync.Mutex
 )
 
-func genSeededGUID() string {
+func genSeededGUID() uint64 {
 	// Golang does not seed the rng for us. Make sure it happens.
 	seededGUIDGenOnce.Do(func() {
 		seededGUIDGen = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -24,7 +23,7 @@ func genSeededGUID() string {
 	// The golang random generators are *not* intrinsically thread-safe.
 	seededGUIDLock.Lock()
 	defer seededGUIDLock.Unlock()
-	return strconv.FormatUint(uint64(seededGUIDGen.Int63()), 36)
+	return uint64(seededGUIDGen.Int63())
 }
 
 var logOneError sync.Once

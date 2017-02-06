@@ -40,6 +40,16 @@ type Options struct {
 	// DropAllLogs turns log events on all Spans into no-ops.
 	// If NewSpanEventListener is set, the callbacks will still fire.
 	DropAllLogs bool
+	// MaxLogsPerSpan limits the number of Logs in a span (if set to a nonzero
+	// value). If a span has more logs than this value, logs are dropped as
+	// necessary (and replaced with a log describing how many were dropped).
+	//
+	// About half of the MaxLogPerSpan logs kept are the oldest logs, and about
+	// half are the newest logs.
+	//
+	// If NewSpanEventListener is set, the callbacks will still fire for all log
+	// events. This value is ignored if DropAllLogs is true.
+	MaxLogsPerSpan int
 	// DebugAssertSingleGoroutine internally records the ID of the goroutine
 	// creating each Span and verifies that no operation is carried out on
 	// it on a different goroutine.
@@ -87,7 +97,8 @@ type Options struct {
 // returned object with a Tracer.
 func DefaultOptions() Options {
 	return Options{
-		ShouldSample: func(traceID uint64) bool { return traceID%64 == 0 },
+		ShouldSample:   func(traceID uint64) bool { return traceID%64 == 0 },
+		MaxLogsPerSpan: 100,
 	}
 }
 
