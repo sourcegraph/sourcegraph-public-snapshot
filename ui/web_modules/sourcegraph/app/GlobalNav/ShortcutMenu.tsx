@@ -90,7 +90,7 @@ export class ShortcutModalComponent extends React.Component<Props, {}> {
 						{shortcutElement("/", "Open quick search")}
 						{shortcutElement("g", "View on GitHub")}
 						{shortcutElement("a", "Toggle authors")}
-						{shortcutElement("y", "Show commit hash in URL")}
+						{shortcutElement("y", "Show commit hash in URL bar")}
 					</div>
 				</div>
 			</ModalComp>}
