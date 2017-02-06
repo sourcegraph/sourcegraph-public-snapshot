@@ -140,9 +140,6 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
-	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.Get
-	// TODO: Try to get rid of that loop, and have a way to use VerifyUserHasReadAccess here.
 	if repo.Private && !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.URI) {
 		return nil, accesscontrol.ErrRepoNotFound
 	}
@@ -161,9 +158,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	if err != nil {
 		return nil, err
 	}
-	// Check permissions against GitHub. The reason this does not call `VerifyUserHasReadAccess` is because
-	// VerifyUserHasReadAccess --calls-> getRepo --calls-> repos.GetByURI
-	// TODO: Try to get rid of that loop, and have a way to use VerifyUserHasReadAccess here.
 	if repo.Private && !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.URI) {
 		return nil, accesscontrol.ErrRepoNotFound
 	}

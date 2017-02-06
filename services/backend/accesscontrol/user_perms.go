@@ -24,33 +24,6 @@ var Repos interface {
 	GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
-// VerifyUserHasReadAccess checks if the user in the current context
-// is authorized to make read requests to this server.
-//
-// This method always returns nil when the user has read access,
-// and returns a non-nil error when access cannot be granted.
-func VerifyUserHasReadAccess(ctx context.Context, method string, repoID int32) error {
-	if mock(ctx) {
-		return Mocks.VerifyUserHasReadAccess(ctx, method, repoID)
-	} else if Skip(ctx) {
-		return nil
-	}
-
-	if repoID != 0 {
-		repo, err := Repos.Get(ctx, repoID)
-		if err != nil {
-			return err
-		}
-		// TODO: Repos.Get above already indirectly performs this access check, but outside of
-		//       accesscontrol package, so it can't be relied on. Still, this is an opportunity
-		//       to optimize, just need to refactor this in a better way.
-		if repo.Private && !VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), method, repo.URI) {
-			return ErrRepoNotFound
-		}
-	}
-	return nil
-}
-
 // VerifyActorHasRepoURIAccess checks if the given actor is authorized to access
 // the given repository with repoURI. The access check is performed by delegating
 // the access check to external providers as necessary, based on the host of repoURI.

@@ -15,7 +15,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
@@ -94,11 +93,8 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// (fmt.Println), we support that, but we DO NOT support looking
 	// for references to a private repository's symbol ever (in fact,
 	// they are not even indexed by the global deps database).
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "Defs.DependencyReferences", op.RepoID); err != nil {
-		return nil, err
-	}
 
-	// Fetch repository information.
+	// SECURITY: repository permissions are checked here
 	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
 	if err != nil {
 		return nil, err

@@ -18,7 +18,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -237,10 +236,9 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		return nil, errors.Wrap(err, "rows error")
 	}
 
-	// SECURITY: DO NOT REMOVE THIS CHECK! Otherwise, private repository data
-	// would be leaked!
 	for _, pkg := range rawPkgs {
-		if err := accesscontrol.VerifyUserHasReadAccess(ctx, "dpkgs.ListPackages", pkg.RepoID); err == nil {
+		// SECURITY: repository permissions are checked here
+		if _, err := Repos.Get(ctx, pkg.RepoID); err == nil {
 			pks = append(pks, pkg)
 		}
 	}

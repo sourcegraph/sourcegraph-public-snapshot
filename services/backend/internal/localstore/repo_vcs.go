@@ -8,7 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	vcstesting "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
 // repoVCS is a local filesystem-backed implementation of the RepoVCS
@@ -20,10 +19,7 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 		return Mocks.RepoVCS.Open(ctx, repo)
 	}
 
-	if err := accesscontrol.VerifyUserHasReadAccess(ctx, "RepoVCS.Open", repo); err != nil {
-		return nil, err
-	}
-
+	// SECURITY: repository permissions are checked here
 	r, err := Repos.Get(ctx, repo)
 	if err != nil {
 		return nil, err
