@@ -29,16 +29,6 @@ var (
 		CreateSQL: []string{
 			`CREATE EXTENSION IF NOT EXISTS citext;`,
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
-		},
-		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
-	}
-
-	// GraphSchema is the DB Schema for the graphstore database used by this package.
-	// Currently, only GlobalRefs store is grouped under GraphSchema.
-	GraphSchema = dbutil2.Schema{
-		CreateSQL: []string{
-			`CREATE EXTENSION IF NOT EXISTS citext;`,
-			`CREATE EXTENSION IF NOT EXISTS hstore;`,
 			new(globalDeps).CreateTable(),
 			new(pkgs).CreateTable(),
 		},
