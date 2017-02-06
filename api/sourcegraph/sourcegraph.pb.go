@@ -109,16 +109,6 @@ type Repo struct {
 	UpdatedAt *time.Time `json:"UpdatedAt,omitempty"`
 	// PushedAt is when this repository's was last (VCS-)pushed to.
 	PushedAt *time.Time `json:"PushedAt,omitempty"`
-	// Permissions describes the actions that the current user (who
-	// retrieved this repository from the API) may perform on the
-	// repository. For public repositories retrieved by
-	// non-contributors, the Permissions field may be null and the
-	// Pull permission is implied (because it's a public repository).
-	//
-	// TODO(sqs): Currently these map directly to the user's GitHub
-	// permissions for GitHub repositories; all other repositories
-	// report that all users have the Pull permission only.
-	Permissions *RepoPermissions `json:"Permissions,omitempty"`
 	// IndexedRevision is the revision that the global index is currently based on. It is only used
 	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
 	// the indexer to reindex the next time it gets triggered for this repository.

@@ -107,11 +107,6 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	// We are only allowed to cache public repos.
 	if !remoteRepo.Private {
 		remoteRepoCopy := *remoteRepo
-		if client(ctx).isAuthedUser {
-			// Repos' Permissions fields may differ for the different authed users.
-			// When adding to public cache, reset them to defaults.
-			remoteRepoCopy.Permissions = &sourcegraph.RepoPermissions{Pull: true, Push: false, Admin: false}
-		}
 		addToPublicCache(repo, &cachedRepo{Repo: remoteRepoCopy})
 		reposGithubPublicCacheCounter.WithLabelValues("miss").Inc()
 	} else {
@@ -213,14 +208,6 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	}
 	if ghrepo.PushedAt != nil {
 		repo.PushedAt = &ghrepo.PushedAt.Time
-	}
-	if pp := ghrepo.Permissions; pp != nil {
-		p := *pp
-		repo.Permissions = &sourcegraph.RepoPermissions{
-			Pull:  p["pull"],
-			Push:  p["push"],
-			Admin: p["admin"],
-		}
 	}
 	return &repo
 }

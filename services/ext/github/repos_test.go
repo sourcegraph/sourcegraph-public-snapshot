@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
@@ -56,11 +54,6 @@ func testRepos_Get(t *testing.T, private bool) {
 					Owner:    &github.User{ID: github.Int(1)},
 					CloneURL: github.String("https://github.com/owner/repo.git"),
 					Private:  github.Bool(private),
-					Permissions: &map[string]bool{
-						"pull":  true,
-						"push":  true,
-						"admin": false,
-					},
 				}, resp, nil
 			},
 		},
@@ -91,9 +84,6 @@ func testRepos_Get(t *testing.T, private bool) {
 	}
 	if !private && calledGet {
 		t.Error("calledGet, expected to hit cache")
-	}
-	if want := (&sourcegraph.RepoPermissions{Pull: true, Push: true}); !reflect.DeepEqual(repo.Permissions, want) {
-		t.Errorf("got perms %#v, want %#v", repo.Permissions, want)
 	}
 }
 
@@ -229,7 +219,6 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 }
 
 // TestRepos_Get_authednocache tests authed users do add public repos to the cache
-// (with repo permissions cleared when added to cache).
 func TestRepos_Get_authednocache(t *testing.T) {
 	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
@@ -250,11 +239,6 @@ func TestRepos_Get_authednocache(t *testing.T) {
 				Owner:    &github.User{ID: github.Int(1)},
 				CloneURL: github.String("https://github.com/owner/repo.git"),
 				Private:  github.Bool(false),
-				Permissions: &map[string]bool{
-					"pull":  true,
-					"push":  true,
-					"admin": false,
-				},
 			}, resp, nil
 		},
 	}
@@ -269,31 +253,18 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	authedGet := func() bool {
 		calledGet = false
 		mock.isAuthedUser = true
-		r, err := s.Get(ctx, repo)
+		_, err := s.Get(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
-		}
-		if calledGet {
-			if !r.Permissions.Push {
-				// It's okay to have lower than real permissions for now since we're not using them.
-				t.Fatal("authed should have repo with Push Permissions if from cache")
-			}
-		} else {
-			if r.Permissions.Push {
-				t.Fatal("authed should have repo without Push Permissions if from API")
-			}
 		}
 		return calledGet
 	}
 	unauthedGet := func() bool {
 		calledGet = false
 		mock.isAuthedUser = false
-		r, err := s.Get(ctx, repo)
+		_, err := s.Get(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
-		}
-		if r.Permissions.Push {
-			t.Fatal("unauthed should always have repo without Push Permissions")
 		}
 		return calledGet
 	}

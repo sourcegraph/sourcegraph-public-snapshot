@@ -142,9 +142,8 @@ func TestReposService_Get_NonGitHub(t *testing.T) {
 	ctx = github.WithRepos(ctx, &githubRepos)
 
 	wantRepo := &sourcegraph.Repo{
-		ID:          1,
-		URI:         "r",
-		Permissions: &sourcegraph.RepoPermissions{Pull: true, Push: true},
+		ID:  1,
+		URI: "r",
 	}
 
 	githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
