@@ -122,6 +122,9 @@ class EditorPreview extends React.Component<EditorProps, {}> {
 
 		const instantiationService = Services.get(IInstantiationService);
 		const editor = getEditorInstance();
+		if (!editor) {
+			throw new Error("Expected editor to be set");
+		}
 
 		const options: IEditorOptions = {
 			scrollBeyondLastLine: false,

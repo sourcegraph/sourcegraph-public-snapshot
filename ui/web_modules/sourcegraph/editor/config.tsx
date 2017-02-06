@@ -109,6 +109,9 @@ function updateEditorAfterURLChange(sel: IRange): void {
 	}
 
 	const editor = getEditorInstance();
+	if (!editor) {
+		return;
+	}
 	editor.setSelection(sel);
 	editor.revealRangeInCenter(sel);
 	editor.getAction(GoToDefinitionAction.ID).run();
@@ -188,7 +191,11 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 	if (isSymbolUrl) {
 		// When updating selection from a symbol URL, update router location
 		// to blob URL.
-		const uri = getEditorInstance().getModel().uri;
+		const editor = getEditorInstance();
+		if (!editor) {
+			return;
+		}
+		const uri = editor.getModel().uri;
 		const prettyRev = prettifyRev(uri.query);
 		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, prettyRev || "", uri.fragment, sel.toZeroIndexedRange()));
 	} else {

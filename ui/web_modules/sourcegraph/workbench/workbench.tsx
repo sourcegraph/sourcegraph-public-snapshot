@@ -11,7 +11,6 @@ import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToas
 import { Header } from "sourcegraph/components/Header";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
 import { PageTitle } from "sourcegraph/components/PageTitle";
-import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { RepoMain } from "sourcegraph/repo/RepoMain";
@@ -80,7 +79,6 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		return <div style={{ display: "flex", height: "100%" }}>
 			<BlobPageTitle repo={this.props.repo} path={path} />
 			<RepoMain {...this.props} repository={repository} commit={repository.commit}>
-				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
 				<WorkbenchShell

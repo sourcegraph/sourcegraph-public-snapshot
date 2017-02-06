@@ -371,7 +371,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		return (
 			<div
 				ref={(c) => this._searchCoachmarkRef = c}
-				style={{ position: "fixed", right: 160, top: 40 }}>
+				style={{ position: "fixed", right: 170, top: 30 }}>
 				<Annotation
 					color="purple"
 					pulseColor="white"
@@ -457,7 +457,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 		});
 	}
 
-	render(): JSX.Element | null {
+	render(): JSX.Element {
 		let { visibleMarks, visibleAnnotation } = this.state;
 		return (<div style={{ zIndex: 101 }}>
 			{visibleMarks.indexOf(_searchCoachmarkIndex) !== -1 && this._renderSearchCoachmarkAnnotation(visibleAnnotation, _searchCoachmarkIndex)}

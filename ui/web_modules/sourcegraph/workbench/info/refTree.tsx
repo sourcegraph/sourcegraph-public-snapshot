@@ -120,6 +120,9 @@ export class RefTree extends React.Component<Props, State> {
 		});
 
 		const editor = getEditorInstance();
+		if (!editor) {
+			throw new Error("Editor not set.");
+		}
 		scrollToLine(editor, editor.getSelection().startLineNumber);
 	}
 
@@ -192,7 +195,9 @@ class Renderer extends LegacyRenderer {
 		super();
 		this._contextService = contextService;
 		const editor = getEditorInstance();
-		this._editorURI = editor.getModel().uri;
+		if (editor) {
+			this._editorURI = editor.getModel().uri;
+		}
 	}
 
 	public getHeight(tree: ITree, element: any): number {

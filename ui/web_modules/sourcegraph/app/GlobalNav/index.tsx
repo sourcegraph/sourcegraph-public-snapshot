@@ -13,6 +13,7 @@ import { AfterPrivateCodeSignup, BetaSignup, Login, Signup } from "sourcegraph/a
 import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
 import { RouterContext, RouterLocation, getRepoFromRouter, getRevFromRouter } from "sourcegraph/app/router";
 import { FlexContainer, Logo, TabItem, Tabs } from "sourcegraph/components";
+import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { colors, layout } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/index";
 import { Container } from "sourcegraph/Container";
@@ -146,6 +147,7 @@ export class GlobalNav extends Container<Props, State> {
 						</Link>
 					</Tabs>}
 				</FlexContainer>
+				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
 
 				{/* TODO(john): the `|| null` is not very nice, we should avoid that. */}
 				{isMobileUserAgent(navigator.userAgent) ? null : <ShortcutModalComponent onDismiss={this.onShortcutDismiss} showModal={this.state.showShortcut} activateShortcut={this.activateShortcutMenu} />}

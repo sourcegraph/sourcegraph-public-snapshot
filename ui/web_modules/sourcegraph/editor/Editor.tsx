@@ -272,10 +272,7 @@ export class Editor implements IDisposable {
 
 let EditorInstance: ICodeEditor | null = null;
 
-export function getEditorInstance(): ICodeEditor {
-	if (EditorInstance === null) {
-		throw "getEditorInstance called before editor instance has been set.";
-	}
+export function getEditorInstance(): ICodeEditor | null {
 	return EditorInstance;
 }
 
