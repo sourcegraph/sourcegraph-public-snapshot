@@ -13,7 +13,7 @@ import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
-	repo: string;
+	repo: string | null;
 	rev?: string | null;
 	repository: GQL.IRepository | null;
 	commit: GQL.ICommitState;
@@ -39,7 +39,7 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	componentDidMount(): void {
 		this._updateRefreshInterval(this.props.commit && this.props.commit.cloneInProgress);
-		if (this.props.commit.commit) {
+		if (this.props.commit.commit && this.props.repo) {
 			// prefetch on first load if repository is already cloned
 			this.prefetchSymbols(this.props.repo, this.props.commit.commit);
 		}
@@ -47,7 +47,10 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	componentWillReceiveProps(nextProps: Props): void {
 		this._updateRefreshInterval(nextProps.commit && nextProps.commit.cloneInProgress);
-		if (nextProps.commit && nextProps.commit.commit && (!this.props.commit || !this.props.commit.commit || nextProps.commit.commit.sha1 !== this.props.commit.commit.sha1)) {
+		if (!nextProps.commit || !nextProps.commit.commit || !nextProps.repo) {
+			return;
+		}
+		if (!this.props.commit || !this.props.commit.commit || nextProps.commit.commit.sha1 !== this.props.commit.commit.sha1) {
 			// prefetch if the repository is being cloned or if we switch repositories after first page load
 			this.prefetchSymbols(nextProps.repo, nextProps.commit.commit);
 		}

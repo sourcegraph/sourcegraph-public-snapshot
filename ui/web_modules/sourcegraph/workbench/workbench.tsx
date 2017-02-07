@@ -18,7 +18,7 @@ import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
 interface Props {
-	repo: string;
+	repo: string | null;
 	rev: string | null;
 	isSymbolUrl: boolean;
 	routes: Route[];
