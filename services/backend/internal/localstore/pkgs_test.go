@@ -21,8 +21,6 @@ func TestPkgs_update(t *testing.T) {
 	}
 	ctx := testContext()
 
-	p := pkgs{}
-
 	pks := []lspext.PackageInformation{{
 		Package: map[string]interface{}{"name": "pkg"},
 		Dependencies: []lspext.DependencyReference{{
@@ -31,7 +29,7 @@ func TestPkgs_update(t *testing.T) {
 	}}
 
 	if err := dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
-		if err := p.update(ctx, tx, 1, "go", pks); err != nil {
+		if err := Pkgs.update(ctx, tx, 1, "go", pks); err != nil {
 			return err
 		}
 		return nil
@@ -44,7 +42,7 @@ func TestPkgs_update(t *testing.T) {
 		Lang:   "go",
 		Pkg:    map[string]interface{}{"name": "pkg"},
 	}}
-	gotPkgs, err := p.getAll(ctx, appDBH(ctx).Db)
+	gotPkgs, err := Pkgs.getAll(ctx, appDBH(ctx).Db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,11 +91,9 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	p := pkgs{}
-
 	op := &sourcegraph.DefsRefreshIndexOp{RepoURI: "github.com/my/repo", RepoID: 1, CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
 	langs := []*inventory.Lang{{Name: "TypeScript"}}
-	if err := p.UnsafeRefreshIndex(ctx, op, langs); err != nil {
+	if err := Pkgs.UnsafeRefreshIndex(ctx, op, langs); err != nil {
 		t.Fatal(err)
 	}
 
@@ -109,7 +105,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 			"version": "2.2.2",
 		},
 	}}
-	gotPkgs, err := p.getAll(ctx, appDBH(ctx).Db)
+	gotPkgs, err := Pkgs.getAll(ctx, appDBH(ctx).Db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,8 +119,6 @@ func TestPkgs_ListPackages(t *testing.T) {
 		t.Skip()
 	}
 	ctx := testContext()
-
-	p := pkgs{}
 
 	calledReposGet := false
 	Mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
@@ -159,7 +153,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 
 	for repo, pks := range repoToPkgs {
 		if err := dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
-			if err := p.update(ctx, tx, repo, "go", pks); err != nil {
+			if err := Pkgs.update(ctx, tx, repo, "go", pks); err != nil {
 				return err
 			}
 			return nil
@@ -179,7 +173,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 			PkgQuery: map[string]interface{}{"name": "pkg1"},
 			Limit:    10,
 		}
-		gotPkgInfo, err := p.ListPackages(ctx, op)
+		gotPkgInfo, err := Pkgs.ListPackages(ctx, op)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -198,7 +192,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 			PkgQuery: map[string]interface{}{"name": "pkg1", "version": "1.1.1"},
 			Limit:    10,
 		}
-		gotPkgInfo, err := p.ListPackages(ctx, op)
+		gotPkgInfo, err := Pkgs.ListPackages(ctx, op)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -213,7 +207,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 			PkgQuery: map[string]interface{}{"name": "pkg1", "version": "2"},
 			Limit:    10,
 		}
-		gotPkgInfo, err := p.ListPackages(ctx, op)
+		gotPkgInfo, err := Pkgs.ListPackages(ctx, op)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -236,7 +230,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 			PkgQuery: map[string]interface{}{"name": "pkg3"},
 			Limit:    10,
 		}
-		gotPkgInfo, err := p.ListPackages(ctx, op)
+		gotPkgInfo, err := Pkgs.ListPackages(ctx, op)
 		if err != nil {
 			t.Fatal(err)
 		}
