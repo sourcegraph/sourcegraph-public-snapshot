@@ -8,6 +8,7 @@ import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { HubSpot } from "sourcegraph/tracking/HubSpotWrapper";
+import { Intercom } from "sourcegraph/tracking/IntercomWrapper";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { experimentManager } from "sourcegraph/util/ExperimentManager";
@@ -16,40 +17,20 @@ import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util
 import * as optimizely from "sourcegraph/util/Optimizely";
 
 class EventLoggerClass {
-	_intercom: any = null;
 	_telligent: any = null;
 
-	_intercomSettings: any;
 	_dispatcherToken: any;
-	_currentPlatform: string = "Web";
-	_currentPlatformVersion: string = "";
 	_gaClientID: string;
 
-	CLOUD_TRACKING_APP_ID: string = "SourcegraphWeb";
+	private CLOUD_TRACKING_APP_ID: string = "SourcegraphWeb";
+	private PLATFORM: string = "Web";
 
 	constructor() {
-		this._intercomSettings = null;
-
 		// Listen for all Stores dispatches.
 		// You must separately log "frontend" actions of interest,
 		// with the relevant event properties.
 		this._dispatcherToken = Dispatcher.Stores.register(this.__onDispatch.bind(this));
 
-		if (typeof document !== "undefined") {
-			document.addEventListener("sourcegraph:platform:initalization", this._initializeForSourcegraphPlatform.bind(this));
-		}
-	}
-
-	_initializeForSourcegraphPlatform(event: any): void {
-		if (event && event.detail) {
-			if (event.detail.currentPlatform) {
-				this._currentPlatform = event.detail.currentPlatform;
-			}
-
-			if (event.detail.currentPlatformVersion) {
-				this._currentPlatformVersion = event.detail.currentPlatformVersion;
-			}
-		}
 	}
 
 	// init initializes Telligent and Intercom.
@@ -80,12 +61,6 @@ class EventLoggerClass {
 			});
 		}
 
-		if (global.window.Intercom) { this._intercom = global.window.Intercom; }
-
-		if (typeof window !== "undefined") {
-			this._intercomSettings = global.window.intercomSettings;
-		}
-
 		global.window.ga(function (tracker: any): any {
 			this._gaClientID = tracker.get("clientId");
 		}.bind(this));
@@ -108,26 +83,22 @@ class EventLoggerClass {
 
 		if (context.user) {
 			this._setTrackerLoginInfo(context.user.Login);
-			this.setIntercomProperty("user_id", context.user.UID.toString());
-			this.setUserProperty("internal_user_id", context.user.UID.toString());
+			Intercom.setIntercomProperty("user_id", context.user.UID.toString());
+			Intercom.setIntercomProperty("internal_user_id", context.user.UID.toString());
 			hubSpotAttributes["user_id"] = context.user.Login;
 			optimizelyAttributes["user_id"] = context.user.Login;
 		}
 
 		if (context.intercomHash) {
-			this.setIntercomProperty("user_hash", context.intercomHash);
+			Intercom.setIntercomProperty("user_hash", context.intercomHash);
 			this.setUserProperty("user_hash", context.intercomHash);
 		}
 
-		if (this._intercom) {
-			this._intercom("boot", this._intercomSettings);
-			this.setIntercomProperty("is_on_prem", context.trackingAppID !== this.CLOUD_TRACKING_APP_ID);
-			this.setIntercomProperty("tracking_app_id", context.trackingAppID);
-		}
+		Intercom.boot(context.trackingAppID !== this.CLOUD_TRACKING_APP_ID, context.trackingAppID);
 
 		if (user) {
 			if (user.Name) {
-				this.setIntercomProperty("name", user.Name);
+				Intercom.setIntercomProperty("name", user.Name);
 				this.setUserProperty("display_name", user.Name);
 				hubSpotAttributes["fullname"] = user.Name;
 			}
@@ -135,13 +106,13 @@ class EventLoggerClass {
 			if (user.RegisteredAt) {
 				this.setUserProperty("registered_at_timestamp", user.RegisteredAt);
 				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
-				this.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
+				Intercom.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
 				hubSpotAttributes["registered_at"] = new Date(user.RegisteredAt).toDateString();
 			}
 
 			if (user.Company) {
 				this.setUserProperty("company", user.Company);
-				this.setIntercomProperty("company", user.Company);
+				Intercom.setIntercomProperty("company", user.Company);
 				hubSpotAttributes["company"] = user.Company;
 			}
 
@@ -158,7 +129,7 @@ class EventLoggerClass {
 		if (primaryEmail) {
 			this.setUserProperty("email", primaryEmail);
 			this.setUserProperty("emails", emails);
-			this.setIntercomProperty("email", primaryEmail);
+			Intercom.setIntercomProperty("email", primaryEmail);
 			optimizelyAttributes["email"] = primaryEmail;
 			hubSpotAttributes["email"] = primaryEmail;
 			hubSpotAttributes["emails"] = emails ? emails.map(email => { return email.Email; }).join(",") : "";
@@ -175,7 +146,7 @@ class EventLoggerClass {
 
 		// Prevent the next user who logs in (e.g., on a public terminal) from
 		// seeing the previous user's Intercom messages.
-		if (this._intercom) { this._intercom("shutdown"); }
+		Intercom.shutdown();
 
 		if (optimizely.optimizelyApiService) {
 			optimizely.optimizelyApiService.logout();
@@ -192,7 +163,7 @@ class EventLoggerClass {
 			this._telligent("setUserId", loginInfo);
 		}
 
-		this.setIntercomProperty("business_user_id", loginInfo);
+		Intercom.setIntercomProperty("business_user_id", loginInfo);
 	}
 
 	/*
@@ -238,8 +209,7 @@ class EventLoggerClass {
 			optimizelyMetadata = optimizely.optimizelyApiService.getOptimizelyMetadata();
 		}
 		const addtlPlatformProperties = {
-			Platform: this._currentPlatform,
-			platformVersion: this._currentPlatformVersion,
+			Platform: this.PLATFORM,
 			is_authed: context.user ? "true" : "false",
 			path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""
 		};
@@ -325,16 +295,6 @@ class EventLoggerClass {
 		}
 	}
 
-	// sets current user's property value
-	setIntercomProperty(property: string, value: any): void {
-		if (this._intercom) { this._intercomSettings[property] = value; }
-	}
-
-	// records intercom events for the current user
-	logIntercomEvent(eventName: string, eventProperties: any): void {
-		if (this._intercom && !context.userAgentIsBot) { this._intercom("trackEvent", eventName, eventProperties); }
-	}
-
 	_dedupedArray(inputArray: Array<string>): Array<string> {
 		return inputArray.filter(function (elem: string, index: number, self: any): any {
 			return elem && (index === self.indexOf(elem));
@@ -382,7 +342,7 @@ class EventLoggerClass {
 						}
 					}
 					HubSpot.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
-					this.setIntercomProperty("authed_orgs_github", orgNames);
+					Intercom.setIntercomProperty("authed_orgs_github", orgNames);
 					this.setUserProperty("authed_orgs_github", orgNames);
 					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({ "fetched_orgs_github": orgNames });
 				}
