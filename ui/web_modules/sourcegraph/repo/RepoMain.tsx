@@ -13,8 +13,6 @@ import * as styles from "sourcegraph/repo/styles/Repo.css";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props {
-	repo: string | null;
-	rev?: string | null;
 	repository: GQL.IRepository | null;
 	commit: GQL.ICommitState;
 	routes: Route[];
@@ -39,20 +37,20 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	componentDidMount(): void {
 		this._updateRefreshInterval(this.props.commit && this.props.commit.cloneInProgress);
-		if (this.props.commit.commit && this.props.repo) {
+		if (this.props.commit.commit && this.props.repository) {
 			// prefetch on first load if repository is already cloned
-			this.prefetchSymbols(this.props.repo, this.props.commit.commit);
+			this.prefetchSymbols(this.props.repository.uri, this.props.commit.commit);
 		}
 	}
 
 	componentWillReceiveProps(nextProps: Props): void {
 		this._updateRefreshInterval(nextProps.commit && nextProps.commit.cloneInProgress);
-		if (!nextProps.commit || !nextProps.commit.commit || !nextProps.repo) {
+		if (!nextProps.commit || !nextProps.commit.commit || !nextProps.repository) {
 			return;
 		}
 		if (!this.props.commit || !this.props.commit.commit || nextProps.commit.commit.sha1 !== this.props.commit.commit.sha1) {
 			// prefetch if the repository is being cloned or if we switch repositories after first page load
-			this.prefetchSymbols(nextProps.repo, nextProps.commit.commit);
+			this.prefetchSymbols(nextProps.repository.uri, nextProps.commit.commit);
 		}
 	}
 
@@ -105,7 +103,7 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	render(): JSX.Element {
 		if (!this.props.repository) {
-			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({ repo: this.props.repo, rev: this.props.rev, page_name: this.props.location.pathname, error_type: "404" });
+			AnalyticsConstants.Events.ViewRepoMain_Failed.logEvent({ page_name: this.props.location.pathname, error_type: "404" });
 			return (
 				<div>
 					<PageTitle title="Not Found" />
