@@ -166,14 +166,11 @@ func index(ctx context.Context, repoName string) error {
 	if !repo.Fork {
 		op := &sourcegraph.DefsRefreshIndexOp{
 			RepoURI:  repo.URI,
-			RepoID:   repo.ID,
-			Private:  repo.Private,
 			CommitID: string(headCommit),
 		}
 
 		// Global refs stores and queries private repository data separately,
-		// so as long as repo.Private is accurate for repo.ID it is safe to
-		// index private repositories.
+		// so it is fine to index private repositories.
 		err = backend.Defs.UnsafeRefreshIndex(ctx, op)
 		if err != nil {
 			return fmt.Errorf("Defs.UnsafeRefreshIndex failed: %s", err)

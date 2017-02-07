@@ -150,8 +150,6 @@ export interface Contributor {
 
 export interface DefsRefreshIndexOp {
 	RepoURI?: string;
-	Repo?: number;
-	Private?: boolean;
 	CommitID?: string;
 }
 

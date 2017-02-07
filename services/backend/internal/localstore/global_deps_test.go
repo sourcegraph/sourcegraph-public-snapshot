@@ -103,9 +103,9 @@ func TestGlobalDeps_UnsafeRefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	repoID := int32(3)
-	op := &sourcegraph.DefsRefreshIndexOp{RepoURI: "github.com/my/repo", RepoID: repoID, CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+	op := &sourcegraph.DefsRefreshIndexOp{RepoURI: "github.com/my/repo", CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
 	langs := []*inventory.Lang{{Name: "Go"}}
-	if err := GlobalDeps.UnsafeRefreshIndex(ctx, op, langs); err != nil {
+	if err := GlobalDeps.UnsafeRefreshIndex(ctx, op, langs, &sourcegraph.Repo{URI: "github.com/my/repo", ID: repoID}); err != nil {
 		t.Fatal(err)
 	}
 

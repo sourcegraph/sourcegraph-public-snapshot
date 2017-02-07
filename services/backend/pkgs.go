@@ -29,11 +29,15 @@ func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	ctx, done := trace(ctx, "Pkgs", "UnsafeRefreshIndex", op, &err)
 	defer done()
 
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: op.RepoID, CommitID: op.CommitID})
+	repo, err := Repos.GetByURI(ctx, op.RepoURI)
 	if err != nil {
 		return err
 	}
-	return localstore.Pkgs.UnsafeRefreshIndex(ctx, op, inv.Languages)
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: op.CommitID})
+	if err != nil {
+		return err
+	}
+	return localstore.Pkgs.UnsafeRefreshIndex(ctx, op, inv.Languages, repo)
 }
 
 func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
