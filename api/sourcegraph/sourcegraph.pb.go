@@ -1,6 +1,7 @@
 package sourcegraph
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -433,6 +434,10 @@ type DependencyReference struct {
 	DepData map[string]interface{} // includes additional information about the dependency, e.g. whether or not it is vendored for Go
 	RepoID  int32                  // the repository who made the reference to the dependency.
 	Hints   map[string]interface{} // hints which should be passed to workspace/xreferences in order to more quickly find the definition.
+}
+
+func (d *DependencyReference) String() string {
+	return fmt.Sprintf("DependencyReference{DepData: %v, RepoID: %v, Hints: %v}", d.DepData, d.RepoID, d.Hints)
 }
 
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
