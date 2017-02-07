@@ -8,7 +8,6 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
@@ -17,10 +16,10 @@ import (
 // repo. Those two cases are not differentiated to avoid leaking repo existence information.
 var ErrRepoNotFound = legacyerr.Errorf(legacyerr.NotFound, "repo not found")
 
-// verifyActorHasRepoURIAccess checks if the given actor is authorized to access
+// verifyUserHasRepoURIAccess checks if the current user is authorized to access
 // the given repository with repoURI. The access check is performed by delegating
 // the access check to external providers as necessary, based on the host of repoURI.
-func verifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoURI string) bool {
+func verifyUserHasRepoURIAccess(ctx context.Context, repoURI string) bool {
 	if accesscontrol.Skip(ctx) {
 		return true
 	}

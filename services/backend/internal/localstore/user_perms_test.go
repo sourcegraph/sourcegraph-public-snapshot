@@ -10,7 +10,6 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
@@ -139,7 +138,7 @@ func TestUserHasReadAccessAll(t *testing.T) {
 	}
 }
 
-func TestVerifyActorHasRepoURIAccess(t *testing.T) {
+func TestVerifyUserHasRepoURIAccess(t *testing.T) {
 	ctx, mock := authTestContext()
 
 	tests := []struct {
@@ -219,9 +218,8 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 			}
 		}
 
-		actor := &auth.Actor{UID: "1"}
 		const repoID = 1
-		got := verifyActorHasRepoURIAccess(ctx, actor, "Repos.GetByURI", test.repoURI)
+		got := verifyUserHasRepoURIAccess(ctx, test.repoURI)
 		if calledGitHub != test.shouldCallGitHub {
 			if test.shouldCallGitHub {
 				t.Errorf("expected GitHub API to be called for permissions check, but it wasn't")
@@ -233,10 +231,4 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 			t.Errorf("%s: got %v, want %v", test.title, got, want)
 		}
 	}
-}
-
-func asUID(uid string) context.Context {
-	return auth.WithActor(context.Background(), &auth.Actor{
-		UID: uid,
-	})
 }

@@ -15,7 +15,6 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
 
@@ -140,7 +139,7 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if repo.Private && !verifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.URI) {
+	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
 		return nil, ErrRepoNotFound
 	}
 	return repo, nil
@@ -158,7 +157,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	if err != nil {
 		return nil, err
 	}
-	if repo.Private && !verifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.URI) {
+	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
 		return nil, ErrRepoNotFound
 	}
 	return repo, nil
