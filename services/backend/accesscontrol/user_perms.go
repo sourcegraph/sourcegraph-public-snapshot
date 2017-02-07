@@ -45,42 +45,16 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
-		return verifyActorHasGitHubRepoAccess(ctx, actor, repoURI)
+		if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
+			return true
+		}
+		return false
 
 	default:
 		// Unless something above explicitly grants access, by default, access is denied.
 		// This is a safer default.
 		return false
 	}
-}
-
-// verifyActorHasGitHubRepoAccess checks if the given actor is authorized to access
-// the given GitHub mirrored repository. repoURI MUST be of the form "github.com/user/repo",
-// it MUST begin with "github.com/" (case insensitive). The access check is performed
-// by delegating the access check to GitHub.
-//
-// NOTE: Only (*localstore.repos).Get/GetByURI method should call this
-// func (indirectly, via VerifyActorHasRepoURIAccess). All other callers should use
-// Verify{User,Actor}Has{Read,Write}Access funcs. This func is
-// specially designed to avoid infinite loops with
-// (*localstore.repos).Get/GetByURI.
-//
-// TODO: move to a security model that is more robust, readable, has
-// better separation when dealing with multiple configurations, actor
-// types, resource types and actions.
-func verifyActorHasGitHubRepoAccess(ctx context.Context, actor *auth.Actor, repoURI string) bool {
-	if repoURI == "" {
-		panic("repoURI must be set")
-	}
-	if !strings.HasPrefix(strings.ToLower(repoURI), "github.com/") {
-		panic(fmt.Errorf(`verifyActorHasGitHubRepoAccess: precondition not satisfied, repoURI %q does not begin with "github.com/" (case insensitive)`, repoURI))
-	}
-
-	if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
-		return true
-	}
-
-	return false
 }
 
 // VerifyUserHasReadAccessAll verifies checks if the current actor
