@@ -63,7 +63,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 								rev={rev}
 								linkSx={Object.assign({ color: colors.blueGrayL1() }, typography.size[7])}
 								linkHoverSx={{ color: `${colors.blueGrayL3()} !important` }}
-								style={{ display: "inline-block", marginBottom: 0, paddingLeft: whitespace[2] }} />
+								style={{ color: colors.blueGrayL1(), display: "inline-block", marginBottom: 0, paddingLeft: whitespace[2] }} />
 						</div>,
 						<div key="right">
 							<div style={Object.assign({

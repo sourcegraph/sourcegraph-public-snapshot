@@ -1,6 +1,7 @@
 import { hover } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
+import { RepoLink } from "sourcegraph/components";
 import { urlToTree } from "sourcegraph/tree/routes";
 
 interface Props {
@@ -13,48 +14,72 @@ interface Props {
 	toFile?: boolean;
 }
 
+interface CrumbProps {
+	url: string;
+	style?: React.CSSProperties;
+	linkClassName?: string;
+	linkSx?: React.CSSProperties;
+	children?: React.ReactNode[];
+	key?: string | number;
+}
+
+interface PathCrumb {
+	dirName: string;
+	url: string;
+}
+
+const crumbSpacing = 4;
+
+function getPathCrumbs(
+	repo: string,
+	rev: string | null,
+	path: string,
+	toFile: boolean,
+): PathCrumb[] {
+	const pathParts = path.split("/");
+	const pathToFile = pathParts.slice(0, -1);
+	const pathArray = toFile ? pathToFile : pathParts;
+	return pathArray.map(
+		(dir, i) => {
+			return {
+				dirName: dir,
+				url: urlToTree(repo, rev, pathToFile.slice(0, i + 1)),
+			};
+		}
+	);
+}
+
+function Crumb({ style, url, linkSx, linkClassName, children, key }: CrumbProps): JSX.Element {
+	return <span style={style} key={key}>
+		<span style={{ display: "inline-block", paddingLeft: crumbSpacing, paddingRight: crumbSpacing }}>/</span>
+		<Link to={url} style={linkSx} className={linkClassName}>{children}</Link>
+	</span>;
+}
+
 export function PathBreadcrumb({ repo, path, rev, linkSx, linkHoverSx, style, toFile = true }: Props): JSX.Element {
 
 	const links: JSX.Element[] = [];
-	const linkHover = linkHoverSx ? hover(linkHoverSx) : null;
+	const linkHoverClass = linkHoverSx ? hover(linkHoverSx).toString() : "";
 
-	const repoParts = repo.split("/");
-	const repoLink: (string | JSX.Element)[] = [];
-	repoParts.forEach((dir, i) => {
-		repoLink.push(dir);
-		if (i === repoParts.length - 1) {
-			return;
-		}
-		repoLink.push(<span style={{
-			paddingLeft: 4,
-			paddingRight: 4,
-		}} key={i}>/</span>);
-	});
-
-	links[0] = <Link key={0}
-		to={urlToTree(repo, rev, [])}
-		style={linkSx}
-		{...linkHover}
-	>
-		{repoLink}
-	</Link>;
+	links.push(
+		<RepoLink
+			repo={repo}
+			rev={rev}
+			style={linkSx}
+			key="RepoLink"
+			className={linkHoverClass}
+			spacing={crumbSpacing} />
+	);
 
 	if (path !== null) {
-		const pathToFile = path.split("/").slice(0, -1);
-		const pathToDir = path.split("/");
-		const pathCrumb = toFile ? pathToFile : pathToDir;
-		const crumbs = pathCrumb.map((item, index) => <span key={index + 1} style={linkSx}>
-			<span style={{ display: "inline-block", paddingLeft: 4, paddingRight: 4 }}>/</span>
-			<Link
-				to={urlToTree(repo, rev, pathToFile.slice(0, index + 1))}
-				style={linkSx}
-				{...linkHover}>
-				{item}
-			</Link>
-		</span>);
-
-		links.push(...crumbs);
+		const crumbs = getPathCrumbs(repo, rev, path, toFile);
+		const crumbEls = crumbs.map((crumb, i) => <Crumb
+			key={i}
+			url={crumb.url}
+			linkSx={linkSx}
+			linkClassName={linkHoverClass}>{crumb.dirName}</Crumb>);
+		links.push(...crumbEls);
 	}
 
 	return <div style={style}>{links}</div>;
-};
+}
