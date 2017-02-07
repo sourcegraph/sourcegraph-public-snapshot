@@ -350,9 +350,5 @@ func PushGitRefToGitUpstream(ctx context.Context, gitRepo gitRepo, headOID, ref,
 
 	return backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
 		return gitRepo.Push(gitRemote, headOID+":refs/zap/"+ref, true)
-	}, GitBackOff(), func(err error, d time.Duration) {
-		if true {
-			fmt.Fprintf(os.Stderr, "retrying git push after error: %s\n", err)
-		}
-	})
+	}, GitBackOff(), nil)
 }

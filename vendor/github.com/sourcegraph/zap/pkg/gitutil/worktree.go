@@ -24,6 +24,13 @@ func NewWorktree(dir string) (Worktree, error) {
 	if err != nil {
 		return Worktree{}, err
 	}
+	// TopLevelDir comes from Git which evaluates symbolic links, we must also
+	// evaluate symbolic links here for the comparison below.
+	dir, err = filepath.EvalSymlinks(dir)
+	if err != nil {
+		return Worktree{}, err
+	}
+
 	w := Worktree{
 		Dir:        dir,
 		BareFSRepo: BareRepoDir(filepath.Join(dir, ".git")),

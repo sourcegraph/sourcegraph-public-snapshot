@@ -14,13 +14,13 @@ var logLevelConfig level.Config
 func init() {
 	logLevel := os.Getenv("LOGLEVEL")
 	switch logLevel {
-	case "", "debug":
+	case "debug":
 		logLevelConfig.Allowed = level.AllowAll()
 	case "info":
 		logLevelConfig.Allowed = level.AllowInfoAndAbove()
 	case "warn":
 		logLevelConfig.Allowed = level.AllowWarnAndAbove()
-	case "error":
+	case "", "error":
 		logLevelConfig.Allowed = level.AllowErrorOnly()
 	default:
 		fmt.Fprintf(os.Stderr, "error: unknown log level %q (valid levels are: %v)\n", logLevel, level.AllowAll())

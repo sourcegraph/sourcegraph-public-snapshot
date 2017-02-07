@@ -16,7 +16,7 @@ Then, in the directory of `sgtest/xyztest`, or any repository you want to use Za
 1. Tell Zap to start watching it: `zap init`
 1. Configure the upstream repository: `zap remote set origin wss://sourcegraph.com/.api/zap github.com/sgtest/xyztest` (replace the last two parameters, the URL and repo name, with the appropriate values)
 1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite -create master@sqs` (use your unix username in place of sqs)
-1. Open the repository in Visual Studio Code, hit alt + s to open Sourcegraph side-by-side, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph
+1. Open the repository in Visual Studio Code, hit alt + s to open Sourcegraph, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph
 
 Notes:
 
@@ -52,47 +52,6 @@ Zap's core concepts are heavily inspired by Git's:
   * **user branch:** a ref of the form `refs/heads/branch@user` (where `branch` and `user` can be anything) that by convention mirrors a single user's workspace (and should not be edited by anyone else)
   * **shared branch:** all other refs of the form `refs/heads/branch` (where `branch` does not contain `@`), which by convention allow multiple clients editing
 * **repository:** like a Git repository, but stores Zap refs and ops instead of Git refs and objects
-
-### Walkthrough
-
-Alice and Bob are collaborators on a Git repository. They set up a remote Zap server for their repository, and each set up their local repository to be watched by their local Zap server and to sync upstream with the same remote server.
-
-Then Alice sits down and her computer and starts working:
-
-1. Alice runs `git checkout foo` to switch to the Git branch `foo`.
-   * The Zap client on Alice's machine creates the Zap branch `foo@alice` on the remote server. If one already exists, it clobbers and recreates it.
-   * Alice's local state is also pushed to `HEAD`, which always refers to Alice's current work in progress. Like Git's `HEAD`, this only exists in Alice's local repository; it's not synced up.
-2. Alice changes a file `f` but does not yet commit the change.
-   * Alice's local change is detected by the Zap local server's file system watcher, which adds an op representing the change to the event log of the Zap branch `foo@alice`.
-   * Alice's local server also sends the op to the upstream branch.
-   * The remote server sends an ack to Alice. When her local server receives the ack, it updates its remote tracking ref `refs/remotes/origin/foo@alice` (which always holds the latest state of the remote branch known to Alice).
-
-Now Bob wants to see Alice's changes:
-
-1. Bob runs `zap branches` to see a list of active branches. He sees `foo@alice`.
-2. Bob runs `zap checkout -upstream origin foo@alice`, which:
-   * Checks out his local Git branch `foo` (fetching it from the server if needed), because Alice's `alice@foo` Zap branch is based on the Git branch `foo`
-   * Resets Bob's local `foo` Git branch to the original Git commit that Alice was on when she created the `foo@alice` branch
-   * Replays all of Alice's changes to `foo@alice` on Bob's machine, so that Bob's local state matches Alice's
-
-Bob wants to collaboratively edit with Alice. They *could* both edit on the `alice@foo` branch, but by convention, collaborative editing should occur on shared branches (that don't contain `@`).
-
-1. Bob asks Alice to run `zap checkout -upstream foo -create foo` on her machine to switch to the *shared* branch `foo`.
-   * Alice runs that command, which causes her local server to create a new remote branch named `foo` based on Alice's current Git branch and head commit.
-2. Bob runs `zap checkout -upstream origin foo` on his machine.
-   * Bob's local workspace is synced to the state of the remote branch (which Alice just created).
-2. Alice adds some text to the file `f`.
-   * Alice's local Zap server notices the file system change and sends the corresponding op to the remote upstream branch.
-   * The Zap remote server broadcasts the op to all watchers (including Bob).
-   * When Bob's local Zap server receives the op, it updates the file on his machine.
-2. Bob adds some text to the file `f`.
-   * Same as the previous step, but with Alice's and Bob's roles reversed.
-
-Bob can commit the changes:
-
-1. Bob runs `git commit f`, which causes his local `HEAD` symbolic ref to point to the new commit.
-   * Bob's zap client detects that the workspace's Git HEAD changed and sends the new HEAD commit ID to the zap remote branch `foo`.
-   * Alice's zap client receives the change and resets her local `foo` branch to the new HEAD commit ID.
 
 #### Notes
 

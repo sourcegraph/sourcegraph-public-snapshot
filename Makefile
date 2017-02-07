@@ -88,3 +88,18 @@ check: ${GOBIN}/go-template-lint
 distclean:
 	go clean ./...
 	rm -rf ${GOBIN}/src
+
+.PHONY: upgrade-zap
+upgrade-zap:
+	cd ui && yarn add libzap vscode-zap
+	govendor update github.com/sourcegraph/zap/...
+
+.PHONY: develop-zap
+develop-zap:
+	cd ui && yarn link libzap vscode-zap
+	rm -rf vendor/github.com/sourcegraph/zap vendor/github.com/sourcegraph/go-kit/kit
+
+.PHONY: undevelop-zap
+undevelop-zap:
+	cd ui && yarn unlink libzap vscode-zap
+	git checkout -- vendor/github.com/sourcegraph/zap vendor/github.com/go-kit/kit

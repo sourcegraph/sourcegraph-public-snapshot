@@ -137,6 +137,8 @@ type Server struct {
 	bgCtx context.Context
 
 	work chan func() error
+
+	updateRemoteTrackingRefMu sync.Mutex
 }
 
 // NewServer creates a new remote server.
@@ -514,7 +516,15 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		}
 		return nil, nil
 
-	case "shutdown", "exit":
+	case "shutdown":
+		level.Debug(log).Log("message", "client "+req.Method)
+		return nil, nil
+
+	case "exit":
+		level.Debug(log).Log("message", "client "+req.Method)
+		if err := c.Close(); err != nil {
+			return nil, err
+		}
 		return nil, nil
 
 	default:

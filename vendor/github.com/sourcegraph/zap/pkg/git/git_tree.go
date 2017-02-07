@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/gitutil"
 )
@@ -215,7 +214,6 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 		}
 
 		doc := ot.Doc(data)
-		level.Debug(log).Log("apply-edit-to", f, "edits", fmt.Sprint(edits), "pre-contents", string(doc))
 		if err := doc.Apply(edits); err != nil {
 			err := fmt.Errorf("apply OT edit to %s @ %s: %s (doc: %q, op: %v)", f, base, err, data, op)
 			if panicOnSomeErrors {

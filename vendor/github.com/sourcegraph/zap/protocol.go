@@ -441,6 +441,7 @@ const (
 	ErrorCodeWorkspaceExists                       // workspace has already been added
 	ErrorCodeWorkspaceIdentifierRequired           // workspace identifier is required in params
 	ErrorCodeRefUpdateInvalid                      // an invalid ref update (e.g., trying to update a remote tracking ref)
+	ErrorCodeInvalidOp                             // an invalid operation (e.g., edit with incorrect base length)
 )
 
 // Code returns the Zap-specific error code for error, or 0 if err has

@@ -17,6 +17,7 @@ type UpstreamClient interface {
 	RefInfo(context.Context, RefIdentifier) (*RefInfoResult, error)
 	RefUpdate(context.Context, RefUpdateUpstreamParams) error
 	SetRefUpdateCallback(func(context.Context, RefUpdateDownstreamParams) error)
+	SetRefUpdateSymbolicCallback(f func(context.Context, RefUpdateSymbolicParams) error)
 	DisconnectNotify() <-chan struct{}
 	Close() error
 }
@@ -96,6 +97,10 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, log *log.Context
 				level.Error(log).Log("params", params, "err", err)
 				return err
 			}
+			return nil
+		})
+		cl.SetRefUpdateSymbolicCallback(func(context.Context, RefUpdateSymbolicParams) error {
+			// Nothing to do here; symbolic refs are not shared between servers.
 			return nil
 		})
 		if sr.conn == nil {

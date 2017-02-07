@@ -12,6 +12,7 @@ import (
 
 	logpkg "github.com/go-kit/kit/log"
 	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/neelance/parallel"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
@@ -70,6 +71,18 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Contex
 	log = log.With("update-remote-tracking-ref", params.RefIdentifier.Ref, "params", params)
 	level.Info(log).Log()
 
+	// When we connect to and repo/watch on a new remote server in
+	// quick succession, if a branch is configured to overwrite, this
+	// method will be called twice in quick succession. This can cause
+	// an error of the form "refdb write: wrong old value for ref
+	// refs/remotes/origin/master@sqs: actual != nil && expected ==
+	// nil".
+	//
+	// TODO(sqs) HACK: mitigate this by locking; we should come up
+	// with a better solution.
+	s.updateRemoteTrackingRefMu.Lock()
+	defer s.updateRemoteTrackingRefMu.Unlock()
+
 	timer := time.AfterFunc(1*time.Second, func() {
 		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
@@ -78,7 +91,9 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Contex
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
 	ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
-	if params.Delete {
+	if params.Ack {
+		// Nothing to do.
+	} else if params.Delete {
 		// Delete ref.
 		if ref != nil {
 			if err := repo.refdb.Delete(params.RefIdentifier.Ref, *ref, refdb.RefLogEntry{}); err != nil {
@@ -344,6 +359,17 @@ func (s *Server) broadcastRefUpdateDownstream(ctx context.Context, log *logpkg.C
 		refID := RefIdentifier{Repo: repo, Ref: ref.Name}
 		if watchers := s.watchers(refID); len(watchers) > 0 {
 			level.Debug(log).Log("broadcast-to-downstream-ref", refID, "watchers", strings.Join(clientIDs(watchers), " "), "downstream-params", params)
+
+			// Determine if the sender is watching (so we don't send
+			// both a broadcast AND an ack to the sender).
+			var senderIsWatching bool
+			for _, c := range watchers {
+				if c == sender {
+					senderIsWatching = true
+					break
+				}
+			}
+
 			s.work <- func() error {
 				// Send the update with the ref name that the client
 				// is watching as (e.g., "HEAD" not "master" if they
@@ -351,28 +377,35 @@ func (s *Server) broadcastRefUpdateDownstream(ctx context.Context, log *logpkg.C
 				params := params
 				params.RefIdentifier.Ref = ref.Name
 
-				senderIsWatching := false
-				for _, c := range watchers { // TODO(sqs): parallelize
-					if c == sender {
-						// We ack the sender below, so skip it here.
-						senderIsWatching = true
-						continue
-					}
+				par := parallel.NewRun(10)
+				for _, c := range watchers {
+					par.Acquire()
+					go func(c *serverConn) {
+						defer par.Release()
 
-					// TODO(sqs): handle closed conns
-					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-					if err := c.conn.Call(ctx, "ref/update", params, nil); err == io.ErrUnexpectedEOF {
-						// This means the client connection no longer
-						// exists. Continue sending to the other watchers.
-					} else if err != nil {
-						cancel()
-						level.Warn(log).Log("watcher-broadcast-error", err, "id", c.init.ID)
-						if err := c.conn.Close(); err != nil {
-							level.Warn(log).Log("error-closing-watcher", err, "id", c.init.ID)
+						if c == sender {
+							// We ack the sender below (and must do that
+							// after broadcasting updates to all
+							// clients), so skip the sender here.
+							return
 						}
-						continue
-					}
-					cancel()
+
+						ctx, cancel := context.WithTimeout(ctx, sendTimeout)
+						defer cancel()
+						if err := c.conn.Call(ctx, "ref/update", params, nil); err == io.ErrUnexpectedEOF {
+							// This means the client connection no longer
+							// exists. Continue sending to the other watchers.
+						} else if err != nil {
+							level.Warn(log).Log("watcher-broadcast-error", err, "id", c.init.ID)
+							if err := c.conn.Close(); err != nil {
+								level.Warn(log).Log("error-closing-watcher", err, "id", c.init.ID)
+							}
+							return
+						}
+					}(c)
+				}
+				if err := par.Wait(); err != nil {
+					return err
 				}
 
 				if senderIsWatching && sender != nil {
@@ -690,7 +723,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 				params.Op = &xop
 			} else {
 				return &jsonrpc2.Error{
-					Code:    int64(ErrorCodeRefConflict),
+					Code:    int64(ErrorCodeInvalidOp),
 					Message: err.Error(),
 				}
 			}

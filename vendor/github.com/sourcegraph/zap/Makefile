@@ -1,5 +1,3 @@
-MAKEFLAGS += --jobs=8
-
 .PHONY: install
 install: install-main install-ext install-lang
 
@@ -16,14 +14,14 @@ install-ext: install-lang
 install-lang:; cd lang && $(MAKE) install
 
 .PHONY: test
-test: test-main test-lang test-ext
+test: test-main test-lang test-ext test-e2e
 
 .PHONY: test-main
 test-main:
 	go get -d -t ./...
 	go test -i ./...
-	go install -race ./cmd/zap
-	go list ./... | grep -v internal/e2e | ZAP_TEST_STALE_OK=t xargs go test -timeout 9m -race
+	go list ./... | grep -v internal/e2e | grep -v cmd/zap | xargs go test -timeout 9m -race
+	go install ./cmd/zap && go test -parallel 3 ./cmd/zap
 
 .PHONY: test-ext
 test-ext:; cd ext && $(MAKE) test
@@ -47,3 +45,8 @@ publish-npm:
 publish-vscode:
 	cd ext/vscode && git clean -fdx node_modules && yarn && vsce publish
 	lerna bootstrap
+
+.PHONY: publish
+publish:
+	$(MAKE) publish-npm
+	$(MAKE) publish-vscode

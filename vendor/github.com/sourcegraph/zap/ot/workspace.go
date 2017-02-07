@@ -748,8 +748,10 @@ func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {
 			}
 		}
 
-		_, created := op.Create[d]
-		if !created && !truncated {
+		if _, created := op.Create[d]; created {
+			delete(op.Create, d)
+		}
+		if !truncated {
 			op.Save[s] = struct{}{}
 		}
 	}
