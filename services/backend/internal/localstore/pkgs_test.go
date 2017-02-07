@@ -114,12 +114,14 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	}
 }
 
+// 🚨 SECURITY: This test is critical for testing security 🚨
 func TestPkgs_ListPackages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := testContext()
 
+	// 🚨 SECURITY: This is critical for testing security 🚨
 	calledReposGet := false
 	Mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		calledReposGet = true

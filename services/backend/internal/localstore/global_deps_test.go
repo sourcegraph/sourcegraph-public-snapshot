@@ -126,6 +126,7 @@ func TestGlobalDeps_UnsafeRefreshIndex(t *testing.T) {
 	}
 }
 
+// 🚨 SECURITY: This test is critical for testing security 🚨
 func TestGlobalDeps_Dependencies(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -136,6 +137,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		return []int32{1, 2, 3, 4}, nil
 	}
 
+	// 🚨 SECURITY: This is critical for testing security 🚨
 	calledReposGet := false
 	Mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		calledReposGet = true
