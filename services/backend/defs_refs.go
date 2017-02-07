@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
-	"testing"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -41,6 +39,10 @@ func init() {
 }
 
 func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
+	if Mocks.Defs.TotalRefs != nil {
+		return Mocks.Defs.TotalRefs(ctx, source)
+	}
+
 	ctx, done := trace(ctx, "Deps", "TotalRefs", source, &err)
 	defer done()
 
@@ -71,6 +73,10 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 }
 
 func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error) {
+	if Mocks.Defs.DependencyReferences != nil {
+		return Mocks.Defs.DependencyReferences(ctx, op)
+	}
+
 	ctx, done := trace(ctx, "Defs", "RefLocations", op, &err)
 	defer done()
 
@@ -157,8 +163,8 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 // 🚨 SECURITY: It is the caller's responsibility to ensure the repository 🚨
 // described by the op parameter is accurately specified as private or not.
 func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
-	if Mocks.Defs.RefreshIndex != nil {
-		return Mocks.Defs.RefreshIndex(ctx, op)
+	if Mocks.Defs.UnsafeRefreshIndex != nil {
+		return Mocks.Defs.UnsafeRefreshIndex(ctx, op)
 	}
 
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
@@ -174,17 +180,7 @@ func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 }
 
 type MockDefs struct {
-	RefreshIndex func(v0 context.Context, v1 *sourcegraph.DefsRefreshIndexOp) error
-}
-
-func (s *MockDefs) MockRefreshIndex(t *testing.T, wantOp *sourcegraph.DefsRefreshIndexOp) (called *bool) {
-	called = new(bool)
-	s.RefreshIndex = func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error {
-		*called = true
-		if !reflect.DeepEqual(op, wantOp) {
-			t.Fatalf("unexpected DefsRefreshIndexOp, got %+v != %+v", op, wantOp)
-		}
-		return nil
-	}
-	return
+	TotalRefs            func(ctx context.Context, source string) (res int, err error)
+	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
+	UnsafeRefreshIndex   func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
 }

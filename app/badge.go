@@ -17,25 +17,30 @@ import (
 // duplication kludge.
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
-func badgeValue(r *http.Request) (string, error) {
+func badgeValue(r *http.Request) (int, error) {
 	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
-		return "", errors.Wrap(err, "GetRepoAndRev")
+		return 0, errors.Wrap(err, "GetRepoAndRev")
 	}
 	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.URI)
 	if err != nil {
-		return "", errors.Wrap(err, "Defs.TotalRefs")
+		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}
+	return totalRefs, nil
+}
+
+// NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
+func badgeValueFmt(totalRefs int) string {
 	// Format e.g. "1,399" as "1.3k".
 	desc := fmt.Sprintf("%d projects", totalRefs)
-	if totalRefs > 1000 {
+	if totalRefs >= 1000 {
 		desc = fmt.Sprintf("%.1fk projects", float64(totalRefs)/1000.0)
 	}
 
 	// Note: We're adding a prefixed space because otherwise the shields.io
 	// badge will be formatted badly (looks like `used by |12k projects`
 	// instead of `used by | 12k projects`).
-	return " " + desc, nil
+	return " " + desc
 }
 
 func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
@@ -49,7 +54,7 @@ func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
 	u := &url.URL{
 		Scheme:   "https",
 		Host:     "img.shields.io",
-		Path:     "/badge/used by-" + value + "-brightgreen.svg",
+		Path:     "/badge/used by-" + badgeValueFmt(value) + "-brightgreen.svg",
 		RawQuery: v.Encode(),
 	}
 	http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
