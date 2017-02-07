@@ -139,6 +139,7 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
+	// SECURITY: access control check here
 	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
 		return nil, ErrRepoNotFound
 	}
@@ -157,6 +158,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	if err != nil {
 		return nil, err
 	}
+	// SECURITY: access control check here
 	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
 		return nil, ErrRepoNotFound
 	}
