@@ -140,8 +140,8 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if repo.Private && !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.URI) {
-		return nil, accesscontrol.ErrRepoNotFound
+	if repo.Private && !verifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.Get", repo.URI) {
+		return nil, ErrRepoNotFound
 	}
 	return repo, nil
 }
@@ -158,8 +158,8 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	if err != nil {
 		return nil, err
 	}
-	if repo.Private && !accesscontrol.VerifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.URI) {
-		return nil, accesscontrol.ErrRepoNotFound
+	if repo.Private && !verifyActorHasRepoURIAccess(ctx, auth.ActorFromContext(ctx), "Repos.GetByURI", repo.URI) {
+		return nil, ErrRepoNotFound
 	}
 	return repo, nil
 }
@@ -181,7 +181,7 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 func (s *repos) getBySQL(ctx context.Context, query string, args ...interface{}) (*sourcegraph.Repo, error) {
 	var repo dbRepo
 	if err := appDBH(ctx).SelectOne(&repo, "SELECT * FROM repo WHERE ("+query+") LIMIT 1", args...); err == sql.ErrNoRows {
-		return nil, accesscontrol.ErrRepoNotFound
+		return nil, ErrRepoNotFound
 	} else if err != nil {
 		return nil, err
 	}
@@ -218,9 +218,9 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 	}
 
 	// SECURITY: It is very important that the input list of repos (rawRepos)
-	// comes directly from the DB as VerifyUserHasReadAccessAll relies directly
+	// comes directly from the DB as verifyUserHasReadAccessAll relies directly
 	// on the accuracy of the Repo.Private field.
-	repos, err := accesscontrol.VerifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)
+	repos, err := verifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-package accesscontrol
+package localstore
 
 import (
 	"context"
@@ -16,8 +16,8 @@ import (
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 )
 
-// testContext with mock stubs for GitHubRepoGetter
-func testContext() (context.Context, *githubmock.GitHubRepoGetter) {
+// authTestContext with mock stubs for GitHubRepoGetter
+func authTestContext() (context.Context, *githubmock.GitHubRepoGetter) {
 	var m githubmock.GitHubRepoGetter
 	ctx := context.Background()
 	ctx = github.WithRepos(ctx, &m)
@@ -28,7 +28,7 @@ func testContext() (context.Context, *githubmock.GitHubRepoGetter) {
 }
 
 func TestUserHasReadAccessAll(t *testing.T) {
-	ctx, mock := testContext()
+	ctx, mock := authTestContext()
 
 	type testcase struct {
 		title                     string
@@ -122,7 +122,7 @@ func TestUserHasReadAccessAll(t *testing.T) {
 	for _, test := range testcases {
 		calledListAccessible := mock.MockListAccessible(ctx, test.mockGitHubAccessibleRepos)
 
-		gotRepos, err := VerifyUserHasReadAccessAll(ctx, "Repos.List", test.inputRepos)
+		gotRepos, err := verifyUserHasReadAccessAll(ctx, "Repos.List", test.inputRepos)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -139,21 +139,8 @@ func TestUserHasReadAccessAll(t *testing.T) {
 	}
 }
 
-type MockRepos struct {
-	_Get      func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
-	_GetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
-}
-
-func (m *MockRepos) Get(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
-	return m._Get(ctx, repo)
-}
-
-func (m *MockRepos) GetByURI(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
-	return m._GetByURI(ctx, repo)
-}
-
 func TestVerifyActorHasRepoURIAccess(t *testing.T) {
-	ctx, mock := testContext()
+	ctx, mock := authTestContext()
 
 	tests := []struct {
 		title                string
@@ -234,7 +221,7 @@ func TestVerifyActorHasRepoURIAccess(t *testing.T) {
 
 		actor := &auth.Actor{UID: "1"}
 		const repoID = 1
-		got := VerifyActorHasRepoURIAccess(ctx, actor, "Repos.GetByURI", test.repoURI)
+		got := verifyActorHasRepoURIAccess(ctx, actor, "Repos.GetByURI", test.repoURI)
 		if calledGitHub != test.shouldCallGitHub {
 			if test.shouldCallGitHub {
 				t.Errorf("expected GitHub API to be called for permissions check, but it wasn't")
