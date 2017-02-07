@@ -6,7 +6,6 @@ import (
 
 	"context"
 
-	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -14,18 +13,17 @@ import (
 )
 
 type MockRepos struct {
-	Get              func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
-	GetByURI         func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
-	List             func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListStarredRepos func(v0 context.Context, v1 *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error)
-	Update           func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
-	GetCommit        func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
-	ResolveRev       func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
-	ListCommits      func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
-	ListDeps         func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
-	ListCommitters   func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
-	GetInventory     func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	RefreshIndex     func(ctx context.Context, repo string) (err error)
+	Get            func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	GetByURI       func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
+	List           func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	Update         func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
+	GetCommit      func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ResolveRev     func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
+	ListCommits    func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
+	ListDeps       func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
+	ListCommitters func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	GetInventory   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	RefreshIndex   func(ctx context.Context, repo string) (err error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
@@ -70,19 +68,6 @@ func (s *MockRepos) MockGet_Return(t *testing.T, returns *sourcegraph.Repo) (cal
 func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 	called = new(bool)
 	s.List = func(ctx context.Context, opt *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error) {
-		*called = true
-		repos := make([]*sourcegraph.Repo, len(wantRepos))
-		for i, repo := range wantRepos {
-			repos[i] = &sourcegraph.Repo{URI: repo}
-		}
-		return &sourcegraph.RepoList{Repos: repos}, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockListStarredRepos(t *testing.T, wantRepos ...string) (called *bool) {
-	called = new(bool)
-	s.ListStarredRepos = func(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (*sourcegraph.RepoList, error) {
 		*called = true
 		repos := make([]*sourcegraph.Repo, len(wantRepos))
 		for i, repo := range wantRepos {

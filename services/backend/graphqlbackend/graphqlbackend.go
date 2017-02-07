@@ -8,7 +8,6 @@ import (
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
-	gogithub "github.com/sourcegraph/go-github/github"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
@@ -17,6 +16,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -121,13 +121,14 @@ func listRepos(ctx context.Context, opt *sourcegraph.RepoListOptions) ([]*reposi
 }
 
 func (r *rootResolver) RemoteStarredRepositories(ctx context.Context) ([]*repositoryResolver, error) {
-	starredRepos, err := backend.Repos.ListStarredRepos(ctx, &gogithub.ActivityListStarredOptions{})
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "RemoteStarredRepositories")
+	repos, err := github.ListStarredRepos(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	var s []*repositoryResolver
-	for _, repo := range starredRepos.Repos {
+	for _, repo := range repos {
 		s = append(s, &repositoryResolver{
 			repo: repo,
 		})
