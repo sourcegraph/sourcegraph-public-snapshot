@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -128,21 +126,21 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 	ctx, done := testContext()
 	defer done()
-	ctx = accesscontrol.WithInsecureMock(ctx, true) // use mock access controls
-	accesscontrol.Mocks = accesscontrol.MockPerms{
-		VerifyUserHasReadAccess: func(ctx context.Context, method string, repoID int32) error {
-			switch repoID {
-			case 1, 2, 3, 4:
-				return nil
-			case 5:
-				return fmt.Errorf("unauthorized")
-			}
-			t.Fatalf("unexpected VerifyUserHasReadAccess call: %s %d", method, repoID)
-			return fmt.Errorf("UNREACHABLE")
-		},
-	}
 
 	p := pkgs{}
+
+	calledReposGet := false
+	Mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
+		calledReposGet = true
+		switch repo {
+		case 1, 2, 3, 4:
+			return &sourcegraph.Repo{ID: repo}, nil
+		case 5:
+			return nil, errors.New("unauthorized")
+		default:
+			return nil, errors.New("not found")
+		}
+	}
 
 	repoToPkgs := map[int32][]lspext.PackageInformation{
 		1: []lspext.PackageInformation{{
@@ -248,6 +246,10 @@ func TestPkgs_ListPackages(t *testing.T) {
 		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
 		}
+	}
+
+	if !calledReposGet {
+		t.Fatalf("!calledReposGet")
 	}
 }
 
