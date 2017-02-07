@@ -97,7 +97,7 @@ upgrade-zap:
 .PHONY: develop-zap
 develop-zap:
 	cd ui && yarn link libzap vscode-zap
-	rm -rf vendor/github.com/sourcegraph/zap vendor/github.com/sourcegraph/go-kit/kit
+	rm -rf vendor/github.com/sourcegraph/zap vendor/github.com/go-kit/kit
 
 .PHONY: undevelop-zap
 undevelop-zap:
