@@ -36,9 +36,7 @@ var Repos interface {
 // specially designed to avoid infinite loops with
 // (*localstore.repos).Get/GetByURI.
 func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method string, repoURI string) bool {
-	if mock(ctx) {
-		return Mocks.VerifyActorHasRepoURIAccess(ctx, actor, method, repoURI)
-	} else if Skip(ctx) {
+	if Skip(ctx) {
 		return true
 	}
 
@@ -76,9 +74,7 @@ func VerifyActorHasRepoURIAccess(ctx context.Context, actor *auth.Actor, method 
 // determining the list of allowed repositories, the second return
 // value will be non-nil error.
 func VerifyUserHasReadAccessAll(ctx context.Context, method string, repos []*sourcegraph.Repo) (allowed []*sourcegraph.Repo, err error) {
-	if mock(ctx) {
-		return Mocks.VerifyUserHasReadAccessAll(ctx, method, repos)
-	} else if Skip(ctx) {
+	if Skip(ctx) {
 		return repos, nil
 	}
 
@@ -128,20 +124,5 @@ func WithInsecureSkip(ctx context.Context, skip bool) context.Context {
 
 func Skip(ctx context.Context) bool {
 	v, _ := ctx.Value(insecureSkip).(bool)
-	return v
-}
-
-// Allow mocking of access control checks
-const insecureMock contextKey = 1
-
-// WithInsecureMock replaces all access checks with mocks. It
-// supersedes WithInsecureSkip. It is INSECURE and should only be used
-// during testing.
-func WithInsecureMock(ctx context.Context, mock bool) context.Context {
-	return context.WithValue(ctx, insecureMock, mock)
-}
-
-func mock(ctx context.Context) bool {
-	v, _ := ctx.Value(insecureMock).(bool)
 	return v
 }
