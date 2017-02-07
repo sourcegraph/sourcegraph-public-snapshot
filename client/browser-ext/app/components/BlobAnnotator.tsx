@@ -12,7 +12,7 @@ const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px" };
 interface Props {
 	path: string;
 	repoURI: string;
-	blobElement: HTMLElement;
+	fileElement: HTMLElement;
 }
 
 interface State {
@@ -94,6 +94,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 	componentDidMount(): void {
 		github.registerExpandDiffClickHandler(this.clickRefresh);
+		this.props.fileElement.addEventListener("click", this.clickRefresh);
 		// Set a timer to re-check revision data every 10 seconds, for repos that haven't been
 		// cloned and revs that haven't been sync'd to Sourcegraph.com.
 		// Single-flighted requests / caching prevents spamming the API.
@@ -104,6 +105,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		if (this.revisionChecker) {
 			clearInterval(this.revisionChecker);
 		}
+		this.props.fileElement.removeEventListener("click", this.clickRefresh);
 	}
 
 	componentDidUpdate(): void {
@@ -111,7 +113,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		this.addAnnotations();
 	}
 
-	clickRefresh(): void {
+	clickRefresh = (): void => {
 		// Diff expansion is not synchronous, so we must wait for
 		// elements to get added to the DOM before calling into the
 		// annotations code. 500ms is arbitrary but seems to work well.
@@ -181,8 +183,11 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			if (!utils.supportedExtensions.has(ext)) {
 				return; // Don't annotate unsupported languages
 			}
-
-			addAnnotations(this.props.path, { repoURI, rev, isDelta: this.isDelta || false, isBase }, this.props.blobElement, this.isSplitDiff || false, loggerProps);
+			const blobElement = github.tryGetBlobElement(this.props.fileElement);
+			if (!blobElement) {
+				return;
+			}
+			addAnnotations(this.props.path, { repoURI, rev, isDelta: this.isDelta || false, isBase }, blobElement, this.isSplitDiff || false, loggerProps);
 		};
 
 		const applyAnnotationsIfResolvedRev = (uri: string, rev?: string, isBase?: boolean) => {

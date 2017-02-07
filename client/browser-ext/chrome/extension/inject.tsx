@@ -61,20 +61,12 @@ function injectBlobAnnotators(): void {
 			return;
 		}
 
-		const blob = github.tryGetBlobElement(file);
-		if (!blob) {
-			// File contents are collapsed (e.g. for large files).
-			// Asynchronously apply annotator after the user clicks on the file (wait for file contents to load).
-			file.addEventListener("click", () => setTimeout(() => addBlobAnnotator(file, mount), 2500));
-			return;
-		}
-
 		if (file.className.includes("sg-blob-annotated")) {
 			// make this function idempotent
 			return;
 		}
 		file.className = `${file.className} sg-blob-annotated`;
-		render(<BlobAnnotator path={filePath} repoURI={uri} blobElement={blob} />, mount);
+		render(<BlobAnnotator path={filePath} repoURI={uri}  fileElement={file} />, mount);
 	}
 
 	const files = github.getFileContainers();
