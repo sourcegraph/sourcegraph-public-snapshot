@@ -59,8 +59,7 @@ func TestRepos_Get(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	s := repos{}
 
@@ -80,8 +79,7 @@ func TestRepos_List(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 
@@ -103,8 +101,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 
@@ -154,8 +151,7 @@ func TestRepos_List_query1(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 	s := repos{}
@@ -200,8 +196,7 @@ func TestRepos_List_query2(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 	s := repos{}
@@ -247,8 +242,7 @@ func TestRepos_List_sort(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 
@@ -277,8 +271,7 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	githubRepos := &githubmock.GitHubRepoGetter{}
 	ctx = github.WithRepos(ctx, githubRepos)
@@ -331,8 +324,7 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	s := repos{}
@@ -373,8 +365,7 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 	ctx = accesscontrol.WithInsecureSkip(ctx, false) // use real access controls
 
 	githubRepos := &githubmock.GitHubRepoGetter{}
@@ -410,8 +401,7 @@ func TestRepos_Create(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	s := repos{}
 
@@ -439,8 +429,7 @@ func TestRepos_Create_dupe(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	s := repos{}
 
@@ -464,8 +453,7 @@ func TestRepos_Update_Description(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	s := repos{}
 
@@ -500,8 +488,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	s := repos{}
 
@@ -541,8 +528,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	s := repos{}
 

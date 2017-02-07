@@ -46,8 +46,7 @@ func TestUserInvites_Get(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	s := userInvites{}
 
@@ -67,8 +66,7 @@ func TestUserInvites_List(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 
@@ -92,8 +90,7 @@ func TestUserInvites_List_URIs(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	ctx = github.WithMockHasAuthedUser(ctx, false)
 

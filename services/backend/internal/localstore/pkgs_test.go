@@ -19,8 +19,7 @@ func TestPkgs_update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	p := pkgs{}
 
@@ -58,8 +57,7 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/xpackages":
@@ -124,8 +122,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx, done := testContext()
-	defer done()
+	ctx := testContext()
 
 	p := pkgs{}
 

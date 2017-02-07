@@ -2,13 +2,14 @@ package testdb
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"os/exec"
@@ -22,12 +23,12 @@ var (
 	truncate     = flag.Bool("db.truncate", true, "truncate (remove all data from) tables before running tests")
 	verbose      = flag.Bool("db.v", false, "log DB schema operations in testdb package")
 
-	// poolSize is the number of databases that are created and
+	// initialPoolSize is the number of databases that are created and
 	// prepared to be supplied to tests that call
-	// PristineDBs. Increasing poolSize makes the initialization time
+	// PristineDBs. Increasing initialPoolSize makes the initialization time
 	// slower but reduces the average wait time for a DB to be
 	// supplied to a test.
-	poolSize = flag.Int("db.pool", 8, "DB pool size")
+	initialPoolSize = flag.Int("db.pool", 8, "DB pool size")
 
 	// label is a string that uniquely identifies a package's
 	// tests. It is used to create the names of pristine DBs so that
@@ -59,7 +60,7 @@ var (
 //
 // NOTE ABOUT DATA LOSS: If you run this func and your env vars are
 // set up to access an existing database, its data will be deleted.
-func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle, done func()) {
+func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle) {
 	var b *backgroundDBPool
 	backgroundDBPoolsLock.Lock()
 	if _, ok := backgroundDBPoolsByName[poolName]; !ok {
@@ -77,6 +78,7 @@ func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle,
 		log.Fatalf("schema mismatch for db pool: %q", poolName)
 	}
 
+	go b.prepareNewDB(poolName)
 	const timeout = 45 * time.Second
 
 	select {
@@ -84,9 +86,7 @@ func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle,
 		if *verbose {
 			b.vlog.Printf("got new dbs: %s", dbh.DataSource)
 		}
-		return dbh, func() {
-			b.doneDBs <- dbh
-		}
+		return dbh
 	case <-time.After(timeout):
 		log.Fatalf("testdb: DB creation wait exceeded timeout (%s)", timeout)
 	}
@@ -95,23 +95,17 @@ func pristineDBs(poolName string, schema *dbutil2.Schema) (main *dbutil2.Handle,
 
 // backgroundDBPool creates DBs and schemas in the background so
 // that there is always a pool of DBs ready to be used by the
-// tests. Without this background process, pristineDBs has to wait on
-// the full truncate operation for each invocation.
-// Each backgroundDBPool object maintains a pool of dbs pertaining
+// tests. Each backgroundDBPool object maintains a pool of dbs pertaining
 // to a single schema.
 type backgroundDBPool struct {
 	schema *dbutil2.Schema // only 1 schema may be used per db pool
 
 	readyDBs chan *dbutil2.Handle
-	doneDBs  chan *dbutil2.Handle
 
-	// Only drop or create each table once, since truncation should
-	// handle clearing out everything.
-	//
-	// TODO(sqs): truncating doesn't get non-dbmapped tables, such as
-	// the simple queues.
-	dropped []bool
-	created []bool
+	// Only drop or create each table once.
+	dropped map[int]bool
+	created map[int]bool
+	nextID  int32
 
 	vlog *log.Logger
 }
@@ -131,49 +125,28 @@ func (b *backgroundDBPool) start(poolName string, schema *dbutil2.Schema) {
 
 	dbutil2.CreateUnloggedTables = true
 
-	b.created = make([]bool, *poolSize)
-	b.dropped = make([]bool, *poolSize)
-	b.readyDBs = make(chan *dbutil2.Handle, *poolSize)
-	b.doneDBs = make(chan *dbutil2.Handle, *poolSize)
+	b.created = map[int]bool{}
+	b.dropped = map[int]bool{}
+	b.readyDBs = make(chan *dbutil2.Handle, *initialPoolSize)
 
-	for id := 0; id < *poolSize; id++ {
-		go func(id int) {
-			dbname := "sgtmp-" + poolName + "-" + label + "-" + strconv.Itoa(id) + "-" + strconv.Itoa(os.Getpid())
-			exec.Command("createdb", dbname).Run() // ignore error
-			dbh, err := dbutil2.Open("dbname="+dbname, *b.schema)
-			if err != nil {
-				log.Fatal("testdb: open DB:", err)
-			}
-			b.prepareDBs(id, dbh, *dropSchema, *createSchema, *truncate)
-			if *verbose {
-				b.vlog.Printf("opened new DB (%s)", dbname)
-			}
-			b.readyDBs <- dbh
-		}(id)
+	for i := 0; i < *initialPoolSize; i++ {
+		go b.prepareNewDB(poolName)
 	}
+}
 
-	for i := 0; i < *poolSize; i++ {
-		go func() {
-			for dbh := range b.doneDBs {
-				if *verbose {
-					b.vlog.Println("(background) done with DB; truncating it and prepping for reuse")
-				}
-				if *truncate {
-					start := time.Now()
-					if *verbose {
-						b.vlog.Println("(background) Truncating all tables...")
-					}
-					if err := dbh.TruncateTables(); err != nil {
-						log.Fatal("testdb: truncate all tables:", err)
-					}
-					if *verbose {
-						b.vlog.Println("(background) Truncated all tables in ", time.Since(start))
-					}
-				}
-				b.readyDBs <- dbh
-			}
-		}()
+func (b *backgroundDBPool) prepareNewDB(poolName string) {
+	id := atomic.AddInt32(&b.nextID, 1)
+	dbname := fmt.Sprintf("sgtmp-%s-%s-%d-%d", poolName, label, id, os.Getpid())
+	_ = exec.Command("createdb", dbname).Run()
+	dbh, err := dbutil2.Open("dbname="+dbname, *b.schema)
+	if err != nil {
+		log.Fatal("testdb: open DB:", err)
 	}
+	b.prepareDBs(int(id), dbh, *dropSchema, *createSchema, *truncate)
+	if *verbose {
+		b.vlog.Printf("opened new DB (%s)", dbname)
+	}
+	b.readyDBs <- dbh
 }
 
 func (b *backgroundDBPool) prepareDBs(id int, mdb *dbutil2.Handle, drop, create, truncate bool) {

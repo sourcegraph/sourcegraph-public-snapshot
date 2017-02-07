@@ -14,12 +14,11 @@ import (
 
 // dbConfig is embedded in TestServer.
 type dbConfig struct {
-	AppDBH    gorp.SqlExecutor
-	appDBDone func()
+	AppDBH gorp.SqlExecutor
 }
 
 func (s *dbConfig) configDB() error {
-	s.AppDBH, s.appDBDone = testdb.NewHandle("app", &localstore.AppSchema)
+	s.AppDBH = testdb.NewHandle("app", &localstore.AppSchema)
 	if _, ok := s.AppDBH.(*dbutil2.Handle); !ok {
 		return fmt.Errorf("test app requires a real app db *dbutil.Handle not %T (must run with -pgsqltest.init=full)", s.AppDBH)
 	}
@@ -48,8 +47,4 @@ func (s *dbConfig) dbEnvConfig() []string {
 		v = append(v, "PGPORT="+u)
 	}
 	return v
-}
-
-func (s *dbConfig) close() {
-	s.appDBDone()
 }
