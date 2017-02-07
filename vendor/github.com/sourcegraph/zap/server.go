@@ -138,6 +138,7 @@ type Server struct {
 
 	work chan func() error
 
+	updateFromDownstreamMu    sync.Mutex
 	updateRemoteTrackingRefMu sync.Mutex
 }
 

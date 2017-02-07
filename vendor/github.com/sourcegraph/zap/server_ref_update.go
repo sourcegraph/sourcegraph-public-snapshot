@@ -556,6 +556,12 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 		}
 	}
 
+	// TODO(sqs): HACK(sqs): fix same issue as with the other
+	// s.updateFromDownstreamMu lock (see its call site comment for
+	// more info). This will make it slower before it gets faster.
+	s.updateFromDownstreamMu.Lock()
+	defer s.updateFromDownstreamMu.Unlock()
+
 	if sender != nil {
 		log = log.With("update-ref-from-downstream", params.RefIdentifier.Ref)
 	} else {
