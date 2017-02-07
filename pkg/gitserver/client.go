@@ -74,7 +74,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 	}
 
 	opt := &vcs.RemoteOpts{}
-	// SECURITY: Only send credentials to gitserver if we know that the repository is private. This
+	// 🚨 SECURITY: Only send credentials to gitserver if we know that the repository is private. This 🚨
 	// is to avoid fetching private commits while our access checks still assume that the repository
 	// is public. In that case better fail fetching those commits until the DB got updated.
 	if strings.HasPrefix(repoURI, "github.com/") && !c.client.NoCreds && c.Repo.Private {

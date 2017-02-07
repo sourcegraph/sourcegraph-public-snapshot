@@ -73,7 +73,7 @@ func (*globalDeps) eachTable(sql string) (composed string) {
 
 // UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
 //
-// SECURITY: It is the caller's responsibility to ensure the repository
+// 🚨 SECURITY: It is the caller's responsibility to ensure the repository 🚨
 // described by the op parameter is accurately specified as private or not.
 func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang) error {
 	var errs []string
@@ -97,7 +97,7 @@ func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.Def
 }
 
 func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) {
-	// SECURITY: Note that we do not speak to global_dep_private here, because
+	// 🚨 SECURITY: Note that we do not speak to global_dep_private here, because 🚨
 	// that could hint towards private repositories existing. We may decide to
 	// relax this constraint in the future, but we should be extremely careful
 	// in doing so.

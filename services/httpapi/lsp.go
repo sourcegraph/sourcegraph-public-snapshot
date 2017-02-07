@@ -26,7 +26,7 @@ import (
 )
 
 func serveLSP(w http.ResponseWriter, r *http.Request) {
-	// SECURITY: This endpoint relies on cookie based authentication.
+	// 🚨 SECURITY: This endpoint relies on cookie based authentication. 🚨
 	// websocketUpgrader.Upgrade handles checking the origin header so
 	// that this endpoint is not vulnerable to CSRF like attacks.
 	//
@@ -105,7 +105,7 @@ func (h jsonrpc2HandlerFunc) Handle(ctx context.Context, conn *jsonrpc2.Conn, re
 // important, it does not currently accept WebSocket connections,
 // although it could be easily enhanced to do so).
 //
-// SECURITY: The jsonrpc2Proxy checks that the repository specified in
+// 🚨 SECURITY: The jsonrpc2Proxy checks that the repository specified in 🚨
 // the "initialize" request can be accessed by the current user. If
 // the current user is forbidden, it immediately ends the connection
 // and does not allow the client to send any messages to the LSP
@@ -128,7 +128,7 @@ func (p *jsonrpc2Proxy) start() {
 func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, req *jsonrpc2.Request) error {
 	<-p.ready
 
-	// SECURITY: If this is the "initialize" request, we MUST check
+	// 🚨 SECURITY: If this is the "initialize" request, we MUST check 🚨
 	// that the current user can access the workspace root's
 	// repository. This is the ONLY PLACE that access is checked; the
 	// LSP proxy does not perform any access checking.
@@ -152,7 +152,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 				return err
 			}
 
-			// SECURITY: LSP recently introduced a rootUri field on
+			// 🚨 SECURITY: LSP recently introduced a rootUri field on 🚨
 			// InitializeParams and deprecated rootPath. Until we
 			// support rootUri in the LSP proxy, unset rootUri so we
 			// guarantee only rootPath can specify the workspace.
@@ -168,7 +168,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 				return err
 			}
 
-			// SECURITY: Check that the the user can access the repo.
+			// 🚨 SECURITY: Check that the the user can access the repo. 🚨
 			if _, err := backend.Repos.Resolve(p.httpCtx, &sourcegraph.RepoResolveOp{Path: rootPathURI.Repo()}); err != nil {
 				log15.Error("jsonrpc2Proxy: access check failed", "workspace", params.RootPath, "err", err)
 				return err
@@ -179,7 +179,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 			if err := from.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{Message: accessErr.Error()}); err != nil {
 				log15.Error("jsonrpc2Proxy: error sending access-check-failed reply", "method", req.Method, "accessErr", accessErr, "err", err)
 			}
-			return accessErr // SECURITY: Do not pass on unauthorized request to server.
+			return accessErr // 🚨 SECURITY: Do not pass on unauthorized request to server. 🚨
 		}
 	}
 

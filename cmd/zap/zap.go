@@ -181,7 +181,7 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		// A Repos.GetByURI call with a nil error indicates the actor
 		// has access to the repo.
 		//
-		// SECURITY: While Zap is in dogfooding, we are OK allowing
+		// 🚨 SECURITY: While Zap is in dogfooding, we are OK allowing 🚨
 		// anyone with read access to also have write access to Zap
 		// repos. Currently we have no way to allow Zap reads but not
 		// writes.
@@ -194,7 +194,7 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		actor := auth.ActorFromContext(ctx)
 		log15.Info("Zap: OpenRepo", "repo", repo, "login", actor.Login, "uid", actor.UID)
 
-		// SECURITY: Limit Zap to only being used with certain repos
+		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
 		// during dogfooding.
 		whitelistedRepos := map[string]bool{
 			"github.com/sgtest/xyztest":                               true,

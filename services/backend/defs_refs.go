@@ -82,7 +82,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	span.SetTag("line", op.Line)
 	span.SetTag("character", op.Character)
 
-	// SECURITY: We first must call textDocument/xdefinition on a ref
+	// 🚨 SECURITY: We first must call textDocument/xdefinition on a ref 🚨
 	// to figure out what to query the global deps database for. The
 	// ref might exist in a private repo, so we MUST check that the
 	// user has access to that private repo first prior to calling it
@@ -94,7 +94,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// for references to a private repository's symbol ever (in fact,
 	// they are not even indexed by the global deps database).
 
-	// SECURITY: repository permissions are checked here
+	// 🚨 SECURITY: repository permissions are checked here 🚨
 	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 
 // UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
 //
-// SECURITY: It is the caller's responsibility to ensure the repository
+// 🚨 SECURITY: It is the caller's responsibility to ensure the repository 🚨
 // described by the op parameter is accurately specified as private or not.
 func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
 	if Mocks.Defs.RefreshIndex != nil {

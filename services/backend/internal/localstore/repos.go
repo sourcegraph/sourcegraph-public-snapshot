@@ -139,7 +139,7 @@ func (s *repos) Get(ctx context.Context, id int32) (*sourcegraph.Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	// SECURITY: access control check here
+	// 🚨 SECURITY: access control check here 🚨
 	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
 		return nil, ErrRepoNotFound
 	}
@@ -158,7 +158,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 	if err != nil {
 		return nil, err
 	}
-	// SECURITY: access control check here
+	// 🚨 SECURITY: access control check here 🚨
 	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
 		return nil, ErrRepoNotFound
 	}
@@ -218,7 +218,7 @@ func (s *repos) List(ctx context.Context, opt *RepoListOp) ([]*sourcegraph.Repo,
 		return nil, err
 	}
 
-	// SECURITY: It is very important that the input list of repos (rawRepos)
+	// 🚨 SECURITY: It is very important that the input list of repos (rawRepos) 🚨
 	// comes directly from the DB as verifyUserHasReadAccessAll relies directly
 	// on the accuracy of the Repo.Private field.
 	repos, err := verifyUserHasReadAccessAll(ctx, "Repos.List", rawRepos)

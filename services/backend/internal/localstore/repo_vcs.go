@@ -19,7 +19,7 @@ func (s *repoVCS) Open(ctx context.Context, repo int32) (vcs.Repository, error) 
 		return Mocks.RepoVCS.Open(ctx, repo)
 	}
 
-	// SECURITY: repository permissions are checked here
+	// 🚨 SECURITY: repository permissions are checked here 🚨
 	r, err := Repos.Get(ctx, repo)
 	if err != nil {
 		return nil, err

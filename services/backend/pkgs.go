@@ -15,7 +15,7 @@ type pkgs struct{}
 // It is safe to invoke on both public and private repositories, as read access
 // is verified after query time (i.e. in localstore.Pkgs.ListPackages).
 //
-// SECURITY: It is the caller's responsibility to ensure that invoking this
+// 🚨 SECURITY: It is the caller's responsibility to ensure that invoking this 🚨
 // function does not leak existence of a private repository. For example,
 // returning error or success to a user would cause a security issue. Also
 // waiting for this method to complete before returning to the user leaks

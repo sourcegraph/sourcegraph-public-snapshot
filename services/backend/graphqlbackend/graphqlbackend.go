@@ -234,7 +234,7 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	checkedUserHasReadAccessToRepo := false // safeguard to make sure we don't accidentally delete the check below
 	var rev *sourcegraph.ResolvedRev
 	{
-		// SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring
+		// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
 		// the user has permissions to access the repository.
 		rev, err = backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 			Repo: repo.ID,

@@ -237,7 +237,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 	}
 
 	for _, pkg := range rawPkgs {
-		// SECURITY: repository permissions are checked here
+		// 🚨 SECURITY: repository permissions are checked here 🚨
 		if _, err := Repos.Get(ctx, pkg.RepoID); err == nil {
 			pks = append(pks, pkg)
 		}

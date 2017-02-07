@@ -155,7 +155,7 @@ type contextID struct {
 	// mode (e.g., for Zap and/or when textDocument/didChange, etc.,
 	// should be enabled).
 	//
-	// SECURITY: The session isolation that this provides is dependent
+	// 🚨 SECURITY: The session isolation that this provides is dependent 🚨
 	// on how difficult to guess this value is. Currently it is chosen
 	// by the client (and only used for Zap). E.g., if the client
 	// picks "foo", then anyone else could probably guess "foo". If
@@ -329,7 +329,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			params.Mode = ""
 		}
 
-		// SECURITY: LSP introduced a rootUri field on
+		// 🚨 SECURITY: LSP introduced a rootUri field on 🚨
 		// InitializeParams and deprecated rootPath. Until we
 		// implement rootUri, ensure that it is not being sent to us,
 		// to avoid confusion. This also helps avoid an exploit where
