@@ -161,37 +161,20 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	}, nil
 }
 
-// UnsafeRefreshIndex refreshes the global deps index for the specified
-// repository. It is safe to invoke on both public and private repositories, as
-// read access is verified at query time (i.e. in localstore.GlobalDeps.Dependencies).
-//
-// 🚨 SECURITY: It is the caller's responsibility to ensure that invoking this 🚨
-// function does not leak existence of a private repository. For example,
-// returning error or success to a user would cause a security issue. Also
-// waiting for this method to complete before returning to the user leaks
-// existence via timing information alone. Generally, only the indexer should
-// invoke this method.
-func (s *defs) UnsafeRefreshIndex(ctx context.Context, repoURI, commitID string) (err error) {
-	if Mocks.Defs.UnsafeRefreshIndex != nil {
-		return Mocks.Defs.UnsafeRefreshIndex(ctx, repoURI, commitID)
+// RefreshIndex refreshes the global deps index for the specified
+// repository.
+func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err error) {
+	if Mocks.Defs.RefreshIndex != nil {
+		return Mocks.Defs.RefreshIndex(ctx, repoURI, commitID)
 	}
 
 	ctx, done := trace(ctx, "Defs", "RefreshIndex", map[string]interface{}{"repoURI": repoURI, "commitID": commitID}, &err)
 	defer done()
-
-	repo, err := Repos.GetByURI(ctx, repoURI)
-	if err != nil {
-		return err
-	}
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: commitID})
-	if err != nil {
-		return err
-	}
-	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, inv.Languages, repo, commitID)
+	return localstore.GlobalDeps.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
 }
 
 type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
 	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
-	UnsafeRefreshIndex   func(ctx context.Context, repoURI, commitID string) error
+	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
 }

@@ -164,24 +164,19 @@ func index(ctx context.Context, repoName string) error {
 
 	// Global refs & packages indexing. Neither index forks.
 	if !repo.Fork {
-		op := &sourcegraph.DefsRefreshIndexOp{
-			RepoURI:  repo.URI,
-			CommitID: string(headCommit),
-		}
-
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
-		err = backend.Defs.UnsafeRefreshIndex(ctx, op)
+		err = backend.Defs.RefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
-			return fmt.Errorf("Defs.UnsafeRefreshIndex failed: %s", err)
+			return fmt.Errorf("Defs.RefreshIndex failed: %s", err)
 		}
 
 		// As part of package indexing, it's fine to index private repositories
 		// because backend.Pkgs.ListPackages is responsible for authentication
 		// checks.
-		err = backend.Pkgs.UnsafeRefreshIndex(ctx, op)
+		err = backend.Pkgs.RefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
-			return fmt.Errorf("Pkgs.UnsafeRefreshIndex failed: %s", err)
+			return fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
 		}
 	}
 

@@ -51,7 +51,7 @@ func TestPkgs_update(t *testing.T) {
 	}
 }
 
-func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
+func TestPkgs_RefreshIndex(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -91,9 +91,21 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	langs := []*inventory.Lang{{Name: "TypeScript"}}
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+		switch repo {
+		case "github.com/my/repo":
+			return &sourcegraph.Repo{ID: 1, URI: repo}, nil
+		default:
+			return nil, errors.New("not found")
+		}
+	}
+
+	reposGetInventory := func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
+	}
+
 	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	if err := Pkgs.UnsafeRefreshIndex(ctx, langs, &sourcegraph.Repo{URI: "github.com/my/repo", ID: 1}, commitID); err != nil {
+	if err := Pkgs.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
 	}
 

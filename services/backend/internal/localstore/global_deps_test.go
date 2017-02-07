@@ -58,7 +58,7 @@ func TestGlobalDeps_update(t *testing.T) {
 	}
 }
 
-func TestGlobalDeps_UnsafeRefreshIndex(t *testing.T) {
+func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -103,9 +103,21 @@ func TestGlobalDeps_UnsafeRefreshIndex(t *testing.T) {
 	defer xlangDone()
 
 	repoID := int32(3)
-	langs := []*inventory.Lang{{Name: "Go"}}
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+		switch repo {
+		case "github.com/my/repo":
+			return &sourcegraph.Repo{ID: repoID, URI: repo}, nil
+		default:
+			return nil, errors.New("not found")
+		}
+	}
+
+	reposGetInventory := func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "Go"}}}, nil
+	}
+
 	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	if err := GlobalDeps.UnsafeRefreshIndex(ctx, langs, &sourcegraph.Repo{URI: "github.com/my/repo", ID: repoID}, commitID); err != nil {
+	if err := GlobalDeps.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
 	}
 

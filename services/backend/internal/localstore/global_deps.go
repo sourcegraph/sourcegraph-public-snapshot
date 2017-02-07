@@ -78,13 +78,19 @@ func (*globalDeps) eachTable(sql string) (composed string) {
 	return
 }
 
-// UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
-//
-// 🚨 SECURITY: It is the caller's responsibility to ensure the repository 🚨
-// described by the repo parameter is accurate.
-func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, langs []*inventory.Lang, repo *sourcegraph.Repo, commitID string) error {
+// RefreshIndex refreshes the global deps index for the specified repo@commit.
+func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)) error {
+	repo, err := Repos.GetByURI(ctx, repoURI)
+	if err != nil {
+		return errors.Wrap(err, "Repos.GetByURI")
+	}
+	inv, err := reposGetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: commitID})
+	if err != nil {
+		return errors.Wrap(err, "Repos.GetInventory")
+	}
+
 	var errs []string
-	for _, lang := range langs {
+	for _, lang := range inv.Languages {
 		langName := strings.ToLower(lang.Name)
 
 		if _, enabled := globalDepEnabledLangs[langName]; !enabled {
