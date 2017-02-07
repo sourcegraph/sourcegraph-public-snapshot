@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-func (h *LangHandler) handleTextDocumentFormatting(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.DocumentFormattingParams) ([]lsp.TextEdit, error) {
+func (h *LangHandler) handleTextDocumentFormatting(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.DocumentFormattingParams) ([]lsp.TextEdit, error) {
 	filename := h.FilePath(params.TextDocument.URI)
 	bctx := h.BuildContext(ctx)
 	fset := token.NewFileSet()

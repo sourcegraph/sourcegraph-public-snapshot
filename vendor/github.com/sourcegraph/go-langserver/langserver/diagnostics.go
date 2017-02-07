@@ -11,13 +11,14 @@ import (
 	"golang.org/x/tools/go/loader"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonrpc2"
 )
 
 type diagnostics map[string][]*lsp.Diagnostic // map of URI to diagnostics (for PublishDiagnosticParams)
 
 // publishDiagnostics sends diagnostic information (such as compile
 // errors) to the client.
-func (h *LangHandler) publishDiagnostics(ctx context.Context, conn JSONRPC2Conn, diags diagnostics) error {
+func (h *LangHandler) publishDiagnostics(ctx context.Context, conn jsonrpc2.JSONRPC2, diags diagnostics) error {
 	// Our diagnostics are currently disabled because they behave
 	// incorrectly. We do not keep track of which files have failed /
 	// succeeded, so we do not send empty diagnostics to clear compiler

@@ -103,3 +103,13 @@ func (t *tracer) RecordSpan(span basictracer.RawSpan) {
 		log.Println("Error sending LSP telemetry/event notification:", err)
 	}
 }
+
+// FollowsFrom means the parent span does not depend on the child span, but
+// caused it to start.
+func startSpanFollowsFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
+	if parentSpan := opentracing.SpanFromContext(ctx); parentSpan != nil {
+		opts = append(opts, opentracing.FollowsFrom(parentSpan.Context()))
+		return parentSpan.Tracer().StartSpan(operationName, opts...)
+	}
+	return opentracing.GlobalTracer().StartSpan(operationName, opts...)
+}

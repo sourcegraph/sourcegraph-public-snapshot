@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-func (h *LangHandler) handleDefinition(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
+func (h *LangHandler) handleDefinition(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]lsp.Location, error) {
 	res, err := h.handleXDefinition(ctx, conn, req, params)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn JSONRPC2Conn, r
 	return locs, nil
 }
 
-func (h *LangHandler) handleXDefinition(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]symbolLocationInformation, error) {
+func (h *LangHandler) handleXDefinition(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]symbolLocationInformation, error) {
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.BuildContext(ctx)
 

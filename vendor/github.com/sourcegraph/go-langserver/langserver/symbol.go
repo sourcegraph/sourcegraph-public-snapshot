@@ -284,14 +284,14 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 
 // handleTextDocumentSymbol handles `textDocument/documentSymbol` requests for
 // the Go language server.
-func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.DocumentSymbolParams) ([]lsp.SymbolInformation, error) {
+func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.DocumentSymbolParams) ([]lsp.SymbolInformation, error) {
 	f := uriToPath(params.TextDocument.URI)
 	return h.handleSymbol(ctx, conn, req, Query{File: f}, 0)
 }
 
 // handleSymbol handles `workspace/symbol` requests for the Go
 // language server.
-func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
+func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lspext.WorkspaceSymbolParams) ([]lsp.SymbolInformation, error) {
 	q := ParseQuery(params.Query)
 	q.Symbol = params.Symbol
 	if q.Filter == FilterDir {
@@ -311,7 +311,7 @@ func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn JSONRPC2Co
 	return h.handleSymbol(ctx, conn, req, q, params.Limit)
 }
 
-func (h *LangHandler) handleSymbol(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, query Query, limit int) ([]lsp.SymbolInformation, error) {
+func (h *LangHandler) handleSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, query Query, limit int) ([]lsp.SymbolInformation, error) {
 	results := resultSorter{Query: query, results: make([]scoredSymbol, 0)}
 	{
 		rootPath := h.FilePath(h.init.RootPath)

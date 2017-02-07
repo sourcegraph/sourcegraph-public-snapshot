@@ -30,7 +30,7 @@ import (
 // calls.
 const workspaceReferencesTimeout = 15 * time.Second
 
-func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lspext.WorkspaceReferencesParams) ([]referenceInformation, error) {
+func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lspext.WorkspaceReferencesParams) ([]referenceInformation, error) {
 	// TODO: Add support for the cancelRequest LSP method instead of using
 	// hard-coded timeouts like this here.
 	//
@@ -183,7 +183,7 @@ loop:
 	return results.results, nil
 }
 
-func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, fset *token.FileSet, pkgs []string, afterTypeCheck func(info *loader.PackageInfo, files []*ast.File)) (prog *loader.Program, err error) {
+func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Context, conn jsonrpc2.JSONRPC2, fset *token.FileSet, pkgs []string, afterTypeCheck func(info *loader.PackageInfo, files []*ast.File)) (prog *loader.Program, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "workspaceRefsTypecheck")
 	defer func() {
 		if err != nil {
@@ -259,7 +259,7 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 
 // workspaceRefsFromPkg collects all the references made to dependencies from
 // the specified package and returns the results.
-func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn JSONRPC2Conn, params lspext.WorkspaceReferencesParams, fs *token.FileSet, pkg *loader.PackageInfo, files []*ast.File, rootPath string, results *refResultSorter) (err error) {
+func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn jsonrpc2.JSONRPC2, params lspext.WorkspaceReferencesParams, fs *token.FileSet, pkg *loader.PackageInfo, files []*ast.File, rootPath string, results *refResultSorter) (err error) {
 	if err := ctx.Err(); err != nil {
 		return err
 	}

@@ -96,7 +96,7 @@ func (h *LangHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *json
 // Handle implements jsonrpc2.Handler, except conn is an interface
 // type for testability. The handle method implements jsonrpc2.Handler
 // exactly.
-func (h *LangHandler) Handle(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request) (result interface{}, err error) {
+func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request) (result interface{}, err error) {
 	// Prevent any uncaught panics from taking the entire server down.
 	defer func() {
 		if perr := panicf(recover(), "%v", req.Method); perr != nil {

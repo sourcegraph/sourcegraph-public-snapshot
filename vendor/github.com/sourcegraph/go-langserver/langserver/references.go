@@ -19,7 +19,9 @@ import (
 	"time"
 
 	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/refactor/importgraph"
 
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/langserver/internal/tools"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -33,13 +35,17 @@ const documentReferencesTimeout = 15 * time.Second
 
 var streamExperiment = len(os.Getenv("STREAM_EXPERIMENT")) > 0
 
-func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSONRPC2Conn, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
+func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
 	// TODO: Add support for the cancelRequest LSP method instead of using
 	// hard-coded timeouts like this here.
 	//
 	// See: https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#cancelRequest
 	ctx, cancel := context.WithTimeout(ctx, documentReferencesTimeout)
 	defer cancel()
+
+	// Begin computing the reverse import graph immediately, as this
+	// occurs in the background and is IO-bound.
+	reverseImportGraphC := h.reverseImportGraph(ctx, conn)
 
 	fset, node, _, _, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
 	if err != nil {
@@ -50,16 +56,6 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 		}
 		return nil, err
 	}
-
-	rootPath := h.FilePath(h.init.RootPath)
-	bctx := h.BuildContext(ctx)
-	h.importGraphOnce.Do(func() {
-		findPackageWithCtx := h.getFindPackageFunc()
-		findPackage := func(bctx *build.Context, importPath, fromDir string, mode build.ImportMode) (*build.Package, error) {
-			return findPackageWithCtx(ctx, bctx, importPath, fromDir, mode)
-		}
-		h.importGraph = tools.BuildReverseImportGraph(bctx, findPackage, rootPath)
-	})
 
 	// NOTICE: Code adapted from golang.org/x/tools/cmd/guru
 	// referrers.go.
@@ -85,198 +81,98 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn JSO
 		return nil, fmt.Errorf("no package found for object %s", obj)
 	}
 	defpkg := obj.Pkg().Path()
-	objposn := fset.Position(obj.Pos())
 	_, pkgLevel := classify(obj)
 
+	bctx := h.BuildContext(ctx)
 	pkgInWorkspace := func(path string) bool {
 		return PathHasPrefix(path, h.init.RootImportPath)
 	}
 
-	// Find the set of packages in this workspace that depend on
-	// defpkg. Only function bodies in those packages need
-	// type-checking.
-	var users map[string]bool
-	if pkgLevel {
-		users = h.importGraph[defpkg]
-		if users == nil {
-			users = map[string]bool{}
-		}
-		users[defpkg] = true
-	} else {
-		users = h.importGraph.Search(defpkg)
-	}
-	lconf := loader.Config{
-		Fset:  fset,
-		Build: bctx,
-		TypeCheckFuncBodies: func(path string) bool {
-			if ctx.Err() != nil {
-				return false
-			}
-
-			// Don't typecheck func bodies in dependency packages
-			// (except the package that defines the object), because
-			// we wouldn't return those refs anyway.
-			path = strings.TrimSuffix(path, "_test")
-			return users[path] && (pkgInWorkspace(path) || path == defpkg)
-		},
-	}
-	allowErrors(&lconf)
-
-	// The importgraph doesn't treat external test packages
-	// as separate nodes, so we must use ImportWithTests.
-	for path := range users {
-		lconf.ImportWithTests(path)
-	}
-
-	// The remainder of this function is somewhat tricky because it
-	// operates on the concurrent stream of packages observed by the
-	// loader's AfterTypeCheck hook.
-
 	var (
-		mu                sync.Mutex
-		refs              []*ast.Ident
-		qobj              types.Object
-		afterTypeCheckErr error
+		// locsC receives the final collected references via
+		// refStreamAndCollect.
+		locsC = make(chan []lsp.Location)
+
+		// refs is a stream of raw references found findReferences.
+		refs = make(chan *ast.Ident)
+
+		// findRefErr is non-nil if findReferences fails.
+		findRefErr error
 	)
 
-	// For efficiency, we scan each package for references
-	// just after it has been type-checked. The loader calls
-	// AfterTypeCheck (concurrently), providing us with a stream of
-	// packages.
-	lconf.AfterTypeCheck = func(info *loader.PackageInfo, files []*ast.File) {
-		// AfterTypeCheck may be called twice for the same package due
-		// to augmentation.
-
-		// Only inspect packages that depend on the declaring package
-		// (and thus were type-checked).
-		if lconf.TypeCheckFuncBodies(info.Pkg.Path()) {
-			mu.Lock()
-			defer mu.Unlock()
-
-			// Record the query object and its package when we see
-			// it. We can't reuse obj from the initial typecheck
-			// because each go/loader Load invocation creates new
-			// objects, and we need to test for equality later when we
-			// look up refs.
-			if qobj == nil && strings.TrimSuffix(info.Pkg.Path(), "_test") == defpkg {
-				// Find the object by its position (slightly ugly).
-				qobj = findObject(fset, &info.Info, objposn)
-				if qobj == nil {
-					// It really ought to be there; we found it once
-					// already.
-					afterTypeCheckErr = fmt.Errorf("object at %s not found in package %s", objposn, defpkg)
-				}
-			}
-			obj := qobj
-
-			// Look for references to the query object. Only collect
-			// those that are in this workspace.
-			if pkgInWorkspace(info.Pkg.Path()) {
-				refs = append(refs, usesOf(obj, info)...)
-			}
-		}
-
-		clearInfoFields(info) // save memory
-	}
-
-	done := make(chan struct{})
 	go func() {
-		// Prevent any uncaught panics from taking the entire server down.
-		defer func() {
-			close(done)
-			_ = panicf(recover(), "%v", req.Method)
-		}()
-
-		lconf.Load() // ignore error
+		locsC <- refStreamAndCollect(ctx, conn, req, fset, refs)
+		close(locsC)
 	}()
 
-	streamUpdate := func() {}
-	streamTick := make(<-chan time.Time, 1)
-	if streamExperiment {
-		initial := json.RawMessage(`[{"op":"replace","path":"","value":[]}]`)
-		conn.Notify(ctx, "$/partialResult", &lspext.PartialResultParams{
-			ID: lsp.ID{
-				Num:      req.ID.Num,
-				Str:      req.ID.Str,
-				IsString: req.ID.IsString,
-			},
-			Patch: &initial,
-		})
-		t := time.NewTicker(time.Second)
-		defer t.Stop()
-		streamTick = t.C
-		streamPos := 0
-		streamUpdate = func() {
-			mu.Lock()
-			partial := refs
-			mu.Unlock()
-			if len(partial) == streamPos {
-				// Everything currently in refs has already been sent.
-				return
+	// seen keeps track of already findReferenced packages. This allows us
+	// to avoid doing extra work when we receive a successive import
+	// graph.
+	seen := make(map[string]bool)
+	for reverseImportGraph := range reverseImportGraphC {
+		// Find the set of packages in this workspace that depend on
+		// defpkg. Only function bodies in those packages need
+		// type-checking.
+		var users map[string]bool
+		if pkgLevel {
+			users = map[string]bool{}
+			for pkg := range reverseImportGraph[defpkg] {
+				users[pkg] = true
 			}
+			users[defpkg] = true
+		} else {
+			users = reverseImportGraph.Search(defpkg)
+		}
 
-			patch := make([]referenceAddOp, 0, len(partial)-streamPos)
-			for ; streamPos < len(partial); streamPos++ {
-				patch = append(patch, referenceAddOp{
-					OP:    "add",
-					Path:  "/-",
-					Value: goRangeToLSPLocation(fset, partial[streamPos].Pos(), partial[streamPos].End()),
-				})
+		// Anything in seen we have already collected references on,
+		// so we only need to collect (users - seen).
+		unseen := make(map[string]bool)
+		for pkg := range users {
+			if !seen[pkg] {
+				unseen[pkg] = true
+				seen[pkg] = true // need to mark for next loop
 			}
-			conn.Notify(ctx, "$/partialResult", &lspext.PartialResultParams{
-				ID: lsp.ID{
-					Num:      req.ID.Num,
-					Str:      req.ID.Str,
-					IsString: req.ID.IsString,
-				},
-				// We use referencePatch so the build server can rewrite URIs
-				Patch: referencePatch(patch),
-			})
 		}
-	}
-Loop:
-	for {
-		select {
-		case <-done:
-			break Loop
-		case <-ctx.Done():
-			break Loop
-		case <-streamTick:
-			streamUpdate()
+		if len(unseen) == 0 { // nothing to do
+			continue
 		}
+
+		lconf := loader.Config{
+			Fset:  fset,
+			Build: bctx,
+		}
+
+		// The importgraph doesn't treat external test packages
+		// as separate nodes, so we must use ImportWithTests.
+		for path := range unseen {
+			lconf.ImportWithTests(path)
+		}
+
+		findRefErr = findReferences(ctx, lconf, pkgInWorkspace, obj, refs)
 	}
+	close(refs)
 
-	// Send a final update
-	streamUpdate()
-
-	// We need to grab mu since it protects qobj
-	mu.Lock()
-	defer mu.Unlock()
+	locs := <-locsC
 
 	// If a timeout does occur, we should know how effective the partial data is
 	if ctx.Err() != nil {
-		refTimeoutResults.Observe(float64(len(refs)))
-		log.Printf("info: timeout during references for %s, found %d refs", defpkg, len(refs))
+		refTimeoutResults.Observe(float64(len(locs)))
+		log.Printf("info: timeout during references for %s, found %d refs", defpkg, len(locs))
 	}
 
-	if qobj == nil {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-		if afterTypeCheckErr != nil {
-			// Only triggered by 1 specific error above (where we assign
-			// afterTypeCheckErr), not any general loader error.
-			return nil, afterTypeCheckErr
-		}
-		return nil, errors.New("query object not found during reloading")
+	// If we find references then we can ignore findRefErr. It should only
+	// be non-nil due to timeouts or our last findReferences doesn't find
+	// the def.
+	if len(locs) == 0 && findRefErr != nil {
+		return nil, findRefErr
 	}
 
 	// Don't include decl if it is outside of workspace.
 	if params.Context.IncludeDeclaration && PathHasPrefix(defpkg, h.init.RootImportPath) {
-		refs = append(refs, &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()})
+		n := &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()}
+		locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
 	}
 
-	locs := goRangesToLSPLocations(fset, refs)
 	sortBySharedDirWithURI(params.TextDocument.URI, locs)
 
 	// Technically we may be able to stop computing references sooner and
@@ -288,6 +184,260 @@ Loop:
 	}
 
 	return locs, nil
+}
+
+// reverseImportGraph returns the reversed import graph for the workspace
+// under the RootPath. Computing the reverse import graph is IO intensive, as
+// such we may send down more than one import graph. The later a graph is
+// sent, the more accurate it is. The channel will be closed, and the last
+// graph sent is accurate. The reader does not have to read all the values.
+func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSONRPC2) <-chan importgraph.Graph {
+	// Ensure our buffer is big enough to prevent deadlock
+	c := make(chan importgraph.Graph, 2)
+
+	go func() {
+		// This should always be related to the go import path for
+		// this repo. For sourcegraph.com this means we share the
+		// import graph across commits. We want this behaviour since
+		// we assume that they don't change drastically across
+		// commits.
+		cacheKey := "importgraph:" + h.init.RootPath
+
+		h.mu.Lock()
+		tryCache := h.importGraph == nil
+		h.mu.Unlock()
+		if tryCache {
+			g := make(importgraph.Graph)
+			if hit := h.cacheGet(ctx, conn, cacheKey, g); hit {
+				// \o/
+				c <- g
+			}
+		}
+
+		parentCtx := ctx
+		h.importGraphOnce.Do(func() {
+			// Note: We use a background context since this
+			// operation should not be cancelled due to an
+			// individual request.
+			span := startSpanFollowsFromContext(parentCtx, "BuildReverseImportGraph")
+			ctx := opentracing.ContextWithSpan(context.Background(), span)
+			defer span.Finish()
+
+			bctx := h.BuildContext(ctx)
+			findPackageWithCtx := h.getFindPackageFunc()
+			findPackage := func(bctx *build.Context, importPath, fromDir string, mode build.ImportMode) (*build.Package, error) {
+				return findPackageWithCtx(ctx, bctx, importPath, fromDir, mode)
+			}
+			g := tools.BuildReverseImportGraph(bctx, findPackage, h.FilePath(h.init.RootPath))
+			h.mu.Lock()
+			h.importGraph = g
+			h.mu.Unlock()
+
+			// Update cache in background
+			go h.cacheSet(ctx, conn, cacheKey, g)
+		})
+		h.mu.Lock()
+		// TODO(keegancsmith) h.importGraph may have been reset after once
+		importGraph := h.importGraph
+		h.mu.Unlock()
+		c <- importGraph
+
+		close(c)
+	}()
+
+	return c
+}
+
+// refStreamAndCollect returns all refs read in from chan until it is
+// closed. While it is reading, it will also occasionaly stream out updates of
+// the refs received so far.
+func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, fset *token.FileSet, refs <-chan *ast.Ident) []lsp.Location {
+	if !streamExperiment {
+		var locs []lsp.Location
+		for n := range refs {
+			locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
+		}
+		return locs
+	}
+
+	id := lsp.ID{
+		Num:      req.ID.Num,
+		Str:      req.ID.Str,
+		IsString: req.ID.IsString,
+	}
+	initial := json.RawMessage(`[{"op":"replace","path":"","value":[]}]`)
+	_ = conn.Notify(ctx, "$/partialResult", &lspext.PartialResultParams{
+		ID:    id,
+		Patch: &initial,
+	})
+
+	var (
+		locs []lsp.Location
+		pos  int
+	)
+	send := func() {
+		if pos >= len(locs) {
+			return
+		}
+		patch := make([]referenceAddOp, 0, len(locs)-pos)
+		for _, l := range locs[pos:] {
+			patch = append(patch, referenceAddOp{
+				OP:    "add",
+				Path:  "/-",
+				Value: l,
+			})
+		}
+		pos = len(locs)
+		_ = conn.Notify(ctx, "$/partialResult", &lspext.PartialResultParams{
+			ID: id,
+			// We use referencePatch so the build server can rewrite URIs
+			Patch: referencePatch(patch),
+		})
+	}
+
+	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
+
+	for {
+		select {
+		case n, ok := <-refs:
+			if !ok {
+				// send a final update
+				send()
+				return locs
+			}
+			locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
+		case <-tick.C:
+			send()
+		}
+	}
+}
+
+// findReferences will find all references to obj. It will only return
+// references from packages in lconf.ImportPkgs.
+func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace func(string) bool, obj types.Object, refs chan<- *ast.Ident) error {
+	allowErrors(&lconf)
+
+	defpkg := obj.Pkg().Path()
+	objposn := lconf.Fset.Position(obj.Pos())
+
+	// The remainder of this function is somewhat tricky because it
+	// operates on the concurrent stream of packages observed by the
+	// loader's AfterTypeCheck hook.
+
+	var (
+		wg                sync.WaitGroup
+		mu                sync.Mutex
+		qobj              types.Object
+		afterTypeCheckErr error
+	)
+
+	collectPkg := pkgInWorkspace
+	if _, ok := lconf.ImportPkgs[defpkg]; !ok {
+		// We have to typecheck defpkg, so just avoid references being collected.
+		collectPkg = func(path string) bool {
+			path = strings.TrimSuffix(path, "_test")
+			return pkgInWorkspace(path) && path != defpkg
+		}
+		lconf.ImportWithTests(defpkg)
+	}
+
+	// Only typecheck pkgs which we can collect refs in, or the pkg our
+	// object is defined in.
+	lconf.TypeCheckFuncBodies = func(path string) bool {
+		if ctx.Err() != nil {
+			return false
+		}
+
+		path = strings.TrimSuffix(path, "_test")
+		_, imported := lconf.ImportPkgs[path]
+		return imported && (pkgInWorkspace(path) || path == defpkg)
+	}
+
+	// For efficiency, we scan each package for references
+	// just after it has been type-checked. The loader calls
+	// AfterTypeCheck (concurrently), providing us with a stream of
+	// packages.
+	lconf.AfterTypeCheck = func(info *loader.PackageInfo, files []*ast.File) {
+		// AfterTypeCheck may be called twice for the same package due
+		// to augmentation.
+
+		defer clearInfoFields(info) // save memory
+
+		wg.Add(1)
+		defer wg.Done()
+
+		// Only inspect packages that depend on the declaring package
+		// (and thus were type-checked).
+		if !lconf.TypeCheckFuncBodies(info.Pkg.Path()) {
+			return
+		}
+
+		// Record the query object and its package when we see
+		// it. We can't reuse obj from the initial typecheck
+		// because each go/loader Load invocation creates new
+		// objects, and we need to test for equality later when we
+		// look up refs.
+		mu.Lock()
+		if qobj == nil && strings.TrimSuffix(info.Pkg.Path(), "_test") == defpkg {
+			// Find the object by its position (slightly ugly).
+			qobj = findObject(lconf.Fset, &info.Info, objposn)
+			if qobj == nil {
+				// It really ought to be there; we found it once
+				// already.
+				afterTypeCheckErr = fmt.Errorf("object at %s not found in package %s", objposn, defpkg)
+			}
+		}
+		queryObj := qobj
+		mu.Unlock()
+
+		// Look for references to the query object. Only collect
+		// those that are in this workspace.
+		if queryObj != nil && collectPkg(info.Pkg.Path()) {
+			for id, obj := range info.Uses {
+				if sameObj(queryObj, obj) {
+					refs <- id
+				}
+			}
+		}
+	}
+
+	// We don't use workgroup on this goroutine, since we want to return
+	// early on context cancellation.
+	done := make(chan struct{})
+	go func() {
+		// Prevent any uncaught panics from taking the entire server down.
+		defer func() {
+			close(done)
+			_ = panicf(recover(), "findReferences")
+		}()
+
+		lconf.Load() // ignore error
+	}()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+	}
+
+	// This should only wait in the case of the context being done. In
+	// that case we are waiting for the currently running AfterTypeCheck
+	// functions to finish.
+	wg.Wait()
+
+	if qobj == nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if afterTypeCheckErr != nil {
+			// Only triggered by 1 specific error above (where we assign
+			// afterTypeCheckErr), not any general loader error.
+			return afterTypeCheckErr
+		}
+		return errors.New("query object not found during reloading")
+	}
+
+	return nil
 }
 
 // classify classifies objects by how far
