@@ -1,6 +1,8 @@
 package github
 
 import (
+	"net/http"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -10,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 )
 
 var (
@@ -23,6 +26,31 @@ var (
 
 func init() {
 	prometheus.MustRegister(abuseDetectionMechanismCounter)
+}
+
+var MockRoundTripper http.RoundTripper
+
+// client returns the context's GitHub API client.
+func client(ctx context.Context) *github.Client {
+	if MockRoundTripper != nil {
+		return github.NewClient(&http.Client{
+			Transport: MockRoundTripper,
+		})
+	}
+
+	ghConf := *githubutil.Default
+	ghConf.Context = ctx
+
+	a := auth.ActorFromContext(ctx)
+	if a.GitHubToken != "" {
+		return ghConf.AuthedClient(a.GitHubToken)
+	}
+
+	return ghConf.UnauthedClient()
+}
+
+func OrgsFromContext(ctx context.Context) *github.OrganizationsService {
+	return client(ctx).Organizations
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {

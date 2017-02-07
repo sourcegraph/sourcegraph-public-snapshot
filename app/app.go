@@ -12,7 +12,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
@@ -51,7 +50,6 @@ func NewHandler(r *router.Router) http.Handler {
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)
 	h = eventsutil.AgentMiddleware(h)
-	h = githubAuthMiddleware(h)
 	h = auth.CookieMiddleware(h)
 	h = httpapiauth.AuthorizationMiddleware(h)
 
@@ -62,11 +60,4 @@ func serveLogout(w http.ResponseWriter, r *http.Request) error {
 	auth.DeleteSession(w, r)
 	http.Redirect(w, r, "/", http.StatusFound)
 	return nil
-}
-
-func githubAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := github.NewContextWithAuthedClient(r.Context())
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
 }
