@@ -10,6 +10,8 @@ import (
 	"github.com/sourcegraph/zap/ot"
 )
 
+const extraDebug = false
+
 // Proxy sits between an upstream server and any number of downstream
 // clients. It proxies the workspace state. To its upstream server,
 // the proxy is an OT client. To its downstream clients, the proxy is
@@ -88,7 +90,9 @@ func (p *Proxy) RecvFromDownstream(log *log.Context, rev int, op ot.WorkspaceOp)
 		return ot.WorkspaceOp{}, fmt.Errorf("revision %d not in history", rev)
 	}
 
-	level.Debug(log).Log("op", op, "transform-against-history", fmt.Sprint(p.history[rev:]))
+	if extraDebug {
+		level.Debug(log).Log("op", op, "transform-against-history", fmt.Sprint(p.history[rev:]))
+	}
 
 	var err error
 	for _, other := range p.history[rev:] {
@@ -97,7 +101,9 @@ func (p *Proxy) RecvFromDownstream(log *log.Context, rev int, op ot.WorkspaceOp)
 		}
 	}
 	if len(p.history[rev:]) > 0 {
-		level.Debug(log).Log("transformed-op", op)
+		if extraDebug {
+			level.Debug(log).Log("transformed-op", op)
+		}
 	}
 
 	if p.Apply != nil {
@@ -172,7 +178,9 @@ func (p *Proxy) RecvFromUpstream(log *log.Context, op ot.WorkspaceOp) (ot.Worksp
 	defer p.mu.Unlock()
 
 	log = log.With("recv-from-upstream", fmt.Sprintf("@%d(upstream)", p.UpstreamRevNumber))
-	level.Debug(log).Log("op", op, "wait", p.Wait, "buf", p.Buf, "history-length", len(p.history), "history", fmt.Sprint(p.history))
+	if extraDebug {
+		level.Debug(log).Log("op", op, "wait", p.Wait, "buf", p.Buf, "history-length", len(p.history), "history", fmt.Sprint(p.history))
+	}
 
 	// Transform it so it can be appended to our view of the history.
 	var err error
@@ -192,7 +200,9 @@ func (p *Proxy) RecvFromUpstream(log *log.Context, op ot.WorkspaceOp) (ot.Worksp
 	}
 
 	if p.Wait != nil || p.Buf != nil {
-		level.Debug(log).Log("transformed-op", op, "wait", p.Wait, "buf", p.Buf)
+		if extraDebug {
+			level.Debug(log).Log("transformed-op", op, "wait", p.Wait, "buf", p.Buf)
+		}
 	}
 
 	// TODO(sqs): this is bad because if Apply fails, p.Wait and p.Buf

@@ -61,10 +61,12 @@ func (s ServerBackend) Create(ctx context.Context, log *logpkg.Context, repo, ba
 			prevSnapshot := snapshot
 
 			// fmt.Fprintf(os.Stderr, "# server workspace: applying op %s on top of snapshot %s\n", op, prevSnapshot)
-			newGitSnapshot, err := CreateTreeForOp(log, gitRepo, &fbuf, prevSnapshot, op)
+			fbufCopy := fbuf.Copy().(*FileBuffer)
+			newGitSnapshot, err := CreateTreeForOp(log, gitRepo, fbufCopy, prevSnapshot, op)
 			if err != nil {
 				return err
 			}
+			fbuf = *fbufCopy
 			snapshot = newGitSnapshot
 			// fmt.Fprintf(os.Stderr, "# server workspace snapshot: %s → %s\n", prevSnapshot, newGitSnapshot)
 

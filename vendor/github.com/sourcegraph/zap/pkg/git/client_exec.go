@@ -152,12 +152,6 @@ func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
 		}
 		doc := ot.Doc(prevData)
 
-		/// DEBUG LOG
-		if isBufferPath(f) {
-			log.Log("apply-to-worktree--edit", f, "pre-contents", string(prevData), "edits", fmt.Sprint(edits))
-		}
-		// END DEBUG LOG
-
 		if err := doc.Apply(edits); err != nil {
 			return &os.PathError{Op: "Edit", Path: f, Err: err}
 		}

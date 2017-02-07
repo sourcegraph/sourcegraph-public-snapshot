@@ -7,7 +7,7 @@ Zap lets you share your Git repository you have write access to and editor state
 These steps help you start using Zap on your repositories.
 
 1. Clone the repository https://github.com/sgtest/xyztest to your local machine.
-1. Install Zap: `go get -v -u github.com/sourcegraph/zap/cmd/zap` (if that fails due to lack of authentication, then run `cd $GOPATH/src/github.com/sourcegraph && git clone git@github.com:sourcegraph/zap.git && go get github.com/sourcegraph/zap/cmd/zap`)
+1. Install Zap: `go get -v -u github.com/sourcegraph/zap/cmd/zap` (if that fails due to lack of authentication, then run `cd $GOPATH/src/github.com/sourcegraph && git clone git@github.com:sourcegraph/zap.git && go get -u github.com/sourcegraph/zap/cmd/zap`)
 1. Launch the Zap server: `zap server -v`
 1. Install the Visual Studio Code extension: Cmd/Ctrl-P for quick open, then `ext install sqs.vscode-zap`
 
@@ -16,7 +16,7 @@ Then, in the directory of `sgtest/xyztest`, or any repository you want to use Za
 1. Tell Zap to start watching it: `zap init`
 1. Configure the upstream repository: `zap remote set origin wss://sourcegraph.com/.api/zap github.com/sgtest/xyztest` (replace the last two parameters, the URL and repo name, with the appropriate values)
 1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite -create master@sqs` (use your unix username in place of sqs)
-1. Open the repository in Visual Studio Code, hit alt + s to open Sourcegraph, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph
+1. Open the repository in Visual Studio Code, hit alt + s to open Sourcegraph, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph. (if the short cut fails to open Sourcegraph: go to VS Code, hit cmd/ctrl + shift + p, search for "Zap: Install/update client" and hit enter. This will update the Zap command-line interface.)
 
 Notes:
 
