@@ -138,8 +138,6 @@ func (s *Server) Close() {
 			log.Fatal(err)
 		}
 	}
-
-	s.dbConfig.close()
 }
 
 func (s *Server) AbsURL(rest string) string {

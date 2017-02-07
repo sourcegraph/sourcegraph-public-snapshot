@@ -13,10 +13,8 @@ func init() {
 }
 
 // testContext constructs a new context that holds a temporary test DB
-// handle and other test configuration. Call done() when done using it
-// to release the DB handle to the pool so it can be used by other
-// tests.
-func testContext() (ctx context.Context, done func()) {
+// handle and other test configuration.
+func testContext() (ctx context.Context) {
 	ctx = context.Background()
 
 	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
@@ -24,8 +22,7 @@ func testContext() (ctx context.Context, done func()) {
 
 	Mocks = MockStores{}
 
-	var appDBDone func()
-	globalAppDBH, appDBDone = testdb.NewHandle("app", &AppSchema)
-
-	return ctx, appDBDone
+	dbh := testdb.NewHandle("app", &AppSchema)
+	ctx = context.WithValue(ctx, dbhKey, dbh)
+	return ctx
 }
