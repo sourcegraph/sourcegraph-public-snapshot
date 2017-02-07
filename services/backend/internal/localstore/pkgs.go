@@ -44,7 +44,7 @@ func (*pkgs) DropTable() string {
 //
 // 🚨 SECURITY: It is the caller's responsibility to ensure the repository 🚨
 // described by the repo parameter is accurate.
-func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang, repo *sourcegraph.Repo) error {
+func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, langs []*inventory.Lang, repo *sourcegraph.Repo, commitID string) error {
 	var errs []string
 	for _, lang := range langs {
 		langName := strings.ToLower(lang.Name)
@@ -52,7 +52,7 @@ func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 		if _, enabled := globalDepEnabledLangs[langName]; !enabled {
 			continue
 		}
-		if err := p.refreshIndexForLanguage(ctx, langName, op, repo); err != nil {
+		if err := p.refreshIndexForLanguage(ctx, langName, repo, commitID); err != nil {
 			log15.Crit("refreshing index failed", "language", langName, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", langName, err))
 		}
@@ -65,7 +65,7 @@ func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	return nil
 }
 
-func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp, repo *sourcegraph.Repo) (err error) {
+func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *sourcegraph.Repo, commitID string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -87,7 +87,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op 
 		// perform.
 		return nil
 	}
-	rootPath := vcs + "://" + repo.URI + "?" + op.CommitID
+	rootPath := vcs + "://" + repo.URI + "?" + commitID
 	var pks []lspext.PackageInformation
 	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &pks)
 	if err != nil {

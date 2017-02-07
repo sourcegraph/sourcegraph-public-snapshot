@@ -522,15 +522,6 @@ type FileRange struct {
 	EndByte int64 `json:"EndByte,omitempty" url:",omitempty"`
 }
 
-type DefsRefreshIndexOp struct {
-	// RepoURI is the URI of the repository whose data is to be re-indexed.
-	RepoURI string `json:"RepoURI,omitempty"`
-
-	// CommitID is the commit ID of the default repository branch which will
-	// be re-indexed.
-	CommitID string `json:"CommitID,omitempty"`
-}
-
 // UserEvent encodes any user initiated event on the local instance.
 type UserEvent struct {
 	Type    string `json:"Type,omitempty"`

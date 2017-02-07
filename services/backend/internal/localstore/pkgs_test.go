@@ -91,9 +91,9 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	op := &sourcegraph.DefsRefreshIndexOp{RepoURI: "github.com/my/repo", CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
 	langs := []*inventory.Lang{{Name: "TypeScript"}}
-	if err := Pkgs.UnsafeRefreshIndex(ctx, op, langs, &sourcegraph.Repo{URI: "github.com/my/repo", ID: 1}); err != nil {
+	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	if err := Pkgs.UnsafeRefreshIndex(ctx, langs, &sourcegraph.Repo{URI: "github.com/my/repo", ID: 1}, commitID); err != nil {
 		t.Fatal(err)
 	}
 

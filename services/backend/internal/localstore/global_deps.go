@@ -82,7 +82,7 @@ func (*globalDeps) eachTable(sql string) (composed string) {
 //
 // 🚨 SECURITY: It is the caller's responsibility to ensure the repository 🚨
 // described by the repo parameter is accurate.
-func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang, repo *sourcegraph.Repo) error {
+func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, langs []*inventory.Lang, repo *sourcegraph.Repo, commitID string) error {
 	var errs []string
 	for _, lang := range langs {
 		langName := strings.ToLower(lang.Name)
@@ -90,7 +90,7 @@ func (g *globalDeps) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.Def
 		if _, enabled := globalDepEnabledLangs[langName]; !enabled {
 			continue
 		}
-		if err := g.refreshIndexForLanguage(ctx, langName, op, repo); err != nil {
+		if err := g.refreshIndexForLanguage(ctx, langName, repo, commitID); err != nil {
 			log15.Crit("refreshing index failed", "language", langName, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", langName, err))
 		}
@@ -133,7 +133,7 @@ func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) 
 	return count, nil
 }
 
-func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp, repo *sourcegraph.Repo) (err error) {
+func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language string, repo *sourcegraph.Repo, commitID string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -150,7 +150,7 @@ func (g *globalDeps) refreshIndexForLanguage(ctx context.Context, language strin
 	// server explicitly for background tasks such as workspace/xdependencies.
 	// This makes it such that indexing repositories does not interfere in
 	// terms of resource usage with real user requests.
-	rootPath := vcs + "://" + repo.URI + "?" + op.CommitID
+	rootPath := vcs + "://" + repo.URI + "?" + commitID
 	var deps []lspext.DependencyReference
 	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xdependencies", map[string]string{}, &deps)
 	if err != nil {

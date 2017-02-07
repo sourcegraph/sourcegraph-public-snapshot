@@ -21,23 +21,23 @@ type pkgs struct{}
 // waiting for this method to complete before returning to the user leaks
 // existence via timing information alone. Generally, only the indexer should
 // invoke this method.
-func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
+func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, repoURI, commitID string) (err error) {
 	if Mocks.Pkgs.UnsafeRefreshIndex != nil {
-		return Mocks.Pkgs.UnsafeRefreshIndex(ctx, op)
+		return Mocks.Pkgs.UnsafeRefreshIndex(ctx, repoURI, commitID)
 	}
 
-	ctx, done := trace(ctx, "Pkgs", "UnsafeRefreshIndex", op, &err)
+	ctx, done := trace(ctx, "Pkgs", "UnsafeRefreshIndex", map[string]interface{}{"repoURI": repoURI, "commitID": commitID}, &err)
 	defer done()
 
-	repo, err := Repos.GetByURI(ctx, op.RepoURI)
+	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return err
 	}
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: op.CommitID})
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: commitID})
 	if err != nil {
 		return err
 	}
-	return localstore.Pkgs.UnsafeRefreshIndex(ctx, op, inv.Languages, repo)
+	return localstore.Pkgs.UnsafeRefreshIndex(ctx, inv.Languages, repo, commitID)
 }
 
 func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error) {
@@ -48,6 +48,6 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 }
 
 type MockPkgs struct {
-	UnsafeRefreshIndex func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
+	UnsafeRefreshIndex func(ctx context.Context, repoURI, commitID string) error
 	ListPackages       func(ctx context.Context, op *sourcegraph.ListPackagesOp) (pkgs []sourcegraph.PackageInfo, err error)
 }
