@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -60,12 +59,6 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 }
 
 var (
-	badRevCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "xlang",
-		Name:      "client_proxy_bad_rev",
-		Help:      "Temporary counter to confirm clients are parsing well-formed revs.",
-	})
 	clientConnsGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
@@ -93,7 +86,6 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(badRevCounter)
 	prometheus.MustRegister(clientConnsGauge)
 	prometheus.MustRegister(clientConnsCounter)
 	prometheus.MustRegister(proxyRetryCounter)
@@ -349,10 +341,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		if len(rootPathURI.Rev()) != 40 {
 			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootPathURI)
-		}
-		if len(rootPathURI.Rev()) != 40 {
-			badRevCounter.Inc()
-			log.Printf("non absolute rev for %s %s", params.RootPath, traceutil.SpanURL(span))
 		}
 
 		c.mu.Lock()
