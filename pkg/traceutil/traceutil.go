@@ -74,6 +74,7 @@ func InitTracer() {
 		options.Recorder = MultiRecorder(
 			&trivialFieldsFilter{lightstep.NewRecorder(lightstep.Options{
 				AccessToken: lightstepAccessToken,
+				UseGRPC:     true,
 			})},
 			&graphqlFieldRecorder{},
 		)
