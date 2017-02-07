@@ -165,6 +165,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 
 	{ // Test case 1
+		calledReposGet = false
 		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
@@ -182,8 +183,12 @@ func TestPkgs_ListPackages(t *testing.T) {
 		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
 		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
 	}
 	{ // Test case 2
+		calledReposGet = false
 		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
@@ -200,6 +205,9 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
+		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
 		}
 	}
 	{ // Test case 3
@@ -218,6 +226,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 4, permissions: filter out unauthorized repository from results
+		calledReposGet = false
 		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 3,
 			Lang:   "go",
@@ -239,10 +248,9 @@ func TestPkgs_ListPackages(t *testing.T) {
 		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
 		}
-	}
-
-	if !calledReposGet {
-		t.Fatalf("!calledReposGet")
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
 	}
 }
 

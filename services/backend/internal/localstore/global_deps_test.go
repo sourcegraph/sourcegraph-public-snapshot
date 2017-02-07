@@ -168,6 +168,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	}
 
 	{ // Test case 1
+		calledReposGet = false
 		wantRefs := []*sourcegraph.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true},
 			RepoID:  1,
@@ -183,8 +184,12 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
 	}
 	{ // Test case 2
+		calledReposGet = false
 		wantRefs := []*sourcegraph.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true},
 			RepoID:  2,
@@ -200,8 +205,12 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
 	}
 	{ // Test case 3, permissions: filter out unauthorized repository from results
+		calledReposGet = false
 		wantRefs := []*sourcegraph.DependencyReference{{
 			DepData: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true},
 			RepoID:  3,
@@ -220,8 +229,8 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
-	}
-	if !calledReposGet {
-		t.Fatalf("!calledReposGet")
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
 	}
 }
