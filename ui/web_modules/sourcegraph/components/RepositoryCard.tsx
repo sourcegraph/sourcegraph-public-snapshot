@@ -12,7 +12,7 @@ interface Props {
 
 export function RepositoryCard({ style, repo }: Props): JSX.Element {
 	function trackRepoClick(): void {
-		AnalyticsConstants.Events.Repository_Clicked.logEvent({ repo });
+		AnalyticsConstants.Events.Repository_Clicked.logEvent({ repo: repo.uri });
 	}
 
 	const sx = Object.assign(

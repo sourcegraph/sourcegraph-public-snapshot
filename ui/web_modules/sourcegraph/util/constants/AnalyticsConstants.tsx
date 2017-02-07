@@ -156,9 +156,11 @@ export const Events = {
 	ToastChromeCTA_Clicked: new LoggableEvent("ChromeToastCTAClicked", EventCategories.Toast, EventActions.Click),
 	ToastChrome_Closed: new LoggableEvent("ChromeToastCloseClicked", EventCategories.Toast, EventActions.Close),
 
+	// Dashboard Events
+	DashboardRepositoryTab_Clicked: new LoggableEvent("DashboardRepositoryTab_Clicked", EventCategories.Nav, EventActions.Click),
+
 	// Repo events
 	Repository_Clicked: new LoggableEvent("RepoClicked", EventCategories.Repository, EventActions.Click),
-	Repository_Added: new LoggableEvent("AddRepo", EventCategories.Repository, EventActions.Success),
 	RepositoryAuthedLanguagesGitHub_Fetched: new LoggableEvent("AuthedLanguagesGitHubFetched", EventCategories.Repository, EventActions.Fetch),
 	RepositoryAuthedReposGitHub_Fetched: new LoggableEvent("AuthedReposGitHubFetched", EventCategories.Repository, EventActions.Fetch),
 
@@ -183,7 +185,6 @@ export const Events = {
 	ChromeExtensionUnsupportedBrowser_Failed: new LoggableEvent("BrowserDoesNotSupportChromeExtension", EventCategories.Onboarding, EventActions.Error),
 	ChromeExtensionStep_Completed: new LoggableEvent("ChromeExtensionStepCompleted", EventCategories.Onboarding, EventActions.Success),
 
-	AuthGitHubStep_Completed: new LoggableEvent("GitHubStepCompleted", EventCategories.Onboarding, EventActions.Success),
 	PrivateAuthGitHub_Skipped: new LoggableEvent("SkipGitHubPrivateAuth", EventCategories.Onboarding, EventActions.Click),
 
 	// ReEngagement
@@ -195,7 +196,6 @@ export const Events = {
 	// Code view
 	// Code view: Symbol events
 	CodeContextMenu_Initiated: new LoggableEvent("CodeContextMenuClicked", EventCategories.CodeView, EventActions.Click),
-	CodeReferences_Viewed: new LoggableEvent("ClickedViewReferences", EventCategories.CodeView, EventActions.Click),
 	CodeExternalReferences_Viewed: new LoggableEvent("ClickedViewExternalReferences", EventCategories.CodeView, EventActions.Click),
 	CodeToken_Hovered: new LoggableEvent("Hovering", EventCategories.CodeView, EventActions.Hover),
 	CodeToken_Clicked: new LoggableEvent("BlobTokenClicked", EventCategories.CodeView, EventActions.Click),
@@ -212,7 +212,6 @@ export const Events = {
 	InfoPanel_Initiated: new LoggableEvent("InfoPanelInitiated", EventCategories.CodeView, EventActions.Toggle),
 	InfoPanel_Dismissed: new LoggableEvent("InfoPanelDismissed", EventCategories.CodeView, EventActions.Close),
 	InfoPanelJumpToDef_Clicked: new LoggableEvent("InfoPanelJumpToDefClicked", EventCategories.CodeView, EventActions.Click),
-	InfoPanelRef_Clicked: new LoggableEvent("InfoPanelRefClicked", EventCategories.CodeView, EventActions.Click),
 	InfoPanelLocalRef_Toggled: new LoggableEvent("InfoPanelLocalRefDisplayed", EventCategories.CodeView, EventActions.Toggle),
 	InfoPanelExternalRef_Toggled: new LoggableEvent("InfoPanelExternalRefDisplayed", EventCategories.CodeView, EventActions.Toggle),
 	InfoPanelRefPreview_Closed: new LoggableEvent("InfoPanelRefPreviewClosed", EventCategories.CodeView, EventActions.Close),
@@ -265,10 +264,6 @@ export const Events = {
 	// Events that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.
 	// See EventLogger.logNonInteractionEventForCategory() for more information
 	ViewRepoMain_Failed: new NonInteractionLoggableEvent("ViewRepoMainError", EventCategories.Repository, EventActions.Error),
-
-	// Dashboard Events
-	DashboardRepositoryTab_Clicked: new LoggableEvent("DashboardRepositoryTab_Clicked", EventCategories.Nav, EventActions.Click),
-
 };
 
 export function getModalDismissedEventObject(modalName: string): LoggableEvent {
