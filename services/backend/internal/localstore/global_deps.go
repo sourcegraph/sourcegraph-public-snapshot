@@ -134,6 +134,12 @@ func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) 
 // use that instead of this manual mapping hack.
 func repoURIToGoPathPrefixes(repoURI string) []string {
 	manualMapping := map[string][]string{
+		// stdlib hack: by returning an empty string (NOT no strings) we end up
+		// with an SQL query like `AND dep_data->>'package' LIKE '%';` which
+		// matches all Go repositories effectively. We do this for the stdlib
+		// because all Go repositories will import the stdlib anyway.
+		"github.com/golang/go": []string{""},
+
 		// google.golang.org
 		"github.com/grpc/grpc-go":                []string{"google.golang.org/grpc"},
 		"github.com/google/google-api-go-client": []string{"google.golang.org/api"},
