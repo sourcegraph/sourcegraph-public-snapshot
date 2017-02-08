@@ -229,7 +229,7 @@ func serveRepoBadgeLanding(w http.ResponseWriter, r *http.Request) error {
 
 	// Add in a query parameter for metrics purposes.
 	q := u.Query()
-	q.Add("_badge_landing", "")
+	q.Add("_event", "RepoBadgeRedirected")
 	u.RawQuery = q.Encode()
 
 	// Redirect.
