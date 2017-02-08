@@ -66,7 +66,7 @@ function injectBlobAnnotators(): void {
 			return;
 		}
 		file.className = `${file.className} sg-blob-annotated`;
-		render(<BlobAnnotator path={filePath} repoURI={uri}  fileElement={file} />, mount);
+		render(<BlobAnnotator path={filePath} repoURI={uri} fileElement={file} />, mount);
 	}
 
 	const files = github.getFileContainers();
