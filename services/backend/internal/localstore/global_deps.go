@@ -80,6 +80,9 @@ func (*globalDeps) eachTable(sql string) (composed string) {
 
 // RefreshIndex refreshes the global deps index for the specified repo@commit.
 func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)) error {
+	// 🚨 SECURITY: Do not remove this call. It prevents us from leaking 🚨
+	// whether or not a private repo exists based on measuring the time
+	// RefreshIndex takes.
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByURI")
