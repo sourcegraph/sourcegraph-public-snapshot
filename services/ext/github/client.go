@@ -25,46 +25,6 @@ func init() {
 	prometheus.MustRegister(abuseDetectionMechanismCounter)
 }
 
-// minimalClient contains the minimal set of GitHub API methods needed
-// by this package.
-type minimalClient struct {
-	repos    githubRepos
-	search   githubSearch
-	activity githubActivity
-	orgs     GitHubOrgs
-}
-
-func newMinimalClient(isAuthedUser bool, userClient *github.Client) *minimalClient {
-	return &minimalClient{
-		repos:    userClient.Repositories,
-		search:   userClient.Search,
-		activity: userClient.Activity,
-		orgs:     userClient.Organizations,
-	}
-}
-
-type githubRepos interface {
-	Get(owner, repo string) (*github.Repository, *github.Response, error)
-	List(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error)
-	CreateHook(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
-}
-
-type githubSearch interface {
-	Repositories(query string, opt *github.SearchOptions) (*github.RepositoriesSearchResult, *github.Response, error)
-}
-
-type githubActivity interface {
-	ListStarred(user string, opt *github.ActivityListStarredOptions) ([]*github.StarredRepository, *github.Response, error)
-}
-
-type githubAuthorizations interface {
-	Revoke(clientID, token string) (*github.Response, error)
-}
-
-type GitHubOrgs interface {
-	List(user string, opt *github.ListOptions) ([]*github.Organization, *github.Response, error)
-}
-
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
 	if err == nil {
 		return nil

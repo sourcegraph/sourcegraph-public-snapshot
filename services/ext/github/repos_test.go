@@ -47,29 +47,27 @@ func testRepos_Get(t *testing.T, private bool) {
 	resetCache(t)
 
 	var calledGet bool
-	ctx := newContext(context.Background(), &minimalClient{
-		repos: github.NewClient(&http.Client{
-			Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-				calledGet = true
-				body, err := json.Marshal(&github.Repository{
-					ID:       github.Int(123),
-					Name:     github.String("repo"),
-					FullName: github.String("owner/repo"),
-					Owner:    &github.User{ID: github.Int(1)},
-					CloneURL: github.String("https://github.com/owner/repo.git"),
-					Private:  github.Bool(private),
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-				return &http.Response{
-					Request:    req,
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader(body)),
-				}, nil
-			}),
-		}).Repositories,
-	})
+	ctx := newContext(context.Background(), github.NewClient(&http.Client{
+		Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			calledGet = true
+			body, err := json.Marshal(&github.Repository{
+				ID:       github.Int(123),
+				Name:     github.String("repo"),
+				FullName: github.String("owner/repo"),
+				Owner:    &github.User{ID: github.Int(1)},
+				CloneURL: github.String("https://github.com/owner/repo.git"),
+				Private:  github.Bool(private),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			return &http.Response{
+				Request:    req,
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewReader(body)),
+			}, nil
+		}),
+	}))
 
 	repo, err := (&repos{}).Get(ctx, "github.com/owner/repo")
 	if err != nil {
@@ -105,17 +103,15 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
 
-	ctx := newContext(context.Background(), &minimalClient{
-		repos: github.NewClient(&http.Client{
-			Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-				return &http.Response{
-					Request:    req,
-					StatusCode: http.StatusNotFound,
-					Body:       ioutil.NopCloser(bytes.NewReader(nil)),
-				}, nil
-			}),
-		}).Repositories,
-	})
+	ctx := newContext(context.Background(), github.NewClient(&http.Client{
+		Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				Request:    req,
+				StatusCode: http.StatusNotFound,
+				Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+			}, nil
+		}),
+	}))
 
 	s := &repos{}
 	nonexistentRepo := "github.com/owner/repo"
@@ -137,49 +133,42 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	resetCache(t)
 
 	calledGetMissing := false
-	mockGetMissing := &minimalClient{
-		repos: github.NewClient(&http.Client{
-			Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-				calledGetMissing = true
-				return &http.Response{
-					Request:    req,
-					StatusCode: http.StatusNotFound,
-					Body:       ioutil.NopCloser(bytes.NewReader(nil)),
-				}, nil
-			}),
-		}).Repositories,
-	}
-	mockGetPrivate := &minimalClient{
-		repos: github.NewClient(&http.Client{
-			Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-				body, err := json.Marshal(&github.Repository{
-					ID:       github.Int(123),
-					Name:     github.String("repo"),
-					FullName: github.String("owner/repo"),
-					Owner:    &github.User{ID: github.Int(1)},
-					CloneURL: github.String("https://github.com/owner/repo.git"),
-					Private:  github.Bool(true),
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-				return &http.Response{
-					Request:    req,
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader(body)),
-				}, nil
-			}),
-		}).Repositories,
-	}
-
-	mock := &minimalClient{}
-	ctx := newContext(context.Background(), mock)
+	mockGetMissing := github.NewClient(&http.Client{
+		Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			calledGetMissing = true
+			return &http.Response{
+				Request:    req,
+				StatusCode: http.StatusNotFound,
+				Body:       ioutil.NopCloser(bytes.NewReader(nil)),
+			}, nil
+		}),
+	})
+	mockGetPrivate := github.NewClient(&http.Client{
+		Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			body, err := json.Marshal(&github.Repository{
+				ID:       github.Int(123),
+				Name:     github.String("repo"),
+				FullName: github.String("owner/repo"),
+				Owner:    &github.User{ID: github.Int(1)},
+				CloneURL: github.String("https://github.com/owner/repo.git"),
+				Private:  github.Bool(true),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			return &http.Response{
+				Request:    req,
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewReader(body)),
+			}, nil
+		}),
+	})
 
 	s := &repos{}
 	privateRepo := "github.com/owner/repo"
 
 	// An unauthed user won't be able to see the repo
-	ctx = newContext(context.Background(), mockGetMissing)
+	ctx := newContext(context.Background(), mockGetMissing)
 	ctx = auth.WithActor(ctx, &auth.Actor{})
 	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
@@ -241,29 +230,27 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	resetCache(t)
 
 	calledGet := false
-	ctx := newContext(context.Background(), &minimalClient{
-		repos: github.NewClient(&http.Client{
-			Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-				calledGet = true
-				body, err := json.Marshal(&github.Repository{
-					ID:       github.Int(123),
-					Name:     github.String("repo"),
-					FullName: github.String("owner/repo"),
-					Owner:    &github.User{ID: github.Int(1)},
-					CloneURL: github.String("https://github.com/owner/repo.git"),
-					Private:  github.Bool(false),
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-				return &http.Response{
-					Request:    req,
-					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewReader(body)),
-				}, nil
-			}),
-		}).Repositories,
-	})
+	ctx := newContext(context.Background(), github.NewClient(&http.Client{
+		Transport: RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			calledGet = true
+			body, err := json.Marshal(&github.Repository{
+				ID:       github.Int(123),
+				Name:     github.String("repo"),
+				FullName: github.String("owner/repo"),
+				Owner:    &github.User{ID: github.Int(1)},
+				CloneURL: github.String("https://github.com/owner/repo.git"),
+				Private:  github.Bool(false),
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			return &http.Response{
+				Request:    req,
+				StatusCode: http.StatusOK,
+				Body:       ioutil.NopCloser(bytes.NewReader(body)),
+			}, nil
+		}),
+	}))
 
 	s := &repos{}
 	repo := "github.com/owner/repo"

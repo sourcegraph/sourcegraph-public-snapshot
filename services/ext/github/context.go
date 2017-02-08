@@ -11,16 +11,9 @@ import (
 type contextKey int
 
 const (
-	minimalClientKey contextKey = iota
+	clientKey contextKey = iota
 	reposKey
 )
-
-// NewContextWithClient creates a new child context with the specified
-// GitHub clients. The userClient is authenticated as the user (or no
-// user if there is none).
-func NewContextWithClient(ctx context.Context, isAuthedUser bool, userClient *github.Client) context.Context {
-	return newContext(ctx, newMinimalClient(isAuthedUser, userClient))
-}
 
 // NewContextWithAuthedClient creates a new child context with a
 // GitHub client that is authenticated using the credentials of the
@@ -39,22 +32,22 @@ func NewContextWithAuthedClient(ctx context.Context) context.Context {
 	} else {
 		userClient = ghConf.UnauthedClient()
 	}
-	return NewContextWithClient(ctx, isAuthedUser, userClient)
+	return newContext(ctx, userClient)
 }
 
-func newContext(ctx context.Context, client *minimalClient) context.Context {
-	return context.WithValue(ctx, minimalClientKey, client)
+func newContext(ctx context.Context, client *github.Client) context.Context {
+	return context.WithValue(ctx, clientKey, client)
 }
 
 // client returns the context's GitHub API client.
-func client(ctx context.Context) *minimalClient {
-	client, _ := ctx.Value(minimalClientKey).(*minimalClient)
+func client(ctx context.Context) *github.Client {
+	client, _ := ctx.Value(clientKey).(*github.Client)
 	if client == nil {
 		panic("no GitHub API client set in context")
 	}
 	return client
 }
 
-func OrgsFromContext(ctx context.Context) GitHubOrgs {
-	return client(ctx).orgs
+func OrgsFromContext(ctx context.Context) *github.OrganizationsService {
+	return client(ctx).Organizations
 }

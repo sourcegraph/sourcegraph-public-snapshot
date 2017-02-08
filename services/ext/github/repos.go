@@ -108,7 +108,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 }
 
 func (s *repos) Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
-	res, _, err := client(ctx).search.Repositories(query, op)
+	res, _, err := client(ctx).Search.Repositories(query, op)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ var GitHubTrackingContextKey = &struct{ name string }{"GitHubTrackingSource"}
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
+	ghrepo, resp, err := client(ctx).Repositories.Get(owner, repoName)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
 	}
@@ -204,7 +204,7 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
 func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
-	ghRepos, resp, err := client(ctx).repos.List("", opt)
+	ghRepos, resp, err := client(ctx).Repositories.List("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
 	}
@@ -225,7 +225,7 @@ func (s *repos) CreateHook(ctx context.Context, repo string, hook *github.Hook) 
 	if err != nil {
 		return legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
 	}
-	_, resp, err := client(ctx).repos.CreateHook(owner, repoName, hook)
+	_, resp, err := client(ctx).Repositories.CreateHook(owner, repoName, hook)
 	if err != nil {
 		return checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.CreateHook %q", githubutil.RepoURI(owner, repoName)))
 	}
@@ -248,7 +248,7 @@ func ReposFromContext(ctx context.Context) Repos {
 }
 
 func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
-	ghRepos, resp, err := client(ctx).activity.ListStarred("", opt)
+	ghRepos, resp, err := client(ctx).Activity.ListStarred("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
 	}
