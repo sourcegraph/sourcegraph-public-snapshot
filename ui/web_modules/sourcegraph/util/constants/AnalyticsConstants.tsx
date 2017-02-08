@@ -270,6 +270,9 @@ export const Events = {
 	HomeCarousel_Clicked: new LoggableEvent("HomeCarouselClicked", EventCategories.Home, EventActions.Click),
 	JobsCTA_Clicked: new LoggableEvent("JobsCTAClicked", EventCategories.Nav, EventActions.Click),
 
+	// Redirect/external events
+	RepoBadge_Redirected: new LoggableEvent("RepoBadgeRedirected", EventCategories.External, EventActions.Redirect),
+
 	// Non-Interaction Events
 	// Events that we wish to track, but do not wish to impact bounce rate on our site for Google analytics.
 	// See EventLogger.logNonInteractionEventForCategory() for more information

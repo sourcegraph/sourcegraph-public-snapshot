@@ -11,12 +11,13 @@ const (
 	routeLangsIndex = "page.index.langs"
 	routeReposIndex = "page.index.repos"
 
-	routeBlob          = "page.blob"
-	routeDefLanding    = "page.def.landing"
-	oldRouteDefLanding = "page.def.landing.old"
-	routeRepo          = "page.repo"
-	routeRepoLanding   = "page.repo.landing"
-	routeTree          = "page.tree"
+	routeBlob             = "page.blob"
+	routeDefLanding       = "page.def.landing"
+	oldRouteDefLanding    = "page.def.landing.old"
+	routeRepo             = "page.repo"
+	routeRepoLanding      = "page.repo.landing"
+	routeTree             = "page.tree"
+	routeRepoBadgeLanding = "page.repo.badge.landing"
 
 	routeJobs     = "page.jobs"
 	routePlan     = "page.plan"
@@ -75,6 +76,7 @@ func newRouter() *mux.Router {
 	repoPath := "/" + routevar.Repo
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim).Subrouter()
 	repo.Path("/info").Methods("GET").Name(routeRepoLanding)
+	repo.Path("/badge-landing").Methods("GET").Name(routeRepoBadgeLanding)
 
 	// RepoRev
 	repoRevPath := repoPath + routevar.RepoRevSuffix
