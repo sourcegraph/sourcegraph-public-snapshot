@@ -113,6 +113,102 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string,
 }
 
 func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) {
+	var sum int
+	for _, expandedSources := range repoURIToGoPathPrefixes(source) {
+		refs, err := g.doTotalRefs(ctx, expandedSources)
+		if err != nil {
+			return 0, err
+		}
+		sum += refs
+	}
+	return sum, nil
+}
+
+// repoURIToGoPathPrefixes translates a repository URI like
+// github.com/kubernetes/kubernetes into its _prefix_ matching Go import paths
+// (e.g. k8s.io/kubernetes). In the case of the standard library,
+// github.com/golang/go returns all of the Go stdlib package paths. If the
+// repository URI is not special cased, []string{repoURI} is simply returned.
+//
+// TODO(slimsag): In the future, when the pkgs index includes Go repositories,
+// use that instead of this manual mapping hack.
+func repoURIToGoPathPrefixes(repoURI string) []string {
+	manualMapping := map[string][]string{
+		// google.golang.org
+		"github.com/grpc/grpc-go":                []string{"google.golang.org/grpc"},
+		"github.com/google/google-api-go-client": []string{"google.golang.org/api"},
+		"github.com/golang/appengine":            []string{"google.golang.org/appengine"},
+
+		// go4.org
+		"github.com/camlistore/go4": []string{"go4.org"},
+	}
+	if v, ok := manualMapping[repoURI]; ok {
+		return v
+	}
+
+	switch {
+	case strings.HasPrefix(repoURI, "github.com/azul3d"): // azul3d.org
+		split := strings.Split(repoURI, "/")
+		if len(split) >= 3 {
+			return []string{"azul3d.org/" + split[2]}
+		}
+
+	case strings.HasPrefix(repoURI, "github.com/dskinner"): // dasa.cc
+		split := strings.Split(repoURI, "/")
+		if len(split) >= 3 {
+			return []string{"dasa.cc/" + split[2]}
+		}
+
+	case strings.HasPrefix(repoURI, "github.com/kubernetes"): // k8s.io
+		split := strings.Split(repoURI, "/")
+		if len(split) >= 3 {
+			return []string{"k8s.io/" + split[2]}
+		}
+
+	case strings.HasPrefix(repoURI, "github.com/uber-go"): // go.uber.org
+		split := strings.Split(repoURI, "/")
+		if len(split) >= 3 {
+			// Uber also uses their non-canonical import paths for some repos.
+			return []string{
+				repoURI,
+				"go.uber.org/" + split[2],
+			}
+		}
+
+	case strings.HasPrefix(repoURI, "github.com/dominikh"): // honnef.co
+		split := strings.Split(repoURI, "/")
+		if len(split) >= 3 {
+			return []string{"honnef.co/" + strings.Replace(split[2], "-", "/", -1)}
+		}
+
+	case strings.HasPrefix(repoURI, "github.com/golang") && repoURI != "github.com/golang/go": // golang.org/x
+		split := strings.Split(repoURI, "/")
+		if len(split) >= 3 {
+			return []string{"golang.org/x/" + split[2]}
+		}
+
+	case strings.HasPrefix(repoURI, "github.com"): // gopkg.in
+		split := strings.Split(repoURI, "/")
+		if len(split) >= 3 && strings.HasPrefix(split[1], "go-") {
+			// Four possibilities
+			return []string{
+				repoURI, // github.com/go-foo/foo
+				"gopkg.in/" + strings.TrimPrefix(split[1], "go-"),     // gopkg.in/foo
+				"labix.org/v1/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v1/foo
+				"labix.org/v2/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v2/foo
+			}
+		} else if len(split) >= 3 {
+			// Two possibilities
+			return []string{
+				repoURI, // github.com/foo/bar
+				"gopkg.in/" + split[1] + "/" + split[2], // gopkg.in/foo/bar
+			}
+		}
+	}
+	return []string{repoURI}
+}
+
+func (g *globalDeps) doTotalRefs(ctx context.Context, source string) (int, error) {
 	// 🚨 SECURITY: Note that we do not speak to global_dep_private here, because 🚨
 	// that could hint towards private repositories existing. We may decide to
 	// relax this constraint in the future, but we should be extremely careful
