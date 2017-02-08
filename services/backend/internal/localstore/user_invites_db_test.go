@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 /*
@@ -68,7 +68,7 @@ func TestUserInvites_List(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 
 	s := userInvites{}
 
@@ -92,7 +92,7 @@ func TestUserInvites_List_URIs(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 
 	s := userInvites{}
 

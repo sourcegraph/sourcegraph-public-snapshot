@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 )
@@ -162,7 +163,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	privateRepo := "github.com/owner/repo"
 
 	// An unauthed user won't be able to see the repo
-	mock.isAuthedUser = false
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 	mock.repos = mockGetMissing
 	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
@@ -182,7 +183,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 
 	// Now if we call as an authed user, we will hit the cache but not use
 	// it since the repo may not 404 for us
-	mock.isAuthedUser = true
+	ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 	mock.repos = mockGetPrivate
 	repo, err := s.Get(ctx, privateRepo)
 	if err != nil {
@@ -194,7 +195,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 
 	// Ensure the repo is still missing for unauthed users
 	calledGetMissing = false
-	mock.isAuthedUser = false
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 	mock.repos = mockGetMissing
 	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
@@ -207,7 +208,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	// use the cached 404 response.
 	for i := 0; i < 2; i++ {
 		calledGetMissing = false
-		mock.isAuthedUser = true
+		ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 		mock.repos = mockGetMissing // Pretend that privateRepo is deleted now, so even authed user can't see it. Do this to ensure cached 404 value isn't used by authed user.
 		if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 			t.Fatal(err)
@@ -252,7 +253,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 
 	authedGet := func() bool {
 		calledGet = false
-		mock.isAuthedUser = true
+		ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 		_, err := s.Get(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
@@ -261,7 +262,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	}
 	unauthedGet := func() bool {
 		calledGet = false
-		mock.isAuthedUser = false
+		ctx = auth.WithActor(ctx, &auth.Actor{})
 		_, err := s.Get(ctx, repo)
 		if err != nil {
 			t.Fatal(err)

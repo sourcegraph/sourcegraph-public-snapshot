@@ -15,13 +15,6 @@ const (
 	reposKey
 )
 
-// WithMockHasAuthedUser creates a new mock client that is nil and
-// will panic on any operation except for HasAuthedUser, which reports
-// the value of hasAuthedUser.
-func WithMockHasAuthedUser(ctx context.Context, hasAuthedUser bool) context.Context {
-	return newContext(ctx, &minimalClient{isAuthedUser: hasAuthedUser})
-}
-
 // NewContextWithClient creates a new child context with the specified
 // GitHub clients. The userClient is authenticated as the user (or no
 // user if there is none).

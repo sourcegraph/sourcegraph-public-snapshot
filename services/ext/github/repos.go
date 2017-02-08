@@ -75,7 +75,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		if cached.NotFound {
 			// The repo is in the cache but not available. If the user is authenticated,
 			// request the repo from the GitHub API (but do not add it to the cache).
-			if client(ctx).isAuthedUser {
+			if HasAuthedUser(ctx) {
 				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
 				return getFromAPI(ctx, owner, repoName)
 			}
@@ -154,7 +154,7 @@ func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
 	}
 	// Temporary: Track where anonymous requests are coming from that don't hit the cache.
-	if _, ok := resp.Header["X-From-Cache"]; !client(ctx).isAuthedUser && !ok {
+	if _, ok := resp.Header["X-From-Cache"]; !HasAuthedUser(ctx) && !ok {
 		src, ok := ctx.Value(GitHubTrackingContextKey).(string)
 		if !ok {
 			src = "unknown"

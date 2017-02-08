@@ -20,8 +20,7 @@ func authTestContext() (context.Context, *githubmock.GitHubRepoGetter) {
 	var m githubmock.GitHubRepoGetter
 	ctx := context.Background()
 	ctx = github.WithRepos(ctx, &m)
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
-	ctx = github.WithMockHasAuthedUser(ctx, true)
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 	return ctx, &m
 }

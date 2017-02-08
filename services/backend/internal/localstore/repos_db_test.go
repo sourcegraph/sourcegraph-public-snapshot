@@ -10,6 +10,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
@@ -88,7 +89,7 @@ func TestRepos_List(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 
 	s := repos{}
 
@@ -110,7 +111,7 @@ func TestRepos_List_pagination(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 
 	s := repos{}
 
@@ -160,7 +161,7 @@ func TestRepos_List_query1(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 	s := repos{}
 
 	createdRepos := []*sourcegraph.Repo{
@@ -205,7 +206,7 @@ func TestRepos_List_query2(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 	s := repos{}
 
 	createdRepos := []*sourcegraph.Repo{
@@ -251,7 +252,7 @@ func TestRepos_List_sort(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 
 	s := repos{}
 
@@ -293,7 +294,7 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 		}
 		return nil, fmt.Errorf("unauthorized")
 	}
-	ctx = github.WithMockHasAuthedUser(ctx, true)
+	ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
 	s := repos{}
 
@@ -343,7 +344,7 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 		return nil, fmt.Errorf("unauthorized")
 	}
 
-	ctx = github.WithMockHasAuthedUser(ctx, true)
+	ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
 	createRepos := []*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Private: true},
@@ -378,7 +379,7 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 	githubRepos := &githubmock.GitHubRepoGetter{}
 	ctx = github.WithRepos(ctx, githubRepos)
 	calledListAccessible := githubRepos.MockListAccessible(ctx, nil)
-	ctx = github.WithMockHasAuthedUser(ctx, false)
+	ctx = auth.WithActor(ctx, &auth.Actor{})
 	githubRepos.Get_ = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		return nil, fmt.Errorf("unauthorized")
 	}

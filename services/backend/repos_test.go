@@ -201,7 +201,7 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 		&sourcegraph.Repo{URI: "github.com/is/accessible"},
 	})
 	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
-	ctx = github.WithMockHasAuthedUser(ctx, true)
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
 	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
 	if err != nil {

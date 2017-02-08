@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -31,8 +32,6 @@ type minimalClient struct {
 	search   githubSearch
 	activity githubActivity
 	orgs     GitHubOrgs
-
-	isAuthedUser bool // whether the client is using a GitHub user's auth token
 }
 
 func newMinimalClient(isAuthedUser bool, userClient *github.Client) *minimalClient {
@@ -41,8 +40,6 @@ func newMinimalClient(isAuthedUser bool, userClient *github.Client) *minimalClie
 		search:   userClient.Search,
 		activity: userClient.Activity,
 		orgs:     userClient.Organizations,
-
-		isAuthedUser: isAuthedUser,
 	}
 }
 
@@ -111,5 +108,5 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 // HasAuthedUser reports whether the context has an authenticated
 // GitHub user's credentials.
 func HasAuthedUser(ctx context.Context) bool {
-	return client(ctx).isAuthedUser
+	return auth.ActorFromContext(ctx).GitHubToken != ""
 }
