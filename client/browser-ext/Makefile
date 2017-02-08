@@ -41,4 +41,5 @@ deploy-e2e:
 
 export CHROME_BUNDLE ?= $(shell pwd)/chrome-bundle.zip
 deploy: bundle deploy-e2e
+	rm .checksum
 	./deploy.sh
