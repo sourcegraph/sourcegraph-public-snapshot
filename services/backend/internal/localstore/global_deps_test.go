@@ -13,6 +13,65 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
+func TestGlobalDeps_TotalRefsExpansion(t *testing.T) {
+	tests := map[string][]string{
+		// azul3d.org
+		"github.com/azul3d/engine": []string{"azul3d.org/engine"},
+
+		// dasa.cc
+		"github.com/dskinner/ztext": []string{"dasa.cc/ztext"},
+
+		// k8s.io
+		"github.com/kubernetes/kubernetes":   []string{"k8s.io/kubernetes"},
+		"github.com/kubernetes/apimachinery": []string{"k8s.io/apimachinery"},
+		"github.com/kubernetes/client-go":    []string{"k8s.io/client-go"},
+		"github.com/kubernetes/heapster":     []string{"k8s.io/heapster"},
+
+		// golang.org/x
+		"github.com/golang/net":    []string{"golang.org/x/net"},
+		"github.com/golang/tools":  []string{"golang.org/x/tools"},
+		"github.com/golang/oauth2": []string{"golang.org/x/oauth2"},
+		"github.com/golang/crypto": []string{"golang.org/x/crypto"},
+		"github.com/golang/sys":    []string{"golang.org/x/sys"},
+		"github.com/golang/text":   []string{"golang.org/x/text"},
+		"github.com/golang/image":  []string{"golang.org/x/image"},
+		"github.com/golang/mobile": []string{"golang.org/x/mobile"},
+
+		// google.golang.org
+		"github.com/grpc/grpc-go":                []string{"google.golang.org/grpc"},
+		"github.com/google/google-api-go-client": []string{"google.golang.org/api"},
+		"github.com/golang/appengine":            []string{"google.golang.org/appengine"},
+
+		// go.uber.org
+		"github.com/uber-go/yarpc":    []string{"github.com/uber-go/yarpc", "go.uber.org/yarpc"},
+		"github.com/uber-go/thriftrw": []string{"github.com/uber-go/thriftrw", "go.uber.org/thriftrw"},
+		"github.com/uber-go/zap":      []string{"github.com/uber-go/zap", "go.uber.org/zap"},
+		"github.com/uber-go/atomic":   []string{"github.com/uber-go/atomic", "go.uber.org/atomic"},
+		"github.com/uber-go/fx":       []string{"github.com/uber-go/fx", "go.uber.org/fx"},
+
+		// go4.org
+		"github.com/camlistore/go4": []string{"go4.org"},
+
+		// honnef.co
+		"github.com/dominikh/go-staticcheck": []string{"honnef.co/go/staticcheck"},
+		"github.com/dominikh/go-js-dom":      []string{"honnef.co/go/js/dom"},
+		"github.com/dominikh/go-ssa":         []string{"honnef.co/go/ssa"},
+
+		// gopkg.in
+		"github.com/go-mgo/mgo":         []string{"github.com/go-mgo/mgo", "gopkg.in/mgo", "labix.org/v1/mgo", "labix.org/v2/mgo"},
+		"github.com/go-yaml/yaml":       []string{"github.com/go-yaml/yaml", "gopkg.in/yaml", "labix.org/v1/yaml", "labix.org/v2/yaml"},
+		"github.com/fatih/set":          []string{"github.com/fatih/set", "gopkg.in/fatih/set"},
+		"github.com/juju/environschema": []string{"github.com/juju/environschema", "gopkg.in/juju/environschema"},
+	}
+	for input, want := range tests {
+		got := repoURIToGoPathPrefixes(input)
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %q want %q", got, want)
+		}
+	}
+
+}
+
 func TestGlobalDeps_update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
