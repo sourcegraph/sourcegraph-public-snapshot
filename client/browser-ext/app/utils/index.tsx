@@ -13,20 +13,20 @@ export const supportedExtensions = new Set<string>([
  * will be supported "soon"
  */
 export const upcomingExtensions = new Set<string>([
-	"cs", // C#
-	"css", // CSS
+	// "cs", // C#
+	// "css", // CSS
 	"java", // Java
-	"swift", // Swift
-	"c", "h", // C
-	"m", "mm", // Obj-C ("h" and "C" overlap with C/C++)
-	"rb", "rbw", // Ruby
-	"rs", "rlib", // Rust
-	"sc", "scala", // Scala
-	"htm", "html", // HTML
-	"pl", "pm", "t", "pod", // Perl
-	"clj", "cljs", "cljc", "edn", // Clojure
+	// "swift", // Swift
+	// "c", "h", // C
+	// "m", "mm", // Obj-C ("h" and "C" overlap with C/C++)
+	// "rb", "rbw", // Ruby
+	// "rs", "rlib", // Rust
+	// "sc", "scala", // Scala
+	// "htm", "html", // HTML
+	// "pl", "pm", "t", "pod", // Perl
+	// "clj", "cljs", "cljc", "edn", // Clojure
 	"py", "pyc", "pyd", "pyo", "pyw", "pyz", // Python
-	"cc", "cpp", "cxx", "c++", "hh", "hpp", "hxx", "h++", // C++ ("h" and "c" overlap with C)
+	// "cc", "cpp", "cxx", "c++", "hh", "hpp", "hxx", "h++", // C++ ("h" and "c" overlap with C)
 	"php", "phtml", "php3", "php4", "php5", "php7", "phps", // PHP
 ]);
 
