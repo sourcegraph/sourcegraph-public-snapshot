@@ -18,7 +18,7 @@ const modalStyle = {
 	backgroundColor: white(),
 	margin: "0px auto",
 	marginTop: "4.75rem",
-	maxWidth: "18rem",
+	maxWidth: "19rem",
 	borderRadius: 3,
 	boxShadow: `0 5px 8px ${black(.5)}`,
 	color: blueGrayD1(),
