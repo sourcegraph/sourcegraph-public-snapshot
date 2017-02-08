@@ -103,6 +103,7 @@ type backgroundDBPool struct {
 	readyDBs chan *dbutil2.Handle
 
 	// Only drop or create each table once.
+	mu      sync.Mutex
 	dropped map[int]bool
 	created map[int]bool
 	nextID  int32
@@ -150,6 +151,8 @@ func (b *backgroundDBPool) prepareNewDB(poolName string) {
 }
 
 func (b *backgroundDBPool) prepareDBs(id int, mdb *dbutil2.Handle, drop, create, truncate bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
 	// Combine all DB handles so we can create schemas concurrently
 	// (which is faster).
 	if drop && !b.dropped[id] {
