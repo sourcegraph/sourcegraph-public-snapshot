@@ -58,6 +58,7 @@ func TestGlobalDeps_update(t *testing.T) {
 	}
 }
 
+// 🚨 SECURITY: This test is critical for testing security 🚨
 func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -102,8 +103,11 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
+	// 🚨 SECURITY: This is critical for testing security 🚨
+	calledReposGetByURI := false
 	repoID := int32(3)
 	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+		calledReposGetByURI = true
 		switch repo {
 		case "github.com/my/repo":
 			return &sourcegraph.Repo{ID: repoID, URI: repo}, nil
@@ -119,6 +123,9 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	if err := GlobalDeps.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
+	}
+	if !calledReposGetByURI {
+		t.Fatalf("!calledReposGetByURI")
 	}
 
 	wantRefs := []*sourcegraph.DependencyReference{{
