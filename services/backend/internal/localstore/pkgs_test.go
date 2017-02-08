@@ -51,7 +51,8 @@ func TestPkgs_update(t *testing.T) {
 	}
 }
 
-func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
+// 🚨 SECURITY: This test is critical for testing security 🚨
+func TestPkgs_RefreshIndex(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -91,10 +92,28 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	})
 	defer xlangDone()
 
-	op := &sourcegraph.DefsRefreshIndexOp{RepoURI: "github.com/my/repo", RepoID: 1, CommitID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
-	langs := []*inventory.Lang{{Name: "TypeScript"}}
-	if err := Pkgs.UnsafeRefreshIndex(ctx, op, langs); err != nil {
+	// 🚨 SECURITY: This is critical for testing security 🚨
+	calledReposGetByURI := false
+	Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+		calledReposGetByURI = true
+		switch repo {
+		case "github.com/my/repo":
+			return &sourcegraph.Repo{ID: 1, URI: repo}, nil
+		default:
+			return nil, errors.New("not found")
+		}
+	}
+
+	reposGetInventory := func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+		return &inventory.Inventory{Languages: []*inventory.Lang{{Name: "TypeScript"}}}, nil
+	}
+
+	commitID := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	if err := Pkgs.RefreshIndex(ctx, "github.com/my/repo", commitID, reposGetInventory); err != nil {
 		t.Fatal(err)
+	}
+	if !calledReposGetByURI {
+		t.Fatalf("!calledReposGetByURI")
 	}
 
 	expPkgs := []sourcegraph.PackageInfo{{
@@ -114,12 +133,14 @@ func TestPkgs_UnsafeRefreshIndex(t *testing.T) {
 	}
 }
 
+// 🚨 SECURITY: This test is critical for testing security 🚨
 func TestPkgs_ListPackages(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	ctx := testContext()
 
+	// 🚨 SECURITY: This is critical for testing security 🚨
 	calledReposGet := false
 	Mocks.Repos.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
 		calledReposGet = true
@@ -163,6 +184,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	}
 
 	{ // Test case 1
+		calledReposGet = false
 		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
@@ -180,8 +202,12 @@ func TestPkgs_ListPackages(t *testing.T) {
 		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
 		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
 	}
 	{ // Test case 2
+		calledReposGet = false
 		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 1,
 			Lang:   "go",
@@ -198,6 +224,9 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
+		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
 		}
 	}
 	{ // Test case 3
@@ -216,6 +245,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 		}
 	}
 	{ // Test case 4, permissions: filter out unauthorized repository from results
+		calledReposGet = false
 		expPkgInfo := []sourcegraph.PackageInfo{{
 			RepoID: 3,
 			Lang:   "go",
@@ -237,10 +267,9 @@ func TestPkgs_ListPackages(t *testing.T) {
 		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
 			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
 		}
-	}
-
-	if !calledReposGet {
-		t.Fatalf("!calledReposGet")
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
 	}
 }
 

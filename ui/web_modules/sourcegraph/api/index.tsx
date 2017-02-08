@@ -148,13 +148,6 @@ export interface Contributor {
 	Contributions?: number;
 }
 
-export interface DefsRefreshIndexOp {
-	RepoURI?: string;
-	Repo?: number;
-	Private?: boolean;
-	CommitID?: string;
-}
-
 export interface DependencyReference {
 }
 

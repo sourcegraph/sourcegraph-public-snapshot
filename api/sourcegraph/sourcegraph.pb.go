@@ -1,6 +1,7 @@
 package sourcegraph
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -435,6 +436,10 @@ type DependencyReference struct {
 	Hints   map[string]interface{} // hints which should be passed to workspace/xreferences in order to more quickly find the definition.
 }
 
+func (d *DependencyReference) String() string {
+	return fmt.Sprintf("DependencyReference{DepData: %v, RepoID: %v, Hints: %v}", d.DepData, d.RepoID, d.Hints)
+}
+
 // RepoTreeGetOptions specifies options for (RepoTreeService).Get.
 type RepoTreeGetOptions struct {
 	ContentsAsString bool `json:"ContentsAsString,omitempty" url:",omitempty"`
@@ -515,23 +520,6 @@ type FileRange struct {
 	StartByte int64 `json:"StartByte,omitempty" url:",omitempty"`
 	// end of byte range
 	EndByte int64 `json:"EndByte,omitempty" url:",omitempty"`
-}
-
-type DefsRefreshIndexOp struct {
-	// RepoURI is the URI of the repository whose data is to be re-indexed.
-	RepoURI string `json:"RepoURI,omitempty"`
-
-	// RepoID is the ID of the repository whose data is to be re-indexed.
-	RepoID int32 `json:"Repo,omitempty"`
-
-	// Private is whether the repository is private or not. This determines
-	// where the data will be located (in global_dep or global_dep_private),
-	// and as such this MUST be correct or else security will be compromised.
-	Private bool `json:"Private,omitempty"`
-
-	// CommitID is the commit ID of the default repository branch which will
-	// be re-indexed.
-	CommitID string `json:"CommitID,omitempty"`
 }
 
 // UserEvent encodes any user initiated event on the local instance.

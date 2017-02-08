@@ -99,8 +99,11 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// (fmt.Println), we support that, but we DO NOT support looking
 	// for references to a private repository's symbol ever (in fact,
 	// they are not even indexed by the global deps database).
-
+	//
 	// 🚨 SECURITY: repository permissions are checked here 🚨
+	//
+	// The Repos.Get call here is responsible for ensuring the user has access
+	// to the repository.
 	repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.RepoID})
 	if err != nil {
 		return nil, err
@@ -158,29 +161,20 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	}, nil
 }
 
-// UnsafeRefreshIndex refreshes the global deps index for the specified repo@commit.
-//
-// 🚨 SECURITY: It is the caller's responsibility to ensure the repository 🚨
-// described by the op parameter is accurately specified as private or not.
-func (s *defs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) (err error) {
-	if Mocks.Defs.UnsafeRefreshIndex != nil {
-		return Mocks.Defs.UnsafeRefreshIndex(ctx, op)
+// RefreshIndex refreshes the global deps index for the specified
+// repository.
+func (s *defs) RefreshIndex(ctx context.Context, repoURI, commitID string) (err error) {
+	if Mocks.Defs.RefreshIndex != nil {
+		return Mocks.Defs.RefreshIndex(ctx, repoURI, commitID)
 	}
 
-	ctx, done := trace(ctx, "Defs", "RefreshIndex", op, &err)
+	ctx, done := trace(ctx, "Defs", "RefreshIndex", map[string]interface{}{"repoURI": repoURI, "commitID": commitID}, &err)
 	defer done()
-
-	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: op.RepoID, CommitID: op.CommitID})
-	if err != nil {
-		return err
-	}
-
-	// Refresh global references indexes.
-	return localstore.GlobalDeps.UnsafeRefreshIndex(ctx, op, inv.Languages)
+	return localstore.GlobalDeps.RefreshIndex(ctx, repoURI, commitID, Repos.GetInventory)
 }
 
 type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
 	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
-	UnsafeRefreshIndex   func(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp) error
+	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
 }

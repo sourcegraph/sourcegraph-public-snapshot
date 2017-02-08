@@ -40,15 +40,28 @@ func (*pkgs) DropTable() string {
 	return `DROP TABLE IF EXISTS pkgs CASCADE;`
 }
 
-func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefreshIndexOp, langs []*inventory.Lang) error {
+// RefreshIndex refreshes the packages index for the specified repo@commit.
+func (p *pkgs) RefreshIndex(ctx context.Context, repoURI, commitID string, reposGetInventory func(context.Context, *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)) error {
+	// 🚨 SECURITY: Do not remove this call. It prevents us from leaking 🚨
+	// whether or not a private repo exists based on measuring the time
+	// RefreshIndex takes.
+	repo, err := Repos.GetByURI(ctx, repoURI)
+	if err != nil {
+		return errors.Wrap(err, "Repos.GetByURI")
+	}
+	inv, err := reposGetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: repo.ID, CommitID: commitID})
+	if err != nil {
+		return errors.Wrap(err, "Repos.GetInventory")
+	}
+
 	var errs []string
-	for _, lang := range langs {
+	for _, lang := range inv.Languages {
 		langName := strings.ToLower(lang.Name)
 
 		if _, enabled := globalDepEnabledLangs[langName]; !enabled {
 			continue
 		}
-		if err := p.refreshIndexForLanguage(ctx, langName, op); err != nil {
+		if err := p.refreshIndexForLanguage(ctx, langName, repo, commitID); err != nil {
 			log15.Crit("refreshing index failed", "language", langName, "error", err)
 			errs = append(errs, fmt.Sprintf("refreshing index failed language=%s error=%v", langName, err))
 		}
@@ -61,7 +74,7 @@ func (p *pkgs) UnsafeRefreshIndex(ctx context.Context, op *sourcegraph.DefsRefre
 	return nil
 }
 
-func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op *sourcegraph.DefsRefreshIndexOp) (err error) {
+func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, repo *sourcegraph.Repo, commitID string) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "pkgs.refreshIndexForLanguage "+language)
 	defer func() {
 		if err != nil {
@@ -83,7 +96,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op 
 		// perform.
 		return nil
 	}
-	rootPath := vcs + "://" + op.RepoURI + "?" + op.CommitID
+	rootPath := vcs + "://" + repo.URI + "?" + commitID
 	var pks []lspext.PackageInformation
 	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &pks)
 	if err != nil {
@@ -92,7 +105,7 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, op 
 
 	err = dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
 		// Update the pkgs table.
-		err = p.update(ctx, tx, op.RepoID, language, pks)
+		err = p.update(ctx, tx, repo.ID, language, pks)
 		if err != nil {
 			return errors.Wrap(err, "pkgs.update")
 		}
