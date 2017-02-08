@@ -277,12 +277,8 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 }
 
 function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
-	if (!repo.URI || !repo.DefaultBranch) {
+	if (!repo.URI || !repo.IndexedRevision) {
 		return Promise.resolve([]);
-	}
-
-	if (!repo.IndexedRevision) {
-		throw new Error("Repo must have indexed revision to fetch xreferences.");
 	}
 
 	let repoURI = URIUtils.pathInRepo(repo.URI, repo.IndexedRevision, "");
