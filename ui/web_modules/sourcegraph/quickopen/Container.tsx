@@ -270,10 +270,11 @@ export class Container extends React.Component<Props, State> {
 				rankInCategory: r,
 			};
 			Object.assign(resultInfo, result);
-			const eventProps = {
-				repo: this.props.repo,
+			let eventProps = {
 				quickOpenResult: resultInfo,
 				quickOpenQuery: this.state.input,
+				repo: this.props.repo ? this.props.repo.URI : "",
+				rev: this.props.repo ? (this.props.repo.rev || "") : "",
 			};
 			AnalyticsConstants.Events.QuickopenItem_Selected.logEvent(eventProps);
 			const url = result.URLPath;

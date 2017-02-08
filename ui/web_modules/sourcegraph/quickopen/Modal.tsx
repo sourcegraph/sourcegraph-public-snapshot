@@ -4,7 +4,7 @@ import * as Relay from "react-relay";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { ModalComp } from "sourcegraph/components/Modal";
 import { Container } from "sourcegraph/quickopen/Container";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, RepoEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Event {
 	target: Node;
@@ -21,9 +21,9 @@ export type Props = {
 // QuickOpenModal controls when and how to show the search modal.
 class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
 
-	_getEventProps(): any {
+	_getEventProps(): RepoEventProps {
 		return {
-			repo: this.props.repo,
+			repo: this.props.repo || "",
 			rev: this.props.rev,
 		};
 	}
@@ -44,7 +44,7 @@ class QuickOpenModalComponent extends React.Component<Props & { root: GQL.IRoot 
 
 	dismissModal = (shouldLog: boolean): void => {
 		if (shouldLog) {
-			AnalyticsConstants.Events.Quickopen_Dismissed.logEvent(this._getEventProps());
+			Events.Quickopen_Dismissed.logEvent(this._getEventProps());
 		}
 		this.props.onDismiss();
 	}

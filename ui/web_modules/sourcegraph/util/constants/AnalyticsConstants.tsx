@@ -102,6 +102,16 @@ export interface SymbolEventProps extends FileEventProps {
 	endColumn?: number;
 }
 
+// Interface to ensure no properties with common names are passed into logEvent with types that our analytics DB isn't expecting,
+// such as non-string repo, rev, or path properties
+interface ProtectedEventPropTypes {
+	repo?: string;
+	rev?: string | null;
+	path?: string;
+	// Any other unspecified property types are permitted
+	[key: string]: any;
+}
+
 export class LoggableEvent {
 	label: string;
 	category: string;
@@ -115,12 +125,12 @@ export class LoggableEvent {
 		this.permittedProps = permittedProps;
 	}
 
-	logEvent(props?: any): void {
+	logEvent(props?: ProtectedEventPropTypes): void {
 		EventLogger.logEventForCategory(this, props);
 	}
 }
 export class NonInteractionLoggableEvent extends LoggableEvent {
-	logEvent(props?: any): void {
+	logEvent(props?: ProtectedEventPropTypes): void {
 		EventLogger.logNonInteractionEventForCategory(this, props);
 	}
 }
