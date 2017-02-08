@@ -426,13 +426,15 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// Allow tracking events that occurred externally and resulted in a redirect
 			// back to Sourcegraph. Pull the event name out of the URL.
 			const eventName = this.props.location.query["_event"];
-			if (this.props.location.query && eventName) {
+			const isBadgeRedirect = this.props.location.query["badge"] !== undefined;
+
+			if (this.props.location.query && (eventName || isBadgeRedirect)) {
 				// For login signup related metrics a channel will be associated with the signup.
 				// This ensures we can track one metrics "SignupCompleted" and then query on the channel
 				// for more granular metrics.
 				let eventProperties = {};
 				for (let key in this.props.location.query) {
-					if (key !== "_event") {
+					if (key !== "_event" && key !== "badge") {
 						eventProperties[this.camelCaseToUnderscore(key)] = this.props.location.query[key];
 					}
 				}
@@ -454,10 +456,10 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				} else if (this.props.location.query["_invited_by_user"]) {
 					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
 					AnalyticsConstants.Events.OrgEmailInvite_Clicked.logEvent(eventProperties);
-				} else if (eventName === "RepoBadgeRedirected") {
-					AnalyticsConstants.Events.RepoBadge_Redirected.logEvent(eventProperties);
-				} else {
+				} else if (eventName) {
 					EventLogger._logEventForCategoryComponents(AnalyticsConstants.EventCategories.External, AnalyticsConstants.EventActions.Redirect, eventName, eventProperties);
+				} else if (isBadgeRedirect) {
+					AnalyticsConstants.Events.RepoBadge_Redirected.logEvent(eventProperties);
 				}
 
 				if (this.props.location.query["_org_invite"]) {
@@ -478,11 +480,12 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				delete this.props.location.query["_githubCompany"];
 				delete this.props.location.query["_githubName"];
 				delete this.props.location.query["_githubLocation"];
+				delete this.props.location.query["badge"];
 
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
 				const locWithoutEvent = Object.assign({}, this.props.location, {
-					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined, _source: undefined, _githubCompany: undefined, _githubName: undefined, _githubLocation: undefined }),
+					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined, _source: undefined, _githubCompany: undefined, _githubName: undefined, _githubLocation: undefined, badge: undefined }),
 					state: Object.assign({}, this.props.location.state, { _onboarding: this.props.location.query["_onboarding"] }),
 				});
 

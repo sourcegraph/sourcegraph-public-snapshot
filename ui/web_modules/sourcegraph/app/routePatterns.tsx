@@ -28,7 +28,7 @@ export const rel = {
 	repo: "*", // matches both "repo" and "repo@rev"
 	tree: "tree/*",
 	blob: "blob/*",
-	symbol: "symbol/:mode/*",
+	symbol: "symbol/:mode/*"
 };
 
 export const abs = {
