@@ -3,6 +3,7 @@ package ui
 import (
 	"errors"
 	"net/http"
+	"net/url"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -54,6 +55,7 @@ func init() {
 	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(internal.Handler(serveDefLanding)))
 	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
 	router.Get(routeRepoLanding).Handler(httptrace.TraceRoute(internal.Handler(serveRepoLanding)))
+	router.Get(routeRepoBadgeLanding).Handler(httptrace.TraceRoute(internal.Handler(serveRepoBadgeLanding)))
 	router.Get(routeTree).Handler(httptrace.TraceRoute(handler(serveTree)))
 	router.Get(routeTopLevel).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
 	router.Get(routeHomePage).Handler(httptrace.TraceRoute(internal.Handler(serveAny)))
@@ -201,6 +203,38 @@ func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
 		repoRev.CommitID,
 	)
 	return m, nil
+}
+
+func serveRepoBadgeLanding(w http.ResponseWriter, r *http.Request) error {
+	// Create a URL to the repo page itself, which we will redirect to.
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	if err != nil {
+		return err
+	}
+	vars := mux.Vars(r)
+	vars["Rev"] = ""
+	repoURL := canonicalRepoURL(
+		conf.AppURL,
+		routeRepo,
+		vars,
+		r.URL.Query(),
+		repo.DefaultBranch,
+		repoRev.CommitID,
+	)
+
+	u, err := url.Parse(repoURL)
+	if err != nil {
+		return err
+	}
+
+	// Add in a query parameter for metrics purposes.
+	q := u.Query()
+	q.Add("_badge_landing", "")
+	u.RawQuery = q.Encode()
+
+	// Redirect.
+	http.Redirect(w, r, u.String(), http.StatusFound)
+	return nil
 }
 
 // serveAny is the fallback/catch-all route. It preloads nothing and
