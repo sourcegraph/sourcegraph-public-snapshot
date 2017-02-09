@@ -1,10 +1,13 @@
 package localstore
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"reflect"
+	"sort"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -112,6 +115,8 @@ func TestGlobalDeps_update(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sort.Sort(sortDepRefs(wantRefs))
+	sort.Sort(sortDepRefs(gotRefs))
 	if !reflect.DeepEqual(gotRefs, wantRefs) {
 		t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 	}
@@ -199,6 +204,8 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	sort.Sort(sortDepRefs(wantRefs))
+	sort.Sort(sortDepRefs(gotRefs))
 	if !reflect.DeepEqual(gotRefs, wantRefs) {
 		t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 	}
@@ -259,6 +266,8 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		sort.Sort(sortDepRefs(wantRefs))
+		sort.Sort(sortDepRefs(gotRefs))
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
@@ -280,6 +289,8 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		sort.Sort(sortDepRefs(wantRefs))
+		sort.Sort(sortDepRefs(gotRefs))
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
@@ -304,6 +315,8 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		sort.Sort(sortDepRefs(wantRefs))
+		sort.Sort(sortDepRefs(gotRefs))
 		if !reflect.DeepEqual(gotRefs, wantRefs) {
 			t.Errorf("got %+v, expected %+v", gotRefs, wantRefs)
 		}
@@ -311,4 +324,50 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 			t.Fatalf("!calledReposGet")
 		}
 	}
+}
+
+type sortDepRefs []*sourcegraph.DependencyReference
+
+func (s sortDepRefs) Len() int { return len(s) }
+
+func (s sortDepRefs) Swap(a, b int) { s[a], s[b] = s[b], s[a] }
+
+func (s sortDepRefs) Less(a, b int) bool {
+	if s[a].RepoID != s[b].RepoID {
+		return s[a].RepoID < s[b].RepoID
+	}
+	if !reflect.DeepEqual(s[a].DepData, s[b].DepData) {
+		return stringMapLess(s[a].DepData, s[b].DepData)
+	}
+	return stringMapLess(s[a].Hints, s[b].Hints)
+}
+
+func stringMapLess(a, b map[string]interface{}) bool {
+	if len(a) != len(b) {
+		return len(a) < len(b)
+	}
+	ak := make([]string, 0, len(a))
+	for k := range a {
+		ak = append(ak, k)
+	}
+	bk := make([]string, 0, len(b))
+	for k := range b {
+		bk = append(bk, k)
+	}
+	sort.Strings(ak)
+	sort.Strings(bk)
+	for i := range ak {
+		if ak[i] != bk[i] {
+			return ak[i] < bk[i]
+		}
+		// This does not consistentlbk order the output, but in the
+		// cases we use this it will since it is just a simple value
+		// like bool or string
+		av, _ := json.Marshal(a[ak[i]])
+		bv, _ := json.Marshal(b[bk[i]])
+		if bytes.Equal(av, bv) {
+			return string(av) < string(bv)
+		}
+	}
+	return false
 }
