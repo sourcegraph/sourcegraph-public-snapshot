@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
@@ -199,7 +200,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// SECURITY NOTE: Do not delete this block. If you delete this
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
-		if _, err := backend.Repos.GetByURI(ctx, rootPathURI.Repo()); err != nil {
+		if _, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: rootPathURI.Repo()}); err != nil {
 			return err
 		}
 		checkedUserHasReadAccessToRepo = true
