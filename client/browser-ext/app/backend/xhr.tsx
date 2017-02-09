@@ -8,11 +8,16 @@ export function useAccessToken(tok: string): void {
 
 type FetchOptions = { headers: Headers };
 
+export function combineHeaders(a: Headers, b: Headers): Headers {
+	let headers = new Headers(a);
+	b.forEach((val: string, name: any) => { headers.append(name, val); });
+	return headers;
+}
+
 function defaultOptions(): FetchOptions | undefined {
 	if (typeof Headers === "undefined") {
 		return; // for unit tests
 	}
-
 	const headers = new Headers();
 	if (token) {
 		headers.set("Authorization", `session ${token}`);
@@ -23,5 +28,11 @@ function defaultOptions(): FetchOptions | undefined {
 
 const f = singleflightFetch(global.fetch);
 export function doFetch(url: string, opt?: any): Promise<Response> {
-	return f(url, Object.assign({}, defaultOptions(), opt));
+	let defaults = defaultOptions();
+	const fetchOptions = Object.assign({}, defaults, opt);
+	if (opt.headers && defaults) {
+		// the above object merge might override the auth headers. add those back in.
+		fetchOptions.headers = combineHeaders(opt.headers, defaults.headers);
+	}
+	return f(url, fetchOptions);
 }
