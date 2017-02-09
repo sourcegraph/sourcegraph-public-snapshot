@@ -85,10 +85,12 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 
 	proxy.start()
 
-	// Don't return from the HTTP handler until the connection is
-	// closed to avoid net/http canceling r.Context() while the LSP
-	// session is still active.
-	<-proxy.disconnectNotify()
+	select {
+	case <-proxy.client.DisconnectNotify():
+		proxy.server.Close()
+	case <-proxy.server.DisconnectNotify():
+		proxy.client.Close()
+	}
 }
 
 type jsonrpc2HandlerFunc func(context.Context, *jsonrpc2.Conn, *jsonrpc2.Request)
@@ -126,8 +128,6 @@ func (p *jsonrpc2Proxy) start() {
 }
 
 func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, req *jsonrpc2.Request) error {
-	<-p.ready
-
 	// 🚨 SECURITY: If this is the "initialize" request, we MUST check 🚨
 	// that the current user can access the workspace root's
 	// repository. This is the ONLY PLACE that access is checked; the
@@ -212,6 +212,8 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 
 func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	start := time.Now()
+	<-p.ready
+
 	err := p.roundTrip(ctx, conn, p.server, req)
 
 	if req.Notif {
@@ -248,12 +250,6 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 }
 
 func (p *jsonrpc2Proxy) handleServerRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	<-p.ready
 	p.roundTrip(ctx, conn, p.client, req)
-}
-
-func (p *jsonrpc2Proxy) disconnectNotify() <-chan struct{} {
-	// Both p.client and p.server's DisconnectNotify() channel should
-	// close at approximately the same time, so we could return either
-	// of them here.
-	return p.client.DisconnectNotify()
 }
