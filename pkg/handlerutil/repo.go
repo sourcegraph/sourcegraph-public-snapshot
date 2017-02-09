@@ -3,68 +3,15 @@ package handlerutil
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"context"
 
 	"github.com/gorilla/mux"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
-
-// RepoCommon holds all of the information necessary to render a
-// repository page template. It is returned by GetRepoFromRequest. See also
-// RepoRevCommon.
-type RepoCommon struct {
-	Repo *sourcegraph.Repo
-}
-
-// RepoRevCommon holds all of the commit-specific information
-// necessary to render a repository page template for a certain
-// commit. It is returned by GetRepoAndRevFromRequest. It is assumed that pages
-// rendered are also provided with repoCommon template data.
-type RepoRevCommon struct {
-	RepoRevSpec sourcegraph.RepoRevSpec
-}
-
-// GetRepoAndRevCommon returns the repository and RepoRevSpec based on
-// the route vars. It may also return custom error types
-// URLMovedError, NoVCSDataError, which callers should ideally check
-// for.
-func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon, vc *RepoRevCommon, err error) {
-	rc = &RepoCommon{}
-	rc.Repo, err = GetRepo(ctx, vars)
-	if err != nil {
-		return
-	}
-
-	vc = &RepoRevCommon{}
-	vc.RepoRevSpec.Repo = rc.Repo.ID
-
-	vc.RepoRevSpec, err = getRepoRev(ctx, vars, rc.Repo.ID, rc.Repo.DefaultBranch)
-	if err != nil {
-		cloneInProgress := legacyerr.ErrCode(err) == legacyerr.Unavailable && legacyerr.ErrorDesc(err) == vcs.RepoNotExistError{CloneInProgress: true}.Error()
-		if noVCSData := legacyerr.ErrCode(err) == legacyerr.NotFound ||
-			cloneInProgress ||
-			strings.Contains(err.Error(), "has no default branch"); noVCSData {
-
-			if cloneInProgress {
-				return rc, vc, err
-			} else if rev := vars["Rev"]; rev != "" && rev != "@" {
-				err = vcs.ErrRevisionNotFound
-			} else {
-				err = &NoVCSDataError{RepoCommon: rc}
-			}
-		}
-		return
-	}
-
-	return
-}
 
 // GetRepoID returns the Sourcegraph repository ID based on the route vars.
 // If the repo path string is a numeric ID, it is returned immediately.
