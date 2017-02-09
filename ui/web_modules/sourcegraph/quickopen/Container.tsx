@@ -274,7 +274,7 @@ export class Container extends React.Component<Props, State> {
 				quickOpenResult: resultInfo,
 				quickOpenQuery: this.state.input,
 				repo: this.props.repo ? this.props.repo.URI : "",
-				rev: this.props.repo ? (this.props.repo.rev || "") : "",
+				rev: this.props.repo ? this.props.repo.rev : null,
 			};
 			AnalyticsConstants.Events.QuickopenItem_Selected.logEvent(eventProps);
 			const url = result.URLPath;
