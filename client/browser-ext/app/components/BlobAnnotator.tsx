@@ -83,11 +83,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			this.headRepoURI = deltaInfo.headURI;
 		}
 
-		if (this.baseRepoURI !== this.headRepoURI && this.headRepoURI) {
-			// Ensure the head repo of a cross-repo PR is created.
-			backend.ensureRepoExists(this.headRepoURI);
-		}
-
 		this.resolveRevs();
 		this.addAnnotations();
 	}

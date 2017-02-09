@@ -16,40 +16,40 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 	if (cacheHit) {
 		return cacheHit;
 	}
-
-	return fetch(`https://sourcegraph.com/.api/repos/${repo}${rev ? `@${rev}` : ""}/-/rev`)
-		.then((resp) => {
-			if (resp.status === 404) {
-				return { notFound: true };
-			}
-			if (resp.status === 202) {
-				return { cloneInProgress: true };
-			}
-
-			const p = resp.json().then((json) => ({ commitID: json.CommitID }));
-			resolvedRevCache.set(key, p);
-			return p;
-		});
-}
-
-const createdRepoOnce = new Set<string>();
-
-export function ensureRepoExists(repo: string): void {
-	if (createdRepoOnce.has(repo)) {
-		return;
-	}
-
-	const body = {
-		Op: {
-			New: {
-				URI: repo,
-				CloneURL: `https://${repo}`,
-				DefaultBranch: "master",
-				Mirror: true,
-			},
+	const p = fetch(`https://sourcegraph.com/.api/graphql`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
 		},
-	};
-
-	fetch("https://sourcegraph.com/.api/repos?AcceptAlreadyExists=true", { method: "POST", body: JSON.stringify(body) });
-	createdRepoOnce.add(repo);
+		body: JSON.stringify({
+				query: `query Content($repo: String, $rev: String) {
+					root {
+						repository(uri: $repo) {
+							commit(rev: $rev) {
+								cloneInProgress,
+								commit {
+									sha1
+								}
+							}
+						}
+					}
+				}`,
+				variables: { repo, rev },
+			}),
+	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
+		if (!json.data) {
+			throw new Error("invalid response received from graphql endpoint");
+		}
+		if (!json.data.root.repository) {
+			return { notFound: true } as ResolvedRevResp;
+		}
+		if (json.data.root.repository.commit.cloneInProgress) {
+			return { cloneInProgress: true } as ResolvedRevResp;
+		} else if (!json.data.root.repository.commit.commit) {
+			throw new Error("not able to resolve sha1");
+		}
+		return { commitID: json.data.root.repository.commit.commit.sha1 } as ResolvedRevResp;
+	});
+	resolvedRevCache.set(key, p);
+	return p;
 }

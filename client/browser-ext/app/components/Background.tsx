@@ -49,11 +49,7 @@ export class Background extends React.Component<{}, {}> {
 			props = this.props;
 		}
 
-		let urlProps = utils.parseURL(window.location);
-
-		if (urlProps.repoURI) {
-			backend.ensureRepoExists(urlProps.repoURI);
-		}
+		let urlProps = utils.parseURL(window.location)
 
 		chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
 			if (identity) {
