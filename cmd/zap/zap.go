@@ -205,7 +205,8 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		// anyone with read access to also have write access to Zap
 		// repos. Currently we have no way to allow Zap reads but not
 		// writes.
-		if _, err := backend.Repos.GetByURI(ctx, repo); err != nil {
+		sRepo, err := backend.Repos.GetByURI(ctx, repo)
+		if err != nil {
 			return false, err
 		}
 		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
@@ -218,7 +219,7 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		// the repo cloned. Remove before launch.
 		go func() {
 			cmd := dogfoodGitClient.Command("git", "rev-parse", "--show-toplevel")
-			cmd.Repo = &sourcegraph.Repo{URI: repo}
+			cmd.Repo = sRepo
 			cmd.Run(ctx)
 		}()
 
