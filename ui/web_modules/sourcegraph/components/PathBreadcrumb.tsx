@@ -49,8 +49,8 @@ function getPathCrumbs(
 	);
 }
 
-function Crumb({ style, url, linkSx, linkClassName, children, key }: CrumbProps): JSX.Element {
-	return <span style={style} key={key}>
+function Crumb({ style, url, linkSx, linkClassName, children }: CrumbProps): JSX.Element {
+	return <span style={style}>
 		<span style={{ display: "inline-block", paddingLeft: crumbSpacing, paddingRight: crumbSpacing }}>/</span>
 		<Link to={url} style={linkSx} className={linkClassName}>{children}</Link>
 	</span>;

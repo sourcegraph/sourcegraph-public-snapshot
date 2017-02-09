@@ -139,7 +139,6 @@ export function getPathFromRouter(router: Router): string | null {
 	}
 	return null;
 }
-
 /**
  * BlobRouteProps returns the matched route arguments for blob URLs.
  */
@@ -147,7 +146,7 @@ export interface BlobRouteProps {
 	repo: string;
 	rev: string | null;
 	path: string;
-	selection: IRange;
+	selection: IRange | null;
 }
 
 /**
@@ -175,10 +174,13 @@ export function getBlobPropsFromRouter(router: Router): BlobRouteProps {
 /**
  * getSelectionFromRouter returns selection of the blob view from the URL hash part.
  */
-export function getSelectionFromRouter(router: Router): IRange {
-	let rop = RangeOrPosition.parse(router.location.hash.substr(2));
-	if (!rop) {
-		rop = RangeOrPosition.fromOneIndexed(1);
+export function getSelectionFromRouter(router: Router): IRange | null {
+	const location = router.location;
+	if (location.hash && location.hash.startsWith("#L")) {
+		const rop = RangeOrPosition.parse(location.hash.replace(/^#L/, ""));
+		if (rop) {
+			return rop.toMonacoRangeAllowEmpty();
+		}
 	}
-	return rop.toMonacoRangeAllowEmpty();
+	return null;
 }

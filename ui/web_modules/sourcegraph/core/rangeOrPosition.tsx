@@ -171,5 +171,5 @@ export interface AbsoluteLocation {
 	repo: string;
 	commitID: string;
 	path: string;
-	selection: IRange;
+	selection: IRange | null;
 }

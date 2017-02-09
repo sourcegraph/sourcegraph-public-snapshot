@@ -102,7 +102,7 @@ function renderDirectoryContent(): void {
 	ReactDOM.render(content, node);
 }
 
-function updateEditorAfterURLChange(sel: IRange): void {
+function updateEditorAfterURLChange(sel: IRange | null): void {
 	// TODO restore scroll position.
 	if (!sel) {
 		return;

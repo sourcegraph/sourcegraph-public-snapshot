@@ -13,7 +13,7 @@ import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
-import { RepoMain } from "sourcegraph/repo/RepoMain";
+import { CloningRefresher, RepoMain } from "sourcegraph/repo/RepoMain";
 import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
@@ -23,15 +23,14 @@ interface Props {
 	isSymbolUrl: boolean;
 	routes: Route[];
 	params: RouteParams;
-	selection: IRange;
+	selection: IRange | null;
 	location: RouterLocation;
 
 	relay: any;
 	root: GQL.IRoot;
 }
 
-// WorkbenchComponent loads the VSCode workbench shell, or our home made file
-// tree and Editor, depending on configuration. To learn about VSCode and the
+// WorkbenchComponent loads the VSCode workbench shell. To learn about VSCode and the
 // way we use it, read README.vscode.md.
 @autobind
 class WorkbenchComponent extends React.Component<Props, {}> {
@@ -47,35 +46,41 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 
 	render(): JSX.Element | null {
 		let repository: GQL.IRepository;
-		let symbol: GQL.ISymbol | undefined;
-		let selection: IRange;
+		let selection: IRange | null;
 		let path: string;
 		if (this.props.isSymbolUrl) {
 			if (!this.props.root.symbols || this.props.root.symbols.length === 0) {
-				return (
-					<Header
-						title="404"
-						subtitle="Symbol not found." />
-				);
+				return <Header
+					title="404"
+					subtitle="Symbol not found." />;
 			}
 			// Assume that there is only one symbol for now
-			symbol = this.props.root.symbols[0];
+			const symbol = this.props.root.symbols[0];
 			repository = symbol.repository;
 			path = symbol.path;
 			selection = RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty();
 		} else {
-			if (!this.props.root.repository || !this.props.root.repository.commit.commit || !this.props.root.repository.commit.commit.tree) {
-				return (
-					<Header
-						title="404"
-						subtitle="Repository not found." />
-				);
+			if (!this.props.root.repository) {
+				return <Header
+					title="404"
+					subtitle="Repository not found." />;
 			}
 			repository = this.props.root.repository;
 			selection = this.props.selection;
 			path = pathFromRouteParams(this.props.params);
 		}
-		const commitID = repository.commit.commit!.sha1;
+
+		if (repository.commit.cloneInProgress) {
+			return <CloningRefresher relay={this.props.relay} />;
+		}
+
+		if (!repository.commit.commit) {
+			return <Header
+				title="404"
+				subtitle="Revision not found" />;
+		}
+
+		const commitID = repository.commit.commit.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<BlobPageTitle repo={this.props.repo} path={path} />
 			<RepoMain {...this.props} repository={repository} commit={repository.commit}>
@@ -85,7 +90,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 					repo={repository.uri}
 					commitID={commitID}
 					path={path}
-					selection={symbol ? RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty() : this.props.selection} />
+					selection={selection} />
 				<InfoPanelLifecycle repo={repository} fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
 			</RepoMain>
 		</div>;
