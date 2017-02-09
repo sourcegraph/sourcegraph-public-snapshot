@@ -334,7 +334,7 @@ class EventLoggerClass {
 				if (action.data) {
 					for (let orgs of action.data) {
 						orgNames.push(orgs.Login);
-						if (orgs.Login === "sourcegraph") {
+						if (orgs.Login === "sourcegraph" || orgs.Login === "sourcegraphtest") {
 							this.setUserProperty("is_employee", true);
 							if (optimizely.optimizelyApiService) {
 								optimizely.optimizelyApiService.setUserAttributes({ "is_employee": true });
