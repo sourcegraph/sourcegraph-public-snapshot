@@ -166,7 +166,9 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				return nil, err
 			}
 			ghRepoURI := githubutil.RepoURI(ghRepo.Owner, ghRepo.Name)
-			if ghRepoURI != uri { // not canonical name
+			if ghRepoURI != uri {
+				// not canonical name (the GitHub api will redirect from the old name to
+				// the results for the new name if the repo got renamed on GitHub)
 				if repo, err := s.getByURI(ctx, uri); err == nil {
 					return repo, nil
 				}
