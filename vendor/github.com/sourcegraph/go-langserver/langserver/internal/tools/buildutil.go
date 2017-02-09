@@ -74,7 +74,7 @@ func allPackages(ctxt *build.Context, root, start string, ch chan<- string) {
 			return
 		}
 
-		pkg := filepath.ToSlash(strings.TrimPrefix(dir, root))
+		pkg := filepath.Clean(filepath.ToSlash(strings.TrimPrefix(dir, root)))
 
 		// Prune search if we encounter any of these import paths.
 		switch pkg {

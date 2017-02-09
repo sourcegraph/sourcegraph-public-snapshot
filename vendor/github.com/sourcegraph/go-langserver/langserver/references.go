@@ -80,7 +80,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		}
 		return nil, fmt.Errorf("no package found for object %s", obj)
 	}
-	defpkg := obj.Pkg().Path()
+	defpkg := strings.TrimSuffix(obj.Pkg().Path(), "_test")
 	_, pkgLevel := classify(obj)
 
 	bctx := h.BuildContext(ctx)
@@ -318,7 +318,7 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace func(string) bool, obj types.Object, refs chan<- *ast.Ident) error {
 	allowErrors(&lconf)
 
-	defpkg := obj.Pkg().Path()
+	defpkg := strings.TrimSuffix(obj.Pkg().Path(), "_test")
 	objposn := lconf.Fset.Position(obj.Pos())
 
 	// The remainder of this function is somewhat tricky because it
@@ -367,9 +367,11 @@ func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace fun
 		wg.Add(1)
 		defer wg.Done()
 
+		pkg := strings.TrimSuffix(info.Pkg.Path(), "_test")
+
 		// Only inspect packages that depend on the declaring package
 		// (and thus were type-checked).
-		if !lconf.TypeCheckFuncBodies(info.Pkg.Path()) {
+		if !lconf.TypeCheckFuncBodies(pkg) {
 			return
 		}
 
@@ -379,7 +381,7 @@ func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace fun
 		// objects, and we need to test for equality later when we
 		// look up refs.
 		mu.Lock()
-		if qobj == nil && strings.TrimSuffix(info.Pkg.Path(), "_test") == defpkg {
+		if qobj == nil && pkg == defpkg {
 			// Find the object by its position (slightly ugly).
 			qobj = findObject(lconf.Fset, &info.Info, objposn)
 			if qobj == nil {
@@ -393,7 +395,7 @@ func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace fun
 
 		// Look for references to the query object. Only collect
 		// those that are in this workspace.
-		if queryObj != nil && collectPkg(info.Pkg.Path()) {
+		if queryObj != nil && collectPkg(pkg) {
 			for id, obj := range info.Uses {
 				if sameObj(queryObj, obj) {
 					refs <- id

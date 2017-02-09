@@ -1,6 +1,7 @@
 package langserver
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -47,14 +48,36 @@ func (h *HandlerShared) HandleFileSystemRequest(ctx context.Context, req *jsonrp
 		if !found {
 			return fmt.Errorf("received textDocument/didChange for unknown file %q", params.TextDocument.URI)
 		}
-		for _, change := range params.ContentChanges {
-			switch {
-			case change.Range == nil && change.RangeLength == 0:
-				contents = []byte(change.Text) // new full content
 
-			default:
-				return fmt.Errorf("incremental updates in textDocument/didChange not supported for file %q", params.TextDocument.URI)
+		for _, change := range params.ContentChanges {
+			if change.Range == nil && change.RangeLength == 0 {
+				contents = []byte(change.Text) // new full content
+				continue
 			}
+			start, ok, why := offsetForPosition(contents, change.Range.Start)
+			if !ok {
+				return fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, params.TextDocument.URI, why)
+			}
+			var end int
+			if change.RangeLength != 0 {
+				end = start + int(change.RangeLength) - 1
+			} else {
+				// RangeLength not specified, work it out from Range.End
+				end, ok, why = offsetForPosition(contents, change.Range.End)
+				if !ok {
+					return fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, params.TextDocument.URI, why)
+				}
+			}
+			if start < 0 || end >= len(contents) || end < start {
+				return fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, params.TextDocument.URI)
+			}
+			// Try avoid doing too many allocations, so use bytes.Buffer
+			b := &bytes.Buffer{}
+			b.Grow(start + len(change.Text) + len(contents) - end - 1)
+			b.Write(contents[:start])
+			b.WriteString(change.Text)
+			b.Write(contents[end+1:])
+			contents = b.Bytes()
 		}
 		h.addOverlayFile(params.TextDocument.URI, contents)
 		return nil
