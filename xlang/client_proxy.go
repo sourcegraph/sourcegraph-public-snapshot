@@ -355,6 +355,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
 		kind := lsp.TDSKNone
+		if c.context.session != "" {
+			// If session is set (zap), we allow operations which can mutate.
+			kind = lsp.TDSKFull
+		}
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync:   lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
