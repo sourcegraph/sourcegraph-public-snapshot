@@ -1,6 +1,6 @@
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
-import { IFileStat, IResolveFileOptions } from "vs/platform/files/common/files";
+import { IFileStat, IResolveFileOptions, IUpdateContentOptions } from "vs/platform/files/common/files";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
@@ -27,6 +27,16 @@ export class FileService {
 			fileStatCache.set(resource.toString(true), fileStat);
 			return fileStat;
 		});
+	}
+
+	// Stubbed implementation to handle updating the configuration from the VSCode extension
+	existsFile(resource: URI): TPromise<boolean> {
+		return TPromise.as(false);
+	}
+
+	// Stubbed implementation to handle updating the configuration from the VSCode extension
+	public updateContent(resource: URI, value: string, options: IUpdateContentOptions = Object.create(null)): TPromise<IFileStat> {
+		return TPromise.as({ isDirectory: true, hasChildren: false });
 	}
 }
 

@@ -45,6 +45,9 @@ const config = {
 		hideCursorInOverviewRuler: true,
 		selectionHighlight: false,
 	},
+	files: {
+		eol: "\n",
+	}
 };
 
 export function toggleCodeLens(): void {
@@ -79,7 +82,7 @@ export class ConfigurationService implements IConfigurationService {
 		};
 	}
 
-	keys(): IConfigurationKeys { return { default: [] as string[], user: [] as string[] }; }
+	keys(): IConfigurationKeys { return { default: ["zap.enable"] as string[], user: [] as string[] }; }
 
 	reloadConfiguration<T>(section?: string): TPromise<T> { return TPromise.as({} as T); }
 

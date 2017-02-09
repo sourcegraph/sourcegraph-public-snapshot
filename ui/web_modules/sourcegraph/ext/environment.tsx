@@ -12,6 +12,7 @@ import { IEnvironment } from "vscode-zap/out/src/environment";
 // and has access to browser APIs.
 class BrowserEnvironment implements IEnvironment {
 	private docAtLastSave: Map<string, string> = new Map<string, string>();
+	private _zapRef: string;
 
 	constructor() {
 		// Track the initial contents of documents so we can revert.
@@ -21,6 +22,8 @@ class BrowserEnvironment implements IEnvironment {
 		vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
 			this.updateDocAtLastSave(doc);
 		});
+
+		this.zapRef = self["__tmpZapRef"];
 	}
 
 	private updateDocAtLastSave(doc: vscode.TextDocument): void {
@@ -44,16 +47,25 @@ class BrowserEnvironment implements IEnvironment {
 
 	private zapRefChangeEmitter: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
 	get onDidChangeZapRef(): vscode.Event<string> { return this.zapRefChangeEmitter.event; } // never fires TODO(sqs)
-	get zapRef(): string {
-		// TODO(sqs): hackily get the passed-through zap ref
-		return self["__tmpZapRef"] || "master@sqs";
+	// get zapRef(): string {
+	// 	// TODO(sqs): hackily get the passed-through zap ref
+	// 	return self["__tmpZapRef"] || "master@sqs";
 
-		// // TODO(sqs): this will get the absolute commit ID, not the branch
-		// const rev = URIUtils.repoParams(this.rootURI as URI).rev;
-		// if (!rev) {
-		// 	throw new Error(`no rev in rootURI: ${this.rootURI!.toString()}`);
-		// }
-		// return rev;
+	// 	// // TODO(sqs): this will get the absolute commit ID, not the branch
+	// 	// const rev = URIUtils.repoParams(this.rootURI as URI).rev;
+	// 	// if (!rev) {
+	// 	// 	throw new Error(`no rev in rootURI: ${this.rootURI!.toString()}`);
+	// 	// }
+	// 	// return rev;
+	// }
+
+	get zapRef(): string {
+		return this._zapRef;
+	}
+
+	set zapRef(ref: string) {
+		this._zapRef = ref;
+		this.zapRefChangeEmitter.fire(ref);
 	}
 
 	asRelativePathInsideWorkspace(uri: vscode.Uri): string | null {
