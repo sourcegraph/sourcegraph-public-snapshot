@@ -126,7 +126,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{})
 			ghrepos, repos = repos, ghrepos
 		} else {
-			ghrepos, err = github.ReposFromContext(ctx).Search(ctx, ghquery, nil)
+			ghrepos, err = github.SearchRepo(ctx, ghquery, nil)
 		}
 		if err == nil {
 			existingRepos := make(map[string]struct{}, len(repos))
@@ -154,7 +154,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		// Fetch latest metadata from GitHub
-		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
+		ghrepo, err := github.GetRepo(ctx, repo.URI)
 		if err != nil {
 			return err
 		}

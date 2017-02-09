@@ -12,7 +12,6 @@ type contextKey int
 
 const (
 	clientKey contextKey = iota
-	reposKey
 )
 
 // NewContextWithAuthedClient creates a new child context with a

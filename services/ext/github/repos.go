@@ -36,14 +36,6 @@ func init() {
 	prometheus.MustRegister(reposGitHubRequestsCounter)
 }
 
-type Repos interface {
-	Get(context.Context, string) (*sourcegraph.Repo, error)
-	Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error)
-	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
-}
-
-type repos struct{}
-
 type cachedRepo struct {
 	sourcegraph.Repo
 
@@ -52,9 +44,19 @@ type cachedRepo struct {
 	NotFound bool
 }
 
-var _ Repos = (*repos)(nil)
+var GetRepoMock func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
-func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+func MockGetRepo_Return(returns *sourcegraph.Repo) {
+	GetRepoMock = func(context.Context, string) (*sourcegraph.Repo, error) {
+		return returns, nil
+	}
+}
+
+func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	if GetRepoMock != nil {
+		return GetRepoMock(ctx, repo)
+	}
+
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
 	// is cacheable. (Permissions can change, but we no longer store that.) But
@@ -106,7 +108,22 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	return remoteRepo, nil
 }
 
-func (s *repos) Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
+var SearchRepoMock func(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error)
+
+func MockSearch_Return(returns []*sourcegraph.Repo) (called *bool) {
+	called = new(bool)
+	SearchRepoMock = func(ctx context.Context, query string, op *gogithub.SearchOptions) ([]*sourcegraph.Repo, error) {
+		*called = true
+		return returns, nil
+	}
+	return
+}
+
+func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
+	if SearchRepoMock != nil {
+		return SearchRepoMock(ctx, query, op)
+	}
+
 	res, _, err := client(ctx).Search.Repositories(query, op)
 	if err != nil {
 		return nil, err
@@ -197,12 +214,32 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	return &repo
 }
 
-// ListAccessible lists repos that are accessible to the authenticated
+var ListAccessibleReposMock func(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
+
+func MockListAccessibleRepos_Return(returns []*sourcegraph.Repo) (called *bool) {
+	called = new(bool)
+	ListAccessibleReposMock = func(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+		*called = true
+
+		if opt != nil && opt.Page > 1 {
+			return nil, nil
+		}
+
+		return returns, nil
+	}
+	return
+}
+
+// ListAccessibleRepos lists repos that are accessible to the authenticated
 // user.
 //
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
-func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+	if ListAccessibleReposMock != nil {
+		return ListAccessibleReposMock(ctx, opt)
+	}
+
 	ghRepos, resp, err := client(ctx).Repositories.List("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
@@ -213,21 +250,6 @@ func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 		repos = append(repos, toRepo(ghRepo))
 	}
 	return repos, nil
-}
-
-// WithRepos returns a copy of parent with the given GitHub Repos service.
-func WithRepos(parent context.Context, s Repos) context.Context {
-	return context.WithValue(parent, reposKey, s)
-}
-
-// ReposFromContext gets the context's GitHub Repos service.
-// If the value is not present, it creates a temporary one.
-func ReposFromContext(ctx context.Context) Repos {
-	s, ok := ctx.Value(reposKey).(Repos)
-	if !ok || s == nil {
-		return &repos{}
-	}
-	return s
 }
 
 func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
@@ -259,7 +281,7 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 	var allRepos []*sourcegraph.Repo
 	for page := 1; page <= maxPage; page++ {
 		op.Page = page
-		repos, err := ReposFromContext(ctx).ListAccessible(ctx, &op)
+		repos, err := ListAccessibleRepos(ctx, &op)
 		if err != nil {
 			return nil, err
 		}

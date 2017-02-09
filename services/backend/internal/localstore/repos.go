@@ -161,7 +161,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
 			// Repo does not exist in DB, create new entry.
 			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
-			ghRepo, err := github.ReposFromContext(ctx).Get(ctx, uri)
+			ghRepo, err := github.GetRepo(ctx, uri)
 			if err != nil {
 				return nil, err
 			}

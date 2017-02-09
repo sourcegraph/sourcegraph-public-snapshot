@@ -69,7 +69,7 @@ func testRepos_Get(t *testing.T, private bool) {
 		}),
 	}))
 
-	repo, err := (&repos{}).Get(ctx, "github.com/owner/repo")
+	repo, err := GetRepo(ctx, "github.com/owner/repo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func testRepos_Get(t *testing.T, private bool) {
 
 	// Test that repo is not cached and fetched from client on second request.
 	calledGet = false
-	repo, err = (&repos{}).Get(ctx, "github.com/owner/repo")
+	repo, err = GetRepo(ctx, "github.com/owner/repo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,9 +113,8 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 		}),
 	}))
 
-	s := &repos{}
 	nonexistentRepo := "github.com/owner/repo"
-	repo, err := s.Get(ctx, nonexistentRepo)
+	repo, err := GetRepo(ctx, nonexistentRepo)
 	if legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
@@ -164,13 +163,12 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		}),
 	})
 
-	s := &repos{}
 	privateRepo := "github.com/owner/repo"
 
 	// An unauthed user won't be able to see the repo
 	ctx := newContext(context.Background(), mockGetMissing)
 	ctx = auth.WithActor(ctx, &auth.Actor{})
-	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
+	if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if !calledGetMissing {
@@ -179,7 +177,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 
 	// If we repeat the call, we should hit the cache
 	calledGetMissing = false
-	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
+	if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
@@ -190,7 +188,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	// it since the repo may not 404 for us
 	ctx = newContext(context.Background(), mockGetPrivate)
 	ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-	repo, err := s.Get(ctx, privateRepo)
+	repo, err := GetRepo(ctx, privateRepo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -202,7 +200,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	calledGetMissing = false
 	ctx = newContext(context.Background(), mockGetMissing)
 	ctx = auth.WithActor(ctx, &auth.Actor{})
-	if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
+	if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
 	if calledGetMissing {
@@ -215,7 +213,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 		calledGetMissing = false
 		ctx = newContext(context.Background(), mockGetMissing) // Pretend that privateRepo is deleted now, so even authed user can't see it. Do this to ensure cached 404 value isn't used by authed user.
 		ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-		if _, err := s.Get(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
+		if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 			t.Fatal(err)
 		}
 		if !calledGetMissing {
@@ -252,13 +250,12 @@ func TestRepos_Get_authednocache(t *testing.T) {
 		}),
 	}))
 
-	s := &repos{}
 	repo := "github.com/owner/repo"
 
 	authedGet := func() bool {
 		calledGet = false
 		ctx = auth.WithActor(ctx, &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-		_, err := s.Get(ctx, repo)
+		_, err := GetRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -267,7 +264,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	unauthedGet := func() bool {
 		calledGet = false
 		ctx = auth.WithActor(ctx, &auth.Actor{})
-		_, err := s.Get(ctx, repo)
+		_, err := GetRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
 		}
