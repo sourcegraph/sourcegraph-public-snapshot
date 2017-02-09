@@ -96,6 +96,12 @@ var websocketUpgrader = websocket.Upgrader{
 	},
 }
 
+// dogfoodGitClient is the git client we use, just while dogfooding. We only
+// use it in the access check to ensure we have cloned the repo onto
+// gitserver-zap. We can't use DefaultClient, since that has NoCreds set to
+// true.
+var dogfoodGitClient = gitserver.NewClient(strings.Fields(os.Getenv("SRC_GIT_SERVERS")))
+
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
@@ -160,6 +166,20 @@ func listen(urlStr string) (string, net.Listener, error) {
 	return "ws://" + lis.Addr().String(), lis, nil
 }
 
+// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
+// during dogfooding.
+var whitelistedRepos = map[string]bool{
+	"github.com/sgtest/xyztest":                               true,
+	"github.com/gorilla/websocket":                            true,
+	"github.com/sourcegraph/go-langserver":                    true,
+	"github.com/sourcegraph/jsonrpc2":                         true,
+	"github.com/sourcegraph/sourcegraph":                      true,
+	"github.com/sourcegraph/javascript-typescript-langserver": true,
+	"github.com/sourcegraph/zap":                              true,
+	"github.com/Microsoft/vscode":                             true,
+	"github.com/Microsoft/TypeScriptSamples":                  true,
+}
+
 var zapServer = zap.NewServer(zapgit.ServerBackend{
 	CanAccessRepo: func(ctx context.Context, log *log.Context, repo string) (ok bool, err error) {
 		logResult := func(ok bool, err error) {
@@ -188,6 +208,20 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		if _, err := backend.Repos.GetByURI(ctx, repo); err != nil {
 			return false, err
 		}
+		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
+		// during dogfooding.
+		if !whitelistedRepos[repo] {
+			return false, fmt.Errorf("repo %q denied; not in zap development whitelist", repo)
+		}
+
+		// Dogfooding: Do a quick git command just to ensure we have
+		// the repo cloned. Remove before launch.
+		go func() {
+			cmd := dogfoodGitClient.Command("git", "rev-parse", "--show-toplevel")
+			cmd.Repo = &sourcegraph.Repo{URI: repo}
+			cmd.Run(ctx)
+		}()
+
 		return true, nil
 	},
 	OpenBareRepo: func(ctx context.Context, log *log.Context, repo string) (zapgit.ServerRepo, error) {
@@ -196,19 +230,8 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 
 		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
 		// during dogfooding.
-		whitelistedRepos := map[string]bool{
-			"github.com/sgtest/xyztest":                               true,
-			"github.com/gorilla/websocket":                            true,
-			"github.com/sourcegraph/go-langserver":                    true,
-			"github.com/sourcegraph/jsonrpc2":                         true,
-			"github.com/sourcegraph/sourcegraph":                      true,
-			"github.com/sourcegraph/javascript-typescript-langserver": true,
-			"github.com/sourcegraph/zap":                              true,
-			"github.com/Microsoft/vscode":                             true,
-			"github.com/Microsoft/TypeScriptSamples":                  true,
-		}
 		if !whitelistedRepos[repo] {
-			return nil, fmt.Errorf("repo %q denied; during development, zap may only be used with the repos %v", repo, whitelistedRepos)
+			return nil, fmt.Errorf("repo %q denied; not in zap development whitelist", repo)
 		}
 
 		_, err := backend.Repos.GetByURI(ctx, repo)
