@@ -38,4 +38,4 @@ class HubSpotWrapper {
 
 }
 
-export const HubSpot = new HubSpotWrapper();
+export const hubSpot = new HubSpotWrapper();

@@ -1,4 +1,5 @@
 import { context } from "sourcegraph/app/context";
+import { logToSentry } from "sourcegraph/util/logToSentry";
 
 class IntercomWrapper {
 	private intercom: (command: string, eventName?: any, settings?: any) => void | null;
@@ -7,13 +8,13 @@ class IntercomWrapper {
 		if (global && global.window && global.window.Intercom) {
 			this.intercom = global.window.Intercom;
 		} else {
-			console.error("Error loading intercom script. global.window.Intercom not present.");
+			logToSentry("Error loading intercom script. global.window.Intercom not present.");
 		}
 
 		if (global && global.window && global.window.intercomSettings) {
 			this.intercomSettings = global.window.intercomSettings;
 		} else {
-			console.error("Error loading intercom settings. global.window.intercomSettings not present.");
+			logToSentry("Error loading intercom settings. global.window.intercomSettings not present.");
 		}
 	}
 
@@ -52,4 +53,4 @@ class IntercomWrapper {
 
 }
 
-export const Intercom = new IntercomWrapper();
+export const intercom = new IntercomWrapper();

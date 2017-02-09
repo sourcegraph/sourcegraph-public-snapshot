@@ -7,8 +7,8 @@ import { Router, RouterLocation } from "sourcegraph/app/router";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
-import { HubSpot } from "sourcegraph/tracking/HubSpotWrapper";
-import { Intercom } from "sourcegraph/tracking/IntercomWrapper";
+import { hubSpot } from "sourcegraph/tracking/HubSpotWrapper";
+import { intercom } from "sourcegraph/tracking/IntercomWrapper";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { experimentManager } from "sourcegraph/util/ExperimentManager";
@@ -83,22 +83,22 @@ class EventLoggerClass {
 
 		if (context.user) {
 			this._setTrackerLoginInfo(context.user.Login);
-			Intercom.setIntercomProperty("user_id", context.user.UID.toString());
-			Intercom.setIntercomProperty("internal_user_id", context.user.UID.toString());
+			intercom.setIntercomProperty("user_id", context.user.UID.toString());
+			intercom.setIntercomProperty("internal_user_id", context.user.UID.toString());
 			hubSpotAttributes["user_id"] = context.user.Login;
 			optimizelyAttributes["user_id"] = context.user.Login;
 		}
 
 		if (context.intercomHash) {
-			Intercom.setIntercomProperty("user_hash", context.intercomHash);
+			intercom.setIntercomProperty("user_hash", context.intercomHash);
 			this.setUserProperty("user_hash", context.intercomHash);
 		}
 
-		Intercom.boot(context.trackingAppID !== this.CLOUD_TRACKING_APP_ID, context.trackingAppID);
+		intercom.boot(context.trackingAppID !== this.CLOUD_TRACKING_APP_ID, context.trackingAppID);
 
 		if (user) {
 			if (user.Name) {
-				Intercom.setIntercomProperty("name", user.Name);
+				intercom.setIntercomProperty("name", user.Name);
 				this.setUserProperty("display_name", user.Name);
 				hubSpotAttributes["fullname"] = user.Name;
 			}
@@ -106,13 +106,13 @@ class EventLoggerClass {
 			if (user.RegisteredAt) {
 				this.setUserProperty("registered_at_timestamp", user.RegisteredAt);
 				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
-				Intercom.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
+				intercom.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
 				hubSpotAttributes["registered_at"] = new Date(user.RegisteredAt).toDateString();
 			}
 
 			if (user.Company) {
 				this.setUserProperty("company", user.Company);
-				Intercom.setIntercomProperty("company", user.Company);
+				intercom.setIntercomProperty("company", user.Company);
 				hubSpotAttributes["company"] = user.Company;
 			}
 
@@ -129,7 +129,7 @@ class EventLoggerClass {
 		if (primaryEmail) {
 			this.setUserProperty("email", primaryEmail);
 			this.setUserProperty("emails", emails);
-			Intercom.setIntercomProperty("email", primaryEmail);
+			intercom.setIntercomProperty("email", primaryEmail);
 			optimizelyAttributes["email"] = primaryEmail;
 			hubSpotAttributes["email"] = primaryEmail;
 			hubSpotAttributes["emails"] = emails ? emails.map(email => { return email.Email; }).join(",") : "";
@@ -138,7 +138,7 @@ class EventLoggerClass {
 		if (optimizely.optimizelyApiService) {
 			optimizely.optimizelyApiService.setUserAttributes(optimizelyAttributes);
 		}
-		HubSpot.setHubSpotProperties(hubSpotAttributes);
+		hubSpot.setHubSpotProperties(hubSpotAttributes);
 	}
 
 	logout(): void {
@@ -146,7 +146,7 @@ class EventLoggerClass {
 
 		// Prevent the next user who logs in (e.g., on a public terminal) from
 		// seeing the previous user's Intercom messages.
-		Intercom.shutdown();
+		intercom.shutdown();
 
 		if (optimizely.optimizelyApiService) {
 			optimizely.optimizelyApiService.logout();
@@ -163,7 +163,7 @@ class EventLoggerClass {
 			this._telligent("setUserId", loginInfo);
 		}
 
-		Intercom.setIntercomProperty("business_user_id", loginInfo);
+		intercom.setIntercomProperty("business_user_id", loginInfo);
 	}
 
 	/*
@@ -252,7 +252,7 @@ class EventLoggerClass {
 		experimentManager.logEvent(eventLabel);
 
 		// Log event on HubSpot (if a valid HubSpot event)
-		HubSpot.logHubSpotEvent(eventLabel);
+		hubSpot.logHubSpotEvent(eventLabel);
 
 		if (global && global.window && global.window.ga) {
 			global.window.ga("send", {
@@ -334,15 +334,15 @@ class EventLoggerClass {
 				if (action.data) {
 					for (let orgs of action.data) {
 						orgNames.push(orgs.Login);
-						if (orgs.Login === "sourcegraph" || orgs.Login === "sourcegraphtest") {
+						if (orgs.Login === "sourcegraph") {
 							this.setUserProperty("is_employee", true);
 							if (optimizely.optimizelyApiService) {
 								optimizely.optimizelyApiService.setUserAttributes({ "is_employee": true });
 							}
 						}
 					}
-					HubSpot.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
-					Intercom.setIntercomProperty("authed_orgs_github", orgNames);
+					hubSpot.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
+					intercom.setIntercomProperty("authed_orgs_github", orgNames);
 					this.setUserProperty("authed_orgs_github", orgNames);
 					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({ "fetched_orgs_github": orgNames });
 				}
@@ -426,15 +426,13 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// Allow tracking events that occurred externally and resulted in a redirect
 			// back to Sourcegraph. Pull the event name out of the URL.
 			const eventName = this.props.location.query["_event"];
-			const isBadgeRedirect = this.props.location.query["badge"] !== undefined;
-
-			if (this.props.location.query && (eventName || isBadgeRedirect)) {
+			if (this.props.location.query && eventName) {
 				// For login signup related metrics a channel will be associated with the signup.
 				// This ensures we can track one metrics "SignupCompleted" and then query on the channel
 				// for more granular metrics.
 				let eventProperties = {};
 				for (let key in this.props.location.query) {
-					if (key !== "_event" && key !== "badge") {
+					if (key !== "_event") {
 						eventProperties[this.camelCaseToUnderscore(key)] = this.props.location.query[key];
 					}
 				}
@@ -456,10 +454,10 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				} else if (this.props.location.query["_invited_by_user"]) {
 					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
 					AnalyticsConstants.Events.OrgEmailInvite_Clicked.logEvent(eventProperties);
-				} else if (eventName) {
-					EventLogger._logEventForCategoryComponents(AnalyticsConstants.EventCategories.External, AnalyticsConstants.EventActions.Redirect, eventName, eventProperties);
-				} else if (isBadgeRedirect) {
+				} else if (eventName === "RepoBadgeRedirected") {
 					AnalyticsConstants.Events.RepoBadge_Redirected.logEvent(eventProperties);
+				} else {
+					EventLogger._logEventForCategoryComponents(AnalyticsConstants.EventCategories.External, AnalyticsConstants.EventActions.Redirect, eventName, eventProperties);
 				}
 
 				if (this.props.location.query["_org_invite"]) {
@@ -480,12 +478,11 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				delete this.props.location.query["_githubCompany"];
 				delete this.props.location.query["_githubName"];
 				delete this.props.location.query["_githubLocation"];
-				delete this.props.location.query["badge"];
 
 				// Remove _event from the URL to canonicalize the URL and make it
 				// less ugly.
 				const locWithoutEvent = Object.assign({}, this.props.location, {
-					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined, _source: undefined, _githubCompany: undefined, _githubName: undefined, _githubLocation: undefined, badge: undefined }),
+					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, invited_by_user: undefined, org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined, _source: undefined, _githubCompany: undefined, _githubName: undefined, _githubLocation: undefined }),
 					state: Object.assign({}, this.props.location.state, { _onboarding: this.props.location.query["_onboarding"] }),
 				});
 

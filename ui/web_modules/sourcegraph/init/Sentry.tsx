@@ -60,3 +60,5 @@ if (context.sentryDSN) {
 		});
 	}
 }
+
+global.window.Raven = Raven;
