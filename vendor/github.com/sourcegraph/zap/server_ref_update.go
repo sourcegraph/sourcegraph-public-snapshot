@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 	"sort"
 	"strings"
@@ -12,7 +11,6 @@ import (
 
 	logpkg "github.com/go-kit/kit/log"
 	level "github.com/go-kit/kit/log/experimental_level"
-	"github.com/neelance/parallel"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
@@ -160,7 +158,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Contex
 		}
 	}
 
-	return s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, withoutSymbolicRefs(refClosure), nil, params)
+	return s.broadcastRefUpdate(ctx, log, withoutSymbolicRefs(refClosure), nil, &params, nil)
 }
 
 func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, log *logpkg.Context, repo *serverRepo, ref refdb.Ref, params RefUpdateDownstreamParams, refConfig RefConfiguration) error {
@@ -245,8 +243,6 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 			oldRefObj := ref.Object.(serverRef)
 			otHandler := &ws.Proxy{
 				SendToUpstream: oldRefObj.ot.SendToUpstream,
-				// TODO(sqs)!!! upstreamrevnumber should be 0 not len(history) beacuse we call RecvFromUpstream below, which will increment the upstreamrevnumber
-				UpstreamRevNumber: len(params.State.History),
 			}
 			if !isWorkspaceHEAD {
 				// Don't call Apply in our loop over
@@ -287,7 +283,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 	// Don't broadcast acks to clients, since we already immediately
 	// ack clients.
 	if !params.Ack {
-		if err := s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, withoutSymbolicRefs(refClosure), nil, params); err != nil {
+		if err := s.broadcastRefUpdate(ctx, log, withoutSymbolicRefs(refClosure), nil, &params, nil); err != nil {
 			return err
 		}
 	}
@@ -343,158 +339,6 @@ func (s *Server) startWorker(ctx context.Context) {
 	}
 }
 
-func (s *Server) broadcastRefUpdateDownstream(ctx context.Context, log *logpkg.Context, repo string, updatedRefs []refdb.Ref, sender *serverConn, params RefUpdateDownstreamParams) error {
-	if ctx == nil {
-		panic("ctx == nil")
-	}
-
-	const sendTimeout = 5 * time.Second
-
-	sort.Sort(sortableRefs(updatedRefs))
-	for _, ref_ := range updatedRefs {
-		ref := ref_
-		if ref.IsSymbolic() {
-			panic(fmt.Sprintf("broadcastRefUpdateDownstream unexpectedly got symbolic ref %q", ref.Name))
-		}
-		refID := RefIdentifier{Repo: repo, Ref: ref.Name}
-		if watchers := s.watchers(refID); len(watchers) > 0 {
-			level.Debug(log).Log("broadcast-to-downstream-ref", refID, "watchers", strings.Join(clientIDs(watchers), " "), "downstream-params", params)
-
-			// Determine if the sender is watching (so we don't send
-			// both a broadcast AND an ack to the sender).
-			var senderIsWatching bool
-			for _, c := range watchers {
-				if c == sender {
-					senderIsWatching = true
-					break
-				}
-			}
-
-			s.work <- func() error {
-				// Send the update with the ref name that the client
-				// is watching as (e.g., "HEAD" not "master" if they
-				// are only watching HEAD).
-				params := params
-				params.RefIdentifier.Ref = ref.Name
-
-				par := parallel.NewRun(10)
-				for _, c := range watchers {
-					par.Acquire()
-					go func(c *serverConn) {
-						defer par.Release()
-
-						if c == sender {
-							// We ack the sender below (and must do that
-							// after broadcasting updates to all
-							// clients), so skip the sender here.
-							return
-						}
-
-						ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-						defer cancel()
-						if err := c.conn.Call(ctx, "ref/update", params, nil); err == io.ErrUnexpectedEOF {
-							// This means the client connection no longer
-							// exists. Continue sending to the other watchers.
-						} else if err != nil {
-							level.Warn(log).Log("watcher-broadcast-error", err, "id", c.init.ID)
-							if err := c.conn.Close(); err != nil {
-								level.Warn(log).Log("error-closing-watcher", err, "id", c.init.ID)
-							}
-							return
-						}
-					}(c)
-				}
-				if err := par.Wait(); err != nil {
-					return err
-				}
-
-				if senderIsWatching && sender != nil {
-					// Ack after the op has been sent to all clients.
-					ackParams := params
-					ackParams.Ack = true
-					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-					err := sender.conn.Call(ctx, "ref/update", ackParams, nil)
-					cancel()
-					if err == io.ErrUnexpectedEOF {
-						// This means the sender disconnected.
-						err = nil
-					}
-					if err != nil {
-						return fmt.Errorf("acking to sender %q: %s", sender.init.ID, err)
-					}
-				}
-				return nil
-			}
-		}
-	}
-	return nil
-}
-
-// broadcastRefUpdateSymbolic broadcasts an update to a symbolic ref
-// to all of its watchers.
-func (s *Server) broadcastRefUpdateSymbolic(ctx context.Context, log *logpkg.Context, repo *serverRepo, sender *serverConn, params RefUpdateSymbolicParams) error {
-	const sendTimeout = 5 * time.Second
-
-	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
-	sort.Sort(sortableRefs(refClosure))
-	for _, ref_ := range refClosure {
-		ref := ref_
-		refID := RefIdentifier{Repo: params.RefIdentifier.Repo, Ref: ref.Name}
-		if watchers := s.watchers(refID); len(watchers) > 0 {
-			level.Debug(log).Log("broadcast-symbolic-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "), "params", params)
-			s.work <- func() error {
-				// Send the update with the ref name that the client
-				// is watching as (e.g., "HEAD" not "master" if they
-				// are only watching HEAD).
-				params := params
-				params.RefIdentifier.Ref = ref.Name
-
-				senderIsWatching := false
-				for _, c := range watchers { // TODO(sqs): parallelize
-					if c == sender {
-						// We ack the sender below, so skip it here.
-						senderIsWatching = true
-						continue
-					}
-
-					// TODO(sqs): handle closed conns
-					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-					if err := c.conn.Call(ctx, "ref/updateSymbolic", params, nil); err == io.ErrUnexpectedEOF {
-						// This means the client connection no longer
-						// exists. Continue sending to the other watchers.
-					} else if err != nil {
-						cancel()
-						level.Warn(log).Log("watcher-broadcast-error", err, "id", c.init.ID)
-						if err := c.conn.Close(); err != nil {
-							level.Warn(log).Log("error-closing-watcher", err, "id", c.init.ID)
-						}
-						continue
-					}
-					cancel()
-				}
-
-				if senderIsWatching && sender != nil {
-					// Ack after the op has been sent to all clients.
-					ackParams := params
-					ackParams.Ack = true
-					ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-					err := sender.conn.Call(ctx, "ref/updateSymbolic", ackParams, nil)
-					cancel()
-					if err == io.ErrUnexpectedEOF {
-						// This means the sender disconnected.
-						err = nil
-					}
-					if err != nil {
-						return fmt.Errorf("acking to sender %q: %s", sender.init.ID, err)
-					}
-				}
-				return nil
-			}
-		}
-	}
-	return nil
-}
-
 func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Context, sender *serverConn, repo *serverRepo, params RefUpdateSymbolicParams) error {
 	// s.recvMu.Lock()
 	// defer s.recvMu.Unlock()
@@ -535,7 +379,7 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Contex
 		return err
 	}
 
-	return s.broadcastRefUpdateSymbolic(ctx, log, repo, sender, params)
+	return s.broadcastRefUpdate(ctx, log, repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref), sender, nil, &params)
 }
 
 func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.Context, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally bool) error {
@@ -743,10 +587,10 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 		// upstream BEFORE this ref existed, then we need to check
 		// now if we need to link the upstream to it.
 		hasUpstreamConfigured := refObj.ot != nil && refObj.ot.SendToUpstream != nil
-		if params.Op != nil && !hasUpstreamConfigured && params.Current == nil && params.State != nil {
+		if !hasUpstreamConfigured {
 			if c, ok := repo.config.Refs[params.RefIdentifier.Ref]; ok {
 				level.Info(log).Log("reattached-ref-config-to-newly-created-ref", fmt.Sprint(c))
-				if err := s.doUpdateRefConfiguration(ctx, log, repo, params.RefIdentifier, ref, RefConfiguration{}, c); err != nil {
+				if err := s.doUpdateRefConfiguration(ctx, log, repo, params.RefIdentifier, ref, RefConfiguration{}, c, false, false); err != nil {
 					return err
 				}
 			}
@@ -759,13 +603,13 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 		}
 		return &RefBaseInfo{GitBase: p.GitBase, GitBranch: p.GitBranch}
 	}
-	return s.broadcastRefUpdateDownstream(ctx, log, params.RefIdentifier.Repo, withoutSymbolicRefs(refClosure), sender, RefUpdateDownstreamParams{
+	return s.broadcastRefUpdate(ctx, log, withoutSymbolicRefs(refClosure), sender, &RefUpdateDownstreamParams{
 		RefIdentifier: params.RefIdentifier,
 		Current:       toRefBaseInfo(params.Current),
 		State:         params.State,
 		Op:            params.Op,
 		Delete:        params.Delete,
-	})
+	}, nil)
 }
 
 func clientIDs(conns []*serverConn) (ids []string) {

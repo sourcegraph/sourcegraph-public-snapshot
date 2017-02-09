@@ -12,7 +12,7 @@ import (
 func (s *Server) doUpdateRepoConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, config RepoConfiguration) error {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
-	if err := s.doUpdateBulkRepoRemoteConfiguration(ctx, log, repo, repo.config.Remotes, config.Remotes); err != nil {
+	if err := s.doUpdateBulkRepoRemoteConfiguration(ctx, log, repoName, repo, repo.config.Remotes, config.Remotes); err != nil {
 		return err
 	}
 	if err := s.doUpdateBulkRefConfiguration(ctx, log, repoName, repo, repo.config.Refs, config.Refs); err != nil {
@@ -22,7 +22,7 @@ func (s *Server) doUpdateRepoConfiguration(ctx context.Context, log *log.Context
 }
 
 // doUpdateRepoRemoteConfiguration assumes the caller holds repo.mu.
-func (s *Server) doUpdateBulkRepoRemoteConfiguration(ctx context.Context, log *log.Context, repo *serverRepo, oldRemotes, newRemotes map[string]RepoRemoteConfiguration) error {
+func (s *Server) doUpdateBulkRepoRemoteConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldRemotes, newRemotes map[string]RepoRemoteConfiguration) error {
 	// Forbid multiple remotes having the same endpoint.
 	seenEndpoints := make(map[string][]string, len(oldRemotes))
 	for name, config := range newRemotes {
@@ -76,6 +76,20 @@ func (s *Server) doUpdateBulkRepoRemoteConfiguration(ctx context.Context, log *l
 			repo.config.Remotes = map[string]RepoRemoteConfiguration{}
 		}
 		repo.config.Remotes[newName] = newRemote
+
+		// Apply existing ref configuration against new upstream, if
+		// the endpoint or repo changed. If just the refspec changed,
+		// we don't need to do anything as that would not change the
+		// desired state on the upstream.
+		if oldRemote.Endpoint != newRemote.Endpoint || oldRemote.Repo != newRemote.Repo {
+			for ref, refConfig := range repo.config.Refs {
+				if refConfig.Upstream == newName {
+					if err := s.doUpdateRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), RefConfiguration{}, refConfig, true /* force */, true); err != nil {
+						return err
+					}
+				}
+			}
+		}
 	}
 
 	return nil

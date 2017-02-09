@@ -43,7 +43,7 @@ export function createExtensionAPI(
 				user: v,
 			});
 			return {
-				zap: value({ enable: true, share: { selections: true } }),
+				zap: value({ enable: true, share: { selections: true }, overwrite: false }),
 			};
 		},
 	} as any,

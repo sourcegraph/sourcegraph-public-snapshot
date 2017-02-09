@@ -177,6 +177,11 @@ func (p *Proxy) RecvFromUpstream(log *log.Context, op ot.WorkspaceOp) (ot.Worksp
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
+	if p.UpstreamRevNumber > len(p.history) {
+		level.Error(log).Log("PANIC-BELOW", "")
+		panic(fmt.Sprintf("invalid p.UpstreamRevNumber > len(p.History) (%d > %d)", p.UpstreamRevNumber, len(p.history)))
+	}
+
 	log = log.With("recv-from-upstream", fmt.Sprintf("@%d(upstream)", p.UpstreamRevNumber))
 	if extraDebug {
 		level.Debug(log).Log("op", op, "wait", p.Wait, "buf", p.Buf, "history-length", len(p.history), "history", fmt.Sprint(p.history))

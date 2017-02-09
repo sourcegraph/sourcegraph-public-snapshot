@@ -303,6 +303,10 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 	return op, nil
 }
 
+// diffOps returns the diff between old and new as OT edit ops.
+//
+// DEV NOTE: Keep this in sync with other language implementations of
+// diffOps.
 func diffOps(old, new []byte) ot.EditOps {
 	change := diff.Bytes(old, new)
 	ops := make(ot.EditOps, 0, len(change)*2)

@@ -32,10 +32,16 @@ test-lang:; cd lang && $(MAKE) test
 .PHONY: test-e2e
 test-e2e: install-lang install-ext
 	go test -timeout 2m -v ./internal/e2e
+	
+.PHONY: check
+check:; bash dev/check-generate-all
 
 .PHONY: watch
 watch:
 	(rego github.com/sourcegraph/zap/cmd/zap version) & (cd lang/js && yarn run watch) & (cd ext/vscode && yarn run watch)
+
+.PHONY: generate
+generate:; cd ot && go generate
 
 .PHONY: publish-npm
 publish-npm:
@@ -50,3 +56,4 @@ publish-vscode:
 publish:
 	$(MAKE) publish-npm
 	$(MAKE) publish-vscode
+	git commit --amend --no-edit ext/vscode/yarn.lock

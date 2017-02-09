@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-kit/kit/log"
+	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/gitutil"
 )
@@ -217,6 +218,7 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 		if err := doc.Apply(edits); err != nil {
 			err := fmt.Errorf("apply OT edit to %s @ %s: %s (doc: %q, op: %v)", f, base, err, data, op)
 			if panicOnSomeErrors {
+				level.Error(log).Log("PANIC-BELOW", "")
 				panic(err)
 			}
 			return "", err

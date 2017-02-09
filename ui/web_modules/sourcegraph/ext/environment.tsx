@@ -11,20 +11,27 @@ import { IEnvironment } from "vscode-zap/out/src/environment";
 // running in the browser. It is backed by the vscode extension API
 // and has access to browser APIs.
 class BrowserEnvironment implements IEnvironment {
-	private docInitialContents: Map<string, string> = new Map<string, string>();
+	private docAtLastSave: Map<string, string> = new Map<string, string>();
 
 	constructor() {
 		// Track the initial contents of documents so we can revert.
 		vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-			const key = doc.uri.toString();
-			if (this.docInitialContents.has(key)) {
-				throw new Error(`expected to see document ${key} only once`);
-			}
-			if (doc.isDirty) {
-				throw new Error(`expected to see document ${key} before it is dirty`);
-			}
-			this.docInitialContents.set(key, doc.getText());
+			this.updateDocAtLastSave(doc);
 		});
+		vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
+			this.updateDocAtLastSave(doc);
+		});
+	}
+
+	private updateDocAtLastSave(doc: vscode.TextDocument): void {
+		const key = doc.uri.toString();
+		if (this.docAtLastSave.has(key)) {
+			throw new Error(`expected to see document ${key} only once`);
+		}
+		if (doc.isDirty) {
+			throw new Error(`expected to see document ${key} before it is dirty`);
+		}
+		this.docAtLastSave.set(key, doc.getText());
 	}
 
 	get rootURI(): vscode.Uri | undefined {
@@ -68,6 +75,14 @@ class BrowserEnvironment implements IEnvironment {
 
 	automaticallyApplyingFileSystemChanges: boolean = false;
 
+	readTextDocumentOnDisk(uri: vscode.Uri): string {
+		const text = this.docAtLastSave.get(uri.toString());
+		if (text === undefined) {
+			throw new Error(`no text for document at URI ${uri.toString()}`);
+		}
+		return text;
+	}
+
 	revertTextDocument2(doc: vscode.TextDocument): Thenable<any> {
 		// HACK(sqs): see the comment in the lone call site of
 		// revertTextDocument2 in zap. this does not happen in the
@@ -76,7 +91,7 @@ class BrowserEnvironment implements IEnvironment {
 	}
 
 	revertTextDocument(doc: vscode.TextDocument): Thenable<any> {
-		const initialContents = this.docInitialContents.get(doc.uri.toString());
+		const initialContents = this.docAtLastSave.get(doc.uri.toString());
 		if (initialContents === undefined) {
 			throw new Error(`revertTextDocument: unknown initial contents for ${doc.uri.toString()}`);
 		}

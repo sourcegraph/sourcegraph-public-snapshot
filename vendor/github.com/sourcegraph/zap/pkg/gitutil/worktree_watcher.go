@@ -1,11 +1,11 @@
 package gitutil
 
 import (
-	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/rjeczalik/notify"
 )
 
 // WorktreeWatcher watches a directory and its subdirectories for
@@ -14,10 +14,10 @@ import (
 // Upon creation (with NewWorktreeWatcher), file changes are sent
 // on the Events channel.
 type WorktreeWatcher struct {
-	Events <-chan fsnotify.Event
+	Events <-chan notify.EventInfo
 	Errors <-chan error
 
-	watcher io.Closer
+	watcher chan notify.EventInfo
 }
 
 // NewWorktreeWatcher creates a new watcher for the worktree at
@@ -25,9 +25,7 @@ type WorktreeWatcher struct {
 func NewWorktreeWatcher(repo interface {
 	WorktreeDir() string
 }, ignorePath func(string) (bool, error)) (*WorktreeWatcher, error) {
-	dir := repo.WorktreeDir()
-
-	watcher, err := fsnotify.NewWatcher()
+	dir, err := filepath.Abs(repo.WorktreeDir())
 	if err != nil {
 		return nil, err
 	}
@@ -36,93 +34,49 @@ func NewWorktreeWatcher(repo interface {
 		// Default: ignore nothing.
 		ignorePath = func(string) (bool, error) { return false, nil }
 	}
+	gitDir := filepath.Join(dir, ".git") + string(os.PathSeparator)
 
-	recursivelyWatchDir := func(root string) error {
-		// TODO(sqs): optimize by using `git ls-files`? instead of calling ignorePath many times
-		if err := watcher.Add(root); err != nil {
-			return err
-		}
-		return filepath.Walk(dir, func(path string, fi os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if fi.Mode().IsDir() {
-				if fi.Name() == ".git" {
-					return filepath.SkipDir
-				}
-				if err := watcher.Add(path); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-	}
-
-	// TODO(sqs): watch more than just the top-level dir (recursively
-	// add watches, AND add watches for newly created dirs).
-	if err := recursivelyWatchDir(dir); err != nil {
-		watcher.Close()
+	// TODO bigger buffer? if we can't keep up, notify will drop events
+	watcher := make(chan notify.EventInfo, 1)
+	if err := notify.Watch(filepath.Join(dir, "..."), watcher, notify.All); err != nil {
 		return nil, err
 	}
 
-	eventsCh := make(chan fsnotify.Event)
+	eventsCh := make(chan notify.EventInfo)
 	errorsCh := make(chan error)
 
 	go func() {
-	loop:
 		for {
-			select {
-			case e, ok := <-watcher.Events:
-				if !ok {
-					break loop
-				}
+			e, ok := <-watcher
+			if !ok {
+				break
+			}
 
-				if ignorePath != nil {
-					if ignore, err := ignorePath(e.Name); err != nil {
-						errorsCh <- err
-						continue
-					} else if ignore {
-						continue
-					}
-				}
-
-				fi, err := os.Stat(e.Name)
-				if os.IsNotExist(err) {
-					// TODO(sqs): recursively remove watches
-					if err := watcher.Remove(e.Name); err != nil {
-						// TODO(sqs): suppress "can't remove non-existent inotify watch" error when we watch a dir and one of its files is deleted (we shouldn't remove the file's watcher (since we never actually watched the file, only the dir), but we dont know enough in that case to avoid calling watcher.Remove on the file).
-						//
-						// errorsCh <- err
-					}
-				} else if err != nil {
-					errorsCh <- err
-					continue
-				}
-
-				if fi != nil && fi.Mode().IsDir() {
-					// Recursively watch newly added directories.
-					if err := recursivelyWatchDir(e.Name); err != nil {
-						errorsCh <- err
-						continue
-					}
-
-					continue
-				}
-
-				// Only pass along events on files (not dirs), since
-				// zap (and git itself) only deals with files.
-				//
-				// TODO(sqs): how to deal with symlinks? how to know if a deleted thing is a dir or file?
-				isFile := fi != nil && fi.Mode().IsRegular()
-				if isFile || e.Op&fsnotify.Remove != 0 {
-					eventsCh <- e
-				}
-
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					break loop
-				}
+			if strings.HasPrefix(e.Path()+string(os.PathSeparator), gitDir) {
+				continue
+			} else if ignore, err := ignorePath(e.Path()); err != nil {
 				errorsCh <- err
+				continue
+			} else if ignore {
+				continue
+			}
+
+			if e.Event()&notify.Remove != 0 {
+				eventsCh <- e
+				continue
+			}
+
+			fi, err := os.Stat(e.Path())
+			if err != nil && !os.IsNotExist(err) {
+				errorsCh <- err
+				continue
+			}
+			if fi == nil {
+				continue
+			}
+
+			if fi.Mode().IsRegular() {
+				eventsCh <- e
 			}
 		}
 	}()
@@ -136,5 +90,6 @@ func NewWorktreeWatcher(repo interface {
 
 // Close stops watching and closes w.Events and w.Errors.
 func (w *WorktreeWatcher) Close() error {
-	return w.watcher.Close()
+	notify.Stop(w.watcher)
+	return nil
 }

@@ -154,11 +154,11 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 				if err != nil {
 					return err
 				}
-				if err := s.parent.broadcastRefUpdateDownstream(ctx, log, w.Dir, []refdb.Ref{*ref}, nil, RefUpdateDownstreamParams{
+				if err := s.parent.broadcastRefUpdate(ctx, log, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
 					RefIdentifier: w.Ref("HEAD"),
 					Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 					Op:            &op,
-				}); err != nil {
+				}, nil); err != nil {
 					return err
 				}
 

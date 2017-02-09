@@ -42,6 +42,9 @@ func mergeSels(a, b map[string]*Sel) map[string]*Sel {
 
 // AdjustSel returns the selections after adjusting for the edit.
 //
+// DEV NOTE: This should be kept in sync with other language
+// implementations of adjustSel.
+//
 // TODO(sqs): support multiple sels, and add tests for multiple sels
 // to TestAdjustSel as well.
 func AdjustSel(sel *Sel, edit EditOps) *Sel {
