@@ -1,4 +1,4 @@
-.PHONY: install build bundle phabricator deploy deploy-e2e test-unit test-watch test-e2e test-all selenium-chrome fmt fmt-check
+.PHONY: install build bundle phabricator deploy deploy-e2e test-unit test-watch test-e2e test-all selenium-chrome fmt fmt-check clean
 
 default: build
 
@@ -39,7 +39,9 @@ selenium-chrome: build
 deploy-e2e:
 	cd ../../test/e2e2 && make deploy
 
+clean:
+	rm -rf build/ dev/ .checksum node_modules/ chrome-bundle.zip firefox-bundle.xpi
+
 export CHROME_BUNDLE ?= $(shell pwd)/chrome-bundle.zip
-deploy: bundle deploy-e2e
-	rm .checksum
+deploy: clean bundle deploy-e2e
 	./deploy.sh

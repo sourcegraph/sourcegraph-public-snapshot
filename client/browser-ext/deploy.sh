@@ -43,3 +43,7 @@ if [ -n "$(echo "$upload_response" | grep FAILURE)" ]; then
 fi
 
 publish_response=$(curl -H "Authorization: Bearer $access_token" -H "x-goog-api-version: 2" -H "Content-Length: 0" -X POST -v "https://www.googleapis.com/chromewebstore/v1.1/items/$app_id/publish")
+
+printf "Check to make sure that the Chrome developer dashboard has the version of the chrome extension you just uploaded (it may be listed as a DRAFT for a couple minutes before becoming the main version)"
+$OPEN "https://chrome.google.com/webstore/developer/dashboard"
+

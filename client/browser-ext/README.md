@@ -77,3 +77,8 @@ $ make deploy
 To deploy the chrome extension with your Google Apps credentials, you must have `CHROME_WEBSTORE_CLIENT_SECRET` on your environment and
 be part of the "sg chrome ext devs" Google group. (You must also pay Google a one-time fee of $5...)
 
+### Steps to deploy
+* Remember to bump the version number in manifest.prod.js
+* Run browser extension unit tests in the sourcegraph top level directory `test/e2e2`
+* Run `make deploy` in `client/browser-ext`
+
