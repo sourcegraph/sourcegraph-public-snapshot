@@ -57,6 +57,10 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 }
 
 func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo, err error) {
+	if Mocks.Repos.GetByURI != nil {
+		return Mocks.Repos.GetByURI(ctx, uri)
+	}
+
 	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
 

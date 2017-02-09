@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
@@ -16,10 +15,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -85,7 +82,7 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 		return nil, nil
 	}
 
-	repo, err := ResolveRepo(ctx, args.URI)
+	repo, err := localstore.Repos.GetByURI(ctx, args.URI)
 	if err != nil {
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil
@@ -96,59 +93,6 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 		return nil, err
 	}
 	return &repositoryResolver{repo: repo}, nil
-}
-
-func ResolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{
-		Path:   uri,
-		Remote: true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if res.Repo != 0 {
-		return localstore.Repos.Get(ctx, res.Repo)
-	}
-
-	// Repo does not exist in DB, create new entry.
-	ghRepo, err := github.ReposFromContext(ctx).Get(ctx, uri)
-	if err != nil {
-		return nil, err
-	}
-
-	// Purposefully set very few fields. We don't want to cache
-	// metadata, because it'll get stale, and fetching online from
-	// GitHub is quite easy and (with HTTP caching) performant.
-	ts := time.Now()
-	repo := &sourcegraph.Repo{
-		Owner:       ghRepo.Owner,
-		Name:        ghRepo.Name,
-		URI:         githubutil.RepoURI(ghRepo.Owner, ghRepo.Name),
-		Description: ghRepo.Description,
-		Fork:        ghRepo.Fork,
-		CreatedAt:   &ts,
-
-		// KLUDGE: set this to be true to avoid accidentally treating
-		// a private GitHub repo as public (the real value should be
-		// populated from GitHub on the fly).
-		Private: true,
-	}
-
-	repoID, err := localstore.Repos.Create(ctx, repo)
-	if err != nil {
-		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.AlreadyExists { // race condition
-			res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{
-				Path: uri,
-			})
-			if err != nil {
-				return nil, err
-			}
-			return localstore.Repos.Get(ctx, res.Repo)
-		}
-		return nil, err
-	}
-	return localstore.Repos.Get(ctx, repoID)
 }
 
 func (r *rootResolver) Repositories(ctx context.Context) ([]*repositoryResolver, error) {
@@ -213,7 +157,7 @@ func (r *rootResolver) Symbols(ctx context.Context, args *struct {
 	}
 
 	repoURI := strings.TrimPrefix(cloneURL, "https://")
-	repo, err := ResolveRepo(ctx, repoURI)
+	repo, err := localstore.Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		if err, ok := err.(legacyerr.Error); ok && err.Code == legacyerr.NotFound {
 			return nil, nil

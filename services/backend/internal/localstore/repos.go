@@ -15,7 +15,9 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 // TODO remove skipFS by decoupling packages
@@ -156,11 +158,49 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 
 	repo, err := s.getByURI(ctx, uri)
 	if err != nil {
+		if strings.HasPrefix(strings.ToLower(uri), "github.com/") {
+			// Repo does not exist in DB, create new entry.
+			ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.GetByURI")
+			ghRepo, err := github.ReposFromContext(ctx).Get(ctx, uri)
+			if err != nil {
+				return nil, err
+			}
+			ghRepoURI := githubutil.RepoURI(ghRepo.Owner, ghRepo.Name)
+			if ghRepoURI != uri { // not canonical name
+				if repo, err := s.getByURI(ctx, uri); err == nil {
+					return repo, nil
+				}
+			}
+
+			// Purposefully set very few fields. We don't want to cache
+			// metadata, because it'll get stale, and fetching online from
+			// GitHub is quite easy and (with HTTP caching) performant.
+			ts := time.Now()
+			newRepo := &sourcegraph.Repo{
+				Owner:       ghRepo.Owner,
+				Name:        ghRepo.Name,
+				URI:         ghRepoURI,
+				Description: ghRepo.Description,
+				Fork:        ghRepo.Fork,
+				Private:     ghRepo.Private,
+				CreatedAt:   &ts,
+			}
+
+			var r dbRepo
+			r.fromRepo(newRepo)
+			if err := appDBH(ctx).Insert(&r); err != nil {
+				if isPQErrorUniqueViolation(err) {
+					if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
+						log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
+					}
+					return s.getByURI(ctx, ghRepoURI) // might be race condition, try to read
+				}
+				return nil, err
+			}
+			return newRepo, nil
+		}
+
 		return nil, err
-	}
-	// 🚨 SECURITY: access control check here 🚨
-	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
-		return nil, ErrRepoNotFound
 	}
 	return repo, nil
 }
@@ -172,8 +212,15 @@ func (s *repos) getByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			// Overwrite with error message containing repo URI.
 			err = legacyerr.Errorf(legacyerr.NotFound, "%s: %s", err, uri)
 		}
+		return nil, err
 	}
-	return repo, err
+
+	// 🚨 SECURITY: access control check here 🚨
+	if repo.Private && !verifyUserHasRepoURIAccess(ctx, repo.URI) {
+		return nil, ErrRepoNotFound
+	}
+
+	return repo, nil
 }
 
 // getBySQL returns a repository matching the SQL query, if any
@@ -353,34 +400,6 @@ func (s *repos) query(ctx context.Context, sql string, args ...interface{}) ([]*
 		return nil, err
 	}
 	return toRepos(repos), nil
-}
-
-// Create a repository and return its ID.
-func (s *repos) Create(ctx context.Context, newRepo *sourcegraph.Repo) (int32, error) {
-	if Mocks.Repos.Create != nil {
-		return Mocks.Repos.Create(ctx, newRepo)
-	}
-
-	if strings.HasPrefix(newRepo.URI, "github.com/") {
-		// Anyone can create GitHub mirrors.
-	} else if !accesscontrol.Skip(ctx) {
-		return 0, legacyerr.Errorf(legacyerr.PermissionDenied, "permission denied: %s", newRepo.URI)
-	}
-
-	if repo, err := s.getByURI(ctx, newRepo.URI); err == nil {
-		return 0, legacyerr.Errorf(legacyerr.AlreadyExists, "repo already exists: %s", repo.URI)
-	}
-
-	var r dbRepo
-	r.fromRepo(newRepo)
-	err := appDBH(ctx).Insert(&r)
-	if isPQErrorUniqueViolation(err) {
-		if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
-			log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
-		}
-		return 0, legacyerr.Errorf(legacyerr.AlreadyExists, "repo already exists: %s", newRepo.URI)
-	}
-	return r.ID, err
 }
 
 // RepoUpdate represents an update to specific fields of a repo. Only

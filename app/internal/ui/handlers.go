@@ -76,6 +76,9 @@ func handler(h func(w http.ResponseWriter, r *http.Request) (*meta, error)) http
 				m.Title = http.StatusText(errcode.HTTP(err))
 			}
 		}
+		if ee, ok := err.(*handlerutil.URLMovedError); ok {
+			return handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
+		}
 		return tmplExec(w, r, errcode.HTTP(err), *m)
 	})
 }

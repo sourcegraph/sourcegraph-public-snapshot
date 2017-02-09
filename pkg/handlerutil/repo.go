@@ -2,7 +2,6 @@ package handlerutil
 
 import (
 	"net/http"
-	"strconv"
 
 	"context"
 
@@ -13,45 +12,22 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
-// GetRepoID returns the Sourcegraph repository ID based on the route vars.
-// If the repo path string is a numeric ID, it is returned immediately.
-// Otherwise the repository ID is resolved via backend.Repos.Resolve.
-// If the canonical path differs, a URLMovedError error is returned.
-func GetRepoID(ctx context.Context, vars map[string]string) (int32, error) {
-	origRepo := routevar.ToRepo(vars)
-
-	// If the URL contains just a numeric ID, then just return that
-	// without incurring a lookup. This does not check for the
-	// existence of the repo, but the backend API will effectively
-	// perform that check.
-	id, err := strconv.Atoi(origRepo)
-	if err == nil {
-		return int32(id), nil
-	}
-
-	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: origRepo})
-	if err != nil {
-		return 0, err
-	}
-
-	// Check for redirect.
-	if origRepo != "" && res.CanonicalPath != "" && origRepo != res.CanonicalPath {
-		return 0, &URLMovedError{res.CanonicalPath}
-	}
-
-	return res.Repo, nil
-}
-
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
 // RepoSpec route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
-func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, err error) {
-	repoID, err := GetRepoID(ctx, vars)
+func GetRepo(ctx context.Context, vars map[string]string) (*sourcegraph.Repo, error) {
+	origRepo := routevar.ToRepo(vars)
+
+	repo, err := backend.Repos.GetByURI(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
 
-	return backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
+	if origRepo != repo.URI {
+		return nil, &URLMovedError{repo.URI}
+	}
+
+	return repo, nil
 }
 
 // getRepoRev resolves the RepoRevSpec and commit specified in the

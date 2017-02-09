@@ -33,12 +33,19 @@ func repoURIs(repos []*sourcegraph.Repo) []string {
 	return uris
 }
 
+func createRepo(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
+	var r dbRepo
+	r.fromRepo(repo)
+	err := appDBH(ctx).Insert(&r)
+	return r.ID, err
+}
+
 func (s *repos) mustCreate(ctx context.Context, t *testing.T, repos ...*sourcegraph.Repo) []*sourcegraph.Repo {
 	var createdRepos []*sourcegraph.Repo
 	for _, repo := range repos {
 		repo.DefaultBranch = "master"
 
-		if _, err := s.Create(ctx, repo); err != nil {
+		if _, err := createRepo(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
 		repo, err := s.GetByURI(ctx, repo.URI)
@@ -163,7 +170,7 @@ func TestRepos_List_query1(t *testing.T) {
 		{URI: "github.com/abc/xyz", Owner: "abc", Name: "xyz", DefaultBranch: "master"},
 	}
 	for _, repo := range createdRepos {
-		if created, err := s.Create(ctx, repo); err != nil {
+		if created, err := createRepo(ctx, repo); err != nil {
 			t.Fatal(err)
 		} else {
 			repo.ID = created
@@ -211,7 +218,7 @@ func TestRepos_List_query2(t *testing.T) {
 		{URI: "abc/m", Owner: "abc", Name: "m", DefaultBranch: "master"},
 	}
 	for _, repo := range createdRepos {
-		if created, err := s.Create(ctx, repo); err != nil {
+		if created, err := createRepo(ctx, repo); err != nil {
 			t.Fatal(err)
 		} else {
 			repo.ID = created
@@ -249,10 +256,10 @@ func TestRepos_List_sort(t *testing.T) {
 	s := repos{}
 
 	// Add some repos.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "fork/abc", Name: "abc", DefaultBranch: "master", Fork: true}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "fork/abc", Name: "abc", DefaultBranch: "master", Fork: true}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "owner/abc", Name: "abc", DefaultBranch: "master"}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "owner/abc", Name: "abc", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -298,7 +305,7 @@ func TestRepos_List_GitHub_Authenticated(t *testing.T) {
 		&sourcegraph.Repo{URI: "github.com/is/inaccessibleBecausePrivate", Private: true, DefaultBranch: "master"},
 	}
 	for _, repo := range createRepos {
-		if _, err := s.Create(ctx, repo); err != nil {
+		if _, err := createRepo(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -342,7 +349,7 @@ func TestRepos_List_GitHub_Authenticated_NoReposAccessible(t *testing.T) {
 		&sourcegraph.Repo{URI: "github.com/not/accessible", DefaultBranch: "master", Private: true},
 	}
 	for _, repo := range createRepos {
-		if _, err := s.Create(ctx, repo); err != nil {
+		if _, err := createRepo(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -378,7 +385,7 @@ func TestRepos_List_GitHub_Unauthenticated(t *testing.T) {
 
 	s := repos{}
 
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master"}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "github.com/private", Private: true, DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -408,7 +415,7 @@ func TestRepos_Create(t *testing.T) {
 	tm := time.Now().Round(time.Second)
 
 	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -431,17 +438,15 @@ func TestRepos_Create_dupe(t *testing.T) {
 
 	ctx := testContext()
 
-	s := repos{}
-
 	tm := time.Now().Round(time.Second)
 
 	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
 	// Add another repo with the same name.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err == nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", CreatedAt: &tm, DefaultBranch: "master"}); err == nil {
 		t.Fatalf("got err == nil, want an error when creating a duplicate repo")
 	}
 }
@@ -458,7 +463,7 @@ func TestRepos_Update_Description(t *testing.T) {
 	s := repos{}
 
 	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -493,7 +498,7 @@ func TestRepos_Update_UpdatedAt(t *testing.T) {
 	s := repos{}
 
 	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -533,7 +538,7 @@ func TestRepos_Update_PushedAt(t *testing.T) {
 	s := repos{}
 
 	// Add a repo.
-	if _, err := s.Create(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
+	if _, err := createRepo(ctx, &sourcegraph.Repo{URI: "a/b", DefaultBranch: "master"}); err != nil {
 		t.Fatal(err)
 	}
 
