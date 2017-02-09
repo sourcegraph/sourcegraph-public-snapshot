@@ -12,7 +12,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 )
 
 type RoundTripperFunc func(*http.Request) (*http.Response, error)
@@ -43,7 +42,6 @@ func TestRepos_Get_existing_private(t *testing.T) {
 // TestRepos_Get_nocache tests the behavior of Repos.Get when called on a
 // repo that is private (i.e., it shouldn't be cached).
 func testRepos_Get(t *testing.T, private bool) {
-	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
 
 	var calledGet bool
@@ -98,7 +96,6 @@ func testRepos_Get(t *testing.T, private bool) {
 // TestRepos_Get_nonexistent tests the behavior of Repos.Get when called
 // on a repo that does not exist.
 func TestRepos_Get_nonexistent(t *testing.T) {
-	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
 
 	MockRoundTripper = RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -124,7 +121,6 @@ func TestRepos_Get_nonexistent(t *testing.T) {
 // rate limit. This test will ensure unauthed clients cache 404, but authed
 // users do not use the cache
 func TestRepos_Get_publicnotfound(t *testing.T) {
-	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
 
 	calledGetMissing := false
@@ -216,7 +212,6 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 
 // TestRepos_Get_authednocache tests authed users do add public repos to the cache
 func TestRepos_Get_authednocache(t *testing.T) {
-	githubcli.Config.GitHubHost = "github.com"
 	resetCache(t)
 
 	calledGet := false
