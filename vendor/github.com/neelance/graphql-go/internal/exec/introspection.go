@@ -14,20 +14,18 @@ var schemaExec iExec
 var typeExec iExec
 
 func init() {
-	{
-		var err error
-		schemaExec, err = makeWithType(schema.Meta, schema.Meta.Types["__Schema"], &introspection.Schema{})
-		if err != nil {
-			panic(err)
-		}
+	b := newExecBuilder(schema.Meta)
+
+	if err := b.assignExec(&schemaExec, schema.Meta.Types["__Schema"], reflect.TypeOf(&introspection.Schema{})); err != nil {
+		panic(err)
 	}
 
-	{
-		var err error
-		typeExec, err = makeWithType(schema.Meta, schema.Meta.Types["__Type"], &introspection.Type{})
-		if err != nil {
-			panic(err)
-		}
+	if err := b.assignExec(&typeExec, schema.Meta.Types["__Type"], reflect.TypeOf(&introspection.Type{})); err != nil {
+		panic(err)
+	}
+
+	if err := b.finish(); err != nil {
+		panic(err)
 	}
 }
 
@@ -40,7 +38,7 @@ func IntrospectSchema(s *schema.Schema) (interface{}, error) {
 }
 
 func introspectSchema(ctx context.Context, r *request, selSet *query.SelectionSet) interface{} {
-	return schemaExec.exec(ctx, r, selSet, reflect.ValueOf(&introspection.Schema{Schema: r.schema}), false)
+	return schemaExec.exec(ctx, r, selSet, reflect.ValueOf(introspection.WrapSchema(r.schema)), false)
 }
 
 func introspectType(ctx context.Context, r *request, name string, selSet *query.SelectionSet) interface{} {
@@ -48,7 +46,7 @@ func introspectType(ctx context.Context, r *request, name string, selSet *query.
 	if !ok {
 		return nil
 	}
-	return typeExec.exec(ctx, r, selSet, reflect.ValueOf(&introspection.Type{t}), false)
+	return typeExec.exec(ctx, r, selSet, reflect.ValueOf(introspection.WrapType(t)), false)
 }
 
 var introspectionQuery *query.Document

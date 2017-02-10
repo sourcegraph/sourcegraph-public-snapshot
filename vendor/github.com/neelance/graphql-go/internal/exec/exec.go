@@ -33,64 +33,101 @@ type Exec struct {
 }
 
 func Make(s *schema.Schema, resolver interface{}) (*Exec, error) {
-	e := &Exec{
-		schema:   s,
-		resolver: reflect.ValueOf(resolver),
-	}
+	b := newExecBuilder(s)
+
+	var queryExec, mutationExec iExec
 
 	if t, ok := s.EntryPoints["query"]; ok {
-		var err error
-		e.queryExec, err = makeWithType(s, t, resolver)
-		if err != nil {
+		if err := b.assignExec(&queryExec, t, reflect.TypeOf(resolver)); err != nil {
 			return nil, err
 		}
 	}
 
 	if t, ok := s.EntryPoints["mutation"]; ok {
-		var err error
-		e.mutationExec, err = makeWithType(s, t, resolver)
-		if err != nil {
+		if err := b.assignExec(&mutationExec, t, reflect.TypeOf(resolver)); err != nil {
 			return nil, err
 		}
 	}
 
-	return e, nil
-}
-
-type typeRefMapKey struct {
-	s common.Type
-	r reflect.Type
-}
-
-type typeRef struct {
-	targets []*iExec
-	exec    iExec
-}
-
-func makeWithType(s *schema.Schema, t common.Type, resolver interface{}) (iExec, error) {
-	m := make(map[typeRefMapKey]*typeRef)
-	var e iExec
-	if err := makeExec(&e, s, t, reflect.TypeOf(resolver), m); err != nil {
+	if err := b.finish(); err != nil {
 		return nil, err
 	}
 
-	for _, ref := range m {
-		for _, target := range ref.targets {
-			*target = ref.exec
+	return &Exec{
+		schema:       s,
+		resolver:     reflect.ValueOf(resolver),
+		queryExec:    queryExec,
+		mutationExec: mutationExec,
+	}, nil
+}
+
+type execBuilder struct {
+	schema        *schema.Schema
+	execMap       map[typePair]*execMapEntry
+	packerMap     map[typePair]*packerMapEntry
+	structPackers []*structPacker
+}
+
+type typePair struct {
+	graphQLType  common.Type
+	resolverType reflect.Type
+}
+
+type execMapEntry struct {
+	exec    iExec
+	targets []*iExec
+}
+
+type packerMapEntry struct {
+	packer  packer
+	targets []*packer
+}
+
+func newExecBuilder(s *schema.Schema) *execBuilder {
+	return &execBuilder{
+		schema:    s,
+		execMap:   make(map[typePair]*execMapEntry),
+		packerMap: make(map[typePair]*packerMapEntry),
+	}
+}
+
+func (b *execBuilder) finish() error {
+	for _, entry := range b.execMap {
+		for _, target := range entry.targets {
+			*target = entry.exec
 		}
 	}
 
-	return e, nil
+	for _, entry := range b.packerMap {
+		for _, target := range entry.targets {
+			*target = entry.packer
+		}
+	}
+
+	for _, p := range b.structPackers {
+		p.defaultStruct = reflect.New(p.structType).Elem()
+		for _, f := range p.fields {
+			if f.field.Default != nil {
+				v, err := f.fieldPacker.pack(nil, f.field.Default)
+				if err != nil {
+					return err
+				}
+				p.defaultStruct.FieldByIndex(f.fieldIndex).Set(v)
+			}
+		}
+	}
+
+	return nil
 }
 
-func makeExec(target *iExec, s *schema.Schema, t common.Type, resolverType reflect.Type, typeRefMap map[typeRefMapKey]*typeRef) error {
-	k := typeRefMapKey{t, resolverType}
-	ref, ok := typeRefMap[k]
+func (b *execBuilder) assignExec(target *iExec, t common.Type, resolverType reflect.Type) error {
+	k := typePair{t, resolverType}
+	ref, ok := b.execMap[k]
 	if !ok {
-		ref = &typeRef{}
-		typeRefMap[k] = ref
+		ref = &execMapEntry{}
+		b.execMap[k] = ref
 		var err error
-		ref.exec, err = makeExec2(s, t, resolverType, typeRefMap)
+		ref.exec, err = b.makeExec(t, resolverType)
 		if err != nil {
 			return err
 		}
@@ -99,79 +136,57 @@ func makeExec(target *iExec, s *schema.Schema, t common.Type, resolverType refle
 	return nil
 }
 
-func makeExec2(s *schema.Schema, t common.Type, resolverType reflect.Type, typeRefMap map[typeRefMapKey]*typeRef) (iExec, error) {
+func (b *execBuilder) makeExec(t common.Type, resolverType reflect.Type) (iExec, error) {
 	var nonNull bool
 	t, nonNull = unwrapNonNull(t)
 
+	switch t := t.(type) {
+	case *schema.Object:
+		return b.makeObjectExec(t.Name, t.Fields, nil, nonNull, resolverType)
+
+	case *schema.Interface:
+		return b.makeObjectExec(t.Name, t.Fields, t.PossibleTypes, nonNull, resolverType)
+
+	case *schema.Union:
+		return b.makeObjectExec(t.Name, nil, t.PossibleTypes, nonNull, resolverType)
+	}
+
 	if !nonNull {
-		if resolverType.Kind() != reflect.Ptr && resolverType.Kind() != reflect.Interface {
-			return nil, fmt.Errorf("%s is not a pointer or interface", resolverType)
+		if resolverType.Kind() != reflect.Ptr {
+			return nil, fmt.Errorf("%s is not a pointer", resolverType)
 		}
+		resolverType = resolverType.Elem()
 	}
 
 	switch t := t.(type) {
 	case *schema.Scalar:
-		if u, ok := reflect.New(resolverType).Interface().(Unmarshaler); ok {
-			if !u.ImplementsGraphQLType(t.Name) {
-				return nil, fmt.Errorf("can not use %s as %s", resolverType, t.Name)
-			}
+		implementsType := false
+		switch r := reflect.New(resolverType).Interface().(type) {
+		case *int32:
+			implementsType = (t.Name == "Int")
+		case *float64:
+			implementsType = (t.Name == "Float")
+		case *string:
+			implementsType = (t.Name == "String")
+		case *bool:
+			implementsType = (t.Name == "Boolean")
+		case Unmarshaler:
+			implementsType = r.ImplementsGraphQLType(t.Name)
+		}
+		if !implementsType {
+			return nil, fmt.Errorf("can not use %s as %s", resolverType, t.Name)
 		}
 		return &scalarExec{}, nil
-
-	case *schema.Object:
-		fields, err := makeFieldExecs(s, t.Name, t.Fields, resolverType, typeRefMap)
-		if err != nil {
-			return nil, err
-		}
-
-		return &objectExec{
-			name:       t.Name,
-			fields:     fields,
-			isConcrete: true,
-			nonNull:    nonNull,
-		}, nil
-
-	case *schema.Interface:
-		fields, err := makeFieldExecs(s, t.Name, t.Fields, resolverType, typeRefMap)
-		if err != nil {
-			return nil, err
-		}
-
-		typeAssertions, err := makeTypeAssertions(s, t.Name, t.PossibleTypes, resolverType, typeRefMap)
-		if err != nil {
-			return nil, err
-		}
-
-		return &objectExec{
-			name:           t.Name,
-			fields:         fields,
-			typeAssertions: typeAssertions,
-			nonNull:        nonNull,
-		}, nil
-
-	case *schema.Union:
-		typeAssertions, err := makeTypeAssertions(s, t.Name, t.PossibleTypes, resolverType, typeRefMap)
-		if err != nil {
-			return nil, err
-		}
-		return &objectExec{
-			name:           t.Name,
-			typeAssertions: typeAssertions,
-			nonNull:        nonNull,
-		}, nil
 
 	case *schema.Enum:
 		return &scalarExec{}, nil
 
 	case *common.List:
-		if !nonNull {
-			resolverType = resolverType.Elem()
-		}
 		if resolverType.Kind() != reflect.Slice {
 			return nil, fmt.Errorf("%s is not a slice", resolverType)
 		}
 		e := &listExec{nonNull: nonNull}
-		if err := makeExec(&e.elem, s, t.OfType, resolverType.Elem(), typeRefMap); err != nil {
+		if err := b.assignExec(&e.elem, t.OfType, resolverType.Elem()); err != nil {
 			return nil, err
 		}
 		return e, nil
@@ -181,10 +196,13 @@ func makeExec2(s *schema.Schema, t common.Type, resolverType reflect.Type, typeR
 	}
 }
 
-var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
-var errorType = reflect.TypeOf((*error)(nil)).Elem()
+func (b *execBuilder) makeObjectExec(typeName string, fields map[string]*schema.Field, possibleTypes []*schema.Object, nonNull bool, resolverType reflect.Type) (*objectExec, error) {
+	if !nonNull {
+		if resolverType.Kind() != reflect.Ptr && resolverType.Kind() != reflect.Interface {
+			return nil, fmt.Errorf("%s is not a pointer or interface", resolverType)
+		}
+	}
 
-func makeFieldExecs(s *schema.Schema, typeName string, fields map[string]*schema.Field, resolverType reflect.Type, typeRefMap map[typeRefMapKey]*typeRef) (map[string]*fieldExec, error) {
 	methodHasReceiver := resolverType.Kind() != reflect.Interface
 	fieldExecs := make(map[string]*fieldExec)
 	for name, f := range fields {
@@ -194,16 +212,40 @@ func makeFieldExecs(s *schema.Schema, typeName string, fields map[string]*schema
 		}
 
 		m := resolverType.Method(methodIndex)
-		fe, err := makeFieldExec(s, typeName, f, m, methodIndex, methodHasReceiver, typeRefMap)
+		fe, err := b.makeFieldExec(typeName, f, m, methodIndex, methodHasReceiver)
 		if err != nil {
 			return nil, fmt.Errorf("method %q of %s: %s", m.Name, resolverType, err)
 		}
 		fieldExecs[name] = fe
 	}
-	return fieldExecs, nil
+
+	typeAssertions := make(map[string]*typeAssertExec)
+	for _, impl := range possibleTypes {
+		methodIndex := findMethod(resolverType, "to"+impl.Name)
+		if methodIndex == -1 {
+			return nil, fmt.Errorf("%s does not resolve %q: missing method %q to convert to %q", resolverType, typeName, "to"+impl.Name, impl.Name)
+		}
+		a := &typeAssertExec{
+			methodIndex: methodIndex,
+		}
+		if err := b.assignExec(&a.typeExec, impl, resolverType.Method(methodIndex).Type.Out(0)); err != nil {
+			return nil, err
+		}
+		typeAssertions[impl.Name] = a
+	}
+
+	return &objectExec{
+		name:           typeName,
+		fields:         fieldExecs,
+		typeAssertions: typeAssertions,
+		nonNull:        nonNull,
+	}, nil
 }
 
-func makeFieldExec(s *schema.Schema, typeName string, f *schema.Field, m reflect.Method, methodIndex int, methodHasReceiver bool, typeRefMap map[typeRefMapKey]*typeRef) (*fieldExec, error) {
+var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
+var errorType = reflect.TypeOf((*error)(nil)).Elem()
+
+func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.Method, methodIndex int, methodHasReceiver bool) (*fieldExec, error) {
 	in := make([]reflect.Type, m.Type.NumIn())
 	for i := range in {
 		in[i] = m.Type.In(i)
@@ -223,7 +265,7 @@ func makeFieldExec(s *schema.Schema, typeName string, f *schema.Field, m reflect
 			return nil, fmt.Errorf("must have parameter for field arguments")
 		}
 		var err error
-		argsPacker, err = makeStructPacker(s, &f.Args, in[0])
+		argsPacker, err = b.makeStructPacker(&f.Args, in[0])
 		if err != nil {
 			return nil, err
 		}
@@ -253,28 +295,10 @@ func makeFieldExec(s *schema.Schema, typeName string, f *schema.Field, m reflect
 		argsPacker:  argsPacker,
 		hasError:    hasError,
 	}
-	if err := makeExec(&fe.valueExec, s, f.Type, m.Type.Out(0), typeRefMap); err != nil {
+	if err := b.assignExec(&fe.valueExec, f.Type, m.Type.Out(0)); err != nil {
 		return nil, err
 	}
 	return fe, nil
-}
-
-func makeTypeAssertions(s *schema.Schema, typeName string, impls []*schema.Object, resolverType reflect.Type, typeRefMap map[typeRefMapKey]*typeRef) (map[string]*typeAssertExec, error) {
-	typeAssertions := make(map[string]*typeAssertExec)
-	for _, impl := range impls {
-		methodIndex := findMethod(resolverType, "to"+impl.Name)
-		if methodIndex == -1 {
-			return nil, fmt.Errorf("%s does not resolve %q: missing method %q to convert to %q", resolverType, typeName, "to"+impl.Name, impl.Name)
-		}
-		a := &typeAssertExec{
-			methodIndex: methodIndex,
-		}
-		if err := makeExec(&a.typeExec, s, impl, resolverType.Method(methodIndex).Type.Out(0), typeRefMap); err != nil {
-			return nil, err
-		}
-		typeAssertions[impl.Name] = a
-	}
-	return typeAssertions, nil
 }
 
 func findMethod(t reflect.Type, name string) int {
@@ -310,6 +334,13 @@ func (r *request) handlePanic() {
 		buf = buf[:runtime.Stack(buf, false)]
 		log.Printf("%s\n%s", execErr, buf)
 	}
+}
+
+func (r *request) resolveVar(value interface{}) interface{} {
+	if v, ok := value.(common.Variable); ok {
+		value = r.vars[string(v)]
+	}
+	return value
 }
 
 func ExecuteRequest(ctx context.Context, e *Exec, document *query.Document, operationName string, variables map[string]interface{}) (interface{}, []*errors.QueryError) {
@@ -403,7 +434,6 @@ func (e *listExec) exec(ctx context.Context, r *request, selSet *query.Selection
 type objectExec struct {
 	name           string
 	fields         map[string]*fieldExec
-	isConcrete     bool
 	typeAssertions map[string]*typeAssertExec
 	nonNull        bool
 }
@@ -453,7 +483,7 @@ func (e *objectExec) execSelectionSet(ctx context.Context, r *request, selSet *q
 				execSel(func() {
 					switch f.Name {
 					case "__typename":
-						if e.isConcrete {
+						if len(e.typeAssertions) == 0 {
 							addResult(f.Alias, e.name)
 							return
 						}
@@ -471,7 +501,7 @@ func (e *objectExec) execSelectionSet(ctx context.Context, r *request, selSet *q
 
 					case "__type":
 						p := valuePacker{valueType: stringType}
-						v, err := p.pack(r, f.Arguments["name"])
+						v, err := p.pack(r, r.resolveVar(f.Arguments["name"]))
 						if err != nil {
 							r.addError(errors.Errorf("%s", err))
 							addResult(f.Alias, nil)
@@ -602,7 +632,7 @@ type typeAssertExec struct {
 func skipByDirective(r *request, d map[string]*query.Directive) bool {
 	if skip, ok := d["skip"]; ok {
 		p := valuePacker{valueType: boolType}
-		v, err := p.pack(r, skip.Arguments["if"])
+		v, err := p.pack(r, r.resolveVar(skip.Arguments["if"]))
 		if err != nil {
 			r.addError(errors.Errorf("%s", err))
 		}
@@ -613,7 +643,7 @@ func skipByDirective(r *request, d map[string]*query.Directive) bool {
 
 	if include, ok := d["include"]; ok {
 		p := valuePacker{valueType: boolType}
-		v, err := p.pack(r, include.Arguments["if"])
+		v, err := p.pack(r, r.resolveVar(include.Arguments["if"]))
 		if err != nil {
 			r.addError(errors.Errorf("%s", err))
 		}

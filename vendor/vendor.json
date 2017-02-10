@@ -389,58 +389,58 @@
 			"revisionTime": "2017-02-01T23:11:41Z"
 		},
 		{
-			"checksumSHA1": "hbRHG7lefE6wGSpoTEvILv4BHLI=",
+			"checksumSHA1": "eCwVTEBnLq6I9RvS9XbidkLsDaM=",
 			"path": "github.com/neelance/graphql-go",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
 			"checksumSHA1": "QMfWVYRb9JDx4D04N9oEErSwMkA=",
 			"path": "github.com/neelance/graphql-go/errors",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
-			"checksumSHA1": "4ybPOxv1WIZwcud4rUr1iOgRqrA=",
+			"checksumSHA1": "jJEioCJSY7gxghc/3W+g09Vbm4E=",
 			"path": "github.com/neelance/graphql-go/internal/common",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
-			"checksumSHA1": "FuR0yhgwA60Lya9zOXTEQi2uPS8=",
+			"checksumSHA1": "xnajRN7dqoGVPmLciiz9lJL0ogs=",
 			"path": "github.com/neelance/graphql-go/internal/exec",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
 			"checksumSHA1": "jfcNYm+kb5DPigLhLvGO5QoXGnM=",
 			"path": "github.com/neelance/graphql-go/internal/lexer",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
 			"checksumSHA1": "CeEaXNoG5dpqHEZKATKToBirf6g=",
 			"path": "github.com/neelance/graphql-go/internal/query",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
-			"checksumSHA1": "NbgZCH35fAPmKca0WiQeG5aD2Kc=",
+			"checksumSHA1": "ifKvAElrhyze0nc4XucAbaXMIrA=",
 			"path": "github.com/neelance/graphql-go/internal/schema",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
-			"checksumSHA1": "oMinhq43UDiZNeQcopvWZezIsSc=",
+			"checksumSHA1": "JrLIh6GhfWqVrYyPr/8MlNdQzjQ=",
 			"path": "github.com/neelance/graphql-go/introspection",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
 			"checksumSHA1": "SMJcg2jarQIR6U0D9IV8JdXNaZ0=",
 			"path": "github.com/neelance/graphql-go/relay",
-			"revision": "ecceddec6e3bbc4df96536a211a9a71f0919e47d",
-			"revisionTime": "2017-01-11T17:10:06Z"
+			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
+			"revisionTime": "2017-02-06T02:30:34Z"
 		},
 		{
 			"checksumSHA1": "K4L6qMn6mHxuWwEYhVBaCoDcSH0=",
