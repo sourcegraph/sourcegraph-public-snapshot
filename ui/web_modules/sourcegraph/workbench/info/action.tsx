@@ -83,25 +83,24 @@ export class DefinitionAction extends EditorAction {
 	}
 
 	async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
-		const defPromise = provideDefinition(props.editorModel, props.lspParams.position);
-		const localRefsPromise = provideReferences(props.editorModel, props.lspParams.position);
-		const def = await defPromise;
 		const id = this._configuration.sideBarID;
-		if (!def) {
-			return;
-		}
-
 		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
-		this.prepareInfoStore(true, this._configuration.sideBarID, fileEventProps);
-		this.dispatchInfo(id, def, fileEventProps);
+		const def: DefinitionData | null = await provideDefinition(props.editorModel, props.lspParams.position).then(defData => {
+			if (!defData || (!defData.docString && !defData.funcName)) {
+				return null;
+			}
+			this.prepareInfoStore(true, this._configuration.sideBarID, fileEventProps);
+			this.dispatchInfo(id, defData, fileEventProps);
+			return defData;
+		});
 
-		const localRefs = await localRefsPromise;
+		const localRefs = await provideReferences(props.editorModel, props.lspParams.position);
 		if (this._configuration.sideBarID !== id) {
 			return;
 		}
+
 		if (!localRefs || localRefs.length === 0) {
 			this.dispatchInfo(id, def, fileEventProps, null);
-			return;
 		}
 
 		let refModel = new ReferencesModel(localRefs, props.editorModel.uri);
@@ -135,7 +134,7 @@ export class DefinitionAction extends EditorAction {
 		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, loadingComplete: true, id, fileEventProps });
 	}
 
-	private dispatchInfo(id: string, defData: DefinitionData, fileEventProps: FileEventProps, refModel?: ReferencesModel | null, loadingComplete?: boolean): void {
+	private dispatchInfo(id: string, defData: DefinitionData | null, fileEventProps: FileEventProps, refModel?: ReferencesModel | null, loadingComplete?: boolean): void {
 		if (id === this._configuration.sideBarID) {
 			infoStore.dispatch({ defData, refModel, loadingComplete, id, fileEventProps });
 		} else if (this.globalFetchSubscription) {

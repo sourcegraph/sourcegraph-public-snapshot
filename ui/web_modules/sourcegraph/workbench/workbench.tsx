@@ -103,7 +103,7 @@ function BlobPageTitle({ repo, path }: { repo: string | null, path: string }): J
 		return <PageTitle title={base} />;
 	}
 	repo = repo.replace(/^github.com\//, "");
-	const title = `${base} · ${repo}`;
+	let title = base === "/" ? repo : `${base} · ${repo}`;
 	return <PageTitle title={title} />;
 }
 

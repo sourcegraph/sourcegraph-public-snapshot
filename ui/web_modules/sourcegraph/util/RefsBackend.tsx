@@ -15,7 +15,7 @@ import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
 export interface DefinitionData {
-	definition: {
+	definition?: {
 		uri: string;
 		range: IRange;
 	};
@@ -47,47 +47,50 @@ export interface ReferenceCommitInfo {
 }
 
 export async function provideDefinition(model: IReadOnlyModel, pos: Position): Promise<DefinitionData | null> {
-	const hoverPromise = lsp.send(model, "textDocument/hover", {
-		textDocument: { uri: model.uri.toString(true) },
-		position: pos,
-		context: { includeDeclaration: false },
-	});
+	const [hoverResult, defResult] = await Promise.all([
+		lsp.send(model, "textDocument/hover", {
+			textDocument: { uri: model.uri.toString(true) },
+			position: pos,
+			context: { includeDeclaration: false },
+		}),
+		lsp.send(model, "textDocument/definition", {
+			textDocument: { uri: model.uri.toString(true) },
+			position: pos,
+			context: { includeDeclaration: false },
+		})]);
 
-	const defPromise = lsp.send(model, "textDocument/definition", {
-		textDocument: { uri: model.uri.toString(true) },
-		position: pos,
-		context: { includeDeclaration: false },
-	});
+	const hover: Hover = hoverResult.result;
+	const def: Definition = defResult.result;
 
-	const hover: Hover = (await hoverPromise).result;
-	const def: Definition = (await defPromise).result;
-
-	if (!hover || !hover.contents || !def || !def[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
+	let definition: { uri: string; range: IRange } | undefined;
+	if (def && def[0]) {
+		const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
+		definition = {
+			uri: firstDef.uri,
+			range: {
+				startLineNumber: firstDef.range.start.line,
+				startColumn: firstDef.range.start.character,
+				endLineNumber: firstDef.range.end.line,
+				endColumn: firstDef.range.end.character,
+			}
+		};
+	}
+	if (!hover || !hover.contents) {
 		return null;
 	}
 
-	let docString: string;
 	let funcName: string;
+	let docString: string;
 	if (hover.contents instanceof Array) {
+		// TODO(nicot): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
 		const [first, second] = hover.contents;
-		// TODO(nico): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
 		funcName = typeof first === "string" ? first : first.value;
-		docString = second ? (typeof second === "string" ? second : second.value) : "";
+		docString = typeof second === "string" ? second : second.value;
 	} else {
 		funcName = typeof hover.contents === "string" ? hover.contents : hover.contents.value;
 		docString = "";
 	}
 
-	const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
-	let definition = {
-		uri: firstDef.uri,
-		range: {
-			startLineNumber: firstDef.range.start.line,
-			startColumn: firstDef.range.start.character,
-			endLineNumber: firstDef.range.end.line,
-			endColumn: firstDef.range.end.character,
-		}
-	};
 	return { funcName, docString, definition };
 }
 

@@ -38,21 +38,22 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 		if ((e.target as any).dataset.toggle === undefined) {
 			return;
 		}
-		const uri = URI.parse(this.props.defData.definition.uri);
-		let { repo, rev, path } = URIUtils.repoParams(uri);
-		rev = prettifyRev(rev);
-		Events.InfoPanelComment_Toggled.logEvent(Object.assign({}, this.props.eventProps, { defRepo: repo, defRev: rev || "", defPath: path }));
 		this.setState({
 			showingFullDocString: !this.state.showingFullDocString,
 		});
+		if (this.props.defData.definition) {
+			const uri = URI.parse(this.props.defData.definition.uri);
+			let { repo, rev, path } = URIUtils.repoParams(uri);
+			rev = prettifyRev(rev);
+			Events.InfoPanelComment_Toggled.logEvent({ ...this.props.eventProps, defRepo: repo, defRev: rev || "", defPath: path });
+		} else {
+			Events.InfoPanelComment_Toggled.logEvent({ ...this.props.eventProps, defRepo: "unknown", defRev: "", defPath: "unknown" });
+		}
 	}
 
 	render(): JSX.Element | null {
 		const { defData } = this.props;
-		const uri = URI.parse(defData.definition.uri);
-		let { repo, rev, path } = URIUtils.repoParams(uri);
-		rev = prettifyRev(rev);
-		const url = urlToBlobRange(repo, rev, path, defData.definition.range);
+
 		const fullDocString = marked(defData.docString, { sanitize: true });
 		let renderedDocString = fullDocString;
 		const fonts = typography.fontStack.sansSerif;
@@ -73,22 +74,34 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				maxHeight: "40vh",
 				overflowY: "scroll",
 				color: colors.blueGrayD1(),
-			}, typography[2])} dangerouslySetInnerHTML={{ __html: renderedDocString }}>
-			</div>
-			<p style={{ color: colors.blueGray(), paddingTop: 0 }}>
-				Defined in
-				<Link to={`/${repo}`} style={{ paddingTop: whitespace[2], paddingBottom: whitespace[2] }}>
-					<List width={20} style={{ marginLeft: 4 }} />
-					{repo.replace(/^github.com\//, "")}
-				</Link>
-			</p>
-			<FlexContainer content="stretch" justify="between" items="center">
-				<Link style={{ flex: "1 0" }} to={url} onClick={() => Events.InfoPanelJumpToDef_Clicked.logEvent(Object.assign({}, this.props.eventProps, { defRepo: repo, defRev: rev || "", defPath: path }))}>
-					<Button color="blueGray" outline={true} style={{ width: "100%" }}>
-						Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
-					</Button>
-				</Link>
-			</FlexContainer>
+			}, typography[2])} dangerouslySetInnerHTML={{ __html: renderedDocString }} />
+			<Definition defData={this.props.defData} />
 		</div ></RouterContext>;
 	}
+}
+
+function Definition({ defData }: { defData: DefinitionData }): JSX.Element {
+	if (!defData.definition) {
+		return <div></div>;
+	}
+	const uri = URI.parse(defData.definition.uri);
+	let { repo, rev, path } = URIUtils.repoParams(uri);
+	rev = prettifyRev(rev);
+	const url = urlToBlobRange(repo, rev, path, defData.definition.range);
+	return <div>
+		<p style={{ color: colors.blueGray(), paddingTop: 0 }}>
+			Defined in
+		<Link to={`/${repo}`} style={{ paddingTop: whitespace[2], paddingBottom: whitespace[2] }}>
+				<List width={20} style={{ marginLeft: 4 }} />
+				{repo.replace(/^github.com\//, "")}
+			</Link>
+		</p>
+		<FlexContainer content="stretch" justify="between" items="center">
+			<Link style={{ flex: "1 0" }} to={url} onClick={() => Events.InfoPanelJumpToDef_Clicked.logEvent({ defRepo: repo, defRev: rev || "", defPath: path })}>
+				<Button color="blueGray" outline={true} style={{ width: "100%" }}>
+					Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
+				</Button>
+			</Link>
+		</FlexContainer>
+	</div>;
 }
