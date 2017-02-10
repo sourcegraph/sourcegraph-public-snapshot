@@ -17,7 +17,6 @@ import (
 	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
-	"github.com/sourcegraph/zap/server/refdb"
 )
 
 // isWatching returns whether c is watching the given ref (either via
@@ -26,8 +25,8 @@ import (
 //
 // The caller must hold c.mu.
 func (c *serverConn) isWatching(ref RefIdentifier) bool {
-	if refspec, ok := c.watchingRepos[ref.Repo]; ok {
-		if refdb.MatchPattern(refspec, ref.Ref) {
+	if refspecs, ok := c.watchingRepos[ref.Repo]; ok {
+		if matchAnyRefspec(refspecs, ref.Ref) {
 			return true
 		}
 	}
@@ -46,7 +45,7 @@ type serverConn struct {
 
 	mu            sync.Mutex
 	init          *InitializeParams
-	watchingRepos map[string]string // repo -> refspec of watched repos
+	watchingRepos map[string][]string // repo -> watch refspecs, for watched repos
 
 	*workspaceServerConn
 }
@@ -233,7 +232,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		log = log.With("repo", params.Repo, "refspec", params.Refspec)
+		log = log.With("repo", params.Repo, "refspecs", params.Refspecs)
 		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err
@@ -300,8 +299,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			branch := parts[1]
 			if repoConfig, ok := repo.config.Remotes[remote]; !ok {
 				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q (remotes: %+v)", params.Ref, remote, repo.config.Remotes)
-			} else if !refdb.MatchPattern(repoConfig.Refspec, branch) {
-				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but the remote %q refspec %q does not match the branch name", params.Ref, remote, repoConfig.Refspec)
+			} else if matchAnyRefspec(repoConfig.Refspecs, branch) {
+				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but no remote %q refspecs %q match the branch name", params.Ref, remote, repoConfig.Refspecs)
 			}
 		}
 

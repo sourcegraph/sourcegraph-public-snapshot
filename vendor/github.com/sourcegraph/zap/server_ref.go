@@ -87,14 +87,7 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 
 	upstreamChanged := force || (oldConfig.Upstream != newConfig.Upstream)
 
-	var oldRemote, newRemote RepoRemoteConfiguration
-	if oldConfig.Upstream != "" {
-		var ok bool
-		oldRemote, ok = repo.config.Remotes[oldConfig.Upstream]
-		if !ok {
-			level.Warn(log).Log("old-upstream-refers-to-missing-remote", oldConfig.Upstream)
-		}
-	}
+	var newRemote RepoRemoteConfiguration
 	if newConfig.Upstream != "" {
 		var ok bool
 		newRemote, ok = repo.config.Remotes[newConfig.Upstream]
@@ -104,9 +97,6 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 				Message: fmt.Sprintf("no remote found for new upstream: %s", newConfig.Upstream),
 			}
 		}
-	}
-	if !upstreamChanged && oldRemote != newRemote {
-		panic("oldRemote != newRemote, expected remotes to stay in sync with upstream")
 	}
 
 	if upstreamChanged && oldConfig.Upstream != "" {

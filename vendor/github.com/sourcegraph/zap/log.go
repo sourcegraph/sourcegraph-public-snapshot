@@ -9,19 +9,19 @@ import (
 	"github.com/go-kit/kit/log/term"
 )
 
-var logLevelConfig level.Config
+var logAllowLevel []string
 
 func init() {
 	logLevel := os.Getenv("LOGLEVEL")
 	switch logLevel {
 	case "debug":
-		logLevelConfig.Allowed = level.AllowAll()
+		logAllowLevel = level.AllowAll()
 	case "info":
-		logLevelConfig.Allowed = level.AllowInfoAndAbove()
+		logAllowLevel = level.AllowInfoAndAbove()
 	case "warn":
-		logLevelConfig.Allowed = level.AllowWarnAndAbove()
+		logAllowLevel = level.AllowWarnAndAbove()
 	case "", "error":
-		logLevelConfig.Allowed = level.AllowErrorOnly()
+		logAllowLevel = level.AllowErrorOnly()
 	default:
 		fmt.Fprintf(os.Stderr, "error: unknown log level %q (valid levels are: %v)\n", logLevel, level.AllowAll())
 		os.Exit(1)
@@ -56,7 +56,7 @@ func (s *Server) baseLogger() *log.Context {
 	}
 
 	logger0 := term.NewLogger(w, log.NewLogfmtLogger, colorFn)
-	logger0 = level.New(logger0, logLevelConfig)
+	logger0 = level.New(logger0, level.Allowed(logAllowLevel))
 	logger1 := log.NewContext(logger0)
 	// logger1 = logger1.With("ts", log.DefaultTimestampUTC)
 	if s.ID != "" {

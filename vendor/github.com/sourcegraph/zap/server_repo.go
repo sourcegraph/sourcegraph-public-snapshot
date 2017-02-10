@@ -3,6 +3,7 @@ package zap
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/go-kit/kit/log"
@@ -67,10 +68,10 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 	{
 		c.mu.Lock()
 		if c.watchingRepos == nil {
-			c.watchingRepos = map[string]string{}
+			c.watchingRepos = map[string][]string{}
 		}
-		level.Info(log).Log("set-watch-refspec", params.Refspec, "old", c.watchingRepos[params.Repo])
-		c.watchingRepos[params.Repo] = params.Refspec
+		level.Info(log).Log("set-watch-refspec", params.Refspecs, "old", c.watchingRepos[params.Repo])
+		c.watchingRepos[params.Repo] = params.Refspecs
 		c.mu.Unlock()
 	}
 
@@ -80,7 +81,8 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 	//
 	// From here on, clients will receive all future updates, so this
 	// means they always have the full state of the repository.
-	if refs := repo.refdb.List(params.Refspec); len(refs) > 0 {
+	refs := refsMatchingRefspecs(repo.refdb, params.Refspecs)
+	if len(refs) > 0 {
 		for _, ref := range refs {
 			if ref.IsSymbolic() {
 				// Send all symbolic refs last, so that when the
@@ -136,4 +138,29 @@ func excludeSymbolicRefs(refs []refdb.Ref) []refdb.Ref {
 		}
 	}
 	return refs2
+}
+
+func refsMatchingRefspecs(db refdb.RefDB, refspecs []string) []refdb.Ref {
+	refs := map[string]refdb.Ref{}
+	for _, refspec := range refspecs {
+		for _, ref := range db.List(refspec) {
+			refs[ref.Name] = ref
+		}
+	}
+
+	refList := make([]refdb.Ref, 0, len(refs))
+	for _, ref := range refs {
+		refList = append(refList, ref)
+	}
+	sort.Sort(sortableRefs(refList))
+	return refList
+}
+
+func matchAnyRefspec(refspecs []string, ref string) bool {
+	for _, refspec := range refspecs {
+		if refdb.MatchPattern(refspec, ref) {
+			return true
+		}
+	}
+	return false
 }

@@ -136,7 +136,7 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, log *log.Context, end
 		for remoteName, remote := range repo.config.Remotes {
 			if remote.Endpoint == endpoint {
 				level.Debug(log).Log("reestablish-watch-repo", repoName, "remote", remoteName)
-				if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: remote.Repo, Refspec: remote.Refspec}); err != nil {
+				if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: remote.Repo, Refspecs: remote.Refspecs}); err != nil {
 					return err
 				}
 				for refName, refConfig := range repo.config.Refs {

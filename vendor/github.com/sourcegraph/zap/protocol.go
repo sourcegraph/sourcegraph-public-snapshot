@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
@@ -136,16 +137,26 @@ type RepoConfigureParams struct {
 // RepoRemoteConfiguration describes the configuration of a repository
 // remote.
 type RepoRemoteConfiguration struct {
-	Endpoint string `json:"endpoint"` // the endpoint URL of the server that hosts the remote repository
-	Repo     string `json:"repo"`     // the name of the repo on the remote server
-	Refspec  string `json:"refspec"`  // the refspec describing which remote refs to sync
+	Endpoint string   `json:"endpoint"` // the endpoint URL of the server that hosts the remote repository
+	Repo     string   `json:"repo"`     // the name of the repo on the remote server
+	Refspecs []string `json:"refspecs"` // the refspecs describing which remote refs to sync (see (RepoWatchParams).Refspecs for spec)
+}
+
+// EquivalentTo returns whether the other RepoRemoteConfiguration is
+// equivalent to c.
+func (c RepoRemoteConfiguration) EquivalentTo(other RepoRemoteConfiguration) bool {
+	return c.Endpoint == other.Endpoint && c.Repo == other.Repo && reflect.DeepEqual(c.Refspecs, other.Refspecs)
+}
+
+func (c RepoRemoteConfiguration) IsEmpty() bool {
+	return c.Endpoint == "" && c.Repo == "" && len(c.Refspecs) == 0
 }
 
 func (c RepoRemoteConfiguration) String() string {
-	if c == (RepoRemoteConfiguration{}) {
+	if c.IsEmpty() {
 		return "<none>"
 	}
-	return fmt.Sprintf("%s:%s refspec(%s)", c.Endpoint, c.Repo, c.Refspec)
+	return fmt.Sprintf("%s:%s refspecs(%s)", c.Endpoint, c.Repo, c.Refspecs)
 }
 
 // RepoWatchParams contains the parameters for the "repo/watch"
@@ -153,11 +164,15 @@ func (c RepoRemoteConfiguration) String() string {
 type RepoWatchParams struct {
 	Repo string `json:"repo"` // the repo to watch
 
-	// Refspec is a pattern that can match any number of refs. The "*"
-	// character is a wildcard. An empty pattern matches all refs.
+	// Refspecs are patterns that can each match any number of
+	// refs. The "*" character is a wildcard when matching ref names
+	// (e.g., "a*c" matches "abc"). An empty list matches no refs. To
+	// watch all refs, pass a refspec "*" as one of the items.
+	//
+	// Each call to repo/watch overwrites all previous refspecs.
 	//
 	// Only non-symbolic refs are eligible to be matched.
-	Refspec string `json:"refspec"`
+	Refspecs []string `json:"refspecs"`
 }
 
 // RefIdentifier identifies a Zap ref. (A Zap branch named "B" is

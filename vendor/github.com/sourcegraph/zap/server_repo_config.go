@@ -54,7 +54,7 @@ func (s *Server) doUpdateBulkRepoRemoteConfiguration(ctx context.Context, log *l
 	}
 	for newName, newRemote := range newRemotes {
 		oldRemote, ok := oldRemotes[newName]
-		if ok && oldRemote == newRemote {
+		if ok && oldRemote.EquivalentTo(newRemote) {
 			continue // unchanged
 		}
 		log := log.With("add-or-update-remote", newName)
@@ -66,8 +66,8 @@ func (s *Server) doUpdateBulkRepoRemoteConfiguration(ctx context.Context, log *l
 
 		// TODO(sqs): does not correctly clean up repo watches
 		// established on previous endpoints or repo names. Kind of an edge case.
-		if oldRemote.Refspec != "" || newRemote.Refspec != "" {
-			if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: newRemote.Repo, Refspec: newRemote.Refspec}); err != nil {
+		if len(oldRemote.Refspecs) != 0 || len(newRemote.Refspecs) != 0 {
+			if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: newRemote.Repo, Refspecs: newRemote.Refspecs}); err != nil {
 				return err
 			}
 		}
