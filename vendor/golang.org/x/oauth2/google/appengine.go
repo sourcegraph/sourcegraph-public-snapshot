@@ -10,8 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"context"
-
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 )
 
@@ -20,6 +19,9 @@ var appengineVM bool
 
 // Set at init time by appengine_hook.go. If nil, we're not on App Engine.
 var appengineTokenFunc func(c context.Context, scopes ...string) (token string, expiry time.Time, err error)
+
+// Set at init time by appengine_hook.go. If nil, we're not on App Engine.
+var appengineAppIDFunc func(c context.Context) string
 
 // AppEngineTokenSource returns a token source that fetches tokens
 // issued to the current App Engine application's service account.
