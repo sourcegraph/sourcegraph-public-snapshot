@@ -15,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 var Auth0Domain = env.Get("AUTH0_DOMAIN", "", "domain of the Auth0 account")
@@ -28,9 +29,12 @@ var Auth0Config = &oauth2.Config{
 	},
 }
 
-var auth0ManagementTokenSource = oauth2.StaticTokenSource(&oauth2.Token{
-	AccessToken: env.Get("AUTH0_MANAGEMENT_API_TOKEN", "", "management token for accessing the Auth0 user database"),
-})
+var auth0ManagementTokenSource = (&clientcredentials.Config{
+	ClientID:     Auth0Config.ClientID,
+	ClientSecret: Auth0Config.ClientSecret,
+	TokenURL:     "https://" + Auth0Domain + "/oauth/token",
+	Audience:     "https://" + Auth0Domain + "/api/v2/",
+}).TokenSource(context.Background())
 
 func SetAppMetadata(ctx context.Context, uid string, key string, value interface{}) error {
 	body, err := json.Marshal(struct {
