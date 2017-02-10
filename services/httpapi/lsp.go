@@ -190,8 +190,15 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 		return nil
 	}
 
+	callOpts := []jsonrpc2.CallOption{
+		// Proxy the ID used. Otherwise we assign our own ID, breaking
+		// calls that depend on controlling the ID such as
+		// $/cancelRequest and $/partialResult.
+		jsonrpc2.PickID(req.ID),
+	}
+
 	var result json.RawMessage
-	if err := to.Call(ctx, req.Method, req.Params, &result); err != nil {
+	if err := to.Call(ctx, req.Method, req.Params, &result, callOpts...); err != nil {
 		log15.Error("jsonrpc2Proxy: error sending request", "method", req.Method, "err", err)
 		var respErr *jsonrpc2.Error
 		if e, ok := err.(*jsonrpc2.Error); ok {
