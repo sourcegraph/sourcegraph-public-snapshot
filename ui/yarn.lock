@@ -18,6 +18,10 @@
     "@types/immutable" "*"
     "@types/react" "*"
 
+"@types/google.analytics@0.0.28":
+  version "0.0.28"
+  resolved "https://registry.yarnpkg.com/@types/google.analytics/-/google.analytics-0.0.28.tgz#d1687c39ad6d5327b63253d8528438dc67a5e973"
+
 "@types/history@*", "@types/history@^2.0.41":
   version "2.0.41"
   resolved "https://registry.yarnpkg.com/@types/history/-/history-2.0.41.tgz#88faa58e931d1c676daca71369cbc3767737d8d3"

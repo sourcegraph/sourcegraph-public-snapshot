@@ -7,6 +7,7 @@ import { Router, RouterLocation } from "sourcegraph/app/router";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import * as RepoActions from "sourcegraph/repo/RepoActions";
+import { googleAnalytics } from "sourcegraph/tracking/GoogleAnalyticsWrapper";
 import { hubSpot } from "sourcegraph/tracking/HubSpotWrapper";
 import { intercom } from "sourcegraph/tracking/IntercomWrapper";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -20,7 +21,6 @@ class EventLoggerClass {
 	_telligent: any = null;
 
 	_dispatcherToken: any;
-	_gaClientID: string;
 
 	private CLOUD_TRACKING_APP_ID: string = "SourcegraphWeb";
 	private PLATFORM: string = "Web";
@@ -60,10 +60,6 @@ class EventLoggerClass {
 				},
 			});
 		}
-
-		global.window.ga(function (tracker: any): any {
-			this._gaClientID = tracker.get("clientId");
-		}.bind(this));
 
 		this._updateUser();
 	}
@@ -155,9 +151,7 @@ class EventLoggerClass {
 
 	// Responsible for setting the login information for all event trackers
 	_setTrackerLoginInfo(loginInfo: string): void {
-		if (global.window.ga) {
-			global.window.ga("set", "userId", loginInfo);
-		}
+		googleAnalytics.setTrackerLogin(loginInfo);
 
 		if (this._telligent) {
 			this._telligent("setUserId", loginInfo);
@@ -188,9 +182,9 @@ class EventLoggerClass {
 		}
 
 		let idProps = { detail: { deviceId: this._getTelligentDuid(), userId: context.user && context.user.Login } };
-		if (global.window.ga) {
-			this._telligent("addStaticMetadataObject", { deviceInfo: { GAClientId: this._gaClientID } });
-			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", Object.assign(idProps, { gaClientId: this._gaClientID }))), 20);
+		if (googleAnalytics.gaClientID) {
+			this._telligent("addStaticMetadataObject", { deviceInfo: { GAClientId: googleAnalytics.gaClientID } });
+			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", Object.assign(idProps, { gaClientId: googleAnalytics.gaClientID }))), 20);
 		} else {
 			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", idProps)), 20);
 		}
@@ -253,15 +247,7 @@ class EventLoggerClass {
 
 		// Log event on HubSpot (if a valid HubSpot event)
 		hubSpot.logHubSpotEvent(eventLabel);
-
-		if (global && global.window && global.window.ga) {
-			global.window.ga("send", {
-				hitType: "event",
-				eventCategory: eventCategory || "",
-				eventAction: eventAction || "",
-				eventLabel: eventLabel,
-			});
-		}
+		googleAnalytics.logEventCategoryComponents(eventCategory, eventAction, eventLabel);
 	}
 
 	_logToConsole(eventAction: string, object?: any): void {
@@ -283,16 +269,7 @@ class EventLoggerClass {
 		if (this._telligent) {
 			this._telligent("track", eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action }));
 		}
-
-		if (global && global.window && global.window.ga) {
-			global.window.ga("send", {
-				hitType: "event",
-				eventCategory: eventObject.category || "",
-				eventAction: eventObject.action || "",
-				eventLabel: eventObject.label,
-				nonInteraction: true,
-			});
-		}
+		googleAnalytics.logEventCategoryComponents(eventObject.category, eventObject.action, eventObject.label, true);
 	}
 
 	_dedupedArray(inputArray: Array<string>): Array<string> {
