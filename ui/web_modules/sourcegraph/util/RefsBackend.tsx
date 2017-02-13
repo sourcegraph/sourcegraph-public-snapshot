@@ -85,7 +85,11 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 		// TODO(nicot): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
 		const [first, second] = hover.contents;
 		funcName = typeof first === "string" ? first : first.value;
-		docString = typeof second === "string" ? second : second.value;
+		if (second) {
+			docString = typeof second === "string" ? second : second.value;
+		} else {
+			docString = "";
+		}
 	} else {
 		funcName = typeof hover.contents === "string" ? hover.contents : hover.contents.value;
 		docString = "";
