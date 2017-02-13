@@ -19,7 +19,7 @@ import { IWindowService, IWindowsService } from "vs/platform/windows/common/wind
 import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { ITreeExplorerService } from "vs/workbench/parts/explorers/common/treeExplorerService";
 import { IWorkspaceConfigurationService } from "vs/workbench/services/configuration/common/configuration";
-import { WorkbenchMessageService } from "vs/workbench/services/message/browser/messageService";
+import { MessageService } from "vs/workbench/services/message/electron-browser/messageService";
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 import { TextModelResolverService } from "vs/workbench/services/textmodelResolver/common/textModelResolverService";
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
@@ -68,9 +68,13 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(IWindowsService, DummyService);
 	set(IIntegrityService, IntegrityService);
 	set(IBackupService, BackupService);
-	set(IMessageService, WorkbenchMessageService);
+
 	set(IThemeService, ThemeService);
 	set(IWindowIPCService, DummyService);
+
+	const messageService = instantiationService.createInstance(MessageService, domElement);
+	services.set(IMessageService, messageService);
+
 	set(ITextFileService, DummyService);
 	set(ITextModelResolverService, TextModelResolverService);
 	set(IConfigurationService, ConfigurationService);
