@@ -147,7 +147,7 @@ export class DefinitionAction extends EditorAction {
 		const eventProps = URIUtils.repoParams(model.uri);
 		const position = normalisePosition(model, editor.getPosition());
 		const word = model.getWordAtPosition(position);
-		if (!word || !this.isIdentifier(model, position)) {
+		if (!word) {
 			return;
 		}
 
@@ -195,6 +195,9 @@ export class DefinitionAction extends EditorAction {
 
 	private highlightWord(editor: editorCommon.ICommonCodeEditor, position: editorCommon.IPosition): void {
 		const model = editor.getModel();
+		if (!this.isIdentifier(model, position)) {
+			return;
+		}
 		const word = model.getWordAtPosition(position);
 		editor.setSelection({
 			startLineNumber: position.lineNumber,
@@ -210,7 +213,12 @@ export class DefinitionAction extends EditorAction {
 		if (tokens.length !== 1) {
 			return true;
 		}
-		return tokens[0].type.indexOf("identifier") >= 0;
+		const token = tokens[0];
+		if (token.type.length === 0) {
+			// Model hasn't been tokenized yet.
+			return true;
+		}
+		return token.type.includes("identifier");
 	}
 
 }
