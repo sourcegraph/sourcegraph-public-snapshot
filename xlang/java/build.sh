@@ -8,7 +8,7 @@ export TAG=${TAG-latest}
 set -x
 
 if [ ! -d "java-langserver" ]; then
-    git clone https://github.com/sourcegraph/java-langserver java-langserver
+    git clone git@github.com:sourcegraph/java-langserver.git java-langserver
 else
     cd java-langserver && git pull && cd ..
 fi
