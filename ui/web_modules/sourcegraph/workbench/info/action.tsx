@@ -147,7 +147,7 @@ export class DefinitionAction extends EditorAction {
 		const eventProps = URIUtils.repoParams(model.uri);
 		const position = normalisePosition(model, editor.getPosition());
 		const word = model.getWordAtPosition(position);
-		if (!word) {
+		if (!word || !this.isIdentifier(model, position)) {
 			return;
 		}
 
@@ -202,6 +202,15 @@ export class DefinitionAction extends EditorAction {
 			endLineNumber: position.lineNumber,
 			endColumn: word.endColumn,
 		});
+	}
+
+	private isIdentifier(model: IModel, pos: editorCommon.IPosition): boolean {
+		const line = model.getLineTokens(pos.lineNumber);
+		const tokens = line.sliceAndInflate(pos.column, pos.column, 0);
+		if (tokens.length !== 1) {
+			return true;
+		}
+		return tokens[0].type.indexOf("identifier") >= 0;
 	}
 
 }
