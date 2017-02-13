@@ -12,6 +12,7 @@ import (
 	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
@@ -34,7 +35,7 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
 	conn, err := websocketUpgrader.Upgrade(getHijacker(w), r, nil)
 	if err != nil {
-		log15.Error("serveLSP: Upgrade to WebSocket failed.", "err", err)
+		proxyFailed.WithLabelValues("upgrade").Inc()
 		http.Error(w, "upgrade to WebSocket failed", http.StatusInternalServerError)
 		return
 	}
@@ -69,26 +70,22 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 
 	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2HandlerFunc(proxy.handleClientRequest))
 
-	addr := os.Getenv("LSP_PROXY")
-	if addr == "" {
-		log15.Error("serveLSP: no LSP_PROXY env var set (need address to LSP proxy)")
-		http.Error(w, "locating LSP server failed", http.StatusBadGateway)
-		return
-	}
-	serverNetConn, err := (&net.Dialer{}).DialContext(ctx, "tcp", addr)
+	serverNetConn, err := dialLSPProxy(ctx)
 	if err != nil {
-		log15.Error("serveLSP: dialing LSP server failed", "addr", addr, "err", err)
+		proxyFailed.WithLabelValues("dial").Inc()
 		http.Error(w, "connecting to LSP server failed", http.StatusBadGateway)
 		return
 	}
-	proxy.server = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2HandlerFunc(proxy.handleServerRequest))
+	proxy.server = &xlang.Client{
+		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2HandlerFunc(proxy.handleServerRequest)),
+	}
 
 	proxy.start()
 
 	select {
 	case <-proxy.client.DisconnectNotify():
 		proxy.server.Close()
-	case <-proxy.server.DisconnectNotify():
+	case <-proxy.server.Conn.DisconnectNotify():
 		proxy.client.Close()
 	}
 }
@@ -116,18 +113,19 @@ func (h jsonrpc2HandlerFunc) Handle(ctx context.Context, conn *jsonrpc2.Conn, re
 // single repository initially specified in the "initialize" request)
 // will be accessed in the current LSP session.
 type jsonrpc2Proxy struct {
-	httpCtx        context.Context
-	client, server *jsonrpc2.Conn //  connection to the client (typically a browser) and server (LSP proxy)
-	mode           *atomic.String
-	builder        *libhoney.Builder
-	ready          chan struct{}
+	httpCtx context.Context
+	client  *jsonrpc2.Conn // connection to the browser
+	server  *xlang.Client  // connection to lsp proxy. We use xlang.Client since it injects opentracing metadata
+	mode    *atomic.String
+	builder *libhoney.Builder
+	ready   chan struct{}
 }
 
 func (p *jsonrpc2Proxy) start() {
 	close(p.ready)
 }
 
-func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, req *jsonrpc2.Request) error {
+func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to jsonrpc2.JSONRPC2, req *jsonrpc2.Request) error {
 	// 🚨 SECURITY: If this is the "initialize" request, we MUST check 🚨
 	// that the current user can access the workspace root's
 	// repository. This is the ONLY PLACE that access is checked; the
@@ -170,14 +168,14 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 
 			// 🚨 SECURITY: Check that the the user can access the repo. 🚨
 			if _, err := backend.Repos.Resolve(p.httpCtx, &sourcegraph.RepoResolveOp{Path: rootPathURI.Repo()}); err != nil {
-				log15.Error("jsonrpc2Proxy: access check failed", "workspace", params.RootPath, "err", err)
+				proxyFailed.WithLabelValues("auth").Inc()
 				return err
 			}
 			return nil
 		}
 		if accessErr := checkAccess(); accessErr != nil {
 			if err := from.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{Message: accessErr.Error()}); err != nil {
-				log15.Error("jsonrpc2Proxy: error sending access-check-failed reply", "method", req.Method, "accessErr", accessErr, "err", err)
+				proxyFailed.WithLabelValues("reply-auth").Inc()
 			}
 			return accessErr // 🚨 SECURITY: Do not pass on unauthorized request to server. 🚨
 		}
@@ -185,7 +183,9 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 
 	if req.Notif {
 		if err := to.Notify(ctx, req.Method, req.Params); err != nil {
-			log15.Error("jsonrpc2Proxy: error sending notification", "method", req.Method)
+			if _, userError := err.(*jsonrpc2.Error); !userError {
+				proxyFailed.WithLabelValues("send-notif").Inc()
+			}
 		}
 		return nil
 	}
@@ -199,7 +199,10 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 
 	var result json.RawMessage
 	if err := to.Call(ctx, req.Method, req.Params, &result, callOpts...); err != nil {
-		log15.Error("jsonrpc2Proxy: error sending request", "method", req.Method, "err", err)
+		if _, userError := err.(*jsonrpc2.Error); !userError {
+			proxyFailed.WithLabelValues("send-req").Inc()
+		}
+
 		var respErr *jsonrpc2.Error
 		if e, ok := err.(*jsonrpc2.Error); ok {
 			respErr = e
@@ -207,12 +210,12 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, 
 			respErr = &jsonrpc2.Error{Message: err.Error()}
 		}
 		if err := from.ReplyWithError(ctx, req.ID, respErr); err != nil {
-			log15.Error("jsonrpc2Proxy: error sending error reply", "method", req.Method, "payload", respErr, "err", err)
+			proxyFailed.WithLabelValues("reply-req-err").Inc()
 		}
 		return respErr
 	}
 	if err := from.Reply(ctx, req.ID, &result); err != nil {
-		log15.Error("jsonrpc2Proxy: error sending reply", "method", req.Method, "err", err)
+		proxyFailed.WithLabelValues("reply-req").Inc()
 	}
 	return nil
 }
@@ -259,4 +262,25 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 func (p *jsonrpc2Proxy) handleServerRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	<-p.ready
 	p.roundTrip(ctx, conn, p.client, req)
+}
+
+func dialLSPProxy(ctx context.Context) (net.Conn, error) {
+	addr := os.Getenv("LSP_PROXY")
+	if addr == "" {
+		return nil, errors.New("lsp proxy not found")
+	}
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
+}
+
+var proxyFailed = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "xlang",
+	Name:      "websocket_proxy_failed",
+	Help:      "Total number of failures in the xlang websocket gateway.",
+}, []string{"why"})
+
+func init() {
+	prometheus.MustRegister(proxyFailed)
 }
