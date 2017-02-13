@@ -354,11 +354,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
-		kind := lsp.TDSKNone
-		if c.context.session != "" {
-			// If session is set (zap), we allow operations which can mutate.
-			kind = lsp.TDSKFull
-		}
+		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync:   lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
@@ -418,12 +414,12 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		return respObj, nil
 
-	case "textDocument/didOpen", "textDocument/didChange", "textDocument/didClose", "textDocument/didSave":
+	case "textDocument/didOpen":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
 		}
 
-		if proxySaveDiagnostics && req.Method == "textDocument/didOpen" {
+		if proxySaveDiagnostics {
 			var params lsp.DidOpenTextDocumentParams
 			if req.Params == nil {
 				return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
@@ -447,6 +443,57 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 					log15.Error("LSP client proxy: error sending saved diagnostics", "context", c.context, "uri", params.TextDocument.URI, "err", err)
 				}
 			}
+		}
+
+		// Only allow isolated sessions (not shared sessions) to
+		// modify file contents. The modified file contents will
+		// only be visible within this session and will not leak
+		// to other sessions.
+		if c.context.session != "" {
+			var respObj interface{}
+			if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
+				return nil, err
+			}
+			return respObj, nil
+		}
+
+		// didOpen is sent when a user opens a file. However, didOpen
+		// can mutate the workspace of our shared language server. Our
+		// only clients should never try to mutate the workspace. So
+		// we ignore the body of didOpen and send a fake hover
+		// request. We do this since most language servers will cache
+		// type information for a file after a request for it. Some
+		// language servers are smart about immutable didOpen, but
+		// others may trigger overlay code / cache invalidation in the
+		// language server.
+		var params lsp.DidOpenTextDocumentParams
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		err := json.Unmarshal(*req.Params, &params)
+		if err != nil {
+			return nil, err
+		}
+		var respObj interface{}
+		err = c.callServer(ctx, req.ID, "textDocument/hover", lsp.TextDocumentPositionParams{TextDocument: lsp.TextDocumentIdentifier{URI: params.TextDocument.URI}}, &respObj)
+		return nil, err // we ignore the hover response (other than err) since the original request was a notif.
+
+	case "textDocument/didClose":
+		if err := ensureInitialized(); err != nil {
+			return nil, err
+		}
+
+		// didClose is harmless to pass along, it does not mutate
+		// anything.
+		var respObj interface{}
+		if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
+			return nil, err
+		}
+		return respObj, nil
+
+	case "textDocument/didChange", "textDocument/didSave":
+		if err := ensureInitialized(); err != nil {
+			return nil, err
 		}
 
 		// Only allow isolated sessions (not shared sessions) to
