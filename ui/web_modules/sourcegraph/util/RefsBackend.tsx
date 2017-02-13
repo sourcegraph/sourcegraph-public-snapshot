@@ -79,20 +79,33 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 		return null;
 	}
 
-	let funcName: string;
-	let docString: string;
+	let funcName = "";
+	let docString = "";
 	if (hover.contents instanceof Array) {
 		// TODO(nicot): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
 		const [first, second] = hover.contents;
-		funcName = typeof first === "string" ? first : first.value;
+		if (first) {
+			if (typeof first === "string") {
+				funcName = first;
+			} else if (first.value) {
+				funcName = first.value;
+			} else {
+				return null;
+			}
+		}
 		if (second) {
-			docString = typeof second === "string" ? second : second.value;
-		} else {
-			docString = "";
+			if (typeof second === "string") {
+				docString = second;
+			} else if (second.value) {
+				docString = second.value;
+			}
 		}
 	} else {
-		funcName = typeof hover.contents === "string" ? hover.contents : hover.contents.value;
-		docString = "";
+		if (typeof hover.contents === "string") {
+			funcName = hover.contents;
+		} else if (hover.contents.value) {
+			funcName = hover.contents.value;
+		}
 	}
 
 	return { funcName, docString, definition };
