@@ -13,7 +13,7 @@ export function RepoLink({ repo, rev, style, className, spacing = 4 }: {
 	const repoLink: JSX.Element[] = [];
 
 	repoParts.forEach((dir, i) => {
-		repoLink.push(<span key={dir}>{dir}</span>);
+		repoLink.push(<span key={dir + i}>{dir}</span>);
 		if (i === repoParts.length - 1) {
 			return;
 		}
