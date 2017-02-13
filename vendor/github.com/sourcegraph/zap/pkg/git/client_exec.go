@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
+	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/internal/pkg/backoff"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/diff"
@@ -91,6 +92,7 @@ func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
 		if err := fbuf.Remove(stripBufferPath(f)); err != nil {
 			return err
 		}
+		level.Info(log).Log("write-file", stripBufferPath(f), "data", string(data))
 		if err := fdisk.WriteFile(stripBufferPath(f), data, 0666); err != nil {
 			return err
 		}
@@ -228,7 +230,13 @@ func checkRemotePath(path string) error {
 
 type ReadFileFunc func(name string) ([]byte, error)
 
+var TestWorkspaceOpForChanges func(changes []*gitutil.ChangedFile, readFileA, readFileB ReadFileFunc) (ot.WorkspaceOp, error)
+
 func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB ReadFileFunc) (ot.WorkspaceOp, error) {
+	if TestWorkspaceOpForChanges != nil {
+		return TestWorkspaceOpForChanges(changes, readFileA, readFileB)
+	}
+
 	var op ot.WorkspaceOp
 	for _, c := range changes {
 		// TODO(sqs): sanitize/clean these paths
@@ -258,7 +266,7 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 			if err != nil {
 				return ot.WorkspaceOp{}, err
 			}
-			if edits := diffOps(prevData, data); len(edits) > 0 {
+			if edits := DiffOps(prevData, data); len(edits) > 0 {
 				op.Edit = map[string]ot.EditOps{dstPath: edits}
 			}
 
@@ -292,7 +300,7 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 			if err != nil {
 				return ot.WorkspaceOp{}, err
 			}
-			if edits := diffOps(prevData, data); len(edits) > 0 {
+			if edits := DiffOps(prevData, data); len(edits) > 0 {
 				if op.Edit == nil {
 					op.Edit = map[string]ot.EditOps{}
 				}
@@ -303,11 +311,11 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 	return op, nil
 }
 
-// diffOps returns the diff between old and new as OT edit ops.
+// DiffOps returns the diff between old and new as OT edit ops.
 //
 // DEV NOTE: Keep this in sync with other language implementations of
 // diffOps.
-func diffOps(old, new []byte) ot.EditOps {
+func DiffOps(old, new []byte) ot.EditOps {
 	change := diff.Bytes(old, new)
 	ops := make(ot.EditOps, 0, len(change)*2)
 	var ret, del, ins int

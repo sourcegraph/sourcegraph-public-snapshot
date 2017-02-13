@@ -69,10 +69,7 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, log *log.Context
 			// prevents an infinite loop when the server closes and
 			// its connections are closed (which usually would cause
 			// them all to try to reconnect).
-			sr.parent.closedMu.Lock()
-			closed := sr.parent.closed
-			sr.parent.closedMu.Unlock()
-			if closed {
+			if sr.parent.isClosed() {
 				return
 			}
 

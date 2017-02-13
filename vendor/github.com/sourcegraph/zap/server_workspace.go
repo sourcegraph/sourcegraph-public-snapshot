@@ -44,6 +44,11 @@ type Workspace interface {
 	// making any modifications to files on disk or Git state.
 	Checkout(ctx context.Context, log *logpkg.Context, keepLocalChanges bool, ref, gitBase, gitBranch string, history []ot.WorkspaceOp, updateExternal func(ctx context.Context) error) error
 
+	// ResetToCurrentState returns a series of ops that, when applied to
+	// the base commit, would yield the exact current workspace state
+	// plus the state of buffered files in bufferFiles.
+	ResetToCurrentState(ctx context.Context, log *logpkg.Context, bufferFiles map[string]string) ([]ot.WorkspaceOp, error)
+
 	// Configure updates the configuration for the repository and
 	// workspace.
 	Configure(context.Context, RepoConfiguration) error
@@ -459,6 +464,64 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		level.Debug(log).Log("ws", repoName, "will-save-file", relPath)
 		workspace.WillSaveFile(relPath)
 		return nil, nil
+
+	case "workspace/reset":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params WorkspaceResetParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		if params.WorkspaceIdentifier == (WorkspaceIdentifier{}) {
+			return nil, errWorkspaceIdentifierRequired
+		}
+
+		log = log.With("reset-ref", params.Ref)
+		level.Info(log).Log()
+
+		repo, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier)
+		if err != nil {
+			return nil, err
+		}
+
+		ref, err := repo.refdb.Resolve("HEAD")
+		if err != nil {
+			return nil, &jsonrpc2.Error{
+				Code:    int64(ErrorCodeSymbolicRefInvalid),
+				Message: fmt.Sprintf("symbolic ref resolution error: %s", err),
+			}
+		}
+		// Consistency check.
+		if ref.Name != params.Ref {
+			return nil, &jsonrpc2.Error{
+				Code:    int64(ErrorCodeRefConflict),
+				Message: fmt.Sprintf("invalid ref %q for workspace reset (expected %q, which is the current HEAD)", params.Ref, ref.Name),
+			}
+		}
+		serverRef := ref.Object.(serverRef)
+
+		repo.mu.Lock()
+		workspace := repo.workspace
+		repo.mu.Unlock()
+
+		// Synthesize a ref/update operation that resets the workspace.
+		resetOps, err := workspace.ResetToCurrentState(ctx, log, params.BufferFiles)
+		if err != nil {
+			return nil, err
+		}
+		refState := &RefState{
+			RefBaseInfo: RefBaseInfo{GitBase: serverRef.gitBase, GitBranch: serverRef.gitBranch},
+			History:     resetOps,
+		}
+		if err := ws.parent.handleRefUpdateFromDownstream(ctx, log, repo, RefUpdateUpstreamParams{
+			RefIdentifier: params.WorkspaceIdentifier.Ref(params.Ref),
+			Force:         true,
+			State:         refState,
+		}, c.parent, false); err != nil {
+			return nil, err
+		}
+		return refState, nil
 	}
 	return nil, errNotHandled
 }

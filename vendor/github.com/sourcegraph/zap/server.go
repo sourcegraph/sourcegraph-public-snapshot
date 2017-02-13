@@ -100,9 +100,12 @@ type ServerBackend interface {
 //     	Upstream server<----------------+
 //
 type Server struct {
+	// ID is used to identify this server in log messages. It should not
+	// be assumed to be unique.
 	ID string
 
-	LogWriter io.Writer // where logs should be written to (os.Stderr by default)
+	// LogWriter is were logs should be written to (os.Stderr by default)
+	LogWriter io.Writer
 
 	backend ServerBackend
 
@@ -112,21 +115,20 @@ type Server struct {
 	connsMu sync.Mutex
 	conns   map[*serverConn]struct{} // open connections to clients
 
-	recvMu sync.Mutex
-
+	// readyToAccept is closed when the server has been started
 	readyToAccept chan struct{}
 
+	// ConnOpt are the connection options used on all connections that are
+	// accepted.
 	ConnOpt []jsonrpc2.ConnOpt
 
 	remotes         serverRemotes
 	workspaceServer *workspaceServer
 
-	closedMu sync.Mutex
-	closed   bool
-
+	// bgCtx is the context used to start this server. It should be used
+	// as the context for any background operations done by the server (ie
+	// not tied to a request)
 	bgCtx context.Context
-
-	work chan func() error
 
 	updateFromDownstreamMu    sync.Mutex
 	updateRemoteTrackingRefMu sync.Mutex
@@ -138,7 +140,6 @@ func NewServer(backend ServerBackend) *Server {
 		backend:       backend,
 		repos:         map[string]*serverRepo{},
 		readyToAccept: make(chan struct{}),
-		work:          make(chan func() error, 25),
 	}
 	s.remotes.parent = s
 	return s
@@ -151,14 +152,6 @@ func (s *Server) Start(ctx context.Context) {
 	}
 	s.bgCtx = ctx
 	close(s.readyToAccept)
-	go s.startWorker(s.bgCtx)
-
-	go func() {
-		<-ctx.Done()
-		s.closedMu.Lock()
-		s.closed = true
-		s.closedMu.Unlock()
-	}()
 }
 
 // Accept accepts a new connection to the remote server from a
@@ -177,6 +170,11 @@ func (s *Server) Accept(ctx context.Context, stream jsonrpc2.ObjectStream) <-cha
 	s.conns[sc] = struct{}{}
 	s.connsMu.Unlock()
 	return sc.conn.DisconnectNotify()
+}
+
+// isClosed returns true if the server is closed.
+func (s *Server) isClosed() bool {
+	return s.bgCtx.Err() != nil
 }
 
 func (s *Server) deleteConn(c *serverConn) {

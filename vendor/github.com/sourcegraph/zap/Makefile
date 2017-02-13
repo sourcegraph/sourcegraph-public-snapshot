@@ -32,7 +32,7 @@ test-lang:; cd lang && $(MAKE) test
 .PHONY: test-e2e
 test-e2e: install-lang install-ext
 	go test -timeout 2m -v ./internal/e2e
-	
+
 .PHONY: check
 check:; bash dev/check-generate-all
 
@@ -56,4 +56,4 @@ publish-vscode:
 publish:
 	$(MAKE) publish-npm
 	$(MAKE) publish-vscode
-	git commit --amend --no-edit ext/vscode/yarn.lock
+	git commit ext/vscode/yarn.lock -m 'update ext/vscode/yarn.lock' && git push

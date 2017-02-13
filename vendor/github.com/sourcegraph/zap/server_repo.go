@@ -70,7 +70,7 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 		if c.watchingRepos == nil {
 			c.watchingRepos = map[string][]string{}
 		}
-		level.Info(log).Log("set-watch-refspec", params.Refspecs, "old", c.watchingRepos[params.Repo])
+		level.Info(log).Log("set-watch-refspec", fmt.Sprint(params.Refspecs), "old", fmt.Sprint(c.watchingRepos[params.Repo]))
 		c.watchingRepos[params.Repo] = params.Refspecs
 		c.mu.Unlock()
 	}

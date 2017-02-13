@@ -18,9 +18,6 @@ import (
 )
 
 func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, log *logpkg.Context, params RefUpdateDownstreamParams, endpoint string) error {
-	// s.recvMu.Lock()
-	// defer s.recvMu.Unlock()
-
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
@@ -321,28 +318,7 @@ func compareRefBaseInfo(p RefBaseInfo, r serverRef) error {
 	return errors.New(strings.Join(diffs, ", "))
 }
 
-func (s *Server) startWorker(ctx context.Context) {
-	log := s.baseLogger().With("worker", "")
-	for {
-		select {
-		case f, ok := <-s.work:
-			if !ok {
-				return
-			}
-			if err := f(); err != nil {
-				level.Error(log).Log("err", err)
-			}
-
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
 func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Context, sender *serverConn, repo *serverRepo, params RefUpdateSymbolicParams) error {
-	// s.recvMu.Lock()
-	// defer s.recvMu.Unlock()
-
 	log = log.With("update-symbolic-ref", params.RefIdentifier.Ref, "old", params.OldTarget, "new", params.Target)
 	level.Info(log).Log()
 
@@ -383,9 +359,6 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Contex
 }
 
 func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.Context, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally bool) error {
-	// s.recvMu.Lock()
-	// defer s.recvMu.Unlock()
-
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
@@ -525,25 +498,46 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 				}
 			}
 
-			otHandler, err := s.backend.Create(ctx, log, params.RefIdentifier.Repo, params.State.GitBase)
-			if err != nil {
-				return err
-			}
-			if prevOT := refObj.ot; prevOT != nil {
-				if otHandler.Apply == nil && prevOT.Apply != nil {
-					// TODO(sqs): this is hacky, mainly for when our
-					// mock tests have set an Apply and we want to
-					// reuse it
-					otHandler.Apply = prevOT.Apply
-					level.Warn(log).Log("HACK-used-prev-ot-handler-Apply-func", "")
+			var otHandler *ws.Proxy
+			if head := repo.refdb.Lookup("HEAD"); head != nil && head.Target == params.RefIdentifier.Ref {
+				repo.mu.Lock()
+				workspace := repo.workspace
+				repo.mu.Unlock()
+				if applyLocally {
+					if err := workspace.Checkout(ctx, log, false, params.RefIdentifier.Ref, params.State.GitBase, params.State.GitBranch, params.State.History, nil); err != nil {
+						return err
+					}
+					applyLocally = false // just did apply locally, don't do it again below
 				}
+				otHandler = &ws.Proxy{
+					Apply: func(log *logpkg.Context, op ot.WorkspaceOp) error {
+						return workspace.Apply(ctx, log, op)
+					},
+				}
+			} else {
+				otHandler, err = s.backend.Create(ctx, log, params.RefIdentifier.Repo, params.State.GitBase)
+				if err != nil {
+					return err
+				}
+				if prevOT := refObj.ot; prevOT != nil {
+					if otHandler.Apply == nil && prevOT.Apply != nil {
+						// TODO(sqs): this is hacky, mainly for when our
+						// mock tests have set an Apply and we want to
+						// reuse it
+						otHandler.Apply = prevOT.Apply
+						level.Warn(log).Log("HACK-used-prev-ot-handler-Apply-func", "")
+					}
+				}
+			}
 
+			if prevOT := refObj.ot; prevOT != nil {
 				if otHandler.SendToUpstream != nil {
 					// This should never happen, but just be safe.
 					panic(fmt.Sprintf("new otHandler from backend %T already has SendToUpstream func", s.backend))
 				}
 				otHandler.SendToUpstream = prevOT.SendToUpstream
 			}
+
 			for _, op := range params.State.History {
 				if applyLocally && otHandler.Apply != nil {
 					if err := otHandler.Apply(log, op); err != nil {

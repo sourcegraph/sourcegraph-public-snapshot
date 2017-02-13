@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/zap/ot"
 )
 
+// TODO(sqs): make callers of these instead call the pathutil funcs
+
 func panicIfFileOrBufferPath(path string) {
 	if strings.HasPrefix(path, "#") || strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("unexpected file or buffer path %q", path))

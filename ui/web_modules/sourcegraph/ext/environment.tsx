@@ -69,6 +69,7 @@ class BrowserEnvironment implements IEnvironment {
 	}
 
 	asRelativePathInsideWorkspace(uri: vscode.Uri): string | null {
+		if (uri.scheme !== "git") { return null; }
 		// TODO(sqs): Check that uri is underneath the rootURI.
 		return URIUtils.repoParams(uri as URI).path;
 	}
@@ -76,13 +77,6 @@ class BrowserEnvironment implements IEnvironment {
 	asAbsoluteURI(fileName: string): vscode.Uri {
 		const { repo, rev } = URIUtils.repoParams(this.rootURI! as URI);
 		return URIUtils.pathInRepo(repo, rev, fileName);
-	}
-
-	textDocumentIsDirtyHack(doc: vscode.TextDocument): boolean {
-		// TODO(sqs): this doc.version>0 is a hack and is not correct
-		// in general - it can be version 5 but it was just
-		// saved. need to track dirty for real in the web app.
-		return doc.isDirty || doc.version > 1;
 	}
 
 	automaticallyApplyingFileSystemChanges: boolean = false;

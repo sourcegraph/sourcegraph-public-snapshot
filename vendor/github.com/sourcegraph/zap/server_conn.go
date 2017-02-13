@@ -232,7 +232,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		log = log.With("repo", params.Repo, "refspecs", params.Refspecs)
+		log = log.With("repo", params.Repo, "refspecs", fmt.Sprint(params.Refspecs))
 		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err
@@ -299,7 +299,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			branch := parts[1]
 			if repoConfig, ok := repo.config.Remotes[remote]; !ok {
 				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q (remotes: %+v)", params.Ref, remote, repo.config.Remotes)
-			} else if matchAnyRefspec(repoConfig.Refspecs, branch) {
+			} else if !matchAnyRefspec(repoConfig.Refspecs, branch) {
 				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but no remote %q refspecs %q match the branch name", params.Ref, remote, repoConfig.Refspecs)
 			}
 		}
