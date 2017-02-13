@@ -51,6 +51,12 @@ func serveRepoBadge(w http.ResponseWriter, r *http.Request) error {
 
 	v := url.Values{}
 	v.Set("logo", "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ny4wNzUgNzcuNyI+PHBhdGggZmlsbD0iI0ZGRiIgZD0iTTQ3LjMyMyA3Ny43Yy0zLjU5NCAwLTYuNzktMi4zOTYtNy43ODctNS45OWwtMTcuMTcyLTYxLjdjLS45OTgtNC4zOTMgMS41OTgtOC43ODYgNS45OS05Ljc4NCA0LjE5My0xIDguMzg3IDEuMzk3IDkuNTg0IDUuMzlsMTYuOTczIDYxLjdjMS4xOTggNC4zOTQtMS4zOTcgOC43ODYtNS41OSA5Ljk4NC0uNi4yLTEuMzk3LjQtMS45OTcuNHoiLz48cGF0aCBmaWxsPSIjRkZGIiBkPSJNMTcuMzcyIDcwLjcxYy00LjM5MyAwLTcuOTg3LTMuNTkzLTcuOTg3LTcuOTg1IDAtMS45OTcuOC0zLjk5NCAxLjk5Ny01LjM5Mkw1NC4xMTIgOS40MWMyLjk5NS0zLjM5MyA3Ljk4Ni0zLjU5MyAxMS4zOC0uNTk4czMuNTk1IDcuOTg3LjYgMTEuMzhsLTQyLjczIDQ3LjcyM2MtMS41OTcgMS43OTgtMy43OTQgMi43OTYtNS45OSAyLjc5NnoiLz48cGF0aCBmaWxsPSIjRkZGIiBkPSJNNjkuMDg3IDU2LjczNGMtLjc5OCAwLTEuNTk3LS4yLTIuNTk2LS40TDUuNTkgMzYuMzY4QzEuNCAzNC45Ny0uOTk3IDMwLjM3Ny40IDI2LjE4NGMxLjM5Ny00LjE5MyA1Ljk5LTYuNTkgMTAuMTgzLTUuMTlsNjAuOSAxOS45NjZjNC4xOTMgMS4zOTcgNi41OSA1Ljk5IDUuMTkgMTAuMTg0LS45OTYgMy4zOTQtMy45OSA1LjU5LTcuNTg2IDUuNTl6Ii8+PC9zdmc+")
+
+	// Allow users to pick the style of badge.
+	if val := r.URL.Query().Get("style"); val != "" {
+		v.Set("style", val)
+	}
+
 	u := &url.URL{
 		Scheme:   "https",
 		Host:     "img.shields.io",
