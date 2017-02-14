@@ -441,6 +441,8 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				referred_by_browser_ext?: string;
 				referred_by_sourcegraph_editor?: string;
 				language?: string;
+				utm_campaign?: string;
+				utm_source?: string;
 			};
 
 			if (location.query && location.query["utm_source"] === "integration" && location.query["type"]) {
@@ -466,6 +468,10 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					url: location.pathname,
 					referred_by_sourcegraph_editor: location.query["editor_type"],
 				};
+			} else if (location.query && (location.query["utm_campaign"] || location.query["utm_source"])) {
+				eventProps = Object.assign({}, { url: location.pathname },
+					location.query["utm_campaign"] ? { utm_campaign: location.query["utm_campaign"] } : {},
+					location.query["utm_source"] ? { utm_source: location.query["utm_source"] } : {});
 			} else {
 				eventProps = {
 					url: location.pathname,
