@@ -1,7 +1,7 @@
 # Development README
 
 The best way to become familiar with the Sourcegraph repository is by
-reading the code at https://sourcegraph.com/sourcegraph/sourcegraph.
+reading the code at https://sourcegraph.com/github.com/sourcegraph/sourcegraph.
 
 ## Environment
 
@@ -239,5 +239,7 @@ steps are required to run Sourcegraph in a Windows environment:
   to convert all symlinks into Windows symlinks and mark them as "not
   changed" (necessary to avoid issues related to running npm-based
   tasks).
+  
+  P.S.#cuddy was here
 
 Note that multiple unit tests currently fail on Windows.
