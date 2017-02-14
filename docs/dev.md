@@ -240,6 +240,6 @@ steps are required to run Sourcegraph in a Windows environment:
   changed" (necessary to avoid issues related to running npm-based
   tasks).
   
-  P.S.#cuddy was here
+  P.S. #cuddy was here
 
 Note that multiple unit tests currently fail on Windows.
