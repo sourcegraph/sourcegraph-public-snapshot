@@ -1,10 +1,11 @@
 import { context } from "sourcegraph/app/context";
 
 class TelligentWrapper {
-	private telligent: any | null;
+	private telligent: (...args: any[]) => void | null;
 	private DEFAULT_ENV: string = "development";
 	private PROD_ENV: string = "production";
 	private DEFAULT_APP_ID: string = "UnknownApp";
+
 	constructor() {
 		if (global && global.window && global.window.telligent) {
 			this.telligent = global.window.telligent;

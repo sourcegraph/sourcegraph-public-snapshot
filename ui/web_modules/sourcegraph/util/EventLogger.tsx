@@ -10,13 +10,13 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { googleAnalytics } from "sourcegraph/tracking/GoogleAnalyticsWrapper";
 import { hubSpot } from "sourcegraph/tracking/HubSpotWrapper";
 import { intercom } from "sourcegraph/tracking/IntercomWrapper";
+import { optimizely } from "sourcegraph/tracking/OptimizelyWrapper";
 import { telligent } from "sourcegraph/tracking/TelligentWrapper";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { experimentManager } from "sourcegraph/util/ExperimentManager";
 import { Features } from "sourcegraph/util/features";
 import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util/inventory";
-import * as optimizely from "sourcegraph/util/Optimizely";
 
 class EventLoggerClass {
 	_dispatcherToken: any;
@@ -104,9 +104,7 @@ class EventLoggerClass {
 			hubSpotAttributes["emails"] = emails ? emails.map(email => { return email.Email; }).join(",") : "";
 		}
 
-		if (optimizely.optimizelyApiService) {
-			optimizely.optimizelyApiService.setUserAttributes(optimizelyAttributes);
-		}
+		optimizely.setUserAttributes(optimizelyAttributes);
 		hubSpot.setHubSpotProperties(hubSpotAttributes);
 	}
 
@@ -117,9 +115,7 @@ class EventLoggerClass {
 		// seeing the previous user's Intercom messages.
 		intercom.shutdown();
 
-		if (optimizely.optimizelyApiService) {
-			optimizely.optimizelyApiService.logout();
-		}
+		optimizely.logout();
 	}
 
 	// Responsible for setting the login information for all event trackers
@@ -160,10 +156,7 @@ class EventLoggerClass {
 	}
 
 	_decorateEventProperties(platformProperties: any): any {
-		let optimizelyMetadata = {};
-		if (optimizely.optimizelyApiService) {
-			optimizelyMetadata = optimizely.optimizelyApiService.getOptimizelyMetadata();
-		}
+		const optimizelyMetadata = optimizely.getOptimizelyMetadata();
 		const addtlPlatformProperties = {
 			Platform: this.PLATFORM,
 			is_authed: context.user ? "true" : "false",
@@ -272,9 +265,7 @@ class EventLoggerClass {
 						orgNames.push(orgs.Login);
 						if (orgs.Login === "sourcegraph" || orgs.Login === "sourcegraphtest") {
 							telligent.setUserProperty("is_employee", true);
-							if (optimizely.optimizelyApiService) {
-								optimizely.optimizelyApiService.setUserAttributes({ "is_employee": true });
-							}
+							optimizely.setUserAttributes({ "is_employee": true });
 						}
 					}
 					hubSpot.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });

@@ -1,5 +1,5 @@
+import { optimizely } from "sourcegraph/tracking/OptimizelyWrapper";
 import { experimentEventNames } from "sourcegraph/util/constants/AnalyticsConstants";
-import * as optimizely from "sourcegraph/util/Optimizely";
 
 export class Variation {
 	public optimizelyId?: string;
@@ -33,10 +33,10 @@ export class Experiment {
 	}
 
 	private getCurrentVariation(): Variation | undefined {
-		if (!(optimizely.optimizelyApiService && this.optimizelyId)) {
+		if (!this.optimizelyId) {
 			return undefined;
 		}
-		const variationId = optimizely.optimizelyApiService.getVariationId(this.optimizelyId);
+		const variationId = optimizely.getVariationId(this.optimizelyId);
 		if (!variationId) {
 			return undefined;
 		}
@@ -55,9 +55,6 @@ export class Experiment {
 			console.error(`Variation ${variationName} not found in experiment ${this.name}.`);
 			return;
 		}
-		if (!optimizely.optimizelyApiService) {
-			return;
-		}
 		if (!this.optimizelyId) {
 			console.error(`cannot set variation, optimizely id missing from experiment ${this.name}: ${this.optimizelyId}`);
 			return;
@@ -66,7 +63,7 @@ export class Experiment {
 			console.error(`cannot set variation, optimizely id missing from variation ${variation.name}: ${variation.optimizelyId}`);
 			return;
 		}
-		optimizely.optimizelyApiService.setVariation(this.optimizelyId, variation.index);
+		optimizely.setVariation(this.optimizelyId, variation.index);
 	}
 
 	private logToConsole(): void {
@@ -98,9 +95,7 @@ export const liveExperiments = [homepageExperiment];
 class ExperimentManagerClass {
 
 	constructor(private experiments: Experiment[]) {
-		if (optimizely.optimizelyApiService) {
-			optimizely.optimizelyApiService.linkExperimentIds(this.experiments);
-		}
+		linkExperimentIds(this.experiments);
 	}
 
 	public getExperimentByName(experimentName: string): Experiment | undefined {
@@ -111,12 +106,35 @@ class ExperimentManagerClass {
 		if (!experimentEventNames.has(eventLabel)) {
 			return;
 		}
-		if (!optimizely.optimizelyApiService) {
-			return;
-		}
-		optimizely.optimizelyApiService.logEvent(eventLabel);
+		optimizely.logEvent(eventLabel);
 	}
 
 }
 
 export const experimentManager = new ExperimentManagerClass(liveExperiments);
+
+function linkExperimentIds(experiments: Experiment[]): void {
+	const experimentDataList = optimizely.getExperiments();
+	optimizely.getActiveExperimentIds().forEach((experimentId) => {
+		const optimizelyExp = experimentDataList[experimentId];
+		if (!optimizelyExp) {
+			console.error(`Experiment id ${experimentId} is active but not present in optimizely.get('data').`);
+			return;
+		}
+		const existingExperiment = experiments.find((el: Experiment) => el.name === optimizelyExp.name);
+		if (!existingExperiment) {
+			console.error(`An experiment ${optimizelyExp.name} is defined on Optimizely that does not exist in JavaScript.`);
+			return;
+		}
+		existingExperiment.optimizelyId = experimentId;
+		optimizelyExp.variations.forEach((optimizelyVariation) => {
+			const variation = existingExperiment.getVariationByName(optimizelyVariation.name);
+			if (!variation) {
+				console.error(`A variation ${optimizelyVariation.name} on experiment ${existingExperiment.name} is defined on Optimizely that does not exist in JavaScript.`);
+				return;
+			}
+			variation.optimizelyId = optimizelyVariation.id;
+		}
+		);
+	});
+}
