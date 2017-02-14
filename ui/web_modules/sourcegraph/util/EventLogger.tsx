@@ -10,6 +10,7 @@ import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { googleAnalytics } from "sourcegraph/tracking/GoogleAnalyticsWrapper";
 import { hubSpot } from "sourcegraph/tracking/HubSpotWrapper";
 import { intercom } from "sourcegraph/tracking/IntercomWrapper";
+import { telligent } from "sourcegraph/tracking/TelligentWrapper";
 import * as UserActions from "sourcegraph/user/UserActions";
 import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 import { experimentManager } from "sourcegraph/util/ExperimentManager";
@@ -18,8 +19,6 @@ import { defPathToLanguage, getLanguageExtensionForPath } from "sourcegraph/util
 import * as optimizely from "sourcegraph/util/Optimizely";
 
 class EventLoggerClass {
-	_telligent: any = null;
-
 	_dispatcherToken: any;
 
 	private CLOUD_TRACKING_APP_ID: string = "SourcegraphWeb";
@@ -35,32 +34,6 @@ class EventLoggerClass {
 
 	// init initializes Telligent and Intercom.
 	init(): void {
-		if (global.window) {
-			this._telligent = global.window.telligent;
-
-			let env = "development";
-			let appId = "UnknownApp";
-			if (context.version !== "dev" && context.trackingAppID) {
-				env = "production";
-				appId = context.trackingAppID;
-			}
-
-			this._telligent("newTracker", "sg", "sourcegraph-logging.telligentdata.com", {
-				appId: appId,
-				platform: "Web",
-				encodeBase64: false,
-				env: env,
-				configUseCookies: true,
-				useCookies: true,
-				metadata: {
-					gaCookies: true,
-					performanceTiming: true,
-					augurIdentityLite: true,
-					webPage: true,
-				},
-			});
-		}
-
 		this._updateUser();
 	}
 
@@ -87,7 +60,7 @@ class EventLoggerClass {
 
 		if (context.intercomHash) {
 			intercom.setIntercomProperty("user_hash", context.intercomHash);
-			this.setUserProperty("user_hash", context.intercomHash);
+			telligent.setUserProperty("user_hash", context.intercomHash);
 		}
 
 		intercom.boot(context.trackingAppID !== this.CLOUD_TRACKING_APP_ID, context.trackingAppID);
@@ -95,36 +68,36 @@ class EventLoggerClass {
 		if (user) {
 			if (user.Name) {
 				intercom.setIntercomProperty("name", user.Name);
-				this.setUserProperty("display_name", user.Name);
+				telligent.setUserProperty("display_name", user.Name);
 				hubSpotAttributes["fullname"] = user.Name;
 			}
 
 			if (user.RegisteredAt) {
-				this.setUserProperty("registered_at_timestamp", user.RegisteredAt);
-				this.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
+				telligent.setUserProperty("registered_at_timestamp", user.RegisteredAt);
+				telligent.setUserProperty("registered_at", new Date(user.RegisteredAt).toDateString());
 				intercom.setIntercomProperty("created_at", new Date(user.RegisteredAt).getTime() / 1000);
 				hubSpotAttributes["registered_at"] = new Date(user.RegisteredAt).toDateString();
 			}
 
 			if (user.Company) {
-				this.setUserProperty("company", user.Company);
+				telligent.setUserProperty("company", user.Company);
 				intercom.setIntercomProperty("company", user.Company);
 				hubSpotAttributes["company"] = user.Company;
 			}
 
 			if (user.Location) {
-				this.setUserProperty("location", user.Location);
+				telligent.setUserProperty("location", user.Location);
 				hubSpotAttributes["location"] = user.Location;
 			}
 
-			this.setUserProperty("is_private_code_user", context.hasPrivateGitHubToken() ? "true" : "false");
-			this.setUserProperty("is_github_organization_authed", context.hasOrganizationGitHubToken() ? "true" : "false");
+			telligent.setUserProperty("is_private_code_user", context.hasPrivateGitHubToken() ? "true" : "false");
+			telligent.setUserProperty("is_github_organization_authed", context.hasOrganizationGitHubToken() ? "true" : "false");
 			hubSpotAttributes["is_private_code_user"] = context.hasPrivateGitHubToken() ? "true" : "false";
 		}
 
 		if (primaryEmail) {
-			this.setUserProperty("email", primaryEmail);
-			this.setUserProperty("emails", emails);
+			telligent.setUserProperty("email", primaryEmail);
+			telligent.setUserProperty("emails", emails);
 			intercom.setIntercomProperty("email", primaryEmail);
 			optimizelyAttributes["email"] = primaryEmail;
 			hubSpotAttributes["email"] = primaryEmail;
@@ -152,11 +125,7 @@ class EventLoggerClass {
 	// Responsible for setting the login information for all event trackers
 	_setTrackerLoginInfo(loginInfo: string): void {
 		googleAnalytics.setTrackerLogin(loginInfo);
-
-		if (this._telligent) {
-			this._telligent("setUserId", loginInfo);
-		}
-
+		telligent.setUserId(loginInfo);
 		intercom.setIntercomProperty("business_user_id", loginInfo);
 	}
 
@@ -177,23 +146,16 @@ class EventLoggerClass {
 	}
 
 	updateTrackerWithIdentificationProps(): any {
-		if (!this._telligent || !context.hasChromeExtensionInstalled()) {
+		if (!telligent.isTelligentLoaded() || !context.hasChromeExtensionInstalled()) {
 			return null;
 		}
 
 		let idProps = { detail: { deviceId: this._getTelligentDuid(), userId: context.user && context.user.Login } };
 		if (googleAnalytics.gaClientID) {
-			this._telligent("addStaticMetadataObject", { deviceInfo: { GAClientId: googleAnalytics.gaClientID } });
+			telligent.addStaticMetadataObject({ deviceInfo: { GAClientId: googleAnalytics.gaClientID } });
 			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", Object.assign(idProps, { gaClientId: googleAnalytics.gaClientID }))), 20);
 		} else {
 			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", idProps)), 20);
-		}
-	}
-
-	// sets current user's properties
-	setUserProperty(property: string, value: any): void {
-		if (this._telligent) {
-			this._telligent("addStaticMetadata", property, value, "userInfo");
 		}
 	}
 
@@ -210,6 +172,10 @@ class EventLoggerClass {
 		return Object.assign({}, platformProperties, addtlPlatformProperties, optimizelyMetadata);
 	}
 
+	setUserProperty(property: string, value: string): void {
+		telligent.setUserProperty(property, value);
+	}
+
 	// Use logViewEvent as the default way to log view events for Telligent and GA
 	// location is the URL, page is the path.
 	logViewEvent(title: string, page: string, eventProperties: any): void {
@@ -219,9 +185,7 @@ class EventLoggerClass {
 
 		this._logToConsole(title, Object.assign({}, this._decorateEventProperties(eventProperties), { page_name: page, page_title: title }));
 
-		if (this._telligent) {
-			this._telligent("track", "view", Object.assign({}, this._decorateEventProperties(eventProperties), { page_name: page, page_title: title }));
-		}
+		telligent.track("view", Object.assign({}, this._decorateEventProperties(eventProperties), { page_name: page, page_title: title }));
 	}
 
 	// Default tracking call to all of our analytics servies.
@@ -236,9 +200,7 @@ class EventLoggerClass {
 		if (context.userAgentIsBot || !eventLabel) {
 			return;
 		}
-		if (this._telligent) {
-			this._telligent("track", eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
-		}
+		telligent.track(eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
 
 		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
 
@@ -265,10 +227,7 @@ class EventLoggerClass {
 		}
 
 		this._logToConsole(eventObject.action, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action, nonInteraction: true }));
-
-		if (this._telligent) {
-			this._telligent("track", eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action }));
-		}
+		telligent.track(eventObject.action, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventObject.label, eventCategory: eventObject.category, eventAction: eventObject.action }));
 		googleAnalytics.logEventCategoryComponents(eventObject.category, eventObject.action, eventObject.label, true);
 	}
 
@@ -294,8 +253,8 @@ class EventLoggerClass {
 							repos.push(` ${repo["Owner"]}/${repo["Name"]}`);
 						}
 
-						this.setUserProperty("authed_languages_github", this._dedupedArray(languages));
-						this.setUserProperty("num_repos_github", action.data.Repos.length);
+						telligent.setUserProperty("authed_languages_github", this._dedupedArray(languages));
+						telligent.setUserProperty("num_repos_github", action.data.Repos.length);
 						AnalyticsConstants.Events.RepositoryAuthedLanguagesGitHub_Fetched.logEvent({ "fetched_languages_github": this._dedupedArray(languages) });
 						AnalyticsConstants.Events.RepositoryAuthedReposGitHub_Fetched.logEvent({ "fetched_repo_names_github": this._dedupedArray(repoNames), "fetched_repo_owners_github": this._dedupedArray(repoOwners), "fetched_repos_github": this._dedupedArray(repos) });
 					}
@@ -312,7 +271,7 @@ class EventLoggerClass {
 					for (let orgs of action.data) {
 						orgNames.push(orgs.Login);
 						if (orgs.Login === "sourcegraph" || orgs.Login === "sourcegraphtest") {
-							this.setUserProperty("is_employee", true);
+							telligent.setUserProperty("is_employee", true);
 							if (optimizely.optimizelyApiService) {
 								optimizely.optimizelyApiService.setUserAttributes({ "is_employee": true });
 							}
@@ -320,7 +279,7 @@ class EventLoggerClass {
 					}
 					hubSpot.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
 					intercom.setIntercomProperty("authed_orgs_github", orgNames);
-					this.setUserProperty("authed_orgs_github", orgNames);
+					telligent.setUserProperty("authed_orgs_github", orgNames);
 					AnalyticsConstants.Events.AuthedOrgsGitHub_Fetched.logEvent({ "fetched_orgs_github": orgNames });
 				}
 				break;
@@ -417,7 +376,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				}
 
 				if (this.props.location.query["_githubAuthed"]) {
-					EventLogger.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
+					telligent.setUserProperty("github_authed", this.props.location.query["_githubAuthed"]);
 					if (eventName === "SignupCompleted") {
 						AnalyticsConstants.Events.Signup_Completed.logEvent(eventProperties);
 						if (context.user) {
@@ -431,7 +390,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 						AnalyticsConstants.Events.OAuth2FlowGitHub_Completed.logEvent(eventProperties);
 					}
 				} else if (this.props.location.query["_invited_by_user"]) {
-					EventLogger.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
+					telligent.setUserProperty("invited_by_user", this.props.location.query["_invited_by_user"]);
 					AnalyticsConstants.Events.OrgEmailInvite_Clicked.logEvent(eventProperties);
 				} else if (eventName === "RepoBadgeRedirected") {
 					AnalyticsConstants.Events.RepoBadge_Redirected.logEvent(eventProperties);
@@ -442,7 +401,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				}
 
 				if (this.props.location.query["_org_invite"]) {
-					EventLogger.setUserProperty("org_invite", this.props.location.query["_org_invite"]);
+					telligent.setUserProperty("org_invite", this.props.location.query["_org_invite"]);
 				}
 
 				// Won't take effect until we call replace below, but prevents this
