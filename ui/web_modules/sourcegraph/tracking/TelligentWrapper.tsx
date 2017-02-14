@@ -2,9 +2,9 @@ import { context } from "sourcegraph/app/context";
 
 class TelligentWrapper {
 	private telligent: any | null;
-	private DEFAULT_ENV: "development";
-	private PROD_ENV: "production";
-	private DEFAULT_APP_ID: "UnknownApp";
+	// private DEFAULT_ENV: "development";
+	// private PROD_ENV: "production";
+	// private DEFAULT_APP_ID: "UnknownApp";
 	constructor() {
 		if (global && global.window && global.window.telligent) {
 			this.telligent = global.window.telligent;
@@ -12,9 +12,9 @@ class TelligentWrapper {
 			return;
 		}
 		if (context.version !== "dev" && context.trackingAppID) {
-			this.initialize(context.trackingAppID, this.PROD_ENV);
+			this.initialize(context.trackingAppID, "production");
 		} else {
-			this.initialize(this.DEFAULT_APP_ID, this.DEFAULT_ENV);
+			this.initialize("UnknownApp", "development");
 		}
 	}
 
