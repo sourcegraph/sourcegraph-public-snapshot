@@ -32,9 +32,9 @@ import { prettifyRev } from "sourcegraph/workbench/utils";
 export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
 	const { repo, commitID, path } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
-	updateFileTree(resource);
 
 	const fileStat = await Services.get(IFileService).resolveFile(resource);
+	updateFileTree(resource);
 	if (fileStat.isDirectory) {
 		renderDirectoryContent();
 		return;
