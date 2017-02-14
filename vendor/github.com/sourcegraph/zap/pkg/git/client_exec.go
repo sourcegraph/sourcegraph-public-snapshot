@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/internal/pkg/backoff"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/diff"
@@ -92,7 +91,6 @@ func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
 		if err := fbuf.Remove(stripBufferPath(f)); err != nil {
 			return err
 		}
-		level.Info(log).Log("write-file", stripBufferPath(f), "data", string(data))
 		if err := fdisk.WriteFile(stripBufferPath(f), data, 0666); err != nil {
 			return err
 		}
