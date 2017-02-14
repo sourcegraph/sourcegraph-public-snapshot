@@ -29,9 +29,12 @@ export class FileService {
 		});
 	}
 
-	// Stubbed implementation to handle updating the configuration from the VSCode extension
 	existsFile(resource: URI): TPromise<boolean> {
-		return TPromise.as(false);
+		return retrieveFilesAndDirs(resource).then(({ root }) => {
+			const files: string[] = root.repository.commit.commit.tree.files.map(file => file.name);
+			const path = resource.fragment;
+			return Boolean(files.find(file => file === path));
+		});
 	}
 
 	// Stubbed implementation to handle updating the configuration from the VSCode extension
