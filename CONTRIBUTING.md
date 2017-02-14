@@ -25,9 +25,8 @@ Sourcegraph easier.
 
 ## Reporting bugs and creating issues
 
-You can report bugs on
-the
-[public Sourcegraph issue tracker](https://github.com/sourcegraph/sourcegraph.com/issues).
+To report bugs to Sourcegraph, you can
+[email support@sourcegraph.com](mailto:support@sourcegraph.com).
 
 Please include the following information in your bug reports, if
 possible:

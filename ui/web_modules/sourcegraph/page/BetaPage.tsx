@@ -33,7 +33,7 @@ export function BetaPage(props: BetaPageProps): JSX.Element {
 				<ul>
 					<li className={styles.p}>Fill out the form below to join. We'll be in touch when we have something ready for you.</li>
 					<li className={styles.p}>Please don't write publicly about unreleased features.</li>
-					<li className={styles.p}><a href="https://github.com/sourcegraph/sourcegraph.com/issues" target="_blank">Report bugs</a> that you encounter.</li>
+					<li className={styles.p}><a href="mailto:support@sourcegraph.com">Report bugs</a> that you encounter.</li>
 					<li className={styles.p}>Share feedback with us and help shape the future of Sourcegraph.</li>
 				</ul>
 				<br />
