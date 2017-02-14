@@ -17,12 +17,8 @@ import (
 )
 
 // NewHandler returns a new app handler that uses the provided app
-// router (or creates a new one if nil).
+// router.
 func NewHandler(r *router.Router) http.Handler {
-	if r == nil {
-		r = router.New(nil)
-	}
-
 	auth.InitSessionStore(conf.AppURL.Scheme == "https")
 
 	m := http.NewServeMux()

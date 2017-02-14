@@ -45,10 +45,8 @@ type Router struct{ mux.Router }
 // It is in a separate package from app so that other packages may use it to
 // generate URLs without resulting in Go import cycles (and so we can release
 // the router as open-source to support our client library).
-func New(base *mux.Router) *Router {
-	if base == nil {
-		base = mux.NewRouter()
-	}
+func New() *Router {
+	base := mux.NewRouter()
 
 	base.StrictSlash(true)
 
@@ -104,4 +102,4 @@ func (r *Router) URLTo(routeName string, params ...string) *url.URL {
 	return u
 }
 
-var Rel = New(nil)
+var Rel = New()

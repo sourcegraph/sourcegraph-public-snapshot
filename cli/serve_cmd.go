@@ -164,20 +164,8 @@ func Main() error {
 	}
 
 	sm := http.NewServeMux()
-	newRouter := func() *mux.Router {
-		router := mux.NewRouter()
-		// httpctx.Base will clear the context for us
-		router.KeepContext = true
-		return router
-	}
-	subRouter := func(r *mux.Route) *mux.Router {
-		router := r.Subrouter()
-		// httpctx.Base will clear the context for us
-		router.KeepContext = true
-		return router
-	}
-	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(subRouter(newRouter().PathPrefix("/.api/"))))))
-	sm.Handle("/", gziphandler.GzipHandler(handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New(newRouter())))))
+	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
+	sm.Handle("/", gziphandler.GzipHandler(handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New()))))
 	assets.Mount(sm)
 
 	if (certFile != "" || keyFile != "") && httpsAddr == "" {

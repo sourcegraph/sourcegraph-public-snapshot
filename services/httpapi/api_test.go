@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"github.com/gorilla/mux"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
@@ -12,6 +11,6 @@ func init() {
 }
 
 func newTest() *httptestutil.Client {
-	mux := NewHandler(router.New(mux.NewRouter()))
+	mux := NewHandler(router.New(nil))
 	return httptestutil.NewTest(mux)
 }
