@@ -311,7 +311,7 @@ function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Re
 const globalRefLangs = new Set(["go", "java"]);
 
 export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
-	// Only fetch global refs for Go.
+	// Only fetch global refs for certain languages.
 	if (!globalRefLangs.has(model.getModeId())) {
 		return null;
 	}
