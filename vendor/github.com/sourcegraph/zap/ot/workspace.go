@@ -582,6 +582,18 @@ func stripFileOrBufferPath(path string) string {
 	return path[1:]
 }
 
+// ComposeAllWorkspaceOps is like ComposeWorkspaceOps but composes any
+// number of ops, not just 2.
+func ComposeAllWorkspaceOps(ops []WorkspaceOp) (composed WorkspaceOp, err error) {
+	for _, other := range ops {
+		composed, err = ComposeWorkspaceOps(composed, other)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // ComposeWorkspaceOps returns an operation equivalent to a followed
 // by b. The operations a and b must be consecutive operations.
 func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {

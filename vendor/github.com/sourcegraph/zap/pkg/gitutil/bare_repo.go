@@ -70,9 +70,6 @@ func (r BareRepo) ObjectNameSHA(arg string) (string, error) {
 		return "", err
 	}
 	sha, err := r.Exec(nil, "rev-parse", "--verify", arg)
-	if err != nil && strings.Contains(arg, "4b825") {
-		panic("X")
-	}
 	return string(bytes.TrimSpace(sha)), err
 }
 

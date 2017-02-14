@@ -538,14 +538,24 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 				otHandler.SendToUpstream = prevOT.SendToUpstream
 			}
 
-			for _, op := range params.State.History {
+			if len(params.State.History) > 0 {
 				if applyLocally && otHandler.Apply != nil {
-					if err := otHandler.Apply(log, op); err != nil {
+					// Compose them into 1 so we perform fewer Git
+					// operations. The outcome is the same as applying
+					// them serially.
+					composed, err := ot.ComposeAllWorkspaceOps(params.State.History)
+					if err != nil {
+						return err
+					}
+					if err := otHandler.Apply(log, composed); err != nil {
 						return err
 					}
 				}
-				if err := otHandler.Record(op); err != nil {
-					return err
+
+				for _, op := range params.State.History {
+					if err := otHandler.Record(op); err != nil {
+						return err
+					}
 				}
 			}
 

@@ -12,29 +12,28 @@ import { IEnvironment } from "vscode-zap/out/src/environment";
 // and has access to browser APIs.
 class BrowserEnvironment implements IEnvironment {
 	private docAtLastSave: Map<string, string> = new Map<string, string>();
+	private docAtBase: Map<string, string> = new Map<string, string>(); // simulated doc at base commit (before ops)
 	private _zapRef: string;
 
 	constructor() {
 		// Track the initial contents of documents so we can revert.
 		vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-			this.updateDocAtLastSave(doc);
+			this.updateDoc(this.docAtBase, doc);
+			this.updateDoc(this.docAtLastSave, doc);
 		});
 		vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
-			this.updateDocAtLastSave(doc);
+			this.updateDoc(this.docAtLastSave, doc);
 		});
 
 		this.zapRef = self["__tmpZapRef"];
 	}
 
-	private updateDocAtLastSave(doc: vscode.TextDocument): void {
+	private updateDoc(map: Map<string, string>, doc: vscode.TextDocument): void {
 		const key = doc.uri.toString();
-		if (this.docAtLastSave.has(key)) {
-			throw new Error(`expected to see document ${key} only once`);
-		}
 		if (doc.isDirty) {
 			throw new Error(`expected to see document ${key} before it is dirty`);
 		}
-		this.docAtLastSave.set(key, doc.getText());
+		map.set(key, doc.getText());
 	}
 
 	get rootURI(): vscode.Uri | undefined {
@@ -47,17 +46,6 @@ class BrowserEnvironment implements IEnvironment {
 
 	private zapRefChangeEmitter: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
 	get onDidChangeZapRef(): vscode.Event<string> { return this.zapRefChangeEmitter.event; } // never fires TODO(sqs)
-	// get zapRef(): string {
-	// 	// TODO(sqs): hackily get the passed-through zap ref
-	// 	return self["__tmpZapRef"] || "master@sqs";
-
-	// 	// // TODO(sqs): this will get the absolute commit ID, not the branch
-	// 	// const rev = URIUtils.repoParams(this.rootURI as URI).rev;
-	// 	// if (!rev) {
-	// 	// 	throw new Error(`no rev in rootURI: ${this.rootURI!.toString()}`);
-	// 	// }
-	// 	// return rev;
-	// }
 
 	get zapRef(): string {
 		return this._zapRef;
@@ -89,15 +77,8 @@ class BrowserEnvironment implements IEnvironment {
 		return text;
 	}
 
-	revertTextDocument2(doc: vscode.TextDocument): Thenable<any> {
-		// HACK(sqs): see the comment in the lone call site of
-		// revertTextDocument2 in zap. this does not happen in the
-		// web, so we can noop here.
-		return Promise.resolve(null);
-	}
-
 	revertTextDocument(doc: vscode.TextDocument): Thenable<any> {
-		const initialContents = this.docAtLastSave.get(doc.uri.toString());
+		const initialContents = this.docAtBase.get(doc.uri.toString());
 		if (initialContents === undefined) {
 			throw new Error(`revertTextDocument: unknown initial contents for ${doc.uri.toString()}`);
 		}

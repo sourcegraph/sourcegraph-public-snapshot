@@ -67,7 +67,9 @@ func (s ServerBackend) Create(ctx context.Context, log *logpkg.Context, repo, ba
 				return err
 			}
 			fbuf = *fbufCopy
-			snapshot = newGitSnapshot
+			if newGitSnapshot != "" {
+				snapshot = newGitSnapshot
+			}
 			// fmt.Fprintf(os.Stderr, "# server workspace snapshot: %s → %s\n", prevSnapshot, newGitSnapshot)
 
 			return nil
