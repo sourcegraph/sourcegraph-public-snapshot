@@ -14,16 +14,9 @@ import (
 // WorkspaceOp represents an operation performed on a workspace.
 //
 // Each field describes a different type of operation. The struct
-// field ordering (first Save, then Copy, and so on) is the order in
+// field ordering (first Copy, then Rename, and so on) is the order in
 // which the types of operations are applied.
 type WorkspaceOp struct {
-	// Save is a list of paths of files that have been saved. Saving
-	// in this context represents transferring the contents of a
-	// path's buffer in an editor to its persisted file on-disk. If a
-	// file already exists at a given path it will be overwritten.
-	// Only buffer paths can be used in a save op.
-	Save []string `json:"save,omitempty"`
-
 	// Copy is a map of destination to source file paths of copied
 	// files. After the copy, the destination file contains the
 	// contents of the source file prior to this op being performed
@@ -33,6 +26,27 @@ type WorkspaceOp struct {
 	// Because a single source file can be copied to multiple
 	// destination paths, but not vice versa, the map keys are the
 	// destination paths (unlike Rename).
+	//
+	// NOTES
+	//
+	// Copy is equivalent to a rename-create-edit, but we model it
+	// separately for better UX. Consider the following case: Alice
+	// and Bob are both editing a file F. Alice copies the file right
+	// after Bob makes some edits locally but before Bob's edits are
+	// synced to the server. If Alice performs a rename-create-edit
+	// (where the edit restores the original file contents to the
+	// source file), then Bob's edits would flow into the new file but
+	// not the existing file. This is bad because the behavior we want
+	// is for edits to flow into both the old and new names of the
+	// file.
+	//
+	// This might seem like an edge case (who really copies files?),
+	// but a copy from a file system path to a special buffer path is
+	// how we've modeled unsaved files in your editor. So, the
+	// scenario described above is extremely common and modeling it as
+	// a rename-create-edit would cause a lot of accidentally
+	// clobbered edits when someone saves a file while someone else is
+	// editing it.
 	Copy map[string]string `json:"copy,omitempty"`
 
 	// Rename is a map of source to destination file paths of renamed
@@ -43,6 +57,13 @@ type WorkspaceOp struct {
 	// performed (i.e., without taking edits of the source file into
 	// account).
 	Rename map[string]string `json:"rename,omitempty"`
+
+	// Save is a list of paths of files that have been saved. Saving
+	// in this context represents transferring the contents of a
+	// path's buffer in an editor to its persisted file on-disk. If a
+	// file already exists at a given path it will be overwritten.
+	// Only buffer paths can be used in a save op.
+	Save []string `json:"save,omitempty"`
 
 	// Create is a list of paths of created files, sorted
 	// alphabetically.

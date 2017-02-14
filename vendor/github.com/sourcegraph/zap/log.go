@@ -3,6 +3,7 @@ package zap
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/go-kit/kit/log"
 	level "github.com/go-kit/kit/log/experimental_level"
@@ -58,7 +59,9 @@ func (s *Server) baseLogger() *log.Context {
 	logger0 := term.NewLogger(w, log.NewLogfmtLogger, colorFn)
 	logger0 = level.New(logger0, level.Allowed(logAllowLevel))
 	logger1 := log.NewContext(logger0)
-	// logger1 = logger1.With("ts", log.DefaultTimestampUTC)
+	if v, _ := strconv.ParseBool(os.Getenv("LOGTIMESTAMP")); v {
+		logger1 = logger1.With("ts", log.DefaultTimestampUTC)
+	}
 	if s.ID != "" {
 		logger1 = logger1.With("server", s.ID)
 	}

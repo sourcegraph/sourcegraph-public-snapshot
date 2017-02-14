@@ -548,9 +548,9 @@ var composeTests = map[string]struct {
 		commutative: true,
 	},
 	"truncate different files": {
-		a:           WorkspaceOp{Truncate: []string{"a"}},
-		b:           WorkspaceOp{Truncate: []string{"b"}},
-		want:        WorkspaceOp{Truncate: []string{"a", "b"}},
+		a:           WorkspaceOp{Truncate: []string{"/a"}},
+		b:           WorkspaceOp{Truncate: []string{"/b"}},
+		want:        WorkspaceOp{Truncate: []string{"/a", "/b"}},
 		commutative: true,
 	},
 	"truncate truncated file": {

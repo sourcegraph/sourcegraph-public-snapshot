@@ -4,11 +4,17 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 )
+
+// MaxFileSize is the maximum file size of files to include when
+// creating commits or diffs. If a file is larger than this, it is
+// omitted.
+const MaxFileSize = 500 * 1024
 
 // Worktree refers to a local directory that is the root of a git
 // worktree.
@@ -78,22 +84,26 @@ func (w Worktree) ListUntrackedFiles() ([]*ChangedFile, error) {
 		return nil, err
 	}
 	paths := splitNulls(out)
-	changes := make([]*ChangedFile, len(paths))
-	for i, p := range paths {
+	changes := make([]*ChangedFile, 0, len(paths))
+	for _, p := range paths {
 		fi, err := os.Stat(filepath.Join(w.WorktreeDir(), p))
 		if err != nil {
 			return nil, err
+		}
+		if fi.Size() > MaxFileSize {
+			log.Printf("skipping large file (%d bytes): %s", fi.Size(), p)
+			continue
 		}
 		mode, err := modeForOSFileMode(fi.Mode())
 		if err != nil {
 			return nil, fmt.Errorf("file %q: %s", p, err)
 		}
 
-		changes[i] = &ChangedFile{
+		changes = append(changes, &ChangedFile{
 			DstMode: mode,
 			Status:  "A",
 			SrcPath: p,
-		}
+		})
 	}
 	return changes, nil
 }
