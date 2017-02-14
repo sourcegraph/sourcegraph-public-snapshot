@@ -23,7 +23,7 @@ import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
-import { GoToDefinitionAction } from "sourcegraph/workbench/info/action";
+import { SidebarActionID } from "sourcegraph/workbench/info/action";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
@@ -114,7 +114,7 @@ function updateEditorAfterURLChange(sel: IRange | null): void {
 	}
 	editor.setSelection(sel);
 	editor.revealRangeInCenter(sel);
-	editor.getAction(GoToDefinitionAction.ID).run();
+	editor.getAction(SidebarActionID).run();
 }
 
 /**

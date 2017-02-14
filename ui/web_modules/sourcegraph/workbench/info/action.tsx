@@ -2,14 +2,12 @@ import { Subscription } from "rxjs";
 
 import { FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
-import { IDisposable } from "vs/base/common/lifecycle";
-import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import * as editorCommon from "vs/editor/common/editorCommon";
-import { IEditorContribution, IModel } from "vs/editor/common/editorCommon";
-import { EditorAction, IActionOptions, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
+import { IModel } from "vs/editor/common/editorCommon";
+import { EditorAction, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
 import { CommonEditorRegistry } from "vs/editor/common/editorCommonExtensions";
-import { PeekContext, getOuterEditor } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
+import { PeekContext } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
 import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
@@ -19,8 +17,6 @@ import { normalisePosition } from "sourcegraph/editor/contrib";
 import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
-
-import ModeContextKeys = editorCommon.ModeContextKeys;
 
 interface Props {
 	editorModel: IModel;
@@ -32,43 +28,25 @@ interface Props {
 	};
 };
 
-const OpenInfoPanelID = "editor.contrib.openInfoPanel";
+export const SidebarActionID = "editor.action.openSidePanel";
 
-@editorContribution
-export class ReferenceAction implements IEditorContribution {
-	private toDispose: IDisposable[] = [];
-
-	public getId(): string {
-		return OpenInfoPanelID;
-	}
-
-	public dispose(): void {
-		this.toDispose.forEach(disposable => disposable.dispose());
-	}
-
-}
-
-export class DefinitionActionConfig {
-	constructor(
-		public sideBarID: string = "",
-	) {
-		//
-	}
-}
-
+@editorAction
 export class DefinitionAction extends EditorAction {
 
-	private _configuration: DefinitionActionConfig;
 	private globalFetchSubscription?: Promise<Subscription | undefined>;
+	currentID: string = "";
 
-	constructor(configuration: DefinitionActionConfig, opts: IActionOptions) {
-		super(opts);
-		this._configuration = configuration;
+	constructor() {
+		super({
+			id: SidebarActionID,
+			label: "Open Side Panel",
+			alias: "Open Side Panel",
+			precondition: editorCommon.ModeContextKeys.hasDefinitionProvider,
+		});
 	}
 
 	public run(accessor: ServicesAccessor, editor: editorCommon.ICommonCodeEditor): void {
 		const editorService = accessor.get(IEditorService);
-		const outerEditor = getOuterEditor(accessor, {});
 
 		editor.onDidChangeModel(event => {
 			let oldModel = event.oldModelUrl;
@@ -79,23 +57,23 @@ export class DefinitionAction extends EditorAction {
 			}
 		});
 
-		this.onResult(editorService, editor, outerEditor);
+		this.onResult(editorService, editor);
 	}
 
 	async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
-		const id = this._configuration.sideBarID;
+		const id = this.currentID;
 		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
 		const def: DefinitionData | null = await provideDefinition(props.editorModel, props.lspParams.position).then(defData => {
 			if (!defData || (!defData.docString && !defData.funcName)) {
 				return null;
 			}
-			this.prepareInfoStore(true, this._configuration.sideBarID, fileEventProps);
+			this.prepareInfoStore(true, this.currentID, fileEventProps);
 			this.dispatchInfo(id, defData, fileEventProps);
 			return defData;
 		});
 
 		const localRefs = await provideReferences(props.editorModel, props.lspParams.position);
-		if (this._configuration.sideBarID !== id) {
+		if (this.currentID !== id) {
 			return;
 		}
 
@@ -108,13 +86,13 @@ export class DefinitionAction extends EditorAction {
 
 		const localRefsWithCommitInfo = await provideReferencesCommitInfo(localRefs);
 		refModel = new ReferencesModel(localRefsWithCommitInfo, props.editorModel.uri);
-		if (this._configuration.sideBarID !== id) {
+		if (this.currentID !== id) {
 			return;
 		}
 		this.dispatchInfo(id, def, fileEventProps, refModel);
 
 		const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
-		if (!depRefs || this._configuration.sideBarID !== id) {
+		if (!depRefs || this.currentID !== id) {
 			this.dispatchInfo(id, def, fileEventProps, refModel, true);
 			return;
 		}
@@ -135,14 +113,14 @@ export class DefinitionAction extends EditorAction {
 	}
 
 	private dispatchInfo(id: string, defData: DefinitionData | null, fileEventProps: FileEventProps, refModel?: ReferencesModel | null, loadingComplete?: boolean): void {
-		if (id === this._configuration.sideBarID) {
+		if (id === this.currentID) {
 			infoStore.dispatch({ defData, refModel, loadingComplete, id, fileEventProps });
 		} else if (this.globalFetchSubscription) {
 			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
 	}
 
-	private onResult(editorService: IEditorService, editor: editorCommon.ICommonCodeEditor, outerEditor: editorCommon.ICommonCodeEditor): void {
+	private onResult(editorService: IEditorService, editor: editorCommon.ICommonCodeEditor): void {
 		const model = editor.getModel();
 		const eventProps = URIUtils.repoParams(model.uri);
 		const position = normalisePosition(model, editor.getPosition());
@@ -151,7 +129,7 @@ export class DefinitionAction extends EditorAction {
 			return;
 		}
 
-		this._configuration.sideBarID = model.uri.toString() + position.lineNumber + ":" + position.column;
+		this.currentID = model.uri.toString() + position.lineNumber + ":" + position.column;
 
 		if (editor instanceof EmbeddedCodeEditorWidget) {
 			const range = {
@@ -160,7 +138,7 @@ export class DefinitionAction extends EditorAction {
 				endLineNumber: position.lineNumber,
 				endColumn: word.endColumn,
 			};
-			this.prepareInfoStore(true, this._configuration.sideBarID, eventProps);
+			this.prepareInfoStore(true, this.currentID, eventProps);
 			editorService.openEditor({
 				resource: model.uri,
 				options: {
@@ -174,7 +152,7 @@ export class DefinitionAction extends EditorAction {
 			return;
 		}
 
-		if (ContextKeyExpr.and(ModeContextKeys.hasDefinitionProvider, PeekContext.notInPeekEditor)) {
+		if (ContextKeyExpr.and(editorCommon.ModeContextKeys.hasDefinitionProvider, PeekContext.notInPeekEditor)) {
 			this.openInSidebar(editor, position);
 		}
 	}
@@ -221,21 +199,6 @@ export class DefinitionAction extends EditorAction {
 		return token.type.includes("identifier");
 	}
 
-}
-
-@editorAction
-export class GoToDefinitionAction extends DefinitionAction {
-
-	public static ID: string = "editor.action.openSidePanel";
-
-	constructor() {
-		super(new DefinitionActionConfig(), {
-			id: GoToDefinitionAction.ID,
-			label: "Open Side Panel",
-			alias: "Open Side Panel",
-			precondition: ModeContextKeys.hasDefinitionProvider,
-		});
-	}
 }
 
 function closeActiveReferenceSearch(): void {
