@@ -308,9 +308,11 @@ function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Re
 	}).then(resp => (!resp || !resp.result) ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
 }
 
+const globalRefLangs = new Set(["go", "java"]);
+
 export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
 	// Only fetch global refs for Go.
-	if (model.getModeId() !== "go") {
+	if (!globalRefLangs.has(model.getModeId())) {
 		return null;
 	}
 
