@@ -22,6 +22,7 @@ type key int
 
 const (
 	routeNameKey key = iota
+	userKey      key = iota
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
@@ -69,6 +70,9 @@ func Middleware(next http.Handler) http.Handler {
 		routeName := "unknown"
 		ctx = context.WithValue(ctx, routeNameKey, &routeName)
 
+		user := ""
+		ctx = context.WithValue(ctx, userKey, &user)
+
 		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
 		next.ServeHTTP(rwIntercept, r.WithContext(ctx))
 
@@ -94,7 +98,17 @@ func Middleware(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
-		log15.Debug("TRACE HTTP", "method", r.Method, "URL", r.URL.String(), "routename", routeName, "trace", traceutil.SpanURL(span), "code", code, "X-Forwarded-For", r.Header.Get("X-Forwarded-For"), "UserAgent", r.UserAgent(), "duration", duration)
+		log15.Debug("TRACE HTTP",
+			"method", r.Method,
+			"url", r.URL.String(),
+			"routename", routeName,
+			"trace", traceutil.SpanURL(span),
+			"userAgent", r.UserAgent(),
+			"user", user,
+			"xForwardedFor", r.Header.Get("X-Forwarded-For"),
+			"code", code,
+			"duration", duration,
+		)
 	})
 }
 
@@ -107,6 +121,12 @@ func TraceRoute(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(rw, r)
 	})
+}
+
+func TraceUser(ctx context.Context, user string) {
+	if p, ok := ctx.Value(userKey).(*string); ok {
+		*p = user
+	}
 }
 
 // TraceRouteFallback is TraceRoute, except if a routename has not been set it

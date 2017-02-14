@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 )
 
 // Actor represents an agent that accesses resources. It can represent
@@ -86,6 +87,9 @@ func ActorFromContext(ctx context.Context) *Actor {
 }
 
 func WithActor(ctx context.Context, a *Actor) context.Context {
+	if a != nil && a.Login != "" {
+		httptrace.TraceUser(ctx, a.Login)
+	}
 	return context.WithValue(ctx, actorKey, a)
 }
 
