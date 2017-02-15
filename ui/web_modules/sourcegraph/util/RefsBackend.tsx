@@ -342,7 +342,7 @@ export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Posi
 		return null;
 	}
 	let object = JSON.parse(data.root.repository.commit.commit.file.dependencyReferences.data);
-	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 1) {
+	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 0) {
 		return null;
 	}
 	let repos = values(object.RepoData);
