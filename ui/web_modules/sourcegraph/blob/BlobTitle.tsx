@@ -53,7 +53,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 			}}>
 				{!isRoot &&
 					[
-						<div key="left">
+						<FlexContainer key="left" style={{ overflow: "hidden" }}>
 							<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>
 								{basename(path)}
 							</Heading>
@@ -63,12 +63,17 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 								rev={rev}
 								linkSx={Object.assign({ color: colors.blueGrayL1() }, typography.size[7])}
 								linkHoverSx={{ color: `${colors.blueGrayL3()} !important` }}
-								style={{ color: colors.blueGrayL1(), display: "inline-block", marginBottom: 0, paddingLeft: whitespace[2] }} />
-						</div>,
-						<div key="right">
+								style={{
+									color: colors.blueGrayL1(),
+									overflow: "hidden",
+									paddingLeft: whitespace[2],
+									paddingRight: whitespace[2],
+									paddingTop: 2,
+								}} />
+						</FlexContainer>,
+						<div key="right" style={{ flex: "0 0 auto" }}>
 							<div style={Object.assign({
 								color: "white",
-								flex: "1 1",
 								textAlign: "right",
 							}, typography.size[7])}>
 
