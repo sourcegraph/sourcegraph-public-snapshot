@@ -23,7 +23,7 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	context: { router: Router };
 
-	_onKeydown(ev: KeyboardEvent): void {
+	_onKeydown = (ev: KeyboardEvent): void => {
 		// Don't trigger if there's a modifier key or if the cursor is focused
 		// in an input field.
 		const el = ev.target as HTMLElement;
@@ -44,7 +44,7 @@ export class RepoMain extends React.Component<Props, {}> {
 		return (
 			<div className={styles.outer_container}>
 				{this.props.children}
-				<EventListener target={global.document.body} event="keydown" callback={this._onKeydown} />
+				<EventListener target={global.document} event="keydown" callback={this._onKeydown} />
 			</div>
 		);
 	}
