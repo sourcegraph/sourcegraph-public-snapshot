@@ -2,12 +2,13 @@ import { Subscription } from "rxjs";
 
 import { FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
+import { isMacintosh } from "vs/base/common/platform";
+import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
+import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
-import * as editorCommon from "vs/editor/common/editorCommon";
+import { IPosition } from "vs/editor/common/editorCommon";
 import { IModel } from "vs/editor/common/editorCommon";
-import { EditorAction, ServicesAccessor, editorAction } from "vs/editor/common/editorCommonExtensions";
 import { CommonEditorRegistry } from "vs/editor/common/editorCommonExtensions";
-import { PeekContext } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
 import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
@@ -17,6 +18,8 @@ import { normalisePosition } from "sourcegraph/editor/contrib";
 import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
+import { Services } from "sourcegraph/workbench/services";
+import { Disposables } from "sourcegraph/workbench/utils";
 
 interface Props {
 	editorModel: IModel;
@@ -28,39 +31,41 @@ interface Props {
 	};
 };
 
-export const SidebarActionID = "editor.action.openSidePanel";
+export const SidebarContribID = "sg.contrib.openSidePanel";
 
-@editorAction
-export class DefinitionAction extends EditorAction {
+@editorContribution
+export class SidebarContribution extends Disposables {
 
 	private globalFetchSubscription?: Promise<Subscription | undefined>;
 	currentID: string = "";
 
-	constructor() {
-		super({
-			id: SidebarActionID,
-			label: "Open Side Panel",
-			alias: "Open Side Panel",
-			precondition: editorCommon.ModeContextKeys.hasDefinitionProvider,
-		});
-	}
+	constructor(
+		private editor: ICodeEditor,
+	) {
+		super();
 
-	public run(accessor: ServicesAccessor, editor: editorCommon.ICommonCodeEditor): void {
-		const editorService = accessor.get(IEditorService);
+		if (editor instanceof EmbeddedCodeEditorWidget) {
+			this.add(this.editor.onMouseUp(this.peekViewMouseUp));
+			return;
+		}
+
+		this.add(this.editor.onMouseUp(this.mouseUp));
 
 		editor.onDidChangeModel(event => {
 			let oldModel = event.oldModelUrl;
 			let newModel = event.newModelUrl;
 			if (!oldModel || (newModel && oldModel.toString() !== newModel.toString())) {
-				const eventProps = URIUtils.repoParams(newModel);
-				this.prepareInfoStore(false, "", eventProps);
+				const fileEventProps = URIUtils.repoParams(newModel);
+				this.prepareInfoStore(false, "", fileEventProps);
 			}
 		});
-
-		this.onResult(editorService, editor);
 	}
 
-	async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
+	getId(): string {
+		return SidebarContribID;
+	}
+
+	private async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
 		const id = this.currentID;
 		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
 		const def: DefinitionData | null = await provideDefinition(props.editorModel, props.lspParams.position).then(defData => {
@@ -120,46 +125,54 @@ export class DefinitionAction extends EditorAction {
 		}
 	}
 
-	private onResult(editorService: IEditorService, editor: editorCommon.ICommonCodeEditor): void {
-		const model = editor.getModel();
-		const eventProps = URIUtils.repoParams(model.uri);
-		const position = normalisePosition(model, editor.getPosition());
-		const word = model.getWordAtPosition(position);
-		if (!word) {
+	private shouldTrigger(e: IEditorMouseEvent): boolean {
+		if (e.event.ctrlKey) {
+			return false;
+		}
+		if (e.event.metaKey && isMacintosh) {
+			return false;
+		}
+		const sel = this.editor.getSelection();
+		if (!sel.isEmpty()) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * When we click on a token in the peek view, we should close the peek
+	 * view, open that file in the main view, and open the side panel for that
+	 * token.
+	 */
+	private peekViewMouseUp = (e: IEditorMouseEvent): void => {
+		if (!this.shouldTrigger(e)) {
 			return;
 		}
-
-		this.currentID = model.uri.toString() + position.lineNumber + ":" + position.column;
-
-		if (editor instanceof EmbeddedCodeEditorWidget) {
-			const range = {
-				startLineNumber: position.lineNumber,
-				startColumn: word.startColumn,
-				endLineNumber: position.lineNumber,
-				endColumn: word.endColumn,
-			};
-			this.prepareInfoStore(true, this.currentID, eventProps);
-			editorService.openEditor({
-				resource: model.uri,
-				options: {
-					selection: range,
-					revealIfVisible: true,
-				}
-			}, true).then(() => {
-				this.openInSidebar(editor, position);
-			});
-
-			return;
-		}
-
-		if (ContextKeyExpr.and(editorCommon.ModeContextKeys.hasDefinitionProvider, PeekContext.notInPeekEditor)) {
-			this.openInSidebar(editor, position);
+		const editorService = Services.get(IEditorService) as IEditorService;
+		const model = this.editor.getModel();
+		const pos = normalisePosition(model, this.editor.getPosition());
+		const selection = this.editor.getSelection();
+		if (this.isIdentifier(model, pos)) {
+			editorService.openEditor({ resource: model.uri, options: { selection } });
 		}
 	}
 
-	private openInSidebar(editor: editorCommon.ICommonCodeEditor, pos: editorCommon.IPosition): void {
+	private mouseUp = (e: IEditorMouseEvent): void => {
+		if (!this.shouldTrigger(e)) {
+			return;
+		}
+		this.openInSidebar();
+	}
+
+	public openInSidebar = (): void => {
+		const model = this.editor.getModel();
+		const pos = normalisePosition(model, this.editor.getPosition());
+		this.currentID = model.uri.toString() + pos.lineNumber + ":" + pos.column;
+
+		this.highlightWord(pos);
+
 		this.globalFetchSubscription = this.renderSidePanelForData({
-			editorModel: editor.getModel(),
+			editorModel: model,
 			lspParams: {
 				position: {
 					line: pos.lineNumber - 1,
@@ -167,17 +180,20 @@ export class DefinitionAction extends EditorAction {
 				},
 			},
 		});
-
-		this.highlightWord(editor, pos);
 	}
 
-	private highlightWord(editor: editorCommon.ICommonCodeEditor, position: editorCommon.IPosition): void {
-		const model = editor.getModel();
+	private highlightWord(position: IPosition): void {
+		const model = this.editor.getModel();
 		if (!this.isIdentifier(model, position)) {
 			return;
 		}
+
 		const word = model.getWordAtPosition(position);
-		editor.setSelection({
+		if (!word) {
+			return;
+		}
+
+		this.editor.setSelection({
 			startLineNumber: position.lineNumber,
 			startColumn: word.startColumn,
 			endLineNumber: position.lineNumber,
@@ -185,7 +201,7 @@ export class DefinitionAction extends EditorAction {
 		});
 	}
 
-	private isIdentifier(model: IModel, pos: editorCommon.IPosition): boolean {
+	private isIdentifier(model: IModel, pos: IPosition): boolean {
 		const line = model.getLineTokens(pos.lineNumber);
 		const tokens = line.sliceAndInflate(pos.column, pos.column, 0);
 		if (tokens.length !== 1) {

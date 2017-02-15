@@ -21,7 +21,7 @@ import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosit
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
 import { renderDirectoryContent, renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
-import { SidebarActionID } from "sourcegraph/workbench/info/action";
+import { SidebarContribID, SidebarContribution } from "sourcegraph/workbench/info/contrib";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
@@ -75,7 +75,8 @@ function updateEditorAfterURLChange(sel: IRange | null): void {
 	}
 	editor.setSelection(sel);
 	editor.revealRangeInCenter(sel);
-	editor.getAction(SidebarActionID).run();
+	const sidebar = editor.getContribution(SidebarContribID) as SidebarContribution;
+	sidebar.openInSidebar();
 }
 
 /**

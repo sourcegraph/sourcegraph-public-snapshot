@@ -2,9 +2,8 @@ import "sourcegraph/feedback/feedback.contribution";
 
 import "sourcegraph/editor/authorshipWidget";
 import "sourcegraph/editor/contrib";
-import "sourcegraph/editor/GotoDefinitionWithClickEditorContribution";
 import "sourcegraph/editor/vscode";
-import "sourcegraph/workbench/info/action";
+import "sourcegraph/workbench/info/contrib";
 import "sourcegraph/workbench/staticImports";
 
 import "vs/editor/common/editorCommon";
