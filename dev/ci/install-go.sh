@@ -2,7 +2,7 @@
 
 set -ex
 
-TARBALL=go1.7.1.linux-amd64.tar.gz
+TARBALL=go1.7.5.linux-amd64.tar.gz
 
 mkdir -p ~/cache
 cd ~/cache
