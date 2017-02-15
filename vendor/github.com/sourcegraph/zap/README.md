@@ -15,7 +15,11 @@ These steps help you start using Zap on your repositories.
 Then, in the directory of `sgtest/xyztest`, or any repository you want to use Zap on:
 
 1. Tell Zap to start watching it: `zap init`
-1. Configure the upstream repository: `zap remote set origin wss://sourcegraph.com/.api/zap github.com/sgtest/xyztest` (replace the last two parameters, the URL and repo name, with the appropriate values)
+1. Configure the upstream repository (replace the last two parameters, the URL and repo name, with the appropriate values):
+   ```
+zap remote set origin wss://sourcegraph.com/.api/zap github.com/sgtest/xyztest
+   ```
+    
 1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite master@sqs` (use your unix username in place of sqs)
 1. Open the repository in Visual Studio Code, hit alt/option+s to open Sourcegraph, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph. (if the short cut fails to open Sourcegraph: go to VS Code, hit cmd/ctrl+shift+p, search for "Zap: Install/update client" and hit enter. This will update the Zap command-line interface.)
 

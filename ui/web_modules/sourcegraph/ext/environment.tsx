@@ -7,6 +7,8 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
 import { IEnvironment } from "vscode-zap/out/src/environment";
 
+import { context } from "sourcegraph/app/context";
+
 // VSCodeEnvironment is an implementation of IEnvironment used when
 // running in the browser. It is backed by the vscode extension API
 // and has access to browser APIs.
@@ -21,11 +23,13 @@ class BrowserEnvironment implements IEnvironment {
 			this.updateDoc(this.docAtBase, doc);
 			this.updateDoc(this.docAtLastSave, doc);
 		});
-		vscode.workspace.onDidSaveTextDocument((doc: vscode.TextDocument) => {
-			this.updateDoc(this.docAtLastSave, doc);
-		});
+		vscode.workspace.onDidSaveTextDocument(doc => this.onDidSaveTextDocument(doc));
 
 		this.zapRef = self["__tmpZapRef"];
+	}
+
+	private onDidSaveTextDocument(doc: vscode.TextDocument): void {
+		this.updateDoc(this.docAtLastSave, doc);
 	}
 
 	private updateDoc(map: Map<string, string>, doc: vscode.TextDocument): void {
@@ -78,7 +82,15 @@ class BrowserEnvironment implements IEnvironment {
 	}
 
 	revertTextDocument(doc: vscode.TextDocument): Thenable<any> {
-		const initialContents = this.docAtBase.get(doc.uri.toString());
+		return this.doRevertTextDocument(this.docAtLastSave, doc);
+	}
+
+	revertTextDocumentToBase(doc: vscode.TextDocument): Thenable<any> {
+		return this.doRevertTextDocument(this.docAtBase, doc);
+	}
+
+	private doRevertTextDocument(contents: Map<string, string>, doc: vscode.TextDocument): Thenable<any> {
+		const initialContents = contents.get(doc.uri.toString());
 		if (initialContents === undefined) {
 			throw new Error(`revertTextDocument: unknown initial contents for ${doc.uri.toString()}`);
 		}
@@ -87,6 +99,15 @@ class BrowserEnvironment implements IEnvironment {
 		const entireRange = new vscode.Range(new vscode.Position(0, 0), doc.positionAt(doc.getText().length));
 		edit.replace(doc.uri, entireRange, initialContents);
 		return vscode.workspace.applyEdit(edit).then(() => doc.save());
+	}
+
+	async saveDocument(doc: vscode.TextDocument): Promise<boolean> {
+		if (doc.uri.scheme === "git") {
+			await doc.save();
+			this.onDidSaveTextDocument(doc);
+			return Promise.resolve(true);
+		}
+		throw new Error(`saveDocument called on non-git document ${doc.uri.toString()}`);
 	}
 
 	openChannel(id: string): Thenable<MessageStream> {
@@ -99,6 +120,12 @@ class BrowserEnvironment implements IEnvironment {
 			return match === "http://" ? "ws://" : "wss://";
 		});
 		return webSocketStreamOpener(`${wsOrigin}/.api/zap`)();
+	}
+
+	get userID(): string {
+		const ctx: typeof context = self["sourcegraphContext"];
+		const user = ctx && ctx.user ? ctx.user.Login : "anonymous";
+		return `${user}@web`;
 	}
 }
 

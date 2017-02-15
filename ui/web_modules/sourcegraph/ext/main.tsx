@@ -1,6 +1,7 @@
 import URI from "vs/base/common/uri";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 
+import { context } from "sourcegraph/app/context";
 import { registerContribution as registerExtHostContribution } from "sourcegraph/ext/extHost.contribution.override";
 import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
@@ -34,6 +35,7 @@ export function init(workspace: URI): void {
 		workspace: workspace.toString(),
 		features: listEnabledFeatures(),
 		tmpZapRef: currentZapRef(),
+		context,
 	};
 
 	// Add our current URL in the worker location's fragment so the

@@ -602,3 +602,7 @@
 :global .global-message-list {
     position: relative !important;
 }
+
+:global .monaco-workbench > .part.statusbar > .statusbar-item a:not([disabled]):not(disabled) {
+	color: rgba(255, 255, 255, 0.9);
+}

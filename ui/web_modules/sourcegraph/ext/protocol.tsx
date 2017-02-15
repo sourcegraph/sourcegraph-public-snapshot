@@ -1,3 +1,5 @@
+import { context } from "sourcegraph/app/context";
+
 /**
  * InitializationOptions are the options sent by main to the extension
  * host when creating the extension host.
@@ -19,4 +21,6 @@ export interface InitializationOptions {
 	features: string[];
 
 	tmpZapRef: string | null; // TODO(sqs) HACK: pass this through
+
+	context: typeof context;
 }

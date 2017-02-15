@@ -146,7 +146,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Contex
 				return err
 			}
 			if op, xop := ot.NormalizeWorkspaceOp(*params.Op), ot.NormalizeWorkspaceOp(xop); !reflect.DeepEqual(op, xop) {
-				panic(fmt.Sprintf("expected remote tracking ref %q to not transform ops since it only receives them from a single source, but got %v != %v", ref.Name, op, xop))
+				panic(fmt.Sprintf("expected remote tracking ref %q to not transform ops since it only receives them from a single source, but got %v != %v (history: %v, buf: %v, wait: %v)", ref.Name, op, xop, ref.Object.(serverRef).history(), ref.Object.(serverRef).ot.Buf, ref.Object.(serverRef).ot.Wait))
 			}
 		}
 

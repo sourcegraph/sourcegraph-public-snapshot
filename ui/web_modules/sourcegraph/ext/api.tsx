@@ -19,6 +19,7 @@ bulkEnableFeatures(initOpts.features);
 
 // TODO(sqs): pass through the zap ref
 self["__tmpZapRef"] = initOpts.tmpZapRef;
+self["sourcegraphContext"] = initOpts.context;
 
 /**
  * createExtensionAPI returns an extension API factory, which creates
