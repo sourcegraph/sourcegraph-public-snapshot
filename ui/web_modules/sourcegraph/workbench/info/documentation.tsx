@@ -75,12 +75,12 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				overflowY: "scroll",
 				color: colors.blueGrayD1(),
 			}, typography[2])} dangerouslySetInnerHTML={{ __html: renderedDocString }} />
-			<Definition defData={this.props.defData} />
+			<Definition defData={this.props.defData} eventProps={this.props.eventProps} />
 		</div ></RouterContext>;
 	}
 }
 
-function Definition({ defData }: { defData: DefinitionData }): JSX.Element {
+function Definition({ defData, eventProps }: { defData: DefinitionData, eventProps: FileEventProps }): JSX.Element {
 	if (!defData.definition) {
 		return <div></div>;
 	}
@@ -97,7 +97,14 @@ function Definition({ defData }: { defData: DefinitionData }): JSX.Element {
 			</Link>
 		</p>
 		<FlexContainer content="stretch" justify="between" items="center">
-			<Link style={{ flex: "1 0" }} to={url} onClick={() => Events.InfoPanelJumpToDef_Clicked.logEvent({ defRepo: repo, defRev: rev || "", defPath: path })}>
+			<Link style={{ flex: "1 0" }} to={url} onClick={() => {
+				Events.InfoPanelJumpToDef_Clicked.logEvent({
+					...eventProps,
+					defRepo: repo,
+					defRev: rev || "",
+					defPath: path
+				});
+			}}>
 				<Button color="blueGray" outline={true} style={{ width: "100%" }}>
 					Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
 				</Button>

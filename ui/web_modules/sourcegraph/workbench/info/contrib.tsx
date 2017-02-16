@@ -9,12 +9,14 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IPosition } from "vs/editor/common/editorCommon";
 import { IModel } from "vs/editor/common/editorCommon";
 import { CommonEditorRegistry } from "vs/editor/common/editorCommonExtensions";
+import { getOuterEditor } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
 import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { normalisePosition } from "sourcegraph/editor/contrib";
+import { Events } from "sourcegraph/util/constants/AnalyticsConstants";
 import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
@@ -145,6 +147,7 @@ export class SidebarContribution extends Disposables {
 	 * token.
 	 */
 	private peekViewMouseUp = (e: IEditorMouseEvent): void => {
+		this.logClick(e);
 		if (!this.shouldTrigger(e)) {
 			return;
 		}
@@ -158,9 +161,11 @@ export class SidebarContribution extends Disposables {
 	}
 
 	private mouseUp = (e: IEditorMouseEvent): void => {
+		this.logClick(e);
 		if (!this.shouldTrigger(e)) {
 			return;
 		}
+
 		this.openInSidebar();
 	}
 
@@ -213,6 +218,29 @@ export class SidebarContribution extends Disposables {
 			return true;
 		}
 		return token.type.includes("identifier");
+	}
+
+	private logClick(e: IEditorMouseEvent): void {
+		const model = this.editor.getModel();
+
+		const params = URIUtils.repoParams(model.uri);
+		if (this.editor instanceof EmbeddedCodeEditorWidget) {
+			const resource = getOuterEditor(Services, {}).getModel().uri;
+			const outerParams = URIUtils.repoParams(resource);
+			Events.CodeToken_Clicked.logEvent({
+				...outerParams,
+				refRepo: params.repo,
+				refRev: params.rev,
+				refPath: params.path,
+				language: model.getModeId(),
+			});
+			return;
+		}
+
+		Events.CodeToken_Clicked.logEvent({
+			...params,
+			language: model.getModeId(),
+		});
 	}
 
 }
