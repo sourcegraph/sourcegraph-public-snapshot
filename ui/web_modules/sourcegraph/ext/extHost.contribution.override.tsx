@@ -45,10 +45,6 @@ export class ExtHostContribution implements IWorkbenchContribution {
 	private initExtensionSystem(): void {
 		const create = (ctor: IConstructorSignature0<any>): any => {
 			const service = this.instantiationService.createInstance(ctor);
-			if (ctor === MainThreadOutputService && localStorage.getItem("logExtensionHostCommunication") === null) {
-				// only open debugger console in development mode
-				(service as MainThreadOutputService).disable();
-			}
 			if (ctor === MainThreadMessageService && localStorage.getItem("logExtensionHostCommunication") === null) {
 				// only open debugger console in development mode
 				(service as MainThreadMessageService).disable();

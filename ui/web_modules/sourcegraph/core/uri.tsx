@@ -68,4 +68,15 @@ export class URIUtils {
 		});
 	}
 
+	// withFilePath returns the URI with the included file path (as the URL
+	// fragment).
+	static withFilePath(uri: URI, path: string): URI {
+		return URI.from({
+			scheme: uri.scheme,
+			authority: uri.authority,
+			path: uri.path,
+			query: uri.query,
+			fragment: path,
+		});
+	}
 }

@@ -31,7 +31,9 @@ export function fetchContent(resource: URI): TPromise<string> {
 		}));
 }
 
-const contentCache = new Map<string, string>();
+// The content cache can be imported and used to dynamically modify
+// available files.
+export const contentCache = new Map<string, string>();
 
 export async function fetchContentAndResolveRev(resource: URI): Promise<{ content: string, commit: string }> {
 	const { repo, rev, path } = URIUtils.repoParams(resource);
@@ -49,13 +51,21 @@ export async function fetchContentAndResolveRev(resource: URI): Promise<{ conten
 				}
 			}
 		}`, { repo, rev, path });
-	if (!resp.root || !resp.root.repository || !resp.root.repository.commit.commit || !resp.root.repository.commit.commit.file) {
+	if (!resp.root || !resp.root.repository || !resp.root.repository.commit.commit) {
 		throw new Error("File content not available.");
 	}
 	const commit = resp.root.repository.commit.commit.sha1;
-	const content = resp.root.repository.commit.commit.file.content;
 	const resourceKey = resource.with({ query: commit }).toString();
-	contentCache.set(resourceKey, content);
+	let content: string;
+	if (contentCache.has(resourceKey)) {
+		content = contentCache.get(resourceKey)!;
+	} else {
+		if (!resp.root.repository.commit.commit.file) {
+			throw new Error("File content not available.");
+		}
+		content = resp.root.repository.commit.commit.file.content;
+		contentCache.set(resourceKey, content);
+	}
 	return {
 		content,
 		commit,

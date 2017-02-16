@@ -13,6 +13,7 @@ import "vs/workbench/parts/files/browser/explorerViewlet";
 import "vs/workbench/parts/files/browser/files.contribution";
 import "vs/workbench/parts/output/browser/output.contribution";
 
+import { start as startTappingOutputChannel } from "sourcegraph/workbench/outputListener";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMode } from "vs/editor/common/modes";
@@ -63,6 +64,8 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	}
 
 	initExtensionHost(workspace);
+
+	instantiationService.invokeFunction(startTappingOutputChannel);
 
 	configurePostStartup(services);
 	return [workbench, services];
