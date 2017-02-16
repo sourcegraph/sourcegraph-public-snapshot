@@ -134,3 +134,7 @@ export function getCurrentBranch(): string | null {
 export function getPlatform(): string {
 	return window.navigator.userAgent.indexOf("Firefox") !== -1 ? "firefox-extension" : "chrome-extension";
 }
+
+export function isE2ETest(): boolean {
+	return process.env.NODE_ENV === "test";
+}

@@ -1,46 +1,44 @@
-import * as backend from "../backend";
-import * as utils from "../utils";
-import { EventLogger } from "../utils/EventLogger";
-import * as tooltips from "../utils/tooltips";
 import * as React from "react";
+import * as backend from "../backend";
+import { ExtensionEventLogger } from "../tracking/ExtensionEventLogger";
+import * as utils from "../utils";
+import { getEventLogger } from "../utils/context";
+import * as tooltips from "../utils/tooltips";
 
-export class Background extends React.Component<{}, {}> {
+export class GitHubBackground extends React.Component<{}, {}> {
 	constructor(props: {}) {
 		super(props);
-		this._refresh = this._refresh.bind(this);
-		this._cleanupAndRefresh = this._cleanupAndRefresh.bind(this);
-		this._popstateUpdate = this._popstateUpdate.bind(this);
 	}
 
 	componentDidMount(): void {
-		document.addEventListener("pjax:end", this._cleanupAndRefresh);
-		window.addEventListener("popstate", this._popstateUpdate);
-		this._cleanupAndRefresh();
+		document.addEventListener("pjax:end", this.cleanupAndRefresh);
+		window.addEventListener("popstate", this.popstateUpdate);
+		this.cleanupAndRefresh();
 	}
 
 	componentWillUpdate(nextProps: {}): void {
 		// Call refresh with new props (since this.props are not updated until this method completes).
-		this._refresh(nextProps);
+		this.refresh(nextProps);
 	}
 
 	componentWillUnmount(): void {
-		document.removeEventListener("pjax:end", this._cleanupAndRefresh);
-		document.removeEventListener("popstate", this._popstateUpdate);
+		document.removeEventListener("pjax:end", this.cleanupAndRefresh);
+		document.removeEventListener("popstate", this.popstateUpdate);
 	}
 
-	_cleanupAndRefresh(): void {
+	private cleanupAndRefresh = (): void => {
 		// Clean up any tooltips on the page before refreshing (after pjax:success).
 		// Otherwise, tooltips may remain on the page because the anchored elem's mousout
 		// event may not have fired (and the elem may no longer be on the page).
 		tooltips.hideTooltip();
-		this._refresh();
+		this.refresh();
 	}
 
-	_popstateUpdate(): void {
+	private popstateUpdate = (): void => {
 		tooltips.hideTooltip();
 	}
 
-	_refresh(props?: {}): void {
+	private refresh = (props?: {}): void => {
 		if (utils.isSourcegraphURL(window.location)) {
 			return;
 		}
@@ -53,7 +51,7 @@ export class Background extends React.Component<{}, {}> {
 
 		chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
 			if (identity) {
-				EventLogger.updatePropsForUser(identity);
+				(getEventLogger() as ExtensionEventLogger).updatePropsForUser(identity);
 			}
 		});
 	}

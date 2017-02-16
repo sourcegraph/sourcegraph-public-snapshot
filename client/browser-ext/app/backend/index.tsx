@@ -22,7 +22,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify({
-				query: `query Content($repo: String, $rev: String) {
+			query: `query Content($repo: String, $rev: String) {
 					root {
 						repository(uri: $repo) {
 							commit(rev: $rev) {
@@ -34,8 +34,8 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 						}
 					}
 				}`,
-				variables: { repo, rev },
-			}),
+			variables: { repo, rev },
+		}),
 	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
 		if (!json.data) {
 			throw new Error("invalid response received from graphql endpoint");

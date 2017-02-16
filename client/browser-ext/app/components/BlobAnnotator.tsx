@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as backend from "../backend";
 import * as utils from "../utils";
-import { addAnnotations } from "../utils/annotations";
+import { addAnnotations, RepoRevSpec } from "../utils/annotations";
 import * as github from "../utils/github";
 import { SourcegraphIcon } from "./Icons";
 
@@ -172,6 +172,16 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		return false;
 	}
 
+	private getCodeCells(isSplitDiff: boolean, repoRevSpec: RepoRevSpec, el: HTMLElement): github.CodeCell[] {
+		// The blob is represented by a table; the first column is the line number,
+		// the second is code. Each row is a line of code
+		const table = el.querySelector("table");
+		if (!table) {
+			return [];
+		}
+		return github.getCodeCellsForAnnotation(table, Object.assign({ isSplitDiff }, repoRevSpec));
+	}
+
 	addAnnotations(): void {
 		const apply = (repoURI: string, rev: string, isBase: boolean, loggerProps: Object) => {
 			const ext = utils.getPathExtension(this.props.path);
@@ -182,7 +192,9 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			if (!blobElement) {
 				return;
 			}
-			addAnnotations(this.props.path, { repoURI, rev, isDelta: this.isDelta || false, isBase }, blobElement, this.isSplitDiff || false, loggerProps);
+			const repoRevSpec = { repoURI, rev, isDelta: this.isDelta || false, isBase };
+			const cells = this.getCodeCells(this.isSplitDiff || false, repoRevSpec, blobElement);
+			addAnnotations(this.props.path, repoRevSpec, blobElement, loggerProps, cells);
 		};
 
 		const applyAnnotationsIfResolvedRev = (uri: string, rev?: string, isBase?: boolean) => {

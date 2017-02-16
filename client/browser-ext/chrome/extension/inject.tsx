@@ -1,10 +1,11 @@
 import * as React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { useAccessToken } from "../../app/backend/xhr";
-import { Background } from "../../app/components/Background";
 import { BlobAnnotator } from "../../app/components/BlobAnnotator";
+import { GitHubBackground } from "../../app/components/GitHubBackground";
 import { ProjectsOverview } from "../../app/components/ProjectsOverview";
-import { EventLogger } from "../../app/utils/EventLogger";
+import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
+import { Domain, getDomain, getEventLogger } from "../../app/utils/context";
 import * as github from "../../app/utils/github";
 import { getGitHubRoute, isGitHubURL, parseURL } from "../../app/utils/index";
 
@@ -23,23 +24,33 @@ function injectModules(): void {
 		if (token) {
 			useAccessToken(token);
 		}
-		injectBackgroundApp();
+		switch (getDomain(window.location)) {
+			case Domain.GITHUB:
+				injectBackgroundApp(<GitHubBackground />);
+				break;
+			case Domain.SOURCEGRAPH:
+				injectBackgroundApp(null);
+				break;
+			default:
+				throw new Error("Unrecognized domain");
+		}
 		injectBlobAnnotators();
 		injectSourcegraphInternalTools();
 	});
 }
 
-function injectBackgroundApp(): void {
+function injectBackgroundApp(element: JSX.Element | null): void {
 	if (document.getElementById("sourcegraph-app-background")) {
 		// make this function idempotent
 		return;
 	}
-
 	let backgroundContainer = document.createElement("div");
 	backgroundContainer.id = "sourcegraph-app-background";
 	backgroundContainer.style.display = "none";
 	document.body.appendChild(backgroundContainer);
-	render(<Background />, backgroundContainer);
+	if (element) {
+		render(element, backgroundContainer);
+	}
 }
 
 function injectBlobAnnotators(): void {
@@ -104,7 +115,7 @@ window.addEventListener("load", () => {
 	injectModules();
 	chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
 		if (identity) {
-			EventLogger.updatePropsForUser(identity);
+			(getEventLogger() as ExtensionEventLogger).updatePropsForUser(identity);
 		}
 	});
 	setTimeout(injectModules, 5000); // extra data may be loaded asynchronously; reapply after timeout
@@ -141,7 +152,7 @@ document.addEventListener("pjax:end", () => {
 
 document.addEventListener("sourcegraph:identify", (ev: CustomEvent) => {
 	if (ev && ev.detail) {
-		EventLogger.updatePropsForUser(ev.detail);
+		(getEventLogger() as ExtensionEventLogger).updatePropsForUser(ev.detail);
 		chrome.runtime.sendMessage({ type: "setIdentity", identity: ev.detail });
 	} else {
 		console.error("sourcegraph:identify missing details");
