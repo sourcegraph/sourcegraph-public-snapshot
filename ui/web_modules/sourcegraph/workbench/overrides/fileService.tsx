@@ -5,24 +5,37 @@ import { IFileStat, IResolveFileOptions, IUpdateContentOptions } from "vs/platfo
 import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
-let fileStatCache: Map<string, IFileStat> = new Map();
+/**
+ * Both of these caches will last until a hard navigation or refresh. We will
+ * need to have a mechanism to bust the cache for Xylo, or alternatively turn
+ * them into active stores.
+ */
+
+/**
+ * The fileStatCache saves us from recomputing the expensive IFileStat. On
+ * large dirs it can take a second. The cache will last until a hard navigation
+ * or refresh.
+ */
+const fileStatCache: Map<string, IFileStat> = new Map();
+
+/**
+ * workspaceFiles caches the contents of a directory. This lets us prevent
+ * doing multiple round trips to fetch the contents of the same directory.
+ */
+const workspaceFiles: Map<string, string[]> = new Map();
 
 // FileService provides files from Sourcegraph's API instead of a normal file
 // system. It is used to find the files in a Workspace, but not for retrieving
 // file content. File content is resolved using the modelResolver, which uses
 // contentLoader.tsx.
 export class FileService {
-	constructor() {
-		//
-	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
-		return retrieveFilesAndDirs(resource).then(({ root }) => {
+		return this.getFilesCached(resource).then(files => {
 			const cachedStat = fileStatCache.get(resource.toString(true));
 			if (cachedStat) {
 				return cachedStat;
 			}
-			const files = root.repository.commit.commit.tree.files.map(file => file.name);
 			const fileStat = toFileStat(resource, files);
 			fileStatCache.set(resource.toString(true), fileStat);
 			return fileStat;
@@ -30,10 +43,25 @@ export class FileService {
 	}
 
 	existsFile(resource: URI): TPromise<boolean> {
-		return retrieveFilesAndDirs(resource).then(({ root }) => {
-			const files: string[] = root.repository.commit.commit.tree.files.map(file => file.name);
+		return this.getFilesCached(resource).then(files => {
 			const path = resource.fragment;
 			return Boolean(files.find(file => file === path));
+		});
+	}
+
+	/**
+	 * Gets and caches a list of all of the files in a workspace.
+	 */
+	private getFilesCached(resource: URI): TPromise<string[]> {
+		const { repo, rev } = URIUtils.repoParams(resource);
+		const key = repo + rev;
+		if (workspaceFiles.has(key)) {
+			return TPromise.wrap(workspaceFiles.get(key));
+		}
+		return retrieveFilesAndDirs(resource).then(({ root }) => {
+			const files: string[] = root.repository.commit.commit.tree.files.map(file => file.name);
+			workspaceFiles.set(key, files);
+			return files;
 		});
 	}
 
