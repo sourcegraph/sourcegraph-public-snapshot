@@ -1,6 +1,6 @@
 import { Subscription } from "rxjs";
 
-import { FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { isMacintosh } from "vs/base/common/platform";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";

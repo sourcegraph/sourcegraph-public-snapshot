@@ -11,7 +11,7 @@ import * as modalStyles from "sourcegraph/components/styles/modal.css";
 import { PopOut } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { langs } from "sourcegraph/Language";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { checkStatus, defaultFetch as fetch } from "sourcegraph/util/xhr";
 
 interface GQLProps {
@@ -85,7 +85,7 @@ class AfterPrivateCodeSignupForm extends React.Component<Props, State> {
 				console.error("Error submitting form:", err); // tslint:disable-line no-console
 			})
 			.then(() => {
-				AnalyticsConstants.Events.AfterPrivateCodeSignup_Completed.logEvent({
+				Events.AfterPrivateCodeSignup_Completed.logEvent({
 					trialSignupProperties: hubspotProps,
 				});
 

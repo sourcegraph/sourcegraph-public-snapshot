@@ -1,4 +1,4 @@
-import { FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import URI from "vs/base/common/uri";
 
 // A URI in Sourcegraph refers to a (file) path and revision in a

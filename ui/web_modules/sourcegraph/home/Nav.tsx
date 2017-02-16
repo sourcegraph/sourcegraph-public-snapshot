@@ -6,7 +6,7 @@ import { RouterLocation } from "sourcegraph/app/router";
 import { Button, FlexContainer, Logo } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, PAGE_LOCATION_GLOBAL_NAV } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Props {
 	context: any;
@@ -30,14 +30,14 @@ export function Nav({ context, style, location }: Props): JSX.Element {
 		<div>
 			<Link to="/about" {...merge(navItemSx, navHover, { marginLeft: 0 }) }>About</Link>
 			<Link to="/pricing" {...merge(navItemSx, navHover) }>Pricing</Link>
-			<a href="/jobs" {...merge(navItemSx, navHover) } onClick={() => AnalyticsConstants.Events.JobsCTA_Clicked.logEvent()}>Jobs</a>
+			<a href="/jobs" {...merge(navItemSx, navHover) } onClick={() => Events.JobsCTA_Clicked.logEvent()}>Jobs</a>
 
 			{!(context as any).signedIn &&
 				<LocationStateToggleLink
 					href="/login"
 					modalName="login"
 					location={location}
-					onToggle={(v) => v && AnalyticsConstants.Events.LoginModal_Initiated.logEvent({ page_name: location.pathname })}
+					onToggle={(v) => v && Events.LoginModal_Initiated.logEvent({ page_name: location.pathname })}
 					{...merge(navItemSx, navHover) }
 				>Log in</LocationStateToggleLink>
 			}
@@ -47,7 +47,7 @@ export function Nav({ context, style, location }: Props): JSX.Element {
 					href="/join"
 					modalName="join"
 					location={location}
-					onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV })}
+					onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV })}
 					{ ...layout.hide.sm }
 					style={{
 						paddingTop: whitespace[2],

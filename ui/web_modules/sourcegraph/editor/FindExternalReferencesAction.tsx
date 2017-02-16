@@ -7,7 +7,7 @@ import * as BlobActions from "sourcegraph/blob/BlobActions";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { makeRepoRev } from "sourcegraph/repo";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { singleflightFetch } from "sourcegraph/util/singleflightFetch";
 import { checkStatus, defaultFetch } from "sourcegraph/util/xhr";
 
@@ -34,7 +34,7 @@ export class FindExternalReferencesAction extends EditorAction {
 
 	private findExternalReferences(model: IReadOnlyModel, pos: IPosition): TPromise<void> {
 		const { repo, rev, path } = URIUtils.repoParams(model.uri);
-		AnalyticsConstants.Events.CodeExternalReferences_Viewed.logEvent({ repo, rev: rev || "", path });
+		Events.CodeExternalReferences_Viewed.logEvent({ repo, rev: rev || "", path });
 
 		const line = pos.lineNumber - 1;
 		const col = pos.column - 1;

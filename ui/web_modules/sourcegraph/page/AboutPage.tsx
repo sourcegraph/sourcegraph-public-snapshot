@@ -7,7 +7,7 @@ import { LocationStateToggleLink } from "sourcegraph/components/LocationStateTog
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export function AboutPage({ location }: LocationProps): JSX.Element {
 	const boardMemberSx = { marginBottom: whitespace[4], marginRight: whitespace[4] };
@@ -152,7 +152,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 					marginTop: whitespace[5],
 					marginBottom: whitespace[5],
 				}}>
-					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="purple">
 							Sign up for free
 						</Button>

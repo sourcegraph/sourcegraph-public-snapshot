@@ -6,7 +6,7 @@ import { ModalComp } from "sourcegraph/components/Modal";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { black, blue, blueGrayD1, blueGrayL1, blueGrayL3, white } from "sourcegraph/components/utils/colors";
 import { weight } from "sourcegraph/components/utils/typography";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export type Props = {
 	onDismiss: () => void,
@@ -63,7 +63,7 @@ export class ShortcutModalComponent extends React.Component<Props, {}> {
 	}
 
 	dismissModal = (): void => {
-		AnalyticsConstants.Events.ShortcutMenu_Dismissed.logEvent();
+		Events.ShortcutMenu_Dismissed.logEvent();
 		this.props.onDismiss();
 	}
 

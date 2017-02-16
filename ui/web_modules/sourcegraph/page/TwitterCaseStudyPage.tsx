@@ -9,7 +9,7 @@ import { LocationStateToggleLink } from "sourcegraph/components/LocationStateTog
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import * as styles from "sourcegraph/page/Page.css";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 
@@ -182,7 +182,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 					paddingBottom: whitespace[4],
 					paddingTop: whitespace[3],
 				}}>
-					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="purple">
 							Sign up for free
 						</Button>

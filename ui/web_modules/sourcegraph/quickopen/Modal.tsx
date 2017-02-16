@@ -4,7 +4,7 @@ import * as Relay from "react-relay";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { ModalComp } from "sourcegraph/components/Modal";
 import { Container } from "sourcegraph/quickopen/Container";
-import { Events, RepoEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, RepoEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Event {
 	target: Node;

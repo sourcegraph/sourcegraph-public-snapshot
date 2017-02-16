@@ -7,12 +7,12 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import * as typography from "sourcegraph/components/styles/_typography.css";
 import { ChevronDown } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { EventLogger } from "sourcegraph/util/EventLogger";
+import { Events, PAGE_LOCATION_GLOBAL_NAV } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 
 export function handleIntercomToggle(locationOnPage: string): void {
 	global.window.Intercom("show");
-	AnalyticsConstants.Events.ContactIntercom_Clicked.logEvent({
+	Events.ContactIntercom_Clicked.logEvent({
 		page_name: location.pathname,
 		location_on_page: locationOnPage,
 	}
@@ -35,20 +35,20 @@ export const UserMenu = (props): JSX.Element => {
 					<div>{props.user.Login}</div>
 					<hr role="divider" className={base.mv3} />
 					<Link to="/settings" role="menu_item">Organization settings</Link>
-					<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location} onToggle={(v) => v && AnalyticsConstants.Events.ToolsModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV })}>
+					<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location} onToggle={(v) => v && Events.ToolsModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV })}>
 						Browser extensions
 					</LocationStateToggleLink>
-					<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV })}>
+					<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location} onToggle={(v) => v && Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV })}>
 						Beta program
 					</LocationStateToggleLink>
 					<a href="/docs" role="menu_item">
 						Docs
 					</a>
-					<a onClick={() => handleIntercomToggle(AnalyticsConstants.PAGE_LOCATION_GLOBAL_NAV)} role="menu_item">
+					<a onClick={() => handleIntercomToggle(PAGE_LOCATION_GLOBAL_NAV)} role="menu_item">
 						Contact
 					</a>
 					<hr role="divider" className={base.mt3} />
-					<a role="menu_item" href="/-/logout" onClick={(e) => { EventLogger.logout(); }}>Sign out</a>
+					<a role="menu_item" href="/-/logout" onClick={(e) => { Events.Logout_Clicked.logEvent(); EventLogger.logout(); }}>Sign out</a>
 					<hr role="divider" className={base.mt2} />
 					<div className={classNames(base.pv1, base.mb1, typography.tc)}>
 						<Link to="/security" className={classNames(typography.f7, typography.link_subtle, base.pr3)}>Security</Link>

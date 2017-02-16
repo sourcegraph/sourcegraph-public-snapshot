@@ -3,7 +3,7 @@ import * as React from "react";
 import { RouterLocation } from "sourcegraph/app/router";
 import { AuthButton } from "sourcegraph/components/AuthButton";
 import { ButtonProps } from "sourcegraph/components/Button";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Props extends ButtonProps {
 	scopes?: string;
@@ -23,7 +23,7 @@ export function GitHubAuthButton(props: Props): JSX.Element {
 	return <AuthButton
 		provider="github"
 		iconType="github"
-		eventObject={AnalyticsConstants.Events.OAuth2FlowGitHub_Initiated}
+		eventObject={Events.OAuth2FlowGitHub_Initiated}
 		scopes={scopes}
 		{...transferredProps}>
 		{children}

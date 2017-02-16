@@ -4,7 +4,7 @@ import * as React from "react";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { ToggleButton } from "sourcegraph/components";
 import { layout, typography, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
 
 interface Props {
@@ -33,7 +33,7 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 
 	showAuthorsClickHandler(): void {
 		this.toggleAuthors();
-		AnalyticsConstants.Events.AuthorsToggle.logEvent({ toggleAuthors: this.state.on, type: "click" });
+		Events.AuthorsToggle.logEvent({ toggleAuthors: this.state.on, type: "click" });
 	}
 
 	showAuthorsKeyHandler(event: KeyboardEvent & Event): void {
@@ -45,7 +45,7 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 		const keyCode = this.props.keyCode;
 		if (event.key === this.props.shortcut || event.keyCode === keyCode) {
 			this.toggleAuthors();
-			AnalyticsConstants.Events.AuthorsToggle.logEvent({ toggleAuthors: this.state.on, type: "keyboardShortcut" });
+			Events.AuthorsToggle.logEvent({ toggleAuthors: this.state.on, type: "keyboardShortcut" });
 			event.preventDefault();
 		}
 	}

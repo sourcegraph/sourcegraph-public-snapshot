@@ -5,8 +5,8 @@ import { Affix, Button, FlexContainer, Heading, Hero, Input, List, Panel } from 
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 const PageName = "MasterPlanPage";
 
@@ -54,7 +54,7 @@ function SignInButton({ block }: { block: boolean }): JSX.Element {
 		href="/join"
 		modalName="join"
 		location={location}
-		onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname })}
+		onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname })}
 		{ ...layout.hide.sm }
 		style={{
 			paddingTop: whitespace[2],

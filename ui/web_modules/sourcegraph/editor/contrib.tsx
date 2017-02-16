@@ -10,7 +10,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { AuthorshipCodeLens } from "sourcegraph/editor/authorshipCodeLens";
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes as supportedModes } from "sourcegraph/editor/modes";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { Features } from "sourcegraph/util/features";
 
 if (!Features.lspExtension.isEnabled()) {
@@ -83,7 +83,7 @@ export class HoverProvider implements modes.HoverProvider {
 				}
 
 				const { repo, rev, path } = URIUtils.repoParams(model.uri);
-				AnalyticsConstants.Events.CodeToken_Hovered.logEvent({
+				Events.CodeToken_Hovered.logEvent({
 					repo: repo,
 					rev: rev || "",
 					path: path,

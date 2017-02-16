@@ -12,7 +12,7 @@ import { Spinner } from "sourcegraph/components/symbols";
 import { Close, Report } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import { Events, FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";

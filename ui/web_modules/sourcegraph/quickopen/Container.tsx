@@ -21,7 +21,7 @@ import "string_score";
 
 import { Hint, ResultCategories } from "sourcegraph/quickopen/Components";
 
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 const modalStyle = {
 	position: "fixed",
@@ -276,7 +276,7 @@ export class Container extends React.Component<Props, State> {
 				repo: this.props.repo ? this.props.repo.URI : "",
 				rev: this.props.repo ? this.props.repo.rev : null,
 			};
-			AnalyticsConstants.Events.QuickopenItem_Selected.logEvent(eventProps);
+			Events.QuickopenItem_Selected.logEvent(eventProps);
 			const url = result.URLPath;
 			this.props.dismissModal(false);
 			this.context.router.push(url);

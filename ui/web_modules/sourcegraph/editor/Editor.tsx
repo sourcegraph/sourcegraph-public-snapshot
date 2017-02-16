@@ -20,7 +20,7 @@ import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorServ
 import * as lsp from "sourcegraph/editor/lsp";
 import { modes } from "sourcegraph/editor/modes";
 import { createEditor } from "sourcegraph/editor/setup";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
 
@@ -109,7 +109,7 @@ export class Editor implements IDisposable {
 			}
 
 			const { repo, rev, path } = URIUtils.repoParams(this._editor.getModel().uri);
-			AnalyticsConstants.Events.CodeContextMenu_Initiated.logEvent({
+			Events.CodeContextMenu_Initiated.logEvent({
 				repo: repo,
 				rev: rev || "",
 				path: path,
@@ -181,7 +181,7 @@ export class Editor implements IDisposable {
 			const authorshipCodeLensElement = <CodeLensAuthorWidget blame={args} repo={repo} rev={rev || ""} onClose={this._removeWidgetForID.bind(this, AuthorshipWidgetID)} />;
 			let authorWidget = new AuthorshipWidget(args, authorshipCodeLensElement);
 			this._toggleAuthorshipWidget(authorWidget, AuthorshipWidgetID, args);
-			AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(args);
+			Events.CodeLensCommit_Clicked.logEvent(args);
 		});
 
 		this._editor.onMouseUp(((e: IEditorMouseEvent) => {

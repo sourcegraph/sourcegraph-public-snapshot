@@ -1,9 +1,4 @@
-import { EventLogger } from "sourcegraph/util/EventLogger";
-
-// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to Optimizely.
-export const experimentEventNames = new Set(["SignupCompleted"]);
-// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to HubSpot.
-export const hubSpotEventNames = new Set(["SignupCompleted"]);
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 
 // Analytics Constants
 
@@ -11,7 +6,7 @@ export const hubSpotEventNames = new Set(["SignupCompleted"]);
 // Supply a category name for the group of events you want to track.
 
 export const EventCategories = {
-	// Home pages
+	// Home pagess
 	Nav: "Nav",
 	Home: "Home",
 	Dashboard: "Dashboard",
@@ -126,13 +121,20 @@ export class LoggableEvent {
 	}
 
 	logEvent(props?: ProtectedEventPropTypes): void {
-		EventLogger.logEventForCategory(this, props);
+		EventLogger.logEventWithComponents(this.category, this.action, this.label, props);
 	}
 }
 export class NonInteractionLoggableEvent extends LoggableEvent {
 	logEvent(props?: ProtectedEventPropTypes): void {
-		EventLogger.logNonInteractionEventForCategory(this, props);
+		EventLogger.logNonInteractionEventWithComponents(this.category, this.action, this.label, props);
 	}
+}
+export function LogUnknownEvent(eventLabel: string): void {
+	EventLogger.logEventWithComponents(EventCategories.Unknown, EventActions.Fetch, eventLabel);
+}
+// TODO (dadlerj): confirm props doesn't contain any type-unsafe entries
+export function LogUnknownRedirectEvent(eventLabel: string, props?: any): void {
+	EventLogger.logEventWithComponents(EventCategories.Unknown, EventActions.Fetch, eventLabel, props);
 }
 
 // List of all possible events, paired with their unique labels, categories, and user actions
@@ -291,3 +293,8 @@ export function getModalDismissedEventObject(modalName: string): LoggableEvent {
 	};
 	return (modalName && modalName in dismissModalsMap) ? dismissModalsMap[modalName] : null;
 }
+
+// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to Optimizely.
+export const experimentEventNames = new Set(Events.Signup_Completed.label);
+// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to HubSpot.
+export const hubSpotEventNames = new Set(Events.Signup_Completed.label);

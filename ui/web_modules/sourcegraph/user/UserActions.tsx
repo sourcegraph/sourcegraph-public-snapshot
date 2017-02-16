@@ -1,4 +1,4 @@
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, LoggableEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export type Action =
 	SubmitBetaSubscription |
@@ -24,10 +24,10 @@ export class SubmitBetaSubscription {
 
 export class BetaSubscriptionCompleted {
 	resp: any;
-	eventObject: AnalyticsConstants.LoggableEvent;
+	eventObject: LoggableEvent;
 
 	constructor(resp: any) {
 		this.resp = resp;
-		this.eventObject = AnalyticsConstants.Events.BetaSubscription_Completed;
+		this.eventObject = Events.BetaSubscription_Completed;
 	}
 }

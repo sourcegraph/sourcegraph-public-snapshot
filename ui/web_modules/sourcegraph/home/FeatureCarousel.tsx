@@ -2,7 +2,7 @@ import { hover, style } from "glamor";
 import * as React from "react";
 import { FlexContainer, Heading } from "sourcegraph/components";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Props { assetsURL: string; }
 interface State { active: 0 | 1 | 2; }
@@ -34,17 +34,17 @@ export class FeatureCarousel extends React.Component<Props, State> {
 					title="View all references"
 					subtitle="See everywhere a function or package is used, and who's using it."
 					active={this.state.active === 0}
-					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 0 }); }} />
+					onClick={() => { Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 0 }); }} />
 				<SliderNavItem
 					title="View the authors of any file"
 					subtitle="See blame information inline with a simple toggle."
 					active={this.state.active === 1}
-					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 1 }); }} />
+					onClick={() => { Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 1 }); }} />
 				<SliderNavItem
 					title="Search by symbol"
 					subtitle="Quickly jump to a variable or function anywhere in a repository."
 					active={this.state.active === 2}
-					onClick={() => { AnalyticsConstants.Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 2 }); }} />
+					onClick={() => { Events.HomeCarousel_Clicked.logEvent(); this.setState({ active: 2 }); }} />
 			</FlexContainer>
 			<div style={{ flex: "1 1 60%", position: "relative", minHeight: 480 }}>
 				<img src={`${this.props.assetsURL}/img/Homepage/screen-placeholder.png`} width="100%" />

@@ -1,5 +1,5 @@
+import { experimentEventNames } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { optimizely } from "sourcegraph/tracking/OptimizelyWrapper";
-import { experimentEventNames } from "sourcegraph/util/constants/AnalyticsConstants";
 
 export class Variation {
 	public optimizelyId?: string;

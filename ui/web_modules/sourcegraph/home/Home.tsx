@@ -13,7 +13,7 @@ import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import { FeatureCarousel } from "sourcegraph/home/FeatureCarousel";
 import { Nav } from "sourcegraph/home/Nav";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, PAGE_DASHBOARD } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { HomepageExperimentContent, homepageExperiment } from "sourcegraph/util/ExperimentManager";
 
 interface HomeProps { location: RouterLocation; }
@@ -68,7 +68,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						)}>{experimentCopy.title}</Heading>
 
 					<p style={{ textAlign: "center" }}>
-						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
+						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
 							<Button color="orange" style={{
 								margin: whitespace[3],
 								paddingLeft: whitespace[3],
@@ -136,7 +136,7 @@ export class Home extends React.Component<HomeProps, {}> {
 
 					</FlexContainer>
 
-					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
+					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_DASHBOARD })}>
 						<div style={{ marginTop: whitespace[3] }}>
 							<strong>
 								Join the beta list
@@ -227,7 +227,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						Free for public and open-source code
 					</Heading>
 
-					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="orange" style={{
 							marginTop: whitespace[4],
 							paddingLeft: whitespace[4],

@@ -22,7 +22,7 @@ import { IntegrationsContainer } from "sourcegraph/home/IntegrationsContainer";
 import { DemoVideo } from "sourcegraph/home/modals/DemoVideo";
 import { QuickOpenModal } from "sourcegraph/quickopen/Modal";
 import { Store } from "sourcegraph/Store";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { isMobileUserAgent } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 
 interface Props {
@@ -67,13 +67,13 @@ export class GlobalNav extends Container<Props, State> {
 	}
 
 	activateSearch(eventProps?: any): void {
-		AnalyticsConstants.Events.Quickopen_Initiated.logEvent(eventProps);
+		Events.Quickopen_Initiated.logEvent(eventProps);
 
 		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(true));
 	}
 
 	activateShortcutMenu(): void {
-		AnalyticsConstants.Events.ShortcutMenu_Initiated.logEvent();
+		Events.ShortcutMenu_Initiated.logEvent();
 		Dispatcher.Backends.dispatch(new SetShortcutMenuVisible(true));
 	}
 

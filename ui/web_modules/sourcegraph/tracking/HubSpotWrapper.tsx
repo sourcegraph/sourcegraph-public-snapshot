@@ -1,8 +1,20 @@
 import { context } from "sourcegraph/app/context";
-import { hubSpotEventNames } from "sourcegraph/util/constants/AnalyticsConstants";
+import { hubSpotEventNames } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface HubSpotScript {
 	push: ([]: any) => void;
+}
+
+interface HubSpotUserAttributes {
+	email?: string | null;
+	user_id?: string | null;
+	fullname?: string | null;
+	company?: string | null;
+	location?: string | null;
+	is_private_code_user?: string | null;
+	emails?: string | null;
+	authed_orgs_github?: string | null;
+	registered_at?: string | null;
 }
 
 class HubSpotWrapper {
@@ -28,7 +40,7 @@ class HubSpotWrapper {
 		hsq.push(["trackEvent", { id: eventLabel }]);
 	}
 
-	setHubSpotProperties(hubSpotAttributes: { email?: string, user_id?: string, fullname?: string, company?: string, location?: string, is_private_code_user?: string, emails?: string, authed_orgs_github?: string }): void {
+	setHubSpotProperties(hubSpotAttributes: HubSpotUserAttributes): void {
 		const hsq = this.getHubspot();
 		if (!hsq) {
 			return;

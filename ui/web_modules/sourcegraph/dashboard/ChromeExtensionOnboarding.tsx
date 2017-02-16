@@ -10,8 +10,8 @@ import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors as jsColors, whitespace } from "sourcegraph/components/utils";
 import { EditorDemo } from "sourcegraph/dashboard/EditorDemo";
 import * as styles from "sourcegraph/dashboard/styles/Dashboard.css";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { EventLogger } from "sourcegraph/util/EventLogger";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 
 interface Props {
@@ -32,32 +32,32 @@ export class ChromeExtensionOnboarding extends React.Component<Props, State> {
 	}
 
 	_successHandler(): void {
-		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({ page_name: "ChromeExtensionOnboarding" });
-		EventLogger.setUserProperty("installed_chrome_extension", "true");
+		Events.ChromeExtension_Installed.logEvent({ page_name: "ChromeExtensionOnboarding" });
+		EventLogger.setUserInstalledChromeExtension("true");
 		// Syncs the our site analytics tracking with the chrome extension tracker.
 		EventLogger.updateTrackerWithIdentificationProps();
 		this._continueOnboarding();
 	}
 
 	_failHandler(): void {
-		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "ChromeExtensionOnboarding" });
-		EventLogger.setUserProperty("installed_chrome_extension", "false");
+		Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "ChromeExtensionOnboarding" });
+		EventLogger.setUserInstalledChromeExtension("false");
 	}
 
 	_installChromeExtensionClicked(): void {
-		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "ChromeExtensionOnboarding" });
+		Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "ChromeExtensionOnboarding" });
 
 		if (!!global.chrome) {
-			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({ page_name: "ChromeExtensionOnboarding" });
+			Events.ChromeExtensionInstall_Started.logEvent({ page_name: "ChromeExtensionOnboarding" });
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
-			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "ChromeExtensionOnboarding" });
+			Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "ChromeExtensionOnboarding" });
 			window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");
 		}
 	}
 
 	_skipClicked(): void {
-		AnalyticsConstants.Events.ChromeExtensionSkipCTA_Clicked.logEvent({ page_name: "ChromeExtensionOnboarding" });
+		Events.ChromeExtensionSkipCTA_Clicked.logEvent({ page_name: "ChromeExtensionOnboarding" });
 		this._continueOnboarding();
 	}
 

@@ -4,7 +4,7 @@ import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { Button } from "sourcegraph/components";
 import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { convertToGitHubLineNumber } from "sourcegraph/util/convertToGitHubLineNumber";
 
 const openInGitHubKeyCode = 71;
@@ -27,7 +27,7 @@ export function OpenInGitHubButton({ repo, rev, path }: Props): JSX.Element {
 	function openInGitHub(e: React.MouseEvent<HTMLAnchorElement> | KeyboardEvent): void {
 		const lineNumber = convertToGitHubLineNumber(window.location.hash);
 		const gitHubURL = `https://${repo}/blob/${rev}/${path}${lineNumber}`;
-		AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path });
+		Events.OpenInCodeHost_Clicked.logEvent({ repo, rev, path });
 		window.open(gitHubURL);
 		e.preventDefault();
 	}

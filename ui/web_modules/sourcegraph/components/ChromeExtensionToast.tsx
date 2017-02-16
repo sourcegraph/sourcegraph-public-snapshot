@@ -4,9 +4,9 @@ import { RouterLocation } from "sourcegraph/app/router";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { Toast } from "sourcegraph/components/Toast";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { installChromeExtensionClicked } from "sourcegraph/util/ChromeExtensionInstallHandler";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { EventLogger } from "sourcegraph/util/EventLogger";
 import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 
 const TOAST_TITLE = "Save time browsing code on GitHub with the Sourcegraph browser extension!";
@@ -59,7 +59,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 	}
 
 	private closeClicked(): void {
-		AnalyticsConstants.Events.ToastChrome_Closed.logEvent({ pageName: "ChromeExtensionOnboarding" });
+		Events.ToastChrome_Closed.logEvent({ pageName: "ChromeExtensionOnboarding" });
 		this.dismissToast();
 	}
 

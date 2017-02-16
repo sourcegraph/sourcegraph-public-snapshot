@@ -5,13 +5,13 @@ import { Button, SplitButton } from "sourcegraph/components";
 import { ButtonProps } from "sourcegraph/components/Button";
 import { GitHubLogo, Google } from "sourcegraph/components/symbols";
 import { typography, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { LoggableEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
 export interface Props extends ButtonProps {
 	provider: oauthProvider;
 	iconType: "github" | "google";
-	eventObject: AnalyticsConstants.LoggableEvent;
+	eventObject: LoggableEvent;
 
 	scopes?: string;
 	returnTo?: string | RouterLocation;

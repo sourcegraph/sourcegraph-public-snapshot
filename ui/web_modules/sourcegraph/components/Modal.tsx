@@ -3,7 +3,7 @@ import * as React from "react";
 import { Router, RouterLocation } from "sourcegraph/app/router";
 import { EventListener } from "sourcegraph/Component";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { getModalDismissedEventObject } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { renderedOnBody } from "sourcegraph/util/renderedOnBody";
 
 interface Props {
@@ -92,7 +92,7 @@ export function setLocationModalState(router: Router, location: RouterLocation, 
 export function dismissModal(modalName: string, location: RouterLocation, router: Router): any {
 	return () => {
 		// Log all modal dismissal events in a consistent way. Note that any additions of new "modalName"s will require new events to be created
-		const eventObject = AnalyticsConstants.getModalDismissedEventObject(modalName);
+		const eventObject = getModalDismissedEventObject(modalName);
 		if (eventObject) {
 			eventObject.logEvent();
 		} else {

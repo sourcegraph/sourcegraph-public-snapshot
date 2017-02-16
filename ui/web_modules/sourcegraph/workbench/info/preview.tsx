@@ -12,7 +12,7 @@ import { colors, whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
-import { Events, FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
 import { Services } from "sourcegraph/workbench/services";
 import { Disposables } from "sourcegraph/workbench/utils";

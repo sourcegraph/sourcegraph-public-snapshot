@@ -11,7 +11,7 @@ import { Heading, Panel, User } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export const AuthorshipWidgetID = "contentwidget.authorship.widget";
 
@@ -54,7 +54,7 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 			<Heading level={6} style={{ marginTop: whitespace[3] }}>{message}</Heading>
 			<a
 				href={commitURL}
-				onClick={() => AnalyticsConstants.Events.CodeLensCommitRedirect_Clicked.logEvent({ commitURL })}
+				onClick={() => Events.CodeLensCommitRedirect_Clicked.logEvent({ commitURL })}
 				target="_blank"
 				{...merge({
 					color: colors.blueGray(),
@@ -122,7 +122,7 @@ function showAuthorshipPopup(accessor: ServicesAccessor, blame: GQL.IHunk): void
 
 	(editor as any).addContentWidget(authorWidget);
 	addListeners(editor);
-	AnalyticsConstants.Events.CodeLensCommit_Clicked.logEvent(blame);
+	Events.CodeLensCommit_Clicked.logEvent(blame);
 }
 
 CommandsRegistry.registerCommand("codelens.authorship.commit", showAuthorshipPopup);

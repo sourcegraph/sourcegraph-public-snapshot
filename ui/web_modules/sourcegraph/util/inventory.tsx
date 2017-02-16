@@ -12,13 +12,3 @@ export function getLanguageExtensionForPath(path: string): string | null {
 	}
 	return language;
 }
-
-export function defPathToLanguage(defPath: string): string | null {
-	if (!defPath) { return null; }
-
-	if (defPath.startsWith("GoPackage")) { return "go"; }
-	if (defPath.startsWith("JavaArtifact")) { return "java"; }
-	if (defPath.startsWith("ManPages")) { return "sh"; }
-
-	return null;
-}

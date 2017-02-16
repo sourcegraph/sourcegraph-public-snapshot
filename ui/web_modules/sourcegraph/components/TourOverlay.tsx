@@ -13,8 +13,8 @@ import { fontStack } from "sourcegraph/components/utils/typography";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as OrgActions from "sourcegraph/org/OrgActions";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { EventLogger } from "sourcegraph/util/EventLogger";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
@@ -349,15 +349,15 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 		switch (markIndex) {
 			case _refCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingRefsCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+				Events.OnboardingRefsCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
 				break;
 			case _defCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingJ2DCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+				Events.OnboardingJ2DCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
 				break;
 			case _searchCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingSearchCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+				Events.OnboardingSearchCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
 				break;
 			default:
@@ -398,25 +398,25 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_successHandler(): void {
-		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({ page_name: "BlobViewOnboarding" });
-		EventLogger.setUserProperty("installed_chrome_extension", "true");
+		Events.ChromeExtension_Installed.logEvent({ page_name: "BlobViewOnboarding" });
+		EventLogger.setUserInstalledChromeExtension("true");
 		// Syncs the our site analytics tracking with the chrome extension tracker.
 		EventLogger.updateTrackerWithIdentificationProps();
 	}
 
 	_failHandler(msg: String): void {
-		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "BlobViewOnboarding" });
-		EventLogger.setUserProperty("installed_chrome_extension", "false");
+		Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "BlobViewOnboarding" });
+		EventLogger.setUserInstalledChromeExtension("false");
 	}
 
 	_installChromeExtensionClicked(): void {
-		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+		Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 
 		if (!!global.chrome) {
-			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({ page_name: "BlobViewOnboarding" });
+			Events.ChromeExtensionInstall_Started.logEvent({ page_name: "BlobViewOnboarding" });
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
-			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "BlobViewOnboarding" });
+			Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "BlobViewOnboarding" });
 			window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");
 		}
 	}
@@ -430,7 +430,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_dismissTour(): void {
-		AnalyticsConstants.Events.OnboardingTour_Dismissed.logEvent({ page_name: "BlobViewOnboarding" });
+		Events.OnboardingTour_Dismissed.logEvent({ page_name: "BlobViewOnboarding" });
 		this._endTour();
 	}
 
