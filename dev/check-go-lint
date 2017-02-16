@@ -13,6 +13,9 @@ go-get honnef.co/go/staticcheck/cmd/staticcheck
 echo go list...
 PKGS=$(go list ./... | grep -v /vendor/)
 
+echo go install...
+go install -buildmode=archive ${PKGS}
+
 echo go vet...
 go vet ${PKGS}
 
