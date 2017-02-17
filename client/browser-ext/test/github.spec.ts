@@ -18,7 +18,7 @@ function setupDOM(url: string): (done: any) => void {
 	});
 }
 
-describe.skip("GitHub DOM", () => {
+describe("GitHub DOM", () => {
 	describe("blob view", () => {
 		const url = "https://github.com/gorilla/mux/blob/757bef944d0f21880861c2dd9c871ca543023cba/mux.go";
 		before(setupDOM(url));
@@ -53,7 +53,7 @@ describe.skip("GitHub DOM", () => {
 		});
 
 		it("should not register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
+			github.registerExpandDiffClickHandler(github.getFileContainers()[0], () => ({}));
 			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(0);
 		});
 
@@ -70,7 +70,7 @@ describe.skip("GitHub DOM", () => {
 		});
 
 		describe("annotations", () => {
-			let _codeCells: github.CodeCell[];
+			let _codeCells: utils.CodeCell[];
 			before(() => {
 				const file = github.getFileContainers()[0];
 				_codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: false, isSplitDiff: false, isBase: false });
@@ -152,7 +152,9 @@ describe.skip("GitHub DOM", () => {
 		});
 
 		it("should register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
+			for (const container of Array.from(github.getFileContainers())) {
+				github.registerExpandDiffClickHandler(container, () => ({}));
+			}
 			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
@@ -244,7 +246,9 @@ describe.skip("GitHub DOM", () => {
 		});
 
 		it("should register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
+			for (const container of Array.from(github.getFileContainers())) {
+				github.registerExpandDiffClickHandler(container, () => ({}));
+			}
 			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
@@ -289,7 +293,7 @@ describe.skip("GitHub DOM", () => {
 				expect(headCells[4].filter((cell) => cell.isAddition)).to.have.length(3);
 			});
 
-			function getPRCells(isBase: boolean): github.CodeCell[] {
+			function getPRCells(isBase: boolean): utils.CodeCell[] {
 				const file = github.getFileContainers()[0];
 				const codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase });
 				return codeCells;
@@ -361,7 +365,9 @@ describe.skip("GitHub DOM", () => {
 		});
 
 		it("should register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
+			for (const container of Array.from(github.getFileContainers())) {
+				github.registerExpandDiffClickHandler(container, () => ({}));
+			}
 			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 

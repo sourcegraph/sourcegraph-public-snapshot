@@ -84,7 +84,8 @@ export function parseURL(loc: Location): GitHubURLData {
 	let rev: string | undefined;
 	let path: string | undefined;
 
-	if (!isGitHubURL(loc)) {
+	const domain = getDomain(loc);
+	if (domain !== Domain.GITHUB) {
 		return {};
 	}
 
@@ -114,14 +115,6 @@ export function parseURL(loc: Location): GitHubURLData {
 	return { user, repo, rev, path, repoURI, isDelta, isPullRequest, isCommit };
 }
 
-export function isGitHubURL(loc: Location): boolean {
-	return Boolean(loc.href.match(/https:\/\/(www.)?github.com/));
-}
-
-export function isSourcegraphURL(loc: Location): boolean {
-	return Boolean(loc.href.match(/https:\/\/(www.)?sourcegraph.com/));
-}
-
 export function getCurrentBranch(): string | null {
 	let branchDropdownEl = document.getElementsByClassName("btn btn-sm select-menu-button js-menu-target css-truncate");
 	if (branchDropdownEl.length !== 1) {
@@ -130,6 +123,14 @@ export function getCurrentBranch(): string | null {
 
 	return (branchDropdownEl[0] as HTMLElement).title;
 }
+// TODO(uforic): create a new file called types, for this and things like RepoRevSpec
+// GitHubURLData, and all the Phabricator types.
+export interface CodeCell {
+	cell: HTMLElement;
+	line: number;
+	isAddition?: boolean; // for diff views
+	isDeletion?: boolean; // for diff views
+}
 
 export function getPlatform(): string {
 	return window.navigator.userAgent.indexOf("Firefox") !== -1 ? "firefox-extension" : "chrome-extension";
@@ -137,4 +138,23 @@ export function getPlatform(): string {
 
 export function isE2ETest(): boolean {
 	return process.env.NODE_ENV === "test";
+}
+
+export function getDomain(loc: Location): Domain {
+	if (/^https?:\/\/phabricator.aws.sgdev.org/.test(loc.href)) {
+		return Domain.SGDEV_PHABRICATOR;
+	}
+	if (/^https?:\/\/(www.)?github.com/.test(loc.href)) {
+		return Domain.GITHUB;
+	}
+	if (/^https?:\/\/(www.)?sourcegraph.com/.test(loc.href)) {
+		return Domain.SOURCEGRAPH;
+	}
+	throw new Error(`Unable to determine the domain, ${loc.href}`);
+}
+
+export enum Domain {
+	GITHUB,
+	SGDEV_PHABRICATOR,
+	SOURCEGRAPH,
 }

@@ -390,7 +390,7 @@ export class ProjectsOverview extends React.Component<{}, State> {
 					return;
 				}
 				this.setState({ showOverview: !this.state.showOverview } as State);
-			}}>{this.state.loaded ? `${this.state.showOverview ? "Hide" : "Show"} Issue Overview` : "Loading issue stats"}</strong>
+			} }>{this.state.loaded ? `${this.state.showOverview ? "Hide" : "Show"} Issue Overview` : "Loading issue stats"}</strong>
 			<span style={{ fontSize: "11px", marginLeft: "15px", cursor: !this.state.fetching ? "pointer" : "normal", fontWeight: "bold", float: "right" }}
 				onClick={() => this.fetchData(true)}>
 				{this.state.fetching ? "..." : "Refresh Data"}

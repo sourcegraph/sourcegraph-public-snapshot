@@ -2,13 +2,10 @@ import * as React from "react";
 import * as backend from "../backend";
 import { ExtensionEventLogger } from "../tracking/ExtensionEventLogger";
 import * as utils from "../utils";
-import { getEventLogger } from "../utils/context";
+import { eventLogger } from "../utils/context";
 import * as tooltips from "../utils/tooltips";
 
 export class GitHubBackground extends React.Component<{}, {}> {
-	constructor(props: {}) {
-		super(props);
-	}
 
 	componentDidMount(): void {
 		document.addEventListener("pjax:end", this.cleanupAndRefresh);
@@ -18,7 +15,7 @@ export class GitHubBackground extends React.Component<{}, {}> {
 
 	componentWillUpdate(nextProps: {}): void {
 		// Call refresh with new props (since this.props are not updated until this method completes).
-		this.refresh(nextProps);
+		this.refresh();
 	}
 
 	componentWillUnmount(): void {
@@ -38,22 +35,9 @@ export class GitHubBackground extends React.Component<{}, {}> {
 		tooltips.hideTooltip();
 	}
 
-	private refresh = (props?: {}): void => {
-		if (utils.isSourcegraphURL(window.location)) {
-			return;
-		}
-
-		if (!props) {
-			props = this.props;
-		}
-
-		let urlProps = utils.parseURL(window.location)
-
-		chrome.runtime.sendMessage({ type: "getIdentity" }, (identity) => {
-			if (identity) {
-				(getEventLogger() as ExtensionEventLogger).updatePropsForUser(identity);
-			}
-		});
+	private refresh = (): void => {
+		(eventLogger as ExtensionEventLogger).updateIdentity();
+		let urlProps = utils.parseURL(window.location);
 	}
 
 	render(): JSX.Element | null {

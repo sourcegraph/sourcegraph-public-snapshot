@@ -105,10 +105,9 @@ export function isPrivateRepo(): boolean {
  * when more source code is shown, and then apply annotations to the
  * newly displayed ranges.
  */
-export function registerExpandDiffClickHandler(cb: (ev: any) => void): void {
-	const diffExpanders = document.getElementsByClassName("diff-expander");
-	for (let i = 0; i < diffExpanders.length; ++i) {
-		const expander = diffExpanders[i];
+export function registerExpandDiffClickHandler(parentElement: HTMLElement, cb: (ev: any) => void): void {
+	const diffExpanders = parentElement.getElementsByClassName("diff-expander");
+	for (let expander of Array.from(diffExpanders)) {
 		if (expander.className.indexOf("sg-diff-expander") !== -1) {
 			// Don't register more than one handler.
 			continue;
@@ -310,18 +309,11 @@ export function getDeltaInfo(): DeltaInfo | null {
 	return { baseBranch, headBranch, baseURI, headURI };
 }
 
-export interface CodeCell {
-	cell: HTMLElement;
-	line: number;
-	isAddition?: boolean; // for diff views
-	isDeletion?: boolean; // for diff views
-}
-
 /**
  * getCodeCellsForAnnotation code cells which should be annotated
  */
-export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: { isDelta: boolean, isSplitDiff: boolean; isBase: boolean }): CodeCell[] {
-	const cells: CodeCell[] = [];
+export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: { isDelta: boolean, isSplitDiff: boolean; isBase: boolean }): utils.CodeCell[] {
+	const cells: utils.CodeCell[] = [];
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];
 

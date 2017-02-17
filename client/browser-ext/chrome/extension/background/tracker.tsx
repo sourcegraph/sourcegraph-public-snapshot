@@ -1,38 +1,40 @@
-// tslint:disable-next-line
-const telligent = require("telligent-tracker");
-const telligentFunctionName = "telligent";
+import { TelligentWrapper } from "../../../app/tracking/TelligentWrapper";
+import { Domain, getDomain } from "../../../app/utils";
 
-// Create the initializing function
-window[telligentFunctionName] = function (): void {
-	(window[telligentFunctionName].q = window[telligentFunctionName].q || []).push(arguments);
-};
+let telligentWrapper: TelligentWrapper | null = null;
 
-// Set up the initial queue, if it doesn't already exist
-window[telligentFunctionName].q = new telligent.Telligent((window[telligentFunctionName].q || []), telligentFunctionName);
+switch (getDomain(window.location)) {
+	case Domain.GITHUB:
+	// TODO(uforic): the app should probably be different here for domain Sourcegraph,
+	// but this was existing behavior
+	case Domain.SOURCEGRAPH:
+		telligentWrapper = new TelligentWrapper("SourcegraphExtension", "BrowserExtension", true, true);
+		break;
+	case Domain.SGDEV_PHABRICATOR:
+		telligentWrapper = new TelligentWrapper("SourcegraphExtension", "BrowserExtension", false, false);
+		break;
+	default:
+		break;
+}
 
-const t = (window as any).telligent;
-
-// Must be called once upon initialization
-t("newTracker", "SourcegraphExtensionTracker", "sourcegraph-logging.telligentdata.com", {
-	encodeBase64: false,
-	appId: "SourcegraphExtension",
-	platform: "BrowserExtension",
-	env: process.env.NODE_ENV,
-	forceSecureTracker: true,
-});
-
-t("addStaticMetadata", "installed_chrome_extension", "true", "userInfo");
-
+/**
+ * These messages come from the ExtensionEventLogger. This has to run in the background
+ * because it requires access to cookies, and the foreground of Chrome extensions
+ * don't have access to that.
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	if (!telligentWrapper) {
+		return;
+	}
 	if (request.type === "trackEvent") {
-		t("track", request.payload.eventAction, request.payload);
+		telligentWrapper.track(request.payload.eventAction, request.payload);
 	} else if (request.type === "trackView") {
-		t("track", "view", request.payload);
+		telligentWrapper.track("view", request.payload);
 	} else if (request.type === "setTrackerUserId") {
-		t("setUserId", request.payload);
+		telligentWrapper.setUserId(request.payload);
 	} else if (request.type === "setTrackerDeviceId") {
-		t("addStaticMetadataObject", { deviceInfo: { TelligentWebDeviceId: request.payload } });
+		telligentWrapper.addStaticMetadataObject({ deviceInfo: { TelligentWebDeviceId: request.payload } });
 	} else if (request.type === "setTrackerGAClientId") {
-		t("addStaticMetadataObject", { deviceInfo: { GAClientId: request.payload } });
+		telligentWrapper.addStaticMetadataObject({ deviceInfo: { GAClientId: request.payload } });
 	}
 });

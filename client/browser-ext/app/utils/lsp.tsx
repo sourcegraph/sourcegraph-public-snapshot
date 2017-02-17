@@ -1,5 +1,5 @@
 import { doFetch as fetch } from "../backend/xhr";
-import { getEventLogger } from "../utils/context";
+import { getSourcegraphUrl } from "../utils/context";
 import { RepoRevSpec } from "./annotations";
 import * as utils from "./index";
 import * as tooltips from "./tooltips";
@@ -50,7 +50,7 @@ export function prewarmLSP(path: string, repoRevSpec: RepoRevSpec): void {
 		},
 	}, repoRevSpec, path);
 
-	fetch("https://sourcegraph.com/.api/xlang/textDocument/hover?prepare", { method: "POST", body: JSON.stringify(body) });
+	fetch(`${getSourcegraphUrl()}/.api/xlang/textDocument/hover?prepare`, { method: "POST", body: JSON.stringify(body) });
 }
 
 export function getTooltip(target: HTMLElement, path: string, line: number, repoRevSpec: RepoRevSpec): Promise<tooltips.TooltipData> {
@@ -74,7 +74,7 @@ export function getTooltip(target: HTMLElement, path: string, line: number, repo
 		},
 	}, repoRevSpec, path);
 
-	return fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", { method: "POST", body: JSON.stringify(body) })
+	return fetch(`${getSourcegraphUrl()}/.api/xlang/textDocument/hover`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
 			if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
 				const title = json[1].result.contents[0].value;
@@ -112,7 +112,7 @@ export function fetchJumpURL(col: string, path: string, line: number, repoRevSpe
 		},
 	}, repoRevSpec, path);
 
-	return fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", { method: "POST", body: JSON.stringify(body) })
+	return fetch(`${getSourcegraphUrl()}/.api/xlang/textDocument/definition`, { method: "POST", body: JSON.stringify(body) })
 		.then((resp) => resp.json()).then((json) => {
 			const respUri = json[1].result[0].uri.split("git://")[1];
 			const prt0Uri = respUri.split("?");
@@ -131,7 +131,7 @@ export function fetchJumpURL(col: string, path: string, line: number, repoRevSpe
 				lineAndCharEnding = `#L${startLine}`;
 			}
 
-			j2dCache[cacheKey] = `https://sourcegraph.com/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
+			j2dCache[cacheKey] = `${getSourcegraphUrl()}/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
 			return j2dCache[cacheKey];
 		});
 }

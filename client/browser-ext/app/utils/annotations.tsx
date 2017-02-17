@@ -1,6 +1,7 @@
 import * as _ from "lodash";
 import * as utf8 from "utf8";
-import { getEventLogger } from "../utils/context";
+import { CodeCell } from "../utils";
+import { eventLogger } from "../utils/context";
 import * as github from "./github";
 import { fetchJumpURL, getTooltip, prewarmLSP } from "./lsp";
 import * as tooltips from "./tooltips";
@@ -16,13 +17,16 @@ export interface RepoRevSpec {
 // An invisible marker is appended to the document to indicate that annotation
 // has been completed; so this function expects that it will be called once all
 // repo/annotation data is resolved from the server.
-export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: github.CodeCell[]): void {
+export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: CodeCell[]): void {
 
 	cells.forEach((cell) => {
 		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
 
 		// If the line has already been annotated,
 		// restore event handlers if necessary otherwise move to next line
+		// the first check works on GitHub, the second is required for phabricator
+		// but is a no-op for GitHub
+		// TODO(uforic):  && hasCellBeenAnnotated(cell.cell) - figure out why we need this.
 		if (el.getAttribute(dataKey)) {
 			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
 				addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
@@ -46,6 +50,13 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 	});
 }
 
+function hasCellBeenAnnotated(cell: HTMLElement): boolean {
+	if (cell.children.length === 0) {
+		return false;
+	}
+	return (cell.children && cell.children[0].getAttribute("data-byteoffset")) ? true : false;
+}
+
 interface ConvertNodeResult<T extends Node> {
 	resultNode: T;
 	bytesConsumed: number;
@@ -62,49 +73,6 @@ function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirst
 		default:
 			throw new Error(`unexpected node type(${node.nodeType})`);
 	}
-}
-
-function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
-	tooltips.createTooltips();
-
-	el.onclick = (e) => {
-		let t = getTarget(e.target as HTMLElement);
-		if (!t || t.style.cursor !== "pointer") {
-			return;
-		}
-
-		fetchJumpURL(t.dataset["byteoffset"], path, line, repoRevSpec).then((defUrl) => {
-			if (!defUrl) {
-				return;
-			}
-
-			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
-			// either move to a line on the same page, or refresh the page to a new blob view.
-			const eventLogger = getEventLogger();
-			if (eventLogger) {
-				eventLogger.logJumpToDef(Object.assign({}, repoRevSpec, loggingStruct));
-			}
-			window.open(defUrl, "_blank");
-		});
-	};
-
-	el.onmouseout = (e) => {
-		tooltips.clearContext();
-		activeTarget = null;
-	};
-
-	el.onmouseover = (e) => {
-		let t = getTarget(e.target as HTMLElement);
-		if (!t || activeTarget === t) {
-			// don't do anything unless target is defined and has changed
-			return;
-		}
-
-		activeTarget = t;
-		tooltips.setContext(t, loggingStruct);
-		tooltips.queueLoading();
-		getTooltip(t, path, line, repoRevSpec).then((data) => tooltips.setTooltip(data, t as HTMLElement));
-	};
 }
 
 // convertNode takes a DOM node and returns an object containing the
@@ -218,4 +186,44 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 	if (t && t.tagName === "SPAN" && t.getAttribute("data-byteoffset")) {
 		return t;
 	}
+}
+
+function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
+	tooltips.createTooltips();
+
+	el.onclick = e => {
+		let t = getTarget(e.target as HTMLElement);
+		if (!t || t.style.cursor !== "pointer") {
+			return;
+		}
+
+		fetchJumpURL(t.dataset["byteoffset"], path, line, repoRevSpec).then((defUrl) => {
+			if (!defUrl) {
+				return;
+			}
+
+			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
+			// either move to a line on the same page, or refresh the page to a new blob view.
+			eventLogger.logJumpToDef(Object.assign({}, repoRevSpec, loggingStruct));
+			window.open(defUrl, "_blank");
+		});
+	};
+
+	el.onmouseout = (e) => {
+		tooltips.clearContext();
+		activeTarget = null;
+	};
+
+	el.onmouseover = (e) => {
+		let t = getTarget(e.target as HTMLElement);
+		if (!t || activeTarget === t) {
+			// don't do anything unless target is defined and has changed
+			return;
+		}
+
+		activeTarget = t;
+		tooltips.setContext(t, loggingStruct);
+		tooltips.queueLoading();
+		getTooltip(activeTarget, path, line, repoRevSpec).then((data) => tooltips.setTooltip(data, activeTarget)).catch((err) => tooltips.setTooltip(null, activeTarget));
+	};
 }

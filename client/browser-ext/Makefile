@@ -43,5 +43,5 @@ clean:
 	rm -rf build/ dev/ .checksum node_modules/ chrome-bundle.zip firefox-bundle.xpi
 
 export CHROME_BUNDLE ?= $(shell pwd)/chrome-bundle.zip
-deploy: clean bundle deploy-e2e
+deploy: clean bundle test-unit deploy-e2e
 	./deploy.sh
