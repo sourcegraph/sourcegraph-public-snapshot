@@ -2,6 +2,7 @@
 // We import a subset of the modules those files import, to reduce the bundle size in
 // the browser (and because we don't need all of the functionality included by default).
 import "vs/editor/browser/widget/codeEditorWidget";
+import "vs/editor/browser/widget/diffEditorWidget";
 import "vs/editor/contrib/clipboard/browser/clipboard";
 import "vs/editor/contrib/contextmenu/browser/contextmenu";
 import "vs/editor/contrib/find/browser/find";

@@ -16,6 +16,7 @@ import "vs/workbench/parts/output/browser/output.contribution";
 import URI from "vs/base/common/uri";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
+import "vs/workbench/electron-browser/main.contribution";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { init as initExtensionHost } from "sourcegraph/ext/main";

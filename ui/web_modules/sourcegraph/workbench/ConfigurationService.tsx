@@ -10,6 +10,7 @@ const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
 let codeLensEnabled = false;
 
 const config = {
+	diffEditor: { renderSideBySide: false },
 	workbench: {
 		quickOpen: {
 			closeOnFocusLost: false,

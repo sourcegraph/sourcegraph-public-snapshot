@@ -16,28 +16,38 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 	private _emitter: Emitter<URI> = new Emitter<URI>();
 
 	public openEditor(data: any, options?: any): TPromise<IEditor> {
-		let { repo, rev, path } = URIUtils.repoParams(data.resource);
-		rev = prettifyRev(rev);
-		const router = __getRouterForWorkbenchOnly();
-
-		let hash: undefined | string = undefined;
-		if (data.options && data.options.selection) {
-			const selection = RangeOrPosition.fromMonacoRange(data.options.selection);
-			hash = `#L${selection}`;
+		let resource: URI;
+		if (data.resource) {
+			resource = data.resource;
+		} else if (data.originalInput) {
+			resource = data.originalInput.resource;
+		} else {
+			throw new Error(`unknown data: ${data}`);
 		}
+		if (resource) {
+			let { repo, rev, path } = URIUtils.repoParams(resource);
+			rev = prettifyRev(rev);
+			const router = __getRouterForWorkbenchOnly();
 
-		const url = urlToBlob(repo, rev, path);
-		router.push({
-			pathname: url,
-			state: options,
-			hash,
-			query: router.location.query,
-		});
-		return this.openEditorWithoutURLChange(data, options);
+			let hash: undefined | string;
+			if (data.options && data.options.selection) {
+				const selection = RangeOrPosition.fromMonacoRange(data.options.selection);
+				hash = `#L${selection}`;
+			}
+
+			const url = urlToBlob(repo, rev, path);
+			router.push({
+				pathname: url,
+				state: options,
+				hash,
+				query: router.location.query,
+			});
+		}
+		return this.openEditorWithoutURLChange(resource, data, options);
 	}
 
-	openEditorWithoutURLChange(data: any, options?: any): TPromise<IEditor> {
-		this._emitter.fire(data.resource);
+	openEditorWithoutURLChange(mainResource: URI, data: any, options?: any): TPromise<IEditor> {
+		this._emitter.fire(mainResource);
 		const router = __getRouterForWorkbenchOnly();
 
 		// calling openEditor with a non-zero position, or options equal to
@@ -49,9 +59,9 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		}
 
 		// Set the resource revision to the commit hash
-		return TPromise.wrap(fetchContentAndResolveRev(data.resource)).then(({ content, commit }) => {
-			data.resource = data.resource.with({ query: commit });
-			updateFileTree(data.resource);
+		return TPromise.wrap(fetchContentAndResolveRev(mainResource)).then(({ content, commit }) => {
+			data.resource = mainResource.with({ query: commit });
+			updateFileTree(mainResource);
 			return super.openEditor(data, options, 0);
 		});
 	}

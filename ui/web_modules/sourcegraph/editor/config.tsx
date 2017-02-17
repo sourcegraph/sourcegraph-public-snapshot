@@ -58,7 +58,7 @@ function renderFileEditor(location: AbsoluteLocation): void {
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	const resolverService = Services.get(ITextModelResolverService);
 	const editorInput = new ResourceEditorInput("", "", resource, resolverService);
-	editorService.openEditorWithoutURLChange(editorInput).then(() => {
+	editorService.openEditorWithoutURLChange(resource, editorInput).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
 }

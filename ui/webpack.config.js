@@ -34,6 +34,11 @@ const plugins = [
 		// vscode uses require.toUrl to get various root paths. It appears to be
 		// harmless to override it in this way.
 		"require.toUrl": "(function(){ return '/'; })",
+
+		// vscode uses this in vs/workbench/electron-browser/actions. It is
+		// harmless to override as we don't care about getting the stats for
+		// their RequireJS loader (which we don't even use).
+		"require.getStats": "(function() { return; })",
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
 	new webpack.IgnorePlugin(/\_test\.js$/),
