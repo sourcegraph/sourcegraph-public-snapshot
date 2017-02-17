@@ -1,4 +1,6 @@
-import { modes } from "sourcegraph/editor/modes";
+import { getModes } from "sourcegraph/util/features";
+
+const modes = getModes();
 
 const ignoredExtensions = new Set<string>(["md"]);
 const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx"]);

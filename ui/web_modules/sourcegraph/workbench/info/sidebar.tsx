@@ -4,7 +4,6 @@ import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
-import URI from "vs/base/common/uri";
 import { Location } from "vs/editor/common/modes";
 
 import { FlexContainer, Heading, Panel } from "sourcegraph/components";
@@ -157,7 +156,7 @@ class InfoPanel extends React.Component<Props, State> {
 
 	getEventProps(): FileEventProps {
 		if (this.props.defData && this.props.defData.definition) {
-			const uri = URI.parse(this.props.defData.definition.uri);
+			const uri = this.props.defData.definition.uri;
 			const { repo, rev, path } = URIUtils.repoParams(uri);
 			return Object.assign({}, this.props.fileEventProps, { defRepo: repo, defRev: rev || "", defPath: path });
 		}

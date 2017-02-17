@@ -1,4 +1,5 @@
 import URI from "vs/base/common/uri";
+import { getLanguages, onLanguage, registerCodeLensProvider } from "vs/editor/browser/standalone/standaloneLanguages";
 import { Range } from "vs/editor/common/core/range";
 import { IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Command, ICodeLensSymbol } from "vs/editor/common/modes";
@@ -7,6 +8,7 @@ import * as modes from "vs/editor/common/modes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { codeLensCache } from "sourcegraph/editor/EditorService";
 import { timeFromNow } from "sourcegraph/util/dateFormatterUtil";
+import { getModes } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
 export class AuthorshipCodeLens implements modes.CodeLensProvider {
@@ -84,3 +86,16 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 	}
 
 }
+
+getLanguages().forEach(({ id }) => {
+	// id should just be plaintext
+	onLanguage(id, () => {
+		registerCodeLensProvider(id, new AuthorshipCodeLens());
+	});
+});
+getModes().forEach(mode => {
+	onLanguage(mode, () => {
+		registerCodeLensProvider(mode, new AuthorshipCodeLens());
+	});
+});
+registerCodeLensProvider("markdown", new AuthorshipCodeLens());

@@ -1,5 +1,6 @@
 import Event, { Emitter } from "vs/base/common/event";
 import * as strings from "vs/base/common/strings";
+import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMessagePassingProtocol } from "vs/base/parts/ipc/common/ipc";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
@@ -15,14 +16,16 @@ import { IThreadService } from "vs/workbench/services/thread/common/threadServic
 export class MainThreadService extends AbstractThreadService implements IThreadService {
 	public _serviceBrand: any;
 
-	private remoteCom: IMainProcessExtHostIPC;
+	private remotes: Map<string, IMainProcessExtHostIPC>;
+	private latestRemoteCom: IMainProcessExtHostIPC;
 	private logCommunication: boolean;
-	private ready: boolean;
 
 	constructor(
 		@IEnvironmentService environmentService: IEnvironmentService,
 	) {
 		super(true);
+
+		this.remotes = new Map<string, IMainProcessExtHostIPC>();
 
 		// Run `localStorage.logExtensionHostCommunication=true` in
 		// your browser's JavaScript console to see detailed message
@@ -33,17 +36,17 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 	}
 
 	/**
-	 * attachWorker sets the Web Worker that this MainThreadService
+	 * attachWorker adds a Web Worker that this MainThreadService
 	 * communicates with. The protocol calls Worker.postMessage
 	 * instead of window.postMessage so that messages go directly to
 	 * the worker and are not broadcast to other potentially untrusted
 	 * recipients.
 	 */
-	public attachWorker(worker: Worker): void {
+	public attachWorker(worker: Worker, workspace: URI): void {
 		const protocol = new MainProtocol(worker);
 
 		// Message: Window --> Extension Host
-		this.remoteCom = create(msg => {
+		const remoteCom = create(msg => {
 			if (this.logCommunication) {
 				console.log("%c[Window \u2192 Extension]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
 			}
@@ -57,19 +60,61 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 				console.log("%c[Extension \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
 			}
 
-			this.remoteCom.handle(msg);
+			remoteCom.handle(msg);
 		});
 
-		this.remoteCom.setManyHandler(this);
+		remoteCom.setManyHandler(this);
 
-		this.ready = true;
+		this.remotes.set(workspace.toString(), remoteCom);
+		this.latestRemoteCom = remoteCom;
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
-		if (!this.ready) {
+		if (!this.latestRemoteCom) {
 			throw new Error("protocol not ready (worker is not yet attached)");
 		}
-		return this.remoteCom.callOnRemote(proxyId, path, args);
+
+		const routeToWorkspaceHost = uri => {
+			const workspace = uri.with({ fragment: "" });
+			const remoteCom = this.remotes.get(workspace.toString());
+			if (remoteCom) {
+				return remoteCom.callOnRemote(proxyId, path, args);
+			}
+			return undefined;
+		};
+
+		const routeToLatest = () => {
+			return this.latestRemoteCom.callOnRemote(proxyId, path, args);
+		};
+
+		switch (proxyId) {
+			case "eExtHostLanguageFeatures":
+				if (args.length >= 2 && args[1] instanceof URI) {
+					return routeToWorkspaceHost(args[1] as URI) || routeToLatest();
+				}
+				break;
+
+			case "eExtHostDocuments":
+				switch (path) {
+					case "$provideTextDocumentContent":
+						return routeToWorkspaceHost(args[1] as URI) || routeToLatest();
+
+					case "$acceptModelAdd":
+						return routeToWorkspaceHost(args[0].url as URI) || routeToLatest();
+				}
+				break;
+
+			case "eExtHostEditors":
+				switch (path) {
+					case "$acceptTextEditorAdd":
+						return routeToWorkspaceHost(args[0].document as URI) || routeToLatest();
+				}
+				break;
+		}
+
+		// Fallback to calling the most recently created remote for non-workspace-specific requests.
+		// TODO(john): set up null workspace extension host at init for catch-all?
+		return routeToLatest();
 	}
 }
 

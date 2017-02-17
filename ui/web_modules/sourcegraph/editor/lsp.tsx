@@ -56,7 +56,6 @@ type LSPResponse = {
 // for managing the lifecycle of the LSP servers; this client treats
 // it as a stateless service.
 export function send(model: IReadOnlyModel, method: string, params: any): Promise<LSPResponse> {
-	assertNotLSPExtension();
 	return sendExt(URIUtils.withoutFilePath(model.uri).toString(true), model.getModeId(), method, params);
 }
 
@@ -78,19 +77,8 @@ async function cachingFetch(url: string | Request, init?: RequestInit): Promise<
 	return response.clone();
 }
 
-/**
- * Asserts that a function should not be called if the lspExtension feature flag is enabled.
- */
-export function assertNotLSPExtension(): void {
-	if (Features.lspExtension.isEnabled()) {
-		console.error("call to deprecated function with Features.lspExtension enabled"); // tslint:disable-line no-console
-	}
-}
-
 // sendExt mirrors the functionality of send, but is intended to be used by callers outside of Monaco.
 export async function sendExt(uri: string, modeID: string, method: string, params: any): Promise<LSPResponse> {
-	assertNotLSPExtension();
-
 	const t0 = Date.now();
 
 	const request = [

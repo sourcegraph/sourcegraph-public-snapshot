@@ -15,20 +15,18 @@ import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
 import { URIUtils } from "sourcegraph/core/uri";
-import { normalisePosition } from "sourcegraph/editor/contrib";
 import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
+import { normalisePosition } from "sourcegraph/workbench/utils";
+
 import { Services } from "sourcegraph/workbench/services";
 import { Disposables } from "sourcegraph/workbench/utils";
 
 interface Props {
 	editorModel: IModel;
-	lspParams: {
-		position: {
-			line: number,
-			character: number
-		},
+	params: {
+		position: IPosition,
 	};
 };
 
@@ -69,7 +67,7 @@ export class SidebarContribution extends Disposables {
 	private async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
 		const id = this.currentID;
 		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
-		const def: DefinitionData | null = await provideDefinition(props.editorModel, props.lspParams.position).then(defData => {
+		const def = await provideDefinition(props.editorModel, props.params.position).then(defData => {
 			if (!defData || (!defData.docString && !defData.funcName)) {
 				return null;
 			}
@@ -77,8 +75,11 @@ export class SidebarContribution extends Disposables {
 			this.dispatchInfo(id, defData, fileEventProps);
 			return defData;
 		});
+		if (!def) {
+			return;
+		}
 
-		const localRefs = await provideReferences(props.editorModel, props.lspParams.position);
+		const localRefs = await provideReferences(props.editorModel, props.params.position);
 		if (this.currentID !== id) {
 			return;
 		}
@@ -97,7 +98,7 @@ export class SidebarContribution extends Disposables {
 		}
 		this.dispatchInfo(id, def, fileEventProps, refModel);
 
-		const depRefs = await fetchDependencyReferences(props.editorModel, props.lspParams.position);
+		const depRefs = await fetchDependencyReferences(props.editorModel, props.params.position);
 		if (!depRefs || this.currentID !== id) {
 			this.dispatchInfo(id, def, fileEventProps, refModel, true);
 			return;
@@ -170,23 +171,18 @@ export class SidebarContribution extends Disposables {
 
 	public openInSidebar = (): void => {
 		const model = this.editor.getModel();
-		const pos = normalisePosition(model, this.editor.getPosition());
-		this.currentID = model.uri.toString() + pos.lineNumber + ":" + pos.column;
+		const position = normalisePosition(model, this.editor.getPosition());
+		this.currentID = model.uri.toString() + position.lineNumber + ":" + position.column;
 
-		if (!this.isIdentifier(model, pos)) {
+		if (!this.isIdentifier(model, position)) {
 			return;
 		}
 
-		this.highlightWord(pos);
+		this.highlightWord(position);
 
 		this.globalFetchSubscription = this.renderSidePanelForData({
 			editorModel: model,
-			lspParams: {
-				position: {
-					line: pos.lineNumber - 1,
-					character: pos.column - 1,
-				},
-			},
+			params: { position },
 		});
 	}
 

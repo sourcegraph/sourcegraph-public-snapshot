@@ -36,7 +36,7 @@ export function OpenInGitHubButton({ repo, rev, path }: Props): JSX.Element {
 		const eventTarget = event.target as Node;
 		if (eventTarget.nodeName === "INPUT" || isNonMonacoTextArea(eventTarget) || event.metaKey || event.ctrlKey) {
 			return;
-		} else if (event.keyCode === openInGitHubKeyCode || event.key.toUpperCase() === openInGitHubKey) {
+		} else if (event.keyCode === openInGitHubKeyCode || (event.key && event.key.toUpperCase() === openInGitHubKey)) {
 			openInGitHub(event);
 		}
 	}

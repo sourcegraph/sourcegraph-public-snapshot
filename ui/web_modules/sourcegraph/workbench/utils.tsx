@@ -2,6 +2,7 @@ import * as React from "react";
 
 import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
+import { IPosition, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { IEditorInput } from "vs/platform/editor/common/editor";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
@@ -116,4 +117,17 @@ export function prettifyRev(newRevision: string | null): string | null {
 		return getRevFromRouter(router) || null;
 	}
 	return newRevision;
+}
+
+export function normalisePosition(model: IReadOnlyModel, position: IPosition): IPosition {
+	const word = model.getWordAtPosition(position);
+	if (!word) {
+		return position;
+	}
+	// We always hover/j2d on the middle of a word. This is so multiple requests for the same word
+	// result in a lookup on the same position.
+	return {
+		lineNumber: position.lineNumber,
+		column: Math.floor((word.startColumn + word.endColumn) / 2),
+	};
 }

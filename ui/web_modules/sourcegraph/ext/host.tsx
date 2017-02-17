@@ -8,9 +8,7 @@ import { Features } from "sourcegraph/util/features";
 //   activate();
 
 import { activate } from "sourcegraph/ext/lsp/extension";
-if (Features.lspExtension.isEnabled()) {
-	activate();
-}
+activate();
 
 import { activate as activateZap } from "sourcegraph/ext/zap/extension";
 if (Features.zap.isEnabled()) {

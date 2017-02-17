@@ -1,26 +1,15 @@
+// TODO(john): this file is defunct and the monaco imports should be moved.
+// The languagesToSearchModes will be removed (and the TODO completed) when we
+// replace our quickopen w/ vscode's.
+
 // This file imports all of the languages ("modes" in vscode
 // terminology) that we support in the UI.
 
 import "monaco-languages/out/monaco.contribution";
 import "monaco-typescript/out/monaco.contribution";
-import { Features } from "sourcegraph/util/features";
+import { getModes } from "sourcegraph/util/features";
 
-export const modes = new Set<string>(["go", "javascript", "typescript"]);
-
-if (Features.langCSS.isEnabled()) {
-	modes.add("css");
-	modes.add("less");
-	modes.add("scss");
-}
-if (Features.langPHP.isEnabled()) {
-	modes.add("php");
-}
-if (Features.langPython.isEnabled()) {
-	modes.add("python");
-}
-if (Features.langJava.isEnabled()) {
-	modes.add("java");
-}
+const modes = getModes();
 
 export function languagesToSearchModes(languages: string[]): string[] {
 	return languages.map(lang => lang.toLowerCase())

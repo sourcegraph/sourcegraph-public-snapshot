@@ -2,21 +2,26 @@ import * as remove from "lodash/remove";
 import * as values from "lodash/values";
 import * as hash from "object-hash";
 import { Observable } from "rxjs";
-import { Definition, Hover, Position } from "vscode-languageserver-types";
 
-import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
+import URI from "vs/base/common/uri";
+import { Position } from "vs/editor/common/core/position";
+import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
+import { getDeclarationsAtPosition } from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
+import { getHover } from "vs/editor/contrib/hover/common/hover";
+import { provideReferences as getReferences } from "vs/editor/contrib/referenceSearch/common/referenceSearch";
 
 import { Repo } from "sourcegraph/api/index";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
+import { setupWorker } from "sourcegraph/ext/main";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
 export interface DefinitionData {
 	definition?: {
-		uri: string;
+		uri: URI;
 		range: IRange;
 	};
 	docString: string;
@@ -46,43 +51,22 @@ export interface ReferenceCommitInfo {
 	hunk: GQL.IHunk;
 }
 
-export async function provideDefinition(model: IReadOnlyModel, pos: Position): Promise<DefinitionData | null> {
-	const [hoverResult, defResult] = await Promise.all([
-		lsp.send(model, "textDocument/hover", {
-			textDocument: { uri: model.uri.toString(true) },
-			position: pos,
-			context: { includeDeclaration: false },
-		}),
-		lsp.send(model, "textDocument/definition", {
-			textDocument: { uri: model.uri.toString(true) },
-			position: pos,
-			context: { includeDeclaration: false },
-		})]);
+export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): Promise<DefinitionData | null> {
+	const position = new Position(pos.lineNumber, pos.column);
+	const hoversPromise = getHover(model, position);
+	const defPromise = getDeclarationsAtPosition(model, position);
 
-	const hover: Hover = hoverResult.result;
-	const def: Definition = defResult.result;
+	const [hovers, def] = await Promise.all([hoversPromise, defPromise]);
 
-	let definition: { uri: string; range: IRange } | undefined;
-	if (def && def[0]) {
-		const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
-		definition = {
-			uri: firstDef.uri,
-			range: {
-				startLineNumber: firstDef.range.start.line,
-				startColumn: firstDef.range.start.character,
-				endLineNumber: firstDef.range.end.line,
-				endColumn: firstDef.range.end.character,
-			}
-		};
-	}
-	if (!hover || !hover.contents) {
+	if (!hovers || hovers.length === 0 || !hovers[0].contents || !def || !def[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
 		return null;
 	}
 
-	let funcName = "";
+	const hover = hovers[0]; // TODO(john): support multiple hover tooltips
+
 	let docString = "";
-	if (hover.contents instanceof Array) {
-		// TODO(nicot): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
+	let funcName = "";
+	if (hover.contents.length > 1) {
 		const [first, second] = hover.contents;
 		if (first) {
 			if (typeof first === "string") {
@@ -101,30 +85,21 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 			}
 		}
 	} else {
-		if (typeof hover.contents === "string") {
-			funcName = hover.contents;
-		} else if (hover.contents.value) {
-			funcName = hover.contents.value;
-		}
+		const content = hover.contents[0];
+		funcName = typeof content === "string" ? content : content.value;
+		docString = "";
 	}
 
+	const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
+	const definition = {
+		uri: firstDef.uri,
+		range: firstDef.range,
+	};
 	return { funcName, docString, definition };
 }
 
-export async function provideReferences(model: IReadOnlyModel, pos: Position): Promise<Location[]> {
-	const resp = await lsp.send(model, "textDocument/references", {
-		textDocument: { uri: model.uri.toString(true) },
-		position: pos,
-		context: { includeDeclaration: false, xlimit: 100 },
-	});
-	const result = resp.result;
-
-	if (!result || Object.keys(result).length === 0) {
-		return [];
-	}
-
-	const locs: lsp.Location[] = result instanceof Array ? result : [result];
-	return locs.map(lsp.toMonacoLocation);
+export async function provideReferences(model: IReadOnlyModel, pos: IPosition): Promise<Location[]> {
+	return getReferences(model, new Position(pos.lineNumber, pos.column));
 }
 
 export interface LocationWithCommitInfo extends Location {
@@ -257,6 +232,9 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(provideReferencesCommitInfo).then(refs => {
 						incrementCountIfNonempty(refs);
 						if (!completed && refs.length > 0) {
+							// HACK(john): this should be written into vscode internals (https://github.com/sourcegraph/sourcegraph/issues/3998)
+							// The first URI in the list is assumed to share the same workspace with the rest.
+							setupWorker(refs[0].uri.with({ fragment: "" }));
 							observer.next(refs);
 						}
 						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
@@ -309,8 +287,7 @@ function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Re
 }
 
 const globalRefLangs = new Set(["go", "java"]);
-
-export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
+export async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition): Promise<DepRefsData | null> {
 	// Only fetch global refs for certain languages.
 	if (!globalRefLangs.has(model.getModeId())) {
 		return null;
@@ -321,7 +298,7 @@ export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Posi
 			commit(rev: "${model.uri.query}") {
 				commit {
 					file(path: "${model.uri.fragment}") {
-						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.line}, Character: ${pos.character}) {
+						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.lineNumber - 1}, Character: ${pos.column - 1}) {
 							data
 						}
 					}

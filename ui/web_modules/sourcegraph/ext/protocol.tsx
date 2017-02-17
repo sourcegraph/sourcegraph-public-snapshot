@@ -11,7 +11,14 @@ import { context } from "sourcegraph/app/context";
  */
 export interface InitializationOptions {
 	/**
-	 *   The workspace URI
+	 * The sequence identifier for an extension host, provided by the main
+	 * thread. This allows us to prevent collisions on globally namespaced
+	 * handles to e.g. hover provider disposables.
+	 */
+	seqId: number;
+
+	/**
+	 * The workspace URI
 	 */
 	workspace: string;
 

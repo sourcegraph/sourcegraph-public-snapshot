@@ -2,12 +2,12 @@ import * as autobind from "autobind-decorator";
 import * as React from "react";
 import { Link } from "react-router";
 import { marked } from "vs/base/common/marked/marked";
-import URI from "vs/base/common/uri";
 
 import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { Button, FlexContainer } from "sourcegraph/components";
 import { ArrowRight, List } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
@@ -42,7 +42,7 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 			showingFullDocString: !this.state.showingFullDocString,
 		});
 		if (this.props.defData.definition) {
-			const uri = URI.parse(this.props.defData.definition.uri);
+			const uri = this.props.defData.definition.uri;
 			let { repo, rev, path } = URIUtils.repoParams(uri);
 			rev = prettifyRev(rev);
 			Events.InfoPanelComment_Toggled.logEvent({ ...this.props.eventProps, defRepo: repo, defRev: rev || "", defPath: path });
@@ -53,7 +53,6 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 
 	render(): JSX.Element | null {
 		const { defData } = this.props;
-
 		const fullDocString = marked(defData.docString, { sanitize: true });
 		let renderedDocString = fullDocString;
 		const fonts = typography.fontStack.sansSerif;
@@ -84,10 +83,10 @@ function Definition({ defData, eventProps }: { defData: DefinitionData, eventPro
 	if (!defData.definition) {
 		return <div></div>;
 	}
-	const uri = URI.parse(defData.definition.uri);
+	const uri = defData.definition.uri;
 	let { repo, rev, path } = URIUtils.repoParams(uri);
 	rev = prettifyRev(rev);
-	const url = urlToBlobRange(repo, rev, path, defData.definition.range);
+	const url = urlToBlobRange(repo, rev, path, RangeOrPosition.fromMonacoRange(defData.definition.range).toZeroIndexedRange());
 	return <div>
 		<p style={{ color: colors.blueGray(), paddingTop: 0 }}>
 			Defined in

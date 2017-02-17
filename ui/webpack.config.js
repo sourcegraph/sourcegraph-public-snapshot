@@ -80,6 +80,9 @@ var devtool = "source-map";
 if (!production && !process.env.WEBPACK_SOURCEMAPS) {
 	devtool = "eval";
 }
+if (process.env.DISABLE_WEBPACK_SOURCEMAPS) {
+	devtool = undefined;
+}
 
 plugins.push(new webpack.LoaderOptionsPlugin({
 	options: {
@@ -155,7 +158,7 @@ module.exports = {
 				}),
 			},
 			{
-				test: /node_modules\/vscode-languageclient/,
+				test: /node_modules\/@sourcegraph\/vscode-languageclient/,
 				loader: 'awesome-typescript-loader?' + JSON.stringify({
 					compilerOptions: {
 						target: "es5",
@@ -175,7 +178,7 @@ module.exports = {
 					{
 						loader: 'css-loader',
 						options: {
-							sourceMap: true,
+							sourceMap: !Boolean(process.env.DISABLE_WEBPACK_SOURCEMAPS),
 							modules: true,
 							importLoaders: 1,
 							localIdentName: "[name]__[local]___[hash:base64:5]",

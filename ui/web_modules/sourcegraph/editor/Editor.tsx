@@ -5,8 +5,7 @@ import URI from "vs/base/common/uri";
 import { ICodeEditor, IContentWidget, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { IEditorConstructionOptions, IStandaloneCodeEditor } from "vs/editor/browser/standalone/standaloneCodeEditor";
 import { createModel } from "vs/editor/browser/standalone/standaloneEditor";
-import { Position } from "vs/editor/common/core/position";
-import { ICursorSelectionChangedEvent, IModelChangedEvent, IRange } from "vs/editor/common/editorCommon";
+import { ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { HoverOperation } from "vs/editor/contrib/hover/browser/hoverOperation";
 import { MenuId, MenuRegistry } from "vs/platform/actions/common/actions";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
@@ -17,14 +16,12 @@ import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import { URIUtils } from "sourcegraph/core/uri";
 import { AuthorshipWidget, AuthorshipWidgetID, CodeLensAuthorWidget } from "sourcegraph/editor/authorshipWidget";
 import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
-import * as lsp from "sourcegraph/editor/lsp";
-import { modes } from "sourcegraph/editor/modes";
 import { createEditor } from "sourcegraph/editor/setup";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
 
-import "sourcegraph/editor/contrib";
+import "sourcegraph/editor/authorshipCodeLens";
 import "sourcegraph/editor/FindExternalReferencesAction";
 import "sourcegraph/editor/vscode";
 import "sourcegraph/workbench/overrides/labels";
@@ -66,21 +63,6 @@ export class Editor implements IDisposable {
 		// WORKAROUND: Remove the initial model from the configuration to avoid infinite recursion when the config gets updated internally.
 		// Reproduce issue by using "Find All References" to open the rift view and then right click again in the code outside of the view.
 		delete (this._editor.getRawConfiguration() as IEditorConstructionOptions).model;
-
-		// Warm up the LSP server immediately when the document loads
-		// instead of waiting until the user tries to hover.
-		this._editor.onDidChangeModel((e: IModelChangedEvent) => {
-			// only do it for modes we have called registerModeProviders on.
-			if (!modes.has(this._editor.getModel().getModeId())) {
-				return;
-			}
-			// We modify the name to indicate to our HTTP gateway that this
-			// should not be measured as a user triggered action.
-			lsp.send(this._editor.getModel(), "textDocument/hover?prepare", {
-				textDocument: { uri: e.newModelUrl.toString(true) },
-				position: lsp.toPosition(new Position(1, 1)),
-			});
-		});
 
 		// Don't show context menu for peek view or comments, etc.
 		// Also don't show for unsupported languages.

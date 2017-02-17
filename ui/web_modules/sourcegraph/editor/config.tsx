@@ -4,6 +4,7 @@ import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
+import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderRegistry } from "vs/editor/common/modes";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IFileService } from "vs/platform/files/common/files";
@@ -75,8 +76,29 @@ function updateEditorAfterURLChange(sel: IRange | null): void {
 	}
 	editor.setSelection(sel);
 	editor.revealRangeInCenter(sel);
-	const sidebar = editor.getContribution(SidebarContribID) as SidebarContribution;
-	sidebar.openInSidebar();
+
+	// Opening sidebar is a noop until a definition provider is registered.
+	// This sidebar ALSO needs hover/reference providers registered to fetch data.
+	// The extension host will register providers asynchronously, so wait
+	// for registration events before opening the sidebar.
+	const providerRegistered = (registry) => {
+		return new Promise<void>((resolve, reject) => {
+			if (registry.all(editor.getModel()).length === 0) {
+				const disposable = registry.onDidChange(() => {
+					// assume the change is a registration as needed by the sidebar
+					disposable.dispose();
+					resolve();
+				});
+			} else {
+				resolve();
+			}
+		});
+	};
+	Promise.all([providerRegistered(DefinitionProviderRegistry), providerRegistered(HoverProviderRegistry), providerRegistered(ReferenceProviderRegistry)])
+		.then(() => {
+			const sidebar = editor.getContribution(SidebarContribID) as SidebarContribution;
+			sidebar.openInSidebar();
+		});
 }
 
 /**

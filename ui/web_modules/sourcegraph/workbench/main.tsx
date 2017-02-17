@@ -1,7 +1,7 @@
 import "sourcegraph/feedback/feedback.contribution";
 
+import "sourcegraph/editor/authorshipCodeLens";
 import "sourcegraph/editor/authorshipWidget";
-import "sourcegraph/editor/contrib";
 import "sourcegraph/editor/vscode";
 import "sourcegraph/workbench/info/contrib";
 import "sourcegraph/workbench/staticImports";
@@ -20,7 +20,6 @@ import "vs/workbench/electron-browser/main.contribution";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { init as initExtensionHost } from "sourcegraph/ext/main";
-import { Features } from "sourcegraph/util/features";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
 
@@ -43,9 +42,7 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	);
 	workbench.startup();
 
-	if (Features.extensions.isEnabled()) {
-		initExtensionHost(workspace);
-	}
+	initExtensionHost(workspace);
 
 	configurePostStartup(services);
 	return [workbench, services];

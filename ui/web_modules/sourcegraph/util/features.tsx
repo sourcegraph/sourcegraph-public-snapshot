@@ -77,19 +77,6 @@ export const Features = {
 	commitInfoBar: new Feature("commitInfoBar"),
 
 	/**
-	 * extensions enables the vscode.d.ts extension API and runs an
-	 * extension host Web Worker where extension code runs.
-	 */
-	extensions: new Feature("extensions").disableBeta(),
-
-	/**
-	 * lspExtension uses the vscode-languageclient vscode extension
-	 * and a WebSocket instead of our custom, HTTP-based LSP adapter
-	 * to connect to our language servers.
-	 */
-	lspExtension: new Feature("lspExtension").disableBeta(),
-
-	/**
 	 * trace is whether to show trace URLs to LightStep in console log messages.
 	 */
 	trace: new Feature("trace"),
@@ -107,7 +94,7 @@ export const Features = {
 	listEnabled,
 };
 
-if ((Features.zap.isEnabled() || Features.zap2Way.isEnabled()) && !Features.extensions.isEnabled()) {
+if ((Features.zap.isEnabled() || Features.zap2Way.isEnabled())) {
 	console.error("features.zap and features.zap2Way require features.extensions to also be enabled"); // tslint:disable-line no-console
 }
 
@@ -125,8 +112,23 @@ export function bulkEnable(featureNames: string[]): void {
 	}
 }
 
-if (Features.lspExtension.isEnabled() && !Features.extensions.isEnabled()) {
-	console.error("features.lspExtension requires features.extensions to also be enabled");
+export function getModes(): Set<string> {
+	const modes = new Set<string>(["go", "javascript", "typescript"]);
+	if (Features.langCSS.isEnabled()) {
+		modes.add("css");
+		modes.add("less");
+		modes.add("scss");
+	}
+	if (Features.langPHP.isEnabled()) {
+		modes.add("php");
+	}
+	if (Features.langPython.isEnabled()) {
+		modes.add("python");
+	}
+	if (Features.langJava.isEnabled()) {
+		modes.add("java");
+	}
+	return modes;
 }
 
 if (global.window) {
