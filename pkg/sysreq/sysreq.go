@@ -3,7 +3,6 @@ package sysreq
 
 import (
 	"strings"
-	"sync"
 
 	"context"
 )
@@ -40,7 +39,6 @@ func Check(ctx context.Context, skip []string) []Status {
 	}
 
 	statuses := make([]Status, len(checks))
-	var wg sync.WaitGroup
 	for i, c := range checks {
 		statuses[i].Name = c.Name
 
@@ -49,30 +47,13 @@ func Check(ctx context.Context, skip []string) []Status {
 			continue
 		}
 
-		wg.Add(1)
-		go func(i int, c check) {
-			defer wg.Done()
-
-			finished := make(chan struct{})
-
-			go func() {
-				problem, fix, err := c.Check(ctx)
-				if err != nil {
-					statuses[i].Err = err
-				}
-				statuses[i].Problem = problem
-				statuses[i].Fix = fix
-				finished <- struct{}{}
-			}()
-
-			select {
-			case <-finished:
-			case <-ctx.Done():
-				statuses[i].Err = context.DeadlineExceeded
-			}
-		}(i, c)
+		problem, fix, err := c.Check(ctx)
+		if err != nil {
+			statuses[i].Err = err
+		}
+		statuses[i].Problem = problem
+		statuses[i].Fix = fix
 	}
-	wg.Wait()
 
 	return statuses
 }
