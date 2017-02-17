@@ -32,9 +32,9 @@ import { prettifyRev } from "sourcegraph/workbench/utils";
 export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
 	const { repo, commitID, path } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
+	updateFileTree(resource);
 
 	const fileStat = await Services.get(IFileService).resolveFile(resource);
-	updateFileTree(resource);
 	if (fileStat.isDirectory) {
 		renderDirectoryContent();
 		return;
@@ -89,9 +89,11 @@ export function registerEditorCallbacks(router: Router): void {
 
 export async function updateFileTree(resource: URI): Promise<void> {
 	const viewletService = Services.get(IViewletService) as IViewletService;
-	const viewlet = viewletService.getActiveViewlet();
+	let viewlet = viewletService.getActiveViewlet();
 	if (!viewlet) {
-		return;
+		viewlet = await new Promise(resolve => {
+			viewletService.onDidViewletOpen(resolve);
+		}) as any;
 	}
 
 	const view = viewlet["explorerView"];
