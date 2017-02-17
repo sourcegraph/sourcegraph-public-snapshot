@@ -1,6 +1,6 @@
 import { Subscription } from "rxjs";
 
-import { FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
 import { isMacintosh } from "vs/base/common/platform";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
@@ -16,7 +16,6 @@ import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRe
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { normalisePosition } from "sourcegraph/editor/contrib";
-import { Events } from "sourcegraph/util/constants/AnalyticsConstants";
 import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
