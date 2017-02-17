@@ -151,6 +151,11 @@ func (s *Server) Start(ctx context.Context) {
 		panic("server is already started")
 	}
 	s.bgCtx = ctx
+	if s.workspaceServer != nil {
+		if err := s.workspaceServer.loadWorkspacesFromConfig(s.baseLogger()); err != nil {
+			s.baseLogger().Log(err)
+		}
+	}
 	close(s.readyToAccept)
 }
 

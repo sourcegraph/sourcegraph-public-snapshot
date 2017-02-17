@@ -14,6 +14,7 @@ import (
 	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
+	"github.com/sourcegraph/zap/pkg/config"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -130,7 +131,7 @@ type workspaceServer struct {
 
 var mockWorkspaceHandled chan struct{}
 
-func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *serverRepo, w WorkspaceIdentifier, workspace Workspace, ready chan struct{}) {
+func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *serverRepo, w WorkspaceIdentifier, workspace Workspace, ready chan error) {
 	// Create a clean logger, because it will be reused across
 	// requests.
 	log := s.parent.baseLogger().With("watching-workspace", w.Dir)
@@ -265,6 +266,10 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 		}
 	}
 	if err := loop(); err != nil {
+		if ready != nil {
+			ready <- err
+			close(ready)
+		}
 		if err != context.Canceled {
 			level.Error(log).Log("ended-with-error", err)
 		}
@@ -306,55 +311,9 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if params.WorkspaceIdentifier == (WorkspaceIdentifier{}) {
 			return nil, errWorkspaceIdentifierRequired
 		}
-
-		// Allow upgrading a bare repo to a workspace repo.
-		repo, exists := ws.parent.repos[params.WorkspaceIdentifier.Dir]
-		if exists {
-			repo.mu.Lock()
-			isWorkspace := repo.workspace != nil
-			repo.mu.Unlock()
-			if isWorkspace {
-				return nil, &jsonrpc2.Error{
-					Code:    int64(ErrorCodeWorkspaceExists),
-					Message: fmt.Sprintf("already added workspace %v", params.WorkspaceIdentifier),
-				}
-			}
-			level.Info(log).Log("create-workspace-in-existing-repo", "")
-		} else {
-			repo = &serverRepo{refdb: refdb.NewMemoryRefDB()}
-			level.Info(log).Log("create-workspace-in-new-repo", "")
-		}
-
-		ctx, cancel := context.WithCancel(ws.parent.bgCtx)
-		workspace, config, err := ws.NewWorkspace(ctx, ws.parent.baseLogger().With("workspace", params.Dir), params.Dir)
-		if err != nil {
-			cancel()
+		if err := ws.addWorkspace(log, params); err != nil {
 			return nil, err
 		}
-		repo.workspace = workspace
-		repo.workspaceCancel = cancel
-
-		do := func() error {
-			ws.parent.reposMu.Lock()
-			defer ws.parent.reposMu.Unlock()
-
-			ready := make(chan struct{})
-			go ws.handleWorkspaceTasks(ws.parent.bgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
-			<-ready
-
-			ws.parent.repos[params.WorkspaceIdentifier.Dir] = repo
-			_ = cancel // suppress lint warning
-			return nil
-		}
-		if err := do(); err != nil {
-			return nil, err
-		}
-
-		if err := ws.parent.doUpdateRepoConfiguration(ctx, log, params.Dir, repo, *config); err != nil {
-			cancel()
-			return nil, err
-		}
-
 		return WorkspaceAddResult{}, nil
 
 	case "workspace/remove":
@@ -372,7 +331,10 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if err != nil {
 			return nil, err
 		}
-		ws.removeWorkspace(log, params.WorkspaceIdentifier, repo)
+		err = ws.removeWorkspace(log, params.WorkspaceIdentifier, repo)
+		if err != nil {
+			return nil, err
+		}
 		return WorkspaceRemoveResult{}, nil
 
 	case "workspace/status":
@@ -526,7 +488,79 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 	return nil, errNotHandled
 }
 
-func (s *workspaceServer) removeWorkspace(log *logpkg.Context, workspace WorkspaceIdentifier, repo *serverRepo) {
+func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddParams) error {
+	// Allow upgrading a bare repo to a workspace repo.
+	repo, exists := s.parent.repos[params.Dir]
+	if exists {
+		repo.mu.Lock()
+		isWorkspace := repo.workspace != nil
+		repo.mu.Unlock()
+		if isWorkspace {
+			return &jsonrpc2.Error{
+				Code:    int64(ErrorCodeWorkspaceExists),
+				Message: fmt.Sprintf("already added workspace %v", params.WorkspaceIdentifier),
+			}
+		}
+		level.Info(log).Log("create-workspace-in-existing-repo", "")
+	} else {
+		repo = &serverRepo{refdb: refdb.NewMemoryRefDB()}
+		level.Info(log).Log("create-workspace-in-new-repo", "")
+	}
+
+	ctx, cancel := context.WithCancel(s.parent.bgCtx)
+	workspace, cfg, err := s.NewWorkspace(ctx, s.parent.baseLogger().With("workspace", params.Dir), params.Dir)
+	if err != nil {
+		cancel()
+		return err
+	}
+	repo.workspace = workspace
+	repo.workspaceCancel = cancel
+
+	do := func() error {
+		s.parent.reposMu.Lock()
+		defer s.parent.reposMu.Unlock()
+
+		ready := make(chan error)
+		go s.handleWorkspaceTasks(s.parent.bgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
+		if err := <-ready; err != nil {
+			return fmt.Errorf("workspace %q failed to become ready: %s", params.Dir, err)
+		}
+		// Only add the workspace if handleWorkspaceTasks
+		// indicated it is ready (and did not fail before becoming
+		// ready).
+		s.parent.repos[params.Dir] = repo
+		return nil
+	}
+	if err := do(); err != nil {
+		return err
+	}
+
+	if err := s.parent.doUpdateRepoConfiguration(ctx, log, params.Dir, repo, *cfg); err != nil {
+		cancel()
+		return err
+	}
+	return config.EnsureWorkspaceInGlobalConfig(params.Dir)
+}
+
+func (s *workspaceServer) loadWorkspacesFromConfig(log *logpkg.Context) error {
+	// Read the current config file, if it exists.
+	cfg, err := config.ReadGlobalFile()
+	if err != nil {
+		return err
+	}
+
+	for _, opt := range cfg.Section("workspaces").Options {
+		if opt.Key != "workspace" {
+			continue
+		}
+		if err := s.addWorkspace(log, WorkspaceAddParams{WorkspaceIdentifier{Dir: opt.Value}}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *workspaceServer) removeWorkspace(log *logpkg.Context, workspace WorkspaceIdentifier, repo *serverRepo) error {
 	level.Info(log).Log("rm-workspace", workspace.Dir)
 
 	s.parent.reposMu.Lock()
@@ -536,6 +570,7 @@ func (s *workspaceServer) removeWorkspace(log *logpkg.Context, workspace Workspa
 	repo.mu.Lock()
 	repo.workspaceCancel()
 	repo.mu.Unlock()
+	return config.EnsureWorkspaceNotInGlobalConfig(workspace.Dir)
 }
 
 func (s *Server) getWorkspaceForFileURI(uriStr string) (repo *serverRepo, workspace Workspace, repoName, relPath string, err error) {

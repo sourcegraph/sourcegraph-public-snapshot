@@ -9,7 +9,7 @@ These steps help you start using Zap on your repositories.
 1. Clone the repository https://github.com/sgtest/xyztest to your local machine.
 1. Install Zap: `go get -v -u github.com/sourcegraph/zap/cmd/zap` (if that fails due to lack of authentication, then run `cd $GOPATH/src/github.com/sourcegraph && git clone git@github.com:sourcegraph/zap.git && go get -u github.com/sourcegraph/zap/cmd/zap`)
 1. Get your auth token from https://sourcegraph.com/-/show-auth and use it in the next step
-1. Launch the Zap server: `ZAP_AUTH_COOKIE=... zap server -v`
+1. To launch the Zap server, run `ZAP_AUTH_COOKIE=... zap server -v` in your terminal
 1. Install the Visual Studio Code extension: Cmd/Ctrl-P for quick open, then `ext install sqs.vscode-zap` (delete the `<`)
 
 Then, in the directory of `sgtest/xyztest`, or any repository you want to use Zap on:
