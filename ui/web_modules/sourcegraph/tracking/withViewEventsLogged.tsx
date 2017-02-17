@@ -28,7 +28,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 		};
 
 		componentDidMount(): void {
-			this._logView(this.props.routes, this.props.location);
+			this.logViewAsync(this.props.routes, this.props.location);
 			this._checkEventQuery();
 		}
 
@@ -40,7 +40,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			// NOTE: this will not log separate page views when query string / hash
 			// values are updated.
 			if (this.props.location.pathname !== nextProps.location.pathname) {
-				this._logView(nextProps.routes, nextProps.location);
+				this.logViewAsync(nextProps.routes, nextProps.location);
 				// Greedily update the event logging tracker identity
 				EventLogger.updateTrackerWithIdentificationProps();
 			}
@@ -128,7 +128,15 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			}
 		}
 
-		_logView(routes: Route[], location: RouterLocation): void {
+		private logViewAsync(routes: Route[], location: RouterLocation): void {
+			setTimeout(() => {
+				// Logging to Telligent takes a long time and blocks us from
+				// rendering the component, so do it async.
+				this.logView(routes, location);
+			});
+		}
+
+		private logView(routes: Route[], location: RouterLocation): void {
 			let eventProps: {
 				url: string;
 				language?: string;

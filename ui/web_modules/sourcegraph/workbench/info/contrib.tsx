@@ -173,6 +173,10 @@ export class SidebarContribution extends Disposables {
 		const pos = normalisePosition(model, this.editor.getPosition());
 		this.currentID = model.uri.toString() + pos.lineNumber + ":" + pos.column;
 
+		if (!this.isIdentifier(model, pos)) {
+			return;
+		}
+
 		this.highlightWord(pos);
 
 		this.globalFetchSubscription = this.renderSidePanelForData({
@@ -188,9 +192,6 @@ export class SidebarContribution extends Disposables {
 
 	private highlightWord(position: IPosition): void {
 		const model = this.editor.getModel();
-		if (!this.isIdentifier(model, position)) {
-			return;
-		}
 
 		const word = model.getWordAtPosition(position);
 		if (!word) {
