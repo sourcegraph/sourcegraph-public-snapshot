@@ -165,7 +165,7 @@ function injectSourcegraphInternalTools(): void {
 	}
 
 	if (window.location.href === "https://github.com/orgs/sourcegraph/projects") {
-		const container = document.querySelector("body > div:nth-child(6) > div.container > div.container-lg.border.rounded-1 > div.bg-gray.p-3.border-bottom");
+		const container = document.querySelector("#projects-results")!.parentElement!.children[0];
 		let mount = document.createElement("span");
 		mount.id = "sourcegraph-projet-overview";
 		(container as Element).insertBefore(mount, (container as Element).firstChild);
