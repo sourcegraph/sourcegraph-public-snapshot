@@ -13,6 +13,10 @@
 :global .monaco-editor .cursor {
 	width: 0px !important;
 }
+/* FEATURE zap2Way: show text insertion cursor */
+:global body.zap2Way .monaco-editor .cursor {
+	width: 2px !important;
+}
 
 /* Highlight the line underneath the cursor. */
 :global .monaco-editor .current-line {

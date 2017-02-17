@@ -14,14 +14,23 @@ import "vs/workbench/parts/files/browser/files.contribution";
 import "vs/workbench/parts/output/browser/output.contribution";
 
 import URI from "vs/base/common/uri";
+import { TPromise } from "vs/base/common/winjs.base";
+import { IMode } from "vs/editor/common/modes";
+import { IModeService } from "vs/editor/common/services/modeService";
+import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import "vs/workbench/electron-browser/main.contribution";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
+import { TextFileEditorModel } from "vs/workbench/services/textfile/common/textFileEditorModel";
+import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
+import { TextModelResolverService } from "sourcegraph/editor/resolverService";
 import { init as initExtensionHost } from "sourcegraph/ext/main";
+import { Features } from "sourcegraph/util/features";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
+import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 
 // init creates the editor interface.
 export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
@@ -41,6 +50,17 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 		services,
 	);
 	workbench.startup();
+
+	if (Features.zap2Way.isEnabled()) {
+		// HACK: overwritten by workbench.startup()
+		services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
+		services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
+
+		// HACK: get URI's filename in fragment, not in URI path component
+		(TextFileEditorModel.prototype as any).getOrCreateMode = function (modeService: IModeService, preferredModeIds: string, firstLineText?: string): TPromise<IMode> {
+			return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
+		};
+	}
 
 	initExtensionHost(workspace);
 
