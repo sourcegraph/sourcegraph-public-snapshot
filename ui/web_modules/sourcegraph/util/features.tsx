@@ -94,10 +94,6 @@ export const Features = {
 	listEnabled,
 };
 
-if ((Features.zap.isEnabled() || Features.zap2Way.isEnabled())) {
-	console.error("features.zap and features.zap2Way require features.extensions to also be enabled"); // tslint:disable-line no-console
-}
-
 if (Features.zap2Way.isEnabled() && !Features.zap.isEnabled()) {
 	console.error("features.zap2Way requires features.zap to also be enabled"); // tslint:disable-line no-console
 }
