@@ -147,14 +147,16 @@ export class Editor implements IDisposable {
 			}
 		}
 
-		// Set the dom readonly property, so keyboard doesn't pop up on mobile.
-		const dom = this._editor.getDomNode();
-		const elements = dom.getElementsByClassName("inputarea");
-		const input = elements[0];
-		if (elements.length === 1 && input instanceof HTMLTextAreaElement) {
-			input.readOnly = true;
-		} else {
-			console.error("Didn't set textarea to readOnly");
+		if (this._editor.getConfiguration().readOnly) {
+			// Set the dom readonly property, so keyboard doesn't pop up on mobile.
+			const dom = this._editor.getDomNode();
+			const elements = dom.getElementsByClassName("inputarea");
+			const input = elements[0];
+			if (elements.length === 1 && input instanceof HTMLTextAreaElement) {
+				input.readOnly = true;
+			} else {
+				console.error("Didn't set textarea to readOnly");
+			}
 		}
 
 		CommandsRegistry.registerCommand("codelens.authorship.commit", (accessor: ServicesAccessor, args: GQL.IHunk) => {
