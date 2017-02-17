@@ -18,6 +18,7 @@ import { AuthorshipWidget, AuthorshipWidgetID, CodeLensAuthorWidget } from "sour
 import { EditorService, IEditorOpenedEvent } from "sourcegraph/editor/EditorService";
 import { createEditor } from "sourcegraph/editor/setup";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { Features } from "sourcegraph/util/features";
 import { isSupportedMode } from "sourcegraph/util/supportedExtensions";
 import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
 
@@ -47,7 +48,7 @@ export class Editor implements IDisposable {
 			// add any implicit dependency on window).
 			model: initialModel,
 
-			readOnly: true,
+			readOnly: !Features.zap2Way.isEnabled(),
 			automaticLayout: true,
 			scrollBeyondLastLine: false,
 			wrappingColumn: 0,

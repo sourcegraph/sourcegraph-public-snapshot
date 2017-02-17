@@ -13,6 +13,8 @@ const staticImports = {
 	"vs/workbench/parts/files/browser/explorerViewlet": require("vs/workbench/parts/files/browser/explorerViewlet"),
 	"vs/workbench/parts/output/browser/outputPanel": require("vs/workbench/parts/output/browser/outputPanel"),
 	"vs/workbench/parts/output/common/outputLinkComputer": require("vs/workbench/parts/output/common/outputLinkComputer"),
+	"vs/workbench/parts/files/browser/editors/textFileEditor": require("vs/workbench/parts/files/browser/editors/textFileEditor"),
+	"vs/workbench/parts/files/common/editors/fileEditorInput": require("vs/workbench/parts/files/common/editors/fileEditorInput"),
 };
 
 window["require"] = (modules: string[], callback: (mod: any) => void): void => {

@@ -6,10 +6,8 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderRegistry } from "vs/editor/common/modes";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IFileService } from "vs/platform/files/common/files";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
@@ -61,9 +59,7 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
  */
 export function renderFileEditor(resource: URI, selection: IRange | null): void {
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	const resolverService = Services.get(ITextModelResolverService);
-	const editorInput = new ResourceEditorInput("", "", resource, resolverService);
-	editorService.openEditorWithoutURLChange(resource, editorInput).then(() => {
+	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
 }
