@@ -348,6 +348,9 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if params.WorkspaceIdentifier == (WorkspaceIdentifier{}) {
 			return nil, errWorkspaceIdentifierRequired
 		}
+		if _, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier); err != nil {
+			return nil, err
+		}
 		// TODO(sqs): this is not fully implemented or useful yet
 		return &ShowStatusParams{Message: "Watching", Type: StatusTypeOK}, nil
 

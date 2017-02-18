@@ -467,7 +467,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 			// Propagate a non-op-only change upstream; otherwise we
 			// will just append to the upstream's ref op history and
 			// not actually reset it.
-			if refConfig, ok := repo.config.Refs[params.RefIdentifier.Ref]; ok {
+			if refConfig, ok := repo.config.Refs[params.RefIdentifier.Ref]; ok && !params.Local {
 				if !refConfig.Overwrite {
 					return &jsonrpc2.Error{
 						Code:    int64(ErrorCodeRefUpdateInvalid),

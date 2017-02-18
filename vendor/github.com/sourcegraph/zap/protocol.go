@@ -249,6 +249,11 @@ type RefUpdateUpstreamParams struct {
 
 	// Delete indicates that the ref should be deleted.
 	Delete bool `json:"delete,omitempty"`
+
+	// Local indicates that if this update causes a ref to be
+	// created, it should only be created on the immediate server and
+	// not created on the upstream as well.
+	Local bool `json:"local,omitempty"`
 }
 
 func (p RefUpdateUpstreamParams) String() string {
