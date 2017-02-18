@@ -81,9 +81,6 @@ class AfterPrivateCodeSignupForm extends React.Component<Props, State> {
 			body: JSON.stringify(hubspotProps),
 		})
 			.then(checkStatus)
-			.catch((err) => {
-				console.error("Error submitting form:", err); // tslint:disable-line no-console
-			})
 			.then(() => {
 				Events.AfterPrivateCodeSignup_Completed.logEvent({
 					trialSignupProperties: hubspotProps,
@@ -92,6 +89,12 @@ class AfterPrivateCodeSignupForm extends React.Component<Props, State> {
 				if (this.props.onSubmit) {
 					this.props.onSubmit();
 				}
+			})
+			.catch(err => {
+				if (this.props.onSubmit) {
+					this.props.onSubmit();
+				}
+				throw new Error(`Submitting after signup form failed with error: ${err}`);
 			});
 	}
 
