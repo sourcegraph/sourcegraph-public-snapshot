@@ -82,6 +82,10 @@ type refUpdateItem struct {
 }
 
 func (c *serverConn) sendRefUpdatesLoop(ctx context.Context, log *log.Context) {
+	// If an error occurs here (which is the only way we return), then
+	// it means the connection is no longer viable, so close it.
+	defer c.Close()
+
 	for {
 		c.mu.Lock()
 		var clientID string
