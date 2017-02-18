@@ -1861,9 +1861,9 @@ lcid@^1.0.0:
   dependencies:
     invert-kv "^1.0.0"
 
-libzap@^0.0.46:
-  version "0.0.46"
-  resolved "https://registry.yarnpkg.com/libzap/-/libzap-0.0.46.tgz#53539759f36595cb230b4b9cc5ef2cbd622946a3"
+libzap@^0.0.47:
+  version "0.0.47"
+  resolved "https://registry.yarnpkg.com/libzap/-/libzap-0.0.47.tgz#a43edbb515016bc2cc81d50cf9cb809fce17961d"
   dependencies:
     diff-match-patch "^1.0.0"
     lodash "^4.17.2"
@@ -3589,11 +3589,11 @@ vscode-languageserver-types@3.0.3, vscode-languageserver-types@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.0.3.tgz#303b2a307c20952ff5c1f5a608f3c91146028d47"
 
-vscode-zap@^0.0.46:
-  version "0.0.46"
-  resolved "https://registry.yarnpkg.com/vscode-zap/-/vscode-zap-0.0.46.tgz#97d15e876b477652caba7db1fc3482816ec4dd83"
+vscode-zap@^0.0.47:
+  version "0.0.47"
+  resolved "https://registry.yarnpkg.com/vscode-zap/-/vscode-zap-0.0.47.tgz#13b5cbdffb391bc5334d62636229e459e2f635bf"
   dependencies:
-    libzap "^0.0.46"
+    libzap "^0.0.47"
     open "^0.0.5"
     vscode-jsonrpc "3.0.1-alpha.7"
 

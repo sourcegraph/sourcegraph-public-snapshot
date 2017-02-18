@@ -87,6 +87,10 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, log *log.Context
 			}
 		}()
 		cl.SetRefUpdateCallback(func(ctx context.Context, params RefUpdateDownstreamParams) error {
+			if simulatedLatency != 0 {
+				time.Sleep(simulatedLatency) // debug: simulate latency
+			}
+
 			// Create a clean logger, because it will be used in
 			// requests other than the initial one.
 			log := sr.parent.baseLogger().With("callback-from-remote-endpoint", endpoint)
