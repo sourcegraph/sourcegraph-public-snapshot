@@ -39,13 +39,11 @@ type serverConn struct {
 
 	ready chan struct{} // ready to handle requests
 
-	// toSend holds ref updates that are waiting to be sent over this
-	// connection.
-	toSend chan refUpdateItem
-
 	mu            sync.Mutex
+	closed        bool
 	init          *InitializeParams
 	watchingRepos map[string][]string // repo -> watch refspecs, for watched repos
+	toSend        chan refUpdateItem  // holds ref updates that are waiting to be sent over this connection
 
 	*workspaceServerConn
 }
@@ -438,6 +436,13 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 // Close closes the connection. The connection may not be used after
 // it has been closed.
 func (c *serverConn) Close() error {
+	c.mu.Lock()
+	if c.closed {
+		c.mu.Unlock()
+		return nil
+	}
+	c.closed = true
+	c.mu.Unlock()
 	c.server.deleteConn(c)
 	close(c.toSend)
 	return c.conn.Close()
