@@ -95,6 +95,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 		Opt:            opt,
+		Private:        c.Repo.Private,
 		NoCreds:        c.client.NoCreds,
 		Stdin:          chanrpcutil.ToChunks(c.Input),
 		ReplyChan:      replyChan,
