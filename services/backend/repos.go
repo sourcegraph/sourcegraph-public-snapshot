@@ -45,8 +45,13 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 		return nil, err
 	}
 
-	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-		return nil, err
+	// SECURITY: calling setRepoFieldsFromRemote ensures we keep repository metadata up to date
+	// (most importantly the "Private" field) and also adds redundancy to our security. However, we
+	// don't call it if there is no GitHub client. Do not remove this setRepoFieldsFromRemote call.
+	if github.HasClient(ctx) {
+		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+			return nil, err
+		}
 	}
 
 	if repo.Blocked {

@@ -216,11 +216,11 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 	}
 
 	rows, err := appDBH(ctx).Db.Query(`
-		SELECT *
-		FROM pkgs
-		WHERE language=$1
-		AND pkg @> $2
-		ORDER BY repo_id ASC
+		SELECT pkgs.*
+		FROM pkgs INNER JOIN repo ON pkgs.repo_id=repo.id
+		WHERE pkgs.language=$1
+		AND pkgs.pkg @> $2
+		ORDER BY pkgs.repo_id ASC
 		LIMIT $3`, op.Lang, string(containmentQuery), op.Limit)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
