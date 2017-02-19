@@ -16,6 +16,9 @@ const (
 	Zap     = "zap"
 
 	GlobalSearch     = "global.search"
+	RepoCreate       = "repo.create"
+	RepoRefresh      = "repo.refresh"
+	RepoResolveRev   = "repo.resolve-rev"
 	Repos            = "repos"
 	RepoShield       = "repo.shield"
 	BetaSubscription = "beta-subscription"
@@ -46,6 +49,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/org-invites").Methods("POST").Name(OrgInvites)
 
 	base.Path("/repos").Methods("GET").Name(Repos)
+	base.Path("/repos").Methods("POST").Name(RepoCreate)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -53,6 +57,9 @@ func New(base *mux.Router) *mux.Router {
 	// Additional paths added will be treated as a repo. To add a new path that should not be treated as a repo
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
+	repoRev := base.PathPrefix(repoPath + routevar.RepoRevSuffix + "/" + routevar.RepoPathDelim + "/").Subrouter()
+	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
+	repoRev.Path("/rev").Methods("GET").Name(RepoResolveRev)
 	repo.Path("/shield").Methods("GET").Name(RepoShield)
 
 	return base
