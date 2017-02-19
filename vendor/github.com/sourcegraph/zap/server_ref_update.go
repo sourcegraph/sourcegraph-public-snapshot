@@ -78,7 +78,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Contex
 	s.updateRemoteTrackingRefMu.Lock()
 	defer s.updateRemoteTrackingRefMu.Unlock()
 
-	timer := time.AfterFunc(1*time.Second, func() {
+	timer := time.AfterFunc(5*time.Second, func() {
 		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
@@ -162,7 +162,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 	log = log.With("update-local-tracking-ref", params.RefIdentifier.Ref)
 	level.Info(log).Log("params", params)
 
-	timer := time.AfterFunc(1*time.Second, func() {
+	timer := time.AfterFunc(5*time.Second, func() {
 		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
@@ -322,7 +322,7 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Contex
 	log = log.With("update-symbolic-ref", params.RefIdentifier.Ref, "old", params.OldTarget, "new", params.Target)
 	level.Info(log).Log()
 
-	timer := time.AfterFunc(1*time.Second, func() {
+	timer := time.AfterFunc(5*time.Second, func() {
 		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
@@ -387,7 +387,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 	log = log.With("params", params)
 	level.Info(log).Log("apply-locally", applyLocally)
 
-	timer := time.AfterFunc(1*time.Second, func() {
+	timer := time.AfterFunc(5*time.Second, func() {
 		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()

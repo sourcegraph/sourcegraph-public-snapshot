@@ -102,10 +102,10 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Edit: map[string]EditOps{"#f": {{S: "x"}}}},
 		want: WorkspaceOp{Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": {{S: "x"}}}},
 	},
-	"copy saved file": {
+	"copy saved fileC": { //C
 		a:    WorkspaceOp{Save: []string{"#f1"}},
 		b:    WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}},
-		want: WorkspaceOp{Copy: map[string]string{"#f2": "#f1"}, Save: []string{"#f1", "#f2"}},
+		want: WorkspaceOp{Save: []string{"#f1"}, Copy: map[string]string{"/f2": "/f1"}},
 	},
 	"copy to saved file": {
 		a:       WorkspaceOp{Save: []string{"#f1"}},
@@ -117,12 +117,12 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Copy: map[string]string{"#f": "/f"}},
 		want: WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}},
 	},
-	"copy save-edited file": {
-		a: WorkspaceOp{Save: []string{"#f1"}, Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
+	"copy save-edited fileC": { //C
+		a: WorkspaceOp{Save: []string{"#f1"}, Copy: map[string]string{"#f1": "/f1"}, Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
 		b: WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}},
 		want: WorkspaceOp{
-			Copy: map[string]string{"#f2": "#f1"},
-			Save: []string{"#f1", "#f2"},
+			Save: []string{"#f1"},
+			Copy: map[string]string{"/f2": "/f1", "#f1": "/f1"},
 			Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}},
 		},
 	},
@@ -303,14 +303,10 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Rename: map[string]string{"/f2": "/f3"}},
 		want: WorkspaceOp{Copy: map[string]string{"/f1": "/f2"}, Rename: map[string]string{"/f2": "/f3"}},
 	},
-	"rename saved file": {
-		a: WorkspaceOp{Save: []string{"#f1"}},
-		b: WorkspaceOp{Rename: map[string]string{"/f1": "/f2"}},
-		want: WorkspaceOp{
-			Copy:   map[string]string{"#f2": "#f1"},
-			Save:   []string{"#f2"},
-			Delete: []string{"/f1"},
-		},
+	"rename saved fileC": {
+		a:    WorkspaceOp{Save: []string{"#f1"}},
+		b:    WorkspaceOp{Rename: map[string]string{"/f1": "/f2"}},
+		want: WorkspaceOp{Save: []string{"#f1"}, Rename: map[string]string{"/f1": "/f2"}},
 	},
 	"rename to saved file": {
 		a:       WorkspaceOp{Save: []string{"#f1"}},
@@ -610,9 +606,9 @@ var composeTests = map[string]struct {
 		want: WorkspaceOp{Copy: map[string]string{"/f1": "/f2"}, Truncate: []string{"/f1"}},
 	},
 	"truncate saved buffer": {
-		a:    WorkspaceOp{Save: []string{"#f1"}},
-		b:    WorkspaceOp{Truncate: []string{"#f1"}},
-		want: WorkspaceOp{Save: []string{"#f1"}, Truncate: []string{"#f1"}},
+		a:       WorkspaceOp{Save: []string{"#f1"}},
+		b:       WorkspaceOp{Truncate: []string{"#f1"}},
+		wantErr: true,
 	},
 	"truncate saved file": {
 		a:    WorkspaceOp{Save: []string{"#f1"}},
@@ -694,9 +690,15 @@ var composeTests = map[string]struct {
 		want: WorkspaceOp{Rename: map[string]string{"/f1": "/f2"}, Edit: map[string]EditOps{"/f2": EditOps{{S: "x"}}}},
 	},
 	"edit saved buffer": {
+		a:       WorkspaceOp{Save: []string{"#f1"}},
+		b:       WorkspaceOp{Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
+		wantErr: true,
+		want:    WorkspaceOp{Save: []string{"#f1"}, Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
+	},
+	"edit saved-copied buffer": {
 		a:    WorkspaceOp{Save: []string{"#f1"}},
-		b:    WorkspaceOp{Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
-		want: WorkspaceOp{Save: []string{"#f1"}, Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
+		b:    WorkspaceOp{Copy: map[string]string{"#f1": "/f1"}, Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
+		want: WorkspaceOp{Save: []string{"#f1"}, Copy: map[string]string{"#f1": "/f1"}, Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
 	},
 	"edit file of saved buffer": {
 		a:    WorkspaceOp{Save: []string{"#f1"}},
@@ -740,12 +742,12 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Save: []string{"#f2"}},
 		want: WorkspaceOp{Save: []string{"#f1", "#f2"}},
 	},
-	"save edited buffer": {
+	"save edited bufferC": { //C
 		a: WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
 		b: WorkspaceOp{Save: []string{"#f"}},
 		want: WorkspaceOp{
 			Save: []string{"#f"},
-			Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "x"}}},
+			Edit: map[string]EditOps{"/f": EditOps{{S: "x"}}},
 		},
 	},
 	"save buffer to edited file": {
@@ -753,20 +755,21 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Save: []string{"#f"}},
 		want: WorkspaceOp{Save: []string{"#f"}},
 	},
-	"save-edit edited buffer": {
+	"save-edit edited bufferC": { //C
 		a: WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
-		b: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"#f": EditOps{{N: 1}, {S: "y"}}}},
+		b: WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": EditOps{{N: 1}, {S: "y"}}}},
 		want: WorkspaceOp{
 			Save: []string{"#f"},
+			Copy: map[string]string{"#f": "/f"},
 			Edit: map[string]EditOps{"#f": EditOps{{S: "xy"}}, "/f": EditOps{{S: "x"}}},
 		},
 	},
-	"save-edit file with edited buffer": {
+	"save-edit file with edited bufferC": { //C
 		a: WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
 		b: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"/f": EditOps{{N: 1}, {S: "y"}}}},
 		want: WorkspaceOp{
 			Save: []string{"#f"},
-			Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "xy"}}},
+			Edit: map[string]EditOps{"/f": EditOps{{S: "xy"}}},
 		},
 	},
 	"save deleted file": {
@@ -774,13 +777,13 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Save: []string{"#f"}},
 		want: WorkspaceOp{Save: []string{"#f"}},
 	},
-	"save-rename edited buffer": {
+	"save-rename edited bufferC": { //C
 		a: WorkspaceOp{Edit: map[string]EditOps{"#f1": EditOps{{S: "x"}}}},
 		b: WorkspaceOp{Save: []string{"#f1"}, Rename: map[string]string{"/f1": "/f2"}},
 		want: WorkspaceOp{
 			Save:   []string{"#f1"},
 			Rename: map[string]string{"/f1": "/f2"},
-			Edit:   map[string]EditOps{"#f1": EditOps{{S: "x"}}, "/f1": EditOps{{S: "x"}}},
+			Edit:   map[string]EditOps{"/f2": EditOps{{S: "x"}}},
 		},
 	},
 	"save to deleted file": {
@@ -803,10 +806,10 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Save: []string{"#f"}},
 		want: WorkspaceOp{Save: []string{"#f"}},
 	},
-	"save created-edited file": {
+	"save created-edited fileC": { //C
 		a:    WorkspaceOp{Create: []string{"/f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
 		b:    WorkspaceOp{Save: []string{"#f"}},
-		want: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "x"}}}},
+		want: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"/f": EditOps{{S: "x"}}}},
 	},
 	"save renamed file": {
 		a:    WorkspaceOp{Rename: map[string]string{"/f1": "/f2"}},
@@ -817,6 +820,11 @@ var composeTests = map[string]struct {
 		a:    WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}},
 		b:    WorkspaceOp{Save: []string{"#f1"}},
 		want: WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}, Save: []string{"#f1"}},
+	},
+	"save-copy-edit x2C": { //NEW
+		a:    WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": {{S: "x"}}}},
+		b:    WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": {{N: 1}, {S: "y"}}}},
+		want: WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": {{S: "xy"}}, "/f": {{S: "x"}}}},
 	},
 	"save copied buffer": {
 		a:    WorkspaceOp{Copy: map[string]string{"#f": "/f"}},
@@ -833,10 +841,10 @@ var composeTests = map[string]struct {
 		b:    WorkspaceOp{Save: []string{"#f2"}},
 		want: WorkspaceOp{Save: []string{"#f2"}, Delete: []string{"/f1"}},
 	},
-	"save renamed and edited buffer": {
+	"save renamed and edited bufferC": { //C
 		a:    WorkspaceOp{Rename: map[string]string{"/f1": "/f2"}, Edit: map[string]EditOps{"#f2": EditOps{{S: "x"}}}},
 		b:    WorkspaceOp{Save: []string{"#f2"}},
-		want: WorkspaceOp{Save: []string{"#f2"}, Delete: []string{"/f1"}, Edit: map[string]EditOps{"#f2": EditOps{{S: "x"}}, "/f2": EditOps{{S: "x"}}}},
+		want: WorkspaceOp{Save: []string{"#f2"}, Delete: []string{"/f1"}, Edit: map[string]EditOps{"/f2": EditOps{{S: "x"}}}},
 	},
 
 	"sel same file, same user": {
@@ -950,6 +958,18 @@ var transformTests = map[string]struct {
 		wantErr:     true,
 		commutative: true,
 	},
+	"copy, edit implying existing dest": {
+		a:           WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}},
+		b:           WorkspaceOp{Edit: map[string]EditOps{"/f2": {{S: "x"}}}},
+		wantErr:     true,
+		commutative: true,
+	},
+	"copy, edit buffer implying existing dest": {
+		a:           WorkspaceOp{Copy: map[string]string{"#f": "/f"}},
+		b:           WorkspaceOp{Edit: map[string]EditOps{"#f": {{S: "x"}}}},
+		wantErr:     true,
+		commutative: true,
+	},
 	"copy, edit": {
 		a:           WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}},
 		b:           WorkspaceOp{Edit: map[string]EditOps{"/f1": EditOps{{S: "x"}}}},
@@ -962,6 +982,18 @@ var transformTests = map[string]struct {
 		b:  WorkspaceOp{Edit: map[string]EditOps{"/f1": EditOps{{S: "y"}}}},
 		a1: WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}, Edit: map[string]EditOps{"/f2": EditOps{{S: "x"}, {N: 1}}}},
 		b1: WorkspaceOp{Edit: map[string]EditOps{"/f1": EditOps{{S: "y"}}, "/f2": EditOps{{N: 1}, {S: "y"}}}},
+	},
+	"copy-edit, copy-edit": {
+		a:  WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}, Edit: map[string]EditOps{"/f2": EditOps{{S: "x"}}}},
+		b:  WorkspaceOp{Copy: map[string]string{"/f2": "/f1"}, Edit: map[string]EditOps{"/f2": EditOps{{S: "y"}}}},
+		a1: WorkspaceOp{Edit: map[string]EditOps{"/f2": EditOps{{S: "x"}, {N: 1}}}},
+		b1: WorkspaceOp{Edit: map[string]EditOps{"/f2": EditOps{{N: 1}, {S: "y"}}}},
+	},
+	"copy-edit, copy-edit of buffer": {
+		a:  WorkspaceOp{Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
+		b:  WorkspaceOp{Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "y"}}}},
+		a1: WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "x"}, {N: 1}}}},
+		b1: WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{N: 1}, {S: "y"}}}},
 	},
 	"copy-edit, edit (reversed)": {
 		a:  WorkspaceOp{Edit: map[string]EditOps{"/f1": EditOps{{S: "x"}}}},
@@ -1069,36 +1101,94 @@ var transformTests = map[string]struct {
 		wantErr:     true,
 		commutative: true,
 	},
-	"save, edit": {
+	"save, copy destC": { //NEW
+		a:           WorkspaceOp{Save: []string{"#f"}},
+		b:           WorkspaceOp{Copy: map[string]string{"#f": "/f"}},
+		wantErr:     true,
+		commutative: true,
+	},
+	"save, editC": { //C
+		// NOTE ABOUT SAVE-EDIT: Both a and b should end up with NO #f
+		// file existing. We adopt this convention for all concurrent
+		// save-edits. This is an arbitrary choice (we could say that
+		// they both have an existing #f after applying their side of
+		// the transform), but we need to choose one way or the other.
+		//
+		// At the end, /f should be "x" and #f should not exist.
 		a:           WorkspaceOp{Save: []string{"#f"}},
 		b:           WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
 		a1:          WorkspaceOp{Save: []string{"#f"}},
-		b1:          WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "x"}}}},
+		b1:          WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{S: "x"}}}},
 		commutative: true,
 	},
-	"save-edit file, edit buffer": {
+	"save-edit file, edit bufferC": { //C
+		// See "NOTE ABOUT SAVE-EDIT" above.
 		a:  WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"/f": EditOps{{S: "x"}}}},
 		b:  WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "y"}}}},
 		a1: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"/f": EditOps{{S: "x"}, {N: 1}}}},
-		b1: WorkspaceOp{Edit: map[string]EditOps{"#f": EditOps{{S: "y"}}, "/f": EditOps{{N: 1}, {S: "y"}}}},
+		b1: WorkspaceOp{Edit: map[string]EditOps{"/f": {{N: 1}, {S: "y"}}}},
 	},
-	"save-edit file, edit file": {
+	"save-edit file, edit fileC": { //C
+		// See "NOTE ABOUT SAVE-EDIT" above.
 		a:  WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"/f": EditOps{{S: "x"}}}},
 		b:  WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{S: "y"}}}},
 		a1: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"/f": EditOps{{S: "xy"}}}},
 		b1: WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{N: 1}, {S: "y"}}}},
 	},
-	"save-edit buffer, edit file": {
-		a:  WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
+	"save-edit buffer, edit fileC": { //C
+		// See "NOTE ABOUT SAVE-EDIT" above.
+		//
+		// NOTE ABOUT SAVE-EDIT-SAVE-EDIT: At the end, #f should be
+		// "xz" and /f should be "yz". It would be preferable for #f
+		// to be "xz" not just "x", because b only applied "z" to /f
+		// (not #f), but unfortunately in general we have no way to
+		// "undo" the /f edit to reconstruct the buffer file at the
+		// previous state (because information is thrown away in OT
+		// deletions), so we must incorporate the /f edit into #f's
+		// end state.
+		a:  WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}}},
 		b:  WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{S: "y"}}}},
-		a1: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "y"}}}},
-		b1: WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{S: "y"}}}},
+		a1: WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "xy"}}, "/f": EditOps{{S: "y"}}}},
+		b1: WorkspaceOp{Edit: map[string]EditOps{"#f": {{N: 1}, {S: "y"}}, "/f": EditOps{{S: "y"}}}},
 	},
-	"save-edit buffer and file, edit file": {
-		a:  WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "y"}}}},
-		b:  WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{S: "z"}}}},
-		a1: WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "yz"}}}},
-		b1: WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{N: 1}, {S: "z"}}}},
+	"save-edit buffer and file, edit fileC": { //C
+		// See "NOTE ABOUT SAVE-EDIT" and "NOTE ABOUT
+		// SAVE-EDIT-EDIT". At the end, #f should be "xz" and /f should
+		// be "yz".
+		a: WorkspaceOp{
+			Save: []string{"#f"},
+			Copy: map[string]string{"#f": "/f"},
+			Edit: map[string]EditOps{
+				"#f": EditOps{{S: "x"}},
+				"/f": EditOps{{S: "y"}},
+			},
+		},
+		b: WorkspaceOp{Edit: map[string]EditOps{"/f": EditOps{{S: "z"}}}},
+		a1: WorkspaceOp{
+			Save: []string{"#f"},
+			Copy: map[string]string{"#f": "/f"},
+			Edit: map[string]EditOps{
+				"#f": EditOps{{S: "xz"}},
+				"/f": EditOps{{S: "yz"}},
+			},
+		},
+		b1: WorkspaceOp{
+			Edit: map[string]EditOps{
+				"#f": {{N: 1}, {S: "z"}},
+				"/f": EditOps{{N: 1}, {S: "z"}},
+			},
+		},
+	},
+	"save-edit buffer and file, save-edit bufferC": { //NEW
+		// See "NOTE ABOUT SAVE-EDIT" above.
+		//
+		// See "NOTE ABOUT SAVE-EDIT-SAVE-EDIT" above.
+		//
+		// At the end, #f should be "xz" and /f should be "yz".
+		a:  WorkspaceOp{Save: []string{"#f"}, Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}}, "/f": EditOps{{S: "y"}}}},
+		b:  WorkspaceOp{Save: []string{"#f"}, Edit: map[string]EditOps{"/f": EditOps{{S: "z"}}}},
+		a1: WorkspaceOp{Copy: map[string]string{"#f": "/f"}, Edit: map[string]EditOps{"#f": EditOps{{S: "x"}, {N: 1}}, "/f": EditOps{{S: "y"}, {N: 1}}}},
+		b1: WorkspaceOp{Edit: map[string]EditOps{"#f": {{N: 1}, {S: "z"}}, "/f": EditOps{{N: 1}, {S: "z"}}}},
 	},
 
 	"create same": {

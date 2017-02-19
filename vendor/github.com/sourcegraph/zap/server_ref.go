@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	level "github.com/go-kit/kit/log/experimental_level"
@@ -162,6 +163,9 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 				return
 			}
 			level.Debug(log).Log()
+			if SimulatedLatency != 0 {
+				time.Sleep(SimulatedLatency) // debug: simulate latency
+			}
 			if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 				RefIdentifier: upstreamRefID,
 				Current: &RefPointer{

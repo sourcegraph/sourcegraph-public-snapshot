@@ -53,7 +53,7 @@ const (
 	sendTimeout    = 20 * time.Second
 )
 
-var simulatedLatency, _ = time.ParseDuration(os.Getenv("SIMULATED_LATENCY"))
+var SimulatedLatency, _ = time.ParseDuration(os.Getenv("SIMULATED_LATENCY"))
 
 func newServerConn(ctx context.Context, server *Server, stream jsonrpc2.ObjectStream) *serverConn {
 	c := &serverConn{
@@ -113,8 +113,8 @@ func (c *serverConn) sendRefUpdatesLoop(ctx context.Context, log *log.Context) {
 			}
 
 			ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-			if simulatedLatency != 0 {
-				time.Sleep(simulatedLatency) // debug: simulate latency
+			if SimulatedLatency != 0 {
+				time.Sleep(SimulatedLatency) // debug: simulate latency
 			}
 			err := c.conn.Call(ctx, method, params, nil)
 			cancel()

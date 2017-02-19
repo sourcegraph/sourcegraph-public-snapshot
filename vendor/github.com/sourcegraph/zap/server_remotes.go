@@ -87,8 +87,8 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, log *log.Context
 			}
 		}()
 		cl.SetRefUpdateCallback(func(ctx context.Context, params RefUpdateDownstreamParams) error {
-			if simulatedLatency != 0 {
-				time.Sleep(simulatedLatency) // debug: simulate latency
+			if SimulatedLatency != 0 {
+				time.Sleep(SimulatedLatency) // debug: simulate latency
 			}
 
 			// Create a clean logger, because it will be used in
