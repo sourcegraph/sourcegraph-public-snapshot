@@ -30,7 +30,7 @@ This is a streamlined setup for Mac machines.
 3. Install Go, Node, PostgreSQL, Redis, Git, Python.
 
     ```
-    brew install go node redis postgresql yarn git python
+    brew install go node redis postgresql yarn git python gnu-sed
     ```
 
 4. Install virtualenv.
