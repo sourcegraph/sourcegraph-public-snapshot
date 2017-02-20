@@ -29,7 +29,6 @@
     "expect.js": "0.3.1",
     "file-loader": "0.9.0",
     "flux": "3.1.0",
-    "fsevents": "^1.0.17",
     "fuzzysearch": "1.0.3",
     "gql2ts": "git+https://github.com/neelance/gql2ts#cad5d7fb84432b41ebf07d17fbfa2e714857d3a4",
     "json-loader": "0.5.4",
@@ -193,7 +192,6 @@
     "vscode-jsonrpc": "3.0.3",
     "vscode-languageserver-types": "3.0.3",
     "vscode-zap": "0.0.5",
-    "libzap": "0.0.8",
-    "fsevents": "1.0.17"
+    "libzap": "0.0.8"
   }
 }
