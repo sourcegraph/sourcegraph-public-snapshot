@@ -3,14 +3,13 @@ package ws
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/go-kit/kit/log"
 	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/ot"
 )
 
-const extraDebug = false
+const extraDebug = true
 
 // Proxy sits between an upstream server and any number of downstream
 // clients. It proxies the workspace state. To its upstream server,
@@ -37,21 +36,15 @@ type Proxy struct {
 	Wait              *ot.WorkspaceOp  // pending upstream acknowledgment
 	Buf               *ot.WorkspaceOp  // buffered to send upstream when Wait ops are acked
 	UpstreamRevNumber int              // upstream revision number of last upstream-acknowledged revision
-
-	mu sync.Mutex
 }
 
 // Rev returns the current revision number for downstream clients.
 func (p *Proxy) Rev() int {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	return len(p.history)
 }
 
 // History returns all acknowledged ops.
 func (p *Proxy) History() []ot.WorkspaceOp {
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	return p.history
 }
 
@@ -63,8 +56,6 @@ func (p *Proxy) Record(op ot.WorkspaceOp) error {
 	// if op.Noop() {
 	// 	panic("noop")
 	// }
-	p.mu.Lock()
-	defer p.mu.Unlock()
 
 	p.history = append(p.history, op)
 	if err := p.bufferedSendToUpstream(op); err != nil {
@@ -80,9 +71,6 @@ func (p *Proxy) RecvFromDownstream(log *log.Context, rev int, op ot.WorkspaceOp)
 	// if op.Noop() {
 	// 	panic("noop")
 	// }
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	log = log.With("recv-from-downstream", fmt.Sprintf("@%d", rev))
 
 	// Transform it so it can be appended to our view of the history.
@@ -149,9 +137,6 @@ func (p *Proxy) bufferedSendToUpstream(op ot.WorkspaceOp) error {
 // AckFromUpstream acknowledges a pending upstream op and sends the
 // buffered op (if any) to the upstream.
 func (p *Proxy) AckFromUpstream() error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	switch {
 	case p.Buf != nil: // ops buffered to send to upstream (AND ops pending upstream ack)
 		p.SendToUpstream(p.UpstreamRevNumber+1, *p.Buf)
@@ -174,9 +159,6 @@ var ErrNoPendingOperation = errors.New("no pending operation")
 // RecvFromUpstream receives ops from the upstream. The caller is
 // responsible for sending the returned op to all downstreams.
 func (p *Proxy) RecvFromUpstream(log *log.Context, op ot.WorkspaceOp) (ot.WorkspaceOp, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
 	if p.UpstreamRevNumber > len(p.history) {
 		level.Error(log).Log("PANIC-BELOW", "")
 		panic(fmt.Sprintf("invalid p.UpstreamRevNumber > len(p.History) (%d > %d)", p.UpstreamRevNumber, len(p.history)))

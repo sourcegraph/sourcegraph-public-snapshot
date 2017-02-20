@@ -9,6 +9,7 @@ import (
 	"github.com/go-kit/kit/log"
 	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/internal/pkg/mutexmap"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -20,6 +21,22 @@ type serverRepo struct {
 	workspace       Workspace // set for non-bare repos added via workspace/add
 	workspaceCancel func()    // tear down workspace
 	config          RepoConfiguration
+
+	refLocks mutexmap.MutexMap
+}
+
+// acquireRef acquires an exclusive lock that allows the holder to
+// perform operations on the named ref. The release func must be
+// called to release the lock.
+//
+// Callers can use the following to hold the lock for the remaining
+// execution of the current function:
+//
+//   defer repo.acquireRef(refName)()
+func (s *serverRepo) acquireRef(refName string) (release func()) {
+	lock := s.refLocks.Get(refName)
+	lock.Lock()
+	return lock.Unlock
 }
 
 func (s *Server) getRepo(ctx context.Context, log *log.Context, repoName string) (*serverRepo, error) {
@@ -95,15 +112,13 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 			log := log.With("update-ref-downstream-with-initial-state", ref.Name)
 			level.Debug(log).Log()
 			refObj := ref.Object.(serverRef)
-			// TODO(sqs): make this a request so we make sure it is
-			// received (to eliminate race conditions).
-			if err := c.conn.Notify(ctx, "ref/update", RefUpdateDownstreamParams{
+			if err := c.conn.Call(ctx, "ref/update", RefUpdateDownstreamParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				State: &RefState{
 					RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 					History:     refObj.history(),
 				},
-			}); err != nil {
+			}, nil); err != nil { //DL DL2
 				return err
 			}
 		}
@@ -116,15 +131,15 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 
 			log := log.With("update-symbolic-ref-with-initial-state", ref.Name)
 			level.Debug(log).Log()
-			if err := c.conn.Notify(ctx, "ref/updateSymbolic", RefUpdateSymbolicParams{
+			if err := c.conn.Call(ctx, "ref/updateSymbolic", RefUpdateSymbolicParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				Target:        ref.Target,
-			}); err != nil {
+			}, nil); err != nil {
 				return err
 			}
 		}
 	} else {
-		level.Warn(log).Log("no-matching-refs", "")
+		level.Debug(log).Log("no-matching-refs", "")
 	}
 
 	return nil

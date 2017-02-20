@@ -242,14 +242,17 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 					ready = nil
 				}
 
-			case config, ok := <-workspace.ConfigChange():
+			case newConfig, ok := <-workspace.ConfigChange():
 				if !ok {
 					return nil
 				}
-				log := log.With("config", config)
+				repo.mu.Lock()
+				oldConfig := repo.config.deepCopy()
+				repo.config = newConfig
+				repo.mu.Unlock()
+				log := log.With("new-config", newConfig, "old-config", oldConfig)
 				level.Info(log).Log()
-				err := s.parent.doUpdateRepoConfiguration(ctx, log, w.Dir, repo, config)
-				if err != nil {
+				if err := s.parent.applyRepoConfiguration(ctx, log, w.Dir, repo, oldConfig, newConfig, false, false); err != nil {
 					return err
 				}
 
@@ -367,7 +370,6 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		}
 
 		log = log.With("checkout-ref", params.Ref)
-		level.Info(log).Log()
 
 		repo, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier)
 		if err != nil {
@@ -493,17 +495,10 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 
 func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddParams) error {
 	// Allow upgrading a bare repo to a workspace repo.
+	s.parent.reposMu.Lock()
 	repo, exists := s.parent.repos[params.Dir]
+	s.parent.reposMu.Unlock()
 	if exists {
-		repo.mu.Lock()
-		isWorkspace := repo.workspace != nil
-		repo.mu.Unlock()
-		if isWorkspace {
-			return &jsonrpc2.Error{
-				Code:    int64(ErrorCodeWorkspaceExists),
-				Message: fmt.Sprintf("already added workspace %v", params.WorkspaceIdentifier),
-			}
-		}
 		level.Info(log).Log("create-workspace-in-existing-repo", "")
 	} else {
 		repo = &serverRepo{refdb: refdb.NewMemoryRefDB()}
@@ -516,21 +511,42 @@ func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddP
 		cancel()
 		return err
 	}
-	repo.workspace = workspace
-	repo.workspaceCancel = cancel
+	{
+		repo.mu.Lock()
+		if repo.workspace != nil {
+			repo.mu.Unlock()
+			cancel()
+			return &jsonrpc2.Error{
+				Code:    int64(ErrorCodeWorkspaceExists),
+				Message: fmt.Sprintf("already added workspace %v", params.WorkspaceIdentifier),
+			}
+		}
+		repo.config = *cfg
+		repo.workspace = workspace
+		repo.workspaceCancel = cancel
+		repo.mu.Unlock()
+	}
 
 	do := func() error {
-		s.parent.reposMu.Lock()
-		defer s.parent.reposMu.Unlock()
-
 		ready := make(chan error)
 		go s.handleWorkspaceTasks(s.parent.bgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
 		if err := <-ready; err != nil {
 			return fmt.Errorf("workspace %q failed to become ready: %s", params.Dir, err)
 		}
+
 		// Only add the workspace if handleWorkspaceTasks
 		// indicated it is ready (and did not fail before becoming
 		// ready).
+
+		s.parent.reposMu.Lock()
+		defer s.parent.reposMu.Unlock()
+		if _, exists := s.parent.repos[params.Dir]; exists {
+			cancel()
+			return &jsonrpc2.Error{
+				Code:    int64(ErrorCodeRepoNotExists),
+				Message: fmt.Sprintf("between start and end of workspace initialization, repo was added by someone else: %v", params.WorkspaceIdentifier),
+			}
+		}
 		s.parent.repos[params.Dir] = repo
 		return nil
 	}
@@ -538,10 +554,12 @@ func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddP
 		return err
 	}
 
-	if err := s.parent.doUpdateRepoConfiguration(ctx, log, params.Dir, repo, *cfg); err != nil {
+	if err := s.parent.applyRepoConfiguration(ctx, log, params.Dir, repo, RepoConfiguration{}, *cfg, false, false); err != nil {
+		level.Error(log).Log("apply-initial-workspace-configuration-error", err)
 		cancel()
 		return err
 	}
+
 	return config.EnsureWorkspaceInGlobalConfig(params.Dir)
 }
 
@@ -554,6 +572,14 @@ func (s *workspaceServer) loadWorkspacesFromConfig(log *logpkg.Context) error {
 
 	for _, opt := range cfg.Section("workspaces").Options {
 		if opt.Key != "workspace" {
+			continue
+		}
+		if opt.Value == "" {
+			level.Warn(log).Log("skip-invalid-workspace", "")
+			continue
+		}
+		if _, err := os.Stat(opt.Value); err != nil {
+			level.Warn(log).Log("skip-inaccessible-workspace", opt.Value, "err", err)
 			continue
 		}
 		if err := s.addWorkspace(log, WorkspaceAddParams{WorkspaceIdentifier{Dir: opt.Value}}); err != nil {

@@ -1,6 +1,9 @@
 package zap
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // WorkspaceIdentifier identifies a workspace.
 type WorkspaceIdentifier struct {
@@ -57,6 +60,18 @@ type RepoConfiguration struct {
 
 func (c RepoConfiguration) String() string {
 	return fmt.Sprintf("workspace(%+v) remotes(%+v) refs(%+v)", c.Workspace, c.Remotes, c.Refs)
+}
+
+func (c RepoConfiguration) deepCopy() RepoConfiguration {
+	tmp, err := json.Marshal(c)
+	if err != nil {
+		panic(err)
+	}
+	var copy RepoConfiguration
+	if err := json.Unmarshal(tmp, &copy); err != nil {
+		panic(err)
+	}
+	return copy
 }
 
 // WorkspaceConfigureResult is the result from the

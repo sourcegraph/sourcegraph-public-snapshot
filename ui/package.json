@@ -62,7 +62,7 @@
     "date-fns": "^1.27.0",
     "glamor": "2.20.8",
     "isomorphic-fetch": "2.2.1",
-    "libzap": "^0.0.48",
+    "libzap": "^0.0.50",
     "lodash": "4.17.2",
     "object-hash": "^1.1.5",
     "raven-js": "3.8.1",
@@ -76,7 +76,7 @@
     "url": "0.11.0",
     "vscode-jsonrpc": "3.0.3",
     "vscode-languageserver-types": "3.0.3",
-    "vscode-zap": "^0.0.48"
+    "vscode-zap": "^0.0.50"
   },
   "scripts": {
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",

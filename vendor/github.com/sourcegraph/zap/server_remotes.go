@@ -87,9 +87,7 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, log *log.Context
 			}
 		}()
 		cl.SetRefUpdateCallback(func(ctx context.Context, params RefUpdateDownstreamParams) error {
-			if SimulatedLatency != 0 {
-				time.Sleep(SimulatedLatency) // debug: simulate latency
-			}
+			debugSimulateLatency()
 
 			// Create a clean logger, because it will be used in
 			// requests other than the initial one.
@@ -132,15 +130,14 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, log *log.Context, end
 	level.Debug(log).Log("reconnect-ok", "")
 
 	reestablishRepo := func(repoName string, repo *serverRepo) error {
-		repo.mu.Lock()
-		defer repo.mu.Unlock()
-		for remoteName, remote := range repo.config.Remotes {
+		repoConfig := repo.getConfig()
+		for remoteName, remote := range repoConfig.Remotes {
 			if remote.Endpoint == endpoint {
 				level.Debug(log).Log("reestablish-watch-repo", repoName, "remote", remoteName)
-				if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: remote.Repo, Refspecs: remote.Refspecs}); err != nil {
+				if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: remote.Repo, Refspecs: remote.Refspecs}); err != nil { //DL2
 					return err
 				}
-				for refName, refConfig := range repo.config.Refs {
+				for refName, refConfig := range repoConfig.Refs {
 					ref := repo.refdb.Lookup(refName)
 					if refConfig.Overwrite && refConfig.Upstream == remoteName && ref != nil {
 						o := ref.Object.(serverRef)
@@ -161,10 +158,10 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, log *log.Context, end
 		return nil
 	}
 
-	sr.parent.reposMu.Lock()
+	sr.parent.reposMu.Lock() // DL2
 	defer sr.parent.reposMu.Unlock()
 	for repoName, repo := range sr.parent.repos {
-		if err := reestablishRepo(repoName, repo); err != nil {
+		if err := reestablishRepo(repoName, repo); err != nil { // DL2
 			return err
 		}
 	}
