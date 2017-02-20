@@ -3,19 +3,8 @@ import { Domain, getDomain } from "../../../app/utils";
 
 let telligentWrapper: TelligentWrapper | null = null;
 
-switch (getDomain(window.location)) {
-	case Domain.GITHUB:
-	// TODO(uforic): the app should probably be different here for domain Sourcegraph,
-	// but this was existing behavior
-	case Domain.SOURCEGRAPH:
-		telligentWrapper = new TelligentWrapper("SourcegraphExtension", "BrowserExtension", true, true);
-		break;
-	case Domain.SGDEV_PHABRICATOR:
-		telligentWrapper = new TelligentWrapper("SourcegraphExtension", "BrowserExtension", false, false);
-		break;
-	default:
-		break;
-}
+
+telligentWrapper = new TelligentWrapper("SourcegraphExtension", "BrowserExtension", true, true);
 
 /**
  * These messages come from the ExtensionEventLogger. This has to run in the background
