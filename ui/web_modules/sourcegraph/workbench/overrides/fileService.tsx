@@ -16,9 +16,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
 import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
-import { renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
 import { OutputListener } from "sourcegraph/workbench/outputListener";
-import { Services } from "sourcegraph/workbench/services";
 
 /**
  * Both of these caches will last until a hard navigation or refresh. We will
@@ -227,8 +225,6 @@ class ZapFileService {
 		return files;
 	}
 }
-
-
 
 function retrieveFilesAndDirs(resource: URI): TPromise<any> {
 	const { repo, rev } = URIUtils.repoParams(resource);
