@@ -201,6 +201,11 @@ func Main() error {
 			// CORS
 			if corsOrigin != "" {
 				w.Header().Set("Access-Control-Allow-Origin", corsOrigin)
+				if r.Method == "OPTIONS" {
+					w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+					w.WriteHeader(http.StatusOK)
+					return // do not invoke next handler
+				}
 			}
 
 			next.ServeHTTP(w, r)
