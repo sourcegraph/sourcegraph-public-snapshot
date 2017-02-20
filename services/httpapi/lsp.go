@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -209,6 +210,8 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 			respErr = &jsonrpc2.Error{Message: err.Error()}
 		}
 		if err := from.ReplyWithError(ctx, req.ID, respErr); err != nil {
+			// TODO(keegancsmith) Temporary logging line to understand this error. Remove before 25 Feb 2017
+			log.Println("reply-req-err", err, respErr)
 			proxyFailed.WithLabelValues("reply-req-err").Inc()
 		}
 		return respErr
