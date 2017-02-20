@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Code, FlexContainer, Heading, Panel, Table } from "sourcegraph/components";
-import { GitHubLogo, Google, Spinner } from "sourcegraph/components/symbols";
+import { GitHubLogo, Spinner } from "sourcegraph/components/symbols";
 import { typography, whitespace } from "sourcegraph/components/utils/index";
 
 export function Symbols(): JSX.Element {
@@ -16,7 +16,6 @@ export function Symbols(): JSX.Element {
 			<FlexContainer justify="between" wrap={true} style={{ marginTop: whitespace[4] }}>
 				<SymbolTile symbol={GitHubLogo} size={32} name="GitHubLogo" key="GitHubLogo" />
 				<SymbolTile symbol={Spinner} size={32} name="Spinner" key="Spinner" />
-				<SymbolTile symbol={Google} size={32} name="Google" key="Google" />
 			</FlexContainer>
 
 			<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>

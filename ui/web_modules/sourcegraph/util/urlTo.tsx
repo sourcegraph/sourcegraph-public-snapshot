@@ -43,5 +43,3 @@ export function urlToOAuth(provider: oauthProvider, scopes: string | null, retur
 	}
 	return `/-/${provider}-oauth/initiate${q ? `?${q}` : ""}`;
 }
-
-export const privateGitHubOAuthScopes = "read:org,repo,user:email";

@@ -41,7 +41,7 @@ export class SignupForm extends Component<Props, State> {
 			<div>
 				<div className={styles.form}>
 					<GitHubAuthButton
-						scopes="user:email"
+						scope="public"
 						newUserReturnTo={newUserRedirLocation}
 						returnTo={this.props.returnTo}
 						tabIndex={1}
@@ -49,6 +49,7 @@ export class SignupForm extends Component<Props, State> {
 						style={{ marginBottom: whitespace[2] }}
 						secondaryText="Always free">Public code only</GitHubAuthButton>
 					<GitHubAuthButton
+						scope="private"
 						color="purple"
 						newUserReturnTo={newUserRedirLocation}
 						returnTo={this.props.returnTo}
