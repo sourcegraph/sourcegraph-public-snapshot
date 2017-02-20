@@ -1,4 +1,6 @@
+import * as includes from "lodash/includes";
 import * as without from "lodash/without";
+import { renderFileEditor } from "sourcegraph/editor/config";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IBaseStat, IContent, IFileStat, IResolveContentOptions, IResolveFileOptions, IStreamContent, IUpdateContentOptions } from "vs/platform/files/common/files";
@@ -9,11 +11,14 @@ import { LocalFileChangeEvent } from "vs/workbench/services/textfile/common/text
 
 import { WorkspaceOp, compose, isFilePath, stripFileOrBufferPathPrefix } from "libzap/lib/ot/workspace";
 
+import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
 import { URIUtils } from "sourcegraph/core/uri";
 import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
 import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+import { renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
 import { OutputListener } from "sourcegraph/workbench/outputListener";
+import { Services } from "sourcegraph/workbench/services";
 
 /**
  * Both of these caches will last until a hard navigation or refresh. We will
@@ -138,7 +143,7 @@ export class FileService {
 	}
 
 	public onReceiveOp(op: WorkspaceOp): void {
-		this.zapFileService.apply(op);
+		this.zapFileService.apply(this.workspace.resource, op);
 		this.refreshTree();
 	}
 
@@ -151,11 +156,50 @@ export class FileService {
 class ZapFileService {
 	private state: WorkspaceOp;
 
-	public apply(op: WorkspaceOp): void {
-		if (!this.state) {
+	public apply(resource: URI, op: WorkspaceOp): void {
+		const initial = !this.state;
+		if (initial) {
 			this.state = op;
 		} else {
 			this.state = compose(this.state, op);
+		}
+
+		if (this.state.create) {
+			for (const f of this.state.create) {
+				const resourceKey = URIUtils.withFilePath(resource, stripFileOrBufferPathPrefix(f)).toString();
+				let content = "";
+				if (this.state.edit && this.state.edit[f]) {
+					if (this.state.edit[f].length > 1 || typeof this.state.edit[f][0] !== "string") {
+						throw new Error(`updateTree: initial edit op for ${f} should only contain one insert`);
+					}
+					content = this.state.edit[f][0] as string;
+				}
+				// Use the content cache to store the inital content of the file.
+				// TODO use TextDocumentService instead to enable editing capabilities.
+				contentCache.set(resourceKey, content);
+			}
+		}
+		if (this.state.delete) {
+			for (const f of this.state.delete) {
+				if (isFilePath(f)) {
+					const resourceKey = URIUtils.withFilePath(resource, stripFileOrBufferPathPrefix(f)).toString();
+					contentCache.delete(resourceKey);
+				}
+			}
+		}
+
+		if (initial) {
+			// After the first op, check to see if the current location is a file that
+			// was created by zap. If so reload the editor with that file set as the
+			// resource.
+			const location = URI.parse(window.location.href);
+			const params = getRouteParams(abs.blob, location.path);
+			if (params.splat.length < 2) { return; }
+			const path = params.splat[1];
+			if (this.state.create && includes(this.state.create, `/${path}`)) {
+				resource = URIUtils.withFilePath(resource, path);
+				renderFileEditor(resource, null);
+			}
 		}
 	}
 
@@ -169,18 +213,6 @@ class ZapFileService {
 		if (this.state.create) {
 			for (const f of this.state.create) {
 				if (isFilePath(f)) {
-					const resourceKey = URIUtils.withFilePath(resource, stripFileOrBufferPathPrefix(f)).toString();
-					let content = "";
-					if (this.state.edit && this.state.edit[f]) {
-						if (this.state.edit[f].length > 1 || typeof this.state.edit[f][0] !== "string") {
-							throw new Error(`updateTree: initial edit op for ${f} should only contain one insert`);
-						}
-						content = this.state.edit[f][0] as string;
-					}
-					// Use the content cache to store the inital content of the file.
-					// TODO use TextDocumentService instead to enable editing capabilities.
-					contentCache.set(resourceKey, content);
-
 					files.push(stripFileOrBufferPathPrefix(f));
 				}
 			}
@@ -188,9 +220,6 @@ class ZapFileService {
 		if (this.state.delete) {
 			for (const f of this.state.delete) {
 				if (isFilePath(f)) {
-					const resourceKey = URIUtils.withFilePath(resource, stripFileOrBufferPathPrefix(f)).toString();
-					contentCache.delete(resourceKey);
-
 					files = without(files, f);
 				}
 			}

@@ -101,20 +101,26 @@ func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph
 }
 
 func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
+	q := r.URL.Query()
 	entry, repo, repoRev, err := repoTreeGet(r.Context(), mux.Vars(r))
-	if err != nil {
+	if err != nil && !(err.Error() == "file does not exist" && q.Get("tmpZapRef") != "") { // TODO proper error value
 		return nil, err
 	}
-	if entry.Type != sourcegraph.FileEntry {
+	if entry != nil && entry.Type != sourcegraph.FileEntry {
 		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a file")}
 	}
 
-	m := treeOrBlobMeta(entry.Name, repo)
+	var m *meta
+	if entry == nil && q.Get("tmpZapRef") != "" {
+		m = treeOrBlobMeta("", repo)
+	} else {
+		m = treeOrBlobMeta(entry.Name, repo)
+	}
 	m.CanonicalURL = canonicalRepoURL(
 		conf.AppURL,
 		getRouteName(r),
 		mux.Vars(r),
-		r.URL.Query(),
+		q,
 		repo.DefaultBranch,
 		repoRev.CommitID,
 	)

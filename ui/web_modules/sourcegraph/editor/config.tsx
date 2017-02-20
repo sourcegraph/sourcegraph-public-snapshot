@@ -29,7 +29,7 @@ import { prettifyRev } from "sourcegraph/workbench/utils";
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
 export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
-	const { repo, commitID, path } = location;
+	const { repo, commitID, path, selection } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
 	updateFileTree(resource);
 
@@ -41,19 +41,23 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 
 	const exists = await Services.get(IFileService).existsFile(resource);
 	if (!exists) {
+		const href = URI.parse(window.location.href).toJSON();
+		if (href.query && href.query.includes("tmpZapRef=")) {
+			// Don't render 404 in a zap session yet since the file may have been
+			// created by an op.
+			return;
+		}
 		renderNotFoundError();
 		return;
 	}
 
-	renderFileEditor(location);
+	renderFileEditor(resource, selection);
 }
 
 /**
  * renderEditor opens the editor for a file.
  */
-function renderFileEditor(location: AbsoluteLocation): void {
-	const { repo, commitID, path, selection } = location;
-	const resource = URIUtils.pathInRepo(repo, commitID, path);
+export function renderFileEditor(resource: URI, selection: IRange | null): void {
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
 		updateEditorAfterURLChange(selection);
