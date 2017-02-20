@@ -10,7 +10,9 @@ export function activate(): void {
 	});
 
 	getModes().forEach(mode => {
-		const client = new BrowserLanguageClient("lsp", "lsp", webSocketStreamOpener(`${wsOrigin}/.api/lsp`), {
+		// We include ?mode= in the url to make it easier to find the correct LSP websocket connection.
+		// It does not affect any behaviour.
+		const client = new BrowserLanguageClient("lsp", "lsp", webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`), {
 			documentSelector: [mode],
 			initializationOptions: { mode },
 		});
