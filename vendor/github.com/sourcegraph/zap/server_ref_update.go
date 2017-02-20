@@ -373,7 +373,7 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Contex
 	return s.broadcastRefUpdate(ctx, log, repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref), sender, nil, &params)
 }
 
-func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.Context, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally bool) error {
+func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.Context, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally, acquireRef bool) error {
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
@@ -401,7 +401,9 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 	})
 	defer timer.Stop()
 
-	defer repo.acquireRef(params.RefIdentifier.Ref)()
+	if acquireRef {
+		defer repo.acquireRef(params.RefIdentifier.Ref)()
+	}
 
 	if ref := repo.refdb.Lookup(params.RefIdentifier.Ref); ref != nil && ref.IsSymbolic() && !params.Force {
 		return &jsonrpc2.Error{

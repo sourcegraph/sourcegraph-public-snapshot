@@ -149,22 +149,26 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 				log := log.With("op", op.String())
 				level.Info(log).Log()
 
-				/////////////// TODO(sqs): wrap this in connsMu to avoid race conds
 				ref, err := repo.refdb.Resolve("HEAD")
 				if err != nil {
 					return err
 				}
-				refObj := ref.Object.(serverRef)
-				err = refObj.ot.Record(op)
-				/////////////////////// TODO(sqs): ^^^^^^^ end of note above
-				if err != nil {
-					return err
+				do := func() error {
+					// Wrap in func so we can defer here.
+					defer repo.acquireRef(ref.Name)()
+
+					refObj := ref.Object.(serverRef)
+					err = refObj.ot.Record(op)
+					if err != nil {
+						return err
+					}
+					return s.parent.broadcastRefUpdate(ctx, log, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
+						RefIdentifier: w.Ref("HEAD"),
+						Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
+						Op:            &op,
+					}, nil)
 				}
-				if err := s.parent.broadcastRefUpdate(ctx, log, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
-					RefIdentifier: w.Ref("HEAD"),
-					Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
-					Op:            &op,
-				}, nil); err != nil {
+				if err := do(); err != nil {
 					return err
 				}
 
@@ -182,64 +186,73 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 					panic("empty ref base info")
 				}
 
-				ref := repo.refdb.Lookup(resetInfo.Ref)
-				var current *RefPointer
-				if ref != nil {
-					refObj := ref.Object.(serverRef)
-					current = &RefPointer{
-						RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
-						Rev:         refObj.rev(),
-					}
-					// if refObj.ot.Apply != nil {
-					// 	panic("Apply func is already set")
-					// }
-					refObj.ot.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
-						return workspace.Apply(ctx, log, op)
-					}
-				}
-				newRefState := &RefState{
-					RefBaseInfo: resetInfo.RefBaseInfo,
-					History:     resetInfo.History,
-				}
-				if err := s.parent.handleRefUpdateFromDownstream(ctx, log, repo, RefUpdateUpstreamParams{
-					RefIdentifier: w.Ref(resetInfo.Ref),
-					Current:       current,
-					State:         newRefState,
-				}, nil, false); err != nil {
-					return err
-				}
-				if ref == nil {
+				do := func() error {
+					// Wrap in func so we can defer here.
+					defer repo.acquireRef(resetInfo.Ref)()
+
 					ref := repo.refdb.Lookup(resetInfo.Ref)
+					var current *RefPointer
+					if ref != nil {
+						refObj := ref.Object.(serverRef)
+						current = &RefPointer{
+							RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
+							Rev:         refObj.rev(),
+						}
+						// if refObj.ot.Apply != nil {
+						// 	panic("Apply func is already set")
+						// }
+						refObj.ot.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
+							return workspace.Apply(ctx, log, op)
+						}
+					}
+					newRefState := &RefState{
+						RefBaseInfo: resetInfo.RefBaseInfo,
+						History:     resetInfo.History,
+					}
+					if err := s.parent.handleRefUpdateFromDownstream(ctx, log, repo, RefUpdateUpstreamParams{
+						RefIdentifier: w.Ref(resetInfo.Ref),
+						Current:       current,
+						State:         newRefState,
+					}, nil, false, false /* do not double-acquire ref */); err != nil {
+						return err
+					}
 					if ref == nil {
-						panic("ref was not created")
+						ref := repo.refdb.Lookup(resetInfo.Ref)
+						if ref == nil {
+							panic("ref was not created")
+						}
+						refObj := ref.Object.(serverRef)
+						// if refObj.ot.Apply != nil {
+						// 	panic("Apply func is already set")
+						// }
+						refObj.ot.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
+							return workspace.Apply(ctx, log, op)
+						}
 					}
-					refObj := ref.Object.(serverRef)
-					// if refObj.ot.Apply != nil {
-					// 	panic("Apply func is already set")
-					// }
-					refObj.ot.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
-						return workspace.Apply(ctx, log, op)
-					}
-				}
 
-				var oldTarget string
-				if oldRef := repo.refdb.Lookup("HEAD"); oldRef != nil {
-					oldTarget = oldRef.Target
+					var oldTarget string
+					if oldRef := repo.refdb.Lookup("HEAD"); oldRef != nil {
+						oldTarget = oldRef.Target
+					}
+					if resetInfo.Ref == oldTarget {
+						return fmt.Errorf("HEAD symbolic ref already points to %v", resetInfo.Ref)
+					}
+					if err := s.parent.handleSymbolicRefUpdate(ctx, log, nil, repo, RefUpdateSymbolicParams{
+						RefIdentifier: w.Ref("HEAD"),
+						Target:        resetInfo.Ref,
+						OldTarget:     oldTarget,
+					}); err != nil {
+						return err
+					}
+
+					if ready != nil {
+						close(ready)
+						ready = nil
+					}
+					return nil
 				}
-				if resetInfo.Ref == oldTarget {
-					return fmt.Errorf("HEAD symbolic ref already points to %v", resetInfo.Ref)
-				}
-				if err := s.parent.handleSymbolicRefUpdate(ctx, log, nil, repo, RefUpdateSymbolicParams{
-					RefIdentifier: w.Ref("HEAD"),
-					Target:        resetInfo.Ref,
-					OldTarget:     oldTarget,
-				}); err != nil {
+				if err := do(); err != nil {
 					return err
-				}
-
-				if ready != nil {
-					close(ready)
-					ready = nil
 				}
 
 			case newConfig, ok := <-workspace.ConfigChange():
@@ -485,7 +498,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 			RefIdentifier: params.WorkspaceIdentifier.Ref(params.Ref),
 			Force:         true,
 			State:         refState,
-		}, c.parent, false); err != nil {
+		}, c.parent, false, true); err != nil {
 			return nil, err
 		}
 		return refState, nil

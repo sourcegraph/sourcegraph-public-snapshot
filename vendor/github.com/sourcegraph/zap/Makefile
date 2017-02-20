@@ -21,7 +21,7 @@ test-main:
 	go get -d -t ./...
 	go test -i ./...
 	go list ./... | grep -v internal/e2e | grep -v cmd/zap | xargs go test -timeout 9m -race
-	go install ./cmd/zap && go test -parallel 2 ./cmd/zap
+	go install ./cmd/zap && go test -parallel 1 ./cmd/zap
 
 .PHONY: test-ext
 test-ext:; cd ext && $(MAKE) test

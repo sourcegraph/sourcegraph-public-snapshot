@@ -470,7 +470,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.handleRefUpdateFromDownstream(ctx, log, repo, params, c, true); err != nil {
+		if err := c.server.handleRefUpdateFromDownstream(ctx, log, repo, params, c, true, true); err != nil {
 			level.Error(log).Log("params", params, "err", err)
 			return nil, err
 		}
