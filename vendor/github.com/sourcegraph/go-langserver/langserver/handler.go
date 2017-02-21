@@ -36,8 +36,10 @@ type LangHandler struct {
 	typecheckCache cache
 	symbolCache    cache
 
-	// cache the reverse import graph
-	importGraphOnce sync.Once
+	// cache the reverse import graph. The sync.Once is a pointer since it
+	// is reset when we reset caches. If it was a value we would racily
+	// updated the internal mutex when assigning a new sync.Once.
+	importGraphOnce *sync.Once
 	importGraph     importgraph.Graph
 
 	cancel *cancel
@@ -53,7 +55,7 @@ func (h *LangHandler) reset(init *InitializeParams) error {
 	if !h.HandlerShared.Shared {
 		// Only reset the shared data if this lang server is running
 		// by itself.
-		if err := h.HandlerShared.Reset(init.RootPath, !init.NoOSFileSystemAccess); err != nil {
+		if err := h.HandlerShared.Reset(!init.NoOSFileSystemAccess); err != nil {
 			return err
 		}
 	}
@@ -68,7 +70,7 @@ func (h *LangHandler) resetCaches(lock bool) {
 		h.mu.Lock()
 	}
 
-	h.importGraphOnce = sync.Once{}
+	h.importGraphOnce = &sync.Once{}
 	h.importGraph = nil
 
 	if h.typecheckCache == nil {
@@ -195,6 +197,10 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 			},
 		}, nil
 
+	case "initialized":
+		// A notification that the client is ready to receive requests. Ignore
+		return nil, nil
+
 	case "shutdown":
 		h.ShutDown()
 		return nil, nil
@@ -316,8 +322,15 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 
 	default:
 		if IsFileSystemRequest(req.Method) {
-			err := h.HandleFileSystemRequest(ctx, req)
-			h.resetCaches(true) // a file changed, so we must re-typecheck and re-enumerate symbols
+			uri, fileChanged, err := h.HandleFileSystemRequest(ctx, req)
+			if fileChanged {
+				// a file changed, so we must re-typecheck and re-enumerate symbols
+				h.resetCaches(true)
+			}
+			if uri != "" {
+				// a user is viewing this path, hint to add it to the cache
+				go h.typecheck(ctx, conn, uri, lsp.Position{})
+			}
 			return nil, err
 		}
 

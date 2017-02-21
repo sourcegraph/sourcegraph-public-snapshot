@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
+	"go/build"
 	"go/token"
 	"go/types"
 	"strings"
@@ -20,6 +21,13 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 		// Invalid nodes means we tried to click on something which is
 		// not an ident (eg comment/string/etc). Return no information.
 		if _, ok := err.(*invalidNodeError); ok {
+			return nil, nil
+		}
+		// This is a common error we get in production when a user is
+		// browsing a go pkg which only contains files we can't
+		// analyse (usually due to build tags). To reduce signal of
+		// actual bad errors, we return no error in this case.
+		if _, ok := err.(*build.NoGoError); ok {
 			return nil, nil
 		}
 		return nil, err
@@ -78,28 +86,22 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 			return ""
 		}
 
-		// Pull the comment out of the comment map for the file.
-		pathIndex := 1
-		switch v := o.(type) {
-		case *types.Var:
-			if !v.IsField() {
-				pathIndex = 2
-			}
-		case *types.TypeName:
-			pathIndex = 2
-		}
+		// Pull the comment out of the comment map for the file. Do
+		// not search too far away from the current path.
 		var doc *ast.CommentGroup
-		switch v := path[pathIndex].(type) {
-		case *ast.Field:
-			doc = v.Doc
-		case *ast.ValueSpec:
-			doc = v.Doc
-		case *ast.TypeSpec:
-			doc = v.Doc
-		case *ast.GenDecl:
-			doc = v.Doc
-		case *ast.FuncDecl:
-			doc = v.Doc
+		for i := 0; i < 3 && i < len(path) && doc == nil; i++ {
+			switch v := path[i].(type) {
+			case *ast.Field:
+				doc = v.Doc
+			case *ast.ValueSpec:
+				doc = v.Doc
+			case *ast.TypeSpec:
+				doc = v.Doc
+			case *ast.GenDecl:
+				doc = v.Doc
+			case *ast.FuncDecl:
+				doc = v.Doc
+			}
 		}
 		if doc == nil {
 			return ""
