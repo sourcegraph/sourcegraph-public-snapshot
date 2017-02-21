@@ -694,7 +694,8 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	crid := clientRequestID{RID: rid, CID: c.id}
 
 	// We try upto 3 times if we encounter ephemeral errors
-	backoffs := []time.Duration{0, 100 * time.Millisecond, 1 * time.Second}
+	// HOTFIX(keegancsmith) remove retries 2017-02-21
+	backoffs := []time.Duration{0} //, 100 * time.Millisecond, 1 * time.Second}
 	for _, b := range backoffs {
 		if b != 0 {
 			// We are retrying. Add in jitter to our backoff sleep
