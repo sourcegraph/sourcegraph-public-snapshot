@@ -23,9 +23,21 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
+
+// repoBlacklist contains repos which we have blacklisted. It is set via the
+// environment variable REPO_BLACKLIST.
+var repoBlacklist map[string]bool
+
+func init() {
+	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
+	for _, r := range repos {
+		repoBlacklist[r] = true
+	}
+}
 
 func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) error {
 	var connOpt []jsonrpc2.ConnOpt
@@ -341,6 +353,9 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		if len(rootPathURI.Rev()) != 40 {
 			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootPathURI)
+		}
+		if repoBlacklist[rootPathURI.Repo()] {
+			return nil, fmt.Errorf("repo is blacklisted")
 		}
 
 		c.mu.Lock()
