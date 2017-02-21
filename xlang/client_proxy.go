@@ -30,7 +30,7 @@ import (
 
 // repoBlacklist contains repos which we have blacklisted. It is set via the
 // environment variable REPO_BLACKLIST.
-var repoBlacklist map[string]bool
+var repoBlacklist = make(map[string]bool)
 
 func init() {
 	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
