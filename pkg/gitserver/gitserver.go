@@ -17,8 +17,21 @@ type execRequest struct {
 	Stdin          <-chan []byte
 	ReplyChan      chan<- *execReply
 
-	Private bool // whether the repo is private, if true, then do not attempt clone/update without creds (race cond)
-	NoCreds bool // sender is not able to provide credentials, do not attempt clone/update for private repos (race cond)
+	// NoAutoUpdate is whether to prevent gitserver from auto-updating or cloning a repository if it
+	// does not yet exist. This should be set to true if the following conditions hold:
+	//
+	// - the repo is private
+	// - no auth credentials are provided
+	//
+	// Note: this addresses the following scenario:
+	//
+	// - unauthed client triggers gitserver to auto-clone a private repository without credentials
+	// - authed client triggers auto-clone, which fails because there is an existing clone in progress
+	// - unauthed auto-clone fails due to lack of credentials
+	// - end result: nothing gets cloned, even though an authed client made a request that should have triggered an auto-clone
+	//
+	// There maybe a more elegant solution, but this will do for now.
+	NoAutoUpdate bool
 }
 
 type execReply struct {

@@ -133,8 +133,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 		var origin string
 		switch {
 		case strings.HasPrefix(req.Repo, "github.com/"):
-			// only try to clone private repos if credentials are potentially available (clone-in-progress race cond)
-			if !req.Private || req.Private && !req.NoCreds {
+			if !req.NoAutoUpdate {
 				origin = "https://" + req.Repo + ".git"
 			}
 		case defaultOrigin != "":
@@ -220,7 +219,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
-	if !req.NoCreds {
+	if !req.NoAutoUpdate {
 		s.updateRepo <- updateRepoRequest{req.Repo, req.Opt}
 	}
 }
