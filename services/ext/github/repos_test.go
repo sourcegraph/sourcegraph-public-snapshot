@@ -300,7 +300,7 @@ func Test_getFromGit(t *testing.T) {
 			Private:       false,
 		},
 	}}
-	ctx := testContext(nil)
+	ctx := auth.WithActor(context.Background(), &auth.Actor{})
 
 	for _, test := range tests {
 		repo, err := getFromGit(ctx, test.owner, test.repoName)
