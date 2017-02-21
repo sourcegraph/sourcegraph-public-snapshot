@@ -68,15 +68,21 @@ drop-entire-local-database:
 drop-test-dbs:
 	psql -A -t -c "select datname from pg_database where datname like 'sgtmp%' or datname like 'graphtmp%';" | xargs -P 10 -n 1 -t dropdb
 
-app/assets/bundle.js: app-dep
-	cd ui && yarn run build
-
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
-test: check src app/assets/bundle.js
+test: check src
 	cd ui && yarn test
 	CDPATH= cd ui/scripts/tsmapimports && yarn test
 	go test -race ${TESTPKGS}
+
+# convenience target for dev to run all checks that might be affected by changes to the main app ONLY
+APPTESTPKGS ?= $(shell go list ./... | grep -v /vendor/ | grep -v '^sourcegraph.com/sourcegraph/sourcegraph/xlang$$' | sort)
+test-app: check src
+	./dev/gofmt.sh
+	./dev/ci/run-checkup.sh
+	cd ui && yarn test
+	CDPATH= cd ui/scripts/tsmapimports && yarn test
+	go test -race ${APPTESTPKGS}
 
 check: ${GOBIN}/go-template-lint
 	go-template-lint -f app/internal/tmpl/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates

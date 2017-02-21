@@ -45,8 +45,14 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 		return nil, err
 	}
 
-	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-		return nil, err
+	// SECURITY: calling setRepoFieldsFromRemote ensures we keep repository metadata up to date
+	// (most importantly the "Private" field) and also adds redundancy to our security. However, we
+	// don't call it if there are no GitHub creds. Do not remove this setRepoFieldsFromRemote call
+	// without first checking with Richard and Beyang.
+	if !github.PreferRawGit {
+		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+			return nil, err
+		}
 	}
 
 	if repo.Blocked {
@@ -336,6 +342,10 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	if Mocks.Repos.GetInventoryUncached != nil {
+		return Mocks.Repos.GetInventoryUncached(ctx, repoRev)
+	}
+
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err

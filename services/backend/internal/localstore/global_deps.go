@@ -10,6 +10,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
+	gorp "gopkg.in/gorp.v1"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/lib/pq"
@@ -298,6 +299,13 @@ type DependenciesOptions struct {
 	// jsonb containment operator. It may be a subset of data.
 	DepData map[string]interface{}
 
+	// Repo filters the returned list of DependencyReference instances
+	// by repo. It should be used mutually exclusively with DepData.
+	Repo int32
+
+	// ExcludePrivate excludes private repo IDs from being included in the result set
+	ExcludePrivate bool
+
 	// Limit limits the number of returned dependency references to the
 	// specified number.
 	Limit int
@@ -335,9 +343,12 @@ func listUserPrivateRepoIDs(ctx context.Context) (accessible []int32, err error)
 }
 
 func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
-	privateRepoIDs, err := listUserPrivateRepoIDs(ctx)
-	if err != nil {
-		return nil, err
+	var privateRepoIDs []int32
+	if !op.ExcludePrivate {
+		privateRepoIDs, err = listUserPrivateRepoIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Note: using global_dep_private first so those results always show up
@@ -380,12 +391,30 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	span.SetTag("DepData", op.DepData)
 	span.SetTag("table", table)
 
-	containmentQuery, err := json.Marshal(op.DepData)
-	if err != nil {
-		return nil, errors.New("marshaling op.DepData query")
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
 	}
 
-	optionalAndSQL := ""
+	var whereConds []string
+
+	if op.Language != "" {
+		whereConds = append(whereConds, `language=`+arg(op.Language))
+	}
+
+	if op.DepData != nil {
+		containmentQuery, err := json.Marshal(op.DepData)
+		if err != nil {
+			return nil, errors.New("marshaling op.DepData query")
+		}
+		whereConds = append(whereConds, `dep_data @> `+arg(string(containmentQuery)))
+	}
+	if op.Repo != 0 {
+		whereConds = append(whereConds, `repo_id = `+arg(op.Repo))
+	}
+
 	switch table {
 	case "global_dep_private":
 		// Important: without this check we would produce a query like
@@ -398,21 +427,25 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 			privateRepoStrings = append(privateRepoStrings, strconv.Itoa(int(repoID)))
 		}
 		privateRepos := strings.Join(privateRepoStrings, ", ")
-		optionalAndSQL = `AND repo_id IN (` + privateRepos + `)`
+		whereConds = append(whereConds, `repo_id IN (`+privateRepos+`)`)
 	case "global_dep":
-		optionalAndSQL = ""
 	default:
 		panic(fmt.Sprintf("Defs.Dependencies: unexpected table %q", table))
 	}
 
-	sql := `select dep_data,repo_id,hints
-		FROM ` + table + `
-		WHERE language=$1
-		AND dep_data @> $2
-		` + optionalAndSQL + `
-		LIMIT $3
-	`
-	rows, err := appDBH(ctx).Db.Query(sql, op.Language, string(containmentQuery), op.Limit)
+	selectSQL := `SELECT dep_data, repo_id, hints`
+	fromSQL := `FROM ` + table
+	whereSQL := ""
+	if len(whereConds) > 0 {
+		whereSQL = `WHERE ` + strings.Join(whereConds, " AND ")
+	}
+	limitSQL := ""
+	if op.Limit != 0 {
+		limitSQL = `LIMIT ` + arg(op.Limit)
+	}
+	sql := fmt.Sprintf("%s %s %s %s", selectSQL, fromSQL, whereSQL, limitSQL)
+
+	rows, err := appDBH(ctx).Db.Query(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}
