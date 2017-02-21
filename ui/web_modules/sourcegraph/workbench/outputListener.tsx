@@ -29,25 +29,8 @@ class OutputListenerService {
 
 export const OutputListener = new OutputListenerService();
 
-// In the main thread, we get a handle to the IOutputService (which
-// deals with output channels) and can receive a callback whenever
-// there is output on a given channel.
-//
-// This start function needs to be called after the IOutputService is
-// set up. It is set up in sourcegraph/workbench/main's init function
-// (by its call to setupServices, to be specific).
-export function start(
-	accessor: ServicesAccessor,
-): void {
+export function start(accessor: ServicesAccessor): void {
 	const outputService = accessor.get<IOutputService>(IOutputService);
-
-	// If you need to see when the output channel is created, and not
-	// just when things are sent on it, you can use this to get the
-	// signal:
-	//
-	// outputService.onOutputChannel(v => {
-	// 	console.log("onOutputChannel", v);
-	// });
 
 	outputService.onOutput((event: IOutputEvent) => {
 		const channel = outputService.getChannel(event.channelId!);
