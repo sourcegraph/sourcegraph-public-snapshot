@@ -210,7 +210,7 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, s svc, lang string,
 	resolvedDeps := resolveDependencies(ctx, s, lang, unfetchedDeps)
 	resolvedDepsList := make([]string, 0, len(resolvedDeps))
 	for rawDepRepo, _ := range resolvedDeps {
-		repo, err := s.ResolveRepo(ctx, rawDepRepo)
+		repo, err := s.GetByURI(ctx, rawDepRepo)
 		if err != nil {
 			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
 			continue

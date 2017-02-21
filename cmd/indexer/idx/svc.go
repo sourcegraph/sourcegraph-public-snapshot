@@ -8,7 +8,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/graphqlbackend"
 )
 
 // svc abstracts all the other services the indexer depends on for
@@ -19,7 +18,6 @@ type svc interface {
 	Update(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error)
 	GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo, err error)
 	Dependencies(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error)
-	ResolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error)
 	ResolveRevision(ctx context.Context, repo *sourcegraph.Repo, spec string) (vcs.CommitID, error)
 	DefsRefreshIndex(ctx context.Context, repoURI, commit string) (err error)
 	PkgsRefreshIndex(ctx context.Context, repo string, commit string) (err error)
@@ -45,9 +43,6 @@ func (s *svcImpl) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Re
 func (s *svcImpl) Dependencies(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error) {
 	return backend.Defs.Dependencies(ctx, repoID, excludePrivate)
 }
-func (s *svcImpl) ResolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	return graphqlbackend.ResolveRepo(ctx, uri)
-}
 func (s *svcImpl) ResolveRevision(ctx context.Context, repo *sourcegraph.Repo, spec string) (vcs.CommitID, error) {
 	return gitcmd.Open(repo).ResolveRevision(ctx, spec)
 }
@@ -67,7 +62,6 @@ type svcMock struct {
 	Update_               func(ctx context.Context, op *sourcegraph.ReposUpdateOp) (err error)
 	GetByURI_             func(ctx context.Context, uri string) (res *sourcegraph.Repo, err error)
 	Dependencies_         func(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error)
-	ResolveRepo_          func(ctx context.Context, uri string) (*sourcegraph.Repo, error)
 	ResolveRevision_      func(ctx context.Context, repo *sourcegraph.Repo, spec string) (vcs.CommitID, error)
 	DefsRefreshIndex_     func(ctx context.Context, repoURI, commit string) (err error)
 	PkgsRefreshIndex_     func(ctx context.Context, repo string, commit string) (err error)
@@ -88,9 +82,6 @@ func (s svcMock) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Rep
 }
 func (s svcMock) Dependencies(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error) {
 	return s.Dependencies_(ctx, repoID, excludePrivate)
-}
-func (s svcMock) ResolveRepo(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
-	return s.ResolveRepo_(ctx, uri)
 }
 func (s svcMock) ResolveRevision(ctx context.Context, repo *sourcegraph.Repo, spec string) (vcs.CommitID, error) {
 	return s.ResolveRevision_(ctx, repo, spec)
