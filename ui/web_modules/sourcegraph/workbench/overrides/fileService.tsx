@@ -164,7 +164,7 @@ class ZapFileService {
 
 		if (this.state.create) {
 			for (const f of this.state.create) {
-				const resourceKey = URIUtils.withFilePath(resource, stripFileOrBufferPathPrefix(f)).toString();
+				const resourceKey = resource.with({ fragment: stripFileOrBufferPathPrefix(f) }).toString();
 				let content = "";
 				if (this.state.edit && this.state.edit[f]) {
 					if (this.state.edit[f].length > 1 || typeof this.state.edit[f][0] !== "string") {
@@ -180,7 +180,7 @@ class ZapFileService {
 		if (this.state.delete) {
 			for (const f of this.state.delete) {
 				if (isFilePath(f)) {
-					const resourceKey = URIUtils.withFilePath(resource, stripFileOrBufferPathPrefix(f)).toString();
+					const resourceKey = resource.with({ fragment: stripFileOrBufferPathPrefix(f) }).toString();
 					contentCache.delete(resourceKey);
 				}
 			}
@@ -195,7 +195,7 @@ class ZapFileService {
 			if (params.splat.length < 2) { return; }
 			const path = params.splat[1];
 			if (this.state.create && includes(this.state.create, `/${path}`)) {
-				resource = URIUtils.withFilePath(resource, path);
+				resource = resource.with({ fragment: path });
 				renderFileEditor(resource, null);
 			}
 		}
