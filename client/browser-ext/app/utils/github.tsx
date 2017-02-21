@@ -103,19 +103,27 @@ export function isPrivateRepo(): boolean {
  * getDeltaFileName returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
-export function getDeltaFileName(container: HTMLElement): string {
+export function getDeltaFileName(container: HTMLElement): {headFilePath: string, baseFilePath: string | null} {
 	const info = container.querySelector(".file-info") as HTMLElement;
 	invariant(info);
 
 	if (info.title) {
 		// for PR conversation snippets
-		return info.title;
+		return getPathNamesFromElement(info);
 	} else {
 		const link = info.querySelector("a") as HTMLElement;
 		invariant(link);
 		invariant(link.title);
-		return link.title;
+		return getPathNamesFromElement(link);
 	}
+}
+
+function getPathNamesFromElement(element: HTMLElement): {headFilePath: string, baseFilePath: string | null } {
+	const elements = element.title.split(" → ");
+	if (elements.length > 1) {
+		return {headFilePath: elements[1], baseFilePath: elements[0]};
+	}
+	return {headFilePath: elements[0], baseFilePath: null};
 }
 
 /**
