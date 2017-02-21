@@ -8,7 +8,6 @@ import { IBackupService } from "vs/platform/backup/common/backup";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
 import { IExtensionService } from "vs/platform/extensions/common/extensions";
-import { IFileService } from "vs/platform/files/common/files";
 import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
@@ -18,26 +17,21 @@ import "vs/platform/opener/browser/opener.contribution";
 import { ISearchService } from "vs/platform/search/common/search";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
 import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
 import { ITreeExplorerService } from "vs/workbench/parts/explorers/common/treeExplorerService";
 import { IWorkspaceConfigurationService } from "vs/workbench/services/configuration/common/configuration";
-import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
 import { MessageService } from "vs/workbench/services/message/electron-browser/messageService";
-import { IPartService } from "vs/workbench/services/part/common/partService";
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
+import { TextModelResolverService } from "vs/workbench/services/textmodelResolver/common/textModelResolverService";
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 import { IWindowIPCService } from "vs/workbench/services/window/electron-browser/windowService";
 
-import { TextModelResolverService } from "sourcegraph/editor/resolverService";
 import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { ConfigurationService, WorkspaceConfigurationService } from "sourcegraph/workbench/ConfigurationService";
 import { EnvironmentService } from "sourcegraph/workbench/environmentService";
 import { ExtensionService } from "sourcegraph/workbench/extensionService";
-import { FileService } from "sourcegraph/workbench/overrides/fileService";
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
-import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
 
 export let Services: ServicesAccessor;
@@ -74,19 +68,14 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(IWindowsService, DummyService);
 	set(IIntegrityService, IntegrityService);
 	set(IBackupService, BackupService);
-	set(IFileService, FileService);
 
 	set(IThemeService, ThemeService);
 	set(IWindowIPCService, DummyService);
-	set(IPartService, DummyService);
 
 	const messageService = instantiationService.createInstance(MessageService, domElement);
 	services.set(IMessageService, messageService);
 
-	const editorPart = instantiationService.createInstance(EditorPart, "workbench.parts.editor", false);
-	services.set(IEditorGroupService, editorPart);
-
-	set(ITextFileService, GitTextFileService);
+	set(ITextFileService, DummyService);
 	set(ITextModelResolverService, TextModelResolverService);
 	set(IConfigurationService, ConfigurationService);
 	set(IWorkspaceConfigurationService, WorkspaceConfigurationService);

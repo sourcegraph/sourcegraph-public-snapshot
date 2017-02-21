@@ -1,12 +1,22 @@
 import * as React from "react";
 
+import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { IPosition, IReadOnlyModel } from "vs/editor/common/editorCommon";
+import { IEditorInput } from "vs/platform/editor/common/editor";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
 import { Router, __getRouterForWorkbenchOnly, getRevFromRouter } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
 import { Services } from "sourcegraph/workbench/services";
+
+export function getResource(input: IEditorInput): URI {
+	if (input["resource"]) {
+		return (input as any).resource;
+	} else {
+		throw new Error("Couldn't find resource.");
+	}
+}
 
 export const NoopDisposer = { dispose: () => {/* */ } };
 

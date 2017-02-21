@@ -34,11 +34,6 @@ export class URIUtils {
 		};
 	}
 
-	static hasAbsoluteCommitID(uri: URI): boolean {
-		const { rev } = URIUtils.repoParams(uri);
-		return rev ? rev.length === 40 : false;
-	}
-
 	// repoParamsExt mirrors the functionality of repoParams, but is
 	// meant to be called outside of Monaco (or when Monaco has not
 	// loaded).

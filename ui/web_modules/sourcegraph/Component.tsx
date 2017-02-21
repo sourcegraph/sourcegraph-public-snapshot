@@ -1,7 +1,5 @@
 import * as React from "react";
 
-import { Features } from "sourcegraph/util/features";
-
 export class Component<P, S> extends React.Component<P, S> {
 	constructor(props: P) {
 		super(props);
@@ -96,11 +94,6 @@ export class EventListener extends React.Component<EventListenerProps, {}> {
 }
 
 export function isNonMonacoTextArea(n: Node): boolean {
-	if (Features.zap2Way.isEnabled()) {
-		// HACK: allow editing document
-		return true;
-	}
-
 	if (n.nodeName !== "TEXTAREA") {
 		return false;
 	}

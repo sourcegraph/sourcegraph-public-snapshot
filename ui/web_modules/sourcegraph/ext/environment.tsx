@@ -20,9 +20,6 @@ class BrowserEnvironment implements IEnvironment {
 	constructor() {
 		// Track the initial contents of documents so we can revert.
 		vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
-			if (doc.isDirty) {
-				throw new Error(`expected to see document ${doc.uri.toString()} before it is dirty`);
-			}
 			this.updateDoc(this.docAtBase, doc);
 			this.updateDoc(this.docAtLastSave, doc);
 		});
@@ -37,6 +34,9 @@ class BrowserEnvironment implements IEnvironment {
 
 	private updateDoc(map: Map<string, string>, doc: vscode.TextDocument): void {
 		const key = doc.uri.toString();
+		if (doc.isDirty) {
+			throw new Error(`expected to see document ${key} before it is dirty`);
+		}
 		map.set(key, doc.getText());
 	}
 
@@ -99,6 +99,15 @@ class BrowserEnvironment implements IEnvironment {
 		const entireRange = new vscode.Range(new vscode.Position(0, 0), doc.positionAt(doc.getText().length));
 		edit.replace(doc.uri, entireRange, initialContents);
 		return vscode.workspace.applyEdit(edit).then(() => doc.save());
+	}
+
+	async saveDocument(doc: vscode.TextDocument): Promise<boolean> {
+		if (doc.uri.scheme === "git") {
+			await doc.save();
+			this.onDidSaveTextDocument(doc);
+			return Promise.resolve(true);
+		}
+		throw new Error(`saveDocument called on non-git document ${doc.uri.toString()}`);
 	}
 
 	openChannel(id: string): Thenable<MessageStream> {

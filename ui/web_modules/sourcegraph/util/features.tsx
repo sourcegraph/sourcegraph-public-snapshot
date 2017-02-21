@@ -97,12 +97,6 @@ export const Features = {
 if (Features.zap2Way.isEnabled() && !Features.zap.isEnabled()) {
 	console.error("features.zap2Way requires features.zap to also be enabled"); // tslint:disable-line no-console
 }
-if (Features.zap2Way.isEnabled()) {
-	// zap2Way requires different CSS.
-	if (document) {
-		document.body.classList.add("zap2Way");
-	}
-}
 
 export function listEnabled(): string[] {
 	return Object.keys(Features).filter(name => Features[name] instanceof Feature && Features[name].isEnabled());

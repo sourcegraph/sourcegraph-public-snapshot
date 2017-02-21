@@ -3,7 +3,7 @@ import * as without from "lodash/without";
 import { renderFileEditor } from "sourcegraph/editor/config";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
-import { IBaseStat, IContent, IFileStat, IResolveContentOptions, IResolveFileOptions, IStreamContent, IUpdateContentOptions } from "vs/platform/files/common/files";
+import { IFileStat, IResolveFileOptions, IUpdateContentOptions } from "vs/platform/files/common/files";
 
 import { IEventService } from "vs/platform/event/common/event";
 import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
@@ -13,7 +13,7 @@ import { WorkspaceOp, compose, isFilePath, stripFileOrBufferPathPrefix } from "l
 
 import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
 import { URIUtils } from "sourcegraph/core/uri";
-import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
+import { contentCache } from "sourcegraph/editor/contentLoader";
 import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { OutputListener } from "sourcegraph/workbench/outputListener";
@@ -81,32 +81,6 @@ export class FileService {
 			fileStatCache.set(resource.toString(true), fileStat);
 			return fileStat;
 		});
-	}
-
-	resolveContent(resource: URI, options?: IResolveContentOptions): TPromise<IContent> {
-		return TPromise.wrap(fetchContentAndResolveRev(resource)).then(({ content }) => {
-			return {
-				...toBaseStat(resource),
-				value: content,
-				encoding: "utf8",
-			};
-		});
-	}
-
-	resolveStreamContent(resource: URI, options?: IResolveContentOptions): TPromise<IStreamContent> {
-		return this.resolveContent(resource, options).then(content => ({
-			...content,
-			value: {
-				on: (event: string, callback: Function): void => {
-					if (event === "data") {
-						callback(content.value);
-					}
-					if (event === "end") {
-						callback();
-					}
-				}
-			},
-		}));
 	}
 
 	existsFile(resource: URI): TPromise<boolean> {
@@ -249,15 +223,6 @@ function retrieveFilesAndDirs(resource: URI): TPromise<any> {
 		}`, { repo, rev }));
 }
 
-function toBaseStat(resource: URI): IBaseStat {
-	return {
-		resource: resource,
-		name: resource.fragment,
-		mtime: 0,
-		etag: resource.toString(),
-	};
-}
-
 /**
  * toFileStat returns a tree of IFileStat that represents the repository rooted at resource.
  * The files parameter is all available files in the repository.
@@ -305,9 +270,12 @@ function toFileStat(resource: URI, files: string[]): IFileStat {
 	}
 
 	return {
-		...toBaseStat(resource),
 		hasChildren: childStats.length > 0,
 		isDirectory: childStats.length > 0,
+		resource: resource,
+		name: resource.fragment,
+		mtime: 0,
+		etag: resource.toString(),
 		children: childStats,
 	};
 }

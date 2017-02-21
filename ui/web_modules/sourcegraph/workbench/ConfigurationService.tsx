@@ -4,8 +4,6 @@ import { TPromise } from "vs/base/common/winjs.base";
 import { IConfigurationKeys, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspaceConfigurationValue, IWorkspaceConfigurationValues } from "vs/workbench/services/configuration/common/configuration";
 
-import { Features } from "sourcegraph/util/features";
-
 const _onDidUpdateConfiguration = new Emitter<IConfigurationServiceEvent>();
 const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
 
@@ -33,7 +31,7 @@ const config = {
 		},
 	},
 	editor: {
-		readOnly: !Features.zap2Way.isEnabled(),
+		readOnly: true,
 		tabSize: 4,
 		automaticLayout: true,
 		scrollBeyondLastLine: false,

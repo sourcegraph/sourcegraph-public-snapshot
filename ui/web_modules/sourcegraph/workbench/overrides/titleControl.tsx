@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { TitleControl } from "vs/workbench/browser/parts/editor/titleControl";
-import { getResource } from "vs/workbench/common/editor";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { EditorTitle } from "sourcegraph/editor/EditorTitle";
+import { getResource } from "sourcegraph/workbench/utils";
 
 export class NoTabsTitleControl extends TitleControl {
 	domElement: HTMLElement;
@@ -23,7 +23,7 @@ export class NoTabsTitleControl extends TitleControl {
 			return;
 		}
 		const editor = this.context && this.context.activeEditor;
-		const resource = getResource(editor) || (editor as any).resource;
+		const resource = getResource(editor);
 		const pathspec = URIUtils.repoParams(resource);
 		const component = <EditorTitle pathspec={pathspec} />;
 		ReactDOM.render(component, this.domElement);

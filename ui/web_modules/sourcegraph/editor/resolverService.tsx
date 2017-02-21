@@ -5,13 +5,9 @@ import { IModel } from "vs/editor/common/editorCommon";
 import { IModelService } from "vs/editor/common/services/modelService";
 import { IModeService } from "vs/editor/common/services/modeService";
 import { ITextEditorModel, ITextModelContentProvider, ITextModelResolverService } from "vs/editor/common/services/resolverService";
-import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
-import { ResourceEditorModel } from "vs/workbench/common/editor/resourceEditorModel";
-import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
+import { EditorModel } from "vs/workbench/common/editor";
 
-import { URIUtils } from "sourcegraph/core/uri";
 import { fetchContent } from "sourcegraph/editor/contentLoader";
-import { Features } from "sourcegraph/util/features";
 
 export class TextModelResolverService implements ITextModelResolverService {
 	public _serviceBrand: any;
@@ -20,9 +16,7 @@ export class TextModelResolverService implements ITextModelResolverService {
 
 	constructor(
 		@IModelService modelService: IModelService,
-		@IModeService private modeService: IModeService,
-		@ITextFileService private textFileService: ITextFileService,
-		@IInstantiationService private instantiationService: IInstantiationService,
+		@IModeService modeService: IModeService,
 	) {
 		this.contentProvider = new TextModelContentProvider(
 			modelService,
@@ -31,16 +25,8 @@ export class TextModelResolverService implements ITextModelResolverService {
 	}
 
 	createModelReference(resource: URI): TPromise<IReference<ITextEditorModel>> {
-		if (Features.zap2Way.isEnabled() && resource.scheme === "git" && URIUtils.hasAbsoluteCommitID(resource)) {
-			return this.textFileService.models.loadOrCreate(resource).then(model => {
-				return this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment).then(mode => {
-					model.textEditorModel.setMode(mode.getId());
-					return new ImmortalReference(model);
-				});
-			});
-		}
 		return this.contentProvider.provideTextContent(resource).then((model) =>
-			new ImmortalReference(this.instantiationService.createInstance(ResourceEditorModel, resource)),
+			new ImmortalReference(new TextEditorModel(model))
 		);
 	}
 
@@ -50,6 +36,15 @@ export class TextModelResolverService implements ITextModelResolverService {
 		};
 	}
 
+}
+
+class TextEditorModel extends EditorModel {
+	textEditorModel: IModel;
+
+	constructor(model: IModel) {
+		super();
+		this.textEditorModel = model;
+	}
 }
 
 export class TextModelContentProvider implements ITextModelContentProvider {

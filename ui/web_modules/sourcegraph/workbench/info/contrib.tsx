@@ -109,7 +109,7 @@ export class SidebarContribution extends Disposables {
 			localAndGlobalRefs = localAndGlobalRefs.concat(refs);
 			refModel = new ReferencesModel(localAndGlobalRefs, props.editorModel.uri);
 			this.dispatchInfo(id, def, fileEventProps, refModel);
-		}, (err) => console.error(err), () => this.dispatchInfo(id, def, fileEventProps, refModel, true));
+		}, () => null, () => this.dispatchInfo(id, def, fileEventProps, refModel, true));
 	}
 
 	private prepareInfoStore(prepare: boolean, id: string, fileEventProps: FileEventProps): void {
