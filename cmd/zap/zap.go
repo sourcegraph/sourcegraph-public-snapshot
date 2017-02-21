@@ -32,7 +32,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 /*
@@ -130,15 +129,13 @@ func main() {
 	ctx := context.Background()
 	zapServer.Start(ctx)
 	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(auth.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx = github.NewContextWithAuthedClient(r.Context()) // necessary to check repo perms
-
 		c, err := websocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: Upgrade: %s [client: %s]\n", err, r.RemoteAddr)
 			http.Error(w, "WebSocket upgrade error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		<-zapServer.Accept(ctx, websocketjsonrpc2.NewObjectStream(c))
+		<-zapServer.Accept(r.Context(), websocketjsonrpc2.NewObjectStream(c))
 	})))))
 	select {}
 }

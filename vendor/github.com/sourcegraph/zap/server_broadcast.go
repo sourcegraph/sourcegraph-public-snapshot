@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	logpkg "github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -19,6 +18,8 @@ func (s *Server) broadcastRefUpdate(ctx context.Context, log *logpkg.Context, up
 	if ctx == nil {
 		panic("ctx == nil")
 	}
+
+	debugSimulateLatency()
 
 	var repo string
 	if nonSymbolic != nil {
@@ -43,7 +44,7 @@ func (s *Server) broadcastRefUpdate(ctx context.Context, log *logpkg.Context, up
 	for _, ref := range updatedRefs {
 		refID := RefIdentifier{Repo: repo, Ref: ref.Name}
 		if watchers := s.watchers(refID); len(watchers) > 0 {
-			level.Debug(log).Log("broadcast-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "))
+			log.Log("broadcast-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "))
 
 			for _, c := range watchers {
 				// Send the update with the ref name that the client
@@ -54,7 +55,13 @@ func (s *Server) broadcastRefUpdate(ctx context.Context, log *logpkg.Context, up
 				// original sender.
 				//
 				// TODO(sqs): c could close at any point and make this channel send panic; need to handle that case
+				c.mu.Lock()
+				if c.closed {
+					c.mu.Unlock()
+					continue
+				}
 				c.toSend <- makeRefUpdateItem(ref.Name, c == sender)
+				c.mu.Unlock()
 			}
 		}
 	}

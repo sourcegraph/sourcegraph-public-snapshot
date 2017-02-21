@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { IAction } from "vs/base/common/actions";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IContextKeyService } from "vs/platform/contextkey/common/contextkey";
+import { IEventService } from "vs/platform/event/common/event";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { IStorageService } from "vs/platform/storage/common/storage";
 import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
@@ -30,7 +31,8 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 		@IWorkbenchEditorService editorService: IWorkbenchEditorService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IInstantiationService instantiationService: IInstantiationService,
-		@IContextKeyService contextKeyService: IContextKeyService
+		@IContextKeyService contextKeyService: IContextKeyService,
+		@IEventService private eventService: IEventService
 	) {
 		super(telemetryService, contextService, storageService, editorGroupService, editorService, configurationService, instantiationService, contextKeyService);
 
@@ -39,6 +41,7 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 		});
 
 		this.onTitleAreaUpdate(() => this.updateTitleComponent());
+		this.eventService.addListener2("files.internal:fileChanged", () => this.refresh());
 	}
 
 	getTitle(): string {
@@ -50,6 +53,11 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 
 	public getActions(): IAction[] {
 		return [];
+	}
+
+	public refresh(): void {
+		const explorerView = this.getExplorerView();
+		explorerView.refresh();
 	}
 
 	private updateTitleComponent(): void {

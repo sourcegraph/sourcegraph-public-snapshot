@@ -168,7 +168,6 @@ func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
 		// (error message of the form "... /index.lock"), like the
 		// user running `git status`. Retry if it fails at first.
 		if err := backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
-			fmt.Fprintf(os.Stderr, "# git reset %s\n", op.GitHead)
 			return gitRepo.Reset("mixed", op.GitHead)
 		}, GitBackOff(), nil); err != nil {
 			return err

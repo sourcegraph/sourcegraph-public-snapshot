@@ -6,7 +6,7 @@ import { ButtonProps } from "sourcegraph/components/Button";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Props extends ButtonProps {
-	scopes?: string;
+	scope: "private" | "public";
 	returnTo?: string | RouterLocation;
 	newUserReturnTo?: string | RouterLocation;
 	pageName?: string;
@@ -15,10 +15,14 @@ interface Props extends ButtonProps {
 
 export function GitHubAuthButton(props: Props): JSX.Element {
 	const {
-		scopes = "read:org,repo,user:email",
+		scope,
 		children,
 		...transferredProps,
 	} = props;
+
+	const scopes = scope === "private" ?
+		"read:org,user:email,repo" :
+		"read:org,user:email";
 
 	return <AuthButton
 		provider="github"

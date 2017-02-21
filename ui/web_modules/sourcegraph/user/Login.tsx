@@ -25,8 +25,8 @@ export function LoginForm(props: Props): JSX.Element {
 	return (
 		<div className={styles.form}>
 			<Heading level={3} align="center" underline="orange">Sign in to Sourcegraph</Heading>
-			<GitHubAuthButton scopes="user:email" returnTo={props.returnTo || props.location} newUserReturnTo={newUserRedirLocation} tabIndex={1} block={true}>Public code only</GitHubAuthButton>
-			<GitHubAuthButton color="purple" returnTo={props.returnTo || props.location} newUserReturnTo={newUserRedirLocation} tabIndex={2} block={true}>Private + public code</GitHubAuthButton>
+			<GitHubAuthButton scope="public" returnTo={props.returnTo || props.location} newUserReturnTo={newUserRedirLocation} tabIndex={1} block={true}>Public code only</GitHubAuthButton>
+			<GitHubAuthButton scope="private" color="purple" returnTo={props.returnTo || props.location} newUserReturnTo={newUserRedirLocation} tabIndex={2} block={true}>Private + public code</GitHubAuthButton>
 			<p style={{ textAlign: "center" }}>
 				No account yet? <LocationStateToggleLink href="/join" modalName="join" location={location}>Sign up.</LocationStateToggleLink>
 			</p>

@@ -62,7 +62,7 @@ func serveSitemapIndex(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
-	rc, _, err := handlerutil.GetRepoAndRevCommon(r.Context(), mux.Vars(r))
+	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func serveRepoSitemap(w http.ResponseWriter, r *http.Request) error {
 
 	// Add repo main page.
 	sm.URLs = append(sm.URLs, sitemap.URL{
-		Loc:        conf.AppURL.ResolveReference(router.Rel.URLToRepo(rc.Repo.URI)).String(),
+		Loc:        conf.AppURL.ResolveReference(router.Rel.URLToRepo(repo.URI)).String(),
 		ChangeFreq: chgFreq,
 		Priority:   repoPriority,
 	})

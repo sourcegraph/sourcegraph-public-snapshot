@@ -3,53 +3,15 @@ package config
 import (
 	"fmt"
 	"os"
-	"os/user"
-	"path/filepath"
 	"strings"
-	"sync"
 
 	gitconfigfmt "github.com/src-d/go-git/plumbing/format/config"
 )
 
-var (
-	isTestOnce   sync.Once
-	cachedIsTest bool
-)
-
-// IsTest tells if the environment is a testing one or not; i.e. if ZAP_TEST=t.
-// It exists to prevent initialization order issues around reading ZAP_TEST and
-// so that the variable does not have to be read on each and every action.
-func IsTest() bool {
-	isTestOnce.Do(func() {
-		cachedIsTest = os.Getenv("ZAP_TEST") == "t"
-	})
-	return cachedIsTest
-}
-
-var (
-	// testGlobalConfigFileMu must be held the ENTIRE lifetime of a test if it
-	// modifies testGlobalConfigFile, in order to prevent those tests from
-	// running concurrently and affecting one another.
-	TestGlobalConfigFileMu sync.Mutex
-	TestGlobalConfigFile   = os.Getenv("ZAP_TEST_GLOBAL_CONFIG_FILE")
-)
-
-// GlobalPath returns the path to the global $HOME/.zapconfig file,
-// or an error.
-//
-// TODO: implement the multiple file path locations described at
-// https://git-scm.com/docs/git-config#FILES
-func GlobalPath() (string, error) {
-	if TestGlobalConfigFile != "" {
-		return TestGlobalConfigFile, nil
-	}
-	// Formulate the path to the config file.
-	u, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(u.HomeDir, ".zapconfig"), nil
-}
+// GlobalConfigPath (if set) enables the use of a global Zap config
+// file at the given path. Global config is disabled if this value is
+// empty.
+var GlobalConfigPath string
 
 // ReadFile attempts to read the config file and decode it.
 func ReadFile(path string) (gitconfigfmt.Config, error) {
@@ -81,14 +43,10 @@ func WriteFile(cfg *gitconfigfmt.Config, path string) error {
 // and nil error if it does not exist.
 func ReadGlobalFile() (gitconfigfmt.Config, error) {
 	var cfg gitconfigfmt.Config
-	if IsTest() && TestGlobalConfigFile == "" {
+	if GlobalConfigPath == "" {
 		return cfg, nil
 	}
-	cfgFile, err := GlobalPath()
-	if err != nil {
-		return cfg, err
-	}
-	cfg, err = ReadFile(cfgFile)
+	cfg, err := ReadFile(GlobalConfigPath)
 	if err != nil && !os.IsNotExist(err) {
 		return cfg, err
 	}
@@ -98,11 +56,10 @@ func ReadGlobalFile() (gitconfigfmt.Config, error) {
 // WriteGlobalFile attempts to encode and write the global config file,
 // overwriting the existing one.
 func WriteGlobalFile(cfg *gitconfigfmt.Config) error {
-	path, err := GlobalPath()
-	if err != nil {
-		return err
+	if GlobalConfigPath == "" {
+		panic("global config is disabled (no GlobalConfigPath set)")
 	}
-	return WriteFile(cfg, path)
+	return WriteFile(cfg, GlobalConfigPath)
 }
 
 // KeyPair represents a single configuration key-value pair, where the key is
@@ -155,8 +112,12 @@ func ParseKey(k string) (section, subsection, option string) {
 }
 
 // EnsureWorkspaceInGlobalConfig ensures the specified directory is in the
-// $HOME/.zapconfig file under the "workspaces" section.
+// global Zap config file under the "workspaces" section.
 func EnsureWorkspaceInGlobalConfig(dir string) error {
+	if GlobalConfigPath == "" {
+		return nil
+	}
+
 	// Read the current config file, if it exists.
 	cfg, err := ReadGlobalFile()
 	if err != nil {
@@ -180,8 +141,12 @@ func EnsureWorkspaceInGlobalConfig(dir string) error {
 }
 
 // EnsureWorkspaceNotInGlobalConfig ensures the specified directory is NOT in the
-// $HOME/.zapconfig file under the "workspaces" section.
+// global Zap config file under the "workspaces" section.
 func EnsureWorkspaceNotInGlobalConfig(dir string) error {
+	if GlobalConfigPath == "" {
+		return nil
+	}
+
 	// Read the current config file, if it exists.
 	cfg, err := ReadGlobalFile()
 	if err != nil {

@@ -199,32 +199,6 @@ type URIList struct {
 	URIs []string `json:"URIs,omitempty"`
 }
 
-type RepoResolveOp struct {
-	// Path is some repo path, such as "github.com/user/repo".
-	Path string `json:"path,omitempty"`
-	// Remote controls the behavior when Resolve locates a remote
-	// repository that is not (yet) associated with an existing local
-	// repository. If Remote is false (the default), then a NotFound
-	// error is returned in that case. If Remote is true, then no
-	// error is returned; the RepoResolution's Repo field will be
-	// empty, but some metadata about the remote repository may be
-	// provided.
-	Remote bool `json:"remote,omitempty"`
-}
-
-// RepoResolution is the result of resolving a repo using
-// Repos.Resolve.
-type RepoResolution struct {
-	// ID is the ID of the local repo (either a locally hosted repo,
-	// or a locally added mirror).
-	Repo int32 `json:"Repo,omitempty"`
-	// CanonicalPath is the canonical repo path of the local repo
-	// (with the canonical casing, etc.). Clients should generally
-	// redirect the user to the canonical repo path if users access a
-	// repo by a non-canonical path.
-	CanonicalPath string `json:"CanonicalPath,omitempty"`
-}
-
 // ReposUpdateOp is an operation to update a repository's metadata.
 type ReposUpdateOp struct {
 	// Repo is the repository to update.

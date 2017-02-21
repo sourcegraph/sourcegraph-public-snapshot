@@ -407,58 +407,58 @@
 			"revisionTime": "2017-02-01T23:11:41Z"
 		},
 		{
-			"checksumSHA1": "eCwVTEBnLq6I9RvS9XbidkLsDaM=",
+			"checksumSHA1": "1TOGxZF2KQJa1CgkC9l3t7Wx6R4=",
 			"path": "github.com/neelance/graphql-go",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "QMfWVYRb9JDx4D04N9oEErSwMkA=",
 			"path": "github.com/neelance/graphql-go/errors",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "jJEioCJSY7gxghc/3W+g09Vbm4E=",
 			"path": "github.com/neelance/graphql-go/internal/common",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
-			"checksumSHA1": "xnajRN7dqoGVPmLciiz9lJL0ogs=",
+			"checksumSHA1": "0zSdkjkUrG9nbf5+9ejYSRY7opI=",
 			"path": "github.com/neelance/graphql-go/internal/exec",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "jfcNYm+kb5DPigLhLvGO5QoXGnM=",
 			"path": "github.com/neelance/graphql-go/internal/lexer",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "CeEaXNoG5dpqHEZKATKToBirf6g=",
 			"path": "github.com/neelance/graphql-go/internal/query",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "ifKvAElrhyze0nc4XucAbaXMIrA=",
 			"path": "github.com/neelance/graphql-go/internal/schema",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "JrLIh6GhfWqVrYyPr/8MlNdQzjQ=",
 			"path": "github.com/neelance/graphql-go/introspection",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "SMJcg2jarQIR6U0D9IV8JdXNaZ0=",
 			"path": "github.com/neelance/graphql-go/relay",
-			"revision": "5b2978fcb1baf5d104a51d2638e2204abac0f5fd",
-			"revisionTime": "2017-02-06T02:30:34Z"
+			"revision": "612317b28bf7e9a793d7b11d2cac81109ad1f988",
+			"revisionTime": "2017-02-20T12:37:21Z"
 		},
 		{
 			"checksumSHA1": "K4L6qMn6mHxuWwEYhVBaCoDcSH0=",
@@ -664,64 +664,70 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "8ASGdQWn1vE05+lSalVusYNz3vg=",
+			"checksumSHA1": "fH6H7tFbfEgqeAGuebW9L7q2Gpk=",
 			"path": "github.com/sourcegraph/zap",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
 			"checksumSHA1": "ITvpzEsRzvzYgJ69rzrtc58zi38=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/backoff",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
+		},
+		{
+			"checksumSHA1": "rRZY48ZMS87E6pxb7S6nkj14Nk0=",
+			"path": "github.com/sourcegraph/zap/internal/pkg/mutexmap",
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
 			"checksumSHA1": "YpsVVNJOIGAtv7HIgr5Ji43eTOg=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/pathutil",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
-			"checksumSHA1": "h+g4s3JUC7I4zY+Nz6Ri+C3nPbA=",
+			"checksumSHA1": "Dhmgo6gEX97rLCc+shzAW30XYT8=",
 			"path": "github.com/sourcegraph/zap/ot",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
-			"checksumSHA1": "gqtaixBmanY+CtgW3BFIkYyuBts=",
+			"checksumSHA1": "wE8pWRTjMZZmO+nXOswjIsGdHXk=",
 			"path": "github.com/sourcegraph/zap/pkg/config",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
 			"checksumSHA1": "UDyC+FOsK4HsGB7pbVc4jLqxQOs=",
 			"path": "github.com/sourcegraph/zap/pkg/diff",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
-			"checksumSHA1": "6GyREfJohM2zdjvB5XvZS+bEyXQ=",
+			"checksumSHA1": "1uOG65jJLZxSFC9w2dbrnnWWcjw=",
 			"path": "github.com/sourcegraph/zap/pkg/git",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
 			"checksumSHA1": "/JwQtUST0Z/j0OQIkymf+3aXfJE=",
 			"path": "github.com/sourcegraph/zap/pkg/gitutil",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
 			"checksumSHA1": "BA0FH4dp/xaH+TKI022DK3ekgdA=",
 			"path": "github.com/sourcegraph/zap/server/refdb",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
-			"checksumSHA1": "3XDm4cQEqHJOd5t7UhIbzQ4dBGU=",
+			"checksumSHA1": "RnSS433+EF7h+dpuuC7sj6uU9ZE=",
 			"path": "github.com/sourcegraph/zap/ws",
-			"revision": "3d2f38dc64dadbbd2f567bb330492eb463434aa3",
-			"revisionTime": "2017-02-18T06:25:15Z"
+			"revision": "49ceb9cf66248d47b78660238f011110c3da671f",
+			"revisionTime": "2017-02-20T12:18:22Z"
 		},
 		{
 			"path": "github.com/sqs/fileset",

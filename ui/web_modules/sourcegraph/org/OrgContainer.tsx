@@ -15,7 +15,6 @@ import { OrgPanel } from "sourcegraph/org/OrgPanel";
 import { OrgStore } from "sourcegraph/org/OrgStore";
 import { Store } from "sourcegraph/Store";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
-import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
 	location: RouterLocation;
@@ -93,7 +92,7 @@ export class OrgContainer extends Container<Props, State> {
 			msgBody = <div>
 				Get inline annotations, jump to definition, and more for your company's private code.
 				<div style={{ marginTop: whitespace[4] }}>
-					<GitHubAuthButton pageName={"ViewOrgs"} scopes={privateGitHubOAuthScopes} returnTo={"/settings"}>
+					<GitHubAuthButton pageName={"ViewOrgs"} scope="private" returnTo={"/settings"}>
 						Add your orgs
 					</GitHubAuthButton> to start a 14-day trial.
 				</div>

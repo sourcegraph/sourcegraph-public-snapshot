@@ -494,16 +494,6 @@ export interface RepoPermissions {
 	Admin?: boolean;
 }
 
-export interface RepoResolution {
-	Repo?: number;
-	CanonicalPath?: string;
-}
-
-export interface RepoResolveOp {
-	path?: string;
-	remote?: boolean;
-}
-
 export interface RepoRevSpec {
 	Repo?: number;
 	CommitID?: string;

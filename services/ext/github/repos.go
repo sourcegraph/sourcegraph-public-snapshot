@@ -38,15 +38,6 @@ func init() {
 	prometheus.MustRegister(reposGitHubRequestsCounter)
 }
 
-type Repos interface {
-	Get(context.Context, string) (*sourcegraph.Repo, error)
-	Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error)
-	ListAccessible(context.Context, *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
-	CreateHook(context.Context, string, *github.Hook) error
-}
-
-type repos struct{}
-
 type cachedRepo struct {
 	sourcegraph.Repo
 
@@ -55,9 +46,19 @@ type cachedRepo struct {
 	NotFound bool
 }
 
-var _ Repos = (*repos)(nil)
+var GetRepoMock func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 
-func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+func MockGetRepo_Return(returns *sourcegraph.Repo) {
+	GetRepoMock = func(context.Context, string) (*sourcegraph.Repo, error) {
+		return returns, nil
+	}
+}
+
+func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
+	if GetRepoMock != nil {
+		return GetRepoMock(ctx, repo)
+	}
+
 	// This function is called a lot, especially on popular public
 	// repos. For public repos we have the same result for everyone, so it
 	// is cacheable. (Permissions can change, but we no longer store that.) But
@@ -77,7 +78,7 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 		if cached.NotFound {
 			// The repo is in the cache but not available. If the user is authenticated,
 			// request the repo from the GitHub API (but do not add it to the cache).
-			if client(ctx).isAuthedUser {
+			if HasAuthedUser(ctx) {
 				reposGithubPublicCacheCounter.WithLabelValues("authed").Inc()
 				return getFromAPI(ctx, owner, repoName)
 			}
@@ -118,8 +119,23 @@ func (s *repos) Get(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	return remoteRepo, nil
 }
 
-func (s *repos) Search(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
-	res, _, err := client(ctx).search.Repositories(query, op)
+var SearchRepoMock func(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error)
+
+func MockSearch_Return(returns []*sourcegraph.Repo) (called *bool) {
+	called = new(bool)
+	SearchRepoMock = func(ctx context.Context, query string, op *gogithub.SearchOptions) ([]*sourcegraph.Repo, error) {
+		*called = true
+		return returns, nil
+	}
+	return
+}
+
+func SearchRepo(ctx context.Context, query string, op *github.SearchOptions) ([]*sourcegraph.Repo, error) {
+	if SearchRepoMock != nil {
+		return SearchRepoMock(ctx, query, op)
+	}
+
+	res, _, err := client(ctx).Search.Repositories(query, op)
 	if err != nil {
 		return nil, err
 	}
@@ -187,12 +203,12 @@ func getFromGit(ctx context.Context, owner, repoName string) (*sourcegraph.Repo,
 // getFromAPI attempts to get a response from the GitHub API without use of
 // the redis cache.
 func getFromAPI(ctx context.Context, owner, repoName string) (*sourcegraph.Repo, error) {
-	ghrepo, resp, err := client(ctx).repos.Get(owner, repoName)
+	ghrepo, resp, err := client(ctx).Repositories.Get(owner, repoName)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.Get %q", githubutil.RepoURI(owner, repoName)))
 	}
 	// Temporary: Track where anonymous requests are coming from that don't hit the cache.
-	if _, ok := resp.Header["X-From-Cache"]; !client(ctx).isAuthedUser && !ok {
+	if _, ok := resp.Header["X-From-Cache"]; !HasAuthedUser(ctx) && !ok {
 		src, ok := ctx.Value(GitHubTrackingContextKey).(string)
 		if !ok {
 			src = "unknown"
@@ -236,13 +252,33 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	return &repo
 }
 
-// ListAccessible lists repos that are accessible to the authenticated
+var ListAccessibleReposMock func(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
+
+func MockListAccessibleRepos_Return(returns []*sourcegraph.Repo) (called *bool) {
+	called = new(bool)
+	ListAccessibleReposMock = func(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+		*called = true
+
+		if opt != nil && opt.Page > 1 {
+			return nil, nil
+		}
+
+		return returns, nil
+	}
+	return
+}
+
+// ListAccessibleRepos lists repos that are accessible to the authenticated
 // user.
 //
 // See https://developer.github.com/v3/repos/#list-your-repositories
 // for more information.
-func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
-	ghRepos, resp, err := client(ctx).repos.List("", opt)
+func ListAccessibleRepos(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error) {
+	if ListAccessibleReposMock != nil {
+		return ListAccessibleReposMock(ctx, opt)
+	}
+
+	ghRepos, resp, err := client(ctx).Repositories.List("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.Repos.ListAccessible")
 	}
@@ -254,39 +290,8 @@ func (s *repos) ListAccessible(ctx context.Context, opt *github.RepositoryListOp
 	return repos, nil
 }
 
-// CreateHook creates a Hook for the specified repository.
-//
-// See http://developer.github.com/v3/repos/hooks/#create-a-hook
-// for more information.
-func (s *repos) CreateHook(ctx context.Context, repo string, hook *github.Hook) error {
-	owner, repoName, err := githubutil.SplitRepoURI(repo)
-	if err != nil {
-		return legacyerr.Errorf(legacyerr.NotFound, "github repo not found: %s", repo)
-	}
-	_, resp, err := client(ctx).repos.CreateHook(owner, repoName, hook)
-	if err != nil {
-		return checkResponse(ctx, resp, err, fmt.Sprintf("github.Repos.CreateHook %q", githubutil.RepoURI(owner, repoName)))
-	}
-	return nil
-}
-
-// WithRepos returns a copy of parent with the given GitHub Repos service.
-func WithRepos(parent context.Context, s Repos) context.Context {
-	return context.WithValue(parent, reposKey, s)
-}
-
-// ReposFromContext gets the context's GitHub Repos service.
-// If the value is not present, it creates a temporary one.
-func ReposFromContext(ctx context.Context) Repos {
-	s, ok := ctx.Value(reposKey).(Repos)
-	if !ok || s == nil {
-		return &repos{}
-	}
-	return s
-}
-
 func ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) ([]*sourcegraph.Repo, error) {
-	ghRepos, resp, err := client(ctx).activity.ListStarred("", opt)
+	ghRepos, resp, err := client(ctx).Activity.ListStarred("", opt)
 	if err != nil {
 		return nil, checkResponse(ctx, resp, err, "github.activity.ListStarred")
 	}
@@ -314,7 +319,7 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 	var allRepos []*sourcegraph.Repo
 	for page := 1; page <= maxPage; page++ {
 		op.Page = page
-		repos, err := ReposFromContext(ctx).ListAccessible(ctx, &op)
+		repos, err := ListAccessibleRepos(ctx, &op)
 		if err != nil {
 			return nil, err
 		}
@@ -324,27 +329,4 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 		}
 	}
 	return allRepos, nil
-}
-
-func toContributor(ghContrib *github.Contributor) *sourcegraph.Contributor {
-	strv := func(s *string) string {
-		if s == nil {
-			return ""
-		}
-		return *s
-	}
-	intv := func(i *int) int {
-		if i == nil {
-			return 0
-		}
-		return *i
-	}
-
-	contrib := sourcegraph.Contributor{
-		Login:         strv(ghContrib.Login),
-		AvatarURL:     strv(ghContrib.AvatarURL),
-		Contributions: intv(ghContrib.Contributions),
-	}
-
-	return &contrib
 }

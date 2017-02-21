@@ -36,18 +36,10 @@ func TestRepoShield(t *testing.T) {
 		"value": " 200 projects",
 	}
 
-	backend.Mocks.Repos.Get = func(ctx context.Context, r *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
-		return &sourcegraph.Repo{
-			ID:            2,
-			URI:           "github.com/gorilla/mux",
-			Description:   "desc",
-			DefaultBranch: "master",
-		}, nil
-	}
-	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
-		switch op.Path {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+		switch uri {
 		case "github.com/gorilla/mux":
-			return &sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "github.com/gorilla/mux"}, nil
+			return &sourcegraph.Repo{ID: 2, URI: uri, DefaultBranch: "master"}, nil
 		default:
 			panic("wrong path")
 		}

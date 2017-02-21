@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	stdlog "log"
+	"math"
+	"math/rand"
 	"os"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -53,7 +56,29 @@ const (
 	sendTimeout    = 20 * time.Second
 )
 
-var simulatedLatency, _ = time.ParseDuration(os.Getenv("SIMULATED_LATENCY"))
+var (
+	DebugMu                           sync.Mutex
+	DebugSimulatedLatency, _          = time.ParseDuration(os.Getenv("SIMULATED_LATENCY"))
+	DebugRandomizeSimulatedLatency, _ = strconv.ParseBool(os.Getenv("RANDOMIZE_SIMULATED_LATENCY"))
+)
+
+func debugSimulateLatency() {
+	DebugMu.Lock()
+	if DebugSimulatedLatency == 0 {
+		DebugMu.Unlock()
+		return
+	}
+	d := DebugSimulatedLatency
+	if DebugRandomizeSimulatedLatency {
+		x := math.Abs(rand.NormFloat64()*0.6 + 1)
+		if x < 0.1 || x > 3 {
+			x = 1
+		}
+		d = time.Duration(float64(d) * x)
+	}
+	DebugMu.Unlock()
+	time.Sleep(d)
+}
 
 func newServerConn(ctx context.Context, server *Server, stream jsonrpc2.ObjectStream) *serverConn {
 	c := &serverConn{
@@ -113,9 +138,7 @@ func (c *serverConn) sendRefUpdatesLoop(ctx context.Context, log *log.Context) {
 			}
 
 			ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-			if simulatedLatency != 0 {
-				time.Sleep(simulatedLatency) // debug: simulate latency
-			}
+			debugSimulateLatency()
 			err := c.conn.Call(ctx, method, params, nil)
 			cancel()
 			if err == io.ErrUnexpectedEOF {
@@ -204,7 +227,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		return repo.config, nil
+		return repo.getConfig(), nil
 
 	case "repo/configure":
 		if req.Params == nil {
@@ -219,17 +242,49 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		repo.mu.Lock()
-		defer repo.mu.Unlock()
-		if err := c.server.doUpdateBulkRepoRemoteConfiguration(ctx, log, params.Repo, repo, repo.config.Remotes, params.Remotes); err != nil {
+
+		var res RepoConfigureResult
+
+		oldConfig, newConfig, err := c.server.updateRepoConfiguration(ctx, repo, func(config *RepoConfiguration) error {
+			var removedRemotes []string
+			for remoteName := range config.Remotes {
+				if _, ok := params.Remotes[remoteName]; !ok {
+					removedRemotes = append(removedRemotes, remoteName)
+				}
+			}
+			sort.Strings(removedRemotes)
+
+			// Handle refs whose upstream remotes will be removed.
+			for _, removedRemote := range removedRemotes {
+				for refName, ref := range config.Refs {
+					if ref.Upstream == removedRemote {
+						// Unset this ref's upstream in the config.
+						ref.Upstream = ""
+						config.Refs[refName] = ref
+
+						// Notify the client so it can tell the user.
+						res.UpstreamConfigurationRemovedFromRefs = append(res.UpstreamConfigurationRemovedFromRefs, refName)
+					}
+				}
+			}
+
+			// TODO(sqs): Handle refs that are no longer matched by their
+			// upstream repo's refspec.
+
+			if config.Remotes == nil {
+				config.Remotes = map[string]RepoRemoteConfiguration{}
+			}
+			config.Remotes = params.Remotes
+			return nil
+		})
+		if err != nil {
 			return nil, err
 		}
-		if repo.workspace != nil {
-			if err := repo.workspace.Configure(ctx, repo.config); err != nil {
-				return nil, err
-			}
+
+		if err := c.server.applyRepoConfiguration(ctx, log, params.Repo, repo, oldConfig, newConfig, false, false /* TODO(sqs): these 2 bools are not meaningful */); err != nil {
+			return nil, err
 		}
-		return nil, nil
+		return res, nil
 
 	case "repo/watch":
 		if req.Params == nil {
@@ -304,10 +359,11 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			parts := strings.SplitN(strings.TrimPrefix(params.Ref, "refs/remotes/"), "/", 2)
 			remote := parts[0]
 			branch := parts[1]
-			if repoConfig, ok := repo.config.Remotes[remote]; !ok {
-				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q (remotes: %+v)", params.Ref, remote, repo.config.Remotes)
-			} else if !matchAnyRefspec(repoConfig.Refspecs, branch) {
-				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but no remote %q refspecs %q match the branch name", params.Ref, remote, repoConfig.Refspecs)
+			repoConfig := repo.getConfig()
+			if remoteConfig, ok := repoConfig.Remotes[remote]; !ok {
+				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q (remotes: %+v)", params.Ref, remote, repoConfig.Remotes)
+			} else if !matchAnyRefspec(remoteConfig.Refspecs, branch) {
+				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but no remote %q refspecs %q match the branch name", params.Ref, remote, remoteConfig.Refspecs)
 			}
 		}
 
@@ -364,15 +420,40 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				Message: fmt.Sprintf("configure called on nonexistent ref: %s", params.RefIdentifier.Ref),
 			}
 		}
-		repo.mu.Lock()
-		defer repo.mu.Unlock()
-		if err := c.server.doUpdateRefConfiguration(ctx, log, repo, params.RefIdentifier, ref, repo.config.Refs[ref.Name], params.RefConfiguration, false, true); err != nil {
+
+		oldConfig, newConfig, err := c.server.updateRepoConfiguration(ctx, repo, func(config *RepoConfiguration) error {
+			// Validate new config.
+			if remoteName := params.RefConfiguration.Upstream; remoteName != "" {
+				remote, ok := config.Remotes[remoteName]
+				if !ok {
+					return &jsonrpc2.Error{
+						Code:    int64(ErrorCodeRemoteNotExists),
+						Message: fmt.Sprintf("remote does not exist: %s", remoteName),
+					}
+				}
+				if !matchAnyRefspec(remote.Refspecs, params.RefIdentifier.Ref) {
+					return &jsonrpc2.Error{
+						Code:    int64(ErrorCodeInvalidConfig),
+						Message: fmt.Sprintf("ref is not matched by refspec %q configured for remote %s", remote.Refspecs, remoteName),
+					}
+				}
+			}
+
+			if config.Refs == nil {
+				config.Refs = map[string]RefConfiguration{}
+			}
+			config.Refs[ref.Name] = params.RefConfiguration
+			return nil
+		})
+		if err != nil {
+			if e, ok := err.(*jsonrpc2.Error); ok {
+				e.Message = fmt.Sprintf("configure ref %s: %s", params.RefIdentifier.Ref, err)
+			}
 			return nil, err
 		}
-		if repo.workspace != nil {
-			if err := repo.workspace.Configure(ctx, repo.config); err != nil {
-				return nil, err
-			}
+
+		if err := c.server.applyRepoConfiguration(ctx, log, params.RefIdentifier.Repo, repo, oldConfig, newConfig, false, true); err != nil {
+			return nil, err
 		}
 		return nil, nil
 
@@ -389,7 +470,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.handleRefUpdateFromDownstream(ctx, log, repo, params, c, true); err != nil {
+		if err := c.server.handleRefUpdateFromDownstream(ctx, log, repo, params, c, true, true); err != nil {
 			level.Error(log).Log("params", params, "err", err)
 			return nil, err
 		}

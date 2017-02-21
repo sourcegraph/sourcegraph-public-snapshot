@@ -1244,8 +1244,8 @@ fs.realpath@^1.0.0:
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
 
 fsevents@^1.0.0:
-  version "1.0.15"
-  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-1.0.15.tgz#fa63f590f3c2ad91275e4972a6cea545fb0aae44"
+  version "1.0.17"
+  resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-1.0.17.tgz#8537f3f12272678765b4fd6528c0f1f66f8f4558"
   dependencies:
     nan "^2.3.0"
     node-pre-gyp "^0.6.29"
@@ -1861,9 +1861,9 @@ lcid@^1.0.0:
   dependencies:
     invert-kv "^1.0.0"
 
-libzap@^0.0.47:
-  version "0.0.47"
-  resolved "https://registry.yarnpkg.com/libzap/-/libzap-0.0.47.tgz#a43edbb515016bc2cc81d50cf9cb809fce17961d"
+libzap@^0.0.51:
+  version "0.0.51"
+  resolved "https://registry.yarnpkg.com/libzap/-/libzap-0.0.51.tgz#b824e9af950eb67b8b4bdf16358fa65a91f42b3f"
   dependencies:
     diff-match-patch "^1.0.0"
     lodash "^4.17.2"
@@ -3589,11 +3589,11 @@ vscode-languageserver-types@3.0.3, vscode-languageserver-types@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.0.3.tgz#303b2a307c20952ff5c1f5a608f3c91146028d47"
 
-vscode-zap@^0.0.47:
-  version "0.0.47"
-  resolved "https://registry.yarnpkg.com/vscode-zap/-/vscode-zap-0.0.47.tgz#13b5cbdffb391bc5334d62636229e459e2f635bf"
+vscode-zap@^0.0.51:
+  version "0.0.51"
+  resolved "https://registry.yarnpkg.com/vscode-zap/-/vscode-zap-0.0.51.tgz#e29e8a3909a51f8ff360dae92c7a3b7ef135cba3"
   dependencies:
-    libzap "^0.0.47"
+    libzap "^0.0.51"
     open "^0.0.5"
     vscode-jsonrpc "3.0.1-alpha.7"
 

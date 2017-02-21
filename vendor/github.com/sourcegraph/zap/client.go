@@ -128,8 +128,9 @@ func (c *Client) RepoInfo(ctx context.Context, params RepoInfoParams) (info *Rep
 }
 
 // RepoConfigure sends the "repo/configure" request to the server.
-func (c *Client) RepoConfigure(ctx context.Context, params RepoConfigureParams) error {
-	return c.c.Call(ctx, "repo/configure", params, nil)
+func (c *Client) RepoConfigure(ctx context.Context, params RepoConfigureParams) (result *RepoConfigureResult, err error) {
+	err = c.c.Call(ctx, "repo/configure", params, &result)
+	return
 }
 
 // RepoWatch sends the "repo/watch" request to the server.

@@ -245,13 +245,13 @@ export class BlobAnnotator extends React.Component<Props, State> {
 function getSourcegraphButton(isFileSupported: boolean, cantFindPrivateRepo: boolean, isLoading: boolean, repoName: string, blobUrl: string, supportedSoon: boolean, fileCallack: () => void, authCallback: () => void): JSX.Element {
 	if (!isFileSupported) {
 		let ariaLabel = !supportedSoon ? "File not supported" : "Language support coming soon!";
-		return (<div style={Object.assign({ cursor: "not-allowed" }, buttonStyle)} className={className} aria-label={ariaLabel}>
+		return (<div style={Object.assign({ cursor: "not-allowed", WebkitFilter: "grayscale(100%)" }, buttonStyle)} className={className} aria-label={ariaLabel}>
 			<SourcegraphIcon style={iconStyle} />
 			Sourcegraph
 		</div>);
 	} else if (cantFindPrivateRepo) {
 		// Not signed in or not auth'd for private repos
-		return (<a href={`${getSourcegraphUrl()}/authext?rtg=${encodeURIComponent(window.location.href)}`}
+		return (<a href={`${getSourcegraphUrl()}/login?private=true`}
 			style={{ textDecoration: "none", color: "inherit" }} onClick={authCallback}>
 			<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph`}>
 				<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />

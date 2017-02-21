@@ -134,6 +134,17 @@ type RepoConfigureParams struct {
 	Remotes map[string]RepoRemoteConfiguration `json:"remotes"`
 }
 
+// RepoConfigureResult is the result of a successful "repo/configure"
+// request.
+type RepoConfigureResult struct {
+	// UpstreamConfigurationRemovedFromRefs is a list of refs
+	// (provided as information to the client, to notify the user)
+	// whose upstreams resided on remotes that were removed in this
+	// "repo/configure" call. The server automatically removed the
+	// upstream configuration from each of these refs.
+	UpstreamConfigurationRemovedFromRefs []string `json:"upstreamConfigurationRemovedFromRefs,omitempty"`
+}
+
 // RepoRemoteConfiguration describes the configuration of a repository
 // remote.
 type RepoRemoteConfiguration struct {
@@ -451,6 +462,7 @@ const (
 	ErrorCodeNotInitialized                        // the connection is not yet initialized
 	ErrorCodeAlreadyInitialized                    // the connection is already initialized
 	ErrorCodeRepoNotExists                         // the specified repo does not exist
+	ErrorCodeRepoExists                            // the specified repo already exists
 	ErrorCodeRefNotExists                          // the specified ref does not exist
 	ErrorCodeRefExists                             // the specified ref exists
 	ErrorCodeRefConflict                           // ref base/state conflict

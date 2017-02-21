@@ -62,6 +62,10 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 }
 
 func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo, err error) {
+	if Mocks.Repos.GetByURI != nil {
+		return Mocks.Repos.GetByURI(ctx, uri)
+	}
+
 	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
 
@@ -75,27 +79,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	}
 
 	return repo, nil
-}
-
-func (s *repos) ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (res *sourcegraph.RepoList, err error) {
-	if Mocks.Repos.ListStarredRepos != nil {
-		return Mocks.Repos.ListStarredRepos(ctx, opt)
-	}
-
-	ctx, done := trace(ctx, "Repos", "ListStarred", opt, &err)
-	defer done()
-
-	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.ListStarredRepos")
-	if opt == nil {
-		opt = &gogithub.ActivityListStarredOptions{}
-	}
-
-	ghRepos, err := github.ListStarredRepos(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sourcegraph.RepoList{Repos: ghRepos}, nil
 }
 
 // ghRepoQueryMatcher matches search queries that look like they refer
@@ -148,7 +131,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{})
 			ghrepos, repos = repos, ghrepos
 		} else {
-			ghrepos, err = github.ReposFromContext(ctx).Search(ctx, ghquery, nil)
+			ghrepos, err = github.SearchRepo(ctx, ghquery, nil)
 		}
 		if err == nil {
 			existingRepos := make(map[string]struct{}, len(repos))
@@ -176,7 +159,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		// Fetch latest metadata from GitHub
-		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
+		ghrepo, err := github.GetRepo(ctx, repo.URI)
 		if err != nil {
 			return err
 		}

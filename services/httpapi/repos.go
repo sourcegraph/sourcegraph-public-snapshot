@@ -4,22 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
-	"strconv"
 	"time"
 
-	"context"
-
-	"gopkg.in/inconshreveable/log15.v2"
-
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/graphqlbackend"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 )
 
 var repoSearchDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -78,66 +69,9 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		return err
 	}
-	if _, err := graphqlbackend.ResolveRepo(r.Context(), data.Op.New.URI); err != nil {
+	if _, err := backend.Repos.GetByURI(r.Context(), data.Op.New.URI); err != nil {
 		return err
 	}
 	w.Write([]byte("OK"))
 	return nil
-}
-
-func resolveLocalRepo(ctx context.Context, repoPath string) (int32, error) {
-	return handlerutil.GetRepoID(ctx, map[string]string{"Repo": repoPath})
-}
-
-func resolveLocalRepoRev(ctx context.Context, repoRev routevar.RepoRev) (*sourcegraph.RepoRevSpec, error) {
-	repo, err := resolveLocalRepo(ctx, repoRev.Repo)
-	if err != nil {
-		return nil, err
-	}
-	res, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: repo, Rev: repoRev.Rev})
-	if err != nil {
-		return nil, err
-	}
-	return &sourcegraph.RepoRevSpec{
-		Repo:     repo,
-		CommitID: res.CommitID,
-	}, nil
-}
-
-func resolveLocalRepos(ctx context.Context, repoPaths []string, ignoreErrors bool) ([]int32, error) {
-	repoIDs := make([]int32, 0, len(repoPaths))
-	for _, repoPath := range repoPaths {
-		repoID, err := resolveLocalRepo(ctx, repoPath)
-		if err != nil {
-			if !ignoreErrors {
-				return nil, err
-			} else {
-				log15.Warn("resolve local repo", "err", err, "repo", repoPath)
-			}
-		} else {
-			repoIDs = append(repoIDs, repoID)
-		}
-	}
-	return repoIDs, nil
-}
-
-// repoIDOrPath is a type used purely for documentation purposes to
-// indicate that this URL query parameter can be either a string (repo
-// path) or number (repo ID).
-type repoIDOrPath string
-
-func init() {
-	schemaDecoder.RegisterConverter(repoIDOrPath(""), func(s string) reflect.Value { return reflect.ValueOf(s) })
-}
-
-// getRepoID gets the repo ID from an interface{} type that can be
-// either an int32 or a string. Typically callers decode the URL query
-// string's "Repo" or "repo" field into an interface{} value and then
-// pass it to getRepoID. This way, they can accept either the numeric
-// repo ID or the repo path, which presents a nicer API to consumers.
-func getRepoID(ctx context.Context, v repoIDOrPath) (int32, error) {
-	if n, err := strconv.Atoi(string(v)); err == nil {
-		return int32(n), nil
-	}
-	return handlerutil.GetRepoID(ctx, map[string]string{"Repo": string(v)})
 }

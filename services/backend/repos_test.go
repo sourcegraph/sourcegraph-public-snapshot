@@ -14,14 +14,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 )
 
 func TestReposService_Get(t *testing.T) {
 	var s repos
 	ctx := testContext()
-	var githubRepos githubmock.GitHubRepoGetter
-	ctx = github.WithRepos(ctx, &githubRepos)
 
 	wantRepo := &sourcegraph.Repo{
 		ID:  1,
@@ -31,7 +28,7 @@ func TestReposService_Get(t *testing.T) {
 		URI: "github.com/u/r",
 	}
 
-	githubRepos.MockGet_Return(ctx, ghrepo)
+	github.MockGetRepo_Return(ghrepo)
 
 	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
 	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
@@ -55,8 +52,6 @@ func TestReposService_Get(t *testing.T) {
 func TestReposService_Get_UpdateMeta(t *testing.T) {
 	var s repos
 	ctx := testContext()
-	var githubRepos githubmock.GitHubRepoGetter
-	ctx = github.WithRepos(ctx, &githubRepos)
 
 	wantRepo := &sourcegraph.Repo{
 		ID:      1,
@@ -64,7 +59,7 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 		Private: true,
 	}
 
-	githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
+	github.MockGetRepo_Return(&sourcegraph.Repo{
 		Description: "This is a repository",
 		Private:     true,
 	})
@@ -90,8 +85,6 @@ func TestReposService_Get_UpdateMeta(t *testing.T) {
 func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 	var s repos
 	ctx := testContext()
-	var githubRepos githubmock.GitHubRepoGetter
-	ctx = github.WithRepos(ctx, &githubRepos)
 
 	// Remove auth from testContext
 	ctx = authpkg.WithActor(ctx, &authpkg.Actor{})
@@ -102,7 +95,7 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 		URI: "github.com/u/r",
 	}
 
-	githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{
+	github.MockGetRepo_Return(&sourcegraph.Repo{
 		Description: "This is a repository",
 	})
 
@@ -138,15 +131,13 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 func TestReposService_Get_NonGitHub(t *testing.T) {
 	var s repos
 	ctx := testContext()
-	var githubRepos githubmock.GitHubRepoGetter
-	ctx = github.WithRepos(ctx, &githubRepos)
 
 	wantRepo := &sourcegraph.Repo{
 		ID:  1,
 		URI: "r",
 	}
 
-	githubRepos.MockGet_Return(ctx, &sourcegraph.Repo{})
+	github.MockGetRepo_Return(&sourcegraph.Repo{})
 
 	calledGet := localstore.Mocks.Repos.MockGet_Return(t, wantRepo)
 	calledUpdate := localstore.Mocks.Repos.MockUpdate(t, 1)
@@ -194,14 +185,12 @@ func TestReposService_List(t *testing.T) {
 func TestRepos_List_remoteOnly(t *testing.T) {
 	var s repos
 	ctx := testContext()
-	var githubRepos githubmock.GitHubRepoGetter
-	ctx = github.WithRepos(ctx, &githubRepos)
 
-	calledListAccessible := githubRepos.MockListAccessible(ctx, []*sourcegraph.Repo{
+	calledListAccessible := github.MockListAccessibleRepos_Return([]*sourcegraph.Repo{
 		&sourcegraph.Repo{URI: "github.com/is/accessible"},
 	})
 	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
-	ctx = github.WithMockHasAuthedUser(ctx, true)
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
 	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
 	if err != nil {
@@ -223,12 +212,10 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 func TestRepos_List_remoteSearch(t *testing.T) {
 	var s repos
 	ctx := testContext()
-	var githubRepos githubmock.GitHubRepoGetter
-	ctx = github.WithRepos(ctx, &githubRepos)
 
 	{
 		testcase := "auth'd user (common case)"
-		calledGHSearch := githubRepos.MockSearch(ctx, []*sourcegraph.Repo{{URI: "remote1"}})
+		calledGHSearch := github.MockSearch_Return([]*sourcegraph.Repo{{URI: "remote1"}})
 		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "local1"}, {URI: "remote1"}}}
@@ -251,7 +238,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 	{
 		testcase := "no auth'd user"
 		ctx := authpkg.WithoutActor(ctx) // unauth'd context
-		calledGHSearch := githubRepos.MockSearch(ctx, []*sourcegraph.Repo{{URI: "remote1"}})
+		calledGHSearch := github.MockSearch_Return([]*sourcegraph.Repo{{URI: "remote1"}})
 		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "local1"}}}
@@ -274,7 +261,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 	{
 		testcase := "no dupe when GitHub and Sourcegraph repos overlap"
 		calledReposList := localstore.Mocks.Repos.MockList(t, "r1", "r2")
-		calledGHSearch := githubRepos.MockSearch(ctx, []*sourcegraph.Repo{{URI: "r2"}, {URI: "r3"}})
+		calledGHSearch := github.MockSearch_Return([]*sourcegraph.Repo{{URI: "r2"}, {URI: "r3"}})
 
 		want := &sourcegraph.RepoList{Repos: []*sourcegraph.Repo{{URI: "r1"}, {URI: "r2"}, {URI: "r3"}}}
 		results, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteSearch: true, Query: "my query"})
@@ -296,7 +283,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 	{
 		testcase := "GitHub API error, e.g., search rate limit"
 		calledGHSearch := false
-		githubRepos.Search_ = func(ctx context.Context, query string, op *gogithub.SearchOptions) ([]*sourcegraph.Repo, error) {
+		github.SearchRepoMock = func(ctx context.Context, query string, op *gogithub.SearchOptions) ([]*sourcegraph.Repo, error) {
 			calledGHSearch = true
 			return nil, fmt.Errorf("GH API error")
 		}
@@ -322,7 +309,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 	{
 		testcase := "github query reformatting (gorilla/mux -> user:gorilla in:name mux)"
 		var lastReceviedGithubQuery string
-		githubRepos.Search_ = func(ctx context.Context, query string, op *gogithub.SearchOptions) ([]*sourcegraph.Repo, error) {
+		github.SearchRepoMock = func(ctx context.Context, query string, op *gogithub.SearchOptions) ([]*sourcegraph.Repo, error) {
 			lastReceviedGithubQuery = query
 			return nil, nil
 		}

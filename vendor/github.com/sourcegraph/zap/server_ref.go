@@ -47,37 +47,22 @@ func (r serverRef) history() []ot.WorkspaceOp {
 	return r.ot.History()
 }
 
-func (s *Server) doUpdateBulkRefConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldRefs, newRefs map[string]RefConfiguration) error {
-	for name, config := range oldRefs {
-		// Remove refs that are in oldRefs but not newRefs.
-		if _, ok := newRefs[name]; !ok {
-			if err := s.doUpdateRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), config, RefConfiguration{}, false, true); err != nil {
-				return err
-			}
-		}
-	}
-	for name, newConfig := range newRefs {
-		if oldConfig := oldRefs[name]; oldConfig != newConfig {
-			if err := s.doUpdateRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// doUpdateRefUpstreamConfiguration sets up the given ref to track a remote
-// branch on the given upstream (which is the name of a remote). It
-// unwatches any previous tracked branches and watches the new tracked
-// branch (if any).
+// doApplyRefUpstreamConfiguration sets up the given ref to track a
+// remote branch on the given upstream (which is the name of a
+// remote). It unwatches any previous tracked branches and watches the
+// new tracked branch (if any).
+//
+// It does not persist the configuration; callers must use
+// (*Server).updateRepoConfiguration for that.
 //
 // If force is true, the changes are applied even if oldConfig ==
 // newConfig.
 //
 // If sendCurrentState, the server immediately sends the current state
 // of the ref upstream.
-func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldConfig, newConfig RefConfiguration, force, sendCurrentState bool) error {
-	// Assumes caller holds repo.mu.
+func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState bool) error {
+	oldConfig := oldRepoConfig.Refs[refID.Ref]
+	newConfig := newRepoConfig.Refs[refID.Ref]
 
 	var refObj *serverRef
 	if ref != nil && ref.Object != nil {
@@ -90,7 +75,7 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 	var newRemote RepoRemoteConfiguration
 	if newConfig.Upstream != "" {
 		var ok bool
-		newRemote, ok = repo.config.Remotes[newConfig.Upstream]
+		newRemote, ok = newRepoConfig.Remotes[newConfig.Upstream]
 		if !ok {
 			return &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRemoteNotExists),
@@ -162,6 +147,7 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 				return
 			}
 			level.Debug(log).Log()
+			debugSimulateLatency()
 			if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 				RefIdentifier: upstreamRefID,
 				Current: &RefPointer{
@@ -180,8 +166,9 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 				// it.
 				if newConfig.Overwrite {
 					// TODO(sqs): this is in a goroutine because
-					// otherwise there is a deadlock.
+					// otherwise there is a deadlock. TODO9
 					go func() {
+						defer repo.acquireRef(refID.Ref)()
 						if ref := repo.refdb.Lookup(refID.Ref); ref != nil {
 							refObj := ref.Object.(serverRef)
 							newRefState := &RefState{
@@ -208,12 +195,6 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 			}
 		}
 	}
-
-	if repo.config.Refs == nil {
-		repo.config.Refs = map[string]RefConfiguration{}
-	}
-	repo.config.Refs[refID.Ref] = newConfig
-
 	return nil
 }
 
@@ -283,12 +264,12 @@ func remoteTrackingRef(remote, ref string) string {
 
 func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string) {
 	// TODO(sqs) HACK: this is indicative of a design flaw
-	s.reposMu.Lock()
+	s.reposMu.Lock() // DL3
 	defer s.reposMu.Unlock()
 	var matchingLocalRepos []*serverRepo
 	var matchingRemoteNames []string
 	for localRepoName2, localRepo := range s.repos {
-		localRepo.mu.Lock()
+		localRepo.mu.Lock() //DL
 		for remoteName, config := range localRepo.config.Remotes {
 			if config.Endpoint == endpoint && config.Repo == remoteRepoName {
 				matchingLocalRepos = append(matchingLocalRepos, localRepo)

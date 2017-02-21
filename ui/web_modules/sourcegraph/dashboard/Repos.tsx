@@ -7,7 +7,6 @@ import { FlexContainer, GitHubAuthButton, Heading, Input, Panel, RepositoryCard 
 import { Spinner } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils";
 import { RepositoryTabs } from "sourcegraph/dashboard";
-import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
 
 interface Props {
 	repos: GQL.IRemoteRepository[] | null;
@@ -65,7 +64,7 @@ export class Repos extends React.Component<Props, {}> {
 			{context.authEnabled &&
 				<FlexContainer items="center" justify="center" wrap={true}>
 					{!context.hasPrivateGitHubToken() &&
-						<GitHubAuthButton scopes={privateGitHubOAuthScopes} style={btnSx} returnTo={this.props.location}>
+						<GitHubAuthButton scope="private" style={btnSx} returnTo={this.props.location}>
 							Add private repositories and start a 14-day trial
 					</GitHubAuthButton>
 					}

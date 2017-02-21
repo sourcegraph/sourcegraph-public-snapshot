@@ -18,7 +18,6 @@ import (
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"go.uber.org/atomic"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -167,7 +166,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 			}
 
 			// 🚨 SECURITY: Check that the the user can access the repo. 🚨
-			if _, err := backend.Repos.Resolve(p.httpCtx, &sourcegraph.RepoResolveOp{Path: rootPathURI.Repo()}); err != nil {
+			if _, err := backend.Repos.GetByURI(p.httpCtx, rootPathURI.Repo()); err != nil {
 				proxyFailed.WithLabelValues("auth").Inc()
 				return err
 			}
@@ -210,7 +209,14 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 			respErr = &jsonrpc2.Error{Message: err.Error()}
 		}
 		if err := from.ReplyWithError(ctx, req.ID, respErr); err != nil {
-			proxyFailed.WithLabelValues("reply-req-err").Inc()
+			// "from" being closed is common in this codepath. The
+			// reason is "to" can be closed during an inflight
+			// request, causing "from" to be closed via
+			// DisconnectNotify. So we only increment the counter
+			// for the uncommon case.
+			if err != jsonrpc2.ErrClosed {
+				proxyFailed.WithLabelValues("reply-req-err").Inc()
+			}
 		}
 		return respErr
 	}

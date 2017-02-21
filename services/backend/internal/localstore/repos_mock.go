@@ -13,7 +13,6 @@ type MockRepos struct {
 	Get      func(ctx context.Context, repo int32) (*sourcegraph.Repo, error)
 	GetByURI func(ctx context.Context, repo string) (*sourcegraph.Repo, error)
 	List     func(v0 context.Context, v1 *RepoListOp) ([]*sourcegraph.Repo, error)
-	Create   func(v0 context.Context, v1 *sourcegraph.Repo) (int32, error)
 	Update   func(v0 context.Context, v1 RepoUpdate) error
 	Delete   func(ctx context.Context, repo int32) error
 }
@@ -27,19 +26,6 @@ func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
 		}
 		return &sourcegraph.Repo{ID: repo}, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockGet_Path(t *testing.T, wantRepo int32, repoPath string) (called *bool) {
-	called = new(bool)
-	s.Get = func(ctx context.Context, repo int32) (*sourcegraph.Repo, error) {
-		*called = true
-		if repo != wantRepo {
-			t.Errorf("got repo %d, want %d", repo, wantRepo)
-			return nil, legacyerr.Errorf(legacyerr.NotFound, "repo %v not found", wantRepo)
-		}
-		return &sourcegraph.Repo{ID: repo, URI: repoPath}, nil
 	}
 	return
 }
