@@ -50,7 +50,7 @@ func main() {
 	// SECURITY: This is only safe because the indexer runs in isolation and does not expose any data to the outside world
 	ctx := accesscontrol.WithInsecureSkip(context.Background(), true)
 	// Prefer raw git over GitHub API
-	ctx = github.ContextWithRawGitPreference(ctx)
+	github.PreferRawGit = true
 
 	go func() {
 		c := make(chan os.Signal, 1)

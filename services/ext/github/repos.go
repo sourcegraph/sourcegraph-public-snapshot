@@ -18,6 +18,13 @@ import (
 )
 
 var (
+	// PreferRawGit, when set to true, will make this package prefer using raw git functionality
+	// when fetching single repositories, rather than hitting the GitHub API. Currently used by the
+	// indexer, which otherwise would likely hit the GitHub API limit and doesn't even have GitHub
+	// auth credentials. We will soon replace `getFromAPI` with `getFromGit`, and this package
+	// variable can be removed when that's done.
+	PreferRawGit bool
+
 	reposGithubPublicCache        = rcache.NewWithTTL("gh_pub", 600)
 	reposGithubPublicCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
@@ -88,7 +95,7 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	}
 
 	var remoteRepo *sourcegraph.Repo
-	if !PrefersRawGit(ctx) { // normally prefer getting from GitHub API if we have authed credentials
+	if PreferRawGit { // normally prefer getting from GitHub API if we have authed credentials
 		remoteRepo, err = getFromAPI(ctx, owner, repoName)
 		if legacyerr.ErrCode(err) == legacyerr.NotFound {
 			// Before we do anything, ensure we cache NotFound responses.
@@ -329,23 +336,4 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 		}
 	}
 	return allRepos, nil
-}
-
-type contextKey int
-
-const (
-	rawGitPreference contextKey = iota
-)
-
-func ContextWithRawGitPreference(ctx context.Context) context.Context {
-	return context.WithValue(ctx, rawGitPreference, struct{}{})
-}
-
-// PrefersRawGit indicates that we should prefer using raw git functionality rather than hitting the
-// GitHub API. This is only ever used when getting specific repositories in the indexer (which
-// otherwise would likely hit the GitHub API limit and doesn't even have GitHub auth
-// credentials). We will soon replace `getFromAPI` with `getFromGit`, and this context item can be
-// removed when that's done.
-func PrefersRawGit(ctx context.Context) bool {
-	return ctx.Value(rawGitPreference) != nil
 }
