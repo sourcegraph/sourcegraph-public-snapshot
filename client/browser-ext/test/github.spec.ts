@@ -139,13 +139,13 @@ describe("GitHub DOM", () => {
 		});
 
 		it("should parse deltaInfo", () => {
-			// Disabled. Must be fixed soon. See https://github.com/sourcegraph/sourcegraph/issues/4263
-			return;
+			/* Disabled. Must be fixed soon. See https://github.com/sourcegraph/sourcegraph/issues/4263
 			const deltaInfo = github.getDeltaInfo();
 			expect(deltaInfo).to.have.property("baseBranch", "master");
 			expect(deltaInfo).to.have.property("headBranch", "master");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
+			*/
 		});
 
 		it("should parse url", () => {
