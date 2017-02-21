@@ -80,9 +80,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 
 	componentDidMount(): void {
-		// register expansion listeners, both at init and 5 seconds later in case of page load lag	
-		this.registerExpansionListeners();
-		setTimeout(this.registerExpansionListeners, 5000);
 		this.props.fileElement.addEventListener("click", this.clickRefresh);
 		// Set a timer to re-check revision data every 10 seconds, for repos that haven't been
 		// cloned and revs that haven't been sync'd to Sourcegraph.com.
@@ -100,14 +97,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	componentDidUpdate(): void {
 		// Reapply annotations after reducer state changes.
 		this.addAnnotations();
-	}
-
-	private registerExpansionListeners = (): void => {
-		const blobElement = github.tryGetBlobElement(this.props.fileElement);
-		if (!blobElement) {
-			return;
-		}
-		github.registerExpandDiffClickHandler(blobElement, this.clickRefresh);
 	}
 
 	clickRefresh = (): void => {

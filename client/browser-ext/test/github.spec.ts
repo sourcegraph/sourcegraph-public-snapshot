@@ -52,11 +52,6 @@ describe("GitHub DOM", () => {
 			expect(github.getDeltaInfo()).to.not.be.ok;
 		});
 
-		it("should not register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(github.getFileContainers()[0], () => ({}));
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(0);
-		});
-
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);
 			expect(data.user).to.eql("gorilla");
@@ -151,13 +146,6 @@ describe("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
 		});
 
-		it("should register diff expand handlers", () => {
-			for (const container of Array.from(github.getFileContainers())) {
-				github.registerExpandDiffClickHandler(container, () => ({}));
-			}
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
-		});
-
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);
 			expect(data.user).to.eql("gorilla");
@@ -243,13 +231,6 @@ describe("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			for (const container of Array.from(github.getFileContainers())) {
-				github.registerExpandDiffClickHandler(container, () => ({}));
-			}
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {
@@ -362,13 +343,6 @@ describe("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			for (const container of Array.from(github.getFileContainers())) {
-				github.registerExpandDiffClickHandler(container, () => ({}));
-			}
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {
