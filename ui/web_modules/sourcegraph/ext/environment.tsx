@@ -49,7 +49,7 @@ class BrowserEnvironment implements IEnvironment {
 	}
 
 	private zapRefChangeEmitter: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
-	get onDidChangeZapRef(): vscode.Event<string> { return this.zapRefChangeEmitter.event; } // never fires TODO(sqs)
+	get onDidChangeZapRef(): vscode.Event<string> { return this.zapRefChangeEmitter.event; }
 
 	get zapRef(): string {
 		return this._zapRef;
