@@ -13,17 +13,18 @@ import (
 )
 
 type MockRepos struct {
-	Get            func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
-	GetByURI       func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
-	List           func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	Update         func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
-	GetCommit      func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
-	ResolveRev     func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
-	ListCommits    func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
-	ListDeps       func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
-	ListCommitters func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
-	GetInventory   func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
-	RefreshIndex   func(ctx context.Context, repo string) (err error)
+	Get                  func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
+	GetByURI             func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
+	List                 func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
+	Update               func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
+	GetCommit            func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
+	ResolveRev           func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
+	ListCommits          func(v0 context.Context, v1 *sourcegraph.ReposListCommitsOp) (*sourcegraph.CommitList, error)
+	ListDeps             func(v0 context.Context, v1 *sourcegraph.URIList) (*sourcegraph.URIList, error)
+	ListCommitters       func(v0 context.Context, v1 *sourcegraph.ReposListCommittersOp) (*sourcegraph.CommitterList, error)
+	GetInventory         func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	GetInventoryUncached func(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error)
+	RefreshIndex         func(ctx context.Context, repo string) (err error)
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo int32) (called *bool) {

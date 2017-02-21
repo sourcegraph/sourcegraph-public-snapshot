@@ -65,7 +65,11 @@ func (c *googleClient) SetAPIKey(apiKey string) error {
 
 // Search is equivalent to issuing a Google search for "site:github.com $query".
 func (c *googleClient) Search(query string) (string, error) {
-	<-c.throttle
+	if GoogleSearchMock != nil {
+		return GoogleSearchMock(query)
+	}
+
+	<-c.throttle // rate limiter
 
 	if c.Service == nil {
 		return "", fmt.Errorf("must set Google API key")
@@ -94,3 +98,5 @@ func extractResultGitHubURL(str string) (*url.URL, error) {
 	}
 	return url.Parse(g[1])
 }
+
+var GoogleSearchMock func(query string) (string, error)

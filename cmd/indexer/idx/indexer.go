@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 type workQueue struct {
@@ -77,10 +78,7 @@ var (
 	currentJobsMu sync.Mutex
 )
 
-func Work(ctx context.Context, w *workQueue, s svc) {
-	if s == nil {
-		s = DefaultSvc
-	}
+func Work(ctx context.Context, w *workQueue) {
 	for {
 		c := make(chan string)
 		w.dequeue <- c
@@ -96,7 +94,7 @@ func Work(ctx context.Context, w *workQueue, s svc) {
 			currentJobsMu.Unlock()
 		}
 
-		if err := index(ctx, w, s, repo); err != nil {
+		if err := index(ctx, w, repo); err != nil {
 			log15.Error("Indexing failed", "repo", repo, "error", err)
 		}
 
@@ -108,13 +106,13 @@ func Work(ctx context.Context, w *workQueue, s svc) {
 	}
 }
 
-func index(ctx context.Context, wq *workQueue, s svc, repoName string) error {
-	repo, err := s.GetByURI(ctx, repoName)
+func index(ctx context.Context, wq *workQueue, repoName string) error {
+	repo, err := backend.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return fmt.Errorf("Repos.GetByURI failed: %s", err)
 	}
 
-	headCommit, err := s.ResolveRevision(ctx, repo, "HEAD")
+	headCommit, err := ResolveRevision(ctx, repo, "HEAD")
 	if err != nil {
 		// If clone is in progress, re-enqueue after 5 seconds
 		if _, ok := err.(vcs.RepoNotExistError); ok && err.(vcs.RepoNotExistError).CloneInProgress {
@@ -127,7 +125,7 @@ func index(ctx context.Context, wq *workQueue, s svc, repoName string) error {
 		return fmt.Errorf("ResolveRevision failed: %s", err)
 	}
 
-	inv, err := s.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
+	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
 		Repo:     repo.ID,
 		CommitID: string(headCommit),
 	})
@@ -146,7 +144,7 @@ func index(ctx context.Context, wq *workQueue, s svc, repoName string) error {
 	if !repo.Fork {
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
-		err = s.DefsRefreshIndex(ctx, repo.URI, string(headCommit))
+		err = backend.Defs.RefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
 			return fmt.Errorf("Defs.RefreshIndex failed: %s", err)
 		}
@@ -154,18 +152,18 @@ func index(ctx context.Context, wq *workQueue, s svc, repoName string) error {
 		// As part of package indexing, it's fine to index private repositories
 		// because backend.Pkgs.ListPackages is responsible for authentication
 		// checks.
-		err = s.PkgsRefreshIndex(ctx, repo.URI, string(headCommit))
+		err = backend.Pkgs.RefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
 			return fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
 		}
 
 		// Spider out to index dependencies
-		if err := enqueueDependencies(ctx, wq, s, inv.PrimaryProgrammingLanguage(), repo.ID); err != nil {
+		if err := enqueueDependencies(ctx, wq, inv.PrimaryProgrammingLanguage(), repo.ID); err != nil {
 			return err
 		}
 	}
 
-	if err := s.Update(ctx, &sourcegraph.ReposUpdateOp{
+	if err := backend.Repos.Update(ctx, &sourcegraph.ReposUpdateOp{
 		Repo:            repo.ID,
 		IndexedRevision: string(headCommit),
 		Language:        inv.PrimaryProgrammingLanguage(),
@@ -181,7 +179,7 @@ func index(ctx context.Context, wq *workQueue, s svc, repoName string) error {
 // itself cannot resolve dependencies to source repository URLs. For those languages, dependency
 // repositories must be indexed before cross-repo jump-to-def can work. enqueueDependencies tries to
 // best-effort determine what those dependencies are and enqueue them.
-func enqueueDependencies(ctx context.Context, wq *workQueue, s svc, lang string, repoID int32) error {
+func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID int32) error {
 	// do nothing if this is not a language that requires heuristic dependency resolution
 	if lang != "Java" {
 		return nil
@@ -189,15 +187,15 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, s svc, lang string,
 
 	log15.Info("Enqueuing dependencies for repo", "repo", repoID, "lang", lang)
 
-	deps, err := s.Dependencies(ctx, repoID, true) // exclude private dependencies, because we don't have GitHub creds in the indexer
+	deps, err := backend.Defs.Dependencies(ctx, repoID, true) // exclude private dependencies, because we don't have GitHub creds in the indexer
 	if err != nil {
-		return fmt.Errorf("Pkgs.DependencyReferences failed: %s", err)
+		return fmt.Errorf("Defs.DependencyReferences failed: %s", err)
 	}
 
 	// Filter out already-indexed dependencies
 	var unfetchedDeps []*sourcegraph.DependencyReference
 	for _, dep := range deps {
-		pkgs, err := s.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, PkgQuery: depReferenceToPkgQuery(lang, dep), Limit: 1})
+		pkgs, err := backend.Pkgs.ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, PkgQuery: depReferenceToPkgQuery(lang, dep), Limit: 1})
 		if err != nil {
 			return err
 		}
@@ -207,10 +205,10 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, s svc, lang string,
 	}
 
 	// Resolve and enqueue unindexed dependencies for indexing
-	resolvedDeps := resolveDependencies(ctx, s, lang, unfetchedDeps)
+	resolvedDeps := resolveDependencies(ctx, lang, unfetchedDeps)
 	resolvedDepsList := make([]string, 0, len(resolvedDeps))
 	for rawDepRepo, _ := range resolvedDeps {
-		repo, err := s.GetByURI(ctx, rawDepRepo)
+		repo, err := backend.Repos.GetByURI(ctx, rawDepRepo)
 		if err != nil {
 			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
 			continue
@@ -237,7 +235,7 @@ func depReferenceToPkgQuery(lang string, dep *sourcegraph.DependencyReference) m
 // resolveDependencies resolves a list of DependencyReferences to a set of source repository URLs.
 // This mapping is different from language to language and is often heuristic, so different
 // languages are handled case-by-case.
-func resolveDependencies(ctx context.Context, s svc, lang string, deps []*sourcegraph.DependencyReference) map[string]struct{} {
+func resolveDependencies(ctx context.Context, lang string, deps []*sourcegraph.DependencyReference) map[string]struct{} {
 	switch lang {
 	case "Java":
 		// Best-effort fetch from GitHub via Google Search. Equivalent to searching for "site:github.com $groupId:$artifactId".
@@ -254,7 +252,7 @@ func resolveDependencies(ctx context.Context, s svc, lang string, deps []*source
 		}
 		resolvedDeps := map[string]struct{}{}
 		for depQuery, _ := range depQueries {
-			depRepoURI, err := s.GoogleGitHub(depQuery)
+			depRepoURI, err := Google.Search(depQuery)
 			if err != nil {
 				log15.Warn("Could not resolve dependency to repository via Google, skipping", "query", depQuery, "error", err)
 				continue

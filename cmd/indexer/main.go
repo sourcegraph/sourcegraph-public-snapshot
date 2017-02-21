@@ -67,7 +67,7 @@ func main() {
 	wq := idx.NewQueue(queueLength)
 	n, _ := strconv.Atoi(numWorkers)
 	for i := 0; i < n; i++ {
-		go idx.Work(ctx, wq, nil)
+		go idx.Work(ctx, wq)
 	}
 
 	http.HandleFunc("/refresh", func(resp http.ResponseWriter, req *http.Request) {

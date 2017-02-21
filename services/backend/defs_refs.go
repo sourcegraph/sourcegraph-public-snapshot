@@ -74,6 +74,10 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 
 // Dependencies returns the dependency references for the given repoID. I.e., the repo's dependencies.
 func (s *defs) Dependencies(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error) {
+	if Mocks.Defs.Dependencies != nil {
+		return Mocks.Defs.Dependencies(ctx, repoID, excludePrivate)
+	}
+
 	return localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
 		Repo:           repoID,
 		ExcludePrivate: excludePrivate,
@@ -185,4 +189,5 @@ type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
 	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
 	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
+	Dependencies         func(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error)
 }

@@ -342,6 +342,10 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	if Mocks.Repos.GetInventoryUncached != nil {
+		return Mocks.Repos.GetInventoryUncached(ctx, repoRev)
+	}
+
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err
