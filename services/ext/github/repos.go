@@ -341,6 +341,11 @@ func ContextWithRawGitPreference(ctx context.Context) context.Context {
 	return context.WithValue(ctx, rawGitPreference, struct{}{})
 }
 
+// PrefersRawGit indicates that we should prefer using raw git functionality rather than hitting the
+// GitHub API. This is only ever used when getting specific repositories in the indexer (which
+// otherwise would likely hit the GitHub API limit and doesn't even have GitHub auth
+// credentials). We will soon replace `getFromAPI` with `getFromGit`, and this context item can be
+// removed when that's done.
 func PrefersRawGit(ctx context.Context) bool {
 	return ctx.Value(rawGitPreference) != nil
 }
