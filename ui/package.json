@@ -79,6 +79,7 @@
     "vscode-zap": "^0.0.51"
   },
   "scripts": {
+    "postinstall": "(cd scripts/tsmapimports/ && yarn install)",
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
     "test": "yarn run lint && yarn run test-unit && yarn run test-tsmapimports",

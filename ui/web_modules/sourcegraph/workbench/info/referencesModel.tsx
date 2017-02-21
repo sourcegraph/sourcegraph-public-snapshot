@@ -1,8 +1,5 @@
-import { Repo } from "sourcegraph/api/index";
-
 import Event, { fromEventEmitter } from "vs/base/common/event";
 import { EventEmitter } from "vs/base/common/eventEmitter";
-import { defaultGenerator } from "vs/base/common/idGenerator";
 import { IDisposable, IReference, dispose } from "vs/base/common/lifecycle";
 import { basename, dirname } from "vs/base/common/paths";
 import * as strings from "vs/base/common/strings";
@@ -13,13 +10,10 @@ import { IModel, IPosition, IRange } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/services/resolverService";
 
-import * as flatten from "lodash/flatten";
-
 import { LocationWithCommitInfo, ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
 
 export class OneReference implements IDisposable {
 
-	private _id: string;
 	private _commitInfo: ReferenceCommitInfo;
 	private _preview: FilePreview;
 	private _resolved: boolean;
@@ -29,11 +23,10 @@ export class OneReference implements IDisposable {
 		private _range: IRange,
 		private _eventBus: EventEmitter
 	) {
-		this._id = defaultGenerator.nextId();
 	}
 
 	public get id(): string {
-		return this._id;
+		return `${this._parent.uri.toString()}:${this._range.startLineNumber}:${this._range.startColumn}`;
 	}
 
 	public get model(): FileReferences {
@@ -159,7 +152,7 @@ export class FileReferences implements IDisposable {
 	}
 
 	public get id(): string {
-		return `${this._uri.toString()}:${this._range.startLineNumber}${this._range.startColumn}`;
+		return `${this._uri.toString()}`;
 	}
 
 	public get parent(): ReferencesModel {
@@ -241,32 +234,13 @@ export class ReferencesModel implements IDisposable {
 	private _groups: FileReferences[] = [];
 	private _references: OneReference[] = [];
 	private _eventBus: EventEmitter = new EventEmitter();
+	private _workspace: URI;
 
 	onDidChangeReferenceRange: Event<OneReference> = fromEventEmitter<OneReference>(this._eventBus, "ref/changed");
 
-	constructor(references: LocationWithCommitInfo[], private _workspace: URI, private _tempFileReferences?: [Repo]) {
-		let newArrayOfLocs: FileReferences[] = [];
-		if (this._tempFileReferences) {
-			newArrayOfLocs = flatten(this._tempFileReferences.map(repository => {
-				let loc: Location = {
-					uri: URI.from({
-						scheme: this._workspace.scheme,
-						authority: this._workspace.authority,
-						path: (repository as any).URI.replace("github.com", ""),
-						fragment: "",
-						query: repository.DefaultBranch,
-					}),
-					range: {
-						startLineNumber: 0,
-						startColumn: 0,
-						endColumn: 0,
-						endLineNumber: 0,
-					},
-				};
-
-				return new FileReferences(this, loc.uri, loc.range);
-			}));
-		}
+	constructor(references: LocationWithCommitInfo[], workspace: URI) {
+		// Workspace URIs should not have a fragment since fragments refer to specific files.
+		this._workspace = workspace.with({ fragment: "" });
 
 		// grouping and sorting
 		references.sort(ReferencesModel._compareReferences);
@@ -277,7 +251,8 @@ export class ReferencesModel implements IDisposable {
 		for (let ref of references) {
 			// We have a new repo! YAY!
 			if (!current || current.uri.path !== ref.uri.path) {
-				let temp = new FileReferences(this, ref.uri, ref.range);
+				const range = { startLineNumber: 0, startColumn: 0, endLineNumber: 0, endColumn: 0 };
+				let temp = new FileReferences(this, ref.uri.with({ fragment: "" }), range);
 				realGroups.push(temp);
 			}
 			// Make the correct file reference and generate a real preview!
@@ -316,8 +291,6 @@ export class ReferencesModel implements IDisposable {
 				this._groups.push(group);
 			}
 		}
-
-		this._groups = this._groups.concat(newArrayOfLocs);
 
 		for (let i = 0; i < references.length; ++i) {
 			const commitInfo = references[i].commitInfo;

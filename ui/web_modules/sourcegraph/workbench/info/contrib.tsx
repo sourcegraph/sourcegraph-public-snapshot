@@ -9,6 +9,7 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IPosition } from "vs/editor/common/editorCommon";
 import { IModel } from "vs/editor/common/editorCommon";
 import { CommonEditorRegistry } from "vs/editor/common/editorCommonExtensions";
+import { Location } from "vs/editor/common/modes";
 import { getOuterEditor } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
 import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
@@ -79,7 +80,16 @@ export class SidebarContribution extends Disposables {
 			return;
 		}
 
-		const localRefs = await provideReferences(props.editorModel, props.params.position);
+		const incrementalLocalRefs: Location[] = [];
+		const localRefs = await provideReferences(props.editorModel, props.params.position, locations => {
+			if (this.currentID !== id) {
+				return;
+			}
+			incrementalLocalRefs.push(...locations);
+			const refModel = new ReferencesModel(incrementalLocalRefs, props.editorModel.uri);
+			this.dispatchInfo(id, def, fileEventProps, refModel);
+		});
+
 		if (this.currentID !== id) {
 			return;
 		}

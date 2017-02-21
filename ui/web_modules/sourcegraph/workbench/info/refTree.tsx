@@ -52,6 +52,7 @@ export class RefTree extends React.Component<Props, State> {
 	private tree: Tree;
 	private toDispose: Disposables = new Disposables();
 	private treeID: string = "reference-tree";
+	private focusedReference: FileReferences | OneReference | undefined = undefined;
 
 	state: State = {
 		previewResource: null,
@@ -88,18 +89,23 @@ export class RefTree extends React.Component<Props, State> {
 
 		if (nextProps.model !== this.props.model) {
 			if (nextProps.model && nextProps.model.groups.length && !firstToggleAdded) {
-				userToggledState.add(nextProps.model.groups[0].uri.toString());
+				userToggledState.add(nextProps.model.workspace.toString());
 				firstToggleAdded = true;
 			}
 			if (nextProps.model) {
 				for (let r of nextProps.model.groups) {
-					if (userToggledState.has(r.uri.toString())) {
+					const workspace = r.uri.with({ fragment: "" }).toString();
+					if (userToggledState.has(workspace)) {
 						expandedElements.push(r);
 					}
 				}
 			}
 			this.tree.setInput(nextProps.model).then(() => {
 				this.tree.expandAll(expandedElements).then(() => {
+					if (this.focusedReference) {
+						this.tree.setSelection([this.focusedReference]);
+						this.tree.setFocus(this.focusedReference);
+					}
 					this.tree.setScrollPosition(scrollPosition);
 					this.tree.layout();
 				});
@@ -109,6 +115,7 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	private treeItemFocused(reference: FileReferences | OneReference): void {
+		this.focusedReference = reference;
 		if (!(reference instanceof OneReference)) {
 			return;
 		}
@@ -135,7 +142,7 @@ export class RefTree extends React.Component<Props, State> {
 		const config = {
 			dataSource: instantiationService.createInstance(DataSource),
 			renderer: instantiationService.createInstance(Renderer),
-			controller: new Controller()
+			controller: new Controller({}, { ref: undefined })
 		};
 
 		const options = {

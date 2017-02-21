@@ -98,8 +98,8 @@ export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): 
 	return { funcName, docString, definition };
 }
 
-export async function provideReferences(model: IReadOnlyModel, pos: IPosition): Promise<Location[]> {
-	return getReferences(model, new Position(pos.lineNumber, pos.column));
+export async function provideReferences(model: IReadOnlyModel, pos: IPosition, progress: (locations: Location[]) => void): Promise<Location[]> {
+	return getReferences(model, Position.lift(pos), progress);
 }
 
 export interface LocationWithCommitInfo extends Location {
