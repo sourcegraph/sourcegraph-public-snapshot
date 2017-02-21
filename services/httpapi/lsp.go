@@ -199,6 +199,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 	var result json.RawMessage
 	if err := to.Call(ctx, req.Method, req.Params, &result, callOpts...); err != nil {
 		if _, userError := err.(*jsonrpc2.Error); !userError {
+			log15.Info("LSP: send req error", err)
 			proxyFailed.WithLabelValues("send-req").Inc()
 		}
 
