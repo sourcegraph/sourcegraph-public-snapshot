@@ -95,7 +95,7 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	}
 
 	var remoteRepo *sourcegraph.Repo
-	if PreferRawGit { // normally prefer getting from GitHub API if we have authed credentials
+	if !PreferRawGit { // normally prefer getting from GitHub API if we have authed credentials
 		remoteRepo, err = getFromAPI(ctx, owner, repoName)
 		if legacyerr.ErrCode(err) == legacyerr.NotFound {
 			// Before we do anything, ensure we cache NotFound responses.
@@ -107,7 +107,7 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 			reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
 			return nil, err
 		}
-	} else { // fallback to getting repo via raw git
+	} else { // fall back to getting repo via raw git
 		remoteRepo, err = getFromGit(ctx, owner, repoName)
 		if err != nil {
 			reposGithubPublicCacheCounter.WithLabelValues("error").Inc()
