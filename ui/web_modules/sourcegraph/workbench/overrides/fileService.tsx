@@ -13,9 +13,8 @@ import { WorkspaceOp, compose, isFilePath, stripFileOrBufferPathPrefix } from "l
 
 import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
 import { URIUtils } from "sourcegraph/core/uri";
-import { contentCache } from "sourcegraph/editor/contentLoader";
+import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
 import { Features } from "sourcegraph/util/features";
-import { fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { OutputListener } from "sourcegraph/workbench/outputListener";
 
