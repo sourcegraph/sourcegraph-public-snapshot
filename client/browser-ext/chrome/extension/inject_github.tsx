@@ -101,8 +101,8 @@ function injectBlobAnnotators(): void {
 
 	const uri = repoURI;
 	function addBlobAnnotator(file: HTMLElement, mount: HTMLElement): void {
-		const filePath = isDelta ? github.getDeltaFileName(file) : path;
-		if (!filePath) {
+		const {headFilePath, baseFilePath} = isDelta ? github.getDeltaFileName(file) : { headFilePath: path, baseFilePath: null };
+		if (!headFilePath) {
 			console.error("cannot determine file path");
 			return;
 		}
@@ -112,7 +112,7 @@ function injectBlobAnnotators(): void {
 			return;
 		}
 		file.className = `${file.className} sg-blob-annotated`;
-		render(<BlobAnnotator path={filePath} repoURI={uri} fileElement={file} />, mount);
+		render(<BlobAnnotator headPath={headFilePath} repoURI={uri} fileElement={file} basePath={baseFilePath} />, mount);
 	}
 
 	const files = github.getFileContainers();

@@ -205,6 +205,7 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 
 		h.mu.Lock()
 		tryCache := h.importGraph == nil
+		once := h.importGraphOnce
 		h.mu.Unlock()
 		if tryCache {
 			g := make(importgraph.Graph)
@@ -215,7 +216,7 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 		}
 
 		parentCtx := ctx
-		h.importGraphOnce.Do(func() {
+		once.Do(func() {
 			// Note: We use a background context since this
 			// operation should not be cancelled due to an
 			// individual request.

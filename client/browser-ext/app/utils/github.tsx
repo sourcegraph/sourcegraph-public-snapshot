@@ -100,40 +100,30 @@ export function isPrivateRepo(): boolean {
 }
 
 /**
- * registerExpandDiffClickHandler will attach a callback to all diff
- * context expanders on the current document. It is used to detect
- * when more source code is shown, and then apply annotations to the
- * newly displayed ranges.
- */
-export function registerExpandDiffClickHandler(parentElement: HTMLElement, cb: (ev: any) => void): void {
-	const diffExpanders = parentElement.getElementsByClassName("diff-expander");
-	for (let expander of Array.from(diffExpanders)) {
-		if (expander.className.indexOf("sg-diff-expander") !== -1) {
-			// Don't register more than one handler.
-			continue;
-		}
-		expander.className = `${expander.className} sg-diff-expander`;
-		expander.addEventListener("click", cb);
-	}
-}
-
-/**
  * getDeltaFileName returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
-export function getDeltaFileName(container: HTMLElement): string {
+export function getDeltaFileName(container: HTMLElement): {headFilePath: string, baseFilePath: string | null} {
 	const info = container.querySelector(".file-info") as HTMLElement;
 	invariant(info);
 
 	if (info.title) {
 		// for PR conversation snippets
-		return info.title;
+		return getPathNamesFromElement(info);
 	} else {
 		const link = info.querySelector("a") as HTMLElement;
 		invariant(link);
 		invariant(link.title);
-		return link.title;
+		return getPathNamesFromElement(link);
 	}
+}
+
+function getPathNamesFromElement(element: HTMLElement): {headFilePath: string, baseFilePath: string | null } {
+	const elements = element.title.split(" → ");
+	if (elements.length > 1) {
+		return {headFilePath: elements[1], baseFilePath: elements[0]};
+	}
+	return {headFilePath: elements[0], baseFilePath: null};
 }
 
 /**

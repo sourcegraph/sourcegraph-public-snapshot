@@ -75,9 +75,9 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "connecting to LSP server failed", http.StatusBadGateway)
 		return
 	}
-	proxy.server = &xlang.Client{
+	proxy.server = &xclient{Client: &xlang.Client{
 		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2HandlerFunc(proxy.handleServerRequest)),
-	}
+	}}
 
 	proxy.start()
 
@@ -114,7 +114,7 @@ func (h jsonrpc2HandlerFunc) Handle(ctx context.Context, conn *jsonrpc2.Conn, re
 type jsonrpc2Proxy struct {
 	httpCtx context.Context
 	client  *jsonrpc2.Conn // connection to the browser
-	server  *xlang.Client  // connection to lsp proxy. We use xlang.Client since it injects opentracing metadata
+	server  *xclient       // connection to lsp proxy. We use a wrapped xlang.Client since it injects opentracing metadata
 	mode    *atomic.String
 	builder *libhoney.Builder
 	ready   chan struct{}

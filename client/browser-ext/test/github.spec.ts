@@ -52,11 +52,6 @@ describe("GitHub DOM", () => {
 			expect(github.getDeltaInfo()).to.not.be.ok;
 		});
 
-		it("should not register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(github.getFileContainers()[0], () => ({}));
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(0);
-		});
-
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);
 			expect(data.user).to.eql("gorilla");
@@ -125,7 +120,7 @@ describe("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
+				{headFilePath: "mux.go", baseFilePath: null}, {headFilePath: "mux_test.go", baseFilePath: null}, {headFilePath: "old_test.go", baseFilePath: null}, {headFilePath: "regexp.go", baseFilePath: null}, {headFilePath: "route.go", baseFilePath: null},
 			]);
 		});
 
@@ -149,13 +144,6 @@ describe("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "master");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			for (const container of Array.from(github.getFileContainers())) {
-				github.registerExpandDiffClickHandler(container, () => ({}));
-			}
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {
@@ -199,6 +187,13 @@ describe("GitHub DOM", () => {
 			});
 		});
 	});
+	describe("Commit view moved file", () => {
+		const url = "https://github.com/sourcegraphtest/test-case/commit/10cf2175c6e1435a03d64d3163215eb4361e5b7a";
+		before(setupDOM(url));
+		it("should see the base and head file names", () => {
+			expect(github.getDeltaFileName(github.getFileContainers()[0])).to.eql({headFilePath: "glide_2.yaml", baseFilePath: "glide.yaml"});
+		});
+	});
 
 	describe("PR unified diff", () => {
 		const url = "https://github.com/gorilla/mux/pull/190/files?diff=unified";
@@ -219,7 +214,7 @@ describe("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
+				{headFilePath: "mux.go", baseFilePath: null}, {headFilePath: "mux_test.go", baseFilePath: null}, {headFilePath: "old_test.go", baseFilePath: null}, {headFilePath: "regexp.go", baseFilePath: null}, {headFilePath: "route.go", baseFilePath: null},
 			]);
 		});
 
@@ -243,13 +238,6 @@ describe("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			for (const container of Array.from(github.getFileContainers())) {
-				github.registerExpandDiffClickHandler(container, () => ({}));
-			}
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {
@@ -338,7 +326,7 @@ describe("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
+				{headFilePath: "mux.go", baseFilePath: null}, {headFilePath: "mux_test.go", baseFilePath: null}, {headFilePath: "old_test.go", baseFilePath: null}, {headFilePath: "regexp.go", baseFilePath: null}, {headFilePath: "route.go", baseFilePath: null},
 			]);
 		});
 
@@ -362,13 +350,6 @@ describe("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			for (const container of Array.from(github.getFileContainers())) {
-				github.registerExpandDiffClickHandler(container, () => ({}));
-			}
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {

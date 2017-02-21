@@ -23,9 +23,21 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
+
+// repoBlacklist contains repos which we have blacklisted. It is set via the
+// environment variable REPO_BLACKLIST.
+var repoBlacklist = make(map[string]bool)
+
+func init() {
+	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
+	for _, r := range repos {
+		repoBlacklist[r] = true
+	}
+}
 
 func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) error {
 	var connOpt []jsonrpc2.ConnOpt
@@ -342,6 +354,9 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if len(rootPathURI.Rev()) != 40 {
 			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootPathURI)
 		}
+		if repoBlacklist[rootPathURI.Repo()] {
+			return nil, fmt.Errorf("repo is blacklisted")
+		}
 
 		c.mu.Lock()
 		defer c.mu.Unlock()
@@ -475,7 +490,14 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 		var respObj interface{}
-		err = c.callServer(ctx, req.ID, "textDocument/hover", lsp.TextDocumentPositionParams{TextDocument: lsp.TextDocumentIdentifier{URI: params.TextDocument.URI}}, &respObj)
+		hoverParams := lsp.TextDocumentPositionParams{
+			TextDocument: lsp.TextDocumentIdentifier{URI: params.TextDocument.URI},
+			Position: lsp.Position{
+				Line:      0,
+				Character: 0,
+			},
+		}
+		err = c.callServer(ctx, req.ID, "textDocument/hover", &hoverParams, &respObj)
 		return nil, err // we ignore the hover response (other than err) since the original request was a notif.
 
 	case "textDocument/didClose":
@@ -687,7 +709,8 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	crid := clientRequestID{RID: rid, CID: c.id}
 
 	// We try upto 3 times if we encounter ephemeral errors
-	backoffs := []time.Duration{0, 100 * time.Millisecond, 1 * time.Second}
+	// HOTFIX(keegancsmith) remove retries 2017-02-21
+	backoffs := []time.Duration{0} //, 100 * time.Millisecond, 1 * time.Second}
 	for _, b := range backoffs {
 		if b != 0 {
 			// We are retrying. Add in jitter to our backoff sleep

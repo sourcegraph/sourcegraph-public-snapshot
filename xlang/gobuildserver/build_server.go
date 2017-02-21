@@ -108,7 +108,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	if err := h.HandlerCommon.Reset(rootURI); err != nil {
 		return err
 	}
-	if err := h.HandlerShared.Reset(rootURI, false); err != nil {
+	if err := h.HandlerShared.Reset(false); err != nil {
 		return err
 	}
 	h.init = init
@@ -242,16 +242,18 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// Put all files in the workspace under a /src/IMPORTPATH
 		// directory, such as /src/github.com/foo/bar, so that Go can
 		// build it in GOPATH=/.
+		var rootPath string
 		if isStdlib {
-			langInitParams.RootPath = "file://" + goroot
+			rootPath = goroot
 		} else {
-			langInitParams.RootPath = "file://" + "/src/" + h.rootImportPath
+			rootPath = "/src/" + h.rootImportPath
 		}
+		langInitParams.RootPath = "file://" + rootPath
 		langInitParams.RootImportPath = h.rootImportPath
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err
 		}
-		h.FS.Bind(h.OverlayMountPath, fs, "/", ctxvfs.BindBefore)
+		h.FS.Bind(rootPath, fs, "/", ctxvfs.BindBefore)
 		var langInitResp lsp.InitializeResult
 		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Notif, langInitParams, &langInitResp); err != nil {
 			return nil, err
@@ -417,7 +419,10 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// Immediately handle file system requests by adding them to
 		// the VFS shared between the build and lang server.
 		if langserver.IsFileSystemRequest(req.Method) {
-			if err := h.HandleFileSystemRequest(ctx, req); err != nil {
+			// TODO(keegancsmith) We are bypassing the cache
+			// resetting funcionality here. Fix!!!
+			// https://github.com/sourcegraph/sourcegraph/issues/3906
+			if _, _, err := h.HandleFileSystemRequest(ctx, req); err != nil {
 				return nil, err
 			}
 			return nil, nil

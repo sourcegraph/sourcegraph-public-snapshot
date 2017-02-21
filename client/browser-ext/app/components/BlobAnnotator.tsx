@@ -11,7 +11,8 @@ const buttonStyle = { marginRight: "5px" };
 const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px" };
 
 interface Props {
-	path: string;
+	headPath: string;
+	basePath: string | null;
 	repoURI: string;
 	fileElement: HTMLElement;
 }
@@ -46,7 +47,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			resolvedRevs: {},
 		};
 
-		this.fileExtension = utils.getPathExtension(props.path);
+		this.fileExtension = utils.getPathExtension(props.headPath);
 
 		const { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
 		this.isDelta = isDelta;
@@ -80,9 +81,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 
 	componentDidMount(): void {
-		// register expansion listeners, both at init and 5 seconds later in case of page load lag	
-		this.registerExpansionListeners();
-		setTimeout(this.registerExpansionListeners, 5000);
 		this.props.fileElement.addEventListener("click", this.clickRefresh);
 		// Set a timer to re-check revision data every 10 seconds, for repos that haven't been
 		// cloned and revs that haven't been sync'd to Sourcegraph.com.
@@ -100,14 +98,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	componentDidUpdate(): void {
 		// Reapply annotations after reducer state changes.
 		this.addAnnotations();
-	}
-
-	private registerExpansionListeners = (): void => {
-		const blobElement = github.tryGetBlobElement(this.props.fileElement);
-		if (!blobElement) {
-			return;
-		}
-		github.registerExpandDiffClickHandler(blobElement, this.clickRefresh);
 	}
 
 	clickRefresh = (): void => {
@@ -177,31 +167,31 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		/**
 		 * applyAnnotationsIfResolvedRev will call addAnnotations if we've established that the repo@rev exists at Sourcegraph
 		 */
-		const applyAnnotationsIfResolvedRev = (uri: string, rev?: string, isBase?: boolean) => {
+		const applyAnnotationsIfResolvedRev = (path: string, uri: string, rev?: string, isBase?: boolean) => {
 			const resolvedRev = this.state.resolvedRevs[backend.cacheKey(uri, rev)];
 			if (resolvedRev && resolvedRev.commitID) {
 				const repoRevSpec = { repoURI: uri, rev: resolvedRev.commitID, isDelta: this.isDelta || false, isBase: Boolean(isBase) };
 				const cells = this.getCodeCells(this.isSplitDiff || false, repoRevSpec, blobElement);
-				addAnnotations(this.props.path, repoRevSpec, blobElement, this.getEventLoggerProps(), cells);
+				addAnnotations(path, repoRevSpec, blobElement, this.getEventLoggerProps(), cells);
 			}
 		};
 
 		if (this.isDelta) {
 			if (this.baseCommitID && this.baseRepoURI) {
-				applyAnnotationsIfResolvedRev(this.baseRepoURI, this.baseCommitID, true);
+				applyAnnotationsIfResolvedRev(this.props.basePath ? this.props.basePath : this.props.headPath, this.baseRepoURI, this.baseCommitID, true);
 			}
 			if (this.headCommitID && this.headRepoURI) {
-				applyAnnotationsIfResolvedRev(this.headRepoURI, this.headCommitID, false);
+				applyAnnotationsIfResolvedRev(this.props.headPath, this.headRepoURI, this.headCommitID, false);
 			}
 		} else {
-			applyAnnotationsIfResolvedRev(this.props.repoURI, this.rev, false);
+			applyAnnotationsIfResolvedRev(this.props.headPath, this.props.repoURI, this.rev, false);
 		}
 	}
 
 	getEventLoggerProps(): Object {
 		return {
 			repo: this.props.repoURI,
-			path: this.props.path,
+			path: this.props.headPath,
 			isPullRequest: this.isPullRequest,
 			isCommit: this.isCommit,
 			language: this.fileExtension,
@@ -222,7 +212,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			github.isPrivateRepo() && resolvedRevs.notFound as boolean,
 			resolvedRevs.cloneInProgress as boolean,
 			this.props.repoURI.split("github.com/")[1],
-			this.isDelta ? this.getSourcegraphBlobUrl(this.headRepoURI as string, this.props.path, this.headCommitID) : this.getSourcegraphBlobUrl(this.props.repoURI, this.props.path, this.rev),
+			this.isDelta ? this.getSourcegraphBlobUrl(this.headRepoURI as string, this.props.headPath, this.headCommitID) : this.getSourcegraphBlobUrl(this.props.repoURI, this.props.headPath, this.rev),
 			utils.upcomingExtensions.has(this.fileExtension),
 			this.getFileOpenCallback,
 			this.getAuthFileCallback);
