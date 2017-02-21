@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 var numWorkers = env.Get("NUM_WORKERS", "4", "The maximum number of indexing done in parallel.")
@@ -48,6 +49,8 @@ func main() {
 
 	// SECURITY: This is only safe because the indexer runs in isolation and does not expose any data to the outside world
 	ctx := accesscontrol.WithInsecureSkip(context.Background(), true)
+	// Prefer raw git over GitHub API
+	ctx = github.ContextWithRawGitPreference(ctx)
 
 	go func() {
 		c := make(chan os.Signal, 1)
