@@ -475,7 +475,14 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 		var respObj interface{}
-		err = c.callServer(ctx, req.ID, "textDocument/hover", lsp.TextDocumentPositionParams{TextDocument: lsp.TextDocumentIdentifier{URI: params.TextDocument.URI}}, &respObj)
+		hoverParams := lsp.TextDocumentPositionParams{
+			TextDocument: lsp.TextDocumentIdentifier{URI: params.TextDocument.URI},
+			Position: lsp.Position{
+				Line:      0,
+				Character: 0,
+			},
+		}
+		err = c.callServer(ctx, req.ID, "textDocument/hover", &hoverParams, &respObj)
 		return nil, err // we ignore the hover response (other than err) since the original request was a notif.
 
 	case "textDocument/didClose":
