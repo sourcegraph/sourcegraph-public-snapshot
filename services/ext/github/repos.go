@@ -13,6 +13,7 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
@@ -88,7 +89,7 @@ func GetRepo(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 	}
 
 	var remoteRepo *sourcegraph.Repo
-	if HasClient(ctx) { // prefer getting from GitHub API
+	if HasGitHubAuthedActor(ctx) { // prefer getting from GitHub API if we have authed credentials
 		remoteRepo, err = getFromAPI(ctx, owner, repoName)
 		if legacyerr.ErrCode(err) == legacyerr.NotFound {
 			// Before we do anything, ensure we cache NotFound responses.
@@ -329,4 +330,12 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 		}
 	}
 	return allRepos, nil
+}
+
+func HasGitHubAuthedActor(ctx context.Context) bool {
+	a := auth.ActorFromContext(ctx)
+	if a == nil {
+		return false
+	}
+	return a.GitHubToken != ""
 }

@@ -98,12 +98,3 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 func HasAuthedUser(ctx context.Context) bool {
 	return auth.ActorFromContext(ctx).GitHubToken != ""
 }
-
-// HasClient returns true if the context currently contains a GitHub client. If no client exists in
-// the context, `ReposFromContext` may still return a temporary one, but HasClient is useful for
-// conditionals where we don't want to make GitHub requests unless a client has explicitly been set.
-func HasClient(ctx context.Context) bool {
-	client, _ := ctx.Value(minimalClientKey).(*minimalClient)
-	repos, _ := ctx.Value(reposKey).(Repos)
-	return client != nil || repos != nil
-}
