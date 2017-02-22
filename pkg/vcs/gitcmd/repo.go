@@ -56,6 +56,9 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 	if err := checkSpecArgSafety(spec); err != nil {
 		return "", err
 	}
+	if spec == "" {
+		spec = "HEAD"
+	}
 
 	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
 	cmd.Repo = r.Repo
