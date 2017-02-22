@@ -89,8 +89,13 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 
 		switch (proxyId) {
 			case "eExtHostLanguageFeatures":
-				if (args.length >= 2 && args[1] instanceof URI) {
-					return routeToWorkspaceHost(args[1] as URI) || routeToLatest();
+				switch (path) {
+					case "$provideReferences":
+						return routeToWorkspaceHost(args[2] as URI) || routeToLatest();
+					default:
+						if (args.length >= 2 && args[1] instanceof URI) {
+							return routeToWorkspaceHost(args[1] as URI) || routeToLatest();
+						}
 				}
 				break;
 
