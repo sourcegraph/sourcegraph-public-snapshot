@@ -1,5 +1,7 @@
-import { experimentEventNames } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { optimizely } from "sourcegraph/tracking/OptimizelyWrapper";
+
+// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to Optimizely.
+const experimentEventNames = new Set();
 
 export class Variation {
 	public optimizelyId?: string;
@@ -77,19 +79,7 @@ export class Experiment {
 	}
 }
 
-export interface HomepageExperimentContent {
-	title: string;
-	subTitle: string;
-}
-
-export const homepageExperiment = new Experiment("HomepageCopy", [new Variation(0, "Current"), new Variation(1, "Previous")], (variation) => {
-	if (variation && variation.isB()) {
-		return { title: "Welcome to the global graph of code", subTitle: "Read code on the web with the power of an IDE." };
-	}
-	return { title: "Read code on the web with the power of an IDE", subTitle: "Read code smarter and faster. Get more done." };
-});
-
-export const liveExperiments = [homepageExperiment];
+export const liveExperiments = [];
 
 // TODO(uforic): We can probably get rid of this.
 class ExperimentManagerClass {

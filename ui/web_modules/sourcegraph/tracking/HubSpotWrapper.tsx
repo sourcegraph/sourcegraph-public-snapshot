@@ -1,5 +1,7 @@
 import { context } from "sourcegraph/app/context";
-import { hubSpotEventNames } from "sourcegraph/tracking/constants/AnalyticsConstants";
+
+// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to HubSpot.
+const hubSpotEventNames = new Set("SignupCompleted");
 
 interface HubSpotScript {
 	push: ([]: any) => void;

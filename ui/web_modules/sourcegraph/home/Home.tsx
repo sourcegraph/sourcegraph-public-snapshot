@@ -14,7 +14,6 @@ import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import { FeatureCarousel } from "sourcegraph/home/FeatureCarousel";
 import { Nav } from "sourcegraph/home/Nav";
 import { Events, PAGE_DASHBOARD } from "sourcegraph/tracking/constants/AnalyticsConstants";
-import { HomepageExperimentContent, homepageExperiment } from "sourcegraph/util/ExperimentManager";
 
 interface HomeProps { location: RouterLocation; }
 
@@ -40,8 +39,6 @@ export class Home extends React.Component<HomeProps, {}> {
 	}
 
 	render(): JSX.Element | null {
-		const experimentCopy = homepageExperiment.getContent() as HomepageExperimentContent;
-
 		return <div style={{
 			backgroundColor: "white",
 			overflowX: "hidden",
@@ -65,7 +62,7 @@ export class Home extends React.Component<HomeProps, {}> {
 								marginTop: whitespace[3],
 								padding: whitespace[3],
 							}
-						)}>{experimentCopy.title}</Heading>
+						)}>Read code on the web with the power of an IDE</Heading>
 
 					<p style={{ textAlign: "center" }}>
 						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
@@ -84,7 +81,7 @@ export class Home extends React.Component<HomeProps, {}> {
 
 			<div style={{ marginBottom: whitespace[5], marginTop: whitespace[6] }}>
 				<Heading level={3} align="center" style={{ fontWeight: "normal" }}>
-					{experimentCopy.subTitle}
+					Read code smarter and faster. Get more done.
 				</Heading>
 				<FeatureCarousel assetsURL={context.assetsRoot} />
 			</div>

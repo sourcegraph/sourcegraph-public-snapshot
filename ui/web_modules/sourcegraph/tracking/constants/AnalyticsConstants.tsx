@@ -293,8 +293,3 @@ export function getModalDismissedEventObject(modalName: string): LoggableEvent {
 	};
 	return (modalName && modalName in dismissModalsMap) ? dismissModalsMap[modalName] : null;
 }
-
-// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to Optimizely.
-export const experimentEventNames = new Set(Events.Signup_Completed.label);
-// Set of all Sourcegraph events (specifically, eventLabels) that should be sent to HubSpot.
-export const hubSpotEventNames = new Set(Events.Signup_Completed.label);
