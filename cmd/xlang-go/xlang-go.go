@@ -67,12 +67,12 @@ func run() error {
 			if err != nil {
 				return err
 			}
-			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler())
+			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
 		}
 
 	case "stdio":
 		log.Println("xlang-go: reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler()).DisconnectNotify()
+		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler())).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 

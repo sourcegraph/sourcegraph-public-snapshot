@@ -6,14 +6,15 @@ Zap lets you share your Git repository you have write access to and editor state
 
 These steps help you start using Zap on your repositories.
 
-1. Clone the repository https://github.com/sgtest/xyztest to your local machine.
 1. Install Zap: `go get -v -u github.com/sourcegraph/zap/cmd/zap` (if that fails due to lack of authentication, then run `cd $GOPATH/src/github.com/sourcegraph && git clone git@github.com:sourcegraph/zap.git && go get -u github.com/sourcegraph/zap/cmd/zap`)
-1. Get your auth token from https://sourcegraph.com/-/show-auth and use it in the next step
-1. To launch the Zap server, run `ZAP_AUTH_COOKIE=... zap server -v` in your terminal
 1. Install the Visual Studio Code extension: Cmd/Ctrl-P for quick open, then `ext install sqs.vscode-zap` (delete the `<`)
+1. Enable the zap feature flag on sourcegraph.com by running `features.zap.enable()` in your developer console
 
 Then, in the directory of `sgtest/xyztest`, or any repository you want to use Zap on:
 
+1. *Optional: if you want a test repository, clone https://github.com/sgtest/xyztest to your local machine.*
+1. Get your auth token from https://sourcegraph.com/-/show-auth and use it in the next step
+1. Launch the Zap server by running `ZAP_AUTH_COOKIE=... zap server -v` in your terminal
 1. Tell Zap to start watching it: `zap init`
 1. Configure the upstream repository (replace the last two parameters, the URL and repo name, with the appropriate values):
    ```
@@ -25,7 +26,7 @@ zap remote set origin wss://sourcegraph.com/.api/zap github.com/sgtest/xyztest
 
 Notes:
 
-* On Sourcegraph, you must run `features.zap.enable()` and `features.extensions.enable()`
+* On Sourcegraph, you must run `features.zap.enable()`
 * You must open Visual Studio Code after running `zap server -v`
 
 ## Hacking

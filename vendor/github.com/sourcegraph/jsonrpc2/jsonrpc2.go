@@ -37,8 +37,13 @@ type Request struct {
 	Method string           `json:"method"`
 	Params *json.RawMessage `json:"params,omitempty"`
 	ID     ID               `json:"id"`
-	Meta   *json.RawMessage `json:"meta,omitempty"`
 	Notif  bool             `json:"-"`
+
+	// Meta optionally provides metadata to include in the request.
+	//
+	// NOTE: It is not part of spec. However, it is useful for propogating
+	// tracing context, etc.
+	Meta *json.RawMessage `json:"meta,omitempty"`
 }
 
 // MarshalJSON implements json.Marshaler and adds the "jsonrpc":"2.0"
@@ -125,6 +130,12 @@ type Response struct {
 	ID     ID               `json:"id"`
 	Result *json.RawMessage `json:"result"`
 	Error  *Error           `json:"error,omitempty"`
+
+	// Meta optionally provides metadata to include in the response.
+	//
+	// NOTE: It is not part of spec. However, it is useful for propogating
+	// tracing context, etc.
+	Meta *json.RawMessage `json:"meta,omitempty"`
 
 	// SPEC NOTE: The spec says "If there was an error in detecting
 	// the id in the Request object (e.g. Parse error/Invalid
@@ -215,7 +226,10 @@ const (
 
 // Handler handles JSON-RPC requests and notifications.
 type Handler interface {
-	// Handle is called to handle a request.
+	// Handle is called to handle a request. No other requests are handled
+	// until it returns. If you do not require strict ordering behaviour
+	// of received RPCs, it is suggested to wrap your handler in
+	// AsyncHandler.
 	Handle(context.Context, *Conn, *Request)
 }
 
@@ -487,7 +501,7 @@ func (c *Conn) readMessages(ctx context.Context) {
 			if c.onRecv != nil {
 				c.onRecv(m.request, nil)
 			}
-			go c.h.Handle(ctx, c, m.request)
+			c.h.Handle(ctx, c, m.request)
 
 		case m.response != nil:
 			resp := m.response

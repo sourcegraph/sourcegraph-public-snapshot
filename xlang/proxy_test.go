@@ -31,7 +31,7 @@ func init() {
 	xlang.ServersByMode["go"] = func() (io.ReadWriteCloser, error) {
 		// Run in-process for easy development (no recompiles, etc.).
 		a, b := xlang.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler())
+		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
 		return b, nil
 	}
 }
@@ -754,10 +754,10 @@ func TestProxy_connections(t *testing.T) {
 		calledConnectToTestServer++
 		mu.Unlock()
 		a, b := xlang.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			addReq(req)
 			return nil, nil
-		}))
+		})))
 		return b, nil
 	}
 	defer func() {
@@ -896,7 +896,7 @@ func TestProxy_propagation(t *testing.T) {
 	// file that we call textDocument/definition on.
 	xlang.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
 		a, b := xlang.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			if req.Method == "textDocument/definition" {
 				var params lsp.TextDocumentPositionParams
 				if err := json.Unmarshal(*req.Params, &params); err != nil {
@@ -916,7 +916,7 @@ func TestProxy_propagation(t *testing.T) {
 				return []lsp.Location{}, nil
 			}
 			return nil, nil
-		}))
+		})))
 		return b, nil
 	}
 	defer func() {

@@ -68,7 +68,7 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 		ready:   make(chan struct{}),
 	}
 
-	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2HandlerFunc(proxy.handleClientRequest))
+	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleClientRequest)))
 
 	serverNetConn, err := dialLSPProxy(ctx)
 	if err != nil {
@@ -77,7 +77,7 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	proxy.server = &xclient{Client: &xlang.Client{
-		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2HandlerFunc(proxy.handleServerRequest)),
+		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleServerRequest))),
 	}}
 
 	proxy.start()

@@ -62,6 +62,10 @@ type Workspace interface {
 	// op).
 	WillSaveFile(relativePath string)
 
+	// DefaultRepoName returns the default name that should be used to
+	// represent the repository for the given remote.
+	DefaultRepoName(remote string) (string, error)
+
 	// Op returns a channel that receives ops describing changes made
 	// to the workspace's file system or git HEAD branch tip.
 	Op() <-chan ot.WorkspaceOp
@@ -140,6 +144,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 		for {
 			select {
 			case <-ctx.Done():
+				level.Debug(log).Log("done", ctx.Err())
 				return ctx.Err()
 
 			case op, ok := <-workspace.Op():
@@ -162,11 +167,14 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 					if err != nil {
 						return err
 					}
-					return s.parent.broadcastRefUpdate(ctx, log, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
+					if err := s.parent.broadcastRefUpdate(ctx, log, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
 						RefIdentifier: w.Ref("HEAD"),
 						Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 						Op:            &op,
-					}, nil)
+					}, nil); err != nil {
+						return fmt.Errorf("after workspace op, broadcasting ref update: %s", err)
+					}
+					return nil
 				}
 				if err := do(); err != nil {
 					return err
@@ -214,7 +222,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 						Current:       current,
 						State:         newRefState,
 					}, nil, false, false /* do not double-acquire ref */); err != nil {
-						return err
+						return fmt.Errorf("after workspace reset, updating ref %q (current %v) to %v: %s", resetInfo.Ref, current, newRefState, err)
 					}
 					if ref == nil {
 						ref := repo.refdb.Lookup(resetInfo.Ref)
@@ -242,7 +250,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 						Target:        resetInfo.Ref,
 						OldTarget:     oldTarget,
 					}); err != nil {
-						return err
+						return fmt.Errorf("after workspace reset, updating HEAD from %q to %q: %s", oldTarget, resetInfo.Ref, err)
 					}
 
 					if ready != nil {
@@ -394,6 +402,8 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 			oldTarget = oldRef.Target
 		}
 
+		defer repo.acquireRef(params.Ref)()
+
 		ref := repo.refdb.Lookup(params.Ref)
 		if ref == nil {
 			return nil, &jsonrpc2.Error{
@@ -540,37 +550,32 @@ func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddP
 		repo.mu.Unlock()
 	}
 
-	do := func() error {
-		ready := make(chan error)
-		go s.handleWorkspaceTasks(s.parent.bgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
-		if err := <-ready; err != nil {
-			return fmt.Errorf("workspace %q failed to become ready: %s", params.Dir, err)
-		}
-
-		// Only add the workspace if handleWorkspaceTasks
-		// indicated it is ready (and did not fail before becoming
-		// ready).
-
+	{
+		// Add repo to server.
 		s.parent.reposMu.Lock()
-		defer s.parent.reposMu.Unlock()
 		if _, exists := s.parent.repos[params.Dir]; exists {
 			cancel()
 			return &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRepoNotExists),
-				Message: fmt.Sprintf("between start and end of workspace initialization, repo was added by someone else: %v", params.WorkspaceIdentifier),
+				Message: fmt.Sprintf("during workspace initialization, repo was added by someone else: %v", params.WorkspaceIdentifier),
 			}
 		}
 		s.parent.repos[params.Dir] = repo
-		return nil
-	}
-	if err := do(); err != nil {
-		return err
+		s.parent.reposMu.Unlock()
 	}
 
 	if err := s.parent.applyRepoConfiguration(ctx, log, params.Dir, repo, RepoConfiguration{}, *cfg, false, false); err != nil {
 		level.Error(log).Log("apply-initial-workspace-configuration-error", err)
 		cancel()
 		return err
+	}
+
+	// Block until workspace is ready (or fails to become ready).
+	ready := make(chan error)
+	go s.handleWorkspaceTasks(s.parent.bgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
+	if err := <-ready; err != nil {
+		cancel()
+		return fmt.Errorf("workspace %q failed to become ready: %s", params.Dir, err)
 	}
 
 	return config.EnsureWorkspaceInGlobalConfig(params.Dir)
@@ -610,7 +615,12 @@ func (s *workspaceServer) removeWorkspace(log *logpkg.Context, workspace Workspa
 	s.parent.reposMu.Unlock()
 
 	repo.mu.Lock()
-	repo.workspaceCancel()
+	if repo.workspaceCancel != nil {
+		repo.workspaceCancel()
+		repo.workspaceCancel = nil
+	}
+	repo.workspace = nil
+	repo.config = RepoConfiguration{}
 	repo.mu.Unlock()
 	return config.EnsureWorkspaceNotInGlobalConfig(workspace.Dir)
 }

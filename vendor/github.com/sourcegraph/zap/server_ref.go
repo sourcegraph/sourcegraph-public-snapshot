@@ -60,9 +60,15 @@ func (r serverRef) history() []ot.WorkspaceOp {
 //
 // If sendCurrentState, the server immediately sends the current state
 // of the ref upstream.
-func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState bool) error {
+//
+// The caller MUST hold the repo.acquireRef lock for the given ref.
+func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState, acquireRef bool) error {
 	oldConfig := oldRepoConfig.Refs[refID.Ref]
 	newConfig := newRepoConfig.Refs[refID.Ref]
+
+	if acquireRef {
+		defer repo.acquireRef(refID.Ref)()
+	}
 
 	var refObj *serverRef
 	if ref != nil && ref.Object != nil {
@@ -74,12 +80,21 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, 
 
 	var newRemote RepoRemoteConfiguration
 	if newConfig.Upstream != "" {
-		var ok bool
-		newRemote, ok = newRepoConfig.Remotes[newConfig.Upstream]
-		if !ok {
+		var (
+			err      error
+			repoName string
+		)
+		if repo.workspace != nil {
+			repoName, err = repo.workspace.DefaultRepoName(newConfig.Upstream)
+			if err != nil {
+				return err
+			}
+		}
+		newRemote, err = newRepoConfig.RemoteOrDefault(newConfig.Upstream, repoName)
+		if err != nil {
 			return &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRemoteNotExists),
-				Message: fmt.Sprintf("no remote found for new upstream: %s", newConfig.Upstream),
+				Message: err.Error(),
 			}
 		}
 	}
@@ -99,9 +114,9 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, 
 		upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: ref.Name}
 		if sendCurrentState {
 			if newConfig.Overwrite {
-				cl, ok := s.remotes.getClient(newRemote.Endpoint)
-				if !ok {
-					panic(fmt.Sprintf("no client for remote %q", newConfig.Upstream))
+				cl, err := s.remotes.getOrCreateClient(ctx, log, newRemote.Endpoint)
+				if err != nil {
+					return err
 				}
 
 				newRefState := &RefState{
@@ -109,6 +124,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, 
 					History:     refObj.history(),
 				}
 				level.Info(log).Log("overwrite-ref-on-upstream", newRefState)
+				debugSimulateLatency()
 				if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 					RefIdentifier: upstreamRefID,
 					Force:         true,
@@ -199,6 +215,8 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, 
 }
 
 func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, log *log.Context, repo *serverRepo, localRefID RefIdentifier, local, tracking refdb.Ref, refConfig RefConfiguration) error {
+	// Assumes caller holds the repo.refAcquire(ref.Ref) lock.
+
 	localObj := local.Object.(serverRef)
 	trackingObj := tracking.Object.(serverRef)
 	// Check that the localObj tracking ref can be fast-forwarded to the tracking ref.
@@ -239,6 +257,7 @@ func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, log *log.Conte
 				State:         newRefState,
 			},
 			refConfig,
+			false,
 		); err != nil {
 			return err
 		}
@@ -264,12 +283,12 @@ func remoteTrackingRef(remote, ref string) string {
 
 func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string) {
 	// TODO(sqs) HACK: this is indicative of a design flaw
-	s.reposMu.Lock() // DL3
+	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
 	var matchingLocalRepos []*serverRepo
 	var matchingRemoteNames []string
 	for localRepoName2, localRepo := range s.repos {
-		localRepo.mu.Lock() //DL
+		localRepo.mu.Lock()
 		for remoteName, config := range localRepo.config.Remotes {
 			if config.Endpoint == endpoint && config.Repo == remoteRepoName {
 				matchingLocalRepos = append(matchingLocalRepos, localRepo)

@@ -112,13 +112,13 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 			log := log.With("update-ref-downstream-with-initial-state", ref.Name)
 			level.Debug(log).Log()
 			refObj := ref.Object.(serverRef)
-			if err := c.conn.Call(ctx, "ref/update", RefUpdateDownstreamParams{
+			if err := c.conn.Notify(ctx, "ref/update", RefUpdateDownstreamParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				State: &RefState{
 					RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 					History:     refObj.history(),
 				},
-			}, nil); err != nil { //DL DL2
+			}); err != nil {
 				return err
 			}
 		}
@@ -131,10 +131,10 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 
 			log := log.With("update-symbolic-ref-with-initial-state", ref.Name)
 			level.Debug(log).Log()
-			if err := c.conn.Call(ctx, "ref/updateSymbolic", RefUpdateSymbolicParams{
+			if err := c.conn.Notify(ctx, "ref/updateSymbolic", RefUpdateSymbolicParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				Target:        ref.Target,
-			}, nil); err != nil {
+			}); err != nil {
 				return err
 			}
 		}

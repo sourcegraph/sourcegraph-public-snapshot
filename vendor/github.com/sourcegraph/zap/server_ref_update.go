@@ -50,7 +50,7 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, log *logpkg.Co
 		if ref == nil {
 			level.Warn(log).Log("upstream-configured-for-nonexistent-ref", params.RefIdentifier.Ref)
 		} else {
-			if err := s.updateLocalTrackingRefAfterUpstreamUpdate(ctx, log, repo, *ref, params, refConfig); err != nil {
+			if err := s.updateLocalTrackingRefAfterUpstreamUpdate(ctx, log, repo, *ref, params, refConfig, true); err != nil {
 				return err
 			}
 		}
@@ -148,7 +148,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Contex
 	return s.broadcastRefUpdate(ctx, log, withoutSymbolicRefs(refClosure), nil, &params, nil)
 }
 
-func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, log *logpkg.Context, repo *serverRepo, ref refdb.Ref, params RefUpdateDownstreamParams, refConfig RefConfiguration) error {
+func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, log *logpkg.Context, repo *serverRepo, ref refdb.Ref, params RefUpdateDownstreamParams, refConfig RefConfiguration, acquireRef bool) error {
 	log = log.With("update-local-tracking-ref", params.RefIdentifier.Ref)
 	level.Info(log).Log("params", params)
 
@@ -167,7 +167,9 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 		return nil
 	}
 
-	defer repo.acquireRef(params.RefIdentifier.Ref)()
+	if acquireRef {
+		defer repo.acquireRef(params.RefIdentifier.Ref)() //DL
+	}
 
 	checkForRace := func() {}
 
@@ -631,7 +633,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 			repoConfig := repo.getConfig()
 			if c, ok := repoConfig.Refs[params.RefIdentifier.Ref]; ok {
 				level.Info(log).Log("reattaching-ref-config-to-newly-created-ref", fmt.Sprint(c))
-				if err := s.doApplyRefConfiguration(ctx, log, repo, params.RefIdentifier, ref, repoConfig, repoConfig, true, false); err != nil {
+				if err := s.doApplyRefConfiguration(ctx, log, repo, params.RefIdentifier, ref, repoConfig, repoConfig, true, false, false); err != nil {
 					return err
 				}
 			}

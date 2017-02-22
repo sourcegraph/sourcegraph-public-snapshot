@@ -53,15 +53,7 @@ func (s *Server) broadcastRefUpdate(ctx context.Context, log *logpkg.Context, up
 				//
 				// Also set Ack = true if this is being sent to the
 				// original sender.
-				//
-				// TODO(sqs): c could close at any point and make this channel send panic; need to handle that case
-				c.mu.Lock()
-				if c.closed {
-					c.mu.Unlock()
-					continue
-				}
-				c.toSend <- makeRefUpdateItem(ref.Name, c == sender)
-				c.mu.Unlock()
+				c.send(ctx, log, makeRefUpdateItem(ref.Name, c == sender))
 			}
 		}
 	}

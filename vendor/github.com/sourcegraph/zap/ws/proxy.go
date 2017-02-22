@@ -192,6 +192,24 @@ func (p *Proxy) RecvFromUpstream(log *log.Context, op ot.WorkspaceOp) (ot.Worksp
 		}
 	}
 
+	{
+		// DEBUG: Sanity check
+		allHistory, _ := ot.ComposeAllWorkspaceOps(p.history)
+		if _, err := ot.ComposeWorkspaceOps(allHistory, op); err != nil {
+			// See if op is consecutive with the last rev.
+			if len(p.history) > 1 {
+				allHistoryButLast, _ := ot.ComposeAllWorkspaceOps(p.history[:len(p.history)-1])
+				if _, err := ot.ComposeWorkspaceOps(allHistoryButLast, op); err == nil {
+					level.Error(log).Log("op-is-not-consecutive-with-history-but-is-with-last-rev", "", "op", op, "rev", p.Rev(), "last-rev", p.Rev()-1, "history", fmt.Sprint(p.history), "composed-history", allHistory, "composed-history-but-last", allHistoryButLast, "err", err)
+					return ot.WorkspaceOp{}, fmt.Errorf("op is consecutive with rev %d not current rev %d: %s", p.Rev()-1, p.Rev(), err)
+				}
+			}
+
+			level.Error(log).Log("op-is-not-consecutive-with-history", "", "op", op, "history", fmt.Sprint(p.history), "composed-history", allHistory, "err", err)
+			return ot.WorkspaceOp{}, err
+		}
+	}
+
 	// TODO(sqs): this is bad because if Apply fails, p.Wait and p.Buf
 	// have already been overwritten.
 	if p.Apply != nil {

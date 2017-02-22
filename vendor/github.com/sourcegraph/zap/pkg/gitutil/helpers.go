@@ -2,6 +2,7 @@ package gitutil
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -18,4 +19,41 @@ func CurrentBranch(gitRepo interface {
 		return v, nil
 	}
 	return "", fmt.Errorf("invalid HEAD %q", v)
+}
+
+// DefaultRepoName derives and returns a default repository name for the given
+// remote URL. For example:
+//
+// 	DefaultRepoName("git@github.com:gorilla/mux") == "github.com/gorilla/mux"
+// 	DefaultRepoName("https://github.com/gorilla/mux") == "github.com/gorilla/mux"
+//  ... etc ...
+//
+func DefaultRepoName(remoteURL string) (string, error) {
+	switch {
+	case strings.HasPrefix(remoteURL, "http") || strings.HasPrefix(remoteURL, "https"):
+		u, err := url.Parse(remoteURL)
+		if err != nil {
+			return "", err
+		}
+		return u.Host + u.Path, nil
+
+	case strings.HasPrefix(remoteURL, "git@") || strings.HasPrefix(remoteURL, "git://") || strings.HasPrefix(remoteURL, "ssh://"):
+		if !strings.HasPrefix(remoteURL, "git://") && !strings.HasPrefix(remoteURL, "ssh://") {
+			remoteURL = "git://" + remoteURL
+		}
+		u, err := url.Parse(remoteURL)
+		if err != nil {
+			return "", err
+		}
+		s := strings.Split(u.Host, ":")
+		if len(s) != 2 {
+			return "", fmt.Errorf("cannot derive repository name from git remote %q", remoteURL)
+		}
+		return s[0] + "/" + s[1] + u.Path, nil
+
+	default:
+		// Default to the remote clone URL itself, as e.g. `zap remote` does when the
+		// repository name is unspecified.
+		return remoteURL, nil
+	}
 }

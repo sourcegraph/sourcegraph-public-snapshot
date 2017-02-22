@@ -50,7 +50,7 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 		last:  time.Now(),
 		id:    nextClientID(),
 	}
-	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(c.handle), connOpt...)
+	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
 	p.mu.Lock()
 	if p.clients == nil {

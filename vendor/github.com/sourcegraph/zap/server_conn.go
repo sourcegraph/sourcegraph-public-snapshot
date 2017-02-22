@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	stdlog "log"
 	"math"
 	"math/rand"
@@ -46,7 +45,6 @@ type serverConn struct {
 	closed        bool
 	init          *InitializeParams
 	watchingRepos map[string][]string // repo -> watch refspecs, for watched repos
-	toSend        chan refUpdateItem  // holds ref updates that are waiting to be sent over this connection
 
 	*workspaceServerConn
 }
@@ -64,12 +62,15 @@ var (
 
 func debugSimulateLatency() {
 	DebugMu.Lock()
-	if DebugSimulatedLatency == 0 {
+	if DebugSimulatedLatency == 0 && !DebugRandomizeSimulatedLatency {
 		DebugMu.Unlock()
 		return
 	}
 	d := DebugSimulatedLatency
 	if DebugRandomizeSimulatedLatency {
+		if d == 0 {
+			d = 10 * time.Millisecond // default
+		}
 		x := math.Abs(rand.NormFloat64()*0.6 + 1)
 		if x < 0.1 || x > 3 {
 			x = 1
@@ -84,14 +85,12 @@ func newServerConn(ctx context.Context, server *Server, stream jsonrpc2.ObjectSt
 	c := &serverConn{
 		server: server,
 		ready:  make(chan struct{}),
-		toSend: make(chan refUpdateItem, sendBufferSize),
 	}
 	if server.workspaceServer != nil {
 		c.workspaceServerConn = &workspaceServerConn{parent: c}
 	}
-	c.conn = jsonrpc2.NewConn(ctx, stream, jsonrpc2.HandlerWithError(c.handle), server.ConnOpt...)
+	c.conn = jsonrpc2.NewConn(ctx, stream, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), server.ConnOpt...)
 	close(c.ready)
-	go c.sendRefUpdatesLoop(ctx, server.baseLogger())
 	go func() {
 		<-c.conn.DisconnectNotify()
 		server.deleteConn(c)
@@ -106,55 +105,44 @@ type refUpdateItem struct {
 	symbolic    *RefUpdateSymbolicParams
 }
 
-func (c *serverConn) sendRefUpdatesLoop(ctx context.Context, log *log.Context) {
-	// If an error occurs here (which is the only way we return), then
-	// it means the connection is no longer viable, so close it.
-	defer c.Close()
+// send sends a ref update to the peer client. If the update fails to
+// send, then it must be a connection error, and we will
+// disconnect/remove the client.
+func (c *serverConn) send(ctx context.Context, log *log.Context, item refUpdateItem) {
+	c.mu.Lock()
+	var clientID string
+	if c.init != nil {
+		clientID = c.init.ID
+	}
+	log = log.With("client", clientID)
+	c.mu.Unlock()
 
-	for {
-		c.mu.Lock()
-		var clientID string
-		if c.init != nil {
-			clientID = c.init.ID
+	var params interface{}
+	var method string
+	if item.nonSymbolic != nil {
+		params = item.nonSymbolic
+		method = "ref/update"
+	} else {
+		params = item.symbolic
+		method = "ref/updateSymbolic"
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, sendTimeout)
+	defer cancel()
+
+	debugSimulateLatency()
+
+	// No wait for the client to reply (we use Notify not Call). We
+	// are the server and we are the source of truth. If the client
+	// experiences an error applying our op, then it is the client's
+	// fault and there is nothing we can do to help resolve it; the
+	// recovery must be done on the client.
+	if err := c.conn.Notify(ctx, method, params); err != nil {
+		level.Warn(log).Log("send-error", err, "id", c.init.ID)
+		if err := c.conn.Close(); err != nil {
+			level.Warn(log).Log("send-close-error", err, "id", c.init.ID)
 		}
-		log := log.With("client", clientID)
-		c.mu.Unlock()
-
-		select {
-		case item, ok := <-c.toSend:
-			if !ok {
-				return
-			}
-
-			// TODO(sqs): add timeout
-			var params interface{}
-			var method string
-			if item.nonSymbolic != nil {
-				params = item.nonSymbolic
-				method = "ref/update"
-			} else {
-				params = item.symbolic
-				method = "ref/updateSymbolic"
-			}
-
-			ctx, cancel := context.WithTimeout(ctx, sendTimeout)
-			debugSimulateLatency()
-			err := c.conn.Call(ctx, method, params, nil)
-			cancel()
-			if err == io.ErrUnexpectedEOF {
-				// This means the client connection no longer
-				// exists. Continue sending to the other watchers.
-			} else if err != nil {
-				level.Warn(log).Log("send-error", err, "id", c.init.ID)
-				if err := c.conn.Close(); err != nil {
-					level.Warn(log).Log("send-close-error", err, "id", c.init.ID)
-				}
-				return
-			}
-
-		case <-ctx.Done():
-			return
-		}
+		return
 	}
 }
 
@@ -317,10 +305,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				if ref.IsSymbolic() {
 					info.Target = ref.Target
 				} else {
+					release := repo.acquireRef(ref.Name)
 					refObj := ref.Object.(serverRef)
 					info.GitBase = refObj.gitBase
 					info.GitBranch = refObj.gitBranch
 					info.Rev = refObj.rev()
+					release()
 				}
 
 				watchers := c.server.watchers(RefIdentifier{Repo: repoName, Ref: ref.Name})
@@ -360,8 +350,18 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			remote := parts[0]
 			branch := parts[1]
 			repoConfig := repo.getConfig()
-			if remoteConfig, ok := repoConfig.Remotes[remote]; !ok {
-				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q (remotes: %+v)", params.Ref, remote, repoConfig.Remotes)
+
+			repo.mu.Lock()
+			ws := repo.workspace
+			repo.mu.Unlock()
+
+			repoName, err := ws.DefaultRepoName(remote)
+			if err != nil {
+				return nil, err
+			}
+
+			if remoteConfig, err := repoConfig.RemoteOrDefault(remote, repoName); err != nil {
+				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured, error: %v", params.Ref, err)
 			} else if !matchAnyRefspec(remoteConfig.Refspecs, branch) {
 				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but no remote %q refspecs %q match the branch name", params.Ref, remote, remoteConfig.Refspecs)
 			}
@@ -384,6 +384,14 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				}
 			}
 		}
+
+		// TODO(sqs): it is slightly racy (in a logical sense, not in
+		// a memory corruption sense) to not hold BOTH the symbolic
+		// ref and its target here (we only lock the target ref). we
+		// might return a state of the target ref that was never in
+		// existence when the symbolic ref pointed to it.
+		defer repo.acquireRef(ref.Name)()
+
 		if o, ok := ref.Object.(serverRef); ok {
 			res.State = &RefState{
 				RefBaseInfo: RefBaseInfo{GitBase: o.gitBase, GitBranch: o.gitBranch},
@@ -424,11 +432,19 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		oldConfig, newConfig, err := c.server.updateRepoConfiguration(ctx, repo, func(config *RepoConfiguration) error {
 			// Validate new config.
 			if remoteName := params.RefConfiguration.Upstream; remoteName != "" {
-				remote, ok := config.Remotes[remoteName]
-				if !ok {
+				var repoName string
+				if repo.workspace != nil {
+					repoName, err = repo.workspace.DefaultRepoName(remoteName)
+					if err != nil {
+						return err
+					}
+				}
+
+				remote, err := config.RemoteOrDefault(remoteName, repoName)
+				if err != nil {
 					return &jsonrpc2.Error{
 						Code:    int64(ErrorCodeRemoteNotExists),
-						Message: fmt.Sprintf("remote does not exist: %s", remoteName),
+						Message: err.Error(),
 					}
 				}
 				if !matchAnyRefspec(remote.Refspecs, params.RefIdentifier.Ref) {
@@ -530,6 +546,5 @@ func (c *serverConn) Close() error {
 	c.closed = true
 	c.mu.Unlock()
 	c.server.deleteConn(c)
-	close(c.toSend)
 	return c.conn.Close()
 }

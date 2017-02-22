@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -16,26 +17,34 @@ type Client struct {
 	refUpdateCallback         func(context.Context, RefUpdateDownstreamParams) error
 	refUpdateSymbolicCallback func(context.Context, RefUpdateSymbolicParams) error
 
-	// ShowStatus, if provided, is called when the status of the zap
-	// client changes. It can indicate that the client is operating as
-	// expected, or unable to sync, etc. Only the most recent status
-	// should be displayed.
+	// ShowStatus, if provided, is called synchronously when the
+	// status of the zap client changes. It can indicate that the
+	// client is operating as expected, or unable to sync, etc. Only
+	// the most recent status should be displayed.
 	ShowStatus func(ShowStatusParams)
 
-	// ShowMessage, if provided, is called when there are messages
-	// that should be displayed to the user.
+	// ShowMessage, if provided, is called synchronously when there
+	// are messages that should be displayed to the user.
 	ShowMessage func(ShowMessageParams)
+
+	mu                 sync.Mutex
+	closed             bool
+	refUpdates         chan RefUpdateDownstreamParams
+	startRefUpdateLoop sync.Once
 }
 
 // NewClient creates a new Zap client.
 func NewClient(ctx context.Context, stream jsonrpc2.ObjectStream, opt ...jsonrpc2.ConnOpt) *Client {
 	var c Client
+	// We use a synchronous jsonrpc2 handler to ensure that our client
+	// callbacks receive messages in the order intended by the server.
+	c.refUpdates = make(chan RefUpdateDownstreamParams, 1000)
 	c.c = jsonrpc2.NewConn(ctx, stream, jsonrpc2.HandlerWithError(c.handle), opt...)
 	return &c
 }
 
-// SetRefUpdateCallback sets the function that is called when the
-// client receives a "ref/update" request from the server.
+// SetRefUpdateCallback sets the function that is called synchronously
+// when the client receives a "ref/update" request from the server.
 func (c *Client) SetRefUpdateCallback(f func(context.Context, RefUpdateDownstreamParams) error) {
 	if c.refUpdateCallback != nil {
 		panic("refUpdateCallback is already set")
@@ -43,8 +52,9 @@ func (c *Client) SetRefUpdateCallback(f func(context.Context, RefUpdateDownstrea
 	c.refUpdateCallback = f
 }
 
-// SetRefUpdateSymbolicCallback sets the function that is called when the
-// client receives a "ref/updateSymbolic" request from the server.
+// SetRefUpdateSymbolicCallback sets the function that is called
+// synchronously when the client receives a "ref/updateSymbolic"
+// request from the server.
 func (c *Client) SetRefUpdateSymbolicCallback(f func(context.Context, RefUpdateSymbolicParams) error) {
 	if c.refUpdateSymbolicCallback != nil {
 		panic("refUpdateSymbolicCallback is already set")
@@ -63,7 +73,28 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 			return nil, err
 		}
 		if c.refUpdateCallback != nil {
-			return nil, c.refUpdateCallback(ctx, params)
+			c.startRefUpdateLoop.Do(func() {
+				go func() {
+					for {
+						select {
+						case params, ok := <-c.refUpdates:
+							if !ok {
+								log.Println("info: ref/update loop is shutting down")
+								return
+							}
+							if err := c.refUpdateCallback(context.Background(), params); err != nil {
+								log.Println("warning: client ref/update callback returned error:", err)
+							}
+						}
+					}
+				}()
+			})
+			c.mu.Lock()
+			if !c.closed {
+				c.refUpdates <- params
+			}
+			c.mu.Unlock()
+			return nil, nil
 		}
 		log.Println("warning: client received ref/update from server, but no callback is set")
 		return nil, nil
@@ -77,7 +108,14 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 			return nil, err
 		}
 		if c.refUpdateSymbolicCallback != nil {
-			return nil, c.refUpdateSymbolicCallback(ctx, params)
+			// The order of symbolic refs is not as important as
+			// non-symbolic refs, so we can just process them async.
+			go func() {
+				if err := c.refUpdateSymbolicCallback(ctx, params); err != nil {
+					log.Println("warning: client ref/updateSymbolic callback returned error:", err)
+				}
+			}()
+			return nil, nil
 		}
 		log.Println("warning: client received ref/updateSymbolic from server, but no callback is set")
 		return nil, nil
@@ -211,4 +249,12 @@ func (c *Client) DisconnectNotify() <-chan struct{} {
 }
 
 // Close closes the client's connection.
-func (c *Client) Close() error { return c.c.Close() }
+func (c *Client) Close() error {
+	c.mu.Lock()
+	if !c.closed {
+		c.closed = true
+		close(c.refUpdates)
+	}
+	c.mu.Unlock()
+	return c.c.Close()
+}

@@ -60,6 +60,9 @@ class BrowserEnvironment implements IEnvironment {
 		this.zapRefChangeEmitter.fire(ref);
 	}
 
+	get zapBranch(): string { return this._zapRef; }
+	get onDidChangeZapBranch(): vscode.Event<string> { return this.zapRefChangeEmitter.event; }
+
 	asRelativePathInsideWorkspace(uri: vscode.Uri): string | null {
 		if (uri.scheme !== "git") { return null; }
 		// TODO(sqs): Check that uri is underneath the rootURI.
