@@ -77,7 +77,7 @@ deployment:
           environment:
             TAG: ${LONG_VERSION}
       - gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:$LONG_VERSION
-      - curl http://staging.sgdev.org/set-branch-version -F "token=$DEPLOY_BOT_TOKEN" -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
+      - curl http://circleci:$DEPLOY_BOT_TOKEN@staging-cluster.sgdev.org/set-branch-version -F "branch=$CIRCLE_BRANCH" -F "version=$LONG_VERSION" -F "user=$CIRCLE_USERNAME"
 
   docker-images:
     branch: /docker-images\/.*/
