@@ -1,7 +1,7 @@
+import { DataCallback, Message, MessageReader, MessageWriter } from "@sourcegraph/vscode-jsonrpc";
+import { AbstractMessageReader } from "@sourcegraph/vscode-jsonrpc/lib/messageReader";
+import { AbstractMessageWriter } from "@sourcegraph/vscode-jsonrpc/lib/messageWriter";
 import { MessageStream } from "@sourcegraph/vscode-languageclient";
-import { DataCallback, Message, MessageReader, MessageWriter } from "vscode-jsonrpc";
-import { AbstractMessageReader } from "vscode-jsonrpc/lib/messageReader";
-import { AbstractMessageWriter } from "vscode-jsonrpc/lib/messageWriter";
 
 // connectWebSocket can be passed to the Zap client's ServerOptions to
 // connect to a Zap server via a WebSocket.
