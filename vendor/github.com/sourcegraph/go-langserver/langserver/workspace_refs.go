@@ -128,7 +128,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 			},
 			Patch: &initial,
 		})
-		t := time.NewTicker(time.Second)
+		t := time.NewTicker(100 * time.Millisecond)
 		defer t.Stop()
 		streamTick = t.C
 		streamPos := 0

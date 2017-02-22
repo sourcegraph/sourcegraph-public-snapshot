@@ -11,7 +11,7 @@ import (
 )
 
 func (h *LangHandler) handleTextDocumentSignatureHelp(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.SignatureHelp, error) {
-	fset, _, nodes, _, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
+	fset, _, nodes, prog, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
 	if err != nil {
 		if _, ok := err.(*invalidNodeError); !ok {
 			return nil, err
@@ -40,6 +40,26 @@ func (h *LangHandler) handleTextDocumentSignatureHelp(ctx context.Context, conn 
 	numArguments := len(call.Args)
 	if activeParameter > numArguments {
 		activeParameter = numArguments
+	}
+
+	funcIdent, funcOk := call.Fun.(*ast.Ident)
+	if !funcOk {
+		selExpr, selOk := call.Fun.(*ast.SelectorExpr)
+		if selOk {
+			funcIdent = selExpr.Sel
+			funcOk = true
+		}
+	}
+	if funcIdent != nil && funcOk {
+		funcObj := pkg.ObjectOf(funcIdent)
+		_, path, _ := prog.PathEnclosingInterval(funcObj.Pos(), funcObj.Pos())
+		for i := 0; i < len(path); i++ {
+			a, b := path[i].(*ast.FuncDecl)
+			if b && a.Doc != nil {
+				info.Documentation = a.Doc.Text()
+				break
+			}
+		}
 	}
 
 	return &lsp.SignatureHelp{Signatures: []lsp.SignatureInformation{info}, ActiveSignature: 0, ActiveParameter: activeParameter}, nil

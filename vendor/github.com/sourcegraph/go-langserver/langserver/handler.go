@@ -21,9 +21,9 @@ import (
 
 // NewHandler creates a Go language server handler.
 func NewHandler() jsonrpc2.Handler {
-	return jsonrpc2.HandlerWithError((&LangHandler{
+	return jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError((&LangHandler{
 		HandlerShared: &HandlerShared{},
-	}).handle)
+	}).handle))
 }
 
 // LangHandler is a Go language server LSP/JSON-RPC handler.

@@ -100,10 +100,19 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		findRefErr error
 	)
 
+	// Start a goroutine to read from the refs chan. It will read all the
+	// refs until the chan is closed. It is responsible to stream the
+	// references back to the client, as well as build up the final slice
+	// which we return as the response.
 	go func() {
 		locsC <- refStreamAndCollect(ctx, conn, req, fset, refs)
 		close(locsC)
 	}()
+
+	// Don't include decl if it is outside of workspace.
+	if params.Context.IncludeDeclaration && PathHasPrefix(defpkg, h.init.RootImportPath) {
+		refs <- &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()}
+	}
 
 	// seen keeps track of already findReferenced packages. This allows us
 	// to avoid doing extra work when we receive a successive import
@@ -150,8 +159,10 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 
 		findRefErr = findReferences(ctx, lconf, pkgInWorkspace, obj, refs)
 	}
-	close(refs)
 
+	// Tell refStreamAndCollect that we are done finding references. It
+	// will then send the all the collected references to locsC.
+	close(refs)
 	locs := <-locsC
 
 	// If a timeout does occur, we should know how effective the partial data is
@@ -165,12 +176,6 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 	// the def.
 	if len(locs) == 0 && findRefErr != nil {
 		return nil, findRefErr
-	}
-
-	// Don't include decl if it is outside of workspace.
-	if params.Context.IncludeDeclaration && PathHasPrefix(defpkg, h.init.RootImportPath) {
-		n := &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()}
-		locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
 	}
 
 	sortBySharedDirWithURI(params.TextDocument.URI, locs)
@@ -296,7 +301,7 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 		})
 	}
 
-	tick := time.NewTicker(time.Second)
+	tick := time.NewTicker(100 * time.Millisecond)
 	defer tick.Stop()
 
 	for {
