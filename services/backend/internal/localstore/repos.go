@@ -178,7 +178,9 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			// metadata, because it'll get stale, and fetching online from
 			// GitHub is quite easy and (with HTTP caching) performant.
 			ts := time.Now()
-			newRepo := &sourcegraph.Repo{
+
+			var r dbRepo
+			r.fromRepo(&sourcegraph.Repo{
 				Owner:       ghRepo.Owner,
 				Name:        ghRepo.Name,
 				URI:         ghRepoURI,
@@ -186,10 +188,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				Fork:        ghRepo.Fork,
 				Private:     ghRepo.Private,
 				CreatedAt:   &ts,
-			}
-
-			var r dbRepo
-			r.fromRepo(newRepo)
+			})
 			if err := appDBH(ctx).Insert(&r); err != nil {
 				if isPQErrorUniqueViolation(err) {
 					if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
@@ -199,7 +198,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				}
 				return nil, err
 			}
-			return newRepo, nil
+			return r.toRepo(), nil
 		}
 
 		return nil, err
