@@ -31,6 +31,9 @@ dependencies:
     - ~/cache
     - ~/.cache/yarn
     - ~/bin
+    # TS/JS build server yarn caches to avoid test flakiness
+    - /tmp/tsjs-yarn-global/.cache
+    - /tmp/yarnshim-test/.cache
 
   override:
     - ./dev/ci/install-go.sh

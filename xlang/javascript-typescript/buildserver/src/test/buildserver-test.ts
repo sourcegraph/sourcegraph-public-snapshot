@@ -1,4 +1,4 @@
-// import * as utils from 'javascript-typescript-langserver/lib/test/test-utils';
+import * as utils from 'javascript-typescript-langserver/lib/test/test-utils';
 
 import { BuildHandler } from "../buildhandler";
 
@@ -11,7 +11,6 @@ import { testWithLangHandler } from 'javascript-typescript-langserver/lib/test/l
 // Run language-server tests with build handler
 testWithLangHandler(() => new BuildHandler());
 
-/*
 // Run build-handler-specific tests
 describe('LSP BuildHandler', function () {
 	this.timeout(20000);
@@ -653,4 +652,3 @@ var t = s;\n\
 		});
 	});
 });
-*/
