@@ -321,8 +321,8 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 		return h.handleWorkspaceReferences(ctx, conn, req, params)
 
 	default:
-		if IsFileSystemRequest(req.Method) {
-			uri, fileChanged, err := h.HandleFileSystemRequest(ctx, req)
+		if isFileSystemRequest(req.Method) {
+			uri, fileChanged, err := h.handleFileSystemRequest(ctx, req)
 			if fileChanged {
 				// a file changed, so we must re-typecheck and re-enumerate symbols
 				h.resetCaches(true)

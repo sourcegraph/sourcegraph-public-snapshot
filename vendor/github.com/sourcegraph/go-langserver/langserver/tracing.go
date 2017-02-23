@@ -78,7 +78,7 @@ func (h *HandlerCommon) SpanForRequest(ctx context.Context, buildOrLang string, 
 		span = opentracing.StartSpan(opName, tags)
 	}
 
-	if !IsFileSystemRequest(req.Method) && req.Params != nil {
+	if !isFileSystemRequest(req.Method) && req.Params != nil {
 		span.SetTag("params", string(*req.Params))
 	}
 

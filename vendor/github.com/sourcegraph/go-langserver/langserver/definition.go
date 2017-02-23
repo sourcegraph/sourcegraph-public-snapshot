@@ -27,7 +27,7 @@ func (h *LangHandler) handleXDefinition(ctx context.Context, conn jsonrpc2.JSONR
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.BuildContext(ctx)
 
-	fset, node, pathEnclosingInterval, _, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
+	fset, node, pathEnclosingInterval, _, pkg, _, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
 	if err != nil {
 		// Invalid nodes means we tried to click on something which is
 		// not an ident (eg comment/string/etc). Return no locations.

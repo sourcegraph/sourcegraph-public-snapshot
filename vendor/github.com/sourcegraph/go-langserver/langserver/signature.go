@@ -11,7 +11,7 @@ import (
 )
 
 func (h *LangHandler) handleTextDocumentSignatureHelp(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.SignatureHelp, error) {
-	fset, _, nodes, prog, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
+	fset, _, nodes, prog, pkg, start, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
 	if err != nil {
 		if _, ok := err.(*invalidNodeError); !ok {
 			return nil, err
@@ -33,13 +33,12 @@ func (h *LangHandler) handleTextDocumentSignatureHelp(ctx context.Context, conn 
 	for i := 0; i < sParams.Len(); i++ {
 		info.Parameters[i] = lsp.ParameterInformation{Label: shortParam(sParams.At(i))}
 	}
-	activeParameter := len(info.Parameters)
-	if activeParameter > 0 {
-		activeParameter = activeParameter - 1
-	}
-	numArguments := len(call.Args)
-	if activeParameter > numArguments {
-		activeParameter = numArguments
+	activeParameter := len(call.Args)
+	for index, arg := range call.Args {
+		if arg.End() >= *start {
+			activeParameter = index
+			break
+		}
 	}
 
 	funcIdent, funcOk := call.Fun.(*ast.Ident)

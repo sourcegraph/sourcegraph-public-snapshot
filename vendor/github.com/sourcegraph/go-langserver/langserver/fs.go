@@ -17,18 +17,18 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-// IsFileSystemRequest returns if this is an LSP method whose sole
+// isFileSystemRequest returns if this is an LSP method whose sole
 // purpose is modifying the contents of the overlay file system.
-func IsFileSystemRequest(method string) bool {
+func isFileSystemRequest(method string) bool {
 	return method == "textDocument/didOpen" ||
 		method == "textDocument/didChange" ||
 		method == "textDocument/didClose" ||
 		method == "textDocument/didSave"
 }
 
-// HandleFileSystemRequest handles textDocument/did* requests. The path the
+// handleFileSystemRequest handles textDocument/did* requests. The path the
 // request is for is returned. true is returned if a file was modified.
-func (h *HandlerShared) HandleFileSystemRequest(ctx context.Context, req *jsonrpc2.Request) (string, bool, error) {
+func (h *HandlerShared) handleFileSystemRequest(ctx context.Context, req *jsonrpc2.Request) (string, bool, error) {
 	span := opentracing.SpanFromContext(ctx)
 	h.Mu.Lock()
 	overlay := h.overlay
@@ -95,10 +95,16 @@ func (h *HandlerShared) HandleFileSystemRequest(ctx context.Context, req *jsonrp
 type overlay struct {
 	mu sync.Mutex
 	m  map[string][]byte
+	// v is contains the versions of m. Version is controlled by the LS
+	// client.
+	v map[string]int
 }
 
 func newOverlay() *overlay {
-	return &overlay{m: make(map[string][]byte)}
+	return &overlay{
+		m: make(map[string][]byte),
+		v: make(map[string]int),
+	}
 }
 
 // FS returns a vfs for the overlay.
@@ -107,7 +113,7 @@ func (h *overlay) FS() ctxvfs.FileSystem {
 }
 
 func (h *overlay) didOpen(params *lsp.DidOpenTextDocumentParams) {
-	h.set(params.TextDocument.URI, []byte(params.TextDocument.Text))
+	h.set(params.TextDocument.URI, params.TextDocument.Version, []byte(params.TextDocument.Text))
 }
 
 func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
@@ -146,7 +152,7 @@ func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
 		b.Write(contents[end+1:])
 		contents = b.Bytes()
 	}
-	h.set(params.TextDocument.URI, contents)
+	h.set(params.TextDocument.URI, params.TextDocument.Version, contents)
 	return nil
 }
 
@@ -169,10 +175,18 @@ func (h *overlay) get(uri string) (contents []byte, found bool) {
 	return
 }
 
-func (h *overlay) set(uri string, contents []byte) {
+func (h *overlay) set(uri string, version int, contents []byte) {
 	path := uriToOverlayPath(uri)
 	h.mu.Lock()
-	h.m[path] = contents
+	// Until we correctly synchronise TextDocumentSync notification, we
+	// suffer from a race condition on mutations. So we can rely on the
+	// version number to prevent an older request overwriting a later
+	// one. The version is a strictly increasing number and is managed by
+	// the client.
+	if version >= h.v[path] {
+		h.v[path] = version
+		h.m[path] = contents
+	}
 	h.mu.Unlock()
 }
 
@@ -180,6 +194,7 @@ func (h *overlay) del(uri string) {
 	path := uriToOverlayPath(uri)
 	h.mu.Lock()
 	delete(h.m, path)
+	delete(h.v, path)
 	h.mu.Unlock()
 }
 
