@@ -13,8 +13,8 @@ These steps help you start using Zap on your repositories.
 Then, in the directory of `sgtest/xyztest`, or any repository you want to use Zap on:
 
 1. *Optional: if you want a test repository, clone https://github.com/sgtest/xyztest to your local machine.*
-1. Get your auth token from https://sourcegraph.com/-/show-auth and use it in the next step
-1. Launch the Zap server by running `ZAP_AUTH_COOKIE=... zap server -v` in your terminal
+1. Run `zap auth` to authenticate with Sourcegraph.
+1. Launch the Zap server by running `zap server -v` in your terminal
 1. Tell Zap to start watching it: `zap init`
 1. Configure the upstream repository (replace the last two parameters, the URL and repo name, with the appropriate values):
    ```

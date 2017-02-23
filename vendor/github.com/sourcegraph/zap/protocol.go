@@ -186,6 +186,17 @@ type RepoWatchParams struct {
 	Refspecs []string `json:"refspecs"`
 }
 
+func (p RepoWatchParams) validate() error {
+	seen := map[string]struct{}{}
+	for _, refspec := range p.Refspecs {
+		if _, seen := seen[refspec]; seen {
+			return fmt.Errorf("duplicate refspec %q", refspec)
+		}
+		seen[refspec] = struct{}{}
+	}
+	return nil
+}
+
 // RefIdentifier identifies a Zap ref. (A Zap branch named "B" is
 // equivalent to a Zap ref named "refs/heads/B".)
 type RefIdentifier struct {
@@ -346,8 +357,14 @@ type RefUpdateDownstreamParams struct {
 }
 
 func (p RefUpdateDownstreamParams) String() string {
+	return p.string(false)
+}
+
+func (p RefUpdateDownstreamParams) string(includeRefIdentifier bool) string {
 	var buf bytes.Buffer
-	// fmt.Fprintf(&buf, "%s: ", p.RefIdentifier)
+	if includeRefIdentifier {
+		fmt.Fprintf(&buf, "%s: ", p.RefIdentifier)
+	}
 	if p.Ack {
 		fmt.Fprint(&buf, "ack:")
 	}
@@ -399,7 +416,14 @@ type RefUpdateSymbolicParams struct {
 }
 
 func (p RefUpdateSymbolicParams) String() string {
+	return p.string(false)
+}
+
+func (p RefUpdateSymbolicParams) string(includeRefIdentifier bool) string {
 	var buf bytes.Buffer
+	if includeRefIdentifier {
+		fmt.Fprintf(&buf, "%s: ", p.RefIdentifier)
+	}
 	if p.Ack {
 		fmt.Fprint(&buf, "ack:")
 	}

@@ -35,7 +35,7 @@ func DefaultRepoName(remoteURL string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return u.Host + u.Path, nil
+		return u.Host + strings.TrimSuffix(u.Path, ".git"), nil
 
 	case strings.HasPrefix(remoteURL, "git@") || strings.HasPrefix(remoteURL, "git://") || strings.HasPrefix(remoteURL, "ssh://"):
 		if !strings.HasPrefix(remoteURL, "git://") && !strings.HasPrefix(remoteURL, "ssh://") {
@@ -49,7 +49,7 @@ func DefaultRepoName(remoteURL string) (string, error) {
 		if len(s) != 2 {
 			return "", fmt.Errorf("cannot derive repository name from git remote %q", remoteURL)
 		}
-		return s[0] + "/" + s[1] + u.Path, nil
+		return s[0] + "/" + s[1] + strings.TrimSuffix(u.Path, ".git"), nil
 
 	default:
 		// Default to the remote clone URL itself, as e.g. `zap remote` does when the

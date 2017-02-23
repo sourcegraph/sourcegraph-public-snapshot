@@ -354,7 +354,9 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			repo.mu.Lock()
 			ws := repo.workspace
 			repo.mu.Unlock()
-
+			if ws == nil {
+				return nil, fmt.Errorf("HINT: requested RefInfo for remote tracking ref %q but repo has no workspace associated with it (technically a bare repo can have remote tracking branches, but that's extremely unlikely to happen intentionally right now)", params.Ref)
+			}
 			repoName, err := ws.DefaultRepoName(remote)
 			if err != nil {
 				return nil, err

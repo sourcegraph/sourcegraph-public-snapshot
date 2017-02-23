@@ -96,7 +96,7 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 			c.mu.Unlock()
 			return nil, nil
 		}
-		log.Println("warning: client received ref/update from server, but no callback is set")
+		log.Printf("warning: client received ref/update from server, but no callback is set: %v", params.string(true))
 		return nil, nil
 
 	case "ref/updateSymbolic":
@@ -117,7 +117,7 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 			}()
 			return nil, nil
 		}
-		log.Println("warning: client received ref/updateSymbolic from server, but no callback is set")
+		log.Printf("warning: client received ref/updateSymbolic from server, but no callback is set: %v", params.string(true))
 		return nil, nil
 
 	case "window/showStatus":

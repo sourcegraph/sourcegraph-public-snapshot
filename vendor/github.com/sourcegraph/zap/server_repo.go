@@ -82,6 +82,10 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 		return &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: "repo is required"}
 	}
 
+	if err := params.validate(); err != nil {
+		return err
+	}
+
 	{
 		c.mu.Lock()
 		if c.watchingRepos == nil {
