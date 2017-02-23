@@ -17,12 +17,18 @@ detect_dev_langservers() {
 	fi
 
 	# JavaScript/TypeScript
-	JSTS_LS_DIR="${LS_ROOT}/javascript-typescript-langserver"
-	if [[ -d "$JSTS_LS_DIR" ]]; then
-		export LANGSERVER_TYPESCRIPT=${LANGSERVER_TYPESCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
-		export LANGSERVER_JAVASCRIPT=${LANGSERVER_JAVASCRIPT-"$JSTS_LS_DIR"/bin/javascript-typescript-langserver}
+	JSTS_LS_DIR=$(dirname "${BASH_SOURCE[0]}")/../xlang/javascript-typescript/buildserver
+	if [[ -d "$JSTS_LS_DIR/lib" ]]; then
+		export LANGSERVER_TYPESCRIPT=${LANGSERVER_TYPESCRIPT-"$JSTS_LS_DIR"/lib/language-server-stdio.js}
+		export LANGSERVER_TYPESCRIPT_ARGS_JSON='["--strict"]'
+		export LANGSERVER_TYPESCRIPT_BG=${LANGSERVER_TYPESCRIPT}
+		export LANGSERVER_TYPESCRIPT_BG_ARGS_JSON='["--strict"]'
+		export LANGSERVER_JAVASCRIPT=${LANGSERVER_JAVASCRIPT-"$JSTS_LS_DIR"/lib/language-server-stdio.js}
+		export LANGSERVER_JAVASCRIPT_ARGS_JSON='["--strict"]'
+		export LANGSERVER_JAVASCRIPT_BG=${LANGSERVER_JAVASCRIPT}
+		export LANGSERVER_JAVASCRIPT_BG_ARGS_JSON='["--strict"]'
 	else
-		echo '# To add JavaScript/TypeScript language support, run `dev/install-langserver.sh javascript-typescript-langserver` or symlink '"$JSTS_LS_DIR"' to a local clone of javascript-typescript-langserver.'
+		echo '# To add JavaScript/TypeScript language support, run `dev/install-langserver.sh javascript-typescript`'
 	fi
 
 	# Python
@@ -52,28 +58,33 @@ detect_dev_langservers() {
 	fi
 }
 
-install_langserver() {
+install_langserver() (
 	set -x
-	LS_NAME=$1
-	LS_DIR="${LS_ROOT}/${LS_NAME}"
-	if [[ ! -d "$LS_DIR" ]]; then
-		mkdir -p "$LS_DIR"/..
-		git clone --quiet https://github.com/sourcegraph/"$LS_NAME".git "$LS_DIR"
-	else
-		(cd "$LS_DIR" && git pull)
-	fi
+	local LS_NAME=$1
+	local LS_DIR="${LS_ROOT}/${LS_NAME}"
+	clone_repo() {
+		if [[ ! -d "$LS_DIR" ]]; then
+			mkdir -p "$LS_DIR"/..
+			git clone --quiet https://github.com/sourcegraph/"$LS_NAME".git "$LS_DIR"
+		else
+			(cd "$LS_DIR" && git pull)
+		fi
+	}
 
 	case "$LS_NAME" in
 		css-langserver)
+			clone_repo
 			(cd "$LS_DIR/langserver" && yarn && node_modules/.bin/tsc)
 			;;
-		javascript-typescript-langserver)
-			(cd "$LS_DIR" && yarn && node_modules/.bin/tsc)
+		javascript-typescript)
+			(cd $(dirname "${BASH_SOURCE[0]}")/../xlang/javascript-typescript/buildserver && yarn && yarn run build)
 			;;
 		java-langserver)
+			clone_repo
 			(cd "$LS_DIR" && mvn clean compile assembly:single)
 			;;
 		python-langserver)
+			clone_repo
 			(cd "$LS_DIR" && pip3 install -r requirements.txt)
 			;;
 		*)
@@ -81,4 +92,4 @@ install_langserver() {
 			exit 1
 			;;
 	esac
-}
+)
