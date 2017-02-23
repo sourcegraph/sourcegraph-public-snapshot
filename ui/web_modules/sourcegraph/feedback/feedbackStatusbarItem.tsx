@@ -5,6 +5,7 @@ import { IContextViewService } from "vs/platform/contextview/browser/contextView
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { IStatusbarItem } from "vs/workbench/browser/parts/statusbar/statusbar";
 
+import { context } from "sourcegraph/app/context";
 import { FeedbackDropdown, IFeedback, IFeedbackService } from "sourcegraph/feedback/feedback";
 import { checkStatus } from "sourcegraph/util/xhr";
 
@@ -25,7 +26,7 @@ class SlackFeedbackService implements IFeedbackService {
 		fetch(SlackFeedbackService.WEBHOOK_URL, {
 			method: "POST",
 			body: JSON.stringify({
-				text: `${sentimentEmoji} ${feedback.feedback} — at <${window.location.href}|${document.title}>`,
+				text: `${sentimentEmoji} ${feedback.feedback} — by *${context.user ? context.user.Login : "Anonymous user"}* at <${window.location.href}|${document.title}>`,
 				unfurl_links: false,
 			}),
 		})
