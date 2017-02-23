@@ -242,6 +242,7 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 			},
 		}, nil
 	},
+	CanAutoCreate: func() bool { return true },
 })
 
 type gitserverExecutor struct {
