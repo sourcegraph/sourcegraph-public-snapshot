@@ -430,7 +430,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 
 // callServer sends an LSP request to the specified server
 // (establishing the connection first if necessary).
-func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid serverID, method string, params, result interface{}) (err error) {
+func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid serverID, method string, notif, requestOriginatedFromProxy bool, params, result interface{}) (err error) {
 	var c *serverProxyConn
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
@@ -454,7 +454,18 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 	c.updateLastTime()
 	c.incMethodStat(method)
 
-	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx), jsonrpc2.PickID(c.nextID(crid)))
+	callOpts := []jsonrpc2.CallOption{addTraceMeta(ctx)}
+	if notif {
+		return c.conn.Notify(ctx, method, params, callOpts...)
+	}
+	if !requestOriginatedFromProxy {
+		// See (*clientProxyConn).callServer for the meaning of
+		// requestOriginatedFromProxy. We only want to tie back this
+		// request to the client if it actually originated from a
+		// client.
+		callOpts = append(callOpts, jsonrpc2.PickID(c.nextID(crid)))
+	}
+	return c.conn.Call(ctx, method, params, result, callOpts...)
 }
 
 // nextID returns a request ID for use in a c.conn.Call. It includes the
