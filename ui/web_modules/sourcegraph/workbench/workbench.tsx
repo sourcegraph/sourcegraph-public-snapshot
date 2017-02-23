@@ -14,7 +14,7 @@ import { PageTitle } from "sourcegraph/components/PageTitle";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { CloningRefresher, RepoMain } from "sourcegraph/repo/RepoMain";
-import { Paywall } from "sourcegraph/user/Paywall";
+import { Paywall, TrialEndingWarning } from "sourcegraph/user/Paywall";
 import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
@@ -87,6 +87,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			<RepoMain {...this.props} repository={repository} commit={repository.commit}>
 				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
+				<TrialEndingWarning layout={() => this.forceUpdate()} repo={repository} />
 				<WorkbenchShell
 					repo={repository.uri}
 					commitID={commitID}
@@ -127,6 +128,7 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 						uri
 						description
 						defaultBranch
+						expirationDate
 						commit(rev: $rev) {
 							commit {
 								sha1
@@ -145,6 +147,7 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 					uri
 					description
 					defaultBranch
+					expirationDate
 					commit(rev: $rev) {
 						commit {
 							sha1

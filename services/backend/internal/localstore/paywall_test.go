@@ -5,6 +5,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"time"
 )
 
 func TestPaywallLogic(t *testing.T) {
@@ -27,14 +28,42 @@ func TestPaywallLogic(t *testing.T) {
 	}
 
 	// Test on a blocked org:
-	err = p.BlockOrg(ctx, "someOrg")
+	_, err = appDBH(ctx).Db.Query("INSERT INTO "+orgTableName+" (org_name, plan) VALUES ($1, $2);", "someOrg", Blocked)
+	if err != nil {
+		t.Fatalf("Unexected error: %s", err)
+	}
+
+	orgRepo := sourcegraph.Repo{Private: true, Owner: "someOrg"}
+	err = p.CheckPaywallForRepo(ctx, &orgRepo)
+	if err != (ErrBlocked{}) {
+		t.Errorf("Org private repos should be blocked, but got %s.", err)
+	}
+}
+
+func TestExpirationLogic(t *testing.T) {
+	username := "badActor12"
+	ctx := auth.WithActor(testContext(), &auth.Actor{Login: username})
+	p := payments{}
+
+	repo := sourcegraph.Repo{Private: true, Owner: username}
+
+	date, err := p.TrialExpirationDate(ctx, &repo)
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err)
+	}
+	if date != nil {
+		t.Errorf("Should have gotten nil time for repo not on trial, got %v", date)
+	}
+
+	// Expired repos are blocked:
+	_, err = appDBH(ctx).Db.Query("INSERT INTO "+orgTableName+" (org_name, trial_expiration, plan) VALUES ($1, $2, $3);", "someOrg", time.Now(), None)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	orgRepo := sourcegraph.Repo{Private: true, Owner: "someOrg"}
 	err = p.CheckPaywallForRepo(ctx, &orgRepo)
-	if err != (ErrBlocked{}) {
+	if err != (ErrTrialExpired{}) {
 		t.Errorf("Org private repos should be blocked, but got %s.", err)
 	}
 }

@@ -26,13 +26,13 @@ func (payments) CreateTable() string {
 	return `CREATE TABLE ` + personalTableName + ` (
 			user_id text,
 			plan text,
-			trial_expiration date,
+			trial_expiration timestamp,
 			PRIMARY KEY (user_id)
 		);
 		CREATE TABLE ` + orgTableName + ` (
 			org_name text,
 			plan text,
-			trial_expiration date,
+			trial_expiration timestamp,
 			PRIMARY KEY (org_name)
 		);`
 }
@@ -63,7 +63,7 @@ func (p *payments) getPersonalPlan(ctx context.Context) (*Payment, error) {
 	actor := auth.ActorFromContext(ctx)
 	err := appDBH(ctx).Db.QueryRow("SELECT * FROM "+personalTableName+" WHERE user_id = $1", actor.UID).Scan(payment)
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return &Payment{Plan: None}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (p *payments) getOrgPlan(ctx context.Context, owner string) (*Payment, erro
 	var payment Payment
 	err := appDBH(ctx).Db.QueryRow("SELECT plan, trial_expiration FROM "+orgTableName+" WHERE org_name = $1", owner).Scan(&payment.Plan, &payment.TrialExpiration)
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return &Payment{Plan: None}, nil
 	}
 	if err != nil {
 		return nil, err
@@ -104,6 +104,17 @@ func (p *payments) CheckPaywallForRepo(ctx context.Context, repo *sourcegraph.Re
 	if payment.Plan == Blocked {
 		return ErrBlocked{}
 	}
+
+	expiration, err := p.TrialExpirationDate(ctx, repo)
+	if err != nil {
+		return err
+	}
+	if expiration == nil {
+		return nil
+	}
+	if expiration.Before(time.Now()) {
+		return ErrTrialExpired{}
+	}
 	return nil
 }
 
@@ -113,8 +124,19 @@ func (ErrBlocked) Error() string {
 	return "account blocked: this account has not paid for private repos"
 }
 
-// Block an org from accessing repos
-func (p *payments) BlockOrg(ctx context.Context, organization string) error {
-	_, err := appDBH(ctx).Db.Query("INSERT INTO "+orgTableName+" (org_name, plan) VALUES ($1, $2);", organization, Blocked)
-	return err
+type ErrTrialExpired struct{}
+
+func (ErrTrialExpired) Error() string {
+	return "trial expired: this account has not paid for private repos"
+}
+
+func (p *payments) TrialExpirationDate(ctx context.Context, repo *sourcegraph.Repo) (*time.Time, error) {
+	if !repo.Private {
+		return nil, nil
+	}
+	plan, err := p.paymentPlanForRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	return plan.TrialExpiration, nil
 }

@@ -58,6 +58,7 @@ type Repository implements Node {
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
+	expirationDate: Int
 }
 
 type Symbol {

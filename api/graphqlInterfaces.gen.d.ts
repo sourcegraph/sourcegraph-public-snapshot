@@ -176,6 +176,7 @@ declare namespace GQL {
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;
+		expirationDate: number | null;
 	}
 
 	/*

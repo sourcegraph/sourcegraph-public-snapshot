@@ -1331,6 +1331,18 @@
 								}
 							}
 						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "expirationDate",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
 					}
 				],
 				"inputFields": null,
