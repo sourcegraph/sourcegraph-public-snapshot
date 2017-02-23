@@ -464,7 +464,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// modify file contents. The modified file contents will
 		// only be visible within this session and will not leak
 		// to other sessions.
-		if c.context.session != "" {
+		if c.allowTextDocumentSync() {
 			if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
 				return nil, err
 			}
@@ -520,7 +520,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// modify file contents. The modified file contents will
 		// only be visible within this session and will not leak
 		// to other sessions.
-		if c.context.session != "" {
+		if c.allowTextDocumentSync() {
 			if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
 				return nil, err
 			}
@@ -557,6 +557,13 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("client proxy handler: method not found: %q", req.Method)}
 	}
+}
+
+// allowTextDocumentSync returns true if the client is allowed to send LSP
+// requests which can mutate the workspace. We allow mutable workspaces when
+// it isn't shared amongst users (such as when a user is editing it via zap).
+func (c *clientProxyConn) allowTextDocumentSync() bool {
+	return c.context.session != ""
 }
 
 // handleFromServer is called by associated server proxy connections
