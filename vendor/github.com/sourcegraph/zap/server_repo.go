@@ -48,6 +48,17 @@ func (s *Server) getRepo(ctx context.Context, log *log.Context, repoName string)
 		return repo, nil
 	}
 
+	// Only perform implicit repository creation below if the backend desires
+	// it. For example, a local server will not desire this because all
+	// repositories should be created via workspace/add (e.g. zap init) not
+	// implicitly.
+	if !s.backend.CanAutoCreate() {
+		return nil, &jsonrpc2.Error{
+			Code:    int64(ErrorCodeRepoNotExists),
+			Message: fmt.Sprintf("repo not found: %s (add it with 'zap init')", repoName),
+		}
+	}
+
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
 	repo, exists := s.repos[repoName]

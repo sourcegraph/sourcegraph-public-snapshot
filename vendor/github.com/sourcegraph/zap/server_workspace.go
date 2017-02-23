@@ -554,6 +554,7 @@ func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddP
 		// Add repo to server.
 		s.parent.reposMu.Lock()
 		if _, exists := s.parent.repos[params.Dir]; exists {
+			s.parent.reposMu.Unlock()
 			cancel()
 			return &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRepoNotExists),
