@@ -14,6 +14,7 @@ import { PageTitle } from "sourcegraph/components/PageTitle";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { CloningRefresher, RepoMain } from "sourcegraph/repo/RepoMain";
+import { Paywall } from "sourcegraph/user/Paywall";
 import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
@@ -202,5 +203,6 @@ export function Workbench(props: { params: any; location: RouterLocation, routes
 				location: props.location,
 			},
 		}}
+		renderFailure={Paywall}
 	/>;
 };

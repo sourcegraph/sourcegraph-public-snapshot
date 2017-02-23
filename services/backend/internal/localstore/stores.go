@@ -6,4 +6,5 @@ var (
 	RepoVCS     = &repoVCS{}
 	Repos       = &repos{}
 	UserInvites = &userInvites{}
+	Payments    = &payments{}
 )

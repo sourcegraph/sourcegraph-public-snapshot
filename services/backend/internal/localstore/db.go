@@ -30,10 +30,12 @@ var (
 			`CREATE EXTENSION IF NOT EXISTS hstore;`,
 			new(globalDeps).CreateTable(),
 			new(pkgs).CreateTable(),
+			new(payments).CreateTable(),
 		},
 		DropSQL: []string{
 			new(globalDeps).DropTable(),
 			new(pkgs).DropTable(),
+			new(payments).DropTable(),
 		},
 		Map: &gorp.DbMap{Dialect: gorp.PostgresDialect{}},
 	}
