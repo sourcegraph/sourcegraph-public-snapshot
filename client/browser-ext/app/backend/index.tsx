@@ -9,13 +9,13 @@ export interface ResolvedRevResp {
 	commitID?: string;
 }
 
-const resolvedRevCache = new Map<string, Promise<ResolvedRevResp>>();
+const promiseCache = new Map<string, Promise<ResolvedRevResp>>();
 
 export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp> {
 	const key = cacheKey(repo, rev);
-	const cacheHit = resolvedRevCache.get(key);
-	if (cacheHit) {
-		return cacheHit;
+	const promiseHit = promiseCache.get(key);
+	if (promiseHit) {
+		return promiseHit;
 	}
 	const p = fetch(`${getSourcegraphUrl()}/.api/graphql`, {
 		method: "POST",
@@ -38,19 +38,28 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 			variables: { repo, rev },
 		}),
 	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
+		// Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
 		if (!json.data) {
-			throw new Error("invalid response received from graphql endpoint");
+			const error = new Error("invalid response received from graphql endpoint");
+			promiseCache.set(key, Promise.reject(error));
+			throw error;
 		}
 		if (!json.data.root.repository) {
-			return { notFound: true } as ResolvedRevResp;
+			const notFound = { notFound: true };
+			promiseCache.set(key, Promise.resolve(notFound));
+			return notFound;
 		}
 		if (json.data.root.repository.commit.cloneInProgress) {
-			return { cloneInProgress: true } as ResolvedRevResp;
+			// don't store this promise, we want to make a new query, holmes.
+			return { cloneInProgress: true };
 		} else if (!json.data.root.repository.commit.commit) {
-			throw new Error("not able to resolve sha1");
+			const error = new Error("not able to resolve sha1");
+			promiseCache.set(key, Promise.reject(error));
+			throw error;
 		}
-		return { commitID: json.data.root.repository.commit.commit.sha1 } as ResolvedRevResp;
+		const found = { commitID: json.data.root.repository.commit.commit.sha1 };
+		promiseCache.set(key, Promise.resolve(found));
+		return found;
 	});
-	resolvedRevCache.set(key, p);
 	return p;
 }

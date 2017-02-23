@@ -120,6 +120,8 @@ export class BlobAnnotator extends React.Component<Props, State> {
 				repoStat = { [repo]: resp };
 			}
 			this.setState({ resolvedRevs: Object.assign({}, this.state.resolvedRevs, { [key]: resp }, repoStat) });
+		}).catch(error => {
+			// NO-OP
 		});
 	}
 

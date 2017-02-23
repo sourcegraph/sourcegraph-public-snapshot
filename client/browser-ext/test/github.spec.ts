@@ -120,7 +120,7 @@ describe("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				{headFilePath: "mux.go", baseFilePath: null}, {headFilePath: "mux_test.go", baseFilePath: null}, {headFilePath: "old_test.go", baseFilePath: null}, {headFilePath: "regexp.go", baseFilePath: null}, {headFilePath: "route.go", baseFilePath: null},
+				{ headFilePath: "mux.go", baseFilePath: null }, { headFilePath: "mux_test.go", baseFilePath: null }, { headFilePath: "old_test.go", baseFilePath: null }, { headFilePath: "regexp.go", baseFilePath: null }, { headFilePath: "route.go", baseFilePath: null },
 			]);
 		});
 
@@ -191,7 +191,7 @@ describe("GitHub DOM", () => {
 		const url = "https://github.com/sourcegraphtest/test-case/commit/10cf2175c6e1435a03d64d3163215eb4361e5b7a";
 		before(setupDOM(url));
 		it("should see the base and head file names", () => {
-			expect(github.getDeltaFileName(github.getFileContainers()[0])).to.eql({headFilePath: "glide_2.yaml", baseFilePath: "glide.yaml"});
+			expect(github.getDeltaFileName(github.getFileContainers()[0])).to.eql({ headFilePath: "glide_2.yaml", baseFilePath: "glide.yaml" });
 		});
 	});
 
@@ -214,7 +214,7 @@ describe("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				{headFilePath: "mux.go", baseFilePath: null}, {headFilePath: "mux_test.go", baseFilePath: null}, {headFilePath: "old_test.go", baseFilePath: null}, {headFilePath: "regexp.go", baseFilePath: null}, {headFilePath: "route.go", baseFilePath: null},
+				{ headFilePath: "mux.go", baseFilePath: null }, { headFilePath: "mux_test.go", baseFilePath: null }, { headFilePath: "old_test.go", baseFilePath: null }, { headFilePath: "regexp.go", baseFilePath: null }, { headFilePath: "route.go", baseFilePath: null },
 			]);
 		});
 
@@ -326,7 +326,7 @@ describe("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				{headFilePath: "mux.go", baseFilePath: null}, {headFilePath: "mux_test.go", baseFilePath: null}, {headFilePath: "old_test.go", baseFilePath: null}, {headFilePath: "regexp.go", baseFilePath: null}, {headFilePath: "route.go", baseFilePath: null},
+				{ headFilePath: "mux.go", baseFilePath: null }, { headFilePath: "mux_test.go", baseFilePath: null }, { headFilePath: "old_test.go", baseFilePath: null }, { headFilePath: "regexp.go", baseFilePath: null }, { headFilePath: "route.go", baseFilePath: null },
 			]);
 		});
 
