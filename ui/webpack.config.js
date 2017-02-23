@@ -150,21 +150,24 @@ module.exports = {
 	module: {
 		rules: [
 			{
+                test: /\.js$/,
+				loader: 'babel-loader',
+                include: path.resolve(__dirname, 'node_modules/@sourcegraph/vscode-languageclient'),
+                query: {
+					cacheDirectory: true,
+                    plugins: [
+						'transform-es2015-for-of',
+						//'transform-runtime', // avoid adding helpers to each affected file
+					],
+                },
+            },
+			{
 				test: /\.tsx?$/,
 				loader: 'awesome-typescript-loader?' + JSON.stringify({
 					compilerOptions: {
 						noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
 					},
 					transpileOnly: true, // type checking is only done as part of linting or testing
-				}),
-			},
-			{
-				test: /node_modules\/@sourcegraph\/vscode-languageclient/,
-				loader: 'awesome-typescript-loader?' + JSON.stringify({
-					compilerOptions: {
-						target: "es5",
-						allowJs: true,
-					}
 				}),
 			},
 			{ test: /\.(svg|png)$/, loader: "url-loader" },
