@@ -97,10 +97,21 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		return nil
 	}
 	rootPath := vcs + "://" + repo.URI + "?" + commitID
-	var pks []lspext.PackageInformation
-	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &pks)
+	var allPks []lspext.PackageInformation
+	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/xpackages")
+	}
+
+	// Filter out vendored packages (don't want them treated as canonical sources)
+	pks := make([]lspext.PackageInformation, 0, len(allPks))
+	for _, pk := range allPks {
+		if baseDir, hasBaseDir := pk.Package["baseDir"]; hasBaseDir {
+			if baseDir, isStr := baseDir.(string); isStr && strings.Index(baseDir, "/vendor") != -1 {
+				continue
+			}
+		}
+		pks = append(pks, pk)
 	}
 
 	err = dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
