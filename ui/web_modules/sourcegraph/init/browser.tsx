@@ -32,7 +32,10 @@ EventLogger.init();
 // Register event logging for dispatched actions
 Dispatcher.Stores.register(DispatchedEventHandler.__onDispatch);
 
-Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", { headers: context.context.xhrHeaders }));
+Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {
+	headers: context.context.xhrHeaders,
+	credentials: "include",
+}));
 
 declare var __webpack_public_path__: any;
 __webpack_public_path__ = document.head.dataset["webpackPublicPath"]; // tslint-disable-line no-undef
