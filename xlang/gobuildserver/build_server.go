@@ -253,9 +253,9 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err
 		}
-		h.FS.Bind(rootPath, fs, "/", ctxvfs.BindBefore)
+		h.FS.Bind(rootPath, fs, "/", ctxvfs.BindAfter)
 		var langInitResp lsp.InitializeResult
-		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Notif, langInitParams, &langInitResp); err != nil {
+		if err := h.callLangServer(ctx, conn, req.Method, req.ID, langInitParams, &langInitResp); err != nil {
 			return nil, err
 		}
 		return langInitResp, nil
@@ -387,6 +387,17 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			req.Params = (*json.RawMessage)(&b)
 		}
 
+		// Immediately handle notifications. We do not have a response
+		// to rewrite, so we can pass it on directly and avoid the
+		// cost of marshalling again. NOTE: FS operations are frequent
+		// and are notifications.
+		if req.Notif {
+			wrappedConn := &jsonrpc2ConnImpl{rewriteURI: h.rewriteURIFromLangServer, conn: conn}
+			// Avoid extracting the tracer again, it is already attached to ctx.
+			req.Meta = nil
+			return h.lang.Handle(ctx, wrappedConn, req)
+		}
+
 		// workspace/symbol queries must have their `dir:` query filter
 		// rewritten for github.com/golang/go due to its specialized directory
 		// structure. e.g. `dir:src/net/http` should work, but the LS will
@@ -414,18 +425,6 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				return nil, err
 			}
 			req.Params = (*json.RawMessage)(&b)
-		}
-
-		// Immediately handle file system requests by adding them to
-		// the VFS shared between the build and lang server.
-		if langserver.IsFileSystemRequest(req.Method) {
-			// TODO(keegancsmith) We are bypassing the cache
-			// resetting funcionality here. Fix!!!
-			// https://github.com/sourcegraph/sourcegraph/issues/3906
-			if _, _, err := h.HandleFileSystemRequest(ctx, req); err != nil {
-				return nil, err
-			}
-			return nil, nil
 		}
 
 		if req.Method == "workspace/xreferences" {
@@ -461,7 +460,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		var result interface{}
-		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Notif, req.Params, &result); err != nil {
+		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Params, &result); err != nil {
 			return nil, err
 		}
 
@@ -558,17 +557,17 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 	}
 }
 
-// callLangServer sends the (usually modified) request to the wrapped
-// Go language server.
+// callLangServer sends the (usually modified) request to the wrapped Go
+// language server. Do not send notifications via this interface! Rather just
+// directly pass on the jsonrpc2.Request via h.lang.Handle.
 //
 // Although bypasses the JSON-RPC wire protocol ( just sending it
 // in-memory for simplicity/speed), it behaves in the same way as
 // though the peer language server were remote.
-func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, method string, id jsonrpc2.ID, notif bool, params, result interface{}) error {
+func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, method string, id jsonrpc2.ID, params, result interface{}) error {
 	req := jsonrpc2.Request{
 		ID:     id,
 		Method: method,
-		Notif:  notif,
 	}
 	if err := req.SetParams(params); err != nil {
 		return err
@@ -581,18 +580,16 @@ func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, 
 		return err
 	}
 
-	if !notif {
-		// Don't pass the interface{} value, to avoid the build and
-		// language servers from breaking the abstraction that they are in
-		// separate memory spaces.
-		b, err := json.Marshal(result0)
-		if err != nil {
+	// Don't pass the interface{} value, to avoid the build and
+	// language servers from breaking the abstraction that they are in
+	// separate memory spaces.
+	b, err := json.Marshal(result0)
+	if err != nil {
+		return err
+	}
+	if result != nil {
+		if err := json.Unmarshal(b, result); err != nil {
 			return err
-		}
-		if result != nil {
-			if err := json.Unmarshal(b, result); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
