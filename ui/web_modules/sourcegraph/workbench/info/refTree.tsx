@@ -105,7 +105,7 @@ export class RefTree extends React.Component<Props, State> {
 		Promise.all(model.groups.map(fileReferences => {
 			return fileReferences.resolve(modelService);
 		})).then(() => {
-			let expandedElements: Array<FileReferences> = [];
+			let elementsToExpand: Array<FileReferences> = [];
 
 			if (model.groups.length && !firstToggleAdded) {
 				userToggledState.add(model.workspace.toString());
@@ -114,30 +114,41 @@ export class RefTree extends React.Component<Props, State> {
 			for (let fileReferences of model.groups) {
 				const workspace = fileReferences.uri.with({ fragment: "" }).toString();
 				if (userToggledState.has(workspace)) {
-					expandedElements.push(fileReferences);
+					elementsToExpand.push(fileReferences);
 				}
 			}
 
-			// If the user has selected a reference, maintain their scroll position.
-			// Otherwise, choose the reference at the current scroll position and keep that one visible.
-			let revealReference: OneReference | undefined = undefined;
+			// Maintain the user's current scroll position.
+			let revealReference: FileReferences | OneReference | undefined = undefined;
 			let relativeTop: number | undefined = undefined;
-			if (this.focusedReference) {
-				relativeTop = this.tree.getRelativeTop(this.focusedReference);
-			} else if (this.visibleModel) {
-				const scrollPosition = this.tree.getScrollPosition();
-				const visibleScrollIndex = Math.floor(this.visibleModel.references.length * scrollPosition);
-				revealReference = this.visibleModel.references[visibleScrollIndex];
+			const scrollPosition = this.tree.getScrollPosition();
+			if (this.visibleModel && this.visibleModel.references.length > 0 && scrollPosition > 0) {
+				// Tree gives us access to a scroll position, which is a % of scroll (0=top, 1=bottom)
+				// We want to map this to an actual reverence that we can reveal after the re-render to maintain scroll position.
+				// As an approximation we collect all expanded elements and pretend that they have the same height
+				// to find the approximate index of the item that has been scrolled to.
+				// Our approximation only needs to be good enought to make sure the item at this index is actually visible.
+				// After render, we reveal this item while maintaining its relative top so that it doesn't appear to move.
+				// We may have to be more precise about this when external references stream in.
+				const expandedElements: FileReferences[] = this.tree.getExpandedElements();
+				const expandedReferences = expandedElements.reduce<(FileReferences | OneReference)[]>((collected, fileRef) => {
+					collected.push(fileRef);
+					collected.push(...fileRef.children);
+					return collected;
+				}, []);
+
+				const visibleScrollIndex = Math.floor((expandedReferences.length - 1) * scrollPosition);
+				revealReference = expandedReferences[visibleScrollIndex];
 				relativeTop = this.tree.getRelativeTop(revealReference);
 			}
 
 			this.tree.setInput(model).then(() => {
-				this.tree.expandAll(expandedElements).then(() => {
+				this.tree.expandAll(elementsToExpand).then(() => {
 					if (this.focusedReference) {
 						this.tree.setSelection([this.focusedReference]);
 						this.tree.setFocus(this.focusedReference);
-						this.tree.reveal(this.focusedReference, relativeTop);
-					} else if (revealReference) {
+					}
+					if (revealReference) {
 						this.tree.reveal(revealReference, relativeTop);
 					}
 					this.tree.layout();
