@@ -79,6 +79,7 @@
     "rxjs": "^5.0.3",
     "string_score": "0.1.22",
     "url": "0.11.0",
+    "uuid": "^3.0.1",
     "vscode-languageserver-types": "3.0.3",
     "vscode-zap": "^0.0.53"
   },
