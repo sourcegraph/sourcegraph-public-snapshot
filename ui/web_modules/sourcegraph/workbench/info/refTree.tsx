@@ -106,7 +106,6 @@ export class RefTree extends React.Component<Props, State> {
 			return fileReferences.resolve(modelService);
 		})).then(() => {
 			let expandedElements: Array<FileReferences> = [];
-			const scrollPosition = this.tree.getScrollPosition();
 
 			if (model.groups.length && !firstToggleAdded) {
 				userToggledState.add(model.workspace.toString());
@@ -119,13 +118,28 @@ export class RefTree extends React.Component<Props, State> {
 				}
 			}
 
+			// If the user has selected a reference, maintain their scroll position.
+			// Otherwise, choose the reference at the current scroll position and keep that one visible.
+			let revealReference: OneReference | undefined = undefined;
+			let relativeTop: number | undefined = undefined;
+			if (this.focusedReference) {
+				relativeTop = this.tree.getRelativeTop(this.focusedReference);
+			} else if (this.visibleModel) {
+				const scrollPosition = this.tree.getScrollPosition();
+				const visibleScrollIndex = Math.floor(this.visibleModel.references.length * scrollPosition);
+				revealReference = this.visibleModel.references[visibleScrollIndex];
+				relativeTop = this.tree.getRelativeTop(revealReference);
+			}
+
 			this.tree.setInput(model).then(() => {
 				this.tree.expandAll(expandedElements).then(() => {
 					if (this.focusedReference) {
 						this.tree.setSelection([this.focusedReference]);
 						this.tree.setFocus(this.focusedReference);
+						this.tree.reveal(this.focusedReference, relativeTop);
+					} else if (revealReference) {
+						this.tree.reveal(revealReference, relativeTop);
 					}
-					this.tree.setScrollPosition(scrollPosition);
 					this.tree.layout();
 					this.updatingTree = false;
 					this.visibleModel = model;
