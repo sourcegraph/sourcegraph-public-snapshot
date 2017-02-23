@@ -65,7 +65,7 @@ install_langserver() (
 	clone_repo() {
 		if [[ ! -d "$LS_DIR" ]]; then
 			mkdir -p "$LS_DIR"/..
-			git clone --quiet https://github.com/sourcegraph/"$LS_NAME".git "$LS_DIR"
+			git clone --quiet git@github.com:sourcegraph/"$LS_NAME".git "$LS_DIR"
 		else
 			(cd "$LS_DIR" && git pull)
 		fi
