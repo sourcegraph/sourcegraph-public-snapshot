@@ -78,27 +78,23 @@ export class OneReference implements IDisposable {
 		this._commitInfo = value;
 	};
 
-	public async resolve(textModelResolverService: ITextModelResolverService): Promise<OneReference> {
+	public resolve(textModelResolverService: ITextModelResolverService): TPromise<OneReference> {
 		if (this._resolved) {
 			return TPromise.as(this);
 		}
 
-		let modelReference = await textModelResolverService.createModelReference(this.uri);
-		if (!modelReference) {
-			// something went wrong... rutro.
+		return textModelResolverService.createModelReference(this.uri).then(modelReference => {
+			const model = modelReference.object;
+
+			if (!model) {
+				modelReference.dispose();
+				throw new Error(`missing ITextEditorModel for ${this.uri}`);
+			}
+
+			this._preview = new FilePreview(modelReference);
 			this._resolved = true;
 			return this;
-		}
-
-		const model = modelReference.object;
-		if (!model) {
-			modelReference.dispose();
-			throw new Error();
-		}
-
-		this._preview = new FilePreview(modelReference);
-		this._resolved = true;
-		return this;
+		});
 	}
 
 	dispose(): void {
@@ -191,34 +187,34 @@ export class FileReferences implements IDisposable {
 		return this._loadFailure;
 	}
 
-	public async resolve(textModelResolverService: ITextModelResolverService): TPromise<FileReferences> {
+	public resolve(textModelResolverService: ITextModelResolverService): TPromise<FileReferences> {
 		if (this._resolved) {
 			return TPromise.as(this);
 		}
 
-		let modelReference = await textModelResolverService.createModelReference(this._uri);
-		if (!modelReference) {
+		return textModelResolverService.createModelReference(this._uri).then(modelReference => {
+			const model = modelReference.object;
+
+			if (!model) {
+				modelReference.dispose();
+				throw new Error(`missing ITextEditorModel for ${this._uri}`);
+			}
+
+			this._preview = new FilePreview(modelReference);
+			this._resolved = true;
+
+			return TPromise.join(this._children.map(oneRef => {
+				return oneRef.resolve(textModelResolverService);
+			}));
+		}, err => {
 			// something wrong here
 			this._children = [];
 			this._resolved = true;
-			this._loadFailure = new Error();
+			this._loadFailure = err;
 			return this;
-		}
-
-		const model = modelReference.object;
-		if (!model) {
-			modelReference.dispose();
-			throw new Error();
-		}
-
-		this._preview = new FilePreview(modelReference);
-		this._resolved = true;
-
-		for (const oneRef of this._children) {
-			await oneRef.resolve(textModelResolverService);
-		}
-
-		return this;
+		}).then(() => {
+			return this;
+		});
 	}
 
 	dispose(): void {
@@ -368,9 +364,11 @@ export class ReferencesModel implements IDisposable {
 	}
 
 	private static _compareReferences(a: Location, b: Location): number {
-		if (a.uri.toString() < b.uri.toString()) {
+		const auri = a.uri.toString();
+		const buri = b.uri.toString();
+		if (auri < buri) {
 			return -1;
-		} else if (a.uri.toString() > b.uri.toString()) {
+		} else if (auri > buri) {
 			return 1;
 		} else {
 			return Range.compareRangesUsingStarts(a.range, b.range);

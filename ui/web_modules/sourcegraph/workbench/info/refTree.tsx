@@ -53,6 +53,8 @@ export class RefTree extends React.Component<Props, State> {
 	private toDispose: Disposables = new Disposables();
 	private treeID: string = "reference-tree";
 	private focusedReference: FileReferences | OneReference | undefined = undefined;
+	private updatingTree: boolean = false;
+	private visibleModel: ReferencesModel | undefined = undefined;
 
 	state: State = {
 		previewResource: null,
@@ -84,23 +86,40 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
-		let expandedElements = new Array<FileReferences>();
-		const scrollPosition = this.tree.getScrollPosition();
+		this.refreshTreeIfModelChanged(nextProps.model);
+		return false;
+	}
 
-		if (nextProps.model !== this.props.model) {
-			if (nextProps.model && nextProps.model.groups.length && !firstToggleAdded) {
-				userToggledState.add(nextProps.model.workspace.toString());
+	private refreshTreeIfModelChanged(model: ReferencesModel): void {
+		if (this.updatingTree) {
+			return;
+		}
+		if (model === this.visibleModel) {
+			return;
+		}
+		this.updatingTree = true;
+
+		// Pre-resolve all models before we set the model on the tree.
+		// If we don't do this, the tree will appear blank as files are resolved (can be slow).
+		const modelService = Services.get(ITextModelResolverService);
+		Promise.all(model.groups.map(fileReferences => {
+			return fileReferences.resolve(modelService);
+		})).then(() => {
+			let expandedElements: Array<FileReferences> = [];
+			const scrollPosition = this.tree.getScrollPosition();
+
+			if (model.groups.length && !firstToggleAdded) {
+				userToggledState.add(model.workspace.toString());
 				firstToggleAdded = true;
 			}
-			if (nextProps.model) {
-				for (let r of nextProps.model.groups) {
-					const workspace = r.uri.with({ fragment: "" }).toString();
-					if (userToggledState.has(workspace)) {
-						expandedElements.push(r);
-					}
+			for (let fileReferences of model.groups) {
+				const workspace = fileReferences.uri.with({ fragment: "" }).toString();
+				if (userToggledState.has(workspace)) {
+					expandedElements.push(fileReferences);
 				}
 			}
-			this.tree.setInput(nextProps.model).then(() => {
+
+			this.tree.setInput(model).then(() => {
 				this.tree.expandAll(expandedElements).then(() => {
 					if (this.focusedReference) {
 						this.tree.setSelection([this.focusedReference]);
@@ -108,10 +127,14 @@ export class RefTree extends React.Component<Props, State> {
 					}
 					this.tree.setScrollPosition(scrollPosition);
 					this.tree.layout();
+					this.updatingTree = false;
+					this.visibleModel = model;
+
+					// check to see if a new model was set while we were refreshing.
+					this.refreshTreeIfModelChanged(this.props.model);
 				});
 			});
-		}
-		return false;
+		});
 	}
 
 	private treeItemFocused(reference: FileReferences | OneReference): void {
