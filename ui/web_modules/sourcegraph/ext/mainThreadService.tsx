@@ -5,6 +5,7 @@ import { TPromise } from "vs/base/common/winjs.base";
 import { IMessagePassingProtocol } from "vs/base/parts/ipc/common/ipc";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
 import { IMainProcessExtHostIPC, create } from "vs/platform/extensions/common/ipcRemoteCom";
+import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { AbstractThreadService } from "vs/workbench/services/thread/common/abstractThreadService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 
@@ -22,6 +23,7 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 
 	constructor(
 		@IEnvironmentService environmentService: IEnvironmentService,
+		@IWorkspaceContextService private contextService: IWorkspaceContextService
 	) {
 		super(true);
 
@@ -92,6 +94,11 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 				switch (path) {
 					case "$provideReferences":
 						return routeToWorkspaceHost(args[2] as URI) || routeToLatest();
+
+					case "$provideWorkspaceSymbols":
+						// Workspace symbol request doesn't provide URI; query current workspace.
+						return routeToWorkspaceHost(this.contextService.getWorkspace().resource) || routeToLatest();
+
 					default:
 						if (args.length >= 2 && args[1] instanceof URI) {
 							return routeToWorkspaceHost(args[1] as URI) || routeToLatest();

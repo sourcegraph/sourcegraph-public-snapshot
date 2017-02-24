@@ -12,8 +12,12 @@ import "vs/workbench/browser/parts/editor/stringEditor";
 import "vs/workbench/parts/files/browser/explorerViewlet";
 import "vs/workbench/parts/files/browser/files.contribution";
 import "vs/workbench/parts/output/browser/output.contribution";
+import "vs/workbench/parts/quickopen/browser/quickopen.contribution";
+import "vs/workbench/parts/search/browser/search.contribution";
+import "vs/workbench/parts/search/browser/searchViewlet";
 
 import { start as startTappingOutputChannel } from "sourcegraph/workbench/outputListener";
+import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMode } from "vs/editor/common/modes";
@@ -33,7 +37,9 @@ import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench
 import { setupServices } from "sourcegraph/workbench/services";
 import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 
-// init creates the editor interface.
+/**
+ * init bootraps workbench creation.
+ */
 export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
 	const workspace = resource.with({ fragment: "" });
 	const services = setupServices(domElement, workspace);
@@ -68,5 +74,30 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	instantiationService.invokeFunction(startTappingOutputChannel);
 
 	configurePostStartup(services);
+	workbenchListeners.forEach(cb => cb(true));
+
 	return [workbench, services];
+}
+
+const workbenchListeners = new Set<(shown: boolean) => void>();
+
+/**
+ * onWorkbenchShown registers a listener callback that is invoked whenever
+ * a new workbench is bootstrapped.
+ */
+export function onWorkbenchShown(listener: (shown: boolean) => void): IDisposable {
+	workbenchListeners.add(listener);
+	return {
+		dispose: () => {
+			workbenchListeners.delete(listener);
+		}
+	};
+}
+
+/**
+ * unmount disposes registered listeners, and should be called when React unmounts
+ * the WorkbenchShell component.
+ */
+export function unmount(): void {
+	workbenchListeners.forEach(cb => cb(false));
 }

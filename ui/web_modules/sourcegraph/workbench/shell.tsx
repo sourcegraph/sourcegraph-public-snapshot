@@ -3,14 +3,16 @@ import * as debounce from "lodash/debounce";
 import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 
+import { IDisposable } from "vs/base/common/lifecycle";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
 import { Router } from "sourcegraph/app/router";
+import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { registerEditorCallbacks, syncEditorWithRouterProps } from "sourcegraph/editor/config";
-import { init } from "sourcegraph/workbench/main";
+import { registerEditorCallbacks, registerQuickopenListeners, syncEditorWithRouterProps, toggleQuickopen as quickopen } from "sourcegraph/editor/config";
+import { init, unmount } from "sourcegraph/workbench/main";
 
 // WorkbenchShell loads the workbench and calls init on it.
 @autobind
@@ -23,6 +25,7 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 	workbench: Workbench;
 	services: ServiceCollection;
 	listener: number;
+	disposables: IDisposable[];
 
 	domRef(domElement: HTMLDivElement): void {
 		if (!domElement) {
@@ -35,7 +38,7 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 		const { repo, commitID, path } = this.props;
 		const resource = URIUtils.pathInRepo(repo, commitID, path);
 		[this.workbench, this.services] = init(domElement, resource);
-		registerEditorCallbacks(this.context.router);
+		registerEditorCallbacks();
 
 		this.layout();
 		syncEditorWithRouterProps(this.props);
@@ -46,8 +49,20 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 		document.body.classList.add("monaco-shell", "vs-dark");
 	}
 
+	componentDidMount(): void {
+		// Sourcegraph controls the visibility of the embedded vscode modal overlay.
+		// This can be implemented by vscode, but without knowing all scenarios in which we
+		// want to display an overlay we've left it the Sourcegraph application's responsibility for toggling visibilty.
+		const modalOverlay = document.querySelector(".workbench-modal-overlay") as any;
+		this.disposables = registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden");
+	}
+
 	componentWillUnmount(): void {
 		window.onresize = () => void (0);
+		if (this.disposables) {
+			this.disposables.forEach(disposable => disposable.dispose());
+		}
+		unmount();
 	}
 
 	componentWillReceiveProps(nextProps: AbsoluteLocation): void {
@@ -69,12 +84,25 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 		this.workbench.layout();
 	}
 
+	toggleQuickopen(event: KeyboardEvent & { target: Node }): void {
+		if (event.target.nodeName === "INPUT" || isNonMonacoTextArea(event.target) || event.metaKey || event.ctrlKey) {
+			return;
+		}
+		const SlashKeyCode = 191;
+		if (!event.shiftKey && (event.key === "/" || event.keyCode === SlashKeyCode)) {
+			quickopen();
+			event.preventDefault();
+		}
+	}
+
 	render(): JSX.Element {
 		this.layout();
 		return <div style={{
 			height: "100%",
 			flex: "1 1 100%",
-		}} ref={this.domRef}></div>;
+		}} ref={this.domRef}>
+			<EventListener target={global.document.body} event="keydown" callback={this.toggleQuickopen} />
+		</div>;
 	}
 
 }

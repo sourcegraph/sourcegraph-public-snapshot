@@ -11,6 +11,35 @@ const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
 
 let codeLensEnabled = false;
 
+// Exclude common vendor directories from jump-to-file, for better UX
+// and perf. This is how GitHub's "t" quick file picker works as well.
+//
+// NOTE: If you add an exclude entry that contains a glob, then
+// defaultExcludesNoGlobs can no longer be used, because it relies on
+// the defaultExcludesRegExp fast path. Not using it will
+// significantly slow down quickopen jump-to-file, so you'll need to
+// fix that.
+//
+// TODO(sqs): We could make this better by using GitHub linguist's
+// standard list of vendor exclusions.
+const defaultExcludesNoGlobs = {
+	"node_modules": true,
+	"bower_components": true,
+	"vendor": true,
+	"dist": true,
+	"out": true,
+	"Godeps": true,
+	"third_party": true,
+};
+
+// This is the fastest way to match strings (faster than
+// Strings.prototype.indexOf). See
+// https://jsperf.com/regexp-indexof-perf.
+//
+// Matches any path containing a path component that is a key of
+// defaultExcludesNoGlobs.
+export const defaultExcludesRegExp = new RegExp("(/|^)(" + Object.keys(defaultExcludesNoGlobs).join("|") + ")/");
+
 const config = {
 	diffEditor: { renderSideBySide: false },
 	workbench: {
@@ -50,7 +79,11 @@ const config = {
 	},
 	files: {
 		eol: "\n",
-	}
+		exclude: defaultExcludesNoGlobs,
+	},
+	search: {
+		exclude: defaultExcludesNoGlobs,
+	},
 };
 
 export function toggleCodeLens(): void {

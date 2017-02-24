@@ -10,6 +10,7 @@ import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
+import { urlToRepo } from "sourcegraph/repo/routes";
 import { Features } from "sourcegraph/util/features";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
@@ -38,15 +39,22 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 				hash = `#L${selection}`;
 			}
 
-			const url = urlToBlob(repo, rev, path);
-			router.push({
-				pathname: url,
-				state: options,
-				hash,
-				query: router.location.query,
+			// openEditor may be called for a file, or for a workspace root (directory);
+			// in the latter case, we circumvent the vscode path to open an real document
+			// otherwise an empty buffer will be shown instead of the workbench watermark.
+			const url = resource.fragment === "" ? urlToRepo(repo) : urlToBlob(repo, rev, path);
+			const promise = resource.fragment === "" ? TPromise.wrap(this.getActiveEditor()) : this.openEditorWithoutURLChange(resource, data, options);
+			return promise.then(editor => {
+				router.push({
+					pathname: url,
+					state: options,
+					hash,
+					query: router.location.query,
+				});
+				return editor;
 			});
 		}
-		return this.openEditorWithoutURLChange(resource, data, options);
+		throw new Error("cannot open editor, missing resource");
 	}
 
 	openEditorWithoutURLChange(mainResource: URI, data: IResourceInput, options?: any): TPromise<IEditor>;
@@ -58,14 +66,11 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		}
 
 		this._emitter.fire(mainResource);
-		const router = __getRouterForWorkbenchOnly();
 
 		// calling openEditor with a non-zero position, or options equal to
 		// true opens up another editor to the side.
 		if (typeof options === "boolean") {
 			options = false;
-		} else if (options === undefined) {
-			options = router.location.state;
 		}
 
 		// Set the resource revision to the commit hash

@@ -16,7 +16,7 @@ export function renderDirectoryContent(): void {
 		padding: "2px 5px",
 	};
 	const message = <div>
-		Start by going to a file or hit <span style={keyboardShortcutStyle}>/</span > to search for a symbol.
+		Start by going to a file or hit <span style={keyboardShortcutStyle}>/</span > to search.
 	</div>;
 	renderRootContent(message);
 }

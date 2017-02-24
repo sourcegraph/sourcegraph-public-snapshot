@@ -13,6 +13,13 @@ const staticImports = {
 	"vs/workbench/parts/files/browser/explorerViewlet": require("vs/workbench/parts/files/browser/explorerViewlet"),
 	"vs/workbench/parts/output/browser/outputPanel": require("vs/workbench/parts/output/browser/outputPanel"),
 	"vs/workbench/parts/output/common/outputLinkComputer": require("vs/workbench/parts/output/common/outputLinkComputer"),
+	"vs/workbench/parts/quickopen/browser/commandsHandler": require("vs/workbench/parts/quickopen/browser/commandsHandler"),
+	"vs/workbench/parts/quickopen/browser/gotoSymbolHandler": require("vs/workbench/parts/quickopen/browser/gotoSymbolHandler"),
+	"vs/workbench/parts/search/browser/openFileHandler": require("vs/workbench/parts/search/browser/openFileHandler"),
+	"vs/workbench/parts/quickopen/browser/helpHandler": require("vs/workbench/parts/quickopen/browser/helpHandler"),
+	"vs/workbench/parts/search/browser/searchViewlet": require("vs/workbench/parts/search/browser/searchViewlet"),
+	"vs/workbench/parts/search/browser/openAnythingHandler": require("vs/workbench/parts/search/browser/openAnythingHandler"),
+	"vs/workbench/parts/quickopen/browser/gotoLineHandler": require("vs/workbench/parts/quickopen/browser/gotoLineHandler"),
 	"vs/workbench/parts/files/browser/editors/textFileEditor": require("vs/workbench/parts/files/browser/editors/textFileEditor"),
 	"vs/workbench/parts/files/common/editors/fileEditorInput": require("vs/workbench/parts/files/common/editors/fileEditorInput"),
 };

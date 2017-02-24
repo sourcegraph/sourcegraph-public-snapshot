@@ -250,7 +250,7 @@ class Renderer extends LegacyRenderer {
 		super();
 		this._contextService = contextService;
 		const editor = getEditorInstance();
-		if (editor) {
+		if (editor && editor.getModel()) {
 			this._editorURI = editor.getModel().uri;
 		}
 	}
@@ -271,7 +271,7 @@ class Renderer extends LegacyRenderer {
 	protected render(tree: ITree, element: FileReferences | OneReference, container: HTMLElement): IElementCallback | any {
 		dom.clearNode(container);
 
-		if (element instanceof FileReferences) {
+		if (element instanceof FileReferences && this._editorURI) {
 			RepositoryHeader(
 				element,
 				container,

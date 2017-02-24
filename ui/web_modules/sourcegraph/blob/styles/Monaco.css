@@ -610,3 +610,78 @@
 :global .monaco-workbench > .part.statusbar > .statusbar-item a:not([disabled]):not(disabled) {
 	color: rgba(255, 255, 255, 0.9);
 }
+
+/* Quickopen */
+
+:global .quick-open-widget {
+	background-color: rgb(35, 48, 67) !important;
+	box-shadow: 0 2px 4px 0 rgba(0,0,0,0.5) !important;
+	z-index: 50; /* so it is above the modal overlay */
+	border-radius: 0px 0px 3px 3px !important;
+}
+
+:global .quick-open-widget .quick-open-input {
+	max-width: 586px !important;
+	padding: 8px !important;
+	padding-top: 10px !important;
+	height: 58px;
+}
+
+:global .quick-open-widget .progress-container {
+	top: 57px !important;
+}
+
+:global .quick-open-widget input {
+	background-color: rgb(62, 87, 121) !important;
+	padding: 8px !important;
+	color: white !important;
+	height: 40px !important;
+	border-radius: 3px !important;
+}
+
+:global .quick-open-widget input::placeholder {
+	color: rgb(201, 212, 227) !important;
+}
+
+:global .quick-open-widget input:focus {
+	outline: none !important;
+}
+
+:global .quick-open-widget .quick-open-input .monaco-inputbox {
+	height: 40px !important;
+}
+
+:global .quick-open-widget .monaco-tree-row {
+	height: 40px !important;
+	color: white !important;
+}
+
+:global .quick-open-widget .monaco-tree-row .quick-open-help-entry-label {
+	color: blue !important;
+}
+
+:global .quick-open-widget .monaco-tree-row .content {
+	display: flex;
+	align-items: center;
+	padding: 10px;
+}
+
+:global .quick-open-widget .monaco-tree-row .results-group-separator {
+	margin-left: 0px;
+}
+
+:global .quick-open-widget .monaco-tree-row .results-group {
+	display: none;
+}
+
+:global .quick-open-widget .monaco-tree-row.focused {
+	background-color: rgb(62, 87, 121) !important;
+}
+
+:global .quick-open-widget div.monaco-tree-row:hover {
+	background-color: rgb(62, 87, 121) !important;
+}
+
+:global .quick-open-widget .monaco-tree-row .results-group-separator {
+	border-top: none;
+}

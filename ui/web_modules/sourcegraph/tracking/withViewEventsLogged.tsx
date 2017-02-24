@@ -1,11 +1,7 @@
 import * as React from "react";
 import { Route } from "react-router";
-import { context } from "sourcegraph/app/context";
 import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
 import { Router, RouterLocation } from "sourcegraph/app/router";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as OrgActions from "sourcegraph/org/OrgActions";
-import * as RepoActions from "sourcegraph/repo/RepoActions";
 import { Events, LogUnknownRedirectEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { getLanguageExtensionForPath } from "sourcegraph/util/inventory";
@@ -77,14 +73,6 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					EventLogger.setUserIsGitHubAuthed(this.props.location.query["_githubAuthed"]);
 					if (eventName === Events.Signup_Completed.label) {
 						Events.Signup_Completed.logEvent(eventProperties);
-
-						// When the user signs up: fire off a request to get orgs and repos if they have the scope.
-						if (context.user) {
-							Dispatcher.Backends.dispatch(new RepoActions.WantRepos("RemoteOnly=true", true));
-							if (context.hasOrganizationGitHubToken()) {
-								Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
-							}
-						}
 					} else if (eventName === "CompletedGitHubOAuth2Flow") {
 						Events.OAuth2FlowGitHub_Completed.logEvent(eventProperties);
 					}

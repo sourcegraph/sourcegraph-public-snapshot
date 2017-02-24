@@ -1389,7 +1389,18 @@
 						}
 					},
 					{
-						"args": [],
+						"args": [
+							{
+								"defaultValue": "",
+								"description": null,
+								"name": "query",
+								"type": {
+									"kind": "SCALAR",
+									"name": "String",
+									"ofType": null
+								}
+							}
+						],
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,

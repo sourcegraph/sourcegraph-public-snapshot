@@ -101,8 +101,10 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 	return &repositoryResolver{repo: repo}, nil
 }
 
-func (r *rootResolver) Repositories(ctx context.Context) ([]*repositoryResolver, error) {
-	return listRepos(ctx, &sourcegraph.RepoListOptions{ListOptions: sourcegraph.ListOptions{PerPage: 100}})
+func (r *rootResolver) Repositories(ctx context.Context, args *struct{ Query string }) ([]*repositoryResolver, error) {
+	opt := &sourcegraph.RepoListOptions{Query: args.Query}
+	opt.PerPage = 20
+	return listRepos(ctx, opt)
 }
 
 func (r *rootResolver) RemoteRepositories(ctx context.Context) ([]*repositoryResolver, error) {

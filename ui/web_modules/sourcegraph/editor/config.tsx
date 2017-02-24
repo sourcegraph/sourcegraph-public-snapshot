@@ -1,5 +1,6 @@
 import * as throttle from "lodash/throttle";
 
+import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
@@ -10,10 +11,10 @@ import { IFileService } from "vs/platform/files/common/files";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
+import { IQuickOpenService } from "vs/workbench/services/quickopen/common/quickOpenService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
-import { Router } from "sourcegraph/app/router";
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
@@ -101,12 +102,41 @@ function updateEditorAfterURLChange(sel: IRange | null): void {
 		});
 }
 
+let quickOpenShown = false;
+
 /**
  * registerEditorCallbacks attaches custom Sourcegraph handling to the workbench editor lifecycle.
  */
-export function registerEditorCallbacks(router: Router): void {
+export function registerEditorCallbacks(): IDisposable[] {
+	const disposables: IDisposable[] = [];
+	disposables.push(...registerQuickopenListeners(() => quickOpenShown = true, () => quickOpenShown = false));
 	const codeEditorService = Services.get(ICodeEditorService) as ICodeEditorService;
-	codeEditorService.onCodeEditorAdd(updateEditor);
+	disposables.push(codeEditorService.onCodeEditorAdd(updateEditor));
+	return disposables;
+}
+
+/**
+ * registerQuickopenListeners attaches callbacks which are invoked when a quickopen
+ * is shown/closed.
+ */
+export function registerQuickopenListeners(onShow: () => any, onHide: () => any): IDisposable[] {
+	const disposables: IDisposable[] = [];
+	const quickOpenService = Services.get(IQuickOpenService) as IQuickOpenService;
+	disposables.push(quickOpenService.onShow(onShow));
+	disposables.push(quickOpenService.onHide(onHide));
+	return disposables;
+}
+
+/**
+ * toggleQuickopen toggles the quickopen modal state.
+ */
+export function toggleQuickopen(): void {
+	const quickopen = Services.get(IQuickOpenService);
+	if (quickOpenShown) {
+		quickopen.close();
+	} else {
+		quickopen.show();
+	}
 }
 
 export async function updateFileTree(resource: URI): Promise<void> {

@@ -67,7 +67,7 @@ export class FileService {
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
-		return this.getFilesCached(resource).then(files => {
+		return getFilesCached(resource).then(files => {
 			if (Features.zap.isEnabled()) {
 				// TODO(renfred): figure out how to take advantage of the stat cache with zap files.
 				files = this.zapFileService.updateTree(this.workspace.resource, files.slice());
@@ -110,28 +110,12 @@ export class FileService {
 	}
 
 	existsFile(resource: URI): TPromise<boolean> {
-		return this.getFilesCached(resource).then(files => {
+		return getFilesCached(resource).then(files => {
 			if (Features.zap.isEnabled()) {
 				files = this.zapFileService.updateTree(this.workspace.resource, files.slice());
 			}
 			const path = resource.fragment;
 			return Boolean(files.find(file => file === path));
-		});
-	}
-
-	/**
-	 * Gets and caches a list of all of the files in a workspace.
-	 */
-	private getFilesCached(resource: URI): TPromise<string[]> {
-		const { repo, rev } = URIUtils.repoParams(resource);
-		const key = repo + rev;
-		if (workspaceFiles.has(key)) {
-			return TPromise.wrap(workspaceFiles.get(key));
-		}
-		return retrieveFilesAndDirs(resource).then(({ root }) => {
-			const files: string[] = root.repository.commit.commit.tree.files.map(file => file.name);
-			workspaceFiles.set(key, files);
-			return files;
 		});
 	}
 
@@ -226,9 +210,9 @@ class ZapFileService {
 	}
 }
 
-function retrieveFilesAndDirs(resource: URI): TPromise<any> {
+export function fetchFilesAndDirs(resource: URI): any {
 	const { repo, rev } = URIUtils.repoParams(resource);
-	return TPromise.wrap(fetchGraphQLQuery(`query Files($repo: String!, $rev: String!) {
+	return fetchGraphQLQuery(`query Files($repo: String!, $rev: String!) {
 			root {
 				repository(uri: $repo) {
 					uri
@@ -246,10 +230,10 @@ function retrieveFilesAndDirs(resource: URI): TPromise<any> {
 					}
 				}
 			}
-		}`, { repo, rev }));
+		}`, { repo, rev });
 }
 
-function toBaseStat(resource: URI): IBaseStat {
+export function toBaseStat(resource: URI): IBaseStat {
 	return {
 		resource: resource,
 		name: resource.fragment,
@@ -262,7 +246,7 @@ function toBaseStat(resource: URI): IBaseStat {
  * toFileStat returns a tree of IFileStat that represents the repository rooted at resource.
  * The files parameter is all available files in the repository.
  */
-function toFileStat(resource: URI, files: string[]): IFileStat {
+export function toFileStat(resource: URI, files: string[]): IFileStat {
 	const childStats: IFileStat[] = [];
 	const childDirectories = new Set();
 	const childFiles: string[] = [];
@@ -310,4 +294,20 @@ function toFileStat(resource: URI, files: string[]): IFileStat {
 		isDirectory: childStats.length > 0,
 		children: childStats,
 	};
+}
+
+/**
+ * Gets and caches a list of all of the files in a workspace.
+ */
+export function getFilesCached(resource: URI): TPromise<string[]> {
+	const { repo, rev } = URIUtils.repoParams(resource);
+	const key = repo + rev;
+	if (workspaceFiles.has(key)) {
+		return TPromise.wrap(workspaceFiles.get(key));
+	}
+	return fetchFilesAndDirs(resource).then(({ root }) => {
+		const files: string[] = root.repository.commit.commit.tree.files.map(file => file.name);
+		workspaceFiles.set(key, files);
+		return files;
+	});
 }

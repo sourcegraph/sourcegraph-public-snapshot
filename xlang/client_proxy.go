@@ -381,10 +381,12 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
-				TextDocumentSync:   lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
-				ReferencesProvider: true,
-				DefinitionProvider: true,
-				HoverProvider:      true,
+				TextDocumentSync:        lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
+				ReferencesProvider:      true,
+				DefinitionProvider:      true,
+				HoverProvider:           true,
+				DocumentSymbolProvider:  true,
+				WorkspaceSymbolProvider: true,
 			},
 		}, nil
 

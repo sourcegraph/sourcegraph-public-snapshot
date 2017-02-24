@@ -36,6 +36,7 @@ import { ConfigurationService, WorkspaceConfigurationService } from "sourcegraph
 import { EnvironmentService } from "sourcegraph/workbench/environmentService";
 import { ExtensionService } from "sourcegraph/workbench/extensionService";
 import { FileService } from "sourcegraph/workbench/overrides/fileService";
+import { SearchService } from "sourcegraph/workbench/searchService";
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
 import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
@@ -92,10 +93,10 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(IWorkspaceConfigurationService, WorkspaceConfigurationService);
 	set(IThreadService, MainThreadService);
 	set(IExtensionService, ExtensionService);
+	set(ISearchService, SearchService);
 
 	// These services are depended on by the extension host but are
 	// not actually used yet.
-	set(ISearchService, function (): void {/* noop */ } as any);
 	set(ITreeExplorerService, function (): void { /* noop */ } as any);
 
 	Services = services;

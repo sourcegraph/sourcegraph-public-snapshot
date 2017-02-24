@@ -13,7 +13,7 @@ type Query {
 
 type Root {
 	repository(uri: String!): Repository
-	repositories: [Repository!]!
+	repositories(query: String = ""): [Repository!]!
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
