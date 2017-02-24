@@ -27,6 +27,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
+// repoLarge contains repos which should be sent to LS with the mode suffix
+// _large. It is set via the environment variable REPO_LARGE.
+var repoLarge = make(map[string]bool)
+
+func init() {
+	repos := strings.Fields(env.Get("REPO_LARGE", "", "repos which should be sent to LS with the mode suffix _large. Seperated by whitespace"))
+	for _, r := range repos {
+		repoLarge[r] = true
+	}
+}
+
 // serverID identifies a lang/build server by the minimal state
 // necessary to reinitialize it. At most one lang/build server per
 // serverID will be used; if two clients issue requests that route to
@@ -313,7 +324,11 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	c.initOnce.Do(func() {
 		didWeInit = true
 
-		rwc, err := connectToServer(ctx, id.mode)
+		mode := id.mode
+		if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode && repoLarge[id.rootPath.Repo()] {
+			mode = mode + "_large"
+		}
+		rwc, err := connectToServer(ctx, mode)
 		if err != nil {
 			c.initErr = err
 			return
