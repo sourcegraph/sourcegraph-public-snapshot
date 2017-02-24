@@ -61,9 +61,12 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	base, err := url.Parse(r.Referer())
-	if err != nil {
-		base = conf.AppURL
+	base := conf.AppURL
+	// use referer as base if available to make reverse proxies work
+	if ref := r.Referer(); ref != "" {
+		if parsedRef, err := url.Parse(r.Referer()); err == nil {
+			base = parsedRef
+		}
 	}
 	redirectURL := base.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive))
 
