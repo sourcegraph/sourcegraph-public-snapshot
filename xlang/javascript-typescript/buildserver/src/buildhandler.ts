@@ -1,4 +1,3 @@
-/// <reference path="../node_modules/vscode/thenable.d.ts" />
 
 import * as rimraf from 'rimraf';
 import * as temp from 'temp';
