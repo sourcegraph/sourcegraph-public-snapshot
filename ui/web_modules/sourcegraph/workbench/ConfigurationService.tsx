@@ -44,7 +44,7 @@ const config = {
 	diffEditor: { renderSideBySide: false },
 	workbench: {
 		quickOpen: {
-			closeOnFocusLost: true,
+			closeOnFocusLost: false,
 		},
 		editor: {
 			enablePreview: false,
