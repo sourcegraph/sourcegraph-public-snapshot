@@ -22,14 +22,15 @@ type ServerRepo interface {
 }
 
 // ServerBackend creates server workspaces backed by a git
-// repository.
+// repository. It implements the zap.ServerBackend interface.
 type ServerBackend struct {
 	// OpenBareRepo is called to open a bare git repository. The value of
 	// repo is opaque to zap and only needs to be created and
 	// interpreted by the client and by this OpenBareRepo func.
 	OpenBareRepo func(ctx context.Context, log *logpkg.Context, repo string) (ServerRepo, error)
 
-	CanAccessRepo func(ctx context.Context, log *logpkg.Context, repo string) (bool, error)
+	CanAccessRepo     func(ctx context.Context, log *logpkg.Context, repo string) (bool, error)
+	CanAutoCreateRepo func() bool
 }
 
 // Create implements zap.ServerBackend.Create.
@@ -80,4 +81,9 @@ func (s ServerBackend) Create(ctx context.Context, log *logpkg.Context, repo, ba
 // CanAccess implements zap.ServerBackend.
 func (s ServerBackend) CanAccess(ctx context.Context, log *logpkg.Context, repo string) (bool, error) {
 	return s.CanAccessRepo(ctx, log, repo)
+}
+
+// CanAutoCreate implements zap.ServerBackend.
+func (s ServerBackend) CanAutoCreate() bool {
+	return s.CanAutoCreateRepo()
 }

@@ -20,6 +20,11 @@ type ServerBackend interface {
 	// CanAccess is called to determine if the client can access the
 	// given repo (and all of its refs).
 	CanAccess(ctx context.Context, log *log.Context, repo string) (bool, error)
+
+	// CanAutoCreate is invoked to check whether or not automatic repository
+	// creation should be supported. i.e. whether or not repositories should
+	// be lazily initialized.
+	CanAutoCreate() bool
 }
 
 // Server is the server that manages the source of truth for all
