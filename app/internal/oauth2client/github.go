@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"encoding/base64"
+
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
@@ -24,14 +26,10 @@ import (
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
-func auth0GitHubConfigWithRedirectURL(r *http.Request) *oauth2.Config {
+func auth0GitHubConfigWithRedirectURL(redirectURL string) *oauth2.Config {
 	config := *auth.Auth0Config
-	base, err := url.Parse(r.Referer())
-	if err != nil {
-		base = conf.AppURL
-	}
 	// RedirectURL is checked by Auth0 against a whitelist so it can't be spoofed.
-	config.RedirectURL = base.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()
+	config.RedirectURL = redirectURL
 	return &config
 }
 
@@ -63,19 +61,42 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	return GitHubOAuth2Initiate(w, r, scopes, returnTo.String(), returnToNew.String())
+	base, err := url.Parse(r.Referer())
+	if err != nil {
+		base = conf.AppURL
+	}
+	redirectURL := base.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive))
+
+	return GitHubOAuth2Initiate(w, r, scopes, redirectURL.String(), returnTo.String(), returnToNew.String())
 }
 
-func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string, returnToNew string) error {
+type oauthCookie struct {
+	Nonce       string
+	RedirectURL string
+	ReturnTo    string
+	ReturnToNew string
+}
+
+func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, redirectURL, returnTo, returnToNew string) error {
 	nonce := randstring.NewLen(32)
+	cookie, err := json.Marshal(&oauthCookie{
+		Nonce:       nonce,
+		RedirectURL: redirectURL,
+		ReturnTo:    returnTo,
+		ReturnToNew: returnToNew,
+	})
+	if err != nil {
+		return err
+	}
+
 	http.SetCookie(w, &http.Cookie{
-		Name:    "nonce",
-		Value:   nonce,
-		Path:    "",
+		Name:    "oauth",
+		Value:   base64.URLEncoding.EncodeToString(cookie),
+		Path:    "/",
 		Expires: time.Now().Add(10 * time.Minute),
 	})
 
-	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL(r).AuthCodeURL(nonce+":"+returnTo+":"+returnToNew,
+	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL(redirectURL).AuthCodeURL(nonce,
 		oauth2.SetAuthURLParam("connection", "github"),
 		oauth2.SetAuthURLParam("connection_scope", strings.Join(scopes, ",")),
 	), http.StatusSeeOther)
@@ -83,17 +104,29 @@ func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 }
 
 func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
-	expectedNonceCookie := ""
-	returnTo := "/"
-	returnToNew := "/"
-	if parts := strings.SplitN(r.URL.Query().Get("state"), ":", 3); len(parts) == 3 {
-		expectedNonceCookie = parts[0]
-		returnTo = parts[1]
-		returnToNew = parts[2]
+	cookie := &oauthCookie{
+		Nonce:       "", // the empty default value is not accepted unless impersonating
+		RedirectURL: "",
+		ReturnTo:    "/",
+		ReturnToNew: "/",
 	}
+	if c, err := r.Cookie("oauth"); err == nil {
+		cookieJSON, err := base64.URLEncoding.DecodeString(c.Value)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(cookieJSON, cookie); err != nil {
+			return err
+		}
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:   "oauth",
+		Path:   "/",
+		MaxAge: -1,
+	})
 
 	code := r.URL.Query().Get("code")
-	token, err := auth0GitHubConfigWithRedirectURL(r).Exchange(r.Context(), code)
+	token, err := auth0GitHubConfigWithRedirectURL(cookie.RedirectURL).Exchange(r.Context(), code)
 	if err != nil {
 		return err
 	}
@@ -125,16 +158,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	if !info.Impersonated { // impersonation has no state parameter, so don't check nonce
-		nonceCookie, err := r.Cookie("nonce")
-		if err != nil {
-			return err
-		}
-		http.SetCookie(w, &http.Cookie{
-			Name:   "nonce",
-			Path:   "/",
-			MaxAge: -1,
-		})
-		if nonceCookie.Value == "" || expectedNonceCookie != nonceCookie.Value {
+		expectedNonce := r.URL.Query().Get("state")
+		if cookie.Nonce == "" || cookie.Nonce != expectedNonce {
 			return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state")}
 		}
 	}
@@ -173,7 +198,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		if len(scopeOfToken) < len(mergedScope) {
 			// The user has once granted us more permissions than we got with this token. Run oauth flow
 			// again to fetch token with all permissions. This should be non-interactive.
-			return GitHubOAuth2Initiate(w, r, mergedScope, returnTo, returnToNew)
+			return GitHubOAuth2Initiate(w, r, mergedScope, cookie.RedirectURL, cookie.ReturnTo, cookie.ReturnToNew)
 		}
 		if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
 			// Wohoo, we got more permissions. Remember in user database.
@@ -195,7 +220,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	if firstTime {
-		returnToNewURL, err := url.Parse(returnToNew)
+		returnToNewURL, err := url.Parse(cookie.ReturnToNew)
 		if err != nil {
 			return err
 		}
@@ -211,7 +236,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		http.Redirect(w, r, returnToNewURL.String(), http.StatusSeeOther)
 	} else {
 		// Add tracking info to return-to URL.
-		returnToURL, err := url.Parse(returnTo)
+		returnToURL, err := url.Parse(cookie.ReturnTo)
 		if err != nil {
 			return err
 		}
