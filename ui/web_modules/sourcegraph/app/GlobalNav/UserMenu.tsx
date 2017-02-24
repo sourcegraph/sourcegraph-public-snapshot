@@ -44,6 +44,9 @@ export const UserMenu = (props): JSX.Element => {
 					<a href="/docs" role="menu_item">
 						Docs
 					</a>
+					<a href="/pricing" role="menu_item">
+						Pricing
+					</a>
 					<a onClick={() => handleIntercomToggle(PAGE_LOCATION_GLOBAL_NAV)} role="menu_item">
 						Contact
 					</a>
