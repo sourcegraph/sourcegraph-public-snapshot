@@ -32,10 +32,19 @@ import (
 // environment variable REPO_BLACKLIST.
 var repoBlacklist = make(map[string]bool)
 
+// repoBlacklistXReferences contains repos which we have blacklisted only on
+// workspace/xreferences. It is set via the environment variable REPO_BLACKLIST_XREFERENCES.
+var repoBlacklistXReferences = make(map[string]bool)
+
 func init() {
 	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
 	for _, r := range repos {
 		repoBlacklist[r] = true
+	}
+
+	repos = strings.Fields(env.Get("REPO_BLACKLIST_XREFERENCES", "", "repos which we should not serve workspace/xreferences requests for. Seperated by whitespace"))
+	for _, r := range repos {
+		repoBlacklistXReferences[r] = true
 	}
 }
 
@@ -395,6 +404,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+
+		if req.Method == "workspace/xreferences" && repoBlacklistXReferences[c.context.rootPath.Repo()] {
+			return nil, fmt.Errorf("repo is blacklisted")
 		}
 
 		// Background modes only ever do one request against them
