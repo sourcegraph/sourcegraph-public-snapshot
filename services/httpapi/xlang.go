@@ -208,9 +208,34 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// Use a one-shot connection to the LSP proxy. This is cheap,
 	// since the LSP proxy will reuse an already running server for
 	// the given workspace if available.
-	c, err := xlangNewClient()
-	if err != nil {
-		return err
+	var c xlangClient
+	if method == "workspace/xreferences" {
+		// The access pattern of xreferences is very different to a
+		// normal user session. The request is a once-off, and we
+		// don't expect any other requests for the workspace. As such
+		// we can use the short lived workspace proxy which is
+		// optimized for that access pattern. This also has the
+		// advantage of isolating xreference requests from normal
+		// sessions, which has caused issues due to it causing OOMs.
+		c, err = xlang.UnsafeNewShortLivedWorkspaceClient()
+		if err != nil {
+			return err
+		}
+
+		// Currently the short lived workspace proxy expects the mode
+		// to have the suffix _bg.
+		if c != nil {
+			initParams.InitializationOptions.Mode = mode + "_bg"
+			initParams.Mode = mode + "_bg"
+		}
+	}
+	if c == nil {
+		// If we didn't dial the short lived workspace, dial the usual
+		// workspace.
+		c, err = xlangNewClient()
+		if err != nil {
+			return err
+		}
 	}
 	defer c.Close()
 
@@ -222,6 +247,12 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// it just makes it harder to make a stupid mistake and remove
 		// the permission check.
 		return &errcode.HTTPErr{Status: http.StatusUnauthorized, Err: errors.New("authorization check failed")}
+	}
+
+	// We usually modify initParams, so marshal them again
+	err = reqs[0].SetParams(initParams)
+	if err != nil {
+		return err
 	}
 
 	// Only return the last response to the HTTP client (e.g., just
