@@ -24,7 +24,7 @@ program
 
 util.setStrict(program.strict);
 const lspPort = program.port || defaultLspPort;
-const clusterSize = program.cluster || numCPUs;
+const clusterSize = program.cluster || Math.floor(numCPUs / 2);
 
 const options: server.ServeOptions = {
 	clusterSize: clusterSize,
