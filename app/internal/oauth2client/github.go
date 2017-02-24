@@ -24,9 +24,14 @@ import (
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
-func auth0GitHubConfigWithRedirectURL() *oauth2.Config {
+func auth0GitHubConfigWithRedirectURL(r *http.Request) *oauth2.Config {
 	config := *auth.Auth0Config
-	config.RedirectURL = conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()
+	base, err := url.Parse(r.Referer())
+	if err != nil {
+		base = conf.AppURL
+	}
+	// RedirectURL is checked by Auth0 against a whitelist so it can't be spoofed.
+	config.RedirectURL = base.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()
 	return &config
 }
 
@@ -70,7 +75,7 @@ func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 		Expires: time.Now().Add(10 * time.Minute),
 	})
 
-	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL().AuthCodeURL(nonce+":"+returnTo+":"+returnToNew,
+	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL(r).AuthCodeURL(nonce+":"+returnTo+":"+returnToNew,
 		oauth2.SetAuthURLParam("connection", "github"),
 		oauth2.SetAuthURLParam("connection_scope", strings.Join(scopes, ",")),
 	), http.StatusSeeOther)
@@ -88,7 +93,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	code := r.URL.Query().Get("code")
-	token, err := auth0GitHubConfigWithRedirectURL().Exchange(r.Context(), code)
+	token, err := auth0GitHubConfigWithRedirectURL(r).Exchange(r.Context(), code)
 	if err != nil {
 		return err
 	}
