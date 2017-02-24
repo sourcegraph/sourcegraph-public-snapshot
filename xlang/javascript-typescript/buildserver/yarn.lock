@@ -656,9 +656,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-1.3.0.tgz#bb2d83661eb5380d88f36aaf2216c87767fa2878"
+javascript-typescript-langserver@^1.3.1:
+  version "1.3.1"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-1.3.1.tgz#6d5cfac1c4b570a194e501832d3b70d8347b28c3"
   dependencies:
     "@types/async" "^2.0.32"
     "@types/node" "^6.0.46"
@@ -811,13 +811,9 @@ ms@0.7.2:
   version "0.7.2"
   resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.2.tgz#ae25cf2512b3885a1d95d7f037868d8431124765"
 
-mute-stream@0.0.6:
+mute-stream@0.0.6, mute-stream@~0.0.4:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.6.tgz#48962b19e169fd1dfc240b3f1e7317627bbc47db"
-
-mute-stream@~0.0.4:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.7.tgz#3075ce93bc21b8fab43e1bc4da7e8115ed1e7bab"
 
 node-emoji@^1.0.4:
   version "1.5.1"
