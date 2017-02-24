@@ -8,7 +8,7 @@ import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAl
 import { FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { Features } from "sourcegraph/util/features";
-import { getPathExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
+import { getPathExtension, isBetaExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 interface Props {
@@ -38,6 +38,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 
 		const extension = getPathExtension(path);
 		const isSupported = extension ? isSupportedExtension(extension) : false;
+		const isBeta = extension ? isBetaExtension(extension) : false;
 		const isIgnored = extension ? isIgnoredExtension(extension) : false;
 		const isRoot = path === "";
 
@@ -78,7 +79,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 							}, typography.size[7])}>
 
 								{!isSupported && !isIgnored &&
-									<UnsupportedLanguageAlert ext={extension} style={{ marginRight: whitespace[1] }} />
+									<UnsupportedLanguageAlert ext={extension} style={{ marginRight: whitespace[1] }} inBeta={isBeta} />
 								}
 
 								<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />
