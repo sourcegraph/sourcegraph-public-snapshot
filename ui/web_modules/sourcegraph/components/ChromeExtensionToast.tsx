@@ -1,8 +1,5 @@
-import * as classNames from "classnames";
 import * as React from "react";
 import { RouterLocation } from "sourcegraph/app/router";
-import * as base from "sourcegraph/components/styles/_base.css";
-import { Close } from "sourcegraph/components/symbols/Primaries";
 import { Toast } from "sourcegraph/components/Toast";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
@@ -31,6 +28,7 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 
 	componentDidMount(): void {
 		const isVisible = shouldPromptToInstallBrowserExtension() && !Boolean(window.localStorage[EXTENSION_TOAST_KEY]);
+
 		if (isVisible) {
 			EventLogger.logViewEvent("ViewChromeExtensionToast", this.props.location.pathname, { toastCopy: TOAST_TITLE });
 		}
@@ -43,9 +41,8 @@ export class ChromeExtensionToast extends React.Component<Props, State>  {
 		let { isVisible } = this.state;
 		if (isVisible) {
 			return (
-				<Toast>
-					<a onClick={this.closeClicked.bind(this)} className={classNames(base.fr, base.mt2)}><Close /></a>
-					<p style={{ textAlign: "center" }}><a onClick={this.toastCTAClicked.bind(this)}>{TOAST_TITLE}</a></p>
+				<Toast color="white" isDismissable={true} onDismiss={this.closeClicked.bind(this)}>
+					<a style={{ textDecoration: "none" }} onClick={this.toastCTAClicked.bind(this)}>{TOAST_TITLE}</a>
 				</Toast>
 			);
 		}

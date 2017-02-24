@@ -43,3 +43,4 @@ export { Key } from "sourcegraph/components/Key";
 export { ReferenceCard } from "sourcegraph/components/ReferenceCard";
 export { SplitButton } from "sourcegraph/components/SplitButton";
 export { RepoLink } from "sourcegraph/components/RepoLink";
+export { Toast } from "sourcegraph/components/Toast";

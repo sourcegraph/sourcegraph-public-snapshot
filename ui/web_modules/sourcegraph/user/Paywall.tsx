@@ -1,35 +1,30 @@
 import * as React from "react";
 
-import { No } from "sourcegraph/components/symbols/Primaries";
-import * as colors from "sourcegraph/components/utils/colors";
+import { context } from "sourcegraph/app/context";
+import { FlexContainer, Toast } from "sourcegraph/components/";
+import { No, Warning } from "sourcegraph/components/symbols/Primaries";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 const sales = <a href="mailto:sales@sourcegraph.com">sales@sourcegraph.com</a>;
-
-const headerSx = {
-	height: 100,
-	background: colors.blueD2(),
-	color: colors.white(),
-};
 
 export function Paywall(err: Error): JSX.Element {
 	if (!err.message.match(/(account blocked)|(trial expired)/)) {
 		return <div />;
 	}
-	return <div>
-		<div style={headerSx}>
-			<No />Your trial has ended. Please contact {sales} to continue using
-			Sourcegraph on private code.
-		</div>
-		<div>
-			A screenshot
-		</div>
-	</div>;
+	return <FlexContainer direction="top_bottom" style={{ flex: "1 1 auto" }}>
+		<Toast isDismissable={false} color="gray" style={{ flex: "0 0 auto" }}>
+			<No color={colors.orangeL1()} width={24} style={{ marginRight: whitespace[3] }} />
+			You don't have permission to view private repositories. Please contact {sales} to upgrade your account.
+		</Toast>
+		<div style={{
+			backgroundColor: colors.blueGrayD2(),
+			backgroundImage: `url(${context.assetsRoot}/img/blur-screenshot.png)`,
+			backgroundSize: "cover",
+			backgroundRepeat: "no-repeat",
+			flex: "1 1 auto",
+		}}></div>
+	</FlexContainer>;
 }
-
-const trialEndingSx = {
-	background: colors.yellow(),
-	height: 50,
-};
 
 export function TrialEndingWarning({ layout, repo }: {
 	layout: () => void, repo: GQL.IRepository
@@ -54,8 +49,9 @@ export function TrialEndingWarning({ layout, repo }: {
 		case 5: timeLeft = "in five days"; break;
 		default: timeLeft = "soon";
 	}
-	return <div style={trialEndingSx}>
+	return <Toast color="gray" isDismissable={true} style={{ zIndex: 6 }}>
+		<Warning color={colors.yellow()} width={24} style={{ marginRight: whitespace[3] }} />
 		Your free trial is ending {timeLeft}. Please contact {sales} to continue using
 		Sourcegraph on private code.
-	</div>;
+	</Toast>;
 }
