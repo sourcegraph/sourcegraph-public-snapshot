@@ -171,6 +171,7 @@ var whitelistedRepos = map[string]bool{
 	"github.com/sourcegraph/go-langserver":                    true,
 	"github.com/sourcegraph/jsonrpc2":                         true,
 	"github.com/sourcegraph/sourcegraph":                      true,
+	"github.com/sourcegraph/infrastructure":                   true,
 	"github.com/sourcegraph/javascript-typescript-langserver": true,
 	"github.com/sourcegraph/zap":                              true,
 	"github.com/Microsoft/vscode":                             true,
