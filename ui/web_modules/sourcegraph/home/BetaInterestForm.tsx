@@ -29,6 +29,7 @@ export class BetaInterestForm extends Component<Props, State> {
 	// TODO(slimsag): these should be 'element' type?
 	_fullName: any;
 	_email: any;
+	_company: any;
 	_editors: any;
 	_languages: any;
 	_message: any;
@@ -65,6 +66,7 @@ export class BetaInterestForm extends Component<Props, State> {
 		window.localStorage["beta-interest-form"] = JSON.stringify({
 			fullName: this._fullName["value"],
 			email: this._email ? this._email["value"] : "",
+			company: this._company["value"],
 			editors: this._editors.selected(),
 			languages: this._languages.selected(),
 			message: this._message["value"],
@@ -95,6 +97,7 @@ export class BetaInterestForm extends Component<Props, State> {
 			this._email ? this._email["value"].trim() : "",
 			firstName || "",
 			lastName || "",
+			this._company["value"],
 			this._languages.selected(),
 			this._editors.selected(),
 			this._message["value"].trim(),
@@ -126,6 +129,7 @@ export class BetaInterestForm extends Component<Props, State> {
 
 		let defaultFullName;
 		let defaultEmail;
+		let defaultCompany;
 		let defaultMessage;
 		let defaultEditors = [];
 		let defaultLanguages: string[] = [];
@@ -134,6 +138,7 @@ export class BetaInterestForm extends Component<Props, State> {
 			ls = JSON.parse(ls);
 			defaultFullName = ls.fullName;
 			defaultEmail = ls.email;
+			defaultCompany = ls.company;
 			defaultEditors = ls.editors;
 			defaultLanguages = ls.languages;
 			defaultMessage = ls.message;
@@ -156,6 +161,9 @@ export class BetaInterestForm extends Component<Props, State> {
 					{(!emails || emails.length === 0) && <div className={styles.row}>
 						<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
 					</div>}
+					<div className={styles.row}>
+						<Input domRef={(c) => this._company = c} block={true} type="text" name="company" placeholder="Company / organization" required={true} defaultValue={defaultCompany} />
+					</div>
 					<div className={styles.row}>
 						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
 					</div>

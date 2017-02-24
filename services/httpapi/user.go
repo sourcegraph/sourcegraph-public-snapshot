@@ -37,6 +37,7 @@ func serveBetaSubscription(w http.ResponseWriter, r *http.Request) error {
 		MergeFields: map[string]interface{}{
 			"FNAME":    sub.FirstName,
 			"LNAME":    sub.LastName,
+			"COMPANY":  sub.Company,
 			"LANGUAGE": mailchimp.Array(sub.Languages),
 			"EDITOR":   mailchimp.Array(sub.Editors),
 			"MESSAGE":  sub.Message,

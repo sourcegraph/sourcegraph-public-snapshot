@@ -18,6 +18,7 @@ class UserBackendClass {
 					Email: action.email,
 					FirstName: action.firstName,
 					LastName: action.lastName,
+					Company: action.company,
 					Languages: action.languages,
 					Editors: action.editors,
 					Message: action.message,

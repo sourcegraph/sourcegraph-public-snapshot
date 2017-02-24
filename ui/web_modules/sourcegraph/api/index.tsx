@@ -24,6 +24,7 @@ export interface BetaRegistration {
 	Email?: string;
 	FirstName?: string;
 	LastName?: string;
+	Company?: string;
 	Languages?: string[];
 	Editors?: string[];
 	Message?: string;

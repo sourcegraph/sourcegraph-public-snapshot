@@ -345,6 +345,8 @@ type BetaRegistration struct {
 	FirstName string `json:"FirstName,omitempty"`
 	// LastName is the last name of the user.
 	LastName string `json:"LastName,omitempty"`
+	// Company is the user's company or organization.
+	Company string `json:"Company,omitempty"`
 	// Languages is a list of programming languages the user is interested in.
 	Languages []string `json:"Languages,omitempty"`
 	// Editors is a list of editors the user is interested in.

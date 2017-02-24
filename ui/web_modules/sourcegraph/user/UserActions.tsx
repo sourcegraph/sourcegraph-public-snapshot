@@ -8,14 +8,16 @@ export class SubmitBetaSubscription {
 	email: string;
 	firstName: string;
 	lastName: string;
+	company: string;
 	languages: string[];
 	editors: string[];
 	message: string;
 
-	constructor(email: string, firstName: string, lastName: string, languages: string[], editors: string[], message: string) {
+	constructor(email: string, firstName: string, lastName: string, company: string, languages: string[], editors: string[], message: string) {
 		this.email = email;
 		this.firstName = firstName;
 		this.lastName = lastName;
+		this.company = company;
 		this.languages = languages;
 		this.editors = editors;
 		this.message = message;
