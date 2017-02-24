@@ -3,9 +3,10 @@ package localstore
 import (
 	"testing"
 
+	"time"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"time"
 )
 
 func TestPaywallLogic(t *testing.T) {
@@ -28,7 +29,7 @@ func TestPaywallLogic(t *testing.T) {
 	}
 
 	// Test on a blocked org:
-	_, err = appDBH(ctx).Db.Query("INSERT INTO "+orgTableName+" (org_name, plan) VALUES ($1, $2);", "someOrg", Blocked)
+	_, err = appDBH(ctx).Db.Query("INSERT INTO "+orgTableName+" (org_name, plan) VALUES ($1, $2);", "someOrg", string(Blocked))
 	if err != nil {
 		t.Fatalf("Unexected error: %s", err)
 	}
@@ -56,7 +57,7 @@ func TestExpirationLogic(t *testing.T) {
 	}
 
 	// Expired repos are blocked:
-	_, err = appDBH(ctx).Db.Query("INSERT INTO "+orgTableName+" (org_name, trial_expiration, plan) VALUES ($1, $2, $3);", "someOrg", time.Now(), None)
+	_, err = appDBH(ctx).Db.Query("INSERT INTO "+orgTableName+" (org_name, trial_expiration, plan) VALUES ($1, $2, $3);", "someOrg", time.Now().UTC(), string(None))
 	if err != nil {
 		t.Fatal(err)
 	}
