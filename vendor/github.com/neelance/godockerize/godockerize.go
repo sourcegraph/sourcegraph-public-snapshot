@@ -81,7 +81,7 @@ func doBuild(c *cli.Context) error {
 	fset := token.NewFileSet()
 	env := c.StringSlice("env")
 	expose := []string{}
-	install := []string{"ca-certificates", "mailcap"} // mailcap is for /etc/mime.types
+	install := []string{"ca-certificates", "mailcap", "tini"} // mailcap is for /etc/mime.types
 	run := []string{}
 	for _, name := range pkg.GoFiles {
 		f, err := parser.ParseFile(fset, filepath.Join(pkg.Dir, name), nil, parser.ParseComments)
@@ -132,7 +132,7 @@ func doBuild(c *cli.Context) error {
 	if len(expose) != 0 {
 		fmt.Fprintf(&dockerfile, "  EXPOSE %s\n", strings.Join(sortedStringSet(expose), " "))
 	}
-	fmt.Fprintf(&dockerfile, "  ENTRYPOINT [\"/usr/local/bin/%s\"]\n", binname)
+	fmt.Fprintf(&dockerfile, "  ENTRYPOINT [\"/sbin/tini\", \"--\", \"/usr/local/bin/%s\"]\n", binname)
 	fmt.Fprintf(&dockerfile, "  ADD %s /usr/local/bin/\n", binname)
 
 	fmt.Println("godockerize: Generated Dockerfile:")
