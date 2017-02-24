@@ -29,20 +29,9 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-// documentReferencesTimeout is the timeout used for textDocument/references
-// calls.
-const documentReferencesTimeout = 15 * time.Second
-
 var streamExperiment = len(os.Getenv("STREAM_EXPERIMENT")) > 0
 
 func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
-	// TODO: Add support for the cancelRequest LSP method instead of using
-	// hard-coded timeouts like this here.
-	//
-	// See: https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#cancelRequest
-	ctx, cancel := context.WithTimeout(ctx, documentReferencesTimeout)
-	defer cancel()
-
 	// Begin computing the reverse import graph immediately, as this
 	// occurs in the background and is IO-bound.
 	reverseImportGraphC := h.reverseImportGraph(ctx, conn)
