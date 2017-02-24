@@ -7,9 +7,9 @@ import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Props extends ButtonProps {
 	scope: "private" | "public";
+	pageName?: string;
 	returnTo?: string | RouterLocation;
 	newUserReturnTo?: string | RouterLocation;
-	pageName?: string;
 	secondaryText?: string;
 }
 
@@ -17,18 +17,27 @@ export function GitHubAuthButton(props: Props): JSX.Element {
 	const {
 		scope,
 		children,
+		returnTo,
+		newUserReturnTo,
+		pageName,
 		...transferredProps,
 	} = props;
 
-	const scopes = scope === "private" ?
-		"read:org,user:email,repo" :
-		"read:org,user:email";
+	let scopes = "read:org,user:email";
+	if (scope === "private") {
+		scopes += ",repo";
+	}
 
 	return <AuthButton
-		provider="github"
+		authInfo={{
+			scopes,
+			pageName,
+			returnTo,
+			newUserReturnTo,
+			provider: "github",
+			eventObject: Events.OAuth2FlowGitHub_Initiated,
+		}}
 		iconType="github"
-		eventObject={Events.OAuth2FlowGitHub_Initiated}
-		scopes={scopes}
 		{...transferredProps}>
 		{children}
 	</AuthButton>;

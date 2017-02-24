@@ -8,36 +8,21 @@ import { typography, whitespace } from "sourcegraph/components/utils";
 import { LoggableEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
-export interface Props extends ButtonProps {
-	provider: oauthProvider;
+interface Props extends ButtonProps {
 	iconType: "github" | "google";
-	eventObject: LoggableEvent;
-
-	scopes?: string;
-	returnTo?: string | RouterLocation;
-	newUserReturnTo?: string | RouterLocation;
-	pageName?: string;
-
 	secondaryText?: string;
+	authInfo: ActionProps;
 }
 
 export function AuthButton(props: Props): JSX.Element {
-	let authForm: HTMLFormElement | null = null;
-
 	const {
-		provider,
 		iconType,
-		eventObject,
-		scopes,
-		returnTo,
-		newUserReturnTo,
 		secondaryText,
-		pageName = "",
 		children,
+		authInfo,
 		...btnProps
 	} = props;
 
-	const url = urlToOAuth(provider, scopes || null, returnTo || null, newUserReturnTo || returnTo || null);
 	const iconSx = props.size === "small" ? typography.size[5] : typography.size[4];
 
 	const icon = <span style={{ marginRight: whitespace[2] }}>
@@ -45,17 +30,64 @@ export function AuthButton(props: Props): JSX.Element {
 		{iconType === "google" && <Google style={iconSx} />}
 	</span>;
 
+	const { submit, form } = GetAuthzAction(authInfo);
+
+	if (secondaryText) {
+		return <SplitButton onClick={submit} {...btnProps} secondaryText={secondaryText}>
+			{form}
+			{icon}
+			{children}
+		</SplitButton>;
+	}
+
+	return <Button onClick={submit} {...btnProps}>
+		{form}
+		{icon}
+		{children}
+	</Button>;
+}
+
+interface ActionProps {
+	eventObject: LoggableEvent;
+	pageName?: string;
+
+	provider: oauthProvider;
+	scopes: string;
+	returnTo?: string | RouterLocation;
+	newUserReturnTo?: string | RouterLocation;
+}
+
+/**
+ * Get an authorization action and form. The invisible form must be included in
+ * the page for the action to work.
+ */
+export function GetAuthzAction(props: ActionProps): { submit: () => void, form: JSX.Element } {
+	let url = urlToOAuth(
+		props.provider,
+		props.scopes,
+		props.returnTo || null,
+		props.newUserReturnTo || null,
+	);
+
+	let authForm: HTMLFormElement | null = null;
 	const submitAuthForm = () => {
 		if (authForm) {
 			authForm.submit();
 		}
 	};
+	const logEvent = () => {
+		props.eventObject.logEvent({ page_name: props.pageName || "" });
+	};
 
-	return <form method="POST" ref={el => authForm = el} action={url} onSubmit={() => eventObject.logEvent({ page_name: pageName })}>
-		<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
-		{secondaryText
-			? <SplitButton onClick={submitAuthForm} {...btnProps} secondaryText={secondaryText}>{icon} {children}</SplitButton>
-			: <Button onClick={submitAuthForm} {...btnProps}>{icon} {children}</Button>
-		}
-	</form>;
+	return {
+		submit: submitAuthForm,
+		form: <form
+			action={url}
+			method="POST"
+			onSubmit={logEvent}
+			ref={el => authForm = el}
+			style={{ display: "none" }} >
+			<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
+		</form>
+	};
 }
