@@ -88,8 +88,8 @@ export class ShortcutModalComponent extends React.Component<Props, {}> {
 					<div style={{ padding: "1.5rem" }}>
 						{shortcutElement("?", "Show keyboard shortcuts")}
 						{shortcutElement("/", "Open quick search")}
-						{shortcutElement("g", "View on GitHub")}
 						{shortcutElement("a", "Toggle authors")}
+						{shortcutElement("g", "View on GitHub")}
 						{shortcutElement("y", "Show commit hash in URL bar")}
 					</div>
 				</div>
