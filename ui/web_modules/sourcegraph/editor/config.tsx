@@ -24,6 +24,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
 import { renderDirectoryContent, renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
 import { SidebarContribID, SidebarContribution } from "sourcegraph/workbench/info/contrib";
+import { onWorkbenchShown } from "sourcegraph/workbench/main";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
@@ -126,6 +127,7 @@ export function registerQuickopenListeners(onShow: () => any, onHide: () => any)
 	const quickOpenService = Services.get(IQuickOpenService) as IQuickOpenService;
 	disposables.push(quickOpenService.onShow(onShow));
 	disposables.push(quickOpenService.onHide(onHide));
+	disposables.push(onWorkbenchShown(shown => !shown && onHide())); // unmounting workbench auto-dismisses quickopen
 	return disposables;
 }
 
