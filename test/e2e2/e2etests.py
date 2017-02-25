@@ -214,6 +214,8 @@ def test_beta_signup(d):
 
     retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').send_keys("Bobby Jones"))
     wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').get_attribute("value") == "Bobby Jones")
+    retry(lambda: wd.find_element_by_name('company').send_keys("Dutch East India"))
+    wait_for(lambda: wd.find_element_by_name('company').get_attribute("value") == "Dutch East India")
 
     def f():
         checkboxes = wd.find_elements_by_css_selector('[class^="BetaInterestForm"] input[type="checkbox"]')
@@ -224,7 +226,7 @@ def test_beta_signup(d):
     retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').send_keys("Sourcegraph is great"))
     wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').get_attribute("value") == "Sourcegraph is great")
     retry(lambda: d.find_button_by_partial_text("Participate").click())
-    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at %s" % username)) > 0)
+    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at")) > 0)
 
 def test_first_open_jump_to_line(d):
     wd = d.d
