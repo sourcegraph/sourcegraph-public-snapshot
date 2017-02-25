@@ -151,11 +151,8 @@ class Driver(object):
             return tt
         raise E2EError("no tooltips within 5px of element %s#%s, nearest was %d" % (tt.tag_name, tt.id, dist))
 
-    def find_search_modal_selected_result(self):
-        return self.d.find_element_by_css_selector("[data-class-name~=modal-result-selected]")
-
     def find_search_modal_results(self, results_text, exact_match=False):
-        results = self.d.find_elements_by_css_selector("[data-class-name~=modal-result]")
+        results = self.d.find_elements_by_css_selector(".quick-open-widget .monaco-tree-row.focused")
         if exact_match:
             return [r for r in results if results_text == r.text]
         return [r for r in results if results_text in r.text]
@@ -216,15 +213,3 @@ class Util(object):
         wd = d.d
         wd.find_element_by_id("global-nav").find_element_by_css_selector(".sourcegraph-user-menu").click()
         wd.find_element_by_partial_link_text("Sign out").click()
-
-    # wait_for_all_network_indicators_to_be_invisible_with_jiggle is a
-    # kludge to address
-    # https://github.com/sourcegraph/sourcegraph/issues/2391
-    @staticmethod
-    def wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4):
-        def f():
-            # "jiggle" the switch
-            d.active_elem().send_keys(Keys.SPACE)
-            d.active_elem().send_keys(Keys.BACKSPACE)
-            wait_for(d.all_network_indicators_are_invisible, max_wait=jiggle_wait)
-        retry(f)
