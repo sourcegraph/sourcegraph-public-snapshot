@@ -23,7 +23,7 @@ curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && yarn && yarn run st
 mkdir -p .bin
 env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,zap}
 env SRC_REPOS_DIR=$HOME/.sourcegraph/repos ./.bin/gitserver &
-env SRC_GIT_SERVERS=127.0.0.1:3178 LSP_PROXY=127.0.0.1:4388 ./.bin/indexer &
+env SRC_GIT_SERVERS=127.0.0.1:3178 LSP_PROXY=127.0.0.1:4388 LSP_PROXY_BG=127.0.0.1:4388 ./.bin/indexer &
 ./.bin/github-proxy &
 env SRC_GIT_SERVERS=127.0.0.1:3178 ./.bin/zap &
 
@@ -34,6 +34,7 @@ export DEBUG=true
 export SRC_APP_DISABLE_SUPPORT_SERVICES=true
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GITHUB_BASE_URL=http://127.0.0.1:3180
+export LSP_PROXY_BG=127.0.0.1:4388
 
 type ulimit > /dev/null && ulimit -n 10000
 exec "$PWD"/vendor/bin/rego \
