@@ -16,6 +16,7 @@ class BrowserEnvironment implements IEnvironment {
 	private docAtLastSave: Map<string, string> = new Map<string, string>();
 	private docAtBase: Map<string, string> = new Map<string, string>(); // simulated doc at base commit (before ops)
 	private _zapRef: string;
+	private _isRunning: boolean;
 
 	constructor() {
 		// Track the initial contents of documents so we can revert.
@@ -58,6 +59,7 @@ class BrowserEnvironment implements IEnvironment {
 	set zapRef(ref: string) {
 		this._zapRef = ref;
 		this.zapRefChangeEmitter.fire(ref);
+		vscode.commands.executeCommand("zap.reference.change", ref);
 	}
 
 	get zapBranch(): string { return this._zapRef; }
@@ -120,6 +122,15 @@ class BrowserEnvironment implements IEnvironment {
 		const ctx: typeof context = self["sourcegraphContext"];
 		const user = ctx && ctx.user ? ctx.user.Login : "anonymous";
 		return `${user}@web`;
+	}
+
+	set isRunning(status: boolean) {
+		this._isRunning = status;
+		vscode.commands.executeCommand("zap.status.change", status);
+	}
+
+	get isRunning(): boolean {
+		return this._isRunning;
 	}
 }
 

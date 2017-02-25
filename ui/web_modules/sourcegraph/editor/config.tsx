@@ -7,7 +7,9 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderRegistry } from "vs/editor/common/modes";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
+import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { IFileService } from "vs/platform/files/common/files";
+import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
@@ -191,7 +193,7 @@ function updateEditor(editor: ICodeEditor): void {
 	updateEditorInstance(editor);
 
 	// Listeners
-	editor.onDidChangeCursorSelection(throttle(updateURLHash, 100, { leading: true, trailing: true }));
+	editor.onDidChangeCursorSelection(throttle(updateURLHash, 200, { leading: true, trailing: true }));
 }
 
 function updateURLHash(e: ICursorSelectionChangedEvent): void {
@@ -219,11 +221,27 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 
 		let query = "";
 		// Keep query param for zap when selecting lines.
-		if (router.location.query["tmpZapRef"]) {
-			query = `?tmpZapRef=${router.location.query["tmpZapRef"]}`;
+		if (currentZapRef) {
+			query = `?tmpZapRef=${currentZapRef}`;
 		}
 
 		// Circumvent react-router to avoid a jarring jump to the anchor position.
 		history.replaceState({}, "", window.location.pathname + query + hash);
 	}
 }
+
+let currentZapRef: string | undefined;
+let currentZapStatus: boolean;
+
+CommandsRegistry.registerCommand("zap.reference.change", (accessor: ServicesAccessor, ref: string) => {
+	currentZapRef = ref;
+	let query = "";
+	if (currentZapRef) {
+		query = `?tmpZapRef=${currentZapRef}`;
+	}
+	history.replaceState({}, "", window.location.pathname + query + window.location.hash);
+});
+
+CommandsRegistry.registerCommand("zap.status.change", (accessor: ServicesAccessor, isRunning: boolean) => {
+	currentZapStatus = isRunning;
+});
