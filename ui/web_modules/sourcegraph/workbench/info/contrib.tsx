@@ -214,7 +214,7 @@ export class SidebarContribution extends Disposables {
 
 	private isIdentifier(model: IModel, pos: IPosition): boolean {
 		const line = model.getLineTokens(pos.lineNumber);
-		const tokens = line.sliceAndInflate(pos.column, pos.column, 0);
+		const tokens = line.sliceAndInflate(pos.column - 1, pos.column - 1, 0);
 		if (tokens.length !== 1) {
 			return true;
 		}
