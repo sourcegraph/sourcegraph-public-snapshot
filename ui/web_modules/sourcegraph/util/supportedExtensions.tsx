@@ -4,7 +4,6 @@ const modes = getModes();
 
 const ignoredExtensions = new Set<string>(["md"]);
 const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx"]);
-const betaExtensions = new Set<string>(["java"]);
 if (modes.has("css")) {
 	supportedExtensions.add("css");
 	supportedExtensions.add("less");
@@ -16,6 +15,9 @@ if (modes.has("php")) {
 if (modes.has("python")) {
 	supportedExtensions.add("py");
 }
+if (modes.has("java")) {
+	supportedExtensions.add("java");
+}
 
 export function isSupportedExtension(ext: string): boolean {
 	return supportedExtensions.has(ext);
@@ -24,10 +26,6 @@ export function isSupportedExtension(ext: string): boolean {
 // ignored extensions, like md, will not trigger a warning banner
 export function isIgnoredExtension(ext: string): boolean {
 	return ignoredExtensions.has(ext);
-}
-
-export function isBetaExtension(ext: string): boolean {
-	return betaExtensions.has(ext);
 }
 
 export function isSupportedMode(modeId: string): boolean {
