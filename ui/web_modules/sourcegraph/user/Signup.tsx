@@ -36,13 +36,14 @@ type State = any;
 
 export class SignupForm extends Component<Props, State> {
 	render(): JSX.Element | null {
-		const newUserRedirLocation = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, { modal: "afterPrivateCodeSignup" });
+		const publicNewUserRedir = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, {});
+		const privateNewUserRedir = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, { modal: "afterPrivateCodeSignup" });
 		return (
 			<div>
 				<div className={styles.form}>
 					<GitHubAuthButton
 						scope="public"
-						newUserReturnTo={newUserRedirLocation}
+						newUserReturnTo={publicNewUserRedir}
 						returnTo={this.props.returnTo}
 						tabIndex={1}
 						block={true}
@@ -51,7 +52,7 @@ export class SignupForm extends Component<Props, State> {
 					<GitHubAuthButton
 						scope="private"
 						color="purple"
-						newUserReturnTo={newUserRedirLocation}
+						newUserReturnTo={privateNewUserRedir}
 						returnTo={this.props.returnTo}
 						tabIndex={2}
 						block={true}
