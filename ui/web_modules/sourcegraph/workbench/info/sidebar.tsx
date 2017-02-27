@@ -21,7 +21,6 @@ import { Disposables } from "sourcegraph/workbench/utils";
 import { MiniStore } from "sourcegraph/workbench/utils";
 
 export const REFERENCES_SECTION_ID = "references-section-header";
-const TreeDomNodeID = "workbench.editors.stringEditor";
 const TreeSidebarClassName = "sg-sidebar";
 
 export interface InfoPanelProps {
@@ -99,7 +98,13 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 	}
 
 	renderOutOfTreeDOMNode(): void {
-		const parent = document.getElementById(TreeDomNodeID) as HTMLDivElement;
+		let parent = document.getElementById("workbench.editors.files.textFileEditor") as HTMLDivElement;
+		if (!parent) {
+			parent = document.getElementById("workbench.editors.stringEditor") as HTMLDivElement;
+		}
+		if (!parent) {
+			parent = document.getElementById("workbench.editors.textDiffEditor") as HTMLDivElement;
+		}
 		if (!parent) {
 			return;
 		}
