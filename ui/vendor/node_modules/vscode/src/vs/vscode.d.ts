@@ -1949,6 +1949,47 @@ declare module 'vscode' {
 	}
 
 	/**
+	 * Represents information about a programming construct that can be used to
+	 * identify and locate the construct's symbol. The identification does not have
+	 * to be unique, but it should be as unique as possible. It is up to the
+	 * language server to define the schema of this object.
+	 *
+	 * In contrast to `SymbolInformation`, `SymbolDescriptor` includes more concrete,
+	 * language-specific, metadata about the symbol.
+	 */
+	export interface SymbolDescriptor {
+		/**
+		 * A list of properties of a symbol that can be used to identify or locate
+		 * it.
+		 */
+		[attr: string]: any
+	}
+
+	/**
+	 * Represents information about a reference to programming constructs like
+	 * variables, classes, interfaces, etc.
+	 */
+	export interface ReferenceInformation {
+		/**
+		 * The location in the workspace where the `symbol` is referenced.
+		 */
+		reference: Location;
+
+		/**
+		 * Metadata about the symbol that can be used to identify or locate its
+		 * definition.
+		 */
+		symbol: SymbolDescriptor;
+	}
+
+	export interface WorkspaceReferenceProvider {
+		/**
+		 * Implements https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md
+		 */
+		provideWorkspaceReferences(query: SymbolDescriptor, hints: { [hint: string]: any }, token: CancellationToken, progress: ProgressCallback<ReferenceInformation[]>): ProviderResult<ReferenceInformation[]>;
+	}
+
+	/**
 	 * A text edit represents edits that should be applied
 	 * to a document.
 	 */
@@ -4196,6 +4237,19 @@ declare module 'vscode' {
 		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
 		 */
 		export function registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Disposable;
+
+		/**
+		 * Register an external reference provider.
+		 *
+		 * Multiple providers can be registered for a language. In that case providers are asked in
+		 * parallel and the results are merged. A failing provider (rejected promise or exception) will
+		 * not cause a failure of the whole operation.
+		 *
+		 * @param selector A selector that defines the documents this provider is applicable to.
+		 * @param provider A reference provider.
+		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 */
+		export function registerWorkspaceReferenceProvider(selector: DocumentSelector, provider: WorkspaceReferenceProvider): Disposable;
 
 		/**
 		 * Register a reference provider.
