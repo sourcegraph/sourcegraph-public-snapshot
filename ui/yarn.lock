@@ -8,12 +8,16 @@
   dependencies:
     fast-json-patch "^1.1.5"
 
-"@sourcegraph/vscode-languageclient@3.0.4-patch2":
-  version "3.0.4-patch2"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/vscode-languageclient/-/vscode-languageclient-3.0.4-patch2.tgz#4bdc2f2c7e5cf91cf5f5edbf196a85e5fab5ac04"
+"@sourcegraph/vscode-languageclient@3.0.4-patch3":
+  version "3.0.4-patch3"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/vscode-languageclient/-/vscode-languageclient-3.0.4-patch3.tgz#44489e05f20f000d314ee08f845473cad8429541"
   dependencies:
     "@sourcegraph/vscode-jsonrpc" "^3.0.4-patch"
-    vscode-languageserver-types "^3.0.3"
+    "@sourcegraph/vscode-languageserver-types" "^3.0.3-patch"
+
+"@sourcegraph/vscode-languageserver-types@3.0.3-patch", "@sourcegraph/vscode-languageserver-types@^3.0.3-patch":
+  version "3.0.3-patch"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/vscode-languageserver-types/-/vscode-languageserver-types-3.0.3-patch.tgz#07e10690a22e4144648b2c21ffc162b7f41bdba8"
 
 "@types/classnames@0.0.32":
   version "0.0.32"
@@ -3769,10 +3773,6 @@ vm-browserify@0.0.4:
 vscode-jsonrpc@3.0.1-alpha.7:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/vscode-jsonrpc/-/vscode-jsonrpc-3.0.3.tgz#a7c3665bad4a3462c7ee3e5add88f3f016b4f3e4"
-
-vscode-languageserver-types@3.0.3, vscode-languageserver-types@^3.0.3:
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/vscode-languageserver-types/-/vscode-languageserver-types-3.0.3.tgz#303b2a307c20952ff5c1f5a608f3c91146028d47"
 
 vscode-zap@^0.0.53:
   version "0.0.53"
