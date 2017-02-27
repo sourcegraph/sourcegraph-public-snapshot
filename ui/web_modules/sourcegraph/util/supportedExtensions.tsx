@@ -6,15 +6,15 @@ const ignoredExtensions = new Set<string>(["md"]);
 const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx"]);
 const betaExtensions = new Set<string>(["java"]);
 if (modes.has("css")) {
-	supportedExtensions.add("css");
-	supportedExtensions.add("less");
-	supportedExtensions.add("scss");
+	betaExtensions.add("css");
+	betaExtensions.add("less");
+	betaExtensions.add("scss");
 }
 if (modes.has("php")) {
-	supportedExtensions.add("php");
+	betaExtensions.add("php");
 }
 if (modes.has("python")) {
-	supportedExtensions.add("py");
+	betaExtensions.add("py");
 }
 
 export function isSupportedExtension(ext: string): boolean {
