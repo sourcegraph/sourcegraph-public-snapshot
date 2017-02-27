@@ -34,7 +34,13 @@ type State = {
 };
 
 class AfterSignupForm extends React.Component<Props, State> {
+
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
 	state: State = { form: {} };
+	context: { router: Router };
 
 	componentDidMount(): void {
 		this._updateStateFromForm();
@@ -82,7 +88,7 @@ class AfterSignupForm extends React.Component<Props, State> {
 		})
 			.then(checkStatus)
 			.then(() => {
-				Events.AfterSignup_Completed.logEvent({
+				Events.AfterSignupModal_Completed.logEvent({
 					trialSignupProperties: hubspotProps,
 				});
 
@@ -98,7 +104,7 @@ class AfterSignupForm extends React.Component<Props, State> {
 			});
 	}
 
-	render(): JSX.Element | null {
+	render(): JSX.Element {
 		let allOrgs: string[] = [];
 		if (this.props.root && this.props.root.currentUser && this.props.root.currentUser.githubOrgs) {
 			this.props.root.currentUser.githubOrgs.forEach(org => allOrgs.push(org));
@@ -108,15 +114,16 @@ class AfterSignupForm extends React.Component<Props, State> {
 		}
 
 		const isPersonalPlan = this.state.form.org === context.user!.Login;
+		const authedPrivate = this.context.router.location.query["private"];
 
 		return (
 			<div style={this.props.style}>
 				<form onSubmit={ev => this._sendForm(ev)} onChange={ev => this._onChange()} ref={e => this._form = e}>
 					<Input autoFocus={true} type="text" placeholder="Name" name="fullName" block={true} label="Your full name" containerStyle={{ marginBottom: whitespace[3] }} required={true} />
-					<Select block={true} name="org" label="Your primary organization" containerSx={{ marginBottom: whitespace[3] }}>
+					{authedPrivate && <Select block={true} name="org" label="Your primary organization" containerSx={{ marginBottom: whitespace[3] }}>
 						{allOrgs.map(org => <option value={org} key={org}>{org}{org === context.user!.Login ? " — personal account" : ""}</option>)}
-					</Select>
-					<p style={{ ...typography.size[6], color: colors.greenD1(), paddingBottom: whitespace[2] }}>{isPersonalPlan ? "Personal" : "Organization"}: 14 days free, then ${isPersonalPlan ? "9" : "25/user"}/month. Unlimited private repositories. <Link to="/pricing" target="_blank">Learn&nbsp;more&nbsp;<PopOut width={18} /></Link></p>
+					</Select>}
+					{authedPrivate && <p style={{ ...typography.size[6], color: colors.greenD1(), paddingBottom: whitespace[2] }}>{isPersonalPlan ? "Personal" : "Organization"}: 14 days free, then ${isPersonalPlan ? "9" : "25/user"}/month. Unlimited private repositories. <Link to="/pricing" target="_blank">Learn&nbsp;more&nbsp;<PopOut width={18} /></Link></p>}
 					<Input block={true} type="email" name="email" placeholder="you@example.com" label="Your work email" required={true} containerStyle={{ marginBottom: whitespace[3] }} />
 					<Select name="language" containerSx={{ marginBottom: whitespace[3] }} label="Your primary programming language">
 						{langs.map(([id, name]) => <option value={id} key={id}>{name}</option>)}

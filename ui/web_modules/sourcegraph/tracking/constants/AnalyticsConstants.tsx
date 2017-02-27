@@ -203,7 +203,7 @@ export const Events = {
 	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
 
 	// GTM
-	AfterSignup_Completed: new LoggableEvent("AfterSignupCompleted", EventCategories.GTM, EventActions.Success),
+	AfterSignupModal_Completed: new LoggableEvent("AfterSignupModalCompleted", EventCategories.GTM, EventActions.Success),
 
 	// Code view
 	// Code view: Symbol events
