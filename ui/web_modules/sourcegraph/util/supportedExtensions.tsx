@@ -4,7 +4,10 @@ const modes = getModes();
 
 const ignoredExtensions = new Set<string>(["md"]);
 const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx"]);
-const betaExtensions = new Set<string>(["java"]);
+const betaExtensions = new Set<string>([]);
+if (modes.has("java")) {
+	betaExtensions.add("java");
+}
 if (modes.has("css")) {
 	betaExtensions.add("css");
 	betaExtensions.add("less");
