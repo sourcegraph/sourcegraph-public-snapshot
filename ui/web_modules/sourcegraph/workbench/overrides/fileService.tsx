@@ -148,7 +148,7 @@ class ZapFileService {
 
 		if (this.state.create) {
 			for (const f of this.state.create) {
-				const resourceKey = resource.with({ fragment: stripFileOrBufferPathPrefix(f) }).toString();
+				const uri = resource.with({ fragment: stripFileOrBufferPathPrefix(f) });
 				let content = "";
 				if (this.state.edit && this.state.edit[f]) {
 					if (this.state.edit[f].length > 1 || typeof this.state.edit[f][0] !== "string") {
@@ -158,14 +158,17 @@ class ZapFileService {
 				}
 				// Use the content cache to store the inital content of the file.
 				// TODO use TextDocumentService instead to enable editing capabilities.
-				contentCache.set(resourceKey, content);
+				contentCache.set(uri.toString(), content);
+				// Store the inital state of the file (empty) to support showing a diff view.
+				contentCache.set(uri.with({ query: `${uri.query}~0` }).toString(), "");
 			}
 		}
 		if (this.state.delete) {
 			for (const f of this.state.delete) {
 				if (isFilePath(f)) {
-					const resourceKey = resource.with({ fragment: stripFileOrBufferPathPrefix(f) }).toString();
-					contentCache.delete(resourceKey);
+					const uri = resource.with({ fragment: stripFileOrBufferPathPrefix(f) });
+					contentCache.delete(uri.toString());
+					contentCache.delete(uri.with({ query: `${uri.query}~0` }).toString());
 				}
 			}
 		}

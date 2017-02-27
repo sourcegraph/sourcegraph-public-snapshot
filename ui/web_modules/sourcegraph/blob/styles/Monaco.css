@@ -611,6 +611,14 @@
 	color: rgba(255, 255, 255, 0.9);
 }
 
+:global .editor.modified {
+	left: 32px !important;
+}
+
+:global .editor.original > .monaco-editor > .overflow-guard {
+	width: 32px !important;
+}
+
 /* Quickopen */
 
 :global .quick-open-widget {
