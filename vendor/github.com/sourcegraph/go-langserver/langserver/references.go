@@ -12,8 +12,6 @@ import (
 	"go/types"
 	"log"
 	"os"
-	"path"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -167,12 +165,9 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		return nil, findRefErr
 	}
 
-	sortBySharedDirWithURI(params.TextDocument.URI, locs)
-
 	// Technically we may be able to stop computing references sooner and
 	// save RAM/CPU, but currently that would have two drawbacks:
 	// * We can't stop the typechecking anyways
-	// * We may return results that are not as interesting since sortBySharedDirWithURI won't see everything.
 	if params.Context.XLimit > 0 && params.Context.XLimit < len(locs) {
 		locs = locs[:params.Context.XLimit]
 	}
@@ -513,58 +508,6 @@ func sameObj(x, y types.Object) bool {
 		}
 	}
 	return false
-}
-
-func sortBySharedDirWithURI(uri string, locs []lsp.Location) {
-	l := locationList{
-		L: locs,
-		D: make([]int, len(locs)),
-	}
-	// l.D[i] = number of shared directories between uri and l.L[i].URI
-	for i := range l.L {
-		u := l.L[i].URI
-		var d int
-		for i := 0; i < len(uri) && i < len(u) && uri[i] == u[i]; i++ {
-			if u[i] == '/' {
-				d++
-			}
-		}
-		if u == uri {
-			// Boost matches in the same uri
-			d++
-		}
-		l.D[i] = d
-	}
-	sort.Sort(l)
-}
-
-type locationList struct {
-	L []lsp.Location
-	D []int
-}
-
-func (l locationList) Less(a, b int) bool {
-	if l.D[a] != l.D[b] {
-		return l.D[a] > l.D[b]
-	}
-	if x, y := path.Dir(l.L[a].URI), path.Dir(l.L[b].URI); x != y {
-		return x < y
-	}
-	if l.L[a].URI != l.L[b].URI {
-		return l.L[a].URI < l.L[b].URI
-	}
-	if l.L[a].Range.Start.Line != l.L[b].Range.Start.Line {
-		return l.L[a].Range.Start.Line < l.L[b].Range.Start.Line
-	}
-	return l.L[a].Range.Start.Character < l.L[b].Range.Start.Character
-}
-
-func (l locationList) Swap(a, b int) {
-	l.L[a], l.L[b] = l.L[b], l.L[a]
-	l.D[a], l.D[b] = l.D[b], l.D[a]
-}
-func (l locationList) Len() int {
-	return len(l.L)
 }
 
 var refTimeoutResults = prometheus.NewHistogram(prometheus.HistogramOpts{
