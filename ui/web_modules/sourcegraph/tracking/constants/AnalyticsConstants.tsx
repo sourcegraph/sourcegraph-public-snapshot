@@ -157,12 +157,12 @@ export const Events = {
 	LoginModal_Initiated: new LoggableEvent("ShowLoginModal", EventCategories.Auth, EventActions.Toggle),
 	ToolsModal_Initiated: new LoggableEvent("ClickToolsandIntegrations", EventCategories.Auth, EventActions.Toggle),
 	BetaModal_Initiated: new LoggableEvent("ClickJoinBeta", EventCategories.Auth, EventActions.Toggle),
-	AfterPrivateCodeSignupModal_Initiated: new LoggableEvent("ShowAfterPrivateCodeSignupModal", EventCategories.GTM, EventActions.Toggle),
+	AfterSignupModal_Initiated: new LoggableEvent("ShowAfterSignupModal", EventCategories.GTM, EventActions.Toggle),
 	JoinModal_Dismissed: new LoggableEvent("DismissJoinModal", EventCategories.Auth, EventActions.Close),
 	LoginModal_Dismissed: new LoggableEvent("DismissLoginModal", EventCategories.Auth, EventActions.Close),
 	ToolsModal_Dismissed: new LoggableEvent("DismissToolsandIntegrationsModal", EventCategories.Auth, EventActions.Close),
 	BetaModal_Dismissed: new LoggableEvent("DismissBetaModal", EventCategories.Auth, EventActions.Close),
-	AfterPrivateCodeSignupModal_Dismissed: new LoggableEvent("DismissAfterPrivateCodeSignupModal", EventCategories.GTM, EventActions.Close),
+	AfterSignupModal_Dismissed: new LoggableEvent("DismissAfterSignupModal", EventCategories.GTM, EventActions.Close),
 
 	// Toast events
 	ToastChromeCTA_Clicked: new LoggableEvent("ChromeToastCTAClicked", EventCategories.Toast, EventActions.Click),
@@ -203,7 +203,7 @@ export const Events = {
 	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
 
 	// GTM
-	AfterPrivateCodeSignup_Completed: new LoggableEvent("AfterPrivateCodeSignupCompleted", EventCategories.GTM, EventActions.Success),
+	AfterSignup_Completed: new LoggableEvent("AfterSignupCompleted", EventCategories.GTM, EventActions.Success),
 
 	// Code view
 	// Code view: Symbol events
@@ -289,7 +289,7 @@ export function getModalDismissedEventObject(modalName: string): LoggableEvent {
 		"join": Events.JoinModal_Dismissed,
 		"login": Events.LoginModal_Dismissed,
 		"orgInvite": Events.OrgManualInviteModal_Dismissed,
-		"afterPrivateCodeSignup": Events.AfterPrivateCodeSignupModal_Dismissed,
+		"afterSignup": Events.AfterSignupModal_Dismissed,
 	};
 	return (modalName && modalName in dismissModalsMap) ? dismissModalsMap[modalName] : null;
 }

@@ -33,7 +33,7 @@ type State = {
 	};
 };
 
-class AfterPrivateCodeSignupForm extends React.Component<Props, State> {
+class AfterSignupForm extends React.Component<Props, State> {
 	state: State = { form: {} };
 
 	componentDidMount(): void {
@@ -82,7 +82,7 @@ class AfterPrivateCodeSignupForm extends React.Component<Props, State> {
 		})
 			.then(checkStatus)
 			.then(() => {
-				Events.AfterPrivateCodeSignup_Completed.logEvent({
+				Events.AfterSignup_Completed.logEvent({
 					trialSignupProperties: hubspotProps,
 				});
 
@@ -138,13 +138,13 @@ const Modal = (props: {
 		marginRight: "auto",
 	};
 
-	return <LocationStateModal modalName="afterPrivateCodeSignup" location={props.location} router={props.router}>
+	return <LocationStateModal modalName="afterSignup">
 		<div className={modalStyles.modal} style={sx}>
 			<Heading level={4} align="center" underline="orange">Let&apos;s get started!</Heading>
-			<AfterPrivateCodeSignupForm
+			<AfterSignupForm
 				root={props.root}
 				relay={props.relay}
-				onSubmit={dismissModal("afterPrivateCodeSignup", props.location, props.router)} />
+				onSubmit={dismissModal("afterSignup", props.location, props.router)} />
 		</div>
 	</LocationStateModal>;
 };

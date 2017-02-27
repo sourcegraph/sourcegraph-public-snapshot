@@ -27,12 +27,12 @@ export class OnboardingModals extends React.Component<Props, {}>  {
 	render(): JSX.Element | null {
 		return (
 			<div>
-				<LocationStateModal modalName="chrome" location={this.props.location} router={this.context.router}>
+				<LocationStateModal modalName="chrome">
 					<div style={{ maxWidth: "800px", marginLeft: "auto", marginRight: "auto" }}>
 						<ChromeExtensionOnboarding completeStep={this._completeChromeStep.bind(this)} location={this.props.location} />
 					</div>
 				</LocationStateModal>
-				<LocationStateModal modalName="github" location={this.props.location} router={this.context.router}>
+				<LocationStateModal modalName="github">
 					<div style={{ maxWidth: "800px", marginLeft: "auto", marginRight: "auto" }}>
 						<GitHubPrivateAuthOnboarding completeStep={this._completeGitHubStep.bind(this)} location={this.props.location} />
 					</div>

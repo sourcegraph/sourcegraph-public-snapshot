@@ -18,7 +18,7 @@ export const BetaSignup = (props: Props): JSX.Element => {
 		marginRight: "auto",
 	};
 
-	return <LocationStateModal modalName="menuBeta" location={props.location} router={props.router}>
+	return <LocationStateModal modalName="menuBeta">
 		<div className={styles.modal} style={sx}>
 			<Heading level={4} align="center">Join our beta program</Heading>
 			<BetaInterestForm

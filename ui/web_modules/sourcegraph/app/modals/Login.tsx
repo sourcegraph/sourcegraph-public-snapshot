@@ -1,13 +1,12 @@
 import * as React from "react";
 
-import { Router, RouterLocation } from "sourcegraph/app/router";
+import { RouterLocation } from "sourcegraph/app/router";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import { LoginForm } from "sourcegraph/user/Login";
 
 interface Props {
 	location: RouterLocation;
-	router: Router;
 }
 
 export const Login = (props: Props): JSX.Element => {
@@ -18,7 +17,7 @@ export const Login = (props: Props): JSX.Element => {
 	};
 
 	return (
-		<LocationStateModal modalName="login" location={props.location} router={props.router}>
+		<LocationStateModal modalName="login">
 			<div className={styles.modal} style={sx}>
 				<LoginForm
 					returnTo={props.location}

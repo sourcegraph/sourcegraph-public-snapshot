@@ -22,7 +22,7 @@ export function LoginForm(props: Props): JSX.Element {
 	// TODO(john): provide route pattern in `location` and use `RouterLocation` type.
 	let newUserPath = props.location.pathname.indexOf("/-/blob/") !== -1 ? { pathname: props.location.pathname, hash: props.location.hash } : defaultOnboardingPath;
 	const publicNewUserRedir = addQueryObjToURL(props.location, newUserPath, {});
-	const privateNewUserRedir = addQueryObjToURL(props.location, newUserPath, { modal: "afterPrivateCodeSignup" });
+	const privateNewUserRedir = addQueryObjToURL(props.location, newUserPath, { private: true });
 	return (
 		<div className={styles.form}>
 			<Heading level={3} align="center" underline="orange">Sign in to Sourcegraph</Heading>

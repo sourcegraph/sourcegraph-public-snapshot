@@ -21,7 +21,7 @@ export const Signup = (props: Props): JSX.Element => {
 
 	let newUserPath = props.location.pathname.indexOf("/-/blob/") !== -1 ? { pathname: props.location.pathname, hash: props.location.hash } : defaultOnboardingPath;
 	return (
-		<LocationStateModal modalName="join" location={props.location} router={props.router}>
+		<LocationStateModal modalName="join">
 			<div className={styles.modal} style={sx}>
 				<Heading level={3} align="center" underline="orange">Get started with Sourcegraph</Heading>
 				<SignupForm
@@ -32,3 +32,13 @@ export const Signup = (props: Props): JSX.Element => {
 		</LocationStateModal>
 	);
 };
+
+export function SignupModalContainer(props: {
+	closable: boolean,
+	children: React.ReactChildren,
+	modalName: string
+}): JSX.Element {
+	return <LocationStateModal modalName={props.modalName} >
+		{props.children}
+	</LocationStateModal>;
+}

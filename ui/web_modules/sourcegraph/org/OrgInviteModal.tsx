@@ -102,7 +102,7 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 
 		return (
 			<div>
-				<LocationStateModal router={this.context.router} modalName="orgInvite" location={this.props.location}>
+				<LocationStateModal modalName="orgInvite">
 					<div style={{ paddingTop: "50px" }}>
 						<div className={styles.modal} style={sx}>
 							<Heading underline="blue" level={3}>Invite Teammate</Heading>

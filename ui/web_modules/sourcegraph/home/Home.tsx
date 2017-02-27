@@ -145,7 +145,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				</div>
 
 				{this.props.location.state && (this.props.location.state as any).modal === "beta" &&
-					<LocationStateModal modalName="beta" location={this.props.location} router={this.context.router}>
+					<LocationStateModal modalName="beta">
 						<Panel style={{
 							maxWidth: 440,
 							minWidth: 320,

@@ -104,13 +104,11 @@ export function dismissModal(modalName: string, location: RouterLocation, router
 }
 
 interface LocationStateModalProps {
-	location: RouterLocation;
 	// modalName is the name of the modal (location.{state,query}.modal value) that this
 	// LocationStateToggleLink component toggles.
 	modalName: string;
 	onDismiss?: (e: any) => void;
 	children?: JSX.Element[];
-	router: Router;
 	style?: React.CSSProperties;
 }
 
@@ -118,20 +116,30 @@ interface LocationStateModalProps {
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
-export function LocationStateModal({ location, modalName, children, onDismiss, style, router }: LocationStateModalProps): JSX.Element {
-	const currentModal = (location.state && location.state["modal"]) ? location.state["modal"] : location.query["modal"];
-	if (currentModal !== modalName) {
-		return <span />;
-	}
-
-	const onDismiss2 = (e) => {
-		dismissModal(modalName, location, router)();
-		if (onDismiss) {
-			onDismiss(e);
-		}
+export class LocationStateModal extends React.Component<LocationStateModalProps, {}> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
 	};
 
-	return <RenderedModal onDismiss={onDismiss2} style={style} location={location} router={router}>
-		{children}
-	</RenderedModal>;
+	context: { router: Router };
+
+	render(): JSX.Element {
+		const { modalName, children, onDismiss, style } = this.props;
+		const location = this.context.router.location;
+		const currentModal = (location.state && location.state["modal"]) ? location.state["modal"] : location.query["modal"];
+		if (currentModal !== modalName) {
+			return <span />;
+		}
+
+		const onDismiss2 = (e) => {
+			dismissModal(modalName, location, this.context.router)();
+			if (onDismiss) {
+				onDismiss(e);
+			}
+		};
+
+		return <RenderedModal onDismiss={onDismiss2} style={style} location={location} router={this.context.router}>
+			{children}
+		</RenderedModal>;
+	}
 }

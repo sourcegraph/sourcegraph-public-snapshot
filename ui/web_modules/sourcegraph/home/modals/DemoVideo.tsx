@@ -17,7 +17,7 @@ export function DemoVideo(props: Props): JSX.Element {
 		marginRight: "auto",
 	};
 
-	return <LocationStateModal modalName="demo_video" location={props.location} router={props.router}>
+	return <LocationStateModal modalName="demo_video">
 		<div className={styles.modal} style={sx}>
 			<iframe width="100%" style={{ minHeight: "500px" }} src="https://www.youtube.com/embed/tf93F2nc3Yo?rel=0&amp;showinfo=0" frameBorder="0" allowFullScreen={true}></iframe>
 		</div>

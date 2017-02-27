@@ -11,7 +11,7 @@ import { GlobalNavStore, SetShortcutMenuVisible } from "sourcegraph/app/GlobalNa
 import { ShortcutModalComponent } from "sourcegraph/app/GlobalNav/ShortcutMenu";
 import { SignupOrLogin } from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
-import { AfterPrivateCodeSignup, BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
+import { AfterSignup, BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
 import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
 import { RouterContext, RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, Logo, TabItem, Tabs } from "sourcegraph/components";
@@ -115,13 +115,13 @@ export class GlobalNav extends Container<Props, State> {
 		const modal = (
 			<div>
 				{modalName === "login" && !context.user &&
-					<Login location={this.props.location} router={this.context.router} />}
+					<Login location={this.props.location} />}
 				{modalName === "join" &&
 					<Signup location={this.props.location} router={this.context.router} shouldHide={shouldHide} />}
 				{modalName === "menuBeta" &&
 					<BetaSignup location={this.props.location} router={this.context.router} />}
-				{modalName === "afterPrivateCodeSignup" &&
-					<AfterPrivateCodeSignup location={this.props.location} router={this.context.router} />}
+				{modalName === "afterSignup" &&
+					<AfterSignup location={this.props.location} router={this.context.router} />}
 				{modalName === "demo_video" &&
 					<DemoVideo location={this.props.location} router={this.context.router} />}
 				{modalName === "menuIntegrations" &&

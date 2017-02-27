@@ -20,7 +20,7 @@ export function addQueryObjToURL(base: RouterLocation, urlOrPathname: string | P
 	if (typeof urlOrPathname === "string") {
 		urlOrPathname = { pathname: urlOrPathname } as RouterLocation;
 	}
-	return Object.assign({}, base, urlOrPathname, { query: queryObj });
+	return Object.assign({}, base, urlOrPathname, { query: { modal: "afterSignup", ...queryObj } });
 }
 
 interface Props {
@@ -37,7 +37,7 @@ type State = any;
 export class SignupForm extends Component<Props, State> {
 	render(): JSX.Element | null {
 		const publicNewUserRedir = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, {});
-		const privateNewUserRedir = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, { modal: "afterPrivateCodeSignup" });
+		const privateNewUserRedir = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, { private: true });
 		return (
 			<div>
 				<div className={styles.form}>
