@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -289,9 +288,6 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
 				ev.AddField("lsp_error", e.Message)
 				success = false
-				if !handlerutil.DebugMode {
-					e.Message = "(error message omitted)"
-				}
 				resps[i].Error = e
 			} else if err != nil {
 				return err
