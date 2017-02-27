@@ -771,12 +771,6 @@
 			"revisionTime": "2015-06-26T09:08:21Z"
 		},
 		{
-			"checksumSHA1": "KicKT3XIQER5CM6DUGLWQxkvekM=",
-			"path": "github.com/yhat/scrape",
-			"revision": "24b7890b0945459dbf91743e4d2ac5d75a51fee2",
-			"revisionTime": "2016-11-28T14:46:10Z"
-		},
-		{
 			"checksumSHA1": "6NS7FWJl1FobB+Xfe4SzBGD+75g=",
 			"path": "go.uber.org/atomic",
 			"revision": "3b8db5e93c4c02efbc313e17b2e796b0914a01fb",
@@ -973,16 +967,6 @@
 			"path": "google.golang.org/api/googleapi/transport",
 			"revision": "c13a21ee847eca050f08db8373d8737494a1170e",
 			"revisionTime": "2016-07-01T18:13:47Z"
-		},
-		{
-			"path": "google.golang.org/cloud/compute/metadata",
-			"revision": "08d53874e89b5a4786b0d1fbe7957443d82b2299",
-			"revisionTime": "2015-04-16T11:42:47+10:00"
-		},
-		{
-			"path": "google.golang.org/cloud/internal",
-			"revision": "08d53874e89b5a4786b0d1fbe7957443d82b2299",
-			"revisionTime": "2015-04-16T11:42:47+10:00"
 		},
 		{
 			"checksumSHA1": "mEyChIkG797MtkrJQXW8X/qZ0l0=",
