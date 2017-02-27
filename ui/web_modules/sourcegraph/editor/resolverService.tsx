@@ -10,8 +10,6 @@ import { ResourceEditorModel } from "vs/workbench/common/editor/resourceEditorMo
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
 import { URIUtils } from "sourcegraph/core/uri";
-import { fetchContent } from "sourcegraph/editor/contentLoader";
-import { Features } from "sourcegraph/util/features";
 
 export class TextModelResolverService implements ITextModelResolverService {
 	public _serviceBrand: any;
@@ -25,13 +23,13 @@ export class TextModelResolverService implements ITextModelResolverService {
 		@IInstantiationService private instantiationService: IInstantiationService,
 	) {
 		this.contentProvider = new TextModelContentProvider(
-			modelService,
 			modeService,
+			textFileService,
 		);
 	}
 
 	createModelReference(resource: URI): TPromise<IReference<ITextEditorModel>> {
-		if (Features.zap2Way.isEnabled() && resource.scheme === "git" && URIUtils.hasAbsoluteCommitID(resource)) {
+		if (resource.scheme === "git" && URIUtils.hasAbsoluteCommitID(resource)) {
 			return this.textFileService.models.loadOrCreate(resource).then(model => {
 				return this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment).then(mode => {
 					model.textEditorModel.setMode(mode.getId());
@@ -55,24 +53,18 @@ export class TextModelResolverService implements ITextModelResolverService {
 export class TextModelContentProvider implements ITextModelContentProvider {
 
 	constructor(
-		@IModelService private modelService: IModelService,
 		@IModeService private modeService: IModeService,
+		@ITextFileService private textFileService: ITextFileService,
 	) {
 		//
 	}
 
 	provideTextContent(resource: URI): TPromise<IModel> {
-		let model = this.modelService.getModel(resource);
-		if (model) {
-			return TPromise.wrap(model);
-		}
-		return fetchContent(resource).then((content) => {
-			model = this.modelService.getModel(resource);
-			if (model) {
-				return model;
-			}
-			const mode = this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment);
-			return this.modelService.createModel(content, mode, resource);
+		return this.textFileService.models.loadOrCreate(resource).then(model => {
+			return this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment).then(mode => {
+				model.textEditorModel.setMode(mode.getId());
+				return model.textEditorModel;
+			});
 		});
 	}
 }

@@ -32,7 +32,6 @@ import { ITextFileService } from "vs/workbench/services/textfile/common/textfile
 
 import { TextModelResolverService } from "sourcegraph/editor/resolverService";
 import { init as initExtensionHost } from "sourcegraph/ext/main";
-import { Features } from "sourcegraph/util/features";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
 import { GitTextFileService } from "sourcegraph/workbench/textFileService";
@@ -58,16 +57,14 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	);
 	workbench.startup();
 
-	if (Features.zap2Way.isEnabled()) {
-		// HACK: overwritten by workbench.startup()
-		services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
-		services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
+	// HACK: overwritten by workbench.startup()
+	services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
+	services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
 
-		// HACK: get URI's filename in fragment, not in URI path component
-		(TextFileEditorModel.prototype as any).getOrCreateMode = function (modeService: IModeService, preferredModeIds: string, firstLineText?: string): TPromise<IMode> {
-			return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
-		};
-	}
+	// HACK: get URI's filename in fragment, not in URI path component
+	(TextFileEditorModel.prototype as any).getOrCreateMode = function (modeService: IModeService, preferredModeIds: string, firstLineText?: string): TPromise<IMode> {
+		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
+	};
 
 	initExtensionHost(workspace);
 

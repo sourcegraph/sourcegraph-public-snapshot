@@ -1,4 +1,3 @@
-import { IModelService } from "vs/editor/common/services/modelService";
 import { IModeService } from "vs/editor/common/services/modeService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { ContextMenuController } from "vs/editor/contrib/contextmenu/browser/contextmenu";
@@ -11,6 +10,7 @@ import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/vie
 import { FileRenderer } from "vs/workbench/parts/files/browser/views/explorerViewer";
 import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
 import { StorageService } from "vs/workbench/services/storage/common/storageService";
+import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
 import { layout } from "sourcegraph/components/utils";
 import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
@@ -38,8 +38,8 @@ export function configurePreStartup(services: ServiceCollection): void {
 export function configurePostStartup(services: ServiceCollection): void {
 	const resolver = services.get(ITextModelResolverService) as ITextModelResolverService;
 	resolver.registerTextModelContentProvider("git", new TextModelContentProvider(
-		services.get(IModelService) as IModelService,
 		services.get(IModeService) as IModeService,
+		services.get(ITextFileService) as ITextFileService,
 	));
 
 	(ContextMenuController.prototype as any)._onContextMenu = () => { /* */ };

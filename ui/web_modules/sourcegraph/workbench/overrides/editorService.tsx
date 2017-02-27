@@ -11,7 +11,6 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
 import { urlToRepo } from "sourcegraph/repo/routes";
-import { Features } from "sourcegraph/util/features";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
@@ -91,7 +90,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 	public createInput(data: IResourceInput): TPromise<IEditorInput>;
 	public createInput(data: IEditorInput): TPromise<IEditorInput>;
 	public createInput(data: any): TPromise<IEditorInput> {
-		if (Features.zap2Way.isEnabled() && data.resource && data.resource instanceof URI && data.resource.scheme === "git" && URIUtils.hasAbsoluteCommitID(data.resource)) {
+		if (data.resource && data.resource instanceof URI && data.resource.scheme === "git" && URIUtils.hasAbsoluteCommitID(data.resource)) {
 			return TPromise.as((this as any).createFileInput(data.resource)); // access superclass's private method
 		}
 		return super.createInput(data);

@@ -27,7 +27,7 @@ export class GitTextFileService extends TextFileService {
 	}
 
 	public confirmSave(resources?: URI[]): ConfirmResult {
-		throw new Error("not implemented");
+		return ConfirmResult.DONT_SAVE;
 	}
 
 	public save(resource: URI, options?: ISaveOptions): TPromise<boolean> {
