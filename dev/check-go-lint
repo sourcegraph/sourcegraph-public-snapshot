@@ -2,13 +2,7 @@
 
 set -e
 
-go-get() {
-    local pkg=$1
-    local cmd=$(basename $pkg)
-    command -v $cmd >/dev/null 2>&1 || go get $pkg
-}
-
-go-get honnef.co/go/staticcheck/cmd/staticcheck
+go get honnef.co/go/staticcheck/cmd/staticcheck
 
 echo go list...
 PKGS=$(go list ./... | grep -v /vendor/)
@@ -20,4 +14,4 @@ echo go vet...
 go vet ${PKGS}
 
 echo staticcheck...
-staticcheck ${PKGS}
+$GOPATH/bin/staticcheck ${PKGS}

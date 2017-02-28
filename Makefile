@@ -79,13 +79,12 @@ test: check src
 APPTESTPKGS ?= $(shell go list ./... | grep -v /vendor/ | grep -v '^sourcegraph.com/sourcegraph/sourcegraph/xlang$$' | sort)
 test-app: check src
 	./dev/gofmt.sh
-	./dev/ci/run-checkup.sh
 	cd ui && yarn test
 	CDPATH= cd ui/scripts/tsmapimports && yarn test
 	go test -race ${APPTESTPKGS}
 
 check: ${GOBIN}/go-template-lint
-	go-template-lint -f app/internal/tmpl/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
+	${GOBIN}/go-template-lint -f app/internal/tmpl/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
 	bash dev/check-for-template-inlines
 	bash dev/check-go-generate-all
 	bash dev/check-go-lint
