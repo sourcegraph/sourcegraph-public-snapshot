@@ -2,5 +2,5 @@ steps:
   - command: "go run ./dev/ci/gen-pipeline.go | buildkite-agent pipeline upload"
     label: ":pipeline:"
     plugins:
-      golang#v0.2:
+      golang#alternative-alternative-approach:
         import: sourcegraph.com/sourcegraph/sourcegraph
