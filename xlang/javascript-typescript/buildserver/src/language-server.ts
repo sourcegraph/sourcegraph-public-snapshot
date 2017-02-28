@@ -1,9 +1,7 @@
-import { spawn } from 'child_process';
 
 import { BuildHandler } from './buildhandler';
 import * as server from 'javascript-typescript-langserver/lib/server';
 import * as util from 'javascript-typescript-langserver/lib/util';
-import { newConnection } from 'javascript-typescript-langserver/lib/connection';
 const program = require('commander');
 const packageJson = require('../package.json');
 
@@ -24,7 +22,7 @@ program
 
 util.setStrict(program.strict);
 const lspPort = program.port || defaultLspPort;
-const clusterSize = program.cluster || Math.floor(numCPUs / 2);
+const clusterSize = program.cluster || numCPUs;
 
 const options: server.ServeOptions = {
 	clusterSize: clusterSize,
@@ -34,22 +32,4 @@ const options: server.ServeOptions = {
 	logfile: program.logfile
 };
 
-server.serve(options, () => new BuildHandler(), () => {
-	const args = [];
-	if (options.strict) {
-		args.push('--strict');
-	}
-	if (options.trace) {
-		args.push('--trace');
-	}
-	const cp = spawn(
-		process.execPath,
-		[...process.execArgv, __dirname + '/language-server-stdio.js', ...args],
-		{ stdio: ['pipe', 'pipe', 'inherit'] }
-	)
-	cp.on('exit', code => {
-		console.error(`${cp.pid} exited with ${code}`);
-	});
-	console.error(`spawned ${cp.pid}`);
-	return newConnection(cp.stdout, cp.stdin, options);
-});
+server.serve(options, () => new BuildHandler());
