@@ -1,6 +1,7 @@
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import Event, { Emitter } from "vs/base/common/event";
 import { TPromise } from "vs/base/common/winjs.base";
+import { DefaultConfig } from "vs/editor/common/config/defaultConfig";
 import { IConfigurationKeys, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspaceConfigurationValue, IWorkspaceConfigurationValues } from "vs/workbench/services/configuration/common/configuration";
 
@@ -85,6 +86,8 @@ const config = {
 		exclude: defaultExcludesNoGlobs,
 	},
 };
+
+DefaultConfig.editor.readOnly = config.editor.readOnly;
 
 export function toggleCodeLens(): void {
 	codeLensEnabled = !codeLensEnabled;
