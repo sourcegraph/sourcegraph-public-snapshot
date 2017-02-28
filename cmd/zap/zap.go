@@ -106,7 +106,7 @@ func main() {
 	env.HandleHelpFlag()
 	traceutil.InitTracer()
 	gitserver.DefaultClient.NoCreds = true
-	auth.InitSessionStore(conf.AppURL.Scheme == "https", conf.AppURL.Host)
+	auth.InitSessionStore(conf.AppURL.Scheme == "https")
 
 	go func() {
 		c := make(chan os.Signal, 1)

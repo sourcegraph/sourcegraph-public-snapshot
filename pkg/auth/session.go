@@ -17,7 +17,7 @@ var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "", "redis used for s
 var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 
 // InitSessionStore initializes the session store.
-func InitSessionStore(secureCookie bool, domain string) {
+func InitSessionStore(secureCookie bool) {
 	if sessionStoreRedis == "" {
 		sessionStoreRedis = ":6379"
 	}
@@ -29,7 +29,6 @@ func InitSessionStore(secureCookie bool, domain string) {
 	sessionStore.Options.Path = "/"
 	sessionStore.Options.HttpOnly = true
 	sessionStore.Options.Secure = secureCookie
-	sessionStore.Options.Domain = domain
 }
 
 // StartNewSession starts a new session with authentication for the given uid.
