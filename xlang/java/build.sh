@@ -14,8 +14,12 @@ else
 fi
 
 cd java-langserver
-
 mvn clean compile assembly:single
 
+cd ..
+mv java-langserver/target/java-language-server.jar docker
+
+cd docker
+git submodule update --init artifacts
 docker build -t $IMAGE:$TAG .
 gcloud docker -- push $IMAGE:$TAG

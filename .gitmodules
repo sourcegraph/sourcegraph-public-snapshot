@@ -1,0 +1,3 @@
+[submodule "xlang/java/docker/artifacts"]
+	path = xlang/java/docker/artifacts
+	url = https://github.com/sourcegraph/java-artifacts
