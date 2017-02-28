@@ -110,6 +110,7 @@ interface LocationStateModalProps {
 	onDismiss?: (e: any) => void;
 	children?: JSX.Element[];
 	style?: React.CSSProperties;
+	sticky?: boolean;
 }
 
 // TODO(nicot): We are getting rid of this function below with the up and coming nicot modal refactor, so the casting I did below is temporary.
@@ -132,6 +133,10 @@ export class LocationStateModal extends React.Component<LocationStateModalProps,
 		}
 
 		const onDismiss2 = (e) => {
+			if (this.props.sticky) {
+				return;
+			}
+
 			dismissModal(modalName, location, this.context.router)();
 			if (onDismiss) {
 				onDismiss(e);

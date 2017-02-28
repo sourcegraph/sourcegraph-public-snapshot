@@ -117,7 +117,7 @@ export class GlobalNav extends Container<Props, State> {
 				{modalName === "login" && !context.user &&
 					<Login location={this.props.location} />}
 				{modalName === "join" &&
-					<Signup location={this.props.location} router={this.context.router} shouldHide={shouldHide} />}
+					<Signup />}
 				{modalName === "menuBeta" &&
 					<BetaSignup location={this.props.location} router={this.context.router} />}
 				{modalName === "afterSignup" &&

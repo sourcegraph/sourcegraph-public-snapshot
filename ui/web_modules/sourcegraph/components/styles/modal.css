@@ -18,7 +18,7 @@
 }
 
 .modal {
-	composes: center mv6 br2 pa4 from base;
+	composes: center mv6 br3 pa4 from base;
 	composes: bg_white from colors;
 	box-shadow: 2px 2px 10px 0px c_black_30;
 	max-width: 80vw;

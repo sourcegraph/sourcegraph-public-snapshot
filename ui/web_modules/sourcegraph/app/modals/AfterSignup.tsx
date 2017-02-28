@@ -114,7 +114,7 @@ class AfterSignupForm extends React.Component<Props, State> {
 		}
 
 		const isPersonalPlan = this.state.form.org === context.user!.Login;
-		const authedPrivate = this.context.router.location.query["private"];
+		const authedPrivate = this.context.router.location.query["private"] === "true";
 
 		return (
 			<div style={this.props.style}>
@@ -145,7 +145,7 @@ const Modal = (props: {
 		marginRight: "auto",
 	};
 
-	return <LocationStateModal modalName="afterSignup">
+	return <LocationStateModal modalName="afterSignup" sticky={true}>
 		<div className={modalStyles.modal} style={sx}>
 			<Heading level={4} align="center" underline="orange">Let&apos;s get started!</Heading>
 			<AfterSignupForm

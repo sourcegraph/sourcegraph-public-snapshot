@@ -1,15 +1,20 @@
 import { History } from "history";
 import * as React from "react";
 
+import { context } from "sourcegraph/app/context";
+import { Router } from "sourcegraph/app/router";
 import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { whitespace } from "sourcegraph/components/utils";
+import { LoggableEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
+import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
 export interface PartialRouterLocation {
 	pathname: string;
@@ -84,3 +89,69 @@ function SignupComp(props: { location: any }): JSX.Element {
 }
 
 export const Signup = redirectIfLoggedIn("/", SignupComp);
+
+export function ghCodeAction(router: Router, privateCode: boolean): ActionForm {
+	const newUserPath = router.location.pathname.indexOf("/-/blob/") !== -1 ? { pathname: router.location.pathname, hash: router.location.hash } : defaultOnboardingPath;
+	const base = Object.assign(router.location, { pathname: "" });
+	const newUserReturnTo = addQueryObjToURL(base, newUserPath, { private: privateCode });
+	return getAuthAction({
+		eventObject: Events.OAuth2FlowGitHub_Initiated,
+		provider: "github",
+		scopes: privateCode ? "read:org,user:email,repo" : "read:org,user:email",
+		returnTo: router.location,
+		newUserReturnTo,
+	});
+}
+
+/**
+ * An action form contains an JSX element that must be included in the DOM and
+ * an action to submit that form.
+ */
+interface ActionForm {
+	submit: () => void;
+	form: JSX.Element;
+}
+
+export interface AuthProps {
+	eventObject: LoggableEvent;
+	pageName?: string;
+
+	provider: oauthProvider;
+	scopes: string;
+	returnTo?: string | RouterLocation;
+	newUserReturnTo?: string | RouterLocation;
+}
+
+/**
+ * Get an authorization action and form.
+ */
+export function getAuthAction(props: AuthProps): ActionForm {
+	let url = urlToOAuth(
+		props.provider,
+		props.scopes,
+		props.returnTo || null,
+		props.newUserReturnTo || null,
+	);
+
+	let authForm: HTMLFormElement | null = null;
+	const submitAuthForm = () => {
+		if (authForm) {
+			authForm.submit();
+		}
+	};
+	const logEvent = () => {
+		props.eventObject.logEvent({ page_name: props.pageName || "" });
+	};
+
+	return {
+		submit: submitAuthForm,
+		form: <form
+			action={url}
+			method="POST"
+			onSubmit={logEvent}
+			ref={el => authForm = el}
+			style={{ display: "none" }} >
+			<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
+		</form>
+	};
+}

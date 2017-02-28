@@ -1,44 +1,91 @@
 import * as React from "react";
 
-import { Router, RouterLocation } from "sourcegraph/app/router";
-import { Heading } from "sourcegraph/components";
+import { Router } from "sourcegraph/app/router";
+import { Button } from "sourcegraph/components";
+import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
-import { SignupForm, defaultOnboardingPath } from "sourcegraph/user/Signup";
+import { GitHubLogo } from "sourcegraph/components/symbols";
+import { Close } from "sourcegraph/components/symbols/Primaries";
+import { colors } from "sourcegraph/components/utils";
+import { ghCodeAction } from "sourcegraph/user/Signup";
 
-interface Props {
-	location: RouterLocation;
-	router: Router;
-	shouldHide: boolean;
-}
-
-export const Signup = (props: Props): JSX.Element => {
-	const sx = {
-		maxWidth: "420px",
-		marginLeft: "auto",
-		marginRight: "auto",
+export class Signup extends React.Component<{}, {}> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
 	};
 
-	let newUserPath = props.location.pathname.indexOf("/-/blob/") !== -1 ? { pathname: props.location.pathname, hash: props.location.hash } : defaultOnboardingPath;
-	return (
-		<LocationStateModal modalName="join">
-			<div className={styles.modal} style={sx}>
-				<Heading level={3} align="center" underline="orange">Get started with Sourcegraph</Heading>
-				<SignupForm
-					newUserReturnTo={newUserPath}
-					returnTo={props.shouldHide ? "/" : props.location.pathname}
-					location={props.location} />
+	context: { router: Router };
+
+	render(): JSX.Element {
+		const buttonSx = {
+			padding: 0,
+			textAlign: "left",
+		};
+		const privateCode = ghCodeAction(this.context.router, true);
+		const publicCode = ghCodeAction(this.context.router, false);
+		return <SignupModalContainer modalName="join">
+			<div style={{ padding: 20 }}>
+				To sign up, please authorize with GitHub:
 			</div>
-		</LocationStateModal>
-	);
+			{privateCode.form}
+			<Button onClick={privateCode.submit} color="blue" style={buttonSx}>
+				<GitHubLogo style={{ padding: 10, background: colors.blueD2() }} />
+				<span style={{ paddingLeft: 10, paddingRight: 20 }}>Authorize with GitHub</span>
+			</Button>
+			<div style={{ color: colors.gray(.8) }}>
+				or
+			</div>
+			{publicCode.form}
+			<a onClick={publicCode.submit}>Only authorize public code</a>
+			<hr style={{ marginLeft: -30, marginRight: -30, marginBottom: 20 }} />
+			Already have an account? <LocationStateToggleLink href="/login" modalName="login" location={location}>
+				Log in
+			</LocationStateToggleLink>
+		</SignupModalContainer>;
+	}
+}
+
+const sx = {
+	maxWidth: "420px",
+	marginLeft: "auto",
+	marginRight: "auto",
+	padding: 0,
+	textAlign: "center",
 };
 
-export function SignupModalContainer(props: {
-	closable: boolean,
-	children: React.ReactChildren,
-	modalName: string
-}): JSX.Element {
-	return <LocationStateModal modalName={props.modalName} >
-		{props.children}
-	</LocationStateModal>;
+interface Props {
+	modalName: string;
+	sticky?: boolean;
+}
+
+export class SignupModalContainer extends React.Component<Props, {}> {
+
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: { router: Router };
+
+	close = () => {
+		const url = { ...this.context.router.location, query: "", state: "" };
+		this.context.router.push(url);
+	}
+
+	render(): JSX.Element {
+		return <LocationStateModal modalName={this.props.modalName} sticky={this.props.sticky}>
+			<div className={styles.modal} style={sx}>
+				<div style={{ padding: 15, fontWeight: 800, textAlign: "left" }}>
+					Sign up
+					{!this.props.sticky && <a style={{ float: "right" }} onClick={close}>
+						<Close style={{ color: colors.black(.5) }} />
+					</a>}
+				</div>
+				<hr style={{ margin: 0 }} />
+				<div style={{ padding: 30, paddingTop: 0 }}>
+					{this.props.children}
+				</div>
+			</div>
+		</LocationStateModal>;
+	}
 }
