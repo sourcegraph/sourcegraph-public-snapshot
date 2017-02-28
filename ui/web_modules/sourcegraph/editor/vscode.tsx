@@ -16,7 +16,8 @@ import "vs/editor/contrib/wordHighlighter/common/wordHighlighter";
 
 import "vs/editor/common/languages.common";
 
-import "sourcegraph/editor/modes";
+import "monaco-languages/out/monaco.contribution";
+import "monaco-typescript/out/monaco.contribution";
 
 // HACK: vscode's markdown parser exports itself in a nonstandard
 // way. This workaround avoids errors like "Uncaught TypeError:
