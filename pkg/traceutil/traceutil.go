@@ -2,26 +2,18 @@ package traceutil
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	"github.com/neelance/graphql-go"
 	basictracer "github.com/opentracing/basictracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-var graphqlQueryHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "query_seconds",
-	Help:      "GraphQL query latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"operation", "query", "error"})
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
@@ -32,22 +24,13 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 }, []string{"type", "field", "error"})
 
 func init() {
-	prometheus.MustRegister(graphqlQueryHistogram)
 	prometheus.MustRegister(graphqlFieldHistogram)
 }
 
 type graphqlFieldRecorder struct {
 }
 
-var whitespaceRegexp = regexp.MustCompile("\\s+")
-
 func (r *graphqlFieldRecorder) RecordSpan(span basictracer.RawSpan) {
-	if query, _ := span.Tags[graphql.OpenTracingTagQuery].(string); query != "" {
-		operation, _ := span.Tags[graphql.OpenTracingTagOperationName].(string)
-		err, _ := span.Tags[graphql.OpenTracingTagError].(string)
-		graphqlQueryHistogram.WithLabelValues(operation, whitespaceRegexp.ReplaceAllString(query, " "), strconv.FormatBool(err != "")).Observe(span.Duration.Seconds())
-	}
-
 	if field, _ := span.Tags[graphql.OpenTracingTagField].(string); field != "" {
 		typ, _ := span.Tags[graphql.OpenTracingTagType].(string)
 		err, _ := span.Tags[graphql.OpenTracingTagError].(string)
