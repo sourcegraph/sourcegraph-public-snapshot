@@ -12,7 +12,7 @@ const sx = { fontWeight: "bold" };
 export function UnsupportedLanguageAlert({ ext, style, inBeta }: Props): JSX.Element {
 	let text;
 	if (inBeta) {
-		text = ext ? `.${ext} support is in beta` : "Support for this file is in beta";
+		text = ext ? `.${ext} support is in preview` : "Support for this file is in preview";
 	} else {
 		text = ext ? `.${ext} files not supported` : "This file is not supported";
 	}
