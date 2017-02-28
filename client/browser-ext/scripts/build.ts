@@ -6,7 +6,7 @@ import * as shelljs from "shelljs";
 
 console.log("[Compute checksum]");
 console.log("--------------------------------");
-require("hash-files")({files: ["./app/**", "./chrome/**", "./scripts/**", "./webpack/**"]}, (error, hash) => {
+require("hash-files")({files: ["./app/**", "./chrome/**", "./phabricator/**", "./scripts/**", "./webpack/**"]}, (error, hash) => {
 	if (error) {
 		console.error(error);
 		return;

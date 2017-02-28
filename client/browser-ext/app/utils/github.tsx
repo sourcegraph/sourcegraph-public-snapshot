@@ -1,4 +1,5 @@
 import * as utils from ".";
+import { CodeCell } from "./types";
 
 function invariant(cond: any): void {
 	if (!cond) {
@@ -68,12 +69,12 @@ export function createBlobAnnotatorMount(fileContainer: HTMLElement): HTMLElemen
 	}
 
 	const buttonGroup = fileActions.querySelector(".BtnGroup");
-	if (buttonGroup) { // blob view
+	if (buttonGroup && buttonGroup.parentNode) { // blob view
 		// mountEl.style.cssFloat = "none";
 		buttonGroup.parentNode.insertBefore(mountEl, buttonGroup);
 	} else { // commit & pull request view
 		const note = fileContainer.querySelector(".show-file-notes");
-		if (!note) {
+		if (!note || !note.parentNode) {
 			throw new Error("cannot locate BlobAnnotator injection site");
 		}
 		note.parentNode.insertBefore(mountEl, note.nextSibling);
@@ -302,8 +303,8 @@ export function getDeltaInfo(): DeltaInfo | null {
 /**
  * getCodeCellsForAnnotation code cells which should be annotated
  */
-export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: { isDelta: boolean, isSplitDiff: boolean; isBase: boolean }): utils.CodeCell[] {
-	const cells: utils.CodeCell[] = [];
+export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: { isDelta: boolean, isSplitDiff: boolean; isBase: boolean }): CodeCell[] {
+	const cells: CodeCell[] = [];
 	for (let i = 0; i < table.rows.length; ++i) {
 		const row = table.rows[i];
 

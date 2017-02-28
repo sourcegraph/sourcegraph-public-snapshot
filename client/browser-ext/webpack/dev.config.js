@@ -9,7 +9,8 @@ module.exports = {
 	devServer: { host, port, https: true },
 	entry: {
 		background: path.join(__dirname, '../chrome/extension/background.tsx'),
-		inject: path.join(__dirname, '../chrome/extension/inject.tsx')
+		inject: path.join(__dirname, '../chrome/extension/inject.tsx'),
+		phabricator: path.join(__dirname, '../phabricator/phabricator.tsx')
 	},
 	output: {
 		path: path.join(__dirname, '../dev/js'),

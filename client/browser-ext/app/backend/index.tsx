@@ -1,4 +1,4 @@
-import { getSourcegraphUrl } from "../utils/context";
+import { sourcegraphUrl } from "../utils/context";
 import { doFetch as fetch } from "./xhr";
 
 export const cacheKey = (repo: string, rev?: string) => `${repo}@${rev || null}`;
@@ -17,7 +17,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 	if (promiseHit) {
 		return promiseHit;
 	}
-	const p = fetch(`${getSourcegraphUrl()}/.api/graphql`, {
+	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",

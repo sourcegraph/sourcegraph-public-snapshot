@@ -1,8 +1,8 @@
 import { TelligentWrapper } from "../../../app/tracking/TelligentWrapper";
-import { Domain, getDomain } from "../../../app/utils";
+import { getDomain } from "../../../app/utils";
+import { Domain } from "../../../app/utils/types";
 
 let telligentWrapper: TelligentWrapper | null = null;
-
 
 telligentWrapper = new TelligentWrapper("SourcegraphExtension", "BrowserExtension", true, true);
 

@@ -2,8 +2,9 @@ import * as React from "react";
 import * as backend from "../backend";
 import * as utils from "../utils";
 import { addAnnotations, RepoRevSpec } from "../utils/annotations";
-import { eventLogger, getSourcegraphUrl } from "../utils/context";
+import { eventLogger, sourcegraphUrl } from "../utils/context";
 import * as github from "../utils/github";
+import { CodeCell } from "../utils/types";
 import { SourcegraphIcon } from "./Icons";
 
 const className = "btn btn-sm tooltipped tooltipped-n";
@@ -146,7 +147,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		}
 	}
 
-	private getCodeCells(isSplitDiff: boolean, repoRevSpec: RepoRevSpec, el: HTMLElement): utils.CodeCell[] {
+	private getCodeCells(isSplitDiff: boolean, repoRevSpec: RepoRevSpec, el: HTMLElement): CodeCell[] {
 		// The blob is represented by a table; the first column is the line number,
 		// the second is code. Each row is a line of code
 		const table = el.querySelector("table");
@@ -214,15 +215,10 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			github.isPrivateRepo() && resolvedRevs.notFound as boolean,
 			resolvedRevs.cloneInProgress as boolean,
 			this.props.repoURI.split("github.com/")[1],
-			this.isDelta ? this.getSourcegraphBlobUrl(this.headRepoURI as string, this.props.headPath, this.headCommitID) : this.getSourcegraphBlobUrl(this.props.repoURI, this.props.headPath, this.rev),
+			this.isDelta ? utils.getSourcegraphBlobUrl(sourcegraphUrl, this.headRepoURI as string, this.props.headPath, this.headCommitID) : utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.repoURI, this.props.headPath, this.rev),
 			utils.upcomingExtensions.has(this.fileExtension),
 			this.getFileOpenCallback,
 			this.getAuthFileCallback);
-	}
-
-	private getSourcegraphBlobUrl(repoUri: string, path: string, commitId?: string): string {
-		const commitString = commitId ? `@${commitId}` : "";
-		return `${getSourcegraphUrl()}/${repoUri}${commitString}/-/blob/${path}`;
 	}
 
 	getFileOpenCallback = (): void => {
@@ -243,7 +239,7 @@ function getSourcegraphButton(isFileSupported: boolean, cantFindPrivateRepo: boo
 		</div>);
 	} else if (cantFindPrivateRepo) {
 		// Not signed in or not auth'd for private repos
-		return (<a href={`${getSourcegraphUrl()}/login?private=true`}
+		return (<a href={`${sourcegraphUrl}/login?private=true`}
 			style={{ textDecoration: "none", color: "inherit" }} onClick={authCallback}>
 			<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph`}>
 				<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />

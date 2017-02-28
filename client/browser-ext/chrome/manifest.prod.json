@@ -20,7 +20,8 @@
     {
       "matches": [
         "https://github.com/*",
-        "https://sourcegraph.com/*"
+        "https://sourcegraph.com/*",
+        "http://phabricator.aws.sgdev.org/*"
       ],
       "run_at": "document_end",
       "js": [
@@ -37,7 +38,8 @@
     "cookies",
     "storage",
     "https://github.com/*",
-    "https://sourcegraph.com/*"
+    "https://sourcegraph.com/*",
+    "http://phabricator.aws.sgdev.org/*"
   ],
   "content_security_policy": "default-src 'self'; script-src 'self'; connect-src 'self' https://sourcegraph-logging.telligentdata.com;"
 }

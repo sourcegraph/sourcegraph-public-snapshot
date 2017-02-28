@@ -1,9 +1,10 @@
-import * as utils from "../app/utils";
-import * as annotations from "../app/utils/annotations";
-import * as github from "../app/utils/github";
 import { expect } from "chai";
 import "fetch-mock";
 import * as jsdom from "jsdom";
+import * as utils from "../app/utils";
+import * as annotations from "../app/utils/annotations";
+import * as github from "../app/utils/github";
+import { CodeCell } from "../app/utils/types";
 
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
@@ -65,7 +66,7 @@ describe("GitHub DOM", () => {
 		});
 
 		describe("annotations", () => {
-			let _codeCells: utils.CodeCell[];
+			let _codeCells: CodeCell[];
 			before(() => {
 				const file = github.getFileContainers()[0];
 				_codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: false, isSplitDiff: false, isBase: false });
@@ -281,7 +282,7 @@ describe("GitHub DOM", () => {
 				expect(headCells[4].filter((cell) => cell.isAddition)).to.have.length(3);
 			});
 
-			function getPRCells(isBase: boolean): utils.CodeCell[] {
+			function getPRCells(isBase: boolean): CodeCell[] {
 				const file = github.getFileContainers()[0];
 				const codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase });
 				return codeCells;

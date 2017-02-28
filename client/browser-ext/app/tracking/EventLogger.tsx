@@ -1,5 +1,5 @@
 import { isE2ETest } from "../utils";
-import { getPlatformName } from "../utils/context";
+import { getPlatformName } from "../utils";
 import { Features } from "../utils/Features";
 
 export abstract class EventLogger {

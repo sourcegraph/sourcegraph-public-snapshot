@@ -1,10 +1,10 @@
 import * as _ from "lodash";
 import * as utf8 from "utf8";
-import { CodeCell } from "../utils";
 import { eventLogger } from "../utils/context";
 import * as github from "./github";
 import { fetchJumpURL, getTooltip, prewarmLSP } from "./lsp";
 import * as tooltips from "./tooltips";
+import { CodeCell, PhabricatorCodeCell } from "./types";
 
 export interface RepoRevSpec {
 	repoURI: string;
@@ -12,16 +12,20 @@ export interface RepoRevSpec {
 	isDelta: boolean;
 	isBase: boolean;
 }
-
-// addAnnotations is the entry point for injecting annotations onto a blob (el).
-// An invisible marker is appended to the document to indicate that annotation
-// has been completed; so this function expects that it will be called once all
-// repo/annotation data is resolved from the server.
+/**
+ * addAnnotations is the entry point for injecting annotations onto a blob (el).
+ * An invisible marker is appended to the document to indicate that annotation
+ * has been completed; so this function expects that it will be called once all
+ * repo/annotation data is resolved from the server.
+ * 
+ * el should be an element that changes when the dom significantly changes.
+ * datakeys are stored as properites on el, and the code shortcuts if the datakey
+ * is detected.
+ */
 export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: CodeCell[]): void {
 
 	cells.forEach((cell) => {
 		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
-
 		// If the line has already been annotated,
 		// restore event handlers if necessary otherwise move to next line
 		// the first check works on GitHub, the second is required for phabricator
@@ -38,7 +42,11 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
 			try {
-				const annLine = convertNode(cell.cell, 1, cell.line, repoRevSpec.isDelta);
+				let ignoreFirstTextChar = repoRevSpec.isDelta;
+				if ((cell as PhabricatorCodeCell).isLeftColumnInSplit) {
+					ignoreFirstTextChar = false;
+				}
+				const annLine = convertNode(cell.cell, 1, cell.line, ignoreFirstTextChar);
 				cell.cell.innerHTML = "";
 				cell.cell.appendChild(annLine.resultNode);
 
@@ -48,13 +56,6 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 			}
 		});
 	});
-}
-
-function hasCellBeenAnnotated(cell: HTMLElement): boolean {
-	if (cell.children.length === 0) {
-		return false;
-	}
-	return (cell.children && cell.children[0].getAttribute("data-byteoffset")) ? true : false;
 }
 
 interface ConvertNodeResult<T extends Node> {

@@ -1,3 +1,5 @@
+import { Domain, GitHubURLData } from "./types";
+
 /**
  * supportedExtensions are the file extensions
  * the extension will apply annotations to
@@ -64,16 +66,6 @@ export function getPathExtension(path: string): string {
 	return pathSplit[pathSplit.length - 1].toLowerCase();
 }
 
-export interface GitHubURLData {
-	user?: string;
-	repo?: string;
-	repoURI?: string;
-	rev?: string;
-	path?: string;
-	isDelta?: boolean;
-	isPullRequest?: boolean;
-	isCommit?: boolean;
-}
 export function parseURL(loc: Location): GitHubURLData {
 	// TODO(john): this method has problems handling branch revisions with "/" character.
 	// TODO(john): this all needs unit testing!
@@ -123,16 +115,8 @@ export function getCurrentBranch(): string | null {
 
 	return (branchDropdownEl[0] as HTMLElement).title;
 }
-// TODO(uforic): create a new file called types, for this and things like RepoRevSpec
-// GitHubURLData, and all the Phabricator types.
-export interface CodeCell {
-	cell: HTMLElement;
-	line: number;
-	isAddition?: boolean; // for diff views
-	isDeletion?: boolean; // for diff views
-}
 
-export function getPlatform(): string {
+export function getPlatformName(): string {
 	return window.navigator.userAgent.indexOf("Firefox") !== -1 ? "firefox-extension" : "chrome-extension";
 }
 
@@ -153,8 +137,15 @@ export function getDomain(loc: Location): Domain {
 	throw new Error(`Unable to determine the domain, ${loc.href}`);
 }
 
-export enum Domain {
-	GITHUB,
-	SGDEV_PHABRICATOR,
-	SOURCEGRAPH,
+/**
+ * This method created a unique username based on the platform and domain the user is visiting.
+ * Examples: sg_dev_phabricator:matt , or uber_phabricator:matt
+ */
+export function getDomainUsername(domain: string, username: string): string {
+	return `${domain}:${username}`;
+}
+
+export function getSourcegraphBlobUrl(sourcegraphUrl: string, repoUri: string, path: string, commitId?: string): string {
+	const commitString = commitId ? `@${commitId}` : "";
+	return `${sourcegraphUrl}/${repoUri}${commitString}/-/blob/${path}`;
 }

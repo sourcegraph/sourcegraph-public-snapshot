@@ -4,7 +4,8 @@ const webpack = require('webpack');
 module.exports = {
 	entry: {
 		background: path.join(__dirname, '../chrome/extension/background.tsx'),
-		inject: path.join(__dirname, '../chrome/extension/inject.tsx')
+		inject: path.join(__dirname, '../chrome/extension/inject.tsx'),
+		phabricator: path.join(__dirname, '../phabricator/phabricator.tsx')
 	},
 	output: {
 		path: path.join(__dirname, '../build/js'),

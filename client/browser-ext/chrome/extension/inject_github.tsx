@@ -7,7 +7,9 @@ import { ProjectsOverview } from "../../app/components/ProjectsOverview";
 import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
 import { eventLogger } from "../../app/utils/context";
 import * as github from "../../app/utils/github";
-import { Domain, getDomain, getGitHubRoute, parseURL } from "../../app/utils/index";
+import { getDomain, getGitHubRoute, parseURL } from "../../app/utils/index";
+import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
+import { Domain } from "../../app/utils/types";
 
 function ejectComponent(mount: HTMLElement): void {
 	try {
@@ -56,15 +58,6 @@ export function injectGitHubApplication(): void {
 		injectModules();
 		setTimeout(injectModules, 5000); // extra data may be loaded asynchronously; reapply after timeout
 	});
-
-	document.addEventListener("sourcegraph:identify", (ev: CustomEvent) => {
-		if (ev && ev.detail) {
-			(eventLogger as ExtensionEventLogger).updatePropsForUser(ev.detail);
-			chrome.runtime.sendMessage({ type: "setIdentity", identity: ev.detail });
-		} else {
-			console.error("sourcegraph:identify missing details");
-		}
-	});
 }
 
 function injectModules(): void {
@@ -77,20 +70,6 @@ function injectModules(): void {
 		injectSourcegraphInternalTools();
 	});
 };
-
-export function injectBackgroundApp(element: JSX.Element | null): void {
-	if (document.getElementById("sourcegraph-app-background")) {
-		// make this function idempotent		
-		return;
-	}
-	const backgroundContainer = document.createElement("div");
-	backgroundContainer.id = "sourcegraph-app-background";
-	backgroundContainer.style.display = "none";
-	document.body.appendChild(backgroundContainer);
-	if (element) {
-		render(element, backgroundContainer);
-	}
-}
 
 function injectBlobAnnotators(): void {
 	const { repoURI, path, isDelta } = parseURL(window.location);

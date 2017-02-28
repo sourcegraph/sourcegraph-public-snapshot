@@ -1,4 +1,4 @@
-import { getPlatform } from "../utils";
+import { getPlatformName } from "../utils";
 import { singleflightFetch } from "./singleflightFetch";
 
 let token: string | null = null;
@@ -22,9 +22,16 @@ function defaultOptions(): FetchOptions | undefined {
 	if (token) {
 		headers.set("Authorization", `session ${token}`);
 	}
-	headers.set("x-sourcegraph-client", `${getPlatform()} v${chrome.runtime.getManifest().version}`);
+	headers.set("x-sourcegraph-client", `${getPlatformName()} v${getExtensionVersion()}`);
 	return { headers };
 };
+
+function getExtensionVersion(): string {
+	if (chrome && chrome.runtime && chrome.runtime.getManifest) {
+		return chrome.runtime.getManifest().version;
+	}
+	return "NO_VERSION";
+}
 
 const f = singleflightFetch(global.fetch);
 export function doFetch(url: string, opt?: any): Promise<Response> {
