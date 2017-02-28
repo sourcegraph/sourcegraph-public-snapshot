@@ -188,6 +188,10 @@
 	cursor: pointer;
 }
 
+:global div.monaco-editor.vs-dark .token.annotation {
+	cursor: pointer;
+}
+
 :global div.monaco-editor.vs-dark .token {
 	color: c_cool_pale_gray;
 }

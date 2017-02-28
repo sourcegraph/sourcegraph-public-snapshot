@@ -223,7 +223,7 @@ export class SidebarContribution extends Disposables {
 			// Model hasn't been tokenized yet.
 			return true;
 		}
-		return token.type.includes("identifier");
+		return token.type.includes("identifier") || token.type.includes("annotation");
 	}
 
 	private logClick(e: IEditorMouseEvent): void {
