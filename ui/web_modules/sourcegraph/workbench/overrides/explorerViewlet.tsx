@@ -15,19 +15,13 @@ import { IEditorGroupService } from "vs/workbench/services/group/common/groupSer
 import { ExplorerViewlet as VSExplorerViewlet } from "vscode/src/vs/workbench/parts/files/browser/explorerViewlet";
 
 import { FlexContainer, Heading } from "sourcegraph/components";
-import { Button } from "sourcegraph/components/Button";
 import { List } from "sourcegraph/components/symbols/Primaries";
-import { History } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import { toggleEditorDiffMode } from "sourcegraph/editor/config";
 import { urlToRepo } from "sourcegraph/repo/routes";
-import { Features } from "sourcegraph/util/features";
-import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { RouterContext } from "sourcegraph/workbench/utils";
 
 export class ExplorerViewlet extends VSExplorerViewlet {
-	private _editorService: WorkbenchEditorService;
 
 	constructor(
 		@ITelemetryService telemetryService: ITelemetryService,
@@ -46,10 +40,8 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 			this.updateTitleArea();
 		});
 
-		this._editorService = editorService as WorkbenchEditorService;
 		this.onTitleAreaUpdate(() => this.updateTitleComponent());
 		this.eventService.addListener2("files.internal:fileChanged", () => this.refresh());
-		this._editorService.onDidOpenEditor(() => this.updateTitleComponent());
 	}
 
 	getTitle(): string {
@@ -78,7 +70,7 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 			throw new Error("Wrong element");
 		}
 		ReactDOM.render(<RouterContext>
-			<Title repo={this.getTitle()} diffMode={this._editorService.diffMode} />
+			<Title repo={this.getTitle()} />
 		</RouterContext>, titleElement);
 	}
 }
@@ -99,7 +91,7 @@ insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .mon
 	fontWeight: "bold",
 });
 
-function Title({ repo, diffMode }: { repo: string, diffMode: boolean }): JSX.Element {
+function Title({ repo }: { repo: string }): JSX.Element {
 	return <FlexContainer items="center" style={{
 		backgroundColor: colors.blueGrayD1(),
 		boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
@@ -112,8 +104,8 @@ function Title({ repo, diffMode }: { repo: string, diffMode: boolean }): JSX.Ele
 	}}>
 		<Heading level={6} compact={true} style={{
 			lineHeight: 0,
+			marginTop: 2,
 			maxWidth: "100%",
-			width: "100%",
 			whiteSpace: "nowrap",
 		}}>
 			<Link to={urlToRepo(repo)}
@@ -124,19 +116,10 @@ function Title({ repo, diffMode }: { repo: string, diffMode: boolean }): JSX.Ele
 					overflow: "hidden",
 					textOverflow: "ellipsis",
 					display: "inline-block",
-					marginTop: 5,
 				}}>
 				<List width={21} style={{ opacity: 0.6, marginRight: whitespace[1] }} />
 				{repo.replace(/^github.com\//, "")}
 			</Link>
-			{Features.zap.isEnabled() &&
-				<Button onClick={toggleEditorDiffMode} color={diffMode ? "blue" : "blueGray"}
-					{...hover({ backgroundColor: !diffMode ? `${colors.blueGrayL1()} !important` : "" }) }
-					style={{
-						float: "right",
-						padding: "5px",
-					}}><History></History></Button>
-			}
 		</Heading>
-	</FlexContainer >;
+	</FlexContainer>;
 }

@@ -2,20 +2,15 @@ import * as throttle from "lodash/throttle";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import { TPromise } from "vs/base/common/winjs.base";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderRegistry } from "vs/editor/common/modes";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
-import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { IFileService } from "vs/platform/files/common/files";
 import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
-import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IQuickOpenService } from "vs/workbench/services/quickopen/common/quickOpenService";
@@ -59,23 +54,8 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 		renderNotFoundError();
 		return;
 	}
-	// TODO: We can't rely on the currentZapRef var being set in this async
-	// context. Instead rely on the URI query to determine if we're in a zap
-	// session and if diff mode should be activated.
-	const href = URI.parse(window.location.href).toJSON();
-	if (href.query && href.query.includes("tmpZapRef=")) {
-		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource);
-	} else {
-		renderFileEditor(resource, selection);
-	}
-}
 
-function resourceForCurrentEditor(): URI | null {
-	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	const input = editorService.getActiveEditor();
-	const editor = getCodeEditor(input);
-	if (!editor) { return null; }
-	return editor.getModel().uri;
+	renderFileEditor(resource, selection);
 }
 
 /**
@@ -86,51 +66,6 @@ export function renderFileEditor(resource: URI, selection: IRange | null): void 
 	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
-}
-
-/**
- * renderEditor opens a diff editor for two files.
- */
-export function renderDiffEditor(left: URI, right: URI): void {
-	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	const resolverService = Services.get(ITextModelResolverService);
-	TPromise.join([editorService.createInput({ resource: left }), editorService.createInput({ resource: right })]).then(inputs => {
-		const leftInput = new ResourceEditorInput("", "", left, resolverService);
-		const rightInput = new ResourceEditorInput("", "", right, resolverService);
-		const diff = new DiffEditorInput("", "", leftInput, rightInput);
-		editorService.openEditorWithoutURLChange(right, diff, {});
-	});
-}
-
-/**
- * toggleEditorDiffMode toggles the mode for the current editor (diff on/off).
- */
-export function toggleEditorDiffMode(): void {
-	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	if (editorService.diffMode) {
-		changeEditorMode(false);
-	} else {
-		changeEditorMode(true);
-	}
-}
-
-/**
- * changeEditorMode changes the diff mode for the current editor.
- */
-export function changeEditorMode(diff?: boolean): void {
-	const uri = resourceForCurrentEditor();
-	if (!uri) {
-		return;
-	}
-
-	if (diff) {
-		const left = uri.with({ query: `${uri.query}~0` });
-		const right = uri.with({});
-		renderDiffEditor(left, right);
-	} else {
-		renderFileEditor(uri, null);
-	}
-	return;
 }
 
 function updateEditorAfterURLChange(sel: IRange | null): void {
@@ -305,16 +240,10 @@ CommandsRegistry.registerCommand("zap.reference.change", (accessor: ServicesAcce
 	let query = "";
 	if (currentZapRef) {
 		query = `?tmpZapRef=${currentZapRef}`;
-		changeEditorMode(true);
-	} else {
-		changeEditorMode(false);
 	}
-	history.replaceState({}, "", `${window.location.pathname}${query}${window.location.hash}`);
+	history.replaceState({}, "", window.location.pathname + query + window.location.hash);
 });
 
 CommandsRegistry.registerCommand("zap.status.change", (accessor: ServicesAccessor, isRunning: boolean) => {
 	currentZapStatus = isRunning;
-	if (!isRunning) {
-		history.replaceState({}, "", `${window.location.pathname}{window.location.hash}`);
-	}
 });

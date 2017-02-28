@@ -14,8 +14,7 @@ import { urlToRepo } from "sourcegraph/repo/routes";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
-	private _onDidOpenEditor: Emitter<URI> = new Emitter<URI>();
-	private _diffMode: boolean = false;
+	private _emitter: Emitter<URI> = new Emitter<URI>();
 
 	public openEditor(data: IResourceInput, options?: any): TPromise<IEditor>;
 	public openEditor(data: IEditorInput, options?: any): TPromise<IEditor>;
@@ -64,13 +63,8 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		if (!data) {
 			data = { resource: mainResource };
 		}
-		if (data.resource) {
-			this._diffMode = false;
-		} else if (data.modifiedInput) {
-			this._diffMode = true;
-		}
 
-		this._onDidOpenEditor.fire(mainResource);
+		this._emitter.fire(mainResource);
 
 		// calling openEditor with a non-zero position, or options equal to
 		// true opens up another editor to the side.
@@ -89,7 +83,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 				throw new Error(`unknown data: ${data}`);
 			}
 			updateFileTree(mainResource);
-			return this.createInput(data).then(input => super.openEditor(input, options, false));
+			return this.createInput(data).then(input => super.openEditor(input, options, 0));
 		});
 	}
 
@@ -102,11 +96,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		return super.createInput(data);
 	}
 
-	get diffMode(): boolean {
-		return this._diffMode;
-	}
-
-	public onDidOpenEditor: Event<URI> = this._onDidOpenEditor.event;
+	public onDidOpenEditor: Event<URI> = this._emitter.event;
 }
 
 export const DelegatingWorkbenchEditorService = vs.DelegatingWorkbenchEditorService;
