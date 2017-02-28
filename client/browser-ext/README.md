@@ -68,7 +68,7 @@ Build the latest phabricator.bundle.js file, and copy to the Sourecgraph assets 
 $ make phabricator
 ```
 
-## Deploy (chrome extension only)
+## Deploy (chrome extension only, ask John/Matt for Firefox)
 
 ```bash
 $ make deploy
