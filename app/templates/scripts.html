@@ -1,6 +1,6 @@
 {{define "Scripts"}}
 
-{{/* Do not access these directly via the window object, import them using context.js. */}}
+{{/* Do not access these directly via the window object, import them using context.tsx. */}}
 <script ignore-csp type="text/javascript">
 	window.__sourcegraphJSContext = {{if .JSCtx}}JSON.parse({{.JSCtx|json}}){{else}}null{{end}}
 </script>

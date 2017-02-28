@@ -13,6 +13,7 @@ class Context {
 	intercomHash: string;
 
 	appURL: string; // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)
+	wsURL: string; // base URL for websockets (eg., https://ws.sourcegraph.com or https://localhost:3080)
 	assetsRoot: string; // URL path to image/font/etc. assets on server
 	version: string;
 	/** 
