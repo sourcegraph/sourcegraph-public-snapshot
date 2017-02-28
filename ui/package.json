@@ -60,8 +60,7 @@
   },
   "dependencies": {
     "@sourcegraph/vscode-jsonrpc": "3.0.4-patch",
-    "@sourcegraph/vscode-languageclient": "3.0.4-patch3",
-    "@sourcegraph/vscode-languageserver-types": "3.0.3-patch",
+    "@sourcegraph/vscode-languageclient": "3.0.4-patch2",
     "autotrack": "1.0.3",
     "classnames": "2.2.5",
     "core-js": "2.4.1",
@@ -81,6 +80,7 @@
     "string_score": "0.1.22",
     "url": "0.11.0",
     "uuid": "^3.0.1",
+    "vscode-languageserver-types": "3.0.3",
     "vscode-zap": "^0.0.53"
   },
   "scripts": {
@@ -195,6 +195,8 @@
     "vinyl-fs": "2.4.4",
     "xtend": "4.0.1",
     "@types/history": "2.0.41",
+    "vscode-jsonrpc": "3.0.3",
+    "vscode-languageserver-types": "3.0.3",
     "vscode-zap": "0.0.5",
     "libzap": "0.0.8",
     "babel-runtime": "6.23.0",
