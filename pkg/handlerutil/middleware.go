@@ -23,6 +23,7 @@ func NewHandlerWithCSRFProtection(handler http.Handler) http.Handler {
 			csrf.CookieName("csrf_token"),
 			csrf.Path("/"),
 			csrf.Secure(conf.AppURL.Scheme == "https"),
+			csrf.Domain(conf.AppURL.Host),
 		)
 		p(handler).ServeHTTP(w, r)
 	})
