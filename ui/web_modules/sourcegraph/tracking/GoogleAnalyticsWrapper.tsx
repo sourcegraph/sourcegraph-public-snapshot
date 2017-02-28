@@ -1,6 +1,8 @@
 // tslint:disable-next-line
 /// <reference path="../../../node_modules/@types/google.analytics/index.d.ts" />
 
+import { Features } from "sourcegraph/util/features";
+
 class GoogleAnalyticsWrapper {
 	ga: UniversalAnalytics.ga | null;
 	gaClientID: string | null;
@@ -18,6 +20,14 @@ class GoogleAnalyticsWrapper {
 	}
 
 	private setTrackerID = (tracker: any) => {
+		if (Features.eventLogDebug.isEnabled()) {
+			// TODO(uforic): remove after bug is resolved
+			/* tslint:disable */
+			console.log("Setting google analytics tracking id");
+			console.log(tracker.get("clientId"));
+			console.log(tracker);
+			/* tslint:enable */
+		}
 		this.gaClientID = tracker.get("clientId");
 	}
 

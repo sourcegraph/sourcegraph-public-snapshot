@@ -173,10 +173,35 @@ class EventLoggerClass {
 		}
 
 		let idProps = { detail: { deviceId: this._getTelligentDuid(), userId: context.user && context.user.Login } };
+		const googleAnalyticsScript = googleAnalytics;
+		const googleAnalyticsId = googleAnalytics.gaClientID;
+		if (Features.eventLogDebug.isEnabled()) {
+			// TODO(uforic): remove after bug is resolved
+			/* tslint:disable */
+			console.log(googleAnalyticsId);
+			console.log(googleAnalyticsScript);
+			console.log(idProps);
+			/* tslint:enable */
+		}
 		if (googleAnalytics.gaClientID) {
+			const eventProps = Object.assign(idProps, { gaClientId: googleAnalytics.gaClientID });
+			if (Features.eventLogDebug.isEnabled()) {
+				// TODO(uforic): remove after bug is resolved
+				/* tslint:disable */
+				console.log("Branch 1 of if statement hit. googleAnalytics.gaClientId is present");
+				console.log(eventProps);
+				/* tslint:enable */
+			}
 			telligent.addStaticMetadataObject({ deviceInfo: { GAClientId: googleAnalytics.gaClientID } });
-			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", Object.assign(idProps, { gaClientId: googleAnalytics.gaClientID }))), 20);
+			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", eventProps)), 20);
 		} else {
+			if (Features.eventLogDebug.isEnabled()) {
+				// TODO(uforic): remove after bug is resolved
+				/* tslint:disable */
+				console.log("Branch 2 of if statement hit. googleAnalytics.gaClientId not present");
+				console.log(googleAnalytics.gaClientID);
+				/* tslint:enable */
+			}
 			setTimeout(() => document.dispatchEvent(new CustomEvent("sourcegraph:identify", idProps)), 20);
 		}
 	}
