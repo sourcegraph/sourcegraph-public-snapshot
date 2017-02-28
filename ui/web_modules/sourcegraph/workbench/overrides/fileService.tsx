@@ -17,6 +17,7 @@ import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/cont
 import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { OutputListener } from "sourcegraph/workbench/outputListener";
+import { CommandsRegistry, ICommandService } from "vs/platform/commands/common/commands";
 
 /**
  * Both of these caches will last until a hard navigation or refresh. We will
@@ -44,13 +45,17 @@ const workspaceFiles: Map<string, string[]> = new Map();
 export class FileService {
 	private zapFileService: ZapFileService;
 	private workspace: IWorkspace;
+	private commandService: ICommandService;
+	private extensionActivated: boolean;
 
 	constructor(
 		@IEventService private eventService: IEventService,
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
+		@ICommandService commandService: ICommandService,
 	) {
 		this.eventService = eventService;
 		this.workspace = contextService.getWorkspace();
+		this.commandService = commandService;
 
 		if (Features.zap.isEnabled()) {
 			this.zapFileService = new ZapFileService();
@@ -64,6 +69,10 @@ export class FileService {
 				}
 			});
 		}
+
+		CommandsRegistry.registerCommand("sourcegraph.extensions.loaded", () => {
+			this.extensionActivated = true;
+		});
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
@@ -83,7 +92,26 @@ export class FileService {
 		});
 	}
 
+	resolveContentsFromExtension(resource: URI): TPromise<string> {
+		return this.commandService.executeCommand("sourcegraph.resolve.file", resource).then((contents: string) => {
+			if (!contents) {
+				return TPromise.wrap(fetchContentAndResolveRev(resource)).then(({ content }) => content);
+			}
+			return contents;
+		});
+	}
+
 	resolveContent(resource: URI, options?: IResolveContentOptions): TPromise<IContent> {
+		if (this.extensionActivated) {
+			return this.resolveContentsFromExtension(resource).then((contents) => {
+				return TPromise.wrap({
+					...toBaseStat(resource),
+					value: contents,
+					encoding: "utf8",
+				});
+			});
+		}
+
 		return TPromise.wrap(fetchContentAndResolveRev(resource)).then(({ content }) => {
 			return {
 				...toBaseStat(resource),
