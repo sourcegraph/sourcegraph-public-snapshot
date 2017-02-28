@@ -149,6 +149,12 @@
 			"revisionTime": "2016-05-18T20:47:10Z"
 		},
 		{
+			"checksumSHA1": "muGVyM8mY3/gcap6kr4Ib3F5Xn4=",
+			"path": "github.com/ghodss/yaml",
+			"revision": "04f313413ffd65ce25f2541bfd2b2ceec5c0908c",
+			"revisionTime": "2016-12-07T00:33:20Z"
+		},
+		{
 			"checksumSHA1": "yZX1JnkLqTWcbc6ogOlAWK7/Xro=",
 			"path": "github.com/go-kit/kit/log",
 			"revision": "a59216a7ce3200b6ba0c05ee8b6da44b852833ce",
