@@ -12,3 +12,4 @@ export { Symbols } from "sourcegraph/styleguide/componentExamples/Symbols";
 export { UserComponent } from "sourcegraph/styleguide/componentExamples/UserComponent";
 export { RepositoryComponent } from "sourcegraph/styleguide/componentExamples/RepositoryComponent";
 export { ColorsComponent } from "sourcegraph/styleguide/componentExamples/ColorsComponent";
+export { OrganizationCardComponent } from "sourcegraph/styleguide/componentExamples/OrganizationCardComponent";

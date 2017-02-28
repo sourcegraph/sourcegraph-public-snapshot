@@ -11,7 +11,7 @@ export function RepositoryComponent(): JSX.Element {
 
 				<RepositoryCard
 					repo={{
-						uri: "https://sourcegraph.com/github.com/golang/go",
+						uri: "github.com/golang/go",
 						description: "The Go Programming Language",
 						language: "Go",
 						private: false,
@@ -33,7 +33,7 @@ export function RepositoryComponent(): JSX.Element {
 	<RepositoryCard
 		repo={{
 			ID: 123,
-			URI: "https://sourcegraph.com/github.com/golang/go",
+			URI: "github.com/golang/go",
 			Owner: "golang",
 			Name: "go",
 			Description: "The Go Programming Language",

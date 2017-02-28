@@ -11,6 +11,7 @@ import {
 	HeadingsComponent,
 	ListComponent,
 	LogoComponent,
+	OrganizationCardComponent,
 	PanelsComponent,
 	RepositoryComponent,
 	Symbols,
@@ -116,6 +117,10 @@ export class ComponentsContainer extends React.Component<{}, any> {
 				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
 					<a id="components-repository-card"></a>
 					<RepositoryComponent />
+				</div>
+				<div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
+					<a id="components-organization-card"></a>
+					<OrganizationCardComponent />
 				</div>
 			</div>
 		);

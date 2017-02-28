@@ -81,6 +81,9 @@ export function StyleguideContainer(props: {}): JSX.Element {
 						<TabItem direction="vertical" color="purple">
 							<a href="#components-repository-card">Repository Card</a>
 						</TabItem>
+						<TabItem direction="vertical" color="purple">
+							<a href="#components-organization-card">Organization Card</a>
+						</TabItem>
 					</Tabs>
 				</Affix>
 				<ComponentsContainer />

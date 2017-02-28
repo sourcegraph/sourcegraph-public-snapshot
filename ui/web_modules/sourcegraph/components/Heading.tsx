@@ -6,19 +6,12 @@ interface Props {
 	level?: number; //  1 is the largest
 	underline?: Color;
 	color: Color;
-	align?: "left" | "right" | "center"; // left, right, center
+	align?: "left" | "right" | "center";
 	compact?: boolean;
-	style?: Object;
+	style?: React.CSSProperties;
 }
 
-enum Color {
-	"blue",
-	"purple",
-	"white",
-	"orange",
-	"green",
-	"gray"
-}
+type Color = "blue" | "purple" | "white" | "orange" | "green" | "gray";
 
 export const Heading = (props: Props): any => {
 	const headingColors = {
