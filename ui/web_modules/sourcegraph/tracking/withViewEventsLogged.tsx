@@ -71,6 +71,12 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 
 				if (this.props.location.query["_githubAuthed"]) {
 					EventLogger.setUserIsGitHubAuthed(this.props.location.query["_githubAuthed"]);
+					if (this.props.location.query["_githubCompany"]) {
+						EventLogger.setUserCompany(this.props.location.query["_githubCompany"]);
+					}
+					if (this.props.location.query["_githubName"]) {
+						EventLogger.setUserName(this.props.location.query["_githubName"]);
+					}
 					if (eventName === Events.Signup_Completed.label) {
 						Events.Signup_Completed.logEvent(eventProperties);
 					} else if (eventName === "CompletedGitHubOAuth2Flow") {
