@@ -77,7 +77,7 @@ export class SignupModalContainer extends React.Component<Props, {}> {
 			<div className={styles.modal} style={sx}>
 				<div style={{ padding: 15, fontWeight: 800, textAlign: "left" }}>
 					Sign up
-					{!this.props.sticky && <a style={{ float: "right" }} onClick={close}>
+					{!this.props.sticky && <a style={{ float: "right" }} onClick={this.close}>
 						<Close style={{ color: colors.black(.5) }} />
 					</a>}
 				</div>
