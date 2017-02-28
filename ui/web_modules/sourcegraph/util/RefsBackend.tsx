@@ -6,10 +6,10 @@ import { Observable } from "rxjs";
 import URI from "vs/base/common/uri";
 import { Position } from "vs/editor/common/core/position";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
-import { IReferenceInformation, Location, WorkspaceReferenceProviderRegistry } from "vs/editor/common/modes";
+import { Location } from "vs/editor/common/modes";
 import { getDeclarationsAtPosition } from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
 import { getHover } from "vs/editor/contrib/hover/common/hover";
-import { provideReferences as getReferences, provideWorkspaceReferences } from "vs/editor/contrib/referenceSearch/common/referenceSearch";
+import { provideReferences as getReferences } from "vs/editor/contrib/referenceSearch/common/referenceSearch";
 
 import { Repo } from "sourcegraph/api/index";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
@@ -99,7 +99,7 @@ export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): 
 }
 
 export async function provideReferences(model: IReadOnlyModel, pos: IPosition, progress: (locations: Location[]) => void): Promise<Location[]> {
-	return getReferences(model, Position.lift(pos), progress, { includeDeclaration: false });
+	return getReferences(model, Position.lift(pos), progress);
 }
 
 export interface LocationWithCommitInfo extends Location {
@@ -229,10 +229,12 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 				const nextDependentsToPoll = dependents.splice(0, Math.min(count, dependents.length));
 				return nextDependentsToPoll.map(dependent => {
 					const repo = repoData[dependent.RepoID];
-
-					return fetchGlobalReferencesForRepo(repo, modeID, symbol, dependent).toPromise().then(provideReferencesCommitInfo).then(refs => {
+					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(provideReferencesCommitInfo).then(refs => {
 						incrementCountIfNonempty(refs);
 						if (!completed && refs.length > 0) {
+							// HACK(john): this should be written into vscode internals (https://github.com/sourcegraph/sourcegraph/issues/3998)
+							// The first URI in the list is assumed to share the same workspace with the rest.
+							setupWorker(refs[0].uri.with({ fragment: "" }));
 							observer.next(refs);
 						}
 						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
@@ -272,55 +274,16 @@ export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsD
 	return observable;
 }
 
-function fetchGlobalReferencesForRepo(repo: Repo, modeID: string, symbol: any, reference: DepReference): Observable<Location[]> {
+function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
 	if (!repo.URI || !repo.IndexedRevision) {
-		return Observable.of([]);
+		return Promise.resolve([]);
 	}
 
 	let repoURI = URIUtils.pathInRepo(repo.URI, repo.IndexedRevision, "");
-
-	// Setting up a workspace is async and there is currently no way for
-	// the main thread to know when the extension is finished registering.
-	// Since we are spinning up this workspace specifically to make a workspace
-	// references request, we just poll the workspace until it has registered a handler.
-	const workspaceIsReady = () => {
-		return WorkspaceReferenceProviderRegistry.has({
-			isTooLargeForHavingARichMode(): boolean {
-				return false;
-			},
-			getModeId(): string {
-				return modeID;
-			},
-			uri: repoURI
-		});
-	};
-
-	const observable = new Observable<IReferenceInformation[]>(observer => {
-		setupWorkspace(repoURI, workspaceIsReady).then(() => {
-			provideWorkspaceReferences(modeID, repoURI, symbol, reference.Hints, references => {
-				// TODO(nick): streaming
-				// observer.next(references);
-			}).then(result => {
-				observer.next(result);
-				observer.complete();
-			}, err => {
-				observer.error(err);
-			});
-		});
-	});
-	return observable.map(refs => refs.map(ref => ref.reference));
-}
-
-function setupWorkspace(uri: URI, isReady: () => boolean): Promise<void> {
-	setupWorker(uri);
-	return new Promise<void>(resolve => {
-		const interval = setInterval(() => {
-			if (isReady()) {
-				clearInterval(interval);
-				resolve();
-			}
-		}, 100);
-	});
+	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
+		query: symbol,
+		hints: reference.Hints,
+	}).then(resp => (!resp || !resp.result) ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
 }
 
 const globalRefLangs = new Set(["go", "java"]);

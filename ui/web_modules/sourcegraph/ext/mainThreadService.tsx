@@ -18,7 +18,7 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 	public _serviceBrand: any;
 
 	private remotes: Map<string, IMainProcessExtHostIPC>;
-	private defaultRemoteCom: IMainProcessExtHostIPC | undefined;
+	private latestRemoteCom: IMainProcessExtHostIPC;
 	private logCommunication: boolean;
 
 	constructor(
@@ -50,7 +50,7 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 		// Message: Window --> Extension Host
 		const remoteCom = create(msg => {
 			if (this.logCommunication) {
-				console.log("%c[Window \u2192 " + workspace.path + "]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
+				console.log("%c[Window \u2192 Extension]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
 			}
 
 			protocol.send(msg);
@@ -59,7 +59,7 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 		// Message: Extension Host --> Window
 		protocol.onMessage(msg => {
 			if (this.logCommunication) {
-				console.log("%c[" + workspace.path + " \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
+				console.log("%c[Extension \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
 			}
 
 			remoteCom.handle(msg);
@@ -68,41 +68,40 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 		remoteCom.setManyHandler(this);
 
 		this.remotes.set(workspace.toString(), remoteCom);
-		if (!this.defaultRemoteCom) {
-			this.defaultRemoteCom = remoteCom;
-		}
+		this.latestRemoteCom = remoteCom;
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
-		if (!this.defaultRemoteCom) {
+		if (!this.latestRemoteCom) {
 			throw new Error("protocol not ready (worker is not yet attached)");
 		}
 
 		const routeToWorkspaceHost = uri => {
 			const workspace = uri.with({ fragment: "" });
 			const remoteCom = this.remotes.get(workspace.toString());
-			if (!remoteCom) {
-				throw new Error(`did not find workspace host for ${uri}`);
+			if (remoteCom) {
+				return remoteCom.callOnRemote(proxyId, path, args);
 			}
-			return remoteCom.callOnRemote(proxyId, path, args);
+			return undefined;
+		};
+
+		const routeToLatest = () => {
+			return this.latestRemoteCom.callOnRemote(proxyId, path, args);
 		};
 
 		switch (proxyId) {
 			case "eExtHostLanguageFeatures":
 				switch (path) {
 					case "$provideReferences":
-						return routeToWorkspaceHost(args[2] as URI);
+						return routeToWorkspaceHost(args[2] as URI) || routeToLatest();
 
 					case "$provideWorkspaceSymbols":
 						// Workspace symbol request doesn't provide URI; query current workspace.
-						return routeToWorkspaceHost(this.contextService.getWorkspace().resource);
-
-					case "$provideWorkspaceReferences":
-						return routeToWorkspaceHost(args[2] as URI);
+						return routeToWorkspaceHost(this.contextService.getWorkspace().resource) || routeToLatest();
 
 					default:
 						if (args.length >= 2 && args[1] instanceof URI) {
-							return routeToWorkspaceHost(args[1] as URI);
+							return routeToWorkspaceHost(args[1] as URI) || routeToLatest();
 						}
 				}
 				break;
@@ -110,26 +109,24 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 			case "eExtHostDocuments":
 				switch (path) {
 					case "$provideTextDocumentContent":
-						return routeToWorkspaceHost(args[1] as URI);
+						return routeToWorkspaceHost(args[1] as URI) || routeToLatest();
 
 					case "$acceptModelAdd":
-						return routeToWorkspaceHost(args[0].url as URI);
+						return routeToWorkspaceHost(args[0].url as URI) || routeToLatest();
 				}
 				break;
 
 			case "eExtHostEditors":
 				switch (path) {
 					case "$acceptTextEditorAdd":
-						return routeToWorkspaceHost(args[0].document as URI);
+						return routeToWorkspaceHost(args[0].document as URI) || routeToLatest();
 				}
 				break;
 		}
 
-		// Fallback to calling the default workspace for non-workspace-specific requests.
-		if (!this.defaultRemoteCom) {
-			throw new Error(`no default workspace to route request to ${proxyId} ${path}, ${args}`);
-		}
-		return this.defaultRemoteCom.callOnRemote(proxyId, path, args);
+		// Fallback to calling the most recently created remote for non-workspace-specific requests.
+		// TODO(john): set up null workspace extension host at init for catch-all?
+		return routeToLatest();
 	}
 }
 
