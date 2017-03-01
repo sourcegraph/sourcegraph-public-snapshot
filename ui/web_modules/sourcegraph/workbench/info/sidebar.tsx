@@ -153,10 +153,12 @@ export interface Props {
 @autobind
 class InfoPanel extends React.Component<Props, State> {
 
-	constructor() {
-		super();
+	constructor(props: Props) {
+		super(props);
 		this.state = {
 			previewLocation: null,
+			refModel: this.props.refModel,
+			loadingComplete: this.props.loadingComplete
 		};
 	}
 
