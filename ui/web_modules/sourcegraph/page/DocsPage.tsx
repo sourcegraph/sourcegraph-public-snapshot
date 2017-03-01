@@ -141,12 +141,12 @@ export function DocsPage(): JSX.Element {
 				<p className={styles.p}>Sourcegraph supports:</p>
 				<ul>
 					<li className={styles.p}>Go</li>
-					<li className={styles.p}>TypeScript [beta]</li>
-					<li className={styles.p}>JavaScript [beta]</li>
+					<li className={styles.p}>Java (Maven)</li>
+					<li className={styles.p}>TypeScript (alpha)</li>
+					<li className={styles.p}>JavaScript (alpha)</li>
 				</ul>
 				<p className={styles.p}>Coming soon:</p>
 				<ul>
-					<li className={styles.p}>Java</li>
 					<li className={styles.p}>Python</li>
 					<li className={styles.p}>PHP</li>
 					<li className={styles.p}><a href="https://sourcegraph.com/beta" target="_blank">Don't see your language?</a></li>
