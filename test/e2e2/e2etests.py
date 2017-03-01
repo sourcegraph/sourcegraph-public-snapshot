@@ -31,6 +31,7 @@ def test_repo_jump_to(d):
     wd = d.d
 
     wd.get(d.sg_url('/github.com/gorilla/mux')) # start on a page with the jump modal active
+    wait_for(lambda: wd.find_element_by_id("directory_help_message"))
     d.active_elem().send_keys("/")
     d.active_elem().send_keys("!golang/go")
     wait_for(lambda: len(d.find_search_modal_results( "gogolang", exact_match=True)) > 0, 10.0)
@@ -123,7 +124,7 @@ def test_golden_workflow(d):
 
     # Hover over "NewRouter" token
     wait_for(lambda: len(d.find_tokens("NewRouter")) > 0)
-    d.hover_token("NewRouter")
+    retry(lambda: d.hover_token("NewRouter"))
     wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0]).text)
 
     # Open NewRouter in InfoBar
@@ -153,7 +154,7 @@ def test_golden_workflow(d):
     # Quickopen to "Route"
     retry(lambda: d.active_elem().send_keys("/"))
     retry(lambda: d.active_elem().send_keys("#Route"))
-    wait_for(lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0, 10.0)
+    wait_for(lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0, 30.0)
     retry(lambda: d.active_elem().send_keys(Keys.ENTER))
     wait_for(lambda: "route.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
 
@@ -167,7 +168,7 @@ def test_global_refs(d, test):
     # Jump to symbol
     d.active_elem().send_keys("/")
     d.active_elem().send_keys("#" + test['symbol'])
-    wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0, 10.0)
+    wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0, 30.0)
     d.find_search_modal_results(test['symbol'])[0].click()
 
     # Wait for sidebar to appear.
