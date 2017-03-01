@@ -9,7 +9,7 @@ import { OpenerService } from "vs/platform/opener/browser/openerService";
 import { IOpenerService } from "vs/platform/opener/common/opener";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
-import { TextModelResolverService } from "sourcegraph/editor/resolverService";
+import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 
 export function createEditor(domElement: HTMLElement, options: IEditorConstructionOptions): [IStandaloneCodeEditor, EditorService] {
 	let services = new DynamicStandaloneServices(domElement, {});
