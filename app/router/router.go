@@ -25,6 +25,8 @@ const (
 	GoogleOAuth2Initiate = "google-oauth2.initiate"
 	GoogleOAuth2Receive  = "google-oauth2.receive"
 
+	InstallZap = "install.zap"
+
 	OldDefRedirect   = "old-def-redirect"
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
@@ -69,6 +71,8 @@ func New() *Router {
 
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
+
+	base.Path("/install/zap").Methods("GET").Name(InstallZap)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
