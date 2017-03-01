@@ -16,7 +16,8 @@ import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
 import { URIUtils } from "sourcegraph/core/uri";
-import { DefinitionData, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideReferences, provideReferencesCommitInfo } from "sourcegraph/util/RefsBackend";
+import { Features } from "sourcegraph/util/features";
+import { DefinitionData, LocationWithCommitInfo, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideGlobalReferencesStreaming, provideReferences, provideReferencesCommitInfo, provideReferencesStreaming } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 import { normalisePosition } from "sourcegraph/workbench/utils";
@@ -122,6 +123,50 @@ export class SidebarContribution extends Disposables {
 		}, (err) => console.error(err), () => this.dispatchInfo(id, def, fileEventProps, refModel, true));
 	}
 
+	private async renderSidePanelForDataStreaming(props: Props): Promise<Subscription | undefined> {
+		const id = this.currentID;
+		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
+		const def = await provideDefinition(props.editorModel, props.params.position).then(defData => {
+			if (!defData || (!defData.docString && !defData.funcName)) {
+				return null;
+			}
+			this.prepareInfoStore(true, this.currentID, fileEventProps);
+			this.dispatchInfo(id, defData, fileEventProps);
+			return defData;
+		});
+		if (!def) {
+			return;
+		}
+
+		let refs: LocationWithCommitInfo[] = [];
+		const dispatchInfo = (done: boolean) => {
+			if (id !== this.currentID) {
+				return;
+			}
+			const model = new ReferencesModel(refs, props.editorModel.uri);
+			this.dispatchInfo(id, def, fileEventProps, model, false);
+			if (done) {
+				if (model.references.length > 0) {
+					provideReferencesCommitInfo(refs).then(refsWithCommitInfo => {
+						const modelWithCommitInfo = new ReferencesModel(refsWithCommitInfo, props.editorModel.uri);
+						this.dispatchInfo(id, def, fileEventProps, modelWithCommitInfo, true);
+					});
+				} else {
+					this.dispatchInfo(id, def, fileEventProps, model, true);
+				}
+			}
+		};
+
+		const localRefs = provideReferencesStreaming(props.editorModel, props.params.position);
+		const globalRefs = provideGlobalReferencesStreaming(props.editorModel, props.params.position);
+		return localRefs.merge(globalRefs).finally(() => {
+			dispatchInfo(true);
+		}).subscribe(ref => {
+			refs.push(ref);
+			dispatchInfo(false);
+		}, console.error);
+	}
+
 	private prepareInfoStore(prepare: boolean, id: string, fileEventProps: FileEventProps): void {
 		if (!prepare && this.globalFetchSubscription) {
 			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
@@ -190,10 +235,17 @@ export class SidebarContribution extends Disposables {
 
 		this.highlightWord(position);
 
-		this.globalFetchSubscription = this.renderSidePanelForData({
-			editorModel: model,
-			params: { position },
-		});
+		if (Features.xrefstream.isEnabled()) {
+			this.globalFetchSubscription = this.renderSidePanelForDataStreaming({
+				editorModel: model,
+				params: { position },
+			});
+		} else {
+			this.globalFetchSubscription = this.renderSidePanelForData({
+				editorModel: model,
+				params: { position },
+			});
+		}
 	}
 
 	private highlightWord(position: IPosition): void {

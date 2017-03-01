@@ -71,6 +71,11 @@ export const Features = {
 	langJava: new Feature("lang-java"),
 
 	/**
+	 * Enable streaming external references.
+	 */
+	xrefstream: new Feature("xrefstream"),
+
+	/**
 	 * commitInfoBar shows the horizontal bar above the editor with
 	 * the file's commit log.
 	 */
