@@ -1,5 +1,4 @@
 import * as _ from "lodash";
-import * as utf8 from "utf8";
 import { eventLogger } from "../utils/context";
 import * as github from "./github";
 import { fetchJumpURL, getTooltip, prewarmLSP } from "./lsp";
@@ -145,7 +144,7 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 	while (nodeText.length > 0) {
 		const token = consumeNext(nodeText);
 
-		wrapperNode.appendChild(createTextNode(utf8.encode(token), offset + prevConsumed));
+		wrapperNode.appendChild(createTextNode(token, offset + prevConsumed));
 		prevConsumed += token.length;
 		bytesConsumed += token.length;
 
