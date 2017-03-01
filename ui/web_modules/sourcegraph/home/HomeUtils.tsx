@@ -1,6 +1,7 @@
-import { langNames } from "sourcegraph/Language";
+import { langIDs, langNames } from "sourcegraph/Language";
 
-export const languages = langNames();
+export const languageNames = langNames();
+export const languageIDs = langIDs();
 
 export const editors = [
 	"Atom",

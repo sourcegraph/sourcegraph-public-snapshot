@@ -6,7 +6,7 @@ import { Component } from "sourcegraph/Component";
 import { Button, CheckboxList, Input } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { editors, languages } from "sourcegraph/home/HomeUtils";
+import { editors, languageIDs, languageNames } from "sourcegraph/home/HomeUtils";
 import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
 import { langName } from "sourcegraph/Language";
 import { SignupForm } from "sourcegraph/user/Signup";
@@ -168,7 +168,7 @@ export class BetaInterestForm extends Component<Props, State> {
 						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
 					</div>
 					<div className={styles.row}>
-						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
+						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languageNames} values={languageIDs} defaultValues={defaultLanguages} />
 					</div>
 					<div className={styles.row}>
 						<textarea ref={(c) => this._message = c} className={styles.textarea} name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>

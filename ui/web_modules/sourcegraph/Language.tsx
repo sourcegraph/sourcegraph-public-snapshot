@@ -1,6 +1,7 @@
 export const langs: [string, string][] = [
 	["golang", "Go"],
 	["java", "Java"],
+	["javaandroid", "Java (Android)"],
 	["python", "Python"],
 	["javascript", "JavaScript"],
 	["typescript", "TypeScript"],
@@ -16,8 +17,12 @@ export const langs: [string, string][] = [
 	["other", "Other"],
 ];
 
-export function langNames(): string[] {
+export function langIDs(): string[] {
 	return langs.map(([id]) => id);
+}
+
+export function langNames(): string[] {
+	return langs.map(([id, name]) => name);
 }
 
 export function langName(lang: string): string {
