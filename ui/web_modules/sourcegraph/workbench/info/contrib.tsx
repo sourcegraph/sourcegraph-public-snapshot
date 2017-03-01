@@ -9,15 +9,13 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { IPosition } from "vs/editor/common/editorCommon";
 import { IModel } from "vs/editor/common/editorCommon";
 import { CommonEditorRegistry } from "vs/editor/common/editorCommonExtensions";
-import { Location } from "vs/editor/common/modes";
 import { getOuterEditor } from "vs/editor/contrib/zoneWidget/browser/peekViewWidget";
 import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
 import { URIUtils } from "sourcegraph/core/uri";
-import { Features } from "sourcegraph/util/features";
-import { DefinitionData, LocationWithCommitInfo, fetchDependencyReferences, provideDefinition, provideGlobalReferences, provideGlobalReferencesStreaming, provideReferences, provideReferencesCommitInfo, provideReferencesStreaming } from "sourcegraph/util/RefsBackend";
+import { DefinitionData, LocationWithCommitInfo, provideDefinition, provideGlobalReferencesStreaming, provideReferencesCommitInfo, provideReferencesStreaming } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
 import { normalisePosition } from "sourcegraph/workbench/utils";
@@ -64,63 +62,6 @@ export class SidebarContribution extends Disposables {
 
 	getId(): string {
 		return SidebarContribID;
-	}
-
-	private async renderSidePanelForData(props: Props): Promise<Subscription | undefined> {
-		const id = this.currentID;
-		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
-		const def = await provideDefinition(props.editorModel, props.params.position).then(defData => {
-			if (!defData || (!defData.docString && !defData.funcName)) {
-				return null;
-			}
-			this.prepareInfoStore(true, this.currentID, fileEventProps);
-			this.dispatchInfo(id, defData, fileEventProps);
-			return defData;
-		});
-		if (!def) {
-			return;
-		}
-
-		const incrementalLocalRefs: Location[] = [];
-		const localRefs = await provideReferences(props.editorModel, props.params.position, locations => {
-			if (this.currentID !== id) {
-				return;
-			}
-			incrementalLocalRefs.push(...locations);
-			const refModel = new ReferencesModel(incrementalLocalRefs, props.editorModel.uri);
-			this.dispatchInfo(id, def, fileEventProps, refModel);
-		});
-
-		if (this.currentID !== id) {
-			return;
-		}
-
-		if (!localRefs || localRefs.length === 0) {
-			this.dispatchInfo(id, def, fileEventProps, null);
-		}
-
-		let refModel = new ReferencesModel(localRefs, props.editorModel.uri);
-		this.dispatchInfo(id, def, fileEventProps, refModel);
-
-		const localRefsWithCommitInfo = await provideReferencesCommitInfo(localRefs);
-		refModel = new ReferencesModel(localRefsWithCommitInfo, props.editorModel.uri);
-		if (this.currentID !== id) {
-			return;
-		}
-		this.dispatchInfo(id, def, fileEventProps, refModel);
-
-		const depRefs = await fetchDependencyReferences(props.editorModel, props.params.position);
-		if (!depRefs || this.currentID !== id) {
-			this.dispatchInfo(id, def, fileEventProps, refModel, true);
-			return;
-		}
-
-		let localAndGlobalRefs = localRefsWithCommitInfo;
-		return provideGlobalReferences(props.editorModel, depRefs).subscribe(refs => {
-			localAndGlobalRefs = localAndGlobalRefs.concat(refs);
-			refModel = new ReferencesModel(localAndGlobalRefs, props.editorModel.uri);
-			this.dispatchInfo(id, def, fileEventProps, refModel);
-		}, (err) => console.error(err), () => this.dispatchInfo(id, def, fileEventProps, refModel, true));
 	}
 
 	private async renderSidePanelForDataStreaming(props: Props): Promise<Subscription | undefined> {
@@ -235,17 +176,10 @@ export class SidebarContribution extends Disposables {
 
 		this.highlightWord(position);
 
-		if (Features.xrefstream.isEnabled()) {
-			this.globalFetchSubscription = this.renderSidePanelForDataStreaming({
-				editorModel: model,
-				params: { position },
-			});
-		} else {
-			this.globalFetchSubscription = this.renderSidePanelForData({
-				editorModel: model,
-				params: { position },
-			});
-		}
+		this.globalFetchSubscription = this.renderSidePanelForDataStreaming({
+			editorModel: model,
+			params: { position },
+		});
 	}
 
 	private highlightWord(position: IPosition): void {
