@@ -57,7 +57,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 							<Panel color="purple" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Personal</Heading>
 								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>free</span></Heading>
-								<span className={styles.amount_per}>free until Jan 1, 2018</span>
+								<span className={styles.amount_per}>free until Feb 1, 2018</span>
 							</Panel>
 							{personalPlanButton}
 						</div>
