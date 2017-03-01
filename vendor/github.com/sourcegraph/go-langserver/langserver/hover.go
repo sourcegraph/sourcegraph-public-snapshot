@@ -55,6 +55,7 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 	qf := func(*types.Package) string { return "" }
 
 	var s string
+	var extra string
 	if f, ok := o.(*types.Var); ok && f.IsField() {
 		// TODO(sqs): make this be like (T).F not "struct field F string".
 		s = "struct " + o.String()
@@ -63,6 +64,11 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 			typ := obj.Type().Underlying()
 			if _, ok := typ.(*types.Struct); ok {
 				s = "type " + obj.Name() + " struct"
+				extra = prettyPrintTypesString(types.TypeString(typ, qf))
+			}
+			if _, ok := typ.(*types.Interface); ok {
+				s = "type " + obj.Name() + " interface"
+				extra = prettyPrintTypesString(types.TypeString(typ, qf))
 			}
 		}
 		if s == "" {
@@ -109,9 +115,15 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 		return doc.Text()
 	}
 
-	comments := findComments(o)
+	contents := maybeAddComments(findComments(o), []lsp.MarkedString{{Language: "go", Value: s}})
+	if extra != "" {
+		// If we have extra info, ensure it comes after the usually
+		// more useful documentation
+		contents = append(contents, lsp.MarkedString{Language: "go", Value: extra})
+	}
+
 	return &lsp.Hover{
-		Contents: maybeAddComments(comments, []lsp.MarkedString{{Language: "go", Value: s}}),
+		Contents: contents,
 		Range:    rangeForNode(fset, node),
 	}, nil
 }
@@ -164,4 +176,62 @@ func commentsToText(cgroups []*ast.CommentGroup) (text string) {
 		}
 	}
 	return text
+}
+
+// prettyPrintTypesString is pretty printing specific to the output of
+// types.*String. Instead of re-implementing the printer, we can just
+// transform its output.
+func prettyPrintTypesString(s string) string {
+	// Don't bother including the fields if it is empty
+	if strings.HasSuffix(s, "{}") {
+		return ""
+	}
+	var b bytes.Buffer
+	b.Grow(len(s))
+	depth := 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch c {
+		case ';':
+			b.WriteByte('\n')
+			for j := 0; j < depth; j++ {
+				b.WriteString("    ")
+			}
+			// Skip following space
+			i++
+
+		case '{':
+			if i == len(s)-1 {
+				// This should never happen, but in case it
+				// does give up
+				return s
+			}
+
+			n := s[i+1]
+			if n == '}' {
+				// Do not modify {}
+				b.WriteString("{}")
+				// We have already written }, so skip
+				i++
+			} else {
+				// We expect fields to follow, insert a newline and space
+				depth++
+				b.WriteString(" {\n")
+				for j := 0; j < depth; j++ {
+					b.WriteString("    ")
+				}
+			}
+
+		case '}':
+			depth--
+			if depth < 0 {
+				return s
+			}
+			b.WriteString("\n}")
+
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
 }
