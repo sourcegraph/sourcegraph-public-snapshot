@@ -10,17 +10,12 @@ export interface ResolvedRevResp {
 }
 
 const promiseCache = new Map<string, Promise<ResolvedRevResp>>();
-const inflightPromises = new Map<string, Promise<ResolvedRevResp>>();
 
 export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp> {
 	const key = cacheKey(repo, rev);
 	const promiseHit = promiseCache.get(key);
 	if (promiseHit) {
 		return promiseHit;
-	}
-	const inflightPromise = inflightPromises.get(key);
-	if (inflightPromise) {
-		return inflightPromise;
 	}
 	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
 		method: "POST",
@@ -44,7 +39,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 		}),
 	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
 		// Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
-		inflightPromises.delete(key);
+		promiseCache.delete(key);
 		if (!json.data) {
 			const error = new Error("invalid response received from graphql endpoint");
 			promiseCache.set(key, Promise.reject(error));
@@ -67,6 +62,6 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 		promiseCache.set(key, Promise.resolve(found));
 		return found;
 	});
-	inflightPromises.set(key, p);
+	promiseCache.set(key, p);
 	return p;
 }

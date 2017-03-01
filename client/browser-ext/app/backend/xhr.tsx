@@ -1,5 +1,4 @@
 import { getPlatformName } from "../utils";
-import { singleflightFetch } from "./singleflightFetch";
 
 let token: string | null = null;
 export function useAccessToken(tok: string): void {
@@ -33,7 +32,6 @@ function getExtensionVersion(): string {
 	return "NO_VERSION";
 }
 
-const f = singleflightFetch(global.fetch);
 export function doFetch(url: string, opt?: any): Promise<Response> {
 	let defaults = defaultOptions();
 	const fetchOptions = Object.assign({}, defaults, opt);
@@ -41,5 +39,5 @@ export function doFetch(url: string, opt?: any): Promise<Response> {
 		// the above object merge might override the auth headers. add those back in.
 		fetchOptions.headers = combineHeaders(opt.headers, defaults.headers);
 	}
-	return f(url, fetchOptions);
+	return global.fetch(url, fetchOptions);
 }
