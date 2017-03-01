@@ -114,14 +114,14 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string,
 	return nil
 }
 
-func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, inv *inventory.Inventory) (int, error) {
+func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) (int, error) {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
 		return 0, err
 	}
 
 	var sum int
-	for _, lang := range inv.Languages {
+	for _, lang := range langs {
 		switch lang.Name {
 		case inventory.LangGo:
 			for _, expandedSources := range repoURIToGoPathPrefixes(repoURI) {

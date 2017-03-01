@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -39,7 +38,7 @@ func init() {
 	prometheus.MustRegister(totalRefsCacheCounter)
 }
 
-func (s *defs) TotalRefs(ctx context.Context, source string, inv *inventory.Inventory) (res int, err error) {
+func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
 	if Mocks.Defs.TotalRefs != nil {
 		return Mocks.Defs.TotalRefs(ctx, source)
 	}
@@ -58,8 +57,20 @@ func (s *defs) TotalRefs(ctx context.Context, source string, inv *inventory.Inve
 	}
 
 	// Query value from the database.
+	rp, err := Repos.GetByURI(ctx, source)
+	if err != nil {
+		return 0, err
+	}
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID, Rev: rp.DefaultBranch})
+	if err != nil {
+		return 0, err
+	}
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: rev.CommitID})
+	if err != nil {
+		return 0, err
+	}
 	totalRefsCacheCounter.WithLabelValues("miss").Inc()
-	res, err = localstore.GlobalDeps.TotalRefs(ctx, source, inv)
+	res, err = localstore.GlobalDeps.TotalRefs(ctx, source, inv.Languages)
 	if err != nil {
 		return 0, err
 	}
