@@ -46,7 +46,7 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 
 	componentWillMount(): void {
 		this.toDispose.add(infoStore.subscribe((info) => {
-			if (info.prepareData) {
+			if (info && info.prepareData) {
 				// Close preview when escape key is clicked - Don't dismiss sidepane.
 				if (!info.prepareData.open && !info.id && this.infoPanelRef instanceof InfoPanel && this.infoPanelRef.state.previewLocation) {
 					Events.InfoPanelRefPreview_Closed.logEvent(this.infoPanelRef.getEventProps());
@@ -70,22 +70,21 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 				this.forceUpdate();
 				return;
 			}
-			if (this.infoPanelRef instanceof InfoPanel) {
-				const state: State = {};
-				let updateState = false;
-				if (info.loadingComplete !== undefined) {
-					state.loadingComplete = info.loadingComplete;
-					updateState = true;
-				}
-				if (info.refModel !== undefined) {
-					this.info = info;
-					state.refModel = info.refModel;
-					state.previewLocation = this.infoPanelRef.state.previewLocation;
-					updateState = true;
-				}
-				if (updateState) {
-					this.infoPanelRef.setState(state);
-				}
+			if (info && info.loadingComplete !== undefined && this.infoPanelRef instanceof InfoPanel) {
+				this.infoPanelRef.setState({
+					loadingComplete: info.loadingComplete,
+				});
+
+				return;
+			}
+			if (info && info.refModel !== undefined && this.infoPanelRef && this.infoPanelRef instanceof InfoPanel) {
+				this.info = info;
+				const currentSelected = this.infoPanelRef.state.previewLocation;
+				this.infoPanelRef.setState({
+					previewLocation: currentSelected,
+					refModel: info.refModel,
+				});
+
 				return;
 			}
 
@@ -265,4 +264,4 @@ class InfoPanel extends React.Component<Props, State> {
 	}
 };
 
-export const infoStore = new MiniStore<Props>();
+export const infoStore = new MiniStore<Props | null>();

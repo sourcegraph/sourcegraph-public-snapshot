@@ -1,4 +1,4 @@
-import { Position } from "@sourcegraph/vscode-languageserver-types";
+import { Position } from "vscode-languageserver-types";
 
 import { IPosition, IRange } from "vs/editor/common/editorCommon";
 
