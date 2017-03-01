@@ -43,6 +43,8 @@ func NewHandler(r *router.Router) http.Handler {
 	r.Get(router.GitHubOAuth2Initiate).Handler(httptrace.TraceRoute(internal.Handler(oauth2client.ServeGitHubOAuth2Initiate)))
 	r.Get(router.GitHubOAuth2Receive).Handler(httptrace.TraceRoute(internal.Handler(oauth2client.ServeGitHubOAuth2Receive)))
 
+	r.Get(router.InstallZap).Handler(httptrace.TraceRoute(internal.Handler(serveInstallZap)))
+
 	r.Get(router.GDDORefs).Handler(httptrace.TraceRoute(internal.Handler(serveGDDORefs)))
 
 	r.Get(router.ShowAuth).Handler(httptrace.TraceRoute(internal.Handler(serveShowAuth)))
