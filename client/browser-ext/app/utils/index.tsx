@@ -8,6 +8,7 @@ export const supportedExtensions = new Set<string>([
 	"go", // Golang
 	"ts", "tsx", // TypeScript
 	"js", "jsx", // JavaScript
+	"java", // Java
 ]);
 
 /**
@@ -17,7 +18,6 @@ export const supportedExtensions = new Set<string>([
 export const upcomingExtensions = new Set<string>([
 	// "cs", // C#
 	// "css", // CSS
-	"java", // Java
 	// "swift", // Swift
 	// "c", "h", // C
 	// "m", "mm", // Obj-C ("h" and "C" overlap with C/C++)
@@ -46,6 +46,8 @@ export function getModeFromExtension(ext: string): string {
 		case "js":
 		case "jsx":
 			return "javascript";
+		case "java":
+			return "java";
 		default:
 			return "unknown";
 	}

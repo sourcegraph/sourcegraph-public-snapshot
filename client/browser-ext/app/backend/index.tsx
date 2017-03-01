@@ -39,6 +39,7 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 		}),
 	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
 		// Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
+		promiseCache.delete(key);
 		if (!json.data) {
 			const error = new Error("invalid response received from graphql endpoint");
 			promiseCache.set(key, Promise.reject(error));
@@ -61,5 +62,6 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 		promiseCache.set(key, Promise.resolve(found));
 		return found;
 	});
+	promiseCache.set(key, p);
 	return p;
 }
