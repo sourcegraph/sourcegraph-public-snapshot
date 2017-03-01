@@ -99,10 +99,6 @@ export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): 
 	return { funcName, docString, definition };
 }
 
-export async function provideReferences(model: IReadOnlyModel, pos: IPosition, progress: (locations: Location[]) => void): Promise<Location[]> {
-	return getReferences(model, Position.lift(pos), progress);
-}
-
 export function provideReferencesStreaming(model: IReadOnlyModel, pos: IPosition): Observable<Location> {
 	return new Observable<Location>(observer => {
 		let gotProgress = false;
@@ -225,7 +221,6 @@ const MAX_GLOBAL_REFS_REPOS = 5;
  * get the user to a "done" state with no loading spinner quicker.
  */
 const MAX_REFS_PER_REPO = 100;
-const globalRefsObservables = new Map<string, Observable<LocationWithCommitInfo[]>>();
 const globalRefsObservablesStreaming = new Map<string, Observable<LocationWithCommitInfo>>();
 
 function log(message?: any, ...optionalParams: any[]): void {
@@ -366,103 +361,8 @@ function setupWorkspace(uri: URI, isReady: () => boolean): Promise<void> {
 	});
 }
 
-export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<LocationWithCommitInfo[]> {
-	const dependents = depRefs.Data.References;
-	const repoData = depRefs.RepoData;
-	const symbol = depRefs.Data.Location.symbol;
-	const modeID = model.getModeId();
-
-	const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
-	const cacheHit = globalRefsObservables.get(key);
-	if (cacheHit) {
-		return cacheHit;
-	}
-
-	const observable = new Observable<LocationWithCommitInfo[]>(observer => {
-		let interval: number | null = null;
-		let unsubscribed = false;
-		let completed = false;
-
-		let countNonempty = 0;
-		function incrementCountIfNonempty(refs: Location[]): void {
-			if (refs && refs.length > 0) {
-				++countNonempty;
-			}
-		}
-
-		function complete(): void {
-			if (!completed) {
-				completed = true;
-			}
-			observer.complete();
-		}
-
-		function pollNext(count: number): Promise<void>[] {
-			if (dependents.length > 0 && countNonempty < MAX_GLOBAL_REFS_REPOS) {
-				const isLastDependent = dependents.length === 1;
-				const nextDependentsToPoll = dependents.splice(0, Math.min(count, dependents.length));
-				return nextDependentsToPoll.map(dependent => {
-					const repo = repoData[dependent.RepoID];
-					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(provideReferencesCommitInfo).then(refs => {
-						incrementCountIfNonempty(refs);
-						if (!completed && refs.length > 0) {
-							// HACK(john): this should be written into vscode internals (https://github.com/sourcegraph/sourcegraph/issues/3998)
-							// The first URI in the list is assumed to share the same workspace with the rest.
-							setupWorker(refs[0].uri.with({ fragment: "" }));
-							observer.next(refs);
-						}
-						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
-							complete();
-						}
-					});
-				});
-			}
-
-			return [];
-		}
-
-		// Fetch references from the first two dependent repos right away, in parallel.
-		Promise.all(pollNext(2)).then(() => {
-			// Unsubscription may happen before we complete fetching the first 2 dependent repo refs.
-			// If so, bail before starting the interval poll.
-			if (unsubscribed) {
-				return;
-			}
-			if (countNonempty >= MAX_GLOBAL_REFS_REPOS || dependents.length === 0) {
-				complete();
-			}
-			// Every 2.5 seconds following, fetch refs for another dependent repo until
-			// there are no more dependent repos or we've fetched non-empty results from MAX_GLOBAL_REFS_REPOS.
-			interval = setInterval(() => pollNext(1), 2500);
-		});
-
-		return function unsubscribe(): void {
-			unsubscribed = true;
-			if (interval) {
-				clearInterval(interval);
-			}
-		};
-	}).publishReplay(MAX_GLOBAL_REFS_REPOS).refCount();
-
-	globalRefsObservables.set(key, observable);
-	return observable;
-}
-
-function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
-	if (!repo.URI || !repo.IndexedRevision) {
-		return Promise.resolve([]);
-	}
-
-	let repoURI = URIUtils.pathInRepo(repo.URI, repo.IndexedRevision, "");
-	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
-		query: symbol,
-		hints: reference.Hints,
-	}).then(resp => (!resp || !resp.result) ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
-}
-
 const globalRefLangs = new Set(["go", "java"]);
-// TODO(nick): remove export once features.xrefstream is removed enabled.
-export async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition): Promise<DepRefsData | null> {
+async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition): Promise<DepRefsData | null> {
 	// Only fetch global refs for certain languages.
 	if (!globalRefLangs.has(model.getModeId())) {
 		return null;

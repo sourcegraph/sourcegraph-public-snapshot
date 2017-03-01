@@ -183,7 +183,7 @@ def test_global_refs(d, test):
     wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
 
     # Wait for references to load + un-expand the "Local" references
-    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45) # Wait for loading icon to disappear
