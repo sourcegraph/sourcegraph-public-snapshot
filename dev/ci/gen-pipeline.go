@@ -54,7 +54,7 @@ func (p *Pipeline) AddWait() {
 }
 
 var golangPlugin = map[string]interface{}{
-	"golang#alternative-alternative-approach": map[string]string{
+	"golang#v0.3": map[string]string{
 		"import": "sourcegraph.com/sourcegraph/sourcegraph",
 	},
 }
