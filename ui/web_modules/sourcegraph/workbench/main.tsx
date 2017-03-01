@@ -22,7 +22,6 @@ import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMode } from "vs/editor/common/modes";
 import { IModeService } from "vs/editor/common/services/modeService";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import "vs/workbench/electron-browser/main.contribution";
@@ -30,7 +29,6 @@ import { Workbench } from "vs/workbench/electron-browser/workbench";
 import { TextFileEditorModel } from "vs/workbench/services/textfile/common/textFileEditorModel";
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
-import { TextModelResolverService } from "sourcegraph/editor/resolverService";
 import { init as initExtensionHost } from "sourcegraph/ext/main";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
@@ -58,7 +56,6 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 	workbench.startup();
 
 	// HACK: overwritten by workbench.startup()
-	services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
 	services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
 
 	// HACK: get URI's filename in fragment, not in URI path component

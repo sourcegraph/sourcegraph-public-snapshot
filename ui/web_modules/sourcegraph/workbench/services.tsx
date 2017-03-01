@@ -30,12 +30,12 @@ import { IThreadService } from "vs/workbench/services/thread/common/threadServic
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 import { IWindowIPCService } from "vs/workbench/services/window/electron-browser/windowService";
 
-import { TextModelResolverService } from "sourcegraph/editor/resolverService";
 import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { ConfigurationService, WorkspaceConfigurationService } from "sourcegraph/workbench/ConfigurationService";
 import { EnvironmentService } from "sourcegraph/workbench/environmentService";
 import { ExtensionService } from "sourcegraph/workbench/extensionService";
 import { FileService } from "sourcegraph/workbench/overrides/fileService";
+import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 import { SearchService } from "sourcegraph/workbench/searchService";
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
 import { GitTextFileService } from "sourcegraph/workbench/textFileService";

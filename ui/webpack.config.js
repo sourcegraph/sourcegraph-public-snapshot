@@ -114,6 +114,7 @@ module.exports = {
 			"vs/workbench/parts/files/browser/explorerViewlet": "sourcegraph/workbench/overrides/explorerViewlet",
 			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",
 			"vs/workbench/services/files/electron-browser/fileService": "sourcegraph/workbench/overrides/fileService",
+			"vs/workbench/services/textmodelResolver/common/textModelResolverService": "sourcegraph/workbench/overrides/resolverService",
 			"fs": "sourcegraph/workbench/overrides/fs",
 			"vs/base/browser/ui/iconLabel/iconLabel": "sourcegraph/workbench/overrides/iconLabel",
 			"vs/workbench/browser/labels": "sourcegraph/workbench/overrides/labels",
@@ -150,17 +151,17 @@ module.exports = {
 	module: {
 		rules: [
 			{
-                test: /\.js$/,
+				test: /\.js$/,
 				loader: 'babel-loader',
-                include: path.resolve(__dirname, 'node_modules/@sourcegraph/vscode-languageclient'),
-                query: {
+				include: path.resolve(__dirname, 'node_modules/@sourcegraph/vscode-languageclient'),
+				query: {
 					cacheDirectory: true,
-                    plugins: [
+					plugins: [
 						'transform-es2015-for-of',
 						//'transform-runtime', // avoid adding helpers to each affected file
 					],
-                },
-            },
+				},
+			},
 			{
 				test: /\.tsx?$/,
 				loader: 'awesome-typescript-loader?' + JSON.stringify({

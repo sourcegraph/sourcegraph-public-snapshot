@@ -13,7 +13,7 @@ import { StorageService } from "vs/workbench/services/storage/common/storageServ
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
 import { layout } from "sourcegraph/components/utils";
-import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
+import { TextModelContentProvider } from "sourcegraph/workbench/overrides/resolverService";
 
 // Set the height of files in the file tree explorer.
 (FileRenderer as any).ITEM_HEIGHT = 30;
