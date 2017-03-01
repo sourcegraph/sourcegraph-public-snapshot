@@ -70,6 +70,11 @@ export const Features = {
 	langPython: new Feature("lang-python"),
 
 	/**
+	 * Enable streaming external references.
+	 */
+	xrefstream: new Feature("xrefstream"),
+
+	/**
 	 * Enable logging for references
 	 */
 	refLogs: new Feature("refLogs"),
