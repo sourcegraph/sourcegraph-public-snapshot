@@ -257,6 +257,8 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 		// the number of repos that we want results from.
 		const initialRequests = triggerRequest.merge(Observable.range(1, MAX_GLOBAL_REFS_REPOS));
 
+		let foundRepos = 0;
+
 		// When a repo returns results, we will process those results.
 		// When a repo does not have results, we will trigger another request (until we run out).
 		const result = Observable.from(depRefs.Data.References)
@@ -283,6 +285,11 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 						if (!hasResults) {
 							// If this repo didn't have any global references, we want to trigger another request.
 							triggerRequest.next();
+						} else {
+							foundRepos++;
+							if (foundRepos === MAX_GLOBAL_REFS_REPOS) {
+								triggerRequest.complete();
+							}
 						}
 					});
 			})
@@ -325,15 +332,15 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, modeID: stri
 	return new Observable<IReferenceInformation>(observer => {
 		setupWorkspace(repoURI, workspaceIsReady).then(() => {
 			let gotProgress = false;
-			log(`provideWorkspaceReferences start ${repoURI.toString()}`);
+			// log(`provideWorkspaceReferences start ${repoURI.toString()}`);
 			provideWorkspaceReferences(modeID, repoURI, symbol, reference.Hints, references => {
-				log(`provideWorkspaceReferences progress ${repoURI.toString()} ${references.length}`);
+				// log(`provideWorkspaceReferences progress ${repoURI.toString()} ${references.length}`);
 				gotProgress = true;
 				for (const ref of references) {
 					observer.next(ref);
 				}
 			}).then(references => {
-				log(`provideWorkspaceReferences finish ${repoURI.toString()} ${references.length}`);
+				// log(`provideWorkspaceReferences finish ${repoURI.toString()} ${references.length}`);
 				// The language server may or may not support sending progress events.
 				// 
 				// If the language server sends progress events, then the final result will either
