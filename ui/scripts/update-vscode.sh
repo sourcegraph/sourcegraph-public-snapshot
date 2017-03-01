@@ -2,7 +2,7 @@
 
 CLONE_URL="${2:-git@github.com:sourcegraph/vscode.git}"
 CLONE_DIR=/tmp/sourcegraph-vscode
-REV=${1:-1cf9f5ae15d1c05d5478aed7b1ffd2092375788a} # pin to commit ID, bump as needed
+REV=${1:-20e7c05865ee0fe2584ff9115acf180ad5923fd5} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
 VENDOR_DIR="$REPO_DIR"/ui/vendor/node_modules/vscode
 #rm -rf $CLONE_DIR # uncomment temporarily if you have pushed new changes to the vscode patch branch
