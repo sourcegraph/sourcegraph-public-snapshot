@@ -19,6 +19,10 @@ type ListPackagesOp struct {
 	// Lang, if non-empty, is the language to which to restrict the list operation.
 	Lang string
 
+	// RepoID, if non-zero, is the repository to which the set of
+	// returned packages should be restricted.
+	RepoID int32
+
 	// PkgQuery is the JSON containment query. It matches all packages
 	// that have the same values for keys defined in PkgQuery.
 	PkgQuery map[string]interface{}

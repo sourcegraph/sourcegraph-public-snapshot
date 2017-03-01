@@ -18,11 +18,15 @@ import (
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
 func badgeValue(r *http.Request) (int, error) {
-	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return 0, errors.Wrap(err, "GetRepoAndRev")
 	}
-	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.URI)
+	inv, err := backend.Repos.GetInventory(r.Context(), &repoRev)
+	if err != nil {
+		return 0, err
+	}
+	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.URI, inv)
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}

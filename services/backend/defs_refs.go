@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
@@ -38,7 +39,7 @@ func init() {
 	prometheus.MustRegister(totalRefsCacheCounter)
 }
 
-func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error) {
+func (s *defs) TotalRefs(ctx context.Context, source string, inv *inventory.Inventory) (res int, err error) {
 	if Mocks.Defs.TotalRefs != nil {
 		return Mocks.Defs.TotalRefs(ctx, source)
 	}
@@ -58,7 +59,7 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 
 	// Query value from the database.
 	totalRefsCacheCounter.WithLabelValues("miss").Inc()
-	res, err = localstore.GlobalDeps.TotalRefs(ctx, source)
+	res, err = localstore.GlobalDeps.TotalRefs(ctx, source, inv)
 	if err != nil {
 		return 0, err
 	}

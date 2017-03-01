@@ -274,6 +274,29 @@ func TestPkgs_ListPackages(t *testing.T) {
 			t.Fatalf("!calledReposGet")
 		}
 	}
+	{ // Test case 5, filter by repo ID
+		calledReposGet = false
+		expPkgInfo := []sourcegraph.PackageInfo{{
+			RepoID: 3,
+			Lang:   "go",
+			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
+		}}
+		op := &sourcegraph.ListPackagesOp{
+			Lang:   "go",
+			RepoID: 3,
+			Limit:  10,
+		}
+		gotPkgInfo, err := Pkgs.ListPackages(ctx, op)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
+			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
+		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
+	}
 }
 
 func (p *pkgs) getAll(ctx context.Context, db dbQueryer) (packages []sourcegraph.PackageInfo, err error) {

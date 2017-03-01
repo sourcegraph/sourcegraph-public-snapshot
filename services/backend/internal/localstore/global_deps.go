@@ -22,6 +22,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -113,14 +114,30 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string,
 	return nil
 }
 
-func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) {
+func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, inv *inventory.Inventory) (int, error) {
+	repo, err := Repos.GetByURI(ctx, repoURI)
+	if err != nil {
+		return 0, err
+	}
+
 	var sum int
-	for _, expandedSources := range repoURIToGoPathPrefixes(source) {
-		refs, err := g.doTotalRefs(ctx, expandedSources)
-		if err != nil {
-			return 0, err
+	for _, lang := range inv.Languages {
+		switch lang.Name {
+		case inventory.LangGo:
+			for _, expandedSources := range repoURIToGoPathPrefixes(repoURI) {
+				refs, err := g.doTotalRefsGo(ctx, expandedSources)
+				if err != nil {
+					return 0, err
+				}
+				sum += refs
+			}
+		case inventory.LangJava:
+			refs, err := g.doTotalRefs(ctx, repo.ID, "java")
+			if err != nil {
+				return 0, err
+			}
+			sum += refs
 		}
-		sum += refs
 	}
 	return sum, nil
 }
@@ -215,7 +232,45 @@ func repoURIToGoPathPrefixes(repoURI string) []string {
 	return []string{repoURI}
 }
 
-func (g *globalDeps) doTotalRefs(ctx context.Context, source string) (int, error) {
+func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (sum int, err error) {
+	// Get packages contained in the repo
+	packages, err := (&pkgs{}).ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
+	if err != nil {
+		return 0, err
+	}
+
+	// Find number of repos that depend on that set of packages
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
+	}
+	var whereClauses []string
+	for _, pkg := range packages {
+		pkgID, ok := xlang.PackageIdentifier(pkg.Pkg, lang)
+		if !ok {
+			return 0, fmt.Errorf("could not extract package identifer: %s", err)
+		}
+		containmentQuery, err := json.Marshal(pkgID)
+		if err != nil {
+			return 0, fmt.Errorf("could not marshal package identifier %+v", pkgID)
+		}
+		whereClauses = append(whereClauses, `dep_data @> `+arg(string(containmentQuery)))
+	}
+	whereSQL := `(language='java') AND ((` + strings.Join(whereClauses, ") OR (") + `))`
+	sql := `SELECT count(distinct(repo_id))
+			FROM global_dep
+			WHERE ` + whereSQL
+	count, err := appDBH(ctx).SelectInt(sql, args...)
+	if err != nil {
+		return 0, err
+	}
+	sum += int(count)
+	return
+}
+
+func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, error) {
 	// 🚨 SECURITY: Note that we do not speak to global_dep_private here, because 🚨
 	// that could hint towards private repositories existing. We may decide to
 	// relax this constraint in the future, but we should be extremely careful

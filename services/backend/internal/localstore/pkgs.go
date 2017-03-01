@@ -13,6 +13,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
+	gorp "gopkg.in/gorp.v1"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -221,18 +222,38 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 	span.SetTag("Lang", op.Lang)
 	span.SetTag("PkgQuery", op.PkgQuery)
 
-	containmentQuery, err := json.Marshal(op.PkgQuery)
-	if err != nil {
-		return nil, errors.New("marshaling op.PkgQuery")
+	var args []interface{}
+	arg := func(a interface{}) string {
+		v := gorp.PostgresDialect{}.BindVar(len(args))
+		args = append(args, a)
+		return v
 	}
 
-	rows, err := appDBH(ctx).Db.Query(`
+	var whereClauses []string
+	if op.PkgQuery != nil {
+		containmentQuery, err := json.Marshal(op.PkgQuery)
+		if err != nil {
+			return nil, errors.New("marshaling op.PkgQuery")
+		}
+		whereClauses = append(whereClauses, `pkgs.pkg @> `+arg(string(containmentQuery)))
+	}
+	if op.RepoID != 0 {
+		whereClauses = append(whereClauses, `repo_id=`+arg(op.RepoID))
+	}
+	if op.Lang != "" {
+		whereClauses = append(whereClauses, `pkgs.language=`+arg(op.Lang))
+	}
+	if len(whereClauses) == 0 {
+		return nil, fmt.Errorf("no filtering options specified, must specify at least one")
+	}
+	whereSQL := "(" + strings.Join(whereClauses, ") AND (") + ")"
+	sql := `
 		SELECT pkgs.*
 		FROM pkgs INNER JOIN repo ON pkgs.repo_id=repo.id
-		WHERE pkgs.language=$1
-		AND pkgs.pkg @> $2
+		WHERE ` + whereSQL + `
 		ORDER BY pkgs.repo_id ASC
-		LIMIT $3`, op.Lang, string(containmentQuery), op.Limit)
+		LIMIT ` + arg(op.Limit)
+	rows, err := appDBH(ctx).Db.Query(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

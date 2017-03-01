@@ -17,6 +17,17 @@ func SymbolPackageDescriptor(sym lspext.SymbolDescriptor, lang string) (map[stri
 	return subSelector(sym), true
 }
 
+// PackageIdentifier extracts the part of the PackageDescriptor that
+// should be used to quasi-uniquely identify a package. Typically, it
+// leaves things liks "version" out.
+func PackageIdentifier(pkgDescriptor map[string]interface{}, lang string) (map[string]interface{}, bool) {
+	pkgIDFn, ok := packageIdentifiers[lang]
+	if !ok {
+		return nil, false
+	}
+	return pkgIDFn(pkgDescriptor), true
+}
+
 // SymbolRepoURL returns the repository URL extracted from the
 // package metadata at the JSON path
 // `symDescriptor.package.repoURL`. If that does not exist, it returns
@@ -80,23 +91,34 @@ var subSelectors = map[string]func(lspext.SymbolDescriptor) map[string]interface
 			// a composer.json file. In this case, there are no external references to this symbol.
 			return nil
 		}
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
+		return packageIdentifiers["php"](symbol["package"].(map[string]interface{}))
 	},
 	"typescript": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
 		if _, ok := symbol["package"]; !ok {
 			return nil
 		}
-		return map[string]interface{}{
-			"name": symbol["package"].(map[string]interface{})["name"],
-		}
+		return packageIdentifiers["typescript"](symbol["package"].(map[string]interface{}))
 	},
 	"java": func(symbol lspext.SymbolDescriptor) map[string]interface{} {
 		if _, ok := symbol["package"].(map[string]interface{}); !ok {
 			return nil
 		}
-		pkg := symbol["package"].(map[string]interface{})
+		return packageIdentifiers["java"](symbol["package"].(map[string]interface{}))
+	},
+}
+
+var packageIdentifiers = map[string]func(map[string]interface{}) map[string]interface{}{
+	"php": func(pkg map[string]interface{}) map[string]interface{} {
+		return map[string]interface{}{
+			"name": pkg["name"],
+		}
+	},
+	"typescript": func(pkg map[string]interface{}) map[string]interface{} {
+		return map[string]interface{}{
+			"name": pkg["name"],
+		}
+	},
+	"java": func(pkg map[string]interface{}) map[string]interface{} {
 		return map[string]interface{}{
 			"id":   pkg["id"],
 			"type": pkg["type"],

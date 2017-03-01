@@ -17,6 +17,13 @@ type Inventory struct {
 	Languages []*Lang `json:"Languages,omitempty"`
 }
 
+// Constants that can be values in the Inventory.Languages slice.
+const (
+	LangGo         = "Go"
+	LangJava       = "Java"
+	LangTypeScript = "TypeScript"
+)
+
 // Lang represents a programming language used in a directory tree.
 type Lang struct {
 	// Name is the name of a programming language (e.g., "Go" or
