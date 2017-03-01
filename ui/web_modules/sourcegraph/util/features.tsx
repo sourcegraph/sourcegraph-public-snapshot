@@ -68,7 +68,6 @@ export const Features = {
 	langCSS: new Feature("lang-css"),
 	langPHP: new Feature("lang-php"),
 	langPython: new Feature("lang-python"),
-	langJava: new Feature("lang-java"),
 
 	/**
 	 * Enable streaming external references.
@@ -120,7 +119,7 @@ export function bulkEnable(featureNames: string[]): void {
 }
 
 export function getModes(): Set<string> {
-	const modes = new Set<string>(["go", "javascript", "typescript"]);
+	const modes = new Set<string>(["go", "java", "javascript", "typescript"]);
 	if (Features.langCSS.isEnabled()) {
 		modes.add("css");
 		modes.add("less");
@@ -131,9 +130,6 @@ export function getModes(): Set<string> {
 	}
 	if (Features.langPython.isEnabled()) {
 		modes.add("python");
-	}
-	if (Features.langJava.isEnabled()) {
-		modes.add("java");
 	}
 	return modes;
 }
