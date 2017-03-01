@@ -44,31 +44,27 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 		}),
 	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
 		// Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
+		inflightPromises.delete(key);
 		if (!json.data) {
 			const error = new Error("invalid response received from graphql endpoint");
 			promiseCache.set(key, Promise.reject(error));
-			inflightPromises.delete(key);
 			throw error;
 		}
 		if (!json.data.root.repository) {
 			const notFound = { notFound: true };
 			promiseCache.set(key, Promise.resolve(notFound));
-			inflightPromises.delete(key);
 			return notFound;
 		}
 		if (json.data.root.repository.commit.cloneInProgress) {
 			// don't store this promise, we want to make a new query, holmes.
-			inflightPromises.delete(key);
 			return { cloneInProgress: true };
 		} else if (!json.data.root.repository.commit.commit) {
 			const error = new Error("not able to resolve sha1");
 			promiseCache.set(key, Promise.reject(error));
-			inflightPromises.delete(key);
 			throw error;
 		}
 		const found = { commitID: json.data.root.repository.commit.commit.sha1 };
 		promiseCache.set(key, Promise.resolve(found));
-		inflightPromises.delete(key);
 		return found;
 	});
 	inflightPromises.set(key, p);
