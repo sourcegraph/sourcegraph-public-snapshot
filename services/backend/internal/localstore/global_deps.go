@@ -232,6 +232,7 @@ func repoURIToGoPathPrefixes(repoURI string) []string {
 	return []string{repoURI}
 }
 
+// doTotalRefs is the generic implementation of total references, using the `pkgs` table.
 func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (sum int, err error) {
 	// Get packages contained in the repo
 	packages, err := (&pkgs{}).ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
@@ -246,30 +247,38 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 		args = append(args, a)
 		return v
 	}
-	var whereClauses []string
+	var pkgClauses []string
 	for _, pkg := range packages {
 		pkgID, ok := xlang.PackageIdentifier(pkg.Pkg, lang)
 		if !ok {
-			return 0, fmt.Errorf("could not extract package identifer: %s", err)
+			return 0, errors.Wrap(err, "PackageIdentifier")
 		}
 		containmentQuery, err := json.Marshal(pkgID)
 		if err != nil {
-			return 0, fmt.Errorf("could not marshal package identifier %+v", pkgID)
+			return 0, errors.Wrap(err, "Marshal")
 		}
-		whereClauses = append(whereClauses, `dep_data @> `+arg(string(containmentQuery)))
+		pkgClauses = append(pkgClauses, `dep_data @> `+arg(string(containmentQuery)))
 	}
-	whereSQL := `(language='java') AND ((` + strings.Join(whereClauses, ") OR (") + `))`
+	whereSQL := `(language=` + arg(lang) + `) AND ((` + strings.Join(pkgClauses, ") OR (") + `))`
 	sql := `SELECT count(distinct(repo_id))
 			FROM global_dep
 			WHERE ` + whereSQL
-	count, err := appDBH(ctx).SelectInt(sql, args...)
+	rows, err := appDBH(ctx).Db.Query(sql, args...)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap("Query")
 	}
-	sum += int(count)
-	return
+	defer rows.Close()
+	var count int
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			return 0, errors.Wrap(err, "Scan")
+		}
+	}
+	return count, nil
 }
 
+// doTotalRefsGo is the Go-specific implementation of total references, since we can extract package metadata directly
+// from Go repository URLs, without going through the `pkgs` table.
 func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, error) {
 	// 🚨 SECURITY: Note that we do not speak to global_dep_private here, because 🚨
 	// that could hint towards private repositories existing. We may decide to
