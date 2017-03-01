@@ -65,9 +65,9 @@ class Feature {
 }
 
 export const Features = {
-	langCSS: new Feature("lang-css"),
+	langCSS: new Feature("lang-css").disableBeta(),
 	langPHP: new Feature("lang-php"),
-	langPython: new Feature("lang-python"),
+	langPython: new Feature("lang-python").disableBeta(),
 
 	/**
 	 * Enable logging for references
