@@ -224,7 +224,7 @@ class InfoPanel extends React.Component<Props, State> {
 		const refsLoading = refModel !== null && !loadingComplete;
 		// position child elements relative to editor container
 		return <div style={{ height: "100%" }}>
-			<FlexContainer direction="top_bottom" style={{
+			<FlexContainer direction="top-bottom" style={{
 				position: "absolute",
 				backgroundColor: "white",
 				width: sidebarWidth,

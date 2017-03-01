@@ -9,7 +9,6 @@ export { Label } from "sourcegraph/components/Label";
 export { Hero } from "sourcegraph/components/Hero";
 export { Logo } from "sourcegraph/components/Logo";
 export { Heading } from "sourcegraph/components/Heading";
-export { Header } from "sourcegraph/components/Header";
 export { Panel } from "sourcegraph/components/Panel";
 export { Icon } from "sourcegraph/components/Icon";
 export { CheckboxList } from "sourcegraph/components/CheckboxList";

@@ -1,4 +1,0 @@
-@value backgrounds "sourcegraph/components/styles/_backgrounds.css";
-
-.bg_img_objects { composes: bg_pattern_objects from backgrounds; }
-.bg_img_objects_fade { composes: bg_pattern_objects_fade from backgrounds; }

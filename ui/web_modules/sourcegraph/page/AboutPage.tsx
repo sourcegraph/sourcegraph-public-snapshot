@@ -19,7 +19,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 					<Heading level={3} color="white">The pace at which humans can write code is the only thing that stands between us and flying cars, a habitat on Mars and a cure for cancer.</Heading>
 				</FlexContainer>
 			</Hero>
-			<FlexContainer direction="top_bottom" style={{
+			<FlexContainer direction="top-bottom" style={{
 				maxWidth: 640,
 				margin: "auto",
 			}}>
@@ -111,12 +111,12 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 
 				<FlexContainer wrap={true}>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Scott Raney" email="Redpoint Ventures" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-scott.png`} />
 						<User nickname="Daniel Friedland" email="Goldcrest Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-daniel.png`} />
 					</FlexContainer>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Quinn Slack" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-quinn.png`} />
 						<User nickname="Beyang Liu" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-beyang.png`} />
 					</FlexContainer>
@@ -129,7 +129,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 
 				<FlexContainer wrap={true}>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Adam Ross" email="Goldcrest Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-adam.png`} />
 						<User nickname="Bear Douglas" email="Developer Evangelist" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-bear.jpg`} />
 						<User nickname="Jens Pillgram-Larsen" email="LinkedIn" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-jens.jpg`} />
@@ -137,7 +137,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 						<User nickname="Mark Striebeck" email="Google" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-mark.jpg`} />
 					</FlexContainer>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Audrey Maclean" email="Entrepreneur" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-audrey.jpg`} />
 						<User nickname="Bill Malloy" email="Technologist & Financier" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-bill.jpg`} />
 						<User nickname="John Vrionis" email="Lightspeed Venture Partners" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-john.jpg`} />

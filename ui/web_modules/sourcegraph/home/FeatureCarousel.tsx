@@ -24,7 +24,7 @@ export class FeatureCarousel extends React.Component<Props, State> {
 				maxWidth: 1080,
 			},
 		)}>
-			<FlexContainer direction="top_bottom" wrap={true} justify="around" style={{
+			<FlexContainer direction="top-bottom" wrap={true} justify="around" style={{
 				flex: "1 1 220px",
 				minWidth: 175,
 				paddingBottom: whitespace[5],

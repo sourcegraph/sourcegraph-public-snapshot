@@ -4,8 +4,10 @@ import { Route } from "react-router";
 import { getRoutePattern } from "sourcegraph/app/routePatterns";
 import { RouteParams, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
-import { Header } from "sourcegraph/components/Header";
+import { Heading, Loader } from "sourcegraph/components";
+import { whitespace } from "sourcegraph/components/utils";
 import { urlWithRev } from "sourcegraph/repo/routes";
+
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 
 interface Props {
@@ -68,6 +70,9 @@ export class CloningRefresher extends React.Component<{
 	}
 
 	render(): JSX.Element {
-		return <Header title="Cloning this repository" />;
+		return <Heading color="gray" level={4} align="center" style={{ marginTop: whitespace[4] }}>
+			Cloning this repository<br />
+			<Loader />
+		</Heading>;
 	}
 }

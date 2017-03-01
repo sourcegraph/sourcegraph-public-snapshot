@@ -7,10 +7,10 @@ import { IRange } from "vs/editor/common/editorCommon";
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { RouteParams, Router, RouterLocation, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import "sourcegraph/blob/styles/Monaco.css";
+import { Heading, PageTitle } from "sourcegraph/components";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
-import { Header } from "sourcegraph/components/Header";
 import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
-import { PageTitle } from "sourcegraph/components/PageTitle";
+import { whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { CloningRefresher, RepoMain } from "sourcegraph/repo/RepoMain";
@@ -51,9 +51,9 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		let path: string;
 		if (this.props.isSymbolUrl) {
 			if (!this.props.root.symbols || this.props.root.symbols.length === 0) {
-				return <Header
-					title="404"
-					subtitle="Symbol not found." />;
+				return <Error
+					code="404"
+					desc="Symbol not found" />;
 			}
 			// Assume that there is only one symbol for now
 			const symbol = this.props.root.symbols[0];
@@ -62,9 +62,9 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			selection = RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty();
 		} else {
 			if (!this.props.root.repository) {
-				return <Header
-					title="404"
-					subtitle="Repository not found." />;
+				return <Error
+					code="404"
+					desc="Repository not found" />;
 			}
 			repository = this.props.root.repository;
 			selection = this.props.selection;
@@ -76,9 +76,9 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		}
 
 		if (!repository.commit.commit) {
-			return <Header
-				title="404"
-				subtitle="Revision not found" />;
+			return <Error
+				code="404"
+				desc="Revision not found" />;
 		}
 
 		const commitID = repository.commit.commit.sha1;
@@ -97,6 +97,13 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			</RepoMain>
 		</div>;
 	}
+}
+
+function Error({ code, desc }: { code: string, desc: string }): JSX.Element {
+	return <div style={{ textAlign: "center", marginTop: whitespace[5] }}>
+		<Heading level={2}>{code}</Heading>
+		<Heading level={4} color="gray">{desc}</Heading>
+	</div>;
 }
 
 function BlobPageTitle({ repo, path }: { repo: string | null, path: string }): JSX.Element {

@@ -11,7 +11,7 @@ export function Paywall(err: Error): JSX.Element {
 	if (!err.message.match(/(account blocked)|(trial expired)/)) {
 		return <div />;
 	}
-	return <FlexContainer direction="top_bottom" style={{ flex: "1 1 auto" }}>
+	return <FlexContainer direction="top-bottom" style={{ flex: "1 1 auto" }}>
 		<Toast isDismissable={false} color="gray" style={{ flex: "0 0 auto" }}>
 			<No color={colors.orangeL1()} width={24} style={{ marginRight: whitespace[3] }} />
 			You don't have permission to view private repositories. Please contact {sales} to upgrade your account.

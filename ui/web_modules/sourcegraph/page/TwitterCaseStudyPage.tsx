@@ -23,7 +23,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 			<Hero style={{
 				backgroundColor: colors.blueGrayL3(),
 			}}>
-				<FlexContainer justify="center" items="center" direction="top_bottom">
+				<FlexContainer justify="center" items="center" direction="top-bottom">
 					<img src={`${context.assetsRoot}/img/tw-case/tw-case-logos.svg`} />
 					<Heading level={1}>Masters of Scale</Heading>
 					<Heading level={4}>How investing in fast, semantic code browsing helps Twitter scale engineering productivity</Heading>
