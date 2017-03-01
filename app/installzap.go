@@ -65,7 +65,7 @@ main() {
     fi
 
     # Install the server as a background daemon
-    must zap server install
+    must sudo zap server install
 
 	echo ""
 	echo "Success! Next steps:"
