@@ -206,7 +206,7 @@ class Util(object):
         wd.find_element_by_id("password").send_keys(password)
         d.active_elem().send_keys(Keys.ENTER)
         if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
-            d.find_button_by_partial_text("Authorize application").click()
+            retry(lambda: d.find_button_by_partial_text("Authorize application").click(), 10)
 
     @staticmethod
     def log_out(d):
