@@ -17,6 +17,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 import * as lsp from "sourcegraph/editor/lsp";
 import { setupWorker } from "sourcegraph/ext/main";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
+import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
 export interface DefinitionData {
@@ -125,7 +126,7 @@ export function provideReferencesStreaming(model: IReadOnlyModel, pos: IPosition
 				}
 			}
 			observer.complete();
-		}, observer.error);
+		}, err => observer.error(err));
 	}).take(MAX_REFS_PER_REPO);
 }
 
@@ -227,6 +228,13 @@ const MAX_REFS_PER_REPO = 100;
 const globalRefsObservables = new Map<string, Observable<LocationWithCommitInfo[]>>();
 const globalRefsObservablesStreaming = new Map<string, Observable<LocationWithCommitInfo>>();
 
+function log(message?: any, ...optionalParams: any[]): void {
+	if (Features.refLogs.isEnabled()) {
+		// tslint:disable: no-console
+		console.log(message, ...optionalParams);
+	}
+}
+
 export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPosition): Observable<Location> {
 	return Observable.from(fetchDependencyReferences(model, pos)).flatMap(depRefs => {
 		if (!depRefs) {
@@ -237,6 +245,7 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 		const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
 		const cacheHit = globalRefsObservablesStreaming.get(key);
 		if (cacheHit) {
+			log(`cache hit for provideGlobalReferencesStreaming`, depRefs);
 			return cacheHit;
 		}
 
@@ -261,13 +270,16 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 				let hasResults = false;
 
 				// Make the actual request to get global references.
+				log(`starting request ${repo.URI}`);
 				return fetchGlobalReferencesForDependentRepoStreaming(repo, modeId, symbol, depRef)
 					.take(MAX_REFS_PER_REPO)
 					.do(location => {
+						log(`progress ${repo.URI}`);
 						// If this repo has results, we don't want to trigger another request after it finishes.
 						hasResults = true;
 					})
 					.finally(() => {
+						log(`finished ${repo.URI} hasResults=${hasResults}`);
 						if (!hasResults) {
 							// If this repo didn't have any global references, we want to trigger another request.
 							triggerRequest.next();
@@ -313,12 +325,15 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, modeID: stri
 	return new Observable<IReferenceInformation>(observer => {
 		setupWorkspace(repoURI, workspaceIsReady).then(() => {
 			let gotProgress = false;
+			log(`provideWorkspaceReferences start ${repoURI.toString()}`);
 			provideWorkspaceReferences(modeID, repoURI, symbol, reference.Hints, references => {
+				log(`provideWorkspaceReferences progress ${repoURI.toString()} ${references.length}`);
 				gotProgress = true;
 				for (const ref of references) {
 					observer.next(ref);
 				}
 			}).then(references => {
+				log(`provideWorkspaceReferences finish ${repoURI.toString()} ${references.length}`);
 				// The language server may or may not support sending progress events.
 				// 
 				// If the language server sends progress events, then the final result will either
@@ -332,16 +347,18 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, modeID: stri
 					}
 				}
 				observer.complete();
-			}, observer.error);
+			}, err => observer.error(err));
 		});
 	}).map(ref => ref.reference);
 }
 
 function setupWorkspace(uri: URI, isReady: () => boolean): Promise<void> {
+	log(`setup workspace ${uri}`);
 	setupWorker(uri);
 	return new Promise<void>(resolve => {
 		const interval = setInterval(() => {
 			if (isReady()) {
+				log(`workspace ready ${uri}`);
 				clearInterval(interval);
 				resolve();
 			}

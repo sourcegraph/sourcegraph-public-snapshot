@@ -76,6 +76,11 @@ export const Features = {
 	xrefstream: new Feature("xrefstream"),
 
 	/**
+	 * Enable logging for references
+	 */
+	refLogs: new Feature("refLogs"),
+
+	/**
 	 * commitInfoBar shows the horizontal bar above the editor with
 	 * the file's commit log.
 	 */

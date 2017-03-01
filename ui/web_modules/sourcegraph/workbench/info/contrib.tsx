@@ -164,7 +164,7 @@ export class SidebarContribution extends Disposables {
 		}).subscribe(ref => {
 			refs.push(ref);
 			dispatchInfo(false);
-		}, console.error);
+		}, err => console.error(err));
 	}
 
 	private prepareInfoStore(prepare: boolean, id: string, fileEventProps: FileEventProps): void {
