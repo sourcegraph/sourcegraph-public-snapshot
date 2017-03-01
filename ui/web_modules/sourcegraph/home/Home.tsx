@@ -62,7 +62,7 @@ export class Home extends React.Component<HomeProps, {}> {
 								marginTop: whitespace[3],
 								padding: whitespace[3],
 							}
-						)}>Read code on the web with the power of an IDE</Heading>
+						)}>Welcome to the first global code graph</Heading>
 
 					<p style={{ textAlign: "center" }}>
 						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
@@ -74,7 +74,7 @@ export class Home extends React.Component<HomeProps, {}> {
 								Sign up for free
 							</Button>
 						</LocationStateToggleLink> or
-						<Link to="/about" style={{ margin: whitespace[2] }}><strong>learn more</strong></Link>
+						<Link to="/plan" style={{ margin: whitespace[2] }}><strong>learn more</strong></Link>
 					</p>
 				</div>
 			</BGContainer>
@@ -113,7 +113,18 @@ export class Home extends React.Component<HomeProps, {}> {
 						}}>
 							Go
 						</Heading>
-
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.orangeL2(),
+							color: colors.orangeD1(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div>Java (Maven)</div>
+						</Heading>
 						<Heading level={5} style={{
 							paddingTop: whitespace[1],
 							paddingRight: whitespace[3],

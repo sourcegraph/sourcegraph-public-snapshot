@@ -21,7 +21,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 	</LocationStateToggleLink>;
 	let personalPlanButton: JSX.Element = <LocationStateToggleLink href="/join" modalName="join" location={location}
 		onToggle={(v) => Events.PricingCTA_Clicked.logEvent({ plan: "personal", page_name: PAGE_PRICING })}>
-		<Button block={true} className={styles.plan_cta || ""} color="purple">Start 14 days free</Button>
+		<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up for free</Button>
 	</LocationStateToggleLink>;
 	let organizationPlanButton: JSX.Element = <LocationStateToggleLink href="/join" modalName="join" location={location}
 		onToggle={(v) => Events.PricingCTA_Clicked.logEvent({ plan: "organization", page_name: PAGE_PRICING })}>
@@ -56,8 +56,8 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 						<div className={styles.plan_box}>
 							<Panel color="purple" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Personal</Heading>
-								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>9</span></Heading>
-								<span className={styles.amount_per}>per month</span>
+								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>free</span></Heading>
+								<span className={styles.amount_per}>free until Feb 1, 2018</span>
 							</Panel>
 							{personalPlanButton}
 						</div>
