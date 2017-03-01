@@ -5,12 +5,26 @@ import { IModelService } from "vs/editor/common/services/modelService";
 import { IResolveContentOptions } from "vs/platform/files/common/files";
 import { ConfirmResult } from "vs/workbench/common/editor";
 import { TextFileService } from "vs/workbench/services/textfile/browser/textFileService";
-import { IRawTextContent, IResult, ISaveOptions, ITextFileEditorModel, ITextFileOperationResult, SaveReason } from "vs/workbench/services/textfile/common/textfiles";
+import { IRawTextContent, IResult, ISaveOptions, ITextFileEditorModel, ITextFileEditorModelManager, ITextFileOperationResult, SaveReason } from "vs/workbench/services/textfile/common/textfiles";
 
+import { toBaseStat } from "sourcegraph/workbench/overrides/fileService";
 import { Services } from "sourcegraph/workbench/services";
 
 export class GitTextFileService extends TextFileService {
+	public models: ITextFileEditorModelManager;
+
 	public resolveTextContent(resource: URI, options?: IResolveContentOptions): TPromise<IRawTextContent> {
+		// todo: We should use the ITextModelResolverService instead of directly referencing models here. @kingy
+		let currentModel = this.models.get(resource);
+		if (currentModel) {
+			const modelService = Services.get(IModelService);
+			return TPromise.as({
+				...toBaseStat(resource),
+				value: RawText.fromString(currentModel.getValue(), modelService.getCreationOptions()),
+				encoding: currentModel.getEncoding(),
+			});
+		}
+
 		return this.fileService.resolveContent(resource, options).then(content => {
 			const modelService = Services.get(IModelService);
 			return {
