@@ -123,7 +123,7 @@ def test_golden_workflow(d):
     wd.get(d.sg_url("/go/github.com/gorilla/mux/-/NewRouter"))
 
     # Hover over "NewRouter" token
-    wait_for(lambda: len(d.find_tokens("NewRouter")) > 0)
+    wait_for(lambda: len(d.find_tokens("NewRouter")) > 0, 10)
     retry(lambda: d.hover_token("NewRouter"))
     wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0]).text)
 
