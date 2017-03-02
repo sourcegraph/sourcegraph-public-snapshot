@@ -245,7 +245,7 @@ class InfoPanel extends React.Component<Props, State> {
 						</Heading>
 					</FlexContainer>
 				</div>
-				{refModel === null && <Panel hover={false} hoverLevel="low" style={{
+				{loadingComplete && (!refModel || refModel.empty) && <Panel hover={false} hoverLevel="low" style={{
 					padding: whitespace[3],
 					margin: whitespace[3],
 					color: colors.text(),
@@ -254,7 +254,7 @@ class InfoPanel extends React.Component<Props, State> {
 					<Report width={36} color={colors.blueGrayL1()} /><br />
 					We couldn't find any references<br /> for this symbol
 				</Panel>}
-				{refModel && <RefTree
+				{refModel && !refModel.empty && <RefTree
 					model={refModel}
 					focus={this.focusResource} />}
 				<hr style={dividerSx} />
