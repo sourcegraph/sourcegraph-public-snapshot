@@ -22,7 +22,7 @@ import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workb
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
 import { RepositoryHeader } from "sourcegraph/workbench/info/repositoryHeader";
 import { Services } from "sourcegraph/workbench/services";
-import { Disposables, scrollToLine } from "sourcegraph/workbench/utils";
+import { Disposables } from "sourcegraph/workbench/utils";
 
 interface Props {
 	model: ReferencesModel;
@@ -73,7 +73,7 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	componentDidUpdate(): void {
-		this.updateTree(this.props.model);
+		this.refreshTreeIfModelChanged();
 	}
 
 	componentWillUnmount(): void {
@@ -86,14 +86,15 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
-		this.refreshTreeIfModelChanged(nextProps.model);
-		return false;
+		return !this.updatingTree;
 	}
 
-	private refreshTreeIfModelChanged(model: ReferencesModel): void {
+	private refreshTreeIfModelChanged(): void {
+		const model = this.props.model;
 		if (this.updatingTree) {
 			return;
 		}
+		this.tree.layout(); // Make sure to layout when the preview closes.
 		if (model === this.visibleModel) {
 			return;
 		}
@@ -156,7 +157,7 @@ export class RefTree extends React.Component<Props, State> {
 					this.visibleModel = model;
 
 					// check to see if a new model was set while we were refreshing.
-					this.refreshTreeIfModelChanged(this.props.model);
+					this.refreshTreeIfModelChanged();
 				});
 			});
 		});
@@ -167,18 +168,7 @@ export class RefTree extends React.Component<Props, State> {
 		if (!(reference instanceof OneReference)) {
 			return;
 		}
-
-		const modelService = Services.get(ITextModelResolverService);
-		modelService.createModelReference(reference.uri).then((ref) => {
-			this.props.focus(reference);
-			this.tree.layout();
-		});
-
-		const editor = getEditorInstance();
-		if (!editor) {
-			throw new Error("Editor not set.");
-		}
-		scrollToLine(editor, editor.getSelection().startLineNumber);
+		this.props.focus(reference);
 	}
 
 	private treeDiv(parent: HTMLDivElement): void {
@@ -203,15 +193,6 @@ export class RefTree extends React.Component<Props, State> {
 		this.toDispose.add(this.tree);
 		this.toDispose.add(this.tree.addListener2(Controller.Events.FOCUSED, this.treeItemFocused));
 		this.forceUpdate();
-	}
-
-	private updateTree(model: ReferencesModel): void {
-		if (this.tree) {
-			this.tree.layout();
-			if (this.tree.getInput() !== model) {
-				this.tree.setInput(model);
-			}
-		}
 	}
 
 	private resetMonacoStyles(): void {
