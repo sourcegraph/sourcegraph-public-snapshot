@@ -167,20 +167,19 @@ def test_global_refs(d, test):
 
     # Jump to symbol
     d.active_elem().send_keys("/")
-    d.active_elem().send_keys("#" + test['symbol'])
+    d.active_elem().send_keys("#")
+    d.active_elem().send_keys(test['symbol'])
     wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0, 30.0)
     d.find_search_modal_results(test['symbol'])[0].click()
 
     # Wait for sidebar to appear.
     wait_for(lambda: len(wd.find_elements_by_css_selector('[class="sg-sidebar"]')) > 0)
 
-    find_sidebar_elements_by_tag_name_and_partial_text = lambda tag, text: [e for e in wd.find_element_by_css_selector('[class="sg-sidebar"]').find_elements_by_tag_name(tag) if text in e.text]
-
     # Symbol signature
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", test["symbol"])) > 0)
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("div", test["symbol"])) > 0)
 
     # "Defined in" header
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
 
     # Wait for references to load + un-expand the "Local" references
     wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
@@ -191,10 +190,10 @@ def test_global_refs(d, test):
     retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
 
     # Local References
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
 
     # External References
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > test["global_min"])
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > test["global_min"])
 
 def test_beta_signup(d):
     wd = d.d
@@ -369,7 +368,7 @@ def test_java_def(dr):
     # Click "Throwables" token
     wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
     retry(lambda: dr.find_token("Throwables", lang="java").click())
-    # Wait until side panel loaded.
+    # Wait until side panel reloaded.
     wait_for(lambda: 'Throwables' in wd.find_elements_by_id("reference-tree")[0].text, 15)
     # Click "Jump to definition"
     dr.find_jump_to_definition_button().click()
@@ -377,6 +376,49 @@ def test_java_def(dr):
     wait_for(lambda: "/Throwables.java#" in wd.current_url, max_wait=10.0, text=('file is Throwables.java'))
     # Check if page properly loaded
     wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
+
+def test_java_cross_repo(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/google/guava/-/blob/guava/src/com/google/common/collect/Maps.java"))
+    # Wait for page to load
+    wait_for(lambda: len(dr.find_tokens("collect", lang="java")) > 0, max_wait=10, text="wait for page load")
+    # Click in editor
+    wd.find_elements_by_css_selector(".monaco-editor")[0].click()
+    # Scroll to "AbstractCollection"
+    dr.page_down_until(lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0)
+    retry(lambda: dr.find_token("AbstractCollection", lang="java").click())
+    # Wait until side panel reloaded.
+    wait_for(lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text, 15)
+    # Click "Jump to definition"
+    dr.find_jump_to_definition_button().click()
+    # Wait for URL to change
+    wait_for(lambda: "/AbstractCollection.java#" in wd.current_url, max_wait=10.0, text=('file is AbstractCollection.java'))
+    # Check if page properly loaded
+    wait_for(lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0, 10)
+
+def test_java_global_usages(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/org/junit/Test.java"))
+    # Wait for page to load
+    wait_for(lambda: len(dr.find_tokens("", lang="java")) > 0, max_wait=10, text="wait for page load")
+    # Scroll to "Test"
+    dr.page_down_until(lambda: len(dr.find_tokens("Test", lang="java")) > 0)
+    retry(lambda: dr.find_token("Test", lang="java").click())
+    # Wait until side panel reloaded.
+    wait_for(lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text, 15)
+    # Wait for references to load + un-expand the "Local" references
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45) # Wait for loading icon to disappear
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 1)
+    retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+    # Local References
+    wait_for(lambda: len(dr.find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
+    # External References
+    wait_for(lambda: len(dr.find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > 0)
 
 all_tests = [
     # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
@@ -395,6 +437,8 @@ all_tests = [
     (test_java_symbol, "@the.other.aaron"),
     (test_java_hover, "@the.other.aaron"),
     (test_java_def, "@the.other.aaron"),
+    (test_java_cross_repo, "@the.other.aaron"),
+    (test_java_global_usages, "@the.other.aaron"),
 ]
 
 global_ref_tests = [{

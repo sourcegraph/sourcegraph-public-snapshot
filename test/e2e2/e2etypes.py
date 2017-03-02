@@ -48,14 +48,14 @@ def wait_for(condition, max_wait=2.0, wait_incr=0.1, text=""):
             res = condition()
             if res is None or res:
                 return
-        except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException):
+        except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException, IndexError):
             pass
         time.sleep(max(0, min(wait_incr, max_wait - time_waited)))
         time_waited += wait_incr
     try:
         if not condition():
             raise E2EError("timed out waiting for condition %s" % text)
-    except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException):
+    except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException, IndexError):
         raise E2EError("timed out waiting for condition %s" % text)
 
 # retry calls fn a maximum of $attempts times, waiting $cooldown
@@ -67,7 +67,7 @@ def retry(fn, attempts=3, cooldown=0):
     for i in xrange(0, attempts):
         try:
             return fn()
-        except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException, WebDriverException, E2EError) as e:
+        except (StaleElementReferenceException, NoSuchElementException, ElementNotVisibleException, WebDriverException, E2EError, IndexError) as e:
             if i == attempts - 1:
                 raise e
         time.sleep(cooldown)
@@ -135,9 +135,9 @@ class Driver(object):
     def find_token(self, tok_text, lang="go", select_any=True):
         candidates = self.find_tokens(tok_text, lang=lang)
         if len(candidates) == 0:
-            raise E2EError('no tokens found with "%s"', tok_text)
+            raise E2EError('no tokens found with "%s"' % tok_text)
         elif len(candidates) > 1 and not select_any:
-            raise E2EError('more than one token found with "%s"', tok_text)
+            raise E2EError('more than one token found with "%s"' % tok_text)
         return candidates[0]
 
     def find_references_menu_options(self):
@@ -176,6 +176,24 @@ class Driver(object):
 
     def find_elements_by_tag_name_and_partial_text(self, tag_name, text):
         return [e for e in self.d.find_elements_by_tag_name(tag_name) if text in e.text]
+
+    def find_sidebar_elements_by_tag_name_and_partial_text(self, tag, text):
+        return [e for e in self.d.find_element_by_css_selector('[class="sg-sidebar"]').find_elements_by_tag_name(tag) if text in e.text]
+
+    def page_down_until(self, condition, max_tries=10, text=""):
+        for i in xrange(max_tries):
+            try:
+                wait_for(condition, max_wait=0.2, wait_incr=0.1, text="")
+                return
+            except:
+                pass
+            self.active_elem().send_keys(Keys.PAGE_DOWN)
+        try:
+            if condition():
+                return
+        except:
+            pass
+        raise E2EError("scrolled %d times, but condition was never true (%s)" % (max_tries, text))
 
     def delete_user_if_exists(self, username):
         auth0_tok = os.getenv("AUTH0_TOKEN")
