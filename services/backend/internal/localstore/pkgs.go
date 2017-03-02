@@ -13,7 +13,6 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
-	gorp "gopkg.in/gorp.v1"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -224,9 +223,8 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
-		return v
+		return fmt.Sprintf("$%d", len(args))
 	}
 
 	var whereClauses []string

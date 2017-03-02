@@ -10,7 +10,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	gorp "gopkg.in/gorp.v1"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/lib/pq"
@@ -243,9 +242,8 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 	// Find number of repos that depend on that set of packages
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
-		return v
+		return fmt.Sprintf("$%d", len(args))
 	}
 	var pkgClauses []string
 	for _, pkg := range packages {
@@ -457,9 +455,8 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 
 	var args []interface{}
 	arg := func(a interface{}) string {
-		v := gorp.PostgresDialect{}.BindVar(len(args))
 		args = append(args, a)
-		return v
+		return fmt.Sprintf("$%d", len(args))
 	}
 
 	var whereConds []string
