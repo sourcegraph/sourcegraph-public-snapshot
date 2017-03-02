@@ -116,7 +116,7 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string,
 func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) (int, error) {
 	repo, err := Repos.GetByURI(ctx, repoURI)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "Repos.GetByURI")
 	}
 
 	var sum int
@@ -126,14 +126,14 @@ func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inv
 			for _, expandedSources := range repoURIToGoPathPrefixes(repoURI) {
 				refs, err := g.doTotalRefsGo(ctx, expandedSources)
 				if err != nil {
-					return 0, err
+					return 0, errors.Wrap(err, "doTotalRefsGo")
 				}
 				sum += refs
 			}
 		case inventory.LangJava:
 			refs, err := g.doTotalRefs(ctx, repo.ID, "java")
 			if err != nil {
-				return 0, err
+				return 0, errors.Wrap(err, "doTotalRefs")
 			}
 			sum += refs
 		}
@@ -236,7 +236,7 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 	// Get packages contained in the repo
 	packages, err := (&pkgs{}).ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrap(err, "ListPackages")
 	}
 
 	// Find number of repos that depend on that set of packages
@@ -263,7 +263,7 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 			WHERE ` + whereSQL
 	rows, err := appDBH(ctx).Db.Query(sql, args...)
 	if err != nil {
-		return 0, errors.Wrap("Query")
+		return 0, errors.Wrap(err, "Query")
 	}
 	defer rows.Close()
 	var count int

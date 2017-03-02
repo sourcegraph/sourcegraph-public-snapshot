@@ -19,7 +19,7 @@ func SymbolPackageDescriptor(sym lspext.SymbolDescriptor, lang string) (map[stri
 
 // PackageIdentifier extracts the part of the PackageDescriptor that
 // should be used to quasi-uniquely identify a package. Typically, it
-// leaves things liks "version" out.
+// leaves out things like package version.
 func PackageIdentifier(pkgDescriptor map[string]interface{}, lang string) (map[string]interface{}, bool) {
 	pkgIDFn, ok := packageIdentifiers[lang]
 	if !ok {
