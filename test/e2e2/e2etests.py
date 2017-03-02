@@ -211,19 +211,25 @@ def test_beta_signup(d):
 
     retry(lambda: wd.execute_script("return arguments[0].scrollIntoView();", d.find_button_by_partial_text("Participate")))
 
-    retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').send_keys("Bobby Jones"))
-    wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').get_attribute("value") == "Bobby Jones")
+    retry(lambda: wd.find_element_by_name('fullName').send_keys("Bobby Jones"))
+    wait_for(lambda: wd.find_element_by_name('fullName').get_attribute("value") == "Bobby Jones")
     retry(lambda: wd.find_element_by_name('company').send_keys("Dutch East India"))
     wait_for(lambda: wd.find_element_by_name('company').get_attribute("value") == "Dutch East India")
 
     def f():
-        checkboxes = wd.find_elements_by_css_selector('[class^="BetaInterestForm"] input[type="checkbox"]')
+        checkboxes = wd.find_elements_by_name('editors')
         for checkbox in checkboxes:
             checkbox.click()
     retry(f)
 
-    retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').send_keys("Sourcegraph is great"))
-    wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').get_attribute("value") == "Sourcegraph is great")
+	def f():
+        checkboxes = wd.find_elements_by_name('languages')
+        for checkbox in checkboxes:
+            checkbox.click()
+    retry(f)
+
+    retry(lambda: wd.find_element_name('message').send_keys("Sourcegraph is great"))
+    wait_for(lambda: wd.find_element_name('message').get_attribute("value") == "Sourcegraph is great")
     retry(lambda: d.find_button_by_partial_text("Participate").click())
     wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at")) > 0)
 
@@ -429,7 +435,7 @@ all_tests = [
     (test_golden_workflow, "@matt"),
     (test_direct_link_to_repo, "@nick"),
     (test_direct_link_to_directory, "@nick"),
-    # (test_beta_signup, "@kingy"),
+    (test_beta_signup, "@kingy"),
     (test_first_open_jump_to_line, "@nico"),
     (test_browser_extension_app_injection, "@john"),
     (test_browser_extension_hover_j2d_blob, "@john"),
