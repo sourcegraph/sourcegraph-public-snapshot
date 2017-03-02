@@ -222,11 +222,11 @@ def test_beta_signup(d):
             checkbox.click()
     retry(f)
 
-	def f():
+    def f2():
         checkboxes = wd.find_elements_by_name('languages')
         for checkbox in checkboxes:
             checkbox.click()
-    retry(f)
+    retry(f2)
 
     retry(lambda: wd.find_element_name('message').send_keys("Sourcegraph is great"))
     wait_for(lambda: wd.find_element_name('message').get_attribute("value") == "Sourcegraph is great")
