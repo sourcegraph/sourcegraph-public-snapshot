@@ -228,8 +228,8 @@ def test_beta_signup(d):
             checkbox.click()
     retry(f2)
 
-    retry(lambda: wd.find_element_name('message').send_keys("Sourcegraph is great"))
-    wait_for(lambda: wd.find_element_name('message').get_attribute("value") == "Sourcegraph is great")
+    retry(lambda: wd.find_element_by_name('message').send_keys("Sourcegraph is great"))
+    wait_for(lambda: wd.find_element_by_name('message').get_attribute("value") == "Sourcegraph is great")
     retry(lambda: d.find_button_by_partial_text("Participate").click())
     wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at")) > 0)
 
