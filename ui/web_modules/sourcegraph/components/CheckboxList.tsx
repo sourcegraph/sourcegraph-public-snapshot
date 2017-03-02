@@ -10,6 +10,7 @@ interface Props {
 
 	defaultValues: string[];
 	className?: string;
+	style?: React.CSSProperties;
 }
 
 export class CheckboxList extends React.Component<Props, {}> {
@@ -31,7 +32,7 @@ export class CheckboxList extends React.Component<Props, {}> {
 	}
 
 	render(): JSX.Element | null {
-		const { className, title, name, labels, values } = this.props;
+		const { className, title, name, labels, values, style } = this.props;
 		let checkboxes: any[] = [];
 		for (let i = 0; i < labels.length; i++) {
 			const value = values ? values[i] : labels[i];
@@ -39,7 +40,7 @@ export class CheckboxList extends React.Component<Props, {}> {
 		}
 
 		return (
-			<fieldset ref={(c) => this._fieldset = c} className={classNames(className, styles.fieldset)}>
+			<fieldset ref={(c) => this._fieldset = c} style={style} className={classNames(className, styles.fieldset)}>
 				<legend>{title}</legend>
 				{checkboxes}
 			</fieldset>

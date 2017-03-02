@@ -4,7 +4,6 @@ import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { Router } from "sourcegraph/app/router";
 import { RouterLocation } from "sourcegraph/app/router";
-import { Component } from "sourcegraph/Component";
 import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
@@ -12,7 +11,6 @@ import { whitespace } from "sourcegraph/components/utils";
 import { LoggableEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
-import * as styles from "sourcegraph/user/styles/accountForm.css";
 import "sourcegraph/user/UserBackend"; // for side effects
 import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
@@ -37,41 +35,33 @@ interface Props {
 	newUserReturnTo: PartialRouterLocation;
 }
 
-type State = any;
-
-export class SignupForm extends Component<Props, State> {
-	render(): JSX.Element | null {
-		const publicNewUserRedir = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, {});
-		const privateNewUserRedir = addQueryObjToURL(this.props.location, this.props.newUserReturnTo, { private: true });
-		return (
-			<div>
-				<div className={styles.form}>
-					<GitHubAuthButton
-						scope="public"
-						newUserReturnTo={publicNewUserRedir}
-						returnTo={this.props.returnTo}
-						tabIndex={1}
-						block={true}
-						style={{ marginBottom: whitespace[2] }}
-						secondaryText="Always free">Public code only</GitHubAuthButton>
-					<GitHubAuthButton
-						scope="private"
-						color="purple"
-						newUserReturnTo={privateNewUserRedir}
-						returnTo={this.props.returnTo}
-						tabIndex={2}
-						block={true}
-						secondaryText="14 days free">Private + public code</GitHubAuthButton>
-					<p style={{ textAlign: "center" }}>
-						By signing up, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
-					</p>
-					<p style={{ textAlign: "center" }}>
-						Already have an account? <LocationStateToggleLink href="/login" modalName="login" location={location}>Log in.</LocationStateToggleLink>
-					</p>
-				</div>
-			</div>
-		);
-	}
+export function SignupForm(props: Props): JSX.Element {
+	const publicNewUserRedir = addQueryObjToURL(props.location, props.newUserReturnTo, {});
+	const privateNewUserRedir = addQueryObjToURL(props.location, props.newUserReturnTo, { private: true });
+	return <div>
+		<GitHubAuthButton
+			scope="public"
+			newUserReturnTo={publicNewUserRedir}
+			returnTo={props.returnTo}
+			tabIndex={1}
+			block={true}
+			style={{ marginBottom: whitespace[2] }}
+			secondaryText="Always free">Public code only</GitHubAuthButton>
+		<GitHubAuthButton
+			scope="private"
+			color="purple"
+			newUserReturnTo={privateNewUserRedir}
+			returnTo={props.returnTo}
+			tabIndex={2}
+			block={true}
+			secondaryText="14 days free">Private + public code</GitHubAuthButton>
+		<p style={{ textAlign: "center" }}>
+			By signing up, you agree to our <a href="/privacy" target="_blank">privacy policy</a> and <a href="/terms" target="_blank">terms</a>.
+		</p>
+		<p style={{ textAlign: "center" }}>
+			Already have an account? <LocationStateToggleLink href="/login" modalName="login" location={location}>Log in.</LocationStateToggleLink>
+		</p>
+	</div>;
 }
 
 export const defaultOnboardingPath: PartialRouterLocation = {
@@ -81,7 +71,7 @@ export const defaultOnboardingPath: PartialRouterLocation = {
 
 function SignupComp(props: { location: any }): JSX.Element {
 	return (
-		<div className={styles.full_page}>
+		<div style={{ margin: "auto", maxWidth: "30rem" }}>
 			<PageTitle title="Sign Up" />
 			<SignupForm {...props} returnTo="/" newUserReturnTo={defaultOnboardingPath} />
 		</div>

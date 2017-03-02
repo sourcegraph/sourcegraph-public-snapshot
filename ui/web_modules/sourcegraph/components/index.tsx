@@ -44,3 +44,4 @@ export { SplitButton } from "sourcegraph/components/SplitButton";
 export { RepoLink } from "sourcegraph/components/RepoLink";
 export { Toast } from "sourcegraph/components/Toast";
 export { OrganizationCard } from "sourcegraph/components/OrganizationCard";
+export { TextArea } from "sourcegraph/components/TextArea";

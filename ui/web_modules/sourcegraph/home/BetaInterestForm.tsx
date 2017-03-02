@@ -1,13 +1,12 @@
-import * as classNames from "classnames";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
-import { Button, CheckboxList, Input } from "sourcegraph/components";
+import { Button, CheckboxList, Input, TextArea } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
+import { whitespace } from "sourcegraph/components/utils";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import { editors, languageIDs, languageNames } from "sourcegraph/home/HomeUtils";
-import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
 import { langName } from "sourcegraph/Language";
 import { SignupForm } from "sourcegraph/user/Signup";
 import * as UserActions from "sourcegraph/user/UserActions";
@@ -117,8 +116,8 @@ export class BetaInterestForm extends Component<Props, State> {
 		if (!context.user) {
 			const newUserReturnTo = { pathname: this.props.loginReturnTo, hash: "" };
 
-			return (<div className={styles.cta}>
-				<p className={styles.p}>You must sign up to continue.</p>
+			return (<div style={{ padding: whitespace[2], textAlign: "center" }}>
+				<p>You must sign up to continue.</p>
 				<SignupForm newUserReturnTo={newUserReturnTo} returnTo={this.props.loginReturnTo} location={this.props.location}></SignupForm>
 			</div>);
 		}
@@ -155,28 +154,56 @@ export class BetaInterestForm extends Component<Props, State> {
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
 				<form className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
-					<div className={styles.row}>
-						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
-					</div>
-					{(!emails || emails.length === 0) && <div className={styles.row}>
-						<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
-					</div>}
-					<div className={styles.row}>
-						<Input domRef={(c) => this._company = c} block={true} type="text" name="company" placeholder="Company / organization" required={true} defaultValue={defaultCompany} />
-					</div>
-					<div className={styles.row}>
-						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
-					</div>
-					<div className={styles.row}>
-						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languageNames} values={languageIDs} defaultValues={defaultLanguages} />
-					</div>
-					<div className={styles.row}>
-						<textarea ref={(c) => this._message = c} className={styles.textarea} name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
-					</div>
-					<div className={classNames(styles.row, base.pb4)}>
-						<Button block={true} type="submit" color="purple">{betaRegistered ? "Update my interests" : "Participate in the beta"}</Button>
-					</div>
-					<div className={classNames(styles.row, base.pb4)}>
+					<Input
+						domRef={(c) => this._fullName = c}
+						block={true}
+						type="text"
+						name="fullName"
+						placeholder="Name"
+						required={true}
+						defaultValue={defaultFullName} />
+					{(!emails || emails.length === 0) &&
+						<Input
+							domRef={(c) => this._email = c}
+							block={true}
+							type="email"
+							name="email"
+							placeholder="Email address"
+							required={true} defaultValue={defaultEmail} />
+					}
+					<Input
+						domRef={(c) => this._company = c}
+						block={true}
+						type="text"
+						name="company"
+						placeholder="Company / organization"
+						required={true}
+						defaultValue={defaultCompany} />
+					<CheckboxList
+						ref={(c) => this._editors = c}
+						title="Preferred editors"
+						name="editors" labels={editors}
+						defaultValues={defaultEditors}
+						style={{ marginBottom: whitespace[3] }} />
+					<CheckboxList
+						ref={(c) => this._languages = c}
+						title="Preferred languages"
+						name="languages"
+						labels={languageNames}
+						values={languageIDs}
+						defaultValues={defaultLanguages}
+						style={{ marginBottom: whitespace[3] }} />
+					<TextArea
+						block={true}
+						domRef={(c) => this._message = c}
+						name="message"
+						placeholder="Other / comments"
+						defaultValue={defaultMessage}>
+					</TextArea>
+					<Button block={true} type="submit" color="purple">
+						{betaRegistered ? "Update my interests" : "Participate in the beta"}
+					</Button>
+					<div className={base.pb4}>
 						{this.state.formError && <strong>{this.state.formError}</strong>}
 						{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
 					</div>

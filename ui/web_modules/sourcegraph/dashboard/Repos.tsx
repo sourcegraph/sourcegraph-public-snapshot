@@ -115,7 +115,7 @@ export class Repos extends React.Component<Props, {}> {
 					domRef={(e) => this._filterInput = e}
 					spellCheck={false}
 					onChange={this._handleFilter}
-					inputSize="small"
+					compact={true}
 					style={{ marginTop: whitespace[1], minWidth: 225 }} />
 			</FlexContainer>
 			<div>
