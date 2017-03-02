@@ -1125,9 +1125,9 @@ html-encoding-sniffer@^1.0.1:
   dependencies:
     whatwg-encoding "^1.0.1"
 
-html-truncate:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/html-truncate/-/html-truncate-1.2.1.tgz#90a546b9429bec7aeb5d57a53547c317fbd6f5f3"
+html-truncate@1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/html-truncate/-/html-truncate-1.2.2.tgz#db2e331dcf1cba0bd432a507d16e988609f2575f"
 
 http-browserify@^1.3.2:
   version "1.7.0"
