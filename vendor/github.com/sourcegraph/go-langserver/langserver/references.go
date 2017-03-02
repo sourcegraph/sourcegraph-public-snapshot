@@ -10,7 +10,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"log"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -20,7 +20,6 @@ import (
 	"golang.org/x/tools/refactor/importgraph"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/langserver/internal/tools"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -75,6 +74,12 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		return PathHasPrefix(path, h.init.RootImportPath)
 	}
 
+	// findRefCtx is used in the findReferences function. It has its own
+	// context so we can stop finding references once we have reached our
+	// limit.
+	findRefCtx, stop := context.WithCancel(ctx)
+	defer stop()
+
 	var (
 		// locsC receives the final collected references via
 		// refStreamAndCollect.
@@ -92,7 +97,7 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 	// references back to the client, as well as build up the final slice
 	// which we return as the response.
 	go func() {
-		locsC <- refStreamAndCollect(ctx, conn, req, fset, refs)
+		locsC <- refStreamAndCollect(ctx, conn, req, fset, refs, params.Context.XLimit, stop)
 		close(locsC)
 	}()
 
@@ -144,7 +149,12 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 			lconf.ImportWithTests(path)
 		}
 
-		findRefErr = findReferences(ctx, lconf, pkgInWorkspace, obj, refs)
+		findRefErr = findReferences(findRefCtx, lconf, pkgInWorkspace, obj, refs)
+
+		if findRefCtx.Err() != nil {
+			// If we are canceled, cancel loop early
+			break
+		}
 	}
 
 	// Tell refStreamAndCollect that we are done finding references. It
@@ -152,24 +162,11 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 	close(refs)
 	locs := <-locsC
 
-	// If a timeout does occur, we should know how effective the partial data is
-	if ctx.Err() != nil {
-		refTimeoutResults.Observe(float64(len(locs)))
-		log.Printf("info: timeout during references for %s, found %d refs", defpkg, len(locs))
-	}
-
 	// If we find references then we can ignore findRefErr. It should only
 	// be non-nil due to timeouts or our last findReferences doesn't find
 	// the def.
 	if len(locs) == 0 && findRefErr != nil {
 		return nil, findRefErr
-	}
-
-	// Technically we may be able to stop computing references sooner and
-	// save RAM/CPU, but currently that would have two drawbacks:
-	// * We can't stop the typechecking anyways
-	if params.Context.XLimit > 0 && params.Context.XLimit < len(locs) {
-		locs = locs[:params.Context.XLimit]
 	}
 
 	return locs, nil
@@ -241,11 +238,19 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 // refStreamAndCollect returns all refs read in from chan until it is
 // closed. While it is reading, it will also occasionaly stream out updates of
 // the refs received so far.
-func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, fset *token.FileSet, refs <-chan *ast.Ident) []lsp.Location {
+func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, fset *token.FileSet, refs <-chan *ast.Ident, limit int, stop func()) []lsp.Location {
+	if limit == 0 {
+		// If we don't have a limit, just set it to a value we should never exceed
+		limit = math.MaxInt32
+	}
+
 	if !streamExperiment {
 		var locs []lsp.Location
 		for n := range refs {
 			locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
+		}
+		if len(locs) > limit {
+			locs = locs[:limit]
 		}
 		return locs
 	}
@@ -296,6 +301,10 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 				send()
 				return locs
 			}
+			if len(locs) >= limit {
+				stop()
+				continue
+			}
 			locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
 		case <-tick.C:
 			send()
@@ -306,6 +315,11 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 // findReferences will find all references to obj. It will only return
 // references from packages in lconf.ImportPkgs.
 func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace func(string) bool, obj types.Object, refs chan<- *ast.Ident) error {
+	// Bail out early if the context is canceled
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	allowErrors(&lconf)
 
 	defpkg := strings.TrimSuffix(obj.Pkg().Path(), "_test")
@@ -508,17 +522,4 @@ func sameObj(x, y types.Object) bool {
 		}
 	}
 	return false
-}
-
-var refTimeoutResults = prometheus.NewHistogram(prometheus.HistogramOpts{
-	Namespace: "golangserver",
-	Subsystem: "references",
-	Name:      "timeout_references",
-	Help:      "The number of references that were returned after a timeout.",
-	// 0.01 is to capture no results
-	Buckets: []float64{0.01, 1, 2, 32, 128, 1024},
-})
-
-func init() {
-	prometheus.MustRegister(refTimeoutResults)
 }
