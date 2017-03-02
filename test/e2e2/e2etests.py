@@ -338,7 +338,7 @@ all_tests = [
     (test_golden_workflow, "@matt"),
     (test_direct_link_to_repo, "@nick"),
     (test_direct_link_to_directory, "@nick"),
-    (test_beta_signup, "@kingy"),
+    # (test_beta_signup, "@kingy"),
     (test_first_open_jump_to_line, "@nico"),
     (test_browser_extension_app_injection, "@john"),
     (test_browser_extension_hover_j2d_blob, "@john"),
