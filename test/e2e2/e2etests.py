@@ -423,7 +423,7 @@ def test_java_global_usages(dr):
 all_tests = [
     # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     # (test_github_public_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
-    (test_login_logout, "@kingy"),
+    # (test_login_logout, "@kingy"),
     (test_repo_jump_to, "@nico"),
     (test_golden_workflow, "@matt"),
     (test_direct_link_to_repo, "@nick"),
