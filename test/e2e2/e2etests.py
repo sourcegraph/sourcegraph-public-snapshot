@@ -386,7 +386,8 @@ def test_java_cross_repo(dr):
     # Click in editor
     wd.find_elements_by_css_selector(".monaco-editor")[0].click()
     # Scroll to "AbstractCollection"
-    dr.page_down_until(lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0)
+    page_down_until(wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
+                    lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0)
     retry(lambda: dr.find_token("AbstractCollection", lang="java").click())
     # Wait until side panel reloaded.
     wait_for(lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text, 15)
@@ -404,7 +405,8 @@ def test_java_global_usages(dr):
     # Wait for page to load
     wait_for(lambda: len(dr.find_tokens("", lang="java")) > 0, max_wait=10, text="wait for page load")
     # Scroll to "Test"
-    dr.page_down_until(lambda: len(dr.find_tokens("Test", lang="java")) > 0)
+    page_down_until(wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
+                    lambda: len(dr.find_tokens("Test", lang="java")) > 0)
     retry(lambda: dr.find_token("Test", lang="java").click())
     # Wait until side panel reloaded.
     wait_for(lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text, 15)

@@ -72,6 +72,24 @@ def retry(fn, attempts=3, cooldown=0):
                 raise e
         time.sleep(cooldown)
 
+# page_down_until scrolls down (with focus on the specified element
+# elem) until a condition becomes true.  It will scroll down and
+# recheck the condition up to max_tries times.
+def page_down_until(elem, condition, max_tries=10, text=""):
+    for i in xrange(max_tries):
+        try:
+            wait_for(condition, max_wait=0.2, wait_incr=0.1, text="")
+            return
+        except:
+            pass
+        elem.send_keys(Keys.PAGE_DOWN)
+    try:
+        if condition():
+            return
+    except:
+        pass
+    raise E2EError("scrolled %d times, but condition was never true (%s)" % (max_tries, text))
+
 # distance returns the L2 pixel distance between two elements
 def distance(e, f):
     dx = e.location['x'] - f.location['x']
@@ -179,21 +197,6 @@ class Driver(object):
 
     def find_sidebar_elements_by_tag_name_and_partial_text(self, tag, text):
         return [e for e in self.d.find_element_by_css_selector('[class="sg-sidebar"]').find_elements_by_tag_name(tag) if text in e.text]
-
-    def page_down_until(self, condition, max_tries=10, text=""):
-        for i in xrange(max_tries):
-            try:
-                wait_for(condition, max_wait=0.2, wait_incr=0.1, text="")
-                return
-            except:
-                pass
-            self.active_elem().send_keys(Keys.PAGE_DOWN)
-        try:
-            if condition():
-                return
-        except:
-            pass
-        raise E2EError("scrolled %d times, but condition was never true (%s)" % (max_tries, text))
 
     def send_keys_like_human(self, keys):
         if isinstance(keys, str):
