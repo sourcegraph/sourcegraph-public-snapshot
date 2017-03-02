@@ -123,17 +123,17 @@ class Driver(object):
             raise E2EError('expected exactly one "%s" option in menu, but found %d' % (option_text, len(peek_items)))
         return peek_items[0]
 
-    def hover_token(self, token_text):
-        ActionChains(self.d).move_to_element(self.find_token(token_text)).perform()
+    def hover_token(self, token_text, lang="go"):
+        ActionChains(self.d).move_to_element(self.find_token(token_text, lang=lang)).perform()
 
     def hover_elem(self, elem):
         ActionChains(self.d).move_to_element(elem).perform()
 
-    def find_tokens(self, tok_text):
-        return [e for e in self.d.find_elements_by_css_selector(".token.identifier.go") if tok_text in e.text]
+    def find_tokens(self, tok_text, lang="go"):
+        return [e for e in self.d.find_elements_by_css_selector(".token.identifier.%s" % lang) if tok_text in e.text]
 
-    def find_token(self, tok_text, select_any=True):
-        candidates = self.find_tokens(tok_text)
+    def find_token(self, tok_text, lang="go", select_any=True):
+        candidates = self.find_tokens(tok_text, lang=lang)
         if len(candidates) == 0:
             raise E2EError('no tokens found with "%s"', tok_text)
         elif len(candidates) > 1 and not select_any:
@@ -144,11 +144,16 @@ class Driver(object):
         refs_menu = self.d.find_element_by_css_selector(".ref-tree.inline")
         return refs_menu.find_elements_by_css_selector(".referenceMatch")
 
+    # find_tooltip_near_elem returns two elements. The first is the
+    # indicator that a visible tooltip exists. The second contains the
+    # actual text of the tooltip. Callers that want to access the text
+    # of the tooltip should do `find_tooltip_near_elem(elem)[1].text`
     def find_tooltip_near_elem(self, elem):
         tt = self.d.find_element_by_css_selector(".cdr.hoverHighlight")
         dist = distance(tt, elem)
         if dist <= 100:
-            return tt
+            ttContent = self.d.find_element_by_css_selector(".monaco-editor-hover-content")
+            return tt, ttContent
         raise E2EError("no tooltips within 5px of element %s#%s, nearest was %d" % (tt.tag_name, tt.id, dist))
 
     def find_search_modal_results(self, results_text, exact_match=False):
@@ -165,6 +170,9 @@ class Driver(object):
 
     def find_buttons_by_partial_text(self, text):
         return [e for e in self.d.find_elements_by_tag_name("button") if text in e.text]
+
+    def find_jump_to_definition_button(self):
+        return [e for e in self.d.find_element_by_css_selector('.sg-sidebar').find_elements_by_tag_name('button') if 'jump to definition' in e.text.lower()][0]
 
     def find_elements_by_tag_name_and_partial_text(self, tag_name, text):
         return [e for e in self.d.find_elements_by_tag_name(tag_name) if text in e.text]

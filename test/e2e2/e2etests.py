@@ -125,7 +125,7 @@ def test_golden_workflow(d):
     # Hover over "NewRouter" token
     wait_for(lambda: len(d.find_tokens("NewRouter")) > 0, 10)
     retry(lambda: d.hover_token("NewRouter"))
-    wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0]).text)
+    wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0])[1].text)
 
     # Open NewRouter in InfoBar
     retry(lambda: d.find_token("NewRouter").click())
@@ -330,10 +330,58 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
         # refresh location after j2d for next test
         wd.get("https://github.com/gorilla/mux/pull/205/files?diff=split")
 
+def test_java_symbol(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4"))
+    wait_for(lambda: wd.find_element_by_id("directory_help_message"), 5)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) > 0, 5)
+
+    # Symbol search for "testfailure"
+    dr.active_elem().send_keys("/")
+    dr.active_elem().send_keys("#testfailure")
+    wait_for(lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0, 30.0)
+    # Click on "TestFailure junit.framework"
+    dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)[0].click()
+    # Wait for URL to change
+    wait_for(lambda: "/TestFailure.java#" in wd.current_url, max_wait=10.0, text=('file is TestFailure.java'))
+    # Check if page properly loaded
+    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
+
+def test_java_hover(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
+    # Hover over "TestFailure" token
+    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
+    retry(lambda: dr.hover_token("TestFailure", lang="java"))
+    wait_for(lambda: 'TestFailure' in dr.find_tooltip_near_elem(dr.find_tokens("TestFailure", lang="java")[0])[1].text)
+
+def test_java_def(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
+    # Click "TestFailure" token
+    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
+    retry(lambda: dr.find_token("TestFailure", lang="java").click())
+    # Wait until side panel loaded.
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
+    # Click "Throwables" token
+    wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
+    retry(lambda: dr.find_token("Throwables", lang="java").click())
+    # Wait until side panel loaded.
+    wait_for(lambda: 'Throwables' in wd.find_elements_by_id("reference-tree")[0].text, 15)
+    # Click "Jump to definition"
+    dr.find_jump_to_definition_button().click()
+    # Wait for URL to change
+    wait_for(lambda: "/Throwables.java#" in wd.current_url, max_wait=10.0, text=('file is Throwables.java'))
+    # Check if page properly loaded
+    wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
+
 all_tests = [
     # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     # (test_github_public_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
-    (test_login_logout, "@beyang"),
+    (test_login_logout, "@kingy"),
     (test_repo_jump_to, "@nico"),
     (test_golden_workflow, "@matt"),
     (test_direct_link_to_repo, "@nick"),
@@ -344,6 +392,9 @@ all_tests = [
     (test_browser_extension_hover_j2d_blob, "@john"),
     (test_browser_extension_hover_j2d_unified_pull_request, "@john"),
     (test_browser_extension_hover_j2d_split_pull_request, "@john"),
+    (test_java_symbol, "@the.other.aaron"),
+    (test_java_hover, "@the.other.aaron"),
+    (test_java_def, "@the.other.aaron"),
 ]
 
 global_ref_tests = [{

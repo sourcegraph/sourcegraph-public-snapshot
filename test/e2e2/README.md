@@ -26,7 +26,7 @@ When writing a new test, you'll want to have 3 terminal windows running the foll
 
 1. `make selenium BROWSER={chrome,firefox}` -- this runs the Selenium server in a Docker container
 1. `make vnc BROWSER={chrome,firefox}` -- this runs the VNC viewer
-1. `make run BROWSER={chrome,firefox} SOURCEGRAPH_URL=https://sourcegraph.com OPT="--pause-on-err --filter=$MY_TEST_NAME` -- this runs the actual test
+1. `make run BROWSER={chrome,firefox} SOURCEGRAPH_URL=https://sourcegraph.com OPT="--pause-on-err --filter=$MY_TEST_NAME"` -- this runs the actual test
 
 After writing the test, run `make deploy` to build, upload, and deploy the Docker image to production. In the Slack channel, you should see a goodbye message from the old test container and a hello message from the new one.
 
