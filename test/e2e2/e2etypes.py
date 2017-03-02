@@ -96,6 +96,26 @@ def distance(e, f):
     dy = e.location['y'] - f.location['y']
     return math.sqrt((dx*dx) + (dy*dy))
 
+def send_keys_with_retry(elem, keys, condition, **kw):
+    firstTry = True
+    def tryOnce():
+        # Enter keys
+        if isinstance(keys, str):
+            for k in keys:
+                elem.send_keys(k)
+        else:
+            elem.send_keys(keys)
+        try:
+            wait_for(condition, **{k: kw[k] for k in ('max_wait', 'wait_incr', 'text') if k in kw.keys()})
+            return
+        except Exception as e:
+            # Delete previous
+            if isinstance(keys, str):
+                for k in keys:
+                    elem.send_keys(Keys.BACKSPACE)
+            raise e
+    retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
+
 # Driver is driver that tests should use to interact with the browser.
 # It provides convenience methods on top of the Selenium web driver.
 #

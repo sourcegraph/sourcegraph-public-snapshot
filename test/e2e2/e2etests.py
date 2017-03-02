@@ -33,9 +33,10 @@ def test_repo_jump_to(d):
     wd.get(d.sg_url('/github.com/gorilla/mux')) # start on a page with the jump modal active
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
     d.send_keys_like_human("/")
-    d.send_keys_like_human("!golang/go")
-    wait_for(lambda: len(d.find_search_modal_results( "gogolang", exact_match=True)) > 0, 10.0)
-    d.find_search_modal_results( "gogolang", exact_match=True)[0].click()
+    send_keys_with_retry(d.active_elem(), "!golang/go",
+                         lambda: len(d.find_search_modal_results("gogolang", exact_match=True)) > 0,
+                         max_wait=5.0)
+    d.find_search_modal_results("gogolang", exact_match=True)[0].click()
 
     wait_for(lambda: wd.current_url == d.sg_url("/github.com/golang/go"), text=('wd.current_url == "%s"' % d.sg_url("/github.com/gorilla/mux")))
 
@@ -152,8 +153,10 @@ def test_golden_workflow(d):
 
     # Quickopen to "Route"
     retry(lambda: d.send_keys_like_human("/"))
-    retry(lambda: d.send_keys_like_human("#Route"))
-    wait_for(lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0, 30.0)
+    send_keys_with_retry(d.active_elem(), "#Route",
+                         lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0,
+                         max_wait=5.0)
+
     retry(lambda: d.send_keys_like_human(Keys.ENTER))
     wait_for(lambda: "route.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
 
@@ -166,10 +169,10 @@ def test_global_refs(d, test):
 
     # Jump to symbol
     d.send_keys_like_human("/")
-    d.send_keys_like_human("#")
-    d.send_keys_like_human(test['symbol'])
-    wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0, 30.0)
-    d.find_search_modal_results(test['symbol'])[0].click()
+    d.send_keys_like_human('#' + test['symbol'])
+    send_keys_with_retry(d.active_elem(), '#' + test['symbol'],
+                         lambda: len(d.find_search_modal_results(test['symbol'])) > 0,
+                         max_wait=5.0)
 
     # Wait for sidebar to appear.
     wait_for(lambda: len(wd.find_elements_by_css_selector('[class="sg-sidebar"]')) > 0)
@@ -343,7 +346,9 @@ def test_java_symbol(dr):
 
     # Symbol search for "testfailure"
     dr.send_keys_like_human("/")
-    dr.send_keys_like_human("#testfailure")
+    send_keys_with_retry(dr.active_elem(), "#testfailure",
+                         lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0,
+                         max_wait=5.0)
     wait_for(lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0, 30.0)
     # Click on "TestFailure junit.framework"
     dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)[0].click()
