@@ -123,7 +123,7 @@ class AfterSignupForm extends React.Component<Props, State> {
 					{authedPrivate && <Select block={true} name="org" label="Your primary organization" containerStyle={{ marginBottom: whitespace[3] }}>
 						{allOrgs.map(org => <option value={org} key={org}>{org}{org === context.user!.Login ? " — personal account" : ""}</option>)}
 					</Select>}
-					{authedPrivate && <p style={{ ...typography.size[6], color: colors.greenD1(), paddingBottom: whitespace[2] }}>{isPersonalPlan ? "Personal" : "Organization"}: 14 days free, then ${isPersonalPlan ? "9" : "25/user"}/month. Unlimited private repositories. <Link to="/pricing" target="_blank">Learn&nbsp;more&nbsp;<PopOut width={18} /></Link></p>}
+					{authedPrivate && <p style={{ ...typography.size[6], color: colors.greenD1(), paddingBottom: whitespace[2] }}>{isPersonalPlan ? "Personal: free until Feb 1, 2018" : "Organization: 14 days free, then $25/user/month"}. Unlimited private repositories. <Link to="/pricing" target="_blank">Learn&nbsp;more&nbsp;<PopOut width={18} /></Link></p>}
 					<Input block={true} type="email" name="email" placeholder="you@example.com" label="Your work email" required={true} containerStyle={{ marginBottom: whitespace[3] }} />
 					<Select name="language" containerStyle={{ marginBottom: whitespace[3] }} label="Your primary programming language">
 						{langs.map(([id, name]) => <option value={id} key={id}>{name}</option>)}
