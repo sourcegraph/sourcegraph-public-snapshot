@@ -242,10 +242,13 @@ class Util(object):
         wd.find_element_by_id("password").send_keys(password)
         d.active_elem().send_keys(Keys.ENTER)
         if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
-            retry(lambda: d.find_button_by_partial_text("Authorize application").click(), 10)
+            if len(wd.find_elements_by_id("js-oauth-authorize-btn")) > 0:
+                wait_for(lambda: wd.find_element_by_id("js-oauth-authorize-btn").is_enabled(), 15)
+                retry(lambda: d.find_button_by_partial_text("Authorize application").click(), 15)
 
     @staticmethod
     def log_out(d):
         wd = d.d
+        wait_for(lambda: len(wd.find_elements_by_id("global-nav")) == 1, 10)
         wd.find_element_by_id("global-nav").find_element_by_css_selector(".sourcegraph-user-menu").click()
         wd.find_element_by_partial_link_text("Sign out").click()

@@ -111,7 +111,6 @@ def test_login_logout(d):
         return
     wd.get(d.sg_url("/"))
     Util.log_in(d, username, password)
-    wait_for(lambda: wd.current_url == d.sg_url("/"))
     Util.log_out(d)
     wait_for(lambda: wd.current_url == d.sg_url("/"))
 
