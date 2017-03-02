@@ -26,7 +26,10 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, log *logpkg.Co
 	}
 
 	// Find the local repo.
-	repo, localRepoName, remote := s.findLocalRepo(params.RefIdentifier.Repo, endpoint)
+	repo, localRepoName, remote, err := s.findLocalRepo(params.RefIdentifier.Repo, endpoint)
+	if err != nil {
+		return err
+	}
 	if repo == nil {
 		return &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRepoNotExists),
@@ -44,7 +47,11 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, log *logpkg.Co
 	}
 
 	// Update the local tracking branch for this upstream branch, if any.
-	refConfig, ok := repo.getConfig().Refs[params.RefIdentifier.Ref]
+	repoConfig, err := repo.getConfig()
+	if err != nil {
+		return err
+	}
+	refConfig, ok := repoConfig.Refs[params.RefIdentifier.Ref]
 	if ok && refConfig.Upstream == remote {
 		ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
 		if ref == nil {
@@ -486,14 +493,12 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 			// Propagate a non-op-only change upstream; otherwise we
 			// will just append to the upstream's ref op history and
 			// not actually reset it.
-			if refConfig, ok := repo.getConfig().Refs[params.RefIdentifier.Ref]; ok && !params.Local {
-				if !refConfig.Overwrite {
-					return &jsonrpc2.Error{
-						Code:    int64(ErrorCodeRefUpdateInvalid),
-						Message: fmt.Sprintf("refusing to perform a force-update/reset on ref %q that is not configured to overwrite its upstream", params.RefIdentifier.Ref),
-					}
-				}
-				remote, ok := repo.getConfig().Remotes[refConfig.Upstream]
+			repoConfig, err := repo.getConfig()
+			if err != nil {
+				return err
+			}
+			if refConfig, ok := repoConfig.Refs[params.RefIdentifier.Ref]; ok && refConfig.Overwrite {
+				remote, ok := repoConfig.Remotes[refConfig.Upstream]
 				if !ok {
 					return &jsonrpc2.Error{
 						Code:    int64(ErrorCodeRemoteNotExists),
@@ -630,7 +635,10 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.
 		// now if we need to link the upstream to it.
 		hasUpstreamConfigured := refObj.ot != nil && refObj.ot.SendToUpstream != nil
 		if !hasUpstreamConfigured {
-			repoConfig := repo.getConfig()
+			repoConfig, err := repo.getConfig()
+			if err != nil {
+				return err
+			}
 			if c, ok := repoConfig.Refs[params.RefIdentifier.Ref]; ok {
 				level.Info(log).Log("reattaching-ref-config-to-newly-created-ref", fmt.Sprint(c))
 				if err := s.doApplyRefConfiguration(ctx, log, repo, params.RefIdentifier, ref, repoConfig, repoConfig, true, false, false); err != nil {

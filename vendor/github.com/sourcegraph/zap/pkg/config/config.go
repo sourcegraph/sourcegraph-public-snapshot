@@ -8,6 +8,21 @@ import (
 	gitconfigfmt "github.com/src-d/go-git/plumbing/format/config"
 )
 
+// WriteDefaultGlobalFileIfNeeded writes the default global zap configuration file, if
+// one does not already exist. It must be called after GlobalConfigPath is set.
+func WriteDefaultGlobalFileIfNeeded() error {
+	if GlobalConfigPath == "" {
+		return nil
+	}
+	if _, err := os.Stat(GlobalConfigPath); !os.IsNotExist(err) {
+		return nil // file exists
+	}
+
+	var cfg gitconfigfmt.Config
+	cfg.Section("default").SetOption("remote", "wss://sourcegraph.com/.api/zap")
+	return WriteGlobalFile(&cfg)
+}
+
 // GlobalConfigPath (if set) enables the use of a global Zap config
 // file at the given path. Global config is disabled if this value is
 // empty.

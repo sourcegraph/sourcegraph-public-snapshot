@@ -2,6 +2,7 @@ package zap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -80,21 +81,12 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, 
 
 	var newRemote RepoRemoteConfiguration
 	if newConfig.Upstream != "" {
-		var (
-			err      error
-			repoName string
-		)
-		if repo.workspace != nil {
-			repoName, err = repo.workspace.DefaultRepoName(newConfig.Upstream)
-			if err != nil {
-				return err
-			}
-		}
-		newRemote, err = newRepoConfig.RemoteOrDefault(newConfig.Upstream, repoName)
-		if err != nil {
+		var ok bool
+		newRemote, ok = newRepoConfig.Remotes[newConfig.Upstream]
+		if !ok {
 			return &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRemoteNotExists),
-				Message: err.Error(),
+				Message: fmt.Sprintf("no remote found for new upstream: %s", newConfig.Upstream),
 			}
 		}
 	}
@@ -214,6 +206,49 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, 
 	return nil
 }
 
+func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, ref string) error {
+	config, err := repo.getConfigNoLock()
+	if err != nil {
+		return err
+	}
+	if len(config.Remotes) == 0 {
+		return nil // unable to autoconfigure
+	}
+	if _, ok := config.Refs[ref]; ok {
+		return nil // ref already has configuration; do nothing
+	}
+	upstream, err := config.defaultUpstream()
+	if err != nil {
+		return err
+	}
+	oldConfig, newConfig, err := s.updateRepoConfiguration(ctx, repo, func(config *RepoConfiguration) error {
+		if config.Refs == nil {
+			config.Refs = map[string]RefConfiguration{}
+		}
+		config.Refs[ref] = RefConfiguration{Upstream: upstream, Overwrite: true}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	finalConfig, err := repo.mergedConfigNoLock(newConfig)
+	if err != nil {
+		return err
+	}
+	return s.doApplyRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldConfig, finalConfig, false, false, false)
+}
+
+// TODO(sqs): hack to "safely" determine a default upstream, until we
+// have a full config for this.
+func (c *RepoConfiguration) defaultUpstream() (string, error) {
+	if len(c.Remotes) == 1 {
+		for k := range c.Remotes {
+			return k, nil
+		}
+	}
+	return "", errors.New("unable to determine branch's default upstream: more than 1 remote exists")
+}
+
 func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, log *log.Context, repo *serverRepo, localRefID RefIdentifier, local, tracking refdb.Ref, refConfig RefConfiguration) error {
 	// Assumes caller holds the repo.refAcquire(ref.Ref) lock.
 
@@ -281,7 +316,7 @@ func remoteTrackingRef(remote, ref string) string {
 	return "refs/remotes/" + remote + "/" + ref
 }
 
-func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string) {
+func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string, err error) {
 	// TODO(sqs) HACK: this is indicative of a design flaw
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
@@ -289,7 +324,11 @@ func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRep
 	var matchingRemoteNames []string
 	for localRepoName2, localRepo := range s.repos {
 		localRepo.mu.Lock()
-		for remoteName, config := range localRepo.config.Remotes {
+		localRepoConfig, err := localRepo.getConfigNoLock()
+		if err != nil {
+			return nil, "", "", err
+		}
+		for remoteName, config := range localRepoConfig.Remotes {
 			if config.Endpoint == endpoint && config.Repo == remoteRepoName {
 				matchingLocalRepos = append(matchingLocalRepos, localRepo)
 				matchingRemoteNames = append(matchingRemoteNames, remoteName)
@@ -302,7 +341,7 @@ func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRep
 		panic(fmt.Sprintf("more than 1 local repo is tracking a remote repo %q at endpoint %q", remoteRepoName, endpoint))
 	}
 	if len(matchingLocalRepos) == 0 {
-		return nil, "", ""
+		return nil, "", "", nil
 	}
-	return matchingLocalRepos[0], localRepoName, matchingRemoteNames[0]
+	return matchingLocalRepos[0], localRepoName, matchingRemoteNames[0], nil
 }

@@ -2,9 +2,11 @@ package gitutil
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -45,6 +47,27 @@ func NewConfigWatcher(gitRepo interface {
 	configCh := make(chan []byte)
 	errorsCh := make(chan error)
 
+	readFile := func() ([]byte, error) {
+		// When the config file is in the middle of being
+		// written to disk, sometimes reading it results in an
+		// empty byte array. Give it some time to finish
+		// writing to disk.
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
+		for {
+			data, err := ioutil.ReadFile(configFile)
+			if len(data) > 0 || err != nil {
+				return data, err
+			}
+
+			if ctx.Err() != nil {
+				// Timed out; the file is probably intentionally empty.
+				return data, err
+			}
+			time.Sleep(50 * time.Millisecond)
+		}
+	}
+
 	// Watch for changes.
 	go func() {
 		var lastValue []byte
@@ -62,7 +85,7 @@ func NewConfigWatcher(gitRepo interface {
 					// TODO(sqs): how to handle deletion?
 					continue
 				}
-				data, err := ioutil.ReadFile(configFile)
+				data, err := readFile()
 				if err == nil {
 					if !bytes.Equal(data, lastValue) {
 						configCh <- data

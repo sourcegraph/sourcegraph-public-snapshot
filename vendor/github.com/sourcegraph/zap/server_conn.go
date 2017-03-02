@@ -177,9 +177,10 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 	switch req.Method {
 	case "initialize":
+		// Hold lock since we check and modify c.init
 		c.mu.Lock()
+		defer c.mu.Unlock()
 		inited := c.init != nil
-		c.mu.Unlock()
 		if inited {
 			return nil, &jsonrpc2.Error{Code: int64(ErrorCodeAlreadyInitialized), Message: "connection is already initialized"}
 		}
@@ -191,9 +192,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		c.mu.Lock()
 		c.init = &params
-		c.mu.Unlock()
 		level.Debug(log.With("client", c.init.ID)).Log("msg", "new client connected")
 		return InitializeResult{
 			Capabilities: ServerCapabilities{WorkspaceOperationalTransformation: true},
@@ -215,7 +214,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		return repo.getConfig(), nil
+		return repo.getConfig()
 
 	case "repo/configure":
 		if req.Params == nil {
@@ -234,8 +233,13 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		var res RepoConfigureResult
 
 		oldConfig, newConfig, err := c.server.updateRepoConfiguration(ctx, repo, func(config *RepoConfiguration) error {
+			finalConfig, err := repo.mergedConfigNoLock(*config)
+			if err != nil {
+				return err
+			}
+
 			var removedRemotes []string
-			for remoteName := range config.Remotes {
+			for remoteName := range finalConfig.Remotes {
 				if _, ok := params.Remotes[remoteName]; !ok {
 					removedRemotes = append(removedRemotes, remoteName)
 				}
@@ -244,7 +248,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 			// Handle refs whose upstream remotes will be removed.
 			for _, removedRemote := range removedRemotes {
-				for refName, ref := range config.Refs {
+				for refName, ref := range finalConfig.Refs {
 					if ref.Upstream == removedRemote {
 						// Unset this ref's upstream in the config.
 						ref.Upstream = ""
@@ -269,7 +273,11 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			return nil, err
 		}
 
-		if err := c.server.applyRepoConfiguration(ctx, log, params.Repo, repo, oldConfig, newConfig, false, false /* TODO(sqs): these 2 bools are not meaningful */); err != nil {
+		newConfig, err = repo.getConfig()
+		if err != nil {
+			return nil, err
+		}
+		if err := c.server.applyRepoConfiguration(ctx, log, params.Repo, repo, oldConfig, newConfig); err != nil {
 			return nil, err
 		}
 		return res, nil
@@ -295,6 +303,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 	case "ref/list":
 		if req.Params != nil && string(*req.Params) != "null" {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		if !c.server.IsPrivate {
+			return nil, &jsonrpc2.Error{
+				Code:    jsonrpc2.CodeInvalidRequest,
+				Message: "ref/list not allowed on shared server",
+			}
 		}
 		c.server.reposMu.Lock()
 		defer c.server.reposMu.Unlock()
@@ -349,21 +363,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			parts := strings.SplitN(strings.TrimPrefix(params.Ref, "refs/remotes/"), "/", 2)
 			remote := parts[0]
 			branch := parts[1]
-			repoConfig := repo.getConfig()
-
-			repo.mu.Lock()
-			ws := repo.workspace
-			repo.mu.Unlock()
-			if ws == nil {
-				return nil, fmt.Errorf("HINT: requested RefInfo for remote tracking ref %q but repo has no workspace associated with it (technically a bare repo can have remote tracking branches, but that's extremely unlikely to happen intentionally right now)", params.Ref)
-			}
-			repoName, err := ws.DefaultRepoName(remote)
+			repoConfig, err := repo.getConfig()
 			if err != nil {
 				return nil, err
 			}
-
-			if remoteConfig, err := repoConfig.RemoteOrDefault(remote, repoName); err != nil {
-				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured, error: %v", params.Ref, err)
+			if remoteConfig, ok := repoConfig.Remotes[remote]; !ok {
+				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but there is no remote configured with name %q (remotes: %+v)", params.Ref, remote, repoConfig.Remotes)
 			} else if !matchAnyRefspec(remoteConfig.Refspecs, branch) {
 				return nil, fmt.Errorf("HINT: requested RefInfo for ref %q but no remote %q refspecs %q match the branch name", params.Ref, remote, remoteConfig.Refspecs)
 			}
@@ -433,20 +438,16 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 		oldConfig, newConfig, err := c.server.updateRepoConfiguration(ctx, repo, func(config *RepoConfiguration) error {
 			// Validate new config.
+			finalConfig, err := repo.mergedConfigNoLock(*config)
+			if err != nil {
+				return err
+			}
 			if remoteName := params.RefConfiguration.Upstream; remoteName != "" {
-				var repoName string
-				if repo.workspace != nil {
-					repoName, err = repo.workspace.DefaultRepoName(remoteName)
-					if err != nil {
-						return err
-					}
-				}
-
-				remote, err := config.RemoteOrDefault(remoteName, repoName)
-				if err != nil {
+				remote, ok := finalConfig.Remotes[remoteName]
+				if !ok {
 					return &jsonrpc2.Error{
 						Code:    int64(ErrorCodeRemoteNotExists),
-						Message: err.Error(),
+						Message: fmt.Sprintf("remote does not exist: %s", remoteName),
 					}
 				}
 				if !matchAnyRefspec(remote.Refspecs, params.RefIdentifier.Ref) {
@@ -470,7 +471,11 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			return nil, err
 		}
 
-		if err := c.server.applyRepoConfiguration(ctx, log, params.RefIdentifier.Repo, repo, oldConfig, newConfig, false, true); err != nil {
+		newConfig, err = repo.getConfig()
+		if err != nil {
+			return nil, err
+		}
+		if err := c.server.applyRepoConfiguration(ctx, log, params.RefIdentifier.Repo, repo, oldConfig, newConfig); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -511,6 +516,9 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			return nil, err
 		}
 		return nil, nil
+
+	case "ping":
+		return "pong", nil
 
 	case "shutdown":
 		level.Debug(log).Log("message", "client "+req.Method)

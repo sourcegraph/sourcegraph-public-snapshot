@@ -1,4 +1,4 @@
-# Zap: multiplayer, realtime coding
+# Zap: multiplayer, realtime coding [![Build Status](https://travis-ci.com/sourcegraph/zap.svg?token=d6c4S5NK6rz4BbFj9G2N&branch=master)](https://travis-ci.com/sourcegraph/zap)
 
 Zap lets you share your Git repository you have write access to and editor state with any number of other editors and viewers. Each operation you perform (keystrokes, saving a file, creating a file, etc.) is replicated to all other participants. Conflicting edits are resolved immediately, just like how Google Docs does it. Think Google Docs meets Git.
 
@@ -14,13 +14,8 @@ Then, in the directory of `sgtest/xyztest`, or any repository you want to use Za
 
 1. *Optional: if you want a test repository, clone https://github.com/sgtest/xyztest to your local machine.*
 1. Run `zap auth` to authenticate with Sourcegraph.
-1. Launch the Zap server by running `zap server -v` in your terminal
+1. Launch the Zap server by running `zap server -v run` in your terminal
 1. Tell Zap to start watching it: `zap init`
-1. Configure the upstream repository (replace the last two parameters, the URL and repo name, with the appropriate values):
-   ```
-zap remote set origin wss://sourcegraph.com/.api/zap github.com/sgtest/xyztest
-   ```
-    
 1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite master@sqs` (use your unix username in place of sqs)
 1. Open the repository in Visual Studio Code, hit alt/option+s to open Sourcegraph, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph. (if the short cut fails to open Sourcegraph: go to VS Code, hit cmd/ctrl+shift+p, search for "Zap: Install/update client" and hit enter. This will update the Zap command-line interface.)
 

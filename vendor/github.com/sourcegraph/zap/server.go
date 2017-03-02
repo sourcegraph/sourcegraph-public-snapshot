@@ -112,6 +112,13 @@ type Server struct {
 	// LogWriter is were logs should be written to (os.Stderr by default)
 	LogWriter io.Writer
 
+	// IsPrivate is true if the server is not shared amongst users. If it
+	// is false operations such as ref/list should not be allowed due to
+	// potentially leaking data. In the future we should deprecate this
+	// setting and instead use efficient access checks on listing
+	// operations.
+	IsPrivate bool
+
 	backend ServerBackend
 
 	reposMu sync.Mutex

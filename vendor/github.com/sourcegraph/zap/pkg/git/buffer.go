@@ -51,11 +51,19 @@ func stripFileOrBufferPath(path string) string {
 	return path[1:]
 }
 
+// FromDiskPaths takes an op whose file names are unprefixed file
+// system paths and returns the op with all of those paths prefixed
+// with "/". It is used because some Git operations are unaware of our
+// buffer path convention (file name "#" prefixes). FromDiskPaths
+// translates ops returned by those Git operations to ops that are
+// valid in the rest of Zap.
+//
+// For example:
+//
+//   FromDiskPaths({Edit: {"foo": ["x"]}}) -> {Edit: {"/foo": ["x"]}}
+//
 func FromDiskPaths(op ot.WorkspaceOp) ot.WorkspaceOp {
 	fromDiskPath := func(path string) string {
-		if strings.HasPrefix(path, "/") || strings.HasPrefix(path, "#") {
-			panic(fmt.Sprintf("path %q must be an actual disk path", path))
-		}
 		return "/" + path
 	}
 

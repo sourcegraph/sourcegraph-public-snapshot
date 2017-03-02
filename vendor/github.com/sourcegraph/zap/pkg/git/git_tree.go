@@ -107,6 +107,7 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 				SrcSHA: sha, DstSHA: sha,
 				SrcPath: stripFileOrBufferPath(src), DstPath: stripFileOrBufferPath(dst),
 			}}); err != nil {
+				level.Error(log).Log("tree-apply-changes-failed", err, "src", src, "dst", dst, "base", base, "op", op)
 				return "", err
 			}
 		}

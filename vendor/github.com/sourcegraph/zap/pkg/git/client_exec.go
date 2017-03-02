@@ -341,7 +341,10 @@ func DiffOps(old, new []byte) ot.EditOps {
 
 var testPushGitRefToGitUpstream func(headOID, ref, gitBranch string) error
 
-func PushGitRefToGitUpstream(ctx context.Context, gitRepo gitRepo, headOID, ref, gitBranch string) error {
+func PushGitRefToGitUpstream(ctx context.Context, gitRepo interface {
+	RemoteForBranchOrZapDefaultRemote(string) (string, error)
+	Push(string, string, bool) error
+}, headOID, ref, gitBranch string) error {
 	if testPushGitRefToGitUpstream != nil {
 		return testPushGitRefToGitUpstream(headOID, ref, gitBranch)
 	}

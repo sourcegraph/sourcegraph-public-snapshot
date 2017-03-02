@@ -163,21 +163,6 @@ func listen(urlStr string) (string, net.Listener, error) {
 	return "ws://" + lis.Addr().String(), lis, nil
 }
 
-// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
-// during dogfooding.
-var whitelistedRepos = map[string]bool{
-	"github.com/sgtest/xyztest":                               true,
-	"github.com/gorilla/websocket":                            true,
-	"github.com/sourcegraph/go-langserver":                    true,
-	"github.com/sourcegraph/jsonrpc2":                         true,
-	"github.com/sourcegraph/sourcegraph":                      true,
-	"github.com/sourcegraph/infrastructure":                   true,
-	"github.com/sourcegraph/javascript-typescript-langserver": true,
-	"github.com/sourcegraph/zap":                              true,
-	"github.com/Microsoft/vscode":                             true,
-	"github.com/Microsoft/TypeScriptSamples":                  true,
-}
-
 var zapServer = zap.NewServer(zapgit.ServerBackend{
 	CanAccessRepo: func(ctx context.Context, log *log.Context, repo string) (ok bool, err error) {
 		logResult := func(ok bool, err error) {
@@ -207,11 +192,6 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		if err != nil {
 			return false, err
 		}
-		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
-		// during dogfooding.
-		if !whitelistedRepos[repo] {
-			return false, fmt.Errorf("repo %q denied; not in zap development whitelist", repo)
-		}
 
 		// Dogfooding: Do a quick git command just to ensure we have
 		// the repo cloned. Remove before launch.
@@ -226,12 +206,6 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 	OpenBareRepo: func(ctx context.Context, log *log.Context, repo string) (zapgit.ServerRepo, error) {
 		actor := auth.ActorFromContext(ctx)
 		log15.Info("Zap: OpenRepo", "repo", repo, "login", actor.Login, "uid", actor.UID)
-
-		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
-		// during dogfooding.
-		if !whitelistedRepos[repo] {
-			return nil, fmt.Errorf("repo %q denied; not in zap development whitelist", repo)
-		}
 
 		_, err := backend.Repos.GetByURI(ctx, repo)
 		if err != nil {

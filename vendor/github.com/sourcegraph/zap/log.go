@@ -59,7 +59,8 @@ func (s *Server) baseLogger() *log.Context {
 	logger0 := term.NewLogger(w, log.NewLogfmtLogger, colorFn)
 	logger0 = level.New(logger0, level.Allowed(logAllowLevel))
 	logger1 := log.NewContext(logger0)
-	if v, _ := strconv.ParseBool(os.Getenv("LOGTIMESTAMP")); v {
+	if v, _ := strconv.ParseBool(os.Getenv("LOGTIMESTAMP")); os.Getenv("LOGTIMESTAMP") == "" || v {
+		// By default include timestamps, but adjust behaviour if LOGTIMESTAMP is specified.
 		logger1 = logger1.With("ts", log.DefaultTimestampUTC)
 	}
 	if s.ID != "" {

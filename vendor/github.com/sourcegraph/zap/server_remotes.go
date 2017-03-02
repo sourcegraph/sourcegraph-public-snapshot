@@ -124,7 +124,10 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, log *log.Context, end
 	level.Debug(log).Log("reconnect-ok", "")
 
 	reestablishRepo := func(repoName string, repo *serverRepo) error {
-		repoConfig := repo.getConfig()
+		repoConfig, err := repo.getConfig()
+		if err != nil {
+			return err
+		}
 		for remoteName, remote := range repoConfig.Remotes {
 			if remote.Endpoint == endpoint {
 				level.Debug(log).Log("reestablish-watch-repo", repoName, "remote", remoteName)

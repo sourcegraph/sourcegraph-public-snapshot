@@ -7,13 +7,58 @@ import (
 	"github.com/go-kit/kit/log"
 	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/pkg/config"
 )
 
-// getConfig returns a deep copy of the repo configuration.
-func (s *serverRepo) getConfig() RepoConfiguration {
+// getConfig returns a deep copy of the repo configuration, with the global
+// configuration merged in.
+func (s *serverRepo) getConfig() (RepoConfiguration, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.config.deepCopy()
+	return s.getConfigNoLock()
+}
+
+func (s *serverRepo) getConfigNoLock() (RepoConfiguration, error) {
+	return s.mergedConfigNoLock(s.config)
+}
+
+func (s *serverRepo) mergedConfigNoLock(c RepoConfiguration) (RepoConfiguration, error) {
+	c = c.deepCopy()
+	ws := s.workspace
+
+	// If no remotes were specified, then consider the global default remote.
+	if len(c.Remotes) > 0 {
+		return c, nil
+	}
+
+	if ws == nil {
+		return c, nil
+	}
+
+	// TODO(slimsag): allow storing multiple non-origin default remotes in the
+	// global config file.
+	repoName, err := ws.DefaultRepoName("origin")
+	if err != nil {
+		return c, nil
+	}
+
+	cfg, err := config.ReadGlobalFile()
+	if err != nil {
+		return RepoConfiguration{}, err
+	}
+	defaultEndpoint := cfg.Section("default").Option("remote")
+	if defaultEndpoint == "" {
+		return c, nil
+	}
+
+	c.Remotes = map[string]RepoRemoteConfiguration{
+		"origin": RepoRemoteConfiguration{
+			Endpoint: defaultEndpoint,
+			Repo:     repoName,
+			Refspecs: []string{"*"},
+		},
+	}
+	return c, nil
 }
 
 // updateRepoConfiguration is called with a callback to persist new
@@ -32,7 +77,6 @@ func (s *Server) updateRepoConfiguration(ctx context.Context, repo *serverRepo, 
 	defer repo.mu.Unlock()
 
 	old = repo.config.deepCopy()
-
 	new = repo.config.deepCopy()
 	if err := updateFunc(&new); err != nil {
 		return RepoConfiguration{}, RepoConfiguration{}, err
@@ -49,9 +93,7 @@ func (s *Server) updateRepoConfiguration(ctx context.Context, repo *serverRepo, 
 	return old, new, nil
 }
 
-func (s *Server) applyRepoConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldConfig, newConfig RepoConfiguration, force, sendCurrentState bool) error {
-	// TODO(sqs): remove force and sendCurrentState options
-
+func (s *Server) applyRepoConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldConfig, newConfig RepoConfiguration) error {
 	if err := s.doApplyBulkRepoRemoteConfiguration(ctx, log, repoName, repo, oldConfig, newConfig); err != nil {
 		return err
 	}

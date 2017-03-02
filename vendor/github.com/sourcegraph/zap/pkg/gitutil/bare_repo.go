@@ -341,7 +341,13 @@ func (r BareRepo) ReadSymbolicRef(name string) (string, error) {
 		return "", err
 	}
 	value, err := r.Exec(nil, "symbolic-ref", name)
-	return string(bytes.TrimSpace(value)), err
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 128") && strings.Contains(err.Error(), fmt.Sprintf("fatal: ref %s is not a symbolic ref", name)) {
+			return "", os.ErrNotExist
+		}
+		return "", err
+	}
+	return string(bytes.TrimSpace(value)), nil
 }
 
 func (r BareRepo) UpdateSymbolicRef(name, ref string) error {

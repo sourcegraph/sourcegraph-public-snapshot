@@ -16,6 +16,7 @@ type MockGitRepo struct {
 	RemoteURL_                                     func(string) (string, error)
 	UpdateSymbolicRef_                             func(name, ref string) error
 	ReadSymbolicRef_                               func(name string) (string, error)
+	CheckoutDetachedHEAD_                          func(ref string) error
 	ReadBlob_                                      func(rev, name string) ([]byte, string, string, error)
 	MakeCommit_                                    func(parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
 	ListTreeFull_                                  func(rev string) (*gitutil.Tree, error)
@@ -27,6 +28,8 @@ type MockGitRepo struct {
 	ObjectNameSHA_                                 func(arg string) (string, error)
 	HEADHasNoCommitsAndNextCommitWillBeRootCommit_ func() (bool, error)
 	HEADOrDevNullTree_                             func() (string, error)
+	IsRebaseApplying_                              func() (bool, error)
+	IsIndexLocked_                                 func() (bool, error)
 }
 
 func (m MockGitRepo) GitDir() string { return ".git" }
@@ -63,6 +66,10 @@ func (m MockGitRepo) UpdateSymbolicRef(name, ref string) error {
 
 func (m MockGitRepo) ReadSymbolicRef(name string) (string, error) {
 	return m.ReadSymbolicRef_(name)
+}
+
+func (m MockGitRepo) CheckoutDetachedHEAD(ref string) error {
+	return m.CheckoutDetachedHEAD_(ref)
 }
 
 func (m MockGitRepo) ReadBlob(rev, name string) ([]byte, string, string, error) {
@@ -103,6 +110,14 @@ func (m MockGitRepo) ObjectNameSHA(arg string) (string, error) {
 
 func (m MockGitRepo) HEADHasNoCommitsAndNextCommitWillBeRootCommit() (bool, error) {
 	return m.HEADHasNoCommitsAndNextCommitWillBeRootCommit_()
+}
+
+func (m MockGitRepo) IsIndexLocked() (bool, error) {
+	return m.IsIndexLocked_()
+}
+
+func (m MockGitRepo) IsRebaseApplying() (bool, error) {
+	return m.IsRebaseApplying_()
 }
 
 func (m MockGitRepo) HEADOrDevNullTree() (string, error) {

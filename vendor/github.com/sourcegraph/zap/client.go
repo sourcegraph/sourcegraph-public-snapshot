@@ -237,6 +237,11 @@ func (c *Client) WorkspaceWillSaveFile(ctx context.Context, params WorkspaceWill
 	return c.c.Call(ctx, "workspace/willSaveFile", params, nil)
 }
 
+// Ping sends the "ping" request to the server.
+func (c *Client) Ping(ctx context.Context) error {
+	return c.c.Call(ctx, "ping", nil, nil)
+}
+
 // Wait waits until the underlying connection is closed.
 func (c *Client) Wait() {
 	<-c.c.DisconnectNotify()

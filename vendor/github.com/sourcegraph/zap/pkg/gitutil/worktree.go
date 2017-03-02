@@ -63,8 +63,8 @@ func (w Worktree) TopLevelDir() (string, error) {
 }
 
 func (w Worktree) Reset(typ, rev string) error {
-	if typ != "hard" && typ != "mixed" {
-		panic(fmt.Sprintf("(Worktree).Reset 1st arg must be \"hard\" or \"reset\", got %q", typ))
+	if typ != "hard" && typ != "mixed" && typ != "merge" {
+		panic(fmt.Sprintf("(Worktree).Reset 1st arg must be \"hard\", \"reset\", or \"merge\"; got %q", typ))
 	}
 	if err := checkArgSafety(rev); err != nil {
 		return err
@@ -78,6 +78,37 @@ func (w Worktree) Clean() error {
 	return err
 }
 
+const RebaseApplyDir = "rebase-apply"
+
+func (w Worktree) IsRebaseApplying() (bool, error) {
+	fi, err := os.Stat(filepath.Join(w.GitDir(), RebaseApplyDir))
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return err == nil && fi.Mode().IsDir(), err
+}
+
+func (w Worktree) CheckoutDetachedHEAD(commit string) error {
+	if len(commit) != 40 {
+		return fmt.Errorf("CheckoutDetachedHEAD requires absolute commit ID (40-char SHA), got %q", commit)
+	}
+	if err := checkArgSafety(commit); err != nil {
+		return err
+	}
+	_, err := execGitCommand(w.Dir, "checkout", "--quiet", "--detach", commit, "--")
+	return err
+}
+
+const IndexLockFile = "index.lock"
+
+func (w Worktree) IsIndexLocked() (bool, error) {
+	fi, err := os.Stat(filepath.Join(w.GitDir(), IndexLockFile))
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return err == nil && fi.Mode().IsRegular(), err
+}
+
 func (w Worktree) ListUntrackedFiles() ([]*ChangedFile, error) {
 	out, err := execGitCommand(w.Dir, "ls-files", "--full-name", "--others", "-z", "--exclude-standard", "--exclude=.#*")
 	if err != nil {
@@ -88,7 +119,7 @@ func (w Worktree) ListUntrackedFiles() ([]*ChangedFile, error) {
 	for _, p := range paths {
 		fi, err := os.Stat(filepath.Join(w.WorktreeDir(), p))
 		if err != nil {
-			return nil, err
+			return nil, &WorktreeConcurrentlyModifiedError{Path: p, Err: err}
 		}
 		if fi.Size() > MaxFileSize {
 			log.Printf("skipping large file (%d bytes): %s", fi.Size(), p)
@@ -270,7 +301,7 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 						}
 						data, err := ioutil.ReadFile(filepath.Join(w.WorktreeDir(), c.SrcPath))
 						if err != nil {
-							return nil, err
+							return nil, &WorktreeConcurrentlyModifiedError{Path: c.SrcPath, Err: err}
 						}
 						if !bytes.Equal(prevData, data) {
 							cleanChanges = append(cleanChanges, &ChangedFile{
@@ -298,6 +329,20 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 	return changes, nil
 }
 
+// A WorktreeConcurrentlyModifiedError occurs when the worktree is
+// concurrently modified while (e.g.) commit object is being
+// created. It signals to the caller that it should retry the
+// operation (and hope there are no concurrent modifications this
+// time).
+type WorktreeConcurrentlyModifiedError struct {
+	Path string
+	Err  error
+}
+
+func (e *WorktreeConcurrentlyModifiedError) Error() string {
+	return fmt.Sprintf("worktree concurrently modified during error: %s", e.Err)
+}
+
 func (w Worktree) CreateTreeAndRacilyFillInNewFileSHAs(basePath string, entries []*TreeEntry) (string, error) {
 	for _, e := range entries {
 		// Entries that were added, and the ancestor trees thereof,
@@ -316,7 +361,7 @@ func (w Worktree) CreateTreeAndRacilyFillInNewFileSHAs(basePath string, entries 
 				// could have been changed on disk in the meantime.
 				data, err := ioutil.ReadFile(filepath.Join(w.WorktreeDir(), path))
 				if err != nil {
-					return "", err
+					return "", &WorktreeConcurrentlyModifiedError{Path: path, Err: err}
 				}
 
 				e.OID, err = w.HashObject("blob", path, data)

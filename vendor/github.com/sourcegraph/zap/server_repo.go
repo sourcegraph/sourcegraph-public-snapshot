@@ -39,8 +39,8 @@ func (s *serverRepo) acquireRef(refName string) (release func()) {
 	return lock.Unlock
 }
 
-func (s *Server) getRepo(ctx context.Context, log *log.Context, repoName string) (*serverRepo, error) {
-	repo, err := s.getRepoIfExists(ctx, log, repoName)
+func (s *Server) getRepo(ctx context.Context, log *log.Context, repoDir string) (*serverRepo, error) {
+	repo, err := s.getRepoIfExists(ctx, log, repoDir)
 	if err != nil {
 		return nil, err
 	}
@@ -55,37 +55,37 @@ func (s *Server) getRepo(ctx context.Context, log *log.Context, repoName string)
 	if !s.backend.CanAutoCreate() {
 		return nil, &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRepoNotExists),
-			Message: fmt.Sprintf("repo not found: %s (add it with 'zap init')", repoName),
+			Message: fmt.Sprintf("repo not found: %s (add it with 'zap init')", repoDir),
 		}
 	}
 
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
-	repo, exists := s.repos[repoName]
+	repo, exists := s.repos[repoDir]
 	if !exists {
 		repo = &serverRepo{
 			refdb: refdb.NewMemoryRefDB(),
 		}
-		s.repos[repoName] = repo
+		s.repos[repoDir] = repo
 	}
 	return repo, nil
 }
 
-func (s *Server) getRepoIfExists(ctx context.Context, log *log.Context, repoName string) (*serverRepo, error) {
-	ok, err := s.backend.CanAccess(ctx, log, repoName)
+func (s *Server) getRepoIfExists(ctx context.Context, log *log.Context, repoDir string) (*serverRepo, error) {
+	ok, err := s.backend.CanAccess(ctx, log, repoDir)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return nil, &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRepoNotExists),
-			Message: fmt.Sprintf("access forbidden to repo: %s", repoName),
+			Message: fmt.Sprintf("access forbidden to repo: %s", repoDir),
 		}
 	}
 
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
-	return s.repos[repoName], nil
+	return s.repos[repoDir], nil
 }
 
 func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo *serverRepo, params RepoWatchParams) error {
