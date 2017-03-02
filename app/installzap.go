@@ -74,6 +74,7 @@ main() {
 	fi
 
 	# Install the server as a background daemon
+	sudo_prompt "You will now be prompted for your sudo password (so we can install zap server as a daemon)"
 	must sudo zap server install
 
 	echo ""
