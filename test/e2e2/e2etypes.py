@@ -195,6 +195,13 @@ class Driver(object):
             pass
         raise E2EError("scrolled %d times, but condition was never true (%s)" % (max_tries, text))
 
+    def send_keys_like_human(self, keys):
+        if isinstance(keys, str):
+            for k in keys:
+                self.active_elem().send_keys(k)
+        else:
+            self.active_elem().send_keys(keys)
+
     def delete_user_if_exists(self, username):
         auth0_tok = os.getenv("AUTH0_TOKEN")
         query = urllib.quote('nickname:"%s"' % username)

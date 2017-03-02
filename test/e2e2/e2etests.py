@@ -32,8 +32,8 @@ def test_repo_jump_to(d):
 
     wd.get(d.sg_url('/github.com/gorilla/mux')) # start on a page with the jump modal active
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
-    d.active_elem().send_keys("/")
-    d.active_elem().send_keys("!golang/go")
+    d.send_keys_like_human("/")
+    d.send_keys_like_human("!golang/go")
     wait_for(lambda: len(d.find_search_modal_results( "gogolang", exact_match=True)) > 0, 10.0)
     d.find_search_modal_results( "gogolang", exact_match=True)[0].click()
 
@@ -58,7 +58,7 @@ def test_github_private_auth_onboarding(d):
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
     wd.find_element_by_id("password").send_keys(password)
-    d.active_elem().send_keys(Keys.ENTER)
+    d.send_keys_like_human(Keys.ENTER)
 
     # Re-authorize application in case GitHub thinks we're a bot (heh heh)
     if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
@@ -89,7 +89,7 @@ def test_github_public_auth_onboarding(d):
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
     wd.find_element_by_id("password").send_keys(password)
-    d.active_elem().send_keys(Keys.ENTER)
+    d.send_keys_like_human(Keys.ENTER)
 
     # Re-authorize application in case GitHub thinks we're a bot (heh heh)
     if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
@@ -141,21 +141,21 @@ def test_golden_workflow(d):
 
     # Open preview and scroll downlist without affecting InfoBar
     retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
-    retry(lambda: d.active_elem().send_keys(Keys.RIGHT))
-    retry(lambda: d.active_elem().send_keys(Keys.DOWN))
+    retry(lambda: d.send_keys_like_human(Keys.RIGHT))
+    retry(lambda: d.send_keys_like_human(Keys.DOWN))
 
     # Verify Infobar remained open
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
 
     # Dismiss InfoBar
-    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
+    retry(lambda: d.send_keys_like_human(Keys.ESCAPE)) # hide any tooltip that might steal the click
 
     # Quickopen to "Route"
-    retry(lambda: d.active_elem().send_keys("/"))
-    retry(lambda: d.active_elem().send_keys("#Route"))
+    retry(lambda: d.send_keys_like_human("/"))
+    retry(lambda: d.send_keys_like_human("#Route"))
     wait_for(lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0, 30.0)
-    retry(lambda: d.active_elem().send_keys(Keys.ENTER))
+    retry(lambda: d.send_keys_like_human(Keys.ENTER))
     wait_for(lambda: "route.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
 
 def test_global_refs(d, test):
@@ -166,9 +166,9 @@ def test_global_refs(d, test):
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
 
     # Jump to symbol
-    d.active_elem().send_keys("/")
-    d.active_elem().send_keys("#")
-    d.active_elem().send_keys(test['symbol'])
+    d.send_keys_like_human("/")
+    d.send_keys_like_human("#")
+    d.send_keys_like_human(test['symbol'])
     wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0, 30.0)
     d.find_search_modal_results(test['symbol'])[0].click()
 
@@ -337,8 +337,8 @@ def test_java_symbol(dr):
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) > 0, 5)
 
     # Symbol search for "testfailure"
-    dr.active_elem().send_keys("/")
-    dr.active_elem().send_keys("#testfailure")
+    dr.send_keys_like_human("/")
+    dr.send_keys_like_human("#testfailure")
     wait_for(lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0, 30.0)
     # Click on "TestFailure junit.framework"
     dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)[0].click()
