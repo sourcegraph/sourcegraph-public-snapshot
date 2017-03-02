@@ -52,14 +52,18 @@ main() {
 		fi
 	fi
 
-	if [[ "$_os" == "darwin" || "$_os" == "linux" ]]; then
+	if [[ "$_os" == "darwin" ]]; then
 		log "Downloading the latest zap binary..."
 		curl "https://storage.googleapis.com/sourcegraph-zap/updates/bin/zap-main-${_os}-${_arch}-latest" -Sf --progress > /tmp/zap
-
-		# Inform the user if we're going to prompt them for a password.
-		if [ $(sudo -n uptime 2>&1|grep "load"|wc -l) -lt 0 ]; then
-			log "You will now be prompted for your password (so we can install the binary into /usr/local/bin)"
-		fi
+		must cp /tmp/zap /usr/local/bin/zap
+		must chmod +x /usr/local/bin/zap
+		must rm /tmp/zap
+		log "Successfully installed Zap to /usr/local/bin/zap"
+	elif [[ "$_os" == "linux" ]]; then
+		log "Downloading the latest zap binary..."
+		curl "https://storage.googleapis.com/sourcegraph-zap/updates/bin/zap-main-${_os}-${_arch}-latest" -Sf --progress > /tmp/zap
+		# Linux requires sudo to write into /usr/local/bin
+		sudo_prompt "You will now be prompted for your sudo password (so we can install the binary to /usr/local/bin)"
 		must sudo cp /tmp/zap /usr/local/bin/zap
 		must sudo chmod +x /usr/local/bin/zap
 		must rm /tmp/zap
@@ -122,6 +126,14 @@ err() {
 must() {
 	"$@"
 	if [[ $? != 0 ]]; then err "command failed: $*"; fi
+}
+
+# sudo_prompt informs the user if we're going to prompt them for their sudo
+# password.
+sudo_prompt() {
+	if [ $(sudo -n uptime 2>&1|grep "load"|wc -l) -le 0 ]; then
+		log "$1"
+	fi
 }
 
 main "$@" || exit 1
