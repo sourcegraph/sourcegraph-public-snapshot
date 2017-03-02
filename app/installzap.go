@@ -41,7 +41,12 @@ main() {
 		echo ""
 		if [[ $REPLY =~ ^[Yy]$ ]]
 		then
-			sudo rm $(command -v zap)
+			if [[ "$_os" == "linux" ]]; then
+				# Linux requires sudo to write into /usr/local/bin
+				sudo rm $(command -v zap)
+			else
+				rm $(command -v zap)
+			fi
 		else
 			err "Not replacing existing installation. Aborting."
 		fi
