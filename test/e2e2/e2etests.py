@@ -173,6 +173,7 @@ def test_global_refs(d, test):
     send_keys_with_retry(d.active_elem, '#' + test['symbol'],
                          lambda: len(d.find_search_modal_results(test['symbol'])) > 0,
                          max_wait=5.0)
+    d.find_search_modal_results(test['symbol'])[0].click()
 
     # Wait for sidebar to appear.
     wait_for(lambda: len(wd.find_elements_by_css_selector('[class="sg-sidebar"]')) > 0)
