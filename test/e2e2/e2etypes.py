@@ -256,7 +256,7 @@ class Driver(object):
         main_window = self.d.current_window_handle
         wait_for(lambda: len(self.d.window_handles) == 2, max_wait=5.0)
         retry(lambda: self.d.switch_to.window(self.d.window_handles[1]))
-        wait_for(lambda: self.d.current_url == location)
+        wait_for(lambda: self.d.current_url == location, max_wait=7.0)
         self.d.close()
         retry(lambda: self.d.switch_to.window(main_window))
 
