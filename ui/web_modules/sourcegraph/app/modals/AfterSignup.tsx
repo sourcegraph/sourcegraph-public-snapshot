@@ -128,14 +128,14 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 
 	private onPremComplete = (onPremDetails: OnPremDetails) => {
 		Events.SignupEnterpriseForm_Completed.logEvent({
-			signup: { onPremDetails: this.state.onPremDetails },
+			signup: { onPremDetails: onPremDetails },
 		});
 		this.setState({ ...this.state, onPremDetails, stage: "enterpriseThanks" });
 	}
 
 	private userDetailsComplete = (userInfo: UserDetails) => {
 		Events.SignupUserDetails_Completed.logEvent({
-			signup: { userInfo: this.state.userInfo },
+			signup: { userInfo: userInfo },
 		});
 		const stage = this.authedPrivate ? "plan" : "finished";
 		this.setState({ ...this.state, stage, userInfo });
@@ -147,12 +147,17 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 		});
 	}
 
+	componentWillUpdate(_: Props, state: Details): void {
+		if (state.stage !== this.state.stage) {
+			this.logStage();
+		}
+	}
+
 	componentDidMount(): void {
 		this.logStage();
 	}
 
 	componentDidUpdate(): void {
-		this.logStage();
 		if (this.state.stage === "finished") {
 			this.submit();
 		}
