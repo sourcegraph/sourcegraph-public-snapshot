@@ -33,7 +33,7 @@ def test_repo_jump_to(d):
     wd.get(d.sg_url('/github.com/gorilla/mux')) # start on a page with the jump modal active
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
     d.send_keys_like_human("/")
-    send_keys_with_retry(d.active_elem(), "!golang/go",
+    send_keys_with_retry(d.active_elem, "!golang/go",
                          lambda: len(d.find_search_modal_results("gogolang", exact_match=True)) > 0,
                          max_wait=5.0)
     d.find_search_modal_results("gogolang", exact_match=True)[0].click()
@@ -153,7 +153,7 @@ def test_golden_workflow(d):
 
     # Quickopen to "Route"
     retry(lambda: d.send_keys_like_human("/"))
-    send_keys_with_retry(d.active_elem(), "#Route",
+    send_keys_with_retry(d.active_elem, "#Route",
                          lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0,
                          max_wait=5.0)
 
@@ -170,7 +170,7 @@ def test_global_refs(d, test):
     # Jump to symbol
     d.send_keys_like_human("/")
     d.send_keys_like_human('#' + test['symbol'])
-    send_keys_with_retry(d.active_elem(), '#' + test['symbol'],
+    send_keys_with_retry(d.active_elem, '#' + test['symbol'],
                          lambda: len(d.find_search_modal_results(test['symbol'])) > 0,
                          max_wait=5.0)
 
@@ -346,7 +346,7 @@ def test_java_symbol(dr):
 
     # Symbol search for "testfailure"
     dr.send_keys_like_human("/")
-    send_keys_with_retry(dr.active_elem(), "#testfailure",
+    send_keys_with_retry(dr.active_elem, "#testfailure",
                          lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0,
                          max_wait=5.0)
     wait_for(lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0, 30.0)
@@ -372,11 +372,11 @@ def test_java_def(dr):
     wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
     # Click "TestFailure" token and wait until side panel loaded.
     wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
-    click_with_retry(dr.find_token("TestFailure", lang="java"),
+    click_with_retry(lambda: dr.find_token("TestFailure", lang="java"),
                      lambda: len(wd.find_elements_by_id("reference-tree")) == 1, max_wait=15)
     # Click "Throwables" token and wait until side panel reloaded.
     wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
-    click_with_retry(dr.find_token("Throwables", lang="java"),
+    click_with_retry(lambda: dr.find_token("Throwables", lang="java"),
                      lambda: 'Throwables' in wd.find_elements_by_id("reference-tree")[0].text,
                      max_wait=15)
     # Click "Jump to definition"
@@ -395,10 +395,10 @@ def test_java_cross_repo(dr):
     # Click in editor
     wd.find_elements_by_css_selector(".monaco-editor")[0].click()
     # Scroll to "AbstractCollection"
-    page_down_until(wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
+    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
                     lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0)
     # Click "AbstractCollection" and wait until side panel reloaded
-    click_with_retry(dr.find_token("AbstractCollection", lang="java"),
+    click_with_retry(lambda: dr.find_token("AbstractCollection", lang="java"),
                      lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text,
                      max_wait=15)
     # Click "Jump to definition"
@@ -415,9 +415,9 @@ def test_java_global_usages(dr):
     # Wait for page to load
     wait_for(lambda: len(dr.find_tokens("", lang="java")) > 0, max_wait=10, text="wait for page load")
     # Scroll to "Test"
-    page_down_until(wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
+    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
                     lambda: len(dr.find_tokens("Test", lang="java")) > 0)
-    click_with_retry(dr.find_token("Test", lang="java"),
+    click_with_retry(lambda: dr.find_token("Test", lang="java"),
                      lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text,
                      max_wait=15)
     # Wait for references to load + un-expand the "Local" references

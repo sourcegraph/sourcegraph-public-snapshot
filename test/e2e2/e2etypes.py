@@ -72,17 +72,17 @@ def retry(fn, attempts=3, cooldown=0):
                 raise e
         time.sleep(cooldown)
 
-# page_down_until scrolls down (with focus on the specified element
-# elem) until a condition becomes true.  It will scroll down and
-# recheck the condition up to max_tries times.
-def page_down_until(elem, condition, max_tries=10, text=""):
+# page_down_until scrolls down (with focus on the specified element)
+# until a condition becomes true.  It will scroll down and recheck the
+# condition up to max_tries times.
+def page_down_until(elemFn, condition, max_tries=10, text=""):
     for i in xrange(max_tries):
         try:
             wait_for(condition, max_wait=0.2, wait_incr=0.1, text="")
             return
         except:
             pass
-        elem.send_keys(Keys.PAGE_DOWN)
+        elemFn().send_keys(Keys.PAGE_DOWN)
     try:
         if condition():
             return
@@ -100,14 +100,14 @@ def distance(e, f):
 # retry the default number of times until condition holds. It assumes
 # the initial state of the input is empty (if not, it may delete
 # pre-existing text on retry).
-def send_keys_with_retry(elem, keys, condition, **kw):
+def send_keys_with_retry(elemFn, keys, condition, **kw):
     def tryOnce():
         # Enter keys
         if isinstance(keys, str):
             for k in keys:
-                elem.send_keys(k)
+                elemFn().send_keys(k)
         else:
-            elem.send_keys(keys)
+            elemFn().send_keys(keys)
         try:
             wait_for(condition, **{k: kw[k] for k in ('max_wait', 'wait_incr', 'text') if k in kw.keys()})
             return
@@ -115,13 +115,13 @@ def send_keys_with_retry(elem, keys, condition, **kw):
             # Delete all
             if isinstance(keys, str):
                 for i in xrange(5 * len(keys)):
-                    elem.send_keys(Keys.BACKSPACE)
+                    elemFn().send_keys(Keys.BACKSPACE)
             raise e
     retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
 
-def click_with_retry(elem, condition, **kw):
+def click_with_retry(elemFn, condition, **kw):
     def tryOnce():
-        elem.click()
+        elemFn().click()
         wait_for(condition,  **{k: kw[k] for k in ('max_wait', 'wait_incr', 'text') if k in kw.keys()})
     retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
 
