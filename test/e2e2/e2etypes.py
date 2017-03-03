@@ -96,6 +96,10 @@ def distance(e, f):
     dy = e.location['y'] - f.location['y']
     return math.sqrt((dx*dx) + (dy*dy))
 
+# send_keys_with_retry sends the keys to the element elem. It will
+# retry the default number of times until condition holds. It assumes
+# the initial state of the input is empty (if not, it may delete
+# pre-existing text on retry).
 def send_keys_with_retry(elem, keys, condition, **kw):
     def tryOnce():
         # Enter keys
@@ -108,9 +112,9 @@ def send_keys_with_retry(elem, keys, condition, **kw):
             wait_for(condition, **{k: kw[k] for k in ('max_wait', 'wait_incr', 'text') if k in kw.keys()})
             return
         except Exception as e:
-            # Delete previous
+            # Delete all
             if isinstance(keys, str):
-                for k in keys:
+                for i in xrange(5 * len(keys)):
                     elem.send_keys(Keys.BACKSPACE)
             raise e
     retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
