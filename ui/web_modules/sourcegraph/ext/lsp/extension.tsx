@@ -5,14 +5,16 @@ import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/br
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
 import { Features, getModes } from "sourcegraph/util/features";
 
-import { context } from "sourcegraph/app/context";
-
 export function activate(): void {
-	const ctx: typeof context = self["sourcegraphContext"];
+	// self.location is the blob: URI, so we need to get the main page location.
+	let wsOrigin = self.location.origin.replace(/^https?:\/\//, (match) => {
+		return match === "http://" ? "ws://" : "wss://";
+	});
+
 	getModes().forEach(mode => {
 		// We include ?mode= in the url to make it easier to find the correct LSP websocket connection.
 		// It does not affect any behaviour.
-		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${ctx.wsURL}/.api/lsp?mode=${mode}`), {
+		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`), {
 			documentSelector: [mode],
 			initializationOptions: {
 				mode,

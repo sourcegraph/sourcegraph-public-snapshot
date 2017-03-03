@@ -22,7 +22,6 @@ import (
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
-var wsURLEnvVar = env.Get("WS_URL", "", "Base URL for websocket connections. Defaults to AppURL.")
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var authEnabledEnvVar = env.Get("AUTH_ENABLED", "true", "require login for users to view repositories")
 var trackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
@@ -31,7 +30,6 @@ var trackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute 
 // "sourcegraph/app/context" module.
 type JSContext struct {
 	AppURL            string                     `json:"appURL"`
-	WSURL             string                     `json:"wsURL"`
 	LegacyAccessToken string                     `json:"accessToken"` // Legacy support for Chrome extension.
 	XHRHeaders        map[string]string          `json:"xhrHeaders"`
 	CSRFToken         string                     `json:"csrfToken"`
@@ -90,21 +88,8 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		authEnabled = true
 	}
 
-	wsURL := wsURLEnvVar
-	if wsURL == "" {
-		u := *conf.AppURL
-		if u.Scheme == "http" {
-			u.Scheme = "ws"
-		} else {
-			// u.Scheme == "https"
-			u.Scheme = "wss"
-		}
-		wsURL = u.String()
-	}
-
 	return JSContext{
 		AppURL:            conf.AppURL.String(),
-		WSURL:             wsURL,
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
 		CSRFToken:         csrfToken,
