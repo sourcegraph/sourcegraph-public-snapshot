@@ -28,7 +28,7 @@ export function OrgSelection(props: Props): JSX.Element {
 		</div>
 		<div style={scrollerStyle}>
 			{props.root.currentUser.githubOrgs.map((org, idx) =>
-				<div onClick={props.select(org.name)} key={idx} style={{ marginBottom: 16 }}>
+				<div onClick={props.select(org.name)} key={idx} style={{ marginBottom: 16, textAlign: "left" }}>
 					<OrganizationCard name={org.name} desc={org.description} icon={org.avatarURL} />
 				</div>
 			)}
