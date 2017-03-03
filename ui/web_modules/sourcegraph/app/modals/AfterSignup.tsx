@@ -196,6 +196,7 @@ const ModalContainer = Relay.createContainer(Modal, {
 					githubOrgs {
 						name
 						avatarURL
+						description
 						collaborators
 					}
 				}
