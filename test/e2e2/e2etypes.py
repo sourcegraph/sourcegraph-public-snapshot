@@ -101,7 +101,7 @@ def distance(e, f):
 # the initial state of the input is empty (if not, it may delete
 # pre-existing text on retry).
 def send_keys_with_retry(elemFn, keys, condition, **kw):
-    def tryOnce():
+    def tryOnce(lastTime):
         # Enter keys
         if isinstance(keys, str):
             for k in keys:
@@ -112,12 +112,16 @@ def send_keys_with_retry(elemFn, keys, condition, **kw):
             wait_for(condition, **{k: kw[k] for k in ('max_wait', 'wait_incr', 'text') if k in kw.keys()})
             return
         except Exception as e:
-            # Delete all
-            if isinstance(keys, str):
-                for i in xrange(5 * len(keys)):
-                    elemFn().send_keys(Keys.BACKSPACE)
+            if not lastTime:
+                # Delete all
+                if isinstance(keys, str):
+                    for i in xrange(5 * len(keys)):
+                        elemFn().send_keys(Keys.BACKSPACE)
             raise e
-    retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
+    try:
+        retry(lambda: tryOnce(False), attempts=2, cooldown=0)
+    except Exception as e:
+        tryOnce(True)
 
 def click_with_retry(elemFn, condition, **kw):
     def tryOnce():

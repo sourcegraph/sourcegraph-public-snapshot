@@ -169,7 +169,6 @@ def test_global_refs(d, test):
 
     # Jump to symbol
     d.send_keys_like_human("/")
-    d.send_keys_like_human('#' + test['symbol'])
     send_keys_with_retry(d.active_elem, '#' + test['symbol'],
                          lambda: len(d.find_search_modal_results(test['symbol'])) > 0,
                          max_wait=5.0)
