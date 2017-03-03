@@ -36,6 +36,8 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 		color: colors.text(),
 		marginLeft: -2,
 		marginTop: 4,
+		paddingTop: 2,
+		paddingBottom: 2,
 	}}>
 		<div style={{ margin: whitespace[3] }}>
 			<User
