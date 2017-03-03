@@ -370,11 +370,10 @@ def test_java_def(dr):
     wd = dr.d
     # Go to JUnit repo page
     wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
-    # Click "TestFailure" token
+    # Click "TestFailure" token and wait until side panel loaded.
     wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
-    retry(lambda: dr.find_token("TestFailure", lang="java").click())
-    # Wait until side panel loaded.
-    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
+    click_with_retry(dr.find_token("TestFailure", lang="java"),
+                     lambda: len(wd.find_elements_by_id("reference-tree")) == 1, max_wait=15)
     # Click "Throwables" token
     wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
     retry(lambda: dr.find_token("Throwables", lang="java").click())

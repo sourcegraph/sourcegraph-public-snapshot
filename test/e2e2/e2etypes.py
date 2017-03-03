@@ -97,7 +97,6 @@ def distance(e, f):
     return math.sqrt((dx*dx) + (dy*dy))
 
 def send_keys_with_retry(elem, keys, condition, **kw):
-    firstTry = True
     def tryOnce():
         # Enter keys
         if isinstance(keys, str):
@@ -114,6 +113,12 @@ def send_keys_with_retry(elem, keys, condition, **kw):
                 for k in keys:
                     elem.send_keys(Keys.BACKSPACE)
             raise e
+    retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
+
+def click_with_retry(elem, condition, **kw):
+    def tryOnce():
+        elem.click()
+        wait_for(condition,  **{k: kw[k] for k in ('max_wait', 'wait_incr', 'text') if k in kw.keys()})
     retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
 
 # Driver is driver that tests should use to interact with the browser.
