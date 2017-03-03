@@ -243,7 +243,7 @@ class Driver(object):
 
     def verify_new_tab_opened(self, location):
         main_window = self.d.current_window_handle
-        wait_for(lambda: len(self.d.window_handles) == 2)
+        wait_for(lambda: len(self.d.window_handles) == 2, max_wait=5.0)
         retry(lambda: self.d.switch_to.window(self.d.window_handles[1]))
         wait_for(lambda: self.d.current_url == location)
         self.d.close()
