@@ -56,8 +56,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-
-	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch}}}, nil
+	return createCommitState(r.repo, rev), nil
 }
 
 func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {
@@ -70,7 +69,7 @@ func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, 
 		}
 		return nil, err
 	}
-	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch}}}, nil
+	return createCommitState(r.repo, rev), nil
 }
 
 func (r *repositoryResolver) DefaultBranch() string {
