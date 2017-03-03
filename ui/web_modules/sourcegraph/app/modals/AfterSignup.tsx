@@ -1,159 +1,191 @@
 import * as React from "react";
 import * as Relay from "react-relay";
-import { Link } from "react-router";
 
 import { context } from "sourcegraph/app/context";
+import { SignupModalContainer } from "sourcegraph/app/modals/Signup";
 import { Router, RouterLocation } from "sourcegraph/app/router";
-import { Button, Input, Select } from "sourcegraph/components";
-import { Heading } from "sourcegraph/components/index";
-import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
-import * as modalStyles from "sourcegraph/components/styles/modal.css";
-import { PopOut } from "sourcegraph/components/symbols/Primaries";
-import { colors, typography, whitespace } from "sourcegraph/components/utils";
-import { langs } from "sourcegraph/Language";
+import { dismissModal } from "sourcegraph/components/Modal";
+import { PlanSelector, PlanType } from "sourcegraph/components/PlanSelector";
+import { EnterpriseDetails, EnterpriseThanks, OnPremDetails } from "sourcegraph/org/OnPremSignup";
+import { OrgSelection } from "sourcegraph/org/OrgSignup";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
+import { UserDetails, UserDetailsForm } from "sourcegraph/user/UserDetails";
 import { checkStatus, defaultFetch as fetch } from "sourcegraph/util/xhr";
 
-interface GQLProps {
-	relay: any;
+interface Props {
+	onSubmit?: () => void;
 	root: GQL.IRoot;
 }
 
-interface Props extends GQLProps {
-	onSubmit?: () => void;
-	style?: React.CSSProperties;
-}
+type Stage = "details" | "plan" | "enterpriseDetails" | "orgDetails" | "enterpriseThanks" | "finished";
 
-type State = {
-	form: {
-		fullName?: string;
-		email?: string;
-		language?: string;
-		org?: string;
-	};
+interface Details {
+	stage: Stage;
+	authedPrivate: boolean;
+	organization?: string;
+	onPremDetails?: OnPremDetails;
+	plan?: PlanType;
+	userInfo?: UserDetails;
 };
 
-class AfterSignupForm extends React.Component<Props, State> {
+function submitSignupInfo(details: Details): void {
+	if (!details.userInfo) {
+		throw new Error("Expected user info to be filled out");
+	}
+	let firstName = "";
+	let lastName = "";
+	if (details.userInfo.name) {
+		const names = details.userInfo.name.split(/\s+/);
+		firstName = names[0];
+		lastName = names.slice(1).join(" ");
+	}
+
+	let signupInformation = {
+		firstname: firstName,
+		lastname: lastName,
+		email: details.userInfo.email,
+		github_orgs: details.organization,
+		plan: details.plan,
+		is_private_code_user: JSON.stringify(details.authedPrivate),
+	};
+
+	if (details.onPremDetails) {
+		// Convert to snake case for hubspot
+		signupInformation = {
+			...signupInformation,
+			exisiting_software: details.onPremDetails.existingSoftware,
+			version_control_system: details.onPremDetails.versionControlSystem,
+			number_of_defs: details.onPremDetails.numberOfDevs,
+			other_details: details.onPremDetails.otherDetails,
+		};
+	}
+
+	Events.AfterSignupModal_Completed.logEvent({
+		trialSignupProperties: signupInformation,
+	});
+
+	fetch(`/.api/submit-form`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json; charset=utf-8" },
+		body: JSON.stringify(signupInformation),
+	})
+		.then(checkStatus)
+		.catch(err => {
+			throw new Error(`Submitting after signup form failed with error: ${err}`);
+		});
+}
+
+export class AfterSignupForm extends React.Component<Props, Details> {
 
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
 
-	state: State = { form: {} };
 	context: { router: Router };
 
+	authedPrivate: boolean = this.context.router.location.query["private"] === "true";
+
+	state: Details = {
+		stage: "details",
+		authedPrivate: this.authedPrivate,
+	};
+
+	private submit = () => {
+		submitSignupInfo(this.state);
+		if (this.props.onSubmit) {
+			this.props.onSubmit();
+		}
+	}
+
+	private selectPlan = (plan: PlanType) => () => {
+		Events.SignupPlan_Selected.logEvent({
+			signup: { plan }
+		});
+		EventLogger.setUserPlan(plan);
+		let stage;
+		if (plan === "enterprise") {
+			stage = "enterpriseDetails";
+		} else if (plan === "organization") {
+			stage = "orgDetails";
+		} else {
+			stage = "finished";
+		}
+		this.setState({ ...this.state, plan, stage });
+	}
+
+	private gotoPlans = () => {
+		this.setState({ ...this.state, stage: "plan" });
+	}
+
+	private selectOrg = (organization: string) => () => {
+		Events.SignupOrg_Selected.logEvent({
+			signup: { organization },
+		});
+		EventLogger.setUserPlanOrg(organization);
+		this.setState({ ...this.state, stage: "finished", organization });
+	}
+
+	private onPremComplete = (onPremDetails: OnPremDetails) => {
+		Events.SignupEnterpriseForm_Completed.logEvent({
+			signup: { onPremDetails: this.state.onPremDetails },
+		});
+		this.setState({ ...this.state, onPremDetails, stage: "enterpriseThanks" });
+	}
+
+	private userDetailsComplete = (userInfo: UserDetails) => {
+		Events.SignupUserDetails_Completed.logEvent({
+			signup: { userInfo: this.state.userInfo },
+		});
+		const stage = this.authedPrivate ? "plan" : "finished";
+		this.setState({ ...this.state, stage, userInfo });
+	}
+
+	private logStage(): void {
+		Events.SignupStage_Initiated.logEvent({
+			signup: { stage: this.state.stage },
+		});
+	}
+
 	componentDidMount(): void {
-		this._updateStateFromForm();
+		this.logStage();
 	}
 
-	private _form: HTMLFormElement;
-
-	_updateStateFromForm(): void {
-		const formFields = this._form.elements;
-		const newForm = {};
-		for (let i = 0; i < formFields.length; i++) {
-			const elem = formFields[i] as (HTMLInputElement | HTMLSelectElement);
-			newForm[elem.name] = elem.value;
+	componentDidUpdate(): void {
+		this.logStage();
+		if (this.state.stage === "finished") {
+			this.submit();
 		}
-		this.setState({ form: newForm });
 	}
 
-	_onChange(): void {
-		this._updateStateFromForm();
-	}
-
-	_sendForm(ev: React.FormEvent<HTMLFormElement>): void {
-		ev.preventDefault();
-
-		let firstName = "";
-		let lastName = "";
-		if (this.state.form.fullName) {
-			const names = this.state.form.fullName.split(/\s+/);
-			firstName = names[0];
-			lastName = names.slice(1).join(" ");
+	render(): JSX.Element | null {
+		switch (this.state.stage) {
+			case "details":
+				return <UserDetailsForm next={this.userDetailsComplete} />;
+			case "plan":
+				return <PlanSelector select={this.selectPlan} />;
+			case "enterpriseDetails":
+				return <EnterpriseDetails next={this.onPremComplete} />;
+			case "orgDetails":
+				return <OrgSelection root={this.props.root} back={this.gotoPlans} select={this.selectOrg} />;
+			case "enterpriseThanks":
+				return <EnterpriseThanks next={this.submit} />;
+			default:
+				return null;
 		}
-
-		const hubspotProps = {
-			firstname: firstName,
-			lastname: lastName,
-			email: this.state.form.email!,
-			github_orgs: `,${this.state.form.org},`,
-			is_personal_account_only: (this.state.form.org === context.user!.Login).toString(), // Go expects map[string]string, HubSpot auto-converts strings to booleans
-			languages_used: this.state.form.language,
-		};
-		fetch(`/.api/submit-form`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json; charset=utf-8" },
-			body: JSON.stringify(hubspotProps),
-		})
-			.then(checkStatus)
-			.then(() => {
-				Events.AfterSignupModal_Completed.logEvent({
-					trialSignupProperties: hubspotProps,
-				});
-
-				if (this.props.onSubmit) {
-					this.props.onSubmit();
-				}
-			})
-			.catch(err => {
-				if (this.props.onSubmit) {
-					this.props.onSubmit();
-				}
-				throw new Error(`Submitting after signup form failed with error: ${err}`);
-			});
-	}
-
-	render(): JSX.Element {
-		let allOrgs: string[] = [];
-		if (this.props.root && this.props.root.currentUser && this.props.root.currentUser.githubOrgs) {
-			this.props.root.currentUser.githubOrgs.forEach(org => allOrgs.push(org));
-		}
-		if (context && context.user) {
-			allOrgs.push(context.user.Login);
-		}
-
-		const isPersonalPlan = this.state.form.org === context.user!.Login;
-		const authedPrivate = this.context.router.location.query["private"] === "true";
-
-		return (
-			<div style={this.props.style}>
-				<form onSubmit={ev => this._sendForm(ev)} onChange={ev => this._onChange()} ref={e => this._form = e}>
-					<Input autoFocus={true} type="text" placeholder="Name" name="fullName" block={true} label="Your full name" containerStyle={{ marginBottom: whitespace[3] }} required={true} />
-					{authedPrivate && <Select block={true} name="org" label="Your primary organization" containerStyle={{ marginBottom: whitespace[3] }}>
-						{allOrgs.map(org => <option value={org} key={org}>{org}{org === context.user!.Login ? " — personal account" : ""}</option>)}
-					</Select>}
-					{authedPrivate && <p style={{ ...typography.size[6], color: colors.greenD1(), paddingBottom: whitespace[2] }}>{isPersonalPlan ? "Personal: free until Feb 1, 2018" : "Organization: 14 days free, then $25/user/month"}. Unlimited private repositories. <Link to="/pricing" target="_blank">Learn&nbsp;more&nbsp;<PopOut width={18} /></Link></p>}
-					<Input block={true} type="email" name="email" placeholder="you@example.com" label="Your work email" required={true} containerStyle={{ marginBottom: whitespace[3] }} />
-					<Select name="language" containerStyle={{ marginBottom: whitespace[3] }} label="Your primary programming language">
-						{langs.map(([id, name]) => <option value={id} key={id}>{name}</option>)}
-					</Select>
-					<Button block={true} type="submit" color="purple" style={{ marginTop: whitespace[4] }}>Start using Sourcegraph</Button>
-				</form>
-			</div>
-		);
 	}
 }
 
 const Modal = (props: {
 	location: RouterLocation;
 	router: Router;
-} & GQLProps): JSX.Element => {
-	const sx = {
-		maxWidth: "420px",
-		marginLeft: "auto",
-		marginRight: "auto",
-	};
-
-	return <LocationStateModal modalName="afterSignup" sticky={true}>
-		<div className={modalStyles.modal} style={sx}>
-			<Heading level={4} align="center" underline="orange">Let&apos;s get started!</Heading>
-			<AfterSignupForm
-				root={props.root}
-				relay={props.relay}
-				onSubmit={dismissModal("afterSignup", props.location, props.router)} />
-		</div>
-	</LocationStateModal>;
+	root: GQL.IRoot;
+}): JSX.Element => {
+	return <SignupModalContainer modalName="afterSignup" sticky={true}>
+		<AfterSignupForm
+			root={props.root}
+			onSubmit={dismissModal("afterSignup", props.location, props.router)} />
+	</SignupModalContainer>;
 };
 
 const ModalContainer = Relay.createContainer(Modal, {
@@ -161,24 +193,40 @@ const ModalContainer = Relay.createContainer(Modal, {
 		root: () => Relay.QL`
 			fragment on Root {
 				currentUser {
-					githubOrgs
+					githubOrgs {
+						name
+						avatarURL
+						collaborators
+					}
 				}
 			}`
 	},
 });
 
-export const ModalMain = function (props: { location: RouterLocation, router: Router }): JSX.Element {
-	if (!context || !context.user) {
-		return <div />; // modal requires a user
+export class ModalMain extends React.Component<{}, {}> {
+
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: { router: Router };
+
+	render(): JSX.Element {
+		if (!context || !context.user) {
+			return <div />; // modal requires a user
+		}
+		return <Relay.RootContainer
+			Component={ModalContainer}
+			route={{
+				name: "Root",
+				queries: {
+					root: () => Relay.QL`query { root }`
+				},
+				params: {
+					router: this.context.router,
+					location: this.context.router.location
+				},
+			}}
+		/>;
 	}
-	return <Relay.RootContainer
-		Component={ModalContainer}
-		route={{
-			name: "Root",
-			queries: {
-				root: () => Relay.QL`query { root }`
-			},
-			params: props,
-		}}
-	/>;
 };

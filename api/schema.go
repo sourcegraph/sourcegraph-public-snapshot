@@ -141,7 +141,14 @@ type Hunk {
 	message: String!
 }
 
+type Organization {
+	name: String!
+	avatarURL: String!
+	description: String!
+	collaborators: Int!
+}
+
 type User {
-	githubOrgs: [String!]!
+	githubOrgs: [Organization!]!
 }
 `

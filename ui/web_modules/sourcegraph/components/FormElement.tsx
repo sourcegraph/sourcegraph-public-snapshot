@@ -32,7 +32,7 @@ export function FormElement(props: Props): JSX.Element {
 	}}>
 		<FlexContainer justify="between">
 			{label && <div style={{ marginBottom: whitespace[2] }}>{label}</div>}
-			{optionalText && <Heading level={7} color="gray">{optionalText}</Heading>}
+			{optionalText && <Heading level={7} color="gray" style={{ marginTop: 0 }}>{optionalText}</Heading>}
 		</FlexContainer>
 		{children}
 		{helperText && <Context type="helper" text={helperText} />}

@@ -19,14 +19,37 @@ func currentUser(ctx context.Context) (*currentUserResolver, error) {
 	return &currentUserResolver{}, nil
 }
 
-func (r *currentUserResolver) GitHubOrgs(ctx context.Context) ([]string, error) {
-	orgs, _, err := github.OrgsFromContext(ctx).List("", &gogithub.ListOptions{PerPage: 100})
-	if err != nil {
-		return nil, err
+type org struct {
+	org gogithub.Organization
+}
+
+func (o *org) Collaborators() int32 {
+	if o.org.Collaborators == nil {
+		return 0
 	}
-	orgNames := make([]string, len(orgs))
-	for i, org := range orgs {
-		orgNames[i] = *org.Login
+	return int32(*o.org.Collaborators)
+}
+
+func (o *org) AvatarURL() string {
+	return *o.org.AvatarURL
+}
+
+func (o *org) Name() string {
+	return *o.org.Login
+}
+
+func (o *org) Description() string {
+	if o.org.Description == nil {
+		return ""
 	}
-	return orgNames, nil
+	return *o.org.Description
+}
+
+func (r *currentUserResolver) GitHubOrgs(ctx context.Context) ([]*org, error) {
+	ghOrgs, _, err := github.OrgsFromContext(ctx).List("", &gogithub.ListOptions{PerPage: 100})
+	orgs := make([]*org, len(ghOrgs))
+	for i, v := range ghOrgs {
+		orgs[i] = &org{*v}
+	}
+	return orgs, err
 }

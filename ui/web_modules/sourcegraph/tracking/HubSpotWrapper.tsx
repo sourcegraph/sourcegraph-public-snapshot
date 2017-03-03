@@ -17,6 +17,7 @@ interface HubSpotUserAttributes {
 	emails?: string | null;
 	authed_orgs_github?: string | null;
 	registered_at?: string | null;
+	plan?: string;
 }
 
 class HubSpotWrapper {

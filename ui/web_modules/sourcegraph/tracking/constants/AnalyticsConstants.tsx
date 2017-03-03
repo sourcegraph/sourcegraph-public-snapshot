@@ -181,6 +181,15 @@ export const Events = {
 	ReposPageVideoButton_Clicked: new LoggableEvent("ReposPageVideoButtonClicked", EventCategories.Dashboard, EventActions.Click),
 	ReposPageContactButton_Clicked: new LoggableEvent("ReposPageContactButtonClicked", EventCategories.Dashboard, EventActions.Click),
 
+	// Signup
+	SignupStage_Initiated: new LoggableEvent("SignupStageInitiated", EventCategories.Onboarding, EventActions.Toggle),
+	SignupPlan_Selected: new LoggableEvent("SignupPlanSelected", EventCategories.Onboarding, EventActions.Click),
+	SignupUserDetails_Completed: new LoggableEvent("SignupUserDetailsCompleted", EventCategories.Onboarding, EventActions.Success),
+	SignupOrg_Selected: new LoggableEvent("SignupOrgSelected", EventCategories.Onboarding, EventActions.Click),
+	SignupInfo_Completed: new LoggableEvent("SignupInfoCompleted", EventCategories.Onboarding, EventActions.Success),
+	SignupEnterpriseForm_Completed: new LoggableEvent("SignupEnterpriseFormCompleted", EventCategories.Onboarding, EventActions.Success),
+	AfterSignupModal_Completed: new LoggableEvent("AfterSignupModalCompleted", EventCategories.GTM, EventActions.Success),
+
 	// Onboarding
 	OnboardingRefsCoachCTA_Clicked: new LoggableEvent("ReferencesCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
 	OnboardingJ2DCoachCTA_Clicked: new LoggableEvent("JumpToDefCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
@@ -201,9 +210,6 @@ export const Events = {
 
 	// ReEngagement
 	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
-
-	// GTM
-	AfterSignupModal_Completed: new LoggableEvent("AfterSignupModalCompleted", EventCategories.GTM, EventActions.Success),
 
 	// Code view
 	// Code view: Symbol events

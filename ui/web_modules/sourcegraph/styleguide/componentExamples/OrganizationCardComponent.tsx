@@ -8,11 +8,7 @@ export function OrganizationCardComponent(): JSX.Element {
 
 		<Panel hoverLevel="low">
 			<div style={{ padding: whitespace[4] }}>
-				<Heading level={7} color="gray" style={{ marginBottom: whitespace[3] }}>Default</Heading>
-				<OrganizationCard icon="https://avatars2.githubusercontent.com/u/3979584?v=3&s=200" name="sourcegraph" userCount={12} style={{ marginBottom: whitespace[4] }} />
-
-				<Heading level={7} color="gray" style={{ marginBottom: whitespace[3] }}>With hover state</Heading>
-				<OrganizationCard icon="https://avatars2.githubusercontent.com/u/3979584?v=3&s=200" name="sourcegraph" userCount={12} hover={true} />
+				<OrganizationCard icon="https://avatars2.githubusercontent.com/u/3979584?v=3&s=200" name="sourcegraph" desc="Fast, global, semantic code search & cross-reference engine for developers." style={{ marginBottom: whitespace[4] }} />
 			</div>
 			<hr />
 			<code>

@@ -1,12 +1,11 @@
 import { css } from "glamor";
 import * as React from "react";
-import { Link } from "react-router";
 import { FlexContainer, Heading, Label, Panel } from "sourcegraph/components";
 import { ChevronRight } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
-	desc?: string;
+	select: (plan: PlanType) => () => void;
 }
 
 interface TileProps {
@@ -19,10 +18,13 @@ interface TileProps {
 	onClick?: () => void;
 }
 
-export function PlanSelector({ desc }: Props): JSX.Element {
-	return <div>
-		<p style={{ marginBottom: whitespace[4], textAlign: "center" }}>{desc}</p>
+export type PlanType = "public" | "personal" | "organization" | "enterprise";
+
+export function PlanSelector({ select }: Props): JSX.Element {
+	return <div style={{ padding: whitespace[4] }}>
+		<p style={{ marginBottom: whitespace[4], textAlign: "center", color: colors.blueGrayD1() }}>Choose your plan:</p>
 		<PlanTile
+			onClick={select("personal")}
 			name="Personal"
 			desc="Your personal, private code"
 			label="Sale!"
@@ -30,20 +32,22 @@ export function PlanSelector({ desc }: Props): JSX.Element {
 			salePrice={9}
 			unit="per month" />
 		<PlanTile
+			onClick={select("organization")}
 			name="Organization"
 			desc="One organizaton's private code"
 			label="Free 14-day trial"
 			price={25}
 			unit="per user/mo" />
 		<PlanTile
+			onClick={select("enterprise")}
 			name="Enterprise"
 			desc="Code hosted on premises"
 			price={50}
 			unit="per user/mo" />
 		<p style={{ marginTop: whitespace[4], textAlign: "center" }}>
-			<Link to="/">
+			<a onClick={select("public")}>
 				<strong>Always free for public code <ChevronRight /></strong>
-			</Link>
+			</a>
 		</p>
 	</div>;
 };

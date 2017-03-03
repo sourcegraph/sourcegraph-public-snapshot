@@ -1,5 +1,6 @@
 import { EmailAddr } from "sourcegraph/api/index";
 import { context } from "sourcegraph/app/context";
+import { PlanType } from "sourcegraph/components/PlanSelector";
 import { googleAnalytics } from "sourcegraph/tracking/GoogleAnalyticsWrapper";
 import { hubSpot } from "sourcegraph/tracking/HubSpotWrapper";
 import { intercom } from "sourcegraph/tracking/IntercomWrapper";
@@ -149,6 +150,18 @@ class EventLoggerClass {
 	setUserInvited(invitingUserId: string, invitedToOrg: string): void {
 		telligent.setUserProperty("invited_by_user", invitingUserId);
 		telligent.setUserProperty("org_invite", invitedToOrg);
+	}
+
+	setUserPlan(plan: PlanType): void {
+		telligent.setUserProperty("plan", plan);
+		hubSpot.setHubSpotProperties({ "plan": plan });
+		intercom.setIntercomProperty("plan", plan);
+	}
+
+	setUserPlanOrg(organization: string): void {
+		telligent.setUserProperty("plan_orgs", organization);
+		hubSpot.setHubSpotProperties({ "authed_orgs_github": organization });
+		intercom.setIntercomProperty("plan_orgs", organization);
 	}
 
 	/*

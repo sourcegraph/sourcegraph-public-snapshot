@@ -108,6 +108,17 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IOrganization {
+		__typename: string;
+		name: string;
+		avatarURL: string;
+		description: string;
+		collaborators: number;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IPerson {
 		__typename: string;
 		name: string;
@@ -238,6 +249,6 @@ declare namespace GQL {
 	*/
 	interface IUser {
 		__typename: string;
-		githubOrgs: Array<string>;
+		githubOrgs: Array<IOrganization>;
 	}
 }

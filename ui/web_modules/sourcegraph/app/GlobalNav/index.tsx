@@ -101,7 +101,6 @@ export class GlobalNav extends Container<Props, State> {
 			borderBottom: `1px solid ${colors.blueGray(0.3)}`,
 			boxShadow: `${colors.blueGray(0.1)} 0px 1px 6px 0px`,
 			display: shouldHide ? "none" : "block",
-			zIndex: 100,
 			paddingLeft: whitespace[2],
 			paddingRight: whitespace[2],
 		};
@@ -121,7 +120,7 @@ export class GlobalNav extends Container<Props, State> {
 				{modalName === "menuBeta" &&
 					<BetaSignup location={this.props.location} router={this.context.router} />}
 				{modalName === "afterSignup" &&
-					<AfterSignup location={this.props.location} router={this.context.router} />}
+					<AfterSignup />}
 				{modalName === "demo_video" &&
 					<DemoVideo location={this.props.location} router={this.context.router} />}
 				{modalName === "menuIntegrations" &&

@@ -1,3 +1,4 @@
+import { hover } from "glamor";
 import * as React from "react";
 
 import { Router } from "sourcegraph/app/router";
@@ -7,8 +8,13 @@ import { LocationStateModal } from "sourcegraph/components/Modal";
 import * as styles from "sourcegraph/components/styles/modal.css";
 import { GitHubLogo } from "sourcegraph/components/symbols";
 import { Close } from "sourcegraph/components/symbols/Primaries";
-import { colors } from "sourcegraph/components/utils";
+import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { ghCodeAction } from "sourcegraph/user/Signup";
+
+const dividerSx = {
+	margin: 0,
+	borderColor: colors.blueGrayL2(0.5),
+};
 
 export class Signup extends React.Component<{}, {}> {
 	static contextTypes: React.ValidationMap<any> = {
@@ -19,39 +25,53 @@ export class Signup extends React.Component<{}, {}> {
 
 	render(): JSX.Element {
 		const buttonSx = {
+			marginTop: whitespace[4],
 			padding: 0,
 			textAlign: "left",
 		};
 		const privateCode = ghCodeAction(this.context.router, true);
 		const publicCode = ghCodeAction(this.context.router, false);
 		return <SignupModalContainer modalName="join">
-			<div style={{ padding: 20 }}>
-				To sign up, please authorize with GitHub:
+			<div style={{
+				margin: "auto",
+				maxWidth: 320,
+				padding: `${whitespace[4]} ${whitespace[3]}`,
+				textAlign: "center",
+			}}>
+				To sign up, please authorize <br {...layout.hide.notSm } /> private code with GitHub:
+				{privateCode.form}
+				<Button onClick={privateCode.submit} color="blue" block={true} style={buttonSx}>
+					<span style={{
+						background: colors.blueD2(0.4),
+						display: "inline-block",
+						padding: whitespace[2],
+					}}>
+						<GitHubLogo width={24} />
+					</span>
+					<span style={{
+						marginLeft: whitespace[3],
+						marginRight: whitespace[3],
+					}}>Authorize with GitHub</span>
+				</Button>
+				<p style={{ color: colors.blueGrayL1() }}>or</p>
+				{publicCode.form}
+				<a onClick={publicCode.submit}>Only authorize public code</a>
 			</div>
-			{privateCode.form}
-			<Button onClick={privateCode.submit} color="blue" style={buttonSx}>
-				<GitHubLogo style={{ padding: 10, background: colors.blueD2() }} />
-				<span style={{ paddingLeft: 10, paddingRight: 20 }}>Authorize with GitHub</span>
-			</Button>
-			<div style={{ color: colors.gray(.8) }}>
-				or
+			<hr style={dividerSx} />
+			<div style={{ padding: "1.5rem", textAlign: "center" }}>
+				Already have an account? <LocationStateToggleLink href="/login" modalName="login" location={location}>
+					Log in
+				</LocationStateToggleLink>
 			</div>
-			{publicCode.form}
-			<a onClick={publicCode.submit}>Only authorize public code</a>
-			<hr style={{ marginLeft: -30, marginRight: -30, marginBottom: 20 }} />
-			Already have an account? <LocationStateToggleLink href="/login" modalName="login" location={location}>
-				Log in
-			</LocationStateToggleLink>
 		</SignupModalContainer>;
 	}
 }
 
 const sx = {
-	maxWidth: "420px",
+	maxWidth: 500,
 	marginLeft: "auto",
 	marginRight: "auto",
 	padding: 0,
-	textAlign: "center",
 };
 
 interface Props {
@@ -75,16 +95,20 @@ export class SignupModalContainer extends React.Component<Props, {}> {
 	render(): JSX.Element {
 		return <LocationStateModal modalName={this.props.modalName} sticky={this.props.sticky}>
 			<div className={styles.modal} style={sx}>
-				<div style={{ padding: 15, fontWeight: 800, textAlign: "left" }}>
-					Sign up
-					{!this.props.sticky && <a style={{ float: "right" }} onClick={this.close}>
-						<Close style={{ color: colors.black(.5) }} />
+				<div style={{ padding: `${whitespace[3]} 0` }}>
+					<strong style={{ marginLeft: "1.5rem" }}>Sign up</strong>
+					{!this.props.sticky && <a onClick={this.close}
+						{...hover({ color: `${colors.blueGray()} !important` }) }
+						style={{
+							color: colors.blueGrayL1(),
+							float: "right",
+							padding: `0 ${whitespace[3]}`,
+						}}>
+						<Close width={24} />
 					</a>}
 				</div>
-				<hr style={{ margin: 0 }} />
-				<div style={{ padding: 30, paddingTop: 0 }}>
-					{this.props.children}
-				</div>
+				<hr style={dividerSx} />
+				{this.props.children}
 			</div>
 		</LocationStateModal>;
 	}
