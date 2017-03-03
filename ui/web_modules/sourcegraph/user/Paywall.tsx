@@ -5,7 +5,7 @@ import { FlexContainer, Toast } from "sourcegraph/components/";
 import { No, Warning } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
 
-const sales = <a href="mailto:sales@sourcegraph.com">sales@sourcegraph.com</a>;
+const sales = <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>;
 
 export function Paywall(err: Error): JSX.Element {
 	if (!err.message.match(/(account blocked)|(trial expired)/)) {
