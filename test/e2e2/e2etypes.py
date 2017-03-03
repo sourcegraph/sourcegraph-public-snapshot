@@ -169,6 +169,12 @@ class Driver(object):
     def hover_token(self, token_text, lang="go"):
         ActionChains(self.d).move_to_element(self.find_token(token_text, lang=lang)).perform()
 
+    def hover_token_with_retry(self, token_text, condition, **kw):
+        def tryOnce():
+            self.hover_token(token_text)
+            wait_for(condition,  **{k: kw[k] for k in ('max_wait', 'wait_incr', 'text') if k in kw.keys()})
+        retry(tryOnce, **{k: kw[k] for k in ('attempts', 'cooldown') if k in kw.keys()})
+
     def hover_elem(self, elem):
         ActionChains(self.d).move_to_element(elem).perform()
 

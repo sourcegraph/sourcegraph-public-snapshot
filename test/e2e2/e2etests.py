@@ -124,8 +124,8 @@ def test_golden_workflow(d):
 
     # Hover over "NewRouter" token
     wait_for(lambda: len(d.find_tokens("NewRouter")) > 0, 10)
-    retry(lambda: d.hover_token("NewRouter"))
-    wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0])[1].text)
+    d.hover_token_with_retry("NewRouter",
+                             lambda: 'NewRouter' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0])[1].text)
 
     # Open NewRouter in InfoBar
     retry(lambda: d.find_token("NewRouter").click())
