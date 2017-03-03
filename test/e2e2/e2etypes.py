@@ -38,7 +38,7 @@ def logf(s, *args):
 # seconds. Its behavior is similar to Selenium's WebDriverWait and it's
 # easier to use. This function should be called from e2etests, but NOT
 # by methods in the Driver class.
-def wait_for(condition, max_wait=2.0, wait_incr=0.1, text=""):
+def wait_for(condition, max_wait=3.0, wait_incr=0.1, text=""):
     if len(text) > 0:
         text = '"%s"' % text
 
@@ -260,7 +260,7 @@ class Driver(object):
         main_window = self.d.current_window_handle
         wait_for(lambda: len(self.d.window_handles) == 2, max_wait=5.0)
         retry(lambda: self.d.switch_to.window(self.d.window_handles[1]))
-        wait_for(lambda: self.d.current_url == location, max_wait=7.0)
+        wait_for(lambda: self.d.current_url == location, max_wait=10.0)
         self.d.close()
         retry(lambda: self.d.switch_to.window(main_window))
 
