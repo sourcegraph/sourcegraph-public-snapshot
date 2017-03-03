@@ -374,11 +374,11 @@ def test_java_def(dr):
     wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
     click_with_retry(dr.find_token("TestFailure", lang="java"),
                      lambda: len(wd.find_elements_by_id("reference-tree")) == 1, max_wait=15)
-    # Click "Throwables" token
+    # Click "Throwables" token and wait until side panel reloaded.
     wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
-    retry(lambda: dr.find_token("Throwables", lang="java").click())
-    # Wait until side panel reloaded.
-    wait_for(lambda: 'Throwables' in wd.find_elements_by_id("reference-tree")[0].text, 15)
+    click_with_retry(dr.find_token("Throwables", lang="java"),
+                     lambda: 'Throwables' in wd.find_elements_by_id("reference-tree")[0].text,
+                     max_wait=15)
     # Click "Jump to definition"
     dr.find_jump_to_definition_button().click()
     # Wait for URL to change
@@ -397,9 +397,10 @@ def test_java_cross_repo(dr):
     # Scroll to "AbstractCollection"
     page_down_until(wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
                     lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0)
-    retry(lambda: dr.find_token("AbstractCollection", lang="java").click())
-    # Wait until side panel reloaded.
-    wait_for(lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text, 15)
+    # Click "AbstractCollection" and wait until side panel reloaded
+    click_with_retry(dr.find_token("AbstractCollection", lang="java"),
+                     lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text,
+                     max_wait=15)
     # Click "Jump to definition"
     dr.find_jump_to_definition_button().click()
     # Wait for URL to change
@@ -416,9 +417,9 @@ def test_java_global_usages(dr):
     # Scroll to "Test"
     page_down_until(wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
                     lambda: len(dr.find_tokens("Test", lang="java")) > 0)
-    retry(lambda: dr.find_token("Test", lang="java").click())
-    # Wait until side panel reloaded.
-    wait_for(lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text, 15)
+    click_with_retry(dr.find_token("Test", lang="java"),
+                     lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text,
+                     max_wait=15)
     # Wait for references to load + un-expand the "Local" references
     wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
