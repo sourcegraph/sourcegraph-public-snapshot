@@ -88,8 +88,9 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 		if (event.target.nodeName === "INPUT" || isNonMonacoTextArea(event.target) || event.metaKey || event.ctrlKey) {
 			return;
 		}
-		const SlashKeyCode = 191;
-		if (!event.shiftKey && (event.key === "/" || event.keyCode === SlashKeyCode)) {
+		const slashKeyCode = 191;
+		const escapeKeyCode = 27;
+		if (!event.shiftKey && (event.key === "/" || event.key === "Escape" || event.keyCode === slashKeyCode || event.keyCode === escapeKeyCode)) {
 			quickopen();
 			event.preventDefault();
 		}
