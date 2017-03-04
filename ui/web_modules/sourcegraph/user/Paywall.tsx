@@ -4,6 +4,7 @@ import { context } from "sourcegraph/app/context";
 import { FlexContainer, Toast } from "sourcegraph/components/";
 import { No, Warning } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 
 const sales = <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>;
 
@@ -11,6 +12,7 @@ export function Paywall(err: Error): JSX.Element {
 	if (!err.message.match(/(account blocked)|(trial expired)/)) {
 		return <div />;
 	}
+	EventLogger.logViewEvent("ViewPaywall", location.pathname, {});
 	return <FlexContainer direction="top-bottom" style={{ flex: "1 1 auto" }}>
 		<Toast isDismissable={false} color="gray" style={{ flex: "0 0 auto" }}>
 			<No color={colors.orangeL1()} width={24} style={{ marginRight: whitespace[3] }} />
@@ -39,6 +41,7 @@ export function TrialEndingWarning({ layout, repo }: {
 		return <div />;
 	}
 	const daysLeft = new Date(msUntilExpiration).getUTCDate() - 1;
+	EventLogger.logViewEvent("ViewTrialExpirationBanner", location.pathname, { daysLeft });
 	let timeLeft: string;
 	switch (daysLeft) {
 		case 0: timeLeft = "today"; break;
