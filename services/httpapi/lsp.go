@@ -34,8 +34,9 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
 	conn, err := websocketUpgrader.Upgrade(getHijacker(w), r, nil)
 	if err != nil {
+		log.Printf("websocket upgrade failed: %s", err)
 		proxyFailed.WithLabelValues("upgrade").Inc()
-		http.Error(w, "upgrade to WebSocket failed", http.StatusInternalServerError)
+		// HTTP response has already been written by Upgrade
 		return
 	}
 
@@ -70,8 +71,9 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 
 	serverNetConn, err := dialLSPProxy(ctx)
 	if err != nil {
+		log.Printf("connecting to LSP server failed: %s", err)
 		proxyFailed.WithLabelValues("dial").Inc()
-		http.Error(w, "connecting to LSP server failed", http.StatusBadGateway)
+		// HTTP response has already been written by Upgrade
 		return
 	}
 	proxy.server = &xclient{Client: &xlang.Client{
