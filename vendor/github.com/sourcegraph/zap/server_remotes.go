@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/zap/internal/pkg/backoff"
 )
 

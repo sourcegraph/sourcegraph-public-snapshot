@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/zap/internal/pkg/pathutil"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/gitutil"

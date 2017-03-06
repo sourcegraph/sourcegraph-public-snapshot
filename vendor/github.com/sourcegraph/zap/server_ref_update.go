@@ -10,7 +10,7 @@ import (
 	"time"
 
 	logpkg "github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"

@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/internal/pkg/mutexmap"
 	"github.com/sourcegraph/zap/server/refdb"

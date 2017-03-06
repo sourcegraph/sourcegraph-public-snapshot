@@ -214,6 +214,11 @@ func (r RefIdentifier) String() string {
 	return r.Repo + ":" + r.Ref
 }
 
+// RefListParams contains the parameters for the "ref/list" request.
+type RefListParams struct {
+	Repo string `json:"repo"` // the repo to watch
+}
+
 // RefBaseInfo describes what a ref is based on.
 type RefBaseInfo struct {
 	// GitBase is the git commit ID that all subsequent ops are based

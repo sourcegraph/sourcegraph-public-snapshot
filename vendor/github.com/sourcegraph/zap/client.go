@@ -176,6 +176,15 @@ func (c *Client) RepoWatch(ctx context.Context, params RepoWatchParams) error {
 	return c.c.Call(ctx, "repo/watch", params, nil)
 }
 
+// RepoList sends the "repo/list" request to the server.
+func (c *Client) RepoList(ctx context.Context) ([]string, error) {
+	var r []string
+	if err := c.c.Call(ctx, "repo/list", nil, &r); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
 // RefConfigure sends the "ref/configure" request to the server.
 func (c *Client) RefConfigure(ctx context.Context, params RefConfigureParams) error {
 	return c.c.Call(ctx, "ref/configure", params, nil)
@@ -202,9 +211,9 @@ func (c *Client) RefInfo(ctx context.Context, params RefIdentifier) (*RefInfoRes
 }
 
 // RefList sends the "ref/list" request to the server.
-func (c *Client) RefList(ctx context.Context) ([]RefInfo, error) {
+func (c *Client) RefList(ctx context.Context, params RefListParams) ([]RefInfo, error) {
 	var r []RefInfo
-	if err := c.c.Call(ctx, "ref/list", nil, &r); err != nil {
+	if err := c.c.Call(ctx, "ref/list", params, &r); err != nil {
 		return nil, err
 	}
 	return r, nil

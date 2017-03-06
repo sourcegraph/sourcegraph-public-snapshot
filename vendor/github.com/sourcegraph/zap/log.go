@@ -6,23 +6,23 @@ import (
 	"strconv"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/go-kit/kit/log/term"
 )
 
-var logAllowLevel []string
+var logLevelOpt level.Option
 
 func init() {
 	logLevel := os.Getenv("LOGLEVEL")
 	switch logLevel {
 	case "debug":
-		logAllowLevel = level.AllowAll()
+		logLevelOpt = level.AllowAll()
 	case "info":
-		logAllowLevel = level.AllowInfoAndAbove()
+		logLevelOpt = level.AllowInfo()
 	case "warn":
-		logAllowLevel = level.AllowWarnAndAbove()
+		logLevelOpt = level.AllowWarn()
 	case "", "error":
-		logAllowLevel = level.AllowErrorOnly()
+		logLevelOpt = level.AllowError()
 	default:
 		fmt.Fprintf(os.Stderr, "error: unknown log level %q (valid levels are: %v)\n", logLevel, level.AllowAll())
 		os.Exit(1)
@@ -57,7 +57,7 @@ func (s *Server) baseLogger() *log.Context {
 	}
 
 	logger0 := term.NewLogger(w, log.NewLogfmtLogger, colorFn)
-	logger0 = level.New(logger0, level.Allowed(logAllowLevel))
+	logger0 = level.NewFilter(logger0, logLevelOpt)
 	logger1 := log.NewContext(logger0)
 	if v, _ := strconv.ParseBool(os.Getenv("LOGTIMESTAMP")); os.Getenv("LOGTIMESTAMP") == "" || v {
 		// By default include timestamps, but adjust behaviour if LOGTIMESTAMP is specified.

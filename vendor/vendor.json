@@ -167,6 +167,12 @@
 			"revisionTime": "2017-02-10T04:40:37Z"
 		},
 		{
+			"checksumSHA1": "vKJtv/ce4b4ZeTbhKoZDoFqt24Y=",
+			"path": "github.com/go-kit/kit/log/level",
+			"revision": "bd066f4fef4ea0d3123fc56bb6b5953d3e5b8075",
+			"revisionTime": "2017-03-05T18:43:24Z"
+		},
+		{
 			"checksumSHA1": "JR9aYgbjMFAnQzkuDjx+mCpE+dU=",
 			"path": "github.com/go-kit/kit/log/term",
 			"revision": "a59216a7ce3200b6ba0c05ee8b6da44b852833ce",
@@ -670,70 +676,70 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "8fW4XCEsHAMCcv+ZE1qV2f46wt0=",
+			"checksumSHA1": "pXsWVgzsk66u11KC9y9V8Eh9E7o=",
 			"path": "github.com/sourcegraph/zap",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "ITvpzEsRzvzYgJ69rzrtc58zi38=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/backoff",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "rRZY48ZMS87E6pxb7S6nkj14Nk0=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/mutexmap",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "YpsVVNJOIGAtv7HIgr5Ji43eTOg=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/pathutil",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "FdF0a1LNOclJ/itk/QC5YFFipvc=",
 			"path": "github.com/sourcegraph/zap/ot",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "3hObMli55ZextZWDmjWrGpKcQdo=",
 			"path": "github.com/sourcegraph/zap/pkg/config",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "UDyC+FOsK4HsGB7pbVc4jLqxQOs=",
 			"path": "github.com/sourcegraph/zap/pkg/diff",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
-			"checksumSHA1": "G7rm5rL1zCnNGPvX0dvYm/AmurU=",
+			"checksumSHA1": "uqKwC8V1QzIJMPR0FbCzS+7Npsg=",
 			"path": "github.com/sourcegraph/zap/pkg/git",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "yniU2WAS3Nj/PlwLMkPwFvrg2RY=",
 			"path": "github.com/sourcegraph/zap/pkg/gitutil",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"checksumSHA1": "BA0FH4dp/xaH+TKI022DK3ekgdA=",
 			"path": "github.com/sourcegraph/zap/server/refdb",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
-			"checksumSHA1": "59nykFDj0XbiMdL80G+ZDAcMTsg=",
+			"checksumSHA1": "e1Dhu9jObVPl4YdQDxXs2ul51WE=",
 			"path": "github.com/sourcegraph/zap/ws",
-			"revision": "7263e2aaa68a8d352af732976cd0e0fec7486b6b",
-			"revisionTime": "2017-03-02T19:44:03Z"
+			"revision": "0c1104ca048b65ba28fccdf4cb6a7bfd021cacc6",
+			"revisionTime": "2017-03-04T20:40:23Z"
 		},
 		{
 			"path": "github.com/sqs/fileset",

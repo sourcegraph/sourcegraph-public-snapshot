@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
 )
@@ -301,44 +301,50 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		return nil, nil
 
 	case "ref/list":
+		if req.Params == nil {
+			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+		}
+		var params RefListParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		log = log.With("repo", params.Repo)
+
+		repo, err := c.server.getRepo(ctx, log, params.Repo)
+		if err != nil {
+			return nil, err
+		}
+
+		refs := c.refsInRepo(params.Repo, repo)
+		if refs == nil {
+			refs = []RefInfo{} // marshal to [] JSON even if empty
+		}
+
+		sort.Sort(sortableRefInfos(refs))
+		return refs, nil
+
+	case "repo/list":
 		if req.Params != nil && string(*req.Params) != "null" {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
 		if !c.server.IsPrivate {
 			return nil, &jsonrpc2.Error{
 				Code:    jsonrpc2.CodeInvalidRequest,
-				Message: "ref/list not allowed on shared server",
+				Message: "repo/list not allowed on shared server",
 			}
 		}
 		c.server.reposMu.Lock()
 		defer c.server.reposMu.Unlock()
-		refs := []RefInfo{} // marshal to [] JSON even if empty
-		for repoName, repo := range c.server.repos {
-			for _, ref := range repo.refdb.List("*") {
-				info := RefInfo{RefIdentifier: RefIdentifier{Repo: repoName, Ref: ref.Name}}
-				if ref.IsSymbolic() {
-					info.Target = ref.Target
-				} else {
-					release := repo.acquireRef(ref.Name)
-					refObj := ref.Object.(serverRef)
-					info.GitBase = refObj.gitBase
-					info.GitBranch = refObj.gitBranch
-					info.Rev = refObj.rev()
-					release()
-				}
-
-				watchers := c.server.watchers(RefIdentifier{Repo: repoName, Ref: ref.Name})
-				info.Watchers = make([]string, len(watchers))
-				for i, wc := range watchers {
-					info.Watchers[i] = wc.init.ID
-				}
-				sort.Strings(info.Watchers)
-
-				refs = append(refs, info)
-			}
+		reposMap := map[string]struct{}{}
+		for repoName := range c.server.repos {
+			reposMap[repoName] = struct{}{}
 		}
-		sort.Sort(sortableRefInfos(refs))
-		return refs, nil
+		repos := make([]string, 0, len(reposMap))
+		for repo := range reposMap {
+			repos = append(repos, repo)
+		}
+		sort.Strings(repos)
+		return repos, nil
 
 	case "ref/info":
 		if req.Params == nil {
@@ -543,6 +549,34 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not found: %q", req.Method)}
 	}
+}
+
+// refsInRepo returns all references in the given repo.
+func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
+	var refs []RefInfo
+	for _, ref := range repo.refdb.List("*") {
+		info := RefInfo{RefIdentifier: RefIdentifier{Repo: repoName, Ref: ref.Name}}
+		if ref.IsSymbolic() {
+			info.Target = ref.Target
+		} else {
+			release := repo.acquireRef(ref.Name)
+			refObj := ref.Object.(serverRef)
+			info.GitBase = refObj.gitBase
+			info.GitBranch = refObj.gitBranch
+			info.Rev = refObj.rev()
+			release()
+		}
+
+		watchers := c.server.watchers(RefIdentifier{Repo: repoName, Ref: ref.Name})
+		info.Watchers = make([]string, len(watchers))
+		for i, wc := range watchers {
+			info.Watchers[i] = wc.init.ID
+		}
+		sort.Strings(info.Watchers)
+
+		refs = append(refs, info)
+	}
+	return refs
 }
 
 // Close closes the connection. The connection may not be used after
