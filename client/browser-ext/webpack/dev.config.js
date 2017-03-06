@@ -10,7 +10,8 @@ module.exports = {
 	entry: {
 		background: path.join(__dirname, '../chrome/extension/background.tsx'),
 		inject: path.join(__dirname, '../chrome/extension/inject.tsx'),
-		phabricator: path.join(__dirname, '../phabricator/phabricator.tsx')
+		sgdev: path.join(__dirname, '../phabricator/sgdev/sgdev.tsx'),
+		umami: path.join(__dirname, '../phabricator/umami/umami.tsx')
 	},
 	output: {
 		path: path.join(__dirname, '../dev/js'),

@@ -2,7 +2,7 @@
  * set the event logger before anything else proceeds, to avoid logging events before we have it set.
  */
 import { ExtensionEventLogger } from "../../app/tracking/ExtensionEventLogger";
-import { eventLogger, setEventLogger, setSourcegraphUrl } from "../../app/utils/context";
+import { eventLogger, setEventLogger, setPhabricatorInstance, setSourcegraphUrl } from "../../app/utils/context";
 setEventLogger(new ExtensionEventLogger());
 
 import { getDomain } from "../../app/utils";
@@ -10,6 +10,8 @@ import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
 import { Domain } from "../../app/utils/types";
 import { injectGitHubApplication } from "./inject_github";
 import { injectPhabricatorApplication } from "./inject_phabricator";
+
+import { SGDEV_SOURCEGRAPH_URL, sgDevPhabricatorInstance } from "../../phabricator/sgdev/constants";
 
 /**
  * Main entry point into browser extension.
@@ -23,7 +25,8 @@ function injectApplication(loc: Location): void {
 			injectGitHubApplication();
 			break;
 		case Domain.SGDEV_PHABRICATOR:
-			setSourcegraphUrl("http://node.aws.sgdev.org:30000");
+			setSourcegraphUrl(SGDEV_SOURCEGRAPH_URL);
+			setPhabricatorInstance(sgDevPhabricatorInstance);
 			injectPhabricatorApplication();
 			break;
 		case Domain.SOURCEGRAPH:

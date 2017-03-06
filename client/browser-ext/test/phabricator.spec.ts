@@ -3,8 +3,10 @@ import "fetch-mock";
 import * as jsdom from "jsdom";
 import * as utils from "../app/utils";
 import * as annotations from "../app/utils/annotations";
+import { setPhabricatorInstance } from "../app/utils/context";
 import * as phabricator from "../app/utils/phabricator";
 import { CodeCell, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorMode } from "../app/utils/types";
+import { securePhabricatorInstance } from "../phabricator/secure/constants";
 
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
@@ -22,7 +24,7 @@ function setupDOM(url: string): (done: any) => void {
 describe("Phabricator DOM", () => {
 	describe("diffusion view", () => {
 		const url = "https://secure.phabricator.com/diffusion/ARC/browse/master/src/__phutil_library_init__.php";
-		phabricator.setPhabricatorInstance(phabricator.securePhabricatorInstance);
+		setPhabricatorInstance(securePhabricatorInstance);
 		before(setupDOM(url));
 
 		it("diffusion state variables", () => {
@@ -38,7 +40,7 @@ describe("Phabricator DOM", () => {
 
 	describe("differential view", () => {
 		const url = "https://secure.phabricator.com/rARCc13e5a629535f460ca1a16d0bfe6d95f43b70b78";
-		phabricator.setPhabricatorInstance(phabricator.securePhabricatorInstance);
+		setPhabricatorInstance(securePhabricatorInstance);
 		before(setupDOM(url));
 
 		it("diffusion state variables", () => {

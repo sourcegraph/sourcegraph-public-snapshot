@@ -1,4 +1,6 @@
+import { PhabricatorInstance } from "../../app/utils/classes";
 import { CodeCell, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorCodeCell, PhabricatorMode, PhabUrl } from "../../app/utils/types";
+import { phabricatorInstance } from "./context";
 
 function getRevFromPage(): string | null {
 	const shaPattern = /r([0-9A-z]+)([0-9a-f]{40})/;
@@ -381,60 +383,3 @@ export function getPhabricatorUsername(): string | null {
 	}
 	return null;
 }
-
-/**
- * The phabricator UX has no way to map from phabricator repo nickname to git address.
- * As a result, we need to hardcode these in. There are two nickname type devices that phabricator
- * uses in it's URLs, shortname and nickname. This is why there are some duplicates, like uzap and uberzap.
- */
-const sgdevPhabricatorRepoMap = {
-	"thyme": "sourcegraph-thyme",
-	"uzap": "uber-zap",
-	"uberzap": "uber-zap",
-	"kubernetes": "kubernetes",
-	"kube": "kubernetes",
-	"jaeger": "uber-jaeger",
-	"angular": "angular",
-	"joda": "joda-time",
-	"jodatime": "joda-time",
-	"jaegerjava": "uber-jaeger-java",
-	"spray": "uber-kafka-spraynozzle",
-	"kafkaspraynozzle": "uber-kafka-spraynozzle",
-	"jrides": "uber-rides-java-sdk",
-	"uberridesjava": "uber-rides-java-sdk",
-	"krest": "uber-kafka-rest",
-	"kafkarest": "uber-kafka-rest",
-	"broke": "broken-test",
-};
-
-const SGDEV_PHAB_SOURCEGRAPH_URL = "http://node.aws.sgdev.org:30000";
-const PHABRICATOR_STAGING_URI = "phabricator-staging";
-
-export class PhabricatorInstance {
-	constructor(private uriToRepoUrlMapping: { [key: string]: string; }, private phabStagingUri: string, public sourcegraphUrl: string) { }
-
-	getPhabricatorRepoFromMap(repoUri: string): string | undefined {
-		repoUri = repoUri.toLowerCase();
-		return this.uriToRepoUrlMapping[repoUri];
-	}
-
-	getStagingRepoUriFromRepoUrl(repoUrl: string) {
-		return this.phabStagingUri;
-	}
-
-}
-
-export const sgDevPhabricatorInstance = new PhabricatorInstance(sgdevPhabricatorRepoMap, PHABRICATOR_STAGING_URI, SGDEV_PHAB_SOURCEGRAPH_URL);
-
-export let phabricatorInstance = sgDevPhabricatorInstance;
-
-export function setPhabricatorInstance(instance: PhabricatorInstance): void {
-	phabricatorInstance = instance;
-}
-
-const securePhabricatorMap = {
-	"arcanist": "github.com/phacility/arcanist",
-	"arc": "github.com/phacility/arcanist",
-};
-
-export const securePhabricatorInstance = new PhabricatorInstance(securePhabricatorMap, "", "");

@@ -1,5 +1,6 @@
 import { EventLogger } from "../tracking/EventLogger";
 import { ExtensionEventLogger } from "../tracking/ExtensionEventLogger";
+import { PhabricatorInstance } from "./classes";
 
 export let eventLogger: EventLogger;
 
@@ -17,4 +18,10 @@ export function setSourcegraphUrl(url: string): void {
 		console.error(`event logger is being set twice, currently is ${sourcegraphUrl} and being set to ${url}`);
 	}
 	sourcegraphUrl = url;
+}
+
+export let phabricatorInstance: PhabricatorInstance;
+
+export function setPhabricatorInstance(instance: PhabricatorInstance): void {
+	phabricatorInstance = instance;
 }
