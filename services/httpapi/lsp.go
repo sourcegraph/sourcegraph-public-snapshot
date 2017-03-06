@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"go.uber.org/atomic"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -55,7 +54,6 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	builder.AddField("client", "ws")
 	builder.AddField("user_agent", r.UserAgent())
 	if actor := auth.ActorFromContext(ctx); actor != nil {
-		log15.Info("LSP: user connected", "login", actor.Login, "uid", actor.UID)
 		builder.AddField("uid", actor.UID)
 		builder.AddField("login", actor.Login)
 		builder.AddField("email", actor.Email)
