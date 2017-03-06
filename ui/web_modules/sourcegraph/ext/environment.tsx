@@ -17,6 +17,7 @@ class BrowserEnvironment implements IEnvironment {
 	private docAtBase: Map<string, string> = new Map<string, string>(); // simulated doc at base commit (before ops)
 	private _zapRef: string;
 	private _isRunning: boolean;
+	private _prevZapRef: string | undefined;
 
 	constructor() {
 		// Track the initial contents of documents so we can revert.
@@ -60,6 +61,17 @@ class BrowserEnvironment implements IEnvironment {
 		this._zapRef = ref;
 		this.zapRefChangeEmitter.fire(ref);
 		vscode.commands.executeCommand("zap.reference.change", ref);
+	}
+
+	get prevZapRef(): string | undefined {
+		// In vscode, the Zap ref is always HEAD because vscode
+		// accesses the file system, and the file system is (by
+		// definition) HEAD.
+		return this._prevZapRef;
+	}
+
+	set prevZapRef(ref: string | undefined) {
+		this._prevZapRef = ref;
 	}
 
 	get zapBranch(): string { return this._zapRef; }
