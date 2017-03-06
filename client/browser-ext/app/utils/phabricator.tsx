@@ -75,17 +75,6 @@ function getParentFromRevisionPage(): string | null {
 	return null;
 }
 
-/**
- * mapPhabUriToSourcegraphRepoUrl converts a phabricator URI, which is totally uncorrelated from the underlying CVS, to the CVS URI.
- */
-function mapPhabUriToRepoUri(phabRepoURI: string): string | undefined {
-	return phabricatorInstance.getPhabricatorRepoFromMap(phabRepoURI);
-}
-
-function mapRepoUriToPhabStagingUri(repoUri: string): string | undefined {
-	return phabricatorInstance.getStagingRepoUriFromRepoUrl(repoUri);
-}
-
 const PHAB_DIFFUSION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(source|diffusion)\/([A-Za-z0-9]+)\/browse\/([A-Za-z0-9]+)\/(.*)/i;
 const PHAB_DIFFERENTIAL_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(D[0-9]+)/i;
 const PHAB_REVISION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/r([0-9A-z]+)([0-9a-f]{40})/i;
@@ -103,9 +92,9 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			branch: diffusionMatches[7],
 			path: diffusionMatches[8],
 		};
-		const sourcegraphUri = mapPhabUriToRepoUri(match.repoUri);
+		const sourcegraphUri = phabricatorInstance.getPhabricatorRepoFromMap(match.repoUri);
 		if (!sourcegraphUri) {
-			console.error(`could not map ${sourcegraphUri} to a valid github address.`);
+			console.error(`could not map ${match.repoUri} to a valid git repository location.`);
 			return null;
 		}
 		let phabricatorMode: PhabricatorMode | null = null;
@@ -148,12 +137,12 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 		if (!diffId) {
 			console.error(`diff id not found on page.`);
 		}
-		const repoUrl = mapPhabUriToRepoUri(phabURI);
+		const repoUrl = phabricatorInstance.getPhabricatorRepoFromMap(phabURI);
 		if (!repoUrl) {
 			console.error(`repository name ${repoUrl} could not be mapped to a URL.`);
 			return null;
 		}
-		const stagingUrl = mapRepoUriToPhabStagingUri(repoUrl);
+		const stagingUrl = phabricatorInstance.getStagingRepoUriFromRepoUrl(repoUrl);
 		if (!stagingUrl) {
 			console.error(`repository url ${stagingUrl} could not be mapped to a Phabricator staging URL, required for differential views.`);
 			return null;
@@ -177,7 +166,7 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			repoUri: revisionMatch[5],
 			rev: revisionMatch[6],
 		};
-		const repoURI = mapPhabUriToRepoUri(match.repoUri);
+		const repoURI = phabricatorInstance.getPhabricatorRepoFromMap(match.repoUri);
 		if (!repoURI) {
 			console.error(`did not successfully map ${match.repoUri} to repository uri.`);
 			return null;
