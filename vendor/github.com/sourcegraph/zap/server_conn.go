@@ -310,6 +310,13 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		}
 		log = log.With("repo", params.Repo)
 
+		if params.Repo == "" {
+			return nil, &jsonrpc2.Error{
+				Code:    jsonrpc2.CodeInvalidParams,
+				Message: "ref/list requires repo to be specified",
+			}
+		}
+
 		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err

@@ -68,7 +68,7 @@
     "date-fns": "^1.27.0",
     "glamor": "2.20.8",
     "isomorphic-fetch": "2.2.1",
-    "libzap": "^0.0.53",
+    "libzap": "^0.0.70",
     "lodash": "4.17.2",
     "object-hash": "^1.1.5",
     "raven-js": "3.8.1",
@@ -81,7 +81,7 @@
     "string_score": "0.1.22",
     "url": "0.11.0",
     "uuid": "^3.0.1",
-    "vscode-zap": "^0.0.53"
+    "vscode-zap": "^0.0.70"
   },
   "scripts": {
     "postinstall": "(cd scripts/tsmapimports/ && yarn install)",
