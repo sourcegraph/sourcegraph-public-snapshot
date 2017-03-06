@@ -121,7 +121,6 @@ module.exports = {
 			"native-keymap": "sourcegraph/workbench/overrides/native-keymap",
 			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
 			"vs/workbench/browser/parts/editor/noTabsTitleControl": "sourcegraph/workbench/overrides/titleControl",
-			"vs/workbench/parts/output/browser/outputServices": "sourcegraph/workbench/overrides/outputServices",
 
 			// In the vscode source, this is "vs/platform/node/package", but here the "node" path component is omitted for some reason.
 			"vs/platform/package": "sourcegraph/workbench/overrides/package",

@@ -2,29 +2,49 @@ import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { RawText } from "vs/editor/common/model/textModel";
 import { IModelService } from "vs/editor/common/services/modelService";
-import { IResolveContentOptions } from "vs/platform/files/common/files";
+import { IFileService, IResolveContentOptions } from "vs/platform/files/common/files";
 import { ConfirmResult } from "vs/workbench/common/editor";
 import { TextFileService } from "vs/workbench/services/textfile/browser/textFileService";
 import { IRawTextContent, IResult, ISaveOptions, ITextFileEditorModel, ITextFileEditorModelManager, ITextFileOperationResult, SaveReason } from "vs/workbench/services/textfile/common/textfiles";
 
-import { toBaseStat } from "sourcegraph/workbench/overrides/fileService";
+import { IConfigurationService } from "vs/platform/configuration/common/configuration";
+import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
+import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
+import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { IBackupModelService } from "vs/workbench/services/backup/common/backup";
+import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
+import { IUntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
+
+import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
+import { IMessageService } from "vs/platform/message/common/message";
+import { IWindowsService } from "vs/platform/windows/common/windows";
+import { IBackupFileService } from "vs/workbench/services/backup/common/backup";
+import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
+
 import { Services } from "sourcegraph/workbench/services";
 
 export class GitTextFileService extends TextFileService {
 	public models: ITextFileEditorModelManager;
 
-	public resolveTextContent(resource: URI, options?: IResolveContentOptions): TPromise<IRawTextContent> {
-		// todo: We should use the ITextModelResolverService instead of directly referencing models here. @kingy
-		let currentModel = this.models.get(resource);
-		if (currentModel) {
-			const modelService = Services.get(IModelService);
-			return TPromise.as({
-				...toBaseStat(resource),
-				value: RawText.fromString(currentModel.getValue(), modelService.getCreationOptions()),
-				encoding: currentModel.getEncoding(),
-			});
-		}
+	constructor(
+		@ILifecycleService lifecycleService: ILifecycleService,
+		@IWorkspaceContextService contextService: IWorkspaceContextService,
+		@IConfigurationService configurationService: IConfigurationService,
+		@ITelemetryService telemetryService: ITelemetryService,
+		@IWorkbenchEditorService editorService: IWorkbenchEditorService,
+		@IFileService fileService: IFileService,
+		@IUntitledEditorService untitledEditorService: IUntitledEditorService,
+		@IInstantiationService instantiationService: IInstantiationService,
+		@IMessageService messageService: IMessageService,
+		@IBackupFileService backupFileService: IBackupFileService,
+		@IWindowsService windowsService: IWindowsService,
+		@IEditorGroupService editorGroupService: IEditorGroupService,
+		@IBackupModelService backupModelService: IBackupModelService,
+	) {
+		super(lifecycleService, contextService, configurationService, telemetryService, editorGroupService, fileService, untitledEditorService, instantiationService, backupModelService, messageService);
+	}
 
+	public resolveTextContent(resource: URI, options?: IResolveContentOptions): TPromise<IRawTextContent> {
 		return this.fileService.resolveContent(resource, options).then(content => {
 			const modelService = Services.get(IModelService);
 			return {

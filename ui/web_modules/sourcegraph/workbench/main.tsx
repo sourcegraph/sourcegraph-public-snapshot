@@ -16,12 +16,12 @@ import "vs/workbench/parts/quickopen/browser/quickopen.contribution";
 import "vs/workbench/parts/search/browser/search.contribution";
 import "vs/workbench/parts/search/browser/searchViewlet";
 
-import { start as startTappingOutputChannel } from "sourcegraph/workbench/outputListener";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMode } from "vs/editor/common/modes";
 import { IModeService } from "vs/editor/common/services/modeService";
+import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import "vs/workbench/electron-browser/main.contribution";
@@ -31,6 +31,7 @@ import { ITextFileService } from "vs/workbench/services/textfile/common/textfile
 
 import { init as initExtensionHost } from "sourcegraph/ext/main";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
+import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 import { setupServices } from "sourcegraph/workbench/services";
 import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 
@@ -54,18 +55,14 @@ export function init(domElement: HTMLDivElement, resource: URI): [Workbench, Ser
 		services,
 	);
 	workbench.startup();
-
-	// HACK: overwritten by workbench.startup()
 	services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
-
+	services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
 	// HACK: get URI's filename in fragment, not in URI path component
 	(TextFileEditorModel.prototype as any).getOrCreateMode = function (modeService: IModeService, preferredModeIds: string, firstLineText?: string): TPromise<IMode> {
 		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
 	};
 
 	initExtensionHost(workspace);
-
-	instantiationService.invokeFunction(startTappingOutputChannel);
 
 	configurePostStartup(services);
 	workbenchListeners.forEach(cb => cb(true));

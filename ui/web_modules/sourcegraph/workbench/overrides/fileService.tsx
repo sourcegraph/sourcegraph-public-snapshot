@@ -1,6 +1,3 @@
-import * as includes from "lodash/includes";
-import * as without from "lodash/without";
-import { renderFileEditor } from "sourcegraph/editor/config";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IBaseStat, IContent, IFileStat, IResolveContentOptions, IResolveFileOptions, IStreamContent, IUpdateContentOptions } from "vs/platform/files/common/files";
@@ -9,14 +6,9 @@ import { IEventService } from "vs/platform/event/common/event";
 import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { LocalFileChangeEvent } from "vs/workbench/services/textfile/common/textfiles";
 
-import { WorkspaceOp, compose, isFilePath, stripFileOrBufferPathPrefix } from "libzap/lib/ot/workspace";
-
-import { abs, getRouteParams } from "sourcegraph/app/routePatterns";
 import { URIUtils } from "sourcegraph/core/uri";
 import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
-import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
-import { OutputListener } from "sourcegraph/workbench/outputListener";
 
 /**
  * Both of these caches will last until a hard navigation or refresh. We will
@@ -42,7 +34,6 @@ const workspaceFiles: Map<string, string[]> = new Map();
 // file content. File content is resolved using the modelResolver, which uses
 // contentLoader.tsx.
 export class FileService {
-	private zapFileService: ZapFileService;
 	private workspace: IWorkspace;
 
 	constructor(
@@ -51,32 +42,26 @@ export class FileService {
 	) {
 		this.eventService = eventService;
 		this.workspace = contextService.getWorkspace();
+	}
 
-		if (Features.zap.isEnabled()) {
-			this.zapFileService = new ZapFileService();
-			OutputListener.subscribe("zapFileTree", (msg: string) => {
-				const data = JSON.parse(msg);
-				if (data.reset) {
-					this.zapFileService.reset(data);
-					this.refreshTree();
-				} else {
-					this.onReceiveOp(JSON.parse(msg));
-				}
-			});
-		}
+	createFile(resource: URI, content: string = ""): TPromise<IFileStat> {
+		contentCache.set(resource.toString(), content);
+		return this.updateContent(resource, content).then(result => {
+			fileStatCache.set(resource.toString(), result);
+			const { repo, rev } = URIUtils.repoParams(this.workspace.resource);
+			const key = repo + rev;
+			let currentFiles = workspaceFiles.get(key) || [];
+			workspaceFiles.set(key, currentFiles.concat(resource.fragment));
+			return result;
+		});
+	}
+
+	public touchFile(resource: URI): TPromise<IFileStat> {
+		return this.createFile(resource);
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
 		return getFilesCached(resource).then(files => {
-			if (Features.zap.isEnabled()) {
-				// TODO(renfred): figure out how to take advantage of the stat cache with zap files.
-				files = this.zapFileService.updateTree(this.workspace.resource, files.slice());
-			} else {
-				const cachedStat = fileStatCache.get(resource.toString(true));
-				if (cachedStat) {
-					return cachedStat;
-				}
-			}
 			const fileStat = toFileStat(resource, files);
 			fileStatCache.set(resource.toString(true), fileStat);
 			return fileStat;
@@ -84,6 +69,25 @@ export class FileService {
 	}
 
 	resolveContent(resource: URI, options?: IResolveContentOptions): TPromise<IContent> {
+		if (resource.scheme === "zap") {
+			let zapResource = resource.with({ scheme: "git" });
+			this.touchFile(zapResource).then(() => this.refreshTree());
+			resource = zapResource;
+		}
+
+		// contentCache acts like watchFileChanges in that it is set the first time when fetching content from 
+		// fetchContentAndResolveRev. It is updated when updateContent is called.
+		// This behavior mimicks watchFileChanges which is used by VSCode to watch for content changes at the filesystem level.
+		// We will need to build on this to handle renaming and moving files so their changes are reflected in the tree.
+		const contents = contentCache.get(resource.toString());
+		if (contents) {
+			return TPromise.wrap({
+				...toBaseStat(resource),
+				value: contents,
+				encoding: "utf8",
+			});
+		}
+
 		return TPromise.wrap(fetchContentAndResolveRev(resource)).then(({ content }) => {
 			return {
 				...toBaseStat(resource),
@@ -94,119 +98,48 @@ export class FileService {
 	}
 
 	resolveStreamContent(resource: URI, options?: IResolveContentOptions): TPromise<IStreamContent> {
-		return this.resolveContent(resource, options).then(content => ({
-			...content,
-			value: {
-				on: (event: string, callback: Function): void => {
-					if (event === "data") {
-						callback(content.value);
+		return this.resolveContent(resource, options).then(content => {
+			return ({
+				...content,
+				value: {
+					on: (event: string, callback: Function): void => {
+						if (event === "data") {
+							callback(content.value);
+						}
+						if (event === "end") {
+							callback();
+						}
 					}
-					if (event === "end") {
-						callback();
-					}
-				}
-			},
-		}));
+				},
+			});
+		});
 	}
 
 	existsFile(resource: URI): TPromise<boolean> {
-		return getFilesCached(resource).then(files => {
-			if (Features.zap.isEnabled()) {
-				files = this.zapFileService.updateTree(this.workspace.resource, files.slice());
-			}
-			const path = resource.fragment;
-			return Boolean(files.find(file => file === path));
-		});
+		return this.resolveFile(resource).then(() => true, () => false);
+	}
+
+	private resolve(resource: URI, options: IResolveFileOptions = Object.create(null)): TPromise<IFileStat> {
+		return this.toStatResolver(resource)
+			.then(model => model.resolve(options));
+	}
+
+	private toStatResolver(resource: URI): TPromise<StatResolver> {
+		let time = new Date().getTime();
+		return TPromise.as(new StatResolver(resource, false, time, 1, false));
 	}
 
 	// Stubbed implementation to handle updating the configuration from the VSCode extension
 	public updateContent(resource: URI, value: string, options: IUpdateContentOptions = Object.create(null)): TPromise<IFileStat> {
-		return TPromise.as({ isDirectory: true, hasChildren: false });
-	}
-
-	public onReceiveOp(op: WorkspaceOp): void {
-		this.zapFileService.apply(this.workspace.resource, op);
-		this.refreshTree();
+		return this.resolve(resource).then((fileStat) => {
+			contentCache.set(resource.toString(), value);
+			return fileStat;
+		});
 	}
 
 	public refreshTree(): void {
 		// Use this event to trigger the refresh of the file tree in ExplorerView.
 		this.eventService.emit("files.internal:fileChanged", new LocalFileChangeEvent());
-	}
-}
-
-class ZapFileService {
-	private state: WorkspaceOp;
-
-	public apply(resource: URI, op: WorkspaceOp): void {
-		const initial = !this.state;
-		if (initial) {
-			this.state = op;
-		} else {
-			this.state = compose(this.state, op);
-		}
-
-		if (this.state.create) {
-			for (const f of this.state.create) {
-				const resourceKey = resource.with({ fragment: stripFileOrBufferPathPrefix(f) }).toString();
-				let content = "";
-				if (this.state.edit && this.state.edit[f]) {
-					if (this.state.edit[f].length > 1 || typeof this.state.edit[f][0] !== "string") {
-						throw new Error(`updateTree: initial edit op for ${f} should only contain one insert`);
-					}
-					content = this.state.edit[f][0] as string;
-				}
-				// Use the content cache to store the inital content of the file.
-				// TODO use TextDocumentService instead to enable editing capabilities.
-				contentCache.set(resourceKey, content);
-			}
-		}
-		if (this.state.delete) {
-			for (const f of this.state.delete) {
-				if (isFilePath(f)) {
-					const resourceKey = resource.with({ fragment: stripFileOrBufferPathPrefix(f) }).toString();
-					contentCache.delete(resourceKey);
-				}
-			}
-		}
-
-		if (initial) {
-			// After the first op, check to see if the current location is a file that
-			// was created by zap. If so reload the editor with that file set as the
-			// resource.
-			const location = URI.parse(window.location.href);
-			const params = getRouteParams(abs.blob, location.path);
-			if (params.splat.length < 2) { return; }
-			const path = params.splat[1];
-			if (this.state.create && includes(this.state.create, `/${path}`)) {
-				resource = resource.with({ fragment: path });
-				renderFileEditor(resource, null);
-			}
-		}
-	}
-
-	public reset(history?: WorkspaceOp): void {
-		this.state = history || {};
-	}
-
-	public updateTree(resource: URI, files: string[]): string[] {
-		if (!this.state) { return files; }
-
-		if (this.state.create) {
-			for (const f of this.state.create) {
-				if (isFilePath(f)) {
-					files.push(stripFileOrBufferPathPrefix(f));
-				}
-			}
-		}
-		if (this.state.delete) {
-			for (const f of this.state.delete) {
-				if (isFilePath(f)) {
-					files = without(files, f);
-				}
-			}
-		}
-		return files;
 	}
 }
 
@@ -310,4 +243,58 @@ export function getFilesCached(resource: URI): TPromise<string[]> {
 		workspaceFiles.set(key, files);
 		return files;
 	});
+}
+
+export class StatResolver {
+	private resource: URI;
+	private isDirectory: boolean;
+	private mtime: number;
+	private name: string;
+	private etag: string;
+	private size: number;
+	private verboseLogging: boolean;
+
+	constructor(resource: URI, isDirectory: boolean, mtime: number, size: number, verboseLogging: boolean) {
+
+		this.resource = resource;
+		this.isDirectory = isDirectory;
+		this.mtime = mtime;
+		this.name = resource.fsPath;
+		this.etag = resource.toString();
+		this.size = size;
+
+		this.verboseLogging = verboseLogging;
+	}
+
+	public resolve(options: IResolveFileOptions): TPromise<IFileStat> {
+
+		// General Data
+		const fileStat: IFileStat = {
+			resource: this.resource,
+			isDirectory: this.isDirectory,
+			hasChildren: undefined as any,
+			name: this.name,
+			etag: this.etag,
+			size: this.size,
+			mtime: this.mtime
+		};
+
+		// File Specific Data
+		if (!this.isDirectory) {
+			return TPromise.as(fileStat);
+		} else {
+			// Convert the paths from options.resolveTo to absolute paths
+			let absoluteTargetPaths: string[] = null as any;
+			if (options && options.resolveTo) {
+				absoluteTargetPaths = [];
+				options.resolveTo.forEach(resource => {
+					absoluteTargetPaths.push(resource.fsPath);
+				});
+			}
+
+			return new TPromise((c, e) => {
+				c(fileStat);
+			});
+		}
+	}
 }

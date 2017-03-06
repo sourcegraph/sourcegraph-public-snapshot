@@ -3,7 +3,6 @@ import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { StaticServices } from "vs/editor/browser/standalone/standaloneServices";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IBackupService } from "vs/platform/backup/common/backup";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
@@ -24,7 +23,6 @@ import { IWorkspaceConfigurationService } from "vs/workbench/services/configurat
 import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
 import { MessageService } from "vs/workbench/services/message/electron-browser/messageService";
 import { IPartService } from "vs/workbench/services/part/common/partService";
-import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
@@ -35,11 +33,10 @@ import { ConfigurationService, WorkspaceConfigurationService } from "sourcegraph
 import { EnvironmentService } from "sourcegraph/workbench/environmentService";
 import { ExtensionService } from "sourcegraph/workbench/extensionService";
 import { FileService } from "sourcegraph/workbench/overrides/fileService";
-import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 import { SearchService } from "sourcegraph/workbench/searchService";
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
-import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
+import { IBackupFileService } from "vs/workbench/services/backup/common/backup";
 
 export let Services: ServicesAccessor;
 
@@ -75,7 +72,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(IWindowsService, DummyService);
 	set(IIntegrityService, IntegrityService);
 	set(IBackupService, BackupService);
-	set(IFileService, FileService);
+	set(IBackupFileService, function (): void { /* noop */ } as any);
 
 	set(IThemeService, ThemeService);
 	set(IWindowIPCService, DummyService);
@@ -86,18 +83,16 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 
 	const editorPart = instantiationService.createInstance(EditorPart, "workbench.parts.editor", false);
 	services.set(IEditorGroupService, editorPart);
-
-	set(ITextFileService, GitTextFileService);
-	set(ITextModelResolverService, TextModelResolverService);
 	set(IConfigurationService, ConfigurationService);
 	set(IWorkspaceConfigurationService, WorkspaceConfigurationService);
 	set(IThreadService, MainThreadService);
 	set(IExtensionService, ExtensionService);
 	set(ISearchService, SearchService);
-
 	// These services are depended on by the extension host but are
 	// not actually used yet.
 	set(ITreeExplorerService, function (): void { /* noop */ } as any);
+
+	set(IFileService, FileService);
 
 	Services = services;
 

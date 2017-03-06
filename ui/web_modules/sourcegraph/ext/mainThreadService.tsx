@@ -86,7 +86,6 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 			}
 			return remoteCom.callOnRemote(proxyId, path, args);
 		};
-
 		switch (proxyId) {
 			case "eExtHostLanguageFeatures":
 				switch (path) {
