@@ -207,8 +207,12 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
 		let codeCell: HTMLTableDataCellElement; // the actual cell that has code inside; each row contains multiple columns
 		let isAddition: boolean | undefined;
 		let isDeletion: boolean | undefined;
-		line = parseInt(row.cells[0].children[0].textContent as string, 10);
-		codeCell = row.cells[1];
+		let isBlameEnabled = false;
+		if (row.cells[0].classList.contains("diffusion-blame-link")) {
+			isBlameEnabled = true;
+		}
+		line = parseInt(row.cells[isBlameEnabled ? 2 : 0].children[0].textContent as string, 10);
+		codeCell = row.cells[isBlameEnabled ? 3 : 1];
 		if (!codeCell) {
 			continue;
 		}
