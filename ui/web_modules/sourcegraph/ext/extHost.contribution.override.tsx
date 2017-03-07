@@ -48,6 +48,9 @@ export class ExtHostContribution implements IWorkbenchContribution {
 			if (ctor === MainThreadMessageService && localStorage.getItem("logExtensionHostCommunication") === null) {
 				// only open debugger console in development mode
 				(service as MainThreadMessageService).disable();
+			} else if (ctor === MainThreadOutputService && localStorage.getItem("logExtensionHostCommunication") === null) {
+				// only open debugger console in development mode
+				(service as MainThreadOutputService).disable();
 			}
 			return service;
 		};
