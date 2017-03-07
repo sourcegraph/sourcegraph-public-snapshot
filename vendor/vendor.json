@@ -15,10 +15,10 @@
 			"revisionTime": "2017-02-14T17:46:59Z"
 		},
 		{
-			"checksumSHA1": "XeG94RjA9o/0wo9Fuw6NSRGYnjk=",
+			"checksumSHA1": "CkFNRGzfUC7uSgO4umgW6WNO7FU=",
 			"path": "github.com/NYTimes/gziphandler",
-			"revision": "63027b26b87e2ae2ce3810393d4b81021cfd3a35",
-			"revisionTime": "2016-04-19T20:25:41Z"
+			"revision": "fb3533722e14198abe471546c9798fd556531451",
+			"revisionTime": "2017-03-07T16:06:19Z"
 		},
 		{
 			"path": "github.com/beorn7/perks/quantile",
@@ -123,6 +123,12 @@
 			"path": "github.com/facebookgo/muster",
 			"revision": "fd3d7953fd52354a74b9f6b3d70d0c9650c4ec2a",
 			"revisionTime": "2015-07-08T23:28:44Z"
+		},
+		{
+			"checksumSHA1": "pVFtdo7/2C9WPUpTyyUHs5/GRWE=",
+			"path": "github.com/felixge/httpsnoop",
+			"revision": "287b56e9e314227d3113c7c6b434d31aec68089d",
+			"revisionTime": "2016-11-25T08:56:00Z"
 		},
 		{
 			"checksumSHA1": "nmc2qcdbg17Ny8tHeEDQuphV6jA=",

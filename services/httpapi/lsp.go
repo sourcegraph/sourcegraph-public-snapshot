@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gorilla/websocket"
 	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -25,21 +27,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-func serveLSP(w http.ResponseWriter, r *http.Request) {
-	// 🚨 SECURITY: This endpoint relies on cookie based authentication. 🚨
-	// websocketUpgrader.Upgrade handles checking the origin header so
-	// that this endpoint is not vulnerable to CSRF like attacks.
-	//
-	// You can read more about this security issue here:
-	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	conn, err := websocketUpgrader.Upgrade(getHijacker(w), r, nil)
-	if err != nil {
-		log.Printf("websocket upgrade failed: %s", err)
-		proxyFailed.WithLabelValues("upgrade").Inc()
-		// HTTP response has already been written by Upgrade
-		return
-	}
+var websocketUpgrader = websocket.Upgrader{}
 
+func serveLSP(w http.ResponseWriter, r *http.Request) {
+	var err error
 	ctx := r.Context()
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP session")
@@ -60,6 +51,56 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 		builder.AddField("email", actor.Email)
 	}
 
+	// Connect to server before upgrading to websocket connection. This is
+	// so we can return BadGateway if our gateway is down. Otherwise we
+	// would have to do some sort of custom response on the websocket
+	// connection.
+	serverNetConn, err := dialLSPProxy(ctx)
+	if err != nil {
+		proxyFailed.WithLabelValues("dial").Inc()
+		http.Error(w, "connecting to LSP server failed", http.StatusBadGateway)
+		return
+	}
+
+	// 🚨 SECURITY: This endpoint relies on cookie based authentication. 🚨
+	// websocketUpgrader.Upgrade handles checking the origin header so
+	// that this endpoint is not vulnerable to CSRF like attacks.
+	//
+	// You can read more about this security issue here:
+	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
+	conn, err := websocketUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		proxyFailed.WithLabelValues("upgrade").Inc()
+		// We do not need to do http.Error, since the
+		// websocketUpgrader will do it for us.
+		return
+	}
+
+	// Our peer is the user in the browser. As such we can get lots of
+	// interesting close responses from them. We instrument how a
+	// connection is closed by the peer. We also normalise it to prevent
+	// noise in the jsonrpc2 pkg.
+	closeHandler := conn.CloseHandler()
+	conn.SetCloseHandler(func(code int, text string) error {
+		// Instrument why we closed
+		span.SetTag("ws.closeerror.code", code)
+		span.SetTag("ws.closeerror.text", text)
+		wsCloseError.WithLabelValues(strconv.Itoa(code)).Inc()
+
+		// Call the wrapped default close handler
+		err := closeHandler(code, text)
+		if err != nil {
+			return err
+		}
+
+		// jsonrpc2 "unwraps" this as an io.ErrUnexpectedEOF. We want
+		// to treat all websocket.CloseErrors as unexpected.
+		return &websocket.CloseError{
+			Code: websocket.CloseAbnormalClosure,
+			Text: io.ErrUnexpectedEOF.Error(),
+		}
+	})
+
 	proxy := &jsonrpc2Proxy{
 		httpCtx: ctx,
 		mode:    atomic.NewString(""),
@@ -68,14 +109,6 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleClientRequest)))
-
-	serverNetConn, err := dialLSPProxy(ctx)
-	if err != nil {
-		log.Printf("connecting to LSP server failed: %s", err)
-		proxyFailed.WithLabelValues("dial").Inc()
-		// HTTP response has already been written by Upgrade
-		return
-	}
 	proxy.server = &xclient{Client: &xlang.Client{
 		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleServerRequest))),
 	}}
@@ -282,13 +315,22 @@ func dialLSPProxy(ctx context.Context) (net.Conn, error) {
 	return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
 }
 
-var proxyFailed = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "xlang",
-	Name:      "websocket_proxy_failed",
-	Help:      "Total number of failures in the xlang websocket gateway.",
-}, []string{"why"})
+var (
+	proxyFailed = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "websocket_proxy_failed",
+		Help:      "Total number of failures in the xlang websocket gateway.",
+	}, []string{"why"})
+	wsCloseError = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "websocket_close_error",
+		Help:      "Total number of websocket close errors received.",
+	}, []string{"code"})
+)
 
 func init() {
 	prometheus.MustRegister(proxyFailed)
+	prometheus.MustRegister(wsCloseError)
 }

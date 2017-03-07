@@ -9,6 +9,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -48,7 +49,6 @@ func init() {
 // Middleware captures and exports metrics to Prometheus, etc.
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		start := time.Now()
 		ctx := r.Context()
 
 		wireContext, err := opentracing.GlobalTracer().Extract(
@@ -73,29 +73,20 @@ func Middleware(next http.Handler) http.Handler {
 		user := ""
 		ctx = context.WithValue(ctx, userKey, &user)
 
-		rwIntercept := &ResponseWriterStatusIntercept{ResponseWriter: rw}
-		next.ServeHTTP(rwIntercept, r.WithContext(ctx))
-
-		// If the code is zero, the inner Handler never explicitly called
-		// WriterHeader. We can assume the response code is 200 in such a case
-		code := rwIntercept.Code
-		if code == 0 {
-			code = 200
-		}
+		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
 
 		// route name is only known after the request has been handled
 		span.SetOperationName("Serve: " + routeName)
 		span.SetTag("Route", routeName)
-		ext.HTTPStatusCode.Set(span, uint16(code))
+		ext.HTTPStatusCode.Set(span, uint16(m.Code))
 
-		duration := time.Now().Sub(start)
 		labels := prometheus.Labels{
 			"route":  routeName,
 			"method": strings.ToLower(r.Method),
-			"code":   strconv.Itoa(code),
+			"code":   strconv.Itoa(m.Code),
 			"repo":   repotrackutil.GetTrackedRepo(r.URL.Path),
 		}
-		requestDuration.With(labels).Observe(duration.Seconds())
+		requestDuration.With(labels).Observe(m.Duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
 		log15.Debug("TRACE HTTP",
@@ -106,8 +97,9 @@ func Middleware(next http.Handler) http.Handler {
 			"userAgent", r.UserAgent(),
 			"user", user,
 			"xForwardedFor", r.Header.Get("X-Forwarded-For"),
-			"code", code,
-			"duration", duration,
+			"written", m.Written,
+			"code", m.Code,
+			"duration", m.Duration,
 		)
 	})
 }
@@ -152,18 +144,3 @@ func SetRouteName(r *http.Request, routeName string) {
 		*p = routeName
 	}
 }
-
-// ResponseWriterStatusIntercept implements the http.ResponseWriter interface
-// so we can intercept the status that we can otherwise not access
-type ResponseWriterStatusIntercept struct {
-	http.ResponseWriter
-	Code int
-}
-
-// WriteHeader saves the code and then delegates to http.ResponseWriter
-func (r *ResponseWriterStatusIntercept) WriteHeader(code int) {
-	r.Code = code
-	r.ResponseWriter.WriteHeader(code)
-}
-
-var _ http.ResponseWriter = (*ResponseWriterStatusIntercept)(nil)

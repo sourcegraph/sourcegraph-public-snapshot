@@ -36,5 +36,5 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 	proxy.Dialer = &d
 
 	// Forward to zap server.
-	proxy.ServeHTTP(getHijacker(w), r)
+	proxy.ServeHTTP(w, r)
 }
