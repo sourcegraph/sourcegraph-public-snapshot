@@ -34,7 +34,11 @@ func Mount(mux *http.ServeMux) {
 			defer f.Close()
 		}
 		if err == nil {
-			w.Header().Set("Cache-Control", "max-age=31556926, public")
+			if isPhabricatorAsset(r.URL.Path) {
+				w.Header().Set("Cache-Control", "max-age=300, public")
+			} else {
+				w.Header().Set("Cache-Control", "max-age=25200, public")
+			}
 		}
 
 		fs.ServeHTTP(w, r)
@@ -43,4 +47,17 @@ func Mount(mux *http.ServeMux) {
 
 func init() {
 	baseURL = &url.URL{Path: "/.assets"}
+}
+
+func isPhabricatorAsset(path string) {
+	if string.Contains(path, "phabricator.bundle.js") {
+		return true
+	}
+	if string.Contains(path, "sgdev.bundle.sj") {
+		return true
+	}
+	if string.Contains(path, "umami.bundle.sj") {
+		return true
+	}
+	return false
 }
