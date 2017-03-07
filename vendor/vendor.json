@@ -682,6 +682,12 @@
 			"revisionTime": "2017-03-07T19:36:45Z"
 		},
 		{
+			"checksumSHA1": "TiDx71Ctm4B+Iihd0io+giTB6cI=",
+			"path": "github.com/sourcegraph/zap/internal/pkg/notify",
+			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
+			"revisionTime": "2017-03-07T19:36:45Z"
+		},
+		{
 			"checksumSHA1": "YpsVVNJOIGAtv7HIgr5Ji43eTOg=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/pathutil",
 			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
