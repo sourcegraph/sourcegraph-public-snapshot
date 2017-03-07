@@ -34,5 +34,5 @@ const bgColors = {
 };
 
 const patterns = {
-	"objects": `${context.assetsRoot}img/backgrounds/pattern.svg`,
+	"objects": `${context.assetsRoot}/img/backgrounds/pattern.svg`,
 };
