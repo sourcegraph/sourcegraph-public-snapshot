@@ -15,7 +15,6 @@ import { prettifyRev } from "sourcegraph/workbench/utils";
 
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 	private _onDidOpenEditor: Emitter<URI> = new Emitter<URI>();
-	private _diffMode: boolean = false;
 
 	public openEditor(data: IResourceInput, options?: any): TPromise<IEditor>;
 	public openEditor(data: IEditorInput, options?: any): TPromise<IEditor>;
@@ -64,11 +63,6 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		if (!data) {
 			data = { resource: mainResource };
 		}
-		if (data.resource) {
-			this._diffMode = false;
-		} else if (data.modifiedInput) {
-			this._diffMode = true;
-		}
 
 		this._onDidOpenEditor.fire(mainResource);
 
@@ -101,10 +95,6 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 			return TPromise.as((this as any).createFileInput(resource)); // access superclass's private method
 		}
 		return super.createInput(data);
-	}
-
-	get diffMode(): boolean {
-		return this._diffMode;
 	}
 
 	public onDidOpenEditor: Event<URI> = this._onDidOpenEditor.event;
