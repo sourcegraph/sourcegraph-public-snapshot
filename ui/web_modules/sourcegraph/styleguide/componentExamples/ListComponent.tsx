@@ -1,15 +1,12 @@
 import * as React from "react";
-import { Code, Heading, List, Panel, Table } from "sourcegraph/components";
+import { List, Panel } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { whitespace } from "sourcegraph/components/utils";
 
 export class ListComponent extends React.Component<{}, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb2}>Lists</Heading>
-
+			<div>
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 
@@ -35,27 +32,6 @@ export class ListComponent extends React.Component<{}, any> {
 							}
 						</pre>
 					</code>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>itemStyle</Code></td>
-								<td><Code>undefined</Code></td>
-								<td>
-									<Code>undefined</Code>, <Code>style object</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
 				</Panel>
 			</div>
 		);

@@ -1,7 +1,6 @@
 import * as React from "react";
-import { Code, Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
+import { Heading, Panel, TabItem, TabPanel, TabPanels, Tabs } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -14,9 +13,7 @@ export class HeadingsComponent extends React.Component<{}, State> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb2}>Headings</Heading>
-
+			<div>
 				<Tabs>
 					<TabItem
 						active={this.state.activeExample === 0}>
@@ -154,48 +151,6 @@ export class HeadingsComponent extends React.Component<{}, State> {
 							</code>
 						</TabPanel>
 					</TabPanels>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>level</Code></td>
-								<td><Code>3</Code></td>
-								<td>
-									<Code>1</Code>, <Code>2</Code>, <Code>3</Code>, <Code>4</Code>, <Code>5</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>color</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>purple</Code>, <Code>blue</Code>, <Code>green</Code>, <Code>orange</Code>, <Code>gray</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>underline</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>blue</Code>, <Code>purple</Code>, <Code>white</Code>, <Code>orange</Code>, <Code>green</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>align</Code></td>
-								<td><Code>null (inherits from parent)</Code></td>
-								<td>
-									<Code>left</Code>, <Code>right</Code>, <Code>center</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
 				</Panel>
 			</div>
 		);

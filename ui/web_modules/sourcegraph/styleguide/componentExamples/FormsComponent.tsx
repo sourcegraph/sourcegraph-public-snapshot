@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Code, Heading, Input, Panel, Select, Table } from "sourcegraph/components";
+import { Input, Panel, Select } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
 
@@ -15,9 +15,7 @@ export class FormsComponent extends React.Component<{}, State> {
 	render(): JSX.Element | null {
 		return (
 
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb2}>Forms</Heading>
-
+			<div>
 				<Panel hoverLevel="low">
 
 					<div className={base.pa4}>
@@ -84,41 +82,6 @@ export class FormsComponent extends React.Component<{}, State> {
 							}
 						</pre>
 					</code>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>color</Code></td>
-								<td><Code>green</Code></td>
-								<td>
-									<Code>green</Code>, <Code>purple</Code>, <Code>blue</Code>, <Code>orange</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>steps</Code></td>
-								<td><Code>[null, null, null]</Code></td>
-								<td>
-									An <Code>array</Code> of <Code>null</Code> or <Code>string</Code> values
-								</td>
-							</tr>
-							<tr>
-								<td><Code>stepsComplete</Code></td>
-								<td><Code>0</Code></td>
-								<td>
-									Any positive integer that is less than or equal to length of array passed to the <Code>steps</Code> prop
-								</td>
-							</tr>
-						</tbody>
-					</Table>
 				</Panel>
 			</div>
 		);

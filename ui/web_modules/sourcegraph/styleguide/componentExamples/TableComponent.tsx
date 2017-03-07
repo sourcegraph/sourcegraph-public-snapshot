@@ -1,7 +1,6 @@
 import * as React from "react";
-import { Code, Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
+import { Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -14,9 +13,7 @@ export class TableComponent extends React.Component<{}, State> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb2}>Table</Heading>
-
+			<div>
 				<Tabs>
 					<TabItem
 						active={this.state.activeExample === 0}>
@@ -193,27 +190,6 @@ export class TableComponent extends React.Component<{}, State> {
 							</code>
 						</TabPanel>
 					</TabPanels>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>tableStyle</Code></td>
-								<td><Code>default</Code></td>
-								<td>
-									<Code>default</Code>, <Code>bordered</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
 				</Panel>
 			</div>
 		);
