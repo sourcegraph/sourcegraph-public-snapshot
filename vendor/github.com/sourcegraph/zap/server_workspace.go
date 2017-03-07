@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	logpkg "github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
@@ -20,7 +20,7 @@ import (
 
 // InitWorkspaceServer creates a workspace server on this server to
 // handle workspace/* requests.
-func (s *Server) InitWorkspaceServer(newWorkspace func(ctx context.Context, log *logpkg.Context, dir string) (Workspace, *RepoConfiguration, error)) {
+func (s *Server) InitWorkspaceServer(newWorkspace func(ctx context.Context, logger log.Logger, dir string) (Workspace, *RepoConfiguration, error)) {
 	s.workspaceServer = &workspaceServer{
 		parent:       s,
 		NewWorkspace: newWorkspace,
@@ -32,23 +32,28 @@ var errNotHandled = errors.New("method not handled by server extension")
 // Workspace represents a watched directory tree.
 type Workspace interface {
 	// Apply applies an operation to the workspace.
-	Apply(context.Context, *logpkg.Context, ot.WorkspaceOp) error
+	Apply(context.Context, log.Logger, ot.WorkspaceOp) error
 
 	// Checkout checks out a new Zap branch in the workspace. If a
 	// conflict occurs, an error of type
 	// *WorkspaceCheckoutConflictError is returned describing the
 	// conflict.
 	//
+	// It returns the op equivalent to a1 =
+	// transform(composed(history), currentWorkspaceState). The
+	// returned op should be recorded on the ref by the caller to
+	// Checkout. If keepLocalChanges is false, the op is a noop.
+	//
 	// The updateExternal func is called AFTER ensuring that the
 	// checkout will succeed (i.e., there is no conflict between the
 	// workspace's current worktree and the new branch) and BEFORE
 	// making any modifications to files on disk or Git state.
-	Checkout(ctx context.Context, log *logpkg.Context, keepLocalChanges bool, ref, gitBase, gitBranch string, history []ot.WorkspaceOp, updateExternal func(ctx context.Context) error) error
+	Checkout(ctx context.Context, logger log.Logger, keepLocalChanges bool, ref, gitBase, gitBranch string, history []ot.WorkspaceOp, updateExternal func(ctx context.Context) error) (ot.WorkspaceOp, error)
 
 	// ResetToCurrentState returns a series of ops that, when applied to
 	// the base commit, would yield the exact current workspace state
 	// plus the state of buffered files in bufferFiles.
-	ResetToCurrentState(ctx context.Context, log *logpkg.Context, bufferFiles map[string]string) ([]ot.WorkspaceOp, error)
+	ResetToCurrentState(ctx context.Context, logger log.Logger, bufferFiles map[string]string) ([]ot.WorkspaceOp, error)
 
 	// Configure updates the configuration for the repository and
 	// workspace.
@@ -136,7 +141,7 @@ func (w WorkspaceResetInfo) String() string {
 type workspaceServer struct {
 	parent *Server
 
-	NewWorkspace func(ctx context.Context, log *logpkg.Context, dir string) (Workspace, *RepoConfiguration, error)
+	NewWorkspace func(ctx context.Context, logger log.Logger, dir string) (Workspace, *RepoConfiguration, error)
 }
 
 var mockWorkspaceHandled chan struct{}
@@ -144,7 +149,7 @@ var mockWorkspaceHandled chan struct{}
 func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *serverRepo, w WorkspaceIdentifier, workspace Workspace, ready chan error) {
 	// Create a clean logger, because it will be reused across
 	// requests.
-	log := s.parent.baseLogger().With("watching-workspace", w.Dir)
+	logger := log.With(s.parent.baseLogger(), "watching-workspace", w.Dir)
 
 	loop := func() (err error) {
 		defer func() {
@@ -156,15 +161,15 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 		for {
 			select {
 			case <-ctx.Done():
-				level.Debug(log).Log("done", ctx.Err())
+				level.Debug(logger).Log("done", ctx.Err())
 				return ctx.Err()
 
 			case op, ok := <-workspace.Op():
 				if !ok {
-					return nil
+					return workspace.Err()
 				}
-				log := log.With("op", op.String())
-				level.Info(log).Log()
+				logger := log.With(logger, "op", op.String())
+				level.Info(logger).Log()
 
 				ref, err := repo.refdb.Resolve("HEAD")
 				if err != nil {
@@ -179,7 +184,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 					if err != nil {
 						return err
 					}
-					if err := s.parent.broadcastRefUpdate(ctx, log, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
+					if err := s.parent.broadcastRefUpdate(ctx, logger, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
 						RefIdentifier: w.Ref("HEAD"),
 						Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 						Op:            &op,
@@ -194,10 +199,10 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 
 			case resetInfo, ok := <-workspace.Reset():
 				if !ok {
-					return nil
+					return workspace.Err()
 				}
-				log := log.With("reset", resetInfo)
-				level.Info(log).Log()
+				logger := log.With(logger, "reset", resetInfo)
+				level.Info(logger).Log()
 
 				if resetInfo.Ref == "" {
 					panic("empty ref")
@@ -221,21 +226,22 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 						// if refObj.ot.Apply != nil {
 						// 	panic("Apply func is already set")
 						// }
-						refObj.ot.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
-							return workspace.Apply(ctx, log, op)
+						refObj.ot.Apply = func(logger log.Logger, op ot.WorkspaceOp) error {
+							return workspace.Apply(ctx, logger, op)
 						}
 					}
 
 					// Automatically configure new workspace HEADs
 					// with an upstream.
-					if err := s.parent.automaticallyConfigureRefUpstream(ctx, log, w.Dir, repo, resetInfo.Ref); err != nil {
+					if err := s.parent.automaticallyConfigureRefUpstream(ctx, logger, w.Dir, repo, resetInfo.Ref); err != nil {
 						return err
 					}
+					level.Debug(logger).Log("POST-resetInfo.Overwrite", resetInfo.Overwrite, "config", repo.config)
 					if resetInfo.Overwrite {
 						newRefState := &RefState{
 							RefBaseInfo: resetInfo.RefBaseInfo,
 						}
-						if err := s.parent.handleRefUpdateFromDownstream(ctx, log, repo, RefUpdateUpstreamParams{
+						if err := s.parent.handleRefUpdateFromDownstream(ctx, logger, repo, RefUpdateUpstreamParams{
 							RefIdentifier: w.Ref(resetInfo.Ref),
 							Current:       current,
 							State:         newRefState,
@@ -252,8 +258,8 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 						// if refObj.ot.Apply != nil {
 						// 	panic("Apply func is already set")
 						// }
-						refObj.ot.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
-							return workspace.Apply(ctx, log, op)
+						refObj.ot.Apply = func(logger log.Logger, op ot.WorkspaceOp) error {
+							return workspace.Apply(ctx, logger, op)
 						}
 					}
 
@@ -262,9 +268,9 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 						oldTarget = oldRef.Target
 					}
 					if resetInfo.Ref == oldTarget {
-						level.Warn(log).Log("HEAD-symbolic-ref-already-points-to", resetInfo.Ref)
+						level.Warn(logger).Log("HEAD-symbolic-ref-already-points-to", resetInfo.Ref)
 					}
-					if err := s.parent.handleSymbolicRefUpdate(ctx, log, nil, repo, RefUpdateSymbolicParams{
+					if err := s.parent.handleSymbolicRefUpdate(ctx, logger, nil, repo, RefUpdateSymbolicParams{
 						RefIdentifier: w.Ref("HEAD"),
 						Target:        resetInfo.Ref,
 						OldTarget:     oldTarget,
@@ -284,7 +290,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 
 			case newConfig, ok := <-workspace.ConfigChange():
 				if !ok {
-					return nil
+					return workspace.Err()
 				}
 				repo.mu.Lock()
 				oldConfig := repo.config.deepCopy()
@@ -295,14 +301,14 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 					return err
 				}
 
-				log := log.With("new-config", newConfig, "old-config", oldConfig)
-				level.Info(log).Log()
-				if err := s.parent.applyRepoConfiguration(ctx, log, w.Dir, repo, oldConfig, newConfig); err != nil {
+				logger := log.With(logger, "new-config", newConfig, "old-config", oldConfig)
+				// level.Info(log).Log()
+				if err := s.parent.applyRepoConfiguration(ctx, logger, w.Dir, repo, oldConfig, newConfig); err != nil {
 					return err
 				}
 
 			case <-workspace.CloseNotify():
-				level.Warn(log).Log("close-notified-with-error", workspace.Err())
+				level.Warn(logger).Log("close-notified-with-error", workspace.Err())
 				return workspace.Err()
 			}
 
@@ -317,12 +323,15 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 		if ready != nil {
 			ready <- err
 			close(ready)
+			ready = nil
 		}
 		if err != context.Canceled {
-			level.Error(log).Log("ended-with-error", err)
+			level.Error(logger).Log("ended-with-error", err)
 		}
+	} else if err == nil && ready != nil {
+		panic("ready not yet signaled: " + err.Error())
 	}
-	s.removeWorkspace(log, w, repo)
+	s.removeWorkspace(logger, w, repo)
 }
 
 var (
@@ -336,7 +345,7 @@ type workspaceServerConn struct {
 	parent *serverConn
 }
 
-func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpkg.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log.Logger, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 	ws := c.server.workspaceServer
 
 	if req.Params != nil {
@@ -344,7 +353,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if err := json.Unmarshal(*req.Params, &partialParams); err != nil {
 			panic(err)
 		}
-		log = log.With("ws", partialParams.Dir)
+		logger = log.With(logger, "ws", partialParams.Dir)
 	}
 
 	switch req.Method {
@@ -359,7 +368,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if params.WorkspaceIdentifier == (WorkspaceIdentifier{}) {
 			return nil, errWorkspaceIdentifierRequired
 		}
-		if err := ws.addWorkspace(log, params); err != nil {
+		if err := ws.addWorkspace(logger, params); err != nil {
 			return nil, err
 		}
 		return WorkspaceAddResult{}, nil
@@ -375,11 +384,11 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if params.WorkspaceIdentifier == (WorkspaceIdentifier{}) {
 			return nil, errWorkspaceIdentifierRequired
 		}
-		repo, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier)
+		repo, err := ws.parent.getWorkspaceRepo(ctx, logger, params.WorkspaceIdentifier)
 		if err != nil {
 			return nil, err
 		}
-		err = ws.removeWorkspace(log, params.WorkspaceIdentifier, repo)
+		err = ws.removeWorkspace(logger, params.WorkspaceIdentifier, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -396,7 +405,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if params.WorkspaceIdentifier == (WorkspaceIdentifier{}) {
 			return nil, errWorkspaceIdentifierRequired
 		}
-		if _, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier); err != nil {
+		if _, err := ws.parent.getWorkspaceRepo(ctx, logger, params.WorkspaceIdentifier); err != nil {
 			return nil, err
 		}
 		// TODO(sqs): this is not fully implemented or useful yet
@@ -414,9 +423,9 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 			return nil, errWorkspaceIdentifierRequired
 		}
 
-		log = log.With("checkout-ref", params.Ref)
+		logger = log.With(logger, "checkout-ref", params.Ref)
 
-		repo, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier)
+		repo, err := ws.parent.getWorkspaceRepo(ctx, logger, params.WorkspaceIdentifier)
 		if err != nil {
 			return nil, err
 		}
@@ -442,13 +451,13 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		gitBase := refObj.gitBase
 		gitBranch := refObj.gitBranch
 		history := refObj.history()
-		refObj.ot.Apply = func(log *logpkg.Context, op ot.WorkspaceOp) error {
-			return workspace.Apply(ctx, log, op)
+		refObj.ot.Apply = func(logger log.Logger, op ot.WorkspaceOp) error {
+			return workspace.Apply(ctx, logger, op)
 		}
 
 		updateExternal := func(ctx context.Context) error {
 			if oldTarget != params.Ref {
-				if err := ws.parent.handleSymbolicRefUpdate(ctx, log, c, repo, RefUpdateSymbolicParams{
+				if err := ws.parent.handleSymbolicRefUpdate(ctx, logger, c, repo, RefUpdateSymbolicParams{
 					RefIdentifier: params.WorkspaceIdentifier.Ref("HEAD"),
 					Target:        params.Ref,
 					OldTarget:     oldTarget,
@@ -458,8 +467,22 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 			}
 			return nil
 		}
-		if err := workspace.Checkout(ctx, log, true, params.Ref, gitBase, gitBranch, history, updateExternal); err != nil {
+		recordOp, err := workspace.Checkout(ctx, logger, true, params.Ref, gitBase, gitBranch, history, updateExternal)
+		if err != nil {
 			return nil, err
+		}
+
+		if !recordOp.Noop() {
+			if err := refObj.ot.Record(recordOp); err != nil {
+				return nil, err
+			}
+			if err := ws.parent.broadcastRefUpdate(ctx, logger, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
+				RefIdentifier: params.WorkspaceIdentifier.Ref("HEAD"),
+				Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
+				Op:            &recordOp,
+			}, nil); err != nil {
+				return nil, fmt.Errorf("after checkout, broadcasting ref update: %s", err)
+			}
 		}
 
 		// Ensure local ref matches tracking ref if no history is passed.
@@ -472,7 +495,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 			trackingRefName := "refs/remotes/" + config.Upstream + "/" + params.Ref
 			trackingRef := repo.refdb.Lookup(trackingRefName)
 			if trackingRef != nil {
-				if err := ws.parent.reconcileRefWithTrackingRef(ctx, log, repo, params.WorkspaceIdentifier.Ref("HEAD"), *ref, *trackingRef, config); err != nil {
+				if err := ws.parent.reconcileRefWithTrackingRef(ctx, logger, repo, params.WorkspaceIdentifier.Ref("HEAD"), *ref, *trackingRef, config); err != nil {
 					return nil, err
 				}
 			}
@@ -492,7 +515,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		if err != nil {
 			return nil, err
 		}
-		level.Debug(log).Log("ws", repoName, "will-save-file", relPath)
+		level.Debug(logger).Log("ws", repoName, "will-save-file", relPath)
 		workspace.WillSaveFile(relPath)
 		return nil, nil
 
@@ -508,10 +531,10 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 			return nil, errWorkspaceIdentifierRequired
 		}
 
-		log = log.With("reset-ref", params.Ref)
-		level.Info(log).Log()
+		logger = log.With(logger, "reset-ref", params.Ref)
+		level.Info(logger).Log()
 
-		repo, err := ws.parent.getWorkspaceRepo(ctx, log, params.WorkspaceIdentifier)
+		repo, err := ws.parent.getWorkspaceRepo(ctx, logger, params.WorkspaceIdentifier)
 		if err != nil {
 			return nil, err
 		}
@@ -537,7 +560,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 		repo.mu.Unlock()
 
 		// Synthesize a ref/update operation that resets the workspace.
-		resetOps, err := workspace.ResetToCurrentState(ctx, log, params.BufferFiles)
+		resetOps, err := workspace.ResetToCurrentState(ctx, logger, params.BufferFiles)
 		if err != nil {
 			return nil, err
 		}
@@ -545,7 +568,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 			RefBaseInfo: RefBaseInfo{GitBase: serverRef.gitBase, GitBranch: serverRef.gitBranch},
 			History:     resetOps,
 		}
-		if err := ws.parent.handleRefUpdateFromDownstream(ctx, log, repo, RefUpdateUpstreamParams{
+		if err := ws.parent.handleRefUpdateFromDownstream(ctx, logger, repo, RefUpdateUpstreamParams{
 			RefIdentifier: params.WorkspaceIdentifier.Ref(params.Ref),
 			Force:         true,
 			State:         refState,
@@ -557,20 +580,20 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, log *logpk
 	return nil, errNotHandled
 }
 
-func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddParams) error {
+func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddParams) error {
 	// Allow upgrading a bare repo to a workspace repo.
 	s.parent.reposMu.Lock()
 	repo, exists := s.parent.repos[params.Dir]
 	s.parent.reposMu.Unlock()
 	if exists {
-		level.Info(log).Log("create-workspace-in-existing-repo", "")
+		level.Info(logger).Log("create-workspace-in-existing-repo", "")
 	} else {
 		repo = &serverRepo{refdb: refdb.NewMemoryRefDB()}
-		level.Info(log).Log("create-workspace-in-new-repo", "")
+		level.Info(logger).Log("create-workspace-in-new-repo", "")
 	}
 
 	ctx, cancel := context.WithCancel(s.parent.bgCtx)
-	workspace, cfg, err := s.NewWorkspace(ctx, s.parent.baseLogger().With("workspace", params.Dir), params.Dir)
+	workspace, cfg, err := s.NewWorkspace(ctx, log.With(s.parent.baseLogger(), "workspace", params.Dir), params.Dir)
 	if err != nil {
 		cancel()
 		return err
@@ -610,8 +633,8 @@ func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddP
 	if err != nil {
 		return err
 	}
-	if err := s.parent.applyRepoConfiguration(ctx, log, params.Dir, repo, RepoConfiguration{}, newConfig); err != nil {
-		level.Error(log).Log("apply-initial-workspace-configuration-error", err)
+	if err := s.parent.applyRepoConfiguration(ctx, logger, params.Dir, repo, RepoConfiguration{}, newConfig); err != nil {
+		level.Error(logger).Log("apply-initial-workspace-configuration-error", err)
 		cancel()
 		return err
 	}
@@ -627,7 +650,7 @@ func (s *workspaceServer) addWorkspace(log *logpkg.Context, params WorkspaceAddP
 	return config.EnsureWorkspaceInGlobalConfig(params.Dir)
 }
 
-func (s *workspaceServer) loadWorkspacesFromConfig(log *logpkg.Context) error {
+func (s *workspaceServer) loadWorkspacesFromConfig(logger log.Logger) error {
 	// Read the current config file, if it exists.
 	cfg, err := config.ReadGlobalFile()
 	if err != nil {
@@ -639,22 +662,22 @@ func (s *workspaceServer) loadWorkspacesFromConfig(log *logpkg.Context) error {
 			continue
 		}
 		if opt.Value == "" {
-			level.Warn(log).Log("skip-invalid-workspace", "")
+			level.Warn(logger).Log("skip-invalid-workspace", "")
 			continue
 		}
 		if _, err := os.Stat(opt.Value); err != nil {
-			level.Warn(log).Log("skip-inaccessible-workspace", opt.Value, "err", err)
+			level.Warn(logger).Log("skip-inaccessible-workspace", opt.Value, "err", err)
 			continue
 		}
-		if err := s.addWorkspace(log, WorkspaceAddParams{WorkspaceIdentifier{Dir: opt.Value}}); err != nil {
+		if err := s.addWorkspace(logger, WorkspaceAddParams{WorkspaceIdentifier{Dir: opt.Value}}); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *workspaceServer) removeWorkspace(log *logpkg.Context, workspace WorkspaceIdentifier, repo *serverRepo) error {
-	level.Info(log).Log("rm-workspace", workspace.Dir)
+func (s *workspaceServer) removeWorkspace(logger log.Logger, workspace WorkspaceIdentifier, repo *serverRepo) error {
+	level.Info(logger).Log("rm-workspace", workspace.Dir)
 
 	s.parent.reposMu.Lock()
 	delete(s.parent.repos, workspace.Dir)
@@ -697,8 +720,8 @@ func (s *Server) getWorkspaceForFileURI(uriStr string) (repo *serverRepo, worksp
 	}
 }
 
-func (s *Server) getWorkspaceRepo(ctx context.Context, log *logpkg.Context, w WorkspaceIdentifier) (*serverRepo, error) {
-	repo, err := s.getRepoIfExists(ctx, log, w.Dir)
+func (s *Server) getWorkspaceRepo(ctx context.Context, logger log.Logger, w WorkspaceIdentifier) (*serverRepo, error) {
+	repo, err := s.getRepoIfExists(ctx, logger, w.Dir)
 	if err != nil {
 		return nil, err
 	}

@@ -24,12 +24,12 @@ type gitRepo interface {
 	IsValidRev(string) (bool, error)
 	RemoteForBranchOrZapDefaultRemote(string) (string, error)
 	RemoteURL(remote string) (string, error)
-	MakeCommit(parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
+	MakeCommit(ctx context.Context, parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
 	Fetch(remote, refspec string) (bool, error)
 	Push(remote, refspec string, force bool) error
 	ConfigGetOne(name string) (string, error)
 	ConfigSet(name, value string) error
-	CreateCommitFromTree(tree, snapshot string, isRootCommit bool) (string, error)
+	CreateCommitFromTree(ctx context.Context, tree, snapshot string, isRootCommit bool) (string, error)
 	Reset(typ, rev string) error
 	ListTreeFull(string) (*gitutil.Tree, error)
 	FileInfoForPath(rev, path string) (string, string, error)
@@ -47,7 +47,7 @@ type FileSystem interface {
 
 var TestApplyToWorktree func(op ot.WorkspaceOp) error
 
-func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
+func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 	WorktreeDir() string
 	ReadBlob(snapshot, name string) ([]byte, string, string, error)
 	IsValidRev(string) (bool, error)
@@ -348,13 +348,11 @@ func PushGitRefToGitUpstream(ctx context.Context, gitRepo interface {
 	if testPushGitRefToGitUpstream != nil {
 		return testPushGitRefToGitUpstream(headOID, ref, gitBranch)
 	}
-
-	gitRemote, err := gitRepo.RemoteForBranchOrZapDefaultRemote(gitBranch)
-	if err != nil {
-		return err
-	}
-
 	return backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
+		gitRemote, err := gitRepo.RemoteForBranchOrZapDefaultRemote(gitBranch)
+		if err != nil {
+			return err
+		}
 		return gitRepo.Push(gitRemote, headOID+":refs/zap/"+ref, true)
 	}, GitBackOff(), nil)
 }
