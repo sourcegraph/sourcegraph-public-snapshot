@@ -93,11 +93,11 @@ func (s *Server) updateRepoConfiguration(ctx context.Context, repo *serverRepo, 
 	return old, new, nil
 }
 
-func (s *Server) applyRepoConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldConfig, newConfig RepoConfiguration) error {
-	if err := s.doApplyBulkRepoRemoteConfiguration(ctx, log, repoName, repo, oldConfig, newConfig); err != nil {
+func (s *Server) applyRepoConfiguration(ctx context.Context, logger log.Logger, repoName string, repo *serverRepo, oldConfig, newConfig RepoConfiguration) error {
+	if err := s.doApplyBulkRepoRemoteConfiguration(ctx, logger, repoName, repo, oldConfig, newConfig); err != nil {
 		return err
 	}
-	if err := s.doApplyBulkRefConfiguration(ctx, log, repoName, repo, oldConfig, newConfig); err != nil {
+	if err := s.doApplyBulkRefConfiguration(ctx, logger, repoName, repo, oldConfig, newConfig); err != nil {
 		return err
 	}
 	return nil
@@ -105,7 +105,7 @@ func (s *Server) applyRepoConfiguration(ctx context.Context, log *log.Context, r
 
 // doApplyBulkRefConfiguration should only be called from
 // applyRepoConfiguration.
-func (s *Server) doApplyBulkRepoRemoteConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldRepoConfig, newRepoConfig RepoConfiguration) error {
+func (s *Server) doApplyBulkRepoRemoteConfiguration(ctx context.Context, logger log.Logger, repoName string, repo *serverRepo, oldRepoConfig, newRepoConfig RepoConfiguration) error {
 	oldConfig := oldRepoConfig.Remotes
 	newConfig := newRepoConfig.Remotes
 
@@ -132,7 +132,7 @@ func (s *Server) doApplyBulkRepoRemoteConfiguration(ctx context.Context, log *lo
 		// TODO(sqs): this needs to check whether this client is being
 		// used by any other repos. It should use reference counting
 		// and only remove/close when it gets to 0.
-		level.Info(log).Log("rm-remote", oldName)
+		level.Info(logger).Log("rm-remote", oldName)
 		if err := s.remotes.closeAndRemoveClient(oldRemote.Endpoint); err != nil {
 			return err
 		}
@@ -142,10 +142,10 @@ func (s *Server) doApplyBulkRepoRemoteConfiguration(ctx context.Context, log *lo
 		if ok && oldRemote.EquivalentTo(newRemote) {
 			continue // unchanged
 		}
-		log := log.With("add-or-update-remote", newName)
-		level.Debug(log).Log("new", newRemote, "old", oldConfig[newName])
+		logger := log.With(logger, "add-or-update-remote", newName)
+		level.Debug(logger).Log("new", newRemote, "old", oldConfig[newName])
 
-		cl, err := s.remotes.getOrCreateClient(ctx, log, newRemote.Endpoint)
+		cl, err := s.remotes.getOrCreateClient(ctx, logger, newRemote.Endpoint)
 		if err != nil {
 			return err
 		}
@@ -165,7 +165,7 @@ func (s *Server) doApplyBulkRepoRemoteConfiguration(ctx context.Context, log *lo
 		if oldRemote.Endpoint != newRemote.Endpoint || oldRemote.Repo != newRemote.Repo {
 			for ref, refConfig := range newRepoConfig.Refs {
 				if refConfig.Upstream == newName {
-					if err := s.doApplyRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldRepoConfig, newRepoConfig, true /* force */, true, true); err != nil {
+					if err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldRepoConfig, newRepoConfig, true /* force */, true, true); err != nil {
 						return err
 					}
 				}
@@ -178,18 +178,18 @@ func (s *Server) doApplyBulkRepoRemoteConfiguration(ctx context.Context, log *lo
 
 // doApplyBulkRefConfiguration should only be called from
 // applyRepoConfiguration.
-func (s *Server) doApplyBulkRefConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldConfig, newConfig RepoConfiguration) error {
+func (s *Server) doApplyBulkRefConfiguration(ctx context.Context, logger log.Logger, repoName string, repo *serverRepo, oldConfig, newConfig RepoConfiguration) error {
 	for name := range oldConfig.Refs {
 		// Remove refs that were removed from the config.
 		if _, ok := newConfig.Refs[name]; !ok {
-			if err := s.doApplyRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true, true); err != nil {
+			if err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true, true); err != nil {
 				return err
 			}
 		}
 	}
 	for name, newRefConfig := range newConfig.Refs {
 		if oldRefConfig := oldConfig.Refs[name]; oldRefConfig != newRefConfig {
-			if err := s.doApplyRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true, true); err != nil {
+			if err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true, true); err != nil {
 				return err
 			}
 		}
