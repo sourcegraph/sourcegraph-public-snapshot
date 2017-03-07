@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gzipfileserver"
 )
@@ -50,13 +51,13 @@ func init() {
 }
 
 func isPhabricatorAsset(path string) {
-	if string.Contains(path, "phabricator.bundle.js") {
+	if strings.Contains(path, "phabricator.bundle.js") {
 		return true
 	}
-	if string.Contains(path, "sgdev.bundle.sj") {
+	if strings.Contains(path, "sgdev.bundle.sj") {
 		return true
 	}
-	if string.Contains(path, "umami.bundle.sj") {
+	if strings.Contains(path, "umami.bundle.sj") {
 		return true
 	}
 	return false
