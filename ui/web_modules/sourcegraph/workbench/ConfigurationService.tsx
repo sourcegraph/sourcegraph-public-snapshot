@@ -62,6 +62,10 @@ const config = {
 			visible: 0,
 		},
 	},
+	zap: {
+		enable: true,
+		overwrite: false,
+	},
 	editor: {
 		readOnly: !Features.zap2Way.isEnabled(),
 		tabSize: 4,
@@ -121,7 +125,7 @@ export class ConfigurationService implements IConfigurationService {
 		};
 	}
 
-	keys(): IConfigurationKeys { return { default: ["zap.enable"] as string[], user: [] as string[] }; }
+	keys(): IConfigurationKeys { return { default: ["zap.enable", "zap.overwrite"], user: [] as string[] }; }
 
 	reloadConfiguration<T>(section?: string): TPromise<T> { return TPromise.as({} as T); }
 
@@ -148,5 +152,19 @@ export class WorkspaceConfigurationService extends ConfigurationService implemen
 		};
 	}
 
-	values(): IWorkspaceConfigurationValues { return {}; }
+	values(): IWorkspaceConfigurationValues {
+		const result: IWorkspaceConfigurationValues = Object.create(null);
+		const keyset = this.keys();
+		const keys = [...keyset.workspace, ...keyset.user, ...keyset.default].sort();
+
+		let lastKey: string | undefined;
+		for (const key of keys) {
+			if (key !== lastKey) {
+				lastKey = key;
+				result[key] = this.lookup(key);
+			}
+		}
+
+		return result;
+	}
 }
