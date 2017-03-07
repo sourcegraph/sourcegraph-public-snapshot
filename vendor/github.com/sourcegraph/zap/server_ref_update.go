@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-kit/kit/log"
+	logpkg "github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/zap/ws"
 )
 
-func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, logger log.Logger, params RefUpdateDownstreamParams, endpoint string) error {
+func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, log *logpkg.Context, params RefUpdateDownstreamParams, endpoint string) error {
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
@@ -42,7 +42,7 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, logger log.Log
 	remoteTrackingParams := params
 	remoteTrackingParams.Ref = remoteTrackingRef(remote, params.RefIdentifier.Ref)
 	remoteTrackingParams.Ack = false
-	if err := s.updateRemoteTrackingRef(ctx, logger, repo, remoteTrackingParams); err != nil {
+	if err := s.updateRemoteTrackingRef(ctx, log, repo, remoteTrackingParams); err != nil {
 		return err
 	}
 
@@ -55,24 +55,24 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, logger log.Log
 	if ok && refConfig.Upstream == remote {
 		ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
 		if ref == nil {
-			level.Warn(logger).Log("upstream-configured-for-nonexistent-ref", params.RefIdentifier.Ref)
+			level.Warn(log).Log("upstream-configured-for-nonexistent-ref", params.RefIdentifier.Ref)
 		} else {
-			if err := s.updateLocalTrackingRefAfterUpstreamUpdate(ctx, logger, repo, *ref, params, refConfig, true); err != nil {
+			if err := s.updateLocalTrackingRefAfterUpstreamUpdate(ctx, log, repo, *ref, params, refConfig, true); err != nil {
 				return err
 			}
 		}
 	} else {
-		level.Debug(logger).Log("no-local-ref-downstream-of", params.RefIdentifier.Ref)
+		level.Debug(log).Log("no-local-ref-downstream-of", params.RefIdentifier.Ref)
 	}
 	return nil
 }
 
-func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger, repo *serverRepo, params RefUpdateDownstreamParams) error {
-	logger = log.With(logger, "update-remote-tracking-ref", params.RefIdentifier.Ref, "params", params)
-	level.Debug(logger).Log()
+func (s *Server) updateRemoteTrackingRef(ctx context.Context, log *logpkg.Context, repo *serverRepo, params RefUpdateDownstreamParams) error {
+	log = log.With("update-remote-tracking-ref", params.RefIdentifier.Ref, "params", params)
+	level.Debug(log).Log()
 
 	timer := time.AfterFunc(5*time.Second, func() {
-		level.Warn(logger).Log("delay", "taking a long time, possible deadlock")
+		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
 
@@ -92,7 +92,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 				return err
 			}
 		} else {
-			level.Warn(logger).Log("delete-of-nonexistent-ref", "")
+			level.Warn(log).Log("delete-of-nonexistent-ref", "")
 		}
 	} else {
 		var oldRef *refdb.Ref
@@ -121,7 +121,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 				// OK to discard the RecvFromUpstream transformed op
 				// return value because we know otHandler's history
 				// started out empty (because we just created it).
-				if _, err := ref.Object.(serverRef).ot.RecvFromUpstream(logger, op); err != nil {
+				if _, err := ref.Object.(serverRef).ot.RecvFromUpstream(log, op); err != nil {
 					return err
 				}
 			}
@@ -138,7 +138,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 					Message: fmt.Sprintf("received upstream op for remote tracking branch %q with conflicting ref state: %s", params.RefIdentifier.Ref, err),
 				}
 			}
-			xop, err := ref.Object.(serverRef).ot.RecvFromUpstream(logger, *params.Op)
+			xop, err := ref.Object.(serverRef).ot.RecvFromUpstream(log, *params.Op)
 			if err != nil {
 				return err
 			}
@@ -152,15 +152,15 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 		}
 	}
 
-	return s.broadcastRefUpdate(ctx, logger, withoutSymbolicRefs(refClosure), nil, &params, nil)
+	return s.broadcastRefUpdate(ctx, log, withoutSymbolicRefs(refClosure), nil, &params, nil)
 }
 
-func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, logger log.Logger, repo *serverRepo, ref refdb.Ref, params RefUpdateDownstreamParams, refConfig RefConfiguration, acquireRef bool) error {
-	logger = log.With(logger, "update-local-tracking-ref", params.RefIdentifier.Ref)
-	level.Info(logger).Log("params", params)
+func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, log *logpkg.Context, repo *serverRepo, ref refdb.Ref, params RefUpdateDownstreamParams, refConfig RefConfiguration, acquireRef bool) error {
+	log = log.With("update-local-tracking-ref", params.RefIdentifier.Ref)
+	level.Info(log).Log("params", params)
 
 	timer := time.AfterFunc(5*time.Second, func() {
-		level.Warn(logger).Log("delay", "taking a long time, possible deadlock")
+		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
 
@@ -170,7 +170,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 	// TODO(sqs): in the future, provide a way like `git pull -f` for
 	// users to explicitly accept overwrites from upstream.
 	if refConfig.Overwrite && (params.Delete || params.State != nil) {
-		level.Debug(logger).Log("refusing-non-op-update", "")
+		level.Debug(log).Log("refusing-non-op-update", "")
 		return nil
 	}
 
@@ -205,7 +205,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 			if params.Op != nil {
 				if err := ref.Object.(serverRef).ot.AckFromUpstream(); err != nil {
 					if err == ws.ErrNoPendingOperation {
-						level.Error(logger).Log("received-ack-for-previous-generation-of-ref", "")
+						level.Error(log).Log("received-ack-for-previous-generation-of-ref", "")
 						// NOTE: ErrNoPendingOperation occurs when
 						// this server's ref was recently updated but
 						// its RefBaseInfo remains the same, and it
@@ -230,14 +230,14 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 			isWorkspaceHEAD := false
 			if headRef := repo.refdb.Lookup("HEAD"); headRef != nil && headRef.Target == ref.Name {
 				isWorkspaceHEAD = true
-				level.Info(logger).Log("workspace-checkout", "")
+				level.Info(log).Log("workspace-checkout", "")
 				repo.mu.Lock()
 				ws := repo.workspace
 				repo.mu.Unlock()
 				if ws == nil {
 					panic(fmt.Sprintf("during local tracking ref update of %q, HEAD points to it but it has no workspace", ref.Name))
 				}
-				if _, err := ws.Checkout(ctx, logger, false, ref.Name, params.State.GitBase, params.State.GitBranch, params.State.History, nil); err != nil {
+				if err := ws.Checkout(ctx, log, false, ref.Name, params.State.GitBase, params.State.GitBranch, params.State.History, nil); err != nil {
 					return fmt.Errorf("during local tracking ref update, workspace checkout failed: %s", err)
 				}
 			}
@@ -257,7 +257,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 				// OK to discard the RecvFromUpstream transformed op
 				// return value because we know otHandler's history
 				// started out empty (because we just created it).
-				if _, err := otHandler.RecvFromUpstream(logger, op); err != nil {
+				if _, err := otHandler.RecvFromUpstream(log, op); err != nil {
 					return err
 				}
 			}
@@ -271,7 +271,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 			}
 
 		case params.Op != nil:
-			xop, err := ref.Object.(serverRef).ot.RecvFromUpstream(logger, *params.Op)
+			xop, err := ref.Object.(serverRef).ot.RecvFromUpstream(log, *params.Op)
 			if err != nil {
 				return err
 			}
@@ -284,7 +284,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 				checkForRace = func() {
 					debugPostRev := ref.Object.(serverRef).rev()
 					if debugPostRev != debugPreRev {
-						level.Error(logger).Log("RACE-unsynchronized-ref-upstream-update", "", "pre-rev", debugPreRev, "post-rev", debugPostRev, "pre-history", preHistory, "post-history", fmt.Sprint(ref.Object.(serverRef).history()), "params", params)
+						level.Error(log).Log("RACE-unsynchronized-ref-upstream-update", "", "pre-rev", debugPreRev, "post-rev", debugPostRev, "pre-history", preHistory, "post-history", fmt.Sprint(ref.Object.(serverRef).history()), "params", params)
 						// panic("RACE: unsynchronized ref updates")
 					}
 				}
@@ -300,7 +300,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 	// ack clients.
 	if !params.Ack {
 		checkForRace()
-		if err := s.broadcastRefUpdate(ctx, logger, withoutSymbolicRefs(refClosure), nil, &params, nil); err != nil {
+		if err := s.broadcastRefUpdate(ctx, log, withoutSymbolicRefs(refClosure), nil, &params, nil); err != nil {
 			return err
 		}
 	}
@@ -338,12 +338,12 @@ func compareRefBaseInfo(p RefBaseInfo, r serverRef) error {
 	return errors.New(strings.Join(diffs, ", "))
 }
 
-func (s *Server) handleSymbolicRefUpdate(ctx context.Context, logger log.Logger, sender *serverConn, repo *serverRepo, params RefUpdateSymbolicParams) error {
-	logger = log.With(logger, "update-symbolic-ref", params.RefIdentifier.Ref, "old", params.OldTarget, "new", params.Target)
-	level.Info(logger).Log()
+func (s *Server) handleSymbolicRefUpdate(ctx context.Context, log *logpkg.Context, sender *serverConn, repo *serverRepo, params RefUpdateSymbolicParams) error {
+	log = log.With("update-symbolic-ref", params.RefIdentifier.Ref, "old", params.OldTarget, "new", params.Target)
+	level.Info(log).Log()
 
 	timer := time.AfterFunc(5*time.Second, func() {
-		level.Warn(logger).Log("delay", "taking a long time, possible deadlock")
+		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
 
@@ -379,10 +379,10 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, logger log.Logger,
 		return err
 	}
 
-	return s.broadcastRefUpdate(ctx, logger, repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref), sender, nil, &params)
+	return s.broadcastRefUpdate(ctx, log, repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref), sender, nil, &params)
 }
 
-func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.Logger, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally, acquireRef bool) error {
+func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, log *logpkg.Context, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally, acquireRef bool) error {
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
@@ -398,15 +398,15 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 	}
 
 	if sender != nil {
-		logger = log.With(logger, "update-ref-from-downstream", params.RefIdentifier.Ref)
+		log = log.With("update-ref-from-downstream", params.RefIdentifier.Ref)
 	} else {
-		logger = log.With(logger, "update-ref-locally", params.RefIdentifier.Ref)
+		log = log.With("update-ref-locally", params.RefIdentifier.Ref)
 	}
-	logger = log.With(logger, "params", params)
-	level.Info(logger).Log("apply-locally", applyLocally)
+	log = log.With("params", params)
+	level.Info(log).Log("apply-locally", applyLocally)
 
 	timer := time.AfterFunc(5*time.Second, func() {
-		level.Warn(logger).Log("delay", "taking a long time, possible deadlock")
+		level.Warn(log).Log("delay", "taking a long time, possible deadlock")
 	})
 	defer timer.Stop()
 
@@ -505,7 +505,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 						Message: fmt.Sprintf("upstream remote %q configured for ref %s does not exist", refConfig.Upstream, params.RefIdentifier),
 					}
 				}
-				cl, err := s.remotes.getOrCreateClient(ctx, logger, remote.Endpoint)
+				cl, err := s.remotes.getOrCreateClient(ctx, log, remote.Endpoint)
 				if err != nil {
 					return err
 				}
@@ -533,18 +533,18 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 				workspace := repo.workspace
 				repo.mu.Unlock()
 				if applyLocally {
-					if _, err := workspace.Checkout(ctx, logger, false, params.RefIdentifier.Ref, params.State.GitBase, params.State.GitBranch, params.State.History, nil); err != nil {
+					if err := workspace.Checkout(ctx, log, false, params.RefIdentifier.Ref, params.State.GitBase, params.State.GitBranch, params.State.History, nil); err != nil {
 						return err
 					}
 					applyLocally = false // just did apply locally, don't do it again below
 				}
 				otHandler = &ws.Proxy{
-					Apply: func(logger log.Logger, op ot.WorkspaceOp) error {
-						return workspace.Apply(ctx, logger, op)
+					Apply: func(log *logpkg.Context, op ot.WorkspaceOp) error {
+						return workspace.Apply(ctx, log, op)
 					},
 				}
 			} else {
-				otHandler, err = s.backend.Create(ctx, logger, params.RefIdentifier.Repo, params.State.GitBase)
+				otHandler, err = s.backend.Create(ctx, log, params.RefIdentifier.Repo, params.State.GitBase)
 				if err != nil {
 					return err
 				}
@@ -554,7 +554,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 						// mock tests have set an Apply and we want to
 						// reuse it
 						otHandler.Apply = prevOT.Apply
-						level.Warn(logger).Log("HACK-used-prev-ot-handler-Apply-func", "")
+						level.Warn(log).Log("HACK-used-prev-ot-handler-Apply-func", "")
 					}
 				}
 			}
@@ -576,7 +576,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 					if err != nil {
 						return err
 					}
-					if err := otHandler.Apply(logger, composed); err != nil {
+					if err := otHandler.Apply(log, composed); err != nil {
 						return err
 					}
 				}
@@ -602,7 +602,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 			}
 
 		case params.Op != nil:
-			if xop, err := refObj.ot.RecvFromDownstream(logger, params.Current.Rev, *params.Op); err == nil {
+			if xop, err := refObj.ot.RecvFromDownstream(log, params.Current.Rev, *params.Op); err == nil {
 				params.Op = &xop
 			} else {
 				return &jsonrpc2.Error{
@@ -618,7 +618,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 				checkForRace = func() {
 					debugPostRev := ref.Object.(serverRef).rev()
 					if debugPostRev != debugPreRev {
-						level.Error(logger).Log("RACE-unsynchronized-ref-downstream-update", "", "pre-rev", debugPreRev, "post-rev", debugPostRev, "pre-history", preHistory, "post-history", fmt.Sprint(ref.Object.(serverRef).history()), "params", params)
+						level.Error(log).Log("RACE-unsynchronized-ref-downstream-update", "", "pre-rev", debugPreRev, "post-rev", debugPostRev, "pre-history", preHistory, "post-history", fmt.Sprint(ref.Object.(serverRef).history()), "params", params)
 						// panic("RACE: unsynchronized ref updates")
 					}
 				}
@@ -640,8 +640,8 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 				return err
 			}
 			if c, ok := repoConfig.Refs[params.RefIdentifier.Ref]; ok {
-				level.Info(logger).Log("reattaching-ref-config-to-newly-created-ref", fmt.Sprint(c))
-				if err := s.doApplyRefConfiguration(ctx, logger, repo, params.RefIdentifier, ref, repoConfig, repoConfig, true, false, false); err != nil {
+				level.Info(log).Log("reattaching-ref-config-to-newly-created-ref", fmt.Sprint(c))
+				if err := s.doApplyRefConfiguration(ctx, log, repo, params.RefIdentifier, ref, repoConfig, repoConfig, true, false, false); err != nil {
 					return err
 				}
 			}
@@ -656,7 +656,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 		}
 		return &RefBaseInfo{GitBase: p.GitBase, GitBranch: p.GitBranch}
 	}
-	return s.broadcastRefUpdate(ctx, logger, withoutSymbolicRefs(refClosure), sender, &RefUpdateDownstreamParams{
+	return s.broadcastRefUpdate(ctx, log, withoutSymbolicRefs(refClosure), sender, &RefUpdateDownstreamParams{
 		RefIdentifier: params.RefIdentifier,
 		Current:       toRefBaseInfo(params.Current),
 		State:         params.State,

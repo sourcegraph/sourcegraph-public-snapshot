@@ -1,19 +1,18 @@
 package gitutil
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func makeCommitFromDir(ctx context.Context, gitRepo Worktree, onlyIfChangedFiles bool) (commitID string, err error) {
+func makeCommitFromDir(gitRepo Worktree, onlyIfChangedFiles bool) (commitID string, err error) {
 	head, err := gitRepo.HEADOrDevNullTree()
 	if err != nil {
 		return
 	}
-	commitID, _, err = gitRepo.MakeCommit(ctx, head, onlyIfChangedFiles)
+	commitID, _, err = gitRepo.MakeCommit(head, onlyIfChangedFiles)
 	return
 }
 

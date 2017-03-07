@@ -251,11 +251,6 @@ func (c *Client) Ping(ctx context.Context) error {
 	return c.c.Call(ctx, "ping", nil, nil)
 }
 
-// DebugLog sends the "debug/log" notification to the server.
-func (c *Client) DebugLog(ctx context.Context, params DebugLogParams) error {
-	return c.c.Call(ctx, "debug/log", params, nil)
-}
-
 // Wait waits until the underlying connection is closed.
 func (c *Client) Wait() {
 	<-c.c.DisconnectNotify()

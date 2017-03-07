@@ -2,12 +2,10 @@ package gitutil
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -437,7 +435,7 @@ func (r BareRepo) CreateTree(basePath string, entries []*TreeEntry) (string, err
 	return string(bytes.TrimSpace(oidBytes)), nil
 }
 
-func (r BareRepo) CreateCommitFromTree(ctx context.Context, tree, parent string, isRootCommit bool) (oid string, err error) {
+func (r BareRepo) CreateCommitFromTree(tree, parent string, isRootCommit bool) (oid string, err error) {
 	args := []string{"commit-tree", "-m", "wip"}
 	if !isRootCommit {
 		parent, err := r.ObjectNameSHA(parent + "^{commit}")
@@ -447,34 +445,6 @@ func (r BareRepo) CreateCommitFromTree(ctx context.Context, tree, parent string,
 		args = append(args, "-p", parent)
 	}
 	args = append(args, tree)
-	oidBytes, err := r.Exec(nil, args...) // TODO(sqs): use ctx
+	oidBytes, err := r.Exec(nil, args...)
 	return string(bytes.TrimSpace(oidBytes)), err
-}
-
-type ReflogEntry struct {
-	CommitID string
-}
-
-func (r BareRepo) RefLog(ref string, skip, maxCount uint) ([]ReflogEntry, error) {
-	if err := checkArgSafety(ref); err != nil {
-		return nil, err
-	}
-	args := []string{"reflog", "-z", "--pretty=format:%H"}
-	if skip > 0 {
-		args = append(args, "--skip="+strconv.FormatUint(uint64(skip), 10))
-	}
-	if maxCount > 0 {
-		args = append(args, "--max-count="+strconv.FormatUint(uint64(maxCount), 10))
-	}
-	args = append(args, ref)
-	out, err := r.Exec(nil, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	var entries []ReflogEntry
-	for _, commitID := range splitNullsBytes(out) {
-		entries = append(entries, ReflogEntry{CommitID: string(commitID)})
-	}
-	return entries, nil
 }

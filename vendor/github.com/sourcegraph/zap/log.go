@@ -29,7 +29,7 @@ func init() {
 	}
 }
 
-func (s *Server) baseLogger() log.Logger {
+func (s *Server) baseLogger() *log.Context {
 	colorFn := func(keyvals ...interface{}) term.FgBgColor {
 		for i := 0; i < len(keyvals)-1; i += 2 {
 			if keyvals[i] != "level" {
@@ -58,13 +58,13 @@ func (s *Server) baseLogger() log.Logger {
 
 	logger0 := term.NewLogger(w, log.NewLogfmtLogger, colorFn)
 	logger0 = level.NewFilter(logger0, logLevelOpt)
-	logger1 := log.With(logger0)
+	logger1 := log.NewContext(logger0)
 	if v, _ := strconv.ParseBool(os.Getenv("LOGTIMESTAMP")); os.Getenv("LOGTIMESTAMP") == "" || v {
 		// By default include timestamps, but adjust behaviour if LOGTIMESTAMP is specified.
-		logger1 = log.With(logger1, "ts", log.DefaultTimestampUTC)
+		logger1 = logger1.With("ts", log.DefaultTimestampUTC)
 	}
 	if s.ID != "" {
-		logger1 = log.With(logger1, "server", s.ID)
+		logger1 = logger1.With("server", s.ID)
 	}
 	return logger1
 }

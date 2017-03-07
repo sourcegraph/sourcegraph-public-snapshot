@@ -15,11 +15,11 @@ import (
 // create workspaces based on a git repository, for example.
 type ServerBackend interface {
 	// Create creates a new workspace.
-	Create(ctx context.Context, logger log.Logger, repo, gitBase string) (*ws.Proxy, error)
+	Create(ctx context.Context, log *log.Context, repo, gitBase string) (*ws.Proxy, error)
 
 	// CanAccess is called to determine if the client can access the
 	// given repo (and all of its refs).
-	CanAccess(ctx context.Context, logger log.Logger, repo string) (bool, error)
+	CanAccess(ctx context.Context, log *log.Context, repo string) (bool, error)
 
 	// CanAutoCreate is invoked to check whether or not automatic repository
 	// creation should be supported. i.e. whether or not repositories should

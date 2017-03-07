@@ -476,12 +476,6 @@ type RefInfo struct {
 	Watchers []string `json:"watchers"` // IDs of clients watching this ref or repo
 }
 
-// DebugLogParams contains the parameters for the "debug/log" request.
-type DebugLogParams struct {
-	Header bool   `json:"header,omitempty"` // render this log message as a section header in the server log
-	Text   string `json:"text"`             // log message
-}
-
 //go:generate stringer -type=ErrorCode
 
 // ErrorCode is a JSON-RPC 2.0 error code used in the Zap protocol.

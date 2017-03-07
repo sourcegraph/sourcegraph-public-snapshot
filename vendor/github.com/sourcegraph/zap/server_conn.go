@@ -108,13 +108,13 @@ type refUpdateItem struct {
 // send sends a ref update to the peer client. If the update fails to
 // send, then it must be a connection error, and we will
 // disconnect/remove the client.
-func (c *serverConn) send(ctx context.Context, logger log.Logger, item refUpdateItem) {
+func (c *serverConn) send(ctx context.Context, log *log.Context, item refUpdateItem) {
 	c.mu.Lock()
 	var clientID string
 	if c.init != nil {
 		clientID = c.init.ID
 	}
-	logger = log.With(logger, "client", clientID)
+	log = log.With("client", clientID)
 	c.mu.Unlock()
 
 	var params interface{}
@@ -138,9 +138,9 @@ func (c *serverConn) send(ctx context.Context, logger log.Logger, item refUpdate
 	// fault and there is nothing we can do to help resolve it; the
 	// recovery must be done on the client.
 	if err := c.conn.Notify(ctx, method, params); err != nil {
-		level.Warn(logger).Log("send-error", err, "id", c.init.ID)
+		level.Warn(log).Log("send-error", err, "id", c.init.ID)
 		if err := c.conn.Close(); err != nil {
-			level.Warn(logger).Log("send-close-error", err, "id", c.init.ID)
+			level.Warn(log).Log("send-close-error", err, "id", c.init.ID)
 		}
 		return
 	}
@@ -165,11 +165,11 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 	c.mu.Lock()
 	inited := c.init != nil
-	logger := c.server.baseLogger()
+	log := c.server.baseLogger()
 	if c.init != nil {
-		logger = log.With(logger, "client", c.init.ID)
+		log = log.With("client", c.init.ID)
 	}
-	logger = log.With(logger, "method", req.Method)
+	log = log.With("method", req.Method)
 	c.mu.Unlock()
 	if !inited && req.Method != "initialize" {
 		return nil, &jsonrpc2.Error{Code: int64(ErrorCodeNotInitialized), Message: "connection is not initialized (client must send initialize request)"}
@@ -193,7 +193,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			return nil, err
 		}
 		c.init = &params
-		level.Debug(log.With(logger, "client", c.init.ID)).Log("msg", "new client connected")
+		level.Debug(log.With("client", c.init.ID)).Log("msg", "new client connected")
 		return InitializeResult{
 			Capabilities: ServerCapabilities{WorkspaceOperationalTransformation: true},
 		}, nil
@@ -209,8 +209,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo)
-		repo, err := c.server.getRepo(ctx, logger, params.Repo)
+		log = log.With("repo", params.Repo)
+		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -224,8 +224,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo)
-		repo, err := c.server.getRepo(ctx, logger, params.Repo)
+		log = log.With("repo", params.Repo)
+		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -277,7 +277,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.applyRepoConfiguration(ctx, logger, params.Repo, repo, oldConfig, newConfig); err != nil {
+		if err := c.server.applyRepoConfiguration(ctx, log, params.Repo, repo, oldConfig, newConfig); err != nil {
 			return nil, err
 		}
 		return res, nil
@@ -290,12 +290,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo, "refspecs", fmt.Sprint(params.Refspecs))
-		repo, err := c.server.getRepo(ctx, logger, params.Repo)
+		log = log.With("repo", params.Repo, "refspecs", fmt.Sprint(params.Refspecs))
+		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err
 		}
-		if err := c.handleRepoWatch(ctx, logger, repo, params); err != nil {
+		if err := c.handleRepoWatch(ctx, log, repo, params); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -308,7 +308,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo)
+		log = log.With("repo", params.Repo)
 
 		if params.Repo == "" {
 			return nil, &jsonrpc2.Error{
@@ -317,7 +317,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 
-		repo, err := c.server.getRepo(ctx, logger, params.Repo)
+		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -361,8 +361,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
-		repo, err := c.server.getRepo(ctx, logger, params.Repo)
+		log = log.With("repo", params.Repo, "ref", params.Ref)
+		repo, err := c.server.getRepo(ctx, log, params.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -436,8 +436,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
-		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
+		log = log.With("repo", params.Repo, "ref", params.Ref)
+		repo, err := c.server.getRepo(ctx, log, params.RefIdentifier.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -488,7 +488,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.applyRepoConfiguration(ctx, logger, params.RefIdentifier.Repo, repo, oldConfig, newConfig); err != nil {
+		if err := c.server.applyRepoConfiguration(ctx, log, params.RefIdentifier.Repo, repo, oldConfig, newConfig); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -501,13 +501,13 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
-		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
+		log = log.With("repo", params.Repo, "ref", params.Ref)
+		repo, err := c.server.getRepo(ctx, log, params.RefIdentifier.Repo)
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.handleRefUpdateFromDownstream(ctx, logger, repo, params, c, true, true); err != nil {
-			level.Error(logger).Log("params", params, "err", err)
+		if err := c.server.handleRefUpdateFromDownstream(ctx, log, repo, params, c, true, true); err != nil {
+			level.Error(log).Log("params", params, "err", err)
 			return nil, err
 		}
 		return nil, nil
@@ -520,12 +520,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
-		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
+		log = log.With("repo", params.Repo, "ref", params.Ref)
+		repo, err := c.server.getRepo(ctx, log, params.RefIdentifier.Repo)
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.handleSymbolicRefUpdate(ctx, logger, c, repo, params); err != nil {
+		if err := c.server.handleSymbolicRefUpdate(ctx, log, c, repo, params); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -533,39 +533,19 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 	case "ping":
 		return "pong", nil
 
-	case "debug/log":
-		if v, _ := strconv.ParseBool(os.Getenv("ZAP_ENABLE_DEBUG_LOG_REQUEST")); !v {
-			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: "debug/log is not enabled (set env var ZAP_ENABLE_DEBUG_LOG_REQUEST=1)"}
-		}
-		if req.Params == nil {
-			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
-		}
-		var params DebugLogParams
-		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			return nil, err
-		}
-		time.Sleep(10 * time.Millisecond) // flush
-		if params.Header {
-			fmt.Fprintf(os.Stderr, strings.Repeat("━", 70)+"\n███ %s\n", params.Text)
-		} else {
-			level.Info(logger).Log("text", params.Text)
-		}
-		time.Sleep(10 * time.Millisecond) // flush
-		return nil, nil
-
 	case "shutdown":
-		level.Debug(logger).Log("message", "client "+req.Method)
+		level.Debug(log).Log("message", "client "+req.Method)
 		return nil, nil
 
 	case "exit":
-		level.Debug(logger).Log("message", "client "+req.Method)
+		level.Debug(log).Log("message", "client "+req.Method)
 		if err := c.Close(); err != nil {
 			return nil, err
 		}
 		return nil, nil
 
 	default:
-		res, err := c.handleWorkspaceServerMethod(ctx, logger, conn, req)
+		res, err := c.handleWorkspaceServerMethod(ctx, log, conn, req)
 		if err != errNotHandled {
 			return res, err
 		}

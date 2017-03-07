@@ -30,7 +30,7 @@ type Proxy struct {
 	// Apply immediately applies op to the workspace. It is assumed
 	// that op will apply cleanly and has been properly transformed
 	// with concurrent ops.
-	Apply func(logger log.Logger, op ot.WorkspaceOp) error
+	Apply func(log *log.Context, op ot.WorkspaceOp) error
 
 	history           []ot.WorkspaceOp // all ops
 	Wait              *ot.WorkspaceOp  // pending upstream acknowledgment
@@ -67,11 +67,11 @@ func (p *Proxy) Record(op ot.WorkspaceOp) error {
 // RecvFromDownstream receives ops from downstream clients. The caller
 // is responsible for acking op to its sender and sending op to all
 // other downstream clients.
-func (p *Proxy) RecvFromDownstream(logger log.Logger, rev int, op ot.WorkspaceOp) (ot.WorkspaceOp, error) {
+func (p *Proxy) RecvFromDownstream(log *log.Context, rev int, op ot.WorkspaceOp) (ot.WorkspaceOp, error) {
 	// if op.Noop() {
 	// 	panic("noop")
 	// }
-	logger = log.With(logger, "recv-from-downstream", fmt.Sprintf("@%d", rev))
+	log = log.With("recv-from-downstream", fmt.Sprintf("@%d", rev))
 
 	// Transform it so it can be appended to our view of the history.
 	if rev < 0 || len(p.history) < rev {
@@ -79,7 +79,7 @@ func (p *Proxy) RecvFromDownstream(logger log.Logger, rev int, op ot.WorkspaceOp
 	}
 
 	if extraDebug {
-		level.Debug(logger).Log("op", op, "transform-against-history", fmt.Sprint(p.history[rev:]))
+		level.Debug(log).Log("op", op, "transform-against-history", fmt.Sprint(p.history[rev:]))
 	}
 
 	var err error
@@ -90,12 +90,12 @@ func (p *Proxy) RecvFromDownstream(logger log.Logger, rev int, op ot.WorkspaceOp
 	}
 	if len(p.history[rev:]) > 0 {
 		if extraDebug {
-			level.Debug(logger).Log("transformed-op", op)
+			level.Debug(log).Log("transformed-op", op)
 		}
 	}
 
 	if p.Apply != nil {
-		if err := p.Apply(logger, op); err != nil {
+		if err := p.Apply(log, op); err != nil {
 			return ot.WorkspaceOp{}, err
 		}
 	}
@@ -158,15 +158,15 @@ var ErrNoPendingOperation = errors.New("no pending operation")
 
 // RecvFromUpstream receives ops from the upstream. The caller is
 // responsible for sending the returned op to all downstreams.
-func (p *Proxy) RecvFromUpstream(logger log.Logger, op ot.WorkspaceOp) (ot.WorkspaceOp, error) {
+func (p *Proxy) RecvFromUpstream(log *log.Context, op ot.WorkspaceOp) (ot.WorkspaceOp, error) {
 	if p.UpstreamRevNumber > len(p.history) {
-		level.Error(logger).Log("PANIC-BELOW", "")
+		level.Error(log).Log("PANIC-BELOW", "")
 		panic(fmt.Sprintf("invalid p.UpstreamRevNumber > len(p.History) (%d > %d)", p.UpstreamRevNumber, len(p.history)))
 	}
 
-	logger = log.With(logger, "recv-from-upstream", fmt.Sprintf("@%d(upstream)", p.UpstreamRevNumber))
+	log = log.With("recv-from-upstream", fmt.Sprintf("@%d(upstream)", p.UpstreamRevNumber))
 	if extraDebug {
-		level.Debug(logger).Log("op", op, "wait", p.Wait, "buf", p.Buf, "history-length", len(p.history), "history", fmt.Sprint(p.history))
+		level.Debug(log).Log("op", op, "wait", p.Wait, "buf", p.Buf, "history-length", len(p.history), "history", fmt.Sprint(p.history))
 	}
 
 	// Transform it so it can be appended to our view of the history.
@@ -188,7 +188,7 @@ func (p *Proxy) RecvFromUpstream(logger log.Logger, op ot.WorkspaceOp) (ot.Works
 
 	if p.Wait != nil || p.Buf != nil {
 		if extraDebug {
-			level.Debug(logger).Log("transformed-op", op, "wait", p.Wait, "buf", p.Buf)
+			level.Debug(log).Log("transformed-op", op, "wait", p.Wait, "buf", p.Buf)
 		}
 	}
 
@@ -200,12 +200,12 @@ func (p *Proxy) RecvFromUpstream(logger log.Logger, op ot.WorkspaceOp) (ot.Works
 			if len(p.history) > 1 {
 				allHistoryButLast, _ := ot.ComposeAllWorkspaceOps(p.history[:len(p.history)-1])
 				if _, err := ot.ComposeWorkspaceOps(allHistoryButLast, op); err == nil {
-					level.Error(logger).Log("op-is-not-consecutive-with-history-but-is-with-last-rev", "", "op", op, "rev", p.Rev(), "last-rev", p.Rev()-1, "history", fmt.Sprint(p.history), "composed-history", allHistory, "composed-history-but-last", allHistoryButLast, "err", err)
+					level.Error(log).Log("op-is-not-consecutive-with-history-but-is-with-last-rev", "", "op", op, "rev", p.Rev(), "last-rev", p.Rev()-1, "history", fmt.Sprint(p.history), "composed-history", allHistory, "composed-history-but-last", allHistoryButLast, "err", err)
 					return ot.WorkspaceOp{}, fmt.Errorf("op is consecutive with rev %d not current rev %d: %s", p.Rev()-1, p.Rev(), err)
 				}
 			}
 
-			level.Error(logger).Log("op-is-not-consecutive-with-history", "", "op", op, "history", fmt.Sprint(p.history), "composed-history", allHistory, "err", err)
+			level.Error(log).Log("op-is-not-consecutive-with-history", "", "op", op, "history", fmt.Sprint(p.history), "composed-history", allHistory, "err", err)
 			return ot.WorkspaceOp{}, err
 		}
 	}
@@ -213,7 +213,7 @@ func (p *Proxy) RecvFromUpstream(logger log.Logger, op ot.WorkspaceOp) (ot.Works
 	// TODO(sqs): this is bad because if Apply fails, p.Wait and p.Buf
 	// have already been overwritten.
 	if p.Apply != nil {
-		if err := p.Apply(logger, op); err != nil {
+		if err := p.Apply(log, op); err != nil {
 			return ot.WorkspaceOp{}, err
 		}
 	}

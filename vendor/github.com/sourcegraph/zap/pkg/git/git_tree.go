@@ -1,7 +1,6 @@
 package git
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -13,7 +12,7 @@ import (
 	"github.com/sourcegraph/zap/pkg/gitutil"
 )
 
-func CreateTreeForOp(logger log.Logger, gitRepo interface {
+func CreateTreeForOp(log *log.Context, gitRepo interface {
 	ReadBlob(snapshot, name string) ([]byte, string, string, error)
 	ListTreeFull(string) (*gitutil.Tree, error)
 	FileInfoForPath(rev, path string) (string, string, error)
@@ -108,7 +107,7 @@ func CreateTreeForOp(logger log.Logger, gitRepo interface {
 				SrcSHA: sha, DstSHA: sha,
 				SrcPath: stripFileOrBufferPath(src), DstPath: stripFileOrBufferPath(dst),
 			}}); err != nil {
-				level.Error(logger).Log("tree-apply-changes-failed", err, "src", src, "dst", dst, "base", base, "op", op)
+				level.Error(log).Log("tree-apply-changes-failed", err, "src", src, "dst", dst, "base", base, "op", op)
 				return "", err
 			}
 		}
@@ -228,7 +227,7 @@ func CreateTreeForOp(logger log.Logger, gitRepo interface {
 		if err := doc.Apply(edits); err != nil {
 			err := fmt.Errorf("apply OT edit to %s @ %s: %s (doc: %q, op: %v)", f, base, err, data, op)
 			if panicOnSomeErrors {
-				level.Error(logger).Log("PANIC-BELOW", "")
+				level.Error(log).Log("PANIC-BELOW", "")
 				panic(err)
 			}
 			return "", err
@@ -251,10 +250,10 @@ func CreateTreeForOp(logger log.Logger, gitRepo interface {
 	return gitRepo.CreateTree("", tree.Root)
 }
 
-func CreateWorktreeSnapshotCommit(ctx context.Context, gitRepo interface {
-	MakeCommit(ctx context.Context, parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
+func CreateWorktreeSnapshotCommit(gitRepo interface {
+	MakeCommit(parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
 }, parent string) (string, []*gitutil.ChangedFile, error) {
-	commitID, changes, err := gitRepo.MakeCommit(ctx, parent, true)
+	commitID, changes, err := gitRepo.MakeCommit(parent, true)
 	if err != nil {
 		return "", nil, err
 	}

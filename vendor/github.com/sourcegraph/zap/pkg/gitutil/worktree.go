@@ -2,7 +2,6 @@ package gitutil
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -80,6 +79,14 @@ func (w Worktree) Clean() error {
 }
 
 const RebaseApplyDir = "rebase-apply"
+
+func (w Worktree) IsRebaseApplying() (bool, error) {
+	fi, err := os.Stat(filepath.Join(w.GitDir(), RebaseApplyDir))
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return err == nil && fi.Mode().IsDir(), err
+}
 
 func (w Worktree) CheckoutDetachedHEAD(commit string) error {
 	if len(commit) != 40 {
@@ -179,7 +186,7 @@ func (w Worktree) DiffIndex(head string) ([]*ChangedFile, error) {
 	return changedFiles, nil
 }
 
-func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*ChangedFile, error) {
+func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 	var (
 		changesMu sync.Mutex
 		changes   []*ChangedFile
@@ -234,10 +241,6 @@ func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*
 		return nil, err
 	}
 
-	if ctx.Err() != nil {
-		return nil, ctx.Err() // early cancellation
-	}
-
 	// Fix some artifacts of computing these 2 diffs separately and
 	// merging them together.
 
@@ -285,9 +288,6 @@ func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*
 		}
 		cleanChanges := changes[:0]
 		for _, c := range changes {
-			if ctx.Err() != nil {
-				return nil, ctx.Err() // early cancellation
-			}
 			switch c.Status[0] {
 			case 'A', 'D':
 				_, created := created[c.SrcPath]
@@ -343,11 +343,6 @@ func (e *WorktreeConcurrentlyModifiedError) Error() string {
 	return fmt.Sprintf("worktree concurrently modified during error: %s", e.Err)
 }
 
-func IsWorktreeConcurrentlyModified(err error) bool {
-	_, ok := err.(*WorktreeConcurrentlyModifiedError)
-	return ok
-}
-
 func (w Worktree) CreateTreeAndRacilyFillInNewFileSHAs(basePath string, entries []*TreeEntry) (string, error) {
 	for _, e := range entries {
 		// Entries that were added, and the ancestor trees thereof,
@@ -389,28 +384,19 @@ func (w Worktree) CreateTreeAndRacilyFillInNewFileSHAs(basePath string, entries 
 	return w.BareRepo.CreateTree(basePath, entries)
 }
 
-func (w Worktree) MakeCommit(ctx context.Context, parent string, onlyIfChangedFiles bool) (string, []*ChangedFile, error) {
+func (w Worktree) MakeCommit(parent string, onlyIfChangedFiles bool) (string, []*ChangedFile, error) {
 	if parent == "" {
 		panic("empty parent commit")
 	}
-
-	// Check for ctx.Err() after each piece of work to avoid doing
-	// unnecessary work if we're canceled.
 
 	onRootCommit, err := w.HEADHasNoCommitsAndNextCommitWillBeRootCommit()
 	if err != nil {
 		return "", nil, err
 	}
-	if ctx.Err() != nil {
-		return "", nil, ctx.Err()
-	}
 
-	changes, err := w.DiffIndexAndWorkingTree(ctx, parent)
+	changes, err := w.DiffIndexAndWorkingTree(parent)
 	if err != nil {
 		return "", nil, err
-	}
-	if ctx.Err() != nil {
-		return "", nil, ctx.Err()
 	}
 	if onlyIfChangedFiles && len(changes) == 0 {
 		return "", nil, nil
@@ -421,16 +407,10 @@ func (w Worktree) MakeCommit(ctx context.Context, parent string, onlyIfChangedFi
 	if err != nil {
 		return "", nil, err
 	}
-	if ctx.Err() != nil {
-		return "", nil, ctx.Err()
-	}
 
 	// Update full tree with changes.
 	if err := tree.ApplyChanges(changes); err != nil {
 		return "", nil, err
-	}
-	if ctx.Err() != nil {
-		return "", nil, ctx.Err()
 	}
 
 	// Create a tree object with the changes (without changing the
@@ -439,10 +419,7 @@ func (w Worktree) MakeCommit(ctx context.Context, parent string, onlyIfChangedFi
 	if err != nil {
 		return "", nil, err
 	}
-	if ctx.Err() != nil {
-		return "", nil, ctx.Err()
-	}
 
-	commitID, err := w.CreateCommitFromTree(ctx, treeID, parent, onRootCommit)
+	commitID, err := w.CreateCommitFromTree(treeID, parent, onRootCommit)
 	return commitID, changes, err
 }

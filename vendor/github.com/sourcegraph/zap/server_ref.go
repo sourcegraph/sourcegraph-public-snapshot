@@ -63,7 +63,7 @@ func (r serverRef) history() []ot.WorkspaceOp {
 // of the ref upstream.
 //
 // The caller MUST hold the repo.acquireRef lock for the given ref.
-func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState, acquireRef bool) error {
+func (s *Server) doApplyRefConfiguration(ctx context.Context, log *log.Context, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState, acquireRef bool) error {
 	oldConfig := oldRepoConfig.Refs[refID.Ref]
 	newConfig := newRepoConfig.Refs[refID.Ref]
 
@@ -100,13 +100,13 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 
 	if upstreamChanged && newConfig.Upstream != "" && refObj != nil {
 		// Start tracking new upstream.
-		logger := log.With(logger, "set-upstream", newConfig.Upstream, "overwrite", newConfig.Overwrite)
-		level.Debug(logger).Log()
+		log := log.With("set-upstream", newConfig.Upstream, "overwrite", newConfig.Overwrite)
+		level.Debug(log).Log()
 
 		upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: ref.Name}
 		if sendCurrentState {
 			if newConfig.Overwrite {
-				cl, err := s.remotes.getOrCreateClient(ctx, logger, newRemote.Endpoint)
+				cl, err := s.remotes.getOrCreateClient(ctx, log, newRemote.Endpoint)
 				if err != nil {
 					return err
 				}
@@ -115,7 +115,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 					RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 					History:     refObj.history(),
 				}
-				level.Info(logger).Log("overwrite-ref-on-upstream", newRefState)
+				level.Info(log).Log("overwrite-ref-on-upstream", newRefState)
 				debugSimulateLatency()
 				if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 					RefIdentifier: upstreamRefID,
@@ -135,7 +135,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 					}
 				}
 
-				if err := s.reconcileRefWithTrackingRef(ctx, logger, repo, refID, *ref, *trackingRef, newConfig); err != nil {
+				if err := s.reconcileRefWithTrackingRef(ctx, log, repo, refID, *ref, *trackingRef, newConfig); err != nil {
 					return err
 				}
 			}
@@ -146,15 +146,15 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 			// use the ones captured by the closure?
 			upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: refID.Ref}
 
-			logger := s.baseLogger()
-			logger = log.With(logger, "send-to-upstream", upstreamRefID, "endpoint", newRemote.Endpoint, "remote", newConfig.Upstream, "rev", upstreamRev, "op", op)
+			log := s.baseLogger()
+			log = log.With("send-to-upstream", upstreamRefID, "endpoint", newRemote.Endpoint, "remote", newConfig.Upstream, "rev", upstreamRev, "op", op)
 
-			cl, err := s.remotes.getOrCreateClient(ctx, logger, newRemote.Endpoint)
+			cl, err := s.remotes.getOrCreateClient(ctx, log, newRemote.Endpoint)
 			if err != nil {
-				level.Error(logger).Log("send-to-upstream-failed-to-create-client", err)
+				level.Error(log).Log("send-to-upstream-failed-to-create-client", err)
 				return
 			}
-			level.Debug(logger).Log()
+			level.Debug(log).Log()
 			debugSimulateLatency()
 			if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 				RefIdentifier: upstreamRefID,
@@ -164,7 +164,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 				},
 				Op: &op,
 			}); err != nil {
-				level.Error(logger).Log("send-to-upstream-failed", err, "op", op)
+				level.Error(log).Log("send-to-upstream-failed", err, "op", op)
 				if os.Getenv("SEND_TO_UPSTREAM_ERRORS_FATAL") != "" {
 					panic(fmt.Sprintf("SendToUpstream(%d, %v) failed: %s", upstreamRev, op, err))
 				}
@@ -183,17 +183,17 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 								RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 								History:     refObj.history(),
 							}
-							level.Info(logger).Log("overwrite-ref-after-error", newRefState)
+							level.Info(log).Log("overwrite-ref-after-error", newRefState)
 							if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 								RefIdentifier: upstreamRefID,
 								Force:         true,
 								State:         newRefState,
 							}); err == nil {
 								if err := refObj.ot.AckFromUpstream(); err != nil {
-									level.Error(logger).Log("ack-after-overwrite-ref-after-error-failed", err)
+									level.Error(log).Log("ack-after-overwrite-ref-after-error-failed", err)
 								}
 							} else {
-								level.Error(logger).Log("overwrite-ref-after-error-failed", err)
+								level.Error(log).Log("overwrite-ref-after-error-failed", err)
 							}
 						}
 					}()
@@ -206,7 +206,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 	return nil
 }
 
-func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger log.Logger, repoName string, repo *serverRepo, ref string) error {
+func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, ref string) error {
 	config, err := repo.getConfigNoLock()
 	if err != nil {
 		return err
@@ -235,7 +235,7 @@ func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger l
 	if err != nil {
 		return err
 	}
-	return s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldConfig, finalConfig, false, false, false)
+	return s.doApplyRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldConfig, finalConfig, false, false, false)
 }
 
 // TODO(sqs): hack to "safely" determine a default upstream, until we
@@ -249,7 +249,7 @@ func (c *RepoConfiguration) defaultUpstream() (string, error) {
 	return "", errors.New("unable to determine branch's default upstream: more than 1 remote exists")
 }
 
-func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, logger log.Logger, repo *serverRepo, localRefID RefIdentifier, local, tracking refdb.Ref, refConfig RefConfiguration) error {
+func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, log *log.Context, repo *serverRepo, localRefID RefIdentifier, local, tracking refdb.Ref, refConfig RefConfiguration) error {
 	// Assumes caller holds the repo.refAcquire(ref.Ref) lock.
 
 	localObj := local.Object.(serverRef)
@@ -283,7 +283,7 @@ func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, logger log.Log
 			History:     trackingObj.history(),
 		}
 		if err := s.updateLocalTrackingRefAfterUpstreamUpdate(ctx,
-			log.With(logger, "fast-forward-to-upstream", newRefState),
+			log.With("fast-forward-to-upstream", newRefState),
 			repo,
 			local,
 			RefUpdateDownstreamParams{

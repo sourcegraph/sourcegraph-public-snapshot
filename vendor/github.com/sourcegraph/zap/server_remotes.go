@@ -40,7 +40,7 @@ type serverRemotes struct {
 	newClient func(ctx context.Context, endpoint string) (UpstreamClient, error)
 }
 
-func (sr *serverRemotes) getOrCreateClient(ctx context.Context, logger log.Logger, endpoint string) (UpstreamClient, error) {
+func (sr *serverRemotes) getOrCreateClient(ctx context.Context, log *log.Context, endpoint string) (UpstreamClient, error) {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if sr.newClient == nil {
@@ -56,28 +56,28 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, logger log.Logge
 		if err != nil {
 			return nil, err
 		}
-		level.Info(logger).Log("connected-to-remote", endpoint)
+		level.Info(log).Log("connected-to-remote", endpoint)
 		go func() {
 			<-cl.DisconnectNotify()
 			// If server is closed, do not attempt to connect. This
 			// prevents an infinite loop when the server closes and
 			// its connections are closed (which usually would cause
 			// them all to try to reconnect).
-			if sr.parent.isClosed() || ctx.Err() != nil {
+			if sr.parent.isClosed() {
 				return
 			}
 
-			logger := log.With(sr.parent.baseLogger(), "remote-client-monitor", endpoint)
-			level.Warn(logger).Log("disconnected", "")
+			log := sr.parent.baseLogger().With("remote-client-monitor", endpoint)
+			level.Warn(log).Log("disconnected", "")
 			sr.mu.Lock()
 			delete(sr.conn, endpoint)
 			sr.mu.Unlock()
 			if err := backoff.RetryNotifyWithContext(context.Background(), func(ctx context.Context) error {
-				return sr.tryReconnect(ctx, logger, endpoint)
+				return sr.tryReconnect(ctx, log, endpoint)
 			}, remoteBackOff(), func(err error, d time.Duration) {
-				level.Debug(logger).Log("retry-reconnect-after-error", err)
+				level.Debug(log).Log("retry-reconnect-after-error", err)
 			}); err != nil {
-				level.Error(logger).Log("reconnect-failed-after-retries", err)
+				level.Error(log).Log("reconnect-failed-after-retries", err)
 			}
 		}()
 		cl.SetRefUpdateCallback(func(ctx context.Context, params RefUpdateDownstreamParams) error {
@@ -85,9 +85,9 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, logger log.Logge
 
 			// Create a clean logger, because it will be used in
 			// requests other than the initial one.
-			logger := log.With(sr.parent.baseLogger(), "callback-from-remote-endpoint", endpoint)
-			if err := sr.parent.handleRefUpdateFromUpstream(ctx, logger, params, endpoint); err != nil {
-				level.Error(logger).Log("params", params, "err", err)
+			log := sr.parent.baseLogger().With("callback-from-remote-endpoint", endpoint)
+			if err := sr.parent.handleRefUpdateFromUpstream(ctx, log, params, endpoint); err != nil {
+				level.Error(log).Log("params", params, "err", err)
 				return err
 			}
 			return nil
@@ -115,13 +115,13 @@ func (sr *serverRemotes) closeAndRemoveClient(endpoint string) error {
 	return cl.Close()
 }
 
-func (sr *serverRemotes) tryReconnect(ctx context.Context, logger log.Logger, endpoint string) error {
-	level.Debug(logger).Log("try-reconnect", "")
-	cl, err := sr.getOrCreateClient(ctx, logger, endpoint)
+func (sr *serverRemotes) tryReconnect(ctx context.Context, log *log.Context, endpoint string) error {
+	level.Debug(log).Log("try-reconnect", "")
+	cl, err := sr.getOrCreateClient(ctx, log, endpoint)
 	if err != nil {
 		return err
 	}
-	level.Debug(logger).Log("reconnect-ok", "")
+	level.Debug(log).Log("reconnect-ok", "")
 
 	reestablishRepo := func(repoName string, repo *serverRepo) error {
 		repoConfig, err := repo.getConfig()
@@ -130,7 +130,7 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, logger log.Logger, en
 		}
 		for remoteName, remote := range repoConfig.Remotes {
 			if remote.Endpoint == endpoint {
-				level.Debug(logger).Log("reestablish-watch-repo", repoName, "remote", remoteName)
+				level.Debug(log).Log("reestablish-watch-repo", repoName, "remote", remoteName)
 				if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: remote.Repo, Refspecs: remote.Refspecs}); err != nil {
 					return err
 				}
