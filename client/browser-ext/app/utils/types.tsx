@@ -47,6 +47,7 @@ export enum Domain {
 	GITHUB,
 	SGDEV_PHABRICATOR,
 	SOURCEGRAPH,
+	SGDEV_BITBUCKET,
 }
 
 export interface CodeCell {
@@ -98,4 +99,19 @@ export enum GitHubMode {
 	Blob,
 	Commit,
 	PullRequest,
+}
+
+export interface BitbucketUrl {
+	mode: BitbucketMode;
+}
+
+export enum BitbucketMode {
+	Browse = 1, // 
+}
+
+export interface BitbucketBrowseUrl extends BitbucketUrl {
+	projectCode: string;
+	repo: string;
+	path: string;
+	rev: string;
 }

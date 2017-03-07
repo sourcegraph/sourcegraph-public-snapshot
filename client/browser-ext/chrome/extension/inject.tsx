@@ -8,6 +8,7 @@ setEventLogger(new ExtensionEventLogger());
 import { getDomain } from "../../app/utils";
 import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
 import { Domain } from "../../app/utils/types";
+import { injectBitbucketApplication } from "./inject_bitbucket";
 import { injectGitHubApplication } from "./inject_github";
 import { injectPhabricatorApplication } from "./inject_phabricator";
 
@@ -32,6 +33,10 @@ function injectApplication(loc: Location): void {
 		case Domain.SOURCEGRAPH:
 			setSourcegraphUrl("https://sourcegraph.com");
 			injectSourcergaphCloudApplication();
+			break;
+		case Domain.SGDEV_BITBUCKET:
+			setSourcegraphUrl(SGDEV_SOURCEGRAPH_URL);
+			injectBitbucketApplication();
 			break;
 		default:
 			break;

@@ -140,6 +140,9 @@ export function getDomain(loc: Location): Domain {
 	if (/^https?:\/\/(www.)?sourcegraph.com/.test(loc.href)) {
 		return Domain.SOURCEGRAPH;
 	}
+	if (/^https?:\/\/(www.)?localhost:7990/.test(loc.href)) {
+		return Domain.SGDEV_BITBUCKET;
+	}
 	throw new Error(`Unable to determine the domain, ${loc.href}`);
 }
 

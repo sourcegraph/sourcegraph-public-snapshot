@@ -17,6 +17,6 @@
   "background": {
     "page": "background.html"
   },
-  "permissions": [ "cookies", "tabs", "storage", "https://github.com/*", "https://sourcegraph.com/*", "http://phabricator.aws.sgdev.org/*", "http://node.aws.sgdev.org:30000/*"],
+  "permissions": [ "cookies", "tabs", "storage", "https://github.com/*", "https://sourcegraph.com/*", "http://phabricator.aws.sgdev.org/*", "http://node.aws.sgdev.org:30000/*", "http://localhost:7990/*"],
   "content_security_policy": "default-src 'self'; script-src 'self' https://localhost:3000  https://sourcegraph-logging.telligentdata.com 'unsafe-eval'; connect-src https://sourcegraph.com/ https://sourcegraph-logging.telligentdata.com https://localhost:3000 wss://localhost:3000;"
 }

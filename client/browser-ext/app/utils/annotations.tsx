@@ -36,7 +36,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 			}
 			return;
 		}
-		el.setAttribute(dataKey, "true");
+		// el.setAttribute(dataKey, "true");
 
 		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
