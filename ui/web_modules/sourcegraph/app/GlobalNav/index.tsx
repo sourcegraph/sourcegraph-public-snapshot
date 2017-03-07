@@ -103,6 +103,7 @@ export class GlobalNav extends Container<Props, State> {
 			display: shouldHide ? "none" : "block",
 			paddingLeft: whitespace[2],
 			paddingRight: whitespace[2],
+			zIndex: 2,
 		};
 
 		const logoSpin = keyframes({
