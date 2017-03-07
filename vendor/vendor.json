@@ -155,22 +155,22 @@
 			"revisionTime": "2016-12-07T00:33:20Z"
 		},
 		{
-			"checksumSHA1": "yZX1JnkLqTWcbc6ogOlAWK7/Xro=",
+			"checksumSHA1": "ZSRtnAM/vH1sl0jxr4HztYI/4vs=",
 			"path": "github.com/go-kit/kit/log",
-			"revision": "a59216a7ce3200b6ba0c05ee8b6da44b852833ce",
-			"revisionTime": "2017-02-10T04:40:37Z"
+			"revision": "fadad6fffe0466b19df9efd9acde5c9a52df5fa4",
+			"revisionTime": "2017-03-06T20:53:01Z"
 		},
 		{
-			"checksumSHA1": "vKJtv/ce4b4ZeTbhKoZDoFqt24Y=",
+			"checksumSHA1": "y2gtCE6zNJsgGNm8BoQUUxUtZXg=",
 			"path": "github.com/go-kit/kit/log/level",
-			"revision": "bd066f4fef4ea0d3123fc56bb6b5953d3e5b8075",
-			"revisionTime": "2017-03-05T18:43:24Z"
+			"revision": "fadad6fffe0466b19df9efd9acde5c9a52df5fa4",
+			"revisionTime": "2017-03-06T20:53:01Z"
 		},
 		{
 			"checksumSHA1": "JR9aYgbjMFAnQzkuDjx+mCpE+dU=",
 			"path": "github.com/go-kit/kit/log/term",
-			"revision": "a59216a7ce3200b6ba0c05ee8b6da44b852833ce",
-			"revisionTime": "2017-02-10T04:40:37Z"
+			"revision": "fadad6fffe0466b19df9efd9acde5c9a52df5fa4",
+			"revisionTime": "2017-03-06T20:53:01Z"
 		},
 		{
 			"checksumSHA1": "KxX/Drph+byPXBFIXaCZaCOAnrU=",
