@@ -9,7 +9,6 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
 
 type commitSpec struct {
@@ -18,9 +17,19 @@ type commitSpec struct {
 	CommitID      string
 }
 
+type zapRefSpec struct {
+	Branch string
+	Base   string
+}
+
 type commitStateResolver struct {
 	commit          *commitResolver
+	zapRef          *zapRefResolver
 	cloneInProgress bool
+}
+
+func (r *commitStateResolver) ZapRef() *zapRefResolver {
+	return r.zapRef
 }
 
 func (r *commitStateResolver) Commit() *commitResolver {
@@ -34,6 +43,10 @@ func (r *commitStateResolver) CloneInProgress() bool {
 type commitResolver struct {
 	repo   *sourcegraph.Repo
 	commit commitSpec
+}
+
+type zapRefResolver struct {
+	zapRef zapRefSpec
 }
 
 func commitByID(ctx context.Context, id graphql.ID) (*commitResolver, error) {
@@ -56,14 +69,6 @@ func (r *commitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*treeResolver, error) {
-
-	// We check the paywall before the tree resolver so that the browser
-	// extension can retrieve repository information, but retrieving file
-	// content is not possible.
-	if err := localstore.Payments.CheckPaywallForRepo(ctx, r.repo); err != nil {
-		return nil, err
-	}
-
 	return makeTreeResolver(ctx, r.commit, args.Path, args.Recursive)
 }
 
@@ -91,6 +96,14 @@ func (r *commitResolver) Languages(ctx context.Context) ([]string, error) {
 		names[i] = l.Name
 	}
 	return names, nil
+}
+
+func (r *zapRefResolver) Branch(ctx context.Context) string {
+	return r.zapRef.Branch
+}
+
+func (r *zapRefResolver) Base(ctx context.Context) string {
+	return r.zapRef.Base
 }
 
 func createCommitState(repo *sourcegraph.Repo, rev *sourcegraph.ResolvedRev) *commitStateResolver {

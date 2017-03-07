@@ -5,18 +5,22 @@ import * as React from "react";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
+import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 
-import { Router } from "sourcegraph/app/router";
+import { getRoutePattern } from "sourcegraph/app/routePatterns";
+import { RouteProps, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { registerEditorCallbacks, registerQuickopenListeners, syncEditorWithRouterProps, toggleQuickopen as quickopen } from "sourcegraph/editor/config";
+import { urlWithRev } from "sourcegraph/repo/routes";
 import { init, unmount } from "sourcegraph/workbench/main";
+import { Services } from "sourcegraph/workbench/services";
 
 // WorkbenchShell loads the workbench and calls init on it.
 @autobind
-export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
+export class WorkbenchShell extends React.Component<AbsoluteLocation & RouteProps & { rev: string | null }, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -26,6 +30,7 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 	services: ServiceCollection;
 	listener: number;
 	disposables: IDisposable[];
+	currWorkspace: IWorkspace;
 
 	domRef(domElement: HTMLDivElement): void {
 		if (!domElement) {
@@ -37,11 +42,13 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 
 		const { repo, commitID, path } = this.props;
 		const resource = URIUtils.pathInRepo(repo, commitID, path);
-		[this.workbench, this.services] = init(domElement, resource);
+		[this.workbench, this.services] = init(domElement, resource, this.props.zapRef);
 		registerEditorCallbacks();
 
 		this.layout();
 		syncEditorWithRouterProps(this.props);
+
+		this.currWorkspace = (this.services.get(IWorkspaceContextService) as IWorkspaceContextService).getWorkspace();
 	}
 
 	componentWillMount(): void {
@@ -55,6 +62,39 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 		// want to display an overlay we've left it the Sourcegraph application's responsibility for toggling visibilty.
 		const modalOverlay = document.querySelector(".workbench-modal-overlay") as any;
 		this.disposables = registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden");
+
+		const contextService = Services.get(IWorkspaceContextService);
+		this.disposables.push(contextService.onWorkspaceUpdated(workspace => {
+			const revState = workspace.revState;
+			if (revState) {
+				if (revState.zapRef && revState.zapRef !== this.props.zapRef) {
+					// extension has changed to a new zap ref, update URL
+					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
+					window.location.href = urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef);
+					return;
+				}
+				if (!revState.zapRef && this.props.zapRef) {
+					// currently looking at a zap ref, update URL now to the base branch.
+					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null));
+					window.location.href = urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null);
+					return;
+				}
+			}
+		}));
+
+		if (this.props.zapRef) {
+			// HACK(john): synchronize on zap extension bootstrap
+			setTimeout(() => {
+				contextService.setWorkspace({
+					...contextService.getWorkspace(),
+					revState: {
+						zapRef: this.props.zapRef,
+						commitID: this.props.commitID,
+						branch: this.props.branch,
+					},
+				});
+			}, 1000);
+		}
 	}
 
 	componentWillUnmount(): void {
@@ -82,6 +122,13 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation, {}> {
 			this.workbench.setSideBarHidden(false);
 		}
 		this.workbench.layout();
+
+		// HACK: our slightly-larger-than-vscode's status bar needs a re-layout to render
+		// entirely within the window, but the layout has to be async. We should update
+		// vscode CSS to accomodate a taller status bar so this is unnecessary.
+		setTimeout(() => {
+			this.workbench.layout();
+		}, 100);
 	}
 
 	toggleQuickopen(event: KeyboardEvent & { target: Node }): void {

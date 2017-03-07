@@ -23,7 +23,7 @@ export class NoTabsTitleControl extends TitleControl {
 			return;
 		}
 		const editor = this.context && this.context.activeEditor;
-		const resource = getResource(editor) || (editor as any).resource;
+		const resource = getResource(editor) || ((editor as any).details && (editor as any).details.resource) || (editor as any).resource;
 		const pathspec = URIUtils.repoParams(resource);
 		const component = <EditorTitle pathspec={pathspec} />;
 		ReactDOM.render(component, this.domElement);

@@ -14,7 +14,8 @@ import { urlToRepo } from "sourcegraph/repo/routes";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
-	private _emitter: Emitter<URI> = new Emitter<URI>();
+	private _onDidOpenEditor: Emitter<URI> = new Emitter<URI>();
+	private _diffMode: boolean = false;
 
 	public openEditor(data: IResourceInput, options?: any): TPromise<IEditor>;
 	public openEditor(data: IEditorInput, options?: any): TPromise<IEditor>;
@@ -63,8 +64,13 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		if (!data) {
 			data = { resource: mainResource };
 		}
+		if (data.resource) {
+			this._diffMode = false;
+		} else if (data.modifiedInput) {
+			this._diffMode = true;
+		}
 
-		this._emitter.fire(mainResource);
+		this._onDidOpenEditor.fire(mainResource);
 
 		// calling openEditor with a non-zero position, or options equal to
 		// true opens up another editor to the side.
@@ -83,20 +89,25 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 				throw new Error(`unknown data: ${data}`);
 			}
 			updateFileTree(mainResource);
-			return this.createInput(data).then(input => super.openEditor(input, options, 0));
+			return this.createInput(data).then(input => super.openEditor(input, options, false));
 		});
 	}
 
 	public createInput(data: IResourceInput): TPromise<IEditorInput>;
 	public createInput(data: IEditorInput): TPromise<IEditorInput>;
 	public createInput(data: any): TPromise<IEditorInput> {
-		if (data.resource && data.resource instanceof URI && data.resource.scheme === "git" && URIUtils.hasAbsoluteCommitID(data.resource)) {
-			return TPromise.as((this as any).createFileInput(data.resource)); // access superclass's private method
+		const resource = data.resource;
+		if (resource && resource instanceof URI && resource.scheme === "git") {
+			return TPromise.as((this as any).createFileInput(resource)); // access superclass's private method
 		}
 		return super.createInput(data);
 	}
 
-	public onDidOpenEditor: Event<URI> = this._emitter.event;
+	get diffMode(): boolean {
+		return this._diffMode;
+	}
+
+	public onDidOpenEditor: Event<URI> = this._onDidOpenEditor.event;
 }
 
 export const DelegatingWorkbenchEditorService = vs.DelegatingWorkbenchEditorService;

@@ -35,6 +35,7 @@ export SRC_APP_DISABLE_SUPPORT_SERVICES=true
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 export LSP_PROXY_BG=127.0.0.1:4388
+export ZAP_SERVER="ws://$HOME/.sourcegraph/zap"
 
 type ulimit > /dev/null && ulimit -n 10000
 exec "$PWD"/vendor/bin/rego \

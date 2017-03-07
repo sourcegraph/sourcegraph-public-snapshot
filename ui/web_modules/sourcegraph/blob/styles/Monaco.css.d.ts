@@ -3,6 +3,7 @@
 
 export const colors: string;
 export const vars: string;
+export const c_cool_dark_gray_2: string;
 export const c_cool_gray: string;
 export const c_cool_gray2: string;
 export const c_cool_gray_2: string;

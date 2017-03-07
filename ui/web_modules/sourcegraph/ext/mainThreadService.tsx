@@ -18,7 +18,6 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 	public _serviceBrand: any;
 
 	private remotes: Map<string, IMainProcessExtHostIPC>;
-	private defaultRemoteCom: IMainProcessExtHostIPC | undefined;
 	private logCommunication: boolean;
 
 	constructor(
@@ -68,13 +67,11 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 		remoteCom.setManyHandler(this);
 
 		this.remotes.set(workspace.toString(), remoteCom);
-		if (!this.defaultRemoteCom) {
-			this.defaultRemoteCom = remoteCom;
-		}
+		this.remotes.set(workspace.with({ query: `${workspace.query}~0` }).toString(), remoteCom);
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
-		if (!this.defaultRemoteCom) {
+		if (this.remotes.size === 0) {
 			throw new Error("protocol not ready (worker is not yet attached)");
 		}
 
@@ -94,10 +91,6 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 
 					case "$provideWorkspaceReferences":
 						return routeToWorkspaceHost(args[2] as URI);
-
-					case "$provideWorkspaceSymbols":
-						// Workspace symbol request doesn't provide URI; query current workspace.
-						return routeToWorkspaceHost(this.contextService.getWorkspace().resource);
 
 					default:
 						if (args.length >= 2 && args[1] instanceof URI) {
@@ -124,11 +117,8 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 				break;
 		}
 
-		// Fallback to calling the default workspace for non-workspace-specific requests.
-		if (!this.defaultRemoteCom) {
-			throw new Error(`no default workspace to route request to ${proxyId} ${path}, ${args}`);
-		}
-		return this.defaultRemoteCom.callOnRemote(proxyId, path, args);
+		// Default to routing requests to the current workspace.
+		return routeToWorkspaceHost(this.contextService.getWorkspace().resource);
 	}
 }
 

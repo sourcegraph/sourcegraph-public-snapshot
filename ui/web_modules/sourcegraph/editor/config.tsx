@@ -2,15 +2,20 @@ import * as throttle from "lodash/throttle";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
+import { TPromise } from "vs/base/common/winjs.base";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderRegistry } from "vs/editor/common/modes";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
+import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
+import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { IFileService } from "vs/platform/files/common/files";
 import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
+import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IQuickOpenService } from "vs/workbench/services/quickopen/common/quickOpenService";
@@ -45,8 +50,7 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 
 	const exists = await Services.get(IFileService).existsFile(resource);
 	if (!exists) {
-		const href = URI.parse(window.location.href).toJSON();
-		if (href.query && href.query.includes("tmpZapRef=")) {
+		if (location.zapRef) {
 			// Don't render 404 in a zap session yet since the file may have been
 			// created by an op.
 			return;
@@ -54,8 +58,19 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 		renderNotFoundError();
 		return;
 	}
+	if (location.zapRef) {
+		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource);
+	} else {
+		renderFileEditor(resource, selection);
+	}
+}
 
-	renderFileEditor(resource, selection);
+function resourceForCurrentEditor(): URI | null {
+	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
+	const input = editorService.getActiveEditor();
+	const editor = getCodeEditor(input);
+	if (!editor) { return null; }
+	return editor.getModel().uri;
 }
 
 /**
@@ -66,6 +81,61 @@ export function renderFileEditor(resource: URI, selection: IRange | null): void 
 	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
+}
+
+/**
+ * renderEditor opens a diff editor for two files.
+ */
+export function renderDiffEditor(left: URI, right: URI): void {
+	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
+	const resolverService = Services.get(ITextModelResolverService);
+	TPromise.join([editorService.createInput({ resource: left }), editorService.createInput({ resource: right })]).then(inputs => {
+		const leftInput = new ResourceEditorInput("", "", left, resolverService);
+		const rightInput = new ResourceEditorInput("", "", right, resolverService);
+		const diff = new DiffEditorInput("", "", leftInput, rightInput);
+		editorService.openEditorWithoutURLChange(right, diff, {});
+	});
+}
+
+/**
+ * toggleEditorDiffMode toggles the mode for the current editor (diff on/off).
+ */
+export function toggleEditorDiffMode(): void {
+	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
+	if (editorService.diffMode) {
+		changeEditorMode(false);
+	} else {
+		changeEditorMode(true);
+	}
+}
+
+/**
+ * isOnZapRef returns whether the user is currently viewing a zap ref
+ */
+export function isOnZapRef(): boolean {
+	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
+	return Boolean(contextService.getWorkspace().revState && contextService.getWorkspace().revState!.zapRef);
+}
+
+/**
+ * changeEditorMode changes the diff mode for the current editor.
+ */
+export function changeEditorMode(diff?: boolean): void {
+	const uri = resourceForCurrentEditor();
+	if (!uri) {
+		return;
+	}
+
+	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
+	const revState = contextService.getWorkspace().revState;
+
+	if (diff) {
+		const left = uri.with({ query: revState && revState.zapRef ? `${uri.query}~0` : `${uri.query}^` });
+		renderDiffEditor(left, uri);
+	} else {
+		renderFileEditor(uri, null);
+	}
+	return;
 }
 
 function updateEditorAfterURLChange(sel: IRange | null): void {
@@ -160,6 +230,7 @@ export async function updateFileTree(resource: URI): Promise<void> {
 	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
 	const newWorkspace = resource.with({ fragment: "" });
 	if (workspaceService.getWorkspace().resource.toString() !== newWorkspace.toString()) {
+		// TODO(john): this code doesn't work properly with Zap branch switching
 		workspaceService.setWorkspace({ resource: newWorkspace });
 		await view.refresh(true);
 	}
@@ -221,29 +292,15 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 	} else {
 		const hash = `#L${sel.toString()}`;
 
-		let query = "";
-		// Keep query param for zap when selecting lines.
-		if (currentZapRef) {
-			query = `?tmpZapRef=${currentZapRef}`;
-		}
-
 		// Circumvent react-router to avoid a jarring jump to the anchor position.
-		history.replaceState({}, "", window.location.pathname + query + hash);
+		history.replaceState({}, "", window.location.pathname + hash);
 	}
 }
 
-let currentZapRef: string | undefined;
-let currentZapStatus: boolean;
-
 CommandsRegistry.registerCommand("zap.reference.change", (accessor: ServicesAccessor, ref: string) => {
-	currentZapRef = ref;
-	let query = "";
-	if (currentZapRef) {
-		query = `?tmpZapRef=${currentZapRef}`;
-	}
-	history.replaceState({}, "", window.location.pathname + query + window.location.hash);
+	// TODO(john): remove
 });
 
 CommandsRegistry.registerCommand("zap.status.change", (accessor: ServicesAccessor, isRunning: boolean) => {
-	currentZapStatus = isRunning;
+	// TODO(john): remove
 });

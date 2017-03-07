@@ -1,7 +1,7 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 
-@value c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple, c_cool_dark_gray, c_green, c_orange_L1, c_blue_gray_L3 from colors;
+@value c_cool_dark_gray_2, c_cool_gray, c_cool_gray2, c_cool_gray_2, c_cool_gray_5, c_cool_mid_gray, c_cool_mid_gray_3, c_cool_mid_gray_5, c_cool_mid_gray_8, c_cool_pale_gray, c_cool_pale_gray_5, c_cool_pale_gray_8, c_cool_dark_gray, c_blue, c_blue_text, c_blue_2, c_blue_5, c_blue_8, c_black_30, c_black_20, c_black_10, c_purple, c_cool_dark_gray, c_green, c_orange_L1, c_blue_gray_L3 from colors;
 
 @value font_size_7 from vars;
 
@@ -615,6 +615,14 @@
 	color: rgba(255, 255, 255, 0.9);
 }
 
+:global .editor.modified {
+	left: 32px !important;
+}
+
+:global .editor.original > .monaco-editor > .overflow-guard {
+	width: 32px !important;
+}
+
 /* Quickopen */
 
 :global .quick-open-widget {
@@ -688,4 +696,60 @@
 
 :global .quick-open-widget .monaco-tree-row .results-group-separator {
 	border-top: none;
+}
+
+:global .monaco-workbench > .part.statusbar {
+	display: flex !important;
+	height: 30px !important;
+}
+
+:global .statusbar-item.left.statusbar-entry > a {
+	padding-top: 5px !important;
+}
+
+/* Status bar */
+
+:global .monaco-workbench .part.statusbar {
+	background-color: c_cool_dark_gray;
+	box-shadow: 0 -2px 4px c_black_20;
+	color: c_cool_dark_gray_2;
+	font-size: 1rem;
+	line-height: 1.5 !important;
+	height: 32px !important;
+}
+
+:global .monaco-workbench > .part.statusbar > .statusbar-item.right > :first-child {
+	margin: 0;
+}
+
+:global .monaco-workbench > .part.statusbar > .statusbar-item a {
+	color: c_cool_dark_gray_2 !important;
+	/*padding: 0 5px 0 5px !important;*/
+	margin-left: .5rem !important;
+	transition: all 0.25s;
+}
+
+:global .monaco-workbench > .part.statusbar > .statusbar-item a:hover,
+:global .monaco-workbench > .part.statusbar > .statusbar-item > .dropdown.send-feedback:hover {
+	color: c_cool_mid_gray !important;
+	background-color: c_black_20 !important;
+}
+
+:global .monaco-workbench > .part.statusbar > .statusbar-item > .dropdown.send-feedback > .dropdown-label.send-feedback {
+	background-image: url("data:image/svg+xml,%3Csvg fill='#5d7eac' viewBox='8 8 48 48' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3Cpath d='M43.25 38c-1.4 0-4.12 4-11.25 4s-9.86-4-11.25-4c-.4-.03-.72.26-.75.65v.1c0 1.3 4.5 7.25 12 7.25s12-5.96 12-7.25c.03-.4-.26-.72-.65-.75h-.1M40 24c-2.67 0-4 3.1-4 6 0 1.3.17 2 .75 2 1.2 0 1.66-1 3.25-1 1.6 0 2.05 1 3.25 1 .58 0 .75-.7.75-2 0-2.9-1.33-6-4-6m-16 0c-2.67 0-4 3.1-4 6 0 1.3.17 2 .75 2 1.2 0 1.66-1 3.25-1 1.6 0 2.05 1 3.25 1 .58 0 .75-.7.75-2 0-2.9-1.33-6-4-6m8 32C18.75 56 8 45.26 8 32 8 18.75 18.75 8 32 8c13.26 0 24 10.75 24 24 0 13.26-10.74 24-24 24' id='a'/%3E%3C/defs%3E%3Cuse fill-rule='evenodd' xlink:href='%23a'/%3E%3C/svg%3E") !important;
+	background-repeat: no-repeat;
+	background-position: 8px center;
+	background-size: 20px;
+	width: auto;
+}
+
+:global .monaco-workbench > .part.statusbar > .statusbar-item > .dropdown.send-feedback > .dropdown-label.send-feedback:before {
+	content: "Feedback";
+    display: inline-block;
+    padding: 4px 8px 4px 40px;
+    line-height: 1.5;
+}
+
+:global .monaco-workbench > .part.statusbar > .statusbar-item > .dropdown.send-feedback > .dropdown-label.send-feedback:hover {
+	background-image: url("data:image/svg+xml,%3Csvg fill='#93a9c8' viewBox='8 8 48 48' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3Cpath d='M43.25 38c-1.4 0-4.12 4-11.25 4s-9.86-4-11.25-4c-.4-.03-.72.26-.75.65v.1c0 1.3 4.5 7.25 12 7.25s12-5.96 12-7.25c.03-.4-.26-.72-.65-.75h-.1M40 24c-2.67 0-4 3.1-4 6 0 1.3.17 2 .75 2 1.2 0 1.66-1 3.25-1 1.6 0 2.05 1 3.25 1 .58 0 .75-.7.75-2 0-2.9-1.33-6-4-6m-16 0c-2.67 0-4 3.1-4 6 0 1.3.17 2 .75 2 1.2 0 1.66-1 3.25-1 1.6 0 2.05 1 3.25 1 .58 0 .75-.7.75-2 0-2.9-1.33-6-4-6m8 32C18.75 56 8 45.26 8 32 8 18.75 18.75 8 32 8c13.26 0 24 10.75 24 24 0 13.26-10.74 24-24 24' id='a'/%3E%3C/defs%3E%3Cuse fill-rule='evenodd' xlink:href='%23a'/%3E%3C/svg%3E") !important;
 }

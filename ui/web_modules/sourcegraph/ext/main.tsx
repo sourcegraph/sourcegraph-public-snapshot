@@ -6,7 +6,6 @@ import { context } from "sourcegraph/app/context";
 import { registerContribution as registerExtHostContribution } from "sourcegraph/ext/extHost.contribution.override";
 import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
-import { currentZapRef } from "sourcegraph/ext/zap/url";
 import { makeBlobURL } from "sourcegraph/init/worker";
 import { listEnabled as listEnabledFeatures } from "sourcegraph/util/features";
 import { Services } from "sourcegraph/workbench/services";
@@ -24,15 +23,15 @@ const workspaces = new Set<string>();
  *
  * TODO(john): there is currently no cleanup of unused extension hosts / web workers.
  */
-export function init(workspace: URI): void {
+export function init(workspace: URI, zapRef?: string): void {
 	registerExtHostContribution();
-	setupWorker(workspace);
-	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w.resource));
+	setupWorker(workspace, zapRef);
+	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w.resource, w.revState ? w.revState.zapRef : undefined));
 }
 
 let seqId = 0;
 
-export function setupWorker(workspace: URI): void {
+export function setupWorker(workspace: URI, zapRef?: string): void {
 	if (workspaces.has(workspace.toString())) {
 		return;
 	}
@@ -44,7 +43,7 @@ export function setupWorker(workspace: URI): void {
 		seqId,
 		workspace: workspace.toString(),
 		features: listEnabledFeatures(),
-		tmpZapRef: currentZapRef(),
+		zapRef: zapRef,
 		context,
 	};
 

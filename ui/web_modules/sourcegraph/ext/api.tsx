@@ -18,7 +18,6 @@ const initOpts: InitializationOptions = (self as any).extensionHostOptions; // r
 bulkEnableFeatures(initOpts.features);
 
 // TODO(sqs): pass through the zap ref
-self["__tmpZapRef"] = initOpts.tmpZapRef;
 self["sourcegraphContext"] = initOpts.context;
 
 /**
