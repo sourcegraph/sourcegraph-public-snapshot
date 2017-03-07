@@ -145,7 +145,7 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 		const router = __getRouterForWorkbenchOnly();
 		const rev = getRevFromRouter(router);
 
-		return <FlexContainer items="center" style={{
+		return <FlexContainer items="center" justify="between" style={{
 			backgroundColor: colors.blueGrayD1(),
 			boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
 			minHeight: layout.editorToolbarHeight,
@@ -157,8 +157,7 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 		}}>
 			<Heading level={6} compact={true} style={{
 				lineHeight: 0,
-				maxWidth: "100%",
-				width: "100%",
+				maxWidth: "85%",
 				whiteSpace: "nowrap",
 			}}>
 				<Link to={urlToRepoRev(this.props.repo, rev)}
@@ -174,15 +173,15 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 					<List width={21} style={{ opacity: 0.6, marginRight: whitespace[1] }} />
 					{this.props.repo.replace(/^github.com\//, "")}
 				</Link>
-				{this.state.revState && this.state.revState.zapRef &&
-					<Button onClick={() => this.toggleDiff()} color={this.state.diffMode ? "blue" : "blueGray"}
-						{...hover({ backgroundColor: !this.state.diffMode ? `${colors.blueGrayL1()} !important` : "" }) }
-						style={{
-							float: "right",
-							padding: "5px",
-						}}><History></History></Button>
-				}
 			</Heading>
+			{this.state.revState && this.state.revState.zapRef &&
+				<Button onClick={() => this.toggleDiff()} color={this.state.diffMode ? "blue" : "blueGray"}
+					{...hover({ backgroundColor: !this.state.diffMode ? `${colors.blueGrayD2()} !important` : "" }) }
+					style={{
+						flex: "0 0 auto",
+						padding: whitespace[1],
+					}}><History style={{ top: 0 }} /></Button>
+			}
 		</FlexContainer >;
 	}
 }
