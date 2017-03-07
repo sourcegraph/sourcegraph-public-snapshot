@@ -604,7 +604,8 @@
 }
 
 :global .monaco-workbench > .editor > .content > .one-editor-silo > .container > .editor-container {
-	height: calc(100% - 45px - 38px) !important;
+	/*height: calc(100% - 45px - 38px) !important;*/
+	height: calc(100% - 45px) !important;
 }
 
 :global .global-message-list {
