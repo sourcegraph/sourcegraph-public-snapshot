@@ -16,7 +16,7 @@ import { IMessageService } from "vs/platform/message/common/message";
 import "vs/platform/opener/browser/opener.contribution";
 import { ISearchService } from "vs/platform/search/common/search";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
-import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { IWorkspace, IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
 import { ITreeExplorerService } from "vs/workbench/parts/explorers/common/treeExplorerService";
 import { IWorkspaceConfigurationService } from "vs/workbench/services/configuration/common/configuration";
@@ -97,6 +97,16 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	Services = services;
 
 	return services;
+}
+
+export function getCurrentWorkspace(): IWorkspace {
+	const contextService = Services.get(IWorkspaceContextService);
+	return contextService.getWorkspace();
+}
+
+export function onWorkspaceUpdated(listener: ((workspace: IWorkspace) => any)): IDisposable {
+	const contextService = Services.get(IWorkspaceContextService);
+	return contextService.onWorkspaceUpdated(listener);
 }
 
 class DummyService { }

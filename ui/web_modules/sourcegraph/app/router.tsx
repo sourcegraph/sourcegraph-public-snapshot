@@ -1,5 +1,5 @@
 import { Location as HistoryLocation } from "history";
-import { InjectedRouter, RouterState } from "react-router";
+import { InjectedRouter, Route, RouterState } from "react-router";
 
 import { IRange } from "vs/editor/common/editorCommon";
 
@@ -37,6 +37,15 @@ export interface RouteParams {
 	// splat is the matched wildcard character(s) of the route's pattern
 	// e.g. "*/-/*" matched on "hello/-/world" will produce ["hello", "world"]
 	splat: Splat;
+}
+
+/**
+ * RouteProps inclues the properties passed by react-router into React components.
+ */
+export interface RouteProps {
+	routes: Route[];
+	params: RouteParams;
+	location: RouterLocation;
 }
 
 let r: Router; // global singleton, use with care

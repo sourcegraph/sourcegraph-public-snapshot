@@ -3,7 +3,7 @@ import { v4 as uuidV4 } from "uuid";
 import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/browser";
 
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
-import { Features, getModes } from "sourcegraph/util/features";
+import { getModes } from "sourcegraph/util/features";
 
 export function activate(): void {
 	// self.location is the blob: URI, so we need to get the main page location.
@@ -45,8 +45,8 @@ export function activate(): void {
  * locally).
  */
 function generateLSPSessionKeyIfNeeded(): string | undefined {
-	if (!Features.zap.isEnabled()) {
-		return undefined;
+	if ((self as any).extensionHostOptions.zapRef) {
+		return uuidV4(); // uses a cryptographic RNG on browsers with window.crypto (all modern browsers)
 	}
-	return uuidV4(); // uses a cryptographic RNG on browsers with window.crypto (all modern browsers)
+	return undefined;
 }

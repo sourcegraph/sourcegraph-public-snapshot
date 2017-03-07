@@ -183,11 +183,22 @@ declare namespace GQL {
 		createdAt: string;
 		pushedAt: string;
 		commit: ICommitState;
+		revState: IRevState;
 		latest: ICommitState;
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;
 		expirationDate: number | null;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IRevState {
+		__typename: string;
+		zapRef: IZapRef | null;
+		commit: ICommit | null;
+		cloneInProgress: boolean;
 	}
 
 	/*
@@ -250,5 +261,14 @@ declare namespace GQL {
 	interface IUser {
 		__typename: string;
 		githubOrgs: Array<IOrganization>;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IZapRef {
+		__typename: string;
+		base: string;
+		branch: string;
 	}
 }
