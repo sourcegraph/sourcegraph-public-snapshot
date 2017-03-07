@@ -204,9 +204,9 @@ export function registerQuickopenListeners(onShow: () => any, onHide: () => any)
 /**
  * toggleQuickopen toggles the quickopen modal state.
  */
-export function toggleQuickopen(): void {
+export function toggleQuickopen(forceHide?: boolean): void {
 	const quickopen = Services.get(IQuickOpenService);
-	if (quickOpenShown) {
+	if (quickOpenShown || forceHide) {
 		quickopen.close();
 	} else {
 		quickopen.show();

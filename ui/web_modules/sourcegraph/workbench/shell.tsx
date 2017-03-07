@@ -138,7 +138,7 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation & RouteProp
 		const slashKeyCode = 191;
 		const escapeKeyCode = 27;
 		if (!event.shiftKey && (event.key === "/" || event.key === "Escape" || event.keyCode === slashKeyCode || event.keyCode === escapeKeyCode)) {
-			quickopen();
+			quickopen(event.key === "Escape" || event.keyCode === escapeKeyCode);
 			event.preventDefault();
 		}
 	}
