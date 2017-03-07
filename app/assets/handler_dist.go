@@ -50,7 +50,7 @@ func init() {
 	baseURL = &url.URL{Path: "/.assets"}
 }
 
-func isPhabricatorAsset(path string) {
+func isPhabricatorAsset(path string) bool {
 	if strings.Contains(path, "phabricator.bundle.js") {
 		return true
 	}
