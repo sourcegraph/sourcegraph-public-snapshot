@@ -99,9 +99,10 @@ upgrade-zap:
 .PHONY: develop-zap
 develop-zap:
 	cd ui && yarn link libzap vscode-zap
-	rm -rf vendor/github.com/sourcegraph/zap vendor/github.com/go-kit/kit
+	rm -rf vendor/github.com/sourcegraph/zap
+	ln -s $(shell go list -f '{{.Dir}}' github.com/sourcegraph/zap) vendor/github.com/sourcegraph/zap
 
 .PHONY: undevelop-zap
 undevelop-zap:
 	cd ui && yarn unlink libzap vscode-zap
-	git checkout -- vendor/github.com/sourcegraph/zap vendor/github.com/go-kit/kit
+	git checkout -- vendor/github.com/sourcegraph/zap
