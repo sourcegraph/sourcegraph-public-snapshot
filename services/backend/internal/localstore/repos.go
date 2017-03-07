@@ -20,9 +20,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
-// TODO remove skipFS by decoupling packages
-var skipFS = false // used by tests
-
 func init() {
 	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(true, "ID")
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,

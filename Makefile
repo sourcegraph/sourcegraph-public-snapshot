@@ -65,9 +65,6 @@ generate:
 drop-entire-local-database:
 	psql -c "drop schema public cascade; create schema public;"
 
-drop-test-dbs:
-	psql -A -t -c "select datname from pg_database where datname like 'sgtmp%' or datname like 'graphtmp%';" | xargs -P 10 -n 1 -t dropdb
-
 PGUSER ?= $(USER)
 TESTPKGS ?= $(shell go list ./... | grep -v /vendor/)
 test: check src
