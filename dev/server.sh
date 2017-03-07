@@ -20,6 +20,8 @@ trap killWebpackDevServer EXIT
 
 curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && yarn && yarn run start &)
 
+export GITHUB_BASE_URL=http://127.0.0.1:3180
+
 mkdir -p .bin
 env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,zap}
 env SRC_REPOS_DIR=$HOME/.sourcegraph/repos ./.bin/gitserver &
@@ -33,7 +35,6 @@ detect_dev_langservers
 export DEBUG=true
 export SRC_APP_DISABLE_SUPPORT_SERVICES=true
 export SRC_GIT_SERVERS=127.0.0.1:3178
-export GITHUB_BASE_URL=http://127.0.0.1:3180
 export LSP_PROXY_BG=127.0.0.1:4388
 export ZAP_SERVER="ws://$HOME/.sourcegraph/zap"
 

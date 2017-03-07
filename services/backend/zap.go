@@ -16,6 +16,7 @@ import (
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"github.com/sourcegraph/zap"
 	"github.com/sourcegraph/zap/pkg/config"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 // TODO(john): this file is copypasta from zap, there's much more here than is strictly necessary.
@@ -46,7 +47,7 @@ func readDialAuth() (http.Header, error) {
 	return nil, nil
 }
 
-func dial(urlStr string) (jsonrpc2.ObjectStream, error) {
+func dial(urlStr string, auth string) (jsonrpc2.ObjectStream, error) {
 	if urlStr == "" {
 		panic("empty dial URL")
 	}
@@ -84,9 +85,15 @@ func dial(urlStr string) (jsonrpc2.ObjectStream, error) {
 			}
 			return net.Dial(network, addr)
 		}
-		headers, err := readDialAuth()
-		if err != nil {
-			return nil, err
+		var headers http.Header
+		if auth != "" {
+			headers = make(http.Header)
+			headers.Set("cookie", "sg-session="+auth)
+		} else {
+			headers, err = readDialAuth()
+			if err != nil {
+				return nil, err
+			}
 		}
 		conn, _, err := dialer.Dial(u.String(), headers)
 		if err != nil {
@@ -102,7 +109,7 @@ func dial(urlStr string) (jsonrpc2.ObjectStream, error) {
 // NewZapClient returns a Zap jsonrpc client.
 func NewZapClient(ctx context.Context) (*zap.Client, error) {
 	var connOpt []jsonrpc2.ConnOpt
-	stream, err := dial(ZapServerURL)
+	stream, err := dial(ZapServerURL, auth.SessionFromContext(ctx))
 	if err != nil {
 		return nil, err
 	}
