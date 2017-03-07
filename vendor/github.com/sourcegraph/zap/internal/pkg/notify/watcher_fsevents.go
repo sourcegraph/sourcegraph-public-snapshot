@@ -26,6 +26,8 @@ type FSEvent struct {
 	Path  string // real path of the file or directory
 	ID    uint64 // ID of the event (FSEventStreamEventId)
 	Flags uint32 // joint FSEvents* flags (FSEventStreamEventFlags)
+
+	BatchID uint64 // NOTE(sqs): added
 }
 
 // splitflags separates event flags from single set into slice of flags.

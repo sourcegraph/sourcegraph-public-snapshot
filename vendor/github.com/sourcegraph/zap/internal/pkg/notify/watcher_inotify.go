@@ -25,7 +25,7 @@ const eventBufferSize = 64 * (syscall.SizeofInotifyEvent + syscall.PathMax + 1)
 // consumersCount defines the number of consumers in producer-consumer based
 // implementation. Each consumer is run in a separate goroutine and has read
 // access to watched files map.
-const consumersCount = 2
+const consumersCount = 1
 
 const invalidDescriptor = -1
 

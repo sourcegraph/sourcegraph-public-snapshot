@@ -1,6 +1,7 @@
 package git
 
 import (
+	"context"
 	"os"
 
 	"github.com/sourcegraph/zap/pkg/gitutil"
@@ -28,7 +29,6 @@ type MockGitRepo struct {
 	ObjectNameSHA_                                 func(arg string) (string, error)
 	HEADHasNoCommitsAndNextCommitWillBeRootCommit_ func() (bool, error)
 	HEADOrDevNullTree_                             func() (string, error)
-	IsRebaseApplying_                              func() (bool, error)
 	IsIndexLocked_                                 func() (bool, error)
 }
 
@@ -76,7 +76,7 @@ func (m MockGitRepo) ReadBlob(rev, name string) ([]byte, string, string, error) 
 	return m.ReadBlob_(rev, name)
 }
 
-func (m MockGitRepo) MakeCommit(parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error) {
+func (m MockGitRepo) MakeCommit(ctx context.Context, parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error) {
 	return m.MakeCommit_(parent, onlyIfChangedFiles)
 }
 
@@ -100,7 +100,7 @@ func (m MockGitRepo) CreateTree(basePath string, entries []*gitutil.TreeEntry) (
 	return m.CreateTree_(basePath, entries)
 }
 
-func (m MockGitRepo) CreateCommitFromTree(tree, parent string, isRootCommit bool) (string, error) {
+func (m MockGitRepo) CreateCommitFromTree(ctx context.Context, tree, parent string, isRootCommit bool) (string, error) {
 	return m.CreateCommitFromTree_(tree, parent, isRootCommit)
 }
 
@@ -114,10 +114,6 @@ func (m MockGitRepo) HEADHasNoCommitsAndNextCommitWillBeRootCommit() (bool, erro
 
 func (m MockGitRepo) IsIndexLocked() (bool, error) {
 	return m.IsIndexLocked_()
-}
-
-func (m MockGitRepo) IsRebaseApplying() (bool, error) {
-	return m.IsRebaseApplying_()
 }
 
 func (m MockGitRepo) HEADOrDevNullTree() (string, error) {

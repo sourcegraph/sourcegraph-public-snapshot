@@ -36,7 +36,7 @@ var nilstream C.FSEventStreamRef
 
 // Default arguments for FSEventStreamCreate function.
 var (
-	latency C.CFTimeInterval
+	latency = C.CFTimeInterval(0.0000001)
 	flags   = C.FSEventStreamCreateFlags(C.kFSEventStreamCreateFlagFileEvents | C.kFSEventStreamCreateFlagNoDefer)
 	since   = uint64(C.FSEventsGetCurrentEventId())
 )
@@ -73,9 +73,11 @@ func init() {
 
 //export gosource
 func gosource(unsafe.Pointer) {
-	time.Sleep(time.Second)
+	time.Sleep(200 * time.Millisecond)
 	wg.Done()
 }
+
+var batchID uint64
 
 //export gostream
 func gostream(_, info uintptr, n C.size_t, paths, flags, ids uintptr) {
@@ -87,6 +89,7 @@ func gostream(_, info uintptr, n C.size_t, paths, flags, ids uintptr) {
 	if n == 0 {
 		return
 	}
+	thisBatchID := atomic.AddUint64(&batchID, 1)
 	ev := make([]FSEvent, 0, int(n))
 	for i := uintptr(0); i < uintptr(n); i++ {
 		switch flags := *(*uint32)(unsafe.Pointer((flags + i*offflag))); {
@@ -94,17 +97,20 @@ func gostream(_, info uintptr, n C.size_t, paths, flags, ids uintptr) {
 			atomic.StoreUint64(&since, uint64(C.FSEventsGetCurrentEventId()))
 		default:
 			ev = append(ev, FSEvent{
-				Path:  C.GoString(*(**C.char)(unsafe.Pointer(paths + i*offchar))),
-				Flags: flags,
-				ID:    *(*uint64)(unsafe.Pointer(ids + i*offid)),
+				Path:    C.GoString(*(**C.char)(unsafe.Pointer(paths + i*offchar))),
+				Flags:   flags,
+				ID:      *(*uint64)(unsafe.Pointer(ids + i*offid)),
+				BatchID: thisBatchID,
 			})
 		}
-
 	}
+	// fmt.Printf("BATCH %+v\n", ev)
 	streamFuncs.get(info)(ev)
 }
 
 // StreamFunc is a callback called when stream receives file events.
+//
+// NOTE(sqs): added a batch ID to determine which events are in a batch
 type streamFunc func([]FSEvent)
 
 var streamFuncs = streamFuncRegistry{m: map[uintptr]streamFunc{}}

@@ -164,7 +164,7 @@ func listen(urlStr string) (string, net.Listener, error) {
 }
 
 var zapServer = zap.NewServer(zapgit.ServerBackend{
-	CanAccessRepo: func(ctx context.Context, log *log.Context, repo string) (ok bool, err error) {
+	CanAccessRepo: func(ctx context.Context, log log.Logger, repo string) (ok bool, err error) {
 		logResult := func(ok bool, err error) {
 			actor := auth.ActorFromContext(ctx)
 			var f func(string, ...interface{})
@@ -203,7 +203,7 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 
 		return true, nil
 	},
-	OpenBareRepo: func(ctx context.Context, log *log.Context, repo string) (zapgit.ServerRepo, error) {
+	OpenBareRepo: func(ctx context.Context, log log.Logger, repo string) (zapgit.ServerRepo, error) {
 		actor := auth.ActorFromContext(ctx)
 		log15.Info("Zap: OpenRepo", "repo", repo, "login", actor.Login, "uid", actor.UID)
 

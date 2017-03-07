@@ -35,7 +35,11 @@ func newNonrecursiveTree(w watcher, c, rec chan EventInfo) *nonrecursiveTree {
 func (t *nonrecursiveTree) dispatch(c <-chan EventInfo) {
 	for ei := range c {
 		dbgprintf("dispatching %v on %q", ei.Event(), ei.Path())
+		done := make(chan struct{})
 		go func(ei EventInfo) {
+			defer func() {
+				close(done)
+			}()
 			var nd node
 			var isrec bool
 			dir, base := split(ei.Path())
@@ -73,6 +77,7 @@ func (t *nonrecursiveTree) dispatch(c <-chan EventInfo) {
 			}
 			t.rec <- ei
 		}(ei)
+		<-done
 	}
 }
 

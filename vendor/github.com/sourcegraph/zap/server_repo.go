@@ -39,8 +39,8 @@ func (s *serverRepo) acquireRef(refName string) (release func()) {
 	return lock.Unlock
 }
 
-func (s *Server) getRepo(ctx context.Context, log *log.Context, repoDir string) (*serverRepo, error) {
-	repo, err := s.getRepoIfExists(ctx, log, repoDir)
+func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string) (*serverRepo, error) {
+	repo, err := s.getRepoIfExists(ctx, logger, repoDir)
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +71,8 @@ func (s *Server) getRepo(ctx context.Context, log *log.Context, repoDir string) 
 	return repo, nil
 }
 
-func (s *Server) getRepoIfExists(ctx context.Context, log *log.Context, repoDir string) (*serverRepo, error) {
-	ok, err := s.backend.CanAccess(ctx, log, repoDir)
+func (s *Server) getRepoIfExists(ctx context.Context, logger log.Logger, repoDir string) (*serverRepo, error) {
+	ok, err := s.backend.CanAccess(ctx, logger, repoDir)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (s *Server) getRepoIfExists(ctx context.Context, log *log.Context, repoDir 
 	return s.repos[repoDir], nil
 }
 
-func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo *serverRepo, params RepoWatchParams) error {
+func (c *serverConn) handleRepoWatch(ctx context.Context, logger log.Logger, repo *serverRepo, params RepoWatchParams) error {
 	if params.Repo == "" {
 		return &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: "repo is required"}
 	}
@@ -102,7 +102,7 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 		if c.watchingRepos == nil {
 			c.watchingRepos = map[string][]string{}
 		}
-		level.Info(log).Log("set-watch-refspec", fmt.Sprint(params.Refspecs), "old", fmt.Sprint(c.watchingRepos[params.Repo]))
+		level.Info(logger).Log("set-watch-refspec", fmt.Sprint(params.Refspecs), "old", fmt.Sprint(c.watchingRepos[params.Repo]))
 		c.watchingRepos[params.Repo] = params.Refspecs
 		c.mu.Unlock()
 	}
@@ -124,8 +124,8 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 				continue
 			}
 
-			log := log.With("update-ref-downstream-with-initial-state", ref.Name)
-			level.Debug(log).Log()
+			logger := log.With(logger, "update-ref-downstream-with-initial-state", ref.Name)
+			level.Debug(logger).Log()
 			refObj := ref.Object.(serverRef)
 			if err := c.conn.Notify(ctx, "ref/update", RefUpdateDownstreamParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
@@ -144,8 +144,8 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 				continue
 			}
 
-			log := log.With("update-symbolic-ref-with-initial-state", ref.Name)
-			level.Debug(log).Log()
+			logger := log.With(logger, "update-symbolic-ref-with-initial-state", ref.Name)
+			level.Debug(logger).Log()
 			if err := c.conn.Notify(ctx, "ref/updateSymbolic", RefUpdateSymbolicParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				Target:        ref.Target,
@@ -154,7 +154,7 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 			}
 		}
 	} else {
-		level.Debug(log).Log("no-matching-refs", "")
+		level.Debug(logger).Log("no-matching-refs", "")
 	}
 
 	return nil

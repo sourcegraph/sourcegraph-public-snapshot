@@ -108,6 +108,7 @@ type recursiveTree struct {
 
 // newRecursiveTree TODO(rjeczalik)
 func newRecursiveTree(w recursiveWatcher, c chan EventInfo) *recursiveTree {
+
 	t := &recursiveTree{
 		root: root{nd: newnode("")},
 		w: struct {
@@ -124,7 +125,11 @@ func newRecursiveTree(w recursiveWatcher, c chan EventInfo) *recursiveTree {
 func (t *recursiveTree) dispatch() {
 	for ei := range t.c {
 		dbgprintf("dispatching %v on %q", ei.Event(), ei.Path())
+		done := make(chan struct{})
 		go func(ei EventInfo) {
+			defer func() {
+				close(done)
+			}()
 			nd, ok := node{}, false
 			dir, base := split(ei.Path())
 			fn := func(it node, isbase bool) error {
@@ -149,6 +154,7 @@ func (t *recursiveTree) dispatch() {
 				nd.Watch.Dispatch(ei, 0)
 			}
 		}(ei)
+		<-done
 	}
 }
 
