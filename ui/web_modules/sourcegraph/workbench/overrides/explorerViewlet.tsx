@@ -22,7 +22,7 @@ import { List } from "sourcegraph/components/symbols/Primaries";
 import { History } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import { toggleEditorDiffMode } from "sourcegraph/editor/config";
+import { editorConfigStore } from "sourcegraph/editor/config";
 import { urlToRepoRev } from "sourcegraph/repo/routes";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
@@ -82,7 +82,7 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 		}
 		const workspace = this._contextService.getWorkspace();
 		ReactDOM.render(<RouterContext>
-			<Title repo={this.getTitle()} revState={workspace.revState} diffMode={this._editorService.diffMode} />
+			<Title repo={this.getTitle()} revState={workspace.revState} />
 		</RouterContext>, titleElement);
 	}
 }
@@ -105,13 +105,12 @@ insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .mon
 
 interface TitleProps {
 	repo: string;
-	diffMode: boolean;
 	revState?: { zapRef?: string, commitID?: string, branch?: string };
 }
 
 interface TitleState {
-	diffMode: boolean;
 	revState?: { zapRef?: string, commitID?: string, branch?: string };
+	diffMode: boolean;
 }
 
 class Title extends React.Component<TitleProps, Partial<TitleState>> {
@@ -120,23 +119,30 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 	constructor(props: TitleProps) {
 		super(props);
 		this.state = {
-			diffMode: this.props.diffMode,
 			revState: this.props.revState,
+			diffMode: editorConfigStore.getState().diffMode,
 		};
+		editorConfigStore.subscribe(
+			() => this.setState(editorConfigStore.getState())
+		);
 		this.disposables = [];
 	}
 
 	componentDidMount(): void {
-		this.disposables.push(onWorkspaceUpdated(workspace => this.setState({ revState: workspace.revState })));
+		this.disposables.push(onWorkspaceUpdated(workspace => {
+			this.setState({
+				revState: workspace.revState,
+			});
+			editorConfigStore.dispatch({ diffMode: true });
+		}));
 	}
 
 	componentWillUnmount(): void {
 		this.disposables.forEach(disposable => disposable.dispose());
 	}
 
-	toggleDiff(): void {
-		this.setState({ diffMode: !this.state.diffMode });
-		toggleEditorDiffMode();
+	setDiffMode(diffMode: boolean): void {
+		editorConfigStore.dispatch({ diffMode });
 	}
 
 	render(): JSX.Element {
@@ -175,11 +181,12 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 				</Link>
 			</Heading>
 			{this.state.revState && this.state.revState.zapRef &&
-				<Button onClick={() => this.toggleDiff()} color={this.state.diffMode ? "blue" : "blueGray"}
+				<Button onClick={() => this.setDiffMode(!this.state.diffMode)} color={this.state.diffMode ? "blue" : "blueGray"}
 					{...hover({ backgroundColor: !this.state.diffMode ? `${colors.blueGrayD2()} !important` : "" }) }
 					style={{
 						flex: "0 0 auto",
 						padding: whitespace[1],
+						paddingTop: "0.125rem",
 					}}><History style={{ top: 0 }} /></Button>
 			}
 		</FlexContainer >;

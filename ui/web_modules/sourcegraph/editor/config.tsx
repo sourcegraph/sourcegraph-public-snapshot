@@ -33,6 +33,15 @@ import { onWorkbenchShown } from "sourcegraph/workbench/main";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
+import { MiniStore } from "sourcegraph/workbench/utils";
+
+interface EditorConfig {
+	diffMode: boolean;
+}
+
+export const editorConfigStore = new MiniStore<EditorConfig>();
+
+editorConfigStore.subscribe(config => updateEditorConfig(config));
 
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
@@ -58,7 +67,7 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 		renderNotFoundError();
 		return;
 	}
-	if (location.zapRef) {
+	if (editorConfigStore.getState().diffMode) {
 		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource);
 	} else {
 		renderFileEditor(resource, selection);
@@ -98,18 +107,6 @@ export function renderDiffEditor(left: URI, right: URI): void {
 }
 
 /**
- * toggleEditorDiffMode toggles the mode for the current editor (diff on/off).
- */
-export function toggleEditorDiffMode(): void {
-	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	if (editorService.diffMode) {
-		changeEditorMode(false);
-	} else {
-		changeEditorMode(true);
-	}
-}
-
-/**
  * isOnZapRef returns whether the user is currently viewing a zap ref
  */
 export function isOnZapRef(): boolean {
@@ -118,9 +115,9 @@ export function isOnZapRef(): boolean {
 }
 
 /**
- * changeEditorMode changes the diff mode for the current editor.
+ * updateEditorConfig updates the configuration properties for the current editor.
  */
-export function changeEditorMode(diff?: boolean): void {
+export function updateEditorConfig(config: EditorConfig): void {
 	const uri = resourceForCurrentEditor();
 	if (!uri) {
 		return;
@@ -129,7 +126,7 @@ export function changeEditorMode(diff?: boolean): void {
 	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
 	const revState = contextService.getWorkspace().revState;
 
-	if (diff) {
+	if (config.diffMode) {
 		const left = uri.with({ query: revState && revState.zapRef ? `${uri.query}~0` : `${uri.query}^` });
 		renderDiffEditor(left, uri);
 	} else {

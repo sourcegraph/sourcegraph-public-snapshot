@@ -40,11 +40,17 @@ export class RouterContext extends React.Component<{}, {}> {
 export class MiniStore<T>{
 
 	private listeners: (((payload: T) => void) | null)[] = [];
+	private state: T;
+
+	getState(): T {
+		return Object.assign({}, this.state);
+	}
 
 	dispatch(payload: T): void {
+		this.state = Object.assign({}, this.state, payload);
 		this.listeners.forEach((listener) => {
 			if (listener) {
-				listener(payload);
+				listener(Object.assign({}, this.state));
 			}
 		});
 	}
