@@ -2,11 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"strings"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
-	"github.com/sourcegraph/zap"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -59,40 +57,6 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		return nil, err
 	}
 	return createCommitState(r.repo, rev), nil
-}
-
-func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
-	var zapRef *zapRefResolver
-
-	// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
-	if args.Rev != "" && !strings.HasSuffix(args.Rev, "^{git}") {
-		cl, err := backend.NewZapClient(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		zapRefInfo, _ := cl.RefInfo(ctx, zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev})
-		// TODO(john): add error-specific handling?
-		if zapRefInfo != nil && zapRefInfo.State != nil {
-			zapRef = &zapRefResolver{zapRef: zapRefSpec{Base: zapRefInfo.State.GitBase, Branch: zapRefInfo.State.GitBranch}}
-		}
-	}
-
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: r.repo.ID,
-		Rev:  args.Rev,
-	})
-	if err != nil {
-		if err == vcs.ErrRevisionNotFound {
-			return &commitStateResolver{zapRef: zapRef}, nil
-		}
-		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
-			return &commitStateResolver{cloneInProgress: true}, nil
-		}
-		return nil, err
-	}
-
-	return &commitStateResolver{zapRef: zapRef, commit: &commitResolver{commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch}}}, nil
 }
 
 func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {

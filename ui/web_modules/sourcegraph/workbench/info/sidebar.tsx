@@ -234,7 +234,6 @@ class InfoPanel extends React.Component<Props, State> {
 				bottom: 0,
 				right: 0,
 				overflowY: "hidden",
-				zIndex: 10,
 			}}>
 				{this.sidebarFunctionHeader(defData)}
 				{(defData && !this.state.previewLocation) && <DefinitionDocumentationHeader defData={defData} eventProps={this.getEventProps()} />}

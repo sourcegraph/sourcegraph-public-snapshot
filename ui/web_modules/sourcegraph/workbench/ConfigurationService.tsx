@@ -8,7 +8,7 @@ import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspace
 import { Features } from "sourcegraph/util/features";
 
 const _onDidUpdateConfiguration = new Emitter<IConfigurationServiceEvent>();
-export const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
+const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
 
 let codeLensEnabled = false;
 

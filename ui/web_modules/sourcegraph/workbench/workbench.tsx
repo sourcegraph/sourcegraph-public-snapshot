@@ -71,33 +71,26 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			path = pathFromRouteParams(this.props.params);
 		}
 
-		if (repository.revState.cloneInProgress) {
+		if (repository.commit.cloneInProgress) {
 			return <CloningRefresher relay={this.props.relay} />;
 		}
 
-		if (!repository.revState.commit && !repository.revState.zapRef) {
+		if (!repository.commit.commit) {
 			return <Error
 				code="404"
 				desc="Revision not found" />;
 		}
 
-		const commitID = repository.revState.zapRef ? repository.revState.zapRef.base : repository.revState.commit!.sha1;
+		const commitID = repository.commit.commit.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<BlobPageTitle repo={this.props.repo} path={path} />
-			{/* TODO(john): repo main takes the commit state for the 'y' hotkey, assume for now revState can be passed. */}
-			<RepoMain {...this.props} repository={repository} commit={repository.revState}>
+			<RepoMain {...this.props} repository={repository} commit={repository.commit}>
 				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
 				<TrialEndingWarning layout={() => this.forceUpdate()} repo={repository} />
 				<WorkbenchShell
-					location={this.props.location}
-					routes={this.props.routes}
-					params={this.props.params}
 					repo={repository.uri}
-					rev={this.props.rev}
 					commitID={commitID}
-					zapRef={repository.revState.zapRef ? this.props.rev! : undefined}
-					branch={repository.revState.zapRef ? repository.revState.zapRef.branch : undefined}
 					path={path}
 					selection={selection} />
 				<InfoPanelLifecycle repo={repository} fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
@@ -143,11 +136,7 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 						description
 						defaultBranch
 						expirationDate
-						revState(rev: $rev) {
-							zapRef {
-								base
-								branch
-							}
+						commit(rev: $rev) {
 							commit {
 								sha1
 								languages
@@ -166,11 +155,7 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 					description
 					defaultBranch
 					expirationDate
-					revState(rev: $rev) {
-						zapRef {
-							base
-							branch
-						}
+					commit(rev: $rev) {
 						commit {
 							sha1
 							languages

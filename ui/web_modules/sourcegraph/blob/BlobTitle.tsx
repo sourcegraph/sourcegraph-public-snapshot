@@ -79,7 +79,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 							}, typography.size[7])}>
 
 								{!isSupported && !isIgnored &&
-									<UnsupportedLanguageAlert ext={extension} inBeta={isBeta} />
+									<UnsupportedLanguageAlert ext={extension} style={{ marginRight: whitespace[1] }} inBeta={isBeta} />
 								}
 
 								<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />

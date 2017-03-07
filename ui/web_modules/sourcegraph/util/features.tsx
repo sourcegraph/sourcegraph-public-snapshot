@@ -85,6 +85,7 @@ export const Features = {
 	 */
 	trace: new Feature("trace"),
 
+	zap: new Feature("zap").disableBeta(),
 	zap2Way: new Feature("zap-2-way").disableBeta(),
 
 	beta: new Feature("beta").disableBeta(),
@@ -97,6 +98,9 @@ export const Features = {
 	listEnabled,
 };
 
+if (Features.zap2Way.isEnabled() && !Features.zap.isEnabled()) {
+	console.error("features.zap2Way requires features.zap to also be enabled"); // tslint:disable-line no-console
+}
 if (Features.zap2Way.isEnabled()) {
 	// zap2Way requires different CSS.
 	if (document) {

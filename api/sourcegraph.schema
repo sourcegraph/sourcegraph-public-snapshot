@@ -50,7 +50,6 @@ type Repository implements Node {
 	createdAt: String!
 	pushedAt: String!
 	commit(rev: String!): CommitState!
-	revState(rev: String!): RevState!
 	latest: CommitState!
 	defaultBranch: String!
 	branches: [String!]!
@@ -80,23 +79,12 @@ type CommitState {
 	cloneInProgress: Boolean!
 }
 
-type RevState {
-	zapRef: ZapRef
-	commit: Commit
-	cloneInProgress: Boolean!
-}
-
 type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
 	file(path: String!): File
 	languages: [String!]!
-}
-
-type ZapRef {
-	base: String!
-	branch: String!
 }
 
 type CommitInfo {

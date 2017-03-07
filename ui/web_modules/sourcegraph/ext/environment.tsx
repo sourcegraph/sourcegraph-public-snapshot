@@ -15,9 +15,9 @@ import { context } from "sourcegraph/app/context";
 class BrowserEnvironment implements IEnvironment {
 	private docAtLastSave: Map<string, string> = new Map<string, string>();
 	private docAtBase: Map<string, string> = new Map<string, string>(); // simulated doc at base commit (before ops)
-	private _prevZapRef: string | undefined;
-	private _zapRef: string | undefined;
+	private _zapRef: string;
 	private _isRunning: boolean;
+	private _prevZapRef: string | undefined;
 
 	constructor() {
 		// Track the initial contents of documents so we can revert.
@@ -30,6 +30,7 @@ class BrowserEnvironment implements IEnvironment {
 		});
 		vscode.workspace.onDidSaveTextDocument(doc => this.onDidSaveTextDocument(doc));
 
+		this.zapRef = self["__tmpZapRef"];
 	}
 
 	private onDidSaveTextDocument(doc: vscode.TextDocument): void {
@@ -49,21 +50,23 @@ class BrowserEnvironment implements IEnvironment {
 		return URIUtils.repoParams(this.rootURI as URI).repo;
 	}
 
-	private zapRefChangeEmitter: vscode.EventEmitter<string | undefined> = new vscode.EventEmitter<string | undefined>();
-	get onDidChangeZapRef(): vscode.Event<string | undefined> { return this.zapRefChangeEmitter.event; }
+	private zapRefChangeEmitter: vscode.EventEmitter<string> = new vscode.EventEmitter<string>();
+	get onDidChangeZapRef(): vscode.Event<string> { return this.zapRefChangeEmitter.event; }
 
-	get zapRef(): string | undefined {
+	get zapRef(): string {
 		return this._zapRef;
 	}
 
-	set zapRef(ref: string | undefined) {
-		this._prevZapRef = this._zapRef;
+	set zapRef(ref: string) {
 		this._zapRef = ref;
 		this.zapRefChangeEmitter.fire(ref);
 		vscode.commands.executeCommand("zap.reference.change", ref);
 	}
 
 	get prevZapRef(): string | undefined {
+		// In vscode, the Zap ref is always HEAD because vscode
+		// accesses the file system, and the file system is (by
+		// definition) HEAD.
 		return this._prevZapRef;
 	}
 
@@ -71,8 +74,8 @@ class BrowserEnvironment implements IEnvironment {
 		this._prevZapRef = ref;
 	}
 
-	get zapBranch(): string | undefined { return this._zapRef; }
-	get onDidChangeZapBranch(): vscode.Event<string | undefined> { return this.zapRefChangeEmitter.event; }
+	get zapBranch(): string { return this._zapRef; }
+	get onDidChangeZapBranch(): vscode.Event<string> { return this.zapRefChangeEmitter.event; }
 
 	asRelativePathInsideWorkspace(uri: vscode.Uri): string | null {
 		if (uri.scheme !== "git") { return null; }

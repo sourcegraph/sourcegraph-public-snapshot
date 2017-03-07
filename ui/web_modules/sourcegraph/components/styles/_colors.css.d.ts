@@ -54,7 +54,6 @@ export const c_cool_pale_gray_5: string;
 export const c_cool_pale_gray_2: string;
 export const c_cool_pale_gray_1: string;
 export const c_cool_dark_gray: string;
-export const c_cool_dark_gray_2: string;
 export const c_dark_gray: string;
 export const c_mid_gray: string;
 export const c_gray: string;

@@ -27,10 +27,7 @@ export interface InitializationOptions {
 	 */
 	features: string[];
 
-	/**
-	 * zapRef is the current Zap at the time of initialization.
-	 */
-	zapRef?: string;
+	tmpZapRef: string | null; // TODO(sqs) HACK: pass this through
 
 	context: typeof context;
 }

@@ -38,7 +38,7 @@ import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 /**
  * init bootraps workbench creation.
  */
-export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string): [Workbench, ServiceCollection] {
+export function init(domElement: HTMLDivElement, resource: URI): [Workbench, ServiceCollection] {
 	const workspace = resource.with({ fragment: "" });
 	const services = setupServices(domElement, workspace);
 	configurePreStartup(services);
@@ -62,7 +62,7 @@ export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string)
 		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
 	};
 
-	initExtensionHost(workspace, zapRef);
+	initExtensionHost(workspace);
 
 	configurePostStartup(services);
 	workbenchListeners.forEach(cb => cb(true));

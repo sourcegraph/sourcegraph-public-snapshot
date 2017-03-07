@@ -10,6 +10,8 @@ import { IInstantiationService } from "vs/platform/instantiation/common/instanti
 import { ResourceEditorModel } from "vs/workbench/common/editor/resourceEditorModel";
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
+import { URIUtils } from "sourcegraph/core/uri";
+
 class ResourceModelCollection extends ReferenceCollection<TPromise<ITextEditorModel>> {
 
 	private providers: { [scheme: string]: ITextModelContentProvider[] } = Object.create(null);
@@ -118,7 +120,7 @@ export class TextModelResolverService implements ITextModelResolverService {
 		// This can be improved, but I would not consider it a hack since the underlying call relies on `openTextDocument` to create a new doc.
 		// We could entertain the idea of using "untitled" to create new virtual documents instead of "zap" later,
 		// but passing a new scheme and registring it in the way we do follows the standard for how a TextDocumentContentProvider is created and used.
-		if (resource.scheme === "git" || resource.scheme === "zap") {
+		if (resource.scheme === "git" && URIUtils.hasAbsoluteCommitID(resource) || resource.scheme === "zap") {
 			return this.textFileService.models.loadOrCreate(resource).then(model => {
 				return this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment).then(mode => {
 					model.textEditorModel.setMode(mode.getId());

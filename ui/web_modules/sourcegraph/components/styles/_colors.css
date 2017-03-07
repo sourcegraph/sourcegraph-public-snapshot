@@ -6,7 +6,7 @@
 @value c_blue_1 rgba(0, 145, 234, .1);
 @value c_dark_blue rgba(0, 113, 184, 1);
 @value c_dark_blue_5 rgba(0, 63, 102, .5);
-@value c_blue_gray_L3 rgb(242, 244, 248);
+@value c_blue_gray_L3 = rgb(242, 244, 248);
 
 @value c_dark_blue_2 rgb(0, 113, 184);
 
@@ -60,7 +60,6 @@
 @value c_cool_pale_gray_1 rgba(242, 244, 248, 0.1);
 
 @value c_cool_dark_gray rgba(35, 48, 67, 1);
-@value c_cool_dark_gray_2 rgba(93, 126, 172, 1);
 
 @value c_dark_gray #333;
 @value c_mid_gray #555;
