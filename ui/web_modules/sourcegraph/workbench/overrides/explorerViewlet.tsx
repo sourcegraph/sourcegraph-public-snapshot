@@ -186,6 +186,7 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 					style={{
 						flex: "0 0 auto",
 						padding: whitespace[1],
+						paddingTop: "0.125rem",
 					}}><History style={{ top: 0 }} /></Button>
 			}
 		</FlexContainer >;
