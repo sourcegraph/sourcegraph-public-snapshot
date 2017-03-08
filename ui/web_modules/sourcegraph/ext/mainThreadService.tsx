@@ -71,15 +71,11 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
-		if (this.remotes.size === 0) {
-			throw new Error("protocol not ready (worker is not yet attached)");
-		}
-
 		const routeToWorkspaceHost = uri => {
 			const workspace = uri.with({ fragment: "" });
 			const remoteCom = this.remotes.get(workspace.toString());
 			if (!remoteCom) {
-				throw new Error(`unable to route call ${proxyId}.${path}(${JSON.stringify(args)}; did not find workspace host for ${workspace.toString()}`);
+				throw new Error(`unable to route call ${proxyId}.${path}(${JSON.stringify(args)} because no host for workspace ${workspace.toString()} (${this.remotes.size} hosts available)`);
 			}
 			return remoteCom.callOnRemote(proxyId, path, args);
 		};
