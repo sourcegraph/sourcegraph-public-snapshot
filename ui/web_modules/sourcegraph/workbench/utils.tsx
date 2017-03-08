@@ -41,6 +41,22 @@ export class MiniStore<T>{
 
 	private listeners: (((payload: T) => void) | null)[] = [];
 	private state: T;
+	private initialized: boolean;
+
+	constructor(initState?: T) {
+		if (initState) {
+			this.state = initState;
+			this.initialized = true;
+		}
+	}
+
+	init(initState: T): void {
+		if (this.initialized) {
+			throw new Error("store has already been initialized");
+		}
+		this.state = initState;
+		this.initialized = true;
+	}
 
 	getState(): T {
 		return Object.assign({}, this.state);

@@ -2,9 +2,7 @@ package gitutil
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
-	"sync"
 )
 
 // splitLines is like strings.Split(s, "\n"), but if s is empty, it returns nil
@@ -48,28 +46,4 @@ func splitNullsBytesToStrings(s []byte) []string {
 		strings[i] = string(item)
 	}
 	return strings
-}
-
-type errorList struct {
-	mu     sync.Mutex
-	errors []error
-}
-
-// add adds err to the list of errors. It is safe to call it from
-// concurrent goroutines.
-func (e *errorList) add(err error) {
-	e.mu.Lock()
-	e.errors = append(e.errors, err)
-	e.mu.Unlock()
-}
-
-func (e *errorList) error() error {
-	switch len(e.errors) {
-	case 0:
-		return nil
-	case 1:
-		return e.errors[0]
-	default:
-		return fmt.Errorf("%s [and %d more errors]", e.errors[0], len(e.errors)-1)
-	}
 }

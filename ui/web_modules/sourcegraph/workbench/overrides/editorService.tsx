@@ -9,7 +9,7 @@ import { urlToBlob } from "sourcegraph/blob/routes";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
-import { fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
+import { resolveRev } from "sourcegraph/editor/contentLoader";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
@@ -73,7 +73,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		}
 
 		// Set the resource revision to the commit hash
-		return TPromise.wrap(fetchContentAndResolveRev(mainResource)).then(({ content, commit }) => {
+		return TPromise.wrap(resolveRev(mainResource)).then(({ commit }) => {
 			const absMainResource = mainResource.with({ query: commit });
 			if (data.resource) {
 				data.resource = absMainResource;

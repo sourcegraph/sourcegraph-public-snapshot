@@ -35,7 +35,13 @@ export function fetchContent(resource: URI): TPromise<string> {
 // available files.
 export const contentCache = new Map<string, string>();
 
-export async function fetchContentAndResolveRev(resource: URI): Promise<{ content: string, commit: string }> {
+/**
+ * fetchContentAndResolveRev fetches the absolute revision SHA for a commit string,
+ * like "myBranch" or "" (default), as well as file contents at that revision for
+ * the specified resource. If you just need to resolve a revision string, use
+ * `resolveRev(resource)` instead.
+ */
+export async function fetchContentAndResolveRev(resource: URI, isViewingZapRef?: boolean): Promise<{ content: string, commit: string }> {
 	const { repo, rev, path } = URIUtils.repoParams(resource);
 	const resp = await fetchGraphQLQuery(`query Content($repo: String, $rev: String, $path: String) {
 			root {
@@ -55,9 +61,10 @@ export async function fetchContentAndResolveRev(resource: URI): Promise<{ conten
 		throw new Error("File content not available.");
 	}
 	const commit = resp.root.repository.commit.commit.sha1;
-	const resourceKey = resource.with({ query: commit }).toString();
+	const resourceKey = resource.toString();
 	let content: string;
-	if (contentCache.has(resourceKey)) {
+	if (contentCache.has(resourceKey) && isViewingZapRef) {
+		// only serve cached resources for zap sessions
 		content = contentCache.get(resourceKey)!;
 	} else {
 		if (!resp.root.repository.commit.commit.file) {
@@ -68,6 +75,32 @@ export async function fetchContentAndResolveRev(resource: URI): Promise<{ conten
 	}
 	return {
 		content,
+		commit,
+	};
+}
+
+/**
+ * resolveRev fetches the absolute revision SHA matching a commit string,
+ * like "myBranch" or "" (default).
+ */
+export async function resolveRev(resource: URI): Promise<{ commit: string }> {
+	const { repo, rev } = URIUtils.repoParams(resource);
+	const resp = await fetchGraphQLQuery(`query ResolveRev($repo: String, $rev: String) {
+			root {
+				repository(uri: $repo) {
+					commit(rev: $rev) {
+						commit {
+							sha1
+						}
+					}
+				}
+			}
+		}`, { repo, rev });
+	if (!resp.root || !resp.root.repository || !resp.root.repository.commit.commit) {
+		throw new Error("Revision not available.");
+	}
+	const commit = resp.root.repository.commit.commit.sha1;
+	return {
 		commit,
 	};
 }

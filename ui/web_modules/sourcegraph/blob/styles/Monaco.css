@@ -197,7 +197,8 @@
 }
 
 :global div.monaco-editor.vs-dark,
-:global div.monaco-editor.vs-dark .monaco-editor-background {
+:global div.monaco-editor.vs-dark .monaco-editor-background,
+:global div.monaco-diff-editor.monaco-editor-background.vs-dark {
 	background-color: c_cool_dark_gray;
 }
 

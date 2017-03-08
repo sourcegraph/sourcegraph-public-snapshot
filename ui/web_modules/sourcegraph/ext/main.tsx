@@ -23,15 +23,15 @@ const workspaces = new Set<string>();
  *
  * TODO(john): there is currently no cleanup of unused extension hosts / web workers.
  */
-export function init(workspace: URI, zapRef?: string): void {
+export function init(workspace: URI, revState?: any): void {
 	registerExtHostContribution();
-	setupWorker(workspace, zapRef);
-	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w.resource, w.revState ? w.revState.zapRef : undefined));
+	setupWorker(workspace, revState);
+	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w.resource, w.revState ? w.revState : undefined));
 }
 
 let seqId = 0;
 
-export function setupWorker(workspace: URI, zapRef?: string): void {
+export function setupWorker(workspace: URI, revState?: any): void {
 	if (workspaces.has(workspace.toString())) {
 		return;
 	}
@@ -43,7 +43,7 @@ export function setupWorker(workspace: URI, zapRef?: string): void {
 		seqId,
 		workspace: workspace.toString(),
 		features: listEnabledFeatures(),
-		zapRef: zapRef,
+		revState,
 		context,
 	};
 

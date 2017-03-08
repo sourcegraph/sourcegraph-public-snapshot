@@ -3,6 +3,7 @@ import { v4 as uuidV4 } from "uuid";
 import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/browser";
 
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
+import { InitializationOptions } from "sourcegraph/ext/protocol";
 import { getModes } from "sourcegraph/util/features";
 
 export function activate(): void {
@@ -45,7 +46,8 @@ export function activate(): void {
  * locally).
  */
 function generateLSPSessionKeyIfNeeded(): string | undefined {
-	if ((self as any).extensionHostOptions.zapRef) {
+	const initOpts: InitializationOptions = (self as any).extensionHostOptions;
+	if (initOpts.revState && initOpts.revState.zapRef) {
 		return uuidV4(); // uses a cryptographic RNG on browsers with window.crypto (all modern browsers)
 	}
 	return undefined;

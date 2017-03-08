@@ -48,7 +48,7 @@ export let Services: ServicesAccessor;
 // Others, like ThemeService, will probably be implemented someday, so users
 // can customize color themes. When they are implemented, we can either use the
 // VSCode ones and override some methods, or we can write our own from scratch.
-export function setupServices(domElement: HTMLDivElement, workspace: URI): ServiceCollection {
+export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRef?: string, commitID?: string, branch?: string): ServiceCollection {
 	const [services, instantiationService] = StaticServices.init({});
 
 	const set = (identifier, impl) => {
@@ -63,6 +63,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	// service.
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource: workspace,
+		revState: { zapRef, commitID, branch },
 	}));
 
 	set(IUntitledEditorService, UntitledEditorService);
@@ -102,6 +103,11 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 export function getCurrentWorkspace(): IWorkspace {
 	const contextService = Services.get(IWorkspaceContextService);
 	return contextService.getWorkspace();
+}
+
+export function setWorkspace(workspace: IWorkspace): void {
+	const contextService = Services.get(IWorkspaceContextService);
+	return contextService.setWorkspace(workspace);
 }
 
 export function onWorkspaceUpdated(listener: ((workspace: IWorkspace) => any)): IDisposable {

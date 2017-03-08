@@ -34,13 +34,20 @@ import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench
 import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 import { setupServices } from "sourcegraph/workbench/services";
 import { GitTextFileService } from "sourcegraph/workbench/textFileService";
+import { MiniStore } from "sourcegraph/workbench/utils";
+
+export interface WorkbenchState {
+	diffMode: boolean;
+}
+
+export const workbenchStore = new MiniStore<WorkbenchState>();
 
 /**
  * init bootraps workbench creation.
  */
-export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string): [Workbench, ServiceCollection] {
+export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string, commitID?: string, branch?: string): [Workbench, ServiceCollection] {
 	const workspace = resource.with({ fragment: "" });
-	const services = setupServices(domElement, workspace);
+	const services = setupServices(domElement, workspace, zapRef, commitID, branch);
 	configurePreStartup(services);
 
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
@@ -62,10 +69,12 @@ export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string)
 		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
 	};
 
-	initExtensionHost(workspace, zapRef);
+	initExtensionHost(workspace, { zapRef, commitID, branch });
 
 	configurePostStartup(services);
 	workbenchListeners.forEach(cb => cb(true));
+
+	workbenchStore.init({ diffMode: Boolean(zapRef) });
 
 	return [workbench, services];
 }

@@ -1,4 +1,5 @@
 import Event, { Emitter } from "vs/base/common/event";
+import { IDisposable } from "vs/base/common/lifecycle";
 import * as strings from "vs/base/common/strings";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
@@ -19,6 +20,7 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 
 	private remotes: Map<string, IMainProcessExtHostIPC>;
 	private logCommunication: boolean;
+	private workerEmitter: Emitter<string> = new Emitter<string>();
 
 	constructor(
 		@IEnvironmentService environmentService: IEnvironmentService,
@@ -68,24 +70,49 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 
 		this.remotes.set(workspace.toString(), remoteCom);
 		this.remotes.set(workspace.with({ query: `${workspace.query}~0` }).toString(), remoteCom);
+		this.workerEmitter.fire(workspace.toString());
+		this.workerEmitter.fire(workspace.with({ query: `${workspace.query}~0` }).toString());
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
 		const routeToWorkspaceHost = uri => {
 			const workspace = uri.with({ fragment: "" });
-			const remoteCom = this.remotes.get(workspace.toString());
-			if (!remoteCom) {
-				const matchingPaths: string[] = [];
-				const workspacePath = workspace.with({ query: "" }).toString();
-				this.remotes.forEach((value, key) => {
-					if (key.startsWith(workspacePath)) {
-						matchingPaths.push(key);
+			let remoteCom = this.remotes.get(workspace.toString());
+			if (remoteCom) {
+				return remoteCom.callOnRemote(proxyId, path, args);
+			}
+			// The main thread may need to wait a moment for a new workspace host to initialize.
+			// We give the worker 3s to get set up before failing the request.
+			return TPromise.wrap(new Promise((resolve, reject) => {
+				let timedOut = false;
+				let d: IDisposable;
+				const timer = setTimeout(() => {
+					timedOut = true;
+					const matchingPaths: string[] = [];
+					const workspacePath = workspace.with({ query: "" }).toString();
+					this.remotes.forEach((value, key) => {
+						if (key.startsWith(workspacePath)) {
+							matchingPaths.push(key);
+						}
+					});
+					if (d) {
+						d.dispose();
+					}
+					reject(new Error(`unable to route call ${proxyId}.${path} because no host for workspace ${workspace.toString()} (${matchingPaths.length} hosts out of ${this.remotes.size} had matching paths: ${JSON.stringify(matchingPaths)})`));
+				}, 3000);
+				d = this.workerEmitter.event((e) => {
+					remoteCom = this.remotes.get(workspace.toString());
+					if (remoteCom && !timedOut) {
+						clearTimeout(timer);
+						if (d) {
+							d.dispose();
+						}
+						resolve(remoteCom.callOnRemote(proxyId, path, args));
 					}
 				});
-				throw new Error(`unable to route call ${proxyId}.${path} because no host for workspace ${workspace.toString()} (${matchingPaths.length} hosts out of ${this.remotes.size} had matching paths: ${JSON.stringify(matchingPaths)})`);
-			}
-			return remoteCom.callOnRemote(proxyId, path, args);
+			}));
 		};
+
 		switch (proxyId) {
 			case "eExtHostLanguageFeatures":
 				switch (path) {

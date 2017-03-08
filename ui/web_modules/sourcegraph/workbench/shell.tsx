@@ -13,9 +13,9 @@ import { RouteProps, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { registerEditorCallbacks, registerQuickopenListeners, syncEditorWithRouterProps, toggleQuickopen as quickopen } from "sourcegraph/editor/config";
+import { registerEditorCallbacks, registerQuickopenListeners, syncEditorWithRouterProps, toggleQuickopen as quickopen, updateEditorConfig } from "sourcegraph/editor/config";
 import { urlWithRev } from "sourcegraph/repo/routes";
-import { init, unmount } from "sourcegraph/workbench/main";
+import { init, unmount, workbenchStore } from "sourcegraph/workbench/main";
 import { Services } from "sourcegraph/workbench/services";
 
 // WorkbenchShell loads the workbench and calls init on it.
@@ -42,7 +42,7 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation & RouteProp
 
 		const { repo, commitID, path } = this.props;
 		const resource = URIUtils.pathInRepo(repo, commitID, path);
-		[this.workbench, this.services] = init(domElement, resource, this.props.zapRef);
+		[this.workbench, this.services] = init(domElement, resource, this.props.zapRef, this.props.commitID, this.props.branch);
 		registerEditorCallbacks();
 
 		this.layout();
@@ -63,38 +63,25 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation & RouteProp
 		const modalOverlay = document.querySelector(".workbench-modal-overlay") as any;
 		this.disposables = registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden");
 
+		this.disposables.push(workbenchStore.subscribe(e => updateEditorConfig(e)));
+
 		const contextService = Services.get(IWorkspaceContextService);
 		this.disposables.push(contextService.onWorkspaceUpdated(workspace => {
 			const revState = workspace.revState;
+			workbenchStore.dispatch({ diffMode: Boolean(revState && revState.zapRef) });
 			if (revState) {
 				if (revState.zapRef && revState.zapRef !== this.props.zapRef) {
-					// extension has changed to a new zap ref, update URL
-					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
 					window.location.href = urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef);
+					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
 					return;
 				}
 				if (!revState.zapRef && this.props.zapRef) {
-					// currently looking at a zap ref, update URL now to the base branch.
-					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null));
 					window.location.href = urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null);
+					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null));
 					return;
 				}
 			}
 		}));
-
-		if (this.props.zapRef) {
-			// HACK(john): synchronize on zap extension bootstrap
-			setTimeout(() => {
-				contextService.setWorkspace({
-					...contextService.getWorkspace(),
-					revState: {
-						zapRef: this.props.zapRef,
-						commitID: this.props.commitID,
-						branch: this.props.branch,
-					},
-				});
-			}, 1000);
-		}
 	}
 
 	componentWillUnmount(): void {
