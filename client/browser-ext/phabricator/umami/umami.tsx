@@ -4,7 +4,7 @@
 import { InPageEventLogger } from "../../app/tracking/InPageEventLogger";
 import { setEventLogger, setPhabricatorInstance, setSourcegraphUrl } from "../../app/utils/context";
 import { UMAMI_SOURCEGRAPH_URL, umamiPhabricatorInstance } from "./constants";
-setEventLogger(new InPageEventLogger("SourcegraphExtension", "PhabricatorExtension"));
+setEventLogger(new InPageEventLogger("SourcegraphExtension", "PhabricatorExtension", false));
 setSourcegraphUrl(UMAMI_SOURCEGRAPH_URL);
 setPhabricatorInstance(umamiPhabricatorInstance);
 

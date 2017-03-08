@@ -6,8 +6,8 @@ export class PhabricatorInstance {
 		return this.uriToRepoUrlMapping[repoUri];
 	}
 
-	getStagingRepoUriFromRepoUrl(repoUrl: string) {
-		return this.phabStagingUri;
+	getStagingRepoUriFromRepoUrl(repoUrl: string): string | undefined {
+		return repoUrl;
 	}
 
 }

@@ -33,7 +33,15 @@ function getRepoFromDifferentialPage(): string | null {
 		console.warn("no href found on repository link on differential page.");
 		return null;
 	}
-	repoUrl = repoUrl.substr("/source/".length);
+	if (repoUrl.startsWith("/source/")) {
+		repoUrl = repoUrl.substr("/source/".length);
+	} else if (repoUrl.startsWith("/diffusion/")) {
+		// this second one exists @ umami
+		repoUrl = repoUrl.substr("/diffusion/".length);
+	} else {
+		console.error(`Unrecongized prefix on repo url ${repoUrl}`);
+		return null;
+	}
 	repoUrl = repoUrl.substr(0, repoUrl.length - 1);
 	return repoUrl;
 }
@@ -139,12 +147,12 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 		}
 		const repoUrl = phabricatorInstance.getPhabricatorRepoFromMap(phabURI);
 		if (!repoUrl) {
-			console.error(`repository name ${repoUrl} could not be mapped to a URL.`);
+			console.error(`repository name ${phabURI} could not be mapped to a URL.`);
 			return null;
 		}
 		const stagingUrl = phabricatorInstance.getStagingRepoUriFromRepoUrl(repoUrl);
 		if (!stagingUrl) {
-			console.error(`repository url ${stagingUrl} could not be mapped to a Phabricator staging URL, required for differential views.`);
+			console.error(`repository url ${repoUrl} could not be mapped to a Phabricator staging URL, required for differential views.`);
 			return null;
 		}
 		return {
