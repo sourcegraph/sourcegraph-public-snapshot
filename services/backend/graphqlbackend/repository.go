@@ -75,6 +75,13 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 		// TODO(john): add error-specific handling?
 		if zapRefInfo != nil && zapRefInfo.State != nil {
 			zapRef = &zapRefResolver{zapRef: zapRefSpec{Base: zapRefInfo.State.GitBase, Branch: zapRefInfo.State.GitBranch}}
+
+			// Note: It is important that Repos.ResolveRev below tries to
+			// resolve the git branch corresponding to the zap branch, for
+			// otherwise we would fail to resolve the git branch (which takes
+			// 6-10s on large repositories) and we would be resolving the wrong
+			// branch anyway (zap branch != git branch).
+			args.Rev = zapRefInfo.State.GitBranch
 		}
 	}
 
