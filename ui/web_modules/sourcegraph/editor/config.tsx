@@ -29,19 +29,10 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
 import { renderDirectoryContent, renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
 import { SidebarContribID, SidebarContribution } from "sourcegraph/workbench/info/contrib";
-import { onWorkbenchShown } from "sourcegraph/workbench/main";
+import { WorkbenchState, onWorkbenchShown, workbenchStore } from "sourcegraph/workbench/main";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
-import { Services } from "sourcegraph/workbench/services";
+import { Services, getCurrentWorkspace, setWorkspace } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
-import { MiniStore } from "sourcegraph/workbench/utils";
-
-interface EditorConfig {
-	diffMode: boolean;
-}
-
-export const editorConfigStore = new MiniStore<EditorConfig>();
-
-editorConfigStore.subscribe(config => updateEditorConfig(config));
 
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
@@ -49,6 +40,11 @@ editorConfigStore.subscribe(config => updateEditorConfig(config));
 export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
 	const { repo, commitID, path, selection } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
+
+	if (resource.with({ fragment: "" }).toString() !== getCurrentWorkspace().resource.toString()) {
+		setWorkspace({ ...getCurrentWorkspace(), resource: resource.with({ fragment: "" }) });
+	}
+
 	updateFileTree(resource);
 
 	const fileStat = await Services.get(IFileService).resolveFile(resource);
@@ -67,7 +63,7 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 		renderNotFoundError();
 		return;
 	}
-	if (editorConfigStore.getState().diffMode) {
+	if (workbenchStore.getState().diffMode) {
 		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource);
 	} else {
 		renderFileEditor(resource, selection);
@@ -117,7 +113,7 @@ export function isOnZapRef(): boolean {
 /**
  * updateEditorConfig updates the configuration properties for the current editor.
  */
-export function updateEditorConfig(config: EditorConfig): void {
+export function updateEditorConfig(config: WorkbenchState): void {
 	const uri = resourceForCurrentEditor();
 	if (!uri) {
 		return;
@@ -126,8 +122,8 @@ export function updateEditorConfig(config: EditorConfig): void {
 	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
 	const revState = contextService.getWorkspace().revState;
 
-	if (config.diffMode) {
-		const left = uri.with({ query: revState && revState.zapRef ? `${uri.query}~0` : `${uri.query}^` });
+	if (config.diffMode && revState && revState.zapRef) {
+		const left = uri.with({ query: `${uri.query}~0` });
 		renderDiffEditor(left, uri);
 	} else {
 		renderFileEditor(uri, null);
@@ -224,13 +220,7 @@ export async function updateFileTree(resource: URI): Promise<void> {
 		throw new Error("Type Error: Expected viewlet to have type ExplorerView");
 	}
 
-	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
-	const newWorkspace = resource.with({ fragment: "" });
-	if (workspaceService.getWorkspace().resource.toString() !== newWorkspace.toString()) {
-		// TODO(john): this code doesn't work properly with Zap branch switching
-		workspaceService.setWorkspace({ resource: newWorkspace });
-		await view.refresh(true);
-	}
+	await view.refresh(true);
 
 	const privateView = view as any;
 	let root = privateView.getInput();

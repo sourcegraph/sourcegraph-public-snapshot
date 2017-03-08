@@ -22,8 +22,8 @@ import { List } from "sourcegraph/components/symbols/Primaries";
 import { History } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import { editorConfigStore } from "sourcegraph/editor/config";
 import { urlToRepoRev } from "sourcegraph/repo/routes";
+import { workbenchStore } from "sourcegraph/workbench/main";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
 import { RouterContext } from "sourcegraph/workbench/utils";
@@ -120,10 +120,10 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 		super(props);
 		this.state = {
 			revState: this.props.revState,
-			diffMode: editorConfigStore.getState().diffMode,
+			diffMode: workbenchStore.getState().diffMode,
 		};
-		editorConfigStore.subscribe(
-			() => this.setState(editorConfigStore.getState())
+		workbenchStore.subscribe(
+			() => this.setState(workbenchStore.getState())
 		);
 		this.disposables = [];
 	}
@@ -133,7 +133,6 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 			this.setState({
 				revState: workspace.revState,
 			});
-			editorConfigStore.dispatch({ diffMode: true });
 		}));
 	}
 
@@ -142,7 +141,7 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 	}
 
 	setDiffMode(diffMode: boolean): void {
-		editorConfigStore.dispatch({ diffMode });
+		workbenchStore.dispatch({ diffMode });
 	}
 
 	render(): JSX.Element {

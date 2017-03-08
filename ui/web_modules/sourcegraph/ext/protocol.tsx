@@ -28,9 +28,13 @@ export interface InitializationOptions {
 	features: string[];
 
 	/**
-	 * zapRef is the current Zap at the time of initialization.
+	 * revState is the current revision state at the time of initialization.
 	 */
-	zapRef?: string;
+	revState?: {
+		zapRef?: string,
+		commitID?: string,
+		branch?: string
+	};
 
 	context: typeof context;
 }
