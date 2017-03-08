@@ -11,7 +11,7 @@ export function Symbols(): JSX.Element {
 			</p>
 
 			<Heading level={4} style={{ marginBottom: whitespace[2] }}>Other Symbols</Heading>
-			<FlexContainer justify="between" wrap={true} style={{ marginTop: whitespace[4] }}>
+			<FlexContainer justify="between" wrap={true} style={{ marginTop: whitespace[5] }}>
 				<SymbolTile symbol={GitHubLogo} size={32} name="GitHubLogo" key="GitHubLogo" />
 				<SymbolTile symbol={Spinner} size={32} name="Spinner" key="Spinner" />
 			</FlexContainer>

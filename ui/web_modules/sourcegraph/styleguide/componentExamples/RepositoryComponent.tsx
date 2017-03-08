@@ -5,7 +5,7 @@ import { whitespace } from "sourcegraph/components/utils";
 export function RepositoryComponent(): JSX.Element {
 	return <div>
 		<Panel hoverLevel="low">
-			<div style={{ padding: whitespace[4] }}>
+			<div style={{ padding: whitespace[5] }}>
 
 				<RepositoryCard
 					repo={{
@@ -24,8 +24,8 @@ export function RepositoryComponent(): JSX.Element {
 			<code>
 				<pre style={{
 					whiteSpace: "pre-wrap",
-					paddingLeft: whitespace[4],
-					paddingRight: whitespace[4],
+					paddingLeft: whitespace[5],
+					paddingRight: whitespace[5],
 				}}>
 					{`
 	<RepositoryCard

@@ -49,7 +49,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				img={`${context.assetsRoot}/img/Homepage/bg-circuit.svg`}
 				style={{ boxShadow: "inset 0 -30px 100px white" }}>
 
-				<Nav location={this.props.location} style={{ padding: whitespace[4] }} context={this.context} />
+				<Nav location={this.props.location} style={{ padding: whitespace[5] }} context={this.context} />
 
 				<div style={layout.container}>
 
@@ -58,7 +58,7 @@ export class Home extends React.Component<HomeProps, {}> {
 							layout.container,
 							{
 								maxWidth: 680,
-								marginBottom: whitespace[5],
+								marginBottom: whitespace[8],
 								marginTop: whitespace[3],
 								padding: whitespace[3],
 							}
@@ -79,7 +79,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				</div>
 			</BGContainer>
 
-			<div style={{ marginBottom: whitespace[5], marginTop: whitespace[6] }}>
+			<div style={{ marginBottom: whitespace[8], marginTop: whitespace[9] }}>
 				<Heading level={3} align="center" style={{ fontWeight: "normal" }}>
 					Read code smarter and faster. Get more done.
 				</Heading>
@@ -161,7 +161,7 @@ export class Home extends React.Component<HomeProps, {}> {
 							maxWidth: 440,
 							minWidth: 320,
 							maxHeight: "85%",
-							padding: whitespace[4],
+							padding: whitespace[5],
 							margin: "auto",
 							marginTop: "20vh",
 						}}>
@@ -175,24 +175,24 @@ export class Home extends React.Component<HomeProps, {}> {
 					</LocationStateModal>
 				}
 
-				<div style={{ paddingTop: whitespace[5], paddingBottom: whitespace[4] }}>
+				<div style={{ paddingTop: whitespace[8], paddingBottom: whitespace[5] }}>
 					<Panel hoverLevel="high" hover={false}
 						style={{
 							margin: "auto",
 							maxWidth: 960,
-							padding: whitespace[4],
+							padding: whitespace[5],
 						}}>
 						<FlexContainer wrap={true} items="center">
 							<Heading align="left" level={4} underline="purple" style={{ flex: "0 0 240px" }} >
 								Used by developers everywhere
 								</Heading>
 							<FlexContainer items="center" justify="end" style={{ flex: "1 1 60%" }}>
-								<Link to="/customers/twitter" style={{ height: 24, marginRight: whitespace[4] }}>
+								<Link to="/customers/twitter" style={{ height: 24, marginRight: whitespace[5] }}>
 									<img style={{ marginRight: whitespace[3] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
 									<span style={{ verticalAlign: "super" }}>Read the case study</span>
 								</Link>
-								<img style={{ marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} height="32" {...layout.hide.sm} />
-								<img style={{ marginTop: "5px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} height="24" {...layout.hide.sm} />
+								<img style={{ marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} height="32" {...layout.hide.sm} />
+								<img style={{ marginTop: "5px", marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} height="24" {...layout.hide.sm} />
 								<img style={{ marginTop: "8px" }} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} height="17" {...layout.hide.sm} />
 							</FlexContainer>
 						</FlexContainer>
@@ -219,9 +219,9 @@ export class Home extends React.Component<HomeProps, {}> {
 					layout.container,
 					{
 						maxWidth: 600,
-						marginTop: whitespace[5],
+						marginTop: whitespace[8],
 						padding: whitespace[3],
-						paddingBottom: whitespace[6],
+						paddingBottom: whitespace[9],
 						textAlign: "center",
 					}
 				)}>
@@ -237,9 +237,9 @@ export class Home extends React.Component<HomeProps, {}> {
 
 					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="orange" style={{
-							marginTop: whitespace[4],
-							paddingLeft: whitespace[4],
-							paddingRight: whitespace[4],
+							marginTop: whitespace[5],
+							paddingLeft: whitespace[5],
+							paddingRight: whitespace[5],
 						}}>Sign up for free</Button>
 					</LocationStateToggleLink>
 				</div>

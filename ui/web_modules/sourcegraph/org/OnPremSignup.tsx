@@ -17,7 +17,7 @@ interface Props {
 
 const formSx = {
 	color: colors.blueGrayD1(),
-	margin: whitespace[4],
+	margin: whitespace[5],
 	marginTop: 0,
 };
 
@@ -79,7 +79,7 @@ export class EnterpriseDetails extends React.Component<Props, OnPremDetails> {
 }
 
 export function EnterpriseThanks(props: { next: () => void }): JSX.Element {
-	return <div style={{ margin: "auto", maxWidth: 320, textAlign: "center", paddingTop: whitespace[4], paddingBottom: whitespace[5] }}>
+	return <div style={{ margin: "auto", maxWidth: 320, textAlign: "center", paddingTop: whitespace[5], paddingBottom: whitespace[8] }}>
 		<Postcard width={64} color={colors.blueGrayL1()} />
 		<Heading level={4}>Thanks!</Heading>
 		<p>

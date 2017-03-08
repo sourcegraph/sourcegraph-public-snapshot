@@ -66,23 +66,23 @@ function SignInButton({ block }: { block: boolean }): JSX.Element {
 }
 
 export function MasterPlanPage(): JSX.Element {
-	return <div style={{ marginBottom: whitespace[4] }}>
+	return <div style={{ marginBottom: whitespace[5] }}>
 		<PageTitle title="Sourcegraph Master Plan" />
-		<Hero pattern="objects" color="blue" style={{ padding: whitespace[4] }}>
+		<Hero pattern="objects" color="blue" style={{ padding: whitespace[5] }}>
 			<Heading level={2} color="white">Sourcegraph Master Plan</Heading>
 			<p>What we're building and why it matters</p>
 		</Hero>
 		<FlexContainer style={{
 			margin: "auto",
 			maxWidth: 1000,
-			paddingTop: whitespace[4],
+			paddingTop: whitespace[5],
 			paddingLeft: whitespace[2],
 			paddingRight: whitespace[2],
 		}}>
 			<div style={{
 				flex: "0 0 320px",
 				order: 99,
-				paddingLeft: whitespace[4],
+				paddingLeft: whitespace[5],
 				paddingTop: whitespace[3],
 			}}
 				{ ...layout.hide.sm }
@@ -92,9 +92,9 @@ export function MasterPlanPage(): JSX.Element {
 					<TLDR style={{
 						borderLeft: `1px solid ${colors.blueGray(0.25)}`,
 						listStyleType: "none",
-						paddingLeft: whitespace[4],
+						paddingLeft: whitespace[5],
 					}} />
-					<EmailSubscribeForm tabIndex={5} block={true} sx={{ padding: whitespace[4] }} />
+					<EmailSubscribeForm tabIndex={5} block={true} sx={{ padding: whitespace[5] }} />
 					{!context.user && <SignInButton block={true} />}
 				</Affix>
 			</div>
@@ -123,14 +123,14 @@ export function MasterPlanPage(): JSX.Element {
 				</p>
 
 				<a id="code-intelligence"></a>
-				<Heading level={3} style={{ marginTop: whitespace[5] }}>
+				<Heading level={3} style={{ marginTop: whitespace[8] }}>
 					Make basic code intelligence ubiquitous (in every editor and language)
 				</Heading>
 				<Panel hoverLevel="low" hover={false} style={{
 					maxWidth: 310,
 					float: "right",
 					margin: whitespace[3],
-					padding: whitespace[4],
+					padding: whitespace[5],
 				}}>
 					<div style={typography.size[6]}>
 						<p>
@@ -192,9 +192,9 @@ export function MasterPlanPage(): JSX.Element {
 					The end result is that anytime you look at code, you have the full power of a perfectly configured IDE.
 				</p>
 				<Panel hoverLevel="low" hover={false} style={{
-					marginBottom: whitespace[5],
-					marginTop: whitespace[5],
-					padding: whitespace[4],
+					marginBottom: whitespace[8],
+					marginTop: whitespace[8],
+					padding: whitespace[5],
 					textAlign: "center",
 				}}>
 					<Heading level={4} style={{ marginBottom: whitespace[3] }}>
@@ -206,7 +206,7 @@ export function MasterPlanPage(): JSX.Element {
 				</Panel>
 
 				<a id="code-review"></a>
-				<Heading level={3} style={{ marginTop: whitespace[5] }}>
+				<Heading level={3} style={{ marginTop: whitespace[8] }}>
 					Make code review continuous and more intelligent
 				</Heading>
 
@@ -243,7 +243,7 @@ export function MasterPlanPage(): JSX.Element {
 				</ol>
 
 				<a id="global-code-graph"></a>
-				<Heading level={3} style={{ marginTop: whitespace[5] }}>
+				<Heading level={3} style={{ marginTop: whitespace[8] }}>
 					Build the global code graph
 				</Heading>
 				<p>
@@ -290,8 +290,8 @@ export function MasterPlanPage(): JSX.Element {
 					<Panel hoverLevel="low" hover={false} style={{
 						margin: "auto",
 						marginBottom: whitespace[2],
-						marginTop: whitespace[4],
-						padding: whitespace[4],
+						marginTop: whitespace[5],
+						padding: whitespace[5],
 						textAlign: "center",
 					}}>
 						<Heading level={4} style={{ marginBottom: whitespace[3] }}>

@@ -116,7 +116,7 @@ function ComponentContainer({ id, name, children }: {
 	name: string,
 	children?: React.ReactNode[],
 }): JSX.Element {
-	return <div style={{ marginTop: whitespace[4], marginBottom: whitespace[5] }}>
+	return <div style={{ marginTop: whitespace[5], marginBottom: whitespace[8] }}>
 		<a id={id}></a>
 		<Heading level={4} style={{ marginBottom: whitespace[3] }}>{name}</Heading>
 		{children}

@@ -107,7 +107,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 }
 
 function Error({ code, desc }: { code: string, desc: string }): JSX.Element {
-	return <div style={{ textAlign: "center", marginTop: whitespace[5] }}>
+	return <div style={{ textAlign: "center", marginTop: whitespace[8] }}>
 		<Heading level={2}>{code}</Heading>
 		<Heading level={4} color="gray">{desc}</Heading>
 	</div>;

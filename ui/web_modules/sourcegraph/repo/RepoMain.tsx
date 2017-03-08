@@ -70,7 +70,7 @@ export class CloningRefresher extends React.Component<{
 	}
 
 	render(): JSX.Element {
-		return <Heading color="gray" level={4} align="center" style={{ marginTop: whitespace[4] }}>
+		return <Heading color="gray" level={4} align="center" style={{ marginTop: whitespace[5] }}>
 			Cloning this repository<br />
 			<Loader />
 		</Heading>;

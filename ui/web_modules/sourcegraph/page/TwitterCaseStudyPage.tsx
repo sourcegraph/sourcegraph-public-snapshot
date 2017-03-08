@@ -44,7 +44,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 					level={4}
 					underline="purple"
 					style={{
-						marginTop: whitespace[4],
+						marginTop: whitespace[5],
 					}}>
 					The Problem:<br />Understanding and reusing existing code.
 				</Heading>
@@ -59,7 +59,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 
 				<Heading level={4} underline="purple"
 					style={{
-						marginTop: whitespace[4],
+						marginTop: whitespace[5],
 					}}>
 					The Solution:<br />Fast, semantic code browsing.
 				</Heading>
@@ -179,7 +179,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 
 				{!context.user && <div style={{
 					textAlign: "center",
-					paddingBottom: whitespace[4],
+					paddingBottom: whitespace[5],
 					paddingTop: whitespace[3],
 				}}>
 					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>

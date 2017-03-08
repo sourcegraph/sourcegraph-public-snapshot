@@ -19,16 +19,16 @@ export class FeatureCarousel extends React.Component<Props, State> {
 		return <FlexContainer wrap={true} style={Object.assign({},
 			layout.container,
 			{
-				marginTop: whitespace[5],
-				paddingright: whitespace[4],
+				marginTop: whitespace[8],
+				paddingright: whitespace[8],
 				maxWidth: 1080,
 			},
 		)}>
 			<FlexContainer direction="top-bottom" wrap={true} justify="around" style={{
 				flex: "1 1 220px",
 				minWidth: 175,
-				paddingBottom: whitespace[5],
-				paddingRight: whitespace[4],
+				paddingBottom: whitespace[8],
+				paddingRight: whitespace[5],
 			}}>
 				<SliderNavItem
 					title="View all references"
@@ -68,9 +68,9 @@ function SliderNavItem({ title, subtitle, active, onClick }: SliderNavItemProps)
 		backgroundImage: active ? `linear-gradient(270deg, ${colors.white()}, ${colors.blueL3()} 100%)` : "transparent",
 		borderRadius: 3,
 		color: colors.blueGrayD1(0.75),
-		marginTop: whitespace[4],
+		marginTop: whitespace[5],
 		paddingBottom: whitespace[2],
-		paddingLeft: whitespace[4],
+		paddingLeft: whitespace[5],
 		paddingTop: whitespace[3],
 	});
 

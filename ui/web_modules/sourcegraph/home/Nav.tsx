@@ -16,7 +16,7 @@ interface Props {
 
 const navItemSx = {
 	marginTop: whitespace[2],
-	marginRight: whitespace[4],
+	marginRight: whitespace[5],
 	color: colors.blueGray(),
 };
 

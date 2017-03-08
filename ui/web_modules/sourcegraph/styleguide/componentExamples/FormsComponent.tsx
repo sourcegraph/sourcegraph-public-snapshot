@@ -21,7 +21,7 @@ export class FormsComponent extends React.Component<{}, State> {
 					<div className={base.pa4}>
 
 						<Input placeholder="Placeholder text" block={true} label="Input label" helperText="This is optional helper text." className={base.mb4} />
-						<Select defaultValue="" label="Select label" containerStyle={{ marginBottom: whitespace[4] }}>
+						<Select defaultValue="" label="Select label" containerStyle={{ marginBottom: whitespace[5] }}>
 							<option value="" disabled={true}>Placeholder</option>
 							<option>Option 1</option>
 							<option>Option 2</option>
@@ -34,13 +34,13 @@ export class FormsComponent extends React.Component<{}, State> {
 
 						<Input placeholder="Placeholder text" block={true} icon="Search" iconPosition="right" error={true} optionalText="This" label="Input label" errorText="This is an error." className={base.mb4} />
 
-						<Select label="Select label" containerStyle={{ marginBottom: whitespace[4] }} placeholder="Select an option">
+						<Select label="Select label" containerStyle={{ marginBottom: whitespace[5] }} placeholder="Select an option">
 							<option>Option 1</option>
 							<option>Option 2</option>
 							<option>Option 3</option>
 						</Select>
 
-						<Select error={true} label="Select label" errorText="This is an error" placeholder="Select an option" containerStyle={{ marginBottom: whitespace[4] }}>
+						<Select error={true} label="Select label" errorText="This is an error" placeholder="Select an option" containerStyle={{ marginBottom: whitespace[5] }}>
 							<option>Option 1</option>
 							<option>Option 2</option>
 							<option>Option 3</option>

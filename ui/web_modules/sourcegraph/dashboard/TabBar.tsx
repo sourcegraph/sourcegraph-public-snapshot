@@ -13,14 +13,14 @@ export function TabBar({ active, style, setActive }: Props): JSX.Element {
 
 	const sx = Object.assign({
 		boxSizing: "border-box",
-		padding: whitespace[4],
+		padding: whitespace[5],
 		paddingLeft: 0,
 		paddingTop: 0,
 	}, style);
 
 	return <div style={sx}>
 		<Heading level={7} color="white" style={{
-			padding: whitespace[4],
+			padding: whitespace[5],
 			paddingBottom: whitespace[2],
 		}}>Repositories</Heading>
 

@@ -42,7 +42,7 @@ export function TabItem({
 		marginBottom: whitespace[2],
 		marginLeft: -1,
 		padding: whitespace[1],
-		paddingLeft: `calc(${whitespace[4]} - ${borderWidth}px)`,
+		paddingLeft: `calc(${whitespace[5]} - ${borderWidth}px)`,
 		paddingRight: whitespace[3],
 	};
 

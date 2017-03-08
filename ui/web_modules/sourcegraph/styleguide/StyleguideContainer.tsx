@@ -8,7 +8,7 @@ export function StyleguideContainer(props: {}): JSX.Element {
 	const navHeadingSx = {
 		marginLeft: whitespace[3],
 		paddingLeft: whitespace[3],
-		marginTop: whitespace[4],
+		marginTop: whitespace[5],
 	};
 
 	return (
@@ -26,7 +26,7 @@ export function StyleguideContainer(props: {}): JSX.Element {
 			</Hero>
 			<FlexContainer className={styles.container_fixed}>
 				<Affix offset={20} style={{ flex: "0 0 240px", order: 9999 }}>
-					<Tabs style={{ marginLeft: whitespace[5] }} direction="vertical">
+					<Tabs style={{ marginLeft: whitespace[8] }} direction="vertical">
 						<MenuItem anchor="#principles" name="Principles" />
 
 						<Heading level={7} style={navHeadingSx}>Brand</Heading>

@@ -18,8 +18,8 @@ export function Hero({ color = "white", className, pattern, children, style }: P
 			backgroundColor: bgColors[color],
 			color: color === "white" || color === "transparent" ? "inherit" : colors.white(),
 			textAlign: "center",
-			paddingBottom: whitespace[4],
-			paddingTop: whitespace[4],
+			paddingBottom: whitespace[5],
+			paddingTop: whitespace[5],
 		}, ...style
 	}}>{children}</BGContainer>;
 }

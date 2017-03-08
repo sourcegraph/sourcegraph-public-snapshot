@@ -10,7 +10,7 @@ import { whitespace } from "sourcegraph/components/utils";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export function AboutPage({ location }: LocationProps): JSX.Element {
-	const boardMemberSx = { marginBottom: whitespace[4], marginRight: whitespace[4] };
+	const boardMemberSx = { marginBottom: whitespace[5], marginRight: whitespace[5] };
 	return (
 		<div>
 			<PageTitle title="About" />
@@ -23,7 +23,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 				maxWidth: 640,
 				margin: "auto",
 			}}>
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>Master Plan</Heading>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>Master Plan</Heading>
 				<p>We believe code intelligence can help bring <strong>the future sooner.</strong> Our long-term vision is to make it so everyone, in every community, in every country, and in every industry can create products using the best technology. Here is what we are working on now to help this happen:</p>
 				<ul>
 					<li>Make basic code intelligence ubiquitous</li>
@@ -100,12 +100,12 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 					</div>
 				</FlexContainer>
 
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>
 					Investors
 				</Heading>
 				<img width="100%" src={`${context.assetsRoot}/img/about/about-investors.png`} />
 
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>
 					Board of Directors
 				</Heading>
 
@@ -123,7 +123,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 
 				</FlexContainer>
 
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>
 					Advisors and Supporters
 					</Heading>
 
@@ -149,8 +149,8 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 
 				{!context.user && <div style={{
 					textAlign: "center",
-					marginTop: whitespace[5],
-					marginBottom: whitespace[5],
+					marginTop: whitespace[8],
+					marginBottom: whitespace[8],
 				}}>
 					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="purple">

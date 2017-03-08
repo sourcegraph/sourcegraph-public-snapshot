@@ -81,11 +81,11 @@ export class Repos extends React.Component<Props, {}> {
 
 	_repoList(): JSX.Element {
 		if (Object.keys(this.props.repos).length === 0) {
-			return <div style={{ margin: whitespace[4] }}>
+			return <div style={{ margin: whitespace[5] }}>
 				<Heading level={4} style={{ marginTop: 0 }}>{this._getTitle(this.props.type)}</Heading>
 				<Panel hoverLevel="low" style={{
 					marginTop: whitespace[3],
-					padding: whitespace[4],
+					padding: whitespace[5],
 					textAlign: "center",
 				}}>
 					It doesn't look like you have any repositories.
@@ -104,7 +104,7 @@ export class Repos extends React.Component<Props, {}> {
 			filteredRepos = this.props.repos.filter(this._showRepo).sort(this._repoSort);
 		}
 
-		return <div style={{ margin: whitespace[4] }}>
+		return <div style={{ margin: whitespace[5] }}>
 			<FlexContainer justify="between" wrap={true} style={{
 				marginTop: whitespace[3],
 				marginBottom: whitespace[3],
@@ -124,7 +124,7 @@ export class Repos extends React.Component<Props, {}> {
 				})}
 			</div>
 			{context.gitHubToken && this._filterInput && this._filterInput.value && filteredRepos.length === 0 &&
-				<div style={{ margin: whitespace[4], textAlign: "center" }}>No matching repositories. Try a different search.</div>
+				<div style={{ margin: whitespace[5], textAlign: "center" }}>No matching repositories. Try a different search.</div>
 			}
 		</div>;
 	}
@@ -132,7 +132,7 @@ export class Repos extends React.Component<Props, {}> {
 	render(): JSX.Element {
 		return <div style={this.props.style}>
 			{this._header()}
-			{!this.props.repos ? <div style={{ margin: whitespace[4], marginTop: 0, textAlign: "center" }}><Spinner /> Loading...</div> : this._repoList()}
+			{!this.props.repos ? <div style={{ margin: whitespace[5], marginTop: 0, textAlign: "center" }}><Spinner /> Loading...</div> : this._repoList()}
 		</div>;
 	}
 }

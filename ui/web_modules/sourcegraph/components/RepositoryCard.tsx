@@ -16,7 +16,7 @@ export function RepositoryCard({ style, repo }: Props): JSX.Element {
 	}
 
 	const sx = Object.assign(
-		{ padding: whitespace[4] },
+		{ padding: whitespace[5] },
 		style,
 	);
 

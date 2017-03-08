@@ -43,14 +43,14 @@ export class UserDetailsForm extends React.Component<Props, UserDetails> {
 		};
 
 		return <form style={detailsSx} onSubmit={this.submit}>
-			<p style={{ marginTop: 0, marginBottom: whitespace[4], textAlign: "center" }}>
+			<p style={{ marginTop: 0, marginBottom: whitespace[5], textAlign: "center" }}>
 				Please confirm your details:
 				</p>
 			<Input label="Full name" block={true} required={true} value={this.state.name} onChange={this.onChange("name")} />
 			<Input label="Email" block={true} required={true} value={this.state.email} onChange={this.onChange("email")} type="email" />
 			<Input block={true} label="Company" required={false} optionalText="Optional" value={this.state.company} onChange={this.onChange("company")} />
 
-			<FlexContainer style={{ marginBottom: whitespace[3], marginTop: whitespace[4] }}>
+			<FlexContainer style={{ marginBottom: whitespace[3], marginTop: whitespace[5] }}>
 				<div style={{ color: colors.blueGray(), ...typography.small }}>
 					By signing up, you agree to our <Link to={abs.terms} style={subtleLinkSx}>terms</Link>, <Link to={abs.privacy} style={subtleLinkSx}>privacy policy</Link>, and <Link to={abs.terms} style={subtleLinkSx}>email policy</Link>.
 					</div>

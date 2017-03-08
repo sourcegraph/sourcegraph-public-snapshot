@@ -64,7 +64,7 @@ function renderRootContent(message: JSX.Element): void {
 		width: "100%",
 		height: "100%",
 		padding: whitespace[2],
-		paddingBottom: whitespace[6],
+		paddingBottom: whitespace[9],
 	}}>
 		<div id="directory_help_message" style={{ ...style, ...typography.size[4] }}>{message}</div>
 	</FlexContainer>;

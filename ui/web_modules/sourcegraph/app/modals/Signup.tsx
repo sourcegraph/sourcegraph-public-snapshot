@@ -25,7 +25,7 @@ export class Signup extends React.Component<{}, {}> {
 
 	render(): JSX.Element {
 		const buttonSx = {
-			marginTop: whitespace[4],
+			marginTop: whitespace[5],
 			padding: 0,
 			textAlign: "left",
 		};
@@ -35,7 +35,7 @@ export class Signup extends React.Component<{}, {}> {
 			<div style={{
 				margin: "auto",
 				maxWidth: 320,
-				padding: `${whitespace[4]} ${whitespace[3]}`,
+				padding: `${whitespace[5]} ${whitespace[3]}`,
 				textAlign: "center",
 			}}>
 				To sign up, please authorize <br {...layout.hide.notSm } /> private code with GitHub:

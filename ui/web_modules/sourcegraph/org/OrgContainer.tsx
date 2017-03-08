@@ -91,7 +91,7 @@ export class OrgContainer extends Container<Props, State> {
 			msgHeader = <div>Browse your Org's private code on Sourcegraph</div>;
 			msgBody = <div>
 				Get inline annotations, jump to definition, and more for your company's private code.
-				<div style={{ marginTop: whitespace[4] }}>
+				<div style={{ marginTop: whitespace[5] }}>
 					<GitHubAuthButton pageName={"ViewOrgs"} scope="private" returnTo={"/settings"}>
 						Add your orgs
 					</GitHubAuthButton> to start a 14-day trial.
@@ -100,7 +100,7 @@ export class OrgContainer extends Container<Props, State> {
 		}
 
 		return <div
-			style={{ marginTop: whitespace[5], padding: whitespace[5], textAlign: "center", maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>
+			style={{ marginTop: whitespace[8], padding: whitespace[8], textAlign: "center", maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>
 			<Heading level={5}>
 				{msgHeader}
 			</Heading>
@@ -120,7 +120,7 @@ export class OrgContainer extends Container<Props, State> {
 	render(): JSX.Element {
 		let mainPanel;
 		if (!this.state.selectedOrg) {
-			mainPanel = <div style={{ marginTop: whitespace[4], paddingTop: whitespace[3], paddingBottom: whitespace[3] }}>
+			mainPanel = <div style={{ marginTop: whitespace[5], paddingTop: whitespace[3], paddingBottom: whitespace[3] }}>
 				Select an organization to view and invite members.
 			</div>;
 		} else if (this.state.selectedOrg) {
@@ -133,7 +133,7 @@ export class OrgContainer extends Container<Props, State> {
 				<div style={{ marginTop: whitespace[2] }}>
 					{(!this._hasOrgs()) ? this._noRepoPanel() :
 						<GridRow>
-							<GridCol style={{ paddingTop: whitespace[4], paddingRight: whitespace[0] }} align="left" col={3} colSm={10}>
+							<GridCol style={{ paddingTop: whitespace[5], paddingRight: whitespace[0] }} align="left" col={3} colSm={10}>
 								<Tabs direction="vertical" style={{ borderLeft: "none" }}>
 									{(this.state.orgs && this.state.orgs.length > 0) && this.state.orgs.map((org, i) =>
 										<TabItem key={i} active={Boolean(this.state.selectedOrg && (this.state.selectedOrg.Login === org.Login))} direction="vertical">

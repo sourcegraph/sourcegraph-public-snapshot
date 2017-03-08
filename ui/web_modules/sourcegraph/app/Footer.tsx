@@ -11,7 +11,7 @@ export function Footer(): JSX.Element {
 	return <div style={{ backgroundColor: "#f0f5fb" }}>
 		<FlexContainer justify="between" style={{
 			padding: whitespace[3],
-			paddingBottom: whitespace[4],
+			paddingBottom: whitespace[5],
 			maxWidth: 960,
 			margin: "auto",
 		}}>

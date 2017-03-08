@@ -21,12 +21,12 @@ export function ColorsComponent(): JSX.Element {
 			<li><strong>Neutrals:</strong> BlueGray, Black, Gray, White</li>
 		</List>
 
-		<Heading level={5} style={{ marginTop: whitespace[4] }}>Usage</Heading>
-		<p style={{ marginBottom: whitespace[4] }}>
+		<Heading level={5} style={{ marginTop: whitespace[5] }}>Usage</Heading>
+		<p style={{ marginBottom: whitespace[5] }}>
 			After importing <Code>colors</Code> from <Code>sourcegraph/components/utils</Code>, you can use it's color function to use it. Each color function takes in an alpha opacity value and outputs an RGBA value string. For example, <Code>colors.blue(0.5)</Code> would output <Code>rgba(0,145,234,1)</Code>.
 		</p>
 
-		<FlexContainer justify="between" wrap={true} style={{ paddingBottom: whitespace[4] }}>
+		<FlexContainer justify="between" wrap={true} style={{ paddingBottom: whitespace[5] }}>
 			{colorBlocks}
 		</FlexContainer>
 	</div>;

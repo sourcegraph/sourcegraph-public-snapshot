@@ -71,9 +71,9 @@ const headerSx = {
 	backgroundColor: colors.white(),
 	borderTopLeftRadius: 3,
 	borderTopRightRadius: 3,
-	paddingTop: whitespace[4],
-	paddingLeft: whitespace[4],
-	paddingRight: whitespace[4],
+	paddingTop: whitespace[5],
+	paddingLeft: whitespace[5],
+	paddingRight: whitespace[5],
 	paddingBottom: whitespace[2],
 };
 
@@ -188,8 +188,8 @@ export class TourOverlay extends React.Component<Props, State>  {
 			refSubtitle = <p style={p}>
 				Click any symbol to view its <strong>references</strong> in this repository and in any public code.
 			</p>;
-			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
-			const refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" color="blueGray" scope="private" returnTo={this.props.location}>Authorizing with GitHub</GitHubAuthButton></div>;
+			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[5] }} color="white" size="tiny">Install the Chrome extension</Button>;
+			const refActionCTA = <div style={{ paddingLeft: whitespace[5] }}><GitHubAuthButton pageName="BlobViewOnboarding" color="blueGray" scope="private" returnTo={this.props.location}>Authorizing with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
 				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", shouldPromptToInstallBrowserExtension() ? null : defActionCTA),
@@ -323,7 +323,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 					{coachmark.headingSubtitle}
 				</div>
 				{coachmark.actionCTA &&
-					<div style={{ padding: whitespace[4] }}>
+					<div style={{ padding: whitespace[5] }}>
 						<Flag width={22} style={flagSx} color={colors.blueD1(0.9)} />
 						<strong style={actionSx}>{coachmark.actionTitle}</strong>
 						{coachmark.actionCTA}

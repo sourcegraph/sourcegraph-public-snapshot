@@ -21,8 +21,8 @@ interface TileProps {
 export type PlanType = "public" | "personal" | "organization" | "enterprise";
 
 export function PlanSelector({ select }: Props): JSX.Element {
-	return <div style={{ padding: whitespace[4] }}>
-		<p style={{ marginBottom: whitespace[4], textAlign: "center", color: colors.blueGrayD1() }}>Choose your plan:</p>
+	return <div style={{ padding: whitespace[5] }}>
+		<p style={{ marginBottom: whitespace[5], textAlign: "center", color: colors.blueGrayD1() }}>Choose your plan:</p>
 		<PlanTile
 			onClick={select("personal")}
 			name="Personal"
@@ -44,7 +44,7 @@ export function PlanSelector({ select }: Props): JSX.Element {
 			desc="Code hosted on premises"
 			price={50}
 			unit="per user/mo" />
-		<p style={{ marginTop: whitespace[4], textAlign: "center" }}>
+		<p style={{ marginTop: whitespace[5], textAlign: "center" }}>
 			<a onClick={select("public")}>
 				<strong>Always free for public code <ChevronRight /></strong>
 			</a>
