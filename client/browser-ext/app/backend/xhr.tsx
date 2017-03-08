@@ -1,11 +1,12 @@
 import { getPlatformName } from "../utils";
+import { phabricatorInstance } from "../utils/context";
 
 let token: string | null = null;
 export function useAccessToken(tok: string): void {
 	token = tok;
 }
 
-type FetchOptions = { headers: Headers };
+type FetchOptions = { headers: Headers, credentials: string };
 
 export function combineHeaders(a: Headers, b: Headers): Headers {
 	let headers = new Headers(a);
@@ -18,11 +19,17 @@ function defaultOptions(): FetchOptions | undefined {
 		return; // for unit tests
 	}
 	const headers = new Headers();
+	// TODO(uforic): can we get rid of this and just pass cookies instead
 	if (token) {
 		headers.set("Authorization", `session ${token}`);
 	}
-	headers.set("x-sourcegraph-client", `${getPlatformName()} v${getExtensionVersion()}`);
-	return { headers };
+	if (!phabricatorInstance) {
+		headers.set("x-sourcegraph-client", `${getPlatformName()} v${getExtensionVersion()}`);
+	}
+	return {
+		headers,
+		credentials: "include",
+	};
 };
 
 function getExtensionVersion(): string {

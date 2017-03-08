@@ -17,13 +17,8 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 	if (promiseHit) {
 		return promiseHit;
 	}
-	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			query: `query Content($repo: String, $rev: String) {
+	const body = {
+		query: `query Content($repo: String, $rev: String) {
 					root {
 						repository(uri: $repo) {
 							commit(rev: $rev) {
@@ -35,8 +30,11 @@ export function resolveRev(repo: string, rev?: string): Promise<ResolvedRevResp>
 						}
 					}
 				}`,
-			variables: { repo, rev },
-		}),
+		variables: { repo, rev },
+	};
+	const p = fetch(`${sourcegraphUrl}/.api/graphql`, {
+		method: "POST",
+		body: JSON.stringify(body),
 	}).then((resp) => resp.json()).then((json: GQL.IGraphQLResponseRoot) => {
 		// Note: only cache the promise if it is not found or found. If it is cloning, we want to recheck.
 		promiseCache.delete(key);

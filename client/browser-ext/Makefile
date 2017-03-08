@@ -13,8 +13,10 @@ bundle: build
 	cd build && zip -r ../firefox-bundle.xpi *
 
 phabricator: clean build
+	# this is phabricator, not umami, because we don't control the code and it references phabricator
 	cp build/js/umami.bundle.js ../../ui/assets/scripts/phabricator.bundle.js
-	cp build/js/umami.bundle.js.map ../../ui/assets/scripts/phabricator.bundle.js.map
+	# this should be umami, because the last line of the above bundle asks for umami.bundle.js.map
+	cp build/js/umami.bundle.js.map ../../ui/assets/scripts/umami.bundle.js.map
 	cp build/js/sgdev.bundle.js ../../ui/assets/scripts/sgdev.bundle.js
 	cp build/js/sgdev.bundle.js.map ../../ui/assets/scripts/sgdev.bundle.js.map
 
