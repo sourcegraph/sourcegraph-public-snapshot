@@ -4,7 +4,6 @@
 export const colors: string;
 export const vars: string;
 export const base: string;
-export const modal: string;
 export const desktop_base_size: string;
 export const mobile_base_size: string;
 export const media_sm: string;

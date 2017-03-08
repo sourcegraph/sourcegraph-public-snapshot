@@ -2,12 +2,12 @@ import * as React from "react";
 
 import { OrganizationCard } from "sourcegraph/components/OrganizationCard";
 import { ChevronRight } from "sourcegraph/components/symbols/Primaries";
+import { whitespace } from "sourcegraph/components/utils";
 
 const scrollerStyle = {
 	overflowY: "scroll",
 	maxHeight: 400,
-	padding: 4,
-	marginBottom: 16,
+	padding: whitespace[1],
 };
 
 interface Props {
@@ -22,18 +22,25 @@ export function OrgSelection(props: Props): JSX.Element {
 			Looks like you don't have any organizations: <a onClick={props.back}>Choose a different plan</a>
 		</div>;
 	}
-	return <div style={{ textAlign: "center", padding: "2rem", paddingBottom: "1rem" }}>
-		<div style={{ margin: "20px 55px" }}>
-			Which organization would you like to use Sourcegraph with?
+	return <div style={{ textAlign: "center" }}>
+		<div style={{ padding: whitespace[4] }}>
+			<p style={{ maxWidth: 360, margin: "auto", marginBottom: whitespace[3] }}>
+				Which organization would you like to use Sourcegraph with?
+			</p>
+			<div style={scrollerStyle}>
+				{props.root.currentUser.githubOrgs.map((org, idx) =>
+					<div onClick={props.select(org.name)} key={idx} style={{ marginBottom: 16, textAlign: "left" }}>
+						<OrganizationCard name={org.name} desc={org.description} icon={org.avatarURL} />
+					</div>
+				)}
+			</div>
 		</div>
-		<div style={scrollerStyle}>
-			{props.root.currentUser.githubOrgs.map((org, idx) =>
-				<div onClick={props.select(org.name)} key={idx} style={{ marginBottom: 16, textAlign: "left" }}>
-					<OrganizationCard name={org.name} desc={org.description} icon={org.avatarURL} />
-				</div>
-			)}
-		</div>
-		<hr style={{ width: "200%", marginBottom: 16 }} />
-		<a onClick={props.back} style={{ fontWeight: "bold" }}>Choose a different plan<ChevronRight /></a>
+		<hr style={{ margin: 0 }} />
+		<a onClick={props.back} style={{
+			display: "inline-block",
+			fontWeight: "bold",
+			paddingBottom: whitespace[3],
+			paddingTop: whitespace[3],
+		}}>Choose a different plan<ChevronRight /></a>
 	</div>;
 }

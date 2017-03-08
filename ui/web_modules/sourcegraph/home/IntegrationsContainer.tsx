@@ -10,7 +10,7 @@ interface Props {
 }
 
 export function IntegrationsContainer(props: Props): JSX.Element {
-	return <LocationStateModal modalName="menuIntegrations">
+	return <LocationStateModal modalName="menuIntegrations" title="Extensions">
 		<Integrations location={props.location} />
 	</LocationStateModal>;
 }

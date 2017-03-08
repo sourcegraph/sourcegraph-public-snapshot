@@ -156,22 +156,12 @@ export class Home extends React.Component<HomeProps, {}> {
 				</div>
 
 				{this.props.location.state && (this.props.location.state as any).modal === "beta" &&
-					<LocationStateModal modalName="beta">
-						<Panel style={{
-							maxWidth: 440,
-							minWidth: 320,
-							maxHeight: "85%",
-							padding: whitespace[5],
-							margin: "auto",
-							marginTop: "20vh",
-						}}>
-							<Heading level={4} align="center">Join the Sourcegraph beta</Heading>
-							<BetaInterestForm
-								style={{ width: "100%" }}
-								location={this.props.location}
-								loginReturnTo="/beta"
-								onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
-						</Panel>
+					<LocationStateModal modalName="beta" title="Sign up for our beta">
+						<BetaInterestForm
+							style={{ width: "100%" }}
+							location={this.props.location}
+							loginReturnTo="/beta"
+							onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
 					</LocationStateModal>
 				}
 

@@ -30,13 +30,13 @@ export function Panel({
 			transition: "all 550ms cubic-bezier(0.175, 0.885, 0.320, 1)",
 		},
 		hoverLevel ? {
-			boxShadow: `0 ${hoverLevel === "high" ? "2px 24px" : "2px 8px"} 0 ${colors.blueGrayD1(0.25)}`,
+			boxShadow: `0 ${hoverLevel === "high" ? "2px 24px" : "2px 8px"} 0 ${colors.blueGrayD2(0.25)}`,
 		} : {},
 		style,
 	);
 
 	const hoverSx = gHover({
-		boxShadow: `0 ${hoverLevel === "high" ? "10px 32px" : "2px 16px"} 3px ${colors.blueGrayD2(0.25)} !important`,
+		boxShadow: `0 ${hoverLevel === "high" ? "10px 32px" : "2px 16px"} 3px ${colors.blueGrayD2(0.5)} !important`,
 	}).toString();
 
 	return <div className={classnames(hover ? hoverSx : "", className)} onClick={onClick} style={sx}>{children}</div>;

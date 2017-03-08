@@ -1,7 +1,6 @@
 @value colors "sourcegraph/components/styles/_colors.css";
 @value vars "sourcegraph/components/styles/_vars.css";
 @value base "sourcegraph/components/styles/_base.css";
-@value modal "sourcegraph/components/styles/modal.css";
 
 @value desktop_base_size, mobile_base_size, media_sm from vars;
 @value c_cool_dark_gray, c_cool_pale_gray_2 from colors;

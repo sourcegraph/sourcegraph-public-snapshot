@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { RouterLocation } from "sourcegraph/app/router";
-import { GitHubAuthButton, Heading } from "sourcegraph/components";
+import { GitHubAuthButton } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { whitespace } from "sourcegraph/components/utils";
@@ -23,8 +23,7 @@ export function LoginForm(props: Props): JSX.Element {
 	const publicNewUserRedir = addQueryObjToURL(props.location, newUserPath, {});
 	const privateNewUserRedir = addQueryObjToURL(props.location, newUserPath, { private: true });
 	return (
-		<div>
-			<Heading level={3} align="center" underline="orange">Sign in to Sourcegraph</Heading>
+		<div style={{ maxWidth: 320, margin: "auto" }}>
 			<GitHubAuthButton scope="public" returnTo={props.returnTo || props.location} newUserReturnTo={publicNewUserRedir} tabIndex={1} block={true} style={{ marginBottom: whitespace[2] }}>
 				Public code only
 			</GitHubAuthButton>
