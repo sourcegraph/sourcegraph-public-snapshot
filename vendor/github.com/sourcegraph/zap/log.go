@@ -24,7 +24,7 @@ func init() {
 	case "", "error":
 		logLevelOpt = level.AllowError()
 	default:
-		fmt.Fprintf(os.Stderr, "error: unknown log level %q (valid levels are: %v)\n", logLevel, level.AllowAll())
+		fmt.Fprintf(os.Stderr, "error: unknown log level %q (valid levels are: debug, info, warn, error)\n", logLevel)
 		os.Exit(1)
 	}
 }
@@ -35,7 +35,15 @@ func (s *Server) baseLogger() log.Logger {
 			if keyvals[i] != "level" {
 				continue
 			}
-			switch keyvals[i+1] {
+			lvl, ok := keyvals[i+1].(level.Value)
+			if !ok {
+				// If this isn't a level.Value, it means
+				// go-kit/log has changed. This wouldn't be
+				// the first time, so rather just do not
+				// color.
+				break
+			}
+			switch lvl.String() {
 			case "debug":
 				return term.FgBgColor{Fg: term.DarkGray}
 			case "info":

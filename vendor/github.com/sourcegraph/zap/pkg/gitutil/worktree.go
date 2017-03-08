@@ -109,7 +109,8 @@ func (w Worktree) IsIndexLocked() (bool, error) {
 }
 
 func (w Worktree) ListUntrackedFiles() ([]*ChangedFile, error) {
-	out, err := execGitCommand(w.Dir, "ls-files", "--full-name", "--others", "-z", "--exclude-standard", "--exclude=.#*")
+	// .#* and #* matches emacs temporary files
+	out, err := execGitCommand(w.Dir, "ls-files", "--full-name", "--others", "-z", "--exclude-standard", "--exclude=.#*", "--exclude=#*")
 	if err != nil {
 		return nil, err
 	}
