@@ -1,6 +1,7 @@
 package gitserver
 
 import (
+	"log"
 	"net"
 	"os/exec"
 	"path"
@@ -22,7 +23,24 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-var defaultOrigin = env.Get("DEFAULT_ORIGIN", "", "the default origin to try for unknown repos")
+type originMapEntry struct {
+	Prefix string
+	Origin string
+}
+
+var originMap = []*originMapEntry{
+	{Prefix: "github.com/", Origin: "https://github.com/%.git"},
+}
+
+func init() {
+	for _, e := range strings.Fields(env.Get("ORIGIN_MAP", "", `space separated list of mappings from repo name prefix to origin url, for example "github.com/!https://github.com/%.git"`)) {
+		p := strings.Split(e, "!")
+		if len(p) != 2 {
+			log.Fatalf("invalid ORIGIN_MAP entry: %s", e)
+		}
+		originMap = append(originMap, &originMapEntry{Prefix: p[0], Origin: p[1]})
+	}
+}
 
 // Server is a gitserver server.
 type Server struct {
@@ -131,16 +149,13 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	}
 	if !repoExists(dir) {
 		var origin string
-		switch {
-		case strings.HasPrefix(req.Repo, "github.com/"):
-			if !req.NoAutoUpdate {
-				origin = "https://" + req.Repo + ".git"
+		for _, entry := range originMap {
+			if strings.HasPrefix(req.Repo, entry.Prefix) {
+				origin = strings.Replace(entry.Origin, "%", strings.TrimPrefix(req.Repo, entry.Prefix), 1)
+				break
 			}
-		case defaultOrigin != "":
-			origin = strings.Replace(defaultOrigin, "_REPO_", req.Repo, 1)
 		}
-
-		if origin != "" {
+		if origin != "" && !req.NoAutoUpdate {
 			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
 			s.cloningMu.Unlock()
 
