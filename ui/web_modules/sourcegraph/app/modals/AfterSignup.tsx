@@ -44,9 +44,10 @@ function submitSignupInfo(details: Details): void {
 	let signupInformation = {
 		firstname: firstName,
 		lastname: lastName,
+		company: details.userInfo.company,
 		email: details.userInfo.email,
 		github_orgs: details.organization,
-		plan: details.plan,
+		plan: details.plan === undefined ? "public" : details.plan,
 		is_private_code_user: JSON.stringify(details.authedPrivate),
 	};
 
@@ -54,9 +55,9 @@ function submitSignupInfo(details: Details): void {
 		// Convert to snake case for hubspot
 		signupInformation = {
 			...signupInformation,
-			exisiting_software: details.onPremDetails.existingSoftware,
+			existing_software: details.onPremDetails.existingSoftware,
 			version_control_system: details.onPremDetails.versionControlSystem,
-			number_of_defs: details.onPremDetails.numberOfDevs,
+			number_of_devs: details.onPremDetails.numberOfDevs,
 			other_details: details.onPremDetails.otherDetails,
 		};
 	}
