@@ -21,6 +21,11 @@ func Mount(mux *http.ServeMux) {
 		if filepath.Ext(r.URL.Path) == ".svg" {
 			w.Header().Set("Content-Type", "image/svg+xml")
 		}
+		// Required for phabricator integration, some browser extensions block
+		// unless the mime type on externally loaded JS is set
+		if filepath.Ext(r.URL.Path) == ".js" {
+			w.Header().Set("Content-Type", "application/javascript")
+		}
 
 		// Only cache if the file is found. This avoids a race
 		// condition during deployment where a 404 for a
