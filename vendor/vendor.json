@@ -670,76 +670,76 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "SLet/AoBsmn74Kys2xRGCKe1/XE=",
+			"checksumSHA1": "gMnu1ZEj/sdiysOIEqpDjDXmBgw=",
 			"path": "github.com/sourcegraph/zap",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "ITvpzEsRzvzYgJ69rzrtc58zi38=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/backoff",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "rRZY48ZMS87E6pxb7S6nkj14Nk0=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/mutexmap",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "TiDx71Ctm4B+Iihd0io+giTB6cI=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/notify",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "YpsVVNJOIGAtv7HIgr5Ji43eTOg=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/pathutil",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "FdF0a1LNOclJ/itk/QC5YFFipvc=",
 			"path": "github.com/sourcegraph/zap/ot",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "jOhAaM9hUxa9yGcc4YGXoskuCDY=",
 			"path": "github.com/sourcegraph/zap/pkg/config",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "UDyC+FOsK4HsGB7pbVc4jLqxQOs=",
 			"path": "github.com/sourcegraph/zap/pkg/diff",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "ybf36sJ55MTPwXYuGpFUrG94IzU=",
 			"path": "github.com/sourcegraph/zap/pkg/git",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
-			"checksumSHA1": "mle8Hyc8CZfrGbEV/8THvL8e5T4=",
+			"checksumSHA1": "Fta7IbuaHGuphoslvIe8dRNcly0=",
 			"path": "github.com/sourcegraph/zap/pkg/gitutil",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "BA0FH4dp/xaH+TKI022DK3ekgdA=",
 			"path": "github.com/sourcegraph/zap/server/refdb",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"checksumSHA1": "TVWe7ypa3E1Fl4opJinrNF7Jbvw=",
 			"path": "github.com/sourcegraph/zap/ws",
-			"revision": "1b40bf73aced4cb7a84a439401fd4df1e4dcc67b",
-			"revisionTime": "2017-03-07T19:36:45Z"
+			"revision": "49aa4c7b01e02939f8d2b3c85ea33b17e409c2c0",
+			"revisionTime": "2017-03-08T04:58:35Z"
 		},
 		{
 			"path": "github.com/sqs/fileset",

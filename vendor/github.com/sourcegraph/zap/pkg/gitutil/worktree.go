@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/zap/pkg/errorlist"
 )
 
 // MaxFileSize is the maximum file size of files to include when
@@ -188,7 +190,7 @@ func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*
 		changesMu sync.Mutex
 		changes   []*ChangedFile
 		wg        sync.WaitGroup
-		errs      errorList
+		errs      errorlist.Errors
 	)
 
 	// Get changed files relative to the HEAD.
@@ -198,7 +200,7 @@ func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*
 
 		indexChanges, err := w.DiffIndex(head)
 		if err != nil {
-			errs.add(err)
+			errs.Add(err)
 			return
 		}
 
@@ -207,9 +209,9 @@ func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*
 			switch f.Status[0] {
 			case 'A', 'C', 'D', 'M', 'R': // ok
 			case 'U':
-				errs.add(fmt.Errorf("unable to commit unmerged file %q", f.SrcPath))
+				errs.Add(fmt.Errorf("unable to commit unmerged file %q", f.SrcPath))
 			default:
-				errs.add(fmt.Errorf("unable to commit unrecognized change with status %q (src %q mode %q, dst %q mode %q); ignoring", f.Status, f.SrcPath, f.SrcMode, f.DstPath, f.DstMode))
+				errs.Add(fmt.Errorf("unable to commit unrecognized change with status %q (src %q mode %q, dst %q mode %q); ignoring", f.Status, f.SrcPath, f.SrcMode, f.DstPath, f.DstMode))
 			}
 		}
 
@@ -225,7 +227,7 @@ func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*
 
 		untrackedChanges, err := w.ListUntrackedFiles()
 		if err != nil {
-			errs.add(err)
+			errs.Add(err)
 			return
 		}
 		changesMu.Lock()
@@ -234,7 +236,7 @@ func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*
 	}()
 
 	wg.Wait()
-	if err := errs.error(); err != nil {
+	if err := errs.Error(); err != nil {
 		return nil, err
 	}
 

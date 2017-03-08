@@ -9,12 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/config"
+	"github.com/sourcegraph/zap/pkg/errorlist"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -657,6 +659,10 @@ func (s *workspaceServer) loadWorkspacesFromConfig(logger log.Logger) error {
 		return err
 	}
 
+	var (
+		wg   sync.WaitGroup
+		errs errorlist.Errors
+	)
 	for _, opt := range cfg.Section("workspaces").Options {
 		if opt.Key != "workspace" {
 			continue
@@ -665,15 +671,21 @@ func (s *workspaceServer) loadWorkspacesFromConfig(logger log.Logger) error {
 			level.Warn(logger).Log("skip-invalid-workspace", "")
 			continue
 		}
-		if _, err := os.Stat(opt.Value); err != nil {
-			level.Warn(logger).Log("skip-inaccessible-workspace", opt.Value, "err", err)
-			continue
-		}
-		if err := s.addWorkspace(logger, WorkspaceAddParams{WorkspaceIdentifier{Dir: opt.Value}}); err != nil {
-			return err
-		}
+		opt := opt
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			if _, err := os.Stat(path); err != nil {
+				level.Warn(logger).Log("skip-inaccessible-workspace", path, "err", err)
+				return
+			}
+			if err := s.addWorkspace(logger, WorkspaceAddParams{WorkspaceIdentifier{Dir: path}}); err != nil {
+				errs.Add(err)
+			}
+		}(opt.Value)
 	}
-	return nil
+	wg.Wait()
+	return errs.Error()
 }
 
 func (s *workspaceServer) removeWorkspace(logger log.Logger, workspace WorkspaceIdentifier, repo *serverRepo) error {
