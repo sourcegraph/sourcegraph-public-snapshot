@@ -670,82 +670,82 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "8dJbc6jvwPC0GU53i1nyKhWC3e8=",
+			"checksumSHA1": "W+EayOG8Sni0dE7O+1wmSbv6SxY=",
 			"path": "github.com/sourcegraph/zap",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "ITvpzEsRzvzYgJ69rzrtc58zi38=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/backoff",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "rRZY48ZMS87E6pxb7S6nkj14Nk0=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/mutexmap",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "TiDx71Ctm4B+Iihd0io+giTB6cI=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/notify",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "YpsVVNJOIGAtv7HIgr5Ji43eTOg=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/pathutil",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "FdF0a1LNOclJ/itk/QC5YFFipvc=",
 			"path": "github.com/sourcegraph/zap/ot",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "jOhAaM9hUxa9yGcc4YGXoskuCDY=",
 			"path": "github.com/sourcegraph/zap/pkg/config",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "UDyC+FOsK4HsGB7pbVc4jLqxQOs=",
 			"path": "github.com/sourcegraph/zap/pkg/diff",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "zAwz0FmhoZ8cB3Z+gC71ANiepPk=",
 			"path": "github.com/sourcegraph/zap/pkg/errorlist",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "ybf36sJ55MTPwXYuGpFUrG94IzU=",
 			"path": "github.com/sourcegraph/zap/pkg/git",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "Dc9T/H3E3v2sHUTufL99Cq3SNmI=",
 			"path": "github.com/sourcegraph/zap/pkg/gitutil",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "BA0FH4dp/xaH+TKI022DK3ekgdA=",
 			"path": "github.com/sourcegraph/zap/server/refdb",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"checksumSHA1": "TVWe7ypa3E1Fl4opJinrNF7Jbvw=",
 			"path": "github.com/sourcegraph/zap/ws",
-			"revision": "687522c42eb61026e19260ed1b08fd0dfa73c42e",
-			"revisionTime": "2017-03-08T19:11:47Z"
+			"revision": "1e63a2f3dd11ee2ea4b9fba905c225a96ee23c5b",
+			"revisionTime": "2017-03-08T20:06:06Z"
 		},
 		{
 			"path": "github.com/sqs/fileset",
