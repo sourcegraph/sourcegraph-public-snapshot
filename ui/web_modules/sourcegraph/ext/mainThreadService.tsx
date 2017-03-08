@@ -75,7 +75,14 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 			const workspace = uri.with({ fragment: "" });
 			const remoteCom = this.remotes.get(workspace.toString());
 			if (!remoteCom) {
-				throw new Error(`unable to route call ${proxyId}.${path} because no host for workspace ${workspace.toString()} (${this.remotes.size} hosts available)`);
+				const matchingPaths: string[] = [];
+				const workspacePath = workspace.with({ query: "" }).toString();
+				this.remotes.forEach((value, key) => {
+					if (key.startsWith(workspacePath)) {
+						matchingPaths.push(key);
+					}
+				});
+				throw new Error(`unable to route call ${proxyId}.${path} because no host for workspace ${workspace.toString()} (${matchingPaths.length} hosts out of ${this.remotes.size} had matching paths: ${JSON.stringify(matchingPaths)})`);
 			}
 			return remoteCom.callOnRemote(proxyId, path, args);
 		};
