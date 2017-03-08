@@ -20,6 +20,10 @@ cd ..
 mv java-langserver/target/java-language-server.jar docker
 
 cd docker
-git submodule update --init artifacts
+if [ -d artifacts ]; then
+    cd ./artifacts && git fetch origin && git checkout origin/master && cd -
+else
+    git clone --depth 1 https://github.com/sourcegraph/java-artifacts artifacts
+fi
 docker build -t $IMAGE:$TAG .
 gcloud docker -- push $IMAGE:$TAG
