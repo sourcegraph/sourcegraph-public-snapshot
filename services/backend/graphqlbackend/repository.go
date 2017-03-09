@@ -79,12 +79,21 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 			if zapRefInfo != nil && zapRefInfo.State != nil {
 				zapRef = &zapRefResolver{zapRef: zapRefSpec{Base: zapRefInfo.State.GitBase, Branch: zapRefInfo.State.GitBranch}}
 
-				// Note: It is important that Repos.ResolveRev below tries to
-				// resolve the git branch corresponding to the zap branch, for
-				// otherwise we would fail to resolve the git branch (which takes
-				// 6-10s on large repositories) and we would be resolving the wrong
-				// branch anyway (zap branch != git branch).
-				args.Rev = zapRefInfo.State.GitBranch
+				// We want to use the Git revision that the Zap branch was based on,
+				// as all of the Zap operations were originating from that revision.
+				// Using any other revision of the same branch would be a mistake
+				// (e.g., the user may be on a revision of the master branch that is
+				// just a few commits behind.)
+				return &commitStateResolver{
+					zapRef: zapRef,
+					commit: &commitResolver{
+						commit: commitSpec{
+							RepoID:        r.repo.ID,
+							CommitID:      zapRefInfo.State.GitBase,
+							DefaultBranch: r.repo.DefaultBranch,
+						},
+					},
+				}, nil
 			}
 		}
 	}
