@@ -57,8 +57,8 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 					return;
 				}
 
-				// Toggle info panel.
-				if (info.prepareData.open !== this.infoPanel.open) {
+				// Toggle info panel or symbol changed.
+				if (info.prepareData.open !== this.infoPanel.open || this.infoPanel.id !== info.id) {
 					if (info.prepareData.open) {
 						// Log sidebar toggling opened
 						Events.InfoPanel_Initiated.logEvent(this.props.fileEventProps);
