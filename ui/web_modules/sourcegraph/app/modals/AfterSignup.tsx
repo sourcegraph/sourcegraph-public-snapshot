@@ -45,7 +45,7 @@ function submitSignupInfo(details: Details): void {
 		firstname: firstName,
 		lastname: lastName,
 		company: details.userInfo.company,
-		email: details.userInfo.email,
+		signup_email: details.userInfo.email,
 		github_orgs: details.organization,
 		plan: details.plan === undefined ? "public" : details.plan,
 		is_private_code_user: JSON.stringify(details.authedPrivate),

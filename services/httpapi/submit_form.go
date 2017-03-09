@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
@@ -28,6 +29,9 @@ func serveSubmitForm(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	actor := auth.ActorFromContext(r.Context())
+	form["email"] = actor.Email
 
 	if err := hubspotclient.SubmitForm(formID, form); err != nil {
 		return err
