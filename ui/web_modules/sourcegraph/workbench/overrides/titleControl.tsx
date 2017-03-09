@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
+
 import { TitleControl } from "vs/workbench/browser/parts/editor/titleControl";
 import { getResource } from "vs/workbench/common/editor";
 
@@ -23,11 +24,17 @@ export class NoTabsTitleControl extends TitleControl {
 			return;
 		}
 		const editor = this.context && this.context.activeEditor;
-		const resource = getResource(editor) || ((editor as any).details && (editor as any).details.resource) || (editor as any).resource;
-		const pathspec = URIUtils.repoParams(resource);
-		const component = <EditorTitle pathspec={pathspec} />;
-		ReactDOM.render(component, this.domElement);
-		this.domElement.style.height = "auto";
+		try {
+			// TODO(john): saw this error at extracting .details once when doing a jump-to-repo via quickopen.
+			// This code is super gross and we need a better way...
+			const resource = getResource(editor) || ((editor as any).details && (editor as any).details.resource) || (editor as any).resource;
+			const pathspec = URIUtils.repoParams(resource);
+			const component = <EditorTitle pathspec={pathspec} />;
+			ReactDOM.render(component, this.domElement);
+			this.domElement.style.height = "auto";
+		} catch (e) {
+			// swallow
+		}
 	}
 
 	dispose(): void {

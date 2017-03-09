@@ -167,6 +167,9 @@ export class SidebarContribution extends Disposables {
 
 	public openInSidebar = (): void => {
 		const model = this.editor.getModel();
+		if (!model) {
+			return;
+		}
 		const position = normalisePosition(model, this.editor.getPosition());
 		this.currentID = model.uri.toString() + position.lineNumber + ":" + position.column;
 

@@ -13,14 +13,22 @@ import { RouteProps, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { registerEditorCallbacks, registerQuickopenListeners, syncEditorWithRouterProps, toggleQuickopen as quickopen, updateEditorConfig } from "sourcegraph/editor/config";
+import { registerEditorCallbacks, registerQuickopenListeners, setEditorDiffState, syncEditorWithRouterProps, toggleQuickopen as quickopen } from "sourcegraph/editor/config";
 import { urlWithRev } from "sourcegraph/repo/routes";
 import { init, unmount, workbenchStore } from "sourcegraph/workbench/main";
 import { Services } from "sourcegraph/workbench/services";
 
+interface Props extends AbsoluteLocation, RouteProps {
+	rev: string | null;
+}
+
+interface State {
+	diffMode: boolean;
+}
+
 // WorkbenchShell loads the workbench and calls init on it.
 @autobind
-export class WorkbenchShell extends React.Component<AbsoluteLocation & RouteProps & { rev: string | null }, {}> {
+export class WorkbenchShell extends React.Component<Props, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -31,6 +39,15 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation & RouteProp
 	listener: number;
 	disposables: IDisposable[];
 	currWorkspace: IWorkspace;
+
+	constructor(props: Props) {
+		super(props);
+		this.state = {
+			diffMode: Boolean(this.props.zapRef),
+		};
+		this.disposables = [];
+		this.disposables.push(workbenchStore.subscribe(e => this.setState(e)));
+	}
 
 	domRef(domElement: HTMLDivElement): void {
 		if (!domElement) {
@@ -61,27 +78,30 @@ export class WorkbenchShell extends React.Component<AbsoluteLocation & RouteProp
 		// This can be implemented by vscode, but without knowing all scenarios in which we
 		// want to display an overlay we've left it the Sourcegraph application's responsibility for toggling visibilty.
 		const modalOverlay = document.querySelector(".workbench-modal-overlay") as any;
-		this.disposables = registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden");
-
-		this.disposables.push(workbenchStore.subscribe(e => updateEditorConfig(e)));
+		this.disposables.push(...registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden"));
 
 		const contextService = Services.get(IWorkspaceContextService);
 		this.disposables.push(contextService.onWorkspaceUpdated(workspace => {
 			const revState = workspace.revState;
+			const newRepo = workspace.resource.authority + workspace.resource.path !== this.props.repo;
 			workbenchStore.dispatch({ diffMode: Boolean(revState && revState.zapRef) });
-			if (revState) {
+			if (revState && !newRepo) {
 				if (revState.zapRef && revState.zapRef !== this.props.zapRef) {
-					window.location.href = urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef);
-					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
+					this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
 					return;
 				}
 				if (!revState.zapRef && this.props.zapRef) {
-					window.location.href = urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null);
-					// this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null));
+					this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null));
 					return;
 				}
 			}
 		}));
+	}
+
+	componentWillUpdate(nextProps: Props, nextState: State): void {
+		if (this.state.diffMode !== nextState.diffMode && nextProps.path !== "/") {
+			setEditorDiffState(nextState);
+		}
 	}
 
 	componentWillUnmount(): void {
