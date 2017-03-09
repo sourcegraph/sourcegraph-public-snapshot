@@ -316,6 +316,12 @@
 			"revisionTime": "2016-01-12T00:40:12+02:00"
 		},
 		{
+			"checksumSHA1": "9fvV44Csmu+K5BpFvEBs2p8alBI=",
+			"path": "github.com/kisielk/gotool",
+			"revision": "0de1eaf82fa3f583ce21fde859f1e7e0c5e9b220",
+			"revisionTime": "2016-11-30T08:01:11Z"
+		},
+		{
 			"checksumSHA1": "SYAsHyJsoKXI9zWa/DTRvMWgGHM=",
 			"path": "github.com/koding/websocketproxy",
 			"revision": "870493fd19c48c3e71eaf5c5e03e07658f73bd26",
@@ -933,6 +939,12 @@
 			"revisionTime": "2016-09-27T13:58:56Z"
 		},
 		{
+			"checksumSHA1": "QKvPv3TJ+ZnOLkUeUkT8Wm8eCV0=",
+			"path": "golang.org/x/tools/go/types/typeutil",
+			"revision": "f7f4b0b08a3ec1e3560fffa2d769052b12b5b1d2",
+			"revisionTime": "2017-02-16T21:19:20Z"
+		},
+		{
 			"checksumSHA1": "2bj5Jq3+RmE2blLnFUfkASYGTlg=",
 			"path": "golang.org/x/tools/godoc/vfs",
 			"revision": "ba484b064f228462fd5d8e41dcbbf4004636bbfe",
@@ -1099,6 +1111,48 @@
 			"path": "gopkg.in/yaml.v2",
 			"revision": "a83829b6f1293c91addabc89d0571c246397bbf4",
 			"revisionTime": "2016-03-01T20:40:22Z"
+		},
+		{
+			"checksumSHA1": "kKYCunASr8CJ1QrhQMupIRjSIzY=",
+			"path": "honnef.co/go/lint",
+			"revision": "f0b0056a162cdb787050cef0670f175b85625697",
+			"revisionTime": "2016-12-02T19:26:46Z"
+		},
+		{
+			"checksumSHA1": "rL+TEKqHXtstF7GWm6WskGcGWWE=",
+			"path": "honnef.co/go/lint/lintutil",
+			"revision": "f0b0056a162cdb787050cef0670f175b85625697",
+			"revisionTime": "2016-12-02T19:26:46Z"
+		},
+		{
+			"checksumSHA1": "Z8BjvXZdJppRbJ5zKJtIFLQ3WPc=",
+			"path": "honnef.co/go/ssa",
+			"revision": "1cf7f34afde4f3f9cb9f7b15f8f2727ebcaa179a",
+			"revisionTime": "2016-12-01T02:21:19Z"
+		},
+		{
+			"checksumSHA1": "CddsrxkDaF8plPS/t0XLNtbOc0g=",
+			"path": "honnef.co/go/staticcheck",
+			"revision": "a1dced908a8310dad6912e6be1c47222097d525c",
+			"revisionTime": "2016-12-19T09:47:26Z"
+		},
+		{
+			"checksumSHA1": "l8mdfmC4ZoWhgZhgSxQEFbdOuBc=",
+			"path": "honnef.co/go/staticcheck/cmd/staticcheck",
+			"revision": "a1dced908a8310dad6912e6be1c47222097d525c",
+			"revisionTime": "2016-12-19T09:47:26Z"
+		},
+		{
+			"checksumSHA1": "znDqHAZUYrhYx1k1rmkEtUOvrqI=",
+			"path": "honnef.co/go/staticcheck/pure",
+			"revision": "a1dced908a8310dad6912e6be1c47222097d525c",
+			"revisionTime": "2016-12-19T09:47:26Z"
+		},
+		{
+			"checksumSHA1": "qFbntb/d3i/f9leBqcmdCsQNo5I=",
+			"path": "honnef.co/go/staticcheck/vrp",
+			"revision": "a1dced908a8310dad6912e6be1c47222097d525c",
+			"revisionTime": "2016-12-19T09:47:26Z"
 		},
 		{
 			"checksumSHA1": "tdG6SHGiaP32dzPT1dPFDazTs9g=",
