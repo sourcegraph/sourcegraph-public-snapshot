@@ -55,7 +55,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 				{!isRoot &&
 					[
 						<FlexContainer key="left" style={{ overflow: "hidden" }}>
-							<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>
+							<Heading style={{ display: "inline-block", whiteSpace: "nowrap" }} level={6} color="white" compact={true}>
 								{basename(path)}
 							</Heading>
 							<PathBreadcrumb
