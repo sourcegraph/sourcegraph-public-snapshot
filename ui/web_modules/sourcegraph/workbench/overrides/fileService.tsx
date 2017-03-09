@@ -48,8 +48,7 @@ export class FileService {
 		contentCache.set(resource.toString(), content);
 		return this.updateContent(resource, content).then(result => {
 			fileStatCache.set(resource.toString(), result);
-			const { repo, rev } = URIUtils.repoParams(this.workspace.resource);
-			const key = repo + rev;
+			const key = this.contextService.getWorkspace().resource.toString();
 			let currentFiles = workspaceFiles.get(key) || [];
 			workspaceFiles.set(key, currentFiles.concat(resource.fragment));
 			return result;
@@ -58,6 +57,18 @@ export class FileService {
 
 	public touchFile(resource: URI): TPromise<IFileStat> {
 		return this.createFile(resource);
+	}
+
+	public del(resource: URI): TPromise<void> {
+		const key = this.contextService.getWorkspace().resource.toString();
+		let wsFiles = workspaceFiles.get(key);
+		if (wsFiles) {
+			workspaceFiles.set(key, wsFiles.filter(item => item !== resource.fragment));
+			fileStatCache.delete(resource.toString());
+			contentCache.delete(resource.toString());
+		}
+		this.refreshTree();
+		return TPromise.as(void 0);
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
@@ -235,8 +246,7 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
  * Gets and caches a list of all of the files in a workspace.
  */
 export function getFilesCached(resource: URI): TPromise<string[]> {
-	const { repo, rev } = URIUtils.repoParams(resource);
-	const key = repo + rev;
+	const key = resource.toString();
 	if (workspaceFiles.has(key)) {
 		return TPromise.wrap(workspaceFiles.get(key));
 	}

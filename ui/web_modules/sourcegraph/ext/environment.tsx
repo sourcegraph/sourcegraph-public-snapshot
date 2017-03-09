@@ -103,6 +103,10 @@ class BrowserEnvironment implements IEnvironment {
 		return this.doRevertTextDocument(this.docAtBase, doc);
 	}
 
+	deleteTextDocument(doc: vscode.TextDocument): Thenable<void> {
+		return doc.delete();
+	}
+
 	private doRevertTextDocument(contents: Map<string, string>, doc: vscode.TextDocument): Thenable<any> {
 		const initialContents = contents.get(doc.uri.toString());
 		if (initialContents === undefined) {

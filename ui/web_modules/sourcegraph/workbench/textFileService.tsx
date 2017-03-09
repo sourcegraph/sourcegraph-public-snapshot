@@ -49,7 +49,7 @@ export class GitTextFileService extends TextFileService {
 			const modelService = Services.get(IModelService);
 			return {
 				...content,
-				value: RawText.fromString(content.value, modelService.getCreationOptions()),
+				value: RawText.fromString(content.value || "", modelService.getCreationOptions()),
 				valueLogicalHash: Math.random().toString(), // TODO(sqs)
 				encoding: content.encoding,
 			};
