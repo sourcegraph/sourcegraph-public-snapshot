@@ -75,7 +75,7 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
-		const routeToWorkspaceHost = uri => {
+		const routeToWorkspaceHost = (uri: URI) => {
 			const workspace = uri.with({ fragment: "" });
 			let remoteCom = this.remotes.get(workspace.toString());
 			if (remoteCom) {
@@ -113,6 +113,8 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 			}));
 		};
 
+		const routeStringURLToWorkspaceHost = (stringURL: string) => routeToWorkspaceHost(URI.parse(stringURL));
+
 		switch (proxyId) {
 			case "eExtHostLanguageFeatures":
 				switch (path) {
@@ -136,13 +138,19 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 
 					case "$acceptModelAdd":
 						return routeToWorkspaceHost(args[0].url as URI);
+
+					default:
+						return routeStringURLToWorkspaceHost(args[0]);
 				}
-				break;
 
 			case "eExtHostEditors":
 				switch (path) {
 					case "$acceptTextEditorAdd":
 						return routeToWorkspaceHost(args[0].document as URI);
+					default:
+						if (args[args.length - 1] instanceof URI) {
+							return routeToWorkspaceHost(args[args.length - 1] as URI);
+						}
 				}
 				break;
 		}

@@ -41,8 +41,10 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 	const { repo, commitID, path, selection } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
 
-	if (resource.with({ fragment: "" }).toString() !== getCurrentWorkspace().resource.toString()) {
-		setWorkspace({ ...getCurrentWorkspace(), resource: resource.with({ fragment: "" }) });
+	const currWorkspace = getCurrentWorkspace();
+
+	if (resource.with({ fragment: "" }).toString() !== currWorkspace.resource.toString()) {
+		setWorkspace({ resource: resource.with({ fragment: "" }), revState: { zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
 	}
 
 	updateFileTree(resource);
@@ -111,24 +113,21 @@ export function isOnZapRef(): boolean {
 }
 
 /**
- * updateEditorConfig updates the configuration properties for the current editor.
+ * setEditorDiffState updates the configuration properties for the current editor.
  */
-export function updateEditorConfig(config: WorkbenchState): void {
+export function setEditorDiffState(state: WorkbenchState): void {
 	const uri = resourceForCurrentEditor();
 	if (!uri) {
 		return;
 	}
 
-	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
-	const revState = contextService.getWorkspace().revState;
-
-	if (config.diffMode && revState && revState.zapRef) {
+	const revState = getCurrentWorkspace().revState;
+	if (state.diffMode && revState && revState.zapRef) {
 		const left = uri.with({ query: `${uri.query}~0` });
 		renderDiffEditor(left, uri);
 	} else {
 		renderFileEditor(uri, null);
 	}
-	return;
 }
 
 function updateEditorAfterURLChange(sel: IRange | null): void {
