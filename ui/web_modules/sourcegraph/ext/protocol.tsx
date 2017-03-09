@@ -37,4 +37,6 @@ export interface InitializationOptions {
 	};
 
 	context: typeof context;
+
+	langs: string[] | undefined;
 }

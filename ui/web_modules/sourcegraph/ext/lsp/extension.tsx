@@ -1,10 +1,10 @@
-import { v4 as uuidV4 } from "uuid";
-
 import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/browser";
+import { v4 as uuidV4 } from "uuid";
 
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
 import { getModes } from "sourcegraph/util/features";
+import { inventoryLangToMode } from "sourcegraph/util/inventory";
 
 export function activate(): void {
 	// self.location is the blob: URI, so we need to get the main page location.
@@ -12,7 +12,13 @@ export function activate(): void {
 		return match === "http://" ? "ws://" : "wss://";
 	});
 
+	const initOpts: InitializationOptions = (self as any).extensionHostOptions;
+	const langs = new Set<string>((initOpts.langs || []).map(inventoryLangToMode));
+
 	getModes().forEach(mode => {
+		if (!langs.has(mode)) {
+			return;
+		}
 		// We include ?mode= in the url to make it easier to find the correct LSP websocket connection.
 		// It does not affect any behaviour.
 		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`), {
@@ -24,7 +30,6 @@ export function activate(): void {
 		});
 		client.start();
 	});
-
 }
 
 /**
