@@ -100,14 +100,11 @@ func main() {
 
 	pipeline := &Pipeline{}
 
-	pipeline.AddStep(":triangular_ruler:",
-		Cmd("./dev/gofmt.sh"))
-
 	pipeline.AddStep(":white_check_mark:",
 		Cmd("cd ui"),
 		Cmd("yarn install"),
 		Cmd("cd .."),
-		Cmd("make check"))
+		Cmd("./dev/check/all.sh"))
 
 	pipeline.AddStep(":desktop_computer:",
 		Cmd("cd ui"),

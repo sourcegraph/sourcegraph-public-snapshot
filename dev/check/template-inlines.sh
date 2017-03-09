@@ -1,14 +1,13 @@
 #!/bin/bash
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 set -euf -o pipefail
 unset CDPATH
-REPOROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
-
 
 # Fails and prints matches if any HTML template files contain inline
 # scripts or styles.
 
-found=$(grep -EHnr '(<script|<style|style=)' "$REPOROOT"/app/templates | grep -v '<script src=' | grep -v '<script ignore-csp' | grep -v '<div ignore-csp' | grep -v '<style ignore-csp' || echo -n)
+found=$(grep -EHnr '(<script|<style|style=)' app/templates | grep -v '<script src=' | grep -v '<script ignore-csp' | grep -v '<div ignore-csp' | grep -v '<style ignore-csp' || echo -n)
 
 if [[ ! "$found" == "" ]]; then
     echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
