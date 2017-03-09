@@ -24,6 +24,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -176,7 +177,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 			}
 
 			var params struct {
-				xlang.ClientProxyInitializeParams
+				lspext.ClientProxyInitializeParams
 				RootURI string `json:"rootUri"`
 			}
 			if err := json.Unmarshal(*req.Params, &params); err != nil {

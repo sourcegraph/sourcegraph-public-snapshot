@@ -621,9 +621,9 @@ func yza() {}
 			}
 
 			// Prepare the connection.
-			if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
+			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 				InitializeParams:      lsp.InitializeParams{RootPath: test.rootPath},
-				InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
+				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}
@@ -780,9 +780,9 @@ func TestProxy_connections(t *testing.T) {
 	c1 := dialProxy(t, addr, nil)
 
 	// C1 connects to the proxy.
-	initParams := xlang.ClientProxyInitializeParams{
+	initParams := lspext.ClientProxyInitializeParams{
 		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", Capabilities: caps},
-		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)
@@ -927,9 +927,9 @@ func TestProxy_propagation(t *testing.T) {
 	c := dialProxy(t, addr, recvDiags)
 
 	// Connect to the proxy.
-	initParams := xlang.ClientProxyInitializeParams{
+	initParams := lspext.ClientProxyInitializeParams{
 		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
-		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)

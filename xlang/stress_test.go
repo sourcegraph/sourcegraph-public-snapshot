@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -126,9 +127,9 @@ func BenchmarkStress(b *testing.B) {
 				// initialize, because this is amortized over each
 				// operation we do.
 				c := dialProxy(b, addr, nil)
-				if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
+				if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 					InitializeParams:      lsp.InitializeParams{RootPath: root.String()},
-					InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
+					InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 				}, nil); err != nil {
 					b.Fatal(err)
 				}

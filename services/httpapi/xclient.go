@@ -10,6 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	xlspext "sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
@@ -50,7 +51,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 	span.SetTag("Method", method)
 
 	if method == "initialize" {
-		var init xlang.ClientProxyInitializeParams
+		var init xlspext.ClientProxyInitializeParams
 		if err := json.Unmarshal(*params.(*json.RawMessage), &init); err != nil {
 			return err
 		}

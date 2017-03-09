@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -161,11 +162,11 @@ func UnsafeOneShotClientRequest(ctx context.Context, mode, rootPath, method stri
 	defer c.Close()
 
 	// Initialize the connection.
-	err = c.Call(ctx, "initialize", ClientProxyInitializeParams{
+	err = c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 		InitializeParams: lsp.InitializeParams{
 			RootPath: rootPath,
 		},
-		InitializationOptions: ClientProxyInitializationOptions{Mode: mode},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},
 		Mode: mode,
 	}, nil)
 	if err != nil {
