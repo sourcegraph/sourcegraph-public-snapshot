@@ -48,7 +48,7 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 		this.toDispose.add(infoStore.subscribe((info) => {
 			if (info.prepareData) {
 				// Close preview when escape key is clicked - Don't dismiss sidepane.
-				if (!info.prepareData.open && !info.id && this.infoPanelRef instanceof InfoPanel && this.infoPanelRef.state.previewLocation) {
+				if (!info.prepareData.open && this.infoPanelRef instanceof InfoPanel && this.infoPanelRef.state.previewLocation) {
 					Events.InfoPanelRefPreview_Closed.logEvent(this.infoPanelRef.getEventProps());
 					this.infoPanelRef.setState({
 						previewLocation: null,
@@ -57,18 +57,21 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 					return;
 				}
 
-				if (info.prepareData.open) {
-					// Log sidebar toggling opened
-					Events.InfoPanel_Initiated.logEvent(this.props.fileEventProps);
-				} else if (this.infoPanel && this.infoPanel.open) {
-					// Log sidebar toggling closed
-					Events.InfoPanel_Dismissed.logEvent(this.props.fileEventProps);
-				}
+				// Toggle info panel.
+				if (info.prepareData.open !== this.infoPanel.open) {
+					if (info.prepareData.open) {
+						// Log sidebar toggling opened
+						Events.InfoPanel_Initiated.logEvent(this.props.fileEventProps);
+					} else if (this.infoPanel && this.infoPanel.open) {
+						// Log sidebar toggling closed
+						Events.InfoPanel_Dismissed.logEvent(this.props.fileEventProps);
+					}
 
-				this.info = info;
-				this.infoPanel = { open: info.prepareData.open, id: info.id };
-				this.forceUpdate();
-				return;
+					this.info = info;
+					this.infoPanel = { open: info.prepareData.open, id: info.id };
+					this.forceUpdate();
+					return;
+				}
 			}
 			if (this.infoPanelRef instanceof InfoPanel) {
 				const state: State = {};
