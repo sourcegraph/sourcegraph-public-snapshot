@@ -8,6 +8,7 @@ import (
 	"github.com/neelance/graphql-go/relay"
 	"github.com/sourcegraph/zap"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -70,18 +71,21 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 		if err != nil {
 			return nil, err
 		}
+		// TODO(matt,john): remove this hack, this zapRefInfo call was causing a front-end error
+		// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
+		if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
+			zapRefInfo, _ := cl.RefInfo(ctx, zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev})
+			// TODO(john): add error-specific handling?
+			if zapRefInfo != nil && zapRefInfo.State != nil {
+				zapRef = &zapRefResolver{zapRef: zapRefSpec{Base: zapRefInfo.State.GitBase, Branch: zapRefInfo.State.GitBranch}}
 
-		zapRefInfo, _ := cl.RefInfo(ctx, zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev})
-		// TODO(john): add error-specific handling?
-		if zapRefInfo != nil && zapRefInfo.State != nil {
-			zapRef = &zapRefResolver{zapRef: zapRefSpec{Base: zapRefInfo.State.GitBase, Branch: zapRefInfo.State.GitBranch}}
-
-			// Note: It is important that Repos.ResolveRev below tries to
-			// resolve the git branch corresponding to the zap branch, for
-			// otherwise we would fail to resolve the git branch (which takes
-			// 6-10s on large repositories) and we would be resolving the wrong
-			// branch anyway (zap branch != git branch).
-			args.Rev = zapRefInfo.State.GitBranch
+				// Note: It is important that Repos.ResolveRev below tries to
+				// resolve the git branch corresponding to the zap branch, for
+				// otherwise we would fail to resolve the git branch (which takes
+				// 6-10s on large repositories) and we would be resolving the wrong
+				// branch anyway (zap branch != git branch).
+				args.Rev = zapRefInfo.State.GitBranch
+			}
 		}
 	}
 
