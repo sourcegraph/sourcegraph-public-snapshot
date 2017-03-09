@@ -161,7 +161,7 @@ export class Home extends React.Component<HomeProps, {}> {
 							style={{ width: "100%" }}
 							location={this.props.location}
 							loginReturnTo="/beta"
-							onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
+							onSubmit={dismissModal("beta", this.context.router)} />
 					</LocationStateModal>
 				}
 

@@ -3,7 +3,7 @@ import * as React from "react";
 import { Router } from "sourcegraph/app/router";
 import { Button } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
-import { LocationStateModal } from "sourcegraph/components/Modal";
+import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
 import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { ghCodeAction } from "sourcegraph/user/Signup";
@@ -78,8 +78,7 @@ export class SignupModalContainer extends React.Component<Props, {}> {
 	context: { router: Router };
 
 	close = () => {
-		const url = { ...this.context.router.location, query: "", state: "" };
-		this.context.router.push(url);
+		dismissModal(this.props.modalName, this.context.router)();
 	}
 
 	render(): JSX.Element {

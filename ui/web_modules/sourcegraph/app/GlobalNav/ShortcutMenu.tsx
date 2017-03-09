@@ -29,17 +29,15 @@ export class ShortcutModal extends React.Component<Props, {}> {
 			if (location && (location as any).state && (location as any).state.modal === modalName) {
 				this.dismissModal();
 			} else {
-				setLocationModalState(router, location, modalName, true);
+				setLocationModalState(router, modalName, true);
 			}
 			event.preventDefault();
 		}
 	}
 
 	dismissModal = (): void => {
-		const { location, router } = this.props;
-
 		Events.ShortcutMenu_Dismissed.logEvent();
-		dismissModal(modalName, location, router)();
+		dismissModal(modalName, this.props.router)();
 	}
 
 	render(): JSX.Element {

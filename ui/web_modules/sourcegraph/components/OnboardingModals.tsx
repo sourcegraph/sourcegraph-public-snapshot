@@ -17,11 +17,11 @@ export class OnboardingModals extends React.Component<Props, {}>  {
 	context: { router: Router };
 
 	_completeChromeStep(): void {
-		setLocationModalState(this.context.router, this.props.location, "github", true);
+		setLocationModalState(this.context.router, "github", true);
 	}
 
 	_completeGitHubStep(): void {
-		setLocationModalState(this.context.router, this.props.location, "github", false);
+		setLocationModalState(this.context.router, "github", false);
 	}
 
 	render(): JSX.Element | null {

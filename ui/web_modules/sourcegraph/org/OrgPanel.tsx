@@ -51,7 +51,7 @@ export class OrgPanel extends React.Component<Props, State> {
 			this._updateSentInvites([member]);
 		} else {
 			Events.OrgManualInviteModal_Initiated.logEvent({ org_name: this.props.org.Login });
-			setLocationModalState(this.context.router, this.props.location, "orgInvite", true);
+			setLocationModalState(this.context.router, "orgInvite", true);
 			this.setState(Object.assign({}, this.state, {
 				selectedMember: member,
 			}));
@@ -67,7 +67,7 @@ export class OrgPanel extends React.Component<Props, State> {
 				Dispatcher.Backends.dispatch(new OrgActions.SubmitOrgInvitation(member["Login"] || "", invite["email"], this.props.org.Login, String(this.props.org.ID)));
 			}
 
-			setLocationModalState(this.context.router, this.props.location, "orgInvite", false);
+			setLocationModalState(this.context.router, "orgInvite", false);
 			this._updateSentInvites(invites.map(invite => {
 				return invite["member"];
 			}));

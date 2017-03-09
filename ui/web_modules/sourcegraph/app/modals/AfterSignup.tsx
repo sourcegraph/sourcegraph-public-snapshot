@@ -190,7 +190,7 @@ const Modal = (props: {
 	return <SignupModalContainer modalName="afterSignup" sticky={true}>
 		<AfterSignupForm
 			root={props.root}
-			onSubmit={dismissModal("afterSignup", props.location, props.router)} />
+			onSubmit={dismissModal("afterSignup", props.router)} />
 	</SignupModalContainer>;
 };
 

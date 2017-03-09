@@ -64,7 +64,8 @@ const RenderedModal = renderedOnBody(ModalComp);
 
 // setLocationModalState shows or hides a modal by setting the location.state.modal
 // property to modalName if shown is true and null otherwise.
-export function setLocationModalState(router: Router, location: RouterLocation, modalName: string, visible: boolean): void {
+export function setLocationModalState(router: Router, modalName: string, visible: boolean): void {
+	const location: RouterLocation = (router as any).getCurrentLocation();
 	router.replace(Object.assign({},
 		location,
 		{
@@ -80,9 +81,11 @@ export function setLocationModalState(router: Router, location: RouterLocation, 
 	);
 }
 
-// dismissModal creates a function that dismisses the modal by setting
-// the location state's modal property to null.
-export function dismissModal(modalName: string, location: RouterLocation, router: Router): any {
+/**
+ * Returns a function that dismisses the modal by unsetting the query or state
+ * property in the location.
+ */
+export function dismissModal(modalName: string, router: Router): () => void {
 	return () => {
 		// Log all modal dismissal events in a consistent way. Note that any additions of new "modalName"s will require new events to be created
 		const eventObject = getModalDismissedEventObject(modalName);
@@ -92,7 +95,7 @@ export function dismissModal(modalName: string, location: RouterLocation, router
 			// TODO(dan) ensure proper params
 		}
 
-		setLocationModalState(router, location, modalName, false);
+		setLocationModalState(router, modalName, false);
 	};
 }
 
@@ -108,7 +111,6 @@ interface LocationStateModalProps {
 	title: string;
 }
 
-// TODO(nicot): We are getting rid of this function below with the up and coming nicot modal refactor, so the casting I did below is temporary.
 // LocationStateModal wraps <Modal> and uses a key on the location state
 // to determine whether it is displayed. Use LocationStateModal with
 // LocationStateToggleLink.
@@ -132,7 +134,7 @@ export class LocationStateModal extends React.Component<LocationStateModalProps,
 				return;
 			}
 
-			dismissModal(modalName, location, this.context.router)();
+			dismissModal(modalName, this.context.router)();
 			if (this.props.onDismiss) {
 				this.props.onDismiss(e);
 			}
