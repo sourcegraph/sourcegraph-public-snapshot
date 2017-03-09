@@ -47,7 +47,7 @@ type Payment struct {
 	TrialExpiration *time.Time `db:"trial_expiration"`
 }
 
-func (p *payments) paymentPlanForRepo(ctx context.Context, repo *sourcegraph.Repo) (*Payment, error) {
+func (p *payments) paymentPlanForRepo(ctx context.Context, repo sourcegraph.Repo) (*Payment, error) {
 	actor := auth.ActorFromContext(ctx)
 	if actor.Login == "" {
 		return nil, errors.New("user must have a login to access private repos")
@@ -87,7 +87,7 @@ func (p *payments) getOrgPlan(ctx context.Context, owner string) (*Payment, erro
 // allows them to see this kind of repository. It is not critical to call in
 // all paths, just primary graphQL paths, i.e. it is OK if an unpaid user sees
 // references from a private repo, but they shouldn't be able to browse it.
-func (p *payments) CheckPaywallForRepo(ctx context.Context, repo *sourcegraph.Repo) error {
+func (p *payments) CheckPaywallForRepo(ctx context.Context, repo sourcegraph.Repo) error {
 	if !repo.Private {
 		return nil
 	}
@@ -130,7 +130,7 @@ func (ErrTrialExpired) Error() string {
 	return "trial expired: this account has not paid for private repos"
 }
 
-func (p *payments) TrialExpirationDate(ctx context.Context, repo *sourcegraph.Repo) (*time.Time, error) {
+func (p *payments) TrialExpirationDate(ctx context.Context, repo sourcegraph.Repo) (*time.Time, error) {
 	if !repo.Private {
 		return nil, nil
 	}

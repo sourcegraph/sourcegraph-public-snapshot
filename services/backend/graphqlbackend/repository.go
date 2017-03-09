@@ -59,7 +59,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
-	return createCommitState(r.repo, rev), nil
+	return createCommitState(*r.repo, rev), nil
 }
 
 func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
@@ -103,7 +103,12 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 		return nil, err
 	}
 
-	return &commitStateResolver{zapRef: zapRef, commit: &commitResolver{commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch}}}, nil
+	return &commitStateResolver{zapRef: zapRef,
+		commit: &commitResolver{
+			commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch},
+			repo:   *r.repo,
+		},
+	}, nil
 }
 
 func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {
@@ -116,7 +121,7 @@ func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, 
 		}
 		return nil, err
 	}
-	return createCommitState(r.repo, rev), nil
+	return createCommitState(*r.repo, rev), nil
 }
 
 func (r *repositoryResolver) DefaultBranch() string {
@@ -188,7 +193,7 @@ func (r *repositoryResolver) CreatedAt() string {
 // TrialExpiration is the Unix timestamp that the repo trial will expire, or
 // nil if this repo is not on a trial.
 func (r *repositoryResolver) ExpirationDate(ctx context.Context) (*int32, error) {
-	t, err := localstore.Payments.TrialExpirationDate(ctx, r.repo)
+	t, err := localstore.Payments.TrialExpirationDate(ctx, *r.repo)
 	if err != nil {
 		return nil, err
 	}
