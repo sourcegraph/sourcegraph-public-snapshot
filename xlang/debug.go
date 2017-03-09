@@ -149,7 +149,10 @@ func summariseCounts(counts map[string]int) string {
 	return strings.Join(p, " ")
 }
 
-var shortenMethodNameRe = regexp.MustCompile(`(^[a-z]|[A-Z]|/[a-z])`)
+// shortenMethodNameRe finds the first character of each word when using
+// camelcase. It special cases x since that is a common prefix for
+// experimental extensions.
+var shortenMethodNameRe = regexp.MustCompile(`(^x?[a-wyz]|[A-Z]|/x?[a-wyz])`)
 
 // shortenMethodName shorterns an LSP method name for display purposes.
 // eg textDocument/hover becomes td/h
