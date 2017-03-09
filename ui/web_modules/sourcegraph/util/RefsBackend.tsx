@@ -14,11 +14,27 @@ import { provideReferences as getReferences, provideWorkspaceReferences } from "
 import { Repo } from "sourcegraph/api/index";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import * as lsp from "sourcegraph/editor/lsp";
 import { setupWorker } from "sourcegraph/ext/main";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+
+// TODO(john): consolidate / standardize types.
+
+interface LSPPosition {
+	line: number;
+	character: number;
+}
+
+interface LSPRange {
+	start: LSPPosition;
+	end: LSPPosition;
+}
+
+interface LSPLocation {
+	uri: string;
+	range: LSPRange;
+}
 
 export interface DefinitionData {
 	definition?: {
@@ -32,7 +48,7 @@ export interface DefinitionData {
 export interface DepRefsData {
 	Data: {
 		Location: {
-			location: lsp.Location,
+			location: LSPLocation,
 			symbol: any,
 		};
 		References: DepReference[];
@@ -59,7 +75,7 @@ export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): 
 
 	const [hovers, def] = await Promise.all([hoversPromise, defPromise]);
 
-	if (!hovers || hovers.length === 0 || !hovers[0].contents || !def || !def[0]) { // TODO(john): throw the error in `lsp.send`, then do try/catch around await.
+	if (!hovers || hovers.length === 0 || !hovers[0].contents || !def || !def[0]) {
 		return null;
 	}
 
@@ -110,7 +126,7 @@ export function provideReferencesStreaming(model: IReadOnlyModel, pos: IPosition
 		};
 		getReferences(model, Position.lift(pos), progress, { includeDeclaration: false }).then(locations => {
 			// The language server may or may not support sending progress events.
-			// 
+			//
 			// If the language server sends progress events, then the final result will either
 			// be empty or contain the data that we already received in the progress events.
 			// In either case we want to ignore it.
@@ -337,7 +353,7 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, modeID: stri
 			}).then(references => {
 				// log(`provideWorkspaceReferences finish ${repoURI.toString()} ${references.length}`);
 				// The language server may or may not support sending progress events.
-				// 
+				//
 				// If the language server sends progress events, then the final result will either
 				// be empty or contain the data that we already received in the progress events.
 				// In either case we want to ignore it.
