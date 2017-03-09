@@ -101,9 +101,6 @@ func main() {
 	pipeline := &Pipeline{}
 
 	pipeline.AddStep(":white_check_mark:",
-		Cmd("cd ui"),
-		Cmd("yarn install"),
-		Cmd("cd .."),
 		Cmd("./dev/check/all.sh"))
 
 	pipeline.AddStep(":desktop_computer:",

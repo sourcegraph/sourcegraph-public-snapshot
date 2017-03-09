@@ -1,3 +1,4 @@
+// tslint:disable
 // graphql typescript definitions
 
 declare namespace GQL {
@@ -272,3 +273,5 @@ declare namespace GQL {
 		branch: string;
 	}
 }
+
+// tslint:enable
