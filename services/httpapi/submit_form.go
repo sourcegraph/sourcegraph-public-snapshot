@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
@@ -17,7 +18,18 @@ func serveSubmitForm(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := hubspotclient.SubmitForm(hubspotutil.AfterPrivateCodeSignupFormID, form); err != nil {
+
+	formName, ok := form["hubSpotFormName"]
+	if !ok {
+		return errors.New("httpapi.serveSubmitForm: must provide a HubSpot form name")
+	}
+
+	formID, err := hubspotutil.GetFormID(formName)
+	if err != nil {
+		return err
+	}
+
+	if err := hubspotclient.SubmitForm(formID, form); err != nil {
 		return err
 	}
 	return nil

@@ -69,7 +69,7 @@ function submitSignupInfo(details: Details): void {
 	fetch(`/.api/submit-form`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json; charset=utf-8" },
-		body: JSON.stringify(signupInformation),
+		body: JSON.stringify({ ...signupInformation, hubSpotFormName: "AfterSignupForm" }),
 	})
 		.then(checkStatus)
 		.catch(err => {
