@@ -273,24 +273,27 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	}
 	serverConnsGauge.Set(float64(len(p.servers)))
 	p.mu.Unlock()
-	if ok && LogServerStats {
+	if ok {
 		stats := c.Stats()
-		// Machine parseable to assist post processing
-		msg, _ := json.Marshal(struct {
-			RootPath   string
-			Mode       string
-			PathPrefix string
-			Stats      serverProxyConnStats
-		}{
-			RootPath:   c.id.rootPath.String(),
-			Mode:       c.id.mode,
-			PathPrefix: c.id.pathPrefix,
-			Stats:      stats,
-		})
-		log.Printf("tracked removed serverProxyConn: %s", msg)
 		serverConnsTotalMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
 		serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
 		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
+		recordClosedServerConn(c.id, stats)
+		if LogServerStats {
+			// Machine parseable to assist post processing
+			msg, _ := json.Marshal(struct {
+				RootPath   string
+				Mode       string
+				PathPrefix string
+				Stats      serverProxyConnStats
+			}{
+				RootPath:   c.id.rootPath.String(),
+				Mode:       c.id.mode,
+				PathPrefix: c.id.pathPrefix,
+				Stats:      stats,
+			})
+			log.Printf("tracked removed serverProxyConn: %s", msg)
+		}
 	}
 }
 
