@@ -15,6 +15,7 @@ interface Props extends ButtonProps {
 
 export function GitHubAuthButton(props: Props): JSX.Element {
 	const {
+		color = "blue",
 		scope,
 		children,
 		returnTo,
@@ -38,6 +39,7 @@ export function GitHubAuthButton(props: Props): JSX.Element {
 			eventObject: Events.OAuth2FlowGitHub_Initiated,
 		}}
 		iconType="github"
+		color={color}
 		{...transferredProps}>
 		{children}
 	</AuthButton>;

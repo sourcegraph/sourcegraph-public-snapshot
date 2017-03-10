@@ -156,7 +156,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				</div>
 
 				{this.props.location.state && (this.props.location.state as any).modal === "beta" &&
-					<LocationStateModal modalName="beta" title="Sign up for our beta">
+					<LocationStateModal padded={false} modalName="beta" title="Sign up for our beta">
 						<BetaInterestForm
 							style={{ width: "100%" }}
 							location={this.props.location}

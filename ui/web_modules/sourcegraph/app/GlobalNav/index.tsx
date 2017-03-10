@@ -112,7 +112,7 @@ export class GlobalNav extends Container<Props, State> {
 		const modal = (
 			<div>
 				{modalName === "login" && !context.user &&
-					<Login location={location} />}
+					<Login />}
 				{modalName === "join" &&
 					<Signup />}
 				{modalName === "menuBeta" &&

@@ -17,8 +17,7 @@ interface Props {
 
 const formSx = {
 	color: colors.blueGrayD1(),
-	margin: whitespace[5],
-	marginTop: 0,
+	padding: whitespace[5],
 };
 
 export class EnterpriseDetails extends React.Component<Props, OnPremDetails> {

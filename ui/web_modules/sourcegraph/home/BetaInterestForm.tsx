@@ -2,7 +2,7 @@ import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
-import { Button, CheckboxList, Input, TextArea } from "sourcegraph/components";
+import { Button, CheckboxList, Input, Panel, TextArea } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
 import * as Dispatcher from "sourcegraph/Dispatcher";
@@ -114,12 +114,10 @@ export class BetaInterestForm extends Component<Props, State> {
 		}
 
 		if (!context.user) {
-			const newUserReturnTo = { pathname: this.props.loginReturnTo, hash: "" };
-
-			return (<div style={{ padding: whitespace[2], textAlign: "center" }}>
+			return <Panel hoverLevel="low" style={{ paddingTop: whitespace[4], textAlign: "center" }}>
 				<p>You must sign up to continue.</p>
-				<SignupForm newUserReturnTo={newUserReturnTo} returnTo={this.props.loginReturnTo} location={this.props.location}></SignupForm>
-			</div>);
+				<SignupForm returnTo={this.props.loginReturnTo} />
+			</Panel>;
 		}
 
 		let [className, language] = [this.props.className, this.props.language];

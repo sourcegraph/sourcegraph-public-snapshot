@@ -1,7 +1,6 @@
 import * as React from "react";
 import { RouterLocation } from "sourcegraph/app/router";
-import { Heading, Hero } from "sourcegraph/components";
-import { PageTitle } from "sourcegraph/components/PageTitle";
+import { Heading, Hero, PageTitle } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import * as styles from "sourcegraph/page/Page.css";
@@ -14,9 +13,9 @@ export function BetaPage(props: BetaPageProps): JSX.Element {
 	return (
 		<div>
 			<PageTitle title="Beta" />
-			<Hero pattern="objects" className={base.pv5}>
+			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<div className={styles.container}>
-					<Heading level={2} color="blue">Get the future Sourcegraph sooner</Heading>
+					<Heading level={2}>Get the future Sourcegraph sooner</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>

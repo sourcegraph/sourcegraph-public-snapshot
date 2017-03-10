@@ -87,6 +87,6 @@ export function PathBreadcrumb({ repo, path, rev, linkSx, linkHoverSx, style, to
 				spacing={crumbSpacing} />
 			{links}
 		</span>
-		<span>{currentDir}</span>
+		<span style={{ whiteSpace: "nowrap" }}>{currentDir}</span>
 	</FlexContainer>;
 }
