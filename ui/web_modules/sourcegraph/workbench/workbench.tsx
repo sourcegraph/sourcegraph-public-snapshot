@@ -9,7 +9,6 @@ import { RouteParams, Router, RouterLocation, pathFromRouteParams, repoRevFromRo
 import "sourcegraph/blob/styles/Monaco.css";
 import { Heading, PageTitle } from "sourcegraph/components";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
-import { OnboardingModals } from "sourcegraph/components/OnboardingModals";
 import { whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
@@ -86,7 +85,6 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			<BlobPageTitle repo={this.props.repo} path={path} />
 			{/* TODO(john): repo main takes the commit state for the 'y' hotkey, assume for now revState can be passed. */}
 			<RepoMain {...this.props} repository={repository} commit={repository.revState}>
-				<OnboardingModals location={this.props.location} />
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
 				<TrialEndingWarning layout={() => this.forceUpdate()} repo={repository} />
 				<WorkbenchShell

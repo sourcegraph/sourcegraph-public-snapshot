@@ -11,11 +11,11 @@ import { Close, Flag } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { fontStack } from "sourcegraph/components/utils/typography";
 import * as Dispatcher from "sourcegraph/Dispatcher";
-import { getEditorInstance } from "sourcegraph/editor/Editor";
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
+import { getEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 
 interface Props { location: RouterLocation; }
 

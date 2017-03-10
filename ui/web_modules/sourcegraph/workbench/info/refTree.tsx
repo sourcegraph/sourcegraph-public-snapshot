@@ -16,11 +16,11 @@ import { IEditorService } from "vs/platform/editor/common/editor";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
-import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { ReferenceItem } from "sourcegraph/workbench/info/referenceItem";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
 import { RepositoryHeader } from "sourcegraph/workbench/info/repositoryHeader";
+import { getEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
 import { Disposables } from "sourcegraph/workbench/utils";
 

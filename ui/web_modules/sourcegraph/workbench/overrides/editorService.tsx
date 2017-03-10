@@ -1,6 +1,7 @@
 import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
+import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { IEditor, IEditorInput, IResourceInput } from "vs/platform/editor/common/editor";
 import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorService";
 
@@ -101,3 +102,13 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 }
 
 export const DelegatingWorkbenchEditorService = vs.DelegatingWorkbenchEditorService;
+
+let EditorInstance: ICodeEditor | null = null;
+
+export function getEditorInstance(): ICodeEditor | null {
+	return EditorInstance;
+}
+
+export function updateEditorInstance(editor: ICodeEditor): void {
+	EditorInstance = editor;
+}

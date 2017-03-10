@@ -129,7 +129,7 @@ function showAuthorshipPopup(accessor: ServicesAccessor, blame: GQL.IHunk): void
 
 CommandsRegistry.registerCommand("codelens.authorship.commit", showAuthorshipPopup);
 
-export function removeWidget(editor: ICodeEditor | any): void {
+function removeWidget(editor: ICodeEditor | any): void {
 	if (!authorWidget) {
 		return;
 	}

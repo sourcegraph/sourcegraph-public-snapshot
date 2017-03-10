@@ -6,10 +6,11 @@ import { Command, ICodeLensSymbol } from "vs/editor/common/modes";
 import * as modes from "vs/editor/common/modes";
 
 import { URIUtils } from "sourcegraph/core/uri";
-import { codeLensCache } from "sourcegraph/editor/EditorService";
 import { timeFromNow } from "sourcegraph/util/dateFormatterUtil";
 import { getModes } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+
+const codeLensCache = new Map<string, GQL.IHunk[]>();
 
 export class AuthorshipCodeLens implements modes.CodeLensProvider {
 	resolveCodeLens(model: IReadOnlyModel, codeLens: ICodeLensSymbol): ICodeLensSymbol | Thenable<ICodeLensSymbol> {
