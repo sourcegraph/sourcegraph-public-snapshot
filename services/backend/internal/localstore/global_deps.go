@@ -238,6 +238,9 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (
 	if err != nil {
 		return 0, errors.Wrap(err, "ListPackages")
 	}
+	if len(packages) == 0 {
+		return 0, nil
+	}
 
 	// Find number of repos that depend on that set of packages
 	var args []interface{}
