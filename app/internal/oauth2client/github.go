@@ -234,7 +234,9 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	// Track user GitHub data in GCS
-	go trackUserGitHubData(actor, eventLabel)
+	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+		go trackUserGitHubData(actor, eventLabel)
+	}
 
 	if firstTime {
 		returnToNewURL, err := url.Parse(cookie.ReturnToNew)
