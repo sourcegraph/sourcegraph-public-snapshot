@@ -700,6 +700,10 @@
 	border-top: none;
 }
 
+:global .quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.dirty {
+	display: none;
+}
+
 :global .monaco-workbench > .part.statusbar {
 	display: flex !important;
 	height: 30px !important;
