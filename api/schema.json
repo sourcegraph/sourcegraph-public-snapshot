@@ -52,7 +52,9 @@
 				"name": "include"
 			}
 		],
-		"mutationType": null,
+		"mutationType": {
+			"name": "Mutation"
+		},
 		"queryType": {
 			"name": "Query"
 		},
@@ -714,6 +716,64 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
+						"name": "cancelSubscription",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "tokenID",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "updatePaymentSource",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Mutation",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
 						"name": "id",
 						"type": {
 							"kind": "NON_NULL",
@@ -742,6 +802,53 @@
 						"ofType": null
 					}
 				]
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "seats",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "renewalDate",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "organization",
+						"type": {
+							"kind": "OBJECT",
+							"name": "Organization",
+							"ofType": null
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "OrgPlan",
+				"possibleTypes": null
 			},
 			{
 				"description": null,
@@ -875,6 +982,49 @@
 				"interfaces": [],
 				"kind": "OBJECT",
 				"name": "Person",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "name",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "cost",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Plan",
 				"possibleTypes": null
 			},
 			{
@@ -1991,6 +2141,22 @@
 										"ofType": null
 									}
 								}
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "paymentPlan",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "Plan",
+								"ofType": null
 							}
 						}
 					}

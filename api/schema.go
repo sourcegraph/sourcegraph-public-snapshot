@@ -4,6 +4,7 @@ package api
 
 var Schema = `schema {
 	query: Query
+	mutation: Mutation
 }
 
 interface Node {
@@ -21,7 +22,7 @@ type Root {
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
-	currentUser(): User
+	currentUser: User
 }
 
 type RefFields {
@@ -160,7 +161,24 @@ type Organization {
 	collaborators: Int!
 }
 
+type OrgPlan {
+	seats: Int
+	renewalDate: Int
+	organization: Organization
+}
+type Plan {
+	name: String!
+	cost: Int!
+
+}
+
 type User {
 	githubOrgs: [Organization!]!
+	paymentPlan: Plan!
+}
+
+type Mutation {
+	cancelSubscription(): Boolean!
+	updatePaymentSource(tokenID: String!): Boolean!
 }
 `

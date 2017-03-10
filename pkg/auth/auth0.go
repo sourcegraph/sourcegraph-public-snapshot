@@ -34,9 +34,7 @@ var auth0ManagementTokenSource = (&clientcredentials.Config{
 }).TokenSource(context.Background())
 
 func SetAppMetadata(ctx context.Context, uid string, key string, value interface{}) error {
-	body, err := json.Marshal(struct {
-		AppMetadata map[string]interface{} `json:"app_metadata"`
-	}{
+	body, err := json.Marshal(AppMetadata{
 		AppMetadata: map[string]interface{}{
 			key: value,
 		},
@@ -61,6 +59,24 @@ func SetAppMetadata(ctx context.Context, uid string, key string, value interface
 	}
 
 	return nil
+}
+
+type AppMetadata struct {
+	AppMetadata map[string]interface{} `json:"app_metadata"`
+}
+
+func GetAppMetadata(ctx context.Context) (map[string]interface{}, error) {
+	actor := ActorFromContext(ctx)
+	uid := actor.AuthInfo().UID
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users/" + uid)
+	if err != nil {
+		return nil, err
+	}
+	var appMetadata AppMetadata
+	if err := json.NewDecoder(resp.Body).Decode(&appMetadata); err != nil {
+		return nil, err
+	}
+	return appMetadata.AppMetadata, nil
 }
 
 // ListUsersByGitHubID lists registered Sourcegraph users by their GitHub ID.

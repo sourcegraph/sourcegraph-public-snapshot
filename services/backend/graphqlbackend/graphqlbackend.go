@@ -26,7 +26,7 @@ var GraphQLSchema *graphql.Schema
 
 func init() {
 	var err error
-	GraphQLSchema, err = graphql.ParseSchema(api.Schema, &queryResolver{})
+	GraphQLSchema, err = graphql.ParseSchema(api.Schema, &schemaResolver{})
 	if err != nil {
 		panic(err)
 	}
@@ -50,13 +50,13 @@ func (r *nodeResolver) ToCommit() (*commitResolver, bool) {
 	return n, ok
 }
 
-type queryResolver struct{}
+type schemaResolver struct{}
 
-func (r *queryResolver) Root() *rootResolver {
+func (r *schemaResolver) Root() *rootResolver {
 	return &rootResolver{}
 }
 
-func (r *queryResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*nodeResolver, error) {
+func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*nodeResolver, error) {
 	switch relay.UnmarshalKind(args.ID) {
 	case "Repository":
 		n, err := repositoryByID(ctx, args.ID)

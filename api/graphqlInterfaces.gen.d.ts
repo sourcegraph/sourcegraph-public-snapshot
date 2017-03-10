@@ -3,7 +3,7 @@
 
 declare namespace GQL {
 	interface IGraphQLResponseRoot {
-		data?: IQuery;
+		data?: IQuery | IMutation;
 		errors?: Array<IGraphQLResponseError>;
 	}
 
@@ -96,6 +96,15 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IMutation {
+		__typename: string;
+		cancelSubscription: boolean;
+		updatePaymentSource: boolean;
+	}
+
+	/*
+	  description: null
+	*/
 	type Node = IRepository | ICommit;
 
 	/*
@@ -104,6 +113,16 @@ declare namespace GQL {
 	interface INode {
 		__typename: string;
 		id: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IOrgPlan {
+		__typename: string;
+		seats: number | null;
+		renewalDate: number | null;
+		organization: IOrganization | null;
 	}
 
 	/*
@@ -125,6 +144,15 @@ declare namespace GQL {
 		name: string;
 		email: string;
 		gravatarHash: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IPlan {
+		__typename: string;
+		name: string;
+		cost: number;
 	}
 
 	/*
@@ -262,6 +290,7 @@ declare namespace GQL {
 	interface IUser {
 		__typename: string;
 		githubOrgs: Array<IOrganization>;
+		paymentPlan: IPlan;
 	}
 
 	/*
