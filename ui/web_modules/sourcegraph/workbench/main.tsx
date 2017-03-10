@@ -74,7 +74,11 @@ export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string,
 	configurePostStartup(services);
 	workbenchListeners.forEach(cb => cb(true));
 
-	workbenchStore.init({ diffMode: Boolean(zapRef) });
+	if (!workbenchStore.isInitialized) {
+		workbenchStore.init({ diffMode: Boolean(zapRef) });
+	} else {
+		workbenchStore.dispatch({diffMode: Boolean(zapRef) });
+	}
 
 	return [workbench, services];
 }

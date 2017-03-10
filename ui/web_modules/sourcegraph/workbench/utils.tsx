@@ -58,6 +58,10 @@ export class MiniStore<T>{
 		this.initialized = true;
 	}
 
+	isInitialized(): boolean {
+		return this.initialized;
+	}
+
 	getState(): T {
 		return Object.assign({}, this.state);
 	}
