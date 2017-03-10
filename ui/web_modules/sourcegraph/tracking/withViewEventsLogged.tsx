@@ -73,7 +73,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					EventLogger.setUserIsGitHubAuthed(this.props.location.query["_githubAuthed"]);
 					if (eventName === Events.Signup_Completed.label) {
 						Events.Signup_Completed.logEvent(eventProperties);
-					} else if (eventName === "CompletedGitHubOAuth2Flow") {
+					} else if (eventName === Events.OAuth2FlowGitHub_Completed.label) {
 						Events.OAuth2FlowGitHub_Completed.logEvent(eventProperties);
 					}
 				} else if (this.props.location.query["_invited_by_user"] || this.props.location.query["_org_invite"]) {

@@ -23,7 +23,7 @@ var Orgs = &orgs{}
 
 type orgs struct{}
 
-func (s *orgs) ListOrgs(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
+func (s *orgs) ListOrgsPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
 	if Mocks.Orgs.ListOrgs != nil {
 		return Mocks.Orgs.ListOrgs(ctx, org)
 	}
@@ -39,7 +39,11 @@ func (s *orgs) ListOrgs(ctx context.Context, org *sourcegraph.OrgListOptions) (r
 		return &sourcegraph.OrgsList{}, nil
 	}
 
-	orgs, _, err := client.Organizations.List("", nil)
+	opts := &github.ListOptions{
+		Page:    int(org.Page),
+		PerPage: int(org.PerPage),
+	}
+	orgs, _, err := client.Organizations.List("", opts)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +57,31 @@ func (s *orgs) ListOrgs(ctx context.Context, org *sourcegraph.OrgListOptions) (r
 		Orgs: slice}, nil
 }
 
-func (s *orgs) ListOrgMembers(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgMembersList, err error) {
+// ListAllOrgs is a convenience wrapper around ListOrgs (since GitHub's API is paginated)
+func (s *orgs) ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
+	// Get a maximum of 1000 organizations per user
+	const perPage = 100
+	const maxPage = 10
+	opts := *op
+	opts.PerPage = perPage
+
+	var allOrgs []*sourcegraph.Org
+	for page := 1; page <= maxPage; page++ {
+		opts.Page = int32(page)
+		orgs, err := s.ListOrgsPage(ctx, &opts)
+		if err != nil {
+			return nil, err
+		}
+		allOrgs = append(allOrgs, orgs.Orgs...)
+		if len(orgs.Orgs) < perPage {
+			break
+		}
+	}
+	return &sourcegraph.OrgsList{
+		Orgs: allOrgs}, nil
+}
+
+func (s *orgs) listOrgMembersPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res []*github.User, err error) {
 	if Mocks.Orgs.ListOrgMembers != nil {
 		return Mocks.Orgs.ListOrgMembers(ctx, org)
 	}
@@ -66,11 +94,41 @@ func (s *orgs) ListOrgMembers(ctx context.Context, org *sourcegraph.OrgListOptio
 		return nil, err
 	}
 	if client == nil {
+		return []*github.User{}, nil
+	}
+
+	opts := &github.ListMembersOptions{
+		ListOptions: github.ListOptions{
+			Page:    int(org.Page),
+			PerPage: int(org.PerPage),
+		},
+	}
+	// Fetch members of the organization.
+	members, _, err := client.Organizations.ListMembers(org.OrgName, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return members, nil
+}
+
+func (s *orgs) ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgMembersList, err error) {
+	if Mocks.Orgs.ListOrgMembersForInvites != nil {
+		return Mocks.Orgs.ListOrgMembersForInvites(ctx, org)
+	}
+
+	ctx, done := trace(ctx, "Orgs", "ListOrgMembersForInvites", org, &err)
+	defer done()
+
+	client, err := authedGitHubClientC(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if client == nil {
 		return &sourcegraph.OrgMembersList{}, nil
 	}
 
-	// Fetch members of the organization.
-	members, _, err := client.Organizations.ListMembers(org.OrgName, &github.ListMembersOptions{})
+	members, err := s.listOrgMembersPage(ctx, org)
 	if err != nil {
 		return nil, err
 	}
@@ -118,6 +176,29 @@ func (s *orgs) ListOrgMembers(ctx context.Context, org *sourcegraph.OrgListOptio
 
 	return &sourcegraph.OrgMembersList{
 		OrgMembers: slice}, nil
+}
+
+// ListAllOrgMembers is a convenience wrapper around ListOrgMembers (since GitHub's API is paginated)
+func (s *orgs) ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOptions) (res []*github.User, err error) {
+	// Get a maximum of 1,000 members per org
+	const perPage = 100
+	const maxPage = 10
+	opts := *op
+	opts.PerPage = perPage
+
+	var allMembers []*github.User
+	for page := 1; page <= maxPage; page++ {
+		opts.Page = int32(page)
+		members, err := s.listOrgMembersPage(ctx, &opts)
+		if err != nil {
+			return nil, err
+		}
+		allMembers = append(allMembers, members...)
+		if len(members) < perPage {
+			break
+		}
+	}
+	return allMembers, nil
 }
 
 // sendEmail lets us avoid sending emails in tests.

@@ -116,6 +116,24 @@ type Repo struct {
 	IndexedRevision *string `json:"IndexedRevision,omitempty"`
 }
 
+// GitHubRepoWithDetails represents a GitHub source code repository with additional context
+// These types are used for data logging/capturing when a GitHub user signs in to Sourcegraph
+type GitHubRepoWithDetails struct {
+	URI         string                `json:"URI,omitempty"`
+	Owner       string                `json:"Owner,omitempty"`
+	Name        string                `json:"Name,omitempty"`
+	Fork        bool                  `json:"Fork,omitempty"`
+	Private     bool                  `json:"Private,omitempty"`
+	CreatedAt   *time.Time            `json:"CreatedAt,omitempty"`
+	Languages   []*GitHubRepoLanguage `json:"Languages,omitempty"`
+	CommitTimes []*time.Time          `json:"Commits,omitempty"`
+}
+
+type GitHubRepoLanguage struct {
+	Language string `json:"Language,omitempty"`
+	Count    int    `json:"Count,omitempty"`
+}
+
 type Contributor struct {
 	Login         string `json:"Login,omitempty"`
 	AvatarURL     string `json:"AvatarURL,omitempty"`
@@ -177,6 +195,10 @@ type RepoSpec struct {
 
 type RepoList struct {
 	Repos []*Repo `json:"Repos,omitempty"`
+}
+
+type GitHubReposWithDetailsList struct {
+	ReposWithDetails []*GitHubRepoWithDetails `json:"ReposWithDetails,omitempty"`
 }
 
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
@@ -552,6 +574,8 @@ type OrgListOptions struct {
 	OrgName  string `json:"OrgName,omitempty"`
 	Username string `json:"Username,omitempty"`
 	OrgID    string `json:"OrgID,omitempty"`
+	// ListOptions controls pagination.
+	ListOptions `json:""`
 }
 
 // OrgsList is a list of GitHub organizations for a given user

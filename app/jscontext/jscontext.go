@@ -24,7 +24,9 @@ import (
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var authEnabledEnvVar = env.Get("AUTH_ENABLED", "true", "require login for users to view repositories")
-var trackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
+
+// TrackingAppID is used by the Telligent data pipeline
+var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
@@ -105,7 +107,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		SentryDSN:     sentryDSNFrontend,
 		IntercomHash:  intercomHMAC(actor.UID),
 		AuthEnabled:   authEnabled,
-		TrackingAppID: trackingAppID,
+		TrackingAppID: TrackingAppID,
 	}, nil
 }
 

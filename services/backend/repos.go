@@ -155,6 +155,25 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
+func (s *repos) ListWithDetails(ctx context.Context) (res *sourcegraph.GitHubReposWithDetailsList, err error) {
+	if Mocks.Repos.ListWithDetails != nil {
+		return Mocks.Repos.ListWithDetails(ctx)
+	}
+
+	ctx, done := trace(ctx, "Repos", "ListWithDetails", nil, &err)
+	defer done()
+
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.ListWithDetails")
+
+	ghReposWithDetails, err := github.ListAllGitHubReposWithDetails(ctx, &gogithub.RepositoryListOptions{})
+	if err != nil {
+		log15.Warn("failed to fetch some remote repositories", "source", "GitHub", "error", err)
+		ghReposWithDetails = nil
+	}
+
+	return &sourcegraph.GitHubReposWithDetailsList{ReposWithDetails: ghReposWithDetails}, nil
+}
+
 // setRepoFieldsFromRemote sets the fields of the repository from the
 // remote (e.g., GitHub) and updates the repository in the store layer.
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {

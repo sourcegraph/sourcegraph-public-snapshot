@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"regexp"
+	"time"
 
 	"context"
 
@@ -259,6 +260,20 @@ func toRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	return &repo
 }
 
+func toGitHubRepoWithDetails(ghrepo *github.Repository, languages []*sourcegraph.GitHubRepoLanguage, commitTimes []*time.Time) *sourcegraph.GitHubRepoWithDetails {
+	repo := toRepo(ghrepo)
+	return &sourcegraph.GitHubRepoWithDetails{
+		URI:         repo.URI,
+		Owner:       repo.Owner,
+		Name:        repo.Name,
+		Fork:        repo.Fork,
+		Private:     repo.Private,
+		CreatedAt:   repo.CreatedAt,
+		Languages:   languages,
+		CommitTimes: commitTimes,
+	}
+}
+
 var ListAccessibleReposMock func(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.Repo, error)
 
 func MockListAccessibleRepos_Return(returns []*sourcegraph.Repo) (called *bool) {
@@ -327,6 +342,88 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 	for page := 1; page <= maxPage; page++ {
 		op.Page = page
 		repos, err := ListAccessibleRepos(ctx, &op)
+		if err != nil {
+			return nil, err
+		}
+		allRepos = append(allRepos, repos...)
+		if len(repos) < perPage {
+			break
+		}
+	}
+	return allRepos, nil
+}
+
+var ListGitHubReposWithDetailsMock func(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.GitHubRepoWithDetails, error)
+
+func MockListGitHubReposWithDetails_Return(returns []*sourcegraph.GitHubRepoWithDetails) (called *bool) {
+	called = new(bool)
+	ListGitHubReposWithDetailsMock = func(ctx context.Context, opt *gogithub.RepositoryListOptions) ([]*sourcegraph.GitHubRepoWithDetails, error) {
+		*called = true
+
+		if opt != nil && opt.Page > 1 {
+			return nil, nil
+		}
+
+		return returns, nil
+	}
+	return
+}
+
+// listGitHubReposWithDetailsPage lists repos that are accessible to the authenticated
+// user, along with (1) full language details, and (2) a history of recent
+// commits by time
+// Note that this only returns a single (paginated) API call's results
+func listGitHubReposWithDetailsPage(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.GitHubRepoWithDetails, error) {
+	if ListGitHubReposWithDetailsMock != nil {
+		return ListGitHubReposWithDetailsMock(ctx, opt)
+	}
+
+	ghRepos, resp, err := client(ctx).Repositories.List("", opt)
+
+	if err != nil {
+		return nil, checkResponse(ctx, resp, err, "github.Repos.ListReposWithDetails")
+	}
+
+	var repos []*sourcegraph.GitHubRepoWithDetails
+	for _, ghRepo := range ghRepos {
+		ghLanguages, resp, err := client(ctx).Repositories.ListLanguages(*ghRepo.Owner.Login, *ghRepo.Name)
+		if err != nil {
+			return nil, checkResponse(ctx, resp, err, "github.Repos.ListReposWithDetails")
+		}
+		var languages []*sourcegraph.GitHubRepoLanguage
+		for k, v := range ghLanguages {
+			languages = append(languages, &sourcegraph.GitHubRepoLanguage{Language: k, Count: v})
+		}
+		commits, resp, err := client(ctx).Repositories.ListCommits(*ghRepo.Owner.Login, *ghRepo.Name, nil)
+		if err != nil {
+			return nil, checkResponse(ctx, resp, err, "github.Repos.ListReposWithDetails")
+		}
+		var commitTimes []*time.Time
+		for _, ghCommit := range commits {
+			commitTimes = append(commitTimes, ghCommit.Commit.Committer.Date)
+		}
+
+		repos = append(repos, toGitHubRepoWithDetails(ghRepo, languages, commitTimes))
+	}
+	return repos, nil
+}
+
+// ListAllGitHubReposWithDetails is a convenience wrapper around
+// Repos.listGitHubReposWithDetailsPage to get ALL repos, rather than just a single
+// page of them
+func ListAllGitHubReposWithDetails(ctx context.Context, op_ *github.RepositoryListOptions) ([]*sourcegraph.GitHubRepoWithDetails, error) {
+	const perPage = 100
+	const maxPage = 10 // only pull a maximum of 1,000 repos
+	op := *op_
+	op.PerPage = perPage
+
+	if !HasAuthedUser(ctx) {
+		return nil, nil
+	}
+	var allRepos []*sourcegraph.GitHubRepoWithDetails
+	for page := 1; page <= maxPage; page++ {
+		op.Page = page
+		repos, err := listGitHubReposWithDetailsPage(ctx, &op)
 		if err != nil {
 			return nil, err
 		}

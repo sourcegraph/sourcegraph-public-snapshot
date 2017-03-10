@@ -303,6 +303,26 @@ export interface GetFileOptions {
 	RecurseSingleSubfolderLimit?: number;
 }
 
+export interface GitHubRepoLanguage {
+	Language?: string;
+	Count?: number;
+}
+
+export interface GitHubRepoWithDetails {
+	URI?: string;
+	Owner?: string;
+	Name?: string;
+	Fork?: boolean;
+	Private?: boolean;
+	CreatedAt?: any;
+	Languages?: GitHubRepoLanguage[];
+	Commits?: any[];
+}
+
+export interface GitHubReposWithDetailsList {
+	ReposWithDetails?: GitHubRepoWithDetails[];
+}
+
 export interface HTTPSConfig {
 }
 
@@ -381,6 +401,8 @@ export interface OrgListOptions {
 	OrgName?: string;
 	Username?: string;
 	OrgID?: string;
+	PerPage?: number;
+	Page?: number;
 }
 
 export interface OrgMember {
