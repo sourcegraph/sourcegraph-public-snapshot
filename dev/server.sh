@@ -32,7 +32,7 @@ curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && yarn && yarn run st
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 
 mkdir -p .bin
-env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,zap}
+env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,zap,xlang-go,lsp-proxy}
 env SRC_REPOS_DIR=$HOME/.sourcegraph/repos ./.bin/gitserver &
 env SRC_GIT_SERVERS=127.0.0.1:3178 LSP_PROXY=127.0.0.1:4388 LSP_PROXY_BG=127.0.0.1:4388 ./.bin/indexer &
 ./.bin/github-proxy &
@@ -40,10 +40,12 @@ env SRC_GIT_SERVERS=127.0.0.1:3178 ./.bin/zap &
 
 . dev/langservers.lib.bash
 detect_dev_langservers
+env SRC_GIT_SERVERS=127.0.0.1:3178 .bin/lsp-proxy -prof-http=:6061 &
 
 export DEBUG=true
 export SRC_APP_DISABLE_SUPPORT_SERVICES=true
 export SRC_GIT_SERVERS=127.0.0.1:3178
+export LSP_PROXY=127.0.0.1:4388
 export LSP_PROXY_BG=127.0.0.1:4388
 export ZAP_SERVER="ws://$HOME/.sourcegraph/zap"
 

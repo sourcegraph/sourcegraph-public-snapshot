@@ -3,9 +3,10 @@ LS_ROOT="${HOME}/.sourcegraph/lang"
 # Prepare and set the LANGSERVER_<lang> env vars for development lang
 # servers in ~/.sourcegraph/lang and the builtin Go lang server.
 detect_dev_langservers() {
-	# Go (builtin)
-	export LANGSERVER_GO=${LANGSERVER_GO-:builtin:}
-	export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-:builtin:}
+	# Go. We can assume server.sh has installed the binary and we are in
+	# the repo root
+	export LANGSERVER_GO=${LANGSERVER_GO-".bin/xlang-go"}
+	export LANGSERVER_GO_BG=${LANGSERVER_GO_BG-".bin/xlang-go"}
 
 	CSS_LS_DIR="${LS_ROOT}/css-langserver"
 	if [[ -d "$CSS_LS_DIR" ]]; then
