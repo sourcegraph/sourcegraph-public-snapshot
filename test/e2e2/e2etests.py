@@ -54,7 +54,7 @@ def test_github_private_auth_onboarding(d):
     # Go to home, click "Sign up"
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: d.find_element_by_id("github-auth-btn").click())
+    retry(lambda: wd.find_element_by_id("github-auth-btn").click())
 
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
