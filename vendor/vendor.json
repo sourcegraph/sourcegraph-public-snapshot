@@ -617,34 +617,34 @@
 			"revisionTime": "2016-09-28T03:47:51Z"
 		},
 		{
-			"checksumSHA1": "ZbEJRMGjkTzpRqZx0r2mpze2DsE=",
+			"checksumSHA1": "VXuG9mqJwyE6/DjPagi4DCo2rnw=",
 			"path": "github.com/sourcegraph/go-langserver/langserver",
-			"revision": "0291f303348531b3561dde485120cee64cd1a007",
-			"revisionTime": "2017-03-01T18:22:11Z"
+			"revision": "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+			"revisionTime": "2017-03-06T21:43:54Z"
 		},
 		{
 			"checksumSHA1": "/1pmXgjVX/cUJyh3iJskHbANOeA=",
 			"path": "github.com/sourcegraph/go-langserver/langserver/internal/refs",
-			"revision": "0291f303348531b3561dde485120cee64cd1a007",
-			"revisionTime": "2017-03-01T18:22:11Z"
+			"revision": "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+			"revisionTime": "2017-03-06T21:43:54Z"
 		},
 		{
 			"checksumSHA1": "OkokvIWcSi8Wk6Ig5mhD5H6MHEI=",
 			"path": "github.com/sourcegraph/go-langserver/langserver/internal/tools",
-			"revision": "0291f303348531b3561dde485120cee64cd1a007",
-			"revisionTime": "2017-03-01T18:22:11Z"
+			"revision": "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+			"revisionTime": "2017-03-06T21:43:54Z"
 		},
 		{
 			"checksumSHA1": "n7VhOybivV5WCKdJ0vN7yLsI0gE=",
 			"path": "github.com/sourcegraph/go-langserver/pkg/lsp",
-			"revision": "0291f303348531b3561dde485120cee64cd1a007",
-			"revisionTime": "2017-03-01T18:22:11Z"
+			"revision": "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+			"revisionTime": "2017-03-06T21:43:54Z"
 		},
 		{
-			"checksumSHA1": "EBN1XuRvX4ISYbh6tNL4+7oNDOY=",
+			"checksumSHA1": "a2IMJmVBUZJb8XDQZN2UGUe/Ee4=",
 			"path": "github.com/sourcegraph/go-langserver/pkg/lspext",
-			"revision": "0291f303348531b3561dde485120cee64cd1a007",
-			"revisionTime": "2017-03-01T18:22:11Z"
+			"revision": "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+			"revisionTime": "2017-03-06T21:43:54Z"
 		},
 		{
 			"checksumSHA1": "m7vjBiKUAdwtdqi0uiuDvoq6WRs=",

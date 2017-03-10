@@ -27,6 +27,9 @@ type WorkspaceReferencesParams struct {
 	// look in order to find the symbol (this is an optimization). It is up to
 	// the language server to define the schema of this object.
 	Hints map[string]interface{} `json:"hints,omitempty"`
+
+	// Limit if positive will limit the number of results returned.
+	Limit int `json:"limit,omitempty"`
 }
 
 // ReferenceInformation represents information about a reference to programming

@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"go/types"
 	"log"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -115,7 +116,13 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 		close(done)
 	}()
 
-	streamUpdate := func() {}
+	limit := params.Limit
+	if limit <= 0 {
+		// If we don't have a limit, just set it to a value we should never exceed
+		limit = math.MaxInt32
+	}
+
+	streamUpdate := func() bool { return true }
 	streamTick := make(<-chan time.Time, 1)
 	if streamExperiment {
 		initial := json.RawMessage(`[{"op":"replace","path":"","value":[]}]`)
@@ -131,13 +138,17 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 		defer t.Stop()
 		streamTick = t.C
 		streamPos := 0
-		streamUpdate = func() {
+		streamUpdate = func() bool {
 			results.resultsMu.Lock()
 			partial := results.results
 			results.resultsMu.Unlock()
-			if len(partial) == streamPos {
+			if len(partial) == streamPos || streamPos == limit {
 				// Everything currently in refs has already been sent.
-				return
+				// return true if we can stream more results.
+				return streamPos < limit
+			}
+			if len(partial) > limit {
+				partial = partial[:limit]
 			}
 
 			patch := make([]xreferenceAddOp, 0, len(partial)-streamPos)
@@ -157,6 +168,9 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 				// We use xreferencePatch so the build server can rewrite URIs
 				Patch: xreferencePatch(patch),
 			})
+
+			// return true if we can stream more results.
+			return len(partial) < limit
 		}
 	}
 
@@ -171,14 +185,25 @@ loop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-streamTick:
-			streamUpdate()
+			canSendMore := streamUpdate()
+			if !canSendMore {
+				cancel()
+				break loop
+			}
 		}
 	}
 
 	// Send a final update
 	streamUpdate()
 
-	return results.results, nil
+	results.resultsMu.Lock()
+	r := results.results
+	results.resultsMu.Unlock()
+	if len(r) > limit {
+		r = r[:limit]
+	}
+
+	return r, nil
 }
 
 func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Context, conn jsonrpc2.JSONRPC2, fset *token.FileSet, pkgs []string, afterTypeCheck func(info *loader.PackageInfo, files []*ast.File)) (prog *loader.Program, err error) {

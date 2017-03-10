@@ -21,9 +21,33 @@ import (
 
 // NewHandler creates a Go language server handler.
 func NewHandler() jsonrpc2.Handler {
-	return jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError((&LangHandler{
+	return lspHandler{jsonrpc2.HandlerWithError((&LangHandler{
 		HandlerShared: &HandlerShared{},
-	}).handle))
+	}).handle)}
+}
+
+// lspHandler wraps LangHandler to correctly handle requests in the correct
+// order.
+//
+// The LSP spec dictates a strict ordering that requests should only be
+// processed serially in the order they are received. However, implementations
+// are allowed to do concurrent computation if it doesn't affect the
+// result. We actually can return responses out of order, since vscode does
+// not seem to have issues with that. We also do everything concurrently,
+// except methods which could mutate the state used by our typecheckers (ie
+// textDocument/didOpen, etc). Those are done serially since applying them out
+// of order could result in a different textDocument.
+type lspHandler struct {
+	jsonrpc2.Handler
+}
+
+// Handle implements jsonrpc2.Handler
+func (h lspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	if isFileSystemRequest(req.Method) {
+		h.Handler.Handle(ctx, conn, req)
+		return
+	}
+	go h.Handler.Handle(ctx, conn, req)
 }
 
 // LangHandler is a Go language server LSP/JSON-RPC handler.
@@ -95,9 +119,10 @@ func (h *LangHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *json
 	return h.Handle(ctx, conn, req)
 }
 
-// Handle implements jsonrpc2.Handler, except conn is an interface
-// type for testability. The handle method implements jsonrpc2.Handler
-// exactly.
+// Handle creates a response for a JSONRPC2 LSP request. Note: LSP has strict
+// ordering requirements, so this should not just be wrapped in an
+// jsonrpc2.AsyncHandler. Ensure you have the same ordering as used in the
+// NewHandler implementation.
 func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request) (result interface{}, err error) {
 	// Prevent any uncaught panics from taking the entire server down.
 	defer func() {
