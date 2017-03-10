@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
-	"go.uber.org/atomic"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
@@ -104,7 +104,6 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 
 	proxy := &jsonrpc2Proxy{
 		httpCtx: ctx,
-		mode:    atomic.NewString(""),
 		builder: builder,
 		ready:   make(chan struct{}),
 	}
@@ -147,12 +146,12 @@ func (h jsonrpc2HandlerFunc) Handle(ctx context.Context, conn *jsonrpc2.Conn, re
 // single repository initially specified in the "initialize" request)
 // will be accessed in the current LSP session.
 type jsonrpc2Proxy struct {
-	httpCtx context.Context
-	client  *jsonrpc2.Conn // connection to the browser
-	server  *xclient       // connection to lsp proxy. We use a wrapped xlang.Client since it injects opentracing metadata
-	mode    *atomic.String
-	builder *libhoney.Builder
-	ready   chan struct{}
+	httpCtx    context.Context
+	client     *jsonrpc2.Conn // connection to the browser
+	server     *xclient       // connection to lsp proxy. We use a wrapped xlang.Client since it injects opentracing metadata
+	initParams atomic.Value
+	builder    *libhoney.Builder
+	ready      chan struct{}
 }
 
 func (p *jsonrpc2Proxy) start() {
@@ -193,12 +192,15 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 				return err
 			}
 
-			p.mode.Store(params.InitializationOptions.Mode)
-
 			rootPathURI, err := uri.Parse(params.RootPath)
 			if err != nil {
 				return err
 			}
+
+			p.initParams.Store(&trackedInitParams{
+				mode:        params.InitializationOptions.Mode,
+				rootPathURI: rootPathURI,
+			})
 
 			// 🚨 SECURITY: Check that the the user can access the repo. 🚨
 			if _, err := backend.Repos.GetByURI(p.httpCtx, rootPathURI.Repo()); err != nil {
@@ -275,15 +277,19 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 
 	duration := time.Since(start)
 	success := strconv.FormatBool(err == nil)
-	mode := p.mode.Load()
-	if mode == "" {
-		mode = "unknown"
+
+	// If we have processed the initialize request, initParams should be non-nil
+	initParams, _ := p.initParams.Load().(*trackedInitParams)
+	if initParams == nil {
+		initParams = &trackedInitParams{
+			mode: "unknown",
+		}
 	}
 
 	labels := prometheus.Labels{
 		"success":   success,
 		"method":    req.Method,
-		"mode":      mode,
+		"mode":      initParams.mode,
 		"transport": "ws",
 	}
 	xlangRequestDuration.With(labels).Observe(duration.Seconds())
@@ -292,8 +298,11 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 		ev := p.builder.NewEvent()
 		ev.AddField("success", success)
 		ev.AddField("method", req.Method)
-		ev.AddField("mode", mode)
+		ev.AddField("mode", initParams.mode)
 		ev.AddField("duration_ms", duration.Seconds()*1000)
+		if initParams.rootPathURI != nil {
+			addRootPathFields(ev, initParams.rootPathURI)
+		}
 		if err != nil {
 			ev.AddField("error", err.Error())
 		}
@@ -314,6 +323,13 @@ func dialLSPProxy(ctx context.Context) (net.Conn, error) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 	return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
+}
+
+// trackedInitParams stores fields we want to track in our instrumentation for
+// each request. The fields are extracted from the initialize request.
+type trackedInitParams struct {
+	mode        string
+	rootPathURI *uri.URI
 }
 
 var (
