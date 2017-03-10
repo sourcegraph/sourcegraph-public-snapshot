@@ -169,6 +169,7 @@ func main() {
 		"docker-images/"):
 		pipeline.AddWait()
 		pipeline.AddStep(":docker:",
+			Env("TAG", version),
 			Cmd("./dev/ci/docker-images.sh "+branch[14:]))
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
