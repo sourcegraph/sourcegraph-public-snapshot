@@ -143,7 +143,13 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 				return err
 			}
 			if op, xop := ot.NormalizeWorkspaceOp(*params.Op), ot.NormalizeWorkspaceOp(xop); !reflect.DeepEqual(op, xop) {
-				panic(fmt.Sprintf("expected remote tracking ref %q to not transform ops since it only receives them from a single source, but got %v != %v (history: %v, buf: %v, wait: %v)", ref.Name, op, xop, ref.Object.(serverRef).history(), ref.Object.(serverRef).ot.Buf, ref.Object.(serverRef).ot.Wait))
+				// We don't expect this to happen since this branch should only
+				// get ops from server and transforms shouldn't be necessary.
+				// This used to be a panic, but this condition was happening
+				// during rapid inserts and undo operations (suspect latency involved).
+				// Everything seems to work with the panic removed so now we just log
+				// a warning when it happens and avoid crashing the server.
+				level.Warn(logger).Log("unexpected-transform-ops-for-ref", ref.Name, "op", op, "xop", xop, "history", fmt.Sprintf("%v", ref.Object.(serverRef).history()), "buf", ref.Object.(serverRef).ot.Buf, "wait", ref.Object.(serverRef).ot.Wait)
 			}
 		}
 
