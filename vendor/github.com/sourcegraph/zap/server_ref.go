@@ -141,12 +141,11 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 			}
 		}
 
-		refObj.ot.SendToUpstream = func(upstreamRev int, op ot.WorkspaceOp) {
+		refObj.ot.SendToUpstream = func(logger log.Logger, upstreamRev int, op ot.WorkspaceOp) {
 			// TODO(sqs): need to get latest GitBase/GitBranch, not
 			// use the ones captured by the closure?
 			upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: refID.Ref}
 
-			logger := s.baseLogger()
 			logger = log.With(logger, "send-to-upstream", upstreamRefID, "endpoint", newRemote.Endpoint, "remote", newConfig.Upstream, "rev", upstreamRev, "op", op)
 
 			cl, err := s.remotes.getOrCreateClient(ctx, logger, newRemote.Endpoint)
@@ -156,14 +155,23 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 			}
 			level.Debug(logger).Log()
 			debugSimulateLatency()
-			if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
-				RefIdentifier: upstreamRefID,
-				Current: &RefPointer{
-					RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
-					Rev:         upstreamRev,
-				},
-				Op: &op,
-			}); err != nil {
+
+			DebugMu.Lock()
+			simulateError := TestSimulateResetAfterErrorInSendToUpstream
+			DebugMu.Unlock()
+			if simulateError {
+				err = errors.New("TestSimulateResetAfterErrorInSendToUpstream")
+			} else {
+				err = cl.RefUpdate(ctx, RefUpdateUpstreamParams{
+					RefIdentifier: upstreamRefID,
+					Current: &RefPointer{
+						RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
+						Rev:         upstreamRev,
+					},
+					Op: &op,
+				})
+			}
+			if err != nil {
 				level.Error(logger).Log("send-to-upstream-failed", err, "op", op)
 				if os.Getenv("SEND_TO_UPSTREAM_ERRORS_FATAL") != "" {
 					panic(fmt.Sprintf("SendToUpstream(%d, %v) failed: %s", upstreamRev, op, err))
@@ -173,30 +181,26 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 				// get an error, wipe the upstream and overwrite
 				// it.
 				if newConfig.Overwrite {
-					// TODO(sqs): this is in a goroutine because
-					// otherwise there is a deadlock. TODO9
-					go func() {
-						defer repo.acquireRef(refID.Ref)()
-						if ref := repo.refdb.Lookup(refID.Ref); ref != nil {
-							refObj := ref.Object.(serverRef)
-							newRefState := &RefState{
-								RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
-								History:     refObj.history(),
-							}
-							level.Info(logger).Log("overwrite-ref-after-error", newRefState)
-							if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
-								RefIdentifier: upstreamRefID,
-								Force:         true,
-								State:         newRefState,
-							}); err == nil {
-								if err := refObj.ot.AckFromUpstream(); err != nil {
-									level.Error(logger).Log("ack-after-overwrite-ref-after-error-failed", err)
-								}
-							} else {
-								level.Error(logger).Log("overwrite-ref-after-error-failed", err)
-							}
+					if ref := repo.refdb.Lookup(refID.Ref); ref != nil {
+						refObj := ref.Object.(serverRef)
+						newRefState := &RefState{
+							RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
+							History:     refObj.history(),
 						}
-					}()
+						logger = log.With(logger, "overwrite-ref-after-error", newRefState)
+						level.Info(logger).Log()
+						if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
+							RefIdentifier: upstreamRefID,
+							Force:         true,
+							State:         newRefState,
+						}); err == nil {
+							if err := refObj.ot.AckFromUpstream(logger); err != nil {
+								level.Error(logger).Log("ack-after-overwrite-ref-after-error-failed", err)
+							}
+						} else {
+							level.Error(logger).Log("overwrite-ref-after-error-failed", err)
+						}
+					}
 				}
 
 				return

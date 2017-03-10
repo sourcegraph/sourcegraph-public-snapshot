@@ -55,9 +55,15 @@ const (
 )
 
 var (
-	DebugMu                           sync.Mutex
+	DebugMu sync.Mutex // guards all vars in this block
+
 	DebugSimulatedLatency, _          = time.ParseDuration(os.Getenv("SIMULATED_LATENCY"))
 	DebugRandomizeSimulatedLatency, _ = strconv.ParseBool(os.Getenv("RANDOMIZE_SIMULATED_LATENCY"))
+
+	// TestSimulateResetAfterErrorInSendToUpstream is used in tests only
+	// and causes SendToUpstream to simulate an error condition that
+	// triggers this server to reset the ref on its upstream.
+	TestSimulateResetAfterErrorInSendToUpstream bool
 )
 
 func debugSimulateLatency() {

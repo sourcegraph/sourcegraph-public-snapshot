@@ -150,12 +150,12 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 				return err
 			}
 		}
-		doc := ot.Doc(prevData)
+		doc := ot.Doc(string(prevData))
 
 		if err := doc.Apply(edits); err != nil {
 			return &os.PathError{Op: "Edit", Path: f, Err: err}
 		}
-		if err := writeFile(f, doc); err != nil {
+		if err := writeFile(f, []byte(string(doc))); err != nil {
 			return err
 		}
 	}
@@ -263,7 +263,7 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 			if err != nil {
 				return ot.WorkspaceOp{}, err
 			}
-			if edits := DiffOps(prevData, data); len(edits) > 0 {
+			if edits := DiffOps([]rune(string(prevData)), []rune(string(data))); len(edits) > 0 {
 				op.Edit = map[string]ot.EditOps{dstPath: edits}
 			}
 
@@ -297,7 +297,7 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 			if err != nil {
 				return ot.WorkspaceOp{}, err
 			}
-			if edits := DiffOps(prevData, data); len(edits) > 0 {
+			if edits := DiffOps([]rune(string(prevData)), []rune(string(data))); len(edits) > 0 {
 				if op.Edit == nil {
 					op.Edit = map[string]ot.EditOps{}
 				}
@@ -312,8 +312,8 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 //
 // DEV NOTE: Keep this in sync with other language implementations of
 // diffOps.
-func DiffOps(old, new []byte) ot.EditOps {
-	change := diff.Bytes(old, new)
+func DiffOps(old, new []rune) ot.EditOps {
+	change := diff.Runes(old, new)
 	ops := make(ot.EditOps, 0, len(change)*2)
 	var ret, del, ins int
 	for _, c := range change {

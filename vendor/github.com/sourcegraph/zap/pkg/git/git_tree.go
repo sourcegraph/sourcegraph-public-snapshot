@@ -224,7 +224,7 @@ func CreateTreeForOp(logger log.Logger, gitRepo interface {
 			return "", err
 		}
 
-		doc := ot.Doc(data)
+		doc := ot.Doc(string(data))
 		if err := doc.Apply(edits); err != nil {
 			err := fmt.Errorf("apply OT edit to %s @ %s: %s (doc: %q, op: %v)", f, base, err, data, op)
 			if panicOnSomeErrors {
@@ -235,11 +235,11 @@ func CreateTreeForOp(logger log.Logger, gitRepo interface {
 		}
 
 		if isBufferPath(f) {
-			if err := fbuf.WriteFile(stripFileOrBufferPath(f), doc, 0666); err != nil {
+			if err := fbuf.WriteFile(stripFileOrBufferPath(f), []byte(string(doc)), 0666); err != nil {
 				return "", err
 			}
 		} else {
-			if err := updateGitFile(stripFileOrBufferPath(f), doc); err != nil {
+			if err := updateGitFile(stripFileOrBufferPath(f), []byte(string(doc))); err != nil {
 				return "", err
 			}
 		}

@@ -144,6 +144,11 @@ type Server struct {
 
 	updateFromDownstreamMu    sync.Mutex
 	updateRemoteTrackingRefMu sync.Mutex
+
+	// TestBlockHandleRefUpdateFromUpstream is used for testing
+	// only. It lets tests simulate a delay in
+	// (*Server).handleRefUpdateFromUpstream.
+	TestBlockHandleRefUpdateFromUpstream chan<- RefUpdateDownstreamParams
 }
 
 // NewServer creates a new remote server.

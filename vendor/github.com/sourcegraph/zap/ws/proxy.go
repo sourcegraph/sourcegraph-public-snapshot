@@ -25,7 +25,7 @@ const extraDebug = true
 // means it never needs to compose or transform operations.
 type Proxy struct {
 	// SendToUpstream sends an operation to the upstream.
-	SendToUpstream func(upstreamRev int, op ot.WorkspaceOp)
+	SendToUpstream func(logger log.Logger, upstreamRev int, op ot.WorkspaceOp)
 
 	// Apply immediately applies op to the workspace. It is assumed
 	// that op will apply cleanly and has been properly transformed
@@ -52,13 +52,13 @@ func (p *Proxy) History() []ot.WorkspaceOp {
 // to the history and sends it (or buffers it to be sent)
 // upstream. The caller is responsible for broadcasting it to all
 // downstream clients.
-func (p *Proxy) Record(op ot.WorkspaceOp) error {
+func (p *Proxy) Record(logger log.Logger, op ot.WorkspaceOp) error {
 	// if op.Noop() {
 	// 	panic("noop")
 	// }
 
 	p.history = append(p.history, op)
-	if err := p.bufferedSendToUpstream(op); err != nil {
+	if err := p.bufferedSendToUpstream(logger, op); err != nil {
 		return err
 	}
 	return nil
@@ -99,11 +99,10 @@ func (p *Proxy) RecvFromDownstream(logger log.Logger, rev int, op ot.WorkspaceOp
 			return ot.WorkspaceOp{}, err
 		}
 	}
-	if err := p.bufferedSendToUpstream(op); err != nil {
+	p.history = append(p.history, op)
+	if err := p.bufferedSendToUpstream(logger, op); err != nil {
 		return ot.WorkspaceOp{}, err
 	}
-
-	p.history = append(p.history, op)
 
 	return op, nil
 }
@@ -112,7 +111,7 @@ func (p *Proxy) RecvFromDownstream(logger log.Logger, rev int, op ot.WorkspaceOp
 // upstream. It sends op to the upstream if there is no pending op;
 // otherwise it buffers it and will send it after the server acks the
 // pending op.
-func (p *Proxy) bufferedSendToUpstream(op ot.WorkspaceOp) error {
+func (p *Proxy) bufferedSendToUpstream(logger log.Logger, op ot.WorkspaceOp) error {
 	if p.SendToUpstream == nil {
 		return nil
 	}
@@ -129,21 +128,21 @@ func (p *Proxy) bufferedSendToUpstream(op ot.WorkspaceOp) error {
 		p.Buf = &op
 	default:
 		p.Wait = &op
-		p.SendToUpstream(p.UpstreamRevNumber, op)
+		p.SendToUpstream(logger, p.UpstreamRevNumber, op)
 	}
 	return nil
 }
 
 // AckFromUpstream acknowledges a pending upstream op and sends the
 // buffered op (if any) to the upstream.
-func (p *Proxy) AckFromUpstream() error {
+func (p *Proxy) AckFromUpstream(logger log.Logger) error {
 	switch {
 	case p.Buf != nil: // ops buffered to send to upstream (AND ops pending upstream ack)
-		p.SendToUpstream(p.UpstreamRevNumber+1, *p.Buf)
 		// Now the upstream is up-to-date with our history at the time
 		// we sent this ack'd op to the server.
 		p.Wait = p.Buf
 		p.Buf = nil
+		p.SendToUpstream(logger, p.UpstreamRevNumber+1, *p.Wait)
 	case p.Wait != nil: // ops pending upstream ack (NO buffered ops)
 		// Now the upstream is up-to-date with us.
 		p.Wait = nil

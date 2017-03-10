@@ -18,6 +18,10 @@ import (
 )
 
 func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, logger log.Logger, params RefUpdateDownstreamParams, endpoint string) error {
+	if s.TestBlockHandleRefUpdateFromUpstream != nil {
+		s.TestBlockHandleRefUpdateFromUpstream <- params
+	}
+
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
@@ -209,7 +213,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 		case params.Ack:
 			// State updates get acked, too, but those do not involve OT.
 			if params.Op != nil {
-				if err := ref.Object.(serverRef).ot.AckFromUpstream(); err != nil {
+				if err := ref.Object.(serverRef).ot.AckFromUpstream(logger); err != nil {
 					if err == ws.ErrNoPendingOperation {
 						level.Error(logger).Log("received-ack-for-previous-generation-of-ref", "")
 						// NOTE: ErrNoPendingOperation occurs when
@@ -588,7 +592,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 				}
 
 				for _, op := range params.State.History {
-					if err := otHandler.Record(op); err != nil {
+					if err := otHandler.Record(logger, op); err != nil {
 						return err
 					}
 				}

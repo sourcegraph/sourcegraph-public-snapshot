@@ -182,7 +182,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 					defer repo.acquireRef(ref.Name)()
 
 					refObj := ref.Object.(serverRef)
-					err = refObj.ot.Record(op)
+					err = refObj.ot.Record(logger, op)
 					if err != nil {
 						return err
 					}
@@ -475,7 +475,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 		}
 
 		if !recordOp.Noop() {
-			if err := refObj.ot.Record(recordOp); err != nil {
+			if err := refObj.ot.Record(logger, recordOp); err != nil {
 				return nil, err
 			}
 			if err := ws.parent.broadcastRefUpdate(ctx, logger, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{

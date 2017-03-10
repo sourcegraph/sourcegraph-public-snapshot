@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"unicode/utf8"
 )
 
 // Doc represents a text document.
-type Doc []byte
+type Doc []rune
 
 // Apply applies the operation sequence ops to the document. An error
 // is returned if applying ops fails.
@@ -15,10 +16,10 @@ func (doc *Doc) Apply(ops EditOps) error {
 	i, buf := 0, *doc
 	ret, del, ins := ops.Count()
 	if ret+del != len(buf) {
-		return fmt.Errorf("base length must equal document length (%d != %d)", ret+del, len(buf))
+		return fmt.Errorf("base length must equal document length (%d != %d, buf %q)", ret+del, len(buf), buf)
 	}
 	if max := ret + del + ins; max > cap(buf) {
-		nbuf := make([]byte, len(buf), max+(max>>2))
+		nbuf := make([]rune, len(buf), max+(max>>2))
 		copy(nbuf, buf)
 		buf = nbuf
 	}
@@ -31,11 +32,11 @@ func (doc *Doc) Apply(ops EditOps) error {
 			buf = buf[:len(buf)+op.N]
 		case op.S != "":
 			l := len(buf)
-			buf = buf[:l+len(op.S)]
-			copy(buf[i+len(op.S):], buf[i:l])
-			buf = append(buf[:i], op.S...)
-			buf = buf[:l+len(op.S)]
-			i += len(op.S)
+			buf = buf[:l+utf8.RuneCountInString(op.S)]
+			copy(buf[i+utf8.RuneCountInString(op.S):], buf[i:l])
+			buf = append(buf[:i], []rune(op.S)...)
+			buf = buf[:l+utf8.RuneCountInString(op.S)]
+			i += utf8.RuneCountInString(op.S)
 		}
 	}
 	*doc = buf
@@ -48,13 +49,10 @@ func (doc *Doc) Apply(ops EditOps) error {
 var editNoop EditOp
 
 // EditOp represents a single edit operation on a text document.
-//
-// TODO(sqs): This operates on bytes, but most editors deal with
-// characters. How to handle?
 type EditOp struct {
 	// N signifies the operation type:
-	// >  0: Retain  N bytes
-	// <  0: Delete -N bytes
+	// >  0: Retain  N characters (Unicode code points)
+	// <  0: Delete -N characters (Unicode code points)
 	// == 0: Noop or Insert string S
 	N int
 	S string
@@ -86,9 +84,9 @@ func (op EditOp) String() string {
 		s := op.S
 		x := ""
 		const max = 20
-		if len(s) > max {
+		if utf8.RuneCountInString(s) > max {
 			x = fmt.Sprintf("…+%d", len(s)-max)
-			s = s[:max]
+			s = string([]rune(s)[:max])
 		}
 		return fmt.Sprintf("ins(%q%s)", s, x)
 	}
@@ -114,7 +112,7 @@ func (ops EditOps) Count() (ret, del, ins int) {
 		case op.N < 0:
 			del += -op.N
 		case op.N == 0:
-			ins += len(op.S)
+			ins += utf8.RuneCountInString(op.S)
 		}
 	}
 	return
@@ -249,25 +247,25 @@ func ComposeEditOps(a, b EditOps) (ab EditOps, err error) {
 				ib, ob = geteditop(ib, b)
 			}
 		case oa.N == 0 && ob.N < 0: // insert delete
-			switch sign(len(oa.S) + ob.N) {
+			switch sign(utf8.RuneCountInString(oa.S) + ob.N) {
 			case 1:
-				oa = EditOp{S: string(oa.S[-ob.N:])}
+				oa = EditOp{S: string([]rune(oa.S)[-ob.N:])}
 				ib, ob = geteditop(ib, b)
 			case -1:
-				ob.N += len(oa.S)
+				ob.N += utf8.RuneCountInString(oa.S)
 				ia, oa = geteditop(ia, a)
 			default:
 				ia, oa = geteditop(ia, a)
 				ib, ob = geteditop(ib, b)
 			}
 		case oa.N == 0 && ob.N > 0: // insert retain
-			switch sign(len(oa.S) - ob.N) {
+			switch sign(utf8.RuneCountInString(oa.S) - ob.N) {
 			case 1:
-				ab = append(ab, EditOp{S: string(oa.S[:ob.N])})
-				oa = EditOp{S: string(oa.S[ob.N:])}
+				ab = append(ab, EditOp{S: string([]rune(oa.S)[:ob.N])})
+				oa = EditOp{S: string([]rune(oa.S)[ob.N:])}
 				ib, ob = geteditop(ib, b)
 			case -1:
-				ob.N -= len(oa.S)
+				ob.N -= utf8.RuneCountInString(oa.S)
 				ab = append(ab, oa)
 				ia, oa = geteditop(ia, a)
 			default:
@@ -318,14 +316,14 @@ func TransformEditOps(a, b EditOps) (a1, b1 EditOps, err error) {
 	for oa != editNoop || ob != editNoop {
 		var om EditOp
 		if oa.N == 0 && oa.S != "" { // insert a
-			om.N = len(oa.S)
+			om.N = utf8.RuneCountInString(oa.S)
 			a1 = append(a1, oa)
 			b1 = append(b1, om)
 			ia, oa = geteditop(ia, a)
 			continue
 		}
 		if ob.N == 0 && ob.S != "" { // insert b
-			om.N = len(ob.S)
+			om.N = utf8.RuneCountInString(ob.S)
 			a1 = append(a1, om)
 			b1 = append(b1, ob)
 			ib, ob = geteditop(ib, b)
