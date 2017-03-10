@@ -92,6 +92,11 @@ type serverProxyConnStats struct {
 	// LSP method.
 	Counts map[string]int
 
+	// TotalFinishedCount is the total number of calls proxied to the
+	// server which finished. This is closely related to TotalCount,
+	// except is only incremented once a result is returned.
+	TotalFinishedCount int
+
 	// TotalErrorCount is the total number of calls proxied to the server
 	// that failed.
 	TotalErrorCount int
@@ -189,9 +194,15 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 	p.mu.Lock()
 	for s := range p.servers {
 		s.mu.Lock()
-		idle := s.stats.Last.Before(cutoff)
+		// If last is before cutoff we should expire
+		last := s.stats.Last
+		// If the only request has been for workspace/xreference,
+		// expire now. If workspace/xreferences is present it is
+		// usually the only request done to a server.
+		isShortLived := s.stats.TotalCount == 1 && s.stats.TotalFinishedCount == 1 && s.stats.Counts["workspace/xreferences"] == 1
 		s.mu.Unlock()
-		if idle {
+
+		if last.Before(cutoff) || isShortLived {
 			wg.Add(1)
 			go func(s *serverProxyConn) {
 				defer wg.Done()
@@ -452,6 +463,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 		opentracing.Tags{"mode": sid.mode, "rootPath": sid.rootPath.String(), "method": method, "params": params},
 	)
 	defer func() {
+		c.incTotalFinishedStat()
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
@@ -665,6 +677,12 @@ func isInfraMethod(method string) bool {
 func (c *serverProxyConn) updateLastTime() {
 	c.mu.Lock()
 	c.stats.Last = time.Now()
+	c.mu.Unlock()
+}
+
+func (c *serverProxyConn) incTotalFinishedStat() {
+	c.mu.Lock()
+	c.stats.TotalFinishedCount++
 	c.mu.Unlock()
 }
 
