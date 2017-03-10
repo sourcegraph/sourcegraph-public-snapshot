@@ -77,7 +77,7 @@ export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string,
 	if (!workbenchStore.isInitialized) {
 		workbenchStore.init({ diffMode: Boolean(zapRef) });
 	} else {
-		workbenchStore.dispatch({diffMode: Boolean(zapRef) });
+		workbenchStore.dispatch({ diffMode: Boolean(zapRef) });
 	}
 
 	return [workbench, services];
