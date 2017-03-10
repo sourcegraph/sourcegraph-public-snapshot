@@ -463,7 +463,9 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 		opentracing.Tags{"mode": sid.mode, "rootPath": sid.rootPath.String(), "method": method, "params": params},
 	)
 	defer func() {
-		c.incTotalFinishedStat()
+		if c != nil {
+			c.incTotalFinishedStat()
+		}
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
