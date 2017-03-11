@@ -4,6 +4,7 @@ import * as ReactDOM from "react-dom";
 import { Link } from "react-router";
 import { IAction } from "vs/base/common/actions";
 import { IDisposable } from "vs/base/common/lifecycle";
+import URI from "vs/base/common/uri";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IContextKeyService } from "vs/platform/contextkey/common/contextkey";
 import { IEventService } from "vs/platform/event/common/event";
@@ -56,10 +57,23 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 	}
 
 	getTitle(): string {
-		const contextService = (this as any).contextService as IWorkspaceContextService;
-		const { resource } = contextService.getWorkspace();
+		const resource = this.getResource();
+		let { repo } = URIUtils.repoParams(resource);
+		// for the explorer viewlet, we don't want to show the authority (github.com/)
+		repo = repo.slice(resource.authority.length + 1);
+		return repo;
+	}
+
+	getRepoUrl(): string {
+		const resource = this.getResource();
 		let { repo } = URIUtils.repoParams(resource);
 		return repo;
+	}
+
+	private getResource(): URI {
+		const contextService = (this as any).contextService as IWorkspaceContextService;
+		const { resource } = contextService.getWorkspace();
+		return resource;
 	}
 
 	public getActions(): IAction[] {
@@ -82,7 +96,7 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 		}
 		const workspace = this._contextService.getWorkspace();
 		ReactDOM.render(<RouterContext>
-			<Title repo={this.getTitle()} revState={workspace.revState} />
+			<Title repoDisplayName={this.getTitle()} repo={this.getRepoUrl()} revState={workspace.revState} />
 		</RouterContext>, titleElement);
 	}
 }
@@ -104,6 +118,7 @@ insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .mon
 });
 
 interface TitleProps {
+	repoDisplayName: string;
 	repo: string;
 	revState?: { zapRef?: string, commitID?: string, branch?: string };
 }
@@ -176,7 +191,7 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 						marginTop: 5,
 					}}>
 					<List width={21} style={{ opacity: 0.6, marginRight: whitespace[1] }} />
-					{this.props.repo.replace(/^github.com\//, "")}
+					{this.props.repoDisplayName}
 				</Link>
 			</Heading>
 			{this.state.revState && this.state.revState.zapRef &&
