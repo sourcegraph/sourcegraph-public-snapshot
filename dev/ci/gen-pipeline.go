@@ -119,7 +119,7 @@ func main() {
 	pipeline.AddStep(":typescript:",
 		Cmd("cd xlang/javascript-typescript/buildserver"),
 		Cmd("yarn install"),
-		Cmd("./node_modules/.bin/tsc"),
+		Cmd("yarn run build"),
 		Cmd("yarn run fmt-check"),
 		Cmd("yarn test"))
 

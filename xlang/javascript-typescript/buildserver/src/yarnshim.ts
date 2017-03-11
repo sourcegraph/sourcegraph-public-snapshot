@@ -11,8 +11,7 @@ import * as mkdirp from 'mkdirp';
 import * as rt from 'javascript-typescript-langserver/lib/request-type';
 
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
-import { readFile } from './vfs';
-
+import { path2uri } from 'javascript-typescript-langserver/lib/util';
 
 const EventReporter = require('yarn/lib/reporters').EventReporter;
 const Config = require('yarn/lib/config').default;
@@ -51,7 +50,7 @@ export async function info(cwd: string, globaldir: string, overlaydir: string, p
 	}
 
 	const packageInput = registries.npm.escapeName(packageName);
-	const {name, version} = parsePackageName(packageInput);
+	const { name, version } = parsePackageName(packageInput);
 
 	let result = await config.registries.npm.request(name);
 	if (!result) {
@@ -331,12 +330,12 @@ async function fetchRequestFromRemoteFS(inst: Install, excludePatterns: string[]
 	}
 
 	for (const registry of Object.keys(registries)) {
-		const {filename} = registries[registry];
+		const { filename } = registries[registry];
 		const loc = path.join(inst.config.cwd, filename);
 
 		let jsonRaw: string;
 		try {
-			jsonRaw = await readFile(fs, loc)
+			jsonRaw = await fs.getTextDocumentContent(path2uri('', loc))
 		} catch (e) {
 			continue;
 		}
@@ -348,7 +347,7 @@ async function fetchRequestFromRemoteFS(inst: Install, excludePatterns: string[]
 		Object.assign(inst.resolutions, json.resolutions);
 		Object.assign(manifest, json);
 
-		const pushDeps = (depType: string, {hint, optional}: { hint: string | null, optional: boolean }, isUsed: boolean) => {
+		const pushDeps = (depType: string, { hint, optional }: { hint: string | null, optional: boolean }, isUsed: boolean) => {
 			const depMap = json[depType];
 			for (const name in depMap) {
 				if (excludeNames.indexOf(name) >= 0) {

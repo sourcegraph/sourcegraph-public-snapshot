@@ -1,88 +1,90 @@
-import * as utils from 'javascript-typescript-langserver/lib/test/test-utils';
 
+import { describeTypeScriptService, initializeTypeScriptService, TestContext as TypeScriptServiceTestContext } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
 import { BuildHandler } from "../buildhandler";
-
+import * as assert from 'assert';
+global.Promise = require('bluebird');
 // forcing strict mode
 import * as util from 'javascript-typescript-langserver/lib/util';
 util.setStrict(true);
 
-import { testWithLangHandler } from 'javascript-typescript-langserver/lib/test/language-server-test';
-
-// Run language-server tests with build handler
-testWithLangHandler(() => new BuildHandler());
+interface TestContext extends TypeScriptServiceTestContext {
+	service: BuildHandler;
+}
 
 // Run build-handler-specific tests
-describe('LSP BuildHandler', function () {
+describe('BuildHandler', function () {
 	this.timeout(20000);
 
-	describe('single package.json at root', function () {
-		before(function (done: () => void) {
-			utils.setUp(new BuildHandler(), {
-				'package.json':
-				'{\n\
-					"name": "mypkg",\n\
-					"version": "4.0.2",\n\
-					"scripts": {\n\
-						"preinstall": "echo preinstall should not run && exit 1",\n\
-						"postinstall": "echo postinstall should not run && exit 1",\n\
-						"install": "echo install should not run && exit 1"\n\
-					},\n\
-					"dependencies": {\n\
-						"typescript": "2.1.1",\n\
-						"diff": "3.0.1"\n\
-					},\n\
-					"devDependencies": {\n\
-						"@types/diff": "0.0.31"\n\
-					}\n\
-				}\n',
-				'a.ts': "import * as diff from 'diff';\n\
-import { diffChars, IDiffResult } from 'diff';\n\
-\n\
-diffChars('foo', 'bar');\n\
-",
-				'b.ts': "import * as ts from 'typescript';\n\
-\n\
-var s ts.SyntaxKind;\n\
-var t = s;\n\
-",
-			}, done);
-		});
-		after(function (done: () => void) {
-			utils.tearDown(done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
-				textDocument: {
-					uri: 'file:///a.ts'
+	describeTypeScriptService(BuildHandler);
+
+	describe('Workspace with single package.json at root', function () {
+		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+			['file:///package.json', JSON.stringify({
+				"name": "mypkg",
+				"version": "4.0.2",
+				"scripts": {
+					"preinstall": "echo preinstall should not run && exit 1",
+					"postinstall": "echo postinstall should not run && exit 1",
+					"install": "echo install should not run && exit 1"
 				},
-				position: {
-					line: 0,
-					character: 12
+				"dependencies": {
+					"typescript": "2.1.1",
+					"diff": "3.0.1"
+				},
+				"devDependencies": {
+					"@types/diff": "0.0.31"
 				}
-			}, {
+			})],
+			['file:///a.ts', [
+				"import * as diff from 'diff';",
+				"import { diffChars, IDiffResult } from 'diff'",
+				"",
+				"diffChars('foo', 'bar')"
+			].join('\n')],
+			['file:///b.ts', [
+				"import * as ts from 'typescript';",
+				"",
+				"var s ts.SyntaxKind;",
+				"var t = s;",
+				"",
+			].join('\n')]
+		])));
+		describe('getDefinition()', <any>function (this: TestContext) {
+			specify('cross-repo definition 1', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 0,
+						character: 12
+					}
+				});
+				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
 						start: {
 							line: 8,
-							character: 0
+							character: 18
 						},
 						end: {
-							line: 86,
-							character: 1
+							line: 8,
+							character: 24
 						}
 					}
-				}, done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 23
-				}
-			}, {
+				}]);
+			});
+			specify('cross-repo definition 2', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 0,
+						character: 23
+					}
+				});
+				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
 						start: {
@@ -94,76 +96,79 @@ var t = s;\n\
 							character: 0
 						}
 					}
-				}, done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 1,
-					character: 10
-				}
-			}, [{
-				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
-				range: {
-					start: {
-						line: 55,
-						character: 4
+				}]);
+			});
+			specify('cross-repo definition 3', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
 					},
-					end: {
-						line: 55,
-						character: 67
+					position: {
+						line: 1,
+						character: 10
 					}
-				}
-			}, {
-				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
-				range: {
-					start: {
-						line: 55,
-						character: 4
+				});
+				assert.deepEqual(result, [{
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					range: {
+						start: {
+							line: 55,
+							character: 13
+						},
+						end: {
+							line: 55,
+							character: 22
+						}
+					}
+				}, {
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					range: {
+						start: {
+							line: 55,
+							character: 13
+						},
+						end: {
+							line: 55,
+							character: 22
+						}
+					}
+				}]);
+			});
+			specify('cross-repo definition 4', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
 					},
-					end: {
-						line: 55,
-						character: 67
+					position: {
+						line: 1,
+						character: 21
 					}
-				}
-			}], done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 1,
-					character: 21
-				}
-			}, {
+				});
+				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
 						start: {
 							line: 9,
-							character: 4
+							character: 14
 						},
 						end: {
-							line: 14,
-							character: 5
+							line: 9,
+							character: 25
 						}
 					}
-				}, done);
-		})
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 1,
-					character: 40
-				}
-			}, {
+				}]);
+			})
+			specify('cross-repo definition 5', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 1,
+						character: 40
+					}
+				});
+				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
 						start: {
@@ -175,41 +180,46 @@ var t = s;\n\
 							character: 0
 						}
 					}
-				}, done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 3,
-					character: 0
-				}
-			}, {
+				}]);
+			});
+			specify('cross-repo definition 6', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 3,
+						character: 0
+					}
+				});
+				assert.deepEqual(result, [{
 					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
 					range: {
 						start: {
 							line: 55,
-							character: 4
+							character: 13
 						},
 						end: {
 							line: 55,
-							character: 67
+							character: 22
 						}
 					}
-				}, done);
+				}]);
+			});
 		});
-		it('cross-repo xdefinition', async function (done: (err?: Error) => void) {
-			utils.xdefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 12
-				}
-			}, {
+		describe('getXdefinition()', <any>function (this: TestContext) {
+			specify('cross-repo xdefinition 1', <any>async function (this: TestContext) {
+				const result = await this.service.getXdefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 0,
+						character: 12
+					}
+				});
+				assert.deepEqual(result, [{
+					location: undefined,
 					symbol: {
 						containerKind: "",
 						containerName: "",
@@ -221,18 +231,20 @@ var t = s;\n\
 							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
-				}, done);
-		});
-		it('cross-repo xdefinition', async function (done: (err?: Error) => void) {
-			utils.xdefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 23
-				}
-			}, {
+				}]);
+			});
+			specify('cross-repo xdefinition 2', <any>async function (this: TestContext) {
+				const result = await this.service.getXdefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 0,
+						character: 23
+					}
+				});
+				assert.deepEqual(result, [{
+					location: undefined,
 					symbol: {
 						containerKind: "",
 						containerName: "",
@@ -244,53 +256,58 @@ var t = s;\n\
 							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
-				}, done);
-		});
-		it('cross-repo xdefinition', async function (done: (err?: Error) => void) {
-			utils.xdefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 1,
-					character: 10
-				}
-			}, [{
-				symbol: {
-					containerKind: "",
-					containerName: "diff",
-					kind: "function",
-					name: "diffChars",
-					package: {
-						name: "@types/diff",
-						version: "0.0.31",
-						repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
+				}]);
+			});
+			specify('cross-repo xdefinition 3', <any>async function (this: TestContext) {
+				const result = await this.service.getXdefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
 					},
-				},
-			}, {
-				symbol: {
-					containerKind: "",
-					containerName: "diff",
-					kind: "function",
-					name: "diffChars",
-					package: {
-						name: "@types/diff",
-						version: "0.0.31",
-						repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
+					position: {
+						line: 1,
+						character: 10
+					}
+				});
+				assert.deepEqual(result, [{
+					location: undefined,
+					symbol: {
+						containerKind: "",
+						containerName: "diff",
+						kind: "function",
+						name: "diffChars",
+						package: {
+							name: "@types/diff",
+							version: "0.0.31",
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
+						},
 					},
-				},
-			}], done);
-		});
-		it('cross-repo xdefinition', async function (done: (err?: Error) => void) {
-			utils.xdefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 1,
-					character: 21
-				}
-			}, {
+				}, {
+					location: undefined,
+					symbol: {
+						containerKind: "",
+						containerName: "diff",
+						kind: "function",
+						name: "diffChars",
+						package: {
+							name: "@types/diff",
+							version: "0.0.31",
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
+						},
+					},
+				}]);
+			});
+			specify('cross-repo xdefinition 4', <any>async function (this: TestContext) {
+				const result = await this.service.getXdefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 1,
+						character: 21
+					}
+				});
+				assert.deepEqual(result, [{
+					location: undefined,
 					symbol: {
 						containerKind: "",
 						containerName: "diff",
@@ -302,18 +319,20 @@ var t = s;\n\
 							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
-				}, done);
-		});
-		it('cross-repo xdefinition', async function (done: (err?: Error) => void) {
-			utils.xdefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 1,
-					character: 40
-				}
-			}, {
+				}]);
+			});
+			specify('cross-repo xdefinition 5', <any>async function (this: TestContext) {
+				const result = await this.service.getXdefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 1,
+						character: 40
+					}
+				});
+				assert.deepEqual(result, [{
+					location: undefined,
 					symbol: {
 						containerKind: "",
 						containerName: "",
@@ -325,18 +344,20 @@ var t = s;\n\
 							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
-				}, done);
-		});
-		it('cross-repo xdefinition', async function (done: (err?: Error) => void) {
-			utils.xdefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 3,
-					character: 0
-				}
-			}, {
+				}]);
+			});
+			specify('cross-repo xdefinition 6', <any>async function (this: TestContext) {
+				const result = await this.service.getXdefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 3,
+						character: 0
+					}
+				});
+				assert.deepEqual(result, [{
+					location: undefined,
 					symbol: {
 						containerKind: "",
 						containerName: "JsDiff",
@@ -348,18 +369,20 @@ var t = s;\n\
 							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
 						},
 					},
-				}, done);
-		})
-		it('cross-repo xdefinition to non-DefinitelyTyped package', async function (done: (err?: Error) => void) {
-			utils.xdefinition({
-				textDocument: {
-					uri: 'file:///b.ts'
-				},
-				position: {
-					line: 2,
-					character: 9
-				}
-			}, {
+				}]);
+			})
+			specify('cross-repo xdefinition to non-DefinitelyTyped package', <any>async function (this: TestContext) {
+				const result = await this.service.getXdefinition({
+					textDocument: {
+						uri: 'file:///b.ts'
+					},
+					position: {
+						line: 2,
+						character: 9
+					}
+				});
+				assert.deepEqual(result, [{
+					location: undefined,
 					symbol: {
 						containerKind: "",
 						containerName: "ts",
@@ -370,10 +393,11 @@ var t = s;\n\
 							version: "2.1.1",
 						},
 					},
-				}, done);
+				}]);
+			});
 		});
-		it('workspace/xreferences', async function (done: (err?: Error) => void) {
-			utils.definition({
+		specify('getWorkspaceReference()', <any>async function (this: TestContext) {
+			const definitionResult = await this.service.getDefinition({
 				textDocument: {
 					uri: 'file:///a.ts'
 				},
@@ -381,119 +405,114 @@ var t = s;\n\
 					line: 0,
 					character: 12
 				}
-			}, {
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
-					range: {
-						start: {
-							line: 8,
-							character: 0
-						},
-						end: {
-							line: 86,
-							character: 1
-						}
+			});
+			assert.deepEqual(definitionResult, [{
+				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+				range: {
+					start: {
+						line: 8,
+						character: 18
+					},
+					end: {
+						line: 8,
+						character: 24
 					}
-				}, () => {
-					utils.workspaceReferences({
-						query: {
-							containerKind: "",
-							containerName: "diff",
-							kind: "function",
-							name: "diffChars",
-							package: {
-								name: "@types/diff",
-								version: "0.0.31",
+				}
+			}]);
+			const referencesResult = await this.service.getWorkspaceReference({
+				query: {
+					containerKind: "",
+					containerName: "diff",
+					kind: "function",
+					name: "diffChars",
+					package: {
+						name: "@types/diff",
+						version: "0.0.31",
+					},
+				}
+			});
+			assert.deepEqual(referencesResult, [
+				{
+					reference: {
+						range: {
+							end: {
+								character: 18,
+								line: 1,
 							},
-						}
-					}, [{
-						reference: {
-							range: {
-								end: {
-									character: 18,
-									line: 1,
-								},
-								start: {
-									character: 8,
-									line: 1,
-								},
-							},
-							uri: "file:///a.ts",
-						},
-						symbol: {
-							containerKind: "",
-							containerName: "diff",
-							kind: "function",
-							name: "diffChars",
-							package: {
-								name: "@types/diff",
-								version: "0.0.31",
+							start: {
+								character: 8,
+								line: 1,
 							},
 						},
-					}, {
-						reference: {
-							range: {
-								end: {
-									character: 18,
-									line: 1,
-								},
-								start: {
-									character: 8,
-									line: 1,
-								},
-							},
-							uri: "file:///a.ts",
+						uri: "file:///a.ts",
+					},
+					symbol: {
+						containerKind: "",
+						containerName: "diff",
+						kind: "function",
+						name: "diffChars",
+						package: {
+							name: "@types/diff",
+							version: "0.0.31",
 						},
-						symbol: {
-							containerKind: "",
-							containerName: "diff",
-							kind: "function",
-							name: "diffChars",
-							package: {
-								name: "@types/diff",
-								version: "0.0.31",
+					},
+				},
+				{
+					reference: {
+						range: {
+							end: {
+								character: 18,
+								line: 1,
+							},
+							start: {
+								character: 8,
+								line: 1,
 							},
 						},
-					}], done);
-				});
+						uri: "file:///a.ts",
+					},
+					symbol: {
+						containerKind: "",
+						containerName: "diff",
+						kind: "function",
+						name: "diffChars",
+						package: {
+							name: "@types/diff",
+							version: "0.0.31",
+						},
+					},
+				}
+			]);
 		});
 	});
 
-	describe('multiple package.json', function () {
-		before(function (done: () => void) {
-			utils.setUp(new BuildHandler(), {
-				'package.json':
-				'{\n\
-					"name": "rootpkg",\n\
-					"version": "4.0.2",\n\
-					"dependencies": {\n\
-						"diff": "3.0.1"\n\
-					},\n\
-					"devDependencies": {\n\
-						"@types/diff": "0.0.31"\n\
-					}\n\
-				}\n',
-				'a.ts': "import * as diff from 'diff';",
-				'foo': {
-					'b.ts': "import * as resolve from 'resolve';",
-					'package.json':
-					'{\n\
-					"name": "foopkg",\n\
-					"version": "1.0.3",\n\
-					"dependencies": {\n\
-						"resolve": "1.1.7"\n\
-					},\n\
-					"devDependencies": {\n\
-						"@types/resolve": "0.0.4"\n\
-					}\n\
-				}\n',
+	describe('Workspace with multiple package.json files', <any>function (this: TestContext) {
+		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+			['file:///package.json', JSON.stringify({
+				"name": "rootpkg",
+				"version": "4.0.2",
+				"dependencies": {
+					"diff": "3.0.1"
 				},
-			}, done);
-		});
-		after(function (done: () => void) {
-			utils.tearDown(done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
+				"devDependencies": {
+					"@types/diff": "0.0.31"
+				}
+			})],
+			['file:///a.ts', "import * as diff from 'diff';"],
+			['file:///foo/b.ts', "import * as resolve from 'resolve';"],
+			['file:///foo/package.json', JSON.stringify({
+				"name": "foopkg",
+				"version": "1.0.3",
+				"dependencies": {
+					"resolve": "1.1.7"
+				},
+				"devDependencies": {
+					"@types/resolve": "0.0.4"
+				}
+			})]
+		])));
+		specify('cross-repo definition 1', <any>async function (this: TestContext) {
+			const result = await this.service.getDefinition({
 				textDocument: {
 					uri: 'file:///a.ts'
 				},
@@ -501,22 +520,23 @@ var t = s;\n\
 					line: 0,
 					character: 12
 				}
-			}, {
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
-					range: {
-						start: {
-							line: 8,
-							character: 0
-						},
-						end: {
-							line: 86,
-							character: 1
-						}
+			});
+			assert.deepEqual(result, [{
+				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+				range: {
+					start: {
+						line: 8,
+						character: 18
+					},
+					end: {
+						line: 8,
+						character: 24
 					}
-				}, done);
+				}
+			}]);
 		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
+		specify('cross-repo definition 2', <any>async function (this: TestContext) {
+			const result = await this.service.getDefinition({
 				textDocument: {
 					uri: 'file:///foo/b.ts'
 				},
@@ -524,46 +544,37 @@ var t = s;\n\
 					line: 0,
 					character: 26
 				}
-			}, {
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
-					range: {
-						start: {
-							line: 13,
-							character: 0
-						},
-						end: {
-							line: 100,
-							character: 0
-						}
+			});
+			assert.deepEqual(result, [{
+				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
+				range: {
+					start: {
+						line: 13,
+						character: 0
+					},
+					end: {
+						line: 100,
+						character: 0
 					}
-				}, done);
+				}
+			}]);
 		});
 	});
 
-	describe('vendored dependencies', function () {
-		before(function (done: () => void) {
-			utils.setUp(new BuildHandler(), {
-				'package.json':
-				'{\n\
-					"name": "rootpkg",\n\
-					"version": "4.0.2",\n\
-					"dependencies": {\n\
-						"diff": "1.0.1"\n\
-					}\n\
-				}\n',
-				'a.ts': "import { x } from 'diff';",
-				'node_modules': {
-					'diff': {
-						'index.d.ts': "export const x = 1;",
-					},
+	describe('Workspace with vendored dependencies', <any>function (this: TestContext) {
+		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+			['file:///package.json', JSON.stringify({
+				"name": "rootpkg",
+				"version": "4.0.2",
+				"dependencies": {
+					"diff": "1.0.1"
 				}
-			}, done);
-		});
-		after(function (done: () => void) {
-			utils.tearDown(done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
+			})],
+			['file:///a.ts', "import { x } from 'diff';"],
+			['file:///node_modules/diff/index.d.ts', "export const x = 1;"]
+		])));
+		specify('cross-repo definition 1', <any>async function (this: TestContext) {
+			const result = await this.service.getDefinition({
 				textDocument: {
 					uri: 'file:///a.ts'
 				},
@@ -571,41 +582,36 @@ var t = s;\n\
 					line: 0,
 					character: 9
 				}
-			}, {
-					uri: 'file:///node_modules/diff/index.d.ts',
-					range: {
-						start: {
-							line: 0,
-							character: 13
-						},
-						end: {
-							line: 0,
-							character: 18
-						}
+			});
+			assert.deepEqual(result, [{
+				uri: 'file:///node_modules/diff/index.d.ts',
+				range: {
+					start: {
+						line: 0,
+						character: 13
+					},
+					end: {
+						line: 0,
+						character: 14
 					}
-				}, done);
+				}
+			}]);
 		});
 	});
 
-	describe('dependency installation should not run scripts (javascript-dep-npm\'s scripts will fail)', function () {
-		before(function (done: () => void) {
-			utils.setUp(new BuildHandler(), {
-				'package.json':
-				'{\n\
-					"name": "rootpkg",\n\
-					"version": "4.0.2",\n\
-					"dependencies": {\n\
-						"javascript-dep-npm": "https://github.com/sgtest/javascript-dep-npm"\n\
-					}\n\
-				}\n',
-				'a.ts': "import * as xyz from 'javascript-dep-npm';",
-			}, done);
-		});
-		after(function (done: () => void) {
-			utils.tearDown(done);
-		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
+	describe('Dependency installation should not run scripts (javascript-dep-npm\'s scripts will fail)', function () {
+		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+			['file:///package.json', JSON.stringify({
+				"name": "rootpkg",
+				"version": "4.0.2",
+				"dependencies": {
+					"javascript-dep-npm": "https://github.com/sgtest/javascript-dep-npm"
+				}
+			})],
+			['file:///a.ts', "import * as xyz from 'javascript-dep-npm';"],
+		])));
+		specify('cross-repo definition 1', <any>async function (this: TestContext) {
+			const result = await this.service.getDefinition({
 				textDocument: {
 					uri: 'file:///a.ts'
 				},
@@ -613,22 +619,23 @@ var t = s;\n\
 					line: 0,
 					character: 12
 				}
-			}, {
-					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
-					range: {
-						start: {
-							line: 0,
-							character: 0
-						},
-						end: {
-							line: 1,
-							character: 0
-						}
+			});
+			assert.deepEqual(result, [{
+				uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
+				range: {
+					start: {
+						line: 0,
+						character: 0
+					},
+					end: {
+						line: 1,
+						character: 0
 					}
-				}, done);
+				}
+			}]);
 		});
-		it('cross-repo definition', async function (done: (err?: Error) => void) {
-			utils.definition({
+		specify('cross-repo definition 2', <any>async function (this: TestContext) {
+			const result = await this.service.getDefinition({
 				textDocument: {
 					uri: 'file:///a.ts'
 				},
@@ -636,19 +643,20 @@ var t = s;\n\
 					line: 0,
 					character: 24
 				}
-			}, {
-					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
-					range: {
-						start: {
-							line: 0,
-							character: 0
-						},
-						end: {
-							line: 1,
-							character: 0
-						}
+			});
+			assert.deepEqual(result, [{
+				uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
+				range: {
+					start: {
+						line: 0,
+						character: 0
+					},
+					end: {
+						line: 1,
+						character: 0
 					}
-				}, done);
+				}
+			}]);
 		});
 	});
 });

@@ -5,27 +5,28 @@ import * as path from 'path';
 import * as os from 'os';
 
 import {
-	InitializeParams,
 	TextDocumentPositionParams,
-	ReferenceParams,
 	Location,
 	Hover,
-	DocumentSymbolParams,
 	SymbolInformation,
-	CompletionList,
-	DidOpenTextDocumentParams,
-	DidCloseTextDocumentParams,
-	DidChangeTextDocumentParams,
-	DidSaveTextDocumentParams
+	InitializeResult
 } from 'vscode-languageserver';
+import { CancellationToken } from 'vscode-jsonrpc';
 
 import { TypeScriptService } from 'javascript-typescript-langserver/lib/typescript-service';
-import { LanguageHandler } from 'javascript-typescript-langserver/lib/lang-handler';
 import { install, info, infoAlt, parseGitHubInfo } from './yarnshim';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
-import { LayeredFileSystem, LocalRootedFileSystem, walkDirs, readFile } from './vfs';
+import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
-import * as rt from 'javascript-typescript-langserver/lib/request-type';
+import {
+	DependencyReference,
+	PackageDescriptor,
+	SymbolLocationInformation,
+	WorkspaceReferenceParams,
+	WorkspaceSymbolParams,
+	ReferenceInformation,
+	InitializeParams
+} from 'javascript-typescript-langserver/lib/request-type';
 
 interface HasURI {
 	uri: string;
@@ -45,65 +46,67 @@ console.error("Using", yarnGlobalDir, "as yarn global directory");
  * file URIs in the response from the TypeScriptService that refer to
  * files that correspond to fetched dependencies.
  */
-export class BuildHandler implements LanguageHandler {
-	private remoteFs: FileSystem;
-	private ls: TypeScriptService;
-	private lsfs: FileSystem;
+export class BuildHandler extends TypeScriptService {
+	private remoteFileSystem: FileSystem;
 	private yarndir: string;
 	private yarnOverlayRoot: string;
 
 	/**
-	 * managedModuleConfig maps from directory to configuration for
+	 * managedModuleConfig maps from directory to package.json for
 	 * each module managed by the build handler. It excludes modules
 	 * already vendored in the repository.
 	 */
 	private managedModuleConfig = new Map<string, any>();
-	private managedModuleInit = new Map<string, Promise<Map<string, rt.DependencyReference>>>();
+	private managedModuleInit = new Map<string, Promise<Map<string, DependencyReference>>>();
 	private puntWorkspaceSymbol = false;
 
-	constructor() {
-		this.ls = new TypeScriptService();
+	async initialize(params: InitializeParams, token = CancellationToken.None): Promise<InitializeResult> {
+		// Workaround for https://github.com/sourcegraph/sourcegraph/issues/4542
+		if (params.rootPath && params.rootPath.startsWith('file://')) {
+			params.rootPath = uri2path(params.rootPath);
+		}
+		return await super.initialize(params, token);
 	}
 
-	async initialize(params: InitializeParams, remoteFs: FileSystem, strict: boolean): Promise<rt.InitializeResult> {
+	private async installDependencies(): Promise<void> {
+		this.remoteFileSystem = this.fileSystem;
 		const yarndir = await new Promise<string>((resolve, reject) => {
 			temp.mkdir("tsjs-yarn", (err: any, dirPath: string) => err ? reject(err) : resolve(dirPath));
 		});
 		this.yarndir = yarndir;
 		this.yarnOverlayRoot = path.join(yarndir, "workspace");
-		this.remoteFs = remoteFs;
-
-		await walkDirs(remoteFs, "/", async (p, entries) => {
-			let foundPackageJson = false;
-			let foundModulesDir = false;
-			for (const entry of entries) {
-				if (!entry.dir && entry.name === "package.json") {
-					foundPackageJson = true;
-				}
-				if (entry.dir && entry.name === "node_modules") {
-					foundModulesDir = true
+		// Search for package.json files
+		const uris = await this.remoteFileSystem.getWorkspaceFiles(undefined);
+		const files = uris.map(uri => uri2path(uri));
+		for (const [i, file] of files.entries()) {
+			if (file.endsWith('package.json')) {
+				const directory = path.dirname(file)
+				// Check that the node_modules directory for the package.json is not vendored
+				const nodeModulesDir = path.join(directory, 'node_modules');
+				if (!files.some(file => file.startsWith(nodeModulesDir))) {
+					// TODO do these in parallel
+					const packageJson = JSON.parse(await this.remoteFileSystem.getTextDocumentContent(uris[i]));
+					if (packageJson.name === 'definitely-typed') {
+						this.puntWorkspaceSymbol = true;
+					}
+					this.managedModuleConfig.set(directory, packageJson);
 				}
 			}
-			if (foundPackageJson && !foundModulesDir) {
-				const config = JSON.parse(await readFile(remoteFs, path.join(p, 'package.json')));
-				if (config['name'] === 'definitely-typed') {
-					this.puntWorkspaceSymbol = true;
-				}
-				this.managedModuleConfig.set(p, config);
-			}
-		});
-
-		const overlayFs = new LocalRootedFileSystem(this.yarnOverlayRoot);
-		const lsfs = new LayeredFileSystem([overlayFs, remoteFs]);
-		this.lsfs = lsfs;
-
-		return this.ls.initialize(params, lsfs, strict);
+		}
+		const overlayFs = new LocalRootedFileSystem(this.root, this.yarnOverlayRoot);
+		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 
-	shutdown(): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
-			rimraf(this.yarndir, (err) => err ? reject(err) : resolve());
+	protected async beforeProjectInit(): Promise<void> {
+		await this.installDependencies();
+	}
+
+	async shutdown(): Promise<void> {
+		// Delete dependencies folder
+		await new Promise<void>((resolve, reject) => {
+			rimraf(this.yarndir, err => err ? reject(err) : resolve());
 		});
+		await super.shutdown();
 	}
 
 	private getManagedModuleDir(uri: string): string | null {
@@ -142,7 +145,7 @@ export class BuildHandler implements LanguageHandler {
 	 * even more to install just that dependency in a given managed
 	 * module directory.
 	 */
-	private async ensureDependency(dependency: rt.PackageDescriptor, dependeeName?: string): Promise<void> {
+	private async ensureDependency(dependency: PackageDescriptor, dependeeName?: string): Promise<void> {
 		if (!this.managedModuleInit) {
 			throw new Error("build handler is not yet initialized");
 		}
@@ -159,8 +162,8 @@ export class BuildHandler implements LanguageHandler {
 	private async initManagedModule(dir: string): Promise<void> {
 		let ready = this.managedModuleInit.get(dir);
 		if (!ready) {
-			ready = install(this.remoteFs, dir, yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
-				await this.ls.projectManager.refreshFileTree(dir, true);
+			ready = install(this.remoteFileSystem, dir, yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
+				await this.projectManager.refreshFileTree(dir, true);
 				return pathToDep;
 			}, (err) => {
 				this.managedModuleInit.delete(dir);
@@ -207,7 +210,7 @@ export class BuildHandler implements LanguageHandler {
 		} catch (e) { }
 		if (!pkginfo) {
 			try {
-				pkginfo = await infoAlt(this.remoteFs, cwd, yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
+				pkginfo = await infoAlt(this.remoteFileSystem, cwd, yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
 			} catch (e) {
 				console.error("could not rewrite dependency uri,", uri, ", due to error:", e);
 				return { uri: uri, rewritten: false };
@@ -252,10 +255,6 @@ export class BuildHandler implements LanguageHandler {
 		}
 	}
 
-	async getCompletions(params: TextDocumentPositionParams): Promise<CompletionList> {
-		return this.ls.getCompletions(params);
-	}
-
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
 		let locs: Location[] = [];
 		// First, attempt to get definition before dependencies
@@ -263,28 +262,28 @@ export class BuildHandler implements LanguageHandler {
 		// fetching to finish and then retry.
 		try {
 			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
-			locs = await this.ls.getDefinition(params);
+			locs = await super.getDefinition(params);
 		} catch (e) { }
 		if (!locs || locs.length === 0) {
 			await this.ensureDependenciesForFile(params.textDocument.uri);
-			locs = await this.ls.getDefinition(params);
+			locs = await super.getDefinition(params);
 		}
 		await this.rewriteURIs(locs);
 		return locs;
 	}
 
-	async getXdefinition(params: TextDocumentPositionParams): Promise<rt.SymbolLocationInformation[]> {
-		let syms: rt.SymbolLocationInformation[] = [];
+	async getXdefinition(params: TextDocumentPositionParams): Promise<SymbolLocationInformation[]> {
+		let syms: SymbolLocationInformation[] = [];
 		// First, attempt to get definition before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
 			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
-			syms = await this.ls.getXdefinition(params);
+			syms = await super.getXdefinition(params);
 		} catch (e) { }
 		if (!syms || syms.length === 0) {
 			await this.ensureDependenciesForFile(params.textDocument.uri);
-			syms = await this.ls.getXdefinition(params);
+			syms = await super.getXdefinition(params);
 		}
 
 		// For symbols defined in dependencies, remove the location field and add in dependency package metadata.
@@ -294,14 +293,14 @@ export class BuildHandler implements LanguageHandler {
 		return syms;
 	}
 
-	private async rewriteSymbol(sym: rt.SymbolLocationInformation): Promise<void> {
+	private async rewriteSymbol(sym: SymbolLocationInformation): Promise<void> {
 		const dep = await this.getDepContainingSymbol(sym);
 		if (!dep) {
 			let moduleDir = this.getManagedModuleDir(sym.location.uri);
 			if (!moduleDir) {
 				return;
 			}
-			const pkgJson = JSON.parse(this.ls.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
+			const pkgJson = JSON.parse(super.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
 			let name = pkgJson['name'];
 			let version = pkgJson['version'];
 			let repoURL = pkgJson['repository'] ? pkgJson['repository']['url'] : undefined;
@@ -328,7 +327,7 @@ export class BuildHandler implements LanguageHandler {
 	 * getDepContainingSymbol returns the dependency that contains the
 	 * symbol or null if the symbol is not defined in a dependency.
 	 */
-	private async getDepContainingSymbol(sym: rt.SymbolLocationInformation): Promise<rt.DependencyReference | null> {
+	private async getDepContainingSymbol(sym: SymbolLocationInformation): Promise<DependencyReference | null> {
 		const moduledir = this.getManagedModuleDir(sym.location.uri);
 		if (!moduledir) {
 			return null;
@@ -354,40 +353,24 @@ export class BuildHandler implements LanguageHandler {
 		// fetching to finish and then retry.
 		try {
 			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
-			hover = await this.ls.getHover(params)
+			hover = await super.getHover(params)
 		} catch (e) { }
 		if (!hover) {
 			await this.ensureDependenciesForFile(params.textDocument.uri);
-			hover = await this.ls.getHover(params);
+			hover = await super.getHover(params);
 		}
 		await this.rewriteURIs(hover)
 		return hover;
 	}
 
-	getReferences(params: ReferenceParams): Promise<Location[]> {
-		return this.ls.getReferences(params);
-	}
-
-	getDependencies(): Promise<rt.DependencyReference[]> {
-		return this.ls.getDependencies();
-	}
-
-	getPackages(): Promise<rt.PackageInformation[]> {
-		return this.ls.getPackages();
-	}
-
-	async getWorkspaceSymbols(params: rt.WorkspaceSymbolParams): Promise<SymbolInformation[]> {
+	async getWorkspaceSymbols(params: WorkspaceSymbolParams): Promise<SymbolInformation[]> {
 		if (this.puntWorkspaceSymbol && (!params.symbol || !params.symbol['package'])) {
 			return Promise.reject("workspace/symbol unsupported on this repository");
 		}
-		return this.ls.getWorkspaceSymbols(params);
+		return super.getWorkspaceSymbols(params);
 	}
 
-	getDocumentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
-		return this.ls.getDocumentSymbol(params);
-	}
-
-	async getWorkspaceReference(params: rt.WorkspaceReferenceParams): Promise<rt.ReferenceInformation[]> {
+	async getWorkspaceReference(params: WorkspaceReferenceParams): Promise<ReferenceInformation[]> {
 		const dependeePackageName = params.hints ? params.hints.dependeePackageName : undefined;
 		await this.ensureDependency(params.query.package, dependeePackageName);
 
@@ -395,28 +378,14 @@ export class BuildHandler implements LanguageHandler {
 		const pkgData = params.query.package;
 		params.query.package = undefined;
 
-		const refs = await this.ls.getWorkspaceReference(params);
+		const refs = await super.getWorkspaceReference(params);
 
-		for (const ref of refs) {
-			ref.symbol.package = pkgData;
+		if (pkgData) {
+			for (const ref of refs) {
+				ref.symbol.package = pkgData;
+			}
 		}
 		return refs;
-	}
-
-	didOpen(params: DidOpenTextDocumentParams) {
-		return this.ls.didOpen(params);
-	}
-
-	didChange(params: DidChangeTextDocumentParams) {
-		return this.ls.didChange(params);
-	}
-
-	didClose(params: DidCloseTextDocumentParams) {
-		return this.ls.didClose(params);
-	}
-
-	didSave(params: DidSaveTextDocumentParams) {
-		return this.ls.didSave(params);
 	}
 }
 
