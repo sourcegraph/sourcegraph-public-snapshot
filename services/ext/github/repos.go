@@ -381,14 +381,14 @@ func listGitHubReposWithDetailsPage(ctx context.Context, opt *github.RepositoryL
 	ghRepos, resp, err := client(ctx).Repositories.List("", opt)
 
 	if err != nil {
-		return nil, checkResponse(ctx, resp, err, "github.Repos.ListReposWithDetails")
+		return nil, checkResponse(ctx, resp, err, "github.Repos.listGitHubReposWithDetailsPage")
 	}
 
 	var repos []*sourcegraph.GitHubRepoWithDetails
 	for _, ghRepo := range ghRepos {
 		ghLanguages, resp, err := client(ctx).Repositories.ListLanguages(*ghRepo.Owner.Login, *ghRepo.Name)
 		if err != nil {
-			return nil, checkResponse(ctx, resp, err, "github.Repos.ListReposWithDetails")
+			return nil, checkResponse(ctx, resp, err, "github.Repos.listGitHubReposWithDetailsPage")
 		}
 		var languages []*sourcegraph.GitHubRepoLanguage
 		for k, v := range ghLanguages {
@@ -396,7 +396,12 @@ func listGitHubReposWithDetailsPage(ctx context.Context, opt *github.RepositoryL
 		}
 		commits, resp, err := client(ctx).Repositories.ListCommits(*ghRepo.Owner.Login, *ghRepo.Name, nil)
 		if err != nil {
-			return nil, checkResponse(ctx, resp, err, "github.Repos.ListReposWithDetails")
+			// 409 errors are returned by GitHub when we check for commits on an empty repo. So instead
+			// of returning an error when a 409 is returned, just set commits to an empty array
+			if resp.StatusCode != 409 {
+				return nil, checkResponse(ctx, resp, err, "github.Repos.listGitHubReposWithDetailsPage")
+			}
+			commits = make([]*github.RepositoryCommit, 0)
 		}
 		var commitTimes []*time.Time
 		for _, ghCommit := range commits {

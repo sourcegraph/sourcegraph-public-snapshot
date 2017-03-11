@@ -167,7 +167,7 @@ func (s *repos) ListWithDetails(ctx context.Context) (res *sourcegraph.GitHubRep
 
 	ghReposWithDetails, err := github.ListAllGitHubReposWithDetails(ctx, &gogithub.RepositoryListOptions{})
 	if err != nil {
-		log15.Warn("failed to fetch some remote repositories", "source", "GitHub", "error", err)
+		log15.Warn("backend.ListWithDetails: failed to fetch some remote repositories", "source", "GitHub", "error", err)
 		ghReposWithDetails = nil
 	}
 

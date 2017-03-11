@@ -26,8 +26,9 @@ type DeviceInfo struct {
 
 // UserInfo represents user-level properties
 type UserInfo struct {
-	BusinessUserID string `json:"business_user_id"`
-	Email          string `json:"email"`
+	BusinessUserID    string `json:"business_user_id"`
+	Email             string `json:"email"`
+	IsPrivateCodeUser bool   `json:"is_private_code_user"`
 }
 
 // TrackedObject represents a user data object to be tracked and stored

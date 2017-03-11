@@ -118,9 +118,17 @@ func (c *Client) NewTrackedObjects(event string) *TrackedObjects {
 }
 
 func generateUserInfo(user *auth.Actor) *UserInfo {
+	isPrivateCodeUser := false
+	for _, v := range user.GitHubScopes {
+		if v == "repo" {
+			isPrivateCodeUser = true
+			break
+		}
+	}
 	return &UserInfo{
-		BusinessUserID: user.Login,
-		Email:          user.Email,
+		BusinessUserID:    user.Login,
+		Email:             user.Email,
+		IsPrivateCodeUser: isPrivateCodeUser,
 	}
 }
 
