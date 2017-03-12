@@ -10,7 +10,7 @@ set -x
 if [ ! -d "java-langserver" ]; then
     git clone git@github.com:sourcegraph/java-langserver.git java-langserver
 else
-    cd java-langserver && git pull && cd ..
+    cd java-langserver && git fetch origin && git checkout origin/master && cd ..
 fi
 
 cd java-langserver
