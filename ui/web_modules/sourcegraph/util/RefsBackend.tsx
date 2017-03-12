@@ -6,8 +6,8 @@ import { Observable, Subject } from "rxjs";
 import URI from "vs/base/common/uri";
 import { Position } from "vs/editor/common/core/position";
 import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
-import { IReferenceInformation, Location, WorkspaceReferenceProviderRegistry } from "vs/editor/common/modes";
-import { getDeclarationsAtPosition } from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
+import { IReferenceInformation, LanguageIdentifier, Location, WorkspaceReferenceProviderRegistry } from "vs/editor/common/modes";
+import { getDefinitionsAtPosition } from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
 import { getHover } from "vs/editor/contrib/hover/common/hover";
 import { provideReferences as getReferences, provideWorkspaceReferences } from "vs/editor/contrib/referenceSearch/common/referenceSearch";
 
@@ -71,7 +71,7 @@ export interface ReferenceCommitInfo {
 export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): Promise<DefinitionData | null> {
 	const position = new Position(pos.lineNumber, pos.column);
 	const hoversPromise = getHover(model, position);
-	const defPromise = getDeclarationsAtPosition(model, position);
+	const defPromise = getDefinitionsAtPosition(model, position);
 
 	const [hovers, def] = await Promise.all([hoversPromise, defPromise]);
 
@@ -279,12 +279,11 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 			// Merge the observables from each request into a single observable.
 			.flatMap(depRef => {
 				const repo = depRefs.RepoData[depRef.RepoID];
-				const modeId = model.getModeId();
 				let hasResults = false;
 
 				// Make the actual request to get global references.
 				log(`starting request ${repo.URI}`);
-				return fetchGlobalReferencesForDependentRepoStreaming(repo, modeId, symbol, depRef)
+				return fetchGlobalReferencesForDependentRepoStreaming(repo, model.getLanguageIdentifier(), symbol, depRef)
 					.take(MAX_REFS_PER_REPO)
 					.do(location => {
 						log(`progress ${repo.URI}`);
@@ -317,7 +316,7 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 	});
 }
 
-function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, modeID: string, symbol: any, reference: DepReference): Observable<Location> {
+function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, language: LanguageIdentifier, symbol: any, reference: DepReference): Observable<Location> {
 	if (!repo.URI || !repo.IndexedRevision) {
 		return Observable.empty();
 	}
@@ -333,18 +332,21 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, modeID: stri
 			isTooLargeForHavingARichMode(): boolean {
 				return false;
 			},
-			getModeId(): string {
-				return modeID;
+			getLanguageIdentifier(): LanguageIdentifier {
+				return language;
 			},
-			uri: repoURI
-		});
+			getModeId(): string {
+				return language.language;
+			},
+			uri: repoURI,
+		} as IReadOnlyModel);
 	};
 
 	return new Observable<IReferenceInformation>(observer => {
 		setupWorkspace(repoURI, workspaceIsReady).then(() => {
 			let gotProgress = false;
 			// log(`provideWorkspaceReferences start ${repoURI.toString()}`);
-			provideWorkspaceReferences(modeID, repoURI, symbol, reference.Hints, references => {
+			provideWorkspaceReferences(language, repoURI, symbol, reference.Hints, references => {
 				// log(`provideWorkspaceReferences progress ${repoURI.toString()} ${references.length}`);
 				gotProgress = true;
 				for (const ref of references) {

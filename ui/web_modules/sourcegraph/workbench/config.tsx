@@ -3,11 +3,11 @@ import { IInstantiationService } from "vs/platform/instantiation/common/instanti
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Registry } from "vs/platform/platform";
 import { IStorageService, StorageScope } from "vs/platform/storage/common/storage";
+import { StorageService } from "vs/platform/storage/common/storageService";
 import { EditorGroupsControl } from "vs/workbench/browser/parts/editor/editorGroupsControl";
 import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
 import { FileRenderer } from "vs/workbench/parts/files/browser/views/explorerViewer";
 import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
-import { StorageService } from "vs/workbench/services/storage/common/storageService";
 
 import { layout } from "sourcegraph/components/utils";
 

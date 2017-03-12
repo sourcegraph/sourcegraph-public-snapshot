@@ -38,7 +38,6 @@ export function setupWorker(workspace: URI, revState?: any): void {
 		return;
 	}
 
-	seqId += 1;
 	workspaces.add(workspace.toString());
 
 	const { repo, rev } = URIUtils.repoParams(workspace);
@@ -71,7 +70,7 @@ export function setupWorker(workspace: URI, revState?: any): void {
 
 	getInventory.then(langs => {
 		const opts: InitializationOptions = {
-			seqId,
+			seqId: ++seqId,
 			workspace: workspace.toString(),
 			features: listEnabledFeatures(),
 			revState,

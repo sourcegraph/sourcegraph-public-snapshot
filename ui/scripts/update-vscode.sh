@@ -2,7 +2,7 @@
 
 CLONE_URL="${2:-git@github.com:sourcegraph/vscode.git}"
 CLONE_DIR=/tmp/sourcegraph-vscode
-REV=${1:-5377fb5a108ae5833dfda8e3d87f169bad5bdbd4} # pin to commit ID, bump as needed
+REV=${1:-5825594bc71f34cdc6b7ecfa1cdd51266450f82c} # pin to commit ID, bump as needed
 REPO_DIR=$(git rev-parse --show-toplevel)
 VENDOR_DIR="$REPO_DIR"/ui/vendor/node_modules/vscode
 #rm -rf $CLONE_DIR # uncomment temporarily if you have pushed new changes to the vscode patch branch
@@ -20,17 +20,19 @@ git --git-dir="$CLONE_DIR" archive --format=tar "$REV" \
 	src \
 	| tar x -C "$VENDOR_DIR" \
 		  --exclude='**/test'
-		  #--exclude='**/electron-browser' \
-		  #--exclude='**/electron-main' \
 
-# Remove vscode's mocha.d.ts because it is also included in our own
-# node_modules/@types. If we don't do this, tsc reports errors:
-#
-#   ../../node_modules/@types/mocha/index.d.ts(38,13): error TS2300: Duplicate identifier 'suite'.
-#   ../../node_modules/@types/mocha/index.d.ts(42,13): error TS2300: Duplicate identifier 'test'.
-#   typings/mocha.d.ts(8,18): error TS2300: Duplicate identifier 'suite'.
-#   typings/mocha.d.ts(9,18): error TS2300: Duplicate identifier 'test'.
-rm "$VENDOR_DIR"/src/typings/mocha.d.ts
+# Remove one of vscode's duplicate vscode-textmate.d.ts files.
+rm -f "$VENDOR_DIR"/src/vs/editor/node/textMate/vscode-textmate.d.ts
+
+# Remove unused modules that introduce node dependencies.
+rm -f \
+   "$VENDOR_DIR"/src/vs/platform/environment/node/argv.ts \
+   "$VENDOR_DIR"/src/vs/platform/extensionManagement/node/extensionManagementService.ts \
+   "$VENDOR_DIR"/src/vs/platform/extensions/node/extensionValidator.ts \
+   "$VENDOR_DIR"/src/vs/workbench/parts/extensions/node/extensionsWorkbenchService.ts \
+   "$VENDOR_DIR"/src/vs/workbench/parts/update/electron-browser/update.ts \
+   "$VENDOR_DIR"/src/vs/workbench/node/extensionPoints.ts \
+   "$VENDOR_DIR"/src/vs/platform/telemetry/node/workbenchCommonProperties.ts
 
 # Standardize CSS module import path syntax. There's no way to get
 # Webpack to work with vscode's custom "vs/css!" syntax.

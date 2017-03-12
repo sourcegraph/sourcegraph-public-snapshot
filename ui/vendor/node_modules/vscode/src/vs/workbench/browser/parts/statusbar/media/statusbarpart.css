@@ -6,10 +6,12 @@
 .monaco-workbench > .part.statusbar {
 	box-sizing: border-box;
 	width: 100%;
-	height: 22px;
-	background: #007ACC;
-	color: white;
-	font-size: 12px;
+	height: 32px;
+	display: flex;
+	background: rgba(35, 48, 67, 1); /* c_cool_dark_gray */
+	color: rgba(93, 126, 172, 1); /* c_cool_dark_gray_2 */
+	box-shadow: 0 -2px 4px rgba(0, 0, 0, .2);
+	font-size: 1rem;
 	padding: 0 10px;
 	overflow: hidden;
 }
@@ -20,7 +22,7 @@
 
 .monaco-workbench > .part.statusbar > .statusbar-item {
 	display: inline-block;
-	line-height: 22px;
+	line-height: 1.5;
 	height: 100%;
 	vertical-align: top;
 }
@@ -34,7 +36,7 @@
 }
 
 .monaco-workbench > .part.statusbar > .statusbar-item.right > :first-child {
-	margin-left: 5px;
+	margin: 0;
 }
 
 .monaco-workbench > .part.statusbar > .statusbar-item a:not([disabled]):not(.disabled) {

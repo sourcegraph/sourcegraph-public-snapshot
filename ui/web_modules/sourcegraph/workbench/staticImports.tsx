@@ -8,7 +8,6 @@
 // add a require() call below.
 
 const staticImports = {
-	"vs/workbench/browser/parts/editor/stringEditor": require("vs/workbench/browser/parts/editor/stringEditor"),
 	"vs/workbench/browser/parts/editor/textDiffEditor": require("vs/workbench/browser/parts/editor/textDiffEditor"),
 	"vs/workbench/parts/files/browser/explorerViewlet": require("vs/workbench/parts/files/browser/explorerViewlet"),
 	"vs/workbench/parts/output/browser/outputPanel": require("vs/workbench/parts/output/browser/outputPanel"),

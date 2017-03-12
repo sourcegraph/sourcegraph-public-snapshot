@@ -3,3 +3,5 @@
 export function getKeyMap(): any {
 	return {};
 }
+
+export function getCurrentKeyboardLayout(): any { return {}; }

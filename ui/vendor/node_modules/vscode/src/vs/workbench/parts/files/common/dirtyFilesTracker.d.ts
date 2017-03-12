@@ -1,0 +1,33 @@
+import { IWorkbenchContribution } from 'vs/workbench/common/contributions';
+import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
+import { IWindowService } from 'vs/platform/windows/common/windows';
+import { IEditorGroupService } from 'vs/workbench/services/group/common/groupService';
+import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
+import { IWorkbenchEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { IActivityBarService } from 'vs/workbench/services/activity/common/activityBarService';
+import { IUntitledEditorService } from 'vs/workbench/services/untitled/common/untitledEditorService';
+export declare class DirtyFilesTracker implements IWorkbenchContribution {
+    private textFileService;
+    private lifecycleService;
+    private editorService;
+    private activityBarService;
+    private windowService;
+    private untitledEditorService;
+    private isDocumentedEdited;
+    private toUnbind;
+    private lastDirtyCount;
+    private stacks;
+    private badgeHandle;
+    constructor(textFileService: ITextFileService, lifecycleService: ILifecycleService, editorGroupService: IEditorGroupService, editorService: IWorkbenchEditorService, activityBarService: IActivityBarService, windowService: IWindowService, untitledEditorService: IUntitledEditorService);
+    private registerListeners();
+    private onUntitledDidChangeDirty(resource);
+    private onTextFilesDirty(e);
+    private doOpenDirtyResources(resources);
+    private onTextFilesSaved(e);
+    private onTextFilesSaveError(e);
+    private onTextFilesReverted(e);
+    private updateActivityBadge();
+    private updateDocumentEdited();
+    getId(): string;
+    dispose(): void;
+}

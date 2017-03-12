@@ -1,10 +1,9 @@
+import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
-import { IBaseStat, IContent, IFileStat, IResolveContentOptions, IResolveFileOptions, IStreamContent, IUpdateContentOptions } from "vs/platform/files/common/files";
+import { FileChangesEvent, FileOperationEvent, IBaseStat, IContent, IFileService, IFileStat, IImportResult, IResolveContentOptions, IResolveFileOptions, IStreamContent, IUpdateContentOptions } from "vs/platform/files/common/files";
 
-import { IEventService } from "vs/platform/event/common/event";
 import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { LocalFileChangeEvent } from "vs/workbench/services/textfile/common/textfiles";
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
@@ -33,15 +32,29 @@ const workspaceFiles: Map<string, string[]> = new Map();
 // system. It is used to find the files in a Workspace, but not for retrieving
 // file content. File content is resolved using the modelResolver, which uses
 // contentLoader.tsx.
-export class FileService {
+export class FileService implements IFileService {
+	_serviceBrand: any;
 	private workspace: IWorkspace;
 
+	private _onFileChanges: Emitter<FileChangesEvent> = new Emitter<FileChangesEvent>();
+	private _onAfterOperation: Emitter<FileOperationEvent> = new Emitter<FileOperationEvent>();
+
 	constructor(
-		@IEventService private eventService: IEventService,
 		@IWorkspaceContextService private contextService: IWorkspaceContextService,
 	) {
-		this.eventService = eventService;
 		this.workspace = contextService.getWorkspace();
+	}
+
+	public get onFileChanges(): Event<FileChangesEvent> {
+		return this._onFileChanges.event;
+	}
+
+	public get onAfterOperation(): Event<FileOperationEvent> {
+		return this._onAfterOperation.event;
+	}
+
+	public updateOptions(options: any): void {
+		throw new Error("not implemented");
 	}
 
 	createFile(resource: URI, content: string = ""): TPromise<IFileStat> {
@@ -77,6 +90,10 @@ export class FileService {
 			fileStatCache.set(resource.toString(true), fileStat);
 			return fileStat;
 		});
+	}
+
+	public resolveContents(resources: URI[]): TPromise<IContent[]> {
+		return TPromise.join(resources.map(resource => this.resolveContent(resource)));
 	}
 
 	resolveContent(resource: URI, options?: IResolveContentOptions): TPromise<IContent> {
@@ -132,6 +149,40 @@ export class FileService {
 		return this.resolveFile(resource).then(() => true, () => false);
 	}
 
+	public moveFile(source: URI, target: URI, overwrite?: boolean): TPromise<IFileStat> {
+		throw new Error("not implemented");
+	}
+
+	public copyFile(source: URI, target: URI, overwrite?: boolean): TPromise<IFileStat> {
+		throw new Error("not implemented");
+	}
+
+	public createFolder(resource: URI): TPromise<IFileStat> {
+		throw new Error("not implemented");
+	}
+
+	public rename(resource: URI, newName: string): TPromise<IFileStat> {
+		throw new Error("not implemented");
+	}
+
+	public importFile(source: URI, targetFolder: URI): TPromise<IImportResult> {
+		throw new Error("not implemented");
+	}
+
+	public watchFileChanges(resource: URI): void {
+		throw new Error("not implemented");
+	}
+
+	public getEncoding(resource: URI): string {
+		throw new Error("not implemented");
+	}
+
+	public unwatchFileChanges(resource: URI): void;
+	public unwatchFileChanges(path: string): void;
+	public unwatchFileChanges(arg1: any): void {
+		throw new Error("not implemented");
+	}
+
 	private resolve(resource: URI, options: IResolveFileOptions = Object.create(null)): TPromise<IFileStat> {
 		return this.toStatResolver(resource)
 			.then(model => model.resolve(options));
@@ -152,8 +203,10 @@ export class FileService {
 
 	public refreshTree(): void {
 		// Use this event to trigger the refresh of the file tree in ExplorerView.
-		this.eventService.emit("files.internal:fileChanged", new LocalFileChangeEvent());
+		this._onFileChanges.fire(new FileChangesEvent([]));
 	}
+
+	public dispose(): void { /* noop */ }
 }
 
 export function fetchFilesAndDirs(resource: URI): any {

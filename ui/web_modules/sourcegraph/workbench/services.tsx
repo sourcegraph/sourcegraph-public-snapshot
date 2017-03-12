@@ -1,4 +1,3 @@
-import Event from "vs/base/common/event";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
@@ -12,7 +11,7 @@ import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
-import { IMessageService } from "vs/platform/message/common/message";
+import { IChoiceService, IMessageService } from "vs/platform/message/common/message";
 import "vs/platform/opener/browser/opener.contribution";
 import { ISearchService } from "vs/platform/search/common/search";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
@@ -23,7 +22,6 @@ import { IWorkspaceConfigurationService } from "vs/workbench/services/configurat
 import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
 import { MessageService } from "vs/workbench/services/message/electron-browser/messageService";
 import { IPartService } from "vs/workbench/services/part/common/partService";
-import { IThemeService } from "vs/workbench/services/themes/common/themeService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 import { IWindowIPCService } from "vs/workbench/services/window/electron-browser/windowService";
@@ -56,6 +54,8 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRef
 		services.set(identifier, instance);
 	};
 
+	set(IExtensionService, ExtensionService);
+
 	standaloneServices(domElement, services);
 
 	// Override standalone WorkspaceContextService immediately so
@@ -75,19 +75,18 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRef
 	set(IBackupService, BackupService);
 	set(IBackupFileService, function (): void { /* noop */ } as any);
 
-	set(IThemeService, ThemeService);
 	set(IWindowIPCService, DummyService);
 	set(IPartService, DummyService);
 
 	const messageService = instantiationService.createInstance(MessageService, domElement);
 	services.set(IMessageService, messageService);
+	services.set(IChoiceService, messageService);
 
 	const editorPart = instantiationService.createInstance(EditorPart, "workbench.parts.editor", false);
 	services.set(IEditorGroupService, editorPart);
 	set(IConfigurationService, ConfigurationService);
 	set(IWorkspaceConfigurationService, WorkspaceConfigurationService);
 	set(IThreadService, MainThreadService);
-	set(IExtensionService, ExtensionService);
 	set(ISearchService, SearchService);
 	// These services are depended on by the extension host but are
 	// not actually used yet.
@@ -154,16 +153,4 @@ class BackupService {
 	getBackupPath(): TPromise<string> {
 		return TPromise.wrap("some backup path");
 	}
-}
-
-class ThemeService {
-
-	onDidColorThemeChange(): Event<string> {
-		return NoopDisposer as any;
-	}
-
-	getColorTheme(): string {
-		return "vs-dark";
-	}
-
 }

@@ -35,6 +35,9 @@ const plugins = [
 		// harmless to override it in this way.
 		"require.toUrl": "(function(){ return '/'; })",
 
+		// vscode uses this to read its own package.json. It's harmless to override.
+		"require.__$__nodeRequire": "(function(){ return {}; })",
+
 		// vscode uses this in vs/workbench/electron-browser/actions. It is
 		// harmless to override as we don't care about getting the stats for
 		// their RequireJS loader (which we don't even use).
@@ -121,6 +124,7 @@ module.exports = {
 			"native-keymap": "sourcegraph/workbench/overrides/native-keymap",
 			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
 			"vs/workbench/browser/parts/editor/noTabsTitleControl": "sourcegraph/workbench/overrides/titleControl",
+			"fast-plist": "sourcegraph/workbench/overrides/fast-plist",
 
 			// In the vscode source, this is "vs/platform/node/package", but here the "node" path component is omitted for some reason.
 			"vs/platform/package": "sourcegraph/workbench/overrides/package",
