@@ -300,7 +300,7 @@ export class BuildHandler extends TypeScriptService {
 			if (!moduleDir) {
 				return;
 			}
-			const pkgJson = JSON.parse(super.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
+			const pkgJson = JSON.parse(this.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
 			let name = pkgJson['name'];
 			let version = pkgJson['version'];
 			let repoURL = pkgJson['repository'] ? pkgJson['repository']['url'] : undefined;
