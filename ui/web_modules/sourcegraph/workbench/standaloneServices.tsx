@@ -24,7 +24,7 @@ export function standaloneServices(container: HTMLElement, services: ServiceColl
 	}
 
 	set(IContextKeyService, ContextKeyService);
-	set(ICommandService, StandaloneCommandService);
+	services.set(ICommandService, new StandaloneCommandService(instantiationService));
 
 	// The ContextViewService must be aware of the entire window (for absolute element positioning), not just
 	// the workbench shell.

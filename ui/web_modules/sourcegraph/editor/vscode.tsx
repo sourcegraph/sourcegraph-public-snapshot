@@ -10,22 +10,11 @@ import "vs/editor/contrib/goToDeclaration/browser/goToDeclaration";
 import "vs/editor/contrib/hover/browser/hover";
 import "vs/editor/contrib/links/browser/links";
 import "vs/editor/contrib/referenceSearch/browser/referenceSearch";
-import "vs/editor/contrib/toggleWordWrap/common/toggleWordWrap";
 import "vs/editor/contrib/wordHighlighter/browser/wordHighlighter.css";
 import "vs/editor/contrib/wordHighlighter/common/wordHighlighter";
 
-import "vs/editor/common/languages.common";
-
 import "monaco-languages/out/monaco.contribution";
 import "monaco-typescript/out/monaco.contribution";
-
-// HACK: vscode's markdown parser exports itself in a nonstandard
-// way. This workaround avoids errors like "Uncaught TypeError:
-// marked_1.marked.Renderer is not a constructor".
-import * as marked from "vs/base/common/marked/marked";
-marked.marked.Renderer = (marked as any).marked.marked.Renderer;
-Object.assign(marked, marked.marked); // make it callable
-// END HACK
 
 import { DefaultConfig } from "vs/editor/common/config/defaultConfig";
 

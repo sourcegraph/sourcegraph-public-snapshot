@@ -121,7 +121,7 @@ export class TextModelResolverService implements ITextModelResolverService {
 		if (resource.scheme === "git" || resource.scheme === "zap") {
 			return this.textFileService.models.loadOrCreate(resource).then(model => {
 				return this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment).then(mode => {
-					model.textEditorModel.setMode(mode.getId());
+					model.textEditorModel.setMode(mode.getLanguageIdentifier());
 					return new ImmortalReference(model);
 				});
 			});
@@ -161,7 +161,7 @@ export class TextModelContentProvider implements ITextModelContentProvider {
 	provideTextContent(resource: URI): TPromise<IModel> {
 		return this.textFileService.models.loadOrCreate(resource).then(model => {
 			return this.modeService.getOrCreateModeByFilenameOrFirstLine(resource.fragment).then(mode => {
-				model.textEditorModel.setMode(mode.getId());
+				model.textEditorModel.setMode(mode.getLanguageIdentifier());
 				return model.textEditorModel;
 			});
 		});

@@ -8,7 +8,6 @@ import "sourcegraph/workbench/staticImports";
 
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
-import "vs/workbench/browser/parts/editor/stringEditor";
 import "vs/workbench/parts/files/browser/explorerViewlet";
 import "vs/workbench/parts/files/browser/files.contribution";
 import "vs/workbench/parts/output/browser/output.contribution";
@@ -57,7 +56,6 @@ export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string,
 		Workbench,
 		parent,
 		domElement,
-		{ resource: workspace },
 		{},
 		services,
 	);

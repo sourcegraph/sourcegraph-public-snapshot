@@ -7,7 +7,7 @@ import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IContextKeyService } from "vs/platform/contextkey/common/contextkey";
-import { IEventService } from "vs/platform/event/common/event";
+import { IFileService } from "vs/platform/files/common/files";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { IStorageService } from "vs/platform/storage/common/storage";
 import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
@@ -42,7 +42,7 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 		@IConfigurationService configurationService: IConfigurationService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IContextKeyService contextKeyService: IContextKeyService,
-		@IEventService private eventService: IEventService
+		@IFileService fileService: IFileService,
 	) {
 		super(telemetryService, contextService, storageService, editorGroupService, editorService, configurationService, instantiationService, contextKeyService);
 
@@ -53,7 +53,7 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 
 		this._editorService = editorService as WorkbenchEditorService;
 		this.onTitleAreaUpdate(() => this.updateTitleComponent());
-		this.eventService.addListener2("files.internal:fileChanged", () => this.refresh());
+		fileService.onFileChanges(() => this.refresh());
 	}
 
 	getTitle(): string {

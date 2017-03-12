@@ -13,12 +13,12 @@ import { ITextModelResolverService } from "vs/editor/common/services/resolverSer
 import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { IFileService } from "vs/platform/files/common/files";
 import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
+import { IQuickOpenService } from "vs/platform/quickOpen/common/quickOpen";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
 import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
-import { IQuickOpenService } from "vs/workbench/services/quickopen/common/quickOpenService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
@@ -222,10 +222,10 @@ export async function updateFileTree(resource: URI): Promise<void> {
 	await view.refresh(true);
 
 	const privateView = view as any;
-	let root = privateView.getInput();
+	let root = privateView.root;
 	if (!root) {
 		await view.refresh();
-		root = privateView.getInput();
+		root = privateView.root;
 	}
 	const fileStat = root.find(resource);
 	const treeModel = privateView.tree.model;

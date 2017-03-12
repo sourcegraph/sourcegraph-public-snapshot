@@ -5,10 +5,26 @@ import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMessagePassingProtocol } from "vs/base/parts/ipc/common/ipc";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
-import { IMainProcessExtHostIPC, create } from "vs/platform/extensions/common/ipcRemoteCom";
+import { IRemoteCom, createProxyProtocol } from "vs/platform/extensions/common/ipcRemoteCom";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { AbstractThreadService } from "vs/workbench/services/thread/common/abstractThreadService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
+
+function asLoggingProtocol(protocol: IMessagePassingProtocol): IMessagePassingProtocol {
+
+	protocol.onMessage(msg => {
+		console.log("%c[Extension \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console 
+	});
+
+	return {
+		onMessage: protocol.onMessage,
+
+		send(msg: any): void {
+			protocol.send(msg);
+			console.log("%c[Window \u2192 Extension]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console 
+		}
+	};
+}
 
 /**
  * MainThreadService is an implementation of IThreadService that
@@ -18,7 +34,7 @@ import { IThreadService } from "vs/workbench/services/thread/common/threadServic
 export class MainThreadService extends AbstractThreadService implements IThreadService {
 	public _serviceBrand: any;
 
-	private remotes: Map<string, IMainProcessExtHostIPC>;
+	private remotes: Map<string, IRemoteCom> = new Map<string, IRemoteCom>();
 	private logCommunication: boolean;
 	private workerEmitter: Emitter<string> = new Emitter<string>();
 
@@ -27,8 +43,6 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 		@IWorkspaceContextService private contextService: IWorkspaceContextService
 	) {
 		super(true);
-
-		this.remotes = new Map<string, IMainProcessExtHostIPC>();
 
 		// Run `localStorage.logExtensionHostCommunication=true` in
 		// your browser's JavaScript console to see detailed message
@@ -46,25 +60,12 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 	 * recipients.
 	 */
 	public attachWorker(worker: Worker, workspace: URI): void {
-		const protocol = new MainProtocol(worker);
+		let protocol: IMessagePassingProtocol = new MainProtocol(worker);
+		if (this.logCommunication) {
+			protocol = asLoggingProtocol(protocol);
+		}
 
-		// Message: Window --> Extension Host
-		const remoteCom = create(msg => {
-			if (this.logCommunication) {
-				console.log("%c[Window \u2192 " + workspace.path + "]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
-			}
-
-			protocol.send(msg);
-		});
-
-		// Message: Extension Host --> Window
-		protocol.onMessage(msg => {
-			if (this.logCommunication) {
-				console.log("%c[" + workspace.path + " \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
-			}
-
-			remoteCom.handle(msg);
-		});
+		const remoteCom = createProxyProtocol(protocol);
 
 		remoteCom.setManyHandler(this);
 

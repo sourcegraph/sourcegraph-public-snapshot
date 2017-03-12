@@ -30,7 +30,7 @@ function fetchAndClean {
 		echo OK
 	else
 		echo -n Cloning to "$CLONE_DIR"...
-		git clone --branch patch --bare --single-branch "$CLONE_URL" "$CLONE_DIR"
+		git clone --branch patch --bare "$CLONE_URL" "$CLONE_DIR"
 		echo OK
 	fi
 

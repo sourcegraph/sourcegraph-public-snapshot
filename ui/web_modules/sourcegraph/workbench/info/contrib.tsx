@@ -208,11 +208,14 @@ export class SidebarContribution extends Disposables {
 			return true;
 		}
 		const token = tokens[0];
-		if (token.type.length === 0) {
+		if (token.getType().length === 0) {
 			// Model hasn't been tokenized yet.
 			return true;
 		}
-		return token.type.includes("identifier") || token.type.includes("annotation");
+
+		// TODO(john): there is no longer a good way to determine token type with CSS class,
+		// this will now return true for other tokens besides identifiers.
+		return token.getType().includes("mtk1" /* token */) || token.getType().includes("mtk3" /* annotation */);
 	}
 
 	private logClick(e: IEditorMouseEvent): void {

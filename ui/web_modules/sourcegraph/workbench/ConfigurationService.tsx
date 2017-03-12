@@ -2,7 +2,7 @@ import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import Event, { Emitter } from "vs/base/common/event";
 import { TPromise } from "vs/base/common/winjs.base";
 import { DefaultConfig } from "vs/editor/common/config/defaultConfig";
-import { IConfigurationKeys, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
+import { IConfigurationKeys, IConfigurationOptions, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspaceConfigurationValue, IWorkspaceConfigurationValues } from "vs/workbench/services/configuration/common/configuration";
 
 import { Features } from "sourcegraph/util/features";
@@ -44,6 +44,7 @@ export const defaultExcludesRegExp = new RegExp("(/|^)(" + Object.keys(defaultEx
 const config = {
 	diffEditor: { renderSideBySide: false },
 	workbench: {
+		colorTheme: "vs-dark",
 		quickOpen: {
 			closeOnFocusLost: false,
 		},
@@ -89,6 +90,9 @@ const config = {
 	search: {
 		exclude: defaultExcludesNoGlobs,
 	},
+	window: {
+		title: "${activeEditorShort} - ${rootName} - Sourcegraph",
+	},
 };
 
 DefaultConfig.editor.readOnly = config.editor.readOnly;
@@ -111,9 +115,14 @@ export function updateConfiguration(updater: (config: any) => void): void {
 export class ConfigurationService implements IConfigurationService {
 	_serviceBrand: any;
 
-	getConfiguration<T>(section?: string): T {
-		if (!section) { return config as any; }
-		return getConfigurationValue<T>(config, section);
+	getConfiguration<C>(section?: string): C;
+	getConfiguration<C>(options?: IConfigurationOptions): C;
+	getConfiguration<C>(arg?: any): C {
+		if (!arg) { return config as any; }
+		if (typeof arg === "string") {
+			return getConfigurationValue<C>(config, arg);
+		}
+		return getConfigurationValue<C>(config, arg.section);
 	}
 
 	lookup<T>(key: string): IConfigurationValue<T> {
@@ -134,6 +143,8 @@ export class ConfigurationService implements IConfigurationService {
 
 export class WorkspaceConfigurationService extends ConfigurationService implements IWorkspaceConfigurationService {
 	hasWorkspaceConfiguration(): boolean { return false; }
+
+	getUnsupportedWorkspaceKeys(): string[] { return []; }
 
 	lookup<T>(key: string): IWorkspaceConfigurationValue<T> {
 		const value = super.lookup<T>(key);
