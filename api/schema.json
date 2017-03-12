@@ -757,6 +757,96 @@
 								"ofType": null
 							}
 						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "tokenID",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							},
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "GitHubOrg",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							},
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "seats",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "subscribeOrg",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "GitHubOrg",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "startOrgTrial",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
 					}
 				],
 				"inputFields": null,
@@ -802,53 +892,6 @@
 						"ofType": null
 					}
 				]
-			},
-			{
-				"description": null,
-				"enumValues": null,
-				"fields": [
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "seats",
-						"type": {
-							"kind": "SCALAR",
-							"name": "Int",
-							"ofType": null
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "renewalDate",
-						"type": {
-							"kind": "SCALAR",
-							"name": "Int",
-							"ofType": null
-						}
-					},
-					{
-						"args": [],
-						"deprecationReason": null,
-						"description": null,
-						"isDeprecated": false,
-						"name": "organization",
-						"type": {
-							"kind": "OBJECT",
-							"name": "Organization",
-							"ofType": null
-						}
-					}
-				],
-				"inputFields": null,
-				"interfaces": [],
-				"kind": "OBJECT",
-				"name": "OrgPlan",
-				"possibleTypes": null
 			},
 			{
 				"description": null,
@@ -1018,6 +1061,42 @@
 								"name": "Int",
 								"ofType": null
 							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "seats",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "renewalDate",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "organization",
+						"type": {
+							"kind": "OBJECT",
+							"name": "Organization",
+							"ofType": null
 						}
 					}
 				],

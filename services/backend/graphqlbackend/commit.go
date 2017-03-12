@@ -9,7 +9,6 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
 
 type commitSpec struct {
@@ -70,13 +69,6 @@ func (r *commitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*treeResolver, error) {
-	// Check that the user is authorized to see this repository. We check the
-	// paywall before the tree resolver so that the browser extension can
-	// retrieve repository information, but retrieving file content is not
-	// possible.
-	if err := localstore.Payments.CheckPaywallForRepo(ctx, r.repo); err != nil {
-		return nil, err
-	}
 	return makeTreeResolver(ctx, r.commit, args.Path, args.Recursive)
 }
 

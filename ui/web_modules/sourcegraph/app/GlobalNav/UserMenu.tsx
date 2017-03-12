@@ -34,7 +34,7 @@ export const UserMenu = (props): JSX.Element => {
 					</div>
 					<div>{props.user.Login}</div>
 					<hr role="divider" className={base.mv3} />
-					<Link to="/settings" role="menu_item">Organization settings</Link>
+					<Link to="/settings" role="menu_item">Settings</Link>
 					<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location} onToggle={(v) => v && Events.ToolsModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV })}>
 						Browser extensions
 					</LocationStateToggleLink>

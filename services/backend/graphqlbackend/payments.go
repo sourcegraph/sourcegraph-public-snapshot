@@ -6,6 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/stripe"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -31,7 +32,6 @@ func (p planResolver) Name() string {
 }
 
 func (p planResolver) Organization(ctx context.Context) (*org, error) {
-	// Fetch from GH.
 	organization, _, err := github.OrgsFromContext(ctx).Get(p.OrgName)
 	if err != nil {
 		return nil, err
@@ -67,6 +67,7 @@ func (f fakePlan) Organization(ctx context.Context) (*org, error) {
 func (f fakePlan) Cost() int32 {
 	return 0
 }
+
 func (f fakePlan) RenewalDate() *int32 {
 	return nil
 }
@@ -118,4 +119,33 @@ func (*schemaResolver) UpdatePaymentSource(ctx context.Context, args *struct {
 	TokenID string
 }) (bool, error) {
 	return true, stripe.SetTokenSourceForCustomer(ctx, args.TokenID)
+}
+
+func (*schemaResolver) SubscribeOrg(ctx context.Context, args *struct {
+	TokenID   string
+	GitHubOrg string
+	Seats     int32
+}) (bool, error) {
+	if args.Seats < 1 {
+		return false, errors.New("must have at least one seat")
+	}
+	seats := uint64(args.Seats)
+
+	if err := stripe.SubscribeOrganization(ctx, args.TokenID, args.GitHubOrg, seats); err != nil {
+		return false, err
+	}
+
+	return true, setupOrganization(ctx, args.GitHubOrg, seats)
+}
+
+// setupOrganization records the payment in the Sourcegraph database.
+func setupOrganization(ctx context.Context, org string, seats uint64) error {
+	return localstore.Payments.PaidForOrg(ctx, org, seats)
+}
+
+// Start the trial for the organization.
+func (*schemaResolver) StartOrgTrial(ctx context.Context, args *struct {
+	GitHubOrg string
+}) (bool, error) {
+	return true, localstore.Payments.StartTrial(ctx, args.GitHubOrg)
 }

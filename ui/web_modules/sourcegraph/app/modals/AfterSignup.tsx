@@ -11,6 +11,7 @@ import { OrgSelection } from "sourcegraph/org/OrgSignup";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { UserDetails, UserDetailsForm } from "sourcegraph/user/UserDetails";
+import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { checkStatus, defaultFetch as fetch } from "sourcegraph/util/xhr";
 
 interface Props {
@@ -65,6 +66,14 @@ function submitSignupInfo(details: Details): void {
 	Events.AfterSignupModal_Completed.logEvent({
 		trialSignupProperties: signupInformation,
 	});
+
+	if (details.plan === "organization") {
+		fetchGraphQLQuery(`{
+			mutation {
+				startOrgTrial($org)
+			}
+		}`, { org: details.organization });
+	}
 
 	fetch(`/.api/submit-form`, {
 		method: "POST",

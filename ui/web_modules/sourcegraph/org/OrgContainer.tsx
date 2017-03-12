@@ -2,11 +2,10 @@ import * as React from "react";
 
 import { Org, OrgMember } from "sourcegraph/api";
 import { context } from "sourcegraph/app/context";
-import { RouterLocation } from "sourcegraph/app/router";
+import { RouterContext } from "sourcegraph/app/router";
 import { GitHubAuthButton, GridCol, GridRow, Heading, TabItem, Tabs } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
-import { colors } from "sourcegraph/components/utils";
-import { whitespace } from "sourcegraph/components/utils/whitespace";
+import { colors, whitespace } from "sourcegraph/components/utils";
 import { Container } from "sourcegraph/Container";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as OrgActions from "sourcegraph/org/OrgActions";
@@ -16,29 +15,25 @@ import { OrgStore } from "sourcegraph/org/OrgStore";
 import { Store } from "sourcegraph/Store";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
-interface Props {
-	location: RouterLocation;
-}
-
 interface State {
 	orgs: Org[] | null;
 	selectedOrg: Org | null;
 	members: OrgMember[] | null;
 }
 
-export class OrgContainer extends Container<Props, State> {
-	constructor(props: Props) {
-		super(props);
-		this.state = {
-			orgs: OrgStore.orgs || null,
-			selectedOrg: null,
-			members: OrgStore.members || null,
-		};
-	}
+export class OrgContainer extends Container<{}, State> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
 
-	reconcileState(state: State, props: Props): void {
-		Object.assign(state, props);
+	context: RouterContext;
+	state: State = {
+		orgs: OrgStore.orgs || null,
+		selectedOrg: null,
+		members: OrgStore.members || null,
+	};
 
+	reconcileState(state: State): void {
 		state.orgs = OrgStore.orgs;
 
 		if (state.orgs) {
@@ -124,31 +119,35 @@ export class OrgContainer extends Container<Props, State> {
 				Select an organization to view and invite members.
 			</div>;
 		} else if (this.state.selectedOrg) {
-			mainPanel = <OrgPanel location={this.props.location} org={this.state.selectedOrg} members={this.state.members} />;
+			mainPanel = <OrgPanel org={this.state.selectedOrg} members={this.state.members} />;
 		}
-
-		return (
-			<div>
-				<PageTitle title="Organization settings" />
-				<div style={{ marginTop: whitespace[2] }}>
-					{(!this._hasOrgs()) ? this._noRepoPanel() :
-						<GridRow>
-							<GridCol style={{ paddingTop: whitespace[5], paddingRight: whitespace[0] }} align="left" col={3} colSm={10}>
-								<Tabs direction="vertical" style={{ borderLeft: "none" }}>
-									{(this.state.orgs && this.state.orgs.length > 0) && this.state.orgs.map((org, i) =>
-										<TabItem key={i} active={Boolean(this.state.selectedOrg && (this.state.selectedOrg.Login === org.Login))} direction="vertical">
-											<a onClick={this._onSelectOrg.bind(this, org)}>
-												<OrgCard org={org} />
-											</a>
-										</TabItem>
-									)}
-								</Tabs>
-							</GridCol>
-							<GridCol align="right" col={9} colSm={11}>{mainPanel}</GridCol>
-						</GridRow>
-					}
-				</div>
+		return <div>
+			<Heading level={5} style={{
+				marginTop: whitespace[3],
+				marginBottom: whitespace[3],
+				marginLeft: whitespace[4],
+				marginRight: whitespace[4],
+			}}>Organization settings</Heading>
+			<hr style={{ borderColor: colors.blueGrayL3(0.7) }} />
+			<PageTitle title="Organization settings" />
+			<div style={{ marginTop: whitespace[2] }}>
+				{(!this._hasOrgs()) ? this._noRepoPanel() :
+					<GridRow>
+						<GridCol style={{ paddingTop: whitespace[4], paddingRight: whitespace[0] }} align="left" col={3} colSm={10}>
+							<Tabs direction="vertical" style={{ borderLeft: "none" }}>
+								{(this.state.orgs && this.state.orgs.length > 0) && this.state.orgs.map((org, i) =>
+									<TabItem key={i} active={Boolean(this.state.selectedOrg && (this.state.selectedOrg.Login === org.Login))} direction="vertical">
+										<a onClick={this._onSelectOrg.bind(this, org)}>
+											<OrgCard org={org} />
+										</a>
+									</TabItem>
+								)}
+							</Tabs>
+						</GridCol>
+						<GridCol align="right" col={9} colSm={11}>{mainPanel}</GridCol>
+					</GridRow>
+				}
 			</div>
-		);
+		</div>;
 	}
 }

@@ -19,7 +19,7 @@ interface State {
 	originalOverflow: string | null;
 }
 
-export class ModalComp extends React.Component<Props, State> {
+class ModalComp extends React.Component<Props, State> {
 	private htmlElement: HTMLElement;
 
 	constructor(props: Props) {

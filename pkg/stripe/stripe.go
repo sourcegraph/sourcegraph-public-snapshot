@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
@@ -13,9 +14,14 @@ import (
 )
 
 func init() {
-	// TODO(nicot) get the production key from the environment.
-	stripe.Key = "sk_test_qvWffwBNHNimCnsNXbCcxSoB"
+	stripeSecretTestKey := "sk_test_QHDBfU09USr4SVaJPZJEGruf"
+	stripe.Key = env.Get("STRIPE_SECRET_KEY", stripeSecretTestKey, "The secret/private stripe API key.")
+
+	stripePublicTestKey := "pk_test_Vo5BwrEkrXCM2ULouAd5ZBZz"
+	StripePublicKey = env.Get("Stripe_PUBLIC_KEY", stripePublicTestKey, "The public Stripe API key.")
 }
+
+var StripePublicKey string
 
 var ErrNotCustomer = errors.New("this user is not yet a customer")
 
@@ -30,7 +36,7 @@ func getCustomerID(ctx context.Context) (*string, error) {
 	}
 	stripeID, ok := appMeta[stripeMetaDataKey].(string)
 	if !ok {
-		return nil, errors.New("type error retrieving stripeID from auth0")
+		return nil, ErrNotCustomer
 	}
 	return &stripeID, nil
 }
@@ -57,7 +63,7 @@ func getStripeSubscription(ctx context.Context) *stripe.Sub {
 		return nil
 	}
 	if len(subs) > 1 {
-		log15.Error("Expected customer to have at most one subscription, but got more. Manual intervention required for customer: ", customerID)
+		log15.Error("Expected customer to have at most one subscription, but got more. Manual intervention required for customer", "customerID", customerID)
 		return nil
 	}
 	return subs[0]
@@ -131,5 +137,35 @@ func SetTokenSourceForCustomer(ctx context.Context, token string) error {
 	_, err = customer.Update(*customerID, &stripe.CustomerParams{
 		Source: &stripe.SourceParams{Token: token},
 	})
+	return err
+}
+
+// orgPlan is the name of the Stripe plan that new subscribers will use.
+const orgPlan = "orgplan-3/8/2016"
+
+// SubscribeOrganization subscribes the user to an organization plan, with cost
+// proportional to the number of seats.
+func SubscribeOrganization(ctx context.Context, token string, org string, seats uint64) error {
+	customerID, err := getOrCreateCustomer(ctx)
+	if err != nil {
+		return err
+	}
+	if err := SetTokenSourceForCustomer(ctx, token); err != nil {
+		return err
+	}
+	params := &stripe.SubParams{
+		Customer: *customerID,
+		Plan:     orgPlan,
+		Quantity: seats,
+		Params: stripe.Params{
+			Meta: map[string]string{stripeOrgNameKey: org},
+		},
+	}
+	subscription := getStripeSubscription(ctx)
+	if subscription != nil {
+		log15.Error("Customer tried to subscribe for multiple plans", "customerID", customerID)
+		return errors.New("only one organization allowed per customer")
+	}
+	_, err = sub.New(params)
 	return err
 }

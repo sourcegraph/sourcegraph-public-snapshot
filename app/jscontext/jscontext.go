@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/stripe"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
 )
 
@@ -46,6 +47,7 @@ type JSContext struct {
 	IntercomHash      string                     `json:"intercomHash"`
 	TrackingAppID     string                     `json:"trackingAppID"`
 	AuthEnabled       bool                       `json:"authEnabled"`
+	StripePublicKey   string                     `json:"stripePublicKey"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -103,11 +105,12 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		Emails: &sourcegraph.EmailAddrList{
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
-		GitHubToken:   gitHubToken,
-		SentryDSN:     sentryDSNFrontend,
-		IntercomHash:  intercomHMAC(actor.UID),
-		AuthEnabled:   authEnabled,
-		TrackingAppID: TrackingAppID,
+		GitHubToken:     gitHubToken,
+		SentryDSN:       sentryDSNFrontend,
+		IntercomHash:    intercomHMAC(actor.UID),
+		AuthEnabled:     authEnabled,
+		TrackingAppID:   TrackingAppID,
+		StripePublicKey: stripe.StripePublicKey,
 	}, nil
 }
 

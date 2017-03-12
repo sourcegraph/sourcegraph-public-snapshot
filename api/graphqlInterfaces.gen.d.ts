@@ -100,6 +100,8 @@ declare namespace GQL {
 		__typename: string;
 		cancelSubscription: boolean;
 		updatePaymentSource: boolean;
+		subscribeOrg: boolean;
+		startOrgTrial: boolean;
 	}
 
 	/*
@@ -113,16 +115,6 @@ declare namespace GQL {
 	interface INode {
 		__typename: string;
 		id: string;
-	}
-
-	/*
-	  description: null
-	*/
-	interface IOrgPlan {
-		__typename: string;
-		seats: number | null;
-		renewalDate: number | null;
-		organization: IOrganization | null;
 	}
 
 	/*
@@ -153,6 +145,9 @@ declare namespace GQL {
 		__typename: string;
 		name: string;
 		cost: number;
+		seats: number | null;
+		renewalDate: number | null;
+		organization: IOrganization | null;
 	}
 
 	/*

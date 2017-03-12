@@ -161,15 +161,12 @@ type Organization {
 	collaborators: Int!
 }
 
-type OrgPlan {
-	seats: Int
-	renewalDate: Int
-	organization: Organization
-}
 type Plan {
 	name: String!
 	cost: Int!
-
+	seats: Int
+	renewalDate: Int
+	organization: Organization
 }
 
 type User {
@@ -180,5 +177,7 @@ type User {
 type Mutation {
 	cancelSubscription(): Boolean!
 	updatePaymentSource(tokenID: String!): Boolean!
+	subscribeOrg(tokenID: String!, GitHubOrg: String!, seats: Int!): Boolean!
+	startOrgTrial(GitHubOrg: String!): Boolean!
 }
 `

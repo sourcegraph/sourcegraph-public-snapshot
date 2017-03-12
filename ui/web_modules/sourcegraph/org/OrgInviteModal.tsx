@@ -1,14 +1,13 @@
 import * as React from "react";
 
 import { Org, OrgMember } from "sourcegraph/api";
-import { Router, RouterLocation } from "sourcegraph/app/router";
+import { Router } from "sourcegraph/app/router";
 import { Button, Heading, Table, User } from "sourcegraph/components";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
 
 interface Props {
-	location: RouterLocation;
 	org: Org;
 	member: OrgMember | null;
 	onInvite: ([]: Array<Object>) => void;

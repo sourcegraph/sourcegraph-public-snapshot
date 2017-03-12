@@ -13,7 +13,7 @@ import { whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
 import { CloningRefresher, RepoMain } from "sourcegraph/repo/RepoMain";
-import { Paywall, TrialEndingWarning } from "sourcegraph/user/Paywall";
+import { Paywall, TrialEndingWarning, needsPayment } from "sourcegraph/user/Paywall";
 import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
@@ -78,6 +78,10 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			return <Error
 				code="404"
 				desc="Revision not found" />;
+		}
+
+		if (needsPayment(repository)) {
+			return <Paywall repo={repository} />;
 		}
 
 		const commitID = repository.revState.zapRef ? repository.revState.zapRef.base : repository.revState.commit!.sha1;
@@ -226,6 +230,5 @@ export function Workbench(props: { params: any; location: RouterLocation, routes
 				location: props.location,
 			},
 		}}
-		renderFailure={Paywall}
 	/>;
 };

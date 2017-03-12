@@ -21,29 +21,11 @@ interface TileProps {
 export type PlanType = "public" | "personal" | "organization" | "enterprise";
 
 export function PlanSelector({ select }: Props): JSX.Element {
-	return <div style={{ padding: whitespace[5] }}>
-		<p style={{ marginBottom: whitespace[5], textAlign: "center", color: colors.blueGrayD1() }}>Choose your plan:</p>
-		<PlanTile
-			onClick={select("personal")}
-			name="Personal"
-			desc="Your personal, private code"
-			label="Sale!"
-			price={0}
-			salePrice={9}
-			unit="per month" />
-		<PlanTile
-			onClick={select("organization")}
-			name="Organization"
-			desc="One organizaton's private code"
-			label="Free 14-day trial"
-			price={25}
-			unit="per user/mo" />
-		<PlanTile
-			onClick={select("enterprise")}
-			name="Enterprise"
-			desc="Code hosted on premises"
-			price={50}
-			unit="per user/mo" />
+	return <div style={{ padding: whitespace[4] }}>
+		<p style={{ marginBottom: whitespace[4], textAlign: "center", color: colors.blueGrayD1() }}>Choose your plan:</p>
+		<PersonalPlan onClick={select("personal")} />
+		<OrgPlan onClick={select("organization")} />
+		<EnterprisePlan onClick={select("enterprise")} />
 		<p style={{ marginTop: whitespace[5], textAlign: "center" }}>
 			<a onClick={select("public")}>
 				<strong>Always free for public code <ChevronRight /></strong>
@@ -51,6 +33,47 @@ export function PlanSelector({ select }: Props): JSX.Element {
 		</p>
 	</div>;
 };
+
+interface PlanProps { onClick?: () => void; }
+
+export function PersonalPlan({ onClick }: PlanProps): JSX.Element {
+	return <PlanTile
+		onClick={onClick}
+		name="Personal"
+		desc="Your personal, private code"
+		label="Sale!"
+		price={0}
+		salePrice={9}
+		unit="per month" />;
+}
+
+export function OrgPlan({ onClick }: PlanProps): JSX.Element {
+	return <PlanTile
+		onClick={onClick}
+		name="Organization"
+		desc="One organizaton's private code"
+		label="Free 14-day trial"
+		price={25}
+		unit="per user/mo" />;
+}
+
+export function EnterprisePlan({ onClick }: PlanProps): JSX.Element {
+	return <PlanTile
+		onClick={onClick}
+		name="Enterprise"
+		desc="Code hosted on premises"
+		price={50}
+		unit="per user/mo" />;
+}
+
+export function PublicPlan({ onClick }: PlanProps): JSX.Element {
+	return <PlanTile
+		onClick={onClick}
+		name="Public code"
+		desc="Any publicy available code"
+		price={0}
+		unit="forever" />;
+}
 
 function PlanTile({ name, desc, price, salePrice, unit, label, onClick }: TileProps): JSX.Element {
 
@@ -65,9 +88,9 @@ function PlanTile({ name, desc, price, salePrice, unit, label, onClick }: TilePr
 	}).toString();
 	const panelSx = {
 		border: "1px solid transparent",
-		cursor: "pointer",
 		marginBottom: whitespace[3],
 		padding: whitespace[3],
+		...onClick && { cursor: "pointer" },
 	};
 
 	return <Panel onClick={onClick} hoverLevel="low" style={panelSx} className={panelHoverSx}>

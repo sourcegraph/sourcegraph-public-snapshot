@@ -8,5 +8,13 @@ export const userSettingsRoutes: PlainRoute[] = [
 		getComponents: (location, callback) => {
 			callback(null, { main: SettingsMain });
 		},
+		getChildRoutes: (location, callback) => {
+			callback(null, [{
+				path: rel.orgSettings,
+				getComponents: (loc, cb) => {
+					cb(null, { main: SettingsMain });
+				},
+			}]);
+		},
 	},
 ];

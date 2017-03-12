@@ -1,29 +1,37 @@
 import * as React from "react";
+import { Link } from "react-router";
 
-import { RouterLocation } from "sourcegraph/app/router";
-import { Heading, Panel } from "sourcegraph/components";
-import { colors, layout, whitespace } from "sourcegraph/components/utils";
+import { abs, isAtRoute, rel } from "sourcegraph/app/routePatterns";
+import { Panel } from "sourcegraph/components";
+import { TabItem } from "sourcegraph/components/TabItem";
+import { Tabs } from "sourcegraph/components/Tabs";
+import { layout, whitespace } from "sourcegraph/components/utils";
+import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
 import { OrgContainer } from "sourcegraph/org/OrgContainer";
+import { BillingContainer } from "sourcegraph/user/Billing";
 
-interface Props { location: RouterLocation; }
-
-export function SettingsMain({ location }: Props): JSX.Element {
-
-	const sx = Object.assign({}, layout.container, {
-		marginBottom: whitespace[5],
-		marginTop: whitespace[5],
-		maxWidth: 960,
-		width: "90%",
-	});
-
-	return <Panel style={sx} hoverLevel="low" hover={false}>
-		<Heading level={5} style={{
-			marginTop: whitespace[3],
-			marginBottom: whitespace[3],
-			marginLeft: whitespace[5],
-			marginRight: whitespace[5],
-		}}>Organization settings</Heading>
-		<hr style={{ borderColor: colors.blueGrayL3(0.7) }} />
-		<OrgContainer location={location} />
-	</Panel>;
+export class SettingsMain extends ComponentWithRouter<{}, {}> {
+	render(): JSX.Element {
+		const billingPage = isAtRoute(this.context.router, abs.settings);
+		return <div style={{
+			...layout.container,
+			width: "90%",
+			display: "flex",
+			marginBottom: whitespace[4],
+			marginTop: whitespace[4],
+			minHeight: "min-content",
+		}}>
+			<Tabs style={{ height: "100%", minWidth: 200 }} direction="vertical">
+				<TabItem direction="vertical" active={billingPage}>
+					<Link to={`/${rel.settings}`}>Billing Information</Link>
+				</TabItem>
+				<TabItem direction="vertical" active={!billingPage}>
+					<Link to={`/${abs.orgSettings}`}>Organizations</Link>
+				</TabItem>
+			</Tabs>
+			<Panel style={{ width: "100%" }} hoverLevel="low" hover={false}>
+				{billingPage ? <BillingContainer /> : <OrgContainer />}
+			</Panel>
+		</div>;
+	}
 }

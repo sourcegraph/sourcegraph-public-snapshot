@@ -2,7 +2,6 @@ import * as React from "react";
 
 import { Org, OrgMember } from "sourcegraph/api";
 import { context } from "sourcegraph/app/context";
-import { Router, RouterLocation } from "sourcegraph/app/router";
 import { setLocationModalState } from "sourcegraph/components/Modal";
 import { Spinner } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
@@ -15,7 +14,6 @@ import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 interface Props {
 	org: Org;
 	members: OrgMember[] | null;
-	location: RouterLocation;
 }
 
 interface State {
@@ -24,12 +22,6 @@ interface State {
 }
 
 export class OrgPanel extends React.Component<Props, State> {
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
-	context: { router: Router };
-
 	constructor(props: Props) {
 		super(props);
 		this.state = {
@@ -100,7 +92,7 @@ export class OrgPanel extends React.Component<Props, State> {
 			return <div style={{ padding: whitespace[5] }}><Spinner /> Loading organization members</div>;
 		}
 		return <div>
-			<OrgInviteModal onInvite={this._onInviteUser.bind(this)} member={this.state.selectedMember || null} org={this.props.org} location={this.props.location} />
+			<OrgInviteModal onInvite={this._onInviteUser.bind(this)} member={this.state.selectedMember || null} org={this.props.org} />
 			<div style={{ padding: whitespace[5] }}>{this._orgMembersList(members)}</div>
 		</div>;
 	}
