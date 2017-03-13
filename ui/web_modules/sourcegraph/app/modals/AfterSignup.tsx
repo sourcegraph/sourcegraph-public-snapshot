@@ -68,10 +68,8 @@ function submitSignupInfo(details: Details): void {
 	});
 
 	if (details.plan === "organization") {
-		fetchGraphQLQuery(`{
-			mutation {
-				startOrgTrial($org)
-			}
+		fetchGraphQLQuery(`mutation {
+			startOrgTrial(GitHubOrg: $org)
 		}`, { org: details.organization });
 	}
 
