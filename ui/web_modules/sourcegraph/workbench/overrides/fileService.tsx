@@ -86,6 +86,12 @@ export class FileService implements IFileService {
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
 		return getFilesCached(resource).then(files => {
+			const statCacheHit = fileStatCache.get(resource.toString());
+			if (statCacheHit) {
+				// TODO(john): this may adversely impact zap -- we may want a flag to force re-computation
+				// of the IFileStat object.
+				return statCacheHit;
+			}
 			const fileStat = toFileStat(resource, files);
 			fileStatCache.set(resource.toString(true), fileStat);
 			return fileStat;
@@ -247,12 +253,18 @@ export function toBaseStat(resource: URI): IBaseStat {
  */
 export function toFileStat(resource: URI, files: string[]): IFileStat {
 	const childStats: IFileStat[] = [];
-	const childDirectories = new Set();
+	const childDirectories = new Set<string>();
 	const childFiles: string[] = [];
 
 	// When we recursively call toFileStat, don't forward files that aren't a transitive child of resource.
 	// This is a noticible performance optimization for large repos.
-	const recursiveFiles: string[] = [];
+	const recursiveFilesByDirectory = new Map<string, string[]>();
+	const addRecursiveFile = (dir: string, file: string) => {
+		if (!recursiveFilesByDirectory.has(dir)) {
+			recursiveFilesByDirectory.set(dir, []);
+		}
+		recursiveFilesByDirectory.get(dir)!.push(file);
+	};
 
 	// looking for children of resource
 	for (const candidate of files) {
@@ -274,16 +286,18 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 		} else {
 			const dir = prefix + child.substr(0, index);
 			childDirectories.add(dir);
-
 			// candidate is in one of resource's subdirectories,
 			// so we forward it as a file candidate in the recursive call.
-			recursiveFiles.push(candidate);
+			addRecursiveFile(dir, candidate);
 		}
 	}
 
-	const children = Array.from(childDirectories).concat(childFiles);
-	for (const child of children) {
-		const fileStat = toFileStat(resource.with({ fragment: child }), recursiveFiles);
+	for (const childDir of Array.from(childDirectories)) {
+		const fileStat = toFileStat(resource.with({ fragment: childDir }), recursiveFilesByDirectory.get(childDir)!);
+		childStats.push(fileStat);
+	}
+	for (const child of childFiles) {
+		const fileStat = toFileStat(resource.with({ fragment: child }), []);
 		childStats.push(fileStat);
 	}
 
