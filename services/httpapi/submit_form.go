@@ -33,7 +33,9 @@ func serveSubmitForm(w http.ResponseWriter, r *http.Request) error {
 	actor := auth.ActorFromContext(r.Context())
 	form["email"] = actor.Email
 
-	if err := hubspotclient.SubmitForm(formID, form); err != nil {
+	formData := hubspotutil.PrepareFormData(formName, form)
+
+	if err := hubspotclient.SubmitForm(formID, formData); err != nil {
 		return err
 	}
 	return nil

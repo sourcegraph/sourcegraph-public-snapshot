@@ -44,3 +44,22 @@ func GetFormID(formName string) (string, error) {
 		return "", fmt.Errorf("hubspotutil.GetFormID: '%s' is not a valid form", formName)
 	}
 }
+
+// PrepareFormData does any required preprocessing for individual forms
+func PrepareFormData(formName string, formData map[string]string) map[string]string {
+	switch formName {
+	case "AfterSignupForm":
+		// Always set `company` and `lastname` fields to "Unknown" if not set by the user.
+		// Salesforce requires these fields to be non-blank to do data ingestion from
+		// HubSpot, so ensure they always have a value
+		if company, ok := formData["company"]; !ok || len(company) == 0 {
+			formData["company"] = "Unknown"
+		}
+		if lastname, ok := formData["lastname"]; !ok || len(lastname) == 0 {
+			formData["lastname"] = "Unknown"
+		}
+		return formData
+	default:
+		return formData
+	}
+}
