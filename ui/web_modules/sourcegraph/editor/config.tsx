@@ -64,7 +64,7 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 		return;
 	}
 	if (workbenchStore.getState().diffMode) {
-		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource);
+		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource, selection);
 	} else {
 		renderFileEditor(resource, selection);
 	}
@@ -91,14 +91,16 @@ export function renderFileEditor(resource: URI, selection: IRange | null): void 
 /**
  * renderEditor opens a diff editor for two files.
  */
-export function renderDiffEditor(left: URI, right: URI): void {
+export function renderDiffEditor(left: URI, right: URI, selection: IRange | null): void {
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	const resolverService = Services.get(ITextModelResolverService);
 	TPromise.join([editorService.createInput({ resource: left }), editorService.createInput({ resource: right })]).then(inputs => {
 		const leftInput = new ResourceEditorInput("", "", left, resolverService);
 		const rightInput = new ResourceEditorInput("", "", right, resolverService);
 		const diff = new DiffEditorInput("", "", leftInput, rightInput);
-		editorService.openEditorWithoutURLChange(right, diff, {});
+		editorService.openEditorWithoutURLChange(right, diff, {}).then(() => {
+			updateEditorAfterURLChange(selection);
+		});
 	});
 }
 
@@ -113,7 +115,7 @@ export function isOnZapRef(): boolean {
 /**
  * setEditorDiffState updates the configuration properties for the current editor.
  */
-export function setEditorDiffState(state: WorkbenchState): void {
+export function setEditorDiffState(state: WorkbenchState, location: AbsoluteLocation): void {
 	const uri = resourceForCurrentEditor();
 	if (!uri) {
 		return;
@@ -122,7 +124,7 @@ export function setEditorDiffState(state: WorkbenchState): void {
 	const revState = getCurrentWorkspace().revState;
 	if (state.diffMode && revState && revState.zapRef) {
 		const left = uri.with({ query: `${uri.query}~0` });
-		renderDiffEditor(left, uri);
+		renderDiffEditor(left, uri, location.selection);
 	} else {
 		renderFileEditor(uri, null);
 	}

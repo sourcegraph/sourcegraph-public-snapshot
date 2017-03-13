@@ -102,7 +102,7 @@ export class WorkbenchShell extends React.Component<Props, State> {
 
 	componentWillUpdate(nextProps: Props, nextState: State): void {
 		if (this.state.diffMode !== nextState.diffMode && nextProps.path !== "/") {
-			setEditorDiffState(nextState);
+			setEditorDiffState(nextState, nextProps);
 		}
 	}
 
