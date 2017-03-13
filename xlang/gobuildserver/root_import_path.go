@@ -9,6 +9,8 @@ import (
 	"path"
 	"strings"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/sourcegraph/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -30,9 +32,28 @@ func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRoot
 	}
 	switch u.Scheme {
 	case "git":
+		// TODO(keegancsmith) umami has .git paths in their import
+		// paths. This normalization may in fact be incorrect, if so
+		// experiment with doing it only for github.com
 		rootImportPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())
 	default:
 		return "", fmt.Errorf("unrecognized originalRootPath: %q", u)
+	}
+
+	// Glide provides a canonical import path for us, try that first if it
+	// exists.
+	yml, err := ctxvfs.ReadFile(ctx, fs, "/glide.yaml")
+	if err == nil && len(yml) > 0 {
+		glide := struct {
+			Package string `yaml:"package"`
+			// There are other fields, but we don't use them
+		}{}
+		// best effort, so ignore error if we have a badly formatted
+		// yml file
+		_ = yaml.Unmarshal(yml, &glide)
+		if glide.Package != "" {
+			return glide.Package, nil
+		}
 	}
 
 	// Now scan for canonical import path comments. This is a
