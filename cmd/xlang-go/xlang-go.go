@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 )
 
@@ -37,6 +38,7 @@ func init() {
 }
 
 func main() {
+	env.Lock()
 	flag.Parse()
 	log.SetFlags(0)
 
