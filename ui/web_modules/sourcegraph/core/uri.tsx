@@ -28,7 +28,7 @@ export class URIUtils {
 			throw new Error(`expected git URI scheme in ${uri.toString()}`);
 		}
 		return {
-			repo: `${uri.authority}${uri.path.replace(/\.git$/, "")}`,
+			repo: `${uri.authority}${uri.path}`,
 			rev: decodeURIComponent(uri.query),
 			path: uri.fragment.replace(/^\//, ""),
 		};
