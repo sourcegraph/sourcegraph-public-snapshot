@@ -1,17 +1,44 @@
-// font size in unit, line height
-const scale = [
-	[3.35, 1.25],
-	[2.5, 1.5],
-	[2.0, 1.5],
-	[1.5, 1.6],
-	[1.25, 1.6],
-	[1, 1.5],
-	[0.9, 1.6],
+export const baseSizeMobile = "14px";
+
+// 1rem = 16px
+export const size = [
+	{
+		fontSize: 0,
+		lineHeight: 0,
+	},
+	{
+		fontSize: "3.25rem",
+		lineHeight: "1.5",
+	},
+	{
+		fontSize: "2.5rem",
+		lineHeight: 1.5,
+	},
+	{
+		fontSize: "2rem",
+		lineHeight: 1.5
+	},
+	{
+		fontSize: "1.5rem",
+		lineHeight: 1.5,
+	},
+	{
+		fontSize: "1.25rem",
+		lineHeight: 1.5,
+	},
+	{
+		fontSize: "1rem",
+		lineHeight: 1.5,
+	},
+	{
+		fontSize: "0.875rem",
+		lineHeight: 1.5,
+	},
 ];
 
-export const unit = "rem";
-
-export const baseSizeMobile = "14px";
+export const body = size[6];
+export const small = size[7];
+export const large = size[2];
 
 export const fontStack = {
 	sansSerif: "'circular-std', -apple-system, BlinkMacSystemFont, '.SFNSText-Regular', 'San Francisco', 'SFNS Display', 'Roboto', 'Lucida Grande', 'avenir next', avenir, 'Helvetica', Ubuntu, 'segoe ui', arial, sans-serif",
@@ -22,46 +49,11 @@ export const weight = [0, 100, 800];
 
 export const codeSize = [
 	{
-		fontSize: 1 + unit,
+		fontSize: "1rem",
 		lineHeight: 1.45,
 	},
 	{
-		fontSize: 0.9 + unit,
+		fontSize: "0.9rem",
 		lineHeight: 1.45,
 	},
 ];
-
-export const size = [
-	{},
-	{
-		fontSize: scale[0][0] + unit,
-		lineHeight: scale[0][1],
-	},
-	{
-		fontSize: scale[1][0] + unit,
-		lineHeight: scale[1][1],
-	},
-	{
-		fontSize: scale[2][0] + unit,
-		lineHeight: scale[2][1],
-	},
-	{
-		fontSize: scale[3][0] + unit,
-		lineHeight: scale[3][1],
-	},
-	{
-		fontSize: scale[4][0] + unit,
-		lineHeight: scale[4][1],
-	},
-	{
-		fontSize: scale[5][0] + unit,
-		lineHeight: scale[5][1],
-	},
-	{
-		fontSize: scale[6][0] + unit,
-		lineHeight: scale[6][1],
-	},
-];
-
-export const small = size[7];
-export const large = size[2];
