@@ -93,6 +93,7 @@ const config = {
 	window: {
 		title: "${activeEditorShort} - ${rootName} - Sourcegraph",
 	},
+	zenMode: {},
 };
 
 DefaultConfig.editor.readOnly = config.editor.readOnly;
