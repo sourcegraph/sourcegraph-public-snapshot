@@ -94,6 +94,8 @@ export class WorkbenchShell extends React.Component<Props, State> {
 					this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null));
 					return;
 				}
+			} else if (revState && revState.zapRef) {
+				this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
 			}
 		}));
 	}

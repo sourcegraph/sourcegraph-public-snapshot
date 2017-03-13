@@ -10,9 +10,7 @@ import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderReg
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
-import { CommandsRegistry } from "vs/platform/commands/common/commands";
 import { IFileService } from "vs/platform/files/common/files";
-import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { IQuickOpenService } from "vs/platform/quickOpen/common/quickOpen";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
@@ -282,11 +280,3 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 		history.replaceState({}, "", window.location.pathname + hash);
 	}
 }
-
-CommandsRegistry.registerCommand("zap.reference.change", (accessor: ServicesAccessor, ref: string) => {
-	// TODO(john): remove
-});
-
-CommandsRegistry.registerCommand("zap.status.change", (accessor: ServicesAccessor, isRunning: boolean) => {
-	// TODO(john): remove
-});

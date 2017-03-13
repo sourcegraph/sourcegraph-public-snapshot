@@ -60,7 +60,6 @@ class BrowserEnvironment implements IEnvironment {
 		this._prevZapRef = this._zapRef;
 		this._zapRef = ref;
 		this.zapRefChangeEmitter.fire(ref);
-		vscode.commands.executeCommand("zap.reference.change", ref);
 	}
 
 	get prevZapRef(): string | undefined {
@@ -139,7 +138,6 @@ class BrowserEnvironment implements IEnvironment {
 
 	set isRunning(status: boolean) {
 		this._isRunning = status;
-		vscode.commands.executeCommand("zap.status.change", status);
 	}
 
 	get isRunning(): boolean {
