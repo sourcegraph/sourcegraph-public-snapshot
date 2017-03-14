@@ -9,10 +9,13 @@ import (
 	"regexp"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
 )
 
 // Adapted from github.com/golang/gddo/gosrc.
+
+var noGoGetDomains = env.Get("NO_GO_GET_DOMAINS", "", "list of domains to NOT perform go get on")
 
 type directory struct {
 	importPath  string // the Go import path for this package
@@ -53,6 +56,38 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 			vcs:         "git",
 			rev:         RuntimeVersion,
 		}, nil
+	}
+
+	// This allows a user to set a list of domains that are considered to be
+	// non-go-gettable, i.e. standard git repositories. Some on-prem customers
+	// use setups like this, where they directly import non-go-gettable git
+	// repository URLs like "mygitolite.aws.me.org/mux.git/subpkg"
+	if noGoGetDomains != "" {
+		list := strings.Split(noGoGetDomains, ",")
+		for _, domain := range list {
+			domain = strings.TrimSpace(domain)
+			if domain == "" {
+				continue
+			}
+			if !strings.HasPrefix(importPath, domain) {
+				continue
+			}
+
+			// TODO(slimsag): We assume that .git only shows up
+			// once in the import path. Not always true, but generally
+			// should be in 99% of cases.
+			split := strings.Split(importPath, ".git")
+			if len(split) != 2 {
+				return nil, fmt.Errorf("expected one .git in %q", importPath)
+			}
+
+			return &directory{
+				importPath:  importPath,
+				projectRoot: split[0],
+				cloneURL:    split[0],
+				vcs:         "git",
+			}, nil
+		}
 	}
 
 	switch {
