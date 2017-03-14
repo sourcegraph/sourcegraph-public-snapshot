@@ -65,6 +65,8 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
 	var zapRef *zapRefResolver
 
+	// TODO(matt,john): remove this hack, this zapRefInfo call was causing a front-end error
+	// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
 	if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
 		// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
 		if args.Rev != "" && !strings.HasSuffix(args.Rev, "^{git}") {
@@ -72,8 +74,6 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 			if err != nil {
 				return nil, err
 			}
-			// TODO(matt,john): remove this hack, this zapRefInfo call was causing a front-end error
-			// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
 			zapRefInfo, _ := cl.RefInfo(ctx, zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev})
 			// TODO(john): add error-specific handling?
 			if zapRefInfo != nil && zapRefInfo.State != nil {

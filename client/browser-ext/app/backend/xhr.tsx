@@ -1,3 +1,4 @@
+import "whatwg-fetch";
 import { getPlatformName } from "../utils";
 import { phabricatorInstance } from "../utils/context";
 
@@ -46,5 +47,5 @@ export function doFetch(url: string, opt?: any): Promise<Response> {
 		// the above object merge might override the auth headers. add those back in.
 		fetchOptions.headers = combineHeaders(opt.headers, defaults.headers);
 	}
-	return global.fetch(url, fetchOptions);
+	return fetch(url, fetchOptions);
 }

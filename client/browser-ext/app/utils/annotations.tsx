@@ -106,6 +106,9 @@ export function convertNode(currentNode: Node, offset: number, line: number, ign
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
+const VARIABLE_TOKENIZER = /(^\w+)/;
+const ASCII_CHARACTER_TOKENIZER = /(^[\x20-\x7F])/;
+const NONVARIABLE_TOKENIZER = /(^\W+)/;
 export function convertTextNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
 	let nodeText;
 	let prevConsumed = 0;
@@ -134,9 +137,23 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 	}
 
 	function consumeNext(txt: string): string {
-		const match = txt.match(/^(\w+)/);
-		if (match) {
-			return match[0];
+		// first, check for real stuff, i.e. sets of [A-Za-z0-9_]
+		const variableMatch = txt.match(VARIABLE_TOKENIZER);
+		if (variableMatch) {
+			return variableMatch[0];
+		}
+		// next, check for tokens that are not variables, but should stand alone
+		// i.e. {}, (), :;. ...
+		const asciiMatch = txt.match(ASCII_CHARACTER_TOKENIZER);
+		if (asciiMatch) {
+			return asciiMatch[0];
+		}
+		// finally, the remaining tokens we can combine into blocks, since they are whitespace
+		// or UTF8 control characters. We had better clump these in case UTF8 control bytes
+		// require adjacent bytes
+		const nonVariableMatch = txt.match(NONVARIABLE_TOKENIZER);
+		if (nonVariableMatch) {
+			return nonVariableMatch[0];
 		}
 		return txt[0];
 	}

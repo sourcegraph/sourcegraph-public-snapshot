@@ -52,6 +52,6 @@
 		"react-icon-base": "^2.0.0",
 		"telligent-tracker": "^0.1.2",
 		"typestyle": "^0.7.4",
-		"utf8": "^2.1.2"
+		"whatwg-fetch": "^2.0.3"
 	}
 }
