@@ -36,3 +36,7 @@ develop-zap:
 undevelop-zap:
 	cd ui && yarn unlink libzap vscode-zap
 	git checkout -- vendor/github.com/sourcegraph/zap
+
+.PHONY: deploy-zap
+deploy-zap:
+	git fetch && git push origin origin/master:docker-images/zap
