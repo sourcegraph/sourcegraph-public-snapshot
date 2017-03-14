@@ -40,18 +40,35 @@ export interface WorkbenchState {
 }
 
 export const workbenchStore = new MiniStore<WorkbenchState>();
+let initializedWorkbench: {
+	workbench: Workbench,
+	services: ServiceCollection,
+	parent: HTMLDivElement
+} | null = null;
 
 /**
  * init bootraps workbench creation.
  */
-export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string, commitID?: string, branch?: string): [Workbench, ServiceCollection] {
+export function init(reactDomElement: HTMLDivElement, resource: URI, zapRef?: string, commitID?: string, branch?: string): [Workbench, ServiceCollection] {
+	if (initializedWorkbench) {
+		const { workbench, services, parent } = initializedWorkbench;
+		reactDomElement.appendChild(parent);
+		return [workbench, services];
+	}
+
+	const parent = document.createElement("div");
+	parent.style.height = "100%";
+	reactDomElement.appendChild(parent);
+	const domElement = document.createElement("div");
+	domElement.style.height = "100%";
+	parent.appendChild(domElement);
+
 	const workspace = resource.with({ fragment: "" });
 	const services = setupServices(domElement, workspace, zapRef, commitID, branch);
 	configurePreStartup(services);
 
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 
-	const parent = domElement.parentElement;
 	const workbench = instantiationService.createInstance(
 		Workbench,
 		parent,
@@ -78,6 +95,11 @@ export function init(domElement: HTMLDivElement, resource: URI, zapRef?: string,
 		workbenchStore.dispatch({ diffMode: Boolean(zapRef) });
 	}
 
+	initializedWorkbench = {
+		parent,
+		workbench,
+		services,
+	};
 	return [workbench, services];
 }
 

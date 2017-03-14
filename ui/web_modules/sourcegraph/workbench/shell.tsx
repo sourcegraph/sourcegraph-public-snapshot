@@ -51,9 +51,6 @@ export class WorkbenchShell extends React.Component<Props, State> {
 
 	domRef(domElement: HTMLDivElement): void {
 		if (!domElement) {
-			if (this.workbench) {
-				this.workbench.dispose();
-			}
 			return;
 		}
 
@@ -78,10 +75,10 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		// This can be implemented by vscode, but without knowing all scenarios in which we
 		// want to display an overlay we've left it the Sourcegraph application's responsibility for toggling visibilty.
 		const modalOverlay = document.querySelector(".workbench-modal-overlay") as any;
-		this.disposables.push(...registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden"));
+		registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden");
 
 		const contextService = Services.get(IWorkspaceContextService);
-		this.disposables.push(contextService.onWorkspaceUpdated(workspace => {
+		contextService.onWorkspaceUpdated(workspace => {
 			const revState = workspace.revState;
 			const newRepo = workspace.resource.authority + workspace.resource.path !== this.props.repo;
 			workbenchStore.dispatch({ diffMode: Boolean(revState && revState.zapRef) });
@@ -97,7 +94,7 @@ export class WorkbenchShell extends React.Component<Props, State> {
 			} else if (revState && revState.zapRef) {
 				this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
 			}
-		}));
+		});
 	}
 
 	componentWillUpdate(nextProps: Props, nextState: State): void {
