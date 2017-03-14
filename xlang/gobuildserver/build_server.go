@@ -200,7 +200,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// Determine the root import path of this workspace (e.g., "github.com/user/repo").
 		span.SetTag("originalRootPath", params.OriginalRootPath)
 		fs := vfsutil.RemoteFS(conn)
-		rootImportPath, err := h.determineRootImportPath(ctx, params.OriginalRootPath, fs)
+		rootImportPath, err := determineRootImportPath(ctx, params.OriginalRootPath, fs)
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootPath)
 		}

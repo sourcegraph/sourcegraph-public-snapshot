@@ -24,7 +24,7 @@ import (
 // It's intended to handle cases like
 // github.com/kubernetes/kubernetes, which has doc.go files that
 // indicate its root import path is k8s.io/kubernetes.
-func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRootPath string, fs ctxvfs.FileSystem) (rootImportPath string, err error) {
+func determineRootImportPath(ctx context.Context, originalRootPath string, fs ctxvfs.FileSystem) (rootImportPath string, err error) {
 	if originalRootPath == "" {
 		return "", errors.New("unable to determine Go workspace root import path without due to empty root path")
 	}
