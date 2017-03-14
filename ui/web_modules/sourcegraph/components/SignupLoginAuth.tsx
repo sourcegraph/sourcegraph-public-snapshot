@@ -1,14 +1,12 @@
 import * as React from "react";
 
-import { Router, RouterLocation } from "sourcegraph/app/router";
 import { GitHubAuthButton } from "sourcegraph/components";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
-import { addQueryObjToURL, ghCodeAction } from "sourcegraph/user/Auth";
+import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
+import { githubAuthAction } from "sourcegraph/user/Auth";
 
 interface Props {
 	children?: React.ReactNode[];
-	newUserReturnTo?: string | RouterLocation;
-	returnTo?: string | RouterLocation;
 }
 
 const dividerSx = {
@@ -29,35 +27,18 @@ const subtextSx = {
 	textAlign: "center",
 	...typography.small
 };
-
-export class SignupLoginAuth extends React.Component<Props, {}> {
-
-	static contextTypes: React.ValidationMap<any> = {
-		router: React.PropTypes.object.isRequired,
-	};
-
-	context: { router: Router };
-
+export class SignupLoginAuth extends ComponentWithRouter<Props, {}> {
 	render(): JSX.Element {
-		const publicCode = ghCodeAction(this.context.router, false);
-		const { children, returnTo, newUserReturnTo } = this.props;
-		const location = this.context.router.location;
-		const signUpFlowURL = addQueryObjToURL(
-			location,
-			newUserReturnTo || location,
-			{ tour: "signup", private: true },
-		);
+		const publicCode = githubAuthAction(this.context.router, false);
 
 		return <div>
 			<div style={containerSx}>
-				{children &&
-					<div style={{ marginBottom: whitespace[5] }}>{children}</div>}
+				{this.props.children &&
+					<div style={{ marginBottom: whitespace[5] }}>{this.props.children}</div>}
 				<GitHubAuthButton
 					id="github-auth-btn"
-					scope="private"
-					block={true}
-					returnTo={returnTo || location}
-					newUserReturnTo={signUpFlowURL}>Authorize with GitHub</GitHubAuthButton>
+					privateCode={true}
+					block={true}>Authorize with GitHub</GitHubAuthButton>
 				<p style={{ color: colors.blueGrayL1() }}>or</p>
 				{publicCode.form}
 				<a onClick={publicCode.submit}>Only authorize public code</a>

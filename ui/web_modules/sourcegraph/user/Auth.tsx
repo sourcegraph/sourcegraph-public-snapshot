@@ -23,7 +23,7 @@ export function addQueryObjToURL(
 	return { ...base, ...urlOrPathname, query: { modal: "afterSignup", ...queryObj } };
 }
 
-export const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/checkup.go#L153";
+export const defaultOnboardingPath = "/github.com/sourcegraph/checkup/-/blob/fs.go";
 
 /**
  * An action form contains an JSX element that must be included in the DOM and
@@ -47,7 +47,7 @@ export interface AuthProps {
 /**
  * Get an authorization action and form.
  */
-export function getAuthAction(props: AuthProps): ActionForm {
+function getAuthAction(props: AuthProps): ActionForm {
 	let url = urlToOAuth(
 		props.provider,
 		props.scopes,
@@ -78,14 +78,17 @@ export function getAuthAction(props: AuthProps): ActionForm {
 	};
 }
 
-export function ghCodeAction(router: Router, privateCode: boolean): ActionForm {
-	const newUserPath = router.location.pathname.indexOf("/-/blob/") !== -1 ? { pathname: router.location.pathname, hash: router.location.hash } : defaultOnboardingPath;
-	const base = { ...router.location, pathname: "" };
-	const newUserReturnTo = addQueryObjToURL(
-		base,
-		newUserPath,
-		{ modal: "afterSignup", private: privateCode }
-	);
+export function githubAuthAction(router: Router, privateCode: boolean): ActionForm {
+	const newUserReturnTo = {
+		...router.location,
+		pathname: defaultOnboardingPath,
+		query: {
+			tour: "signup",
+			private: privateCode,
+			modal: "afterSignup",
+		},
+		hash: "#L153"
+	};
 	return getAuthAction({
 		eventObject: Events.OAuth2FlowGitHub_Initiated,
 		provider: "github",

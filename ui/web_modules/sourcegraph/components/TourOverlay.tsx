@@ -182,7 +182,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 				Click any symbol to view its <strong>references</strong> in this repository and in any public code.
 			</p>;
 			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[5] }} color="white" size="tiny">Install the Chrome extension</Button>;
-			const refActionCTA = <div style={{ paddingLeft: whitespace[5] }}><GitHubAuthButton pageName="BlobViewOnboarding" color="blueGray" scope="private" returnTo={this.props.location}>Authorizing with GitHub</GitHubAuthButton></div>;
+			const refActionCTA = <div style={{ paddingLeft: whitespace[5] }}><GitHubAuthButton pageName="BlobViewOnboarding" color="blueGray" privateCode={true}>Authorizing with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
 				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", shouldPromptToInstallBrowserExtension() ? null : defActionCTA),

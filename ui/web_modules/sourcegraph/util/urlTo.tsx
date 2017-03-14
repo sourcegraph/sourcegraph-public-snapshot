@@ -20,9 +20,7 @@ function createHrefWithHash(loc: RouterLocation | string): string {
 		}
 		loc = { pathname: loc } as RouterLocation;
 	}
-	let s = history.createHref(loc);
-	if (loc.hash) { s += `#${loc.hash}`; }
-	return s;
+	return history.createHref(loc);
 }
 
 // urlToOAuth returns an OAuth initiate URL for given provider, scopes, returnTo.

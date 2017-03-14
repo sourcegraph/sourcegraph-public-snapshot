@@ -2,9 +2,8 @@ import * as React from "react";
 import * as Relay from "react-relay";
 
 import { context } from "sourcegraph/app/context";
-import { SignupModalContainer } from "sourcegraph/app/modals/Signup";
 import { Router, RouterLocation } from "sourcegraph/app/router";
-import { dismissModal } from "sourcegraph/components/Modal";
+import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
 import { PlanSelector, PlanType } from "sourcegraph/components/PlanSelector";
 import { EnterpriseDetails, EnterpriseThanks, OnPremDetails } from "sourcegraph/org/OnPremSignup";
 import { OrgSelection } from "sourcegraph/org/OrgSignup";
@@ -205,11 +204,11 @@ const Modal = (props: {
 	router: Router;
 	root: GQL.IRoot;
 }): JSX.Element => {
-	return <SignupModalContainer modalName="afterSignup" sticky={true}>
+	return <LocationStateModal modalName="afterSignup" title="Sign up" padded={false} sticky={true}>
 		<AfterSignupForm
 			root={props.root}
 			onSubmit={dismissModal("afterSignup", props.router)} />
-	</SignupModalContainer>;
+	</LocationStateModal>;
 };
 
 const ModalContainer = Relay.createContainer(Modal, {

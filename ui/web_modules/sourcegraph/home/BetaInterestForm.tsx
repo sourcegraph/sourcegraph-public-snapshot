@@ -116,7 +116,7 @@ export class BetaInterestForm extends Component<Props, State> {
 		if (!context.user) {
 			return <Panel hoverLevel="low" style={{ paddingTop: whitespace[4], textAlign: "center" }}>
 				<p>You must sign up to continue.</p>
-				<SignupForm returnTo={this.props.loginReturnTo} />
+				<SignupForm />
 			</Panel>;
 		}
 

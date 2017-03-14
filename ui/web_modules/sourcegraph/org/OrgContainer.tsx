@@ -3,7 +3,7 @@ import * as React from "react";
 import { Org, OrgMember } from "sourcegraph/api";
 import { context } from "sourcegraph/app/context";
 import { RouterContext } from "sourcegraph/app/router";
-import { GitHubAuthButton, GridCol, GridRow, Heading, TabItem, Tabs } from "sourcegraph/components";
+import { GridCol, GridRow, Heading, TabItem, Tabs } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, whitespace } from "sourcegraph/components/utils";
 import { Container } from "sourcegraph/Container";
@@ -74,33 +74,17 @@ export class OrgContainer extends Container<{}, State> {
 	}
 
 	_noRepoPanel(): JSX.Element {
-		let msgHeader;
-		let msgBody;
-
-		if (context.hasOrganizationGitHubToken()) {
-			msgHeader = <span>It looks like you're not a part of any orgs</span>;
-			msgBody = <span>
-				If this doesn't seem right, try <a target="_blank" href="https://github.com/settings/connections/applications/8ac4b6c4d2e7b0721d68">verifying permissions</a> on GitHub.
-			</span>;
-		} else {
-			msgHeader = <div>Browse your Org's private code on Sourcegraph</div>;
-			msgBody = <div>
-				Get inline annotations, jump to definition, and more for your company's private code.
-				<div style={{ marginTop: whitespace[5] }}>
-					<GitHubAuthButton pageName={"ViewOrgs"} scope="private" returnTo={"/settings"}>
-						Add your orgs
-					</GitHubAuthButton> to start a 14-day trial.
-				</div>
-			</div>;
-		}
-
 		return <div
 			style={{ marginTop: whitespace[8], padding: whitespace[8], textAlign: "center", maxWidth: 500, marginLeft: "auto", marginRight: "auto" }}>
 			<Heading level={5}>
-				{msgHeader}
+				<span>It looks like you're not a part of any organizations.</span>
 			</Heading>
 			<div style={{ color: colors.blueGray() }}>
-				{msgBody}
+				<span>
+					Don't see the organization you were looking for? Your organization's GitHub permissions may restrict third-party applications.
+					You can <a target="_blank" href="https://github.com/settings/connections/applications/8ac4b6c4d2e7b0721d68">request access</a>
+					on GitHub, or contact us at <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>.
+			</span>;
 			</div>
 		</div>;
 	}
