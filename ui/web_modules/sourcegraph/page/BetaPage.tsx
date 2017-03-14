@@ -38,7 +38,7 @@ export function BetaPage(props: BetaPageProps): JSX.Element {
 				<br />
 				<Heading level={3} underline="blue">Register for beta access</Heading>
 
-				<BetaInterestForm loginReturnTo="/beta" location={props.location} />
+				<BetaInterestForm location={props.location} />
 			</div>
 		</div>
 	);

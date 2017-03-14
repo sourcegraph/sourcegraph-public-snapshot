@@ -16,7 +16,6 @@ interface Props {
 	className?: string;
 	language?: string;
 	location: RouterLocation;
-	loginReturnTo: string;
 	style?: React.CSSProperties;
 }
 

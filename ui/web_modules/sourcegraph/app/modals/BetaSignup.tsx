@@ -13,7 +13,6 @@ export const BetaSignup = (props: Props): JSX.Element => {
 	return <LocationStateModal modalName="menuBeta" title="Join our beta program">
 		<BetaInterestForm
 			location={props.location}
-			loginReturnTo="/beta"
 			onSubmit={dismissModal("menuBeta", props.router)} />
 	</LocationStateModal>;
 };
