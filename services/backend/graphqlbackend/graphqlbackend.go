@@ -99,7 +99,7 @@ func (r *rootResolver) Repository(ctx context.Context, args *struct{ URI string 
 
 func (r *rootResolver) Repositories(ctx context.Context, args *struct{ Query string }) ([]*repositoryResolver, error) {
 	opt := &sourcegraph.RepoListOptions{Query: args.Query}
-	opt.PerPage = 20
+	opt.PerPage = 200
 	return listRepos(ctx, opt)
 }
 

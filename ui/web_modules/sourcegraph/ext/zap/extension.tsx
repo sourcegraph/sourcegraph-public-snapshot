@@ -1,3 +1,4 @@
+import { isOnPremInstance } from "sourcegraph/app/context";
 import * as vscode from "vscode";
 
 import browserEnvironment from "sourcegraph/ext/environment";
@@ -7,7 +8,7 @@ import { InitializationOptions } from "sourcegraph/ext/protocol";
 
 export function activate(): any {
 	const initOpts: InitializationOptions = (self as any).extensionHostOptions;
-	if (initOpts.context.appURL === "http://sourcegraph.dev.uberinternal.com:30000" || initOpts.context.appURL === "http://node.aws.sgdev.org:30000") {
+	if (isOnPremInstance(initOpts.context.authEnabled)) {
 		return;
 	}
 	const ctx: vscode.ExtensionContext = { subscriptions: [] as vscode.Disposable[] } as any;

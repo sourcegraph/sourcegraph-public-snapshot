@@ -13,6 +13,7 @@ import { FileMatch, IFileMatch, ISearchComplete, ISearchConfiguration, ISearchPr
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
 import { RepoList } from "sourcegraph/api";
+import { context, isOnPremInstance } from "sourcegraph/app/context";
 import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { defaultExcludesRegExp } from "sourcegraph/workbench/ConfigurationService";
@@ -93,6 +94,9 @@ export class SearchService implements ISearchService {
 			if (cacheHit) {
 				return onComplete({ results: convertResults(cacheHit), stats: {} as any });
 			}
+			// repo search doesn't work for on-premises. the quick and dirty hack is to return all repos,
+			// then allow VSCode to do the filtering on the front-end
+			// TODO(neelance): fix repo search
 			fetchGraphQLQuery(`query {
 				root {
 					repositories(query: $query) {
@@ -104,7 +108,7 @@ export class SearchService implements ISearchService {
 						}
 					}
 				}
-			}`, { query: query.filePattern })
+			}`, { query: isOnPremInstance(context.authEnabled) ? "" : query.filePattern })
 				.then(data => {
 					reposCache.set(query.filePattern!, data.root.repositories);
 					onComplete({ results: convertResults(data.root.repositories), stats: {} as any });

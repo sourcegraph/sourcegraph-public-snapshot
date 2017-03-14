@@ -59,6 +59,11 @@ class Context {
 	}
 }
 
+// exported because webworkers need to be able to use it, and methods not transferred with context object
+export function isOnPremInstance(authEnabled: boolean): boolean {
+	return !authEnabled;
+}
+
 const SOURCEGRAPH_CLOUD_URL_PATTERN = /^https?:\/\/sourcegraph.com/i;
 
 export const context = new Context(global.__sourcegraphJSContext);
