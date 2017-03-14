@@ -9,9 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"strconv"
-
-	"github.com/prometheus/client_golang/prometheus"
 	gogithub "github.com/sourcegraph/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -85,17 +82,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	return repo, nil
 }
 
-var listReposCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "repos",
-	Name:      "list_requests",
-	Help:      "Counts queries to list repositories.",
-}, []string{"query_empty"})
-
-func init() {
-	prometheus.MustRegister(listReposCounter)
-}
-
 // ghRepoQueryMatcher matches search queries that look like they refer
 // to GitHub repositories. Examples include "github.com/gorilla/mux", "gorilla/mux", "gorilla mux",
 // "gorilla / mux"
@@ -105,8 +91,6 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
-
-	listReposCounter.WithLabelValues(strconv.FormatBool(opt == nil || opt.Query == "")).Inc()
 
 	ctx, done := trace(ctx, "Repos", "List", opt, &err)
 	defer done()
