@@ -544,7 +544,7 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 
 				i := strings.Index(d.cloneURL, "://")
 				if i >= 0 {
-					repo := strings.TrimSuffix(d.cloneURL[i+len("://"):], "."+d.vcs)
+					repo := d.cloneURL[i+len("://"):]
 					path := strings.TrimPrefix(strings.TrimPrefix(p, d.projectRoot), "/")
 					return fmt.Sprintf("%s://%s?%s#%s", d.vcs, repo, rev, path), nil
 				}
