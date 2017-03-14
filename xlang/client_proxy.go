@@ -352,14 +352,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
-
-		// PERF: Initialize the server as soon as possible, so that it
-		// can start indexing before a user does an explicit request.
-		err = c.proxy.initializeServer(ctx, serverID{contextID: c.context})
-		if err != nil {
-			return nil, err
-		}
-
 		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
