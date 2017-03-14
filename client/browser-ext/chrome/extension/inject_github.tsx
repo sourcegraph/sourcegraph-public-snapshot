@@ -9,7 +9,7 @@ import { eventLogger } from "../../app/utils/context";
 import * as github from "../../app/utils/github";
 import { getDomain, getGitHubRoute, parseURL } from "../../app/utils/index";
 import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
-import { Domain } from "../../app/utils/types";
+import { Domain, GitHubBlobUrl, GitHubMode, GitHubUrl } from "../../app/utils/types";
 
 function ejectComponent(mount: HTMLElement): void {
 	try {
@@ -72,7 +72,14 @@ function injectModules(): void {
 };
 
 function injectBlobAnnotators(): void {
-	const { repoURI, path, isDelta } = parseURL(window.location);
+	let { repoURI, path, isDelta } = parseURL(window.location);
+	const gitHubState: GitHubUrl | null = github.getGitHubState(window.location.href);
+	// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a 
+	// slash in it to fix that bug
+	if (gitHubState && gitHubState.mode === GitHubMode.Blob && (gitHubState as GitHubBlobUrl).rev.indexOf("/") > 0) {
+		// correct in case branch has slash in it
+		path = (gitHubState as GitHubBlobUrl).path;
+	}
 	if (!repoURI) {
 		console.error("cannot determine repo URI");
 		return;

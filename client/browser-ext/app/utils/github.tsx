@@ -1,5 +1,5 @@
 import * as utils from ".";
-import { CodeCell } from "./types";
+import { CodeCell, GitHubBlobUrl, GitHubMode, GitHubPullUrl, GitHubUrl } from "./types";
 
 function invariant(cond: any): void {
 	if (!cond) {
@@ -384,4 +384,93 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement, opt: { isDelt
 	}
 
 	return cells;
+}
+
+const GITHUB_BLOB_REGEX = /^(https?):\/\/(github.com)\/([A-Za-z0-9_]+)\/([A-Za-z0-9-]+)\/blob\/([^#]*)(#L[0-9]+)?/i;
+const GITHUB_PULL_REGEX = /^(https?):\/\/(github.com)\/([A-Za-z0-9_]+)\/([A-Za-z0-9-]+)\/pull\/([0-9]+)(\/(commits|files))?/i;
+const COMMIT_HASH_REGEX = /^([0-9a-f]{40})/i;
+export function getGitHubState(url: string): GitHubBlobUrl | GitHubPullUrl | null {
+	const blobMatch = GITHUB_BLOB_REGEX.exec(url);
+	if (blobMatch) {
+		const match = {
+			protocol: blobMatch[1],
+			hostname: blobMatch[2],
+			org: blobMatch[3],
+			repo: blobMatch[4],
+			revAndPath: blobMatch[5],
+			lineNumber: blobMatch[6],
+		};
+		let rev = getRevOrBranch(match.revAndPath);
+		if (!rev) {
+			return null;
+		}
+		const path = match.revAndPath.replace(rev + "/", "");
+		return {
+			mode: GitHubMode.Blob,
+			owner: match.org,
+			repo: match.repo,
+			revAndPath: match.revAndPath,
+			lineNumber: match.lineNumber,
+			rev: rev,
+			path: path,
+		};
+	}
+	const pullMatch = GITHUB_PULL_REGEX.exec(url);
+	if (pullMatch) {
+		const match = {
+			protocol: pullMatch[1],
+			hostname: pullMatch[2],
+			org: pullMatch[3],
+			repo: pullMatch[4],
+			id: pullMatch[5],
+			view: pullMatch[7],
+		};
+		const numId: number = parseInt(match.id, 10);
+		if (isNaN(numId)) {
+			console.error(`match.id ${match.id} is parsing to NaN`);
+			return null;
+		}
+		return {
+			mode: GitHubMode.PullRequest,
+			repo: match.repo,
+			owner: match.org,
+			view: match.view,
+			id: numId,
+		};
+	}
+	return null;
+}
+
+function getBranchName(): string | null {
+	const branchButtons = document.getElementsByClassName("btn btn-sm select-menu-button js-menu-target css-truncate");
+	if (branchButtons.length === 0) {
+		return null;
+	}
+	// if the branch is a long name, it appears in the title of this element
+	// I'm not kidding, so dumb...
+	if ((branchButtons[0] as HTMLElement).title) {
+		return (branchButtons[0] as HTMLElement).title;
+	}
+	const innerButtonEls = (branchButtons[0] as HTMLElement).getElementsByClassName("js-select-button css-truncate-target");
+	if (innerButtonEls.length === 0) {
+		return null;
+	}
+	// otherwise, the branch name is fully rendered in the button
+	return (innerButtonEls[0] as HTMLElement).innerText as string;
+}
+
+function getRevOrBranch(revAndPath: string): string | null {
+	const matchesCommit = COMMIT_HASH_REGEX.exec(revAndPath);
+	if (matchesCommit) {
+		return matchesCommit[1].substring(0, 40);
+	}
+	const branch = getBranchName();
+	if (!branch) {
+		return null;
+	}
+	if (!revAndPath.startsWith(branch)) {
+		console.error(`branch and path is ${revAndPath}, and branch is ${branch}`);
+		return null;
+	}
+	return branch;
 }

@@ -4,7 +4,7 @@ import * as jsdom from "jsdom";
 import * as utils from "../app/utils";
 import * as annotations from "../app/utils/annotations";
 import * as github from "../app/utils/github";
-import { CodeCell } from "../app/utils/types";
+import { CodeCell, GitHubBlobUrl } from "../app/utils/types";
 
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
@@ -20,6 +20,39 @@ function setupDOM(url: string): (done: any) => void {
 }
 
 describe("GitHub DOM", () => {
+	describe("blob view", () => {
+		const url = "https://github.com/gorilla/mux/blob/master/mux.go";
+		before(setupDOM(url));
+
+		it("should parse branch name from button", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("master");
+		});
+
+	});
+	describe("short branch blob view", () => {
+		const url = "https://github.com/sourcegraphtest/test-case/blob/uforic/wip/glide_2.yaml";
+		before(setupDOM(url));
+
+		it("should parse branch name from button", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("uforic/wip");
+		});
+
+	});
+	describe("long branch blob view", () => {
+		const url = "https://github.com/sourcegraphtest/test-case/blob/uforic/very_long_wip/glide_2.yaml";
+		before(setupDOM(url));
+
+		it("should parse branch name from button", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("uforic/very_long_wip");
+		});
+
+	});
 	describe("blob view", () => {
 		const url = "https://github.com/gorilla/mux/blob/757bef944d0f21880861c2dd9c871ca543023cba/mux.go";
 		before(setupDOM(url));
@@ -63,6 +96,12 @@ describe("GitHub DOM", () => {
 			expect(data.isDelta).to.not.be.ok;
 			expect(data.isCommit).to.not.be.ok;
 			expect(data.isPullRequest).to.not.be.ok;
+		});
+
+		it("when visiting a url @ a specific commit, getGitHubState should use commit SHA not branch name", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("757bef944d0f21880861c2dd9c871ca543023cba");
 		});
 
 		describe("annotations", () => {

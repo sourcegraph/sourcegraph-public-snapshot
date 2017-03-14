@@ -4,7 +4,7 @@ import * as utils from "../utils";
 import { addAnnotations, RepoRevSpec } from "../utils/annotations";
 import { eventLogger, sourcegraphUrl } from "../utils/context";
 import * as github from "../utils/github";
-import { CodeCell } from "../utils/types";
+import { CodeCell, GitHubBlobUrl, GitHubMode, GitHubUrl } from "../utils/types";
 import { SourcegraphIcon } from "./Icons";
 
 const className = "btn btn-sm tooltipped tooltipped-n";
@@ -50,7 +50,14 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
 		this.fileExtension = utils.getPathExtension(props.headPath);
 
-		const { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
+		let { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
+		const gitHubState = github.getGitHubState(window.location.href);
+		// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a 
+		// slash in it to fix that bug
+		if (gitHubState && gitHubState.mode === GitHubMode.Blob && (gitHubState as GitHubBlobUrl).rev.indexOf("/") > 0) {
+			// correct in case branch has slash in it
+			rev = (gitHubState as GitHubBlobUrl).rev;
+		}
 		this.isDelta = isDelta;
 		this.isPullRequest = isPullRequest;
 		this.isCommit = isCommit;

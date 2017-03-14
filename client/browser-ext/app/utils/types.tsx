@@ -61,3 +61,31 @@ export interface GitHubURLData {
 	isPullRequest?: boolean;
 	isCommit?: boolean;
 }
+
+export interface GitHubUrl {
+	mode: GitHubMode;
+}
+
+export interface GitHubBlobUrl {
+	mode: GitHubMode;
+	owner: string;
+	repo: string;
+	revAndPath: string;
+	lineNumber: string | undefined;
+	rev: string;
+	path: string;
+}
+
+export interface GitHubPullUrl {
+	mode: GitHubMode;
+	owner: string;
+	repo: string;
+	view: string;
+	id: number;
+}
+
+export enum GitHubMode {
+	Blob,
+	Commit,
+	PullRequest,
+}
