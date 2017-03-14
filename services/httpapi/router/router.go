@@ -19,7 +19,6 @@ const (
 	RepoCreate       = "repo.create"
 	RepoRefresh      = "repo.refresh"
 	RepoResolveRev   = "repo.resolve-rev"
-	Repos            = "repos"
 	RepoShield       = "repo.shield"
 	BetaSubscription = "beta-subscription"
 	SubmitForm       = "submit-form"
@@ -48,7 +47,6 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/org-members").Methods("POST").Name(OrgMembers)
 	base.Path("/org-invites").Methods("POST").Name(OrgInvites)
 
-	base.Path("/repos").Methods("GET").Name(Repos)
 	base.Path("/repos").Methods("POST").Name(RepoCreate)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
