@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
+	"log"
 	"path"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -33,8 +35,15 @@ func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRoot
 	switch u.Scheme {
 	case "git":
 		// TODO(keegancsmith) umami has .git paths in their import
-		// paths. This normalization may in fact be incorrect, if so
-		// experiment with doing it only for github.com
+		// paths. This normalization may in fact be incorrect. This
+		// codeblock is to test if we really need this stripping in
+		// production.
+		if strings.HasSuffix(u.Path, ".git") {
+			pathHasGitSuffix.Inc()
+			defer func() {
+				log.Printf("WARN: determineRootImportPath has .git suffix. before=%q after=%q %s", originalRootPath, rootImportPath, err)
+			}()
+		}
 		rootImportPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())
 	default:
 		return "", fmt.Errorf("unrecognized originalRootPath: %q", u)
@@ -128,4 +137,15 @@ func readCanonicalImportPath(contents []byte) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+var pathHasGitSuffix = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "golangserver",
+	Subsystem: "build",
+	Name:      "path_has_git_suffix",
+	Help:      "Temporary counter to determine if paths have a git suffix.",
+})
+
+func init() {
+	prometheus.MustRegister(pathHasGitSuffix)
 }
