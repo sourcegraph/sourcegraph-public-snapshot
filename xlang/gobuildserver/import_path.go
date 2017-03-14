@@ -73,6 +73,22 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 				continue
 			}
 
+			if !strings.Contains(importPath, ".git") {
+				// Assume GitHub-like where two path elements is the project
+				// root.
+				parts := strings.SplitN(importPath, "/", 4)
+				if len(parts) < 3 {
+					return nil, fmt.Errorf("invalid GitHub-like import path: %q", importPath)
+				}
+				repo := parts[0] + "/" + parts[1] + "/" + parts[2]
+				return &directory{
+					importPath:  importPath,
+					projectRoot: repo,
+					cloneURL:    "http://" + repo,
+					vcs:         "git",
+				}, nil
+			}
+
 			// TODO(slimsag): We assume that .git only shows up
 			// once in the import path. Not always true, but generally
 			// should be in 99% of cases.
