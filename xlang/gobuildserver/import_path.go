@@ -73,37 +73,10 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 		if !strings.HasPrefix(importPath, domain) {
 			continue
 		}
-
-		if !strings.Contains(importPath, ".git") {
-			// Assume GitHub-like where two path elements is the project
-			// root.
-			parts := strings.SplitN(importPath, "/", 4)
-			if len(parts) < 3 {
-				return nil, fmt.Errorf("invalid GitHub-like import path: %q", importPath)
-			}
-			repo := parts[0] + "/" + parts[1] + "/" + parts[2]
-			return &directory{
-				importPath:  importPath,
-				projectRoot: repo,
-				cloneURL:    "http://" + repo,
-				vcs:         "git",
-			}, nil
+		d, err := guessImportPath(importPath)
+		if d != nil || err != nil {
+			return d, err
 		}
-
-		// TODO(slimsag): We assume that .git only shows up
-		// once in the import path. Not always true, but generally
-		// should be in 99% of cases.
-		split := strings.Split(importPath, ".git")
-		if len(split) != 2 {
-			return nil, fmt.Errorf("expected one .git in %q", importPath)
-		}
-
-		return &directory{
-			importPath:  importPath,
-			projectRoot: split[0] + ".git",
-			cloneURL:    "http://" + split[0] + ".git",
-			vcs:         "git",
-		}, nil
 	}
 
 	switch {
@@ -129,6 +102,41 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 		return d, nil
 	}
 	return nil, errNoMatch
+}
+
+// guessImportPath is used by noGoGetDomains since we can't do the usual
+// go get resolution.
+func guessImportPath(importPath string) (*directory, error) {
+	if !strings.Contains(importPath, ".git") {
+		// Assume GitHub-like where two path elements is the project
+		// root.
+		parts := strings.SplitN(importPath, "/", 4)
+		if len(parts) < 3 {
+			return nil, fmt.Errorf("invalid GitHub-like import path: %q", importPath)
+		}
+		repo := parts[0] + "/" + parts[1] + "/" + parts[2]
+		return &directory{
+			importPath:  importPath,
+			projectRoot: repo,
+			cloneURL:    "http://" + repo,
+			vcs:         "git",
+		}, nil
+	}
+
+	// TODO(slimsag): We assume that .git only shows up
+	// once in the import path. Not always true, but generally
+	// should be in 99% of cases.
+	split := strings.Split(importPath, ".git")
+	if len(split) != 2 {
+		return nil, fmt.Errorf("expected one .git in %q", importPath)
+	}
+
+	return &directory{
+		importPath:  importPath,
+		projectRoot: split[0] + ".git",
+		cloneURL:    "http://" + split[0] + ".git",
+		vcs:         "git",
+	}, nil
 }
 
 // gopkgSrcTemplate matches the go-source dir templates specified by the
