@@ -15,7 +15,10 @@ import (
 
 // Adapted from github.com/golang/gddo/gosrc.
 
-var noGoGetDomains = env.Get("NO_GO_GET_DOMAINS", "", "list of domains to NOT perform go get on")
+// noGoGetDomains is a list of domains we do not attempt standard go vanity
+// import resolution. Instead we take an educated guess based on the URL how
+// to create the directory struct.
+var noGoGetDomains = strings.Split(env.Get("NO_GO_GET_DOMAINS", "", "list of domains to NOT perform go get on. Separated by ','"), ",")
 
 type directory struct {
 	importPath  string // the Go import path for this package
@@ -62,48 +65,45 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 	// non-go-gettable, i.e. standard git repositories. Some on-prem customers
 	// use setups like this, where they directly import non-go-gettable git
 	// repository URLs like "mygitolite.aws.me.org/mux.git/subpkg"
-	if noGoGetDomains != "" {
-		list := strings.Split(noGoGetDomains, ",")
-		for _, domain := range list {
-			domain = strings.TrimSpace(domain)
-			if domain == "" {
-				continue
-			}
-			if !strings.HasPrefix(importPath, domain) {
-				continue
-			}
+	for _, domain := range noGoGetDomains {
+		domain = strings.TrimSpace(domain)
+		if domain == "" {
+			continue
+		}
+		if !strings.HasPrefix(importPath, domain) {
+			continue
+		}
 
-			if !strings.Contains(importPath, ".git") {
-				// Assume GitHub-like where two path elements is the project
-				// root.
-				parts := strings.SplitN(importPath, "/", 4)
-				if len(parts) < 3 {
-					return nil, fmt.Errorf("invalid GitHub-like import path: %q", importPath)
-				}
-				repo := parts[0] + "/" + parts[1] + "/" + parts[2]
-				return &directory{
-					importPath:  importPath,
-					projectRoot: repo,
-					cloneURL:    "http://" + repo,
-					vcs:         "git",
-				}, nil
+		if !strings.Contains(importPath, ".git") {
+			// Assume GitHub-like where two path elements is the project
+			// root.
+			parts := strings.SplitN(importPath, "/", 4)
+			if len(parts) < 3 {
+				return nil, fmt.Errorf("invalid GitHub-like import path: %q", importPath)
 			}
-
-			// TODO(slimsag): We assume that .git only shows up
-			// once in the import path. Not always true, but generally
-			// should be in 99% of cases.
-			split := strings.Split(importPath, ".git")
-			if len(split) != 2 {
-				return nil, fmt.Errorf("expected one .git in %q", importPath)
-			}
-
+			repo := parts[0] + "/" + parts[1] + "/" + parts[2]
 			return &directory{
 				importPath:  importPath,
-				projectRoot: split[0] + ".git",
-				cloneURL:    "http://" + split[0] + ".git",
+				projectRoot: repo,
+				cloneURL:    "http://" + repo,
 				vcs:         "git",
 			}, nil
 		}
+
+		// TODO(slimsag): We assume that .git only shows up
+		// once in the import path. Not always true, but generally
+		// should be in 99% of cases.
+		split := strings.Split(importPath, ".git")
+		if len(split) != 2 {
+			return nil, fmt.Errorf("expected one .git in %q", importPath)
+		}
+
+		return &directory{
+			importPath:  importPath,
+			projectRoot: split[0] + ".git",
+			cloneURL:    "http://" + split[0] + ".git",
+			vcs:         "git",
+		}, nil
 	}
 
 	switch {
