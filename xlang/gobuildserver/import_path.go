@@ -83,8 +83,8 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 
 			return &directory{
 				importPath:  importPath,
-				projectRoot: split[0],
-				cloneURL:    split[0],
+				projectRoot: split[0] + ".git",
+				cloneURL:    split[0] + ".git",
 				vcs:         "git",
 			}, nil
 		}
