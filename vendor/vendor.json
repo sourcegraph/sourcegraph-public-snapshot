@@ -923,38 +923,38 @@
 		{
 			"checksumSHA1": "nJGYSAwWAjkslNuv7w6yvmjf2K8=",
 			"path": "golang.org/x/oauth2",
-			"revision": "4cde0fb000c6fee5d13d63b39b6d10cf3f4750f7",
-			"revisionTime": "2017-02-10T22:32:30Z"
+			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
+			"revisionTime": "2017-03-13T19:46:53Z"
 		},
 		{
-			"checksumSHA1": "yyZzxdgaALVQtlQuCHTOC4gjv00=",
+			"checksumSHA1": "8U0u48TaP/zvUTrt35ceybvgm3Q=",
 			"path": "golang.org/x/oauth2/clientcredentials",
-			"revision": "4cde0fb000c6fee5d13d63b39b6d10cf3f4750f7",
-			"revisionTime": "2017-02-10T22:32:30Z"
+			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
+			"revisionTime": "2017-03-13T19:46:53Z"
 		},
 		{
-			"checksumSHA1": "rEzA1cW2NdfF9ndGQHTNzE5+mF4=",
+			"checksumSHA1": "spKKklhjqvogHnodJY/0KwhIIv0=",
 			"path": "golang.org/x/oauth2/google",
-			"revision": "4cde0fb000c6fee5d13d63b39b6d10cf3f4750f7",
-			"revisionTime": "2017-02-10T22:32:30Z"
+			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
+			"revisionTime": "2017-03-13T19:46:53Z"
 		},
 		{
-			"checksumSHA1": "O8Y5cMmHqBfPH2i7qxTufl0bdII=",
+			"checksumSHA1": "hEV//Lc2Pb3SUAC36BHgmgrH1gE=",
 			"path": "golang.org/x/oauth2/internal",
-			"revision": "4cde0fb000c6fee5d13d63b39b6d10cf3f4750f7",
-			"revisionTime": "2017-02-10T22:32:30Z"
+			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
+			"revisionTime": "2017-03-13T19:46:53Z"
 		},
 		{
 			"checksumSHA1": "huVltYnXdRFDJLgp/ZP9IALzG7g=",
 			"path": "golang.org/x/oauth2/jws",
-			"revision": "4cde0fb000c6fee5d13d63b39b6d10cf3f4750f7",
-			"revisionTime": "2017-02-10T22:32:30Z"
+			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
+			"revisionTime": "2017-03-13T19:46:53Z"
 		},
 		{
 			"checksumSHA1": "/eV4E08BY+f1ZikiR7OOMJAj3m0=",
 			"path": "golang.org/x/oauth2/jwt",
-			"revision": "4cde0fb000c6fee5d13d63b39b6d10cf3f4750f7",
-			"revisionTime": "2017-02-10T22:32:30Z"
+			"revision": "1611bb46e67abc64a71ecc5c3ae67f1cbbc2b921",
+			"revisionTime": "2017-03-13T19:46:53Z"
 		},
 		{
 			"checksumSHA1": "oBKY8LJtCoSvmYA4ADFDY02A8NY=",

@@ -14,6 +14,7 @@
 package clientcredentials // import "golang.org/x/oauth2/clientcredentials"
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -23,7 +24,7 @@ import (
 	"golang.org/x/oauth2/internal"
 )
 
-// Client Credentials Config describes a 2-legged OAuth2 flow, with both the
+// Config describes a 2-legged OAuth2 flow, with both the
 // client application information and the server's endpoint URLs.
 type Config struct {
 	// ClientID is the application's ID.
@@ -39,8 +40,8 @@ type Config struct {
 	// Scope specifies optional requested permissions.
 	Scopes []string
 
-	// Audience specifies optional audience of the token.
-	Audience string
+	// EndpointParams specifies additional parameters for requests to the token endpoint.
+	EndpointParams url.Values
 }
 
 // Token uses client credentials to retrieve a token.
@@ -79,11 +80,17 @@ type tokenSource struct {
 // Token refreshes the token by using a new client credentials request.
 // tokens received this way do not include a refresh token
 func (c *tokenSource) Token() (*oauth2.Token, error) {
-	tk, err := internal.RetrieveToken(c.ctx, c.conf.ClientID, c.conf.ClientSecret, c.conf.TokenURL, url.Values{
+	v := url.Values{
 		"grant_type": {"client_credentials"},
 		"scope":      internal.CondVal(strings.Join(c.conf.Scopes, " ")),
-		"audience":   internal.CondVal(c.conf.Audience),
-	})
+	}
+	for k, p := range c.conf.EndpointParams {
+		if _, ok := v[k]; ok {
+			return nil, fmt.Errorf("oauth2: cannot overwrite parameter %q", k)
+		}
+		v[k] = p
+	}
+	tk, err := internal.RetrieveToken(c.ctx, c.conf.ClientID, c.conf.ClientSecret, c.conf.TokenURL, v)
 	if err != nil {
 		return nil, err
 	}

@@ -30,7 +30,9 @@ var auth0ManagementTokenSource = (&clientcredentials.Config{
 	ClientID:     Auth0Config.ClientID,
 	ClientSecret: Auth0Config.ClientSecret,
 	TokenURL:     "https://" + Auth0Domain + "/oauth/token",
-	Audience:     "https://" + Auth0Domain + "/api/v2/",
+	EndpointParams: url.Values{
+		"audience": []string{"https://" + Auth0Domain + "/api/v2/"},
+	},
 }).TokenSource(context.Background())
 
 func SetAppMetadata(ctx context.Context, uid string, key string, value interface{}) error {
