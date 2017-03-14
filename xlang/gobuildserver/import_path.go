@@ -20,6 +20,20 @@ import (
 // to create the directory struct.
 var noGoGetDomains = strings.Split(env.Get("NO_GO_GET_DOMAINS", "", "list of domains to NOT perform go get on. Separated by ','"), ",")
 
+func init() {
+	// Clean-up noGoGetDomains to avoid needing to validate them when
+	// resolving static import paths
+	i := 0
+	for _, s := range noGoGetDomains {
+		s = strings.TrimSpace(s)
+		if s != "" {
+			noGoGetDomains[i] = s
+			i++
+		}
+	}
+	noGoGetDomains = noGoGetDomains[:i]
+}
+
 type directory struct {
 	importPath  string // the Go import path for this package
 	projectRoot string // import path prefix for all packages in the project
@@ -66,10 +80,6 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 	// use setups like this, where they directly import non-go-gettable git
 	// repository URLs like "mygitolite.aws.me.org/mux.git/subpkg"
 	for _, domain := range noGoGetDomains {
-		domain = strings.TrimSpace(domain)
-		if domain == "" {
-			continue
-		}
 		if !strings.HasPrefix(importPath, domain) {
 			continue
 		}
