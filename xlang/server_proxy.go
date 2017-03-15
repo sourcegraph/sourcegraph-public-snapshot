@@ -408,6 +408,13 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	return c, err
 }
 
+// initializeServer will ensure we either have an open connection or will open
+// one to ID. If it fails, it will return a non-nil error.
+func (p *Proxy) initializeServer(ctx context.Context, id serverID) error {
+	_, err := p.getServerConn(ctx, id)
+	return err
+}
+
 // clientBroadcastFunc returns a function which will broadcast a request to
 // all active clients for id.
 func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc2.Request) {
