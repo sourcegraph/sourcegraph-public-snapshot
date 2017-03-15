@@ -216,7 +216,8 @@ export async function updateFileTree(resource: URI): Promise<void> {
 
 	const view = viewlet["explorerView"];
 	if (!(view instanceof ExplorerView)) {
-		throw new Error("Type Error: Expected viewlet to have type ExplorerView");
+		// A different viewlet is open.
+		return;
 	}
 
 	await view.refresh(true);
