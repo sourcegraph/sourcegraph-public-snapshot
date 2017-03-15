@@ -1,0 +1,7 @@
+webpack: curl -Ss -o /dev/null "$WEBPACK_DEV_SERVER_URL" || (cd ui && yarn && yarn run start)
+gitserver: .bin/gitserver
+indexer: .bin/indexer
+github-proxy: .bin/github-proxy
+zap: .bin/zap
+lsp-proxy: .bin/lsp-proxy -prof-http=:6061
+frontend: vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" -extra-watches='app/templates/*' sourcegraph.com/sourcegraph/sourcegraph/cmd/src

@@ -49,6 +49,12 @@
 			"revisionTime": "2016-01-28T11:33:10Z"
 		},
 		{
+			"checksumSHA1": "awH0udAyzV8zYKBShHEfpHyM9fI=",
+			"path": "github.com/daviddengcn/go-colortext",
+			"revision": "511bcaf42ccd42c38aba7427b6673277bf19e2a1",
+			"revisionTime": "2016-05-07T01:00:35Z"
+		},
+		{
 			"checksumSHA1": "6E32dTaYC6MpKiO/JFRZWHOPSH0=",
 			"path": "github.com/drone/drone-exec/docker",
 			"revision": "bb2d8bde3efb057c8ac62250b139087ff2098842",
@@ -317,6 +323,12 @@
 			"revisionTime": "2016-03-03T14:01:16-06:00"
 		},
 		{
+			"checksumSHA1": "ljZrmD7pmMXAkGNfp6IEzj31fY8=",
+			"path": "github.com/joho/godotenv",
+			"revision": "4ed13390c0acd2ff4e371e64d8b97c8954138243",
+			"revisionTime": "2015-09-07T01:02:28Z"
+		},
+		{
 			"checksumSHA1": "IXVypCQsDOlWf8dqyFogbOsRdvM=",
 			"path": "github.com/jpillora/backoff",
 			"revision": "0496a6c14df020789376f4d4a261273d5ddb36ec",
@@ -412,6 +424,12 @@
 			"path": "github.com/mattn/go-isatty",
 			"revision": "7fcbc72f853b92b5720db4a6b8482be612daef24",
 			"revisionTime": "2015-08-14T09:26:29+09:00"
+		},
+		{
+			"checksumSHA1": "vasCAI7NJuwAgnM1qGNebsswvTo=",
+			"path": "github.com/mattn/goreman",
+			"revision": "3a84a95fe47b27112d9bece50e3b4fd17a1dd5bb",
+			"revisionTime": "2017-02-14T23:50:58Z"
 		},
 		{
 			"path": "github.com/matttproud/golang_protobuf_extensions/pbutil",
