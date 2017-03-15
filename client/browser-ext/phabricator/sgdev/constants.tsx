@@ -1,23 +1,12 @@
 import { PhabricatorInstance } from "../../app/utils/classes";
 
 const sgdevPhabricatorRepoMap = {
-	"thyme": "sourcegraph-thyme",
-	"uzap": "uber-zap",
-	"uberzap": "uber-zap",
-	"kubernetes": "kubernetes",
-	"kube": "kubernetes",
-	"jaeger": "uber-jaeger",
-	"angular": "angular",
-	"joda": "joda-time",
-	"jodatime": "joda-time",
-	"jaegerjava": "uber-jaeger-java",
-	"spray": "uber-kafka-spraynozzle",
-	"kafkaspraynozzle": "uber-kafka-spraynozzle",
-	"jrides": "uber-rides-java-sdk",
-	"uberridesjava": "uber-rides-java-sdk",
-	"krest": "uber-kafka-rest",
-	"kafkarest": "uber-kafka-rest",
-	"broke": "broken-test",
+	"nzap": "gitolite.aws.sgdev.org/uber-go/zap.git",
+	"nmux": "gitolite.aws.sgdev.org/mux.git",
+	"nbroke": "gitolite.aws.sgdev.org/sourcegraph/broken-test",
+	"njoda": "gitolite.aws.sgdev.org/JodaOrg/joda-time",
+	"nangular": "gitolite.aws.sgdev.org/angular/angular",
+	"nrides": "gitolite.aws.sgdev.org/uber/rides-java-sdk",
 };
 
 export const SGDEV_SOURCEGRAPH_URL = "http://node.aws.sgdev.org:30000";
