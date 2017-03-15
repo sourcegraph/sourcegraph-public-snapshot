@@ -11,7 +11,7 @@ import { GlobalNavStore } from "sourcegraph/app/GlobalNav/GlobalNavStore";
 import { ShortcutModal } from "sourcegraph/app/GlobalNav/ShortcutMenu";
 import { SignupOrLogin } from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
-import { AfterSignup, BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
+import { AfterSignup, BetaSignup } from "sourcegraph/app/modals/index";
 import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
 import { RouterContext, RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, Logo, TabItem, Tabs } from "sourcegraph/components";
@@ -24,6 +24,8 @@ import { toggleQuickopen } from "sourcegraph/editor/config";
 import { IntegrationsContainer } from "sourcegraph/home/IntegrationsContainer";
 import { Store } from "sourcegraph/Store";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { LoginModal } from "sourcegraph/user/Login";
+import { SignupModal } from "sourcegraph/user/Signup";
 import { isMobileUserAgent } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 import { onWorkbenchShown } from "sourcegraph/workbench/main";
 
@@ -112,9 +114,9 @@ export class GlobalNav extends Container<Props, State> {
 		const modal = (
 			<div>
 				{modalName === "login" && !context.user &&
-					<Login />}
+					<LoginModal />}
 				{modalName === "join" &&
-					<Signup />}
+					<SignupModal />}
 				{modalName === "menuBeta" &&
 					<BetaSignup location={location} router={router} />}
 				{modalName === "afterSignup" &&

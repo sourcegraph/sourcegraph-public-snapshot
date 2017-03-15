@@ -1,15 +1,19 @@
 import * as React from "react";
 import { Panel, SignupLoginAuth } from "sourcegraph/components";
+import { LocationStateModal } from "sourcegraph/components/Modal";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
 import "sourcegraph/user/UserBackend"; // for side effects
 
-// Login is the standalone login page.
-export const LoginForm = (): JSX.Element => <Panel hoverLevel="low" style={{ margin: "auto", maxWidth: "30rem" }}>
-	<PageTitle title="Sign In" />
-	<SignupLoginAuth >
-		To log in, authorize with GitHub:
-	</SignupLoginAuth>
-</Panel>;
+const Login = () => <SignupLoginAuth>
+	To log in, authorize with GitHub:
+</SignupLoginAuth>;
 
-export const Login = redirectIfLoggedIn("/", LoginForm);
+export const LoginModal = (): JSX.Element => <LocationStateModal modalName="login" title="Log in" padded={false}>
+	<Login />
+</LocationStateModal>;
+
+export const LoginPage = redirectIfLoggedIn("/", () => <Panel hoverLevel="low" style={{ margin: "auto", maxWidth: "30rem" }}>
+	<PageTitle title="Sign In" />
+	<Login />
+</Panel>);
