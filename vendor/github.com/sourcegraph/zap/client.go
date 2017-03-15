@@ -202,12 +202,10 @@ func (c *Client) RefUpdateSymbolic(ctx context.Context, params RefUpdateSymbolic
 }
 
 // RefInfo sends the "ref/info" request to the server.
-func (c *Client) RefInfo(ctx context.Context, params RefIdentifier) (*RefInfoResult, error) {
-	var state *RefInfoResult
-	if err := c.c.Call(ctx, "ref/info", params, &state); err != nil {
-		return nil, err
-	}
-	return state, nil
+func (c *Client) RefInfo(ctx context.Context, params RefIdentifier) (*RefInfo, error) {
+	var result *RefInfo
+	err := c.c.Call(ctx, "ref/info", params, &result)
+	return result, err
 }
 
 // RefList sends the "ref/list" request to the server.
@@ -238,6 +236,11 @@ func (c *Client) WorkspaceRemove(ctx context.Context, params WorkspaceRemovePara
 // WorkspaceCheckout sends the "workspace/checkout" request to the server.
 func (c *Client) WorkspaceCheckout(ctx context.Context, params WorkspaceCheckoutParams) error {
 	return c.c.Call(ctx, "workspace/checkout", params, nil)
+}
+
+// WorkspaceReset sends the "workspace/reset" request to the server.
+func (c *Client) WorkspaceReset(ctx context.Context, params WorkspaceResetParams) error {
+	return c.c.Call(ctx, "workspace/reset", params, nil)
 }
 
 // WorkspaceWillSaveFile sends the "workspace/willSaveFile" request to

@@ -17,6 +17,13 @@ func panicIfNotFileOrBufferPath(path string) {
 	}
 }
 
+func ToBufferPath(path string) string {
+	if strings.HasPrefix(path, "/") {
+		panic(fmt.Sprintf("path %q is a file path, wanted a non-buffer, non-file path", path))
+	}
+	return "#" + path
+}
+
 func IsBufferPath(path string) bool {
 	panicIfNotFileOrBufferPath(path)
 	return strings.HasPrefix(path, "#")

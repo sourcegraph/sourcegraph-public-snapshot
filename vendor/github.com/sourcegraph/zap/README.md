@@ -4,25 +4,9 @@ Zap lets you share your Git repository you have write access to and editor state
 
 ## Getting started
 
-These steps help you start using Zap on your repositories.
+Please follow:
 
-1. Install Zap: `go get -v -u github.com/sourcegraph/zap/cmd/zap` (if that fails due to lack of authentication, then run `cd $GOPATH/src/github.com/sourcegraph && git clone git@github.com:sourcegraph/zap.git && go get -u github.com/sourcegraph/zap/cmd/zap`)
-1. Install the Visual Studio Code extension: Cmd/Ctrl-P for quick open, then `ext install sqs.vscode-zap` (delete the `<`)
-1. Enable the zap feature flag on sourcegraph.com by running `features.zap.enable()` in your developer console
-
-Then, in the directory of `sgtest/xyztest`, or any repository you want to use Zap on:
-
-1. *Optional: if you want a test repository, clone https://github.com/sgtest/xyztest to your local machine.*
-1. Run `zap auth` to authenticate with Sourcegraph.
-1. Launch the Zap server by running `zap server -v run` in your terminal
-1. Tell Zap to start watching it: `zap init`
-1. Set the current Zap branch to push upstream: `zap checkout -upstream origin -overwrite master@sqs` (use your unix username in place of sqs)
-1. Open the repository in Visual Studio Code, hit alt/option+s to open Sourcegraph, and watch as cursors, selections, and edits are instantly synced from your editor to Sourcegraph. (if the short cut fails to open Sourcegraph: go to VS Code, hit cmd/ctrl+shift+p, search for "Zap: Install/update client" and hit enter. This will update the Zap command-line interface.)
-
-Notes:
-
-* On Sourcegraph, you must run `features.zap.enable()`
-* You must open Visual Studio Code after running `zap server -v`
+https://slack-files.com/T02FSM7DL-F4BRWRCDC-00bd5b24eb
 
 ## Hacking
 

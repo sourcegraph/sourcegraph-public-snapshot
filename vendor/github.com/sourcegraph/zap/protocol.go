@@ -457,23 +457,23 @@ type RefConfiguration struct {
 	Overwrite bool `json:"overwrite"`
 }
 
-// RefInfoResult is the result from the remote "ref/info" request.
-type RefInfoResult struct {
+// RefInfo is the result from the remote "ref/info" request.
+type RefInfo struct {
+	RefIdentifier // the repo and ref name (omitted by functions that return only a single RefInfo)
+
 	State  *RefState `json:"state,omitempty"`  // the state of the ref (symbolic refs are NOT resolved)
 	Target string    `json:"target,omitempty"` // the target of the ref (for symbolic refs)
 
-	// Extra diagnostics
+	Watchers []string `json:"watchers"` // names of clients that are watching this ref
+
+	// Extra diagnostics (for use by tests only)
 	Wait, Buf         *ot.WorkspaceOp
 	UpstreamRevNumber int
 }
 
-// RefInfo describes a ref.
-type RefInfo struct {
-	RefIdentifier // the repo and ref name
-	RefBaseInfo
-	Rev      int      `json:"rev"`      // number of ops received by the server
-	Target   string   `json:"target"`   // if symbolic ref, the target ref
-	Watchers []string `json:"watchers"` // IDs of clients watching this ref or repo
+// IsSymbolic reports whether r is a symbolic ref.
+func (r RefInfo) IsSymbolic() bool {
+	return r.Target != ""
 }
 
 // DebugLogParams contains the parameters for the "debug/log" request.

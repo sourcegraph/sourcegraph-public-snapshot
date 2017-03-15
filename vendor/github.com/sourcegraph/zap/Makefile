@@ -71,10 +71,12 @@ generate:; cd ot && go generate
 
 .PHONY: publish-npm
 publish-npm:
+	bash dev/ensure-clean-master
 	lerna publish --yes --force-publish vscode-zap,libzap
 
 .PHONY: publish-vscode
 publish-vscode:
+	bash dev/ensure-clean-master
 	cd ext/vscode && git clean -fdx node_modules && yarn && vsce publish
 	lerna bootstrap
 
@@ -83,6 +85,7 @@ ${GOBIN}/gup:
 
 .PHONY: publish-zap
 publish-zap: ${GOBIN}/gup
+	bash dev/ensure-clean-master
 	bash dev/publish-zap
 
 .PHONY: publish
@@ -90,3 +93,4 @@ publish:
 	$(MAKE) publish-npm
 	$(MAKE) publish-vscode
 	git commit ext/vscode/yarn.lock -m 'update ext/vscode/yarn.lock' && git push
+	$(MAKE) publish-zap

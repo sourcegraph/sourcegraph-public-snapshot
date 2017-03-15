@@ -159,10 +159,8 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 			DebugMu.Lock()
 			simulateError := TestSimulateResetAfterErrorInSendToUpstream
 			DebugMu.Unlock()
-			if simulateError {
-				err = errors.New("TestSimulateResetAfterErrorInSendToUpstream")
-			} else {
-				err = cl.RefUpdate(ctx, RefUpdateUpstreamParams{
+			doRefUpdate := func() error {
+				return cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 					RefIdentifier: upstreamRefID,
 					Current: &RefPointer{
 						RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
@@ -170,6 +168,11 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 					},
 					Op: &op,
 				})
+			}
+			if simulateError {
+				err = errors.New("TestSimulateResetAfterErrorInSendToUpstream")
+			} else {
+				err = doRefUpdate()
 			}
 			if err != nil {
 				level.Error(logger).Log("send-to-upstream-failed", err, "op", op)
@@ -181,11 +184,14 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 				// get an error, wipe the upstream and overwrite
 				// it.
 				if newConfig.Overwrite {
+					// Only force push the history that the upstream already knows about.
+					// If that succeeds, then we will retry applying the op.
 					if ref := repo.refdb.Lookup(refID.Ref); ref != nil {
+						newHistory := refObj.history()[:upstreamRev]
 						refObj := ref.Object.(serverRef)
 						newRefState := &RefState{
 							RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
-							History:     refObj.history(),
+							History:     newHistory,
 						}
 						logger = log.With(logger, "overwrite-ref-after-error", newRefState)
 						level.Info(logger).Log()
@@ -194,8 +200,14 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 							Force:         true,
 							State:         newRefState,
 						}); err == nil {
-							if err := refObj.ot.AckFromUpstream(logger); err != nil {
-								level.Error(logger).Log("ack-after-overwrite-ref-after-error-failed", err)
+							level.Info(logger).Log("retry-op", op)
+							if err := doRefUpdate(); err != nil {
+								// TODO(nick): This is our second attempt at apply this op.
+								// If this op doesn't apply after the reset we did above,
+								// then there isn't much point in trying this op again immediately.
+								// Handling this correctly is a bigger design problem with how we
+								// manage connectivity and errors.
+								level.Error(logger).Log("retry-op-after-overwrite-ref-error", err)
 							}
 						} else {
 							level.Error(logger).Log("overwrite-ref-after-error-failed", err)

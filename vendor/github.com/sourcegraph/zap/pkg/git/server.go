@@ -62,12 +62,12 @@ func (s ServerBackend) Create(ctx context.Context, logger log.Logger, repo, base
 			prevSnapshot := snapshot
 
 			// fmt.Fprintf(os.Stderr, "# server workspace: applying op %s on top of snapshot %s\n", op, prevSnapshot)
-			fbufCopy := fbuf.Copy().(*FileBuffer)
+			fbufCopy := fbuf.Copy().(FileBuffer)
 			newGitSnapshot, err := CreateTreeForOp(logger, gitRepo, fbufCopy, prevSnapshot, op)
 			if err != nil {
 				return err
 			}
-			fbuf = *fbufCopy
+			fbuf = fbufCopy
 			if newGitSnapshot != "" {
 				snapshot = newGitSnapshot
 			}

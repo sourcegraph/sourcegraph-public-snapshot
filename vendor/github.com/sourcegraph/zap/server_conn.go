@@ -396,11 +396,14 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		ref := repo.refdb.Lookup(params.Ref)
 		if ref == nil {
 			return nil, &jsonrpc2.Error{
-				Code:    int64(ErrorCodeRefNotExists),
-				Message: fmt.Sprintf("ref not found: %s", params.Ref),
+				Code: int64(ErrorCodeRefNotExists),
+				// TODO(slimsag): do not use CLI instructions here, instead
+				// type assert to *jsonrpc2.Error in the CLI and then print
+				// instructions.
+				Message: fmt.Sprintf("ref not found: %s\n\nHINT: Maybe you need to run 'zap auth'?", params.Ref),
 			}
 		}
-		res := RefInfoResult{Target: ref.Target}
+		res := RefInfo{Target: ref.Target}
 		if ref.IsSymbolic() {
 			ref, err = repo.refdb.Resolve(ref.Name)
 			if err != nil {
@@ -432,6 +435,16 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			res.Buf = o.ot.Buf
 			res.UpstreamRevNumber = o.ot.UpstreamRevNumber
 		}
+
+		// Add watchers.
+		if watchers := c.server.watchers(params); len(watchers) > 0 {
+			res.Watchers = make([]string, len(watchers))
+			for i, wc := range watchers {
+				res.Watchers[i] = wc.init.ID
+			}
+			sort.Strings(res.Watchers)
+		}
+
 		return res, nil
 
 	case "ref/configure":
@@ -594,9 +607,13 @@ func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
 		} else {
 			release := repo.acquireRef(ref.Name)
 			refObj := ref.Object.(serverRef)
-			info.GitBase = refObj.gitBase
-			info.GitBranch = refObj.gitBranch
-			info.Rev = refObj.rev()
+			info.State = &RefState{
+				RefBaseInfo: RefBaseInfo{
+					GitBase:   refObj.gitBase,
+					GitBranch: refObj.gitBranch,
+				},
+				History: refObj.history(),
+			}
 			release()
 		}
 

@@ -52,9 +52,11 @@ type Workspace interface {
 	// making any modifications to files on disk or Git state.
 	Checkout(ctx context.Context, logger log.Logger, keepLocalChanges bool, ref, gitBase, gitBranch string, history []ot.WorkspaceOp, updateExternal func(ctx context.Context) error) (ot.WorkspaceOp, error)
 
-	// ResetToCurrentState returns a series of ops that, when applied to
-	// the base commit, would yield the exact current workspace state
-	// plus the state of buffered files in bufferFiles.
+	// ResetToCurrentState returns a sequence of ops that, when
+	// applied to the base commit, would yield the exact current
+	// workspace state plus the state of buffered files in
+	// bufferFiles. (If bufferFiles is nil, the workspace's existing
+	// known buffer file contents are used.)
 	ResetToCurrentState(ctx context.Context, logger log.Logger, bufferFiles map[string]string) ([]ot.WorkspaceOp, error)
 
 	// Configure updates the configuration for the repository and
@@ -394,6 +396,9 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 		if err != nil {
 			return nil, err
 		}
+		if err := config.EnsureWorkspaceNotInGlobalConfig(params.WorkspaceIdentifier.Dir); err != nil {
+			return nil, err
+		}
 		return WorkspaceRemoveResult{}, nil
 
 	case "workspace/status":
@@ -411,7 +416,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 			return nil, err
 		}
 		// TODO(sqs): this is not fully implemented or useful yet
-		return &ShowStatusParams{Message: "Watching", Type: StatusTypeOK}, nil
+		return &ShowStatusParams{Message: "Monitoring for file system changes", Type: StatusTypeOK}, nil
 
 	case "workspace/checkout":
 		if req.Params == nil {
@@ -703,7 +708,7 @@ func (s *workspaceServer) removeWorkspace(logger log.Logger, workspace Workspace
 	repo.workspace = nil
 	repo.config = RepoConfiguration{}
 	repo.mu.Unlock()
-	return config.EnsureWorkspaceNotInGlobalConfig(workspace.Dir)
+	return nil
 }
 
 func (s *Server) getWorkspaceForFileURI(uriStr string) (repo *serverRepo, workspace Workspace, repoName, relPath string, err error) {
