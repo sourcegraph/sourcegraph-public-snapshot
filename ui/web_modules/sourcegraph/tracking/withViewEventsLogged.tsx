@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Route } from "react-router";
-import { getRouteParams, getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
+import { getRoutePattern, getViewName } from "sourcegraph/app/routePatterns";
 import { Router, RouterLocation } from "sourcegraph/app/router";
 import { Events, LogUnknownRedirectEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
@@ -142,9 +142,8 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				};
 			}
 
-			const routePattern = getRoutePattern(routes);
 			const viewName = getViewName(routes);
-			const routeParams = getRouteParams(routePattern, location.pathname);
+			const routeParams = this.context.router.params;
 
 			if (viewName) {
 				if (viewName === "ViewBlob" && routeParams) {

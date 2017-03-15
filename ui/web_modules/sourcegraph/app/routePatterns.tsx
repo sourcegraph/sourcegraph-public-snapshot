@@ -18,7 +18,7 @@ export const rel = {
 	styleguide: "styleguide",
 	twittercasestudy: "customers/twitter",
 	settings: "settings",
-	orgSettings: "organization",
+	orgSettings: "settings/organization",
 	login: "login",
 	signup: "join",
 
@@ -49,7 +49,7 @@ export const abs = {
 	login: rel.login,
 	signup: rel.signup,
 
-	orgSettings: `${rel.settings}/${rel.orgSettings}`,
+	orgSettings: rel.orgSettings,
 	goSymbol: `go/${rel.symbolId}`,
 	repo: rel.repo,
 	tree: `${rel.repo}/-/${rel.tree}`,

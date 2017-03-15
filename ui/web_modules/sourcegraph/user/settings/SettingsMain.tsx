@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link } from "react-router";
 
-import { abs, isAtRoute, rel } from "sourcegraph/app/routePatterns";
+import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
 import { Panel } from "sourcegraph/components";
 import { TabItem } from "sourcegraph/components/TabItem";
 import { Tabs } from "sourcegraph/components/Tabs";
@@ -23,7 +23,7 @@ export class SettingsMain extends ComponentWithRouter<{}, {}> {
 		}}>
 			<Tabs style={{ height: "100%", minWidth: 200 }} direction="vertical">
 				<TabItem direction="vertical" active={billingPage}>
-					<Link to={`/${rel.settings}`}>Billing Information</Link>
+					<Link to={`/${abs.settings}`}>Billing Information</Link>
 				</TabItem>
 				<TabItem direction="vertical" active={!billingPage}>
 					<Link to={`/${abs.orgSettings}`}>Organizations</Link>
