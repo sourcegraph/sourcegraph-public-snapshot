@@ -234,7 +234,7 @@ func (s *orgs) InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*so
 	user := authpkg.ActorFromContext(ctx).User()
 	inviterOrgOptions := &sourcegraph.OrgListOptions{
 		OrgName:  opt.OrgName,
-		Username: user.UID,
+		Username: user.Login,
 	}
 	isInviterMember, err := Orgs.IsOrgMember(ctx, inviterOrgOptions)
 	if err != nil {
