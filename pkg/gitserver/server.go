@@ -100,6 +100,8 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
+	req.Repo = normalizeRepo(req.Repo)
+
 	// This is a repo that we use for testing the cloning state of the UI
 	if req.Repo == "github.com/sourcegraphtest/alwayscloningtest" {
 		chanrpcutil.Drain(req.Stdin)
