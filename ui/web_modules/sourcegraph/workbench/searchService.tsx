@@ -92,7 +92,7 @@ export class SearchService implements ISearchService {
 						throw new Error("?");
 					}
 					let response = data.root.repository.commit.commit.textSearch.map(file => {
-						const resource = workspace.with({ query: file.path });
+						const resource = workspace.with({ fragment: file.path });
 						const lineMatches = file.lineMatches.map(lineMatch => {
 							if (!query.contentPattern) {
 								throw new Error("?");
