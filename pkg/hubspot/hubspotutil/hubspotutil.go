@@ -8,12 +8,17 @@ import (
 )
 
 // AfterPrivateCodeSignupFormID is a hardcoded identifier for the
-// "After Private Code Signup" HubSpot form. To make changes to
-// variables passed to this form, edit it in the HubSpot console.
+// "After Private Code Signup" HubSpot form
+// Defined in HubSpot "Forms" web console (https://app.hubspot.com/forms/2762526/)
 const AfterPrivateCodeSignupFormID = "e9443a20-ef14-4858-971e-4925a3c6c45c"
 
 // ChangeUserPlanFormID is an identifier for the "Change user plan form"
+// Defined in HubSpot "Forms" web console
 const ChangeUserPlanFormID = "198ad76b-a88c-4b79-b026-bf0588bb2f9f"
+
+// ZapDownloadedEventID is an identifier for the "ZapDownloaded" event
+// Defined in HubSpot "Events" web console (https://app.hubspot.com/reports/2762526/events)
+const ZapDownloadedEventID = "000001971426"
 
 var client *hubspot.Client
 

@@ -24,15 +24,7 @@ func New(portalID string) *Client {
 	}
 }
 
-func (c *Client) baseURL() *url.URL {
-	return &url.URL{
-		Scheme: "https",
-		Host:   "forms.hubspot.com",
-		Path:   "/uploads/form/v2/" + c.portalID,
-	}
-}
-
-func (c *Client) post(methodName, suffix string, body interface{}) error {
+func (c *Client) post(methodName string, baseURL *url.URL, suffix string, body interface{}) error {
 	var data url.Values
 	switch body := body.(type) {
 	case map[string]string:
@@ -48,9 +40,8 @@ func (c *Client) post(methodName, suffix string, body interface{}) error {
 		}
 	}
 
-	u := c.baseURL()
-	u.Path = path.Join(u.Path, suffix)
-	req, err := http.NewRequest("POST", u.String(), strings.NewReader(data.Encode()))
+	baseURL.Path = path.Join(baseURL.Path, suffix)
+	req, err := http.NewRequest("POST", baseURL.String(), strings.NewReader(data.Encode()))
 	if err != nil {
 		return wrapError(methodName, err)
 	}
@@ -62,6 +53,33 @@ func (c *Client) post(methodName, suffix string, body interface{}) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusFound {
+		buf := new(bytes.Buffer)
+		_, _ = buf.ReadFrom(resp.Body)
+		return wrapError(methodName, errors.New(buf.String()))
+	}
+	return nil
+}
+
+func (c *Client) get(methodName string, baseURL *url.URL, suffix string, params map[string]string) error {
+	q := make(url.Values, len(params))
+	for k, v := range params {
+		q.Set(k, v)
+	}
+
+	baseURL.Path = path.Join(baseURL.Path, suffix)
+	baseURL.RawQuery = q.Encode()
+	req, err := http.NewRequest("GET", baseURL.String(), nil)
+	if err != nil {
+		return wrapError(methodName, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return wrapError(methodName, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
 		buf := new(bytes.Buffer)
 		_, _ = buf.ReadFrom(resp.Body)
 		return wrapError(methodName, errors.New(buf.String()))
