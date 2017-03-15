@@ -50,6 +50,13 @@ main() {
 		else
 			err "Not replacing existing installation. Aborting."
 		fi
+
+		# Ensure the zap binary was removed (this also handles weird cases
+		# where a user has two zap binaries on their PATH and we only removed
+		# the first).
+		if command -v zap > /dev/null 2>&1; then
+			err "unexpected condition: zap binary still located at $(command -v zap)"
+		fi
 	fi
 
 	if [[ "$_os" == "darwin" ]]; then
