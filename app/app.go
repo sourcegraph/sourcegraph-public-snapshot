@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal"
@@ -10,6 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
@@ -23,6 +25,10 @@ func NewHandler(r *router.Router) http.Handler {
 	m := http.NewServeMux()
 
 	m.Handle("/", r)
+
+	m.Handle("/__version", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, env.Version)
+	}))
 
 	r.Get(router.RobotsTxt).Handler(httptrace.TraceRoute(http.HandlerFunc(robotsTxt)))
 	r.Get(router.Favicon).Handler(httptrace.TraceRoute(http.HandlerFunc(favicon)))
