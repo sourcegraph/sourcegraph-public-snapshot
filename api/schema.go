@@ -148,7 +148,7 @@ type FileMatch {
 
 type LineMatch {
 	preview: String!
-	lineNumber: Float!
+	lineNumber: Int!
 }
 
 type DependencyReferences {

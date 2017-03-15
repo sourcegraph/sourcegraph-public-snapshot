@@ -884,14 +884,14 @@ type PatternInfo struct {
 // FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
 	path        string
-	lineMatches []LineMatch
+	lineMatches []*LineMatch
 }
 
 func (fm *FileMatch) Path() string {
 	return fm.path
 }
 
-func (fm *FileMatch) LineMatches() []LineMatch {
+func (fm *FileMatch) LineMatches() []*LineMatch {
 	return fm.lineMatches
 }
 
@@ -903,12 +903,12 @@ type LineMatch struct {
 	//OffsetAndLengths [][2]int
 }
 
-func (lm LineMatch) Preview() string {
+func (lm *LineMatch) Preview() string {
 	return lm.preview
 }
 
-func (lm LineMatch) LineNumber() float64 {
-	return float64(lm.lineNumber)
+func (lm *LineMatch) LineNumber() int32 {
+	return int32(lm.lineNumber)
 }
 
 // Grep is a wrapper around git grep
@@ -1017,7 +1017,7 @@ func (r *Repository) Grep(ctx context.Context, commit vcs.CommitID, info Pattern
 				}
 				matches = append(matches, current)
 			}
-			current.lineMatches = append(current.lineMatches, LineMatch{
+			current.lineMatches = append(current.lineMatches, &LineMatch{
 				preview:    line,
 				lineNumber: lineNumber,
 			})
