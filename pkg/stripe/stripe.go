@@ -18,7 +18,7 @@ func init() {
 	stripe.Key = env.Get("STRIPE_SECRET_KEY", stripeSecretTestKey, "The secret/private stripe API key.")
 
 	stripePublicTestKey := "pk_test_Vo5BwrEkrXCM2ULouAd5ZBZz"
-	StripePublicKey = env.Get("Stripe_PUBLIC_KEY", stripePublicTestKey, "The public Stripe API key.")
+	StripePublicKey = env.Get("STRIPE_PUBLIC_KEY", stripePublicTestKey, "The public Stripe API key.")
 }
 
 var StripePublicKey string
