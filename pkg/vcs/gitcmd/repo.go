@@ -871,6 +871,145 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	return fis, nil
 }
 
+// PatternInfo is the struct used by vscode pass on search queries.
+type PatternInfo struct {
+	Pattern         string
+	IsRegExp        bool
+	IsWordMatch     bool
+	IsCaseSensitive bool
+	// We do not support IsMultiline
+	//IsMultiline     bool
+}
+
+// FileMatch is the struct used by vscode to receive search results
+type FileMatch struct {
+	Path        string
+	LineMatches []LineMatch
+}
+
+// LineMatch is the struct used by vscode to receive search results for a line
+type LineMatch struct {
+	Preview    string
+	LineNumber int
+	// We do not know the offset and length currently
+	//OffsetAndLengths [][2]int
+}
+
+// Grep is a wrapper around git grep
+func (r *Repository) Grep(ctx context.Context, commit vcs.CommitID, info PatternInfo) ([]*FileMatch, error) {
+	// NOTE: This is temporary code. Running git grep is not scalable
+	// since it puts loads on central git servers.
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Grep")
+	span.SetTag("Commit", commit)
+	span.SetTag("Pattern", info.Pattern)
+	span.SetTag("IsRegExp", info.IsRegExp)
+	span.SetTag("IsWordMatch", info.IsWordMatch)
+	//span.SetTag("IsMultiline", info.IsMultiline)
+	span.SetTag("IsCaseSensitive", info.IsCaseSensitive)
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	args := []string{
+		"grep",
+		"--line-number",
+		"--null",
+	}
+	if info.IsRegExp {
+		args = append(args, "--basic-regexp")
+	} else {
+		args = append(args, "--fixed-strings")
+	}
+	if info.IsWordMatch {
+		args = append(args, "--word-regexp")
+	}
+	if !info.IsCaseSensitive {
+		args = append(args, "--ignore-case")
+	}
+	args = append(args,
+		"-e", info.Pattern,
+		string(commit),
+	)
+
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = r.Repo
+	cmd.EnsureRevision = string(commit)
+
+	// TODO(keegancsmith) we should stream the output
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	current := &FileMatch{}
+	matches := make([]*FileMatch, 0)
+
+	var (
+		path       string
+		lineNumber int
+		line       string
+	)
+	const (
+		stateCommit = iota
+		statePath
+		stateLineNumber
+		stateLine
+	)
+	state := stateCommit
+	for len(out) > 0 {
+		var delim byte
+		switch state {
+		case stateCommit:
+			delim = ':'
+		case statePath, stateLineNumber:
+			delim = '\x00'
+		case stateLine:
+			delim = '\n'
+		}
+
+		var s string
+		if j := bytes.IndexByte(out, delim); j == -1 {
+			// unexpected EOF, just do best effort
+			s = string(out)
+			out = []byte{}
+		} else {
+			s = string(out[:j])
+			out = out[j+1:]
+		}
+
+		switch state {
+		case stateCommit:
+			state = statePath
+		case statePath:
+			state = stateLineNumber
+			path = s
+		case stateLineNumber:
+			state = stateLine
+			lineNumber, err = strconv.Atoi(s)
+			if err != nil {
+				return nil, err
+			}
+		case stateLine:
+			state = stateCommit
+			line = s
+
+			if current.Path != path {
+				current = &FileMatch{
+					Path: path,
+				}
+				matches = append(matches, current)
+			}
+			current.LineMatches = append(current.LineMatches, LineMatch{
+				Preview:    line,
+				LineNumber: lineNumber,
+			})
+		}
+	}
+	return matches, nil
+}
+
 func ensureAbsCommit(commitID vcs.CommitID) {
 	// We don't want to even be running commands on non-absolute
 	// commit IDs if we can avoid it, because we can't cache the
