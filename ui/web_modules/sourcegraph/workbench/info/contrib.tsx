@@ -1,7 +1,7 @@
 import { Subscription } from "rxjs";
 
 import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
-import { KeyCode, KeyMod } from "vs/base/common/keyCodes";
+import { KeyCode } from "vs/base/common/keyCodes";
 import { isMacintosh } from "vs/base/common/platform";
 import { ICodeEditor, IEditorMouseEvent } from "vs/editor/browser/editorBrowser";
 import { editorContribution } from "vs/editor/browser/editorBrowserExtensions";
@@ -249,9 +249,8 @@ function closeActiveReferenceSearch(): void {
 
 KeybindingsRegistry.registerCommandAndKeybindingRule({
 	id: "closeSidePaneWidget",
-	weight: CommonEditorRegistry.commandWeight(-202),
+	weight: CommonEditorRegistry.commandWeight(300),
 	primary: KeyCode.Escape,
-	secondary: [KeyMod.Shift | KeyCode.Escape | KeyCode.Delete], // tslint:disable-line
-	when: ContextKeyExpr.and(ContextKeyExpr.not("config.editor.stablePeek")),
+	when: ContextKeyExpr.not("config.editor.stablePeek"),
 	handler: closeActiveReferenceSearch
 });
