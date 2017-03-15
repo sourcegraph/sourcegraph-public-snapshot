@@ -27,6 +27,7 @@ const subtextSx = {
 	textAlign: "center",
 	...typography.small
 };
+
 export class SignupLoginAuth extends ComponentWithRouter<Props, {}> {
 	render(): JSX.Element {
 		const publicCode = githubAuthAction(this.context.router, false);

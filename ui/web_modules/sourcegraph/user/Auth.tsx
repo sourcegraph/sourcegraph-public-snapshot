@@ -57,12 +57,10 @@ function getAuthAction(props: AuthProps): ActionForm {
 
 	let authForm: HTMLFormElement | null = null;
 	const submitAuthForm = () => {
+		props.eventObject.logEvent({ page_name: props.pageName || "" });
 		if (authForm) {
 			authForm.submit();
 		}
-	};
-	const logEvent = () => {
-		props.eventObject.logEvent({ page_name: props.pageName || "" });
 	};
 
 	return {
@@ -70,7 +68,6 @@ function getAuthAction(props: AuthProps): ActionForm {
 		form: <form
 			action={url}
 			method="POST"
-			onSubmit={logEvent}
 			ref={el => authForm = el}
 			style={{ display: "none" }} >
 			<input type="hidden" name="gorilla.csrf.Token" value={context.csrfToken} />
