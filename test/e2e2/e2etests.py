@@ -4,6 +4,7 @@ import traceback
 import argparse
 import os
 import sys
+import requests
 
 from selenium.webdriver.common.keys import Keys
 from colors import yellow
@@ -431,6 +432,28 @@ def test_java_global_usages(dr):
     wait_for(lambda: len(dr.find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
     # External References
     wait_for(lambda: len(dr.find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > 0)
+
+def ensure_test_data(sourcegraph_url):
+    print("Ensuring test repositories are cloned")
+    start = time.time()
+    while True:
+        req = requests.post("%s/.api/repos-ensure" % sourcegraph_url, json=test_repos)
+        if len(req.json()) == 0:
+            break
+        if time.time() - start > 60:
+            raise Exception("timed out waiting for test data to be ensured")
+        time.sleep(1)
+    print("All test repositories are cloned")
+
+test_repos = [
+    "github.com/gorilla/muxy",
+    "github.com/gorilla/mux",
+    "github.com/golang/go",
+    "github.com/gorilla/pat",
+    "github.com/captncraig/mux",
+    "github.com/junit-team/junit4",
+    "github.com/google/guava",
+];
 
 all_tests = [
     # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed

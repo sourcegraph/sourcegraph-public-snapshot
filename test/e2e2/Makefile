@@ -9,7 +9,7 @@ test: dep dep-browser-ext
 	BROWSER=${BROWSER} ./selenium.sh kill
 
 dep: .env/bin/python .env/bin/pip
-	.env/bin/pip install -r requirements.txt
+	.env/bin/python2 .env/bin/pip install -r requirements.txt
 
 dep-browser-ext:
 	cd ./browser-ext && yarn && yarn run build
@@ -37,6 +37,10 @@ run:
 all-prod:
 	BROWSER=chrome SOURCEGRAPH_URL="https://sourcegraph.com" $(MAKE) test || true
 	BROWSER=firefox SOURCEGRAPH_URL="https://sourcegraph.com" $(MAKE) test || true
+
+ci:
+	echo "testing against instance $SOURCEGRAPH_URL";
+	BROWSER=chrome OPT="--exclude=test_browser_extension" NOVNC=1 $(MAKE) test
 
 chrome-prod:
 	BROWSER=chrome SOURCEGRAPH_URL="https://sourcegraph.com" $(MAKE) test

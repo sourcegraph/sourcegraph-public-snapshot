@@ -2,6 +2,7 @@ import os
 import sys
 import argparse
 import traceback
+import time
 import atexit
 import random
 
@@ -9,8 +10,6 @@ from urlparse import urlparse
 from colors import green, red, bold
 from slackclient import SlackClient
 from prometheus_client import Counter, start_http_server
-
-import requests
 
 from e2etypes import *
 from e2etests import *
@@ -129,6 +128,8 @@ Type "continue" to continue.
     logf('')
     logf('Starting test run with test plan:\n%s' % '\n'.join(['\t'+f[0].func_name for f in tests]))
 
+    ensure_test_data(args.url)
+
     for test in tests:
         testfunc, owner = test
         if args.browser == "firefox" and "test_browser_extension" in testfunc.func_name:
@@ -198,6 +199,7 @@ def main():
     p.add_argument("--selenium", help="the address of the Selenium server instance to communicate with", default="http://localhost:4444", type=str)
     p.add_argument("--browser", help="the browser type (firefox or chrome)", default="chrome", type=str)
     p.add_argument("--filter", help="only run the tests matching this query", default="", type=str)
+    p.add_argument("--exclude", help="don't run the tests matching this query", default="", type=str)
     p.add_argument("--alert-on-err", help="send alert to Slack on error. If this is true, the following environment variables should also be set: SLACK_API_TOKEN, SLACK_WARNING_CHANNEL", action="store_true", default=False)
     p.add_argument("--loop", help="loop continuously", action="store_true", default=False)
     p.add_argument("--tries-before-err", help="the number of times a test is tried before signaling failure", default=1, type=int)
@@ -207,7 +209,9 @@ def main():
         sys.stderr.write("browser needs to be chrome or firefox, was %s\n" % args.browser)
         return
 
-    tests = [t for t in all_tests if args.filter in t[0].func_name]
+    tests = [t for t in all_tests if
+             (args.filter in t[0].func_name) and
+             ((len(args.exclude) == 0) or (args.exclude not in t[0].func_name))]
 
     if args.alert_on_err:
         slack_cli, slack_ch = alert_config(args)
