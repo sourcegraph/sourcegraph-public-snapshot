@@ -3,7 +3,7 @@
 # Waits for a given version (Docker image tag) to be deployed to a given staging environment
 
 START=$(date +%s);
-TIMEOUT=120;  # seconds
+TIMEOUT=240;  # seconds
 
 if [ -z ${VERSION+x} ] || [ -z ${STAGING_NAME+x} ]; then
     echo 'either $VERSION or $STAGING_NAME is not set';
