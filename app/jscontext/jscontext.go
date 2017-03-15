@@ -25,6 +25,7 @@ import (
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 var authEnabledEnvVar = env.Get("AUTH_ENABLED", "true", "require login for users to view repositories")
+var repoHomeRegexFilter = env.Get("REPO_HOME_REGEX_FILTER", "", "use this regex to filter for repositories on the repository landing page")
 
 // TrackingAppID is used by the Telligent data pipeline
 var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute front end user logs to. not providing this value will prevent logging.")
@@ -32,22 +33,23 @@ var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute 
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 type JSContext struct {
-	AppURL            string                     `json:"appURL"`
-	LegacyAccessToken string                     `json:"accessToken"` // Legacy support for Chrome extension.
-	XHRHeaders        map[string]string          `json:"xhrHeaders"`
-	CSRFToken         string                     `json:"csrfToken"`
-	UserAgentIsBot    bool                       `json:"userAgentIsBot"`
-	AssetsRoot        string                     `json:"assetsRoot"`
-	Version           string                     `json:"version"`
-	Features          interface{}                `json:"features"`
-	User              *sourcegraph.User          `json:"user"`
-	Emails            *sourcegraph.EmailAddrList `json:"emails"`
-	GitHubToken       *sourcegraph.ExternalToken `json:"gitHubToken"`
-	SentryDSN         string                     `json:"sentryDSN"`
-	IntercomHash      string                     `json:"intercomHash"`
-	TrackingAppID     string                     `json:"trackingAppID"`
-	AuthEnabled       bool                       `json:"authEnabled"`
-	StripePublicKey   string                     `json:"stripePublicKey"`
+	AppURL              string                     `json:"appURL"`
+	LegacyAccessToken   string                     `json:"accessToken"` // Legacy support for Chrome extension.
+	XHRHeaders          map[string]string          `json:"xhrHeaders"`
+	CSRFToken           string                     `json:"csrfToken"`
+	UserAgentIsBot      bool                       `json:"userAgentIsBot"`
+	AssetsRoot          string                     `json:"assetsRoot"`
+	Version             string                     `json:"version"`
+	Features            interface{}                `json:"features"`
+	User                *sourcegraph.User          `json:"user"`
+	Emails              *sourcegraph.EmailAddrList `json:"emails"`
+	GitHubToken         *sourcegraph.ExternalToken `json:"gitHubToken"`
+	SentryDSN           string                     `json:"sentryDSN"`
+	IntercomHash        string                     `json:"intercomHash"`
+	TrackingAppID       string                     `json:"trackingAppID"`
+	AuthEnabled         bool                       `json:"authEnabled"`
+	RepoHomeRegexFilter string                     `json:"repoHomeRegexFilter"`
+	StripePublicKey     string                     `json:"stripePublicKey"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -105,12 +107,13 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		Emails: &sourcegraph.EmailAddrList{
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
-		GitHubToken:     gitHubToken,
-		SentryDSN:       sentryDSNFrontend,
-		IntercomHash:    intercomHMAC(actor.UID),
-		AuthEnabled:     authEnabled,
-		TrackingAppID:   TrackingAppID,
-		StripePublicKey: stripe.StripePublicKey,
+		GitHubToken:         gitHubToken,
+		SentryDSN:           sentryDSNFrontend,
+		IntercomHash:        intercomHMAC(actor.UID),
+		AuthEnabled:         authEnabled,
+		TrackingAppID:       TrackingAppID,
+		RepoHomeRegexFilter: repoHomeRegexFilter,
+		StripePublicKey:     stripe.StripePublicKey,
 	}, nil
 }
 

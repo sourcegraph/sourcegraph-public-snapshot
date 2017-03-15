@@ -22,10 +22,15 @@ class Context {
 	authEnabled: boolean;
 	/**
 	 * trackingAppID, set as "" by default server side, is required for the telligent environment to be set to production.
-	 * For Sourcegraph.com, it is SourcegraphWeb. For an on-premises deployment, it might be something like SgdevWeb.
+	 * For Sourcegraph.com, it is SourcegraphWeb. For the node.aws.sgdev.org deployment, it might be something like SgdevWeb.
 	 * It is stored in telligent as a field called appID.
 	 */
 	trackingAppID: string | null;
+	/**
+	 * repoHomePageRegex filter is for on-premises deployments, to ensure that only organization repos appear on the home page.
+	 * For instance, on node.aws.sgdev.org, it is set to ^gitolite\.aws\.sgdev\.org.
+	 */
+	repoHomeRegexFilter: string;
 
 	stripePublicKey: string;
 
