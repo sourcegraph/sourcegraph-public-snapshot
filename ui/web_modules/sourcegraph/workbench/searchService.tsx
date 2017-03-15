@@ -89,13 +89,13 @@ export class SearchService implements ISearchService {
 				}
 			}`, { ...query.contentPattern, rev, uri: repo, }).then(data => {
 					if (!data.root.repository || !data.root.repository.commit.commit) {
-						throw new Error("?");
+						throw new Error("Repository does not exist.");
 					}
 					let response = data.root.repository.commit.commit.textSearch.map(file => {
 						const resource = workspace.with({ fragment: file.path });
 						const lineMatches = file.lineMatches.map(lineMatch => {
 							if (!query.contentPattern) {
-								throw new Error("?");
+								throw new Error("Query missing search string.");
 							}
 							let offsetAndLengths: number[][];
 							if (query.contentPattern.isRegExp) {
@@ -126,9 +126,8 @@ export class SearchService implements ISearchService {
 
 		if (query.type === QueryType.File) {
 			return this.fileSearch(query);
-		} else {
-			return this.textSearch(query);
 		}
+		return this.textSearch(query);
 	}
 
 	/**
