@@ -26,6 +26,7 @@ declare namespace GQL {
 		id: string;
 		sha1: string;
 		tree: ITree | null;
+		textSearch: Array<IFileMatch>;
 		file: IFile | null;
 		languages: Array<string>;
 	}
@@ -82,6 +83,15 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IFileMatch {
+		__typename: string;
+		path: string;
+		lineMatches: Array<ILineMatch>;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IHunk {
 		__typename: string;
 		startLine: number;
@@ -91,6 +101,15 @@ declare namespace GQL {
 		rev: string;
 		author: ISignature | null;
 		message: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ILineMatch {
+		__typename: string;
+		preview: string;
+		lineNumber: number;
 	}
 
 	/*
