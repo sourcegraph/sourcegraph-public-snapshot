@@ -23,10 +23,12 @@ class SlackFeedbackService implements IFeedbackService {
 		// sourcegraph/util/xhr, because we are POSTing cross-domain
 		// and do not want to include our auth headers.
 		const sentimentEmoji = feedback.sentiment === 1 ? ":heart_eyes:" : ":rage:";
+		const user = context.user ? context.user.Login : "Anonymous user";
+
 		fetch(SlackFeedbackService.WEBHOOK_URL, {
 			method: "POST",
 			body: JSON.stringify({
-				text: `${sentimentEmoji} ${feedback.feedback} — by *${context.user ? context.user.Login : "Anonymous user"}* at <${window.location.href}|${document.title}>`,
+				text: `${sentimentEmoji} ${feedback.feedback} — by *${user}* at <${window.location.href}|${document.title}>\n\n<https://github.com/sourcegraph/sourcegraph/issues/new?title=${encodeURIComponent("[Feedback] " + feedback.feedback.slice(0, 30) + "...\n")}&body=${encodeURIComponent(feedback.feedback)}${encodeURIComponent("\n\nPosted by: **" + user + "**\n")}${encodeURIComponent("\nLocation: " + window.location.href)}|Create issue>`,
 				unfurl_links: false,
 			}),
 		})
