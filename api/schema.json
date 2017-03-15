@@ -144,6 +144,75 @@
 							{
 								"defaultValue": null,
 								"description": null,
+								"name": "pattern",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							},
+							{
+								"defaultValue": "false",
+								"description": null,
+								"name": "isRegExp",
+								"type": {
+									"kind": "SCALAR",
+									"name": "Boolean",
+									"ofType": null
+								}
+							},
+							{
+								"defaultValue": "false",
+								"description": null,
+								"name": "isWordMatch",
+								"type": {
+									"kind": "SCALAR",
+									"name": "Boolean",
+									"ofType": null
+								}
+							},
+							{
+								"defaultValue": "false",
+								"description": null,
+								"name": "isCaseSensitive",
+								"type": {
+									"kind": "SCALAR",
+									"name": "Boolean",
+									"ofType": null
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "textSearch",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "FileMatch",
+										"ofType": null
+									}
+								}
+							}
+						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
 								"name": "path",
 								"type": {
 									"kind": "NON_NULL",
@@ -559,6 +628,57 @@
 				"possibleTypes": null
 			},
 			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "path",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "lineMatches",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "LineMatch",
+										"ofType": null
+									}
+								}
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "FileMatch",
+				"possibleTypes": null
+			},
+			{
 				"description": "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).",
 				"enumValues": null,
 				"fields": null,
@@ -705,6 +825,49 @@
 				"interfaces": null,
 				"kind": "SCALAR",
 				"name": "Int",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "preview",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "lineNumber",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "LineMatch",
 				"possibleTypes": null
 			},
 			{

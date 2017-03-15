@@ -55,12 +55,7 @@ export class SearchService implements ISearchService {
 		}
 	}
 
-	/**
-	 * search returns a promise which completes with file search results matching the specified query.
-	 */
-	public search(query: ISearchQuery): PPromise<ISearchComplete, ISearchProgressItem> {
-		this.extendQuery(query);
-
+	private fileSearch(query: ISearchQuery): PPromise<ISearchComplete, ISearchProgressItem> {
 		const rawSearchQuery = new PPromise<ISearchComplete, ISearchProgressItem>((onComplete, onError, onProgress) => {
 			this.getWorkspaceFiles(query).then(files => {
 				onComplete({
@@ -70,6 +65,69 @@ export class SearchService implements ISearchService {
 			});
 		}, () => rawSearchQuery && rawSearchQuery.cancel());
 		return rawSearchQuery;
+	}
+
+	private textSearch(query: ISearchQuery): PPromise<ISearchComplete, ISearchProgressItem> {
+		const workspace = this.contextService.getWorkspace().resource;
+		const { repo, rev } = URIUtils.repoParams(workspace);
+		const search = new PPromise<ISearchComplete, ISearchProgressItem>((complete, error, progress) => {
+			fetchGraphQLQuery(`query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!) {
+				root {
+					repository(uri: $uri) {
+						commit(rev: $rev) {
+							commit {
+								textSearch(pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive) {
+									path
+									lineMatches {
+										preview
+										lineNumber
+									}
+								}
+							}
+						}
+					}
+				}
+			}`, { ...query.contentPattern, rev, uri: repo, }).then(data => {
+					if (!data.root.repository || !data.root.repository.commit.commit) {
+						throw new Error("Repository does not exist.");
+					}
+					let response = data.root.repository.commit.commit.textSearch.map(file => {
+						const resource = workspace.with({ fragment: file.path });
+						const lineMatches = file.lineMatches.map(lineMatch => {
+							if (!query.contentPattern) {
+								throw new Error("Query missing search string.");
+							}
+							let offsetAndLengths: number[][];
+							if (query.contentPattern.isRegExp) {
+								offsetAndLengths = [[]];
+							} else {
+								const offset = lineMatch.preview.indexOf(query.contentPattern.pattern);
+								const len = query.contentPattern.pattern.length;
+								offsetAndLengths = [[offset, offset + len]];
+							}
+							return ({ ...lineMatch, offsetAndLengths });
+						});
+						return { ...file, resource, lineMatches };
+					});
+					complete({
+						results: response,
+						stats: {} as any,
+					});
+				});
+		}, () => search && search.cancel());
+		return search;
+	}
+
+	/**
+	 * search returns a promise which completes with file search results matching the specified query.
+	 */
+	public search(query: ISearchQuery): PPromise<ISearchComplete, ISearchProgressItem> {
+		this.extendQuery(query);
+
+		if (query.type === QueryType.File) {
+			return this.fileSearch(query);
+		}
+		return this.textSearch(query);
 	}
 
 	/**

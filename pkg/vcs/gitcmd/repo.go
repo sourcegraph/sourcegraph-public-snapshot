@@ -883,16 +883,32 @@ type PatternInfo struct {
 
 // FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
-	Path        string
-	LineMatches []LineMatch
+	path        string
+	lineMatches []*LineMatch
+}
+
+func (fm *FileMatch) Path() string {
+	return fm.path
+}
+
+func (fm *FileMatch) LineMatches() []*LineMatch {
+	return fm.lineMatches
 }
 
 // LineMatch is the struct used by vscode to receive search results for a line
 type LineMatch struct {
-	Preview    string
-	LineNumber int
+	preview    string
+	lineNumber int
 	// We do not know the offset and length currently
 	//OffsetAndLengths [][2]int
+}
+
+func (lm *LineMatch) Preview() string {
+	return lm.preview
+}
+
+func (lm *LineMatch) LineNumber() int32 {
+	return int32(lm.lineNumber)
 }
 
 // Grep is a wrapper around git grep
@@ -940,6 +956,11 @@ func (r *Repository) Grep(ctx context.Context, commit vcs.CommitID, info Pattern
 	// TODO(keegancsmith) we should stream the output
 	out, err := cmd.Output(ctx)
 	if err != nil {
+		// Janky, but this is currently our best way of knowing if git
+		// grep just didn't find any results.
+		if err.Error() == "exit status 1" {
+			return []*FileMatch{}, nil
+		}
 		return nil, err
 	}
 
@@ -995,15 +1016,15 @@ func (r *Repository) Grep(ctx context.Context, commit vcs.CommitID, info Pattern
 			state = stateCommit
 			line = s
 
-			if current.Path != path {
+			if current.path != path {
 				current = &FileMatch{
-					Path: path,
+					path: path,
 				}
 				matches = append(matches, current)
 			}
-			current.LineMatches = append(current.LineMatches, LineMatch{
-				Preview:    line,
-				LineNumber: lineNumber,
+			current.lineMatches = append(current.lineMatches, &LineMatch{
+				preview:    line,
+				lineNumber: lineNumber,
 			})
 		}
 	}
