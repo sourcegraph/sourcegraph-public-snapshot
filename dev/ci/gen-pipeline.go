@@ -155,6 +155,7 @@ func main() {
 
 	case strings.HasPrefix(branch,
 		"staging/"):
+		stagingName := strings.Replace(strings.TrimPrefix(branch, "staging/"), "/", "-", -1)
 		pipeline.AddWait()
 		pipeline.AddStep(":docker:",
 			Env("TAG", version),
@@ -164,6 +165,18 @@ func main() {
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
 			Cmd("./dev/ci/deploy-staging.sh"))
+		pipeline.AddWait()
+		pipeline.AddStep(":selenium:",
+			Cmd("cd test/e2e2"),
+			Cmd("pip install virtualenv"),
+			Cmd("virtualenv .env"),
+			Env("VERSION", version),
+			Env("STAGING_NAME", stagingName),
+			Cmd("../../dev/ci/wait-for-deploy.sh"),
+			Env("NOVNC", "1"),
+			Env("SOURCEGRAPH_URL", fmt.Sprintf("http://%s.staging.sgdev.org", stagingName)),
+			Cmd("make ci"),
+		)
 
 	case strings.HasPrefix(branch,
 		"docker-images/"):
