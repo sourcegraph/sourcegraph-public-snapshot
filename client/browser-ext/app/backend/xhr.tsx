@@ -29,7 +29,9 @@ function defaultOptions(): FetchOptions | undefined {
 	}
 	return {
 		headers,
-		credentials: "include",
+		// we only need to include cookies when running in-page
+		// the chrome extension uses the Authorization field
+		credentials: !phabricatorInstance ? "omit" : "include",
 	};
 };
 
