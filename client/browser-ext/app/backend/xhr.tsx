@@ -1,6 +1,6 @@
 import "whatwg-fetch";
 import { getPlatformName } from "../utils";
-import { phabricatorInstance } from "../utils/context";
+import { isBrowserExtension } from "../utils/context";
 
 let token: string | null = null;
 export function useAccessToken(tok: string): void {
@@ -21,17 +21,17 @@ function defaultOptions(): FetchOptions | undefined {
 	}
 	const headers = new Headers();
 	// TODO(uforic): can we get rid of this and just pass cookies instead
-	if (token) {
+	if (isBrowserExtension() && token) {
 		headers.set("Authorization", `session ${token}`);
 	}
-	if (!phabricatorInstance) {
+	if (isBrowserExtension()) {
 		headers.set("x-sourcegraph-client", `${getPlatformName()} v${getExtensionVersion()}`);
 	}
 	return {
 		headers,
 		// we only need to include cookies when running in-page
 		// the chrome extension uses the Authorization field
-		credentials: !phabricatorInstance ? "omit" : "include",
+		credentials: isBrowserExtension() ? "omit" : "include",
 	};
 };
 

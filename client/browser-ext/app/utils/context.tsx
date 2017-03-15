@@ -25,3 +25,7 @@ export let phabricatorInstance: PhabricatorInstance;
 export function setPhabricatorInstance(instance: PhabricatorInstance): void {
 	phabricatorInstance = instance;
 }
+
+export function isBrowserExtension(): boolean {
+	return !phabricatorInstance;
+}
