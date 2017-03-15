@@ -956,6 +956,11 @@ func (r *Repository) Grep(ctx context.Context, commit vcs.CommitID, info Pattern
 	// TODO(keegancsmith) we should stream the output
 	out, err := cmd.Output(ctx)
 	if err != nil {
+		// Janky, but this is currently our best way of knowing if git
+		// grep just didn't find any results.
+		if err.Error() == "exit status 1" {
+			return []*FileMatch{}, nil
+		}
 		return nil, err
 	}
 
