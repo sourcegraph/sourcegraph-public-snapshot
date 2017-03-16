@@ -10,13 +10,11 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
-type Plan string
-
 const (
-	None    Plan = "none"
-	Trial   Plan = "trial"
-	Paid    Plan = "paid"
-	Blocked Plan = "blocked"
+	None    = "none"
+	Trial   = "trial"
+	Paid    = "paid"
+	Blocked = "blocked"
 
 	orgTableName = "organization_payments"
 )
@@ -38,7 +36,7 @@ func (payments) DropTable() string {
 }
 
 type Payment struct {
-	Plan            Plan       `db:"plan"`
+	Plan            string     `db:"plan"`
 	TrialExpiration *time.Time `db:"trial_expiration"`
 }
 
@@ -80,7 +78,7 @@ func (p *payments) StartTrial(ctx context.Context, githubOrg string) error {
 	return err
 }
 
-func (p *payments) PaidForOrg(ctx context.Context, githubOrg string, seats uint64) error {
+func (p *payments) PayForOrg(ctx context.Context, githubOrg string, seats uint64) error {
 	_, err := appDBH(ctx).Db.Exec("UPDATE "+orgTableName+" SET plan = $1, seats = $2 WHERE org_name = $3;", Paid, seats, githubOrg)
 	return err
 }

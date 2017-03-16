@@ -131,16 +131,11 @@ func (*schemaResolver) SubscribeOrg(ctx context.Context, args *struct {
 	}
 	seats := uint64(args.Seats)
 
-	if err := stripe.SubscribeOrganization(ctx, args.TokenID, args.GitHubOrg, seats); err != nil {
+	if err := localstore.Payments.PayForOrg(ctx, args.GitHubOrg, seats); err != nil {
 		return false, err
 	}
 
-	return true, setupOrganization(ctx, args.GitHubOrg, seats)
-}
-
-// setupOrganization records the payment in the Sourcegraph database.
-func setupOrganization(ctx context.Context, org string, seats uint64) error {
-	return localstore.Payments.PaidForOrg(ctx, org, seats)
+	return true, stripe.SubscribeOrganization(ctx, args.TokenID, args.GitHubOrg, seats)
 }
 
 // Start the trial for the organization.

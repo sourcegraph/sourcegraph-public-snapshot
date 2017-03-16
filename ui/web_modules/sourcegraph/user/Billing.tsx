@@ -50,12 +50,10 @@ class CancelSubscription extends ComponentWithRouter<{ plan: GQL.IPlan }, {}> {
 
 	private cancelSubcription = () => {
 		Events.CancelSubscription_Clicked.logEvent();
-
-		fetchGraphQLQuery(`{
-			mutation {
-				cancelSubcription()
-			}
-		}`);
+		fetchGraphQLQuery(`mutation {
+				cancelSubscription()
+			}`);
+		location.reload();
 	}
 
 	render(): JSX.Element {

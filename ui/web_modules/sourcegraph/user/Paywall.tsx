@@ -4,7 +4,7 @@ import * as Relay from "react-relay";
 import { context } from "sourcegraph/app/context";
 import { Button, FlexContainer, Toast } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
-import { LocationStateModal, dismissModal } from "sourcegraph/components/Modal";
+import { LocationStateModal } from "sourcegraph/components/Modal";
 import { OrgSeatsCard } from "sourcegraph/components/OrganizationCard";
 import { ChevronRight, No, Warning } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
@@ -118,7 +118,6 @@ class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot 
 				seats,
 				GitHubOrg: org.name,
 			});
-		dismissModal(modalName, this.context.router)();
 		location.reload();
 	}
 

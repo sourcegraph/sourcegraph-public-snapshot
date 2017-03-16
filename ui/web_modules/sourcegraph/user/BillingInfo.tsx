@@ -32,7 +32,7 @@ export class PaymentInfo extends React.Component<Props, {}> {
 			locale: "auto",
 			token: this.props.submit,
 			closed: this.props.closed,
-			panelLabel: this.props.submitLabel,
+			panelLabel: this.props.submitLabel || "",
 		});
 		this.handler.open({
 			name: "Sourcegraph",
