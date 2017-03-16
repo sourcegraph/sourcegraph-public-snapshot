@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
@@ -150,6 +151,23 @@ func serveInstallZap(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		hubspotclient.LogEvent(email, hubspotutil.ZapDownloadedEventID, map[string]string{})
+
+		gcsclient, err := gcstracker.NewFromUserInfo(&gcstracker.UserInfo{
+			Email: email,
+		})
+		if err != nil {
+			return err
+		}
+		if gcsclient != nil {
+			return nil
+		}
+		tos := gcsclient.NewTrackedObjects("ZapDownloadCompleted")
+		if err := tos.AddUserDetailsObject(&gcstracker.UserDetailsContext{
+			ZapDownloadCompleted: true,
+		}); err != nil {
+			return err
+		}
+		gcsclient.Write(tos)
 	}
 
 	w.Header().Set("Content-Type", "text/x-sh")
