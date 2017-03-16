@@ -17,6 +17,8 @@ const staticImports = {
 	"vs/workbench/parts/search/browser/openFileHandler": require("vs/workbench/parts/search/browser/openFileHandler"),
 	"vs/workbench/parts/quickopen/browser/helpHandler": require("vs/workbench/parts/quickopen/browser/helpHandler"),
 	"vs/workbench/parts/search/browser/searchViewlet": require("vs/workbench/parts/search/browser/searchViewlet"),
+	"vs/workbench/parts/git/electron-browser/git.contribution": require("vs/workbench/parts/git/electron-browser/git.contribution"),
+	"vs/workbench/parts/scm/electron-browser/scmViewlet": require("vs/workbench/parts/scm/electron-browser/scmViewlet"),
 	"vs/workbench/parts/search/browser/openAnythingHandler": require("vs/workbench/parts/search/browser/openAnythingHandler"),
 	"vs/workbench/parts/quickopen/browser/gotoLineHandler": require("vs/workbench/parts/quickopen/browser/gotoLineHandler"),
 	"vs/workbench/parts/files/browser/editors/textFileEditor": require("vs/workbench/parts/files/browser/editors/textFileEditor"),

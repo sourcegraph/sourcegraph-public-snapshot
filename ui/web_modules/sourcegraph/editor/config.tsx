@@ -215,33 +215,53 @@ export async function updateFileTree(resource: URI): Promise<void> {
 	}
 
 	const view = viewlet["explorerView"];
-	if (!(view instanceof ExplorerView)) {
-		// A different viewlet is open.
-		return;
-	}
+	if (view instanceof ExplorerView) {
+		await view.refresh(true);
 
-	await view.refresh(true);
+		const privateView = view as any;
+		let root = privateView.root;
+		if (!root) {
+			await view.refresh();
+			root = privateView.root;
+		}
+		const fileStat = root.find(resource);
+		const treeModel = privateView.tree.model;
+		const chain = await treeModel.resolveUnknownParentChain(fileStat);
+		chain.forEach((item) => {
+			treeModel.expand(item);
+		});
+		treeModel.expand(fileStat);
 
-	const privateView = view as any;
-	let root = privateView.root;
-	if (!root) {
-		await view.refresh();
-		root = privateView.root;
-	}
-	const fileStat = root.find(resource);
-	const treeModel = privateView.tree.model;
-	const chain = await treeModel.resolveUnknownParentChain(fileStat);
-	chain.forEach((item) => {
-		treeModel.expand(item);
-	});
-	treeModel.expand(fileStat);
+		const oldSelection = privateView.tree.getSelection();
+		await view.select(resource);
+		const scrollPos = privateView.tree.getRelativeTop(fileStat);
+		if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
+			// Item is scrolled off screen
+			await view.select(resource, true);
+			await view.refresh(true);
 
-	const oldSelection = privateView.tree.getSelection();
-	await view.select(resource);
-	const scrollPos = privateView.tree.getRelativeTop(fileStat);
-	if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
-		// Item is scrolled off screen
-		await view.select(resource, true);
+			const privateView = view as any;
+			let root = privateView.root;
+			if (!root) {
+				await view.refresh();
+				root = privateView.root;
+			}
+			const fileStat = root.find(resource);
+			const treeModel = privateView.tree.model;
+			const chain = await treeModel.resolveUnknownParentChain(fileStat);
+			chain.forEach((item) => {
+				treeModel.expand(item);
+			});
+			treeModel.expand(fileStat);
+
+			const oldSelection = privateView.tree.getSelection();
+			await view.select(resource);
+			const scrollPos = privateView.tree.getRelativeTop(fileStat);
+			if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
+				// Item is scrolled off screen
+				await view.select(resource, true);
+			}
+		}
 	}
 }
 

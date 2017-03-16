@@ -10,8 +10,10 @@ import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
 import "vs/workbench/parts/files/browser/explorerViewlet";
 import "vs/workbench/parts/files/browser/files.contribution";
+import "vs/workbench/parts/git/electron-browser/git.contribution";
 import "vs/workbench/parts/output/browser/output.contribution";
 import "vs/workbench/parts/quickopen/browser/quickopen.contribution";
+import "vs/workbench/parts/scm/electron-browser/scm.contribution";
 import "vs/workbench/parts/search/browser/search.contribution";
 import "vs/workbench/parts/search/browser/searchViewlet";
 
@@ -29,6 +31,7 @@ import { TextFileEditorModel } from "vs/workbench/services/textfile/common/textF
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
 import { init as initExtensionHost } from "sourcegraph/ext/main";
+import { Features } from "sourcegraph/util/features";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 import { setupServices } from "sourcegraph/workbench/services";
@@ -66,6 +69,7 @@ export function init(reactDomElement: HTMLDivElement, resource: URI, zapRef?: st
 	const workspace = resource.with({ fragment: "" });
 	const services = setupServices(domElement, workspace, zapRef, commitID, branch);
 	configurePreStartup(services);
+	window.localStorage.setItem("enablePreviewSCM", "true"); // TODO: move this.
 
 	const instantiationService = services.get(IInstantiationService) as IInstantiationService;
 
@@ -79,6 +83,9 @@ export function init(reactDomElement: HTMLDivElement, resource: URI, zapRef?: st
 	workbench.startup();
 	services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
 	services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
+	if (Features.zapChanges.isEnabled()) {
+		workbench.setActivityBarHidden(false);
+	}
 	// HACK: get URI's filename in fragment, not in URI path component
 	(TextFileEditorModel.prototype as any).getOrCreateMode = function (modeService: IModeService, preferredModeIds: string, firstLineText?: string): TPromise<IMode> {
 		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this

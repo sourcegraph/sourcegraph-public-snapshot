@@ -20,7 +20,7 @@ if (!isWebWorker) {
 
 self["require"] = () => { throw new Error("require is not provided"); };
 
-const vscode = createExtensionAPI()({ name: "global", id: "global", version: "0.0.0" } as any);
+const vscode = createExtensionAPI()({ name: "global", id: "global", version: "0.0.0", enableProposedApi: true, } as any);
 
 // Attach to global scope for easy/fun JavaScript console hacking.
 self["vscode"] = vscode;
@@ -33,6 +33,7 @@ export const extensions = vscode.extensions;
 export const window = vscode.window;
 export const languages = vscode.languages;
 export const workspace = vscode.workspace;
+export const scm = (vscode as any).scm;
 // constructors
 export const CancellationTokenSource = vscode.CancellationTokenSource;
 export const CodeLens = vscode.CodeLens;

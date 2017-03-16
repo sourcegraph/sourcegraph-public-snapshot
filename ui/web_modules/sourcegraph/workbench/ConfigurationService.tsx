@@ -52,7 +52,7 @@ const config = {
 			enablePreview: false,
 		},
 		activityBar: {
-			visible: Features.textSearch.isEnabled(),
+			visible: Features.textSearch.isEnabled() || Features.zapChanges.isEnabled(),
 		},
 		statusBar: {
 			visible: false,

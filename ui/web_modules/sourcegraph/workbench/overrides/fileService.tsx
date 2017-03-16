@@ -160,7 +160,7 @@ export class FileService implements IFileService {
 	}
 
 	public copyFile(source: URI, target: URI, overwrite?: boolean): TPromise<IFileStat> {
-		throw new Error("not implemented");
+		return TPromise.wrap({ isDirectory: true, hasChildren: true } as IFileStat);
 	}
 
 	public createFolder(resource: URI): TPromise<IFileStat> {

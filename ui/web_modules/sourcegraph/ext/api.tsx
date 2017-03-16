@@ -64,7 +64,7 @@ export function createExtensionAPI(
 			userExtensionsHome: environmentService.extensionsPath,
 			extensionDevelopmentPath: environmentService.extensionDevelopmentPath,
 			extensionTestsPath: environmentService.extensionTestsPath,
-			enableProposedApi: false,
+			enableProposedApi: true,
 		},
 		contextService: {
 			workspace: contextService.getWorkspace()
