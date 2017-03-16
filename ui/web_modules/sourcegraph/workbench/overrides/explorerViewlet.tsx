@@ -85,10 +85,11 @@ export class ExplorerViewlet extends VSExplorerViewlet {
 		explorerView.refresh();
 	}
 
-	private updateTitleComponent(): void {
+	private updateTitleComponent = (): void => {
 		const parent = document.getElementById("workbench.parts.sidebar");
 		if (!parent) {
-			throw new Error("Expected SideBar element to exist.");
+			requestAnimationFrame(this.updateTitleComponent);
+			return;
 		}
 		let titleElement = parent.children[0];
 		if (!titleElement || titleElement.className !== "composite title") {
