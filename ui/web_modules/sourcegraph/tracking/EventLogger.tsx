@@ -40,7 +40,6 @@ class EventLoggerClass {
 
 		if (user) {
 			if (user.Name) { this.setUserName(user.Name); }
-			if (user.RegisteredAt) { this.setUserRegisteredAt(user.RegisteredAt); }
 			if (user.Company) { this.setUserCompany(user.Company); }
 			if (user.Location) { this.setUserLocation(user.Location); }
 			this.setUserIsPrivateCodeUser(context.hasPrivateGitHubToken() ? "true" : "false");
@@ -65,10 +64,15 @@ class EventLoggerClass {
 		googleAnalytics.setTrackerLogin(login);
 		telligent.setUserId(login);
 		intercom.setIntercomProperty("business_user_id", login);
-		hubSpot.setHubSpotProperties({ "user_id": login });
+		hubSpot.setHubSpotProperties({
+			"user_id": login,
+			"github_link": `https://github.com/${login}`,
+			"looker_link": `https://sourcegraph.looker.com/dashboards/9?User%20ID=${login}`
+		});
 		optimizely.setUserAttributes({ "user_id": login });
 
 		// Set UID
+		telligent.setUserProperty("internal_user_id", UID);
 		intercom.setIntercomProperty("user_id", UID);
 		intercom.setIntercomProperty("internal_user_id", UID);
 	}
@@ -90,6 +94,18 @@ class EventLoggerClass {
 		hubSpot.setHubSpotProperties({ "company": company });
 	}
 
+	setUserGitHubName(githubName: string): void {
+		// No need to set this for telligent — this data is logged with the 
+		// corresponding SignupCompleted or CompletedGitHubOAuth2Flow event
+		hubSpot.setHubSpotProperties({ "github_name": githubName });
+	}
+
+	setUserGitHubCompany(githubCompany: string): void {
+		// No need to set this for telligent — this data is logged with the 
+		// corresponding SignupCompleted or CompletedGitHubOAuth2Flow event
+		hubSpot.setHubSpotProperties({ "github_company": githubCompany });
+	}
+
 	setUserRegisteredAt(registeredAt: any): void {
 		telligent.setUserProperty("registered_at_timestamp", registeredAt);
 		telligent.setUserProperty("registered_at", new Date(registeredAt).toDateString());
@@ -109,6 +125,7 @@ class EventLoggerClass {
 
 	setUserInstalledChromeExtension(installedChromeExtension: string): void {
 		telligent.setUserProperty("installed_chrome_extension", installedChromeExtension);
+		hubSpot.setHubSpotProperties({ "installed_chrome_extension": installedChromeExtension });
 	}
 
 	setUserIsGitHubOrgAuthed(isGitHubOrgAuthed: string): void {
@@ -150,6 +167,7 @@ class EventLoggerClass {
 	setUserInvited(invitingUserId: string, invitedToOrg: string): void {
 		telligent.setUserProperty("invited_by_user", invitingUserId);
 		telligent.setUserProperty("org_invite", invitedToOrg);
+		hubSpot.setHubSpotProperties({ "invited_by_user": invitingUserId, "invited_to_org": invitedToOrg });
 	}
 
 	setUserPlan(plan: PlanType): void {
@@ -160,8 +178,12 @@ class EventLoggerClass {
 
 	setUserPlanOrg(organization: string): void {
 		telligent.setUserProperty("plan_orgs", organization);
-		hubSpot.setHubSpotProperties({ "authed_orgs_github": organization });
+		hubSpot.setHubSpotProperties({ "plan_orgs": organization });
 		intercom.setIntercomProperty("plan_orgs", organization);
+	}
+
+	setUserViewedPricingPage(): void {
+		hubSpot.setHubSpotProperties({ "viewed_pricing_page": "true" });
 	}
 
 	/*

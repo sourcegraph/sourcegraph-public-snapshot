@@ -10,6 +10,7 @@ import { Checkmark } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
 import * as styles from "sourcegraph/page/Page.css";
 import { Events, PAGE_PRICING } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 
 export function PricingPage({ location }: { location: RouterLocation }): JSX.Element {
 	const privateScopeRegEx = /(^repo,)|(,repo$)|(,repo,)|(^repo$)/;
@@ -39,6 +40,8 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 			organizationPlanButton = <Button block={true} outline={true} color="green" className={styles.plan_cta_noop || ""}><Checkmark className={styles.icon} /> Full access during trial</Button>;
 		}
 	}
+
+	EventLogger.setUserViewedPricingPage();
 
 	return (
 		<div style={{ flex: 1 }}>

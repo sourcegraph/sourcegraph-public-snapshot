@@ -46,7 +46,7 @@ function submitSignupInfo(details: Details): void {
 		lastname: lastName,
 		company: details.userInfo.company,
 		signup_email: details.userInfo.email,
-		github_orgs: details.organization,
+		plan_orgs: details.organization,
 		plan: details.plan === undefined ? "public" : details.plan,
 		is_private_code_user: JSON.stringify(details.authedPrivate),
 	};
@@ -65,6 +65,7 @@ function submitSignupInfo(details: Details): void {
 	Events.AfterSignupModal_Completed.logEvent({
 		trialSignupProperties: signupInformation,
 	});
+	EventLogger.setUserRegisteredAt(Date.now());
 
 	if (details.plan === "organization") {
 		fetchGraphQLQuery(`mutation {

@@ -8,16 +8,25 @@ interface HubSpotScript {
 }
 
 interface HubSpotUserAttributes {
-	email?: string | null;
-	user_id?: string | null;
-	fullname?: string | null;
-	company?: string | null;
-	location?: string | null;
-	is_private_code_user?: string | null;
-	emails?: string | null;
 	authed_orgs_github?: string | null;
-	registered_at?: string | null;
+	company?: string | null;
+	email?: string | null;
+	emails?: string | null;
+	fullname?: string | null;
+	github_name?: string | null;
+	github_company?: string | null;
+	github_link?: string | null;
+	installed_chrome_extension?: string | null;
+	invited_by_user?: string | null;
+	invited_to_org?: string | null;
+	is_private_code_user?: string | null;
+	location?: string | null;
+	looker_link?: string | null;
 	plan?: string;
+	plan_orgs?: string;
+	registered_at?: string | null;
+	user_id?: string | null;
+	viewed_pricing_page?: string | null;
 }
 
 class HubSpotWrapper {
