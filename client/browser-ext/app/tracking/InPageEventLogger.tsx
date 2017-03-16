@@ -6,17 +6,17 @@ export class InPageEventLogger extends EventLogger {
 
 	constructor(appId: string, platformId: string, forceSecure: boolean) {
 		super();
-		this.telligentWrapper = new TelligentWrapper(appId, platformId, forceSecure, false);
+		// this.telligentWrapper = new TelligentWrapper(appId, platformId, forceSecure, false);
 	}
 
 	setUserName(username: string | null): void {
 		if (username !== null) {
-			this.telligentWrapper.setUserId(username);
+			// this.telligentWrapper.setUserId(username);
 		}
 	}
 
 	protected logEventToTelligent(eventAction: string, eventProps: any): void {
-		this.telligentWrapper.track(eventAction, eventProps);
+		// this.telligentWrapper.track(eventAction, eventProps);
 	}
 
 }

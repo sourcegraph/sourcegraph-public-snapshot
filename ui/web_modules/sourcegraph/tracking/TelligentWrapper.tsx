@@ -1,4 +1,4 @@
-import { context } from "sourcegraph/app/context";
+import { context, isOnPremInstance } from "sourcegraph/app/context";
 
 class TelligentWrapper {
 	private telligent: (...args: any[]) => void | null;
@@ -7,7 +7,7 @@ class TelligentWrapper {
 	private DEFAULT_APP_ID: string = "UnknownApp";
 
 	constructor() {
-		if (global && global.window && global.window.telligent) {
+		if (global && global.window && global.window.telligent && !isOnPremInstance(context.authEnabled)) {
 			this.telligent = global.window.telligent;
 		} else {
 			return;
