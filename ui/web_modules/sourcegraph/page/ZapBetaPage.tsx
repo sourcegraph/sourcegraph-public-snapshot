@@ -111,7 +111,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 				}}>
 					<div style={stepSx}>1</div>
 					<p>To install and run the Zap server, open a terminal and paste:</p>
-					<code style={codeSx}>{`sh <(curl -sSf httcodes://sourcegraph.com/install/zap)`}</code>
+					<code style={codeSx}>{`sh <(curl -sSf https://sourcegraph.com/install/zap)`}</code>
 				</div>
 
 				<div style={{
