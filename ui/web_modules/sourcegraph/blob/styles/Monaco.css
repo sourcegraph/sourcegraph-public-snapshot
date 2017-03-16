@@ -84,20 +84,7 @@
 
 /* Pointer on tokens. */
 :global div.monaco-editor.vs-dark .mtk1,
-:global div.monaco-editor.vs-dark .mtk2,
-:global div.monaco-editor.vs-dark .mtk3,
-:global div.monaco-editor.vs-dark .mtk4,
-:global div.monaco-editor.vs-dark .mtk5,
-:global div.monaco-editor.vs-dark .mtk6,
-:global div.monaco-editor.vs-dark .mtk7,
-:global div.monaco-editor.vs-dark .mtk8,
-:global div.monaco-editor.vs-dark .mtk9,
-:global div.monaco-editor.vs-dark .mtk10,
-:global div.monaco-editor.vs-dark .mtk11,
-:global div.monaco-editor.vs-dark .mtk12,
-:global div.monaco-editor.vs-dark .mtk13,
-:global div.monaco-editor.vs-dark .mtk14,
-:global div.monaco-editor.vs-dark .mtk15 {
+:global div.monaco-editor.vs-dark .mtk3 {
 	cursor: pointer;
 }
 
