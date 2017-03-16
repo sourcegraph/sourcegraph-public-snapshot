@@ -48,6 +48,10 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 		height: 32,
 		margin: whitespace[0],
 	};
+
+	const emails = context.emails && context.emails.EmailAddrs || null;
+	const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
+
 	return (
 		<div>
 			<PageTitle title="Zap beta" />
@@ -111,7 +115,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 				}}>
 					<div style={stepSx}>1</div>
 					<p>To install and run the Zap server, open a terminal and paste:</p>
-					<code style={codeSx}>{`sh <(curl -sSf https://sourcegraph.com/install/zap)`}</code>
+					<code style={codeSx}>{`sh <(curl -sSf https://sourcegraph.com/install/zap${primaryEmail && "?email=" + primaryEmail})`}</code>
 				</div>
 
 				<div style={{
