@@ -62,7 +62,7 @@ export class Home extends React.Component<HomeProps, {}> {
 								marginTop: whitespace[3],
 								padding: whitespace[3],
 							}
-						)}>Welcome to the first global code graph</Heading>
+						)}>The global code graph</Heading>
 
 					<p style={{ textAlign: "center" }}>
 						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
@@ -176,10 +176,7 @@ export class Home extends React.Component<HomeProps, {}> {
 								Used by developers everywhere
 								</Heading>
 							<FlexContainer items="center" justify="end" style={{ flex: "1 1 60%" }}>
-								<Link to="/customers/twitter" style={{ height: 24, marginRight: whitespace[5] }}>
-									<img style={{ marginRight: whitespace[3] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
-									<span style={{ verticalAlign: "super" }}>Read the case study</span>
-								</Link>
+								<img style={{ marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
 								<img style={{ marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} height="32" {...layout.hide.sm} />
 								<img style={{ marginTop: "5px", marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} height="24" {...layout.hide.sm} />
 								<img style={{ marginTop: "8px" }} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} height="17" {...layout.hide.sm} />
