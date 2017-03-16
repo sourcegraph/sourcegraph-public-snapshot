@@ -36,8 +36,14 @@ type Client struct {
 	ctx                   context.Context
 }
 
-// New returns a new GCS Tracker client using the given API key.
+// New returns a new GCS Tracker client using the given API key
+// based on a provided auth.Actor
 func New(user *auth.Actor) (*Client, error) {
+	return NewFromUserInfo(generateUserInfo(user))
+}
+
+// NewFromUserInfo returns a new GCS Tracker client using the given API key
+func NewFromUserInfo(info *UserInfo) (*Client, error) {
 	ctx := context.Background()
 
 	gcsClient, err := storage.NewClient(ctx)
@@ -55,7 +61,7 @@ func New(user *auth.Actor) (*Client, error) {
 		env:   prodEnv,
 		// TODO (Dan): see if we can send the Telligent cookie session ID back with the request from the frontend
 		sessionID: "",
-		userInfo:  generateUserInfo(user),
+		userInfo:  info,
 		gcsClient: gcsClient,
 		ctx:       ctx,
 	}, nil
@@ -193,5 +199,16 @@ func (tos *TrackedObjects) AddOrgsWithDetailsObjects(ml map[string]([]*github.Us
 		tos.AddTrackedObject("OrgDetails", newOrg)
 	}
 
+	return nil
+}
+
+// AddUserDetailsObject adds a UserDetailsContext object to a TrackedObjects struct
+// This provides us with the ability to set user-level properties based on information
+// that may not be available from frontend events
+func (tos *TrackedObjects) AddUserDetailsObject(ud *UserDetailsContext) error {
+	err := tos.AddTrackedObject("UserDetails", ud)
+	if err != nil {
+		return err
+	}
 	return nil
 }
