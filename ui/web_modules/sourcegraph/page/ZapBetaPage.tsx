@@ -119,7 +119,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 					marginTop: whitespace[3],
 				}}>
 					<div style={stepSx}>2</div>
-					<p>To authenticate Zap against your Sourcegraph account, type zap auth into the terminal and follow the prompts.</p>
+					<p>To authenticate Zap with your Sourcegraph account, type zap auth into the terminal and follow the prompts.</p>
 					<code style={codeSx}>zap auth</code>
 				</div>
 
