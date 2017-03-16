@@ -270,10 +270,10 @@
 			"revisionTime": "2016-09-02T15:33:43Z"
 		},
 		{
-			"checksumSHA1": "+OUCr6R5ycUgzUkjhcY6BAdTRCs=",
+			"checksumSHA1": "zgbFHMZCYfWePLxR+LmwAvwT1kM=",
 			"path": "github.com/gorilla/schema",
-			"revision": "08023a0215e7fc27a9aecd8b8c50913c40019478",
-			"revisionTime": "2016-04-26T23:15:12Z"
+			"revision": "64644a2fced21dbfa12f7ca184bdcedeb2513dd4",
+			"revisionTime": "2017-02-24T19:38:40Z"
 		},
 		{
 			"checksumSHA1": "nZoAsxDHOA8fLilA56HKvezLqNU=",

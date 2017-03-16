@@ -12,7 +12,7 @@ The basic usage is really simple. Given this struct:
 		Phone string
 	}
 
-...we can fill it passing a map to the Load() function:
+...we can fill it passing a map to the Decode() function:
 
 	values := map[string][]string{
 		"Name":  {"John"},
