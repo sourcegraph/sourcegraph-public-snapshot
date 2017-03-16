@@ -57,6 +57,7 @@ type Repository implements Node {
 	commit(rev: String!): CommitState!
 	revState(rev: String!): RevState!
 	latest: CommitState!
+	lastIndexedRevOrLatest: CommitState!
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!

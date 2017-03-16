@@ -140,8 +140,8 @@ export class SearchService implements ISearchService {
 			const results: any[] = [];
 			for (const repo of repoList) {
 				// TODO(john): support jumping to repos that haven't been cloned yet
-				if (repo.latest && repo.latest.commit && repo.latest.commit.sha1) {
-					results.push(new FileMatch(URI.parse(`git://${repo.uri}?${repo.latest.commit.sha1}`)));
+				if (repo.lastIndexedRevOrLatest && repo.lastIndexedRevOrLatest.commit && repo.lastIndexedRevOrLatest.commit.sha1) {
+					results.push(new FileMatch(URI.parse(`git://${repo.uri}?${repo.lastIndexedRevOrLatest.commit.sha1}`)));
 				}
 			}
 			return results.filter(file => this.matches(file.resource, query.filePattern!, query.includePattern!, query.excludePattern!));
@@ -159,7 +159,7 @@ export class SearchService implements ISearchService {
 				root {
 					repositories(query: $query) {
 						uri
-						latest {
+						lastIndexedRevOrLatest {
 							commit {
 								sha1
 							}

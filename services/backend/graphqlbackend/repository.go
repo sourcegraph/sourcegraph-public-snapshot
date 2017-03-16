@@ -133,6 +133,15 @@ func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, 
 	return createCommitState(*r.repo, rev), nil
 }
 
+func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*commitStateResolver, error) {
+	// This method is a stopgap until we no longer require git:// URIs on the client which include rev data.
+	// THIS RESOLVER WILL BE REMOVED SOON, DO NOT USE IT!!!
+	if r.repo.IndexedRevision != nil && *r.repo.IndexedRevision != "" {
+		return createCommitState(*r.repo, &sourcegraph.ResolvedRev{CommitID: *r.repo.IndexedRevision}), nil
+	}
+	return r.Latest(ctx)
+}
+
 func (r *repositoryResolver) DefaultBranch() string {
 	return r.repo.DefaultBranch
 }

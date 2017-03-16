@@ -29,12 +29,5 @@ export const c_green: string;
 export const c_orange_L1: string;
 export const c_blue_gray_L3: string;
 export const font_size_7: string;
-export const yellow: string;
-export const orange: string;
-export const red: string;
-export const magenta: string;
-export const violet: string;
 export const blue: string;
-export const cyan: string;
-export const green: string;
 

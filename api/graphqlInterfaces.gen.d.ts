@@ -228,6 +228,7 @@ declare namespace GQL {
 		commit: ICommitState;
 		revState: IRevState;
 		latest: ICommitState;
+		lastIndexedRevOrLatest: ICommitState;
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;

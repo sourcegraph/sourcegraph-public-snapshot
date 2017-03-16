@@ -1771,6 +1771,22 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
+						"name": "lastIndexedRevOrLatest",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "CommitState",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
 						"name": "defaultBranch",
 						"type": {
 							"kind": "NON_NULL",
