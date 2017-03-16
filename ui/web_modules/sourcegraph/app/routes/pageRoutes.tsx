@@ -12,6 +12,7 @@ import { PrivacyPage } from "sourcegraph/page/PrivacyPage";
 import { SecurityPage } from "sourcegraph/page/SecurityPage";
 import { TermsPage } from "sourcegraph/page/TermsPage";
 import { TwitterCaseStudyPage } from "sourcegraph/page/TwitterCaseStudyPage";
+import { ZapBetaPage } from "sourcegraph/page/ZapBetaPage";
 
 const pages = {
 	[rel.about]: AboutPage,
@@ -23,7 +24,8 @@ const pages = {
 	[rel.terms]: TermsPage,
 	[rel.privacy]: PrivacyPage,
 	[rel.docs]: DocsPage,
-	[rel.twittercasestudy]: TwitterCaseStudyPage
+	[rel.twittercasestudy]: TwitterCaseStudyPage,
+	[rel.zapbeta]: ZapBetaPage
 };
 
 export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
