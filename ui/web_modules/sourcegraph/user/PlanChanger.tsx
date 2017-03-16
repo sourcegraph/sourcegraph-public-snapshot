@@ -5,7 +5,7 @@ import { LocationStateToggleLink } from "sourcegraph/components/LocationStateTog
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
-import { checkStatus, defaultFetch as fetch } from "sourcegraph/util/xhr";
+import { submitChangeUserPlanForm } from "sourcegraph/user/SubmitForm";
 
 interface State {
 	contents: string;
@@ -27,18 +27,9 @@ export class PlanChanger extends ComponentWithRouter<{}, State> {
 	}
 
 	submit = () => {
-		fetch(`/.api/submit-form`, {
-			method: "POST",
-			headers: { "Content-Type": "application/json; charset=utf-8" },
-			body: JSON.stringify({
-				hubSpotFormName: "ChangeUserPlan",
-				change_plan_message: this.state.contents,
-			}),
-		})
-			.then(checkStatus)
-			.catch(err => {
-				throw new Error(`Submitting after signup form failed with error: ${err}`);
-			});
+		submitChangeUserPlanForm({
+			changePlanMessage: this.state.contents,
+		});
 		this.setState({ ...this.state, submitted: true });
 	}
 

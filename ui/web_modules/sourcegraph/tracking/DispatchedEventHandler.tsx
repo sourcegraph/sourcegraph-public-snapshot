@@ -1,15 +1,9 @@
 import * as OrgActions from "sourcegraph/org/OrgActions";
 import { Events, LogUnknownEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
-import * as UserActions from "sourcegraph/user/UserActions";
 
 export function __onDispatch(action: any): void {
 	switch (action.constructor) {
-		case UserActions.BetaSubscriptionCompleted:
-			if (action.eventObject) {
-				action.eventObject.logEvent();
-			}
-			break;
 		case OrgActions.OrgsFetched:
 			let orgNames: Array<string> = [];
 			if (action.data) {

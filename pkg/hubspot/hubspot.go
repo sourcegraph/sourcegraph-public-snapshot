@@ -93,18 +93,3 @@ func wrapError(methodName string, err error) error {
 	}
 	return fmt.Errorf("hubspot.%s: %v", methodName, err)
 }
-
-// Array returns the given list of strings as a plaintext-string usable within
-// HubSpot as an 'array' of sorts. Basically:
-//
-//  Array("a", "b", "c") == "a,b,c,"
-//  Array(nil) == ""
-//
-// The trailing comma is significant because it allows matching a singular
-// element within HubSpot using the "contains" operator
-func Array(values []string) string {
-	if len(values) == 0 {
-		return ""
-	}
-	return strings.Join(values, ",") + ","
-}

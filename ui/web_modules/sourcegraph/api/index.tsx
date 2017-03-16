@@ -20,20 +20,6 @@ export interface BehindAhead {
 	Ahead?: number;
 }
 
-export interface BetaRegistration {
-	Email?: string;
-	FirstName?: string;
-	LastName?: string;
-	Company?: string;
-	Languages?: string[];
-	Editors?: string[];
-	Message?: string;
-}
-
-export interface BetaResponse {
-	EmailAddress?: string;
-}
-
 export interface BlameOptions {
 }
 
@@ -670,6 +656,10 @@ export interface SignatureInformation {
 
 export interface StreamResponse {
 	HasMore?: boolean;
+}
+
+export interface SubmitFormResponse {
+	EmailAddress?: string;
 }
 
 export interface SubmoduleInfo {

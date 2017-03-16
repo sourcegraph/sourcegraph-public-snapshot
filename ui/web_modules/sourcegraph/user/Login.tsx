@@ -3,7 +3,6 @@ import { Panel, SignupLoginAuth } from "sourcegraph/components";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
-import "sourcegraph/user/UserBackend"; // for side effects
 
 const Login = () => <SignupLoginAuth>
 	To log in, authorize with GitHub:

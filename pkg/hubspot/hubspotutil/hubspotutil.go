@@ -2,23 +2,31 @@ package hubspotutil
 
 import (
 	"errors"
-	"fmt"
+	"unicode"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 )
 
-// AfterPrivateCodeSignupFormID is a hardcoded identifier for the
-// "After Private Code Signup" HubSpot form
-// Defined in HubSpot "Forms" web console (https://app.hubspot.com/forms/2762526/)
-const AfterPrivateCodeSignupFormID = "e9443a20-ef14-4858-971e-4925a3c6c45c"
+// FormNameToID is a mapping from form names provided by backend or API
+// requests to submit HubSpot forms
+//
+// HubSpot IDs are all defined in HubSpot "Forms" web console:
+// https://app.hubspot.com/forms/2762526/
+var FormNameToHubSpotID = map[string]string{
+	// AfterPrivateCodeSignupForm represents the
+	// "After Private Code Signup" form
+	"AfterSignupForm": "e9443a20-ef14-4858-971e-4925a3c6c45c",
+	// BetaSignupForm represents the "Beta Signup" form
+	"BetaSignupForm": "105a5d66-64e8-4993-bb75-797fb725ab85",
+	// ChangeUserPlan represents the "Change user plan form"
+	"ChangeUserPlan": "198ad76b-a88c-4b79-b026-bf0588bb2f9f",
+}
 
-// ChangeUserPlanFormID is an identifier for the "Change user plan form"
-// Defined in HubSpot "Forms" web console
-const ChangeUserPlanFormID = "198ad76b-a88c-4b79-b026-bf0588bb2f9f"
+// HubSpot Events and IDs are all defined in HubSpot "Events" web console:
+// https://app.hubspot.com/reports/2762526/events
 
-// ZapDownloadedEventID is an identifier for the "ZapDownloaded" event
-// Defined in HubSpot "Events" web console (https://app.hubspot.com/reports/2762526/events)
-const ZapDownloadedEventID = "000001971426"
+// ZapDownloadCompletedEventID is an identifier for the "ZapDownloaded" event
+const ZapDownloadCompletedEventID = "000001971426"
 
 var client *hubspot.Client
 
@@ -38,33 +46,46 @@ func Client() (*hubspot.Client, error) {
 	return client, nil
 }
 
-// GetFormID returns a valid HubSpot API form ID
-func GetFormID(formName string) (string, error) {
-	switch formName {
-	case "AfterSignupForm":
-		return AfterPrivateCodeSignupFormID, nil
-	case "ChangeUserPlan":
-		return ChangeUserPlanFormID, nil
-	default:
-		return "", fmt.Errorf("hubspotutil.GetFormID: '%s' is not a valid form", formName)
-	}
-}
-
 // PrepareFormData does any required preprocessing for individual forms
 func PrepareFormData(formName string, formData map[string]string) map[string]string {
-	switch formName {
-	case "AfterSignupForm":
-		// Always set `company` and `lastname` fields to "Unknown" if not set by the user.
-		// Salesforce requires these fields to be non-blank to do data ingestion from
-		// HubSpot, so ensure they always have a value
-		if company, ok := formData["company"]; !ok || len(company) == 0 {
-			formData["company"] = "Unknown"
+	// Convert all form keys to snake case, per HubSpot requirements
+	data := make(map[string]string)
+	for key, value := range formData {
+		if key == "hubSpotFormName" {
+			continue
 		}
-		if lastname, ok := formData["lastname"]; !ok || len(lastname) == 0 {
-			formData["lastname"] = "Unknown"
-		}
-		return formData
-	default:
-		return formData
+		data[ToSnake(key)] = value
 	}
+
+	// Always set `company` and `lastname` fields to "Unknown" if not set by the user.
+	// Salesforce requires these fields to be non-blank to do data ingestion from
+	// HubSpot, so ensure they always have a value
+	if formName == "AfterSignupForm" {
+		if company := data["company"]; company == "" {
+			data["company"] = "Unknown"
+		}
+		if lastname := data["lastname"]; lastname == "" {
+			data["lastname"] = "Unknown"
+		}
+	}
+	return data
+}
+
+// ToSnake convert the given string to snake case following the Golang format:
+// acronyms are converted to lower-case and preceded by an underscore.
+//
+// Source: https://gist.github.com/elwinar/14e1e897fdbe4d3432e1
+func ToSnake(in string) string {
+	runes := []rune(in)
+	length := len(runes)
+
+	var out []rune
+	for i := 0; i < length; i++ {
+		if i > 0 && unicode.IsUpper(runes[i]) && ((i+1 < length && unicode.IsLower(runes[i+1])) || unicode.IsLower(runes[i-1])) {
+			out = append(out, '_')
+		}
+		out = append(out, unicode.ToLower(runes[i]))
+	}
+
+	return string(out)
 }

@@ -356,31 +356,11 @@ type UpdateEmailsOp struct {
 	Add *EmailAddrList `json:"Add,omitempty"`
 }
 
-// BetaRegistration represents the user information needed to register for the
-// beta program.
-type BetaRegistration struct {
-	// Email is the primary email address for the user. It is only used if the
-	// user does not already have an email address set in their account, else
-	// this field is no-op.
-	Email string `json:"Email,omitempty"`
-	// FirstName is the first name of the user.
-	FirstName string `json:"FirstName,omitempty"`
-	// LastName is the last name of the user.
-	LastName string `json:"LastName,omitempty"`
-	// Company is the user's company or organization.
-	Company string `json:"Company,omitempty"`
-	// Languages is a list of programming languages the user is interested in.
-	Languages []string `json:"Languages,omitempty"`
-	// Editors is a list of editors the user is interested in.
-	Editors []string `json:"Editors,omitempty"`
-	// Message contains any additional comments the user may have.
-	Message string `json:"Message,omitempty"`
-}
-
-// BetaResponse is a response to a user registering for beta access.
-type BetaResponse struct {
-	// EmailAddress is the email address that was registered and will be
-	// contacted once approved by an admin.
+// SubmitFormResponse is a response to a user submitting a form (such
+// as, e.g., a beta signup form).
+type SubmitFormResponse struct {
+	// EmailAddress is the email address of the user that submitted the
+	// form
 	EmailAddress string `json:"EmailAddress,omitempty"`
 }
 

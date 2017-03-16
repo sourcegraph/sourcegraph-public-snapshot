@@ -9,9 +9,9 @@ import { EnterpriseDetails, EnterpriseThanks, OnPremDetails } from "sourcegraph/
 import { OrgSelection } from "sourcegraph/org/OrgSignup";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
+import { submitAfterSignupForm } from "sourcegraph/user/SubmitForm";
 import { UserDetails, UserDetailsForm } from "sourcegraph/user/UserDetails";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
-import { checkStatus, defaultFetch as fetch } from "sourcegraph/util/xhr";
 
 interface Props {
 	onSubmit?: () => void;
@@ -45,27 +45,18 @@ function submitSignupInfo(details: Details): void {
 		firstname: firstName,
 		lastname: lastName,
 		company: details.userInfo.company,
-		signup_email: details.userInfo.email,
-		plan_orgs: details.organization,
+		signupEmail: details.userInfo.email,
+		planOrgs: details.organization,
 		plan: details.plan === undefined ? "public" : details.plan,
-		is_private_code_user: JSON.stringify(details.authedPrivate),
+		isPrivateCodeUser: JSON.stringify(details.authedPrivate),
 	};
 
 	if (details.onPremDetails) {
-		// Convert to snake case for hubspot
 		signupInformation = {
 			...signupInformation,
-			existing_software: details.onPremDetails.existingSoftware,
-			version_control_system: details.onPremDetails.versionControlSystem,
-			number_of_devs: details.onPremDetails.numberOfDevs,
-			other_details: details.onPremDetails.otherDetails,
+			...details.onPremDetails,
 		};
 	}
-
-	Events.AfterSignupModal_Completed.logEvent({
-		trialSignupProperties: signupInformation,
-	});
-	EventLogger.setUserRegisteredAt(Date.now());
 
 	if (details.plan === "organization") {
 		fetchGraphQLQuery(`mutation {
@@ -73,15 +64,12 @@ function submitSignupInfo(details: Details): void {
 		}`, { org: details.organization });
 	}
 
-	fetch(`/.api/submit-form`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json; charset=utf-8" },
-		body: JSON.stringify({ ...signupInformation, hubSpotFormName: "AfterSignupForm" }),
-	})
-		.then(checkStatus)
-		.catch(err => {
-			throw new Error(`Submitting after signup form failed with error: ${err}`);
-		});
+	Events.AfterSignupModal_Completed.logEvent({
+		trialSignupProperties: signupInformation,
+	});
+	EventLogger.setUserRegisteredAt(Date.now());
+
+	submitAfterSignupForm(signupInformation);
 }
 
 export class AfterSignupForm extends React.Component<Props, Details> {

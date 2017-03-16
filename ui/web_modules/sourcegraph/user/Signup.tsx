@@ -4,7 +4,6 @@ import { PageTitle, Panel, SignupLoginAuth } from "sourcegraph/components";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import { layout } from "sourcegraph/components/utils";
 import { redirectIfLoggedIn } from "sourcegraph/user/redirectIfLoggedIn";
-import "sourcegraph/user/UserBackend"; // for side effects
 
 export const SignupForm = (): JSX.Element => <SignupLoginAuth>
 	To sign up, please authorize <br {...layout.hide.notSm } /> code with GitHub:
