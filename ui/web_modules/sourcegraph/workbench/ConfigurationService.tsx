@@ -4,6 +4,7 @@ import { TPromise } from "vs/base/common/winjs.base";
 import { DefaultConfig } from "vs/editor/common/config/defaultConfig";
 import { IConfigurationKeys, IConfigurationOptions, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspaceConfigurationValue, IWorkspaceConfigurationValues } from "vs/workbench/services/configuration/common/configuration";
+import { OpenSearchViewletAction } from "vscode/src/vs/workbench/parts/search/browser/searchActions";
 
 import { Features } from "sourcegraph/util/features";
 
@@ -97,6 +98,10 @@ const config = {
 };
 
 DefaultConfig.editor.readOnly = config.editor.readOnly;
+
+if (!Features.textSearch.isEnabled()) {
+	OpenSearchViewletAction.prototype.run = () => TPromise.wrap(void 0);
+}
 
 export function toggleCodeLens(): void {
 	codeLensEnabled = !codeLensEnabled;
