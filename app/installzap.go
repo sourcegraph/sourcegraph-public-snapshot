@@ -3,6 +3,8 @@ package app
 import (
 	"bytes"
 	"net/http"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
 var installScript = `#!/bin/sh
@@ -141,6 +143,15 @@ main "$@" || exit 1
 `
 
 func serveInstallZap(w http.ResponseWriter, r *http.Request) error {
+	// Installation metrics.
+	if email := r.URL.Query().Get("email"); email != "" {
+		hubspotclient, err := hubspotutil.Client()
+		if err != nil {
+			return err
+		}
+		hubspotclient.LogEvent(email, hubspotutil.ZapDownloadedEventID, map[string]string{})
+	}
+
 	w.Header().Set("Content-Type", "text/x-sh")
 	w.WriteHeader(http.StatusOK)
 	_, err := bytes.NewBufferString(installScript).WriteTo(w)
