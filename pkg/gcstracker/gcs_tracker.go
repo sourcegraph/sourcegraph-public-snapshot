@@ -195,3 +195,10 @@ func (tos *TrackedObjects) AddOrgsWithDetailsObjects(ml map[string]([]*github.Us
 
 	return nil
 }
+
+// AddUserDetailsObject adds a UserDetailsContext object to a TrackedObjects struct
+// This provides us with the ability to set user-level properties based on information
+// that may not be available from frontend events
+func (tos *TrackedObjects) AddUserDetailsObject(ud *UserDetailsContext) {
+	tos.AddTrackedObject("UserDetails", ud)
+}
