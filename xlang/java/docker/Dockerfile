@@ -5,4 +5,4 @@ EXPOSE 2088
 COPY ./artifacts /root/.java-langserver/artifacts
 COPY ./java-language-server.jar /usr/bin
 
-CMD java $JVM_OPT -jar /usr/bin/java-language-server.jar $LANGSERVER_OPT
+CMD java $JVM_OPT -jar /usr/bin/java-language-server.jar
