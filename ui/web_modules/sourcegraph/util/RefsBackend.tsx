@@ -1,7 +1,7 @@
 import * as remove from "lodash/remove";
 import * as values from "lodash/values";
 import * as hash from "object-hash";
-import { Observable, Subject } from "rxjs";
+import { Observable, Subject, Subscriber } from "rxjs";
 
 import URI from "vs/base/common/uri";
 import { Position } from "vs/editor/common/core/position";
@@ -117,29 +117,17 @@ export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): 
 
 export function provideReferencesStreaming(model: IReadOnlyModel, pos: IPosition): Observable<Location> {
 	return new Observable<Location>(observer => {
-		let gotProgress = false;
-		const progress = locations => {
-			gotProgress = true;
-			for (const location of locations) {
-				observer.next(location);
-			}
-		};
-		getReferences(model, Position.lift(pos), progress, { includeDeclaration: false }).then(locations => {
-			// The language server may or may not support sending progress events.
-			//
-			// If the language server sends progress events, then the final result will either
-			// be empty or contain the data that we already received in the progress events.
-			// In either case we want to ignore it.
-			//
-			// If the language server did not send progress events, then the final result is all we have.
-			if (!gotProgress) {
-				for (const location of locations) {
-					observer.next(location);
-				}
-			}
+		const handler = createProgressHandler(observer);
+		getReferences(model, Position.lift(pos), handler, { includeDeclaration: false }).then(locations => {
+			handler(locations);
 			observer.complete();
 		}, err => observer.error(err));
-	}).take(MAX_REFS_PER_REPO);
+	})
+		// TODO(nick): This is a workaround for https://github.com/sourcegraph/sourcegraph/issues/4594
+		// Once that issue is fixed, we should not need to dedupe.
+		// Instead, we should discard the final result if any progress results were sent.
+		.distinct(getLocationId)
+		.take(MAX_REFS_PER_REPO);
 }
 
 export interface LocationWithCommitInfo extends Location {
@@ -344,32 +332,43 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, language: La
 
 	return new Observable<IReferenceInformation>(observer => {
 		setupWorkspace(repoURI, workspaceIsReady).then(() => {
-			let gotProgress = false;
-			// log(`provideWorkspaceReferences start ${repoURI.toString()}`);
-			provideWorkspaceReferences(language, repoURI, symbol, reference.Hints, references => {
-				// log(`provideWorkspaceReferences progress ${repoURI.toString()} ${references.length}`);
-				gotProgress = true;
-				for (const ref of references) {
-					observer.next(ref);
-				}
-			}).then(references => {
-				// log(`provideWorkspaceReferences finish ${repoURI.toString()} ${references.length}`);
-				// The language server may or may not support sending progress events.
-				//
-				// If the language server sends progress events, then the final result will either
-				// be empty or contain the data that we already received in the progress events.
-				// In either case we want to ignore it.
-				//
-				// If the language server did not send progress events, then the final result is all we have.
-				if (!gotProgress) {
-					for (const ref of references) {
-						observer.next(ref);
-					}
-				}
+			const handler = createProgressHandler(observer);
+			provideWorkspaceReferences(language, repoURI, symbol, reference.Hints, handler).then(references => {
+				handler(references);
 				observer.complete();
 			}, err => observer.error(err));
 		});
-	}).map(ref => ref.reference);
+	})
+		.map(ref => ref.reference)
+		// TODO(nick): This is a workaround for https://github.com/sourcegraph/sourcegraph/issues/4594
+		// Once that issue is fixed, we should not need to dedupe.
+		// Instead, we should discard the final result if any progress results were sent.
+		.distinct(getLocationId);
+}
+
+/**
+ * getLocationId returns a unique identifier for the given location.
+ */
+function getLocationId(location: Location): string {
+	return [
+		location.uri.toString(),
+		location.range.startColumn,
+		location.range.startLineNumber,
+		location.range.endColumn,
+		location.range.endLineNumber
+	].join(":");
+}
+
+/**
+ * createProgressHandler returns a function that forwards value to
+ * the provided observer when it is called.
+ */
+function createProgressHandler<T>(observer: Subscriber<T>): (values: T[]) => void {
+	return values => {
+		for (const v of values) {
+			observer.next(v);
+		}
+	};
 }
 
 function setupWorkspace(uri: URI, isReady: () => boolean): Promise<void> {
