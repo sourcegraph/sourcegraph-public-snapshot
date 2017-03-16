@@ -72,7 +72,7 @@ const config = {
 		tabSize: 4,
 		automaticLayout: true,
 		scrollBeyondLastLine: false,
-		wrappingColumn: 0,
+		wordWrap: "on",
 		fontFamily: code_font_face,
 		fontSize: 15,
 		lineHeight: 21,
