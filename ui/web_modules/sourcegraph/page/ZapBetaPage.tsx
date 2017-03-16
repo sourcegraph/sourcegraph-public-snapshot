@@ -138,10 +138,8 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 					marginTop: whitespace[3],
 				}}>
 					<div style={stepSx}>4</div>
-					<p>To install and run the Zap server, open a terminal and paste:</p>
+					<p>To begin using Zap on a repository, open a terminal and run:</p>
 					<code style={codeSx}>zap init</code>
-					<code style={codeSx}>zap remote set origin wss://sourcegraph.com/.api/zap github.com/your_org/your_repo</code>
-					<code style={codeSx}>zap checkout -upstream origin -overwrite -create your_branch@your_unix_user_name</code>
 				</div>
 
 				<div style={{
@@ -150,7 +148,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 				}}>
 					<div style={stepSx}>5</div>
 					<p>Open Visual Studio Code in your repo's directory.</p>
-					<code style={codeSx}>code.</code>
+					<code style={codeSx}>code .</code>
 				</div>
 
 				<div style={{
