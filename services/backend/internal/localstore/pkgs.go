@@ -249,7 +249,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 		SELECT pkgs.*
 		FROM pkgs INNER JOIN repo ON pkgs.repo_id=repo.id
 		WHERE ` + whereSQL + `
-		ORDER BY pkgs.repo_id ASC
+		ORDER BY repo.created_at ASC NULLS LAST, pkgs.repo_id ASC
 		LIMIT ` + arg(op.Limit)
 	rows, err := appDBH(ctx).Db.Query(sql, args...)
 	if err != nil {
