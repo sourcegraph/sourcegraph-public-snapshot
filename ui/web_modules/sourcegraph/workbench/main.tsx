@@ -49,6 +49,12 @@ let initializedWorkbench: {
 	parent: HTMLDivElement
 } | null = null;
 
+function fullHeightDiv(): HTMLDivElement {
+	const div = document.createElement("div");
+	div.style.height = "100%";
+	div.style.flex = "1 1 100%";
+	return div;
+}
 /**
  * init bootraps workbench creation.
  */
@@ -59,13 +65,12 @@ export function init(reactDomElement: HTMLDivElement, resource: URI, zapRef?: st
 		return [workbench, services];
 	}
 
-	const parent = document.createElement("div");
-	parent.style.height = "100%";
+	const parent = fullHeightDiv();
+	parent.style.display = "flex";
+	parent.style.flexDirection = "column";
 	reactDomElement.appendChild(parent);
-	const domElement = document.createElement("div");
-	domElement.style.height = "100%";
+	const domElement = fullHeightDiv();
 	parent.appendChild(domElement);
-
 	const workspace = resource.with({ fragment: "" });
 	const services = setupServices(domElement, workspace, zapRef, commitID, branch);
 	configurePreStartup(services);

@@ -153,7 +153,9 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		this.layout();
 		return <div style={{
 			height: "100%",
+			display: "flex",
 			flex: "1 1 100%",
+			flexDirection: "column",
 		}} ref={this.domRef}>
 			<EventListener target={global.document.body} event="keydown" callback={this.toggleQuickopen} />
 		</div>;
