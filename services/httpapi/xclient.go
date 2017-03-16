@@ -26,7 +26,7 @@ type xclient struct {
 	*xlang.Client
 
 	hasXDefinitionAndXPackages bool
-	hasXHovers                 bool
+	hasCrossRepoHover          bool
 	mode                       string
 }
 
@@ -63,7 +63,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			c.mode = init.Mode
 		}
 		_, c.hasXDefinitionAndXPackages = xlang.HasXDefinitionAndXPackages[c.mode]
-		_, c.hasXHovers = xlang.HasXHovers[c.mode]
+		_, c.hasCrossRepoHover = xlang.HasCrossRepoHover[c.mode]
 		return c.Client.Call(ctx, method, params, result, opt...)
 	case !c.hasXDefinitionAndXPackages:
 		break
