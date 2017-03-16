@@ -52,9 +52,13 @@ var HasXDefinitionAndXPackages = map[string]struct{}{
 	"java":       struct{}{},
 }
 
-var HasXHovers = map[string]struct{}{
-	"java": struct{}{},
-}
+// HasXHovers records the languages for which we support cross-repo
+// hovers. In theory, this should be identical to
+// HasXDefinitionAndXPackages, but cross-repo hover has the additional
+// requirement that locations returned by workspace/symbol must
+// correspond to the location of the *ident*, rather than the entire
+// body AST node. This is not the case for TypeScript.
+var HasXHovers = map[string]struct{}{"java": struct{}{}}
 
 // IsSymbolReferenceable tells if the SymbolDescriptor is referenceable
 // according to the language semantics defined by the mode.
