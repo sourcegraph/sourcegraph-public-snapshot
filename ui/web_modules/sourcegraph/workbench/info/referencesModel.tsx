@@ -114,6 +114,10 @@ export class FilePreview implements IDisposable {
 	private get _model(): IModel { return this._modelReference.object.textEditorModel; }
 
 	public preview(range: IRange, n: number = 8): { before: string; inside: string; after: string } {
+		if (!this._model) {
+			// Don't show a preview if the model is disposed.
+			return { before: "", inside: "", after: "" };
+		}
 		const { startLineNumber, startColumn, endColumn } = range;
 		const word = this._model.getWordUntilPosition({ lineNumber: startLineNumber, column: startColumn - n });
 		const beforeRange = new Range(startLineNumber, word.startColumn, startLineNumber, startColumn);
