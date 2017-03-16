@@ -152,7 +152,7 @@ export class FileService implements IFileService {
 	}
 
 	existsFile(resource: URI): TPromise<boolean> {
-		return this.resolveFile(resource).then(() => true, () => false);
+		return this.resolveFile(resource).then(stat => stat["exists"]);
 	}
 
 	public moveFile(source: URI, target: URI, overwrite?: boolean): TPromise<IFileStat> {
@@ -255,6 +255,7 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 	const childStats: IFileStat[] = [];
 	const childDirectories = new Set<string>();
 	const childFiles: string[] = [];
+	let isFile = false;
 
 	// When we recursively call toFileStat, don't forward files that aren't a transitive child of resource.
 	// This is a noticible performance optimization for large repos.
@@ -269,6 +270,7 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 	// looking for children of resource
 	for (const candidate of files) {
 		if (candidate === resource.fragment) {
+			isFile = true;
 			// skip over self
 			continue;
 		}
@@ -301,11 +303,14 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 		childStats.push(fileStat);
 	}
 
+	const isDir = childStats.length > 0;
+
 	return {
 		...toBaseStat(resource),
-		hasChildren: childStats.length > 0,
-		isDirectory: childStats.length > 0,
+		hasChildren: isDir,
+		isDirectory: isDir,
 		children: childStats,
+		exists: isDir || isFile,
 	};
 }
 
