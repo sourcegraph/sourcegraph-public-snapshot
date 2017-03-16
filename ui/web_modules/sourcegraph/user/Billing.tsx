@@ -9,6 +9,7 @@ import { LocationStateModal } from "sourcegraph/components/Modal";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { OrgPlan, PersonalPlan, PublicPlan } from "sourcegraph/components/PlanSelector";
 import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { ChangeBillingInfo } from "sourcegraph/user/BillingInfo";
 import { PlanChanger } from "sourcegraph/user/PlanChanger";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
@@ -48,6 +49,8 @@ const modalName = "cancelSubscriptionModal";
 class CancelSubscription extends ComponentWithRouter<{ plan: GQL.IPlan }, {}> {
 
 	private cancelSubcription = () => {
+		Events.CancelSubscription_Clicked.logEvent();
+
 		fetchGraphQLQuery(`{
 			mutation {
 				cancelSubcription()
@@ -58,7 +61,7 @@ class CancelSubscription extends ComponentWithRouter<{ plan: GQL.IPlan }, {}> {
 	render(): JSX.Element {
 		const date = formatRenewalDate(new Date(this.props.plan.renewalDate! * 1000));
 		return <div>
-			<LocationStateToggleLink modalName={modalName} location={this.context.router.location}>
+			<LocationStateToggleLink modalName={modalName} location={this.context.router.location} onToggle={v => v && Events.CancelSubscriptionModal_Initiated.logEvent()}>
 				Disable auto-renewal
 			</LocationStateToggleLink>
 			<LocationStateModal style={{ textAlign: "center" }} modalName={modalName} title="Confirm cancelation">
@@ -137,7 +140,7 @@ export class BillingContainer extends ComponentWithRouter<{}, {}> {
 	render(): JSX.Element {
 		if (!context || !context.user) {
 			return <div>
-				Please <LocationStateToggleLink href="/login" modalName="login" location={this.context.router.location}>
+				Please <LocationStateToggleLink href="/login" modalName="login" location={this.context.router.location} onToggle={v => v && Events.LoginModal_Initiated.logEvent({ page_name: location.pathname })}>
 					log in
 				</LocationStateToggleLink> to view this page.
 			</div>;

@@ -9,6 +9,7 @@ import { OrgSeatsCard } from "sourcegraph/components/OrganizationCard";
 import { ChevronRight, No, Warning } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { PaymentInfo } from "sourcegraph/user/BillingInfo";
 import { PlanChanger } from "sourcegraph/user/PlanChanger";
@@ -146,7 +147,7 @@ class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot 
 			</Button>;
 		}
 		return <div>
-			<LocationStateToggleLink modalName={modalName} location={this.context.router.location} >
+			<LocationStateToggleLink modalName={modalName} location={this.context.router.location} onToggle={v => v && Events.CompleteSubscriptionModal_Initiated.logEvent()}>
 				<Button color="blue">Complete your subscription <ChevronRight /></Button>
 			</LocationStateToggleLink>
 			{this.state.showPayment ?

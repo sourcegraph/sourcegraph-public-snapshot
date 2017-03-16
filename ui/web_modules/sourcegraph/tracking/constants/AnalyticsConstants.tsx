@@ -22,6 +22,7 @@ export const EventCategories = {
 	ReEngagement: "ReEngagement",
 	Toast: "Toast",
 	GTM: "GTM",
+	Billing: "Billing",
 
 	// Application pages
 	Repository: "Repository",
@@ -158,11 +159,17 @@ export const Events = {
 	ToolsModal_Initiated: new LoggableEvent("ClickToolsandIntegrations", EventCategories.Auth, EventActions.Toggle),
 	BetaModal_Initiated: new LoggableEvent("ClickJoinBeta", EventCategories.Auth, EventActions.Toggle),
 	AfterSignupModal_Initiated: new LoggableEvent("ShowAfterSignupModal", EventCategories.GTM, EventActions.Toggle),
+	ChangePlanModal_Initiated: new LoggableEvent("ShowChangePlanModal", EventCategories.Billing, EventActions.Toggle),
+	CancelSubscriptionModal_Initiated: new LoggableEvent("ShowCancelSubscriptionModal", EventCategories.Billing, EventActions.Toggle),
+	CompleteSubscriptionModal_Initiated: new LoggableEvent("ShowCompleteSubscriptionModal", EventCategories.Billing, EventActions.Toggle),
 	JoinModal_Dismissed: new LoggableEvent("DismissJoinModal", EventCategories.Auth, EventActions.Close),
 	LoginModal_Dismissed: new LoggableEvent("DismissLoginModal", EventCategories.Auth, EventActions.Close),
 	ToolsModal_Dismissed: new LoggableEvent("DismissToolsandIntegrationsModal", EventCategories.Auth, EventActions.Close),
 	BetaModal_Dismissed: new LoggableEvent("DismissBetaModal", EventCategories.Auth, EventActions.Close),
 	AfterSignupModal_Dismissed: new LoggableEvent("DismissAfterSignupModal", EventCategories.GTM, EventActions.Close),
+	ChangePlanModal_Dismissed: new LoggableEvent("DismissChangePlanModal", EventCategories.Billing, EventActions.Close),
+	CancelSubscriptionModal_Dismissed: new LoggableEvent("DismissCancelSubscriptionModal", EventCategories.Billing, EventActions.Close),
+	CompleteSubscriptionModal_Dismissed: new LoggableEvent("DismissCompleteSubscriptionModal", EventCategories.Billing, EventActions.Close),
 
 	// Toast events
 	ToastChromeCTA_Clicked: new LoggableEvent("ChromeToastCTAClicked", EventCategories.Toast, EventActions.Click),
@@ -194,7 +201,6 @@ export const Events = {
 	OnboardingRefsCoachCTA_Clicked: new LoggableEvent("ReferencesCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
 	OnboardingJ2DCoachCTA_Clicked: new LoggableEvent("JumpToDefCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
 	OnboardingSearchCoachCTA_Clicked: new LoggableEvent("SearchCoachmarkCTAClicked", EventCategories.Onboarding, EventActions.Click),
-	OnboardingTour_Completed: new LoggableEvent("OnboardingTourCompleted", EventCategories.Onboarding, EventActions.Success),
 	OnboardingTour_Dismissed: new LoggableEvent("DismissTourCTAClicked", EventCategories.Onboarding, EventActions.Close),
 
 	ChromeExtension_Installed: new LoggableEvent("ChromeExtensionInstalled", EventCategories.Onboarding, EventActions.Success),
@@ -202,14 +208,13 @@ export const Events = {
 	ChromeExtensionCTA_Clicked: new LoggableEvent("ChromeExtensionCTAClicked", EventCategories.Onboarding, EventActions.Click),
 	ChromeExtensionInstall_Started: new LoggableEvent("ChromeExtensionInstallStarted", EventCategories.Onboarding, EventActions.Click),
 	ChromeExtensionStore_Redirected: new LoggableEvent("ChromeExtensionStoreRedirect", EventCategories.Onboarding, EventActions.Click),
-	ChromeExtensionSkipCTA_Clicked: new LoggableEvent("SkipChromeExtensionCTAClicked", EventCategories.Onboarding, EventActions.Click),
-	ChromeExtensionUnsupportedBrowser_Failed: new LoggableEvent("BrowserDoesNotSupportChromeExtension", EventCategories.Onboarding, EventActions.Error),
-	ChromeExtensionStep_Completed: new LoggableEvent("ChromeExtensionStepCompleted", EventCategories.Onboarding, EventActions.Success),
-
-	PrivateAuthGitHub_Skipped: new LoggableEvent("SkipGitHubPrivateAuth", EventCategories.Onboarding, EventActions.Click),
 
 	// ReEngagement
 	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
+
+	// Billing
+	CancelSubscription_Clicked: new LoggableEvent("CancelSubscriptionClicked", EventCategories.Billing, EventActions.Click),
+	ChangeSubscriptionRequest_Completed: new LoggableEvent("ChangeSubscriptionRequestCompleted", EventCategories.Billing, EventActions.Success),
 
 	// Code view
 	// Code view: Symbol events
@@ -246,14 +251,6 @@ export const Events = {
 
 	ShortcutMenu_Initiated: new LoggableEvent("ShorcutMenuInitiated", EventCategories.ShortcutMenu, EventActions.Toggle),
 	ShortcutMenu_Dismissed: new LoggableEvent("ShorcutMenuDismissed", EventCategories.ShortcutMenu, EventActions.Close),
-
-	// Def info - implemented manually in static_event_logger.js
-	// 	TODO(dadlerj): delete these, or integrate this file with that logger
-	// DefInfoDefLink_Clicked:                  new LoggableEvent("DefInfoViewDefLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
-	// DefInfoFileLink_Clicked:                 new LoggableEvent("DefInfoViewFileLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
-	// DefInfoRefSnippedLink_Clicked:           new LoggableEvent("DefInfoRefSnippetLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
-	// DefInfoRefRepoLink_Clicked:              new LoggableEvent("DefInfoRefRepoLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
-	// DefInfoRefFileLink_Clicked:              new LoggableEvent("DefInfoRefFileLinkClicked", EventCategories.LandingDefInfo, EventActions.Click),
 
 	// Orgs
 	Org_Selected: new LoggableEvent("SelectedOrg", EventCategories.Orgs, EventActions.Click),
@@ -296,6 +293,9 @@ export function getModalDismissedEventObject(modalName: string): LoggableEvent {
 		"login": Events.LoginModal_Dismissed,
 		"orgInvite": Events.OrgManualInviteModal_Dismissed,
 		"afterSignup": Events.AfterSignupModal_Dismissed,
+		"cancelSubscriptionModal": Events.CancelSubscriptionModal_Dismissed,
+		"trialCompletionModal": Events.CompleteSubscriptionModal_Dismissed,
+		"planChanger": Events.ChangePlanModal_Dismissed,
 	};
 	return (modalName && modalName in dismissModalsMap) ? dismissModalsMap[modalName] : null;
 }

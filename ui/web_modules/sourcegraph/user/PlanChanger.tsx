@@ -4,6 +4,7 @@ import { Button, Heading, TextArea } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { LocationStateModal } from "sourcegraph/components/Modal";
 import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { checkStatus, defaultFetch as fetch } from "sourcegraph/util/xhr";
 
 interface State {
@@ -47,7 +48,7 @@ export class PlanChanger extends ComponentWithRouter<{}, State> {
 
 	render(): JSX.Element {
 		return <div>
-			<LocationStateToggleLink location={this.context.router.location} modalName={modalName}>
+			<LocationStateToggleLink location={this.context.router.location} modalName={modalName} onToggle={v => v && Events.ChangePlanModal_Initiated.logEvent()}>
 				Change your plan
 			</LocationStateToggleLink>
 			<LocationStateModal title="Change your plan" modalName={modalName} onDismiss={this.modalDismissed}>
