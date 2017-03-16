@@ -236,7 +236,7 @@ func serveInstallZap(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		hubspotclient.LogEvent(email, hubspotutil.ZapDownloadedEventID, map[string]string{})
+		hubspotclient.LogEvent(email, hubspotutil.ZapDownloadCompletedEventID, map[string]string{})
 
 		gcsclient, err := gcstracker.NewFromUserInfo(&gcstracker.UserInfo{
 			Email: email,
