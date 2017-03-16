@@ -52,6 +52,10 @@ var HasXDefinitionAndXPackages = map[string]struct{}{
 	"java":       struct{}{},
 }
 
+var HasXHovers = map[string]struct{}{
+	"java": struct{}{},
+}
+
 // IsSymbolReferenceable tells if the SymbolDescriptor is referenceable
 // according to the language semantics defined by the mode.
 func IsSymbolReferenceable(mode string, symbolDescriptor lspext.SymbolDescriptor) bool {
