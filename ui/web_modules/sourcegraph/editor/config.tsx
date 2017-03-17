@@ -32,8 +32,11 @@ import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorSe
 import { Services, getCurrentWorkspace, setWorkspace } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
-export async function updateWorkspace(location: AbsoluteLocation): Promise<void> {
-	const { repo, commitID, path } = location;
+/**
+ * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
+ */
+export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
+	const { repo, commitID, path, selection } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
 
 	const currWorkspace = getCurrentWorkspace();
@@ -42,14 +45,7 @@ export async function updateWorkspace(location: AbsoluteLocation): Promise<void>
 		setWorkspace({ resource: resource.with({ fragment: "" }), revState: { zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
 	}
 
-	return updateFileTree(resource);
-}
-/**
- * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
- */
-export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
-	const { repo, commitID, path, selection } = location;
-	const resource = URIUtils.pathInRepo(repo, commitID, path);
+	updateFileTree(resource);
 
 	const fileStat = await Services.get(IFileService).resolveFile(resource);
 	if (fileStat.isDirectory) {
