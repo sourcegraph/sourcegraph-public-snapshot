@@ -129,7 +129,6 @@ export class FeedbackDropdown extends Dropdown {
 			rows: 3,
 			"aria-label": nls.localize("commentsHeader", "Comments")
 		})
-			.text(this.feedback).attr("required", "required")
 			.on("keyup", () => {
 				this.feedbackDescriptionInput!.value ? this.sendButton!.removeAttribute("disabled") : this.sendButton!.attr("disabled", "");
 			})
