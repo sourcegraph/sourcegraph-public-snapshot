@@ -29,14 +29,6 @@ This assumes you have run `lerna bootstrap` already.
 
 Zap's core concepts are heavily inspired by Git's:
 
-* **workspace:** like a Git tree plus editor state and history: the contents of all files on disk in a directory tree, plus the contents of unsaved files in your editor, cursor positions for each user, and the current Git HEAD
-* **op** (short for "operation"): like a Git commit diff, but capable of representing changes to anything in the workspace (including cursor position and changes to unsaved files)
-* **rev** (short for "revision"): a sequential integer N that refers to a prior state of a ref (after only the first N ops were applied)
-* **ref** (short for "reference"): a name that refers to some version of a workspace (similar to how a Git ref refers to a commit and, indirectly, tree)
-  * **branch:** a ref of the form `refs/heads/branch` (where `branch` can be anything) that points to an active line of work
-  * **user branch:** a ref of the form `refs/heads/branch@user` (where `branch` and `user` can be anything) that by convention mirrors a single user's workspace (and should not be edited by anyone else)
-  * **shared branch:** all other refs of the form `refs/heads/branch` (where `branch` does not contain `@`), which by convention allow multiple clients editing
-* **repository:** like a Git repository, but stores Zap refs and ops instead of Git refs and objects
 
 #### Notes
 

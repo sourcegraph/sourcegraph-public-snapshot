@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	stdlog "log"
-	"math"
-	"math/rand"
 	"os"
 	"runtime"
 	"sort"
@@ -18,6 +16,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
 )
 
@@ -55,37 +54,13 @@ const (
 )
 
 var (
-	DebugMu sync.Mutex // guards all vars in this block
+	// Vars in this block are guarded by debugutil.Mu.
 
-	DebugSimulatedLatency, _          = time.ParseDuration(os.Getenv("SIMULATED_LATENCY"))
-	DebugRandomizeSimulatedLatency, _ = strconv.ParseBool(os.Getenv("RANDOMIZE_SIMULATED_LATENCY"))
-
-	// TestSimulateResetAfterErrorInSendToUpstream is used in tests only
-	// and causes SendToUpstream to simulate an error condition that
-	// triggers this server to reset the ref on its upstream.
+	// TestSimulateResetAfterErrorInSendToUpstream is used in tests
+	// only and causes SendToUpstream to simulate an error condition
+	// that triggers this server to reset the ref on its upstream.
 	TestSimulateResetAfterErrorInSendToUpstream bool
 )
-
-func debugSimulateLatency() {
-	DebugMu.Lock()
-	if DebugSimulatedLatency == 0 && !DebugRandomizeSimulatedLatency {
-		DebugMu.Unlock()
-		return
-	}
-	d := DebugSimulatedLatency
-	if DebugRandomizeSimulatedLatency {
-		if d == 0 {
-			d = 10 * time.Millisecond // default
-		}
-		x := math.Abs(rand.NormFloat64()*0.6 + 1)
-		if x < 0.1 || x > 3 {
-			x = 1
-		}
-		d = time.Duration(float64(d) * x)
-	}
-	DebugMu.Unlock()
-	time.Sleep(d)
-}
 
 func newServerConn(ctx context.Context, server *Server, stream jsonrpc2.ObjectStream) *serverConn {
 	c := &serverConn{
@@ -136,7 +111,7 @@ func (c *serverConn) send(ctx context.Context, logger log.Logger, item refUpdate
 	ctx, cancel := context.WithTimeout(ctx, sendTimeout)
 	defer cancel()
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	// No wait for the client to reply (we use Notify not Call). We
 	// are the server and we are the source of truth. If the client
@@ -429,6 +404,9 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			if res.State.History == nil {
 				res.State.History = []ot.WorkspaceOp{}
 			}
+			repo.mu.Lock()
+			res.UpdatedAt = repo.refUpdatedAt[ref.Name]
+			repo.mu.Unlock()
 
 			// Extra diagnostics
 			res.Wait = o.ot.Wait
@@ -614,6 +592,9 @@ func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
 				},
 				History: refObj.history(),
 			}
+			repo.mu.Lock()
+			info.UpdatedAt = repo.refUpdatedAt[ref.Name]
+			repo.mu.Unlock()
 			release()
 		}
 

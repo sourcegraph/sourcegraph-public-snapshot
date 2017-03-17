@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -22,7 +23,8 @@ type serverRepo struct {
 	workspaceCancel func()    // tear down workspace
 	config          RepoConfiguration
 
-	refLocks mutexmap.MutexMap
+	refLocks     mutexmap.MutexMap
+	refUpdatedAt map[string]time.Time
 }
 
 // acquireRef acquires an exclusive lock that allows the holder to
@@ -193,4 +195,22 @@ func matchAnyRefspec(refspecs []string, ref string) bool {
 		}
 	}
 	return false
+}
+
+var testDoNotSetTime bool // used in tests to avoid needing to mock time.Now()
+
+// setRefUpdatedAt updates the ref's updated-at time.
+//
+// TODO(sqs): these are never deleted; entries should be deleted when
+// the ref is deleted.
+func (s *serverRepo) setRefUpdatedAt(ref string) {
+	if testDoNotSetTime {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.refUpdatedAt == nil {
+		s.refUpdatedAt = map[string]time.Time{}
+	}
+	s.refUpdatedAt[ref] = time.Now()
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/internal/pkg/backoff"
 )
 
@@ -51,7 +52,7 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, logger log.Logge
 		ctx := sr.parent.bgCtx // use background context since this isn't tied to a specific request
 
 		var err error
-		debugSimulateLatency()
+		debugutil.SimulateLatency()
 		cl, err = sr.newClient(ctx, endpoint)
 		if err != nil {
 			return nil, err
@@ -81,7 +82,7 @@ func (sr *serverRemotes) getOrCreateClient(ctx context.Context, logger log.Logge
 			}
 		}()
 		cl.SetRefUpdateCallback(func(ctx context.Context, params RefUpdateDownstreamParams) error {
-			debugSimulateLatency()
+			debugutil.SimulateLatency()
 
 			// Create a clean logger, because it will be used in
 			// requests other than the initial one.

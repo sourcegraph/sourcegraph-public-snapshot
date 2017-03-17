@@ -12,6 +12,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
 	"github.com/sourcegraph/zap/ws"
@@ -84,7 +85,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
 	if params.Ack {
@@ -157,6 +158,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 			}
 		}
 
+		repo.setRefUpdatedAt(ref.Name)
 		if err := repo.refdb.Write(*ref, true, oldRef, refdb.RefLogEntry{}); err != nil {
 			return err
 		}
@@ -192,7 +194,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	if params.Delete {
 		if err := repo.refdb.Delete(params.RefIdentifier.Ref, ref, refdb.RefLogEntry{}); err != nil {
@@ -299,8 +301,9 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 					}
 				}
 			}
-			debugSimulateLatency()
+			debugutil.SimulateLatency()
 		}
+		repo.setRefUpdatedAt(ref.Name)
 		if err := repo.refdb.Write(ref, true, &oldRef, refdb.RefLogEntry{}); err != nil {
 			return err
 		}
@@ -373,7 +376,7 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, logger log.Logger,
 		}
 	}
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	var old *refdb.Ref
 	if params.OldTarget != "" {
@@ -444,7 +447,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	if params.Delete {
 		// Delete ref.
@@ -466,6 +469,10 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 	} else {
 		// Create or update ref.
 		oldRef := ref
+		if oldRef != nil {
+			tmp := *oldRef
+			oldRef = &tmp
+		}
 		if params.Current == nil {
 			if ref != nil && !params.Force {
 				return &jsonrpc2.Error{
@@ -633,9 +640,10 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 					}
 				}
 			}
-			debugSimulateLatency()
+			debugutil.SimulateLatency()
 		}
 
+		repo.setRefUpdatedAt(ref.Name)
 		if err := repo.refdb.Write(*ref, true, oldRef, refdb.RefLogEntry{}); err != nil {
 			return err
 		}

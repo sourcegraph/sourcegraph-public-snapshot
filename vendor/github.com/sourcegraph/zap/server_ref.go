@@ -10,6 +10,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
 	"github.com/sourcegraph/zap/ws"
@@ -116,7 +117,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 					History:     refObj.history(),
 				}
 				level.Info(logger).Log("overwrite-ref-on-upstream", newRefState)
-				debugSimulateLatency()
+				debugutil.SimulateLatency()
 				if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 					RefIdentifier: upstreamRefID,
 					Force:         true,
@@ -154,11 +155,11 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 				return
 			}
 			level.Debug(logger).Log()
-			debugSimulateLatency()
+			debugutil.SimulateLatency()
 
-			DebugMu.Lock()
+			debugutil.Mu.Lock()
 			simulateError := TestSimulateResetAfterErrorInSendToUpstream
-			DebugMu.Unlock()
+			debugutil.Mu.Unlock()
 			doRefUpdate := func() error {
 				return cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 					RefIdentifier: upstreamRefID,
