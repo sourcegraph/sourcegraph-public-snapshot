@@ -26,7 +26,7 @@ interface Props {
 }
 
 interface State {
-	revState?: { zapRef?: string, commitID?: string, branch?: string };
+	revState?: { zapRev?: string, commitID?: string, branch?: string };
 }
 
 export class OpenInGitHubButton extends React.Component<Props, State> {
@@ -51,7 +51,7 @@ export class OpenInGitHubButton extends React.Component<Props, State> {
 	}
 
 	openInGitHub(e: React.MouseEvent<HTMLAnchorElement> | KeyboardEvent): void {
-		const commitID = this.state.revState && this.state.revState.zapRef ? this.state.revState.commitID : this.props.rev;
+		const commitID = this.state.revState && this.state.revState.zapRev ? this.state.revState.commitID : this.props.rev;
 		const gitHubURL = `https://${this.props.repo}/blob/${commitID}/${this.props.path}`;
 		Events.OpenInCodeHost_Clicked.logEvent({ repo: this.props.repo, rev: this.props.rev, path: this.props.path });
 		window.open(gitHubURL);
@@ -69,7 +69,7 @@ export class OpenInGitHubButton extends React.Component<Props, State> {
 
 	// float required to fix Firefox issue.
 	render(): JSX.Element {
-		const commitID = this.state.revState && this.state.revState.zapRef ? this.state.revState.commitID : this.props.rev;
+		const commitID = this.state.revState && this.state.revState.zapRev ? this.state.revState.commitID : this.props.rev;
 
 		return <div style={{
 			display: "inline-block",

@@ -121,11 +121,11 @@ insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .mon
 interface TitleProps {
 	repoDisplayName: string;
 	repo: string;
-	revState?: { zapRef?: string, commitID?: string, branch?: string };
+	revState?: { zapRev?: string, commitID?: string, branch?: string };
 }
 
 interface TitleState {
-	revState?: { zapRef?: string, commitID?: string, branch?: string };
+	revState?: { zapRev?: string, commitID?: string, branch?: string };
 	diffMode: boolean;
 }
 
@@ -195,7 +195,7 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 					{this.props.repoDisplayName}
 				</Link>
 			</Heading>
-			{this.state.revState && this.state.revState.zapRef &&
+			{this.state.revState && this.state.revState.zapRev &&
 				<Button onClick={() => this.setDiffMode(!this.state.diffMode)} color={this.state.diffMode ? "blue" : "blueGray"}
 					{...hover({ backgroundColor: !this.state.diffMode ? `${colors.blueGrayD2()} !important` : "" }) }
 					style={{

@@ -87,7 +87,7 @@ type CommitState {
 }
 
 type RevState {
-	zapRef: ZapRef
+	zapRev: ZapRev
 	commit: Commit
 	cloneInProgress: Boolean!
 }
@@ -101,7 +101,8 @@ type Commit implements Node {
 	languages: [String!]!
 }
 
-type ZapRef {
+type ZapRev {
+	ref: String!
 	base: String!
 	branch: String!
 }

@@ -47,7 +47,7 @@ export let Services: ServicesAccessor;
 // Others, like ThemeService, will probably be implemented someday, so users
 // can customize color themes. When they are implemented, we can either use the
 // VSCode ones and override some methods, or we can write our own from scratch.
-export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRef?: string, commitID?: string, branch?: string): ServiceCollection {
+export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRev?: string, zapRef?: string, commitID?: string, branch?: string): ServiceCollection {
 	const [services, instantiationService] = StaticServices.init({});
 
 	const set = (identifier, impl) => {
@@ -64,7 +64,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRef
 	// service.
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource: workspace,
-		revState: { zapRef, commitID, branch },
+		revState: { zapRev, zapRef, commitID, branch },
 	}));
 
 	set(IUntitledEditorService, UntitledEditorService);
@@ -106,6 +106,10 @@ export function getCurrentWorkspace(): IWorkspace {
 }
 
 export function setWorkspace(workspace: IWorkspace): void {
+	if (workspace.revState && workspace.revState.zapRef && !/^branch\//.test(workspace.revState.zapRef)) {
+		throw new Error(`invalid Zap ref: ${JSON.stringify(workspace.revState.zapRef)} (no 'branch/' prefix)`);
+	}
+
 	const contextService = Services.get(IWorkspaceContextService);
 	return contextService.setWorkspace(workspace);
 }

@@ -172,6 +172,7 @@ export interface AbsoluteLocation {
 	commitID: string;
 	path: string;
 	selection: IRange | null;
+	zapRev?: string;
 	zapRef?: string;
 	branch?: string;
 }

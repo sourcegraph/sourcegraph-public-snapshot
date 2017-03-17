@@ -56,7 +56,7 @@ export class WorkbenchShell extends React.Component<Props, State> {
 
 		const { repo, commitID, path } = this.props;
 		const resource = URIUtils.pathInRepo(repo, commitID, path);
-		const { workbench, services, domElement } = init(resource, this.props.zapRef, this.props.commitID, this.props.branch);
+		const { workbench, services, domElement } = init(resource, this.props.zapRev, this.props.zapRef, this.props.commitID, this.props.branch);
 		registerEditorCallbacks();
 		this.workbench = workbench;
 		this.services = services;
@@ -88,16 +88,16 @@ export class WorkbenchShell extends React.Component<Props, State> {
 			const newRepo = workspace.resource.authority + workspace.resource.path !== this.props.repo;
 			workbenchStore.dispatch({ diffMode: Boolean(revState && revState.zapRef) });
 			if (revState && !newRepo) {
-				if (revState.zapRef && revState.zapRef !== this.props.zapRef) {
-					this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
+				if (revState.zapRev && revState.zapRev !== this.props.zapRev) {
+					this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRev));
 					return;
 				}
-				if (!revState.zapRef && this.props.zapRef) {
+				if (!revState.zapRev && this.props.zapRev) {
 					this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.commitID || null));
 					return;
 				}
-			} else if (revState && revState.zapRef) {
-				this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRef));
+			} else if (revState && revState.zapRev) {
+				this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRev));
 			}
 		});
 	}

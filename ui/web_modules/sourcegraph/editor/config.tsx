@@ -47,7 +47,7 @@ export async function updateWorkspace(location: AbsoluteLocation): Promise<void>
 	const currWorkspace = getCurrentWorkspace();
 
 	if (resource.with({ fragment: "" }).toString() !== currWorkspace.resource.toString()) {
-		setWorkspace({ resource: resource.with({ fragment: "" }), revState: { zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
+		setWorkspace({ resource: resource.with({ fragment: "" }), revState: { zapRev: location.zapRev, zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
 	}
 
 	return updateFileTree(resource);
@@ -115,9 +115,9 @@ export function renderDiffEditor(left: URI, right: URI, selection: IRange | null
 }
 
 /**
- * isOnZapRef returns whether the user is currently viewing a zap ref
+ * isOnZapRev returns whether the user is currently viewing a Zap (not Git) revision.
  */
-export function isOnZapRef(): boolean {
+export function isOnZapRev(): boolean {
 	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
 	return Boolean(contextService.getWorkspace().revState && contextService.getWorkspace().revState!.zapRef);
 }

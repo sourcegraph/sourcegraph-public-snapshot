@@ -41,7 +41,7 @@ export const contentCache = new Map<string, string>();
  * the specified resource. If you just need to resolve a revision string, use
  * `resolveRev(resource)` instead.
  */
-export async function fetchContentAndResolveRev(resource: URI, isViewingZapRef?: boolean): Promise<{ content: string, commit: string }> {
+export async function fetchContentAndResolveRev(resource: URI, isViewingZapRev?: boolean): Promise<{ content: string, commit: string }> {
 	const { repo, rev, path } = URIUtils.repoParams(resource);
 	const resp = await fetchGraphQLQuery(`query Content($repo: String, $rev: String, $path: String) {
 			root {
@@ -63,7 +63,7 @@ export async function fetchContentAndResolveRev(resource: URI, isViewingZapRef?:
 	const commit = resp.root.repository.commit.commit.sha1;
 	const resourceKey = resource.toString();
 	let content: string;
-	if (contentCache.has(resourceKey) && isViewingZapRef) {
+	if (contentCache.has(resourceKey) && isViewingZapRev) {
 		// only serve cached resources for zap sessions
 		content = contentCache.get(resourceKey)!;
 	} else {

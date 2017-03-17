@@ -19,19 +19,20 @@ type commitSpec struct {
 	CommitID      string
 }
 
-type zapRefSpec struct {
+type zapRevSpec struct {
+	Ref    string // the full (non-fuzzy) ref name
 	Branch string
 	Base   string
 }
 
 type commitStateResolver struct {
 	commit          *commitResolver
-	zapRef          *zapRefResolver
+	zapRev          *zapRevResolver
 	cloneInProgress bool
 }
 
-func (r *commitStateResolver) ZapRef() *zapRefResolver {
-	return r.zapRef
+func (r *commitStateResolver) ZapRev() *zapRevResolver {
+	return r.zapRev
 }
 
 func (r *commitStateResolver) Commit() *commitResolver {
@@ -47,8 +48,8 @@ type commitResolver struct {
 	commit commitSpec
 }
 
-type zapRefResolver struct {
-	zapRef zapRefSpec
+type zapRevResolver struct {
+	zapRev zapRevSpec
 }
 
 func commitByID(ctx context.Context, id graphql.ID) (*commitResolver, error) {
@@ -100,12 +101,16 @@ func (r *commitResolver) Languages(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func (r *zapRefResolver) Branch(ctx context.Context) string {
-	return r.zapRef.Branch
+func (r *zapRevResolver) Ref(ctx context.Context) string {
+	return r.zapRev.Ref
 }
 
-func (r *zapRefResolver) Base(ctx context.Context) string {
-	return r.zapRef.Base
+func (r *zapRevResolver) Branch(ctx context.Context) string {
+	return r.zapRev.Branch
+}
+
+func (r *zapRevResolver) Base(ctx context.Context) string {
+	return r.zapRev.Base
 }
 
 func createCommitState(repo sourcegraph.Repo, rev *sourcegraph.ResolvedRev) *commitStateResolver {

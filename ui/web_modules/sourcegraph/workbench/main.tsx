@@ -60,7 +60,7 @@ function fullHeightDiv(): HTMLDivElement {
 /**
  * init bootraps workbench creation.
  */
-export function init(resource: URI, zapRef?: string, commitID?: string, branch?: string): InitializedWorkbench {
+export function init(resource: URI, zapRev?: string, zapRef?: string, commitID?: string, branch?: string): InitializedWorkbench {
 	if (initializedWorkbench) {
 		return initializedWorkbench;
 	}
@@ -71,7 +71,7 @@ export function init(resource: URI, zapRef?: string, commitID?: string, branch?:
 	const domElement = fullHeightDiv();
 	parent.appendChild(domElement);
 	const workspace = resource.with({ fragment: "" });
-	const services = setupServices(domElement, workspace, zapRef, commitID, branch);
+	const services = setupServices(domElement, workspace, zapRev, zapRef, commitID, branch);
 	configurePreStartup(services);
 	window.localStorage.setItem("enablePreviewSCM", "true"); // TODO: move this.
 
@@ -95,7 +95,7 @@ export function init(resource: URI, zapRef?: string, commitID?: string, branch?:
 		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
 	};
 
-	initExtensionHost(workspace, { zapRef, commitID, branch });
+	initExtensionHost(workspace, { zapRev, zapRef, commitID, branch });
 
 	configurePostStartup(services);
 	workbenchListeners.forEach(cb => cb(true));

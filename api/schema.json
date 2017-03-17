@@ -1880,10 +1880,10 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
-						"name": "zapRef",
+						"name": "zapRev",
 						"type": {
 							"kind": "OBJECT",
-							"name": "ZapRef",
+							"name": "ZapRev",
 							"ofType": null
 						}
 					},
@@ -2434,6 +2434,22 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
+						"name": "ref",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
 						"name": "base",
 						"type": {
 							"kind": "NON_NULL",
@@ -2465,7 +2481,7 @@
 				"inputFields": null,
 				"interfaces": [],
 				"kind": "OBJECT",
-				"name": "ZapRef",
+				"name": "ZapRev",
 				"possibleTypes": null
 			},
 			{
