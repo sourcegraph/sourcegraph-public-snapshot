@@ -114,10 +114,13 @@ def run_tests(args, tests):
             screenshot = driver.d.get_screenshot_as_png()
             resp = slack_cli.api_call("files.upload", channels=slack_ch, initial_comment=msg, file=screenshot, filename="screenshot.png")
         if args.pause_on_err:
+            wd = driver.d
+            d = driver
+            dr = driver
             print("""
 #################################################################################################
 PAUSED on error. You are now in the Python debugger (https://docs.python.org/2/library/pdb.html).
-You can do things like `driver.d.find_element_by_id("my-id").click()`.
+You can do things like `wd.find_element_by_id("my-id").click()`.
 Type "continue" to continue.
 #################################################################################################
 """)

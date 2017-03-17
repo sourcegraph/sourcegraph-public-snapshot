@@ -12,6 +12,7 @@ set -x
 git clean -fdx ui/assets
 
 cd ui
+yarn install
 yarn run build
 cd ..
 

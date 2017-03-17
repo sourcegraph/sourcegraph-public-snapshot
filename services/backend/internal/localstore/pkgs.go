@@ -97,10 +97,21 @@ func (p *pkgs) refreshIndexForLanguage(ctx context.Context, language string, rep
 		return nil
 	}
 	rootPath := vcs + "://" + repo.URI + "?" + commitID
-	var pks []lspext.PackageInformation
-	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &pks)
+	var allPks []lspext.PackageInformation
+	err = unsafeXLangCall(ctx, language+"_bg", rootPath, "workspace/xpackages", map[string]string{}, &allPks)
 	if err != nil {
 		return errors.Wrap(err, "LSP Call workspace/xpackages")
+	}
+
+	// Filter out vendored packages (don't want them treated as canonical sources)
+	pks := make([]lspext.PackageInformation, 0, len(allPks))
+	for _, pk := range allPks {
+		if baseDir, hasBaseDir := pk.Package["baseDir"]; hasBaseDir {
+			if baseDir, isStr := baseDir.(string); isStr && strings.Index(baseDir, "/vendor") != -1 {
+				continue
+			}
+		}
+		pks = append(pks, pk)
 	}
 
 	err = dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
@@ -210,18 +221,37 @@ func (p *pkgs) ListPackages(ctx context.Context, op *sourcegraph.ListPackagesOp)
 	span.SetTag("Lang", op.Lang)
 	span.SetTag("PkgQuery", op.PkgQuery)
 
-	containmentQuery, err := json.Marshal(op.PkgQuery)
-	if err != nil {
-		return nil, errors.New("marshaling op.PkgQuery")
+	var args []interface{}
+	arg := func(a interface{}) string {
+		args = append(args, a)
+		return fmt.Sprintf("$%d", len(args))
 	}
 
-	rows, err := appDBH(ctx).Db.Query(`
-		SELECT *
-		FROM pkgs
-		WHERE language=$1
-		AND pkg @> $2
-		ORDER BY repo_id ASC
-		LIMIT $3`, op.Lang, string(containmentQuery), op.Limit)
+	var whereClauses []string
+	if op.PkgQuery != nil {
+		containmentQuery, err := json.Marshal(op.PkgQuery)
+		if err != nil {
+			return nil, errors.New("marshaling op.PkgQuery")
+		}
+		whereClauses = append(whereClauses, `pkgs.pkg @> `+arg(string(containmentQuery)))
+	}
+	if op.RepoID != 0 {
+		whereClauses = append(whereClauses, `repo_id=`+arg(op.RepoID))
+	}
+	if op.Lang != "" {
+		whereClauses = append(whereClauses, `pkgs.language=`+arg(op.Lang))
+	}
+	if len(whereClauses) == 0 {
+		return nil, fmt.Errorf("no filtering options specified, must specify at least one")
+	}
+	whereSQL := "(" + strings.Join(whereClauses, ") AND (") + ")"
+	sql := `
+		SELECT pkgs.*
+		FROM pkgs INNER JOIN repo ON pkgs.repo_id=repo.id
+		WHERE ` + whereSQL + `
+		ORDER BY repo.created_at ASC NULLS LAST, pkgs.repo_id ASC
+		LIMIT ` + arg(op.Limit)
+	rows, err := appDBH(ctx).Db.Query(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

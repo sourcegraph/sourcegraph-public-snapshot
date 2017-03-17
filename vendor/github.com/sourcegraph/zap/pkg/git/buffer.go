@@ -51,11 +51,19 @@ func stripFileOrBufferPath(path string) string {
 	return path[1:]
 }
 
+// FromDiskPaths takes an op whose file names are unprefixed file
+// system paths and returns the op with all of those paths prefixed
+// with "/". It is used because some Git operations are unaware of our
+// buffer path convention (file name "#" prefixes). FromDiskPaths
+// translates ops returned by those Git operations to ops that are
+// valid in the rest of Zap.
+//
+// For example:
+//
+//   FromDiskPaths({Edit: {"foo": ["x"]}}) -> {Edit: {"/foo": ["x"]}}
+//
 func FromDiskPaths(op ot.WorkspaceOp) ot.WorkspaceOp {
 	fromDiskPath := func(path string) string {
-		if strings.HasPrefix(path, "/") || strings.HasPrefix(path, "#") {
-			panic(fmt.Sprintf("path %q must be an actual disk path", path))
-		}
 		return "/" + path
 	}
 
@@ -95,75 +103,72 @@ func FromDiskPaths(op ot.WorkspaceOp) ot.WorkspaceOp {
 	return ot.NormalizeWorkspaceOp(op2)
 }
 
-type FileBuffer struct {
-	files map[string][]byte
-}
+// A FileBuffer is an in-memory file system for storing buffered
+// (unsaved) file contents.
+type FileBuffer map[string][]byte
 
-func (b *FileBuffer) String() string {
-	v := make(map[string]string, len(b.files))
-	for name, data := range b.files {
-		v[name] = string(data)
-	}
-	return fmt.Sprintf("%+v", v)
-}
+var _ FileSystem = make(FileBuffer)
 
-var _ FileSystem = &FileBuffer{}
-
-func (b *FileBuffer) ReadFile(name string) ([]byte, error) {
+// ReadFile implements FileSystem.
+func (b FileBuffer) ReadFile(name string) ([]byte, error) {
 	panicIfFileOrBufferPath(name)
-	if data, ok := b.files[name]; ok {
+	if data, ok := b[name]; ok {
 		return data, nil
 	}
 	return nil, &os.PathError{Op: "ReadFile", Path: "(buf)" + name, Err: os.ErrNotExist}
 }
 
-func (b *FileBuffer) WriteFile(name string, data []byte, mode os.FileMode) error {
+// WriteFile implements FileSystem.
+func (b FileBuffer) WriteFile(name string, data []byte, mode os.FileMode) error {
 	panicIfFileOrBufferPath(name)
-	if b.files == nil {
-		b.files = map[string][]byte{}
-	}
-	b.files[name] = data
+	b[name] = data
 	return nil
 }
 
-func (b *FileBuffer) Rename(oldpath, newpath string) error {
+// Rename implements FileSystem.
+func (b FileBuffer) Rename(oldpath, newpath string) error {
 	panicIfFileOrBufferPath(oldpath)
 	panicIfFileOrBufferPath(newpath)
-	if _, ok := b.files[oldpath]; !ok {
+	if _, ok := b[oldpath]; !ok {
 		return &os.PathError{Op: "Rename", Path: "(buf)" + oldpath, Err: os.ErrNotExist}
 	}
-	b.files[newpath] = b.files[oldpath]
-	delete(b.files, oldpath)
+	b[newpath] = b[oldpath]
+	delete(b, oldpath)
 	return nil
 }
 
-func (b *FileBuffer) Exists(name string) error {
+// Exists implements FileSystem.
+func (b FileBuffer) Exists(name string) error {
 	panicIfFileOrBufferPath(name)
-	if _, ok := b.files[name]; !ok {
+	if _, ok := b[name]; !ok {
 		return &os.PathError{Op: "Exists", Path: "(buf)" + name, Err: os.ErrNotExist}
 	}
 	return nil
 }
 
-func (b *FileBuffer) Remove(name string) error {
+// Remove implements FileSystem.
+func (b FileBuffer) Remove(name string) error {
 	panicIfFileOrBufferPath(name)
-	if _, ok := b.files[name]; !ok {
+	if _, ok := b[name]; !ok {
 		return &os.PathError{Op: "Remove", Path: "(buf)" + name, Err: os.ErrNotExist}
 	}
-	delete(b.files, name)
+	delete(b, name)
 	return nil
 }
 
-func (b *FileBuffer) Copy() FileSystem {
-	b2 := &FileBuffer{files: make(map[string][]byte, len(b.files))}
-	for name, data := range b.files {
+// Copy implements FileSystemCopier.
+func (b FileBuffer) Copy() FileSystem {
+	b2 := make(FileBuffer, len(b))
+	for name, data := range b {
 		tmp := make([]byte, len(data))
 		copy(tmp, data)
-		b2.files[name] = tmp
+		b2[name] = tmp
 	}
 	return b2
 }
 
+// A FileSystemCopier is a file system that can produce a deep copy of
+// itself.
 type FileSystemCopier interface {
 	Copy() FileSystem
 }

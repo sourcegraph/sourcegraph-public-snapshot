@@ -12,7 +12,7 @@ import (
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
 func badgeValue(r *http.Request) (int, error) {
-	repo, _, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	repo, err := handlerutil.GetRepo(r.Context(), mux.Vars(r))
 	if err != nil {
 		return 0, errors.Wrap(err, "GetRepoAndRev")
 	}

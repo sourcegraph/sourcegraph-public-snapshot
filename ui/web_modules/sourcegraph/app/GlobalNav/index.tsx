@@ -2,36 +2,40 @@ import { hover, keyframes } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 
+import { IDisposable } from "vs/base/common/lifecycle";
+
 import { context } from "sourcegraph/app/context";
 import "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
 import { SearchCTA, ShortcutCTA } from "sourcegraph/app/GlobalNav/GlobalNavCTA";
-import { GlobalNavStore, SetQuickOpenVisible, SetShortcutMenuVisible } from "sourcegraph/app/GlobalNav/GlobalNavStore";
-import { ShortcutModalComponent } from "sourcegraph/app/GlobalNav/ShortcutMenu";
+import { GlobalNavStore } from "sourcegraph/app/GlobalNav/GlobalNavStore";
+import { ShortcutModal } from "sourcegraph/app/GlobalNav/ShortcutMenu";
 import { SignupOrLogin } from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
-import { AfterPrivateCodeSignup, BetaSignup, Login, Signup } from "sourcegraph/app/modals/index";
+import { AfterSignup, BetaSignup } from "sourcegraph/app/modals/index";
 import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
-import { RouterContext, RouterLocation, getRepoFromRouter, getRevFromRouter } from "sourcegraph/app/router";
+import { RouterContext, RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, Logo, TabItem, Tabs } from "sourcegraph/components";
+import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { colors, layout } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/index";
 import { Container } from "sourcegraph/Container";
-import * as Dispatcher from "sourcegraph/Dispatcher";
+import { toggleQuickopen } from "sourcegraph/editor/config";
 import { IntegrationsContainer } from "sourcegraph/home/IntegrationsContainer";
-import { DemoVideo } from "sourcegraph/home/modals/DemoVideo";
-import { QuickOpenModal } from "sourcegraph/quickopen/Modal";
 import { Store } from "sourcegraph/Store";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { LoginModal } from "sourcegraph/user/Login";
+import { SignupModal } from "sourcegraph/user/Signup";
 import { isMobileUserAgent } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
+import { onWorkbenchShown } from "sourcegraph/workbench/main";
 
 interface Props {
 	location: RouterLocation;
 }
 
 interface State {
-	showSearch: boolean;
 	showShortcut: boolean;
+	workbenchShown: boolean;
 }
 
 export class GlobalNav extends Container<Props, State> {
@@ -40,17 +44,28 @@ export class GlobalNav extends Container<Props, State> {
 	};
 
 	context: RouterContext;
+	workbenchListener: IDisposable;
 
 	constructor(props: Props) {
 		super(props);
-		this.onSearchDismiss = this.onSearchDismiss.bind(this);
 		this.activateSearch = this.activateSearch.bind(this);
-		this.state = { showSearch: false, showShortcut: false };
+		this.state = { showShortcut: false, workbenchShown: false };
+	}
+
+	componentDidMount(): void {
+		super.componentDidMount();
+		this.workbenchListener = onWorkbenchShown(shown => this.setState({ workbenchShown: shown } as State));
+	}
+
+	componentWillUnmount(): void {
+		super.componentWillUnmount();
+		if (this.workbenchListener) {
+			this.workbenchListener.dispose();
+		}
 	}
 
 	reconcileState(state: State, props: Props): void {
 		Object.assign(state, props);
-		state.showSearch = GlobalNavStore.quickOpenVisible;
 		state.showShortcut = GlobalNavStore.shortcutMenuVisible;
 	}
 
@@ -58,47 +73,36 @@ export class GlobalNav extends Container<Props, State> {
 		return [GlobalNavStore];
 	}
 
-	onSearchDismiss(): void {
-		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(false));
-	}
-
-	onShortcutDismiss(): void {
-		Dispatcher.Backends.dispatch(new SetShortcutMenuVisible(false));
-	}
-
 	activateSearch(eventProps?: any): void {
-		AnalyticsConstants.Events.Quickopen_Initiated.logEvent(eventProps);
-
-		Dispatcher.Backends.dispatch(new SetQuickOpenVisible(true));
+		Events.Quickopen_Initiated.logEvent(eventProps);
+		toggleQuickopen();
 	}
 
 	activateShortcutMenu(): void {
-		AnalyticsConstants.Events.ShortcutMenu_Initiated.logEvent();
-		Dispatcher.Backends.dispatch(new SetShortcutMenuVisible(true));
+		Events.ShortcutMenu_Initiated.logEvent();
 	}
 
 	render(): JSX.Element {
-
 		const hiddenNavRoutes = new Set([
 			"/styleguide",
 			"login",
 			"join",
 		]);
 
-		const isHomeRoute = isAtRoute(this.context.router, abs.home);
-		const shouldHide = hiddenNavRoutes.has(this.props.location.pathname) || (isHomeRoute && !context.user && context.authEnabled);
+		const location = this.props.location;
+		const router = this.context.router;
 
-		const repo = getRepoFromRouter(this.context.router);
-		const rev = getRevFromRouter(this.context.router);
+		const isHomeRoute = isAtRoute(router, abs.home);
+		const shouldHide = hiddenNavRoutes.has(location.pathname) || (isHomeRoute && !context.user && context.authEnabled);
 
 		const sx = {
 			backgroundColor: colors.white(),
 			borderBottom: `1px solid ${colors.blueGray(0.3)}`,
 			boxShadow: `${colors.blueGray(0.1)} 0px 1px 6px 0px`,
 			display: shouldHide ? "none" : "block",
-			zIndex: 100,
 			paddingLeft: whitespace[2],
 			paddingRight: whitespace[2],
+			zIndex: 2,
 		};
 
 		const logoSpin = keyframes({
@@ -106,21 +110,20 @@ export class GlobalNav extends Container<Props, State> {
 			"100%": { transform: "rotate(180deg) scale(1)" },
 		});
 
-		const modalName = (this.props.location.state && this.props.location.state["modal"]) || this.props.location.query["modal"];
+		const modalName = (location.state && location.state["modal"]) || location.query["modal"];
 		const modal = (
 			<div>
 				{modalName === "login" && !context.user &&
-					<Login location={this.props.location} router={this.context.router} />}
+					<LoginModal />}
 				{modalName === "join" &&
-					<Signup location={this.props.location} router={this.context.router} shouldHide={shouldHide} />}
+					<SignupModal />}
 				{modalName === "menuBeta" &&
-					<BetaSignup location={this.props.location} router={this.context.router} />}
-				{modalName === "afterPrivateCodeSignup" &&
-					<AfterPrivateCodeSignup location={this.props.location} router={this.context.router} />}
-				{modalName === "demo_video" &&
-					<DemoVideo location={this.props.location} router={this.context.router} />}
+					<BetaSignup location={location} router={router} />}
+				{modalName === "afterSignup" &&
+					<AfterSignup />}
 				{modalName === "menuIntegrations" &&
-					<IntegrationsContainer location={this.props.location} router={this.context.router} />}
+					<IntegrationsContainer location={location} router={router} />}
+				<ShortcutModal location={location} router={router} />
 			</div>
 		);
 
@@ -147,17 +150,15 @@ export class GlobalNav extends Container<Props, State> {
 						</Link>
 					</Tabs>}
 				</FlexContainer>
-				{this.props.location.query["tour"] && <TourOverlay location={this.props.location} />}
-
-				{/* TODO(john): the `|| null` is not very nice, we should avoid that. */}
-				{isMobileUserAgent(navigator.userAgent) ? null : <ShortcutModalComponent onDismiss={this.onShortcutDismiss} showModal={this.state.showShortcut} activateShortcut={this.activateShortcutMenu} />}
-				<QuickOpenModal repo={repo || null} rev={rev || null}
-					showModal={this.state.showSearch}
-					activateSearch={(eventProps) => this.activateSearch(eventProps)}
-					onDismiss={this.onSearchDismiss} />
+				{location.query["tour"] && <TourOverlay location={location} />}
 				<FlexContainer items="center" style={{ paddingRight: "0.5rem" }}>
-					{isMobileUserAgent(navigator.userAgent) ? null : <a onClick={() => this.activateShortcutMenu()}><ShortcutCTA width={26} /></a>}
-					<a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>
+					{/* Only show the shortcut and search actions in the navbar when on a workbench view. */}
+					{!isMobileUserAgent(navigator.userAgent) && this.state.workbenchShown &&
+						<LocationStateToggleLink modalName="keyboardShortcuts" location={location} onToggle={this.activateShortcutMenu}>
+							<ShortcutCTA width={26} />
+						</LocationStateToggleLink>
+					}
+					{this.state.workbenchShown && <a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>}
 					{context.authEnabled &&
 						(context.user
 							? <UserMenu user={context.user} location={location} style={{ flex: "0 0 auto", marginTop: 4 }} />

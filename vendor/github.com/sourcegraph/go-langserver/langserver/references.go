@@ -10,10 +10,8 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
-	"log"
+	"math"
 	"os"
-	"path"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -22,32 +20,20 @@ import (
 	"golang.org/x/tools/refactor/importgraph"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/langserver/internal/tools"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-// documentReferencesTimeout is the timeout used for textDocument/references
-// calls.
-const documentReferencesTimeout = 15 * time.Second
-
 var streamExperiment = len(os.Getenv("STREAM_EXPERIMENT")) > 0
 
 func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
-	// TODO: Add support for the cancelRequest LSP method instead of using
-	// hard-coded timeouts like this here.
-	//
-	// See: https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#cancelRequest
-	ctx, cancel := context.WithTimeout(ctx, documentReferencesTimeout)
-	defer cancel()
-
 	// Begin computing the reverse import graph immediately, as this
 	// occurs in the background and is IO-bound.
 	reverseImportGraphC := h.reverseImportGraph(ctx, conn)
 
-	fset, node, _, _, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
+	fset, node, _, _, pkg, _, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
 	if err != nil {
 		// Invalid nodes means we tried to click on something which is
 		// not an ident (eg comment/string/etc). Return no information.
@@ -88,6 +74,12 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		return PathHasPrefix(path, h.init.RootImportPath)
 	}
 
+	// findRefCtx is used in the findReferences function. It has its own
+	// context so we can stop finding references once we have reached our
+	// limit.
+	findRefCtx, stop := context.WithCancel(ctx)
+	defer stop()
+
 	var (
 		// locsC receives the final collected references via
 		// refStreamAndCollect.
@@ -100,10 +92,19 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 		findRefErr error
 	)
 
+	// Start a goroutine to read from the refs chan. It will read all the
+	// refs until the chan is closed. It is responsible to stream the
+	// references back to the client, as well as build up the final slice
+	// which we return as the response.
 	go func() {
-		locsC <- refStreamAndCollect(ctx, conn, req, fset, refs)
+		locsC <- refStreamAndCollect(ctx, conn, req, fset, refs, params.Context.XLimit, stop)
 		close(locsC)
 	}()
+
+	// Don't include decl if it is outside of workspace.
+	if params.Context.IncludeDeclaration && PathHasPrefix(defpkg, h.init.RootImportPath) {
+		refs <- &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()}
+	}
 
 	// seen keeps track of already findReferenced packages. This allows us
 	// to avoid doing extra work when we receive a successive import
@@ -148,39 +149,24 @@ func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jso
 			lconf.ImportWithTests(path)
 		}
 
-		findRefErr = findReferences(ctx, lconf, pkgInWorkspace, obj, refs)
+		findRefErr = findReferences(findRefCtx, lconf, pkgInWorkspace, obj, refs)
+
+		if findRefCtx.Err() != nil {
+			// If we are canceled, cancel loop early
+			break
+		}
 	}
+
+	// Tell refStreamAndCollect that we are done finding references. It
+	// will then send the all the collected references to locsC.
 	close(refs)
-
 	locs := <-locsC
-
-	// If a timeout does occur, we should know how effective the partial data is
-	if ctx.Err() != nil {
-		refTimeoutResults.Observe(float64(len(locs)))
-		log.Printf("info: timeout during references for %s, found %d refs", defpkg, len(locs))
-	}
 
 	// If we find references then we can ignore findRefErr. It should only
 	// be non-nil due to timeouts or our last findReferences doesn't find
 	// the def.
 	if len(locs) == 0 && findRefErr != nil {
 		return nil, findRefErr
-	}
-
-	// Don't include decl if it is outside of workspace.
-	if params.Context.IncludeDeclaration && PathHasPrefix(defpkg, h.init.RootImportPath) {
-		n := &ast.Ident{NamePos: obj.Pos(), Name: obj.Name()}
-		locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
-	}
-
-	sortBySharedDirWithURI(params.TextDocument.URI, locs)
-
-	// Technically we may be able to stop computing references sooner and
-	// save RAM/CPU, but currently that would have two drawbacks:
-	// * We can't stop the typechecking anyways
-	// * We may return results that are not as interesting since sortBySharedDirWithURI won't see everything.
-	if params.Context.XLimit > 0 && params.Context.XLimit < len(locs) {
-		locs = locs[:params.Context.XLimit]
 	}
 
 	return locs, nil
@@ -205,6 +191,7 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 
 		h.mu.Lock()
 		tryCache := h.importGraph == nil
+		once := h.importGraphOnce
 		h.mu.Unlock()
 		if tryCache {
 			g := make(importgraph.Graph)
@@ -215,7 +202,7 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 		}
 
 		parentCtx := ctx
-		h.importGraphOnce.Do(func() {
+		once.Do(func() {
 			// Note: We use a background context since this
 			// operation should not be cancelled due to an
 			// individual request.
@@ -251,11 +238,19 @@ func (h *LangHandler) reverseImportGraph(ctx context.Context, conn jsonrpc2.JSON
 // refStreamAndCollect returns all refs read in from chan until it is
 // closed. While it is reading, it will also occasionaly stream out updates of
 // the refs received so far.
-func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, fset *token.FileSet, refs <-chan *ast.Ident) []lsp.Location {
+func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, fset *token.FileSet, refs <-chan *ast.Ident, limit int, stop func()) []lsp.Location {
+	if limit == 0 {
+		// If we don't have a limit, just set it to a value we should never exceed
+		limit = math.MaxInt32
+	}
+
 	if !streamExperiment {
 		var locs []lsp.Location
 		for n := range refs {
 			locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
+		}
+		if len(locs) > limit {
+			locs = locs[:limit]
 		}
 		return locs
 	}
@@ -295,7 +290,7 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 		})
 	}
 
-	tick := time.NewTicker(time.Second)
+	tick := time.NewTicker(100 * time.Millisecond)
 	defer tick.Stop()
 
 	for {
@@ -305,6 +300,10 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 				// send a final update
 				send()
 				return locs
+			}
+			if len(locs) >= limit {
+				stop()
+				continue
 			}
 			locs = append(locs, goRangeToLSPLocation(fset, n.Pos(), n.End()))
 		case <-tick.C:
@@ -316,6 +315,11 @@ func refStreamAndCollect(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonr
 // findReferences will find all references to obj. It will only return
 // references from packages in lconf.ImportPkgs.
 func findReferences(ctx context.Context, lconf loader.Config, pkgInWorkspace func(string) bool, obj types.Object, refs chan<- *ast.Ident) error {
+	// Bail out early if the context is canceled
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+
 	allowErrors(&lconf)
 
 	defpkg := strings.TrimSuffix(obj.Pkg().Path(), "_test")
@@ -518,69 +522,4 @@ func sameObj(x, y types.Object) bool {
 		}
 	}
 	return false
-}
-
-func sortBySharedDirWithURI(uri string, locs []lsp.Location) {
-	l := locationList{
-		L: locs,
-		D: make([]int, len(locs)),
-	}
-	// l.D[i] = number of shared directories between uri and l.L[i].URI
-	for i := range l.L {
-		u := l.L[i].URI
-		var d int
-		for i := 0; i < len(uri) && i < len(u) && uri[i] == u[i]; i++ {
-			if u[i] == '/' {
-				d++
-			}
-		}
-		if u == uri {
-			// Boost matches in the same uri
-			d++
-		}
-		l.D[i] = d
-	}
-	sort.Sort(l)
-}
-
-type locationList struct {
-	L []lsp.Location
-	D []int
-}
-
-func (l locationList) Less(a, b int) bool {
-	if l.D[a] != l.D[b] {
-		return l.D[a] > l.D[b]
-	}
-	if x, y := path.Dir(l.L[a].URI), path.Dir(l.L[b].URI); x != y {
-		return x < y
-	}
-	if l.L[a].URI != l.L[b].URI {
-		return l.L[a].URI < l.L[b].URI
-	}
-	if l.L[a].Range.Start.Line != l.L[b].Range.Start.Line {
-		return l.L[a].Range.Start.Line < l.L[b].Range.Start.Line
-	}
-	return l.L[a].Range.Start.Character < l.L[b].Range.Start.Character
-}
-
-func (l locationList) Swap(a, b int) {
-	l.L[a], l.L[b] = l.L[b], l.L[a]
-	l.D[a], l.D[b] = l.D[b], l.D[a]
-}
-func (l locationList) Len() int {
-	return len(l.L)
-}
-
-var refTimeoutResults = prometheus.NewHistogram(prometheus.HistogramOpts{
-	Namespace: "golangserver",
-	Subsystem: "references",
-	Name:      "timeout_references",
-	Help:      "The number of references that were returned after a timeout.",
-	// 0.01 is to capture no results
-	Buckets: []float64{0.01, 1, 2, 32, 128, 1024},
-})
-
-func init() {
-	prometheus.MustRegister(refTimeoutResults)
 }

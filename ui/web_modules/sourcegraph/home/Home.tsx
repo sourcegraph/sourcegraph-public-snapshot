@@ -13,8 +13,7 @@ import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import { FeatureCarousel } from "sourcegraph/home/FeatureCarousel";
 import { Nav } from "sourcegraph/home/Nav";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { HomepageExperimentContent, homepageExperiment } from "sourcegraph/util/ExperimentManager";
+import { Events, PAGE_DASHBOARD } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface HomeProps { location: RouterLocation; }
 
@@ -40,8 +39,6 @@ export class Home extends React.Component<HomeProps, {}> {
 	}
 
 	render(): JSX.Element | null {
-		const experimentCopy = homepageExperiment.getContent() as HomepageExperimentContent;
-
 		return <div style={{
 			backgroundColor: "white",
 			overflowX: "hidden",
@@ -52,7 +49,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				img={`${context.assetsRoot}/img/Homepage/bg-circuit.svg`}
 				style={{ boxShadow: "inset 0 -30px 100px white" }}>
 
-				<Nav location={this.props.location} style={{ padding: whitespace[4] }} context={this.context} />
+				<Nav location={this.props.location} style={{ padding: whitespace[5] }} context={this.context} />
 
 				<div style={layout.container}>
 
@@ -61,14 +58,14 @@ export class Home extends React.Component<HomeProps, {}> {
 							layout.container,
 							{
 								maxWidth: 680,
-								marginBottom: whitespace[5],
+								marginBottom: whitespace[8],
 								marginTop: whitespace[3],
 								padding: whitespace[3],
 							}
-						)}>{experimentCopy.title}</Heading>
+						)}>The global code graph</Heading>
 
 					<p style={{ textAlign: "center" }}>
-						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
+						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
 							<Button color="orange" style={{
 								margin: whitespace[3],
 								paddingLeft: whitespace[3],
@@ -77,14 +74,14 @@ export class Home extends React.Component<HomeProps, {}> {
 								Sign up for free
 							</Button>
 						</LocationStateToggleLink> or
-						<Link to="/about" style={{ margin: whitespace[2] }}><strong>learn more</strong></Link>
+						<Link to="/plan" style={{ margin: whitespace[2] }}><strong>learn more</strong></Link>
 					</p>
 				</div>
 			</BGContainer>
 
-			<div style={{ marginBottom: whitespace[5], marginTop: whitespace[6] }}>
+			<div style={{ marginBottom: whitespace[8], marginTop: whitespace[9] }}>
 				<Heading level={3} align="center" style={{ fontWeight: "normal" }}>
-					{experimentCopy.subTitle}
+					Read code smarter and faster. Get more done.
 				</Heading>
 				<FeatureCarousel assetsURL={context.assetsRoot} />
 			</div>
@@ -116,7 +113,18 @@ export class Home extends React.Component<HomeProps, {}> {
 						}}>
 							Go
 						</Heading>
-
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.orangeL2(),
+							color: colors.orangeD1(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div>Java (Maven)</div>
+						</Heading>
 						<Heading level={5} style={{
 							paddingTop: whitespace[1],
 							paddingRight: whitespace[3],
@@ -136,7 +144,7 @@ export class Home extends React.Component<HomeProps, {}> {
 
 					</FlexContainer>
 
-					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: AnalyticsConstants.PAGE_DASHBOARD })}>
+					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_DASHBOARD })}>
 						<div style={{ marginTop: whitespace[3] }}>
 							<strong>
 								Join the beta list
@@ -148,43 +156,29 @@ export class Home extends React.Component<HomeProps, {}> {
 				</div>
 
 				{this.props.location.state && (this.props.location.state as any).modal === "beta" &&
-					<LocationStateModal modalName="beta" location={this.props.location} router={this.context.router}>
-						<Panel style={{
-							maxWidth: 440,
-							minWidth: 320,
-							maxHeight: "85%",
-							padding: whitespace[4],
-							margin: "auto",
-							marginTop: "20vh",
-						}}>
-							<Heading level={4} align="center">Join the Sourcegraph beta</Heading>
-							<BetaInterestForm
-								style={{ width: "100%" }}
-								location={this.props.location}
-								loginReturnTo="/beta"
-								onSubmit={dismissModal("beta", this.props.location, (this.context as any).router)} />
-						</Panel>
+					<LocationStateModal padded={false} modalName="beta" title="Sign up for our beta">
+						<BetaInterestForm
+							style={{ width: "100%" }}
+							location={this.props.location}
+							onSubmit={dismissModal("beta", this.context.router)} />
 					</LocationStateModal>
 				}
 
-				<div style={{ paddingTop: whitespace[5], paddingBottom: whitespace[4] }}>
+				<div style={{ paddingTop: whitespace[8], paddingBottom: whitespace[5] }}>
 					<Panel hoverLevel="high" hover={false}
 						style={{
 							margin: "auto",
 							maxWidth: 960,
-							padding: whitespace[4],
+							padding: whitespace[5],
 						}}>
 						<FlexContainer wrap={true} items="center">
 							<Heading align="left" level={4} underline="purple" style={{ flex: "0 0 240px" }} >
 								Used by developers everywhere
 								</Heading>
 							<FlexContainer items="center" justify="end" style={{ flex: "1 1 60%" }}>
-								<Link to="/customers/twitter" style={{ height: 24, marginRight: whitespace[4] }}>
-									<img style={{ marginRight: whitespace[3] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
-									<span style={{ verticalAlign: "super" }}>Read the case study</span>
-								</Link>
-								<img style={{ marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} height="32" {...layout.hide.sm} />
-								<img style={{ marginTop: "5px", marginRight: whitespace[4] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} height="24" {...layout.hide.sm} />
+								<img style={{ marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/twitter.svg`} height="24" {...layout.hide.sm} />
+								<img style={{ marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/red-hat.svg`} height="32" {...layout.hide.sm} />
+								<img style={{ marginTop: "5px", marginRight: whitespace[5] }} src={`${context.assetsRoot}/img/Homepage/logo/daily-motion.svg`} height="24" {...layout.hide.sm} />
 								<img style={{ marginTop: "8px" }} src={`${context.assetsRoot}/img/Homepage/logo/progressly.svg`} height="17" {...layout.hide.sm} />
 							</FlexContainer>
 						</FlexContainer>
@@ -211,9 +205,9 @@ export class Home extends React.Component<HomeProps, {}> {
 					layout.container,
 					{
 						maxWidth: 600,
-						marginTop: whitespace[5],
+						marginTop: whitespace[8],
 						padding: whitespace[3],
-						paddingBottom: whitespace[6],
+						paddingBottom: whitespace[9],
 						textAlign: "center",
 					}
 				)}>
@@ -227,11 +221,11 @@ export class Home extends React.Component<HomeProps, {}> {
 						Free for public and open-source code
 					</Heading>
 
-					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="orange" style={{
-							marginTop: whitespace[4],
-							paddingLeft: whitespace[4],
-							paddingRight: whitespace[4],
+							marginTop: whitespace[5],
+							paddingLeft: whitespace[5],
+							paddingRight: whitespace[5],
 						}}>Sign up for free</Button>
 					</LocationStateToggleLink>
 				</div>

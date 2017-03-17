@@ -15,17 +15,24 @@ class Context {
 	appURL: string; // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)
 	assetsRoot: string; // URL path to image/font/etc. assets on server
 	version: string;
-	/** 
+	/**
 	 * authEnabled, set as AUTH_ENABLED as an env var and enabled by default, causes Sourcegraph to require GitHub.com authentication.
 	 * With authEnabled set to false, no sign in is required or possible, and repositories are pulled from local disk. Used for on-prem.
 	 */
 	authEnabled: boolean;
-	/** 
+	/**
 	 * trackingAppID, set as "" by default server side, is required for the telligent environment to be set to production.
-	 * For Sourcegraph.com, it is SourcegraphWeb. For an on-premises deployment, it might be something like SgdevWeb.
+	 * For Sourcegraph.com, it is SourcegraphWeb. For the node.aws.sgdev.org deployment, it might be something like SgdevWeb.
 	 * It is stored in telligent as a field called appID.
 	 */
 	trackingAppID: string | null;
+	/**
+	 * repoHomePageRegex filter is for on-premises deployments, to ensure that only organization repos appear on the home page.
+	 * For instance, on node.aws.sgdev.org, it is set to ^gitolite\.aws\.sgdev\.org.
+	 */
+	repoHomeRegexFilter: string;
+
+	stripePublicKey: string;
 
 	constructor(ctx: any) {
 		Object.assign(this, ctx);
@@ -55,6 +62,11 @@ class Context {
 	isSourcegraphCloud(): boolean {
 		return SOURCEGRAPH_CLOUD_URL_PATTERN.test(this.appURL);
 	}
+}
+
+// exported because webworkers need to be able to use it, and methods not transferred with context object
+export function isOnPremInstance(authEnabled: boolean): boolean {
+	return !authEnabled;
 }
 
 const SOURCEGRAPH_CLOUD_URL_PATTERN = /^https?:\/\/sourcegraph.com/i;

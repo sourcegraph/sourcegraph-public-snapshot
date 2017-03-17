@@ -4,8 +4,10 @@ import { Route } from "react-router";
 import { getRoutePattern } from "sourcegraph/app/routePatterns";
 import { RouteParams, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
-import { Header } from "sourcegraph/components/Header";
+import { Heading, Loader } from "sourcegraph/components";
+import { whitespace } from "sourcegraph/components/utils";
 import { urlWithRev } from "sourcegraph/repo/routes";
+
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 
 interface Props {
@@ -23,7 +25,7 @@ export class RepoMain extends React.Component<Props, {}> {
 
 	context: { router: Router };
 
-	_onKeydown(ev: KeyboardEvent): void {
+	_onKeydown = (ev: KeyboardEvent): void => {
 		// Don't trigger if there's a modifier key or if the cursor is focused
 		// in an input field.
 		const el = ev.target as HTMLElement;
@@ -44,7 +46,7 @@ export class RepoMain extends React.Component<Props, {}> {
 		return (
 			<div className={styles.outer_container}>
 				{this.props.children}
-				<EventListener target={global.document.body} event="keydown" callback={this._onKeydown} />
+				<EventListener target={global.document} event="keydown" callback={this._onKeydown} />
 			</div>
 		);
 	}
@@ -68,6 +70,9 @@ export class CloningRefresher extends React.Component<{
 	}
 
 	render(): JSX.Element {
-		return <Header title="Cloning this repository" />;
+		return <Heading color="gray" level={4} align="center" style={{ marginTop: whitespace[5] }}>
+			Cloning this repository<br />
+			<Loader />
+		</Heading>;
 	}
 }

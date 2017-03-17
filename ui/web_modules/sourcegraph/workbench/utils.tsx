@@ -1,21 +1,12 @@
 import * as React from "react";
 
-import URI from "vs/base/common/uri";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
-import { IEditorInput } from "vs/platform/editor/common/editor";
+import { IPosition, IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
 import { Router, __getRouterForWorkbenchOnly, getRevFromRouter } from "sourcegraph/app/router";
 import { URIUtils } from "sourcegraph/core/uri";
 import { Services } from "sourcegraph/workbench/services";
-
-export function getResource(input: IEditorInput): URI {
-	if (input["resource"]) {
-		return (input as any).resource;
-	} else {
-		throw new Error("Couldn't find resource.");
-	}
-}
 
 export const NoopDisposer = { dispose: () => {/* */ } };
 
@@ -49,11 +40,37 @@ export class RouterContext extends React.Component<{}, {}> {
 export class MiniStore<T>{
 
 	private listeners: (((payload: T) => void) | null)[] = [];
+	private state: T;
+	private initialized: boolean;
+
+	constructor(initState?: T) {
+		if (initState) {
+			this.state = initState;
+			this.initialized = true;
+		}
+	}
+
+	init(initState: T): void {
+		if (this.initialized) {
+			throw new Error("store has already been initialized");
+		}
+		this.state = initState;
+		this.initialized = true;
+	}
+
+	isInitialized(): boolean {
+		return this.initialized;
+	}
+
+	getState(): T {
+		return Object.assign({}, this.state);
+	}
 
 	dispatch(payload: T): void {
+		this.state = Object.assign({}, this.state, payload);
 		this.listeners.forEach((listener) => {
 			if (listener) {
-				listener(payload);
+				listener(Object.assign({}, this.state));
 			}
 		});
 	}
@@ -116,4 +133,17 @@ export function prettifyRev(newRevision: string | null): string | null {
 		return getRevFromRouter(router) || null;
 	}
 	return newRevision;
+}
+
+export function normalisePosition(model: IReadOnlyModel, position: IPosition): IPosition {
+	const word = model.getWordAtPosition(position);
+	if (!word) {
+		return position;
+	}
+	// We always hover/j2d on the middle of a word. This is so multiple requests for the same word
+	// result in a lookup on the same position.
+	return {
+		lineNumber: position.lineNumber,
+		column: Math.floor((word.startColumn + word.endColumn) / 2),
+	};
 }

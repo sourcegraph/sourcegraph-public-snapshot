@@ -20,19 +20,6 @@ export interface BehindAhead {
 	Ahead?: number;
 }
 
-export interface BetaRegistration {
-	Email?: string;
-	FirstName?: string;
-	LastName?: string;
-	Languages?: string[];
-	Editors?: string[];
-	Message?: string;
-}
-
-export interface BetaResponse {
-	EmailAddress?: string;
-}
-
 export interface BlameOptions {
 }
 
@@ -302,6 +289,26 @@ export interface GetFileOptions {
 	RecurseSingleSubfolderLimit?: number;
 }
 
+export interface GitHubRepoLanguage {
+	Language?: string;
+	Count?: number;
+}
+
+export interface GitHubRepoWithDetails {
+	URI?: string;
+	Owner?: string;
+	Name?: string;
+	Fork?: boolean;
+	Private?: boolean;
+	CreatedAt?: any;
+	Languages?: GitHubRepoLanguage[];
+	Commits?: any[];
+}
+
+export interface GitHubReposWithDetailsList {
+	ReposWithDetails?: GitHubRepoWithDetails[];
+}
+
 export interface HTTPSConfig {
 }
 
@@ -380,6 +387,8 @@ export interface OrgListOptions {
 	OrgName?: string;
 	Username?: string;
 	OrgID?: string;
+	PerPage?: number;
+	Page?: number;
 }
 
 export interface OrgMember {
@@ -492,16 +501,6 @@ export interface RepoPermissions {
 	Pull?: boolean;
 	Push?: boolean;
 	Admin?: boolean;
-}
-
-export interface RepoResolution {
-	Repo?: number;
-	CanonicalPath?: string;
-}
-
-export interface RepoResolveOp {
-	path?: string;
-	remote?: boolean;
 }
 
 export interface RepoRevSpec {
@@ -657,6 +656,10 @@ export interface SignatureInformation {
 
 export interface StreamResponse {
 	HasMore?: boolean;
+}
+
+export interface SubmitFormResponse {
+	EmailAddress?: string;
 }
 
 export interface SubmoduleInfo {

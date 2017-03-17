@@ -1,29 +1,37 @@
 package git
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
+	"github.com/sourcegraph/zap/internal/pkg/pathutil"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/gitutil"
 )
 
-func CreateTreeForOp(log *log.Context, gitRepo interface {
+func CreateTreeForOp(logger log.Logger, gitRepo interface {
 	ReadBlob(snapshot, name string) ([]byte, string, string, error)
 	ListTreeFull(string) (*gitutil.Tree, error)
 	FileInfoForPath(rev, path string) (string, string, error)
 	HashObject(typ, path string, data []byte) (string, error)
 	CreateTree(basePath string, entries []*gitutil.TreeEntry) (string, error)
 }, fbuf FileSystem, base string, op ot.WorkspaceOp) (string, error) {
-	panicOnSomeErrors := os.Getenv("WORKSPACE_APPLY_ERRORS_FATAL") != ""
-
-	tree, err := gitRepo.ListTreeFull(base)
-	if err != nil {
-		return "", err
+	// As an optimization, if op does not depend on the Git tree, then
+	// do not compute the Git tree.
+	var tree *gitutil.Tree
+	if OpDependsOnGitTree(op) {
+		var err error
+		tree, err = gitRepo.ListTreeFull(base)
+		if err != nil {
+			return "", err
+		}
 	}
+
+	panicOnSomeErrors := os.Getenv("WORKSPACE_APPLY_ERRORS_FATAL") != ""
 
 	fileOrigin := func(name string) string {
 		if src, ok := op.Copy[name]; ok {
@@ -100,6 +108,7 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 				SrcSHA: sha, DstSHA: sha,
 				SrcPath: stripFileOrBufferPath(src), DstPath: stripFileOrBufferPath(dst),
 			}}); err != nil {
+				level.Error(logger).Log("tree-apply-changes-failed", err, "src", src, "dst", dst, "base", base, "op", op)
 				return "", err
 			}
 		}
@@ -198,6 +207,7 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 		}
 
 		var data []byte
+		var err error
 		if _, created := created[f]; created {
 			// no data yet
 			data = []byte{}
@@ -214,33 +224,37 @@ func CreateTreeForOp(log *log.Context, gitRepo interface {
 			return "", err
 		}
 
-		doc := ot.Doc(data)
+		doc := ot.Doc(string(data))
 		if err := doc.Apply(edits); err != nil {
 			err := fmt.Errorf("apply OT edit to %s @ %s: %s (doc: %q, op: %v)", f, base, err, data, op)
 			if panicOnSomeErrors {
-				level.Error(log).Log("PANIC-BELOW", "")
+				level.Error(logger).Log("PANIC-BELOW", "")
 				panic(err)
 			}
 			return "", err
 		}
 
 		if isBufferPath(f) {
-			if err := fbuf.WriteFile(stripFileOrBufferPath(f), doc, 0666); err != nil {
+			if err := fbuf.WriteFile(stripFileOrBufferPath(f), []byte(string(doc)), 0666); err != nil {
 				return "", err
 			}
 		} else {
-			if err := updateGitFile(stripFileOrBufferPath(f), doc); err != nil {
+			if err := updateGitFile(stripFileOrBufferPath(f), []byte(string(doc))); err != nil {
 				return "", err
 			}
 		}
 	}
+
+	if tree == nil {
+		return "", nil // indicates no new tree SHA was created
+	}
 	return gitRepo.CreateTree("", tree.Root)
 }
 
-func CreateWorktreeSnapshotCommit(gitRepo interface {
-	MakeCommit(parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
+func CreateWorktreeSnapshotCommit(ctx context.Context, gitRepo interface {
+	MakeCommit(ctx context.Context, parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
 }, parent string) (string, []*gitutil.ChangedFile, error) {
-	commitID, changes, err := gitRepo.MakeCommit(parent, true)
+	commitID, changes, err := gitRepo.MakeCommit(ctx, parent, true)
 	if err != nil {
 		return "", nil, err
 	}
@@ -248,4 +262,101 @@ func CreateWorktreeSnapshotCommit(gitRepo interface {
 		return parent, nil, nil
 	}
 	return commitID, changes, nil
+}
+
+// OpDependsOnGitTree reports whether applying op requires the Git
+// tree to be known. Mere edits to buffered files do not require the
+// Git tree. This function allows us to optimize elsewhere by not
+// always reading in the full Git tree.
+func OpDependsOnGitTree(op ot.WorkspaceOp) bool {
+	if op.Noop() {
+		return false
+	}
+	if len(op.Save) > 0 {
+		return true
+	}
+	for src, dst := range op.Copy {
+		if pathutil.IsFilePath(src) {
+			return true
+		}
+		if pathutil.IsFilePath(dst) {
+			return true
+		}
+	}
+	for src, dst := range op.Rename {
+		if pathutil.IsFilePath(src) {
+			return true
+		}
+		if pathutil.IsFilePath(dst) {
+			return true
+		}
+	}
+	for _, f := range op.Create {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	for _, f := range op.Delete {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	for _, f := range op.Truncate {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	for f := range op.Edit {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	if op.GitHead != "" {
+		return true
+	}
+	return false
+}
+
+// OpAffectsGitTree reports whether the op modifies the Git tree.
+func OpAffectsGitTree(op ot.WorkspaceOp) bool {
+	if op.Noop() {
+		return false
+	}
+	if len(op.Save) > 0 {
+		return true
+	}
+	for dst := range op.Copy {
+		if pathutil.IsFilePath(dst) {
+			return true
+		}
+	}
+	for src, dst := range op.Rename {
+		if pathutil.IsFilePath(src) {
+			return true
+		}
+		if pathutil.IsFilePath(dst) {
+			return true
+		}
+	}
+	for _, f := range op.Create {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	for _, f := range op.Delete {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	for _, f := range op.Truncate {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	for f := range op.Edit {
+		if pathutil.IsFilePath(f) {
+			return true
+		}
+	}
+	return false
 }

@@ -16,7 +16,7 @@ func serveOrgs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	orgs, err := backend.Orgs.ListOrgs(r.Context(), &o)
+	orgs, err := backend.Orgs.ListOrgsPage(r.Context(), &o)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func serveOrgMembers(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	members, err := backend.Orgs.ListOrgMembers(r.Context(), &m)
+	members, err := backend.Orgs.ListOrgMembersForInvites(r.Context(), &m)
 	if err != nil {
 		return err
 	}

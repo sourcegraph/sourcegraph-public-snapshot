@@ -24,6 +24,10 @@
     "autobind-decorator": "^1.3.4",
     "autoprefixer": "6.5.3",
     "awesome-typescript-loader": "^3.0.0-beta.18",
+    "babel-core": "^6.23.1",
+    "babel-loader": "^6.3.2",
+    "babel-plugin-transform-es2015-for-of": "^6.23.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "babel-relay-plugin": "0.9.3",
     "css-loader": "0.25.0",
     "expect.js": "0.3.1",
@@ -41,6 +45,7 @@
     "raw-loader": "^0.5.1",
     "react-addons-perf": "15.3.2",
     "react-addons-test-utils": "15.3.2",
+    "semver": "^5.3.0",
     "source-map-support": "0.4.6",
     "style-loader": "0.13.1",
     "tslint": "^4.1.1",
@@ -55,13 +60,16 @@
     "webpack-dev-server": "2.2.0"
   },
   "dependencies": {
+    "@sourcegraph/vscode-jsonrpc": "3.0.4-patch",
+    "@sourcegraph/vscode-languageclient": "3.0.4-patch3",
+    "@sourcegraph/vscode-languageserver-types": "3.0.3-patch",
     "autotrack": "1.0.3",
     "classnames": "2.2.5",
     "core-js": "2.4.1",
     "date-fns": "^1.27.0",
     "glamor": "2.20.8",
     "isomorphic-fetch": "2.2.1",
-    "libzap": "^0.0.38",
+    "libzap": "^0.0.82",
     "lodash": "4.17.2",
     "object-hash": "^1.1.5",
     "raven-js": "3.8.1",
@@ -70,15 +78,14 @@
     "react-relay": "0.9.3",
     "react-router": "3.0.0",
     "react-router-scroll": "0.4.1",
-    "rxjs": "^5.0.3",
+    "rxjs": "^5.2.0",
     "string_score": "0.1.22",
     "url": "0.11.0",
-    "vscode-jsonrpc": "3.0.3",
-    "vscode-languageclient": "https://registry.npmjs.org/@sourcegraph/vscode-languageclient/-/vscode-languageclient-3.0.3-fork1.tgz",
-    "vscode-languageserver-types": "3.0.3",
-    "vscode-zap": "^0.0.38"
+    "uuid": "^3.0.1",
+    "vscode-zap": "^0.0.82"
   },
   "scripts": {
+    "postinstall": "(cd scripts/tsmapimports/ && yarn install)",
     "start": "NODE_ENV=${NODE_ENV:=development} node ./node_modules/.bin/webpack-dev-server",
     "build": "env NODE_ENV=production node ./node_modules/.bin/webpack",
     "test": "yarn run lint && yarn run test-unit && yarn run test-tsmapimports",
@@ -189,9 +196,11 @@
     "vinyl-fs": "2.4.4",
     "xtend": "4.0.1",
     "@types/history": "2.0.41",
-    "vscode-jsonrpc": "3.0.3",
-    "vscode-languageserver-types": "3.0.3",
     "vscode-zap": "0.0.5",
-    "libzap": "0.0.8"
+    "libzap": "0.0.8",
+    "babel-runtime": "6.23.0",
+    "js-tokens": "3.0.1",
+    "babel-code-frame": "6.22.0",
+    "jsesc": "1.3.0"
   }
 }

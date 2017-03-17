@@ -1,7 +1,6 @@
 import * as React from "react";
-import { Code, Heading, Logo, Panel, Table } from "sourcegraph/components";
+import { Heading, Logo, Panel } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -14,9 +13,7 @@ export class LogoComponent extends React.Component<{}, State> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb4}>Logo and Logotype</Heading>
-
+			<div>
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 						<Heading level={7} className={base.mb3} color="cool_mid_gray">Logomark</Heading>
@@ -55,35 +52,6 @@ export class LogoComponent extends React.Component<{}, State> {
 						</pre>
 					</code>
 				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>type</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>null</Code>, <Code>logotype</Code>, <Code>logotype-with-tag</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>width</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									A <Code>string</Code> of a positive integer appended with <Code>px</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
-				</Panel>
-
 			</div>
 		);
 	}

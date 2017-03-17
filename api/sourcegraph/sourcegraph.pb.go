@@ -116,6 +116,24 @@ type Repo struct {
 	IndexedRevision *string `json:"IndexedRevision,omitempty"`
 }
 
+// GitHubRepoWithDetails represents a GitHub source code repository with additional context
+// These types are used for data logging/capturing when a GitHub user signs in to Sourcegraph
+type GitHubRepoWithDetails struct {
+	URI         string                `json:"URI,omitempty"`
+	Owner       string                `json:"Owner,omitempty"`
+	Name        string                `json:"Name,omitempty"`
+	Fork        bool                  `json:"Fork,omitempty"`
+	Private     bool                  `json:"Private,omitempty"`
+	CreatedAt   *time.Time            `json:"CreatedAt,omitempty"`
+	Languages   []*GitHubRepoLanguage `json:"Languages,omitempty"`
+	CommitTimes []*time.Time          `json:"Commits,omitempty"`
+}
+
+type GitHubRepoLanguage struct {
+	Language string `json:"Language,omitempty"`
+	Count    int    `json:"Count,omitempty"`
+}
+
 type Contributor struct {
 	Login         string `json:"Login,omitempty"`
 	AvatarURL     string `json:"AvatarURL,omitempty"`
@@ -179,6 +197,10 @@ type RepoList struct {
 	Repos []*Repo `json:"Repos,omitempty"`
 }
 
+type GitHubReposWithDetailsList struct {
+	ReposWithDetails []*GitHubRepoWithDetails `json:"ReposWithDetails,omitempty"`
+}
+
 // ReposResolveRevOp specifies a Repos.ResolveRev operation.
 type ReposResolveRevOp struct {
 	Repo int32 `json:"repo,omitempty"`
@@ -197,32 +219,6 @@ type ResolvedRev struct {
 
 type URIList struct {
 	URIs []string `json:"URIs,omitempty"`
-}
-
-type RepoResolveOp struct {
-	// Path is some repo path, such as "github.com/user/repo".
-	Path string `json:"path,omitempty"`
-	// Remote controls the behavior when Resolve locates a remote
-	// repository that is not (yet) associated with an existing local
-	// repository. If Remote is false (the default), then a NotFound
-	// error is returned in that case. If Remote is true, then no
-	// error is returned; the RepoResolution's Repo field will be
-	// empty, but some metadata about the remote repository may be
-	// provided.
-	Remote bool `json:"remote,omitempty"`
-}
-
-// RepoResolution is the result of resolving a repo using
-// Repos.Resolve.
-type RepoResolution struct {
-	// ID is the ID of the local repo (either a locally hosted repo,
-	// or a locally added mirror).
-	Repo int32 `json:"Repo,omitempty"`
-	// CanonicalPath is the canonical repo path of the local repo
-	// (with the canonical casing, etc.). Clients should generally
-	// redirect the user to the canonical repo path if users access a
-	// repo by a non-canonical path.
-	CanonicalPath string `json:"CanonicalPath,omitempty"`
 }
 
 // ReposUpdateOp is an operation to update a repository's metadata.
@@ -360,29 +356,11 @@ type UpdateEmailsOp struct {
 	Add *EmailAddrList `json:"Add,omitempty"`
 }
 
-// BetaRegistration represents the user information needed to register for the
-// beta program.
-type BetaRegistration struct {
-	// Email is the primary email address for the user. It is only used if the
-	// user does not already have an email address set in their account, else
-	// this field is no-op.
-	Email string `json:"Email,omitempty"`
-	// FirstName is the first name of the user.
-	FirstName string `json:"FirstName,omitempty"`
-	// LastName is the last name of the user.
-	LastName string `json:"LastName,omitempty"`
-	// Languages is a list of programming languages the user is interested in.
-	Languages []string `json:"Languages,omitempty"`
-	// Editors is a list of editors the user is interested in.
-	Editors []string `json:"Editors,omitempty"`
-	// Message contains any additional comments the user may have.
-	Message string `json:"Message,omitempty"`
-}
-
-// BetaResponse is a response to a user registering for beta access.
-type BetaResponse struct {
-	// EmailAddress is the email address that was registered and will be
-	// contacted once approved by an admin.
+// SubmitFormResponse is a response to a user submitting a form (such
+// as, e.g., a beta signup form).
+type SubmitFormResponse struct {
+	// EmailAddress is the email address of the user that submitted the
+	// form
 	EmailAddress string `json:"EmailAddress,omitempty"`
 }
 
@@ -576,6 +554,8 @@ type OrgListOptions struct {
 	OrgName  string `json:"OrgName,omitempty"`
 	Username string `json:"Username,omitempty"`
 	OrgID    string `json:"OrgID,omitempty"`
+	// ListOptions controls pagination.
+	ListOptions `json:""`
 }
 
 // OrgsList is a list of GitHub organizations for a given user

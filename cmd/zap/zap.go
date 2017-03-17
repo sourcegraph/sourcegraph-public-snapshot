@@ -32,7 +32,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
 /*
@@ -130,15 +129,13 @@ func main() {
 	ctx := context.Background()
 	zapServer.Start(ctx)
 	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(auth.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx = github.NewContextWithAuthedClient(r.Context()) // necessary to check repo perms
-
 		c, err := websocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: Upgrade: %s [client: %s]\n", err, r.RemoteAddr)
 			http.Error(w, "WebSocket upgrade error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		<-zapServer.Accept(ctx, websocketjsonrpc2.NewObjectStream(c))
+		<-zapServer.Accept(r.Context(), websocketjsonrpc2.NewObjectStream(c))
 	})))))
 	select {}
 }
@@ -166,22 +163,8 @@ func listen(urlStr string) (string, net.Listener, error) {
 	return "ws://" + lis.Addr().String(), lis, nil
 }
 
-// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
-// during dogfooding.
-var whitelistedRepos = map[string]bool{
-	"github.com/sgtest/xyztest":                               true,
-	"github.com/gorilla/websocket":                            true,
-	"github.com/sourcegraph/go-langserver":                    true,
-	"github.com/sourcegraph/jsonrpc2":                         true,
-	"github.com/sourcegraph/sourcegraph":                      true,
-	"github.com/sourcegraph/javascript-typescript-langserver": true,
-	"github.com/sourcegraph/zap":                              true,
-	"github.com/Microsoft/vscode":                             true,
-	"github.com/Microsoft/TypeScriptSamples":                  true,
-}
-
 var zapServer = zap.NewServer(zapgit.ServerBackend{
-	CanAccessRepo: func(ctx context.Context, log *log.Context, repo string) (ok bool, err error) {
+	CanAccessRepo: func(ctx context.Context, log log.Logger, repo string) (ok bool, err error) {
 		logResult := func(ok bool, err error) {
 			actor := auth.ActorFromContext(ctx)
 			var f func(string, ...interface{})
@@ -209,11 +192,6 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		if err != nil {
 			return false, err
 		}
-		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
-		// during dogfooding.
-		if !whitelistedRepos[repo] {
-			return false, fmt.Errorf("repo %q denied; not in zap development whitelist", repo)
-		}
 
 		// Dogfooding: Do a quick git command just to ensure we have
 		// the repo cloned. Remove before launch.
@@ -225,15 +203,9 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 
 		return true, nil
 	},
-	OpenBareRepo: func(ctx context.Context, log *log.Context, repo string) (zapgit.ServerRepo, error) {
+	OpenBareRepo: func(ctx context.Context, log log.Logger, repo string) (zapgit.ServerRepo, error) {
 		actor := auth.ActorFromContext(ctx)
 		log15.Info("Zap: OpenRepo", "repo", repo, "login", actor.Login, "uid", actor.UID)
-
-		// 🚨 SECURITY: Limit Zap to only being used with certain repos 🚨
-		// during dogfooding.
-		if !whitelistedRepos[repo] {
-			return nil, fmt.Errorf("repo %q denied; not in zap development whitelist", repo)
-		}
 
 		_, err := backend.Repos.GetByURI(ctx, repo)
 		if err != nil {
@@ -245,6 +217,7 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 			},
 		}, nil
 	},
+	CanAutoCreateRepo: func() bool { return true },
 })
 
 type gitserverExecutor struct {

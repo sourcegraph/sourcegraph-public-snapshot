@@ -13,8 +13,10 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 )
 
@@ -22,9 +24,21 @@ var (
 	mode     = flag.String("mode", "stdio", "communication mode (stdio|tcp)")
 	addr     = flag.String("addr", ":4389", "server listen address (tcp)")
 	profbind = flag.String("prof-http", ":6060", "net/http/pprof http bind address")
+
+	openGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "golangserver",
+		Subsystem: "build",
+		Name:      "open_connections",
+		Help:      "Number of open connections to the langserver.",
+	})
 )
 
+func init() {
+	prometheus.MustRegister(openGauge)
+}
+
 func main() {
+	env.Lock()
 	flag.Parse()
 	log.SetFlags(0)
 
@@ -67,12 +81,17 @@ func run() error {
 			if err != nil {
 				return err
 			}
-			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler())
+			openGauge.Inc()
+			c := jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
+			go func() {
+				<-c.DisconnectNotify()
+				openGauge.Dec()
+			}()
 		}
 
 	case "stdio":
 		log.Println("xlang-go: reading on stdin, writing on stdout")
-		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler()).DisconnectNotify()
+		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler())).DisconnectNotify()
 		log.Println("connection closed")
 		return nil
 

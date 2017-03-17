@@ -1,23 +1,20 @@
-import { IModelService } from "vs/editor/common/services/modelService";
-import { IModeService } from "vs/editor/common/services/modeService";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
+import { Features } from "sourcegraph/util/features";
 import { ContextMenuController } from "vs/editor/contrib/contextmenu/browser/contextmenu";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Registry } from "vs/platform/platform";
 import { IStorageService, StorageScope } from "vs/platform/storage/common/storage";
+import { StorageService } from "vs/platform/storage/common/storageService";
 import { EditorGroupsControl } from "vs/workbench/browser/parts/editor/editorGroupsControl";
 import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
 import { FileRenderer } from "vs/workbench/parts/files/browser/views/explorerViewer";
 import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
-import { StorageService } from "vs/workbench/services/storage/common/storageService";
+import { IActivityBarService } from "vs/workbench/services/activity/common/activityBarService";
 
 import { layout } from "sourcegraph/components/utils";
-import { TextModelContentProvider } from "sourcegraph/editor/resolverService";
 
 // Set the height of files in the file tree explorer.
 (FileRenderer as any).ITEM_HEIGHT = 30;
-
 // Set the height of the blob title.
 (EditorGroupsControl as any).EDITOR_TITLE_HEIGHT = layout.EDITOR_TITLE_HEIGHT;
 
@@ -36,11 +33,10 @@ export function configurePreStartup(services: ServiceCollection): void {
 
 // Workbench overwrites a few services, so we add these services after startup.
 export function configurePostStartup(services: ServiceCollection): void {
-	const resolver = services.get(ITextModelResolverService) as ITextModelResolverService;
-	resolver.registerTextModelContentProvider("git", new TextModelContentProvider(
-		services.get(IModelService) as IModelService,
-		services.get(IModeService) as IModeService,
-	));
-
 	(ContextMenuController.prototype as any)._onContextMenu = () => { /* */ };
+
+	if (Features.zapChanges.isEnabled()) {
+		const activityBarService = services.get(IActivityBarService) as IActivityBarService;
+		activityBarService.pin("workbench.view.scm");
+	}
 }

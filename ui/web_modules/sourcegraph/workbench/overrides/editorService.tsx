@@ -1,7 +1,8 @@
 import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
-import { IEditor } from "vs/platform/editor/common/editor";
+import { ICodeEditor } from "vs/editor/browser/editorBrowser";
+import { IEditor, IEditorInput, IResourceInput } from "vs/platform/editor/common/editor";
 import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorService";
 
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
@@ -9,54 +10,105 @@ import { urlToBlob } from "sourcegraph/blob/routes";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
-import { fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
+import { resolveRev } from "sourcegraph/editor/contentLoader";
+import { urlToRepo } from "sourcegraph/repo/routes";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
-	private _emitter: Emitter<URI> = new Emitter<URI>();
+	private _onDidOpenEditor: Emitter<URI> = new Emitter<URI>();
 
+	public openEditor(data: IResourceInput, options?: any): TPromise<IEditor>;
+	public openEditor(data: IEditorInput, options?: any): TPromise<IEditor>;
 	public openEditor(data: any, options?: any): TPromise<IEditor> {
-		let { repo, rev, path } = URIUtils.repoParams(data.resource);
-		rev = prettifyRev(rev);
-		const router = __getRouterForWorkbenchOnly();
-
-		let hash: undefined | string = undefined;
-		if (data.options && data.options.selection) {
-			const selection = RangeOrPosition.fromMonacoRange(data.options.selection);
-			hash = `#L${selection}`;
+		let resource: URI;
+		if (data.resource) {
+			resource = data.resource;
+		} else if (data.modifiedInput) {
+			resource = data.modifiedInput.resource;
+		} else {
+			throw new Error(`unknown data: ${data}`);
 		}
+		if (resource) {
+			let { repo, rev, path } = URIUtils.repoParams(resource);
+			rev = prettifyRev(rev);
+			const router = __getRouterForWorkbenchOnly();
 
-		const url = urlToBlob(repo, rev, path);
-		router.push({
-			pathname: url,
-			state: options,
-			hash,
-			query: router.location.query,
-		});
-		return this.openEditorWithoutURLChange(data, options);
+			let hash: undefined | string;
+			if (data.options && data.options.selection) {
+				const selection = RangeOrPosition.fromMonacoRange(data.options.selection);
+				hash = `#L${selection}`;
+			}
+
+			// openEditor may be called for a file, or for a workspace root (directory);
+			// in the latter case, we circumvent the vscode path to open an real document
+			// otherwise an empty buffer will be shown instead of the workbench watermark.
+			const url = resource.fragment === "" ? urlToRepo(repo) : urlToBlob(repo, rev, path);
+			const promise = resource.fragment === "" ? TPromise.wrap(this.getActiveEditor()) : this.openEditorWithoutURLChange(resource, data, options);
+			return promise.then(editor => {
+				router.push({
+					pathname: url,
+					state: options,
+					hash,
+					query: router.location.query,
+				});
+				return editor;
+			});
+		}
+		throw new Error("cannot open editor, missing resource");
 	}
 
-	openEditorWithoutURLChange(data: any, options?: any): TPromise<IEditor> {
-		this._emitter.fire(data.resource);
-		const router = __getRouterForWorkbenchOnly();
+	openEditorWithoutURLChange(mainResource: URI, data: IResourceInput, options?: any): TPromise<IEditor>;
+	openEditorWithoutURLChange(mainResource: URI, data: IEditorInput, options?: any): TPromise<IEditor>;
+	openEditorWithoutURLChange(mainResource: URI, data: null, options?: any): TPromise<IEditor>;
+	openEditorWithoutURLChange(mainResource: URI, data: any, options?: any): TPromise<IEditor> {
+		if (!data) {
+			data = { resource: mainResource };
+		}
+
+		this._onDidOpenEditor.fire(mainResource);
 
 		// calling openEditor with a non-zero position, or options equal to
 		// true opens up another editor to the side.
 		if (typeof options === "boolean") {
 			options = false;
-		} else if (options === undefined) {
-			options = router.location.state;
 		}
 
 		// Set the resource revision to the commit hash
-		return TPromise.wrap(fetchContentAndResolveRev(data.resource)).then(({ content, commit }) => {
-			data.resource = data.resource.with({ query: commit });
-			updateFileTree(data.resource);
-			return super.openEditor(data, options, 0);
+		return TPromise.wrap(resolveRev(mainResource)).then(({ commit }) => {
+			const absMainResource = mainResource.with({ query: commit });
+			if (data.resource) {
+				data.resource = absMainResource;
+			} else if (data.modifiedInput) {
+				data.modifiedInput.resource = absMainResource;
+			} else {
+				throw new Error(`unknown data: ${data}`);
+			}
+			updateFileTree(mainResource);
+			return this.createInput(data).then(input => super.openEditor(input, options, false));
 		});
 	}
 
-	public onDidOpenEditor: Event<URI> = this._emitter.event;
+	public createInput(data: IResourceInput): TPromise<IEditorInput>;
+	public createInput(data: IEditorInput): TPromise<IEditorInput>;
+	public createInput(data: any): TPromise<IEditorInput> {
+		const resource = data.resource;
+		if (resource && resource instanceof URI && resource.scheme === "git") {
+			return TPromise.as((this as any).createFileInput(resource)); // access superclass's private method
+		}
+		return super.createInput(data);
+	}
+
+	public onDidOpenEditor: Event<URI> = this._onDidOpenEditor.event;
 }
 
 export const DelegatingWorkbenchEditorService = vs.DelegatingWorkbenchEditorService;
+
+let EditorInstance: ICodeEditor | null = null;
+
+export function getEditorInstance(): ICodeEditor | null {
+	return EditorInstance;
+}
+
+export function updateEditorInstance(editor: ICodeEditor): void {
+	EditorInstance = editor;
+}

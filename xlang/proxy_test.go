@@ -31,7 +31,7 @@ func init() {
 	xlang.ServersByMode["go"] = func() (io.ReadWriteCloser, error) {
 		// Run in-process for easy development (no recompiles, etc.).
 		a, b := xlang.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), gobuildserver.NewHandler())
+		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
 		return b, nil
 	}
 }
@@ -621,9 +621,9 @@ func yza() {}
 			}
 
 			// Prepare the connection.
-			if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
+			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 				InitializeParams:      lsp.InitializeParams{RootPath: test.rootPath},
-				InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
+				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}
@@ -754,10 +754,10 @@ func TestProxy_connections(t *testing.T) {
 		calledConnectToTestServer++
 		mu.Unlock()
 		a, b := xlang.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			addReq(req)
 			return nil, nil
-		}))
+		})))
 		return b, nil
 	}
 	defer func() {
@@ -780,18 +780,23 @@ func TestProxy_connections(t *testing.T) {
 	c1 := dialProxy(t, addr, nil)
 
 	// C1 connects to the proxy.
-	initParams := xlang.ClientProxyInitializeParams{
+	initParams := lspext.ClientProxyInitializeParams{
 		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", Capabilities: caps},
-		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(100 * time.Millisecond) // we're testing for a negative, so this is not as flaky as it seems; if a request is received later, it'll cause a test failure the next time we call wantReqs
-	if got := getAndClearReqs(); len(got) != 0 {
-		t.Errorf(`after C1 initialize, got reqs %s, want none
-
-Nothing should've been received by S1 yet, since the "initialize" request is proxied and not delivered to S1 until it is needed for responding to an actual request. This may change in the future if we want to pre-warm it upon receiving the initialize, though.`, got)
+	want := []testRequest{
+		{"initialize", lspext.InitializeParams{
+			InitializeParams: lsp.InitializeParams{RootPath: "file:///", Capabilities: caps},
+			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Mode:             "test",
+		}},
+	}
+	if err := wantReqs(want); err != nil {
+		t.Fatal("after C1 initialize request:", err)
 	}
 
 	// Now C1 sends an actual request. The proxy should open a
@@ -802,15 +807,11 @@ Nothing should've been received by S1 yet, since the "initialize" request is pro
 	}, nil); err != nil {
 		t.Fatal(err)
 	}
-	want := []testRequest{
-		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{RootPath: "file:///", Capabilities: caps},
-			OriginalRootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Mode:             "test",
-		}},
+	want = []testRequest{
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile"},
-			Position:     lsp.Position{Line: 1, Character: 2}}},
+			Position:     lsp.Position{Line: 1, Character: 2},
+		}},
 	}
 	if err := wantReqs(want); err != nil {
 		t.Fatal("after C1 textDocument/definition request:", err)
@@ -896,7 +897,7 @@ func TestProxy_propagation(t *testing.T) {
 	// file that we call textDocument/definition on.
 	xlang.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
 		a, b := xlang.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			if req.Method == "textDocument/definition" {
 				var params lsp.TextDocumentPositionParams
 				if err := json.Unmarshal(*req.Params, &params); err != nil {
@@ -916,7 +917,7 @@ func TestProxy_propagation(t *testing.T) {
 				return []lsp.Location{}, nil
 			}
 			return nil, nil
-		}))
+		})))
 		return b, nil
 	}
 	defer func() {
@@ -927,9 +928,9 @@ func TestProxy_propagation(t *testing.T) {
 	c := dialProxy(t, addr, recvDiags)
 
 	// Connect to the proxy.
-	initParams := xlang.ClientProxyInitializeParams{
+	initParams := lspext.ClientProxyInitializeParams{
 		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
-		InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: "test"},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)

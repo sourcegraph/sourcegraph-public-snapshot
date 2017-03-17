@@ -57,8 +57,20 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	}
 
 	// Query value from the database.
+	rp, err := Repos.GetByURI(ctx, source)
+	if err != nil {
+		return 0, err
+	}
+	rev, err := Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{Repo: rp.ID, Rev: rp.DefaultBranch})
+	if err != nil {
+		return 0, err
+	}
+	inv, err := Repos.GetInventory(ctx, &sourcegraph.RepoRevSpec{Repo: rp.ID, CommitID: rev.CommitID})
+	if err != nil {
+		return 0, err
+	}
 	totalRefsCacheCounter.WithLabelValues("miss").Inc()
-	res, err = localstore.GlobalDeps.TotalRefs(ctx, source)
+	res, err = localstore.GlobalDeps.TotalRefs(ctx, source, inv.Languages)
 	if err != nil {
 		return 0, err
 	}
@@ -70,6 +82,18 @@ func (s *defs) TotalRefs(ctx context.Context, source string) (res int, err error
 	}
 	totalRefsCache.Set(source, jsonRes)
 	return res, nil
+}
+
+// Dependencies returns the dependency references for the given repoID. I.e., the repo's dependencies.
+func (s *defs) Dependencies(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error) {
+	if Mocks.Defs.Dependencies != nil {
+		return Mocks.Defs.Dependencies(ctx, repoID, excludePrivate)
+	}
+
+	return localstore.GlobalDeps.Dependencies(ctx, localstore.DependenciesOptions{
+		Repo:           repoID,
+		ExcludePrivate: excludePrivate,
+	})
 }
 
 func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error) {
@@ -177,4 +201,5 @@ type MockDefs struct {
 	TotalRefs            func(ctx context.Context, source string) (res int, err error)
 	DependencyReferences func(ctx context.Context, op sourcegraph.DependencyReferencesOptions) (res *sourcegraph.DependencyReferences, err error)
 	RefreshIndex         func(ctx context.Context, repoURI, commitID string) error
+	Dependencies         func(ctx context.Context, repoID int32, excludePrivate bool) ([]*sourcegraph.DependencyReference, error)
 }

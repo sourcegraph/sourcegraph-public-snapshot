@@ -7,11 +7,14 @@
 package gobuildserver
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/sourcegraph/ctxvfs"
 )
 
 type testTransport map[string]string
@@ -31,6 +34,9 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestResolveImportPath(t *testing.T) {
+	defer func(orig []string) { noGoGetDomains = orig }(noGoGetDomains)
+	noGoGetDomains = []string{"mygitolite.aws.me.org"}
+
 	tests := []struct {
 		importPath string
 		dir        *directory
@@ -75,6 +81,32 @@ func TestResolveImportPath(t *testing.T) {
 			vcs:         "git",
 		}},
 		{"github.com/foo", nil},
+
+		// no go get (see noGoGetDomains)
+		{"mygitolite.aws.me.org/mux.git", &directory{
+			importPath:  "mygitolite.aws.me.org/mux.git",
+			projectRoot: "mygitolite.aws.me.org/mux.git",
+			cloneURL:    "http://mygitolite.aws.me.org/mux.git",
+			vcs:         "git",
+		}},
+		{"mygitolite.aws.me.org/mux.git/subpkg", &directory{
+			importPath:  "mygitolite.aws.me.org/mux.git/subpkg",
+			projectRoot: "mygitolite.aws.me.org/mux.git",
+			cloneURL:    "http://mygitolite.aws.me.org/mux.git",
+			vcs:         "git",
+		}},
+		{"mygitolite.aws.me.org/org/repo", &directory{
+			importPath:  "mygitolite.aws.me.org/org/repo",
+			projectRoot: "mygitolite.aws.me.org/org/repo",
+			cloneURL:    "http://mygitolite.aws.me.org/org/repo",
+			vcs:         "git",
+		}},
+		{"mygitolite.aws.me.org/org/repo/subpkg", &directory{
+			importPath:  "mygitolite.aws.me.org/org/repo/subpkg",
+			projectRoot: "mygitolite.aws.me.org/org/repo",
+			cloneURL:    "http://mygitolite.aws.me.org/org/repo",
+			vcs:         "git",
+		}},
 
 		// dynamic (see client setup below)
 		{"alice.org/pkg", &directory{
@@ -213,4 +245,70 @@ func TestResolveImportPath(t *testing.T) {
 			t.Errorf("resolveImportPath(client, %q) =\n     %+v,\nwant %+v", tt.importPath, dir, tt.dir)
 		}
 	}
+}
+
+func TestDetermineRootImportPath(t *testing.T) {
+	type tcase struct {
+		Name     string
+		RootPath string
+		Want     string
+		FS       map[string]string
+	}
+
+	cases := []tcase{
+		{
+			Name:     "glide",
+			RootPath: "git://github.com/alice/pkg",
+			Want:     "alice.org/pkg",
+			FS: map[string]string{
+				"glide.yaml": "package: alice.org/pkg",
+			},
+		},
+		{
+			Name:     "canonical",
+			RootPath: "git://github.com/alice/pkg",
+			Want:     "alice.org/pkg",
+			FS: map[string]string{
+				"doc.go": `package pkg // import "alice.org/pkg"`,
+			},
+		},
+		{
+			Name:     "nested-canonical",
+			RootPath: "git://github.com/alice/pkg",
+			Want:     "alice.org/pkg",
+			FS: map[string]string{
+				"http/doc.go": `package http // import "alice.org/pkg/http"`,
+			},
+		},
+		{
+			Name:     "fallback",
+			RootPath: "git://github.com/alice/pkg",
+			Want:     "github.com/alice/pkg",
+			FS: map[string]string{
+				"doc.go": `package pkg`,
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			got, err := determineRootImportPath(context.Background(), tc.RootPath, mapFS(tc.FS))
+			if err != nil {
+				t.Fatal("unexpected error", err)
+			}
+			if got != tc.Want {
+				t.Fatalf("got %q, want %q", got, tc.Want)
+			}
+		})
+	}
+}
+
+// mapFS lets us easily instantiate a VFS with a map[string]string
+// (which is less noisy than map[string][]byte in test fixtures).
+func mapFS(m map[string]string) ctxvfs.FileSystem {
+	m2 := make(map[string][]byte, len(m))
+	for k, v := range m {
+		m2[k] = []byte(v)
+	}
+	return ctxvfs.Map(m2)
 }

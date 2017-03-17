@@ -4,7 +4,7 @@ import { IDisposable } from "vs/base/common/lifecycle";
 import * as nls from "vs/nls";
 import { IContextViewService } from "vs/platform/contextview/browser/contextView";
 import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
-import "vs/workbench/parts/feedback/browser/media/feedback.css";
+import "vs/workbench/parts/feedback/electron-browser/media/feedback.css";
 
 export interface IFeedback {
 	feedback: string;

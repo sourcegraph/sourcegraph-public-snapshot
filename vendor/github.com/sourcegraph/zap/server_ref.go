@@ -2,12 +2,13 @@ package zap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
@@ -47,37 +48,28 @@ func (r serverRef) history() []ot.WorkspaceOp {
 	return r.ot.History()
 }
 
-func (s *Server) doUpdateBulkRefConfiguration(ctx context.Context, log *log.Context, repoName string, repo *serverRepo, oldRefs, newRefs map[string]RefConfiguration) error {
-	for name, config := range oldRefs {
-		// Remove refs that are in oldRefs but not newRefs.
-		if _, ok := newRefs[name]; !ok {
-			if err := s.doUpdateRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), config, RefConfiguration{}, false, true); err != nil {
-				return err
-			}
-		}
-	}
-	for name, newConfig := range newRefs {
-		if oldConfig := oldRefs[name]; oldConfig != newConfig {
-			if err := s.doUpdateRefConfiguration(ctx, log, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// doUpdateRefUpstreamConfiguration sets up the given ref to track a remote
-// branch on the given upstream (which is the name of a remote). It
-// unwatches any previous tracked branches and watches the new tracked
-// branch (if any).
+// doApplyRefUpstreamConfiguration sets up the given ref to track a
+// remote branch on the given upstream (which is the name of a
+// remote). It unwatches any previous tracked branches and watches the
+// new tracked branch (if any).
+//
+// It does not persist the configuration; callers must use
+// (*Server).updateRepoConfiguration for that.
 //
 // If force is true, the changes are applied even if oldConfig ==
 // newConfig.
 //
 // If sendCurrentState, the server immediately sends the current state
 // of the ref upstream.
-func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldConfig, newConfig RefConfiguration, force, sendCurrentState bool) error {
-	// Assumes caller holds repo.mu.
+//
+// The caller MUST hold the repo.acquireRef lock for the given ref.
+func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState, acquireRef bool) error {
+	oldConfig := oldRepoConfig.Refs[refID.Ref]
+	newConfig := newRepoConfig.Refs[refID.Ref]
+
+	if acquireRef {
+		defer repo.acquireRef(refID.Ref)()
+	}
 
 	var refObj *serverRef
 	if ref != nil && ref.Object != nil {
@@ -90,7 +82,7 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 	var newRemote RepoRemoteConfiguration
 	if newConfig.Upstream != "" {
 		var ok bool
-		newRemote, ok = repo.config.Remotes[newConfig.Upstream]
+		newRemote, ok = newRepoConfig.Remotes[newConfig.Upstream]
 		if !ok {
 			return &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRemoteNotExists),
@@ -108,22 +100,23 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 
 	if upstreamChanged && newConfig.Upstream != "" && refObj != nil {
 		// Start tracking new upstream.
-		log := log.With("set-upstream", newConfig.Upstream, "overwrite", newConfig.Overwrite)
-		level.Debug(log).Log()
+		logger := log.With(logger, "set-upstream", newConfig.Upstream, "overwrite", newConfig.Overwrite)
+		level.Debug(logger).Log()
 
 		upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: ref.Name}
 		if sendCurrentState {
 			if newConfig.Overwrite {
-				cl, ok := s.remotes.getClient(newRemote.Endpoint)
-				if !ok {
-					panic(fmt.Sprintf("no client for remote %q", newConfig.Upstream))
+				cl, err := s.remotes.getOrCreateClient(ctx, logger, newRemote.Endpoint)
+				if err != nil {
+					return err
 				}
 
 				newRefState := &RefState{
 					RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 					History:     refObj.history(),
 				}
-				level.Info(log).Log("overwrite-ref-on-upstream", newRefState)
+				level.Info(logger).Log("overwrite-ref-on-upstream", newRefState)
+				debugSimulateLatency()
 				if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 					RefIdentifier: upstreamRefID,
 					Force:         true,
@@ -142,35 +135,47 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 					}
 				}
 
-				if err := s.reconcileRefWithTrackingRef(ctx, log, repo, refID, *ref, *trackingRef, newConfig); err != nil {
+				if err := s.reconcileRefWithTrackingRef(ctx, logger, repo, refID, *ref, *trackingRef, newConfig); err != nil {
 					return err
 				}
 			}
 		}
 
-		refObj.ot.SendToUpstream = func(upstreamRev int, op ot.WorkspaceOp) {
+		refObj.ot.SendToUpstream = func(logger log.Logger, upstreamRev int, op ot.WorkspaceOp) {
 			// TODO(sqs): need to get latest GitBase/GitBranch, not
 			// use the ones captured by the closure?
 			upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: refID.Ref}
 
-			log := s.baseLogger()
-			log = log.With("send-to-upstream", upstreamRefID, "endpoint", newRemote.Endpoint, "remote", newConfig.Upstream, "rev", upstreamRev, "op", op)
+			logger = log.With(logger, "send-to-upstream", upstreamRefID, "endpoint", newRemote.Endpoint, "remote", newConfig.Upstream, "rev", upstreamRev, "op", op)
 
-			cl, err := s.remotes.getOrCreateClient(ctx, log, newRemote.Endpoint)
+			cl, err := s.remotes.getOrCreateClient(ctx, logger, newRemote.Endpoint)
 			if err != nil {
-				level.Error(log).Log("send-to-upstream-failed-to-create-client", err)
+				level.Error(logger).Log("send-to-upstream-failed-to-create-client", err)
 				return
 			}
-			level.Debug(log).Log()
-			if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
-				RefIdentifier: upstreamRefID,
-				Current: &RefPointer{
-					RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
-					Rev:         upstreamRev,
-				},
-				Op: &op,
-			}); err != nil {
-				level.Error(log).Log("send-to-upstream-failed", err, "op", op)
+			level.Debug(logger).Log()
+			debugSimulateLatency()
+
+			DebugMu.Lock()
+			simulateError := TestSimulateResetAfterErrorInSendToUpstream
+			DebugMu.Unlock()
+			doRefUpdate := func() error {
+				return cl.RefUpdate(ctx, RefUpdateUpstreamParams{
+					RefIdentifier: upstreamRefID,
+					Current: &RefPointer{
+						RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
+						Rev:         upstreamRev,
+					},
+					Op: &op,
+				})
+			}
+			if simulateError {
+				err = errors.New("TestSimulateResetAfterErrorInSendToUpstream")
+			} else {
+				err = doRefUpdate()
+			}
+			if err != nil {
+				level.Error(logger).Log("send-to-upstream-failed", err, "op", op)
 				if os.Getenv("SEND_TO_UPSTREAM_ERRORS_FATAL") != "" {
 					panic(fmt.Sprintf("SendToUpstream(%d, %v) failed: %s", upstreamRev, op, err))
 				}
@@ -179,45 +184,90 @@ func (s *Server) doUpdateRefConfiguration(ctx context.Context, log *log.Context,
 				// get an error, wipe the upstream and overwrite
 				// it.
 				if newConfig.Overwrite {
-					// TODO(sqs): this is in a goroutine because
-					// otherwise there is a deadlock.
-					go func() {
-						if ref := repo.refdb.Lookup(refID.Ref); ref != nil {
-							refObj := ref.Object.(serverRef)
-							newRefState := &RefState{
-								RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
-								History:     refObj.history(),
-							}
-							level.Info(log).Log("overwrite-ref-after-error", newRefState)
-							if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
-								RefIdentifier: upstreamRefID,
-								Force:         true,
-								State:         newRefState,
-							}); err == nil {
-								if err := refObj.ot.AckFromUpstream(); err != nil {
-									level.Error(log).Log("ack-after-overwrite-ref-after-error-failed", err)
-								}
-							} else {
-								level.Error(log).Log("overwrite-ref-after-error-failed", err)
-							}
+					// Only force push the history that the upstream already knows about.
+					// If that succeeds, then we will retry applying the op.
+					if ref := repo.refdb.Lookup(refID.Ref); ref != nil {
+						newHistory := refObj.history()[:upstreamRev]
+						refObj := ref.Object.(serverRef)
+						newRefState := &RefState{
+							RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
+							History:     newHistory,
 						}
-					}()
+						logger = log.With(logger, "overwrite-ref-after-error", newRefState)
+						level.Info(logger).Log()
+						if err := cl.RefUpdate(ctx, RefUpdateUpstreamParams{
+							RefIdentifier: upstreamRefID,
+							Force:         true,
+							State:         newRefState,
+						}); err == nil {
+							level.Info(logger).Log("retry-op", op)
+							if err := doRefUpdate(); err != nil {
+								// TODO(nick): This is our second attempt at apply this op.
+								// If this op doesn't apply after the reset we did above,
+								// then there isn't much point in trying this op again immediately.
+								// Handling this correctly is a bigger design problem with how we
+								// manage connectivity and errors.
+								level.Error(logger).Log("retry-op-after-overwrite-ref-error", err)
+							}
+						} else {
+							level.Error(logger).Log("overwrite-ref-after-error-failed", err)
+						}
+					}
 				}
 
 				return
 			}
 		}
 	}
-
-	if repo.config.Refs == nil {
-		repo.config.Refs = map[string]RefConfiguration{}
-	}
-	repo.config.Refs[refID.Ref] = newConfig
-
 	return nil
 }
 
-func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, log *log.Context, repo *serverRepo, localRefID RefIdentifier, local, tracking refdb.Ref, refConfig RefConfiguration) error {
+func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger log.Logger, repoName string, repo *serverRepo, ref string) error {
+	config, err := repo.getConfigNoLock()
+	if err != nil {
+		return err
+	}
+	if len(config.Remotes) == 0 {
+		return nil // unable to autoconfigure
+	}
+	if _, ok := config.Refs[ref]; ok {
+		return nil // ref already has configuration; do nothing
+	}
+	upstream, err := config.defaultUpstream()
+	if err != nil {
+		return err
+	}
+	oldConfig, newConfig, err := s.updateRepoConfiguration(ctx, repo, func(config *RepoConfiguration) error {
+		if config.Refs == nil {
+			config.Refs = map[string]RefConfiguration{}
+		}
+		config.Refs[ref] = RefConfiguration{Upstream: upstream, Overwrite: true}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	finalConfig, err := repo.mergedConfigNoLock(newConfig)
+	if err != nil {
+		return err
+	}
+	return s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldConfig, finalConfig, false, false, false)
+}
+
+// TODO(sqs): hack to "safely" determine a default upstream, until we
+// have a full config for this.
+func (c *RepoConfiguration) defaultUpstream() (string, error) {
+	if len(c.Remotes) == 1 {
+		for k := range c.Remotes {
+			return k, nil
+		}
+	}
+	return "", errors.New("unable to determine branch's default upstream: more than 1 remote exists")
+}
+
+func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, logger log.Logger, repo *serverRepo, localRefID RefIdentifier, local, tracking refdb.Ref, refConfig RefConfiguration) error {
+	// Assumes caller holds the repo.refAcquire(ref.Ref) lock.
+
 	localObj := local.Object.(serverRef)
 	trackingObj := tracking.Object.(serverRef)
 	// Check that the localObj tracking ref can be fast-forwarded to the tracking ref.
@@ -249,7 +299,7 @@ func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, log *log.Conte
 			History:     trackingObj.history(),
 		}
 		if err := s.updateLocalTrackingRefAfterUpstreamUpdate(ctx,
-			log.With("fast-forward-to-upstream", newRefState),
+			log.With(logger, "fast-forward-to-upstream", newRefState),
 			repo,
 			local,
 			RefUpdateDownstreamParams{
@@ -258,6 +308,7 @@ func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, log *log.Conte
 				State:         newRefState,
 			},
 			refConfig,
+			false,
 		); err != nil {
 			return err
 		}
@@ -281,7 +332,7 @@ func remoteTrackingRef(remote, ref string) string {
 	return "refs/remotes/" + remote + "/" + ref
 }
 
-func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string) {
+func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string, err error) {
 	// TODO(sqs) HACK: this is indicative of a design flaw
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
@@ -289,7 +340,11 @@ func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRep
 	var matchingRemoteNames []string
 	for localRepoName2, localRepo := range s.repos {
 		localRepo.mu.Lock()
-		for remoteName, config := range localRepo.config.Remotes {
+		localRepoConfig, err := localRepo.getConfigNoLock()
+		if err != nil {
+			return nil, "", "", err
+		}
+		for remoteName, config := range localRepoConfig.Remotes {
 			if config.Endpoint == endpoint && config.Repo == remoteRepoName {
 				matchingLocalRepos = append(matchingLocalRepos, localRepo)
 				matchingRemoteNames = append(matchingRemoteNames, remoteName)
@@ -302,7 +357,7 @@ func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRep
 		panic(fmt.Sprintf("more than 1 local repo is tracking a remote repo %q at endpoint %q", remoteRepoName, endpoint))
 	}
 	if len(matchingLocalRepos) == 0 {
-		return nil, "", ""
+		return nil, "", "", nil
 	}
-	return matchingLocalRepos[0], localRepoName, matchingRemoteNames[0]
+	return matchingLocalRepos[0], localRepoName, matchingRemoteNames[0], nil
 }

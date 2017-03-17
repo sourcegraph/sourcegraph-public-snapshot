@@ -1,37 +1,35 @@
-import { doFetch as fetch } from "../backend/xhr";
-import { EventLogger } from "../utils/EventLogger";
-import * as github from "./github";
-import * as utils from "./index";
-import * as tooltips from "./tooltips";
 import * as _ from "lodash";
+import { eventLogger } from "../utils/context";
+import * as github from "./github";
+import { fetchJumpURL, getTooltip, prewarmLSP } from "./lsp";
+import * as tooltips from "./tooltips";
+import { CodeCell, PhabricatorCodeCell } from "./types";
 
-interface RepoRevSpec {
+export interface RepoRevSpec {
 	repoURI: string;
 	rev: string;
 	isDelta: boolean;
 	isBase: boolean;
 }
+/**
+ * addAnnotations is the entry point for injecting annotations onto a blob (el).
+ * An invisible marker is appended to the document to indicate that annotation
+ * has been completed; so this function expects that it will be called once all
+ * repo/annotation data is resolved from the server.
+ * 
+ * el should be an element that changes when the dom significantly changes.
+ * datakeys are stored as properites on el, and the code shortcuts if the datakey
+ * is detected.
+ */
+export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: CodeCell[]): void {
 
-// addAnnotations is the entry point for injecting annotations onto a blob (el).
-// An invisible marker is appended to the document to indicate that annotation
-// has been completed; so this function expects that it will be called once all
-// repo/annotation data is resolved from the server.
-export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, isSplitDiff: boolean, loggingStruct: Object): void {
-	prewarmLSP(path, repoRevSpec);
-
-	// The blob is represented by a table; the first column is the line number,
-	// the second is code. Each row is a line of code
-	const table = el.querySelector("table");
-	if (!table) {
-		return;
-	}
-
-	const cells = github.getCodeCellsForAnnotation(table, Object.assign({ isSplitDiff }, repoRevSpec));
 	cells.forEach((cell) => {
 		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
-
 		// If the line has already been annotated,
 		// restore event handlers if necessary otherwise move to next line
+		// the first check works on GitHub, the second is required for phabricator
+		// but is a no-op for GitHub
+		// TODO(uforic):  && hasCellBeenAnnotated(cell.cell) - figure out why we need this.
 		if (el.getAttribute(dataKey)) {
 			if (!el.onclick || !el.onmouseout || !el.onmouseover) {
 				addEventListeners(cell.cell, path, repoRevSpec, cell.line, loggingStruct);
@@ -43,7 +41,11 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
 			try {
-				const annLine = convertNode(cell.cell, 1, cell.line, repoRevSpec.isDelta);
+				let ignoreFirstTextChar = repoRevSpec.isDelta;
+				if ((cell as PhabricatorCodeCell).isLeftColumnInSplit) {
+					ignoreFirstTextChar = false;
+				}
+				const annLine = convertNode(cell.cell, 1, cell.line, ignoreFirstTextChar);
 				cell.cell.innerHTML = "";
 				cell.cell.appendChild(annLine.resultNode);
 
@@ -104,6 +106,9 @@ export function convertNode(currentNode: Node, offset: number, line: number, ign
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
+const VARIABLE_TOKENIZER = /(^\w+)/;
+const ASCII_CHARACTER_TOKENIZER = /(^[\x20-\x7F])/;
+const NONVARIABLE_TOKENIZER = /(^\W+)/;
 export function convertTextNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
 	let nodeText;
 	let prevConsumed = 0;
@@ -132,9 +137,23 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 	}
 
 	function consumeNext(txt: string): string {
-		const match = txt.match(/^(\w+)/);
-		if (match) {
-			return match[0];
+		// first, check for real stuff, i.e. sets of [A-Za-z0-9_]
+		const variableMatch = txt.match(VARIABLE_TOKENIZER);
+		if (variableMatch) {
+			return variableMatch[0];
+		}
+		// next, check for tokens that are not variables, but should stand alone
+		// i.e. {}, (), :;. ...
+		const asciiMatch = txt.match(ASCII_CHARACTER_TOKENIZER);
+		if (asciiMatch) {
+			return asciiMatch[0];
+		}
+		// finally, the remaining tokens we can combine into blocks, since they are whitespace
+		// or UTF8 control characters. We had better clump these in case UTF8 control bytes
+		// require adjacent bytes
+		const nonVariableMatch = txt.match(NONVARIABLE_TOKENIZER);
+		if (nonVariableMatch) {
+			return nonVariableMatch[0];
 		}
 		return txt[0];
 	}
@@ -172,9 +191,6 @@ export function convertElementNode(currentNode: Node, offset: number, line: numb
 	return { resultNode: wrapperNode, bytesConsumed };
 }
 
-let tooltipCache: { [key: string]: tooltips.TooltipData } = {};
-let j2dCache = {};
-
 let activeTarget;
 function getTarget(t: HTMLElement): HTMLElement | undefined {
 	if (t.tagName === "TD") {
@@ -189,45 +205,23 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 	}
 }
 
-function wrapLSP(req: { method: string, params: Object }, repoRevSpec: RepoRevSpec, path: string): Object[] {
-	(req as any).id = 1;
-	return [
-		{
-			id: 0,
-			method: "initialize",
-			params: {
-				rootPath: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}`,
-				mode: `${utils.getModeFromExtension(utils.getPathExtension(path))}`,
-			},
-		},
-		req,
-		{
-			id: 2,
-			method: "shutdown",
-		},
-		{
-			method: "exit",
-		},
-	];
-}
-
 function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSpec, line: number, loggingStruct: Object): void {
 	tooltips.createTooltips();
 
-	el.onclick = (e) => {
+	el.onclick = e => {
 		let t = getTarget(e.target as HTMLElement);
 		if (!t || t.style.cursor !== "pointer") {
 			return;
 		}
 
-		fetchJumpURL(t.dataset["byteoffset"], (defUrl) => {
+		fetchJumpURL(t.dataset["byteoffset"], path, line, repoRevSpec).then((defUrl) => {
 			if (!defUrl) {
 				return;
 			}
 
 			// If cmd/ctrl+clicked or middle button clicked, open in new tab/page otherwise
 			// either move to a line on the same page, or refresh the page to a new blob view.
-			EventLogger.logEventForCategory("Def", "Click", "JumpDef", Object.assign({}, repoRevSpec, loggingStruct));
+			eventLogger.logJumpToDef(Object.assign({}, repoRevSpec, loggingStruct));
 			window.open(defUrl, "_blank");
 		});
 	};
@@ -247,107 +241,6 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 		activeTarget = t;
 		tooltips.setContext(t, loggingStruct);
 		tooltips.queueLoading();
-		getTooltip(t, (data) => tooltips.setTooltip(data, t as HTMLElement));
+		getTooltip(activeTarget, path, line, repoRevSpec).then((data) => tooltips.setTooltip(data, activeTarget)).catch((err) => tooltips.setTooltip(null, activeTarget));
 	};
-
-	function fetchJumpURL(col: string, cb: (val: any) => void): void {
-		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${col}`;
-		if (typeof j2dCache[cacheKey] !== "undefined") {
-			return cb(j2dCache[cacheKey]);
-		}
-
-		const body = wrapLSP({
-			method: "textDocument/definition",
-			params: {
-				textDocument: {
-					uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
-				},
-				position: {
-					character: parseInt(col, 10) - 1,
-					line: line - 1,
-				},
-			},
-		}, repoRevSpec, path);
-
-		fetch("https://sourcegraph.com/.api/xlang/textDocument/definition", { method: "POST", body: JSON.stringify(body) })
-			.then((resp) => resp.json().then((json) => {
-				const respUri = json[1].result[0].uri.split("git://")[1];
-				const prt0Uri = respUri.split("?");
-				const prt1Uri = prt0Uri[1].split("#");
-
-				const repoUri = prt0Uri[0];
-				const frevUri = (repoUri === repoRevSpec.repoURI ? repoRevSpec.rev : prt1Uri[0]) || "master"; // TODO(john): preserve rev branch
-				const pathUri = prt1Uri[1];
-				const startLine = parseInt(json[1].result[0].range.start.line, 10) + 1;
-				const startChar = parseInt(json[1].result[0].range.start.character, 10) + 1;
-
-				let lineAndCharEnding = "";
-				if (startLine && startChar) {
-					lineAndCharEnding = `#L${startLine}:${startChar}`;
-				} else if (startLine) {
-					lineAndCharEnding = `#L${startLine}`;
-				}
-
-				j2dCache[cacheKey] = `https://sourcegraph.com/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
-				cb(j2dCache[cacheKey]);
-			})).catch((err) => cb(null));
-	}
-
-	function getTooltip(target: HTMLElement, cb: (val: tooltips.TooltipData) => void): void {
-		const cacheKey = `${path}@${repoRevSpec.rev}:${line}@${target.dataset["byteoffset"]}`;
-		if (typeof tooltipCache[cacheKey] !== "undefined") {
-			return cb(tooltipCache[cacheKey]);
-		}
-
-		const body = wrapLSP({
-			method: "textDocument/hover",
-			params: {
-				textDocument: {
-					uri: `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`,
-				},
-				position: {
-					character: parseInt(target.dataset["byteoffset"], 10) - 1,
-					line: line - 1,
-				},
-			},
-		}, repoRevSpec, path);
-
-		fetch("https://sourcegraph.com/.api/xlang/textDocument/hover", { method: "POST", body: JSON.stringify(body) })
-			.then((resp) => resp.json().then((json) => {
-				if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
-					const title = json[1].result.contents[0].value;
-					let doc;
-					json[1].result.contents.filter((markedString) => markedString.language === "markdown").forEach((content) => {
-						// TODO(john): what if there is more than 1?
-						doc = content.value;
-					});
-					tooltipCache[cacheKey] = { title, doc };
-				} else {
-					tooltipCache[cacheKey] = null;
-				}
-				cb(tooltipCache[cacheKey]);
-			})).catch((err) => cb(null));
-	}
-}
-
-const prewarmCache = new Set<string>();
-function prewarmLSP(path: string, repoRevSpec: RepoRevSpec): void {
-	const uri = `git://${repoRevSpec.repoURI}?${repoRevSpec.rev}#${path}`;
-	if (prewarmCache.has(uri)) {
-		return;
-	}
-	prewarmCache.add(uri);
-
-	const body = wrapLSP({
-		method: "textDocument/hover?prepare",
-		params: {
-			textDocument: { uri },
-			position: {
-				character: 0,
-				line: 0,
-			},
-		},
-	}, repoRevSpec, path);
-
-	fetch("https://sourcegraph.com/.api/xlang/textDocument/hover?prepare", { method: "POST", body: JSON.stringify(body) });
 }

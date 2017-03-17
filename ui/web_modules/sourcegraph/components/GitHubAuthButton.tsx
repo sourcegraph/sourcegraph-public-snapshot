@@ -1,30 +1,24 @@
 import * as React from "react";
 
-import { RouterLocation } from "sourcegraph/app/router";
 import { AuthButton } from "sourcegraph/components/AuthButton";
 import { ButtonProps } from "sourcegraph/components/Button";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
 
 interface Props extends ButtonProps {
-	scopes?: string;
-	returnTo?: string | RouterLocation;
-	newUserReturnTo?: string | RouterLocation;
+	privateCode: boolean;
 	pageName?: string;
 	secondaryText?: string;
 }
 
 export function GitHubAuthButton(props: Props): JSX.Element {
 	const {
-		scopes = "read:org,repo,user:email",
+		color = "blue",
 		children,
+		pageName,
 		...transferredProps,
 	} = props;
 
 	return <AuthButton
-		provider="github"
-		iconType="github"
-		eventObject={AnalyticsConstants.Events.OAuth2FlowGitHub_Initiated}
-		scopes={scopes}
+		color={color}
 		{...transferredProps}>
 		{children}
 	</AuthButton>;

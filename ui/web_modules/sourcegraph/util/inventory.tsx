@@ -13,12 +13,9 @@ export function getLanguageExtensionForPath(path: string): string | null {
 	return language;
 }
 
-export function defPathToLanguage(defPath: string): string | null {
-	if (!defPath) { return null; }
-
-	if (defPath.startsWith("GoPackage")) { return "go"; }
-	if (defPath.startsWith("JavaArtifact")) { return "java"; }
-	if (defPath.startsWith("ManPages")) { return "sh"; }
-
-	return null;
+export function inventoryLangToMode(lang: string): string {
+	// Assume the mode is just the lower-cased lang string. This will
+	// not always be true, e.g. when the inventory language is human readable
+	// (e.g. "markdown") while the mode is an abbreviation (e.g. "md").
+	return lang.toLowerCase();
 }

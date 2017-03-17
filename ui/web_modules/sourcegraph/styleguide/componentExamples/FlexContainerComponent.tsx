@@ -1,16 +1,13 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import { Code, FlexContainer, Heading, Panel, Table } from "sourcegraph/components";
+import { FlexContainer, Heading, Panel } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { whitespace } from "sourcegraph/components/utils";
 
 export class FlexContainerComponent extends React.Component<{}, any> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb3}>FlexContainer</Heading>
-
+			<div>
 				<Panel hoverLevel="low">
 					<div className={base.pa4}>
 						<Heading level={7} className={base.mb3} color="cool_mid_gray">Default</Heading>
@@ -110,55 +107,6 @@ export class FlexContainerComponent extends React.Component<{}, any> {
 							}
 						</pre>
 					</code>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>direction</Code></td>
-								<td><Code>left_right</Code></td>
-								<td>
-									<Code>left_right</Code>, <Code>right_left</Code>, <Code>top_bottom</Code>, <Code>bottom_top</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>wrap</Code></td>
-								<td><Code>false</Code></td>
-								<td>
-									<Code>true</Code>, <Code>false</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>justify</Code></td>
-								<td><Code>start</Code></td>
-								<td>
-									<Code>start</Code>, <Code>end</Code>, <Code>center</Code>, <Code>between</Code>, <Code>around</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>items</Code></td>
-								<td><Code>stretch</Code></td>
-								<td>
-									<Code>start</Code>, <Code>end</Code>, <Code>center</Code>, <Code>baseline</Code>, <Code>stretch</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>content</Code></td>
-								<td><Code>stretch</Code></td>
-								<td>
-									<Code>start</Code>, <Code>end</Code>, <Code>center</Code>, <Code>between</Code>, <Code>around</Code>, <Code>stretch</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
 				</Panel>
 			</div>
 		);

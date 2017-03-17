@@ -1,22 +1,44 @@
 import * as remove from "lodash/remove";
 import * as values from "lodash/values";
 import * as hash from "object-hash";
-import { Observable } from "rxjs";
-import { Definition, Hover, Position } from "vscode-languageserver-types";
+import { Observable, Subject, Subscriber } from "rxjs";
 
-import { IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
-import { Location } from "vs/editor/common/modes";
+import URI from "vs/base/common/uri";
+import { Position } from "vs/editor/common/core/position";
+import { IPosition, IRange, IReadOnlyModel } from "vs/editor/common/editorCommon";
+import { IReferenceInformation, LanguageIdentifier, Location, WorkspaceReferenceProviderRegistry } from "vs/editor/common/modes";
+import { getDefinitionsAtPosition } from "vs/editor/contrib/goToDeclaration/common/goToDeclaration";
+import { getHover } from "vs/editor/contrib/hover/common/hover";
+import { provideReferences as getReferences, provideWorkspaceReferences } from "vs/editor/contrib/referenceSearch/common/referenceSearch";
 
 import { Repo } from "sourcegraph/api/index";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import * as lsp from "sourcegraph/editor/lsp";
+import { setupWorker } from "sourcegraph/ext/main";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
+import { Features } from "sourcegraph/util/features";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+
+// TODO(john): consolidate / standardize types.
+
+interface LSPPosition {
+	line: number;
+	character: number;
+}
+
+interface LSPRange {
+	start: LSPPosition;
+	end: LSPPosition;
+}
+
+interface LSPLocation {
+	uri: string;
+	range: LSPRange;
+}
 
 export interface DefinitionData {
 	definition?: {
-		uri: string;
+		uri: URI;
 		range: IRange;
 	};
 	docString: string;
@@ -26,10 +48,10 @@ export interface DefinitionData {
 export interface DepRefsData {
 	Data: {
 		Location: {
-			location: lsp.Location,
+			location: LSPLocation,
 			symbol: any,
 		};
-		References: [DepReference];
+		References: DepReference[];
 	};
 	RepoData: { [id: number]: Repo };
 }
@@ -37,7 +59,7 @@ export interface DepRefsData {
 interface DepReference {
 	DepData: any;
 	Hints: {
-		dirs: [string];
+		dirs: string[];
 	};
 	RepoID: number;
 }
@@ -46,43 +68,22 @@ export interface ReferenceCommitInfo {
 	hunk: GQL.IHunk;
 }
 
-export async function provideDefinition(model: IReadOnlyModel, pos: Position): Promise<DefinitionData | null> {
-	const [hoverResult, defResult] = await Promise.all([
-		lsp.send(model, "textDocument/hover", {
-			textDocument: { uri: model.uri.toString(true) },
-			position: pos,
-			context: { includeDeclaration: false },
-		}),
-		lsp.send(model, "textDocument/definition", {
-			textDocument: { uri: model.uri.toString(true) },
-			position: pos,
-			context: { includeDeclaration: false },
-		})]);
+export async function provideDefinition(model: IReadOnlyModel, pos: IPosition): Promise<DefinitionData | null> {
+	const position = new Position(pos.lineNumber, pos.column);
+	const hoversPromise = getHover(model, position);
+	const defPromise = getDefinitionsAtPosition(model, position);
 
-	const hover: Hover = hoverResult.result;
-	const def: Definition = defResult.result;
+	const [hovers, def] = await Promise.all([hoversPromise, defPromise]);
 
-	let definition: { uri: string; range: IRange } | undefined;
-	if (def && def[0]) {
-		const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
-		definition = {
-			uri: firstDef.uri,
-			range: {
-				startLineNumber: firstDef.range.start.line,
-				startColumn: firstDef.range.start.character,
-				endLineNumber: firstDef.range.end.line,
-				endColumn: firstDef.range.end.character,
-			}
-		};
-	}
-	if (!hover || !hover.contents) {
+	if (!hovers || hovers.length === 0 || !hovers[0].contents || !def || !def[0]) {
 		return null;
 	}
 
-	let funcName = "";
+	const hover = hovers[0]; // TODO(john): support multiple hover tooltips
+
 	let docString = "";
-	if (hover.contents instanceof Array) {
-		// TODO(nicot): this shouldn't be detrmined by position, but language of the content (e.g. 'text/markdown' for doc string)
+	let funcName = "";
+	if (hover.contents.length > 1) {
 		const [first, second] = hover.contents;
 		if (first) {
 			if (typeof first === "string") {
@@ -101,30 +102,32 @@ export async function provideDefinition(model: IReadOnlyModel, pos: Position): P
 			}
 		}
 	} else {
-		if (typeof hover.contents === "string") {
-			funcName = hover.contents;
-		} else if (hover.contents.value) {
-			funcName = hover.contents.value;
-		}
+		const content = hover.contents[0];
+		funcName = typeof content === "string" ? content : content.value;
+		docString = "";
 	}
 
+	const firstDef = def[0]; // TODO: handle disambiguating multiple declarations
+	const definition = {
+		uri: firstDef.uri,
+		range: firstDef.range,
+	};
 	return { funcName, docString, definition };
 }
 
-export async function provideReferences(model: IReadOnlyModel, pos: Position): Promise<Location[]> {
-	const resp = await lsp.send(model, "textDocument/references", {
-		textDocument: { uri: model.uri.toString(true) },
-		position: pos,
-		context: { includeDeclaration: false, xlimit: 100 },
-	});
-	const result = resp.result;
-
-	if (!result || Object.keys(result).length === 0) {
-		return [];
-	}
-
-	const locs: lsp.Location[] = result instanceof Array ? result : [result];
-	return locs.map(lsp.toMonacoLocation);
+export function provideReferencesStreaming(model: IReadOnlyModel, pos: IPosition): Observable<Location> {
+	return new Observable<Location>(observer => {
+		const handler = createProgressHandler(observer);
+		getReferences(model, Position.lift(pos), handler, { includeDeclaration: false }).then(locations => {
+			handler(locations);
+			observer.complete();
+		}, err => observer.error(err));
+	})
+		// TODO(nick): This is a workaround for https://github.com/sourcegraph/sourcegraph/issues/4594
+		// Once that issue is fixed, we should not need to dedupe.
+		// Instead, we should discard the final result if any progress results were sent.
+		.distinct(getLocationId)
+		.take(MAX_REFS_PER_REPO);
 }
 
 export interface LocationWithCommitInfo extends Location {
@@ -215,102 +218,177 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 }
 
 const MAX_GLOBAL_REFS_REPOS = 5;
-const globalRefsObservables = new Map<string, Observable<LocationWithCommitInfo[]>>();
 
-export function provideGlobalReferences(model: IReadOnlyModel, depRefs: DepRefsData): Observable<LocationWithCommitInfo[]> {
-	const dependents = depRefs.Data.References;
-	const repoData = depRefs.RepoData;
-	const symbol = depRefs.Data.Location.symbol;
-	const modeID = model.getModeId();
+/**
+ * Limits the number of references displayed for any given repo.
+ * This reduces the number of graphql queries to resolve the previews and
+ * get the user to a "done" state with no loading spinner quicker.
+ */
+const MAX_REFS_PER_REPO = 100;
+const globalRefsObservablesStreaming = new Map<string, Observable<LocationWithCommitInfo>>();
 
-	const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
-	const cacheHit = globalRefsObservables.get(key);
-	if (cacheHit) {
-		return cacheHit;
+function log(message?: any, ...optionalParams: any[]): void {
+	if (Features.refLogs.isEnabled()) {
+		// tslint:disable: no-console
+		console.log(message, ...optionalParams);
 	}
-
-	const observable = new Observable<LocationWithCommitInfo[]>(observer => {
-		let interval: number | null = null;
-		let unsubscribed = false;
-		let completed = false;
-
-		let countNonempty = 0;
-		function incrementCountIfNonempty(refs: Location[]): void {
-			if (refs && refs.length > 0) {
-				++countNonempty;
-			}
-		}
-
-		function complete(): void {
-			if (!completed) {
-				completed = true;
-			}
-			observer.complete();
-		}
-
-		function pollNext(count: number): Promise<void>[] {
-			if (dependents.length > 0 && countNonempty < MAX_GLOBAL_REFS_REPOS) {
-				const isLastDependent = dependents.length === 1;
-				const nextDependentsToPoll = dependents.splice(0, Math.min(count, dependents.length));
-				return nextDependentsToPoll.map(dependent => {
-					const repo = repoData[dependent.RepoID];
-					return fetchGlobalReferencesForDependentRepo(dependent, repo, modeID, symbol).then(provideReferencesCommitInfo).then(refs => {
-						incrementCountIfNonempty(refs);
-						if (!completed && refs.length > 0) {
-							observer.next(refs);
-						}
-						if (isLastDependent || countNonempty === MAX_GLOBAL_REFS_REPOS) {
-							complete();
-						}
-					});
-				});
-			}
-
-			return [];
-		}
-
-		// Fetch references from the first two dependent repos right away, in parallel.
-		Promise.all(pollNext(2)).then(() => {
-			// Unsubscription may happen before we complete fetching the first 2 dependent repo refs.
-			// If so, bail before starting the interval poll.
-			if (unsubscribed) {
-				return;
-			}
-			if (countNonempty >= MAX_GLOBAL_REFS_REPOS || dependents.length === 0) {
-				complete();
-			}
-			// Every 2.5 seconds following, fetch refs for another dependent repo until
-			// there are no more dependent repos or we've fetched non-empty results from MAX_GLOBAL_REFS_REPOS.
-			interval = setInterval(() => pollNext(1), 2500);
-		});
-
-		return function unsubscribe(): void {
-			unsubscribed = true;
-			if (interval) {
-				clearInterval(interval);
-			}
-		};
-	}).publishReplay(MAX_GLOBAL_REFS_REPOS).refCount();
-
-	globalRefsObservables.set(key, observable);
-	return observable;
 }
 
-function fetchGlobalReferencesForDependentRepo(reference: DepReference, repo: Repo, modeID: string, symbol: any): Promise<Location[]> {
+export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPosition): Observable<Location> {
+	return Observable.from(fetchDependencyReferences(model, pos)).flatMap(depRefs => {
+		if (!depRefs) {
+			return Observable.empty();
+		}
+
+		const symbol = depRefs.Data.Location.symbol;
+		const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
+		const cacheHit = globalRefsObservablesStreaming.get(key);
+		if (cacheHit) {
+			log(`cache hit for provideGlobalReferencesStreaming`, depRefs);
+			return cacheHit;
+		}
+
+		// triggerRequest.next() causes a workspace/xreferences request
+		// to be made for the next available repo.
+		const triggerRequest = new Subject<void>();
+
+		// Start with a number of requests (in parallel) that is equal to
+		// the number of repos that we want results from.
+		const initialRequests = triggerRequest.merge(Observable.range(1, MAX_GLOBAL_REFS_REPOS));
+
+		let foundRepos = 0;
+
+		// When a repo returns results, we will process those results.
+		// When a repo does not have results, we will trigger another request (until we run out).
+		const result = Observable.from(depRefs.Data.References)
+			// Throttle the emission of references by calls to .next() on triggerRequest.
+			.zip(initialRequests, ref => ref)
+
+			// Merge the observables from each request into a single observable.
+			.flatMap(depRef => {
+				const repo = depRefs.RepoData[depRef.RepoID];
+				let hasResults = false;
+
+				// Make the actual request to get global references.
+				log(`starting request ${repo.URI}`);
+				return fetchGlobalReferencesForDependentRepoStreaming(repo, model.getLanguageIdentifier(), symbol, depRef)
+					.take(MAX_REFS_PER_REPO)
+					.do(location => {
+						log(`progress ${repo.URI}`);
+						// If this repo has results, we don't want to trigger another request after it finishes.
+						hasResults = true;
+					})
+					.finally(() => {
+						log(`finished ${repo.URI} hasResults=${hasResults}`);
+						if (!hasResults) {
+							// If this repo didn't have any global references, we want to trigger another request.
+							triggerRequest.next();
+						} else {
+							foundRepos++;
+							if (foundRepos === MAX_GLOBAL_REFS_REPOS) {
+								triggerRequest.complete();
+							}
+						}
+					});
+			})
+
+			// Allow future subscribers to observe a relay of all events.
+			// This is necessary for caching to work.
+			.publishReplay()
+
+			// Automatically start the observable when someone subscribes.
+			.refCount();
+
+		globalRefsObservablesStreaming.set(key, result);
+		return result;
+	});
+}
+
+function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, language: LanguageIdentifier, symbol: any, reference: DepReference): Observable<Location> {
 	if (!repo.URI || !repo.IndexedRevision) {
-		return Promise.resolve([]);
+		return Observable.empty();
 	}
 
 	let repoURI = URIUtils.pathInRepo(repo.URI, repo.IndexedRevision, "");
-	return lsp.sendExt(repoURI.toString(), modeID, "workspace/xreferences", {
-		query: symbol,
-		hints: reference.Hints,
-	}).then(resp => (!resp || !resp.result) ? [] : resp.result.map(ref => lsp.toMonacoLocation(ref.reference)));
+
+	// Setting up a workspace is async and there is currently no way for
+	// the main thread to know when the extension is finished registering.
+	// Since we are spinning up this workspace specifically to make a workspace
+	// references request, we just poll the workspace until it has registered a handler.
+	const workspaceIsReady = () => {
+		return WorkspaceReferenceProviderRegistry.has({
+			isTooLargeForHavingARichMode(): boolean {
+				return false;
+			},
+			getLanguageIdentifier(): LanguageIdentifier {
+				return language;
+			},
+			getModeId(): string {
+				return language.language;
+			},
+			uri: repoURI,
+		} as IReadOnlyModel);
+	};
+
+	return new Observable<IReferenceInformation>(observer => {
+		setupWorkspace(repoURI, workspaceIsReady).then(() => {
+			const handler = createProgressHandler(observer);
+			provideWorkspaceReferences(language, repoURI, symbol, reference.Hints, handler).then(references => {
+				handler(references);
+				observer.complete();
+			}, err => observer.error(err));
+		});
+	})
+		.map(ref => ref.reference)
+		// TODO(nick): This is a workaround for https://github.com/sourcegraph/sourcegraph/issues/4594
+		// Once that issue is fixed, we should not need to dedupe.
+		// Instead, we should discard the final result if any progress results were sent.
+		.distinct(getLocationId);
 }
 
-export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Position): Promise<DepRefsData | null> {
-	// Only fetch global refs for Go.
-	if (model.getModeId() !== "go") {
+/**
+ * getLocationId returns a unique identifier for the given location.
+ */
+function getLocationId(location: Location): string {
+	return [
+		location.uri.toString(),
+		location.range.startColumn,
+		location.range.startLineNumber,
+		location.range.endColumn,
+		location.range.endLineNumber
+	].join(":");
+}
+
+/**
+ * createProgressHandler returns a function that forwards value to
+ * the provided observer when it is called.
+ */
+function createProgressHandler<T>(observer: Subscriber<T>): (values: T[]) => void {
+	return values => {
+		for (const v of values) {
+			observer.next(v);
+		}
+	};
+}
+
+function setupWorkspace(uri: URI, isReady: () => boolean): Promise<void> {
+	log(`setup workspace ${uri}`);
+	setupWorker(uri);
+	return new Promise<void>(resolve => {
+		const interval = setInterval(() => {
+			if (isReady()) {
+				log(`workspace ready ${uri}`);
+				clearInterval(interval);
+				resolve();
+			}
+		}, 100);
+	});
+}
+
+const globalRefLangs = new Set(["go", "java"]);
+async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition): Promise<DepRefsData | null> {
+	// Only fetch global refs for certain languages.
+	if (!globalRefLangs.has(model.getModeId())) {
 		return null;
 	}
 
@@ -319,7 +397,7 @@ export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Posi
 			commit(rev: "${model.uri.query}") {
 				commit {
 					file(path: "${model.uri.fragment}") {
-						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.line}, Character: ${pos.character}) {
+						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.lineNumber - 1}, Character: ${pos.column - 1}) {
 							data
 						}
 					}
@@ -340,7 +418,7 @@ export async function fetchDependencyReferences(model: IReadOnlyModel, pos: Posi
 		return null;
 	}
 	let object = JSON.parse(data.root.repository.commit.commit.file.dependencyReferences.data);
-	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 1) {
+	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 0) {
 		return null;
 	}
 	let repos = values(object.RepoData);

@@ -14,11 +14,11 @@ import { EnvironmentService } from "sourcegraph/workbench/environmentService";
 import { ExtensionService } from "sourcegraph/workbench/extensionService";
 import "sourcegraph/workbench/overrides/package";
 
-const initOpts: InitializationOptions = JSON.parse(decodeURIComponent(self.location.hash.slice(1)));
+const initOpts: InitializationOptions = (self as any).extensionHostOptions; // read opts off the global namespace
 bulkEnableFeatures(initOpts.features);
 
 // TODO(sqs): pass through the zap ref
-self["__tmpZapRef"] = initOpts.tmpZapRef;
+self["sourcegraphContext"] = initOpts.context;
 
 /**
  * createExtensionAPI returns an extension API factory, which creates
@@ -56,6 +56,7 @@ export function createExtensionAPI(
 	delete ExtHostContext.ExtHostTerminalService;
 
 	const initData: IInitData = {
+		seqId: initOpts.seqId * 100000, // TODO(john): this is used as an offset for auto-incrementing numbers; the mulitplier is a (brittle) way to avoid collisions
 		parentPid: 0,
 		environment: {
 			appSettingsHome: environmentService.appSettingsHome,
@@ -63,7 +64,7 @@ export function createExtensionAPI(
 			userExtensionsHome: environmentService.extensionsPath,
 			extensionDevelopmentPath: environmentService.extensionDevelopmentPath,
 			extensionTestsPath: environmentService.extensionTestsPath,
-			enableProposedApi: false,
+			enableProposedApi: true,
 		},
 		contextService: {
 			workspace: contextService.getWorkspace()

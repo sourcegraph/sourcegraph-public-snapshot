@@ -1,24 +1,27 @@
-import * as classNames from "classnames";
 import * as React from "react";
-import * as styles from "sourcegraph/components/styles/hero.css";
+import { BGContainer } from "sourcegraph/components/BGContainer";
 import { colors, whitespace } from "sourcegraph/components/utils";
+
+import { context } from "sourcegraph/app/context";
 
 interface Props {
 	className?: string;
 	color?: "transparent" | "white" | "purple" | "blue" | "green" | "dark";
 	children?: React.ReactNode[];
-	pattern?: string;
+	pattern?: "objects";
 	style?: React.CSSProperties;
 }
 
 export function Hero({ color = "white", className, pattern, children, style }: Props): JSX.Element {
-	return <div className={classNames(pattern ? patternClasses[pattern] : null, className)} style={Object.assign({
-		backgroundColor: bgColors[color],
-		color: color === "white" || color === "transparent" ? "inherit" : colors.white(),
-		textAlign: "center",
-		paddingBottom: whitespace[4],
-		paddingTop: whitespace[4],
-	}, style)}>{children}</div>;
+	return <BGContainer img={pattern ? patterns[pattern] : ""} className={className} style={{
+		...{
+			backgroundColor: bgColors[color],
+			color: color === "white" || color === "transparent" ? "inherit" : colors.white(),
+			textAlign: "center",
+			paddingBottom: whitespace[5],
+			paddingTop: whitespace[5],
+		}, ...style
+	}}>{children}</BGContainer>;
 }
 
 const bgColors = {
@@ -30,7 +33,6 @@ const bgColors = {
 	"green": colors.green(),
 };
 
-const patternClasses = {
-	"objects": styles.bg_img_objects,
-	"objects_fade": styles.bg_img_objects_fade,
+const patterns = {
+	"objects": `${context.assetsRoot}/img/backgrounds/pattern.svg`,
 };

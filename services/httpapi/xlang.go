@@ -18,13 +18,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -151,7 +150,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	if reqs[3].ID != (jsonrpc2.ID{}) {
 		return errors.New("invalid jsonrpc2 exit request: id should NOT be present")
 	}
-	var initParams xlang.ClientProxyInitializeParams
+	var initParams lspext.ClientProxyInitializeParams
 	if err := json.Unmarshal(*reqs[0].Params, &initParams); err != nil {
 		return fmt.Errorf("invalid jsonrpc2 initialize params: %s", err)
 	}
@@ -200,7 +199,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// SECURITY NOTE: Do not delete this block. If you delete this
 		// block, anyone can access any private code, even if they are
 		// not authorized to do so.
-		if _, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: rootPathURI.Repo()}); err != nil {
+		if _, err := backend.Repos.GetByURI(ctx, rootPathURI.Repo()); err != nil {
 			return err
 		}
 		checkedUserHasReadAccessToRepo = true
@@ -223,6 +222,12 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		// it just makes it harder to make a stupid mistake and remove
 		// the permission check.
 		return &errcode.HTTPErr{Status: http.StatusUnauthorized, Err: errors.New("authorization check failed")}
+	}
+
+	// We usually modify initParams, so marshal them again
+	err = reqs[0].SetParams(initParams)
+	if err != nil {
+		return err
 	}
 
 	// Only return the last response to the HTTP client (e.g., just
@@ -259,9 +264,6 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 				span.LogEvent(fmt.Sprintf("error: %s failed with %v", req.Method, err))
 				ev.AddField("lsp_error", e.Message)
 				success = false
-				if !handlerutil.DebugMode {
-					e.Message = "(error message omitted)"
-				}
 				resps[i].Error = e
 			} else if err != nil {
 				return err

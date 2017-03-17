@@ -1,47 +1,97 @@
 import URI from "vs/base/common/uri";
+import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 
+import { context } from "sourcegraph/app/context";
+import { URIUtils } from "sourcegraph/core/uri";
 import { registerContribution as registerExtHostContribution } from "sourcegraph/ext/extHost.contribution.override";
 import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
-import { currentZapRef } from "sourcegraph/ext/zap/url";
 import { makeBlobURL } from "sourcegraph/init/worker";
 import { listEnabled as listEnabledFeatures } from "sourcegraph/util/features";
+import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 import { Services } from "sourcegraph/workbench/services";
 
-let inited = false;
+/**
+ * workspaces is a set of URIs for which we have already bootstrapped
+ * an extension host.
+ */
+const workspaces = new Set<string>();
 
 /**
- * init initializes the extension host. If it is already initialized,
- * it is a noop. There is only one extension host and it hosts all
- * extensions.
+ * init initializes an extension host for the initial workspace and
+ * sets up a listener to initialize a new extension host when workspace
+ * is updated.
  *
- * TODO(sqs): This means that only the first workspace loaded upon page
- * load can be used in the extension host. This is a known limitation
- * and will be addressed before the vscode extensions API support is
- * un-feature-flagged.
+ * TODO(john): there is currently no cleanup of unused extension hosts / web workers.
  */
-export function init(workspace: URI): void {
-	if (inited) {
-		console.log("DEV NOTE: The vscode extension API support only works on the first repository/commit that you visit after loading the page. This limitation will be addressed before release."); // tslint:disable-line no-console
+export function init(workspace: URI, revState?: any): void {
+	registerExtHostContribution();
+	setupWorker(workspace, revState);
+	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w.resource, w.revState ? w.revState : undefined));
+}
+
+let seqId = 0;
+
+export function setupWorker(workspace: URI, revState?: any): void {
+	if (workspaces.has(workspace.toString())) {
 		return;
 	}
-	inited = true;
 
-	registerExtHostContribution();
+	workspaces.add(workspace.toString());
 
-	const opts: InitializationOptions = {
-		workspace: workspace.toString(),
-		features: listEnabledFeatures(),
-		tmpZapRef: currentZapRef(),
-	};
+	const { repo, rev } = URIUtils.repoParams(workspace);
 
-	// Add our current URL in the worker location's fragment so the
-	// worker can determine the current workspace.
-	//
-	// TODO(sqs): This limits the extension API to working only on the workspace
-	// that was in use when the page loaded. This will be fixed before we release
-	// the vscode extension API support.
-	const worker = new Worker(makeBlobURL(require("raw-loader!inline-worker-loader!sourcegraph/ext/host")) + `#${encodeURIComponent(JSON.stringify(opts))}`);
-	(Services.get(IThreadService) as MainThreadService).attachWorker(worker);
+	// Try to get repo language inventory before initializing extension host.
+	// These langs are passed as initialization options to the extension host and
+	// allow the host to short-circuit unnecessary LSP work for unused languages.
+	// If there is an error fetching inventory, the extension host can make no
+	// assumptions about which languages are used in the repository.
+	const getInventory = fetchGraphQLQuery(`query RepoInventory($repo: String, $rev: String) {
+		root {
+			repository(uri: $repo) {
+				commit(rev: $rev) {
+					commit {
+						languages
+					}
+				}
+			}
+		}
+	}`, { repo, rev })
+		.then(query => {
+			try {
+				return query.root.repository!.commit.commit!.languages;
+			} catch (e) {
+				console.warn(e);
+				return undefined;
+			}
+		})
+		.catch(err => undefined);
+
+	getInventory.then(langs => {
+		const opts: InitializationOptions = {
+			seqId: ++seqId,
+			workspace: workspace.toString(),
+			features: listEnabledFeatures(),
+			revState,
+			context,
+			langs,
+		};
+
+		const blob = new Blob([require("raw-loader!inline-worker-loader!sourcegraph/ext/host")]);
+		const reader = new FileReader();
+
+		// We need to provide properties (e.g. current workspace) to the worker.
+		// We could add those properties to the worker location's fragment; however,
+		// there are browser compatibility issues with loading a blob URI with a
+		// fragment (fails on Safari). Instead, we read the blob contents and append
+		// properties to the worker script's global namespace. This is safe to do
+		// because the worker's namespace is sandboxed.
+		reader.onload = event => {
+			const resultWithOpts = `self.extensionHostOptions=${JSON.stringify(opts)};${reader.result}`;
+			const worker = new Worker(makeBlobURL(resultWithOpts));
+			(Services.get(IThreadService) as MainThreadService).attachWorker(worker, workspace);
+		};
+		reader.readAsText(blob);
+	});
 }

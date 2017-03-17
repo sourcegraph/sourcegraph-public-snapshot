@@ -34,6 +34,14 @@ const plugins = [
 		// vscode uses require.toUrl to get various root paths. It appears to be
 		// harmless to override it in this way.
 		"require.toUrl": "(function(){ return '/'; })",
+
+		// vscode uses this to read its own package.json. It's harmless to override.
+		"require.__$__nodeRequire": "(function(){ return {}; })",
+
+		// vscode uses this in vs/workbench/electron-browser/actions. It is
+		// harmless to override as we don't care about getting the stats for
+		// their RequireJS loader (which we don't even use).
+		"require.getStats": "(function() { return; })",
 	}),
 	new webpack.IgnorePlugin(/testdata\//),
 	new webpack.IgnorePlugin(/\_test\.js$/),
@@ -75,6 +83,9 @@ var devtool = "source-map";
 if (!production && !process.env.WEBPACK_SOURCEMAPS) {
 	devtool = "eval";
 }
+if (process.env.DISABLE_WEBPACK_SOURCEMAPS) {
+	devtool = undefined;
+}
 
 plugins.push(new webpack.LoaderOptionsPlugin({
 	options: {
@@ -106,12 +117,14 @@ module.exports = {
 			"vs/workbench/parts/files/browser/explorerViewlet": "sourcegraph/workbench/overrides/explorerViewlet",
 			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",
 			"vs/workbench/services/files/electron-browser/fileService": "sourcegraph/workbench/overrides/fileService",
+			"vs/workbench/services/textmodelResolver/common/textModelResolverService": "sourcegraph/workbench/overrides/resolverService",
 			"fs": "sourcegraph/workbench/overrides/fs",
 			"vs/base/browser/ui/iconLabel/iconLabel": "sourcegraph/workbench/overrides/iconLabel",
 			"vs/workbench/browser/labels": "sourcegraph/workbench/overrides/labels",
 			"native-keymap": "sourcegraph/workbench/overrides/native-keymap",
 			"vs/workbench/browser/parts/titlebar/titlebarPart": "sourcegraph/workbench/overrides/titleBar",
 			"vs/workbench/browser/parts/editor/noTabsTitleControl": "sourcegraph/workbench/overrides/titleControl",
+			"fast-plist": "sourcegraph/workbench/overrides/fast-plist",
 
 			// In the vscode source, this is "vs/platform/node/package", but here the "node" path component is omitted for some reason.
 			"vs/platform/package": "sourcegraph/workbench/overrides/package",
@@ -141,21 +154,24 @@ module.exports = {
 	module: {
 		rules: [
 			{
+				test: /\.js$/,
+				loader: 'babel-loader',
+				include: path.resolve(__dirname, 'node_modules/@sourcegraph/vscode-languageclient'),
+				query: {
+					cacheDirectory: true,
+					plugins: [
+						'transform-es2015-for-of',
+						//'transform-runtime', // avoid adding helpers to each affected file
+					],
+				},
+			},
+			{
 				test: /\.tsx?$/,
 				loader: 'awesome-typescript-loader?' + JSON.stringify({
 					compilerOptions: {
 						noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
 					},
 					transpileOnly: true, // type checking is only done as part of linting or testing
-				}),
-			},
-			{
-				test: /node_modules\/vscode-languageclient/,
-				loader: 'awesome-typescript-loader?' + JSON.stringify({
-					compilerOptions: {
-						target: "es5",
-						allowJs: true,
-					}
 				}),
 			},
 			{ test: /\.(svg|png)$/, loader: "url-loader" },
@@ -170,7 +186,7 @@ module.exports = {
 					{
 						loader: 'css-loader',
 						options: {
-							sourceMap: true,
+							sourceMap: !Boolean(process.env.DISABLE_WEBPACK_SOURCEMAPS),
 							modules: true,
 							importLoaders: 1,
 							localIdentName: "[name]__[local]___[hash:base64:5]",

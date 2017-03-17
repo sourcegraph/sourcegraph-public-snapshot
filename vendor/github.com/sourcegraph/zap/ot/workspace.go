@@ -14,14 +14,15 @@ import (
 // WorkspaceOp represents an operation performed on a workspace.
 //
 // Each field describes a different type of operation. The struct
-// field ordering (first Save, then Copy, and so on) is the order in
-// which the types of operations are applied.
+// field ordering (first Save, then Copy, then Rename, and so on) is
+// the order in which the types of operations are applied.
 type WorkspaceOp struct {
 	// Save is a list of paths of files that have been saved. Saving
 	// in this context represents transferring the contents of a
 	// path's buffer in an editor to its persisted file on-disk. If a
-	// file already exists at a given path it will be overwritten.
-	// Only buffer paths can be used in a save op.
+	// file already exists at a given path it will be
+	// overwritten. After saving, the buffer file is considered to no
+	// longer exist. Only buffer paths can be used in a save op.
 	Save []string `json:"save,omitempty"`
 
 	// Copy is a map of destination to source file paths of copied
@@ -33,6 +34,27 @@ type WorkspaceOp struct {
 	// Because a single source file can be copied to multiple
 	// destination paths, but not vice versa, the map keys are the
 	// destination paths (unlike Rename).
+	//
+	// NOTES
+	//
+	// Copy is equivalent to a rename-create-edit, but we model it
+	// separately for better UX. Consider the following case: Alice
+	// and Bob are both editing a file F. Alice copies the file right
+	// after Bob makes some edits locally but before Bob's edits are
+	// synced to the server. If Alice performs a rename-create-edit
+	// (where the edit restores the original file contents to the
+	// source file), then Bob's edits would flow into the new file but
+	// not the existing file. This is bad because the behavior we want
+	// is for edits to flow into both the old and new names of the
+	// file.
+	//
+	// This might seem like an edge case (who really copies files?),
+	// but a copy from a file system path to a special buffer path is
+	// how we've modeled unsaved files in your editor. So, the
+	// scenario described above is extremely common and modeling it as
+	// a rename-create-edit would cause a lot of accidentally
+	// clobbered edits when someone saves a file while someone else is
+	// editing it.
 	Copy map[string]string `json:"copy,omitempty"`
 
 	// Rename is a map of source to destination file paths of renamed
@@ -246,7 +268,11 @@ func NormalizeWorkspaceOp(op WorkspaceOp) WorkspaceOp {
 				mergedEdits[path] = mo
 			}
 		}
-		op.Edit = mergedEdits
+		if len(mergedEdits) > 0 {
+			op.Edit = mergedEdits
+		} else {
+			op.Edit = nil
+		}
 	} else {
 		op.Edit = nil
 	}
@@ -358,42 +384,85 @@ type tmpWorkspaceOp struct {
 // performing the op, based on the implied conditions (e.g., if a file
 // was created, then it must not have existed previously).
 func (op *tmpWorkspaceOp) existed(path string) (existed, known bool) {
-	_, copiedFrom := op.copyFrom[path]
-	_, copiedTo := op.Copy[path]
-	_, renamedFrom := op.Rename[path]
-	_, renamedTo := op.renameTo[path]
-	_, created := op.Create[path]
-	_, deleted := op.Delete[path]
-	_, truncated := op.Truncate[path]
-	_, edited := op.Edit[path]
-	_, selected := op.Sel[path]
-
-	existed = copiedFrom || renamedFrom || deleted || truncated || edited || selected && !(renamedTo || copiedTo || created)
-	known = copiedFrom || copiedTo || renamedFrom || renamedTo || created || deleted || truncated || edited || selected
-	return
+	if _, savedFrom := op.Save[path]; savedFrom {
+		return true, true
+	}
+	if isValidFilePath(path) {
+		b, _ := fileToBufferPath(path)
+		if _, savedTo := op.Save[b]; savedTo {
+			return false, false // unknown
+		}
+	}
+	if _, copiedFrom := op.copyFrom[path]; copiedFrom {
+		return true, true
+	}
+	if _, copiedTo := op.Copy[path]; copiedTo {
+		return false, true
+	}
+	if _, renamedFrom := op.Rename[path]; renamedFrom {
+		return true, true
+	}
+	if _, renamedTo := op.renameTo[path]; renamedTo {
+		return false, true
+	}
+	if _, created := op.Create[path]; created {
+		return false, true
+	}
+	if _, deleted := op.Delete[path]; deleted {
+		return true, true
+	}
+	if _, truncated := op.Truncate[path]; truncated {
+		return true, true
+	}
+	if _, edited := op.Edit[path]; edited {
+		return true, true
+	}
+	if _, selected := op.Sel[path]; selected {
+		return true, true
+	}
+	return false, false
 }
 
 // exists is whether a file exists after performing the op (e.g., if a
 // file was created, then it exists now).
 func (op *tmpWorkspaceOp) exists(path string) (exists, known bool) {
-	_, copiedFrom := op.copyFrom[path]
-	_, copiedTo := op.Copy[path]
-	_, renamedFrom := op.Rename[path]
-	_, renamedTo := op.renameTo[path]
-	_, created := op.Create[path]
-	_, deleted := op.Delete[path]
-	_, truncated := op.Truncate[path]
-	_, edited := op.Edit[path]
-	_, selected := op.Sel[path]
-	var savedTo bool
+	if _, selected := op.Sel[path]; selected {
+		return true, true
+	}
+	if _, edited := op.Edit[path]; edited {
+		return true, true
+	}
+	if _, truncated := op.Truncate[path]; truncated {
+		return true, true
+	}
+	if _, deleted := op.Delete[path]; deleted {
+		return false, true
+	}
+	if _, created := op.Create[path]; created {
+		return true, true
+	}
+	if _, renamedTo := op.renameTo[path]; renamedTo {
+		return true, true
+	}
+	if _, renamedFrom := op.Rename[path]; renamedFrom {
+		return false, true
+	}
+	if _, copiedTo := op.Copy[path]; copiedTo {
+		return true, true
+	}
+	if _, copiedFrom := op.copyFrom[path]; copiedFrom {
+		return true, true
+	}
+	if _, savedFrom := op.Save[path]; savedFrom {
+		return false, true
+	}
 	if isValidFilePath(path) {
 		b, _ := fileToBufferPath(path)
-		_, savedTo = op.Save[b]
+		if _, savedTo := op.Save[b]; savedTo {
+			return true, true
+		}
 	}
-
-	exists = copiedFrom || copiedTo || renamedTo || created || truncated || edited || selected || savedTo && !(renamedFrom || deleted)
-	known = copiedFrom || copiedTo || renamedFrom || renamedTo || created || deleted || truncated || savedTo || edited || selected
-	return
+	return false, false
 }
 
 // from initializes and indexes a temp. data structure from a.
@@ -482,6 +551,9 @@ func (op *tmpWorkspaceOp) from(a WorkspaceOp) (err error) {
 
 func (op *tmpWorkspaceOp) toWorkspaceOp() WorkspaceOp {
 	mapKeys := func(m map[string]struct{}) []string {
+		if len(m) == 0 {
+			return nil
+		}
 		keys := make([]string, 0, len(m))
 		for k := range m {
 			keys = append(keys, k)
@@ -561,6 +633,18 @@ func stripFileOrBufferPath(path string) string {
 	return path[1:]
 }
 
+// ComposeAllWorkspaceOps is like ComposeWorkspaceOps but composes any
+// number of ops, not just 2.
+func ComposeAllWorkspaceOps(ops []WorkspaceOp) (composed WorkspaceOp, err error) {
+	for _, other := range ops {
+		composed, err = ComposeWorkspaceOps(composed, other)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // ComposeWorkspaceOps returns an operation equivalent to a followed
 // by b. The operations a and b must be consecutive operations.
 func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {
@@ -570,6 +654,62 @@ func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {
 	var op tmpWorkspaceOp
 	if err = op.from(a); err != nil {
 		return
+	}
+
+	for _, s := range b.Save {
+		if exists, known := op.exists(s); known && !exists {
+			err = &os.PathError{Op: "save from", Path: s, Err: os.ErrNotExist}
+			return
+		}
+		var d string
+		d, err = bufferToFilePath(s)
+		if err != nil {
+			return
+		}
+		if _, edited := op.Edit[d]; edited {
+			delete(op.Edit, d)
+		}
+		if _, edited := op.Edit[s]; edited {
+			op.Edit[d] = op.Edit[s]
+			delete(op.Edit, s)
+		}
+		if _, deleted := op.Delete[d]; deleted {
+			delete(op.Delete, d)
+		}
+		if _, truncated := op.Truncate[d]; truncated {
+			delete(op.Truncate, d)
+		}
+		_, truncated := op.Truncate[s]
+		if truncated {
+			op.Truncate[d] = struct{}{}
+		}
+		if r, renamed := op.renameTo[d]; renamed {
+			delete(op.Rename, r)
+			op.Delete[r] = struct{}{}
+		}
+
+		if cs, ok := op.Copy[s]; ok {
+			if isFilePath(cs) && isBufferPath(s) && stripFileOrBufferPath(cs) == stripFileOrBufferPath(s) {
+				delete(op.Copy, s)
+				if edit, ok := op.Edit[s]; ok {
+					delete(op.Edit, s)
+					op.Edit[d] = edit
+				}
+				continue
+			}
+		}
+
+		_, created := op.Create[s]
+		if created {
+			delete(op.Create, s)
+			op.Create[d] = struct{}{}
+		}
+		if _, createdF := op.Create[d]; createdF && !created {
+			delete(op.Create, d)
+		}
+		if !truncated && !created {
+			op.Save[s] = struct{}{}
+		}
 	}
 
 	for d, s := range b.Copy {
@@ -604,23 +744,6 @@ func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {
 		if !created {
 			op.Copy[d] = s
 			op.copyFrom[s] = append(op.copyFrom[s], d)
-		}
-
-		if isValidFilePath(s) && isValidFilePath(d) {
-			var sb, db string
-			sb, err = fileToBufferPath(s)
-			if err != nil {
-				return
-			}
-			db, err = fileToBufferPath(d)
-			if err != nil {
-				return
-			}
-			if _, saved := op.Save[sb]; saved {
-				op.Save[db] = struct{}{}
-				op.Copy[db] = sb
-				delete(op.Copy, d)
-			}
 		}
 	}
 
@@ -684,75 +807,6 @@ func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {
 		if !created {
 			op.Rename[s] = d
 			op.renameTo[d] = s
-		}
-
-		if isValidFilePath(s) {
-			var sb, db string
-			sb, err = fileToBufferPath(s)
-			if err != nil {
-				return
-			}
-			db, err = fileToBufferPath(d)
-			if err != nil {
-				return
-			}
-			if _, saved := op.Save[sb]; saved {
-				op.Save[db] = struct{}{}
-				op.Copy[db] = sb
-				op.Delete[s] = struct{}{}
-				delete(op.Rename, s)
-			}
-		}
-	}
-
-	for _, s := range b.Save {
-		if exists, known := op.exists(s); known && !exists {
-			err = &os.PathError{Op: "save from", Path: s, Err: os.ErrNotExist}
-			return
-		}
-		var d string
-		d, err = bufferToFilePath(s)
-		if err != nil {
-			return
-		}
-		if _, edited := op.Edit[d]; edited {
-			delete(op.Edit, d)
-		}
-		if _, edited := op.Edit[s]; edited {
-			op.Edit[d] = op.Edit[s]
-		}
-		if _, deleted := op.Delete[d]; deleted {
-			delete(op.Delete, d)
-		}
-		if _, truncated := op.Truncate[d]; truncated {
-			delete(op.Truncate, d)
-		}
-		_, truncated := op.Truncate[s]
-		if truncated {
-			op.Truncate[d] = struct{}{}
-		}
-		if r, renamed := op.renameTo[d]; renamed {
-			delete(op.Rename, r)
-			op.Delete[r] = struct{}{}
-		}
-
-		if cs, ok := op.Copy[s]; ok {
-			if isFilePath(cs) && isBufferPath(s) && stripFileOrBufferPath(cs) == stripFileOrBufferPath(s) {
-				delete(op.Copy, s)
-				delete(op.Save, s)
-				if edit, ok := op.Edit[s]; ok {
-					delete(op.Edit, s)
-					op.Edit[d] = edit
-				}
-				continue
-			}
-		}
-
-		if _, created := op.Create[d]; created {
-			delete(op.Create, d)
-		}
-		if !truncated {
-			op.Save[s] = struct{}{}
 		}
 	}
 
@@ -837,7 +891,13 @@ func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {
 			f = o
 		}
 
-		op.Truncate[f] = struct{}{}
+		if _, copyTo := op.Copy[f]; copyTo {
+			delete(op.Truncate, f)
+			delete(op.Copy, f)
+			op.Create[f] = struct{}{}
+		} else {
+			op.Truncate[f] = struct{}{}
+		}
 		delete(op.Edit, f)
 		delete(op.Sel, f)
 		if isValidFilePath(f) {
@@ -913,15 +973,11 @@ func ComposeWorkspaceOps(a, b WorkspaceOp) (ab WorkspaceOp, err error) {
 // other ops in favor of a as described...investigate and fix that
 // inconsistency.
 func TransformWorkspaceOps(a, b WorkspaceOp) (a1, b1 WorkspaceOp, err error) {
-	var at, bt tmpWorkspaceOp
-	if err = at.from(a); err != nil {
-		return
-	}
-	if err = bt.from(b); err != nil {
-		return
-	}
+	transform := func(x, y *tmpWorkspaceOp, primary bool) (err error) {
+		// Basically, we want to remove things in y that are already
+		// in x. When we begin, x and y are concurrent ops. When we're
+		// done, we expect x and y to be consecutive ops.
 
-	transform := func(x, y tmpWorkspaceOp, z *WorkspaceOp, primary bool) (err error) {
 		transformEditOps := func(x, y EditOps) (EditOps, error) {
 			var edit1, edit2 EditOps
 			if primary {
@@ -934,14 +990,49 @@ func TransformWorkspaceOps(a, b WorkspaceOp) (a1, b1 WorkspaceOp, err error) {
 				return EditOps{}, err
 			}
 			if primary {
-				return x1, nil
+				return y1, nil
 			}
-			return y1, nil
+			return x1, nil
 		}
 
-		newFileSrc := map[string]string{}
+		transformThenCompose := func(a, b EditOps) (EditOps, error) {
+			_, b1, err := TransformEditOps(a, b)
+			if err != nil {
+				return nil, err
+			}
+			return ComposeEditOps(a, b1)
+		}
+
+		zexists := y.exists
+
+		for s := range x.Save {
+			if existed, known := y.existed(s); known && !existed {
+				err = &os.PathError{Op: "save", Path: s, Err: os.ErrNotExist}
+				return
+			}
+			delete(y.Save, s)
+
+			var f string
+			f, err = bufferToFilePath(s)
+			if err != nil {
+				return
+			}
+			delete(y.Create, f)
+
+			if _, copiedTo := y.Copy[s]; !copiedTo {
+				if e, ok := y.Edit[s]; ok && !e.Noop() {
+					y.Edit[f], err = transformThenCompose(y.Edit[s], y.Edit[f])
+					if err != nil {
+						return err
+					}
+				}
+				delete(y.Edit, s)
+			}
+		}
 		for d, s := range x.Copy {
 			if ys, ycopied := y.Copy[d]; ycopied && ys == s {
+				delete(y.Copy, d)
+				delete(y.copyFrom, s)
 				continue
 			} else if ycopied && ys != s {
 				err = &os.PathError{Op: "copy to", Path: s, Err: fmt.Errorf("conflict: %s", ys)}
@@ -952,20 +1043,34 @@ func TransformWorkspaceOps(a, b WorkspaceOp) (a1, b1 WorkspaceOp, err error) {
 				return
 			}
 			if yd, yrenamed := y.Rename[s]; yrenamed && yd == d {
+				delete(y.Rename, s)
+				y.Delete[s] = struct{}{}
 				continue
-			} else if exists, known := y.exists(d); known && exists {
+			} else if exists, known := y.existed(d); known && exists {
 				err = &os.PathError{Op: "copy to", Path: d, Err: os.ErrExist}
 				return
 			}
-			if z.Copy == nil {
-				z.Copy = make(map[string]string, len(x.Copy))
+
+			existed, existedknown := y.existed(d)
+			exists, existsknown := y.exists(d)
+			if (!existed && existedknown) && (exists && existsknown) {
+				delete(y.Create, d)
+				delete(x.Edit, d)
+				y.Truncate[d] = struct{}{}
+				continue
 			}
-			z.Copy[d] = s
-			newFileSrc[d] = s
+
+			if x.Edit != nil {
+				y.Edit[d] = y.Edit[s]
+			}
+			if x.Sel != nil {
+				x.Sel[d] = x.Sel[s]
+			}
 		}
 
 		for s, d := range x.Rename {
 			if yd, yrenamed := y.Rename[d]; yrenamed && yd == s {
+				delete(y.Rename, d)
 				continue
 			} else if yrenamed && yd != s {
 				err = &os.PathError{Op: "rename to", Path: s, Err: fmt.Errorf("conflict: %s", yd)}
@@ -976,67 +1081,60 @@ func TransformWorkspaceOps(a, b WorkspaceOp) (a1, b1 WorkspaceOp, err error) {
 				return
 			}
 			if yd, yrename := y.Rename[s]; yrename && yd == d {
+				delete(y.Rename, s)
 				continue
 			} else if yrename {
-				if z.Copy == nil {
-					z.Copy = make(map[string]string, len(x.Copy))
-				}
-				z.Copy[d] = yd
-				newFileSrc[yd] = s
+				y.Copy[yd] = d
+				delete(y.Rename, s)
 				continue
 			}
-			if exists, known := y.exists(s); known && !exists {
+			if exists, known := zexists(s); known && !exists {
 				err = &os.PathError{Op: "rename from", Path: s, Err: os.ErrNotExist}
 				return
 			}
 			if ys, ycopied := y.Copy[d]; ycopied && ys == s {
-				z.Delete = append(z.Delete, s)
+				delete(y.Copy, d)
 				continue
-			} else if existed, known := y.existed(d); known && existed {
-				err = &os.PathError{Op: "rename to", Path: d, Err: os.ErrExist}
-				return
 			} else if exists, known := y.exists(d); known && exists {
 				err = &os.PathError{Op: "rename to", Path: d, Err: os.ErrExist}
 				return
 			}
-			if z.Rename == nil {
-				z.Rename = make(map[string]string, len(x.Rename))
+			if _, ok := y.Edit[s]; ok {
+				y.Edit[d] = y.Edit[s]
+				delete(y.Edit, s)
 			}
-			z.Rename[s] = d
-			newFileSrc[d] = s
-		}
-
-		for s, _ := range x.Save {
-			if _, ysaved := y.Save[s]; ysaved {
-				continue
+			if _, ok := y.Sel[s]; ok {
+				y.Sel[d] = y.Sel[s]
+				delete(y.Sel, s)
 			}
-
-			z.Save = append(z.Save, s)
 		}
 
 		for f := range x.Create {
-			if _, ycreated := y.Create[f]; !ycreated {
-				if exists, known := y.exists(f); known && exists {
-					err = &os.PathError{Op: "create", Path: f, Err: os.ErrExist}
-					return
-				}
-				z.Create = append(z.Create, f)
+			yexisted, yexistedknown := y.existed(f)
+			if yexisted && yexistedknown {
+				err = &os.PathError{Op: "create", Path: f, Err: os.ErrExist}
+				return
 			}
 			if _, ydeleted := y.Delete[f]; ydeleted {
 				return &os.PathError{Op: "create", Path: f, Err: errors.New("conflict: y delete")}
 			}
+			if _, ycreate := y.Create[f]; ycreate {
+				delete(y.Create, f)
+			} else {
+				delete(y.Edit, f)
+			}
+			delete(y.Copy, f)
 		}
 		for f := range x.Delete {
-			if _, ydeleted := y.Delete[f]; !ydeleted {
-				if exists, known := y.exists(f); known && !exists {
-					err = &os.PathError{Op: "delete", Path: f, Err: os.ErrNotExist}
-					return
-				}
-				z.Delete = append(z.Delete, f)
+			if exists, known := y.existed(f); known && !exists {
+				err = &os.PathError{Op: "delete", Path: f, Err: os.ErrNotExist}
+				return
 			}
 			if _, ycreated := y.Create[f]; ycreated {
 				return &os.PathError{Op: "delete", Path: f, Err: errors.New("conflict: y create")}
 			}
+			delete(y.Delete, f)
+			delete(y.Sel, f)
 		}
 		for f := range x.Truncate {
 			_, ycreated := y.Create[f]
@@ -1050,123 +1148,102 @@ func TransformWorkspaceOps(a, b WorkspaceOp) (a1, b1 WorkspaceOp, err error) {
 				return &os.PathError{Op: "truncate", Path: f, Err: errors.New("conflict: y delete")}
 			}
 			if !ytruncated && !ycreated && !ydeleted && !sameTruncateEdit {
-				if exists, known := y.exists(f); known && !exists {
+				if exists, known := zexists(f); known && !exists {
 					err = &os.PathError{Op: "truncate", Path: f, Err: os.ErrNotExist}
 					return
 				}
-				z.Truncate = append(z.Truncate, f)
+			} else {
+				delete(y.Truncate, f)
+			}
+			delete(y.Sel, f)
+		}
+		for f, edit := range x.Edit {
+			if isFilePath(f) {
+				b, _ := fileToBufferPath(f)
+				if _, ysavedTo := y.Save[b]; ysavedTo {
+					y.Edit[f], err = transformThenCompose(y.Edit[f], edit)
+					if err != nil {
+						return
+					}
+					delete(x.Edit, f)
+
+					if s, copiedTo := y.Copy[b]; copiedTo && s == f {
+						y.Edit[b], err = transformThenCompose(y.Edit[b], edit)
+						if err != nil {
+							return
+						}
+					}
+				}
+			}
+		}
+		for f, edit := range x.Edit {
+			_ = edit
+			if _, ysave := y.Save[f]; ysave {
+				b := f
+				f, _ := bufferToFilePath(b)
+				y.Edit[f], err = transformEditOps(x.Edit[b], y.Edit[f])
+				if err != nil {
+					return
+				}
+				delete(x.Edit, b)
 			}
 		}
 
 		for f, edit := range x.Edit {
-			yd, yrenamed := y.Rename[f]
-			if exists, known := y.exists(yd); yrenamed && known && !exists {
-				err = &os.PathError{Op: "edit", Path: yd, Err: os.ErrNotExist}
-				return
-			} else if exists, known := y.exists(f); !yrenamed && known && !exists {
-				err = &os.PathError{Op: "edit", Path: f, Err: os.ErrNotExist}
+			yf := f
+			if _, ysave := y.Save[f]; ysave {
+				yf, _ = bufferToFilePath(f)
+			}
+			if d, ycopy := y.Copy[yf]; ycopy {
+				yf = d
+			}
+			if d, yrename := y.Rename[yf]; yrename {
+				yf = d
+			}
+			if exists, known := y.exists(yf); known && !exists {
+				err = &os.PathError{Op: "edit", Path: yf, Err: os.ErrNotExist}
 				return
 			}
-
-			if z.Edit == nil {
-				z.Edit = make(map[string]EditOps, len(x.Edit))
-			}
-
 			for _, d := range y.copyFrom[f] {
-				z.Edit[d], err = transformEditOps(x.Edit[f], y.Edit[d])
+				y.Edit[d], err = transformEditOps(edit, y.Edit[d])
 				if err != nil {
 					return
 				}
 			}
 
-			xedit := x.Edit[f]
-
-			var yf string
-			if s, isNewFile := newFileSrc[f]; isNewFile {
-				yf = s
-			} else {
-				yf = f
+			if yd, yrename := y.Rename[f]; yrename {
+				delete(y.Edit, f)
+				f = yd
 			}
-			if d, yrenamed := y.Rename[yf]; yrenamed {
-				f = d
-				edit, err = transformEditOps(edit, y.Edit[d])
-				if err != nil {
-					return
-				}
-			}
-			yedit, yedited := y.Edit[yf]
-			if yedited {
-				edit, err = transformEditOps(edit, yedit)
+			if _, yedited := y.Edit[yf]; yedited {
+				y.Edit[f], err = transformEditOps(edit, y.Edit[yf])
 				if err != nil {
 					return
 				}
 			}
 
-			if !xedit.Equal(y.Edit[f]) {
-				if !z.Edit[f].Noop() {
-					err = &os.PathError{Op: "edit", Path: f, Err: errors.New("copy/rename edit conflict")}
-					return
-				}
-				z.Edit[f] = edit
+			if y.Edit[f].Noop() {
+				delete(y.Edit, f)
 			}
-		}
 
-		for f, _ := range x.Edit {
-			if isValidBufferPath(f) {
-				d, _ := bufferToFilePath(f)
-				if _, saved := y.Save[f]; saved {
-					z.Edit[d], err = transformEditOps(x.Edit[f], y.Edit[d])
-					if err != nil {
-						return
-					}
-				}
-				if _, saved := x.Save[f]; saved {
-					z.Edit[d] = y.Edit[d]
-				}
-			}
-		}
-		for f, _ := range x.Edit {
-			if isValidFilePath(f) {
-				s, _ := fileToBufferPath(f)
-				if _, saved := x.Save[s]; saved {
-					z.Edit[f], err = transformEditOps(x.Edit[f], y.Edit[s])
-					if err != nil {
-						return
-					}
-					var z1 EditOps
-					z1, err = transformEditOps(z.Edit[f], y.Edit[f])
-					if err != nil {
-						return
-					}
-					z.Edit[f], err = ComposeEditOps(y.Edit[f], z1)
-					if err != nil {
-						return
-					}
-				}
+			for u, sel := range y.Sel[f] {
+				y.Sel[f][u] = AdjustSel(sel, edit)
 			}
 		}
 
 		for f, usel := range x.Sel {
-			if _, deleted := y.Delete[f]; deleted {
-				continue
-			}
-			if _, truncated := y.Truncate[f]; truncated {
-				continue
-			}
 			f2, ok := y.Rename[f]
 			if ok {
 				f = f2
 			}
 			for u, sel := range usel {
-				_, yselected := y.Sel[f][u]
-				if primary || !yselected {
-					if z.Sel == nil {
-						z.Sel = make(map[string]map[string]*Sel, 1)
+				_ = sel
+				ysel, yselected := y.Sel[f][u]
+				if yselected && (sel.equal(ysel) || primary) {
+					delete(y.Sel[f], u)
+					if len(y.Sel[f]) == 0 {
+						delete(y.Sel, f)
 					}
-					if z.Sel[f] == nil {
-						z.Sel[f] = make(map[string]*Sel, 1)
-					}
-					z.Sel[f][u] = AdjustSel(sel, y.Edit[f])
 				}
 			}
 		}
@@ -1174,12 +1251,30 @@ func TransformWorkspaceOps(a, b WorkspaceOp) (a1, b1 WorkspaceOp, err error) {
 		return
 	}
 
-	if err = transform(at, bt, &a1, true); err != nil {
+	var at1, bt1, at2, bt2 tmpWorkspaceOp
+	if err = at1.from(a); err != nil {
 		return
 	}
-	if err = transform(bt, at, &b1, false); err != nil {
+	if err = bt1.from(b); err != nil {
 		return
 	}
+	if err = at2.from(a); err != nil {
+		return
+	}
+	if err = bt2.from(b); err != nil {
+		return
+	}
+	// at1 == at2, bt1 == bt2
+
+	if err = transform(&at1, &bt1, true); err != nil {
+		return
+	}
+	if err = transform(&bt2, &at2, false); err != nil {
+		return
+	}
+
+	a1 = at2.toWorkspaceOp()
+	b1 = bt1.toWorkspaceOp()
 
 	if a.GitHead != b.GitHead {
 		if a.GitHead != "" && b.GitHead != "" {
@@ -1188,6 +1283,9 @@ func TransformWorkspaceOps(a, b WorkspaceOp) (a1, b1 WorkspaceOp, err error) {
 		}
 		a1.GitHead = a.GitHead
 		b1.GitHead = b.GitHead
+	} else {
+		a1.GitHead = ""
+		b1.GitHead = ""
 	}
 
 	a1 = NormalizeWorkspaceOp(a1)

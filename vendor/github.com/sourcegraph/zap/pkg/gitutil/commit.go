@@ -1,18 +1,19 @@
 package gitutil
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func makeCommitFromDir(gitRepo Worktree, onlyIfChangedFiles bool) (commitID string, err error) {
+func makeCommitFromDir(ctx context.Context, gitRepo Worktree, onlyIfChangedFiles bool) (commitID string, err error) {
 	head, err := gitRepo.HEADOrDevNullTree()
 	if err != nil {
 		return
 	}
-	commitID, _, err = gitRepo.MakeCommit(head, onlyIfChangedFiles)
+	commitID, _, err = gitRepo.MakeCommit(ctx, head, onlyIfChangedFiles)
 	return
 }
 
@@ -22,7 +23,7 @@ type Tree struct {
 	Root   []*TreeEntry
 }
 
-func (t *Tree) Add(path string, e *TreeEntry) {
+func (t *Tree) Add(path string, e *TreeEntry) error {
 	if path == "" || path == "." {
 		panic(fmt.Sprintf("bad path: %q", path))
 	}
@@ -31,7 +32,7 @@ func (t *Tree) Add(path string, e *TreeEntry) {
 		t.byPath = map[string]*TreeEntry{}
 	}
 	if _, exists := t.byPath[path]; exists {
-		panic(fmt.Sprintf("already exists: %q", path))
+		return fmt.Errorf("Tree.Add: path already exists: %q", path)
 	}
 	t.byPath[path] = e
 
@@ -45,6 +46,7 @@ func (t *Tree) Add(path string, e *TreeEntry) {
 		}
 		parent.Entries = append(parent.Entries, e)
 	}
+	return nil
 }
 
 // remove removes path from the tree. It does not prune trees that are
@@ -82,10 +84,10 @@ func (t *Tree) Get(path string) *TreeEntry {
 // don't already exist). If any ancestor trees already exist, it marks
 // them as having changed. Their oids are zeroed out and need to be
 // recomputed later.
-func (t *Tree) createOrDirtyAncestors(path string) {
+func (t *Tree) createOrDirtyAncestors(path string) error {
 	dir := filepath.Dir(path)
 	if dir == "." {
-		return
+		return nil
 	}
 
 	comps := strings.Split(dir, string(os.PathSeparator))
@@ -106,10 +108,13 @@ func (t *Tree) createOrDirtyAncestors(path string) {
 				Type: "tree",
 				Name: filepath.Base(p),
 			}
-			t.Add(p, ancestor)
+			if err := t.Add(p, ancestor); err != nil {
+				return err
+			}
 		}
 		ancestor.OID = "" // mark dirty
 	}
+	return nil
 }
 
 func (t *Tree) ApplyChanges(changes []*ChangedFile) error {
@@ -120,7 +125,9 @@ func (t *Tree) ApplyChanges(changes []*ChangedFile) error {
 			src := t.Get(f.SrcPath)
 			src.Mode = f.DstMode
 			src.OID = f.DstSHA
-			t.createOrDirtyAncestors(f.SrcPath)
+			if err := t.createOrDirtyAncestors(f.SrcPath); err != nil {
+				return err
+			}
 		}
 
 		if status == 'A' || status == 'C' || status == 'R' { // A=create, C=copy-edit, R=rename-edit
@@ -142,12 +149,18 @@ func (t *Tree) ApplyChanges(changes []*ChangedFile) error {
 				OID:  f.DstSHA,
 				Name: filepath.Base(path),
 			}
-			t.createOrDirtyAncestors(path)
-			t.Add(path, e)
+			if err := t.createOrDirtyAncestors(path); err != nil {
+				return err
+			}
+			if err := t.Add(path, e); err != nil {
+				return err
+			}
 		}
 
 		if status == 'D' || status == 'R' { // D=delete, R=rename-edit
-			t.createOrDirtyAncestors(f.SrcPath)
+			if err := t.createOrDirtyAncestors(f.SrcPath); err != nil {
+				return err
+			}
 			t.remove(f.SrcPath)
 		}
 	}

@@ -16,13 +16,13 @@ import { IEditorService } from "vs/platform/editor/common/editor";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
-import { getEditorInstance } from "sourcegraph/editor/Editor";
 import { ReferenceItem } from "sourcegraph/workbench/info/referenceItem";
 import { FileReferences, OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
 import { RepositoryHeader } from "sourcegraph/workbench/info/repositoryHeader";
+import { getEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
-import { Disposables, scrollToLine } from "sourcegraph/workbench/utils";
+import { Disposables } from "sourcegraph/workbench/utils";
 
 interface Props {
 	model: ReferencesModel;
@@ -52,6 +52,9 @@ export class RefTree extends React.Component<Props, State> {
 	private tree: Tree;
 	private toDispose: Disposables = new Disposables();
 	private treeID: string = "reference-tree";
+	private focusedReference: FileReferences | OneReference | undefined = undefined;
+	private updatingTree: boolean = false;
+	private visibleModel: ReferencesModel | undefined = undefined;
 
 	state: State = {
 		previewResource: null,
@@ -70,7 +73,7 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	componentDidUpdate(): void {
-		this.updateTree(this.props.model);
+		this.refreshTreeIfModelChanged();
 	}
 
 	componentWillUnmount(): void {
@@ -83,47 +86,89 @@ export class RefTree extends React.Component<Props, State> {
 	}
 
 	shouldComponentUpdate(nextProps: Props, nextState: State): boolean {
-		let expandedElements = new Array<FileReferences>();
-		const scrollPosition = this.tree.getScrollPosition();
+		return !this.updatingTree;
+	}
 
-		if (nextProps.model !== this.props.model) {
-			if (nextProps.model && nextProps.model.groups.length && !firstToggleAdded) {
-				userToggledState.add(nextProps.model.groups[0].uri.toString());
+	private refreshTreeIfModelChanged(): void {
+		const model = this.props.model;
+		if (this.updatingTree) {
+			return;
+		}
+		this.tree.layout(); // Make sure to layout when the preview closes.
+		if (model === this.visibleModel) {
+			return;
+		}
+		this.updatingTree = true;
+
+		// Pre-resolve all models before we set the model on the tree.
+		// If we don't do this, the tree will appear blank as files are resolved (can be slow).
+		const modelService = Services.get(ITextModelResolverService);
+		Promise.all(model.groups.map(fileReferences => {
+			return fileReferences.resolve(modelService);
+		})).then(() => {
+			let elementsToExpand: Array<FileReferences> = [];
+
+			if (model.groups.length && !firstToggleAdded) {
+				userToggledState.add(model.workspace.toString());
 				firstToggleAdded = true;
 			}
-			if (nextProps.model) {
-				for (let r of nextProps.model.groups) {
-					if (userToggledState.has(r.uri.toString())) {
-						expandedElements.push(r);
-					}
+			for (let fileReferences of model.groups) {
+				const workspace = fileReferences.uri.with({ fragment: "" }).toString();
+				if (userToggledState.has(workspace)) {
+					elementsToExpand.push(fileReferences);
 				}
 			}
-			this.tree.setInput(nextProps.model).then(() => {
-				this.tree.expandAll(expandedElements).then(() => {
-					this.tree.setScrollPosition(scrollPosition);
+
+			// Maintain the user's current scroll position.
+			let revealReference: FileReferences | OneReference | undefined = undefined;
+			let relativeTop: number | undefined = undefined;
+			const scrollPosition = this.tree.getScrollPosition();
+			if (this.visibleModel && this.visibleModel.references.length > 0 && scrollPosition > 0) {
+				// Tree gives us access to a scroll position, which is a % of scroll (0=top, 1=bottom)
+				// We want to map this to an actual reverence that we can reveal after the re-render to maintain scroll position.
+				// As an approximation we collect all expanded elements and pretend that they have the same height
+				// to find the approximate index of the item that has been scrolled to.
+				// Our approximation only needs to be good enought to make sure the item at this index is actually visible.
+				// After render, we reveal this item while maintaining its relative top so that it doesn't appear to move.
+				// We may have to be more precise about this when external references stream in.
+				const expandedElements: FileReferences[] = this.tree.getExpandedElements();
+				const expandedReferences = expandedElements.reduce<(FileReferences | OneReference)[]>((collected, fileRef) => {
+					collected.push(fileRef);
+					collected.push(...fileRef.children);
+					return collected;
+				}, []);
+
+				const visibleScrollIndex = Math.floor((expandedReferences.length - 1) * scrollPosition);
+				revealReference = expandedReferences[visibleScrollIndex];
+				relativeTop = this.tree.getRelativeTop(revealReference);
+			}
+
+			this.tree.setInput(model).then(() => {
+				this.tree.expandAll(elementsToExpand).then(() => {
+					if (this.focusedReference) {
+						this.tree.setSelection([this.focusedReference]);
+						this.tree.setFocus(this.focusedReference);
+					}
+					if (revealReference) {
+						this.tree.reveal(revealReference, relativeTop);
+					}
 					this.tree.layout();
+					this.updatingTree = false;
+					this.visibleModel = model;
+
+					// check to see if a new model was set while we were refreshing.
+					this.refreshTreeIfModelChanged();
 				});
 			});
-		}
-		return false;
+		});
 	}
 
 	private treeItemFocused(reference: FileReferences | OneReference): void {
+		this.focusedReference = reference;
 		if (!(reference instanceof OneReference)) {
 			return;
 		}
-
-		const modelService = Services.get(ITextModelResolverService);
-		modelService.createModelReference(reference.uri).then((ref) => {
-			this.props.focus(reference);
-			this.tree.layout();
-		});
-
-		const editor = getEditorInstance();
-		if (!editor) {
-			throw new Error("Editor not set.");
-		}
-		scrollToLine(editor, editor.getSelection().startLineNumber);
+		this.props.focus(reference);
 	}
 
 	private treeDiv(parent: HTMLDivElement): void {
@@ -135,7 +180,7 @@ export class RefTree extends React.Component<Props, State> {
 		const config = {
 			dataSource: instantiationService.createInstance(DataSource),
 			renderer: instantiationService.createInstance(Renderer),
-			controller: new Controller()
+			controller: new Controller({}, { ref: undefined })
 		};
 
 		const options = {
@@ -148,15 +193,6 @@ export class RefTree extends React.Component<Props, State> {
 		this.toDispose.add(this.tree);
 		this.toDispose.add(this.tree.addListener2(Controller.Events.FOCUSED, this.treeItemFocused));
 		this.forceUpdate();
-	}
-
-	private updateTree(model: ReferencesModel): void {
-		if (this.tree) {
-			this.tree.layout();
-			if (this.tree.getInput() !== model) {
-				this.tree.setInput(model);
-			}
-		}
 	}
 
 	private resetMonacoStyles(): void {
@@ -195,7 +231,7 @@ class Renderer extends LegacyRenderer {
 		super();
 		this._contextService = contextService;
 		const editor = getEditorInstance();
-		if (editor) {
+		if (editor && editor.getModel()) {
 			this._editorURI = editor.getModel().uri;
 		}
 	}
@@ -216,7 +252,7 @@ class Renderer extends LegacyRenderer {
 	protected render(tree: ITree, element: FileReferences | OneReference, container: HTMLElement): IElementCallback | any {
 		dom.clearNode(container);
 
-		if (element instanceof FileReferences) {
+		if (element instanceof FileReferences && this._editorURI) {
 			RepositoryHeader(
 				element,
 				container,

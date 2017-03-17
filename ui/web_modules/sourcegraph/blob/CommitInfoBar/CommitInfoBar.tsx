@@ -8,7 +8,7 @@ import { Commit } from "sourcegraph/blob/CommitInfoBar/Commit";
 import { Popover } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
 import { urlWithRev } from "sourcegraph/repo/routes";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Props {
 	repo: string;
@@ -56,9 +56,9 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 
 		const dropdownClickHandler = visible => {
 			if (visible) {
-				AnalyticsConstants.Events.CommitInfo_Initiated.logEvent(eventProps);
+				Events.CommitInfo_Initiated.logEvent(eventProps);
 			} else {
-				AnalyticsConstants.Events.CommitInfo_Dismissed.logEvent(eventProps);
+				Events.CommitInfo_Dismissed.logEvent(eventProps);
 			}
 		};
 
@@ -76,7 +76,7 @@ class CommitInfoBarComponent extends React.Component<Props, {}> {
 
 		const commitList = commitOffset.map(commit => {
 			function commitClickHandler(): void {
-				AnalyticsConstants.Events.CommitInfoItem_Selected.logEvent(Object.assign(
+				Events.CommitInfoItem_Selected.logEvent(Object.assign(
 					{ selectedRev: commit.rev },
 					eventProps
 				));

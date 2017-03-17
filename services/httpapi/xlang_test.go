@@ -20,16 +20,16 @@ func TestXLang(t *testing.T) {
 
 	calledValid := false
 	calledUnauthed := false
-	backend.Mocks.Repos.Resolve = func(ctx context.Context, op *sourcegraph.RepoResolveOp) (*sourcegraph.RepoResolution, error) {
-		switch op.Path {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+		switch uri {
 		case "my/repo":
 			calledValid = true
-			return &sourcegraph.RepoResolution{Repo: 1, CanonicalPath: "my/repo"}, nil
+			return &sourcegraph.Repo{ID: 1, URI: uri}, nil
 		case "your/repo":
 			calledUnauthed = true
 			return nil, legacyerr.Errorf(legacyerr.Unauthenticated, "nope")
 		default:
-			t.Errorf("got unexpected repo %q", op.Path)
+			t.Errorf("got unexpected repo %q", uri)
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "404")
 		}
 	}

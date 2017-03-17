@@ -2,109 +2,32 @@ package handlerutil
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
 
 	"context"
 
 	"github.com/gorilla/mux"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
-
-// RepoCommon holds all of the information necessary to render a
-// repository page template. It is returned by GetRepoFromRequest. See also
-// RepoRevCommon.
-type RepoCommon struct {
-	Repo *sourcegraph.Repo
-}
-
-// RepoRevCommon holds all of the commit-specific information
-// necessary to render a repository page template for a certain
-// commit. It is returned by GetRepoAndRevFromRequest. It is assumed that pages
-// rendered are also provided with repoCommon template data.
-type RepoRevCommon struct {
-	RepoRevSpec sourcegraph.RepoRevSpec
-}
-
-// GetRepoAndRevCommon returns the repository and RepoRevSpec based on
-// the route vars. It may also return custom error types
-// URLMovedError, NoVCSDataError, which callers should ideally check
-// for.
-func GetRepoAndRevCommon(ctx context.Context, vars map[string]string) (rc *RepoCommon, vc *RepoRevCommon, err error) {
-	rc = &RepoCommon{}
-	rc.Repo, err = GetRepo(ctx, vars)
-	if err != nil {
-		return
-	}
-
-	vc = &RepoRevCommon{}
-	vc.RepoRevSpec.Repo = rc.Repo.ID
-
-	vc.RepoRevSpec, err = getRepoRev(ctx, vars, rc.Repo.ID, rc.Repo.DefaultBranch)
-	if err != nil {
-		cloneInProgress := legacyerr.ErrCode(err) == legacyerr.Unavailable && legacyerr.ErrorDesc(err) == vcs.RepoNotExistError{CloneInProgress: true}.Error()
-		if noVCSData := legacyerr.ErrCode(err) == legacyerr.NotFound ||
-			cloneInProgress ||
-			strings.Contains(err.Error(), "has no default branch"); noVCSData {
-
-			if cloneInProgress {
-				return rc, vc, err
-			} else if rev := vars["Rev"]; rev != "" && rev != "@" {
-				err = vcs.ErrRevisionNotFound
-			} else {
-				err = &NoVCSDataError{RepoCommon: rc}
-			}
-		}
-		return
-	}
-
-	return
-}
-
-// GetRepoID returns the Sourcegraph repository ID based on the route vars.
-// If the repo path string is a numeric ID, it is returned immediately.
-// Otherwise the repository ID is resolved via backend.Repos.Resolve.
-// If the canonical path differs, a URLMovedError error is returned.
-func GetRepoID(ctx context.Context, vars map[string]string) (int32, error) {
-	origRepo := routevar.ToRepo(vars)
-
-	// If the URL contains just a numeric ID, then just return that
-	// without incurring a lookup. This does not check for the
-	// existence of the repo, but the backend API will effectively
-	// perform that check.
-	id, err := strconv.Atoi(origRepo)
-	if err == nil {
-		return int32(id), nil
-	}
-
-	res, err := backend.Repos.Resolve(ctx, &sourcegraph.RepoResolveOp{Path: origRepo})
-	if err != nil {
-		return 0, err
-	}
-
-	// Check for redirect.
-	if origRepo != "" && res.CanonicalPath != "" && origRepo != res.CanonicalPath {
-		return 0, &URLMovedError{res.CanonicalPath}
-	}
-
-	return res.Repo, nil
-}
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
 // RepoSpec route param. Callers should ideally check for a return error of type
 // URLMovedError and handle this scenario by warning or redirecting the user.
-func GetRepo(ctx context.Context, vars map[string]string) (repo *sourcegraph.Repo, err error) {
-	repoID, err := GetRepoID(ctx, vars)
+func GetRepo(ctx context.Context, vars map[string]string) (*sourcegraph.Repo, error) {
+	origRepo := routevar.ToRepo(vars)
+
+	repo, err := backend.Repos.GetByURI(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
 
-	return backend.Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repoID})
+	if origRepo != repo.URI {
+		return nil, &URLMovedError{repo.URI}
+	}
+
+	return repo, nil
 }
 
 // getRepoRev resolves the RepoRevSpec and commit specified in the

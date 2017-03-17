@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/gzipfileserver"
 )
@@ -19,6 +20,11 @@ func Mount(mux *http.ServeMux) {
 		// circumstances that couldn't be reproduced
 		if filepath.Ext(r.URL.Path) == ".svg" {
 			w.Header().Set("Content-Type", "image/svg+xml")
+		}
+		// Required for phabricator integration, some browser extensions block
+		// unless the mime type on externally loaded JS is set
+		if filepath.Ext(r.URL.Path) == ".js" {
+			w.Header().Set("Content-Type", "application/javascript")
 		}
 
 		// Only cache if the file is found. This avoids a race
@@ -34,7 +40,11 @@ func Mount(mux *http.ServeMux) {
 			defer f.Close()
 		}
 		if err == nil {
-			w.Header().Set("Cache-Control", "max-age=31556926, public")
+			if isPhabricatorAsset(r.URL.Path) {
+				w.Header().Set("Cache-Control", "max-age=300, public")
+			} else {
+				w.Header().Set("Cache-Control", "max-age=25200, public")
+			}
 		}
 
 		fs.ServeHTTP(w, r)
@@ -43,4 +53,17 @@ func Mount(mux *http.ServeMux) {
 
 func init() {
 	baseURL = &url.URL{Path: "/.assets"}
+}
+
+func isPhabricatorAsset(path string) bool {
+	if strings.Contains(path, "phabricator.bundle.js") {
+		return true
+	}
+	if strings.Contains(path, "sgdev.bundle.sj") {
+		return true
+	}
+	if strings.Contains(path, "umami.bundle.sj") {
+		return true
+	}
+	return false
 }

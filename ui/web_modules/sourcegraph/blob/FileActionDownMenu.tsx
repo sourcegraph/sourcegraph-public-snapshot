@@ -6,7 +6,7 @@ import { FlexContainer, Menu, Popover } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { ChevronDown } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 const openInGitHubKeyCode = 71;
 const openInGitHubKey = "G";
@@ -47,14 +47,14 @@ export class FileActionDownMenu extends React.Component<Props, {}> {
 		if (eventTarget.nodeName === "INPUT" || isNonMonacoTextArea(eventTarget) || event.metaKey || event.ctrlKey) {
 			return;
 		} else if (event.keyCode === openInGitHubKeyCode || event.key === openInGitHubKey) {
-			AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps);
+			Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps);
 			window.open(this.githubURL());
 			event.preventDefault();
 		}
 	}
 
 	private onViewGithubClick(): void {
-		AnalyticsConstants.Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps);
+		Events.OpenInCodeHost_Clicked.logEvent(this.props.eventProps);
 		window.open(this.githubURL());
 	}
 

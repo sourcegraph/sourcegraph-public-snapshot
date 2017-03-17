@@ -10,13 +10,10 @@ import { GitHubAuthButton } from "sourcegraph/components/GitHubAuthButton";
 import { Close, Flag } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { fontStack } from "sourcegraph/components/utils/typography";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import { getEditorInstance } from "sourcegraph/editor/Editor";
-import * as OrgActions from "sourcegraph/org/OrgActions";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
-import { EventLogger } from "sourcegraph/util/EventLogger";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { shouldPromptToInstallBrowserExtension } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
-import { privateGitHubOAuthScopes } from "sourcegraph/util/urlTo";
+import { getEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 
 interface Props { location: RouterLocation; }
 
@@ -72,9 +69,9 @@ const headerSx = {
 	backgroundColor: colors.white(),
 	borderTopLeftRadius: 3,
 	borderTopRightRadius: 3,
-	paddingTop: whitespace[4],
-	paddingLeft: whitespace[4],
-	paddingRight: whitespace[4],
+	paddingTop: whitespace[5],
+	paddingLeft: whitespace[5],
+	paddingRight: whitespace[5],
 	paddingBottom: whitespace[2],
 };
 
@@ -128,11 +125,6 @@ export class TourOverlay extends React.Component<Props, State>  {
 			visibleMarks: visibleMarks,
 			viewedAnnotations: [],
 		};
-
-		// Fetch orgs for analytics and GTM at start of onboarding flow.
-		if (context.user && context.hasOrganizationGitHubToken()) {
-			Dispatcher.Backends.dispatch(new OrgActions.WantOrgs(context.user.Login));
-		}
 	}
 
 	componentDidMount(): void {
@@ -189,8 +181,8 @@ export class TourOverlay extends React.Component<Props, State>  {
 			refSubtitle = <p style={p}>
 				Click any symbol to view its <strong>references</strong> in this repository and in any public code.
 			</p>;
-			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[4] }} color="white" size="tiny">Install the Chrome extension</Button>;
-			const refActionCTA = <div style={{ paddingLeft: whitespace[4] }}><GitHubAuthButton pageName="BlobViewOnboarding" color="blueGray" scopes={privateGitHubOAuthScopes} returnTo={this.props.location}>Authorizing with GitHub</GitHubAuthButton></div>;
+			const defActionCTA = <Button onClick={this._installChromeExtensionClicked.bind(this)} style={{ marginLeft: whitespace[5] }} color="white" size="tiny">Install the Chrome extension</Button>;
+			const refActionCTA = <div style={{ paddingLeft: whitespace[5] }}><GitHubAuthButton pageName="BlobViewOnboarding" color="blueGray" privateCode={true}>Authorizing with GitHub</GitHubAuthButton></div>;
 
 			this._coachmarks = [
 				this._initCoachmarkAnnotation(defRandom, "def-coachmark", "def-mark", _defCoachmarkIndex, "Jump to definition", defSubtitle, "Jump to definition and hover documentation on GitHub", shouldPromptToInstallBrowserExtension() ? null : defActionCTA),
@@ -324,7 +316,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 					{coachmark.headingSubtitle}
 				</div>
 				{coachmark.actionCTA &&
-					<div style={{ padding: whitespace[4] }}>
+					<div style={{ padding: whitespace[5] }}>
 						<Flag width={22} style={flagSx} color={colors.blueD1(0.9)} />
 						<strong style={actionSx}>{coachmark.actionTitle}</strong>
 						{coachmark.actionCTA}
@@ -349,15 +341,15 @@ export class TourOverlay extends React.Component<Props, State>  {
 
 		switch (markIndex) {
 			case _refCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingRefsCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+				Events.OnboardingRefsCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
 				break;
 			case _defCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingJ2DCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+				Events.OnboardingJ2DCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
 				break;
 			case _searchCoachmarkIndex: {
-				AnalyticsConstants.Events.OnboardingSearchCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+				Events.OnboardingSearchCoachCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 			}
 				break;
 			default:
@@ -398,25 +390,25 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_successHandler(): void {
-		AnalyticsConstants.Events.ChromeExtension_Installed.logEvent({ page_name: "BlobViewOnboarding" });
-		EventLogger.setUserProperty("installed_chrome_extension", "true");
+		Events.ChromeExtension_Installed.logEvent({ page_name: "BlobViewOnboarding" });
+		EventLogger.setUserInstalledChromeExtension("true");
 		// Syncs the our site analytics tracking with the chrome extension tracker.
 		EventLogger.updateTrackerWithIdentificationProps();
 	}
 
 	_failHandler(msg: String): void {
-		AnalyticsConstants.Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "BlobViewOnboarding" });
-		EventLogger.setUserProperty("installed_chrome_extension", "false");
+		Events.ChromeExtensionInstall_Failed.logEvent({ page_name: "BlobViewOnboarding" });
+		EventLogger.setUserInstalledChromeExtension("false");
 	}
 
 	_installChromeExtensionClicked(): void {
-		AnalyticsConstants.Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
+		Events.ChromeExtensionCTA_Clicked.logEvent({ page_name: "BlobViewOnboarding" });
 
 		if (!!global.chrome) {
-			AnalyticsConstants.Events.ChromeExtensionInstall_Started.logEvent({ page_name: "BlobViewOnboarding" });
+			Events.ChromeExtensionInstall_Started.logEvent({ page_name: "BlobViewOnboarding" });
 			global.chrome.webstore.install("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", this._successHandler.bind(this), this._failHandler.bind(this));
 		} else {
-			AnalyticsConstants.Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "BlobViewOnboarding" });
+			Events.ChromeExtensionStore_Redirected.logEvent({ page_name: "BlobViewOnboarding" });
 			window.open("https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack", "_newtab");
 		}
 	}
@@ -430,7 +422,7 @@ export class TourOverlay extends React.Component<Props, State>  {
 	}
 
 	_dismissTour(): void {
-		AnalyticsConstants.Events.OnboardingTour_Dismissed.logEvent({ page_name: "BlobViewOnboarding" });
+		Events.OnboardingTour_Dismissed.logEvent({ page_name: "BlobViewOnboarding" });
 		this._endTour();
 	}
 

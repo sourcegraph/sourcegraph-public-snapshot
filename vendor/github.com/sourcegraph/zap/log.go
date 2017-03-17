@@ -3,38 +3,47 @@ package zap
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/go-kit/kit/log/term"
 )
 
-var logAllowLevel []string
+var logLevelOpt level.Option
 
 func init() {
 	logLevel := os.Getenv("LOGLEVEL")
 	switch logLevel {
 	case "debug":
-		logAllowLevel = level.AllowAll()
+		logLevelOpt = level.AllowAll()
 	case "info":
-		logAllowLevel = level.AllowInfoAndAbove()
+		logLevelOpt = level.AllowInfo()
 	case "warn":
-		logAllowLevel = level.AllowWarnAndAbove()
+		logLevelOpt = level.AllowWarn()
 	case "", "error":
-		logAllowLevel = level.AllowErrorOnly()
+		logLevelOpt = level.AllowError()
 	default:
-		fmt.Fprintf(os.Stderr, "error: unknown log level %q (valid levels are: %v)\n", logLevel, level.AllowAll())
+		fmt.Fprintf(os.Stderr, "error: unknown log level %q (valid levels are: debug, info, warn, error)\n", logLevel)
 		os.Exit(1)
 	}
 }
 
-func (s *Server) baseLogger() *log.Context {
+func (s *Server) baseLogger() log.Logger {
 	colorFn := func(keyvals ...interface{}) term.FgBgColor {
 		for i := 0; i < len(keyvals)-1; i += 2 {
 			if keyvals[i] != "level" {
 				continue
 			}
-			switch keyvals[i+1] {
+			lvl, ok := keyvals[i+1].(level.Value)
+			if !ok {
+				// If this isn't a level.Value, it means
+				// go-kit/log has changed. This wouldn't be
+				// the first time, so rather just do not
+				// color.
+				break
+			}
+			switch lvl.String() {
 			case "debug":
 				return term.FgBgColor{Fg: term.DarkGray}
 			case "info":
@@ -56,11 +65,14 @@ func (s *Server) baseLogger() *log.Context {
 	}
 
 	logger0 := term.NewLogger(w, log.NewLogfmtLogger, colorFn)
-	logger0 = level.New(logger0, level.Allowed(logAllowLevel))
-	logger1 := log.NewContext(logger0)
-	// logger1 = logger1.With("ts", log.DefaultTimestampUTC)
+	logger0 = level.NewFilter(logger0, logLevelOpt)
+	logger1 := log.With(logger0)
+	if v, _ := strconv.ParseBool(os.Getenv("LOGTIMESTAMP")); os.Getenv("LOGTIMESTAMP") == "" || v {
+		// By default include timestamps, but adjust behaviour if LOGTIMESTAMP is specified.
+		logger1 = log.With(logger1, "ts", log.DefaultTimestampUTC)
+	}
 	if s.ID != "" {
-		logger1 = logger1.With("server", s.ID)
+		logger1 = log.With(logger1, "server", s.ID)
 	}
 	return logger1
 }

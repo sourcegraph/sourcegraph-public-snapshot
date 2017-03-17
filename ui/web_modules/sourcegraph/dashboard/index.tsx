@@ -6,7 +6,7 @@ import { FlexContainer, PageTitle } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
 import { Repos } from "sourcegraph/dashboard/Repos";
 import { TabBar } from "sourcegraph/dashboard/TabBar";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export interface RepositoryTypes {
 	"mine": any;
@@ -31,7 +31,7 @@ class DashboardComponent extends React.Component<Props & { root: GQL.IRoot }, St
 
 	setActive(name: RepositoryTabs): void {
 		this.setState({ active: name });
-		AnalyticsConstants.Events.DashboardRepositoryTab_Clicked.logEvent({ name });
+		Events.DashboardRepositoryTab_Clicked.logEvent({ name });
 	}
 
 	render(): JSX.Element {

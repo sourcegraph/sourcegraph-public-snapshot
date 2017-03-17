@@ -52,7 +52,9 @@
 				"name": "include"
 			}
 		],
-		"mutationType": null,
+		"mutationType": {
+			"name": "Mutation"
+		},
 		"queryType": {
 			"name": "Query"
 		},
@@ -135,6 +137,75 @@
 							"kind": "OBJECT",
 							"name": "Tree",
 							"ofType": null
+						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "pattern",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							},
+							{
+								"defaultValue": "false",
+								"description": null,
+								"name": "isRegExp",
+								"type": {
+									"kind": "SCALAR",
+									"name": "Boolean",
+									"ofType": null
+								}
+							},
+							{
+								"defaultValue": "false",
+								"description": null,
+								"name": "isWordMatch",
+								"type": {
+									"kind": "SCALAR",
+									"name": "Boolean",
+									"ofType": null
+								}
+							},
+							{
+								"defaultValue": "false",
+								"description": null,
+								"name": "isCaseSensitive",
+								"type": {
+									"kind": "SCALAR",
+									"name": "Boolean",
+									"ofType": null
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "textSearch",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "FileMatch",
+										"ofType": null
+									}
+								}
+							}
 						}
 					},
 					{
@@ -557,6 +628,57 @@
 				"possibleTypes": null
 			},
 			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "path",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "lineMatches",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "LIST",
+								"name": null,
+								"ofType": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "OBJECT",
+										"name": "LineMatch",
+										"ofType": null
+									}
+								}
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "FileMatch",
+				"possibleTypes": null
+			},
+			{
 				"description": "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).",
 				"enumValues": null,
 				"fields": null,
@@ -714,6 +836,197 @@
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
+						"name": "preview",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "lineNumber",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "LineMatch",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "cancelSubscription",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "tokenID",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "updatePaymentSource",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "tokenID",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							},
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "GitHubOrg",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							},
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "seats",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "Int",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "subscribeOrg",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "GitHubOrg",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "startOrgTrial",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Mutation",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
 						"name": "id",
 						"type": {
 							"kind": "NON_NULL",
@@ -742,6 +1055,81 @@
 						"ofType": null
 					}
 				]
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "name",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "avatarURL",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "description",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "collaborators",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Organization",
+				"possibleTypes": null
 			},
 			{
 				"description": null,
@@ -800,6 +1188,85 @@
 				"interfaces": [],
 				"kind": "OBJECT",
 				"name": "Person",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "name",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "cost",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "seats",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "renewalDate",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "organization",
+						"type": {
+							"kind": "OBJECT",
+							"name": "Organization",
+							"ofType": null
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "Plan",
 				"possibleTypes": null
 			},
 			{
@@ -1253,11 +1720,58 @@
 						}
 					},
 					{
+						"args": [
+							{
+								"defaultValue": null,
+								"description": null,
+								"name": "rev",
+								"type": {
+									"kind": "NON_NULL",
+									"name": null,
+									"ofType": {
+										"kind": "SCALAR",
+										"name": "String",
+										"ofType": null
+									}
+								}
+							}
+						],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "revState",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "RevState",
+								"ofType": null
+							}
+						}
+					},
+					{
 						"args": [],
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
 						"name": "latest",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "CommitState",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "lastIndexedRevOrLatest",
 						"type": {
 							"kind": "NON_NULL",
 							"name": null,
@@ -1331,6 +1845,18 @@
 								}
 							}
 						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "expirationDate",
+						"type": {
+							"kind": "SCALAR",
+							"name": "Int",
+							"ofType": null
+						}
 					}
 				],
 				"inputFields": null,
@@ -1343,6 +1869,57 @@
 				],
 				"kind": "OBJECT",
 				"name": "Repository",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "zapRef",
+						"type": {
+							"kind": "OBJECT",
+							"name": "ZapRef",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "commit",
+						"type": {
+							"kind": "OBJECT",
+							"name": "Commit",
+							"ofType": null
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "cloneInProgress",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "RevState",
 				"possibleTypes": null
 			},
 			{
@@ -1377,7 +1954,18 @@
 						}
 					},
 					{
-						"args": [],
+						"args": [
+							{
+								"defaultValue": "",
+								"description": null,
+								"name": "query",
+								"type": {
+									"kind": "SCALAR",
+									"name": "String",
+									"ofType": null
+								}
+							}
+						],
 						"deprecationReason": null,
 						"description": null,
 						"isDeprecated": false,
@@ -1806,11 +2394,27 @@
 									"kind": "NON_NULL",
 									"name": null,
 									"ofType": {
-										"kind": "SCALAR",
-										"name": "String",
+										"kind": "OBJECT",
+										"name": "Organization",
 										"ofType": null
 									}
 								}
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "paymentPlan",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "OBJECT",
+								"name": "Plan",
+								"ofType": null
 							}
 						}
 					}
@@ -1819,6 +2423,49 @@
 				"interfaces": [],
 				"kind": "OBJECT",
 				"name": "User",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": [
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "base",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"args": [],
+						"deprecationReason": null,
+						"description": null,
+						"isDeprecated": false,
+						"name": "branch",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"inputFields": null,
+				"interfaces": [],
+				"kind": "OBJECT",
+				"name": "ZapRef",
 				"possibleTypes": null
 			},
 			{

@@ -4,7 +4,6 @@ import * as truncate from "lodash/truncate";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RefTree } from "sourcegraph/workbench/info/refTree";
-import URI from "vs/base/common/uri";
 import { Location } from "vs/editor/common/modes";
 
 import { FlexContainer, Heading, Panel } from "sourcegraph/components";
@@ -12,7 +11,7 @@ import { Spinner } from "sourcegraph/components/symbols";
 import { Close, Report } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
-import { Events, FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
@@ -22,7 +21,6 @@ import { Disposables } from "sourcegraph/workbench/utils";
 import { MiniStore } from "sourcegraph/workbench/utils";
 
 export const REFERENCES_SECTION_ID = "references-section-header";
-const TreeDomNodeID = "workbench.editors.stringEditor";
 const TreeSidebarClassName = "sg-sidebar";
 
 export interface InfoPanelProps {
@@ -48,9 +46,9 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 
 	componentWillMount(): void {
 		this.toDispose.add(infoStore.subscribe((info) => {
-			if (info && info.prepareData) {
+			if (info.prepareData) {
 				// Close preview when escape key is clicked - Don't dismiss sidepane.
-				if (!info.prepareData.open && !info.id && this.infoPanelRef instanceof InfoPanel && this.infoPanelRef.state.previewLocation) {
+				if (!info.prepareData.open && this.infoPanelRef instanceof InfoPanel && this.infoPanelRef.state.previewLocation) {
 					Events.InfoPanelRefPreview_Closed.logEvent(this.infoPanelRef.getEventProps());
 					this.infoPanelRef.setState({
 						previewLocation: null,
@@ -59,35 +57,39 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 					return;
 				}
 
-				if (info.prepareData.open) {
-					// Log sidebar toggling opened
-					Events.InfoPanel_Initiated.logEvent(this.props.fileEventProps);
-				} else if (this.infoPanel && this.infoPanel.open) {
-					// Log sidebar toggling closed
-					Events.InfoPanel_Dismissed.logEvent(this.props.fileEventProps);
+				// Toggle info panel or symbol changed.
+				if (info.prepareData.open !== this.infoPanel.open || this.infoPanel.id !== info.id) {
+					if (info.prepareData.open) {
+						// Log sidebar toggling opened
+						Events.InfoPanel_Initiated.logEvent(this.props.fileEventProps);
+					} else if (this.infoPanel && this.infoPanel.open) {
+						// Log sidebar toggling closed
+						Events.InfoPanel_Dismissed.logEvent(this.props.fileEventProps);
+					}
+
+					this.info = info;
+					this.infoPanel = { open: info.prepareData.open, id: info.id };
+					this.forceUpdate();
+					return;
 				}
-
-				this.info = info;
-				this.infoPanel = { open: info.prepareData.open, id: info.id };
-				this.forceUpdate();
-				return;
 			}
-			if (info && info.loadingComplete !== undefined && this.infoPanelRef instanceof InfoPanel) {
-				this.infoPanelRef.setState({
-					loadingComplete: info.loadingComplete,
-				});
-
-				return;
-			}
-			if (info && info.refModel !== undefined && this.infoPanelRef && this.infoPanelRef instanceof InfoPanel) {
-				this.info = info;
-				const currentSelected = this.infoPanelRef.state.previewLocation;
-				this.infoPanelRef.setState({
-					previewLocation: currentSelected,
-					refModel: info.refModel,
-				});
-
-				return;
+			if (this.infoPanelRef instanceof InfoPanel) {
+				const state: State = {};
+				let updateState = false;
+				if (info.loadingComplete !== undefined) {
+					state.loadingComplete = info.loadingComplete;
+					updateState = true;
+				}
+				if (info.refModel !== undefined) {
+					this.info = info;
+					state.refModel = info.refModel;
+					state.previewLocation = this.infoPanelRef.state.previewLocation;
+					updateState = true;
+				}
+				if (updateState) {
+					this.infoPanelRef.setState(state);
+					return;
+				}
 			}
 
 			this.info = info;
@@ -100,7 +102,13 @@ export class InfoPanelLifecycle extends React.Component<InfoPanelProps, {}> {
 	}
 
 	renderOutOfTreeDOMNode(): void {
-		const parent = document.getElementById(TreeDomNodeID) as HTMLDivElement;
+		let parent = document.getElementById("workbench.editors.files.textFileEditor") as HTMLDivElement;
+		if (!parent) {
+			parent = document.getElementById("workbench.editors.stringEditor") as HTMLDivElement;
+		}
+		if (!parent) {
+			parent = document.getElementById("workbench.editors.textDiffEditor") as HTMLDivElement;
+		}
 		if (!parent) {
 			return;
 		}
@@ -148,16 +156,18 @@ export interface Props {
 @autobind
 class InfoPanel extends React.Component<Props, State> {
 
-	constructor() {
-		super();
+	constructor(props: Props) {
+		super(props);
 		this.state = {
 			previewLocation: null,
+			refModel: this.props.refModel,
+			loadingComplete: this.props.loadingComplete
 		};
 	}
 
 	getEventProps(): FileEventProps {
 		if (this.props.defData && this.props.defData.definition) {
-			const uri = URI.parse(this.props.defData.definition.uri);
+			const uri = this.props.defData.definition.uri;
 			const { repo, rev, path } = URIUtils.repoParams(uri);
 			return Object.assign({}, this.props.fileEventProps, { defRepo: repo, defRev: rev || "", defPath: path });
 		}
@@ -219,7 +229,7 @@ class InfoPanel extends React.Component<Props, State> {
 		const refsLoading = refModel !== null && !loadingComplete;
 		// position child elements relative to editor container
 		return <div style={{ height: "100%" }}>
-			<FlexContainer direction="top_bottom" style={{
+			<FlexContainer direction="top-bottom" style={{
 				position: "absolute",
 				backgroundColor: "white",
 				width: sidebarWidth,
@@ -227,6 +237,7 @@ class InfoPanel extends React.Component<Props, State> {
 				bottom: 0,
 				right: 0,
 				overflowY: "hidden",
+				zIndex: 10,
 			}}>
 				{this.sidebarFunctionHeader(defData)}
 				{(defData && !this.state.previewLocation) && <DefinitionDocumentationHeader defData={defData} eventProps={this.getEventProps()} />}
@@ -238,7 +249,7 @@ class InfoPanel extends React.Component<Props, State> {
 						</Heading>
 					</FlexContainer>
 				</div>
-				{refModel === null && <Panel hover={false} hoverLevel="low" style={{
+				{loadingComplete && (!refModel || refModel.empty) && <Panel hover={false} hoverLevel="low" style={{
 					padding: whitespace[3],
 					margin: whitespace[3],
 					color: colors.text(),
@@ -247,7 +258,7 @@ class InfoPanel extends React.Component<Props, State> {
 					<Report width={36} color={colors.blueGrayL1()} /><br />
 					We couldn't find any references<br /> for this symbol
 				</Panel>}
-				{refModel && <RefTree
+				{refModel && !refModel.empty && <RefTree
 					model={refModel}
 					focus={this.focusResource} />}
 				<hr style={dividerSx} />
@@ -260,4 +271,4 @@ class InfoPanel extends React.Component<Props, State> {
 	}
 };
 
-export const infoStore = new MiniStore<Props | null>();
+export const infoStore = new MiniStore<Props>();

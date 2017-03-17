@@ -4,6 +4,7 @@ package api
 
 var Schema = `schema {
 	query: Query
+	mutation: Mutation
 }
 
 interface Node {
@@ -17,11 +18,11 @@ type Query {
 
 type Root {
 	repository(uri: String!): Repository
-	repositories: [Repository!]!
+	repositories(query: String = ""): [Repository!]!
 	remoteRepositories: [RemoteRepository!]!
 	remoteStarredRepositories: [RemoteRepository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
-	currentUser(): User
+	currentUser: User
 }
 
 type RefFields {
@@ -54,10 +55,13 @@ type Repository implements Node {
 	createdAt: String!
 	pushedAt: String!
 	commit(rev: String!): CommitState!
+	revState(rev: String!): RevState!
 	latest: CommitState!
+	lastIndexedRevOrLatest: CommitState!
 	defaultBranch: String!
 	branches: [String!]!
 	tags: [String!]!
+	expirationDate: Int
 }
 
 type Symbol {
@@ -82,12 +86,24 @@ type CommitState {
 	cloneInProgress: Boolean!
 }
 
+type RevState {
+	zapRef: ZapRef
+	commit: Commit
+	cloneInProgress: Boolean!
+}
+
 type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
+	textSearch(pattern: String!, isRegExp: Boolean = false, isWordMatch: Boolean = false, isCaseSensitive: Boolean = false): [FileMatch!]!
 	file(path: String!): File
 	languages: [String!]!
+}
+
+type ZapRef {
+	base: String!
+	branch: String!
 }
 
 type CommitInfo {
@@ -126,6 +142,16 @@ type File {
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
 }
 
+type FileMatch {
+	path: String!
+	lineMatches: [LineMatch!]!
+}
+
+type LineMatch {
+	preview: String!
+	lineNumber: Int!
+}
+
 type DependencyReferences {
 	data: String!
 }
@@ -140,7 +166,30 @@ type Hunk {
 	message: String!
 }
 
+type Organization {
+	name: String!
+	avatarURL: String!
+	description: String!
+	collaborators: Int!
+}
+
+type Plan {
+	name: String!
+	cost: Int!
+	seats: Int
+	renewalDate: Int
+	organization: Organization
+}
+
 type User {
-	githubOrgs: [String!]!
+	githubOrgs: [Organization!]!
+	paymentPlan: Plan!
+}
+
+type Mutation {
+	cancelSubscription(): Boolean!
+	updatePaymentSource(tokenID: String!): Boolean!
+	subscribeOrg(tokenID: String!, GitHubOrg: String!, seats: Int!): Boolean!
+	startOrgTrial(GitHubOrg: String!): Boolean!
 }
 `

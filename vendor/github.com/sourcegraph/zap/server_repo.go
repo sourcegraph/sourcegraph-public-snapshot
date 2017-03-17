@@ -7,8 +7,9 @@ import (
 	"sync"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/internal/pkg/mutexmap"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -20,10 +21,26 @@ type serverRepo struct {
 	workspace       Workspace // set for non-bare repos added via workspace/add
 	workspaceCancel func()    // tear down workspace
 	config          RepoConfiguration
+
+	refLocks mutexmap.MutexMap
 }
 
-func (s *Server) getRepo(ctx context.Context, log *log.Context, repoName string) (*serverRepo, error) {
-	repo, err := s.getRepoIfExists(ctx, log, repoName)
+// acquireRef acquires an exclusive lock that allows the holder to
+// perform operations on the named ref. The release func must be
+// called to release the lock.
+//
+// Callers can use the following to hold the lock for the remaining
+// execution of the current function:
+//
+//   defer repo.acquireRef(refName)()
+func (s *serverRepo) acquireRef(refName string) (release func()) {
+	lock := s.refLocks.Get(refName)
+	lock.Lock()
+	return lock.Unlock
+}
+
+func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string) (*serverRepo, error) {
+	repo, err := s.getRepoIfExists(ctx, logger, repoDir)
 	if err != nil {
 		return nil, err
 	}
@@ -31,38 +48,53 @@ func (s *Server) getRepo(ctx context.Context, log *log.Context, repoName string)
 		return repo, nil
 	}
 
+	// Only perform implicit repository creation below if the backend desires
+	// it. For example, a local server will not desire this because all
+	// repositories should be created via workspace/add (e.g. zap init) not
+	// implicitly.
+	if !s.backend.CanAutoCreate() {
+		return nil, &jsonrpc2.Error{
+			Code:    int64(ErrorCodeRepoNotExists),
+			Message: fmt.Sprintf("repo not found: %s (add it with 'zap init')", repoDir),
+		}
+	}
+
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
-	repo, exists := s.repos[repoName]
+	repo, exists := s.repos[repoDir]
 	if !exists {
 		repo = &serverRepo{
 			refdb: refdb.NewMemoryRefDB(),
 		}
-		s.repos[repoName] = repo
+		s.repos[repoDir] = repo
 	}
 	return repo, nil
 }
 
-func (s *Server) getRepoIfExists(ctx context.Context, log *log.Context, repoName string) (*serverRepo, error) {
-	ok, err := s.backend.CanAccess(ctx, log, repoName)
+func (s *Server) getRepoIfExists(ctx context.Context, logger log.Logger, repoDir string) (*serverRepo, error) {
+	ok, err := s.backend.CanAccess(ctx, logger, repoDir)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return nil, &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRepoNotExists),
-			Message: fmt.Sprintf("access forbidden to repo: %s", repoName),
+			Message: fmt.Sprintf("access forbidden to repo: %s", repoDir),
 		}
 	}
 
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
-	return s.repos[repoName], nil
+	return s.repos[repoDir], nil
 }
 
-func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo *serverRepo, params RepoWatchParams) error {
+func (c *serverConn) handleRepoWatch(ctx context.Context, logger log.Logger, repo *serverRepo, params RepoWatchParams) error {
 	if params.Repo == "" {
 		return &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: "repo is required"}
+	}
+
+	if err := params.validate(); err != nil {
+		return err
 	}
 
 	{
@@ -70,7 +102,7 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 		if c.watchingRepos == nil {
 			c.watchingRepos = map[string][]string{}
 		}
-		level.Info(log).Log("set-watch-refspec", fmt.Sprint(params.Refspecs), "old", fmt.Sprint(c.watchingRepos[params.Repo]))
+		level.Info(logger).Log("set-watch-refspec", fmt.Sprint(params.Refspecs), "old", fmt.Sprint(c.watchingRepos[params.Repo]))
 		c.watchingRepos[params.Repo] = params.Refspecs
 		c.mu.Unlock()
 	}
@@ -92,11 +124,9 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 				continue
 			}
 
-			log := log.With("update-ref-downstream-with-initial-state", ref.Name)
-			level.Debug(log).Log()
+			logger := log.With(logger, "update-ref-downstream-with-initial-state", ref.Name)
+			level.Debug(logger).Log()
 			refObj := ref.Object.(serverRef)
-			// TODO(sqs): make this a request so we make sure it is
-			// received (to eliminate race conditions).
 			if err := c.conn.Notify(ctx, "ref/update", RefUpdateDownstreamParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				State: &RefState{
@@ -114,8 +144,8 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 				continue
 			}
 
-			log := log.With("update-symbolic-ref-with-initial-state", ref.Name)
-			level.Debug(log).Log()
+			logger := log.With(logger, "update-symbolic-ref-with-initial-state", ref.Name)
+			level.Debug(logger).Log()
 			if err := c.conn.Notify(ctx, "ref/updateSymbolic", RefUpdateSymbolicParams{
 				RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name},
 				Target:        ref.Target,
@@ -124,7 +154,7 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, log *log.Context, repo
 			}
 		}
 	} else {
-		level.Warn(log).Log("no-matching-refs", "")
+		level.Debug(logger).Log("no-matching-refs", "")
 	}
 
 	return nil

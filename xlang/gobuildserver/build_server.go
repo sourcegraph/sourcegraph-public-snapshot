@@ -108,7 +108,7 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, rootURI string) erro
 	if err := h.HandlerCommon.Reset(rootURI); err != nil {
 		return err
 	}
-	if err := h.HandlerShared.Reset(rootURI, false); err != nil {
+	if err := h.HandlerShared.Reset(false); err != nil {
 		return err
 	}
 	h.init = init
@@ -200,7 +200,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// Determine the root import path of this workspace (e.g., "github.com/user/repo").
 		span.SetTag("originalRootPath", params.OriginalRootPath)
 		fs := vfsutil.RemoteFS(conn)
-		rootImportPath, err := h.determineRootImportPath(ctx, params.OriginalRootPath, fs)
+		rootImportPath, err := determineRootImportPath(ctx, params.OriginalRootPath, fs)
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine workspace's root Go import path: %s (original rootPath is %q)", err, params.OriginalRootPath)
 		}
@@ -242,18 +242,20 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		// Put all files in the workspace under a /src/IMPORTPATH
 		// directory, such as /src/github.com/foo/bar, so that Go can
 		// build it in GOPATH=/.
+		var rootPath string
 		if isStdlib {
-			langInitParams.RootPath = "file://" + goroot
+			rootPath = goroot
 		} else {
-			langInitParams.RootPath = "file://" + "/src/" + h.rootImportPath
+			rootPath = "/src/" + h.rootImportPath
 		}
+		langInitParams.RootPath = "file://" + rootPath
 		langInitParams.RootImportPath = h.rootImportPath
 		if err := h.reset(&params, langInitParams.RootPath); err != nil {
 			return nil, err
 		}
-		h.FS.Bind(h.OverlayMountPath, fs, "/", ctxvfs.BindBefore)
+		h.FS.Bind(rootPath, fs, "/", ctxvfs.BindAfter)
 		var langInitResp lsp.InitializeResult
-		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Notif, langInitParams, &langInitResp); err != nil {
+		if err := h.callLangServer(ctx, conn, req.Method, req.ID, langInitParams, &langInitResp); err != nil {
 			return nil, err
 		}
 		return langInitResp, nil
@@ -385,6 +387,17 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			req.Params = (*json.RawMessage)(&b)
 		}
 
+		// Immediately handle notifications. We do not have a response
+		// to rewrite, so we can pass it on directly and avoid the
+		// cost of marshalling again. NOTE: FS operations are frequent
+		// and are notifications.
+		if req.Notif {
+			wrappedConn := &jsonrpc2ConnImpl{rewriteURI: h.rewriteURIFromLangServer, conn: conn}
+			// Avoid extracting the tracer again, it is already attached to ctx.
+			req.Meta = nil
+			return h.lang.Handle(ctx, wrappedConn, req)
+		}
+
 		// workspace/symbol queries must have their `dir:` query filter
 		// rewritten for github.com/golang/go due to its specialized directory
 		// structure. e.g. `dir:src/net/http` should work, but the LS will
@@ -412,15 +425,6 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				return nil, err
 			}
 			req.Params = (*json.RawMessage)(&b)
-		}
-
-		// Immediately handle file system requests by adding them to
-		// the VFS shared between the build and lang server.
-		if langserver.IsFileSystemRequest(req.Method) {
-			if err := h.HandleFileSystemRequest(ctx, req); err != nil {
-				return nil, err
-			}
-			return nil, nil
 		}
 
 		if req.Method == "workspace/xreferences" {
@@ -456,7 +460,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		}
 
 		var result interface{}
-		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Notif, req.Params, &result); err != nil {
+		if err := h.callLangServer(ctx, conn, req.Method, req.ID, req.Params, &result); err != nil {
 			return nil, err
 		}
 
@@ -540,7 +544,7 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 
 				i := strings.Index(d.cloneURL, "://")
 				if i >= 0 {
-					repo := strings.TrimSuffix(d.cloneURL[i+len("://"):], "."+d.vcs)
+					repo := d.cloneURL[i+len("://"):]
 					path := strings.TrimPrefix(strings.TrimPrefix(p, d.projectRoot), "/")
 					return fmt.Sprintf("%s://%s?%s#%s", d.vcs, repo, rev, path), nil
 				}
@@ -553,17 +557,17 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri string) (string, error) {
 	}
 }
 
-// callLangServer sends the (usually modified) request to the wrapped
-// Go language server.
+// callLangServer sends the (usually modified) request to the wrapped Go
+// language server. Do not send notifications via this interface! Rather just
+// directly pass on the jsonrpc2.Request via h.lang.Handle.
 //
 // Although bypasses the JSON-RPC wire protocol ( just sending it
 // in-memory for simplicity/speed), it behaves in the same way as
 // though the peer language server were remote.
-func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, method string, id jsonrpc2.ID, notif bool, params, result interface{}) error {
+func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, method string, id jsonrpc2.ID, params, result interface{}) error {
 	req := jsonrpc2.Request{
 		ID:     id,
 		Method: method,
-		Notif:  notif,
 	}
 	if err := req.SetParams(params); err != nil {
 		return err
@@ -576,18 +580,16 @@ func (h *BuildHandler) callLangServer(ctx context.Context, conn *jsonrpc2.Conn, 
 		return err
 	}
 
-	if !notif {
-		// Don't pass the interface{} value, to avoid the build and
-		// language servers from breaking the abstraction that they are in
-		// separate memory spaces.
-		b, err := json.Marshal(result0)
-		if err != nil {
+	// Don't pass the interface{} value, to avoid the build and
+	// language servers from breaking the abstraction that they are in
+	// separate memory spaces.
+	b, err := json.Marshal(result0)
+	if err != nil {
+		return err
+	}
+	if result != nil {
+		if err := json.Unmarshal(b, result); err != nil {
 			return err
-		}
-		if result != nil {
-			if err := json.Unmarshal(b, result); err != nil {
-				return err
-			}
 		}
 	}
 	return nil

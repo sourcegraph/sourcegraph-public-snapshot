@@ -6,9 +6,13 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
+	"log"
 	"path"
 	"strings"
 
+	yaml "gopkg.in/yaml.v2"
+
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -20,7 +24,7 @@ import (
 // It's intended to handle cases like
 // github.com/kubernetes/kubernetes, which has doc.go files that
 // indicate its root import path is k8s.io/kubernetes.
-func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRootPath string, fs ctxvfs.FileSystem) (rootImportPath string, err error) {
+func determineRootImportPath(ctx context.Context, originalRootPath string, fs ctxvfs.FileSystem) (rootImportPath string, err error) {
 	if originalRootPath == "" {
 		return "", errors.New("unable to determine Go workspace root import path without due to empty root path")
 	}
@@ -30,9 +34,35 @@ func (h *BuildHandler) determineRootImportPath(ctx context.Context, originalRoot
 	}
 	switch u.Scheme {
 	case "git":
+		// TODO(keegancsmith) umami has .git paths in their import
+		// paths. This normalization may in fact be incorrect. This
+		// codeblock is to test if we really need this stripping in
+		// production.
+		if strings.HasSuffix(u.Path, ".git") {
+			pathHasGitSuffix.Inc()
+			defer func() {
+				log.Printf("WARN: determineRootImportPath has .git suffix. before=%q after=%q %s", originalRootPath, rootImportPath, err)
+			}()
+		}
 		rootImportPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())
 	default:
 		return "", fmt.Errorf("unrecognized originalRootPath: %q", u)
+	}
+
+	// Glide provides a canonical import path for us, try that first if it
+	// exists.
+	yml, err := ctxvfs.ReadFile(ctx, fs, "/glide.yaml")
+	if err == nil && len(yml) > 0 {
+		glide := struct {
+			Package string `yaml:"package"`
+			// There are other fields, but we don't use them
+		}{}
+		// best effort, so ignore error if we have a badly formatted
+		// yml file
+		_ = yaml.Unmarshal(yml, &glide)
+		if glide.Package != "" {
+			return glide.Package, nil
+		}
 	}
 
 	// Now scan for canonical import path comments. This is a
@@ -107,4 +137,15 @@ func readCanonicalImportPath(contents []byte) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+var pathHasGitSuffix = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "golangserver",
+	Subsystem: "build",
+	Name:      "path_has_git_suffix",
+	Help:      "Temporary counter to determine if paths have a git suffix.",
+})
+
+func init() {
+	prometheus.MustRegister(pathHasGitSuffix)
 }

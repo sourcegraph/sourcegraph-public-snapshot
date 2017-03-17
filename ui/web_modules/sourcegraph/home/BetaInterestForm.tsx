@@ -1,79 +1,58 @@
-import * as classNames from "classnames";
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
 import { Component } from "sourcegraph/Component";
-import { Button, CheckboxList, Input } from "sourcegraph/components";
+import { Button, CheckboxList, Input, Panel, TextArea } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import { editors, languages } from "sourcegraph/home/HomeUtils";
-import * as styles from "sourcegraph/home/styles/BetaInterestForm.css";
+import { whitespace } from "sourcegraph/components/utils";
+import { editors, languageIDs, languageNames } from "sourcegraph/home/HomeUtils";
 import { langName } from "sourcegraph/Language";
 import { SignupForm } from "sourcegraph/user/Signup";
-import * as UserActions from "sourcegraph/user/UserActions";
+import { submitBetaSignupForm } from "sourcegraph/user/SubmitForm";
 
 interface Props {
 	onSubmit?: () => void;
 	className?: string;
 	language?: string;
 	location: RouterLocation;
-	loginReturnTo: string;
 	style?: React.CSSProperties;
 }
 
-type State = any;
+interface State {
+	formError?: string;
+	resp?: Response;
+	respError?: Error;
+};
 
 export class BetaInterestForm extends Component<Props, State> {
-	_dispatcherToken: string;
-
-	// TODO(slimsag): these should be 'element' type?
-	_fullName: any;
-	_email: any;
-	_editors: any;
-	_languages: any;
-	_message: any;
-
-	constructor(props: Props) {
-		super(props);
-		this._onChange = this._onChange.bind(this);
-	}
+	private fullName: HTMLInputElement;
+	private email: HTMLInputElement;
+	private company: HTMLInputElement;
+	private editors: CheckboxList;
+	private languages: CheckboxList;
+	private message: HTMLTextAreaElement;
 
 	componentDidMount(): void {
-		this._dispatcherToken = Dispatcher.Stores.register(this._onDispatch.bind(this));
-
-		// Trigger _onChange now to save this.props.language if set.
+		// Trigger onChange now to save this.props.language if set.
 		if (context.user && this.props.language) {
-			this._onChange();
+			this.onChange();
 		}
 	}
 
-	componentWillUnmount(): void {
-		Dispatcher.Stores.unregister(this._dispatcherToken);
+	private onChange = (): void => {
+		localStorage.setItem("beta-interest-form", JSON.stringify({
+			fullName: this.fullName.value,
+			email: this.email ? this.email.value : "",
+			company: this.company.value,
+			editors: this.editors.selected(),
+			languages: this.languages.selected(),
+			message: this.message.value,
+		}));
 	}
 
-	reconcileState(state: State, props: Props): void {
-		Object.assign(state, props);
-	}
-
-	_onDispatch(action: any): void {
-		if (action instanceof UserActions.BetaSubscriptionCompleted) {
-			this.setState({ resp: action.resp });
-		}
-	}
-
-	_onChange(): void {
-		window.localStorage["beta-interest-form"] = JSON.stringify({
-			fullName: this._fullName["value"],
-			email: this._email ? this._email["value"] : "",
-			editors: this._editors.selected(),
-			languages: this._languages.selected(),
-			message: this._message["value"],
-		});
-	}
-
-	_sendForm(ev: any): void {
+	private sendForm = (ev: any): void => {
 		ev.preventDefault();
-		const name = this._fullName["value"];
+		const name = this.fullName.value;
 		let firstName;
 		let lastName;
 		if (name) {
@@ -82,42 +61,47 @@ export class BetaInterestForm extends Component<Props, State> {
 			lastName = names.slice(1).join(" ");
 		}
 
-		if (this._editors.selected().length === 0) {
+		if (this.editors.selected().length === 0) {
 			this.setState({ formError: "Please select at least one preferred editor." });
 			return;
 		}
-		if (this._languages.selected().length === 0) {
+		if (this.languages.selected().length === 0) {
 			this.setState({ formError: "Please select at least one preferred language." });
 			return;
 		}
 
-		Dispatcher.Backends.dispatch(new UserActions.SubmitBetaSubscription(
-			this._email ? this._email["value"].trim() : "",
-			firstName || "",
-			lastName || "",
-			this._languages.selected(),
-			this._editors.selected(),
-			this._message["value"].trim(),
-		));
+		submitBetaSignupForm({
+			email: this.email ? this.email.value.trim() : "",
+			firstname: firstName || "",
+			lastname: lastName || "",
+			company: this.company.value,
+			languages_used: this.languages.selected(),
+			editors_used: this.editors.selected(),
+			message: this.message.value.trim(),
+		}).then(resp => {
+			this.setState({ resp });
+		}).catch(respError => {
+			this.setState({ respError });
+		});
 	}
 
 	render(): JSX.Element | null {
-		if (this.state.resp && !this.state.resp.Error) {
+		if (this.state.resp && !this.state.respError) {
 			// Display a "Close" button if there is an onSubmit handler.
 			return (<span>
 				<p>Success! Return to this page any time to update your favorite editors / languages!</p>
-				<p>We'll contact you at <strong>{this.state.resp.EmailAddress}</strong> once a beta has begun.</p>
+				{this.state.resp["EmailAddress"] !== undefined
+					? <p>We'll contact you at <strong>{this.state.resp["EmailAddress"]}</strong> once a beta has begun.</p>
+					: <p>We'll contact you once a beta has begun.</p>}
 				{this.props.onSubmit && <Button block={true} type="submit" color="purple" onClick={this.props.onSubmit}>Close</Button>}
 			</span>);
 		}
 
 		if (!context.user) {
-			const newUserReturnTo = { pathname: this.props.loginReturnTo, hash: "" };
-
-			return (<div className={styles.cta}>
-				<p className={styles.p}>You must sign up to continue.</p>
-				<SignupForm newUserReturnTo={newUserReturnTo} returnTo={this.props.loginReturnTo} location={this.props.location}></SignupForm>
-			</div>);
+			return <Panel hoverLevel="low" style={{ paddingTop: whitespace[4], textAlign: "center" }}>
+				<p>You must sign up to continue.</p>
+				<SignupForm />
+			</Panel>;
 		}
 
 		let [className, language] = [this.props.className, this.props.language];
@@ -126,17 +110,19 @@ export class BetaInterestForm extends Component<Props, State> {
 
 		let defaultFullName;
 		let defaultEmail;
+		let defaultCompany;
 		let defaultMessage;
 		let defaultEditors = [];
 		let defaultLanguages: string[] = [];
-		let ls = window.localStorage["beta-interest-form"];
+		const ls = localStorage.getItem("beta-interest-form");
 		if (ls) {
-			ls = JSON.parse(ls);
-			defaultFullName = ls.fullName;
-			defaultEmail = ls.email;
-			defaultEditors = ls.editors;
-			defaultLanguages = ls.languages;
-			defaultMessage = ls.message;
+			const lsParsed = JSON.parse(ls);
+			defaultFullName = lsParsed.fullName;
+			defaultEmail = lsParsed.email;
+			defaultCompany = lsParsed.company;
+			defaultEditors = lsParsed.editors;
+			defaultLanguages = lsParsed.languages;
+			defaultMessage = lsParsed.message;
 		}
 
 		if (language) {
@@ -149,28 +135,60 @@ export class BetaInterestForm extends Component<Props, State> {
 					<p>You've already registered. We'll contact you once a beta matching your interests has begun.</p>
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
-				<form className={className} onSubmit={this._sendForm.bind(this)} onChange={this._onChange}>
-					<div className={styles.row}>
-						<Input domRef={(c) => this._fullName = c} block={true} type="text" name="fullName" placeholder="Name" required={true} defaultValue={defaultFullName} />
-					</div>
-					{(!emails || emails.length === 0) && <div className={styles.row}>
-						<Input domRef={(c) => this._email = c} block={true} type="email" name="email" placeholder="Email address" required={true} defaultValue={defaultEmail} />
-					</div>}
-					<div className={styles.row}>
-						<CheckboxList ref={(c) => this._editors = c} title="Preferred editors" name="editors" labels={editors} defaultValues={defaultEditors} />
-					</div>
-					<div className={styles.row}>
-						<CheckboxList ref={(c) => this._languages = c} title="Preferred languages" name="languages" labels={languages} defaultValues={defaultLanguages} />
-					</div>
-					<div className={styles.row}>
-						<textarea ref={(c) => this._message = c} className={styles.textarea} name="message" placeholder="Other / comments" defaultValue={defaultMessage}></textarea>
-					</div>
-					<div className={classNames(styles.row, base.pb4)}>
-						<Button block={true} type="submit" color="purple">{betaRegistered ? "Update my interests" : "Participate in the beta"}</Button>
-					</div>
-					<div className={classNames(styles.row, base.pb4)}>
+				<form className={className} onSubmit={this.sendForm} onChange={this.onChange}>
+					<Input
+						domRef={c => this.fullName = c}
+						block={true}
+						type="text"
+						name="fullName"
+						placeholder="Name"
+						required={true}
+						defaultValue={defaultFullName} />
+					{(!emails || emails.length === 0) &&
+						<Input
+							domRef={c => this.email = c}
+							block={true}
+							type="email"
+							name="email"
+							placeholder="Email address"
+							required={true} defaultValue={defaultEmail} />
+					}
+					<Input
+						domRef={c => this.company = c}
+						block={true}
+						type="text"
+						name="company"
+						placeholder="Company / organization"
+						required={true}
+						defaultValue={defaultCompany} />
+					<CheckboxList
+						ref={c => this.editors = c}
+						title="Preferred editors"
+						name="editors" labels={editors}
+						defaultValues={defaultEditors}
+						style={{ marginBottom: whitespace[3] }} />
+					<CheckboxList
+						ref={c => this.languages = c}
+						title="Preferred languages"
+						name="languages"
+						labels={languageNames}
+						values={languageIDs}
+						defaultValues={defaultLanguages}
+						style={{ marginBottom: whitespace[3] }} />
+					<TextArea
+						block={true}
+						domRef={c => this.message = c}
+						name="message"
+						placeholder="Other / comments"
+						defaultValue={defaultMessage}>
+					</TextArea>
+					<Button block={true} type="submit" color="purple">
+						{betaRegistered ? "Update my interests" : "Participate in the beta"}
+					</Button>
+					<div className={base.pb4}>
+						<br />
 						{this.state.formError && <strong>{this.state.formError}</strong>}
-						{this.state.resp && this.state.resp.Error && <div>{this.state.resp.Error.body}</div>}
+						{this.state.respError && <div>{this.state.respError.message}</div>}
 					</div>
 				</form>
 			</div>

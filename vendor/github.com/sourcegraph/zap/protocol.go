@@ -134,6 +134,17 @@ type RepoConfigureParams struct {
 	Remotes map[string]RepoRemoteConfiguration `json:"remotes"`
 }
 
+// RepoConfigureResult is the result of a successful "repo/configure"
+// request.
+type RepoConfigureResult struct {
+	// UpstreamConfigurationRemovedFromRefs is a list of refs
+	// (provided as information to the client, to notify the user)
+	// whose upstreams resided on remotes that were removed in this
+	// "repo/configure" call. The server automatically removed the
+	// upstream configuration from each of these refs.
+	UpstreamConfigurationRemovedFromRefs []string `json:"upstreamConfigurationRemovedFromRefs,omitempty"`
+}
+
 // RepoRemoteConfiguration describes the configuration of a repository
 // remote.
 type RepoRemoteConfiguration struct {
@@ -175,6 +186,17 @@ type RepoWatchParams struct {
 	Refspecs []string `json:"refspecs"`
 }
 
+func (p RepoWatchParams) validate() error {
+	seen := map[string]struct{}{}
+	for _, refspec := range p.Refspecs {
+		if _, seen := seen[refspec]; seen {
+			return fmt.Errorf("duplicate refspec %q", refspec)
+		}
+		seen[refspec] = struct{}{}
+	}
+	return nil
+}
+
 // RefIdentifier identifies a Zap ref. (A Zap branch named "B" is
 // equivalent to a Zap ref named "refs/heads/B".)
 type RefIdentifier struct {
@@ -190,6 +212,11 @@ func (r RefIdentifier) String() string {
 		r.Ref = "<no-ref>"
 	}
 	return r.Repo + ":" + r.Ref
+}
+
+// RefListParams contains the parameters for the "ref/list" request.
+type RefListParams struct {
+	Repo string `json:"repo"` // the repo to watch
 }
 
 // RefBaseInfo describes what a ref is based on.
@@ -330,8 +357,14 @@ type RefUpdateDownstreamParams struct {
 }
 
 func (p RefUpdateDownstreamParams) String() string {
+	return p.string(false)
+}
+
+func (p RefUpdateDownstreamParams) string(includeRefIdentifier bool) string {
 	var buf bytes.Buffer
-	// fmt.Fprintf(&buf, "%s: ", p.RefIdentifier)
+	if includeRefIdentifier {
+		fmt.Fprintf(&buf, "%s: ", p.RefIdentifier)
+	}
 	if p.Ack {
 		fmt.Fprint(&buf, "ack:")
 	}
@@ -383,7 +416,14 @@ type RefUpdateSymbolicParams struct {
 }
 
 func (p RefUpdateSymbolicParams) String() string {
+	return p.string(false)
+}
+
+func (p RefUpdateSymbolicParams) string(includeRefIdentifier bool) string {
 	var buf bytes.Buffer
+	if includeRefIdentifier {
+		fmt.Fprintf(&buf, "%s: ", p.RefIdentifier)
+	}
 	if p.Ack {
 		fmt.Fprint(&buf, "ack:")
 	}
@@ -417,23 +457,29 @@ type RefConfiguration struct {
 	Overwrite bool `json:"overwrite"`
 }
 
-// RefInfoResult is the result from the remote "ref/info" request.
-type RefInfoResult struct {
+// RefInfo is the result from the remote "ref/info" request.
+type RefInfo struct {
+	RefIdentifier // the repo and ref name (omitted by functions that return only a single RefInfo)
+
 	State  *RefState `json:"state,omitempty"`  // the state of the ref (symbolic refs are NOT resolved)
 	Target string    `json:"target,omitempty"` // the target of the ref (for symbolic refs)
 
-	// Extra diagnostics
+	Watchers []string `json:"watchers"` // names of clients that are watching this ref
+
+	// Extra diagnostics (for use by tests only)
 	Wait, Buf         *ot.WorkspaceOp
 	UpstreamRevNumber int
 }
 
-// RefInfo describes a ref.
-type RefInfo struct {
-	RefIdentifier // the repo and ref name
-	RefBaseInfo
-	Rev      int      `json:"rev"`      // number of ops received by the server
-	Target   string   `json:"target"`   // if symbolic ref, the target ref
-	Watchers []string `json:"watchers"` // IDs of clients watching this ref or repo
+// IsSymbolic reports whether r is a symbolic ref.
+func (r RefInfo) IsSymbolic() bool {
+	return r.Target != ""
+}
+
+// DebugLogParams contains the parameters for the "debug/log" request.
+type DebugLogParams struct {
+	Header bool   `json:"header,omitempty"` // render this log message as a section header in the server log
+	Text   string `json:"text"`             // log message
 }
 
 //go:generate stringer -type=ErrorCode
@@ -446,6 +492,7 @@ const (
 	ErrorCodeNotInitialized                        // the connection is not yet initialized
 	ErrorCodeAlreadyInitialized                    // the connection is already initialized
 	ErrorCodeRepoNotExists                         // the specified repo does not exist
+	ErrorCodeRepoExists                            // the specified repo already exists
 	ErrorCodeRefNotExists                          // the specified ref does not exist
 	ErrorCodeRefExists                             // the specified ref exists
 	ErrorCodeRefConflict                           // ref base/state conflict

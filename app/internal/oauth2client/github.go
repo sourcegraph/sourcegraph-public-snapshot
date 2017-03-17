@@ -5,28 +5,37 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/go-github/github"
+
+	"encoding/base64"
+
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
-func auth0GitHubConfigWithRedirectURL() *oauth2.Config {
+func auth0GitHubConfigWithRedirectURL(redirectURL string) *oauth2.Config {
 	config := *auth.Auth0Config
-	config.RedirectURL = conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive)).String()
+	// RedirectURL is checked by Auth0 against a whitelist so it can't be spoofed.
+	config.RedirectURL = redirectURL
 	return &config
 }
 
@@ -58,19 +67,45 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
-	return GitHubOAuth2Initiate(w, r, scopes, returnTo.String(), returnToNew.String())
+	base := conf.AppURL
+	// use X-App-Url header as base if available to make reverse proxies work
+	if h := r.Header.Get("X-App-Url"); h != "" {
+		if u, err := url.Parse(h); err == nil {
+			base = u
+		}
+	}
+	redirectURL := base.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive))
+
+	return GitHubOAuth2Initiate(w, r, scopes, redirectURL.String(), returnTo.String(), returnToNew.String())
 }
 
-func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, returnTo string, returnToNew string) error {
+type oauthCookie struct {
+	Nonce       string
+	RedirectURL string
+	ReturnTo    string
+	ReturnToNew string
+}
+
+func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, redirectURL, returnTo, returnToNew string) error {
 	nonce := randstring.NewLen(32)
+	cookie, err := json.Marshal(&oauthCookie{
+		Nonce:       nonce,
+		RedirectURL: redirectURL,
+		ReturnTo:    returnTo,
+		ReturnToNew: returnToNew,
+	})
+	if err != nil {
+		return err
+	}
+
 	http.SetCookie(w, &http.Cookie{
-		Name:    "nonce",
-		Value:   nonce,
-		Path:    "",
+		Name:    "oauth",
+		Value:   base64.URLEncoding.EncodeToString(cookie),
+		Path:    "/",
 		Expires: time.Now().Add(10 * time.Minute),
 	})
 
-	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL().AuthCodeURL(nonce+":"+returnTo+":"+returnToNew,
+	http.Redirect(w, r, auth0GitHubConfigWithRedirectURL(redirectURL).AuthCodeURL(nonce,
 		oauth2.SetAuthURLParam("connection", "github"),
 		oauth2.SetAuthURLParam("connection_scope", strings.Join(scopes, ",")),
 	), http.StatusSeeOther)
@@ -78,17 +113,29 @@ func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 }
 
 func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
-	expectedNonceCookie := ""
-	returnTo := "/"
-	returnToNew := "/"
-	if parts := strings.SplitN(r.URL.Query().Get("state"), ":", 3); len(parts) == 3 {
-		expectedNonceCookie = parts[0]
-		returnTo = parts[1]
-		returnToNew = parts[2]
+	cookie := &oauthCookie{
+		Nonce:       "", // the empty default value is not accepted unless impersonating
+		RedirectURL: "",
+		ReturnTo:    "/",
+		ReturnToNew: "/",
 	}
+	if c, err := r.Cookie("oauth"); err == nil {
+		cookieJSON, err := base64.URLEncoding.DecodeString(c.Value)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(cookieJSON, cookie); err != nil {
+			return err
+		}
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:   "oauth",
+		Path:   "/",
+		MaxAge: -1,
+	})
 
 	code := r.URL.Query().Get("code")
-	token, err := auth0GitHubConfigWithRedirectURL().Exchange(r.Context(), code)
+	token, err := auth0GitHubConfigWithRedirectURL(cookie.RedirectURL).Exchange(r.Context(), code)
 	if err != nil {
 		return err
 	}
@@ -120,16 +167,8 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	if !info.Impersonated { // impersonation has no state parameter, so don't check nonce
-		nonceCookie, err := r.Cookie("nonce")
-		if err != nil {
-			return err
-		}
-		http.SetCookie(w, &http.Cookie{
-			Name:   "nonce",
-			Path:   "/",
-			MaxAge: -1,
-		})
-		if nonceCookie.Value == "" || expectedNonceCookie != nonceCookie.Value {
+		expectedNonce := r.URL.Query().Get("state")
+		if cookie.Nonce == "" || cookie.Nonce != expectedNonce {
 			return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("invalid state")}
 		}
 	}
@@ -168,7 +207,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		if len(scopeOfToken) < len(mergedScope) {
 			// The user has once granted us more permissions than we got with this token. Run oauth flow
 			// again to fetch token with all permissions. This should be non-interactive.
-			return GitHubOAuth2Initiate(w, r, mergedScope, returnTo, returnToNew)
+			return GitHubOAuth2Initiate(w, r, mergedScope, cookie.RedirectURL, cookie.ReturnTo, cookie.ReturnToNew)
 		}
 		if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
 			// Wohoo, we got more permissions. Remember in user database.
@@ -189,14 +228,24 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		return err
 	}
 
+	eventLabel := "CompletedGitHubOAuth2Flow"
 	if firstTime {
-		returnToNewURL, err := url.Parse(returnToNew)
+		eventLabel = "SignupCompleted"
+	}
+
+	// Track user GitHub data in GCS
+	if r.UserAgent() != "Sourcegraph e2etest-bot" {
+		go trackUserGitHubData(actor, eventLabel)
+	}
+
+	if firstTime {
+		returnToNewURL, err := url.Parse(cookie.ReturnToNew)
 		if err != nil {
 			return err
 		}
 		q := returnToNewURL.Query()
 		q.Set("tour", "signup")
-		q.Set("_event", "SignupCompleted")
+		q.Set("_event", eventLabel)
 		q.Set("_signupChannel", "GitHubOAuth")
 		q.Set("_githubAuthed", "true")
 		q.Set("_githubCompany", info.Company)
@@ -206,7 +255,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		http.Redirect(w, r, returnToNewURL.String(), http.StatusSeeOther)
 	} else {
 		// Add tracking info to return-to URL.
-		returnToURL, err := url.Parse(returnTo)
+		returnToURL, err := url.Parse(cookie.ReturnTo)
 		if err != nil {
 			return err
 		}
@@ -216,7 +265,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		if q.Get("ob") != "github" {
 			q.Del("ob")
 		}
-		q.Set("_event", "CompletedGitHubOAuth2Flow")
+		q.Set("_event", eventLabel)
 		q.Set("_githubAuthed", "true")
 		q.Set("_githubCompany", info.Company)
 		q.Set("_githubName", info.Name)
@@ -254,4 +303,62 @@ func mergeScopes(a, b []string) []string {
 	}
 	sort.Strings(merged)
 	return merged
+}
+
+// Track user data in GCS
+func trackUserGitHubData(actor *auth.Actor, event string) error {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("panic in trackUserGitHubData: %s", err)
+		}
+	}()
+
+	gcsClient, err := gcstracker.New(actor)
+	if err != nil {
+		return err
+	}
+	if gcsClient == nil {
+		return nil
+	}
+
+	// Since the newly-authenticated actor (and their GitHubToken) has
+	// not yet been associated with the request's context, we need to
+	// create a temporary Context object that contains that linkage in
+	// order to pull data from the GitHub API
+	tempCtx := auth.WithActor(context.Background(), actor)
+
+	// Fetch orgs and org members data
+	orgs, err := backend.Orgs.ListAllOrgs(tempCtx, &sourcegraph.OrgListOptions{})
+	if err != nil {
+		return err
+	}
+	orgsWithDetails := make(map[string]([]*github.User))
+	for _, org := range orgs.Orgs {
+		members, err := backend.Orgs.ListAllOrgMembers(tempCtx, &sourcegraph.OrgListOptions{OrgName: org.Login})
+		if err != nil {
+			return err
+		}
+		orgsWithDetails[org.Login] = members
+	}
+
+	// Fetch repo data
+	reposWithDetails, err := backend.Repos.ListWithDetails(tempCtx)
+	if err != nil {
+		return err
+	}
+
+	// Add new TrackedObject
+	tos := gcsClient.NewTrackedObjects(event)
+
+	err = tos.AddOrgsWithDetailsObjects(orgsWithDetails)
+	if err != nil {
+		return err
+	}
+	err = tos.AddReposWithDetailsObjects(reposWithDetails)
+	if err != nil {
+		return err
+	}
+
+	gcsClient.Write(tos)
+	return nil
 }

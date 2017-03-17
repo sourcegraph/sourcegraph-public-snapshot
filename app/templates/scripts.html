@@ -7,15 +7,14 @@
 
 <!-- Start of Telligent scripts -->
 <script ignore-csp>
-;(function(t,r,a,c,k,e,d){if(!t[k]){t.GlobalTelligentNamespace=t.GlobalTelligentNamespace||[];t.GlobalTelligentNamespace.push(k);t[k]=function(){(t[k].q=t[k].q||[]).push(arguments)};t[k].q=t[k].q||[];e=r.createElement(a);d=r.getElementsByTagName(a)[0];e.async=1;e.src=c;d.parentNode.insertBefore(e,d)}}(window,document,"script","https://s3.amazonaws.com/telligent-data/tracker-binaries/js/latest/tel.js","telligent"));
+;(function(t,r,a,c,k,e,d){if(!t[k]){t.GlobalTelligentNamespace=t.GlobalTelligentNamespace||[];t.GlobalTelligentNamespace.push(k);t[k]=function(){(t[k].q=t[k].q||[]).push(arguments)};t[k].q=t[k].q||[];e=r.createElement(a);d=r.getElementsByTagName(a)[0];e.async=1;e.src=c;d.parentNode.insertBefore(e,d)}}(window,document,"script","https://storage.googleapis.com/telligent-artifacts/tracker/tel.js","telligent"));
 </script>
 <!-- End of Telligent scripts-->
 
-<!-- Start of Optimizely script -->
-<script ignore-csp src="https://cdn.optimizely.com/js/8155070806.js"></script>
-<!-- End of Optimizely script -->
-
 {{if not disableSupportServices}}
+	<!-- Start of Optimizely script -->		
+	<!-- <script ignore-csp src="https://cdn.optimizely.com/js/8155070806.js"></script>	-->
+	<!-- End of Optimizely script -->
 
 	<!-- Don't load Intercom for SEO pages -->
 	{{if not .Meta.SEO}}

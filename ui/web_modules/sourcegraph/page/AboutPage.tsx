@@ -7,10 +7,10 @@ import { LocationStateToggleLink } from "sourcegraph/components/LocationStateTog
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export function AboutPage({ location }: LocationProps): JSX.Element {
-	const boardMemberSx = { marginBottom: whitespace[4], marginRight: whitespace[4] };
+	const boardMemberSx = { marginBottom: whitespace[5], marginRight: whitespace[5] };
 	return (
 		<div>
 			<PageTitle title="About" />
@@ -19,11 +19,11 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 					<Heading level={3} color="white">The pace at which humans can write code is the only thing that stands between us and flying cars, a habitat on Mars and a cure for cancer.</Heading>
 				</FlexContainer>
 			</Hero>
-			<FlexContainer direction="top_bottom" style={{
+			<FlexContainer direction="top-bottom" style={{
 				maxWidth: 640,
 				margin: "auto",
 			}}>
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>Master Plan</Heading>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>Master Plan</Heading>
 				<p>We believe code intelligence can help bring <strong>the future sooner.</strong> Our long-term vision is to make it so everyone, in every community, in every country, and in every industry can create products using the best technology. Here is what we are working on now to help this happen:</p>
 				<ul>
 					<li>Make basic code intelligence ubiquitous</li>
@@ -100,36 +100,36 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 					</div>
 				</FlexContainer>
 
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>
 					Investors
 				</Heading>
 				<img width="100%" src={`${context.assetsRoot}/img/about/about-investors.png`} />
 
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>
 					Board of Directors
 				</Heading>
 
 				<FlexContainer wrap={true}>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Scott Raney" email="Redpoint Ventures" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-scott.png`} />
 						<User nickname="Daniel Friedland" email="Goldcrest Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-daniel.png`} />
 					</FlexContainer>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Quinn Slack" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-quinn.png`} />
 						<User nickname="Beyang Liu" email="Sourcegraph" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-board-beyang.png`} />
 					</FlexContainer>
 
 				</FlexContainer>
 
-				<Heading level={4} underline="purple" style={{ marginTop: whitespace[4] }}>
+				<Heading level={4} underline="purple" style={{ marginTop: whitespace[5] }}>
 					Advisors and Supporters
 					</Heading>
 
 				<FlexContainer wrap={true}>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Adam Ross" email="Goldcrest Capital" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-adam.png`} />
 						<User nickname="Bear Douglas" email="Developer Evangelist" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-bear.jpg`} />
 						<User nickname="Jens Pillgram-Larsen" email="LinkedIn" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-jens.jpg`} />
@@ -137,7 +137,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 						<User nickname="Mark Striebeck" email="Google" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-mark.jpg`} />
 					</FlexContainer>
 
-					<FlexContainer wrap={true} direction="top_bottom">
+					<FlexContainer wrap={true} direction="top-bottom">
 						<User nickname="Audrey Maclean" email="Entrepreneur" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-audrey.jpg`} />
 						<User nickname="Bill Malloy" email="Technologist & Financier" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-bill.jpg`} />
 						<User nickname="John Vrionis" email="Lightspeed Venture Partners" style={boardMemberSx} avatar={`${context.assetsRoot}/img/about/about-advisor-john.jpg`} />
@@ -149,10 +149,10 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 
 				{!context.user && <div style={{
 					textAlign: "center",
-					marginTop: whitespace[5],
-					marginBottom: whitespace[5],
+					marginTop: whitespace[8],
+					marginBottom: whitespace[8],
 				}}>
-					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="purple">
 							Sign up for free
 						</Button>

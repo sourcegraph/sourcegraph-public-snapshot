@@ -27,7 +27,7 @@ func verifyUserHasRepoURIAccess(ctx context.Context, repoURI string) bool {
 	switch {
 	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
-		if _, err := github.ReposFromContext(ctx).Get(ctx, repoURI); err == nil {
+		if _, err := github.GetRepo(ctx, repoURI); err == nil {
 			return true
 		}
 		return false

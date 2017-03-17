@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"time"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/githubcli"
 
 	"context"
 
@@ -23,6 +23,8 @@ import (
 	"github.com/sourcegraph/httpcache"
 	"golang.org/x/oauth2"
 )
+
+var gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degredation"))
 
 func init() {
 	prometheus.MustRegister(reposGitHubHTTPCacheCounter)
@@ -134,7 +136,7 @@ func baseTransport(transport http.RoundTripper) http.RoundTripper {
 	if transport == nil {
 		transport = http.DefaultTransport
 	}
-	if githubcli.Config.Disable {
+	if gitHubDisable {
 		transport = disabledTransport{}
 	}
 

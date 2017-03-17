@@ -1,7 +1,7 @@
-import { style } from "glamor";
 import * as React from "react";
-import { Warning } from "sourcegraph/components/symbols/Primaries";
-import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { FormElement } from "sourcegraph/components/FormElement";
+import * as Icons from "sourcegraph/components/symbols/Primaries";
+import { colors, forms, typography, whitespace } from "sourcegraph/components/utils";
 
 interface Props extends React.HTMLAttributes<HTMLInputElement> {
 	block?: boolean;
@@ -11,93 +11,64 @@ interface Props extends React.HTMLAttributes<HTMLInputElement> {
 	// to <input ref={...}>.
 	domRef?: (c: HTMLInputElement) => void;
 	label?: string;
-	placeholder?: string;
 	helperText?: string;
 	error?: boolean;
 	errorText?: string;
+	optionalText?: string;
 	style?: React.CSSProperties;
 	containerStyle?: React.CSSProperties;
-	inputSize?: "small";
+	compact?: boolean;
+	icon?: string; // Choose from Primaries icon names
+	iconPosition?: "right";
 }
 
 export function Input(props: Props): JSX.Element {
-	const other = Object.assign({}, props);
-	delete other.block;
-	delete other.className;
-	delete other.domRef;
-	delete other.label;
-	delete other.placeholder;
-	delete other.helperText;
-	delete other.error;
-	delete other.errorText;
-	delete other.style;
-	delete other.containerStyle;
-	delete other.inputSize;
+	const {
+		block,
+		className,
+		errorText,
+		helperText,
+		label,
+		optionalText,
 
-	const errorTextSx = Object.assign(
-		{
-			display: "block",
-			marginTop: whitespace[2],
-		},
-		typography.size[7],
-	);
+		compact,
+		containerStyle,
+		domRef,
+		error,
+		icon,
+		iconPosition,
+		style,
 
-	const inputSx = Object.assign(
-		{
-			appearance: "none",
-			borderRadius: 3,
-			backgroundColor: "white",
-			borderColor: props.error ? colors.red() : colors.blueGray(0.3),
-			borderWidth: 1,
-			borderStyle: "solid",
-			boxSizing: "border-box",
-			color: colors.blueGrayD1(),
-			display: props.block ? "block" : "inline-block",
-			paddingBottom: props.inputSize === "small" ? whitespace[1] : whitespace[2],
-			paddingLeft: props.inputSize === "small" ? "0.8rem" : whitespace[3],
-			paddingRight: props.inputSize === "small" ? "0.8rem" : whitespace[3],
-			paddingTop: props.inputSize === "small" ? "0.3rem" : whitespace[2],
-			transition: "all 0.25s ease-in-out",
-			width: props.block ? "100%" : null,
-		},
-		props.style,
-		props.inputSize === "small" ? typography.size[7] : null,
-	);
+		...inputProps
+	} = props;
 
-	const placeholderSx = { color: colors.blueGray(0.7) };
+	const formElProps = { block, className, errorText, helperText, label, optionalText };
 
-	const sx = Object.assign(
-		{
-			width: props.block ? "100%" : null,
-		},
-		props.containerStyle,
-	);
+	const inputSx = {
+		display: block ? "block" : "inline-block",
+		paddingBottom: compact ? whitespace[1] : whitespace[2],
+		paddingTop: compact ? whitespace[1] : whitespace[2],
+		paddingLeft: icon && !iconPosition ? "2.5rem" : whitespace[3],
+		paddingRight: icon && iconPosition ? "2.5rem" : whitespace[3],
+		width: block && "100%",
+		boxShadow: error && forms.error,
+		...style,
+		...compact ? typography.size[7] : {},
+	};
 
-	return <div className={props.className} style={sx}>
-		{props.label && <div style={{ marginBottom: whitespace[2] }}>{props.label}</div>}
-		<input {...other} style={inputSx} ref={props.domRef} placeholder={props.placeholder}
-			{...style({
-				":focus": {
-					borderColor: `${colors.blueGray(0.7)} !important`,
-					outline: "none",
+	return <FormElement {...formElProps} style={containerStyle}>
+		<div style={{ position: "relative" }}>
+			<input {...inputProps} {...forms.style} style={inputSx} ref={domRef} />
+			{icon && Icons[icon]({
+				color: colors.blueGrayL1(),
+				width: compact ? 16 : 24,
+				style: {
+					margin: whitespace[2],
+					position: "absolute",
+					right: iconPosition && 0,
+					top: 0,
 				},
-				"::-webkit-input-placeholder": placeholderSx,
-				"::-moz-placeholder": placeholderSx,
-				":-moz-placeholder": placeholderSx,
-				":-ms-input-placeholder": placeholderSx,
-			}) }
-		/>
-		{props.helperText && <em style={errorTextSx}>{props.helperText}</em>}
-		{props.errorText && <div style={{
-			color: colors.red(),
-			marginBottom: whitespace[2],
-			marginTop: whitespace[2],
-		}}>
-			<Warning width={18} style={{
-				fill: colors.red(),
-				marginRight: whitespace[2],
-			}} />
-			{props.errorText}
-		</div>}
-	</div>;
+			})}
+		</div>
+	</FormElement>;
 }

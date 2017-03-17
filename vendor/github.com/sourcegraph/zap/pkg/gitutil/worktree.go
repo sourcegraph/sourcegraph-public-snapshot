@@ -2,13 +2,22 @@ package gitutil
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/zap/pkg/errorlist"
 )
+
+// MaxFileSize is the maximum file size of files to include when
+// creating commits or diffs. If a file is larger than this, it is
+// omitted.
+const MaxFileSize = 500 * 1024
 
 // Worktree refers to a local directory that is the root of a git
 // worktree.
@@ -20,6 +29,9 @@ type Worktree struct {
 // NewWorktree creates a new Worktree that performs operations on the
 // git repository whose worktree is at dir.
 func NewWorktree(dir string) (Worktree, error) {
+	if dir == "" {
+		dir = "." // windows filepath.Abs cannot handle this case otherwise
+	}
 	dir, err := filepath.Abs(dir)
 	if err != nil {
 		return Worktree{}, err
@@ -53,12 +65,13 @@ func (w Worktree) WorktreeDir() string { return w.Dir }
 
 func (w Worktree) TopLevelDir() (string, error) {
 	dir, err := execGitCommand(w.Dir, "rev-parse", "--show-toplevel")
+	dir = filepath.Clean(dir) // windows: git returns unix slashes NOT windows slashes, so clean to convert them to windows
 	return string(dir), err
 }
 
 func (w Worktree) Reset(typ, rev string) error {
-	if typ != "hard" && typ != "mixed" {
-		panic(fmt.Sprintf("(Worktree).Reset 1st arg must be \"hard\" or \"reset\", got %q", typ))
+	if typ != "hard" && typ != "mixed" && typ != "merge" {
+		panic(fmt.Sprintf("(Worktree).Reset 1st arg must be \"hard\", \"reset\", or \"merge\"; got %q", typ))
 	}
 	if err := checkArgSafety(rev); err != nil {
 		return err
@@ -72,28 +85,56 @@ func (w Worktree) Clean() error {
 	return err
 }
 
+const RebaseApplyDir = "rebase-apply"
+
+func (w Worktree) CheckoutDetachedHEAD(commit string) error {
+	if len(commit) != 40 {
+		return fmt.Errorf("CheckoutDetachedHEAD requires absolute commit ID (40-char SHA), got %q", commit)
+	}
+	if err := checkArgSafety(commit); err != nil {
+		return err
+	}
+	_, err := execGitCommand(w.Dir, "checkout", "--quiet", "--detach", commit, "--")
+	return err
+}
+
+const IndexLockFile = "index.lock"
+
+func (w Worktree) IsIndexLocked() (bool, error) {
+	fi, err := os.Stat(filepath.Join(w.GitDir(), IndexLockFile))
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return err == nil && fi.Mode().IsRegular(), err
+}
+
 func (w Worktree) ListUntrackedFiles() ([]*ChangedFile, error) {
-	out, err := execGitCommand(w.Dir, "ls-files", "--full-name", "--others", "-z", "--exclude-standard", "--exclude=.#*")
+	// .#* and #* matches emacs temporary files
+	out, err := execGitCommand(w.Dir, "ls-files", "--full-name", "--others", "-z", "--exclude-standard", "--exclude=.#*", "--exclude=#*")
 	if err != nil {
 		return nil, err
 	}
 	paths := splitNulls(out)
-	changes := make([]*ChangedFile, len(paths))
-	for i, p := range paths {
+	changes := make([]*ChangedFile, 0, len(paths))
+	for _, p := range paths {
 		fi, err := os.Stat(filepath.Join(w.WorktreeDir(), p))
 		if err != nil {
-			return nil, err
+			return nil, &WorktreeConcurrentlyModifiedError{Path: p, Err: err}
+		}
+		if fi.Size() > MaxFileSize {
+			log.Printf("skipping large file (%d bytes): %s", fi.Size(), p)
+			continue
 		}
 		mode, err := modeForOSFileMode(fi.Mode())
 		if err != nil {
 			return nil, fmt.Errorf("file %q: %s", p, err)
 		}
 
-		changes[i] = &ChangedFile{
+		changes = append(changes, &ChangedFile{
 			DstMode: mode,
 			Status:  "A",
 			SrcPath: p,
-		}
+		})
 	}
 	return changes, nil
 }
@@ -145,12 +186,12 @@ func (w Worktree) DiffIndex(head string) ([]*ChangedFile, error) {
 	return changedFiles, nil
 }
 
-func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
+func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*ChangedFile, error) {
 	var (
 		changesMu sync.Mutex
 		changes   []*ChangedFile
 		wg        sync.WaitGroup
-		errs      errorList
+		errs      errorlist.Errors
 	)
 
 	// Get changed files relative to the HEAD.
@@ -160,7 +201,7 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 
 		indexChanges, err := w.DiffIndex(head)
 		if err != nil {
-			errs.add(err)
+			errs.Add(err)
 			return
 		}
 
@@ -169,9 +210,9 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 			switch f.Status[0] {
 			case 'A', 'C', 'D', 'M', 'R': // ok
 			case 'U':
-				errs.add(fmt.Errorf("unable to commit unmerged file %q", f.SrcPath))
+				errs.Add(fmt.Errorf("unable to commit unmerged file %q", f.SrcPath))
 			default:
-				errs.add(fmt.Errorf("unable to commit unrecognized change with status %q (src %q mode %q, dst %q mode %q); ignoring", f.Status, f.SrcPath, f.SrcMode, f.DstPath, f.DstMode))
+				errs.Add(fmt.Errorf("unable to commit unrecognized change with status %q (src %q mode %q, dst %q mode %q); ignoring", f.Status, f.SrcPath, f.SrcMode, f.DstPath, f.DstMode))
 			}
 		}
 
@@ -187,7 +228,7 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 
 		untrackedChanges, err := w.ListUntrackedFiles()
 		if err != nil {
-			errs.add(err)
+			errs.Add(err)
 			return
 		}
 		changesMu.Lock()
@@ -196,8 +237,12 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 	}()
 
 	wg.Wait()
-	if err := errs.error(); err != nil {
+	if err := errs.Error(); err != nil {
 		return nil, err
+	}
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err() // early cancellation
 	}
 
 	// Fix some artifacts of computing these 2 diffs separately and
@@ -247,6 +292,9 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 		}
 		cleanChanges := changes[:0]
 		for _, c := range changes {
+			if ctx.Err() != nil {
+				return nil, ctx.Err() // early cancellation
+			}
 			switch c.Status[0] {
 			case 'A', 'D':
 				_, created := created[c.SrcPath]
@@ -260,7 +308,7 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 						}
 						data, err := ioutil.ReadFile(filepath.Join(w.WorktreeDir(), c.SrcPath))
 						if err != nil {
-							return nil, err
+							return nil, &WorktreeConcurrentlyModifiedError{Path: c.SrcPath, Err: err}
 						}
 						if !bytes.Equal(prevData, data) {
 							cleanChanges = append(cleanChanges, &ChangedFile{
@@ -288,6 +336,25 @@ func (w Worktree) DiffIndexAndWorkingTree(head string) ([]*ChangedFile, error) {
 	return changes, nil
 }
 
+// A WorktreeConcurrentlyModifiedError occurs when the worktree is
+// concurrently modified while (e.g.) commit object is being
+// created. It signals to the caller that it should retry the
+// operation (and hope there are no concurrent modifications this
+// time).
+type WorktreeConcurrentlyModifiedError struct {
+	Path string
+	Err  error
+}
+
+func (e *WorktreeConcurrentlyModifiedError) Error() string {
+	return fmt.Sprintf("worktree concurrently modified during error: %s", e.Err)
+}
+
+func IsWorktreeConcurrentlyModified(err error) bool {
+	_, ok := err.(*WorktreeConcurrentlyModifiedError)
+	return ok
+}
+
 func (w Worktree) CreateTreeAndRacilyFillInNewFileSHAs(basePath string, entries []*TreeEntry) (string, error) {
 	for _, e := range entries {
 		// Entries that were added, and the ancestor trees thereof,
@@ -306,7 +373,7 @@ func (w Worktree) CreateTreeAndRacilyFillInNewFileSHAs(basePath string, entries 
 				// could have been changed on disk in the meantime.
 				data, err := ioutil.ReadFile(filepath.Join(w.WorktreeDir(), path))
 				if err != nil {
-					return "", err
+					return "", &WorktreeConcurrentlyModifiedError{Path: path, Err: err}
 				}
 
 				e.OID, err = w.HashObject("blob", path, data)
@@ -329,19 +396,28 @@ func (w Worktree) CreateTreeAndRacilyFillInNewFileSHAs(basePath string, entries 
 	return w.BareRepo.CreateTree(basePath, entries)
 }
 
-func (w Worktree) MakeCommit(parent string, onlyIfChangedFiles bool) (string, []*ChangedFile, error) {
+func (w Worktree) MakeCommit(ctx context.Context, parent string, onlyIfChangedFiles bool) (string, []*ChangedFile, error) {
 	if parent == "" {
 		panic("empty parent commit")
 	}
+
+	// Check for ctx.Err() after each piece of work to avoid doing
+	// unnecessary work if we're canceled.
 
 	onRootCommit, err := w.HEADHasNoCommitsAndNextCommitWillBeRootCommit()
 	if err != nil {
 		return "", nil, err
 	}
+	if ctx.Err() != nil {
+		return "", nil, ctx.Err()
+	}
 
-	changes, err := w.DiffIndexAndWorkingTree(parent)
+	changes, err := w.DiffIndexAndWorkingTree(ctx, parent)
 	if err != nil {
 		return "", nil, err
+	}
+	if ctx.Err() != nil {
+		return "", nil, ctx.Err()
 	}
 	if onlyIfChangedFiles && len(changes) == 0 {
 		return "", nil, nil
@@ -352,10 +428,16 @@ func (w Worktree) MakeCommit(parent string, onlyIfChangedFiles bool) (string, []
 	if err != nil {
 		return "", nil, err
 	}
+	if ctx.Err() != nil {
+		return "", nil, ctx.Err()
+	}
 
 	// Update full tree with changes.
 	if err := tree.ApplyChanges(changes); err != nil {
 		return "", nil, err
+	}
+	if ctx.Err() != nil {
+		return "", nil, ctx.Err()
 	}
 
 	// Create a tree object with the changes (without changing the
@@ -364,7 +446,10 @@ func (w Worktree) MakeCommit(parent string, onlyIfChangedFiles bool) (string, []
 	if err != nil {
 		return "", nil, err
 	}
+	if ctx.Err() != nil {
+		return "", nil, ctx.Err()
+	}
 
-	commitID, err := w.CreateCommitFromTree(treeID, parent, onRootCommit)
+	commitID, err := w.CreateCommitFromTree(ctx, treeID, parent, onRootCommit)
 	return commitID, changes, err
 }

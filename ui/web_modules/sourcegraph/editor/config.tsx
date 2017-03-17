@@ -1,105 +1,143 @@
 import * as throttle from "lodash/throttle";
-import * as React from "react";
-import * as ReactDOM from "react-dom";
+
+import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
+import { TPromise } from "vs/base/common/winjs.base";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeEditorWidget";
 import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
+import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderRegistry } from "vs/editor/common/modes";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
+import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IFileService } from "vs/platform/files/common/files";
+import { IQuickOpenService } from "vs/platform/quickOpen/common/quickOpen";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
 import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
-import { Router } from "sourcegraph/app/router";
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { urlToBlobRange } from "sourcegraph/blob/routes";
-import { FlexContainer } from "sourcegraph/components";
-import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { getEditorInstance, updateEditorInstance } from "sourcegraph/editor/Editor";
-import { GoToDefinitionAction } from "sourcegraph/workbench/info/action";
+import { renderDirectoryContent, renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
+import { SidebarContribID, SidebarContribution } from "sourcegraph/workbench/info/contrib";
+import { WorkbenchState, onWorkbenchShown, workbenchStore } from "sourcegraph/workbench/main";
+import { getEditorInstance, updateEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
-import { Services } from "sourcegraph/workbench/services";
+import { Services, getCurrentWorkspace, setWorkspace } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
 export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
+	updateWorkspace(location);
+	updateEditorArea(location);
+}
+
+export async function updateWorkspace(location: AbsoluteLocation): Promise<void> {
 	const { repo, commitID, path } = location;
 	const resource = URIUtils.pathInRepo(repo, commitID, path);
+
+	const currWorkspace = getCurrentWorkspace();
+
+	if (resource.with({ fragment: "" }).toString() !== currWorkspace.resource.toString()) {
+		setWorkspace({ resource: resource.with({ fragment: "" }), revState: { zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
+	}
+
+	return updateFileTree(resource);
+}
+
+export async function updateEditorArea(location: AbsoluteLocation): Promise<void> {
+	const { repo, commitID, path, selection } = location;
+	const resource = URIUtils.pathInRepo(repo, commitID, path);
+
 	const fileStat = await Services.get(IFileService).resolveFile(resource);
 	if (fileStat.isDirectory) {
 		renderDirectoryContent();
-		updateFileTree(resource);
-	} else {
-		renderFileEditor(location);
+		return;
 	}
+
+	const exists = await Services.get(IFileService).existsFile(resource);
+	if (!exists) {
+		if (location.zapRef) {
+			// Don't render 404 in a zap session yet since the file may have been
+			// created by an op.
+			return;
+		}
+		renderNotFoundError();
+		return;
+	}
+	if (workbenchStore.getState().diffMode) {
+		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource, selection);
+	} else {
+		renderFileEditor(resource, selection);
+	}
+}
+
+function resourceForCurrentEditor(): URI | null {
+	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
+	const input = editorService.getActiveEditor();
+	const editor = getCodeEditor(input);
+	if (!editor) { return null; }
+	return editor.getModel().uri;
 }
 
 /**
  * renderEditor opens the editor for a file.
  */
-function renderFileEditor(location: AbsoluteLocation): void {
-	const { repo, commitID, path, selection } = location;
-	const resource = URIUtils.pathInRepo(repo, commitID, path);
+export function renderFileEditor(resource: URI, selection: IRange | null): void {
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	const resolverService = Services.get(ITextModelResolverService);
-	const editorInput = new ResourceEditorInput("", "", resource, resolverService);
-	editorService.openEditorWithoutURLChange(editorInput).then(() => {
+	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
 }
 
 /**
- * renderRootContent displays a welcome message when a user is viewing the root of or a directory in a repo.
+ * renderEditor opens a diff editor for two files.
  */
-function renderDirectoryContent(): void {
-	// We don't need or want the editor to be open when displaying the content for a directory.
+export function renderDiffEditor(left: URI, right: URI, selection: IRange | null): void {
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	editorService.closeAllEditors();
+	const resolverService = Services.get(ITextModelResolverService);
+	TPromise.join([editorService.createInput({ resource: left }), editorService.createInput({ resource: right })]).then(inputs => {
+		const leftInput = new ResourceEditorInput("", "", left, resolverService);
+		const rightInput = new ResourceEditorInput("", "", right, resolverService);
+		const diff = new DiffEditorInput("", "", leftInput, rightInput);
+		editorService.openEditorWithoutURLChange(right, diff, {}).then(() => {
+			updateEditorAfterURLChange(selection);
+		});
+	});
+}
 
-	const el = document.getElementById("workbench.parts.editor");
-	if (!el) {
-		throw new Error("Expected workbench.parts.editor element to exist.");
+/**
+ * isOnZapRef returns whether the user is currently viewing a zap ref
+ */
+export function isOnZapRef(): boolean {
+	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
+	return Boolean(contextService.getWorkspace().revState && contextService.getWorkspace().revState!.zapRef);
+}
+
+/**
+ * setEditorDiffState updates the configuration properties for the current editor.
+ */
+export function setEditorDiffState(state: WorkbenchState, location: AbsoluteLocation): void {
+	const uri = resourceForCurrentEditor();
+	if (!uri) {
+		return;
 	}
-	const container = el.firstChild;
-	if (!container) {
-		throw new Error("Expected workbench.parts.editor to have a child.");
+
+	const revState = getCurrentWorkspace().revState;
+	if (state.diffMode && revState && revState.zapRef) {
+		const left = uri.with({ query: `${uri.query}~0` });
+		renderDiffEditor(left, uri, location.selection);
+	} else {
+		renderFileEditor(uri, null);
 	}
-
-	const node = document.createElement("div");
-	node.style.width = "100%";
-	node.style.height = "100%";
-	container.appendChild(node);
-
-	const style = {
-		fontFamily: typography.fontStack.sansSerif,
-		color: colors.white(),
-		margin: whitespace[2],
-		textAlign: "center",
-	};
-
-	const keyboardShortcutStyle = {
-		backgroundColor: colors.blueGrayD1(),
-		borderRadius: "3px",
-		padding: "2px 5px",
-	};
-	const content = <FlexContainer direction="top_bottom" justify="center" items="center" style={{
-		width: "100%",
-		height: "100%",
-		padding: whitespace[2],
-		paddingBottom: whitespace[6],
-	}}>
-		<div id="directory_help_message" style={{ ...style, ...typography.size[4] }}>Start by going to a file or hit <span style={keyboardShortcutStyle}>/</span > to search for a symbol.</div>
-	</FlexContainer>;
-	ReactDOM.render(content, node);
 }
 
 function updateEditorAfterURLChange(sel: IRange | null): void {
@@ -114,56 +152,126 @@ function updateEditorAfterURLChange(sel: IRange | null): void {
 	}
 	editor.setSelection(sel);
 	editor.revealRangeInCenter(sel);
-	editor.getAction(GoToDefinitionAction.ID).run();
+
+	// Opening sidebar is a noop until a definition provider is registered.
+	// This sidebar ALSO needs hover/reference providers registered to fetch data.
+	// The extension host will register providers asynchronously, so wait
+	// for registration events before opening the sidebar.
+	const providerRegistered = (registry) => {
+		return new Promise<void>((resolve, reject) => {
+			if (registry.all(editor.getModel()).length === 0) {
+				const disposable = registry.onDidChange(() => {
+					// assume the change is a registration as needed by the sidebar
+					disposable.dispose();
+					resolve();
+				});
+			} else {
+				resolve();
+			}
+		});
+	};
+	Promise.all([providerRegistered(DefinitionProviderRegistry), providerRegistered(HoverProviderRegistry), providerRegistered(ReferenceProviderRegistry)])
+		.then(() => {
+			const sidebar = editor.getContribution(SidebarContribID) as SidebarContribution;
+			sidebar.openInSidebar();
+		});
 }
+
+let quickOpenShown = false;
 
 /**
  * registerEditorCallbacks attaches custom Sourcegraph handling to the workbench editor lifecycle.
  */
-export function registerEditorCallbacks(router: Router): void {
+export function registerEditorCallbacks(): IDisposable[] {
+	const disposables: IDisposable[] = [];
+	disposables.push(...registerQuickopenListeners(() => quickOpenShown = true, () => quickOpenShown = false));
 	const codeEditorService = Services.get(ICodeEditorService) as ICodeEditorService;
-	codeEditorService.onCodeEditorAdd(updateEditor);
+	disposables.push(codeEditorService.onCodeEditorAdd(updateEditor));
+	return disposables;
+}
+
+/**
+ * registerQuickopenListeners attaches callbacks which are invoked when a quickopen
+ * is shown/closed.
+ */
+export function registerQuickopenListeners(onShow: () => any, onHide: () => any): IDisposable[] {
+	const disposables: IDisposable[] = [];
+	const quickOpenService = Services.get(IQuickOpenService) as IQuickOpenService;
+	disposables.push(quickOpenService.onShow(onShow));
+	disposables.push(quickOpenService.onHide(onHide));
+	disposables.push(onWorkbenchShown(shown => !shown && onHide())); // unmounting workbench auto-dismisses quickopen
+	return disposables;
+}
+
+/**
+ * toggleQuickopen toggles the quickopen modal state.
+ */
+export function toggleQuickopen(forceHide?: boolean): void {
+	const quickopen = Services.get(IQuickOpenService);
+	if (quickOpenShown || forceHide) {
+		quickopen.close();
+	} else {
+		quickopen.show();
+	}
 }
 
 export async function updateFileTree(resource: URI): Promise<void> {
 	const viewletService = Services.get(IViewletService) as IViewletService;
-	const viewlet = viewletService.getActiveViewlet();
+	let viewlet = viewletService.getActiveViewlet();
 	if (!viewlet) {
-		return;
+		viewlet = await new Promise(resolve => {
+			viewletService.onDidViewletOpen(resolve);
+		}) as any;
 	}
 
 	const view = viewlet["explorerView"];
-	if (!(view instanceof ExplorerView)) {
-		throw new Error("Type Error: Expected viewlet to have type ExplorerView");
-	}
-
-	const workspaceService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
-	const newWorkspace = resource.with({ fragment: "" });
-	if (workspaceService.getWorkspace().resource.toString() !== newWorkspace.toString()) {
-		workspaceService.setWorkspace({ resource: newWorkspace });
+	if (view instanceof ExplorerView) {
 		await view.refresh(true);
-	}
 
-	const privateView = view as any;
-	let root = privateView.getInput();
-	if (!root) {
-		await view.refresh();
-		root = privateView.getInput();
-	}
-	const fileStat = root.find(resource);
-	const treeModel = privateView.tree.model;
-	const chain = await treeModel.resolveUnknownParentChain(fileStat);
-	chain.forEach((item) => {
-		treeModel.expand(item);
-	});
-	treeModel.expand(fileStat);
+		const privateView = view as any;
+		let root = privateView.root;
+		if (!root) {
+			await view.refresh();
+			root = privateView.root;
+		}
+		const fileStat = root.find(resource);
+		const treeModel = privateView.tree.model;
+		const chain = await treeModel.resolveUnknownParentChain(fileStat);
+		chain.forEach((item) => {
+			treeModel.expand(item);
+		});
+		treeModel.expand(fileStat);
 
-	const oldSelection = privateView.tree.getSelection();
-	await view.select(resource);
-	const scrollPos = privateView.tree.getRelativeTop(fileStat);
-	if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
-		// Item is scrolled off screen
-		await view.select(resource, true);
+		const oldSelection = privateView.tree.getSelection();
+		await view.select(resource);
+		const scrollPos = privateView.tree.getRelativeTop(fileStat);
+		if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
+			// Item is scrolled off screen
+			await view.select(resource, true);
+			await view.refresh(true);
+
+			const privateView = view as any;
+			let root = privateView.root;
+			if (!root) {
+				await view.refresh();
+				root = privateView.root;
+			}
+			const fileStat = root.find(resource);
+			const treeModel = privateView.tree.model;
+			const chain = await treeModel.resolveUnknownParentChain(fileStat);
+			chain.forEach((item) => {
+				treeModel.expand(item);
+			});
+			treeModel.expand(fileStat);
+
+			const oldSelection = privateView.tree.getSelection();
+			await view.select(resource);
+			const scrollPos = privateView.tree.getRelativeTop(fileStat);
+			if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
+				// Item is scrolled off screen
+				await view.select(resource, true);
+			}
+		}
 	}
 }
 
@@ -175,7 +283,7 @@ function updateEditor(editor: ICodeEditor): void {
 	updateEditorInstance(editor);
 
 	// Listeners
-	editor.onDidChangeCursorSelection(throttle(updateURLHash, 100, { leading: true, trailing: true }));
+	editor.onDidChangeCursorSelection(throttle(updateURLHash, 200, { leading: true, trailing: true }));
 }
 
 function updateURLHash(e: ICursorSelectionChangedEvent): void {
@@ -201,13 +309,7 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 	} else {
 		const hash = `#L${sel.toString()}`;
 
-		let query = "";
-		// Keep query param for zap when selecting lines.
-		if (router.location.query["tmpZapRef"]) {
-			query = `?tmpZapRef=${router.location.query["tmpZapRef"]}`;
-		}
-
 		// Circumvent react-router to avoid a jarring jump to the anchor position.
-		history.replaceState({}, "", window.location.pathname + query + hash);
+		history.replaceState({}, "", window.location.pathname + hash);
 	}
 }

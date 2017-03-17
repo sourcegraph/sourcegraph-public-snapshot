@@ -3,7 +3,7 @@ import { Heading, Hero } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import * as base from "sourcegraph/components/styles/_base.css";
 import * as styles from "sourcegraph/page/Page.css";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export function DocsPage(): JSX.Element {
 	return (
@@ -16,7 +16,7 @@ export function DocsPage(): JSX.Element {
 			</Hero>
 			<div className={styles.content}>
 				<Heading level={3}>Overview</Heading>
-				<p className={styles.p}>Sourcegraph is a tool that helps developers explore and understand code. These docs describe how to use Sourcegraph in your development workflow. If you have any problems or requests, please contact <a href="#contact_us" onClick={(e) => e && AnalyticsConstants.Events.DocsContactSupportCTA_Clicked.logEvent()}>support</a>.</p>
+				<p className={styles.p}>Sourcegraph is a tool that helps developers explore and understand code. These docs describe how to use Sourcegraph in your development workflow. If you have any problems or requests, please contact <a href="#contact_us" onClick={(e) => e && Events.DocsContactSupportCTA_Clicked.logEvent()}>support</a>.</p>
 				<ul>
 					<li>
 						<a href="#code_intelligence">Code Intelligence</a>
@@ -114,7 +114,7 @@ export function DocsPage(): JSX.Element {
 
 				<a id="chrome_extension"></a>
 				<Heading level={3} underline="blue">Chrome Extension</Heading>
-				<p className={styles.p}>Sourcegraph's Chrome extension allows you to browse GitHub with IDE-like functionality. <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank" onClick={(e) => e && AnalyticsConstants.Events.DocsInstallExtensionCTA_Clicked.logEvent()}>Install our Chrome extension.</a></p>
+				<p className={styles.p}>Sourcegraph's Chrome extension allows you to browse GitHub with IDE-like functionality. <a href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack" target="_blank" onClick={(e) => e && Events.DocsInstallExtensionCTA_Clicked.logEvent()}>Install our Chrome extension.</a></p>
 
 				<a id="github_hover_over_documentation"></a>
 				<Heading level={5} className={styles.h5}>Hover over Documentation</Heading>
@@ -141,12 +141,12 @@ export function DocsPage(): JSX.Element {
 				<p className={styles.p}>Sourcegraph supports:</p>
 				<ul>
 					<li className={styles.p}>Go</li>
-					<li className={styles.p}>TypeScript [beta]</li>
-					<li className={styles.p}>JavaScript [beta]</li>
+					<li className={styles.p}>Java (Maven)</li>
+					<li className={styles.p}>TypeScript (alpha)</li>
+					<li className={styles.p}>JavaScript (alpha)</li>
 				</ul>
 				<p className={styles.p}>Coming soon:</p>
 				<ul>
-					<li className={styles.p}>Java</li>
 					<li className={styles.p}>Python</li>
 					<li className={styles.p}>PHP</li>
 					<li className={styles.p}><a href="https://sourcegraph.com/beta" target="_blank">Don't see your language?</a></li>

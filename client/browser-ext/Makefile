@@ -12,8 +12,13 @@ bundle: build
 	zip -r chrome-bundle.zip build/*
 	cd build && zip -r ../firefox-bundle.xpi *
 
-phabricator: build
-	cp build/js/phabricator.bundle.js ../../ui/assets/scripts
+phabricator: clean build
+	# this is phabricator, not umami, because we don't control the code and it references phabricator
+	cp build/js/umami.bundle.js ../../ui/assets/scripts/phabricator.bundle.js
+	# this should be umami, because the last line of the above bundle asks for umami.bundle.js.map
+	cp build/js/umami.bundle.js.map ../../ui/assets/scripts/umami.bundle.js.map
+	cp build/js/sgdev.bundle.js ../../ui/assets/scripts/sgdev.bundle.js
+	cp build/js/sgdev.bundle.js.map ../../ui/assets/scripts/sgdev.bundle.js.map
 
 test-unit:
 	yarn run test
@@ -43,5 +48,5 @@ clean:
 	rm -rf build/ dev/ .checksum node_modules/ chrome-bundle.zip firefox-bundle.xpi
 
 export CHROME_BUNDLE ?= $(shell pwd)/chrome-bundle.zip
-deploy: clean bundle deploy-e2e
+deploy: clean bundle test-unit deploy-e2e
 	./deploy.sh

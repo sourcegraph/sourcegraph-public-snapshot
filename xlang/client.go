@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -30,7 +31,31 @@ func UnsafeNewDefaultClient() (*Client, error) {
 	if addr == "" {
 		return nil, errors.New("no LSP_PROXY env var set (need address to LSP proxy)")
 	}
+	return dialClient(addr)
+}
 
+// UnsafeNewShortLivedWorkspaceClient returns a new one-shot connection to
+// the LSP proxy for short lived workspaces. This proxy is different to the
+// usual UnsafeNewDefaultClient since the proxy and LS are tuned for
+// workspaces which exist for a very short amount of time, rather than needing
+// to exist for a user session.
+//
+// If no short lived workspace is configured, this function will return nil,
+// nil. In such a case, you should use UnsafeNewDefaultClient with the vanilla
+// mode string.
+//
+// SECURITY NOTE this does not check the user has permission to read the repo
+// of any operation done on the Client. Please ensure the user has access to
+// the repo.
+func UnsafeNewShortLivedWorkspaceClient() (*Client, error) {
+	addr := os.Getenv("LSP_PROXY_BG")
+	if addr == "" {
+		return nil, nil
+	}
+	return dialClient(addr)
+}
+
+func dialClient(addr string) (*Client, error) {
 	dialCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	conn, err := DialProxy(dialCtx, addr, nil)
@@ -137,11 +162,11 @@ func UnsafeOneShotClientRequest(ctx context.Context, mode, rootPath, method stri
 	defer c.Close()
 
 	// Initialize the connection.
-	err = c.Call(ctx, "initialize", ClientProxyInitializeParams{
+	err = c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 		InitializeParams: lsp.InitializeParams{
 			RootPath: rootPath,
 		},
-		InitializationOptions: ClientProxyInitializationOptions{Mode: mode},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},
 		Mode: mode,
 	}, nil)
 	if err != nil {

@@ -43,6 +43,6 @@ if (phabricatorUsername && pilotUsers.find(function(pilotUser) {return pilotUser
     script.type = "text/javascript";
     script.defer = true;
 	// this url should point to the sourcegraph instance serving the phabricator tooltips
-    script.src = "http://node.aws.sgdev.org:30000/.assets/scripts/phabricator.bundle.js";
+    script.src = "http://node.aws.sgdev.org:30000/.assets/scripts/sgdev.bundle.js";
     document.getElementsByTagName("head")[0].appendChild(script);
 }

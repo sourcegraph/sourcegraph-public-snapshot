@@ -29,18 +29,6 @@ func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevO
 // consulting its VCS data). If no rev is specified, the repo's
 // default branch is used.
 func resolveRepoRev(ctx context.Context, repo int32, rev string) (vcs.CommitID, error) {
-	repoObj, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: repo})
-	if err != nil {
-		return "", err
-	}
-
-	if rev == "" {
-		if repoObj.DefaultBranch == "" {
-			return "", legacyerr.Errorf(legacyerr.FailedPrecondition, "repo %d has no default branch", repo)
-		}
-		rev = repoObj.DefaultBranch
-	}
-
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repo)
 	if err != nil {
 		return "", err

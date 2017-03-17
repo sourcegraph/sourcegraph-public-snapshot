@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "zAwz0FmhoZ8cB3Z+gC71ANiepPk=",
+			"path": "github.com/sourcegraph/zap/pkg/errorlist",
+			"revision": "4b998b812a9cbccc6ff9fe8bf1d0bbcb7dcd3a3b",
+			"revisionTime": "2017-03-08T18:56:57Z"
+		}
+	],
+	"rootPath": "sourcegraph.com/sourcegraph/sourcegraph/ui"
+}

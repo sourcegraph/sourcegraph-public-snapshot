@@ -1,8 +1,9 @@
+// tslint:disable
 // graphql typescript definitions
 
 declare namespace GQL {
 	interface IGraphQLResponseRoot {
-		data?: IQuery;
+		data?: IQuery | IMutation;
 		errors?: Array<IGraphQLResponseError>;
 	}
 
@@ -25,6 +26,7 @@ declare namespace GQL {
 		id: string;
 		sha1: string;
 		tree: ITree | null;
+		textSearch: Array<IFileMatch>;
 		file: IFile | null;
 		languages: Array<string>;
 	}
@@ -81,6 +83,15 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IFileMatch {
+		__typename: string;
+		path: string;
+		lineMatches: Array<ILineMatch>;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IHunk {
 		__typename: string;
 		startLine: number;
@@ -90,6 +101,26 @@ declare namespace GQL {
 		rev: string;
 		author: ISignature | null;
 		message: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ILineMatch {
+		__typename: string;
+		preview: string;
+		lineNumber: number;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IMutation {
+		__typename: string;
+		cancelSubscription: boolean;
+		updatePaymentSource: boolean;
+		subscribeOrg: boolean;
+		startOrgTrial: boolean;
 	}
 
 	/*
@@ -108,11 +139,34 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IOrganization {
+		__typename: string;
+		name: string;
+		avatarURL: string;
+		description: string;
+		collaborators: number;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IPerson {
 		__typename: string;
 		name: string;
 		email: string;
 		gravatarHash: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IPlan {
+		__typename: string;
+		name: string;
+		cost: number;
+		seats: number | null;
+		renewalDate: number | null;
+		organization: IOrganization | null;
 	}
 
 	/*
@@ -172,10 +226,23 @@ declare namespace GQL {
 		createdAt: string;
 		pushedAt: string;
 		commit: ICommitState;
+		revState: IRevState;
 		latest: ICommitState;
+		lastIndexedRevOrLatest: ICommitState;
 		defaultBranch: string;
 		branches: Array<string>;
 		tags: Array<string>;
+		expirationDate: number | null;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IRevState {
+		__typename: string;
+		zapRef: IZapRef | null;
+		commit: ICommit | null;
+		cloneInProgress: boolean;
 	}
 
 	/*
@@ -237,6 +304,18 @@ declare namespace GQL {
 	*/
 	interface IUser {
 		__typename: string;
-		githubOrgs: Array<string>;
+		githubOrgs: Array<IOrganization>;
+		paymentPlan: IPlan;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IZapRef {
+		__typename: string;
+		base: string;
+		branch: string;
 	}
 }
+
+// tslint:enable

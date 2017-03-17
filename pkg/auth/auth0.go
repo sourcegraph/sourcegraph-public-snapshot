@@ -5,9 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,6 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 var Auth0Domain = env.Get("AUTH0_DOMAIN", "", "domain of the Auth0 account")
@@ -28,14 +26,17 @@ var Auth0Config = &oauth2.Config{
 	},
 }
 
-var auth0ManagementTokenSource = oauth2.StaticTokenSource(&oauth2.Token{
-	AccessToken: env.Get("AUTH0_MANAGEMENT_API_TOKEN", "", "management token for accessing the Auth0 user database"),
-})
+var auth0ManagementTokenSource = (&clientcredentials.Config{
+	ClientID:     Auth0Config.ClientID,
+	ClientSecret: Auth0Config.ClientSecret,
+	TokenURL:     "https://" + Auth0Domain + "/oauth/token",
+	EndpointParams: url.Values{
+		"audience": []string{"https://" + Auth0Domain + "/api/v2/"},
+	},
+}).TokenSource(context.Background())
 
 func SetAppMetadata(ctx context.Context, uid string, key string, value interface{}) error {
-	body, err := json.Marshal(struct {
-		AppMetadata map[string]interface{} `json:"app_metadata"`
-	}{
+	body, err := json.Marshal(AppMetadata{
 		AppMetadata: map[string]interface{}{
 			key: value,
 		},
@@ -60,6 +61,24 @@ func SetAppMetadata(ctx context.Context, uid string, key string, value interface
 	}
 
 	return nil
+}
+
+type AppMetadata struct {
+	AppMetadata map[string]interface{} `json:"app_metadata"`
+}
+
+func GetAppMetadata(ctx context.Context) (map[string]interface{}, error) {
+	actor := ActorFromContext(ctx)
+	uid := actor.AuthInfo().UID
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users/" + uid)
+	if err != nil {
+		return nil, err
+	}
+	var appMetadata AppMetadata
+	if err := json.NewDecoder(resp.Body).Decode(&appMetadata); err != nil {
+		return nil, err
+	}
+	return appMetadata.AppMetadata, nil
 }
 
 // ListUsersByGitHubID lists registered Sourcegraph users by their GitHub ID.
@@ -113,37 +132,4 @@ type User struct {
 	Nickname string `json:"nickname"`
 	Picture  string `json:"picture"`
 	UserID   string `json:"user_id"`
-}
-
-// LinkAccount links account with uid with linkWithProvider provider and linkWithUID uid.
-func LinkAccount(ctx context.Context, uid string, linkWithProvider, linkWithUID string) error {
-	body, err := json.Marshal(struct {
-		Provider string `json:"provider"`
-		UserID   string `json:"user_id"`
-	}{
-		Provider: linkWithProvider,
-		UserID:   linkWithUID,
-	})
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", "https://"+Auth0Domain+"/api/v2/users/"+uid+"/identities", bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("did not get acceptable status code: %v body: %q", resp.Status, body)
-	}
-	io.Copy(ioutil.Discard, resp.Body)
-
-	return nil
 }

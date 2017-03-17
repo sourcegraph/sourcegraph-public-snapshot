@@ -1,6 +1,7 @@
 import { media, style } from "glamor";
 import * as React from "react";
 import * as Relay from "react-relay";
+import { context } from "sourcegraph/app/context";
 import { FlexContainer, PageTitle } from "sourcegraph/components";
 import { colors, layout } from "sourcegraph/components/utils";
 import { Props } from "sourcegraph/dashboard";
@@ -13,6 +14,7 @@ class NoAuthDashboardComponent extends React.Component<Props & { root: GQL.IRoot
 	}
 
 	render(): JSX.Element {
+		const regexFilter = context.repoHomeRegexFilter ? RegExp(context.repoHomeRegexFilter) : null;
 		return <FlexContainer content="stretch" items="stretch" wrap={true} style={{
 			alignSelf: "stretch",
 			flex: "1 0",
@@ -27,7 +29,12 @@ class NoAuthDashboardComponent extends React.Component<Props & { root: GQL.IRoot
 			</div>
 
 			<Repos
-				repos={this.props.root.repositories}
+				repos={this.props.root.repositories.filter(repo => {
+					if (!regexFilter) {
+						return true;
+					}
+					return regexFilter.test(repo.uri);
+				})}
 				location={this.props.location}
 				style={{ flex: "1 1 500px", overflowY: "auto" }} />
 

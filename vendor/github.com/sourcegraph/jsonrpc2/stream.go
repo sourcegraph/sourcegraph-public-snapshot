@@ -8,6 +8,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // An ObjectStream is a bidirectional stream of JSON-RPC 2.0 objects.
@@ -30,6 +31,8 @@ type bufferedObjectStream struct {
 	r    *bufio.Reader
 
 	codec ObjectCodec
+
+	mu sync.Mutex
 }
 
 // NewBufferedStream creates a buffered stream from a network
@@ -37,7 +40,7 @@ type bufferedObjectStream struct {
 // objectStream is used to produce the bytes to write to the stream
 // for the JSON-RPC 2.0 objects.
 func NewBufferedStream(conn io.ReadWriteCloser, codec ObjectCodec) ObjectStream {
-	return bufferedObjectStream{
+	return &bufferedObjectStream{
 		conn:  conn,
 		w:     bufio.NewWriter(conn),
 		r:     bufio.NewReader(conn),
@@ -46,7 +49,9 @@ func NewBufferedStream(conn io.ReadWriteCloser, codec ObjectCodec) ObjectStream 
 }
 
 // WriteObject implements ObjectStream.
-func (t bufferedObjectStream) WriteObject(obj interface{}) error {
+func (t *bufferedObjectStream) WriteObject(obj interface{}) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if err := t.codec.WriteObject(t.w, obj); err != nil {
 		return err
 	}
@@ -54,12 +59,12 @@ func (t bufferedObjectStream) WriteObject(obj interface{}) error {
 }
 
 // ReadObject implements ObjectStream.
-func (t bufferedObjectStream) ReadObject(v interface{}) error {
+func (t *bufferedObjectStream) ReadObject(v interface{}) error {
 	return t.codec.ReadObject(t.r, v)
 }
 
 // Close implements ObjectStream.
-func (t bufferedObjectStream) Close() error {
+func (t *bufferedObjectStream) Close() error {
 	return t.conn.Close()
 }
 

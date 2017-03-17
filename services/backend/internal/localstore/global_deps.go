@@ -21,6 +21,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -112,14 +113,30 @@ func (g *globalDeps) RefreshIndex(ctx context.Context, repoURI, commitID string,
 	return nil
 }
 
-func (g *globalDeps) TotalRefs(ctx context.Context, source string) (int, error) {
+func (g *globalDeps) TotalRefs(ctx context.Context, repoURI string, langs []*inventory.Lang) (int, error) {
+	repo, err := Repos.GetByURI(ctx, repoURI)
+	if err != nil {
+		return 0, errors.Wrap(err, "Repos.GetByURI")
+	}
+
 	var sum int
-	for _, expandedSources := range repoURIToGoPathPrefixes(source) {
-		refs, err := g.doTotalRefs(ctx, expandedSources)
-		if err != nil {
-			return 0, err
+	for _, lang := range langs {
+		switch lang.Name {
+		case inventory.LangGo:
+			for _, expandedSources := range repoURIToGoPathPrefixes(repoURI) {
+				refs, err := g.doTotalRefsGo(ctx, expandedSources)
+				if err != nil {
+					return 0, errors.Wrap(err, "doTotalRefsGo")
+				}
+				sum += refs
+			}
+		case inventory.LangJava:
+			refs, err := g.doTotalRefs(ctx, repo.ID, "java")
+			if err != nil {
+				return 0, errors.Wrap(err, "doTotalRefs")
+			}
+			sum += refs
 		}
-		sum += refs
 	}
 	return sum, nil
 }
@@ -214,7 +231,56 @@ func repoURIToGoPathPrefixes(repoURI string) []string {
 	return []string{repoURI}
 }
 
-func (g *globalDeps) doTotalRefs(ctx context.Context, source string) (int, error) {
+// doTotalRefs is the generic implementation of total references, using the `pkgs` table.
+func (g *globalDeps) doTotalRefs(ctx context.Context, repo int32, lang string) (sum int, err error) {
+	// Get packages contained in the repo
+	packages, err := (&pkgs{}).ListPackages(ctx, &sourcegraph.ListPackagesOp{Lang: lang, Limit: 500, RepoID: repo})
+	if err != nil {
+		return 0, errors.Wrap(err, "ListPackages")
+	}
+	if len(packages) == 0 {
+		return 0, nil
+	}
+
+	// Find number of repos that depend on that set of packages
+	var args []interface{}
+	arg := func(a interface{}) string {
+		args = append(args, a)
+		return fmt.Sprintf("$%d", len(args))
+	}
+	var pkgClauses []string
+	for _, pkg := range packages {
+		pkgID, ok := xlang.PackageIdentifier(pkg.Pkg, lang)
+		if !ok {
+			return 0, errors.Wrap(err, "PackageIdentifier")
+		}
+		containmentQuery, err := json.Marshal(pkgID)
+		if err != nil {
+			return 0, errors.Wrap(err, "Marshal")
+		}
+		pkgClauses = append(pkgClauses, `dep_data @> `+arg(string(containmentQuery)))
+	}
+	whereSQL := `(language=` + arg(lang) + `) AND ((` + strings.Join(pkgClauses, ") OR (") + `))`
+	sql := `SELECT count(distinct(repo_id))
+			FROM global_dep
+			WHERE ` + whereSQL
+	rows, err := appDBH(ctx).Db.Query(sql, args...)
+	if err != nil {
+		return 0, errors.Wrap(err, "Query")
+	}
+	defer rows.Close()
+	var count int
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			return 0, errors.Wrap(err, "Scan")
+		}
+	}
+	return count, nil
+}
+
+// doTotalRefsGo is the Go-specific implementation of total references, since we can extract package metadata directly
+// from Go repository URLs, without going through the `pkgs` table.
+func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, error) {
 	// 🚨 SECURITY: Note that we do not speak to global_dep_private here, because 🚨
 	// that could hint towards private repositories existing. We may decide to
 	// relax this constraint in the future, but we should be extremely careful
@@ -298,6 +364,13 @@ type DependenciesOptions struct {
 	// jsonb containment operator. It may be a subset of data.
 	DepData map[string]interface{}
 
+	// Repo filters the returned list of DependencyReference instances
+	// by repo. It should be used mutually exclusively with DepData.
+	Repo int32
+
+	// ExcludePrivate excludes private repo IDs from being included in the result set
+	ExcludePrivate bool
+
 	// Limit limits the number of returned dependency references to the
 	// specified number.
 	Limit int
@@ -335,9 +408,12 @@ func listUserPrivateRepoIDs(ctx context.Context) (accessible []int32, err error)
 }
 
 func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (refs []*sourcegraph.DependencyReference, err error) {
-	privateRepoIDs, err := listUserPrivateRepoIDs(ctx)
-	if err != nil {
-		return nil, err
+	var privateRepoIDs []int32
+	if !op.ExcludePrivate {
+		privateRepoIDs, err = listUserPrivateRepoIDs(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Note: using global_dep_private first so those results always show up
@@ -380,12 +456,29 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 	span.SetTag("DepData", op.DepData)
 	span.SetTag("table", table)
 
-	containmentQuery, err := json.Marshal(op.DepData)
-	if err != nil {
-		return nil, errors.New("marshaling op.DepData query")
+	var args []interface{}
+	arg := func(a interface{}) string {
+		args = append(args, a)
+		return fmt.Sprintf("$%d", len(args))
 	}
 
-	optionalAndSQL := ""
+	var whereConds []string
+
+	if op.Language != "" {
+		whereConds = append(whereConds, `language=`+arg(op.Language))
+	}
+
+	if op.DepData != nil {
+		containmentQuery, err := json.Marshal(op.DepData)
+		if err != nil {
+			return nil, errors.New("marshaling op.DepData query")
+		}
+		whereConds = append(whereConds, `dep_data @> `+arg(string(containmentQuery)))
+	}
+	if op.Repo != 0 {
+		whereConds = append(whereConds, `repo_id = `+arg(op.Repo))
+	}
+
 	switch table {
 	case "global_dep_private":
 		// Important: without this check we would produce a query like
@@ -398,21 +491,25 @@ func (g *globalDeps) queryDependencies(ctx context.Context, table string, op Dep
 			privateRepoStrings = append(privateRepoStrings, strconv.Itoa(int(repoID)))
 		}
 		privateRepos := strings.Join(privateRepoStrings, ", ")
-		optionalAndSQL = `AND repo_id IN (` + privateRepos + `)`
+		whereConds = append(whereConds, `repo_id IN (`+privateRepos+`)`)
 	case "global_dep":
-		optionalAndSQL = ""
 	default:
 		panic(fmt.Sprintf("Defs.Dependencies: unexpected table %q", table))
 	}
 
-	sql := `select dep_data,repo_id,hints
-		FROM ` + table + `
-		WHERE language=$1
-		AND dep_data @> $2
-		` + optionalAndSQL + `
-		LIMIT $3
-	`
-	rows, err := appDBH(ctx).Db.Query(sql, op.Language, string(containmentQuery), op.Limit)
+	selectSQL := `SELECT dep_data, repo_id, hints`
+	fromSQL := `FROM ` + table
+	whereSQL := ""
+	if len(whereConds) > 0 {
+		whereSQL = `WHERE ` + strings.Join(whereConds, " AND ")
+	}
+	limitSQL := ""
+	if op.Limit != 0 {
+		limitSQL = `LIMIT ` + arg(op.Limit)
+	}
+	sql := fmt.Sprintf("%s %s %s %s", selectSQL, fromSQL, whereSQL, limitSQL)
+
+	rows, err := appDBH(ctx).Db.Query(sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

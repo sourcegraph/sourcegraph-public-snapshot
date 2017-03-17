@@ -174,6 +174,9 @@ func TestPkgs_ListPackages(t *testing.T) {
 
 	for repo, pks := range repoToPkgs {
 		if err := dbutil.Transaction(ctx, appDBH(ctx).Db, func(tx *sql.Tx) error {
+			if _, err := tx.Exec(`INSERT INTO repo(id, vcs, default_branch) VALUES ($1, '', 'master')`, repo); err != nil {
+				return err
+			}
 			if err := Pkgs.update(ctx, tx, repo, "go", pks); err != nil {
 				return err
 			}
@@ -259,6 +262,29 @@ func TestPkgs_ListPackages(t *testing.T) {
 			Lang:     "go",
 			PkgQuery: map[string]interface{}{"name": "pkg3"},
 			Limit:    10,
+		}
+		gotPkgInfo, err := Pkgs.ListPackages(ctx, op)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(gotPkgInfo, expPkgInfo) {
+			t.Errorf("got %+v, expected %+v", gotPkgInfo, expPkgInfo)
+		}
+		if !calledReposGet {
+			t.Fatalf("!calledReposGet")
+		}
+	}
+	{ // Test case 5, filter by repo ID
+		calledReposGet = false
+		expPkgInfo := []sourcegraph.PackageInfo{{
+			RepoID: 3,
+			Lang:   "go",
+			Pkg:    map[string]interface{}{"name": "pkg3", "version": "3.3.1"},
+		}}
+		op := &sourcegraph.ListPackagesOp{
+			Lang:   "go",
+			RepoID: 3,
+			Limit:  10,
 		}
 		gotPkgInfo, err := Pkgs.ListPackages(ctx, op)
 		if err != nil {

@@ -10,7 +10,7 @@ import (
 	"go/token"
 	"go/types"
 	"log"
-	"sort"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -82,7 +82,7 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 	// Collect dependency references in the AfterTypeCheck phase. This enables
 	// us to begin looking at packages as they are typechecked, instead of
 	// waiting for all packages to be typechecked (which is IO bound).
-	var results = refResultSorter{results: make([]referenceInformation, 0)}
+	var results = refResult{results: make([]referenceInformation, 0)}
 	afterTypeCheck := func(pkg *loader.PackageInfo, files []*ast.File) {
 		_, interested := unvendoredPackages[pkg.Pkg.Path()]
 		if !interested {
@@ -116,7 +116,13 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 		close(done)
 	}()
 
-	streamUpdate := func() {}
+	limit := params.Limit
+	if limit <= 0 {
+		// If we don't have a limit, just set it to a value we should never exceed
+		limit = math.MaxInt32
+	}
+
+	streamUpdate := func() bool { return true }
 	streamTick := make(<-chan time.Time, 1)
 	if streamExperiment {
 		initial := json.RawMessage(`[{"op":"replace","path":"","value":[]}]`)
@@ -128,17 +134,21 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 			},
 			Patch: &initial,
 		})
-		t := time.NewTicker(time.Second)
+		t := time.NewTicker(100 * time.Millisecond)
 		defer t.Stop()
 		streamTick = t.C
 		streamPos := 0
-		streamUpdate = func() {
+		streamUpdate = func() bool {
 			results.resultsMu.Lock()
 			partial := results.results
 			results.resultsMu.Unlock()
-			if len(partial) == streamPos {
+			if len(partial) == streamPos || streamPos == limit {
 				// Everything currently in refs has already been sent.
-				return
+				// return true if we can stream more results.
+				return streamPos < limit
+			}
+			if len(partial) > limit {
+				partial = partial[:limit]
 			}
 
 			patch := make([]xreferenceAddOp, 0, len(partial)-streamPos)
@@ -158,6 +168,9 @@ func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrp
 				// We use xreferencePatch so the build server can rewrite URIs
 				Patch: xreferencePatch(patch),
 			})
+
+			// return true if we can stream more results.
+			return len(partial) < limit
 		}
 	}
 
@@ -172,15 +185,25 @@ loop:
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-streamTick:
-			streamUpdate()
+			canSendMore := streamUpdate()
+			if !canSendMore {
+				cancel()
+				break loop
+			}
 		}
 	}
 
 	// Send a final update
 	streamUpdate()
 
-	sort.Sort(&results) // sort to provide consistent results
-	return results.results, nil
+	results.resultsMu.Lock()
+	r := results.results
+	results.resultsMu.Unlock()
+	if len(r) > limit {
+		r = r[:limit]
+	}
+
+	return r, nil
 }
 
 func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Context, conn jsonrpc2.JSONRPC2, fset *token.FileSet, pkgs []string, afterTypeCheck func(info *loader.PackageInfo, files []*ast.File)) (prog *loader.Program, err error) {
@@ -259,7 +282,7 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 
 // workspaceRefsFromPkg collects all the references made to dependencies from
 // the specified package and returns the results.
-func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn jsonrpc2.JSONRPC2, params lspext.WorkspaceReferencesParams, fs *token.FileSet, pkg *loader.PackageInfo, files []*ast.File, rootPath string, results *refResultSorter) (err error) {
+func (h *LangHandler) workspaceRefsFromPkg(ctx context.Context, bctx *build.Context, conn jsonrpc2.JSONRPC2, params lspext.WorkspaceReferencesParams, fs *token.FileSet, pkg *loader.PackageInfo, files []*ast.File, rootPath string, results *refResult) (err error) {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -347,15 +370,8 @@ func defSymbolDescriptor(ctx context.Context, bctx *build.Context, rootPath stri
 	return desc, nil
 }
 
-// refResultSorter is a utility struct for collecting, filtering, and
-// sorting workspace reference results.
-type refResultSorter struct {
+// refResult is a utility struct for collecting workspace reference results.
+type refResult struct {
 	results   []referenceInformation
 	resultsMu sync.Mutex
-}
-
-func (s *refResultSorter) Len() int      { return len(s.results) }
-func (s *refResultSorter) Swap(i, j int) { s.results[i], s.results[j] = s.results[j], s.results[i] }
-func (s *refResultSorter) Less(i, j int) bool {
-	return s.results[i].Reference.URI < s.results[j].Reference.URI
 }

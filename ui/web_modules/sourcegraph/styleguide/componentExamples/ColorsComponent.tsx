@@ -10,9 +10,7 @@ export function ColorsComponent(): JSX.Element {
 		return <Color label={label} rgb={rgb} hex={hex} key={i} />;
 	});
 
-	return <div style={{ marginBottom: whitespace[4], marginTop: whitespace[4] }}>
-		<Heading level={3} style={{ marginBottom: whitespace[4] }}>Colors</Heading>
-
+	return <div>
 		<p>
 			There are 8 series of colors in the Sourcegraph palette. Each color has a base color, 3 light shades, and 2 dark shades.
 		</p>
@@ -23,12 +21,12 @@ export function ColorsComponent(): JSX.Element {
 			<li><strong>Neutrals:</strong> BlueGray, Black, Gray, White</li>
 		</List>
 
-		<Heading level={4} style={{ marginTop: whitespace[4] }}>Usage</Heading>
-		<p style={{ marginBottom: whitespace[4] }}>
+		<Heading level={5} style={{ marginTop: whitespace[5] }}>Usage</Heading>
+		<p style={{ marginBottom: whitespace[5] }}>
 			After importing <Code>colors</Code> from <Code>sourcegraph/components/utils</Code>, you can use it's color function to use it. Each color function takes in an alpha opacity value and outputs an RGBA value string. For example, <Code>colors.blue(0.5)</Code> would output <Code>rgba(0,145,234,1)</Code>.
 		</p>
 
-		<FlexContainer justify="between" wrap={true} style={{ paddingBottom: whitespace[4] }}>
+		<FlexContainer justify="between" wrap={true} style={{ paddingBottom: whitespace[5] }}>
 			{colorBlocks}
 		</FlexContainer>
 	</div>;

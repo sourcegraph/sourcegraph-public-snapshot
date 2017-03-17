@@ -21,7 +21,7 @@ import (
 	"golang.org/x/tools/go/loader"
 )
 
-func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fileURI string, position lsp.Position) (*token.FileSet, *ast.Ident, []ast.Node, *loader.Program, *loader.PackageInfo, error) {
+func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fileURI string, position lsp.Position) (*token.FileSet, *ast.Ident, []ast.Node, *loader.Program, *loader.PackageInfo, *token.Pos, error) {
 	parentSpan := opentracing.SpanFromContext(ctx)
 	span := parentSpan.Tracer().StartSpan("langserver-go: load program",
 		opentracing.Tags{"fileURI": fileURI},
@@ -34,11 +34,11 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 
 	contents, err := h.readFile(ctx, fileURI)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 	offset, valid, why := offsetForPosition(contents, position)
 	if !valid {
-		return nil, nil, nil, nil, nil, fmt.Errorf("invalid position: %s:%d:%d (%s)", filename, position.Line, position.Character, why)
+		return nil, nil, nil, nil, nil, nil, fmt.Errorf("invalid position: %s:%d:%d (%s)", filename, position.Line, position.Character, why)
 	}
 
 	bctx := h.BuildContext(ctx)
@@ -47,16 +47,16 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 	if mpErr, ok := err.(*build.MultiplePackageError); ok {
 		bpkg, err = buildPackageForNamedFileInMultiPackageDir(bpkg, mpErr, filepath.Base(filename))
 		if err != nil {
-			return nil, nil, nil, nil, nil, err
+			return nil, nil, nil, nil, nil, nil, err
 		}
 	} else if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	// TODO(sqs): do all pkgs in workspace together?
 	fset, prog, diags, err := h.cachedTypecheck(ctx, bctx, bpkg)
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, err
 	}
 
 	if len(diags) > 0 {
@@ -69,12 +69,12 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 
 	start := posForFileOffset(fset, filename, offset)
 	if start == token.NoPos {
-		return nil, nil, nil, nil, nil, fmt.Errorf("invalid location: %s:#%d", filename, offset)
+		return nil, nil, nil, nil, nil, nil, fmt.Errorf("invalid location: %s:#%d", filename, offset)
 	}
 
 	pkg, nodes, _ := prog.PathEnclosingInterval(start, start)
 	if len(nodes) == 0 {
-		return nil, nil, nil, nil, nil, fmt.Errorf("no node found at %s offset %d", fset.Position(start), offset)
+		return nil, nil, nil, nil, nil, nil, fmt.Errorf("no node found at %s offset %d", fset.Position(start), offset)
 	}
 	node, ok := nodes[0].(*ast.Ident)
 	if !ok {
@@ -82,12 +82,12 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 			pp := fset.Position(p)
 			return fmt.Sprintf("%d:%d", pp.Line, pp.Column)
 		}
-		return fset, nil, nodes, prog, pkg, &invalidNodeError{
+		return fset, nil, nodes, prog, pkg, &start, &invalidNodeError{
 			Node: nodes[0],
 			msg:  fmt.Sprintf("invalid node: %s (%s-%s)", reflect.TypeOf(nodes[0]).Elem(), lineCol(nodes[0].Pos()), lineCol(nodes[0].End())),
 		}
 	}
-	return fset, node, nodes, prog, pkg, nil
+	return fset, node, nodes, prog, pkg, &start, nil
 }
 
 type invalidNodeError struct {

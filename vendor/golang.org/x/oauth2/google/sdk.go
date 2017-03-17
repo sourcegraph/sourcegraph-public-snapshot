@@ -16,8 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"context"
-
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/internal"
 )
@@ -161,9 +160,13 @@ var sdkConfigPath = func() (string, error) {
 }
 
 func guessUnixHomeDir() string {
-	usr, err := user.Current()
-	if err == nil {
-		return usr.HomeDir
+	// Prefer $HOME over user.Current due to glibc bug: golang.org/issue/13470
+	if v := os.Getenv("HOME"); v != "" {
+		return v
 	}
-	return os.Getenv("HOME")
+	// Else, fall back to user.Current:
+	if u, err := user.Current(); err == nil {
+		return u.HomeDir
+	}
+	return ""
 }

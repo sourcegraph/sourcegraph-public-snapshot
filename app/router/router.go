@@ -25,6 +25,8 @@ const (
 	GoogleOAuth2Initiate = "google-oauth2.initiate"
 	GoogleOAuth2Receive  = "google-oauth2.receive"
 
+	InstallZap = "install.zap"
+
 	OldDefRedirect   = "old-def-redirect"
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
@@ -45,10 +47,8 @@ type Router struct{ mux.Router }
 // It is in a separate package from app so that other packages may use it to
 // generate URLs without resulting in Go import cycles (and so we can release
 // the router as open-source to support our client library).
-func New(base *mux.Router) *Router {
-	if base == nil {
-		base = mux.NewRouter()
-	}
+func New() *Router {
+	base := mux.NewRouter()
 
 	base.StrictSlash(true)
 
@@ -71,6 +71,8 @@ func New(base *mux.Router) *Router {
 
 	addOldTreeRedirectRoute(&Router{*base}, base)
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
+
+	base.Path("/install/zap").Methods("GET").Name(InstallZap)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
@@ -104,4 +106,4 @@ func (r *Router) URLTo(routeName string, params ...string) *url.URL {
 	return u
 }
 
-var Rel = New(nil)
+var Rel = New()

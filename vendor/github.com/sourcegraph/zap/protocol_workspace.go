@@ -1,6 +1,9 @@
 package zap
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // WorkspaceIdentifier identifies a workspace.
 type WorkspaceIdentifier struct {
@@ -59,6 +62,18 @@ func (c RepoConfiguration) String() string {
 	return fmt.Sprintf("workspace(%+v) remotes(%+v) refs(%+v)", c.Workspace, c.Remotes, c.Refs)
 }
 
+func (c RepoConfiguration) deepCopy() RepoConfiguration {
+	tmp, err := json.Marshal(c)
+	if err != nil {
+		panic(err)
+	}
+	var copy RepoConfiguration
+	if err := json.Unmarshal(tmp, &copy); err != nil {
+		panic(err)
+	}
+	return copy
+}
+
 // WorkspaceConfigureResult is the result from the
 // "workspace/configure" request.
 type WorkspaceConfigureResult struct{}
@@ -89,15 +104,29 @@ type WorkspaceResetParams struct {
 	WorkspaceIdentifier // the workspace to reset
 
 	// BufferFiles is a map of buffer filename (e.g.,
-	// "#mydir/myfile.txt") to contents. It contains the contents of
-	// all unsaved files in the editor when the editor sent the
-	// workspace/reset command.
+	// "#mydir/myfile.txt") to contents.
 	//
-	// Files doesn't contain the contents of saved files. Those are
-	// supplied by the local server when it receives the
-	// workspace/reset request from the editor. The local server is
-	// responsible for computing the diffs between each local file on
-	// disk and its unsaved contents sent by the editor in this field.
+	// If BufferFiles is set (by an editor), it is used as the source
+	// of truth for unsaved files in the editor. The workspace server
+	// also stores unsaved files' contents, but the BufferFiles map
+	// (if set) is used instead. This is useful because the desired
+	// behavior when resetting from your editor is "keep the current
+	// contents of all unsaved files in my editor"; if there was a
+	// syncing error and the workspace server's unsaved file contents
+	// had diverged from what was in your editor, you would want not
+	// want resetting to use the (old) data from the workspace server.
+	//
+	// If BufferFiles is nil, then the workspace server uses the
+	// unsaved file contents it is aware of (not the actual contents
+	// of unsaved files in your editor). This occurs when
+	// workspace/reset is called from the CLI.
+	//
+	// BufferFiles doesn't contain the contents of *saved* files (only
+	// unsaved, a.k.a. buffered, files). Those are supplied by the
+	// local server when it receives the workspace/reset request from
+	// the editor. The local server is responsible for computing the
+	// diffs between each local file on disk and its unsaved contents
+	// sent by the editor in this field.
 	BufferFiles map[string]string `json:"bufferFiles"`
 
 	// Ref is the current ref name.

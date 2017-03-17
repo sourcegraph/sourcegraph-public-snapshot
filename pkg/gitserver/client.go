@@ -53,7 +53,7 @@ func (c *Client) connect(addr string) {
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
-	repoURI := strings.ToLower(c.Repo.URI)
+	repoURI := normalizeRepo(c.Repo.URI)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -95,7 +95,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
 		Opt:            opt,
-		NoCreds:        c.client.NoCreds,
+		NoAutoUpdate:   c.Repo.Private && c.client.NoCreds,
 		Stdin:          chanrpcutil.ToChunks(c.Input),
 		ReplyChan:      replyChan,
 	}}

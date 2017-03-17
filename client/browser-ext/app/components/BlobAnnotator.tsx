@@ -1,8 +1,10 @@
 import * as React from "react";
 import * as backend from "../backend";
 import * as utils from "../utils";
-import { addAnnotations } from "../utils/annotations";
+import { addAnnotations, RepoRevSpec } from "../utils/annotations";
+import { eventLogger, sourcegraphUrl } from "../utils/context";
 import * as github from "../utils/github";
+import { CodeCell, GitHubBlobUrl, GitHubMode, GitHubUrl } from "../utils/types";
 import { SourcegraphIcon } from "./Icons";
 
 const className = "btn btn-sm tooltipped tooltipped-n";
@@ -10,7 +12,8 @@ const buttonStyle = { marginRight: "5px" };
 const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px" };
 
 interface Props {
-	path: string;
+	headPath: string;
+	basePath: string | null;
 	repoURI: string;
 	fileElement: HTMLElement;
 }
@@ -23,7 +26,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	revisionChecker: NodeJS.Timer;
 
 	// language is determined by the path extension
-	language: string;
+	fileExtension: string;
 
 	isDelta?: boolean;
 	isCommit?: boolean;
@@ -36,8 +39,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	// base/head properties are defined for diff views (commit + pull request)
 	baseCommitID?: string;
 	headCommitID?: string;
-	baseBranch?: string;
-	headBranch?: string;
 	baseRepoURI?: string;
 	headRepoURI?: string;
 
@@ -47,16 +48,16 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			resolvedRevs: {},
 		};
 
-		this.clickRefresh = this.clickRefresh.bind(this);
-		this.updateResolvedRevs = this.updateResolvedRevs.bind(this);
-		this.resolveRevs = this.resolveRevs.bind(this);
-		this.hasUnresolvedRevs = this.hasUnresolvedRevs.bind(this);
-		this.addAnnotations = this.addAnnotations.bind(this);
-		this.eventLoggerProps = this.eventLoggerProps.bind(this);
+		this.fileExtension = utils.getPathExtension(props.headPath);
 
-		this.language = utils.getPathExtension(props.path);
-
-		const { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
+		let { isDelta, isPullRequest, isCommit, rev } = utils.parseURL(window.location);
+		const gitHubState = github.getGitHubState(window.location.href);
+		// TODO(uforic): Eventually, use gitHubState for everything, but for now, only use it when the branch should have a 
+		// slash in it to fix that bug
+		if (gitHubState && gitHubState.mode === GitHubMode.Blob && (gitHubState as GitHubBlobUrl).rev.indexOf("/") > 0) {
+			// correct in case branch has slash in it
+			rev = (gitHubState as GitHubBlobUrl).rev;
+		}
 		this.isDelta = isDelta;
 		this.isPullRequest = isPullRequest;
 		this.isCommit = isCommit;
@@ -88,7 +89,6 @@ export class BlobAnnotator extends React.Component<Props, State> {
 	}
 
 	componentDidMount(): void {
-		github.registerExpandDiffClickHandler(this.clickRefresh);
 		this.props.fileElement.addEventListener("click", this.clickRefresh);
 		// Set a timer to re-check revision data every 10 seconds, for repos that haven't been
 		// cloned and revs that haven't been sync'd to Sourcegraph.com.
@@ -128,6 +128,8 @@ export class BlobAnnotator extends React.Component<Props, State> {
 				repoStat = { [repo]: resp };
 			}
 			this.setState({ resolvedRevs: Object.assign({}, this.state.resolvedRevs, { [key]: resp }, repoStat) });
+		}).catch(error => {
+			// NO-OP
 		});
 	}
 
@@ -152,112 +154,114 @@ export class BlobAnnotator extends React.Component<Props, State> {
 		}
 	}
 
-	hasUnresolvedRevs(): boolean {
-		const hasRev = (uri: string, rev?: string) => {
-			const resolvedRev = this.state.resolvedRevs[backend.cacheKey(uri, rev)];
-			return resolvedRev && resolvedRev.notFound;
-		};
-
-		if (this.isDelta) {
-			if (this.baseCommitID && this.baseRepoURI && !hasRev(this.baseRepoURI, this.baseCommitID)) {
-				return true;
-			}
-			if (this.headCommitID && this.headRepoURI && !hasRev(this.headRepoURI, this.headCommitID)) {
-				return true;
-			}
-		} else if (!hasRev(this.props.repoURI, this.rev)) {
-			return true;
+	private getCodeCells(isSplitDiff: boolean, repoRevSpec: RepoRevSpec, el: HTMLElement): CodeCell[] {
+		// The blob is represented by a table; the first column is the line number,
+		// the second is code. Each row is a line of code
+		const table = el.querySelector("table");
+		if (!table) {
+			return [];
 		}
-
-		return false;
+		return github.getCodeCellsForAnnotation(table, Object.assign({ isSplitDiff }, repoRevSpec));
 	}
 
-	addAnnotations(): void {
-		const apply = (repoURI: string, rev: string, isBase: boolean, loggerProps: Object) => {
-			const ext = utils.getPathExtension(this.props.path);
-			if (!utils.supportedExtensions.has(ext)) {
-				return; // Don't annotate unsupported languages
-			}
-			const blobElement = github.tryGetBlobElement(this.props.fileElement);
-			if (!blobElement) {
-				return;
-			}
-			addAnnotations(this.props.path, { repoURI, rev, isDelta: this.isDelta || false, isBase }, blobElement, this.isSplitDiff || false, loggerProps);
-		};
+	addAnnotations = (): void => {
+		if (!utils.supportedExtensions.has(this.fileExtension)) {
+			return; // Don't annotate unsupported languages
+		}
+		// this check is for either when the blob is collapsed or the dom element is not rendered
+		const blobElement = github.tryGetBlobElement(this.props.fileElement);
+		if (!blobElement) {
+			return;
+		}
 
-		const applyAnnotationsIfResolvedRev = (uri: string, rev?: string, isBase?: boolean) => {
+		/**
+		 * applyAnnotationsIfResolvedRev will call addAnnotations if we've established that the repo@rev exists at Sourcegraph
+		 */
+		const applyAnnotationsIfResolvedRev = (path: string, uri: string, rev?: string, isBase?: boolean) => {
 			const resolvedRev = this.state.resolvedRevs[backend.cacheKey(uri, rev)];
 			if (resolvedRev && resolvedRev.commitID) {
-				apply(uri, resolvedRev.commitID, Boolean(isBase), this.eventLoggerProps());
+				const repoRevSpec = { repoURI: uri, rev: resolvedRev.commitID, isDelta: this.isDelta || false, isBase: Boolean(isBase) };
+				const cells = this.getCodeCells(this.isSplitDiff || false, repoRevSpec, blobElement);
+				addAnnotations(path, repoRevSpec, blobElement, this.getEventLoggerProps(), cells);
 			}
 		};
 
 		if (this.isDelta) {
 			if (this.baseCommitID && this.baseRepoURI) {
-				applyAnnotationsIfResolvedRev(this.baseRepoURI, this.baseCommitID, true);
+				applyAnnotationsIfResolvedRev(this.props.basePath ? this.props.basePath : this.props.headPath, this.baseRepoURI, this.baseCommitID, true);
 			}
 			if (this.headCommitID && this.headRepoURI) {
-				applyAnnotationsIfResolvedRev(this.headRepoURI, this.headCommitID, false);
+				applyAnnotationsIfResolvedRev(this.props.headPath, this.headRepoURI, this.headCommitID, false);
 			}
 		} else {
-			applyAnnotationsIfResolvedRev(this.props.repoURI, this.rev, false);
+			applyAnnotationsIfResolvedRev(this.props.headPath, this.props.repoURI, this.rev, false);
 		}
 	}
 
-	eventLoggerProps(): Object {
+	getEventLoggerProps(): Object {
 		return {
-			repoURI: this.props.repoURI,
-			path: this.props.path,
+			repo: this.props.repoURI,
+			path: this.props.headPath,
 			isPullRequest: this.isPullRequest,
 			isCommit: this.isCommit,
-			language: this.language,
+			language: this.fileExtension,
 			isPrivateRepo: github.isPrivateRepo(),
 		};
 	}
 
-	getBlobUrl(): string {
-		if (this.isDelta) {
-			return `https://sourcegraph.com/${this.headRepoURI}${this.headCommitID ? `@${this.headCommitID}` : ""}/-/blob/${this.props.path}`;
-		}
-		return `https://sourcegraph.com/${this.props.repoURI}${this.rev ? `@${this.rev}` : ""}/-/blob/${this.props.path}`;
-	}
-
 	render(): JSX.Element | null {
-		if (typeof this.state.resolvedRevs[this.props.repoURI] === "undefined") {
+		if (!this.isDelta && !Boolean(this.state.resolvedRevs[this.props.repoURI])) {
 			return null;
 		}
-
-		if (!utils.supportedExtensions.has(utils.getPathExtension(this.props.path))) {
-			let ariaLabel = !utils.upcomingExtensions.has(utils.getPathExtension(this.props.path)) ? "File not supported" : "Language support coming soon!";
-
-			return (<div style={Object.assign({ cursor: "not-allowed" }, buttonStyle)} className={className} aria-label={ariaLabel}>
-				<SourcegraphIcon style={iconStyle} />
-				Sourcegraph
-			</div>);
-
-		} else if (github.isPrivateRepo() && this.state.resolvedRevs[this.props.repoURI].notFound) {
-			// Not signed in or not auth'd for private repos
-			return (<a href={`https://sourcegraph.com/login?private=true`} target="_none"
-				style={{ textDecoration: "none", color: "inherit" }}>
-				<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph to access your private code`}>
-					<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />
-					Sourcegraph
-				</div>
-			</a>);
-
-		} else if (this.state.resolvedRevs[this.props.repoURI].cloneInProgress) {
-			return (<div style={buttonStyle} className={className} aria-label={`Sourcegraph is analyzing ${this.props.repoURI.split("github.com/")[1]}`}>
-				<SourcegraphIcon style={iconStyle} />
-				Loading...
-			</div>);
-
-		} else {
-			return (<a href={this.getBlobUrl()} style={{ textDecoration: "none", color: "inherit" }}>
-				<div style={buttonStyle} className={className} aria-label="View on Sourcegraph">
-					<SourcegraphIcon style={iconStyle} />
-					Sourcegraph
-				</div>
-			</a>);
+		if (this.isDelta && !Boolean(this.state.resolvedRevs[this.baseRepoURI as string])) {
+			return null;
 		}
+		// this is crappy, and only works because we stick in the cache both the repoURI as key as well as the repoURI@revision
+		const resolvedRevs = this.state.resolvedRevs[this.props.repoURI] as backend.ResolvedRevResp;
+		return getSourcegraphButton(utils.supportedExtensions.has(this.fileExtension),
+			github.isPrivateRepo() && resolvedRevs.notFound as boolean,
+			resolvedRevs.cloneInProgress as boolean,
+			this.props.repoURI.split("github.com/")[1],
+			this.isDelta ? utils.getSourcegraphBlobUrl(sourcegraphUrl, this.headRepoURI as string, this.props.headPath, this.headCommitID) : utils.getSourcegraphBlobUrl(sourcegraphUrl, this.props.repoURI, this.props.headPath, this.rev),
+			utils.upcomingExtensions.has(this.fileExtension),
+			this.getFileOpenCallback,
+			this.getAuthFileCallback);
 	}
+
+	getFileOpenCallback = (): void => {
+		eventLogger.logOpenFile(this.getEventLoggerProps());
+	}
+
+	getAuthFileCallback = (): void => {
+		eventLogger.logAuthClicked(this.getEventLoggerProps());
+	}
+}
+
+function getSourcegraphButton(isFileSupported: boolean, cantFindPrivateRepo: boolean, isLoading: boolean, repoName: string, blobUrl: string, supportedSoon: boolean, fileCallack: () => void, authCallback: () => void): JSX.Element {
+	if (!isFileSupported) {
+		let ariaLabel = !supportedSoon ? "File not supported" : "Language support coming soon!";
+		return (<div style={Object.assign({ cursor: "not-allowed", WebkitFilter: "grayscale(100%)" }, buttonStyle)} className={className} aria-label={ariaLabel}>
+			<SourcegraphIcon style={iconStyle} />
+			Sourcegraph
+		</div>);
+	} else if (cantFindPrivateRepo) {
+		// Not signed in or not auth'd for private repos
+		return (<a href={`${sourcegraphUrl}/login?private=true`}
+			style={{ textDecoration: "none", color: "inherit" }} onClick={authCallback}>
+			<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph`}>
+				<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />
+				Sourcegraph
+			</div>
+		</a>);
+	} else if (isLoading) {
+		return (<div style={buttonStyle} className={className} aria-label={`Sourcegraph is analyzing ${repoName}`}>
+			<SourcegraphIcon style={iconStyle} />
+			Loading...
+		</div>);
+	}
+	return (<a href={blobUrl} style={{ textDecoration: "none", color: "inherit" }} onClick={fileCallack}>
+		<div style={buttonStyle} className={className} aria-label="View on Sourcegraph"><SourcegraphIcon style={iconStyle} />
+			Sourcegraph
+		</div>
+	</a>);
 }

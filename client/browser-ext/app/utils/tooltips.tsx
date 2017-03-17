@@ -1,7 +1,7 @@
-import { EventLogger } from "./EventLogger";
 import * as _ from "lodash";
 import * as marked from "marked";
 import { style } from "typestyle";
+import { eventLogger } from "../utils/context";
 
 // tslint:disable-next-line
 const truncate = require("html-truncate");
@@ -178,7 +178,7 @@ function _updateTooltip(target: HTMLElement | null): void {
 		}
 
 		// only log when displaying a real tooltip (not a loading indicator)
-		EventLogger.logEventForCategory("Def", "Hover", "HighlightDef", hoverEventProps || undefined); // TODO(john): make hover event props invariant?
+		eventLogger.logHover(Object.assign({}, hoverEventProps || undefined));
 	} else {
 		tooltip.appendChild(loadingTooltip);
 	}

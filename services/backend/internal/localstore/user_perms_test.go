@@ -12,22 +12,18 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
-	githubmock "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github/mocks"
 )
 
 // authTestContext with mock stubs for GitHubRepoGetter
-func authTestContext() (context.Context, *githubmock.GitHubRepoGetter) {
-	var m githubmock.GitHubRepoGetter
+func authTestContext() context.Context {
 	ctx := context.Background()
-	ctx = github.WithRepos(ctx, &m)
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
-	ctx = github.WithMockHasAuthedUser(ctx, true)
+	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
-	return ctx, &m
+	return ctx
 }
 
 func TestUserHasReadAccessAll(t *testing.T) {
-	ctx, mock := authTestContext()
+	ctx := authTestContext()
 
 	type testcase struct {
 		title                     string
@@ -119,7 +115,7 @@ func TestUserHasReadAccessAll(t *testing.T) {
 	}}
 
 	for _, test := range testcases {
-		calledListAccessible := mock.MockListAccessible(ctx, test.mockGitHubAccessibleRepos)
+		calledListAccessible := github.MockListAccessibleRepos_Return(test.mockGitHubAccessibleRepos)
 
 		gotRepos, err := verifyUserHasReadAccessAll(ctx, "Repos.List", test.inputRepos)
 		if err != nil {
@@ -139,7 +135,7 @@ func TestUserHasReadAccessAll(t *testing.T) {
 }
 
 func TestVerifyUserHasRepoURIAccess(t *testing.T) {
-	ctx, mock := authTestContext()
+	ctx := authTestContext()
 
 	tests := []struct {
 		title                string
@@ -206,7 +202,7 @@ func TestVerifyUserHasRepoURIAccess(t *testing.T) {
 
 		// Mocked GitHub API responses differ depending on value of test.authorizedForPrivate.
 		// If true, then "github.com/user/privaterepo" repo exists, otherwise it's not found.
-		mock.Get_ = func(_ context.Context, uri string) (*sourcegraph.Repo, error) {
+		github.GetRepoMock = func(_ context.Context, uri string) (*sourcegraph.Repo, error) {
 			calledGitHub = true
 			switch uri := strings.ToLower(uri); {
 			case uri == "github.com/user/privaterepo" && test.authorizedForPrivate:

@@ -9,7 +9,7 @@ import { LocationStateToggleLink } from "sourcegraph/components/LocationStateTog
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import * as styles from "sourcegraph/page/Page.css";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 
@@ -23,7 +23,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 			<Hero style={{
 				backgroundColor: colors.blueGrayL3(),
 			}}>
-				<FlexContainer justify="center" items="center" direction="top_bottom">
+				<FlexContainer justify="center" items="center" direction="top-bottom">
 					<img src={`${context.assetsRoot}/img/tw-case/tw-case-logos.svg`} />
 					<Heading level={1}>Masters of Scale</Heading>
 					<Heading level={4}>How investing in fast, semantic code browsing helps Twitter scale engineering productivity</Heading>
@@ -44,7 +44,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 					level={4}
 					underline="purple"
 					style={{
-						marginTop: whitespace[4],
+						marginTop: whitespace[5],
 					}}>
 					The Problem:<br />Understanding and reusing existing code.
 				</Heading>
@@ -59,7 +59,7 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 
 				<Heading level={4} underline="purple"
 					style={{
-						marginTop: whitespace[4],
+						marginTop: whitespace[5],
 					}}>
 					The Solution:<br />Fast, semantic code browsing.
 				</Heading>
@@ -179,10 +179,10 @@ export function TwitterCaseStudyPage({ location }: LocationProps): JSX.Element {
 
 				{!context.user && <div style={{
 					textAlign: "center",
-					paddingBottom: whitespace[4],
+					paddingBottom: whitespace[5],
 					paddingTop: whitespace[3],
 				}}>
-					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && AnalyticsConstants.Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
+					<LocationStateToggleLink href="/join" modalName="join" location={location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
 						<Button color="purple">
 							Sign up for free
 						</Button>

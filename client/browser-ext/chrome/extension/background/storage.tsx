@@ -1,6 +1,13 @@
-// The chrome.cookies and chrome.storage APIs may not be directly accessible
-// through by content scripts in Chrome AND Firefox. Instead, content scripts
-// may pass message to this background script.
+/**
+ * The chrome.cookies and chrome.storage APIs may not be directly accessible
+ * through by content scripts in Chrome AND Firefox. Instead, content scripts
+ * may pass message to this background script.
+ *
+ * setIdentity is a message sent from the Sourcegraph.com front end.
+ * getIdentity is a message sent from the extension eventLogger
+ * getSessionToken gets any logged in token from the sourcegraph.com cookie, so that we can
+ * include it with XHR requests, and is sent when first injecting the extension on GitHub.
+ */
 chrome.runtime.onMessage.addListener((message, sender, cb) => {
 	if (message.type === "setIdentity") {
 		chrome.storage.local.set({ identity: message.identity });

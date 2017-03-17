@@ -1,4 +1,4 @@
-import { Position } from "vscode-languageserver-types";
+import { Position } from "@sourcegraph/vscode-languageserver-types";
 
 import { IPosition, IRange } from "vs/editor/common/editorCommon";
 
@@ -172,4 +172,6 @@ export interface AbsoluteLocation {
 	commitID: string;
 	path: string;
 	selection: IRange | null;
+	zapRef?: string;
+	branch?: string;
 }

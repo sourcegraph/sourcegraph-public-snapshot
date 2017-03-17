@@ -5,7 +5,7 @@ import { handleIntercomToggle } from "sourcegraph/app/GlobalNav/UserMenu";
 import { BookClosed, Compose, VideoCamera } from "sourcegraph/components/symbols/Primaries";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
-import { Events, PAGE_LOCATION_DASHBOARD_SIDEBAR } from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, PAGE_LOCATION_DASHBOARD_SIDEBAR } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 const listItemStyle = css(
 	glamorSelector(":hover .inner", { color: colors.white() }),

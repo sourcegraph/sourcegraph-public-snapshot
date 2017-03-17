@@ -149,3 +149,32 @@ func WalkURIFields(o interface{}, collect func(string), update func(string) stri
 	}
 	walk(o)
 }
+
+// TODO(keegancsmith) work out why we have so many custom initializeparams
+// that look similiar.
+
+// ClientProxyInitializeParams are sent by the client to the proxy in
+// the "initialize" request. It has a non-standard field "mode", which
+// is the name of the language (using vscode terminology); "go" or
+// "typescript", for example.
+type ClientProxyInitializeParams struct {
+	lsp.InitializeParams
+	InitializationOptions ClientProxyInitializationOptions `json:"initializationOptions"`
+
+	// Mode is DEPRECATED; it was moved to the subfield
+	// initializationOptions.Mode. It is still here for backward
+	// compatibility until the xlang service is upgraded.
+	Mode string `json:"mode,omitempty"`
+}
+
+// ClientProxyInitializationOptions is the "initializationOptions"
+// field of the "initialize" request params sent from the client to
+// the LSP client proxy.
+type ClientProxyInitializationOptions struct {
+	Mode string `json:"mode"`
+
+	// Session, if set, causes this session to be isolated from other
+	// LSP sessions using the same workspace and mode. See
+	// (contextID).session for more information.
+	Session string `json:"session,omitempty"`
+}

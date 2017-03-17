@@ -1,3 +1,5 @@
+import { Domain, GitHubURLData } from "./types";
+
 /**
  * supportedExtensions are the file extensions
  * the extension will apply annotations to
@@ -6,6 +8,7 @@ export const supportedExtensions = new Set<string>([
 	"go", // Golang
 	"ts", "tsx", // TypeScript
 	"js", "jsx", // JavaScript
+	"java", // Java
 ]);
 
 /**
@@ -15,7 +18,6 @@ export const supportedExtensions = new Set<string>([
 export const upcomingExtensions = new Set<string>([
 	// "cs", // C#
 	// "css", // CSS
-	"java", // Java
 	// "swift", // Swift
 	// "c", "h", // C
 	// "m", "mm", // Obj-C ("h" and "C" overlap with C/C++)
@@ -44,6 +46,8 @@ export function getModeFromExtension(ext: string): string {
 		case "js":
 		case "jsx":
 			return "javascript";
+		case "java":
+			return "java";
 		default:
 			return "unknown";
 	}
@@ -64,16 +68,6 @@ export function getPathExtension(path: string): string {
 	return pathSplit[pathSplit.length - 1].toLowerCase();
 }
 
-export interface GitHubURLData {
-	user?: string;
-	repo?: string;
-	repoURI?: string;
-	rev?: string;
-	path?: string;
-	isDelta?: boolean;
-	isPullRequest?: boolean;
-	isCommit?: boolean;
-}
 export function parseURL(loc: Location): GitHubURLData {
 	// TODO(john): this method has problems handling branch revisions with "/" character.
 	// TODO(john): this all needs unit testing!
@@ -84,7 +78,8 @@ export function parseURL(loc: Location): GitHubURLData {
 	let rev: string | undefined;
 	let path: string | undefined;
 
-	if (!isGitHubURL(loc)) {
+	const domain = getDomain(loc);
+	if (domain !== Domain.GITHUB) {
 		return {};
 	}
 
@@ -114,14 +109,6 @@ export function parseURL(loc: Location): GitHubURLData {
 	return { user, repo, rev, path, repoURI, isDelta, isPullRequest, isCommit };
 }
 
-export function isGitHubURL(loc: Location): boolean {
-	return Boolean(loc.href.match(/https:\/\/(www.)?github.com/));
-}
-
-export function isSourcegraphURL(loc: Location): boolean {
-	return Boolean(loc.href.match(/https:\/\/(www.)?sourcegraph.com/));
-}
-
 export function getCurrentBranch(): string | null {
 	let branchDropdownEl = document.getElementsByClassName("btn btn-sm select-menu-button js-menu-target css-truncate");
 	if (branchDropdownEl.length !== 1) {
@@ -131,6 +118,36 @@ export function getCurrentBranch(): string | null {
 	return (branchDropdownEl[0] as HTMLElement).title;
 }
 
-export function getPlatform(): string {
+export function getPlatformName(): string {
 	return window.navigator.userAgent.indexOf("Firefox") !== -1 ? "firefox-extension" : "chrome-extension";
+}
+
+export function isE2ETest(): boolean {
+	return process.env.NODE_ENV === "test";
+}
+
+export function getDomain(loc: Location): Domain {
+	if (/^https?:\/\/phabricator.aws.sgdev.org/.test(loc.href)) {
+		return Domain.SGDEV_PHABRICATOR;
+	}
+	if (/^https?:\/\/(www.)?github.com/.test(loc.href)) {
+		return Domain.GITHUB;
+	}
+	if (/^https?:\/\/(www.)?sourcegraph.com/.test(loc.href)) {
+		return Domain.SOURCEGRAPH;
+	}
+	throw new Error(`Unable to determine the domain, ${loc.href}`);
+}
+
+/**
+ * This method created a unique username based on the platform and domain the user is visiting.
+ * Examples: sg_dev_phabricator:matt , or uber_phabricator:matt
+ */
+export function getDomainUsername(domain: string, username: string): string {
+	return `${domain}:${username}`;
+}
+
+export function getSourcegraphBlobUrl(sourcegraphUrl: string, repoUri: string, path: string, commitId?: string): string {
+	const commitString = commitId ? `@${commitId}` : "";
+	return `${sourcegraphUrl}/${repoUri}${commitString}/-/blob/${path}`;
 }

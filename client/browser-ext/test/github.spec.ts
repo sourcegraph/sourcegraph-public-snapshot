@@ -1,9 +1,10 @@
-import * as utils from "../app/utils";
-import * as annotations from "../app/utils/annotations";
-import * as github from "../app/utils/github";
 import { expect } from "chai";
 import "fetch-mock";
 import * as jsdom from "jsdom";
+import * as utils from "../app/utils";
+import * as annotations from "../app/utils/annotations";
+import * as github from "../app/utils/github";
+import { CodeCell, GitHubBlobUrl } from "../app/utils/types";
 
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
@@ -18,7 +19,40 @@ function setupDOM(url: string): (done: any) => void {
 	});
 }
 
-describe.skip("GitHub DOM", () => {
+describe("GitHub DOM", () => {
+	describe("blob view", () => {
+		const url = "https://github.com/gorilla/mux/blob/master/mux.go";
+		before(setupDOM(url));
+
+		it("should parse branch name from button", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("master");
+		});
+
+	});
+	describe("short branch blob view", () => {
+		const url = "https://github.com/sourcegraphtest/test-case/blob/uforic/wip/glide_2.yaml";
+		before(setupDOM(url));
+
+		it("should parse branch name from button", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("uforic/wip");
+		});
+
+	});
+	describe("long branch blob view", () => {
+		const url = "https://github.com/sourcegraphtest/test-case/blob/uforic/very_long_wip/glide_2.yaml";
+		before(setupDOM(url));
+
+		it("should parse branch name from button", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("uforic/very_long_wip");
+		});
+
+	});
 	describe("blob view", () => {
 		const url = "https://github.com/gorilla/mux/blob/757bef944d0f21880861c2dd9c871ca543023cba/mux.go";
 		before(setupDOM(url));
@@ -52,11 +86,6 @@ describe.skip("GitHub DOM", () => {
 			expect(github.getDeltaInfo()).to.not.be.ok;
 		});
 
-		it("should not register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(0);
-		});
-
 		it("should parse url", () => {
 			const data = utils.parseURL(window.location);
 			expect(data.user).to.eql("gorilla");
@@ -69,8 +98,14 @@ describe.skip("GitHub DOM", () => {
 			expect(data.isPullRequest).to.not.be.ok;
 		});
 
+		it("when visiting a url @ a specific commit, getGitHubState should use commit SHA not branch name", () => {
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("757bef944d0f21880861c2dd9c871ca543023cba");
+		});
+
 		describe("annotations", () => {
-			let _codeCells: github.CodeCell[];
+			let _codeCells: CodeCell[];
 			before(() => {
 				const file = github.getFileContainers()[0];
 				_codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: false, isSplitDiff: false, isBase: false });
@@ -125,7 +160,7 @@ describe.skip("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
+				{ headFilePath: "mux.go", baseFilePath: null }, { headFilePath: "mux_test.go", baseFilePath: null }, { headFilePath: "old_test.go", baseFilePath: null }, { headFilePath: "regexp.go", baseFilePath: null }, { headFilePath: "route.go", baseFilePath: null },
 			]);
 		});
 
@@ -149,11 +184,6 @@ describe.skip("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "master");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {
@@ -197,6 +227,13 @@ describe.skip("GitHub DOM", () => {
 			});
 		});
 	});
+	describe("Commit view moved file", () => {
+		const url = "https://github.com/sourcegraphtest/test-case/commit/10cf2175c6e1435a03d64d3163215eb4361e5b7a";
+		before(setupDOM(url));
+		it("should see the base and head file names", () => {
+			expect(github.getDeltaFileName(github.getFileContainers()[0])).to.eql({ headFilePath: "glide_2.yaml", baseFilePath: "glide.yaml" });
+		});
+	});
 
 	describe("PR unified diff", () => {
 		const url = "https://github.com/gorilla/mux/pull/190/files?diff=unified";
@@ -217,7 +254,7 @@ describe.skip("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
+				{ headFilePath: "mux.go", baseFilePath: null }, { headFilePath: "mux_test.go", baseFilePath: null }, { headFilePath: "old_test.go", baseFilePath: null }, { headFilePath: "regexp.go", baseFilePath: null }, { headFilePath: "route.go", baseFilePath: null },
 			]);
 		});
 
@@ -241,11 +278,6 @@ describe.skip("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {
@@ -289,7 +321,7 @@ describe.skip("GitHub DOM", () => {
 				expect(headCells[4].filter((cell) => cell.isAddition)).to.have.length(3);
 			});
 
-			function getPRCells(isBase: boolean): github.CodeCell[] {
+			function getPRCells(isBase: boolean): CodeCell[] {
 				const file = github.getFileContainers()[0];
 				const codeCells = github.getCodeCellsForAnnotation(github.getCodeTable(file), { isDelta: true, isSplitDiff: false, isBase });
 				return codeCells;
@@ -301,7 +333,7 @@ describe.skip("GitHub DOM", () => {
 				const convertedNode = annotations.convertElementNode(codeCells[0].cell, 1, 80, false);
 				expect(convertedNode.bytesConsumed).to.eql(23);
 				expect(convertedNode.resultNode.textContent).to.eql("-\t\tpath := getPath(req)");
-				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-80-1"><span id="text-node-80-1" data-byteoffset="1">-</span><span id="text-node-80-2" data-byteoffset="2">\t</span><span id="text-node-80-3" data-byteoffset="3">\t</span></span><span data-byteoffset="4" class="pl-smi"><span id="text-node-wrapper-80-4"><span id="text-node-80-4" data-byteoffset="4">path</span></span></span><span id="text-node-wrapper-80-8"><span id="text-node-80-8" data-byteoffset="8"> </span></span><span data-byteoffset="9" class="pl-k"><span id="text-node-wrapper-80-9"><span id="text-node-80-9" data-byteoffset="9">:</span><span id="text-node-80-10" data-byteoffset="10">=</span></span></span><span id="text-node-wrapper-80-11"><span id="text-node-80-11" data-byteoffset="11"> </span></span><span data-byteoffset="12" class="pl-c1"><span id="text-node-wrapper-80-12"><span id="text-node-80-12" data-byteoffset="12">getPath</span></span></span><span id="text-node-wrapper-80-19"><span id="text-node-80-19" data-byteoffset="19">(</span><span id="text-node-80-20" data-byteoffset="20">req</span><span id="text-node-80-23" data-byteoffset="23">)</span></span>`);
+				expect(convertedNode.resultNode.innerHTML).to.eql(`<span id="text-node-wrapper-80-1"><span id="text-node-80-1" data-byteoffset="1">-</span><span id="text-node-80-2" data-byteoffset="2">		</span></span><span data-byteoffset="4" class="pl-smi"><span id="text-node-wrapper-80-4"><span id="text-node-80-4" data-byteoffset="4">path</span></span></span><span id="text-node-wrapper-80-8"><span id="text-node-80-8" data-byteoffset="8"> </span></span><span data-byteoffset="9" class="pl-k"><span id="text-node-wrapper-80-9"><span id="text-node-80-9" data-byteoffset="9">:</span><span id="text-node-80-10" data-byteoffset="10">=</span></span></span><span id="text-node-wrapper-80-11"><span id="text-node-80-11" data-byteoffset="11"> </span></span><span data-byteoffset="12" class="pl-c1"><span id="text-node-wrapper-80-12"><span id="text-node-80-12" data-byteoffset="12">getPath</span></span></span><span id="text-node-wrapper-80-19"><span id="text-node-80-19" data-byteoffset="19">(</span><span id="text-node-80-20" data-byteoffset="20">req</span><span id="text-node-80-23" data-byteoffset="23">)</span></span>`);
 			});
 
 			it("should convert addition node (stress test)", () => {
@@ -334,7 +366,7 @@ describe.skip("GitHub DOM", () => {
 
 		it("should get file names of containers", () => {
 			expect(Array.from(github.getFileContainers()).map(github.getDeltaFileName)).to.eql([
-				"mux.go", "mux_test.go", "old_test.go", "regexp.go", "route.go",
+				{ headFilePath: "mux.go", baseFilePath: null }, { headFilePath: "mux_test.go", baseFilePath: null }, { headFilePath: "old_test.go", baseFilePath: null }, { headFilePath: "regexp.go", baseFilePath: null }, { headFilePath: "route.go", baseFilePath: null },
 			]);
 		});
 
@@ -358,11 +390,6 @@ describe.skip("GitHub DOM", () => {
 			expect(deltaInfo).to.have.property("headBranch", "use-encoded-path-option");
 			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
 			expect(deltaInfo).to.have.property("headURI", "github.com/kushmansingh/mux");
-		});
-
-		it("should register diff expand handlers", () => {
-			github.registerExpandDiffClickHandler(() => ({}));
-			expect(document.getElementsByClassName("sg-diff-expander")).to.have.length(25);
 		});
 
 		it("should parse url", () => {

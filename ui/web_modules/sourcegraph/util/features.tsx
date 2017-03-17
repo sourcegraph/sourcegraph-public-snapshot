@@ -65,10 +65,14 @@ class Feature {
 }
 
 export const Features = {
-	langCSS: new Feature("lang-css"),
+	langCSS: new Feature("lang-css").disableBeta(),
 	langPHP: new Feature("lang-php"),
-	langPython: new Feature("lang-python"),
-	langJava: new Feature("lang-java"),
+	langPython: new Feature("lang-python").disableBeta(),
+
+	/**
+	 * Enable logging for references
+	 */
+	refLogs: new Feature("refLogs"),
 
 	/**
 	 * commitInfoBar shows the horizontal bar above the editor with
@@ -77,24 +81,10 @@ export const Features = {
 	commitInfoBar: new Feature("commitInfoBar"),
 
 	/**
-	 * extensions enables the vscode.d.ts extension API and runs an
-	 * extension host Web Worker where extension code runs.
-	 */
-	extensions: new Feature("extensions").disableBeta(),
-
-	/**
-	 * lspExtension uses the vscode-languageclient vscode extension
-	 * and a WebSocket instead of our custom, HTTP-based LSP adapter
-	 * to connect to our language servers.
-	 */
-	lspExtension: new Feature("lspExtension").disableBeta(),
-
-	/**
 	 * trace is whether to show trace URLs to LightStep in console log messages.
 	 */
 	trace: new Feature("trace"),
 
-	zap: new Feature("zap").disableBeta(),
 	zap2Way: new Feature("zap-2-way").disableBeta(),
 
 	beta: new Feature("beta").disableBeta(),
@@ -102,17 +92,18 @@ export const Features = {
 	actionLogDebug: new Feature("action-log-debug").disableBeta(),
 	experimentLogDebug: new Feature("experiment-log-debug").disableBeta(),
 	zapSelections: new Feature("zapSelections").disableBeta(),
+	zapChanges: new Feature("zapChanges").disableBeta(),
+	textSearch: new Feature("text-search").disableBeta(),
 
 	experimentManager,
 	listEnabled,
 };
 
-if ((Features.zap.isEnabled() || Features.zap2Way.isEnabled()) && !Features.extensions.isEnabled()) {
-	console.error("features.zap and features.zap2Way require features.extensions to also be enabled"); // tslint:disable-line no-console
-}
-
-if (Features.zap2Way.isEnabled() && !Features.zap.isEnabled()) {
-	console.error("features.zap2Way requires features.zap to also be enabled"); // tslint:disable-line no-console
+if (Features.zap2Way.isEnabled()) {
+	// zap2Way requires different CSS.
+	if (document) {
+		document.body.classList.add("zap2Way");
+	}
 }
 
 export function listEnabled(): string[] {
@@ -125,8 +116,20 @@ export function bulkEnable(featureNames: string[]): void {
 	}
 }
 
-if (Features.lspExtension.isEnabled() && !Features.extensions.isEnabled()) {
-	console.error("features.lspExtension requires features.extensions to also be enabled");
+export function getModes(): Set<string> {
+	const modes = new Set<string>(["go", "java", "javascript", "typescript"]);
+	if (Features.langCSS.isEnabled()) {
+		modes.add("css");
+		modes.add("less");
+		modes.add("scss");
+	}
+	if (Features.langPHP.isEnabled()) {
+		modes.add("php");
+	}
+	if (Features.langPython.isEnabled()) {
+		modes.add("python");
+	}
+	return modes;
 }
 
 if (global.window) {

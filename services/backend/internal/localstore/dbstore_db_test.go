@@ -2,15 +2,13 @@ package localstore
 
 import (
 	"context"
+	"log"
+	"os/exec"
 
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/testdb"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
 )
-
-func init() {
-	skipFS = true
-}
 
 // testContext constructs a new context that holds a temporary test DB
 // handle and other test configuration.
@@ -22,7 +20,19 @@ func testContext() (ctx context.Context) {
 
 	Mocks = MockStores{}
 
-	dbh := testdb.NewHandle("app", &AppSchema)
+	dbname := "localstore-test"
+	_ = exec.Command("createdb", dbname).Run()
+	dbh, err := dbutil2.Open("dbname="+dbname, AppSchema)
+	if err != nil {
+		log.Fatal("testdb: open DB:", err)
+	}
+	if err := dbh.DropSchema(); err != nil {
+		log.Fatal("testdb: drop schemas:", err)
+	}
+	if err := dbh.CreateSchema(); err != nil {
+		log.Fatal("testdb: create schemas:", err)
+	}
 	ctx = context.WithValue(ctx, dbhKey, dbh)
+
 	return ctx
 }

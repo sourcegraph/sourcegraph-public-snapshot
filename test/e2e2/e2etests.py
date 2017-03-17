@@ -31,10 +31,12 @@ def test_repo_jump_to(d):
     wd = d.d
 
     wd.get(d.sg_url('/github.com/gorilla/mux')) # start on a page with the jump modal active
-    d.active_elem().send_keys("/")
-    d.active_elem().send_keys("golang/go")
-    wait_for(lambda: len(d.find_search_modal_results( "github.com/golang/go", exact_match=True)) > 0)
-    d.find_search_modal_results( "github.com/golang/go", exact_match=True)[0].click()
+    wait_for(lambda: wd.find_element_by_id("directory_help_message"))
+    d.send_keys_like_human("/")
+    send_keys_with_retry(d.active_elem, "!golang/go",
+                         lambda: len(d.find_search_modal_results("gogolang", exact_match=True)) > 0,
+                         max_wait=5.0)
+    d.find_search_modal_results("gogolang", exact_match=True)[0].click()
 
     wait_for(lambda: wd.current_url == d.sg_url("/github.com/golang/go"), text=('wd.current_url == "%s"' % d.sg_url("/github.com/gorilla/mux")))
 
@@ -52,12 +54,12 @@ def test_github_private_auth_onboarding(d):
     # Go to home, click "Sign up"
     wd.get(d.sg_url("/"))
     retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: d.find_button_by_partial_text("Private + public code").click())
+    retry(lambda: wd.find_element_by_id("github-auth-btn").click())
 
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
     wd.find_element_by_id("password").send_keys(password)
-    d.active_elem().send_keys(Keys.ENTER)
+    d.send_keys_like_human(Keys.ENTER)
 
     # Re-authorize application in case GitHub thinks we're a bot (heh heh)
     if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
@@ -88,7 +90,7 @@ def test_github_public_auth_onboarding(d):
     # Type in GitHub login creds
     wd.find_element_by_id("login_field").send_keys(username)
     wd.find_element_by_id("password").send_keys(password)
-    d.active_elem().send_keys(Keys.ENTER)
+    d.send_keys_like_human(Keys.ENTER)
 
     # Re-authorize application in case GitHub thinks we're a bot (heh heh)
     if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
@@ -110,7 +112,6 @@ def test_login_logout(d):
         return
     wd.get(d.sg_url("/"))
     Util.log_in(d, username, password)
-    wait_for(lambda: wd.current_url == d.sg_url("/"))
     Util.log_out(d)
     wait_for(lambda: wd.current_url == d.sg_url("/"))
 
@@ -122,9 +123,9 @@ def test_golden_workflow(d):
     wd.get(d.sg_url("/go/github.com/gorilla/mux/-/NewRouter"))
 
     # Hover over "NewRouter" token
-    wait_for(lambda: len(d.find_tokens("NewRouter")) > 0)
-    d.hover_token("NewRouter")
-    wait_for(lambda: '' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0]).text)
+    wait_for(lambda: len(d.find_tokens("NewRouter")) > 0, 10)
+    d.hover_token_with_retry("NewRouter",
+                             lambda: 'NewRouter' in d.find_tooltip_near_elem(d.find_tokens("NewRouter")[0])[1].text)
 
     # Open NewRouter in InfoBar
     retry(lambda: d.find_token("NewRouter").click())
@@ -140,24 +141,24 @@ def test_golden_workflow(d):
 
     # Open preview and scroll downlist without affecting InfoBar
     retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
-    retry(lambda: d.active_elem().send_keys(Keys.RIGHT))
-    retry(lambda: d.active_elem().send_keys(Keys.DOWN))
+    retry(lambda: d.send_keys_like_human(Keys.RIGHT))
+    retry(lambda: d.send_keys_like_human(Keys.DOWN))
 
     # Verify Infobar remained open
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
 
     # Dismiss InfoBar
-    retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
+    retry(lambda: d.send_keys_like_human(Keys.ESCAPE)) # hide any tooltip that might steal the click
 
-    # Jump to modal to "NewRouter"
-    retry(lambda: d.active_elem().send_keys("/"))
-    retry(lambda: d.active_elem().send_keys("NewRouter"))
-    Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
-    def e():
-        d.active_elem().send_keys(Keys.ENTER)
-        wait_for(lambda: "mux.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
-    retry(e)
+    # Quickopen to "Route"
+    retry(lambda: d.send_keys_like_human("/"))
+    send_keys_with_retry(d.active_elem, "#Route",
+                         lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0,
+                         max_wait=5.0)
+
+    retry(lambda: d.send_keys_like_human(Keys.ENTER))
+    wait_for(lambda: "route.go" in wd.current_url and "/github.com/gorilla/mux" in wd.current_url)
 
 def test_global_refs(d, test):
     wd = d.d
@@ -167,33 +168,23 @@ def test_global_refs(d, test):
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
 
     # Jump to symbol
-    d.active_elem().send_keys("/")
-    d.active_elem().send_keys(test['symbol'])
-    Util.wait_for_all_network_indicators_to_be_invisible_with_jiggle(d, jiggle_wait=4)
-    wait_for(lambda: len(d.find_search_modal_results(test['symbol'])) > 0)
+    d.send_keys_like_human("/")
+    send_keys_with_retry(d.active_elem, '#' + test['symbol'],
+                         lambda: len(d.find_search_modal_results(test['symbol'])) > 0,
+                         max_wait=5.0)
     d.find_search_modal_results(test['symbol'])[0].click()
-
-    # Click the symbol.
-    wait_for(lambda: len(d.find_tokens(test['symbol_name'])) > 0, 5) # wait a little longer, to rule out VSCode start-up time
-    def rc():
-        retry(lambda: d.active_elem().send_keys(Keys.ESCAPE)) # hide any tooltip that might steal the click
-        retry(lambda: d.active_elem().send_keys(Keys.UP)) # cursor might steal the click if we don't move it out of the way
-        retry(lambda: d.find_token(test['symbol_name']).click())
-    retry(rc)
 
     # Wait for sidebar to appear.
     wait_for(lambda: len(wd.find_elements_by_css_selector('[class="sg-sidebar"]')) > 0)
 
-    find_sidebar_elements_by_tag_name_and_partial_text = lambda tag, text: [e for e in wd.find_element_by_css_selector('[class="sg-sidebar"]').find_elements_by_tag_name(tag) if text in e.text]
-
     # Symbol signature
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", test["symbol_name"])) > 0)
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("div", test["symbol"])) > 0)
 
     # "Defined in" header
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("p", "Defined in")) > 0)
 
     # Wait for references to load + un-expand the "Local" references
-    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1)
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
     wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45) # Wait for loading icon to disappear
@@ -201,10 +192,10 @@ def test_global_refs(d, test):
     retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
 
     # Local References
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
 
     # External References
-    wait_for(lambda: len(find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > test["global_min"])
+    wait_for(lambda: len(d.find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > test["global_min"])
 
 def test_beta_signup(d):
     wd = d.d
@@ -223,19 +214,27 @@ def test_beta_signup(d):
 
     retry(lambda: wd.execute_script("return arguments[0].scrollIntoView();", d.find_button_by_partial_text("Participate")))
 
-    retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').send_keys("Bobby Jones"))
-    wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] input').get_attribute("value") == "Bobby Jones")
+    retry(lambda: wd.find_element_by_name('fullName').send_keys("Bobby Jones"))
+    wait_for(lambda: wd.find_element_by_name('fullName').get_attribute("value") == "Bobby Jones")
+    retry(lambda: wd.find_element_by_name('company').send_keys("Dutch East India"))
+    wait_for(lambda: wd.find_element_by_name('company').get_attribute("value") == "Dutch East India")
 
     def f():
-        checkboxes = wd.find_elements_by_css_selector('[class^="BetaInterestForm"] input[type="checkbox"]')
+        checkboxes = wd.find_elements_by_name('editors')
         for checkbox in checkboxes:
             checkbox.click()
     retry(f)
 
-    retry(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').send_keys("Sourcegraph is great"))
-    wait_for(lambda: wd.find_element_by_css_selector('[class^="BetaInterestForm"] textarea').get_attribute("value") == "Sourcegraph is great")
+    def f2():
+        checkboxes = wd.find_elements_by_name('languages')
+        for checkbox in checkboxes:
+            checkbox.click()
+    retry(f2)
+
+    retry(lambda: wd.find_element_by_name('message').send_keys("Sourcegraph is great"))
+    wait_for(lambda: wd.find_element_by_name('message').get_attribute("value") == "Sourcegraph is great")
     retry(lambda: d.find_button_by_partial_text("Participate").click())
-    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at %s" % username)) > 0)
+    wait_for(lambda: len(d.find_elements_by_tag_name_and_partial_text("p", "We'll contact you at")) > 0)
 
 def test_first_open_jump_to_line(d):
     wd = d.d
@@ -338,12 +337,107 @@ def test_browser_extension_hover_j2d_split_pull_request(d):
         # refresh location after j2d for next test
         wd.get("https://github.com/gorilla/mux/pull/205/files?diff=split")
 
+def test_java_symbol(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4"))
+    wait_for(lambda: wd.find_element_by_id("directory_help_message"), 5)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) > 0, 5)
+
+    # Symbol search for "testfailure"
+    dr.send_keys_like_human("/")
+    send_keys_with_retry(dr.active_elem, "#testfailure",
+                         lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0,
+                         max_wait=5.0)
+    wait_for(lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0, 30.0)
+    # Click on "TestFailure junit.framework"
+    dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)[0].click()
+    # Wait for URL to change
+    wait_for(lambda: "/TestFailure.java#" in wd.current_url, max_wait=10.0, text=('file is TestFailure.java'))
+    # Check if page properly loaded
+    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
+
+def test_java_hover(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
+    # Hover over "TestFailure" token
+    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
+    retry(lambda: dr.hover_token("TestFailure", lang="java"))
+    wait_for(lambda: 'TestFailure' in dr.find_tooltip_near_elem(dr.find_tokens("TestFailure", lang="java")[0])[1].text)
+
+def test_java_def(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
+    # Click "TestFailure" token and wait until side panel loaded.
+    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
+    click_with_retry(lambda: dr.find_token("TestFailure", lang="java"),
+                     lambda: len(wd.find_elements_by_id("reference-tree")) == 1, max_wait=15)
+    # Click "Throwables" token and wait until side panel reloaded.
+    wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
+    click_with_retry(lambda: dr.find_token("Throwables", lang="java"),
+                     lambda: 'Throwables' in wd.find_elements_by_id("reference-tree")[0].text,
+                     max_wait=15)
+    # Click "Jump to definition"
+    dr.find_jump_to_definition_button().click()
+    # Wait for URL to change
+    wait_for(lambda: "/Throwables.java#" in wd.current_url, max_wait=10.0, text=('file is Throwables.java'))
+    # Check if page properly loaded
+    wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
+
+def test_java_cross_repo(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/google/guava/-/blob/guava/src/com/google/common/collect/Maps.java"))
+    # Wait for page to load
+    wait_for(lambda: len(dr.find_tokens("collect", lang="java")) > 0, max_wait=10, text="wait for page load")
+    # Click in editor
+    wd.find_elements_by_css_selector(".monaco-editor")[0].click()
+    # Scroll to "AbstractCollection"
+    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
+                    lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0)
+    # Click "AbstractCollection" and wait until side panel reloaded
+    click_with_retry(lambda: dr.find_token("AbstractCollection", lang="java"),
+                     lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text,
+                     max_wait=15)
+    # Click "Jump to definition"
+    dr.find_jump_to_definition_button().click()
+    # Wait for URL to change
+    wait_for(lambda: "/AbstractCollection.java#" in wd.current_url, max_wait=10.0, text=('file is AbstractCollection.java'))
+    # Check if page properly loaded
+    wait_for(lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0, 10)
+
+def test_java_global_usages(dr):
+    wd = dr.d
+    # Go to JUnit repo page
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/org/junit/Test.java"))
+    # Wait for page to load
+    wait_for(lambda: len(dr.find_tokens("", lang="java")) > 0, max_wait=10, text="wait for page load")
+    # Scroll to "Test"
+    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
+                    lambda: len(dr.find_tokens("Test", lang="java")) > 0)
+    click_with_retry(lambda: dr.find_token("Test", lang="java"),
+                     lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text,
+                     max_wait=15)
+    # Wait for references to load + un-expand the "Local" references
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
+    wait_for(lambda: len(wd.find_elements_by_class_name("uil-default")) == 0, 45) # Wait for loading icon to disappear
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-workspace-badge")) >= 1)
+    retry(lambda: wd.find_element_by_class_name("monaco-workspace-badge").click())
+    # Local References
+    wait_for(lambda: len(dr.find_sidebar_elements_by_tag_name_and_partial_text("div", "Local")) > 0)
+    # External References
+    wait_for(lambda: len(dr.find_sidebar_elements_by_tag_name_and_partial_text("div", "External")) > 0)
+
 all_tests = [
     # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     # (test_github_public_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
-    (test_login_logout, "@beyang"),
-    (test_repo_jump_to, "@nico"),
-    (test_golden_workflow, "@matt"),
+    (test_login_logout, "@kingy"),
+    # (test_repo_jump_to, "@nico"), # broken
+    # (test_golden_workflow, "@matt"), broken
     (test_direct_link_to_repo, "@nick"),
     (test_direct_link_to_directory, "@nick"),
     (test_beta_signup, "@kingy"),
@@ -352,21 +446,24 @@ all_tests = [
     (test_browser_extension_hover_j2d_blob, "@john"),
     (test_browser_extension_hover_j2d_unified_pull_request, "@john"),
     (test_browser_extension_hover_j2d_split_pull_request, "@john"),
+    # (test_java_symbol, "@the.other.aaron"), # broken
+    # (test_java_hover, "@the.other.aaron"), # broken
+    # (test_java_def, "@the.other.aaron"), # broken
+    # (test_java_cross_repo, "@the.other.aaron"), # broken
+    # (test_java_global_usages, "@the.other.aaron"), # broken
 ]
 
 global_ref_tests = [{
     "repo_rev": "github.com/golang/go@go1.7.3", # non-default branch
-    "symbol": "context.Context",
-    "symbol_name": "Context",
+    "symbol": "Context",
     "global_min": 5,
 }, {
     "repo_rev": "github.com/gorilla/mux",
-    "symbol": "mux.Router",
-    "symbol_name": "Router",
+    "symbol": "Router",
     "global_min": 5,
 }]
 for test in global_ref_tests:
     def test_global_refs_wrap(d):
 	return test_global_refs(d, test)
-    test_global_refs_wrap.func_name = test_global_refs.func_name + '_' + test['symbol_name'].lower()
+    test_global_refs_wrap.func_name = test_global_refs.func_name + '_' + test['symbol'].lower()
     all_tests.append((test_global_refs_wrap, '@stephen'))

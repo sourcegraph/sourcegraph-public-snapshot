@@ -1,9 +1,0 @@
-.bg_pattern_objects {
-	background-image: url('../../../../assets/img/backgrounds/pattern.svg');
-}
-
-.bg_pattern_objects_fade {
-	background-image: url('../../../../assets/img/backgrounds/pattern-fade.svg');
-	background-size: 290px 214px;
-	background-repeat: repeat-x;
-}

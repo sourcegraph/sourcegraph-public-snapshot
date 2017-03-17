@@ -2,7 +2,6 @@ import * as React from "react";
 import { colors } from "sourcegraph/components/utils";
 
 interface Props {
-	size?: "small" | "large" | "default";
 	children?: React.ReactNode[];
 	direction?: "vertical" | "horizontal";
 	style?: React.CSSProperties;

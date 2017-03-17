@@ -1,7 +1,7 @@
 import Event, { Emitter } from "vs/base/common/event";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMessagePassingProtocol } from "vs/base/parts/ipc/common/ipc";
-import { IMainProcessExtHostIPC, create } from "vs/platform/extensions/common/ipcRemoteCom";
+import { IRemoteCom, createProxyProtocol } from "vs/platform/extensions/common/ipcRemoteCom";
 import { AbstractThreadService } from "vs/workbench/services/thread/common/abstractThreadService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 
@@ -13,16 +13,13 @@ declare var self: Worker;
  */
 export class ExtHostThreadService extends AbstractThreadService implements IThreadService {
 	public _serviceBrand: any;
-	private remoteCom: IMainProcessExtHostIPC;
+	private remoteCom: IRemoteCom;
 
 	constructor() {
 		super(false);
 
 		const protocol = new WorkerProtocol();
-		this.remoteCom = create(msg => protocol.send(msg));
-		protocol.onMessage(msg => {
-			this.remoteCom.handle(msg);
-		});
+		this.remoteCom = createProxyProtocol(protocol);
 		this.remoteCom.setManyHandler(this);
 	}
 

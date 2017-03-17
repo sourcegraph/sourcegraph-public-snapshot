@@ -9,7 +9,7 @@ interface Props {
 
 export function List({ children, style, itemStyle }: Props): JSX.Element {
 	const sx = Object.assign(
-		{ paddingLeft: whitespace[4] },
+		{ paddingLeft: whitespace[5] },
 		style,
 	);
 

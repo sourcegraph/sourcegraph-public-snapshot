@@ -68,4 +68,8 @@ var mocha = new Mocha();
 files.forEach((file) => {
 	mocha.addFile(file);
 });
-mocha.run();
+mocha.run((failures) => {
+	process.on('exit', () => {
+		process.exit(failures);  // exit with non-zero status if there were failures
+	});
+});

@@ -37,36 +37,44 @@ function getAssignee(issue: Issue): string | null {
 }
 
 function getProjectOrComponent(issue: Issue): string | null {
-	for (const label of issue.labels) {
-		if (label.name.startsWith("Project: ") || label.name.startsWith("Component: ")) {
-			return label.name;
+	if (issue.labels) {
+		for (const label of issue.labels) {
+			if (label.name.startsWith("Project: ") || label.name.startsWith("Component: ")) {
+				return label.name;
+			}
 		}
 	}
 	return null;
 }
 
 function getPriority(issue: Issue): string | null {
-	for (const label of issue.labels) {
-		if (label.name === "P1" || label.name === "P2" || label.name === "P3" || label.name === "P4" || label.name === "P5") {
-			return label.name;
+	if (issue.labels) {
+		for (const label of issue.labels) {
+			if (label.name === "P1" || label.name === "P2" || label.name === "P3" || label.name === "P4" || label.name === "P5") {
+				return label.name;
+			}
 		}
 	}
 	return null;
 }
 
 function getType(issue: Issue, type: string): string | null {
-	for (const label of issue.labels) {
-		if (label.name.startsWith("Type: ")) {
-			return label.name;
+	if (issue.labels) {
+		for (const label of issue.labels) {
+			if (label.name.startsWith("Type: ")) {
+				return label.name;
+			}
 		}
 	}
 	return null;
 }
 
 function isType(issue: Issue, type: string): boolean {
-	for (const label of issue.labels) {
-		if (label.name === type) {
-			return true;
+	if (issue.labels) {
+		for (const label of issue.labels) {
+			if (label.name === type) {
+				return true;
+			}
 		}
 	}
 	return false;

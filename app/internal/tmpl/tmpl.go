@@ -2,6 +2,7 @@
 package tmpl
 
 import (
+	"context"
 	"fmt"
 	htmpl "html/template"
 	"io/ioutil"
@@ -9,8 +10,6 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
-
-	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/jscontext"

@@ -1,30 +1,88 @@
-import * as classNames from "classnames";
+import { css } from "glamor";
 import * as React from "react";
-import * as base from "sourcegraph/components/styles/_base.css";
-import * as colors from "sourcegraph/components/styles/_colors.css";
+import { FlexContainer } from "sourcegraph/components";
+import { Close } from "sourcegraph/components/symbols/Primaries";
+import { colors, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
+	color: "gray" | "green" | "red" | "yellow" | "white";
 	style?: Object;
 	className?: string;
+	isDismissable: boolean;
+	onDismiss?: () => void;
 }
 
-export class Toast extends React.Component<Props, {}> {
-	static defaultProps: Props = {
-		className: classNames(base.pv1, base.ph2, base.ba, base.br2, colors.b__cool_pale_gray, colors.bg_near_white),
-	};
+interface State {
+	isVisible: boolean;
+}
+
+export class Toast extends React.Component<Props, State> {
 
 	constructor(props: Props) {
 		super(props);
-		this.state = { alertVisible: true };
+		this.state = { isVisible: true };
+	}
+
+	dismiss(): void {
+		this.setState({ isVisible: false });
+		if (this.props.onDismiss) {
+			this.props.onDismiss();
+		}
 	}
 
 	render(): JSX.Element {
-		let { children, style, className } = this.props;
+		const { color, children, className, isDismissable, style, } = this.props;
+		const linkSx = css({
+			"& a": { color: linkColors[color](), textDecoration: "underline" },
+			"& a:hover": { color: linkColors[color]() },
+		});
 
-		return (
-			<div className={className} style={style}>
-				{children}
+		const closeLinkSx = css({
+			"&": { color: linkColors[color](0.5) },
+			"&:hover": { color: linkColors[color](0.75) },
+			"&:active": { color: linkColors[color]() },
+		});
+
+		return <FlexContainer className={className} style={Object.assign({
+			backgroundColor: bgColor[color],
+			boxShadow: `0 2px 4px 0 ${colors.black(0.5)}`,
+			boxSizing: "border-box",
+			color: textColor[color],
+			overflow: "hidden",
+
+			maxHeight: this.state.isVisible ? "200px" : "0",
+			transition: "max-height 500ms ease-in-out",
+		}, style)}>
+			<div style={{ padding: whitespace[3], flex: "2 2 auto" }}>
+				<span {...linkSx}>{children}</span>
 			</div>
-		);
+			{isDismissable && <a onClick={() => this.dismiss()} style={{ flex: "0 0 56px" }} {...closeLinkSx}>
+				<Close width={24} style={{ margin: whitespace[3] }} />
+			</a>}
+		</FlexContainer >;
 	}
 }
+
+const linkColors = {
+	gray: colors.blueL2,
+	green: colors.white,
+	red: colors.white,
+	yellow: colors.black,
+	white: colors.blue,
+};
+
+const bgColor = {
+	gray: colors.blueGrayD1(),
+	green: colors.green(),
+	red: colors.red(),
+	yellow: colors.yellowL1(),
+	white: colors.white(),
+};
+
+const textColor = {
+	gray: "white",
+	green: "white",
+	red: "white",
+	yellow: colors.yellowD2(),
+	white: null,
+};

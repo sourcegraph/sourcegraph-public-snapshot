@@ -13,6 +13,10 @@ func (s *Sel) String() string { return fmt.Sprintf("%d-%d", s[0], s[1]) }
 func (s *Sel) start() uint { return s[0] }
 func (s *Sel) end() uint   { return s[1] }
 
+func (s *Sel) equal(other *Sel) bool {
+	return s == other || (s != nil && other != nil && *s == *other)
+}
+
 func (s *Sel) clone() *Sel {
 	if s == nil {
 		return nil

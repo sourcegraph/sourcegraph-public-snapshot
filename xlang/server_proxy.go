@@ -27,6 +27,17 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
+// repoLarge contains repos which should be sent to LS with the mode suffix
+// _large. It is set via the environment variable REPO_LARGE.
+var repoLarge = make(map[string]bool)
+
+func init() {
+	repos := strings.Fields(env.Get("REPO_LARGE", "", "repos which should be sent to LS with the mode suffix _large. Seperated by whitespace"))
+	for _, r := range repos {
+		repoLarge[r] = true
+	}
+}
+
 // serverID identifies a lang/build server by the minimal state
 // necessary to reinitialize it. At most one lang/build server per
 // serverID will be used; if two clients issue requests that route to
@@ -80,6 +91,11 @@ type serverProxyConnStats struct {
 	// Counts is the total number of calls proxied to the server per
 	// LSP method.
 	Counts map[string]int
+
+	// TotalFinishedCount is the total number of calls proxied to the
+	// server which finished. This is closely related to TotalCount,
+	// except is only incremented once a result is returned.
+	TotalFinishedCount int
 
 	// TotalErrorCount is the total number of calls proxied to the server
 	// that failed.
@@ -178,9 +194,15 @@ func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) 
 	p.mu.Lock()
 	for s := range p.servers {
 		s.mu.Lock()
-		idle := s.stats.Last.Before(cutoff)
+		// If last is before cutoff we should expire
+		last := s.stats.Last
+		// If the only request has been for workspace/xreference,
+		// expire now. If workspace/xreferences is present it is
+		// usually the only request done to a server.
+		isShortLived := s.stats.TotalCount == 1 && s.stats.TotalFinishedCount == 1 && s.stats.Counts["workspace/xreferences"] == 1
 		s.mu.Unlock()
-		if idle {
+
+		if last.Before(cutoff) || isShortLived {
 			wg.Add(1)
 			go func(s *serverProxyConn) {
 				defer wg.Done()
@@ -251,24 +273,27 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	}
 	serverConnsGauge.Set(float64(len(p.servers)))
 	p.mu.Unlock()
-	if ok && LogServerStats {
+	if ok {
 		stats := c.Stats()
-		// Machine parseable to assist post processing
-		msg, _ := json.Marshal(struct {
-			RootPath   string
-			Mode       string
-			PathPrefix string
-			Stats      serverProxyConnStats
-		}{
-			RootPath:   c.id.rootPath.String(),
-			Mode:       c.id.mode,
-			PathPrefix: c.id.pathPrefix,
-			Stats:      stats,
-		})
-		log.Printf("tracked removed serverProxyConn: %s", msg)
 		serverConnsTotalMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
 		serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
 		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
+		recordClosedServerConn(c.id, stats)
+		if LogServerStats {
+			// Machine parseable to assist post processing
+			msg, _ := json.Marshal(struct {
+				RootPath   string
+				Mode       string
+				PathPrefix string
+				Stats      serverProxyConnStats
+			}{
+				RootPath:   c.id.rootPath.String(),
+				Mode:       c.id.mode,
+				PathPrefix: c.id.pathPrefix,
+				Stats:      stats,
+			})
+			log.Printf("tracked removed serverProxyConn: %s", msg)
+		}
 	}
 }
 
@@ -313,7 +338,11 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	c.initOnce.Do(func() {
 		didWeInit = true
 
-		rwc, err := connectToServer(ctx, id.mode)
+		mode := id.mode
+		if _, hasLargeMode := ServersByMode[mode+"_large"]; hasLargeMode && repoLarge[id.rootPath.Repo()] {
+			mode = mode + "_large"
+		}
+		rwc, err := connectToServer(ctx, mode)
 		if err != nil {
 			c.initErr = err
 			return
@@ -324,7 +353,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 		if p.Trace {
 			connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
 		}
-		c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(c.handle), connOpt...)
+		c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
 		// SECURITY NOTE: We assume that the caller to the LSP client
 		// proxy has already checked the user's permissions to read
@@ -379,6 +408,13 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 	return c, err
 }
 
+// initializeServer will ensure we either have an open connection or will open
+// one to ID. If it fails, it will return a non-nil error.
+func (p *Proxy) initializeServer(ctx context.Context, id serverID) error {
+	_, err := p.getServerConn(ctx, id)
+	return err
+}
+
 // clientBroadcastFunc returns a function which will broadcast a request to
 // all active clients for id.
 func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc2.Request) {
@@ -430,13 +466,16 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) error {
 
 // callServer sends an LSP request to the specified server
 // (establishing the connection first if necessary).
-func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid serverID, method string, params, result interface{}) (err error) {
+func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid serverID, method string, notif, requestOriginatedFromProxy bool, params, result interface{}) (err error) {
 	var c *serverProxyConn
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: "+method,
 		opentracing.Tags{"mode": sid.mode, "rootPath": sid.rootPath.String(), "method": method, "params": params},
 	)
 	defer func() {
+		if c != nil {
+			c.incTotalFinishedStat()
+		}
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.LogEvent(fmt.Sprintf("error: %v", err))
@@ -454,7 +493,18 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 	c.updateLastTime()
 	c.incMethodStat(method)
 
-	return c.conn.Call(ctx, method, params, result, addTraceMeta(ctx), jsonrpc2.PickID(c.nextID(crid)))
+	callOpts := []jsonrpc2.CallOption{addTraceMeta(ctx)}
+	if notif {
+		return c.conn.Notify(ctx, method, params, callOpts...)
+	}
+	if !requestOriginatedFromProxy {
+		// See (*clientProxyConn).callServer for the meaning of
+		// requestOriginatedFromProxy. We only want to tie back this
+		// request to the client if it actually originated from a
+		// client.
+		callOpts = append(callOpts, jsonrpc2.PickID(c.nextID(crid)))
+	}
+	return c.conn.Call(ctx, method, params, result, callOpts...)
 }
 
 // nextID returns a request ID for use in a c.conn.Call. It includes the
@@ -639,6 +689,12 @@ func isInfraMethod(method string) bool {
 func (c *serverProxyConn) updateLastTime() {
 	c.mu.Lock()
 	c.stats.Last = time.Now()
+	c.mu.Unlock()
+}
+
+func (c *serverProxyConn) incTotalFinishedStat() {
+	c.mu.Lock()
+	c.stats.TotalFinishedCount++
 	c.mu.Unlock()
 }
 

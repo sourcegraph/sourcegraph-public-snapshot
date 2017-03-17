@@ -2,10 +2,12 @@ package gitutil
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -70,9 +72,6 @@ func (r BareRepo) ObjectNameSHA(arg string) (string, error) {
 		return "", err
 	}
 	sha, err := r.Exec(nil, "rev-parse", "--verify", arg)
-	if err != nil && strings.Contains(arg, "4b825") {
-		panic("X")
-	}
 	return string(bytes.TrimSpace(sha)), err
 }
 
@@ -344,7 +343,13 @@ func (r BareRepo) ReadSymbolicRef(name string) (string, error) {
 		return "", err
 	}
 	value, err := r.Exec(nil, "symbolic-ref", name)
-	return string(bytes.TrimSpace(value)), err
+	if err != nil {
+		if strings.Contains(err.Error(), "exit status 128") && strings.Contains(err.Error(), fmt.Sprintf("fatal: ref %s is not a symbolic ref", name)) {
+			return "", os.ErrNotExist
+		}
+		return "", err
+	}
+	return string(bytes.TrimSpace(value)), nil
 }
 
 func (r BareRepo) UpdateSymbolicRef(name, ref string) error {
@@ -432,7 +437,7 @@ func (r BareRepo) CreateTree(basePath string, entries []*TreeEntry) (string, err
 	return string(bytes.TrimSpace(oidBytes)), nil
 }
 
-func (r BareRepo) CreateCommitFromTree(tree, parent string, isRootCommit bool) (oid string, err error) {
+func (r BareRepo) CreateCommitFromTree(ctx context.Context, tree, parent string, isRootCommit bool) (oid string, err error) {
 	args := []string{"commit-tree", "-m", "wip"}
 	if !isRootCommit {
 		parent, err := r.ObjectNameSHA(parent + "^{commit}")
@@ -442,6 +447,34 @@ func (r BareRepo) CreateCommitFromTree(tree, parent string, isRootCommit bool) (
 		args = append(args, "-p", parent)
 	}
 	args = append(args, tree)
-	oidBytes, err := r.Exec(nil, args...)
+	oidBytes, err := r.Exec(nil, args...) // TODO(sqs): use ctx
 	return string(bytes.TrimSpace(oidBytes)), err
+}
+
+type ReflogEntry struct {
+	CommitID string
+}
+
+func (r BareRepo) RefLog(ref string, skip, maxCount uint) ([]ReflogEntry, error) {
+	if err := checkArgSafety(ref); err != nil {
+		return nil, err
+	}
+	args := []string{"reflog", "-z", "--pretty=format:%H"}
+	if skip > 0 {
+		args = append(args, "--skip="+strconv.FormatUint(uint64(skip), 10))
+	}
+	if maxCount > 0 {
+		args = append(args, "--max-count="+strconv.FormatUint(uint64(maxCount), 10))
+	}
+	args = append(args, ref)
+	out, err := r.Exec(nil, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var entries []ReflogEntry
+	for _, commitID := range splitNullsBytes(out) {
+		entries = append(entries, ReflogEntry{CommitID: string(commitID)})
+	}
+	return entries, nil
 }

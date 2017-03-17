@@ -1,6 +1,5 @@
 import { install } from './yarnshim';
-import { InMemoryFileSystem } from 'javascript-typescript-langserver/lib/project-manager';
-import { FileSystem, FileInfo } from 'javascript-typescript-langserver/lib/fs';
+import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import * as path from 'path';
 import * as cluster from 'cluster';
 import * as process from 'process';
@@ -16,38 +15,23 @@ const yarntestdir = '/tmp/yarnshim-test'
  * InMemFileSystem mocks the FileSystem interface with in-memory contents.
  */
 class InMemFileSystem implements FileSystem {
-	private fs: InMemoryFileSystem;
+	private files = new Map<string, string>();
 
-	constructor(root: string) {
-		this.fs = new InMemoryFileSystem(root);
+	constructor(root: string) { }
+
+	async getWorkspaceFiles(): Promise<string[]> {
+		return Array.from(this.files.keys());
 	}
 
-	readDir(p: string, callback: (err: Error | null, result?: FileInfo[]) => void) {
-		const entries = this.fs.getFileSystemEntries(p);
-		const fileInfo = [];
-		for (const name of entries.files) {
-			fileInfo.push({
-				name: name,
-				size: this.fs.readFile(path.join(p, name)).length,
-				dir: false,
-			});
+	async getTextDocumentContent(uri: string): Promise<string> {
+		if (!this.files.has(uri)) {
+			throw new Error(`Unknown file ${uri}`);
 		}
-		for (const name of entries.directories) {
-			fileInfo.push({
-				name: name,
-				size: 0,
-				dir: true,
-			});
-		}
-		callback(null, fileInfo);
+		return this.files.get(uri);
 	}
 
-	readFile(p: string, callback: (err: Error | null, result?: string) => void) {
-		callback(null, this.fs.readFile(p));
-	}
-
-	addFile(path: string, content: string) {
-		this.fs.addFile(path, content);
+	addFile(uri: string, content: string) {
+		this.files.set(uri, content);
 	}
 }
 

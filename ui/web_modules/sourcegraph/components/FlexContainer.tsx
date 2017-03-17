@@ -1,67 +1,67 @@
-import * as classNames from "classnames";
 import * as React from "react";
 
-import * as styles from "sourcegraph/components/styles/flexContainer.css";
-
 interface Props extends React.DOMAttributes<HTMLElement> {
-	direction?: string; // left_right, right_left, top_bottom, bottom_top
+	direction?: "left-right" | "right-left" | "top-bottom" | "bottom-top";
 	wrap?: boolean;
-	justify?: string; // start, end, center, between, around
-	items?: string; // start, end, center, baseline, stretch
-	content?: string; // start, end, center, between, stretch
+	justify?: "start" | "end" | "center" | "between" | "around";
+	items?: "start" | "end" | "center" | "baseline" | "stretch";
+	content?: "start" | "end" | "center" | "between" | "around" | "stretch";
 	className?: string;
-	children?: any;
-	style?: Object;
+	children?: React.ReactNode[];
+	style?: React.CSSProperties;
 }
 
-export class FlexContainer extends React.Component<Props, {}> {
-	render(): JSX.Element | null {
-		const {
-			direction = "left_right",
-			wrap,
-			justify = "start",
-			items = "stretch",
-			content = "stretch",
-			className,
-			children,
-			...transferredProps,
-		} = this.props;
+export function FlexContainer(props: Props): JSX.Element {
+	const {
+		direction = "left_right",
+		wrap = false,
+		justify = "start",
+		items = "stretch",
+		content = "stretch",
+		className,
+		children,
+		style,
+		...transferredProps,
+	} = props;
 
-		return (
-			<div className={classNames(styles.flex, directionClasses[direction], justifyClasses[justify], itemsClasses[items], contentClasses[content], wrap ? styles.wrap : styles.nowrap, className)} {...transferredProps}>
-				{children}
-			</div>
-		);
-	}
+	return <div className={className} {...transferredProps} style={Object.assign({
+		display: "flex",
+		flexWrap: wrap ? "wrap" : "nowrap",
+		flexDirection: directionAttrs[direction],
+		alignContent: contentAttrs[content],
+		alignItems: itemsAttrs[items],
+		justifyContent: justifyAttrs[justify],
+	}, style)}>{children}</div>;
 }
 
-const directionClasses = {
-	"left_right": styles.left_right,
-	"right_left": styles.right_left,
-	"top_bottom": styles.top_bottom,
-	"bottom_top": styles.bottom_top,
+const directionAttrs = {
+	"left-right": "row",
+	"right-left": "row-reverse",
+	"top-bottom": "column",
+	"bottom-top": "column-reverse",
 };
 
-const justifyClasses = {
-	"start": styles.justify_start,
-	"end": styles.justify_end,
-	"center": styles.justify_center,
-	"between": styles.justify_between,
-	"around": styles.justify_around,
+const justifyAttrs = {
+	"start": "flex-start",
+	"end": "flex-end",
+	"center": "center",
+	"between": "space-between",
+	"around": "space-around",
 };
 
-const itemsClasses = {
-	"start": styles.items_start,
-	"end": styles.items_end,
-	"center": styles.items_center,
-	"baseline": styles.items_baseline,
-	"stretch": styles.items_stretch,
+const itemsAttrs = {
+	"start": "flex-start",
+	"end": "flex-end",
+	"center": "center",
+	"baseline": "baseline",
+	"stretch": "stretch",
 };
 
-const contentClasses = {
-	"start": styles.content_start,
-	"end": styles.content_end,
-	"center": styles.content_center,
-	"between": styles.content_between,
-	"stretch": styles.content_stretch,
+const contentAttrs = {
+	"start": "flex-start",
+	"end": "flex-end",
+	"center": "center",
+	"around": "space-around",
+	"between": "space-between",
+	"stretch": "stretch",
 };

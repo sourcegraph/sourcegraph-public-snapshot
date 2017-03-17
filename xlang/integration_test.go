@@ -13,6 +13,7 @@ import (
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -233,9 +234,9 @@ func TestIntegration(t *testing.T) {
 			c := dialProxy(t, addr, nil)
 
 			// Prepare the connection.
-			if err := c.Call(ctx, "initialize", xlang.ClientProxyInitializeParams{
+			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 				InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
-				InitializationOptions: xlang.ClientProxyInitializationOptions{Mode: test.mode},
+				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}

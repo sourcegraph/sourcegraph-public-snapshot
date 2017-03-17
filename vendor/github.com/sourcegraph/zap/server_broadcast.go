@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	logpkg "github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -15,10 +15,12 @@ import (
 // sender.
 //
 // Exactly 1 of the nonSymbolic and symbolic parameters must be set.
-func (s *Server) broadcastRefUpdate(ctx context.Context, log *logpkg.Context, updatedRefs []refdb.Ref, sender *serverConn, nonSymbolic *RefUpdateDownstreamParams, symbolic *RefUpdateSymbolicParams) error {
+func (s *Server) broadcastRefUpdate(ctx context.Context, logger log.Logger, updatedRefs []refdb.Ref, sender *serverConn, nonSymbolic *RefUpdateDownstreamParams, symbolic *RefUpdateSymbolicParams) error {
 	if ctx == nil {
 		panic("ctx == nil")
 	}
+
+	debugSimulateLatency()
 
 	var repo string
 	if nonSymbolic != nil {
@@ -43,7 +45,7 @@ func (s *Server) broadcastRefUpdate(ctx context.Context, log *logpkg.Context, up
 	for _, ref := range updatedRefs {
 		refID := RefIdentifier{Repo: repo, Ref: ref.Name}
 		if watchers := s.watchers(refID); len(watchers) > 0 {
-			level.Debug(log).Log("broadcast-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "))
+			level.Debug(logger).Log("broadcast-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "))
 
 			for _, c := range watchers {
 				// Send the update with the ref name that the client
@@ -52,7 +54,7 @@ func (s *Server) broadcastRefUpdate(ctx context.Context, log *logpkg.Context, up
 				//
 				// Also set Ack = true if this is being sent to the
 				// original sender.
-				c.toSend <- makeRefUpdateItem(ref.Name, c == sender)
+				c.send(ctx, logger, makeRefUpdateItem(ref.Name, c == sender))
 			}
 		}
 	}

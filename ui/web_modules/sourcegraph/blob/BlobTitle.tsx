@@ -8,7 +8,7 @@ import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAl
 import { FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { Features } from "sourcegraph/util/features";
-import { getPathExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
+import { getPathExtension, isBetaExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 interface Props {
@@ -38,6 +38,7 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 
 		const extension = getPathExtension(path);
 		const isSupported = extension ? isSupportedExtension(extension) : false;
+		const isBeta = extension ? isBetaExtension(extension) : false;
 		const isIgnored = extension ? isIgnoredExtension(extension) : false;
 		const isRoot = path === "";
 
@@ -53,8 +54,8 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 			}}>
 				{!isRoot &&
 					[
-						<div key="left">
-							<Heading style={{ display: "inline-block" }} level={6} color="white" compact={true}>
+						<FlexContainer key="left" style={{ overflow: "hidden" }}>
+							<Heading style={{ display: "inline-block", whiteSpace: "nowrap" }} level={6} color="white" compact={true}>
 								{basename(path)}
 							</Heading>
 							<PathBreadcrumb
@@ -63,17 +64,22 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 								rev={rev}
 								linkSx={Object.assign({ color: colors.blueGrayL1() }, typography.size[7])}
 								linkHoverSx={{ color: `${colors.blueGrayL3()} !important` }}
-								style={{ color: colors.blueGrayL1(), display: "inline-block", marginBottom: 0, paddingLeft: whitespace[2] }} />
-						</div>,
-						<div key="right">
+								style={{
+									color: colors.blueGrayL1(),
+									overflow: "hidden",
+									paddingLeft: whitespace[2],
+									paddingRight: whitespace[2],
+									paddingTop: 2,
+								}} />
+						</FlexContainer>,
+						<div key="right" style={{ flex: "0 0 auto" }}>
 							<div style={Object.assign({
 								color: "white",
-								flex: "1 1",
 								textAlign: "right",
 							}, typography.size[7])}>
 
 								{!isSupported && !isIgnored &&
-									<UnsupportedLanguageAlert ext={extension} style={{ marginRight: whitespace[1] }} />
+									<UnsupportedLanguageAlert ext={extension} inBeta={isBeta} />
 								}
 
 								<AuthorsToggleButton shortcut="a" keyCode={65} toggleAuthors={toggleAuthors} />

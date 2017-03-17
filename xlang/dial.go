@@ -21,7 +21,7 @@ func DialProxy(dialCtx context.Context, addr string, h *ClientHandler, connOpt .
 	if err != nil {
 		return nil, err
 	}
-	return jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(h.handle), connOpt...), nil
+	return jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(h.handle)), connOpt...), nil
 }
 
 // ClientHandler is a JSON-RPC 2.0 handler for the client that

@@ -1,7 +1,7 @@
 import { hover } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
-import { RepoLink } from "sourcegraph/components";
+import { FlexContainer, RepoLink } from "sourcegraph/components";
 import { urlToTree } from "sourcegraph/tree/routes";
 
 interface Props {
@@ -51,7 +51,7 @@ function getPathCrumbs(
 
 function Crumb({ style, url, linkSx, linkClassName, children }: CrumbProps): JSX.Element {
 	return <span style={style}>
-		<span style={{ display: "inline-block", paddingLeft: crumbSpacing, paddingRight: crumbSpacing }}>/</span>
+		<span style={{ paddingLeft: crumbSpacing, paddingRight: crumbSpacing }}>/</span>
 		<Link to={url} style={linkSx} className={linkClassName}>{children}</Link>
 	</span>;
 }
@@ -60,16 +60,7 @@ export function PathBreadcrumb({ repo, path, rev, linkSx, linkHoverSx, style, to
 
 	const links: JSX.Element[] = [];
 	const linkHoverClass = linkHoverSx ? hover(linkHoverSx).toString() : "";
-
-	links.push(
-		<RepoLink
-			repo={repo}
-			rev={rev}
-			style={linkSx}
-			key="RepoLink"
-			className={linkHoverClass}
-			spacing={crumbSpacing} />
-	);
+	let currentDir;
 
 	if (path !== null) {
 		const crumbs = getPathCrumbs(repo, rev, path, toFile);
@@ -79,7 +70,23 @@ export function PathBreadcrumb({ repo, path, rev, linkSx, linkHoverSx, style, to
 			linkSx={linkSx}
 			linkClassName={linkHoverClass}>{crumb.dirName}</Crumb>);
 		links.push(...crumbEls);
+		currentDir = links.pop();
 	}
 
-	return <div style={style}>{links}</div>;
+	return <FlexContainer style={style}>
+		<span style={{
+			overflow: "hidden",
+			textOverflow: "ellipsis",
+			whiteSpace: "pre",
+		}}><RepoLink
+				repo={repo}
+				rev={rev}
+				style={linkSx}
+				key="RepoLink"
+				className={linkHoverClass}
+				spacing={crumbSpacing} />
+			{links}
+		</span>
+		<span style={{ whiteSpace: "nowrap" }}>{currentDir}</span>
+	</FlexContainer>;
 }

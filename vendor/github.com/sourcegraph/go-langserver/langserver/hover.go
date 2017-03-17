@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"go/ast"
+	"go/build"
 	"go/token"
 	"go/types"
 	"strings"
@@ -15,11 +16,18 @@ import (
 )
 
 func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) (*lsp.Hover, error) {
-	fset, node, _, prog, pkg, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
+	fset, node, _, prog, pkg, _, err := h.typecheck(ctx, conn, params.TextDocument.URI, params.Position)
 	if err != nil {
 		// Invalid nodes means we tried to click on something which is
 		// not an ident (eg comment/string/etc). Return no information.
 		if _, ok := err.(*invalidNodeError); ok {
+			return nil, nil
+		}
+		// This is a common error we get in production when a user is
+		// browsing a go pkg which only contains files we can't
+		// analyse (usually due to build tags). To reduce signal of
+		// actual bad errors, we return no error in this case.
+		if _, ok := err.(*build.NoGoError); ok {
 			return nil, nil
 		}
 		return nil, err
@@ -47,6 +55,7 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 	qf := func(*types.Package) string { return "" }
 
 	var s string
+	var extra string
 	if f, ok := o.(*types.Var); ok && f.IsField() {
 		// TODO(sqs): make this be like (T).F not "struct field F string".
 		s = "struct " + o.String()
@@ -55,6 +64,11 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 			typ := obj.Type().Underlying()
 			if _, ok := typ.(*types.Struct); ok {
 				s = "type " + obj.Name() + " struct"
+				extra = prettyPrintTypesString(types.TypeString(typ, qf))
+			}
+			if _, ok := typ.(*types.Interface); ok {
+				s = "type " + obj.Name() + " interface"
+				extra = prettyPrintTypesString(types.TypeString(typ, qf))
 			}
 		}
 		if s == "" {
@@ -78,28 +92,22 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 			return ""
 		}
 
-		// Pull the comment out of the comment map for the file.
-		pathIndex := 1
-		switch v := o.(type) {
-		case *types.Var:
-			if !v.IsField() {
-				pathIndex = 2
-			}
-		case *types.TypeName:
-			pathIndex = 2
-		}
+		// Pull the comment out of the comment map for the file. Do
+		// not search too far away from the current path.
 		var doc *ast.CommentGroup
-		switch v := path[pathIndex].(type) {
-		case *ast.Field:
-			doc = v.Doc
-		case *ast.ValueSpec:
-			doc = v.Doc
-		case *ast.TypeSpec:
-			doc = v.Doc
-		case *ast.GenDecl:
-			doc = v.Doc
-		case *ast.FuncDecl:
-			doc = v.Doc
+		for i := 0; i < 3 && i < len(path) && doc == nil; i++ {
+			switch v := path[i].(type) {
+			case *ast.Field:
+				doc = v.Doc
+			case *ast.ValueSpec:
+				doc = v.Doc
+			case *ast.TypeSpec:
+				doc = v.Doc
+			case *ast.GenDecl:
+				doc = v.Doc
+			case *ast.FuncDecl:
+				doc = v.Doc
+			}
 		}
 		if doc == nil {
 			return ""
@@ -107,9 +115,15 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 		return doc.Text()
 	}
 
-	comments := findComments(o)
+	contents := maybeAddComments(findComments(o), []lsp.MarkedString{{Language: "go", Value: s}})
+	if extra != "" {
+		// If we have extra info, ensure it comes after the usually
+		// more useful documentation
+		contents = append(contents, lsp.MarkedString{Language: "go", Value: extra})
+	}
+
 	return &lsp.Hover{
-		Contents: maybeAddComments(comments, []lsp.MarkedString{{Language: "go", Value: s}}),
+		Contents: contents,
 		Range:    rangeForNode(fset, node),
 	}, nil
 }
@@ -162,4 +176,62 @@ func commentsToText(cgroups []*ast.CommentGroup) (text string) {
 		}
 	}
 	return text
+}
+
+// prettyPrintTypesString is pretty printing specific to the output of
+// types.*String. Instead of re-implementing the printer, we can just
+// transform its output.
+func prettyPrintTypesString(s string) string {
+	// Don't bother including the fields if it is empty
+	if strings.HasSuffix(s, "{}") {
+		return ""
+	}
+	var b bytes.Buffer
+	b.Grow(len(s))
+	depth := 0
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch c {
+		case ';':
+			b.WriteByte('\n')
+			for j := 0; j < depth; j++ {
+				b.WriteString("    ")
+			}
+			// Skip following space
+			i++
+
+		case '{':
+			if i == len(s)-1 {
+				// This should never happen, but in case it
+				// does give up
+				return s
+			}
+
+			n := s[i+1]
+			if n == '}' {
+				// Do not modify {}
+				b.WriteString("{}")
+				// We have already written }, so skip
+				i++
+			} else {
+				// We expect fields to follow, insert a newline and space
+				depth++
+				b.WriteString(" {\n")
+				for j := 0; j < depth; j++ {
+					b.WriteString("    ")
+				}
+			}
+
+		case '}':
+			depth--
+			if depth < 0 {
+				return s
+			}
+			b.WriteString("\n}")
+
+		default:
+			b.WriteByte(c)
+		}
+	}
+	return b.String()
 }

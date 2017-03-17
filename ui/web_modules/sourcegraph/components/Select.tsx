@@ -1,66 +1,62 @@
-import { css } from "glamor";
 import * as React from "react";
-import { ChevronDown, Warning } from "sourcegraph/components/symbols/Primaries";
-import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { FormElement } from "sourcegraph/components/FormElement";
+import { ChevronDown } from "sourcegraph/components/symbols/Primaries";
+import { colors, forms, whitespace } from "sourcegraph/components/utils";
 
-interface Props {
+interface Props extends React.HTMLAttributes<HTMLSelectElement> {
 	block?: boolean;
 	children?: React.ReactNode[];
-	containerSx?: React.CSSProperties;
-	name?: string;
+	containerStyle?: React.CSSProperties;
+	defaultValue?: string;
 	label?: string;
-	placeholder?: string;
 	helperText?: string;
 	error?: boolean;
 	errorText?: string;
+	optionalText?: string;
+	placeholder?: string;
 	style?: React.CSSProperties;
-	defaultValue?: string;
 }
 
-export function Select({ block = true, containerSx, name, children, label, placeholder, helperText, error, errorText, style, defaultValue }: Props): JSX.Element {
-	const sx = css({
-		appearance: "none",
-		backgroundColor: "white",
-		borderColor: error ? colors.red() : colors.blueGray(),
-		borderRadius: 3,
-		borderWidth: 1,
-		boxSizing: "border-box",
+export function Select(props: Props): JSX.Element {
+	const {
+		block = true,
+		errorText,
+		helperText,
+		label,
+		optionalText,
+
+		children,
+		containerStyle,
+		defaultValue,
+		error,
+		placeholder,
+		style,
+
+		...selectProps
+	} = props;
+
+	const formElProps = { block, errorText, helperText, label, optionalText };
+
+	const sx = {
+		color: "inherit",
 		marginTop: whitespace[2],
-		padding: "8px 38px 8px 15px",
-		transition: "all 0.25s ease-in-out",
+		padding: `${whitespace[2]} ${whitespace[3]}`,
 		fontFamily: "inherit",
-		fontWeight: "inherit",
-		outline: "none",
-		width: block ? "100%" : "",
-	});
-	return <div style={containerSx}>
-		{label && <div>{label} <br /></div>}
+		width: block && "100%",
+		boxShadow: error && forms.error,
+		...style,
+	};
+
+	return <FormElement {...formElProps} style={containerStyle}>
 		<select
-			{...sx}
-			name={name}
-			style={style}
+			{...selectProps}
+			{...forms.style}
+			style={sx}
 			required={true}
-			defaultValue={defaultValue}
-			placeholder={placeholder ? placeholder : ""}>
+			defaultValue={defaultValue ? defaultValue : ""}>
+			{placeholder && <option value="" disabled={true}>{placeholder}</option>}
 			{children}
 		</select>
-		<ChevronDown style={{ fill: colors.blueGray(), marginLeft: "-28px" }} width={18} />
-		{helperText && <em { ...css({
-			display: "block",
-			marginTop: whitespace[2],
-		}, typography.small) }> {helperText}</em>}
-		{errorText &&
-			<div style={{
-				color: colors.red(),
-				marginTop: whitespace[2],
-				marginBottom: whitespace[2],
-			}}>
-				<Warning width={18} style={{
-					fill: "currentColor",
-					marginRight: whitespace[2],
-				}} />
-				This is an error message.
-			</div>
-		}
-	</div>;
+		<ChevronDown color={colors.blueGray()} width={24} style={{ marginLeft: "-32px" }} />
+	</FormElement>;
 }

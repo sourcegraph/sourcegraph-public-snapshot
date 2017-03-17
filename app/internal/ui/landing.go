@@ -28,7 +28,7 @@ import (
 	approuter "sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
@@ -39,11 +39,11 @@ func curlRepro(mode, rootPath, method string, params interface{}) string {
 		ID:     jsonrpc2.ID{Num: 0},
 		Method: "initialize",
 	}
-	init.SetParams(xlang.ClientProxyInitializeParams{
+	init.SetParams(lspext.ClientProxyInitializeParams{
 		InitializeParams: lsp.InitializeParams{
 			RootPath: rootPath,
 		},
-		InitializationOptions: xlang.ClientProxyInitializationOptions{
+		InitializationOptions: lspext.ClientProxyInitializationOptions{
 			Mode: mode,
 		},
 	})

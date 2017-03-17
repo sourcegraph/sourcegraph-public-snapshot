@@ -1,7 +1,6 @@
 import * as React from "react";
-import { Code, Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
+import { Heading, Panel, TabItem, TabPanel, TabPanels, Tabs } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -14,9 +13,7 @@ export class TabsComponent extends React.Component<{}, State> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb2}>Tabs</Heading>
-
+			<div>
 				<Tabs>
 					<TabItem
 						active={this.state.activeExample === 0}>
@@ -167,83 +164,6 @@ export class TabsComponent extends React.Component<{}, State> {
 							</code>
 						</TabPanel>
 					</TabPanels>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Tabs Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>direction</Code></td>
-								<td><Code>horizontal</Code></td>
-								<td>
-									<Code>horizontal</Code>, <Code>vertical</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>TabItem Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>color</Code></td>
-								<td><Code>blue</Code></td>
-								<td>
-									<Code>blue</Code>, <Code>purple</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>active</Code></td>
-								<td><Code>false</Code></td>
-								<td>
-									<Code>true</Code>, <Code>false</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>hideMobile</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>true</Code>, <Code>false</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>size</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>small</Code>, <Code>large</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>direction</Code></td>
-								<td><Code>horizontal</Code></td>
-								<td>
-									<Code>horizontal</Code>, <Code>vertical</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>inverted</Code></td>
-								<td><Code>false</Code></td>
-								<td>
-									<Code>true</Code>, <Code>false</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
 				</Panel>
 			</div>
 		);

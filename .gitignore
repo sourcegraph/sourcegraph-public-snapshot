@@ -40,10 +40,10 @@ npm-debug.log
 
 .tmp/*.jar
 
+/api/node_modules
+
 /ui/artifacts
-/ui/node_modules/fsevents/build
-/ui/node_modules/fsevents/lib
-/ui/node_modules/node-sass
+/ui/node_modules
 /ui/assets/_goTemplates.js
 /ui/assets/analytics.js
 /ui/assets/bundle.js

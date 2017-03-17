@@ -15,7 +15,7 @@ import { userRoutes } from "sourcegraph/app/routes/userRoutes";
 import { userSettingsRoutes } from "sourcegraph/app/routes/userSettingsRoutes";
 import * as styles from "sourcegraph/app/styles/App.css";
 import { HomeRouter } from "sourcegraph/home/HomeRouter";
-import { withViewEventsLogged } from "sourcegraph/util/EventLogger";
+import { withViewEventsLogged } from "sourcegraph/tracking/withViewEventsLogged";
 
 interface Props {
 	main: JSX.Element;

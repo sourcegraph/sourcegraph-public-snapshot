@@ -1,13 +1,23 @@
 package hubspot
 
+import "net/url"
+
 // SubmitForm submits form data.  Form submissions return an empty
 // body with status code 204 or 302 if submission was successful.
 //
 // See http://developers.hubspot.com/docs/methods/forms/submit_form.
 func (c *Client) SubmitForm(formID string, params map[string]string) error {
-	err := c.post("SubmitForm", formID, params)
+	err := c.post("SubmitForm", c.baseFormURL(), formID, params)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (c *Client) baseFormURL() *url.URL {
+	return &url.URL{
+		Scheme: "https",
+		Host:   "forms.hubspot.com",
+		Path:   "/uploads/form/v2/" + c.portalID,
+	}
 }

@@ -1,20 +1,23 @@
-import { modes } from "sourcegraph/editor/modes";
+import { getModes } from "sourcegraph/util/features";
+
+const modes = getModes();
 
 const ignoredExtensions = new Set<string>(["md", "txt", "json", "yml"]);
 const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx"]);
+const betaExtensions = new Set<string>([]);
+if (modes.has("java")) {
+	betaExtensions.add("java");
+}
 if (modes.has("css")) {
-	supportedExtensions.add("css");
-	supportedExtensions.add("less");
-	supportedExtensions.add("scss");
+	betaExtensions.add("css");
+	betaExtensions.add("less");
+	betaExtensions.add("scss");
 }
 if (modes.has("php")) {
-	supportedExtensions.add("php");
+	betaExtensions.add("php");
 }
 if (modes.has("python")) {
-	supportedExtensions.add("py");
-}
-if (modes.has("java")) {
-	supportedExtensions.add("java");
+	betaExtensions.add("py");
 }
 
 export function isSupportedExtension(ext: string): boolean {
@@ -24,6 +27,10 @@ export function isSupportedExtension(ext: string): boolean {
 // ignored extensions, like md, will not trigger a warning banner
 export function isIgnoredExtension(ext: string): boolean {
 	return ignoredExtensions.has(ext);
+}
+
+export function isBetaExtension(ext: string): boolean {
+	return betaExtensions.has(ext);
 }
 
 export function isSupportedMode(modeId: string): boolean {

@@ -23,9 +23,30 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
+
+// repoBlacklist contains repos which we have blacklisted. It is set via the
+// environment variable REPO_BLACKLIST.
+var repoBlacklist = make(map[string]bool)
+
+// repoBlacklistXReferences contains repos which we have blacklisted only on
+// workspace/xreferences. It is set via the environment variable REPO_BLACKLIST_XREFERENCES.
+var repoBlacklistXReferences = make(map[string]bool)
+
+func init() {
+	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
+	for _, r := range repos {
+		repoBlacklist[r] = true
+	}
+
+	repos = strings.Fields(env.Get("REPO_BLACKLIST_XREFERENCES", "", "repos which we should not serve workspace/xreferences requests for. Seperated by whitespace"))
+	for _, r := range repos {
+		repoBlacklistXReferences[r] = true
+	}
+}
 
 func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) error {
 	var connOpt []jsonrpc2.ConnOpt
@@ -38,7 +59,7 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 		last:  time.Now(),
 		id:    nextClientID(),
 	}
-	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.HandlerWithError(c.handle), connOpt...)
+	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
 	p.mu.Lock()
 	if p.clients == nil {
@@ -192,39 +213,13 @@ type clientProxyConn struct {
 
 	mu       sync.Mutex
 	context  contextID
-	init     *ClientProxyInitializeParams
+	init     *lspext.ClientProxyInitializeParams
 	last     time.Time // max(last request received, last response sent), used to evict idle clients
 	shutdown bool      // whether this connection has received an LSP "shutdown"
 }
 
-// ClientProxyInitializeParams are sent by the client to the proxy in
-// the "initialize" request. It has a non-standard field "mode", which
-// is the name of the language (using vscode terminology); "go" or
-// "typescript", for example.
-type ClientProxyInitializeParams struct {
-	lsp.InitializeParams
-	InitializationOptions ClientProxyInitializationOptions `json:"initializationOptions"`
-
-	// Mode is DEPRECATED; it was moved to the subfield
-	// initializationOptions.Mode. It is still here for backward
-	// compatibility until the xlang service is upgraded.
-	Mode string `json:"mode,omitempty"`
-}
-
-// ClientProxyInitializationOptions is the "initializationOptions"
-// field of the "initialize" request params sent from the client to
-// the LSP client proxy.
-type ClientProxyInitializationOptions struct {
-	Mode string `json:"mode"`
-
-	// Session, if set, causes this session to be isolated from other
-	// LSP sessions using the same workspace and mode. See
-	// (contextID).session for more information.
-	Session string `json:"session,omitempty"`
-}
-
-// LogTrackedErrors, if true, causes errors to be logged if they are
-// related to language analysis.
+// LogTrackedErrors if true causes errors to be logged if they are related to
+// language analysis.
 var LogTrackedErrors = true
 
 type trackedError struct {
@@ -308,7 +303,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
 		var params struct {
-			ClientProxyInitializeParams
+			lspext.ClientProxyInitializeParams
 			RootURI string `json:"rootUri"`
 		}
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
@@ -342,10 +337,13 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if len(rootPathURI.Rev()) != 40 {
 			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootPathURI)
 		}
+		if repoBlacklist[rootPathURI.Repo()] {
+			return nil, fmt.Errorf("repo is blacklisted")
+		}
 
 		c.mu.Lock()
-		defer c.mu.Unlock()
 		if c.init != nil {
+			c.mu.Unlock()
 			// This would only happen if the client is misbehaving (if
 			// it sends 2 "initialize" requests).
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidRequest, Message: fmt.Sprintf("client proxy handler is already initialized")}
@@ -354,13 +352,25 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
+		c.mu.Unlock()
+
+		// PERF: Initialize the server as soon as possible, so that it
+		// can start indexing before a user does an explicit request.
+		err = c.proxy.initializeServer(ctx, serverID{contextID: c.context})
+		if err != nil {
+			return nil, err
+		}
+
 		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
-				TextDocumentSync:   lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
-				ReferencesProvider: true,
-				DefinitionProvider: true,
-				HoverProvider:      true,
+				TextDocumentSync:             lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
+				ReferencesProvider:           true,
+				DefinitionProvider:           true,
+				HoverProvider:                true,
+				DocumentSymbolProvider:       true,
+				WorkspaceSymbolProvider:      true,
+				XWorkspaceReferencesProvider: true,
 			},
 		}, nil
 
@@ -382,6 +392,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
 
+		if req.Method == "workspace/xreferences" && repoBlacklistXReferences[c.context.rootPath.Repo()] {
+			return nil, fmt.Errorf("repo is blacklisted")
+		}
+
 		// Background modes only ever do one request against them
 		// (currently workspace/xreferences). As such we do not need to
 		// keep the workspace open.
@@ -398,7 +412,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 
 		var respObj interface{}
-		if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
+		if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, &respObj); err != nil {
 			// Machine parseable to assist us finding most common errors
 			msg, _ := json.Marshal(trackedError{
 				RootPath: c.context.rootPath.String(),
@@ -449,12 +463,11 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// modify file contents. The modified file contents will
 		// only be visible within this session and will not leak
 		// to other sessions.
-		if c.context.session != "" {
-			var respObj interface{}
-			if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
+		if c.allowTextDocumentSync() {
+			if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
 				return nil, err
 			}
-			return respObj, nil
+			return nil, nil
 		}
 
 		// didOpen is sent when a user opens a file. However, didOpen
@@ -475,7 +488,14 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 		var respObj interface{}
-		err = c.callServer(ctx, req.ID, "textDocument/hover", lsp.TextDocumentPositionParams{TextDocument: lsp.TextDocumentIdentifier{URI: params.TextDocument.URI}}, &respObj)
+		hoverParams := lsp.TextDocumentPositionParams{
+			TextDocument: lsp.TextDocumentIdentifier{URI: params.TextDocument.URI},
+			Position: lsp.Position{
+				Line:      0,
+				Character: 0,
+			},
+		}
+		err = c.callServer(ctx, req.ID, "textDocument/hover", false, true, &hoverParams, &respObj)
 		return nil, err // we ignore the hover response (other than err) since the original request was a notif.
 
 	case "textDocument/didClose":
@@ -485,11 +505,15 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 		// didClose is harmless to pass along, it does not mutate
 		// anything.
-		var respObj interface{}
-		if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
-			return nil, err
-		}
-		return respObj, nil
+		//
+		// TODO(john): I noticed while debugging https://github.com/sourcegraph/sourcegraph/issues/4616
+		// that this statement is not true. Toggling the diff editor sends a didClose event for the
+		// "left" document URI (like this https://cl.ly/1y3M3r1j0W1i) which does seem to have some reverting
+		// effect on the langserver.
+		// if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
+		// 	return nil, err
+		// }
+		return nil, nil
 
 	case "textDocument/didChange", "textDocument/didSave":
 		if err := ensureInitialized(); err != nil {
@@ -500,12 +524,11 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// modify file contents. The modified file contents will
 		// only be visible within this session and will not leak
 		// to other sessions.
-		if c.context.session != "" {
-			var respObj interface{}
-			if err := c.callServer(ctx, req.ID, req.Method, req.Params, &respObj); err != nil {
+		if c.allowTextDocumentSync() {
+			if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
 				return nil, err
 			}
-			return respObj, nil
+			return nil, nil
 		}
 
 		// Specifically forbid these methods so we don't accidentally
@@ -538,6 +561,13 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("client proxy handler: method not found: %q", req.Method)}
 	}
+}
+
+// allowTextDocumentSync returns true if the client is allowed to send LSP
+// requests which can mutate the workspace. We allow mutable workspaces when
+// it isn't shared amongst users (such as when a user is editing it via zap).
+func (c *clientProxyConn) allowTextDocumentSync() bool {
+	return c.context.session != ""
 }
 
 // handleFromServer is called by associated server proxy connections
@@ -646,12 +676,29 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 	}
 }
 
+var requestOriginatedFromProxy = &jsonrpc2.ID{Str: "special value; never used directly"}
+
 // callServer sends the LSP request to the server chosen based on the
 // client's context and the file URI specified (e.g., for a ".go"
 // file, it will choose a Go lang/build server). It rewrites any file
 // URIs to refer to file paths in the virtual workspace, not the
 // repository clone URL.
-func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, method string, params, result interface{}) error {
+//
+// If notif is true, then rid and result must be zero valued.
+//
+// If requestOriginatedFromProxy is true, then it indicates that the
+// request does not correspond to a proxied request from the client
+// (e.g., the "textDocument/hover" prewarm request we send). In this
+// case, the proxy MUST generate an ID for the request that is
+// guaranteed to be distinct from any request ID generated by
+// jsonrpc2.PickID, so that the proxy's request does not get treated
+// as a client request (which is possible if the jsonrpc2.ID zero
+// value, indicating a numeric ID of 0, is used).
+func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, method string, notif, requestOriginatedFromProxy bool, params, result interface{}) error {
+	if notif && (rid != jsonrpc2.ID{} || result != nil) {
+		return fmt.Errorf("invalid non-zero ID or result for notification %q", method)
+	}
+
 	pb, err := json.Marshal(params)
 	if err != nil {
 		return err
@@ -687,14 +734,15 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	crid := clientRequestID{RID: rid, CID: c.id}
 
 	// We try upto 3 times if we encounter ephemeral errors
-	backoffs := []time.Duration{0, 100 * time.Millisecond, 1 * time.Second}
+	// HOTFIX(keegancsmith) remove retries 2017-02-21
+	backoffs := []time.Duration{0} //, 100 * time.Millisecond, 1 * time.Second}
 	for _, b := range backoffs {
 		if b != 0 {
 			// We are retrying. Add in jitter to our backoff sleep
 			time.Sleep(b + time.Duration(rand.Int63n(50)-25)*time.Millisecond)
 			proxyRetryCounter.WithLabelValues(id.mode).Inc()
 		}
-		err = c.proxy.callServer(ctx, crid, id, method, params, result)
+		err = c.proxy.callServer(ctx, crid, id, method, notif, requestOriginatedFromProxy, params, result)
 		if err == nil {
 			break
 		}
@@ -708,31 +756,33 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	}
 
 	// Convert the URIs back.
-	result2, err := json.Marshal(result)
-	if err != nil {
-		return err
-	}
-	var resultObj interface{}
-	if err := json.Unmarshal(result2, &resultObj); err != nil {
-		return err
-	}
-	lspext.WalkURIFields(resultObj, nil, func(uriStr string) string {
-		newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
+	if result != nil {
+		result2, err := json.Marshal(result)
 		if err != nil {
-			walkErr = err
-			return ""
+			return err
 		}
-		return newURI.String()
-	})
-	if walkErr != nil {
-		return walkErr
-	}
-	result2, err = json.Marshal(resultObj)
-	if err != nil {
-		return err
-	}
-	if err := json.Unmarshal(result2, result); err != nil {
-		return err
+		var resultObj interface{}
+		if err := json.Unmarshal(result2, &resultObj); err != nil {
+			return err
+		}
+		lspext.WalkURIFields(resultObj, nil, func(uriStr string) string {
+			newURI, err := absWorkspaceURI(c.context.rootPath, uriStr)
+			if err != nil {
+				walkErr = err
+				return ""
+			}
+			return newURI.String()
+		})
+		if walkErr != nil {
+			return walkErr
+		}
+		result2, err = json.Marshal(resultObj)
+		if err != nil {
+			return err
+		}
+		if err := json.Unmarshal(result2, result); err != nil {
+			return err
+		}
 	}
 	return nil
 }

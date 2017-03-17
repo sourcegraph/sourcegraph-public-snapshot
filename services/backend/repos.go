@@ -45,8 +45,14 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 		return nil, err
 	}
 
-	if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
-		return nil, err
+	// SECURITY: calling setRepoFieldsFromRemote ensures we keep repository metadata up to date
+	// (most importantly the "Private" field) and also adds redundancy to our security. However, we
+	// don't call it if there are no GitHub creds. Do not remove this setRepoFieldsFromRemote call
+	// without first checking with Richard and Beyang.
+	if !github.PreferRawGit {
+		if err := s.setRepoFieldsFromRemote(ctx, repo); err != nil {
+			return nil, err
+		}
 	}
 
 	if repo.Blocked {
@@ -57,6 +63,10 @@ func (s *repos) Get(ctx context.Context, repoSpec *sourcegraph.RepoSpec) (res *s
 }
 
 func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo, err error) {
+	if Mocks.Repos.GetByURI != nil {
+		return Mocks.Repos.GetByURI(ctx, uri)
+	}
+
 	ctx, done := trace(ctx, "Repos", "GetByURI", uri, &err)
 	defer done()
 
@@ -70,27 +80,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (res *sourcegraph.Repo
 	}
 
 	return repo, nil
-}
-
-func (s *repos) ListStarredRepos(ctx context.Context, opt *gogithub.ActivityListStarredOptions) (res *sourcegraph.RepoList, err error) {
-	if Mocks.Repos.ListStarredRepos != nil {
-		return Mocks.Repos.ListStarredRepos(ctx, opt)
-	}
-
-	ctx, done := trace(ctx, "Repos", "ListStarred", opt, &err)
-	defer done()
-
-	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.ListStarredRepos")
-	if opt == nil {
-		opt = &gogithub.ActivityListStarredOptions{}
-	}
-
-	ghRepos, err := github.ListStarredRepos(ctx, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	return &sourcegraph.RepoList{Repos: ghRepos}, nil
 }
 
 // ghRepoQueryMatcher matches search queries that look like they refer
@@ -143,7 +132,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 			ghrepos, err = github.ListAllGitHubRepos(ctx, &gogithub.RepositoryListOptions{})
 			ghrepos, repos = repos, ghrepos
 		} else {
-			ghrepos, err = github.ReposFromContext(ctx).Search(ctx, ghquery, nil)
+			ghrepos, err = github.SearchRepo(ctx, ghquery, nil)
 		}
 		if err == nil {
 			existingRepos := make(map[string]struct{}, len(repos))
@@ -166,12 +155,31 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 	return &sourcegraph.RepoList{Repos: repos}, nil
 }
 
+func (s *repos) ListWithDetails(ctx context.Context) (res *sourcegraph.GitHubReposWithDetailsList, err error) {
+	if Mocks.Repos.ListWithDetails != nil {
+		return Mocks.Repos.ListWithDetails(ctx)
+	}
+
+	ctx, done := trace(ctx, "Repos", "ListWithDetails", nil, &err)
+	defer done()
+
+	ctx = context.WithValue(ctx, github.GitHubTrackingContextKey, "Repos.ListWithDetails")
+
+	ghReposWithDetails, err := github.ListAllGitHubReposWithDetails(ctx, &gogithub.RepositoryListOptions{})
+	if err != nil {
+		log15.Warn("backend.ListWithDetails: failed to fetch some remote repositories", "source", "GitHub", "error", err)
+		ghReposWithDetails = nil
+	}
+
+	return &sourcegraph.GitHubReposWithDetailsList{ReposWithDetails: ghReposWithDetails}, nil
+}
+
 // setRepoFieldsFromRemote sets the fields of the repository from the
 // remote (e.g., GitHub) and updates the repository in the store layer.
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
 	if strings.HasPrefix(strings.ToLower(repo.URI), "github.com/") {
 		// Fetch latest metadata from GitHub
-		ghrepo, err := github.ReposFromContext(ctx).Get(ctx, repo.URI)
+		ghrepo, err := github.GetRepo(ctx, repo.URI)
 		if err != nil {
 			return err
 		}
@@ -353,6 +361,10 @@ func (s *repos) GetInventory(ctx context.Context, repoRev *sourcegraph.RepoRevSp
 }
 
 func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.RepoRevSpec) (*inventory.Inventory, error) {
+	if Mocks.Repos.GetInventoryUncached != nil {
+		return Mocks.Repos.GetInventoryUncached(ctx, repoRev)
+	}
+
 	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
 	if err != nil {
 		return nil, err

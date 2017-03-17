@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
-	level "github.com/go-kit/kit/log/experimental_level"
 	"github.com/sourcegraph/zap/internal/pkg/backoff"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/diff"
@@ -25,12 +24,12 @@ type gitRepo interface {
 	IsValidRev(string) (bool, error)
 	RemoteForBranchOrZapDefaultRemote(string) (string, error)
 	RemoteURL(remote string) (string, error)
-	MakeCommit(parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
+	MakeCommit(ctx context.Context, parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
 	Fetch(remote, refspec string) (bool, error)
 	Push(remote, refspec string, force bool) error
 	ConfigGetOne(name string) (string, error)
 	ConfigSet(name, value string) error
-	CreateCommitFromTree(tree, snapshot string, isRootCommit bool) (string, error)
+	CreateCommitFromTree(ctx context.Context, tree, snapshot string, isRootCommit bool) (string, error)
 	Reset(typ, rev string) error
 	ListTreeFull(string) (*gitutil.Tree, error)
 	FileInfoForPath(rev, path string) (string, string, error)
@@ -48,7 +47,7 @@ type FileSystem interface {
 
 var TestApplyToWorktree func(op ot.WorkspaceOp) error
 
-func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
+func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 	WorktreeDir() string
 	ReadBlob(snapshot, name string) ([]byte, string, string, error)
 	IsValidRev(string) (bool, error)
@@ -92,7 +91,6 @@ func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
 		if err := fbuf.Remove(stripBufferPath(f)); err != nil {
 			return err
 		}
-		level.Info(log).Log("write-file", stripBufferPath(f), "data", string(data))
 		if err := fdisk.WriteFile(stripBufferPath(f), data, 0666); err != nil {
 			return err
 		}
@@ -152,12 +150,12 @@ func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
 				return err
 			}
 		}
-		doc := ot.Doc(prevData)
+		doc := ot.Doc(string(prevData))
 
 		if err := doc.Apply(edits); err != nil {
 			return &os.PathError{Op: "Edit", Path: f, Err: err}
 		}
-		if err := writeFile(f, doc); err != nil {
+		if err := writeFile(f, []byte(string(doc))); err != nil {
 			return err
 		}
 	}
@@ -170,7 +168,6 @@ func ApplyToWorktree(ctx context.Context, log *log.Context, gitRepo interface {
 		// (error message of the form "... /index.lock"), like the
 		// user running `git status`. Retry if it fails at first.
 		if err := backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
-			fmt.Fprintf(os.Stderr, "# git reset %s\n", op.GitHead)
 			return gitRepo.Reset("mixed", op.GitHead)
 		}, GitBackOff(), nil); err != nil {
 			return err
@@ -266,7 +263,7 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 			if err != nil {
 				return ot.WorkspaceOp{}, err
 			}
-			if edits := DiffOps(prevData, data); len(edits) > 0 {
+			if edits := DiffOps([]rune(string(prevData)), []rune(string(data))); len(edits) > 0 {
 				op.Edit = map[string]ot.EditOps{dstPath: edits}
 			}
 
@@ -300,7 +297,7 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 			if err != nil {
 				return ot.WorkspaceOp{}, err
 			}
-			if edits := DiffOps(prevData, data); len(edits) > 0 {
+			if edits := DiffOps([]rune(string(prevData)), []rune(string(data))); len(edits) > 0 {
 				if op.Edit == nil {
 					op.Edit = map[string]ot.EditOps{}
 				}
@@ -315,8 +312,8 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 //
 // DEV NOTE: Keep this in sync with other language implementations of
 // diffOps.
-func DiffOps(old, new []byte) ot.EditOps {
-	change := diff.Bytes(old, new)
+func DiffOps(old, new []rune) ot.EditOps {
+	change := diff.Runes(old, new)
 	ops := make(ot.EditOps, 0, len(change)*2)
 	var ret, del, ins int
 	for _, c := range change {
@@ -344,17 +341,18 @@ func DiffOps(old, new []byte) ot.EditOps {
 
 var testPushGitRefToGitUpstream func(headOID, ref, gitBranch string) error
 
-func PushGitRefToGitUpstream(ctx context.Context, gitRepo gitRepo, headOID, ref, gitBranch string) error {
+func PushGitRefToGitUpstream(ctx context.Context, gitRepo interface {
+	RemoteForBranchOrZapDefaultRemote(string) (string, error)
+	Push(string, string, bool) error
+}, headOID, ref, gitBranch string) error {
 	if testPushGitRefToGitUpstream != nil {
 		return testPushGitRefToGitUpstream(headOID, ref, gitBranch)
 	}
-
-	gitRemote, err := gitRepo.RemoteForBranchOrZapDefaultRemote(gitBranch)
-	if err != nil {
-		return err
-	}
-
 	return backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
+		gitRemote, err := gitRepo.RemoteForBranchOrZapDefaultRemote(gitBranch)
+		if err != nil {
+			return err
+		}
 		return gitRepo.Push(gitRemote, headOID+":refs/zap/"+ref, true)
 	}, GitBackOff(), nil)
 }

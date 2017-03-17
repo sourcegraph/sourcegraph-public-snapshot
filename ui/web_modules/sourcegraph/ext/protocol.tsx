@@ -1,3 +1,5 @@
+import { context } from "sourcegraph/app/context";
+
 /**
  * InitializationOptions are the options sent by main to the extension
  * host when creating the extension host.
@@ -9,7 +11,14 @@
  */
 export interface InitializationOptions {
 	/**
-	 *   The workspace URI
+	 * The sequence identifier for an extension host, provided by the main
+	 * thread. This allows us to prevent collisions on globally namespaced
+	 * handles to e.g. hover provider disposables.
+	 */
+	seqId: number;
+
+	/**
+	 * The workspace URI
 	 */
 	workspace: string;
 
@@ -18,5 +27,16 @@ export interface InitializationOptions {
 	 */
 	features: string[];
 
-	tmpZapRef: string | null; // TODO(sqs) HACK: pass this through
+	/**
+	 * revState is the current revision state at the time of initialization.
+	 */
+	revState?: {
+		zapRef?: string,
+		commitID?: string,
+		branch?: string
+	};
+
+	context: typeof context;
+
+	langs: string[] | undefined;
 }

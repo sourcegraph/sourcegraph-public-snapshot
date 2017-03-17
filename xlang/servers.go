@@ -3,6 +3,7 @@ package xlang
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -46,7 +47,7 @@ func RegisterServersFromEnv() error {
 			continue
 		}
 		name, val := parts[0], parts[1]
-		if prefix := "LANGSERVER_"; strings.HasPrefix(name, prefix) {
+		if prefix := "LANGSERVER_"; strings.HasPrefix(name, prefix) && !strings.HasSuffix(name, "_ARGS_JSON") {
 			mode := strings.ToLower(strings.TrimPrefix(name, prefix))
 			if _, present := ServersByMode[mode]; present {
 				return fmt.Errorf("invalid language server registration from env var %s: a server is already registered for the mode %q", name, mode)
@@ -60,9 +61,19 @@ func RegisterServersFromEnv() error {
 			case strings.Contains(val, ":"):
 				return fmt.Errorf(`invalid language server URL %q (you probably mean "tcp://%s")`, val, val)
 			default:
+				// Allow specifying extra command-line args to
+				// language server executables in
+				// LANGSERVER_name_ARGS_JSON env vars.
+				var args []string
+				if v := os.Getenv(name + "_ARGS_JSON"); v != "" {
+					if err := json.Unmarshal([]byte(v), &args); err != nil {
+						return fmt.Errorf("%s_ARGS_JSON: %s", name, err)
+					}
+				}
+
 				log15.Info("Registering language server executable", "mode", mode, "path", val)
 				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
-					cmd := exec.Command(val)
+					cmd := exec.Command(val, args...)
 					cmd.Stderr = &prefixWriter{w: os.Stderr, prefix: filepath.Base(val) + ": "}
 					in, err := cmd.StdinPipe()
 					if err != nil {

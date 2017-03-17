@@ -15,11 +15,16 @@ import (
 // create workspaces based on a git repository, for example.
 type ServerBackend interface {
 	// Create creates a new workspace.
-	Create(ctx context.Context, log *log.Context, repo, gitBase string) (*ws.Proxy, error)
+	Create(ctx context.Context, logger log.Logger, repo, gitBase string) (*ws.Proxy, error)
 
 	// CanAccess is called to determine if the client can access the
 	// given repo (and all of its refs).
-	CanAccess(ctx context.Context, log *log.Context, repo string) (bool, error)
+	CanAccess(ctx context.Context, logger log.Logger, repo string) (bool, error)
+
+	// CanAutoCreate is invoked to check whether or not automatic repository
+	// creation should be supported. i.e. whether or not repositories should
+	// be lazily initialized.
+	CanAutoCreate() bool
 }
 
 // Server is the server that manages the source of truth for all
@@ -107,6 +112,13 @@ type Server struct {
 	// LogWriter is were logs should be written to (os.Stderr by default)
 	LogWriter io.Writer
 
+	// IsPrivate is true if the server is not shared amongst users. If it
+	// is false operations such as ref/list should not be allowed due to
+	// potentially leaking data. In the future we should deprecate this
+	// setting and instead use efficient access checks on listing
+	// operations.
+	IsPrivate bool
+
 	backend ServerBackend
 
 	reposMu sync.Mutex
@@ -132,6 +144,11 @@ type Server struct {
 
 	updateFromDownstreamMu    sync.Mutex
 	updateRemoteTrackingRefMu sync.Mutex
+
+	// TestBlockHandleRefUpdateFromUpstream is used for testing
+	// only. It lets tests simulate a delay in
+	// (*Server).handleRefUpdateFromUpstream.
+	TestBlockHandleRefUpdateFromUpstream chan<- RefUpdateDownstreamParams
 }
 
 // NewServer creates a new remote server.
@@ -151,6 +168,11 @@ func (s *Server) Start(ctx context.Context) {
 		panic("server is already started")
 	}
 	s.bgCtx = ctx
+	if s.workspaceServer != nil {
+		if err := s.workspaceServer.loadWorkspacesFromConfig(s.baseLogger()); err != nil {
+			s.baseLogger().Log(err)
+		}
+	}
 	close(s.readyToAccept)
 }
 

@@ -2,10 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
+	"github.com/sourcegraph/zap"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -56,8 +59,65 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 		}
 		return nil, err
 	}
+	return createCommitState(*r.repo, rev), nil
+}
 
-	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch}}}, nil
+func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
+	var zapRef *zapRefResolver
+
+	// TODO(matt,john): remove this hack, this zapRefInfo call was causing a front-end error
+	// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
+	if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
+		// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
+		if args.Rev != "" && !strings.HasSuffix(args.Rev, "^{git}") {
+			cl, err := backend.NewZapClient(ctx)
+			if err != nil {
+				return nil, err
+			}
+			zapRefInfo, _ := cl.RefInfo(ctx, zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev})
+			// TODO(john): add error-specific handling?
+			if zapRefInfo != nil && zapRefInfo.State != nil {
+				zapRef = &zapRefResolver{zapRef: zapRefSpec{Base: zapRefInfo.State.GitBase, Branch: zapRefInfo.State.GitBranch}}
+
+				// We want to use the Git revision that the Zap branch was based on,
+				// as all of the Zap operations were originating from that revision.
+				// Using any other revision of the same branch would be a mistake
+				// (e.g., the user may be on a revision of the master branch that is
+				// just a few commits behind.)
+				return &commitStateResolver{
+					zapRef: zapRef,
+					commit: &commitResolver{
+						commit: commitSpec{
+							RepoID:        r.repo.ID,
+							CommitID:      zapRefInfo.State.GitBase,
+							DefaultBranch: r.repo.DefaultBranch,
+						},
+					},
+				}, nil
+			}
+		}
+	}
+
+	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+		Repo: r.repo.ID,
+		Rev:  args.Rev,
+	})
+	if err != nil {
+		if err == vcs.ErrRevisionNotFound {
+			return &commitStateResolver{zapRef: zapRef}, nil
+		}
+		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
+			return &commitStateResolver{cloneInProgress: true}, nil
+		}
+		return nil, err
+	}
+
+	return &commitStateResolver{zapRef: zapRef,
+		commit: &commitResolver{
+			commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch},
+			repo:   *r.repo,
+		},
+	}, nil
 }
 
 func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {
@@ -70,7 +130,16 @@ func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, 
 		}
 		return nil, err
 	}
-	return &commitStateResolver{commit: &commitResolver{commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch}}}, nil
+	return createCommitState(*r.repo, rev), nil
+}
+
+func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*commitStateResolver, error) {
+	// This method is a stopgap until we no longer require git:// URIs on the client which include rev data.
+	// THIS RESOLVER WILL BE REMOVED SOON, DO NOT USE IT!!!
+	if r.repo.IndexedRevision != nil && *r.repo.IndexedRevision != "" {
+		return createCommitState(*r.repo, &sourcegraph.ResolvedRev{CommitID: *r.repo.IndexedRevision}), nil
+	}
+	return r.Latest(ctx)
 }
 
 func (r *repositoryResolver) DefaultBranch() string {
@@ -137,4 +206,20 @@ func (r *repositoryResolver) CreatedAt() string {
 		return r.repo.CreatedAt.String()
 	}
 	return ""
+}
+
+// TrialExpiration is the Unix timestamp that the repo trial will expire, or
+// nil if this repo is not on a trial.
+func (r *repositoryResolver) ExpirationDate(ctx context.Context) (*int32, error) {
+	t, err := localstore.Payments.TrialExpirationDate(ctx, *r.repo)
+	if err != nil {
+		return nil, err
+	}
+
+	if t == nil {
+		return nil, nil
+	}
+
+	n := int32(t.Unix())
+	return &n, nil
 }

@@ -1,6 +1,8 @@
 package github
 
 import (
+	"net/http"
+
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"context"
@@ -8,7 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 )
 
 var (
@@ -24,48 +28,29 @@ func init() {
 	prometheus.MustRegister(abuseDetectionMechanismCounter)
 }
 
-// minimalClient contains the minimal set of GitHub API methods needed
-// by this package.
-type minimalClient struct {
-	repos    githubRepos
-	search   githubSearch
-	activity githubActivity
-	orgs     GitHubOrgs
+var MockRoundTripper http.RoundTripper
 
-	isAuthedUser bool // whether the client is using a GitHub user's auth token
-}
-
-func newMinimalClient(isAuthedUser bool, userClient *github.Client) *minimalClient {
-	return &minimalClient{
-		repos:    userClient.Repositories,
-		search:   userClient.Search,
-		activity: userClient.Activity,
-		orgs:     userClient.Organizations,
-
-		isAuthedUser: isAuthedUser,
+// client returns the context's GitHub API client.
+func client(ctx context.Context) *github.Client {
+	if MockRoundTripper != nil {
+		return github.NewClient(&http.Client{
+			Transport: MockRoundTripper,
+		})
 	}
+
+	ghConf := *githubutil.Default
+	ghConf.Context = ctx
+
+	a := auth.ActorFromContext(ctx)
+	if a.GitHubToken != "" {
+		return ghConf.AuthedClient(a.GitHubToken)
+	}
+
+	return ghConf.UnauthedClient()
 }
 
-type githubRepos interface {
-	Get(owner, repo string) (*github.Repository, *github.Response, error)
-	List(user string, opt *github.RepositoryListOptions) ([]*github.Repository, *github.Response, error)
-	CreateHook(owner, repo string, hook *github.Hook) (*github.Hook, *github.Response, error)
-}
-
-type githubSearch interface {
-	Repositories(query string, opt *github.SearchOptions) (*github.RepositoriesSearchResult, *github.Response, error)
-}
-
-type githubActivity interface {
-	ListStarred(user string, opt *github.ActivityListStarredOptions) ([]*github.StarredRepository, *github.Response, error)
-}
-
-type githubAuthorizations interface {
-	Revoke(clientID, token string) (*github.Response, error)
-}
-
-type GitHubOrgs interface {
-	List(user string, opt *github.ListOptions) ([]*github.Organization, *github.Response, error)
+func OrgsFromContext(ctx context.Context) *github.OrganizationsService {
+	return client(ctx).Organizations
 }
 
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
@@ -111,5 +96,5 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 // HasAuthedUser reports whether the context has an authenticated
 // GitHub user's credentials.
 func HasAuthedUser(ctx context.Context) bool {
-	return client(ctx).isAuthedUser
+	return auth.ActorFromContext(ctx).GitHubToken != ""
 }

@@ -1,16 +1,51 @@
 import { code_font_face } from "sourcegraph/components/styles/_vars.css";
 import Event, { Emitter } from "vs/base/common/event";
 import { TPromise } from "vs/base/common/winjs.base";
-import { IConfigurationKeys, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
+import { DefaultConfig } from "vs/editor/common/config/defaultConfig";
+import { IConfigurationKeys, IConfigurationOptions, IConfigurationService, IConfigurationServiceEvent, IConfigurationValue, getConfigurationValue } from "vs/platform/configuration/common/configuration";
 import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspaceConfigurationValue, IWorkspaceConfigurationValues } from "vs/workbench/services/configuration/common/configuration";
+import { OpenSearchViewletAction } from "vscode/src/vs/workbench/parts/search/browser/searchActions";
+
+import { Features } from "sourcegraph/util/features";
 
 const _onDidUpdateConfiguration = new Emitter<IConfigurationServiceEvent>();
-const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
+export const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
 
 let codeLensEnabled = false;
 
+// Exclude common vendor directories from jump-to-file, for better UX
+// and perf. This is how GitHub's "t" quick file picker works as well.
+//
+// NOTE: If you add an exclude entry that contains a glob, then
+// defaultExcludesNoGlobs can no longer be used, because it relies on
+// the defaultExcludesRegExp fast path. Not using it will
+// significantly slow down quickopen jump-to-file, so you'll need to
+// fix that.
+//
+// TODO(sqs): We could make this better by using GitHub linguist's
+// standard list of vendor exclusions.
+const defaultExcludesNoGlobs = {
+	"node_modules": true,
+	"bower_components": true,
+	"vendor": true,
+	"dist": true,
+	"out": true,
+	"Godeps": true,
+	"third_party": true,
+};
+
+// This is the fastest way to match strings (faster than
+// Strings.prototype.indexOf). See
+// https://jsperf.com/regexp-indexof-perf.
+//
+// Matches any path containing a path component that is a key of
+// defaultExcludesNoGlobs.
+export const defaultExcludesRegExp = new RegExp("(/|^)(" + Object.keys(defaultExcludesNoGlobs).join("|") + ")/");
+
 const config = {
+	diffEditor: { renderSideBySide: false },
 	workbench: {
+		colorTheme: "vs-dark",
 		quickOpen: {
 			closeOnFocusLost: false,
 		},
@@ -18,7 +53,7 @@ const config = {
 			enablePreview: false,
 		},
 		activityBar: {
-			visible: false,
+			visible: Features.textSearch.isEnabled() || Features.zapChanges.isEnabled(),
 		},
 		statusBar: {
 			visible: false,
@@ -29,12 +64,16 @@ const config = {
 			visible: 0,
 		},
 	},
+	zap: {
+		enable: true,
+		overwrite: false,
+	},
 	editor: {
-		readOnly: true,
+		readOnly: !Features.zap2Way.isEnabled(),
 		tabSize: 4,
 		automaticLayout: true,
 		scrollBeyondLastLine: false,
-		wrappingColumn: 0,
+		wordWrap: "on",
 		fontFamily: code_font_face,
 		fontSize: 15,
 		lineHeight: 21,
@@ -47,8 +86,22 @@ const config = {
 	},
 	files: {
 		eol: "\n",
-	}
+		exclude: defaultExcludesNoGlobs,
+	},
+	search: {
+		exclude: defaultExcludesNoGlobs,
+	},
+	window: {
+		title: "${activeEditorShort} - ${rootName} - Sourcegraph",
+	},
+	zenMode: {},
 };
+
+DefaultConfig.editor.readOnly = config.editor.readOnly;
+
+if (!Features.textSearch.isEnabled()) {
+	OpenSearchViewletAction.prototype.run = () => TPromise.wrap(void 0);
+}
 
 export function toggleCodeLens(): void {
 	codeLensEnabled = !codeLensEnabled;
@@ -68,9 +121,14 @@ export function updateConfiguration(updater: (config: any) => void): void {
 export class ConfigurationService implements IConfigurationService {
 	_serviceBrand: any;
 
-	getConfiguration<T>(section?: string): T {
-		if (!section) { return config as any; }
-		return getConfigurationValue<T>(config, section);
+	getConfiguration<C>(section?: string): C;
+	getConfiguration<C>(options?: IConfigurationOptions): C;
+	getConfiguration<C>(arg?: any): C {
+		if (!arg) { return config as any; }
+		if (typeof arg === "string") {
+			return getConfigurationValue<C>(config, arg);
+		}
+		return getConfigurationValue<C>(config, arg.section);
 	}
 
 	lookup<T>(key: string): IConfigurationValue<T> {
@@ -82,7 +140,7 @@ export class ConfigurationService implements IConfigurationService {
 		};
 	}
 
-	keys(): IConfigurationKeys { return { default: ["zap.enable"] as string[], user: [] as string[] }; }
+	keys(): IConfigurationKeys { return { default: ["zap.enable", "zap.overwrite"], user: [] as string[] }; }
 
 	reloadConfiguration<T>(section?: string): TPromise<T> { return TPromise.as({} as T); }
 
@@ -91,6 +149,8 @@ export class ConfigurationService implements IConfigurationService {
 
 export class WorkspaceConfigurationService extends ConfigurationService implements IWorkspaceConfigurationService {
 	hasWorkspaceConfiguration(): boolean { return false; }
+
+	getUnsupportedWorkspaceKeys(): string[] { return []; }
 
 	lookup<T>(key: string): IWorkspaceConfigurationValue<T> {
 		const value = super.lookup<T>(key);
@@ -109,5 +169,19 @@ export class WorkspaceConfigurationService extends ConfigurationService implemen
 		};
 	}
 
-	values(): IWorkspaceConfigurationValues { return {}; }
+	values(): IWorkspaceConfigurationValues {
+		const result: IWorkspaceConfigurationValues = Object.create(null);
+		const keyset = this.keys();
+		const keys = [...keyset.workspace, ...keyset.user, ...keyset.default].sort();
+
+		let lastKey: string | undefined;
+		for (const key of keys) {
+			if (key !== lastKey) {
+				lastKey = key;
+				result[key] = this.lookup(key);
+			}
+		}
+
+		return result;
+	}
 }

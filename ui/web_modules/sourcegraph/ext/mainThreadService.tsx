@@ -1,11 +1,30 @@
 import Event, { Emitter } from "vs/base/common/event";
+import { IDisposable } from "vs/base/common/lifecycle";
 import * as strings from "vs/base/common/strings";
+import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { IMessagePassingProtocol } from "vs/base/parts/ipc/common/ipc";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
-import { IMainProcessExtHostIPC, create } from "vs/platform/extensions/common/ipcRemoteCom";
+import { IRemoteCom, createProxyProtocol } from "vs/platform/extensions/common/ipcRemoteCom";
+import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { AbstractThreadService } from "vs/workbench/services/thread/common/abstractThreadService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
+
+function asLoggingProtocol(protocol: IMessagePassingProtocol): IMessagePassingProtocol {
+
+	protocol.onMessage(msg => {
+		console.log("%c[Extension \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
+	});
+
+	return {
+		onMessage: protocol.onMessage,
+
+		send(msg: any): void {
+			protocol.send(msg);
+			console.log("%c[Window \u2192 Extension]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
+		}
+	};
+}
 
 /**
  * MainThreadService is an implementation of IThreadService that
@@ -15,12 +34,13 @@ import { IThreadService } from "vs/workbench/services/thread/common/threadServic
 export class MainThreadService extends AbstractThreadService implements IThreadService {
 	public _serviceBrand: any;
 
-	private remoteCom: IMainProcessExtHostIPC;
+	private remotes: Map<string, IRemoteCom> = new Map<string, IRemoteCom>();
 	private logCommunication: boolean;
-	private ready: boolean;
+	private workerEmitter: Emitter<string> = new Emitter<string>();
 
 	constructor(
 		@IEnvironmentService environmentService: IEnvironmentService,
+		@IWorkspaceContextService private contextService: IWorkspaceContextService
 	) {
 		super(true);
 
@@ -33,43 +53,127 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 	}
 
 	/**
-	 * attachWorker sets the Web Worker that this MainThreadService
+	 * attachWorker adds a Web Worker that this MainThreadService
 	 * communicates with. The protocol calls Worker.postMessage
 	 * instead of window.postMessage so that messages go directly to
 	 * the worker and are not broadcast to other potentially untrusted
 	 * recipients.
 	 */
-	public attachWorker(worker: Worker): void {
-		const protocol = new MainProtocol(worker);
+	public attachWorker(worker: Worker, workspace: URI): void {
+		let protocol: IMessagePassingProtocol = new MainProtocol(worker);
+		if (this.logCommunication) {
+			protocol = asLoggingProtocol(protocol);
+		}
 
-		// Message: Window --> Extension Host
-		this.remoteCom = create(msg => {
-			if (this.logCommunication) {
-				console.log("%c[Window \u2192 Extension]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
-			}
+		const remoteCom = createProxyProtocol(protocol);
 
-			protocol.send(msg);
-		});
+		remoteCom.setManyHandler(this);
 
-		// Message: Extension Host --> Window
-		protocol.onMessage(msg => {
-			if (this.logCommunication) {
-				console.log("%c[Extension \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
-			}
-
-			this.remoteCom.handle(msg);
-		});
-
-		this.remoteCom.setManyHandler(this);
-
-		this.ready = true;
+		this.remotes.set(workspace.toString(), remoteCom);
+		this.remotes.set(workspace.with({ query: `${workspace.query}~0` }).toString(), remoteCom);
+		this.workerEmitter.fire(workspace.toString());
+		this.workerEmitter.fire(workspace.with({ query: `${workspace.query}~0` }).toString());
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
-		if (!this.ready) {
-			throw new Error("protocol not ready (worker is not yet attached)");
+		const routeToWorkspaceHost = (uri: URI) => {
+			const workspace = uri.with({ fragment: "" });
+			let remoteCom = this.remotes.get(workspace.toString());
+			if (remoteCom) {
+				return remoteCom.callOnRemote(proxyId, path, args);
+			}
+			// The main thread may need to wait a moment for a new workspace host to initialize.
+			// We give the worker 3s to get set up before failing the request.
+			return TPromise.wrap(new Promise((resolve, reject) => {
+				let timedOut = false;
+				let d: IDisposable;
+				const timer = setTimeout(() => {
+					timedOut = true;
+					const matchingPaths: string[] = [];
+					const workspacePath = workspace.with({ query: "" }).toString();
+					this.remotes.forEach((value, key) => {
+						if (key.startsWith(workspacePath)) {
+							matchingPaths.push(key);
+						}
+					});
+					if (d) {
+						d.dispose();
+					}
+					reject(new Error(`unable to route call ${proxyId}.${path} because no host for workspace ${workspace.toString()} (${matchingPaths.length} hosts out of ${this.remotes.size} had matching paths: ${JSON.stringify(matchingPaths)})`));
+				}, 3000);
+				d = this.workerEmitter.event((e) => {
+					remoteCom = this.remotes.get(workspace.toString());
+					if (remoteCom && !timedOut) {
+						clearTimeout(timer);
+						if (d) {
+							d.dispose();
+						}
+						resolve(remoteCom.callOnRemote(proxyId, path, args));
+					}
+				});
+			}));
+		};
+
+		const routeStringURLToWorkspaceHost = (stringURL: string) => routeToWorkspaceHost(URI.parse(stringURL));
+
+		switch (proxyId) {
+			case "eExtHostLanguageFeatures":
+				switch (path) {
+					case "$provideReferences":
+						return routeToWorkspaceHost(args[2] as URI);
+
+					case "$provideWorkspaceReferences":
+						return routeToWorkspaceHost(args[2] as URI);
+
+					default:
+						if (args.length >= 2 && args[1] instanceof URI) {
+							return routeToWorkspaceHost(args[1] as URI);
+						}
+				}
+				break;
+
+			case "eExtHostDocuments":
+				switch (path) {
+					case "$provideTextDocumentContent":
+						return routeToWorkspaceHost(args[1] as URI);
+
+					case "$acceptModelAdd":
+						return routeToWorkspaceHost(args[0].url as URI);
+
+					default:
+						return routeStringURLToWorkspaceHost(args[0]);
+				}
+
+			case "eExtHostEditors":
+				switch (path) {
+					case "$acceptTextEditorAdd":
+						return routeToWorkspaceHost(args[0].document as URI);
+					default:
+						if (args[args.length - 1] instanceof URI) {
+							return routeToWorkspaceHost(args[args.length - 1] as URI);
+						}
+				}
+				break;
+
+			case "eExtHostDocumentsAndEditors":
+				switch (path) {
+					case "$acceptDocumentsAndEditorsDelta":
+						const arg = args[0];
+						if (arg.addedDocuments && arg.addedDocuments.length > 0) {
+							// assume the first doucment is for the same workspace as the rest
+							return routeToWorkspaceHost(arg.addedDocuments[0].url as URI);
+						} else if (arg.removedDocuments) {
+							// assume again the first document is for the same workspace as the rest
+							return routeToWorkspaceHost(URI.parse(arg.removedDocuments[0]));
+						} else if (arg.addedEditors) {
+							return routeToWorkspaceHost(arg.addedEditors[0].document as URI);
+						}
+						break;
+				}
 		}
-		return this.remoteCom.callOnRemote(proxyId, path, args);
+
+		// Default to routing requests to the current workspace.
+		return routeToWorkspaceHost(this.contextService.getWorkspace().resource);
 	}
 }
 

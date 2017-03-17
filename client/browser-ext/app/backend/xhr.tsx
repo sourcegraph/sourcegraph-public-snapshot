@@ -1,12 +1,13 @@
-import { getPlatform } from "../utils";
-import { singleflightFetch } from "./singleflightFetch";
+import "whatwg-fetch";
+import { getPlatformName } from "../utils";
+import { isBrowserExtension } from "../utils/context";
 
 let token: string | null = null;
 export function useAccessToken(tok: string): void {
 	token = tok;
 }
 
-type FetchOptions = { headers: Headers };
+type FetchOptions = { headers: Headers, credentials: string };
 
 export function combineHeaders(a: Headers, b: Headers): Headers {
 	let headers = new Headers(a);
@@ -19,14 +20,28 @@ function defaultOptions(): FetchOptions | undefined {
 		return; // for unit tests
 	}
 	const headers = new Headers();
-	if (token) {
+	// TODO(uforic): can we get rid of this and just pass cookies instead
+	if (isBrowserExtension() && token) {
 		headers.set("Authorization", `session ${token}`);
 	}
-	headers.set("x-sourcegraph-client", `${getPlatform()} v${chrome.runtime.getManifest().version}`);
-	return { headers };
+	if (isBrowserExtension()) {
+		headers.set("x-sourcegraph-client", `${getPlatformName()} v${getExtensionVersion()}`);
+	}
+	return {
+		headers,
+		// we only need to include cookies when running in-page
+		// the chrome extension uses the Authorization field
+		credentials: isBrowserExtension() ? "omit" : "include",
+	};
 };
 
-const f = singleflightFetch(global.fetch);
+function getExtensionVersion(): string {
+	if (chrome && chrome.runtime && chrome.runtime.getManifest) {
+		return chrome.runtime.getManifest().version;
+	}
+	return "NO_VERSION";
+}
+
 export function doFetch(url: string, opt?: any): Promise<Response> {
 	let defaults = defaultOptions();
 	const fetchOptions = Object.assign({}, defaults, opt);
@@ -34,5 +49,5 @@ export function doFetch(url: string, opt?: any): Promise<Response> {
 		// the above object merge might override the auth headers. add those back in.
 		fetchOptions.headers = combineHeaders(opt.headers, defaults.headers);
 	}
-	return f(url, fetchOptions);
+	return fetch(url, fetchOptions);
 }

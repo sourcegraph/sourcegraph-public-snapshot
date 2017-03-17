@@ -2,14 +2,14 @@ import * as autobind from "autobind-decorator";
 import * as React from "react";
 import { Link } from "react-router";
 import { marked } from "vs/base/common/marked/marked";
-import URI from "vs/base/common/uri";
 
 import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { Button, FlexContainer } from "sourcegraph/components";
 import { ArrowRight, List } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { Events, FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { RouterContext, prettifyRev } from "sourcegraph/workbench/utils";
 
@@ -42,7 +42,7 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 			showingFullDocString: !this.state.showingFullDocString,
 		});
 		if (this.props.defData.definition) {
-			const uri = URI.parse(this.props.defData.definition.uri);
+			const uri = this.props.defData.definition.uri;
 			let { repo, rev, path } = URIUtils.repoParams(uri);
 			rev = prettifyRev(rev);
 			Events.InfoPanelComment_Toggled.logEvent({ ...this.props.eventProps, defRepo: repo, defRev: rev || "", defPath: path });
@@ -53,7 +53,6 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 
 	render(): JSX.Element | null {
 		const { defData } = this.props;
-
 		const fullDocString = marked(defData.docString, { sanitize: true });
 		let renderedDocString = fullDocString;
 		const fonts = typography.fontStack.sansSerif;
@@ -75,19 +74,19 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 				overflowY: "scroll",
 				color: colors.blueGrayD1(),
 			}, typography[2])} dangerouslySetInnerHTML={{ __html: renderedDocString }} />
-			<Definition defData={this.props.defData} />
+			<Definition defData={this.props.defData} eventProps={this.props.eventProps} />
 		</div ></RouterContext>;
 	}
 }
 
-function Definition({ defData }: { defData: DefinitionData }): JSX.Element {
+function Definition({ defData, eventProps }: { defData: DefinitionData, eventProps: FileEventProps }): JSX.Element {
 	if (!defData.definition) {
 		return <div></div>;
 	}
-	const uri = URI.parse(defData.definition.uri);
+	const uri = defData.definition.uri;
 	let { repo, rev, path } = URIUtils.repoParams(uri);
 	rev = prettifyRev(rev);
-	const url = urlToBlobRange(repo, rev, path, defData.definition.range);
+	const url = urlToBlobRange(repo, rev, path, RangeOrPosition.fromMonacoRange(defData.definition.range).toZeroIndexedRange());
 	return <div>
 		<p style={{ color: colors.blueGray(), paddingTop: 0 }}>
 			Defined in
@@ -97,7 +96,14 @@ function Definition({ defData }: { defData: DefinitionData }): JSX.Element {
 			</Link>
 		</p>
 		<FlexContainer content="stretch" justify="between" items="center">
-			<Link style={{ flex: "1 0" }} to={url} onClick={() => Events.InfoPanelJumpToDef_Clicked.logEvent({ defRepo: repo, defRev: rev || "", defPath: path })}>
+			<Link style={{ flex: "1 0" }} to={url} onClick={() => {
+				Events.InfoPanelJumpToDef_Clicked.logEvent({
+					...eventProps,
+					defRepo: repo,
+					defRev: rev || "",
+					defPath: path
+				});
+			}}>
 				<Button color="blueGray" outline={true} style={{ width: "100%" }}>
 					Jump to definition <ArrowRight width={22} style={{ top: 0 }} />
 				</Button>

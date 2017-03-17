@@ -1,12 +1,14 @@
 package xlang
 
 import (
+	"container/ring"
 	"fmt"
 	"html/template"
 	"net/http"
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -26,26 +28,36 @@ func (h *DebugHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Proxy.mu.Unlock()
 
+	// build list of recently closed servers so we don't need to hold the
+	// lock while computing summaries.
+	closedServers := make([]*recentlyClosedItem, 0, recentlyClosedMaxItems)
+	recentlyClosedMu.Lock()
+	recentlyClosed.Do(func(x interface{}) {
+		if x == nil {
+			return
+		}
+		closedServers = append(closedServers, x.(*recentlyClosedItem))
+	})
+	recentlyClosedMu.Unlock()
+
 	var data []*modeSummary
 	{
 		modes := make(map[string][]*serverSummary)
+		closed := make(map[string][]*serverSummary)
 		for _, c := range servers {
-			stats := c.Stats()
-			modes[c.id.mode] = append(modes[c.id.mode], &serverSummary{
-				ID:         fmt.Sprintf("%s %s", c.id.rootPath.String(), c.id.pathPrefix),
-				TotalCount: stats.TotalCount,
-				Age:        time.Since(stats.Created),
-				Idle:       time.Since(stats.Last),
-				Counts:     summariseCounts(stats.Counts),
-				Errors:     summariseCounts(stats.ErrorCounts),
-			})
+			modes[c.id.mode] = append(modes[c.id.mode], newServerSummary(c.id, c.Stats()))
 		}
-		for name, sx := range modes {
-			sort.Sort(byAge(sx))
+		for _, c := range closedServers {
+			closed[c.id.mode] = append(closed[c.id.mode], newServerSummary(c.id, c.stats))
+		}
+		for mode := range modes {
+			sort.Sort(byAge(modes[mode]))
+			sort.Sort(byIdle(closed[mode]))
 			data = append(data, &modeSummary{
-				Name:      name,
-				TotalOpen: len(sx),
-				Servers:   sx,
+				Name:      mode,
+				TotalOpen: len(modes[mode]),
+				Servers:   modes[mode],
+				Closed:    closed[mode],
 			})
 		}
 		sort.Sort(byTotalOpen(data))
@@ -70,6 +82,7 @@ type modeSummary struct {
 	Name      string
 	TotalOpen int
 	Servers   []*serverSummary
+	Closed    []*serverSummary
 }
 
 type countSummary struct {
@@ -102,12 +115,55 @@ var debugTmpl = template.Must(template.New("").Parse(`
   <tr><th>ServerID</th><th>TotalCount</th><th>Age</th><th>Idle</th><th>Counts</th><th>Errors</th></tr>
   {{range .Servers}}<tr><td>{{.ID}}</td><td>{{.TotalCount}}</td><td>{{.Age}}</td><td>{{.Idle}}</td><td>{{.Counts}}</td><td>{{.Errors}}</td></tr>{{end}}
   </table>
+  {{if .Closed}}
+  <h4>{{.Name}} Recently Closed</h4>
+  <table class="table table-condensed table-hover">
+  <tr><th>ServerID</th><th>TotalCount</th><th>Age</th><th>Idle</th><th>Counts</th><th>Errors</th></tr>
+  {{range .Closed}}<tr><td>{{.ID}}</td><td>{{.TotalCount}}</td><td>{{.Age}}</td><td>{{.Idle}}</td><td>{{.Counts}}</td><td>{{.Errors}}</td></tr>{{end}}
+  </table>
+  {{end}}
 {{end}}
 
 </div>
 </body>
 </html>
 `))
+
+const recentlyClosedMaxItems = 100
+
+var (
+	recentlyClosedMu sync.Mutex
+	recentlyClosed   = ring.New(recentlyClosedMaxItems)
+)
+
+type recentlyClosedItem struct {
+	id    serverID
+	stats serverProxyConnStats
+}
+
+// recordClosedServerConn adds the server stats to the recently closed list
+// shown on the debug page.
+func recordClosedServerConn(id serverID, stats serverProxyConnStats) {
+	item := &recentlyClosedItem{
+		id:    id,
+		stats: stats,
+	}
+	recentlyClosedMu.Lock()
+	recentlyClosed.Value = item
+	recentlyClosed = recentlyClosed.Next()
+	recentlyClosedMu.Unlock()
+}
+
+func newServerSummary(id serverID, stats serverProxyConnStats) *serverSummary {
+	return &serverSummary{
+		ID:         fmt.Sprintf("%s %s", id.rootPath.String(), id.pathPrefix),
+		TotalCount: stats.TotalCount,
+		Age:        time.Since(stats.Created),
+		Idle:       time.Since(stats.Last),
+		Counts:     summariseCounts(stats.Counts),
+		Errors:     summariseCounts(stats.ErrorCounts),
+	}
+}
 
 type byTotalOpen []*modeSummary
 
@@ -126,6 +182,12 @@ type byAge []*serverSummary
 func (p byAge) Len() int           { return len(p) }
 func (p byAge) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 func (p byAge) Less(i, j int) bool { return p[i].Age > p[j].Age }
+
+type byIdle []*serverSummary
+
+func (p byIdle) Len() int           { return len(p) }
+func (p byIdle) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p byIdle) Less(i, j int) bool { return p[i].Idle > p[j].Idle }
 
 type byCount []countSummary
 
@@ -149,7 +211,10 @@ func summariseCounts(counts map[string]int) string {
 	return strings.Join(p, " ")
 }
 
-var shortenMethodNameRe = regexp.MustCompile(`(^[a-z]|[A-Z]|/[a-z])`)
+// shortenMethodNameRe finds the first character of each word when using
+// camelcase. It special cases x since that is a common prefix for
+// experimental extensions.
+var shortenMethodNameRe = regexp.MustCompile(`(^x?[a-wyz]|[A-Z]|/x?[a-wyz])`)
 
 // shortenMethodName shorterns an LSP method name for display purposes.
 // eg textDocument/hover becomes td/h

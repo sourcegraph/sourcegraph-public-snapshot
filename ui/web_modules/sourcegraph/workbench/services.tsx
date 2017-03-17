@@ -1,28 +1,27 @@
-import Event from "vs/base/common/event";
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { StaticServices } from "vs/editor/browser/standalone/standaloneServices";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IBackupService } from "vs/platform/backup/common/backup";
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
 import { IExtensionService } from "vs/platform/extensions/common/extensions";
+import { IFileService } from "vs/platform/files/common/files";
 import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IIntegrityService, IntegrityTestResult } from "vs/platform/integrity/common/integrity";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
-import { IMessageService } from "vs/platform/message/common/message";
+import { IChoiceService, IMessageService } from "vs/platform/message/common/message";
 import "vs/platform/opener/browser/opener.contribution";
 import { ISearchService } from "vs/platform/search/common/search";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
-import { IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { IWorkspace, IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
 import { ITreeExplorerService } from "vs/workbench/parts/explorers/common/treeExplorerService";
 import { IWorkspaceConfigurationService } from "vs/workbench/services/configuration/common/configuration";
-import { WorkbenchMessageService } from "vs/workbench/services/message/browser/messageService";
-import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
-import { TextModelResolverService } from "vs/workbench/services/textmodelResolver/common/textModelResolverService";
-import { IThemeService } from "vs/workbench/services/themes/common/themeService";
+import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
+import { MessageService } from "vs/workbench/services/message/electron-browser/messageService";
+import { IPartService } from "vs/workbench/services/part/common/partService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 import { IUntitledEditorService, UntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 import { IWindowIPCService } from "vs/workbench/services/window/electron-browser/windowService";
@@ -31,8 +30,12 @@ import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { ConfigurationService, WorkspaceConfigurationService } from "sourcegraph/workbench/ConfigurationService";
 import { EnvironmentService } from "sourcegraph/workbench/environmentService";
 import { ExtensionService } from "sourcegraph/workbench/extensionService";
+import { FileService } from "sourcegraph/workbench/overrides/fileService";
+import { SearchService } from "sourcegraph/workbench/searchService";
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
 import { NoopDisposer } from "sourcegraph/workbench/utils";
+import { IPreferencesService } from "vs/workbench/parts/preferences/common/preferences";
+import { IBackupFileService } from "vs/workbench/services/backup/common/backup";
 
 export let Services: ServicesAccessor;
 
@@ -44,13 +47,15 @@ export let Services: ServicesAccessor;
 // Others, like ThemeService, will probably be implemented someday, so users
 // can customize color themes. When they are implemented, we can either use the
 // VSCode ones and override some methods, or we can write our own from scratch.
-export function setupServices(domElement: HTMLDivElement, workspace: URI): ServiceCollection {
+export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRef?: string, commitID?: string, branch?: string): ServiceCollection {
 	const [services, instantiationService] = StaticServices.init({});
 
 	const set = (identifier, impl) => {
 		const instance = instantiationService.createInstance(impl);
 		services.set(identifier, instance);
 	};
+
+	set(IExtensionService, ExtensionService);
 
 	standaloneServices(domElement, services);
 
@@ -59,6 +64,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	// service.
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource: workspace,
+		revState: { zapRef, commitID, branch },
 	}));
 
 	set(IUntitledEditorService, UntitledEditorService);
@@ -68,24 +74,45 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI): Servi
 	set(IWindowsService, DummyService);
 	set(IIntegrityService, IntegrityService);
 	set(IBackupService, BackupService);
-	set(IMessageService, WorkbenchMessageService);
-	set(IThemeService, ThemeService);
+	set(IBackupFileService, function (): void { /* noop */ } as any);
+
 	set(IWindowIPCService, DummyService);
-	set(ITextFileService, DummyService);
-	set(ITextModelResolverService, TextModelResolverService);
+	set(IPartService, DummyService);
+
+	const messageService = instantiationService.createInstance(MessageService, domElement);
+	services.set(IMessageService, messageService);
+	services.set(IChoiceService, messageService);
+
+	const editorPart = instantiationService.createInstance(EditorPart, "workbench.parts.editor", false);
+	services.set(IEditorGroupService, editorPart);
 	set(IConfigurationService, ConfigurationService);
 	set(IWorkspaceConfigurationService, WorkspaceConfigurationService);
 	set(IThreadService, MainThreadService);
-	set(IExtensionService, ExtensionService);
-
+	set(ISearchService, SearchService);
 	// These services are depended on by the extension host but are
 	// not actually used yet.
-	set(ISearchService, function (): void {/* noop */ } as any);
-	set(ITreeExplorerService, function (): void { /* noop */ } as any);
+	set(ITreeExplorerService, DummyService);
+	set(IPreferencesService, DummyService);
+	set(IFileService, FileService);
 
 	Services = services;
 
 	return services;
+}
+
+export function getCurrentWorkspace(): IWorkspace {
+	const contextService = Services.get(IWorkspaceContextService);
+	return contextService.getWorkspace();
+}
+
+export function setWorkspace(workspace: IWorkspace): void {
+	const contextService = Services.get(IWorkspaceContextService);
+	return contextService.setWorkspace(workspace);
+}
+
+export function onWorkspaceUpdated(listener: ((workspace: IWorkspace) => any)): IDisposable {
+	const contextService = Services.get(IWorkspaceContextService);
+	return contextService.onWorkspaceUpdated(listener);
 }
 
 class DummyService { }
@@ -127,16 +154,4 @@ class BackupService {
 	getBackupPath(): TPromise<string> {
 		return TPromise.wrap("some backup path");
 	}
-}
-
-class ThemeService {
-
-	onDidColorThemeChange(): Event<string> {
-		return NoopDisposer as any;
-	}
-
-	getColorTheme(): string {
-		return "vs-dark";
-	}
-
 }

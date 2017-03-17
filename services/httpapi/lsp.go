@@ -3,12 +3,16 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
 	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -16,30 +20,18 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
-	"go.uber.org/atomic"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-func serveLSP(w http.ResponseWriter, r *http.Request) {
-	// 🚨 SECURITY: This endpoint relies on cookie based authentication. 🚨
-	// websocketUpgrader.Upgrade handles checking the origin header so
-	// that this endpoint is not vulnerable to CSRF like attacks.
-	//
-	// You can read more about this security issue here:
-	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	conn, err := websocketUpgrader.Upgrade(getHijacker(w), r, nil)
-	if err != nil {
-		proxyFailed.WithLabelValues("upgrade").Inc()
-		http.Error(w, "upgrade to WebSocket failed", http.StatusInternalServerError)
-		return
-	}
+var websocketUpgrader = websocket.Upgrader{}
 
+func serveLSP(w http.ResponseWriter, r *http.Request) {
+	var err error
 	ctx := r.Context()
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP session")
@@ -55,30 +47,71 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	builder.AddField("client", "ws")
 	builder.AddField("user_agent", r.UserAgent())
 	if actor := auth.ActorFromContext(ctx); actor != nil {
-		log15.Info("LSP: user connected", "login", actor.Login, "uid", actor.UID)
 		builder.AddField("uid", actor.UID)
 		builder.AddField("login", actor.Login)
 		builder.AddField("email", actor.Email)
 	}
 
-	proxy := &jsonrpc2Proxy{
-		httpCtx: ctx,
-		mode:    atomic.NewString(""),
-		builder: builder,
-		ready:   make(chan struct{}),
-	}
-
-	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2HandlerFunc(proxy.handleClientRequest))
-
+	// Connect to server before upgrading to websocket connection. This is
+	// so we can return BadGateway if our gateway is down. Otherwise we
+	// would have to do some sort of custom response on the websocket
+	// connection.
 	serverNetConn, err := dialLSPProxy(ctx)
 	if err != nil {
 		proxyFailed.WithLabelValues("dial").Inc()
 		http.Error(w, "connecting to LSP server failed", http.StatusBadGateway)
 		return
 	}
-	proxy.server = &xlang.Client{
-		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2HandlerFunc(proxy.handleServerRequest)),
+
+	// 🚨 SECURITY: This endpoint relies on cookie based authentication. 🚨
+	// websocketUpgrader.Upgrade handles checking the origin header so
+	// that this endpoint is not vulnerable to CSRF like attacks.
+	//
+	// You can read more about this security issue here:
+	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
+	conn, err := websocketUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		proxyFailed.WithLabelValues("upgrade").Inc()
+		// We do not need to do http.Error, since the
+		// websocketUpgrader will do it for us.
+		return
 	}
+
+	// Our peer is the user in the browser. As such we can get lots of
+	// interesting close responses from them. We instrument how a
+	// connection is closed by the peer. We also normalise it to prevent
+	// noise in the jsonrpc2 pkg.
+	closeHandler := conn.CloseHandler()
+	conn.SetCloseHandler(func(code int, text string) error {
+		// Instrument why we closed
+		span.SetTag("ws.closeerror.code", code)
+		span.SetTag("ws.closeerror.text", text)
+		wsCloseError.WithLabelValues(strconv.Itoa(code)).Inc()
+
+		// Call the wrapped default close handler
+		err := closeHandler(code, text)
+		if err != nil {
+			return err
+		}
+
+		// jsonrpc2 "unwraps" this as an io.ErrUnexpectedEOF. We want
+		// to treat all websocket.CloseErrors as unexpected.
+		return &websocket.CloseError{
+			Code: websocket.CloseAbnormalClosure,
+			Text: io.ErrUnexpectedEOF.Error(),
+		}
+	})
+
+	proxy := &jsonrpc2Proxy{
+		httpCtx: ctx,
+		builder: builder,
+		ready:   make(chan struct{}),
+	}
+
+	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleClientRequest)))
+	proxy.server = &xclient{Client: &xlang.Client{
+		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleServerRequest))),
+	}}
 
 	proxy.start()
 
@@ -113,12 +146,12 @@ func (h jsonrpc2HandlerFunc) Handle(ctx context.Context, conn *jsonrpc2.Conn, re
 // single repository initially specified in the "initialize" request)
 // will be accessed in the current LSP session.
 type jsonrpc2Proxy struct {
-	httpCtx context.Context
-	client  *jsonrpc2.Conn // connection to the browser
-	server  *xlang.Client  // connection to lsp proxy. We use xlang.Client since it injects opentracing metadata
-	mode    *atomic.String
-	builder *libhoney.Builder
-	ready   chan struct{}
+	httpCtx    context.Context
+	client     *jsonrpc2.Conn // connection to the browser
+	server     *xclient       // connection to lsp proxy. We use a wrapped xlang.Client since it injects opentracing metadata
+	initParams atomic.Value
+	builder    *libhoney.Builder
+	ready      chan struct{}
 }
 
 func (p *jsonrpc2Proxy) start() {
@@ -143,7 +176,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 			}
 
 			var params struct {
-				xlang.ClientProxyInitializeParams
+				lspext.ClientProxyInitializeParams
 				RootURI string `json:"rootUri"`
 			}
 			if err := json.Unmarshal(*req.Params, &params); err != nil {
@@ -159,15 +192,18 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 				return err
 			}
 
-			p.mode.Store(params.InitializationOptions.Mode)
-
 			rootPathURI, err := uri.Parse(params.RootPath)
 			if err != nil {
 				return err
 			}
 
+			p.initParams.Store(&trackedInitParams{
+				mode:        params.InitializationOptions.Mode,
+				rootPathURI: rootPathURI,
+			})
+
 			// 🚨 SECURITY: Check that the the user can access the repo. 🚨
-			if _, err := backend.Repos.Resolve(p.httpCtx, &sourcegraph.RepoResolveOp{Path: rootPathURI.Repo()}); err != nil {
+			if _, err := backend.Repos.GetByURI(p.httpCtx, rootPathURI.Repo()); err != nil {
 				proxyFailed.WithLabelValues("auth").Inc()
 				return err
 			}
@@ -200,6 +236,7 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 	var result json.RawMessage
 	if err := to.Call(ctx, req.Method, req.Params, &result, callOpts...); err != nil {
 		if _, userError := err.(*jsonrpc2.Error); !userError {
+			log.Println("LSP: send req error", err.Error())
 			proxyFailed.WithLabelValues("send-req").Inc()
 		}
 
@@ -210,7 +247,14 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 			respErr = &jsonrpc2.Error{Message: err.Error()}
 		}
 		if err := from.ReplyWithError(ctx, req.ID, respErr); err != nil {
-			proxyFailed.WithLabelValues("reply-req-err").Inc()
+			// "from" being closed is common in this codepath. The
+			// reason is "to" can be closed during an inflight
+			// request, causing "from" to be closed via
+			// DisconnectNotify. So we only increment the counter
+			// for the uncommon case.
+			if err != jsonrpc2.ErrClosed {
+				proxyFailed.WithLabelValues("reply-req-err").Inc()
+			}
 		}
 		return respErr
 	}
@@ -233,15 +277,19 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 
 	duration := time.Since(start)
 	success := strconv.FormatBool(err == nil)
-	mode := p.mode.Load()
-	if mode == "" {
-		mode = "unknown"
+
+	// If we have processed the initialize request, initParams should be non-nil
+	initParams, _ := p.initParams.Load().(*trackedInitParams)
+	if initParams == nil {
+		initParams = &trackedInitParams{
+			mode: "unknown",
+		}
 	}
 
 	labels := prometheus.Labels{
 		"success":   success,
 		"method":    req.Method,
-		"mode":      mode,
+		"mode":      initParams.mode,
 		"transport": "ws",
 	}
 	xlangRequestDuration.With(labels).Observe(duration.Seconds())
@@ -250,8 +298,11 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 		ev := p.builder.NewEvent()
 		ev.AddField("success", success)
 		ev.AddField("method", req.Method)
-		ev.AddField("mode", mode)
+		ev.AddField("mode", initParams.mode)
 		ev.AddField("duration_ms", duration.Seconds()*1000)
+		if initParams.rootPathURI != nil {
+			addRootPathFields(ev, initParams.rootPathURI)
+		}
 		if err != nil {
 			ev.AddField("error", err.Error())
 		}
@@ -274,13 +325,29 @@ func dialLSPProxy(ctx context.Context) (net.Conn, error) {
 	return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
 }
 
-var proxyFailed = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "xlang",
-	Name:      "websocket_proxy_failed",
-	Help:      "Total number of failures in the xlang websocket gateway.",
-}, []string{"why"})
+// trackedInitParams stores fields we want to track in our instrumentation for
+// each request. The fields are extracted from the initialize request.
+type trackedInitParams struct {
+	mode        string
+	rootPathURI *uri.URI
+}
+
+var (
+	proxyFailed = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "websocket_proxy_failed",
+		Help:      "Total number of failures in the xlang websocket gateway.",
+	}, []string{"why"})
+	wsCloseError = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "websocket_close_error",
+		Help:      "Total number of websocket close errors received.",
+	}, []string{"code"})
+)
 
 func init() {
 	prometheus.MustRegister(proxyFailed)
+	prometheus.MustRegister(wsCloseError)
 }

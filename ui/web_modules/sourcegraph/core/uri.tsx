@@ -1,4 +1,4 @@
-import { FileEventProps } from "sourcegraph/util/constants/AnalyticsConstants";
+import { FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import URI from "vs/base/common/uri";
 
 // A URI in Sourcegraph refers to a (file) path and revision in a
@@ -28,10 +28,15 @@ export class URIUtils {
 			throw new Error(`expected git URI scheme in ${uri.toString()}`);
 		}
 		return {
-			repo: `${uri.authority}${uri.path.replace(/\.git$/, "")}`,
+			repo: `${uri.authority}${uri.path}`,
 			rev: decodeURIComponent(uri.query),
 			path: uri.fragment.replace(/^\//, ""),
 		};
+	}
+
+	static hasAbsoluteCommitID(uri: URI): boolean {
+		const { rev } = URIUtils.repoParams(uri);
+		return rev ? rev.length === 40 : false;
 	}
 
 	// repoParamsExt mirrors the functionality of repoParams, but is
@@ -62,5 +67,4 @@ export class URIUtils {
 			// Omit the fragment (file path).
 		});
 	}
-
 }

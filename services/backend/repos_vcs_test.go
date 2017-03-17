@@ -19,7 +19,6 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := Mocks.Repos.MockGet_Return(t, &sourcegraph.Repo{ID: 1, URI: "r", DefaultBranch: "b"})
 	var calledVCSRepoResolveRevision bool
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
@@ -32,9 +31,6 @@ func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) 
 	commitID, err := resolveRepoRev(ctx, 1, "")
 	if err != nil {
 		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -49,7 +45,6 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := Mocks.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
@@ -61,9 +56,6 @@ func TestReposService_resolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	commitID, err := resolveRepoRev(ctx, 1, "b")
 	if err != nil {
 		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -78,7 +70,6 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 
 	want := strings.Repeat("a", 40)
 
-	calledGet := Mocks.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
@@ -90,9 +81,6 @@ func TestReposService_resolveRev_commitIDSpecified_resolvesCommitID(t *testing.T
 	commitID, err := resolveRepoRev(ctx, 1, strings.Repeat("a", 40))
 	if err != nil {
 		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")
@@ -107,7 +95,6 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 
 	want := errors.New("x")
 
-	calledGet := Mocks.Repos.MockGet(t, 1)
 	var calledVCSRepoResolveRevision bool
 	localstore.Mocks.RepoVCS.MockOpen(t, 1, vcstest.MockRepository{
 		ResolveRevision_: func(ctx context.Context, rev string) (vcs.CommitID, error) {
@@ -119,9 +106,6 @@ func TestReposService_resolveRev_commitIDSpecified_failsToResolve(t *testing.T) 
 	_, err := resolveRepoRev(ctx, 1, strings.Repeat("a", 40))
 	if !reflect.DeepEqual(err, want) {
 		t.Fatalf("got err %v, want %v", err, want)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
 	}
 	if !calledVCSRepoResolveRevision {
 		t.Error("!calledVCSRepoResolveRevision")

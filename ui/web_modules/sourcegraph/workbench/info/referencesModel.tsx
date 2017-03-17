@@ -1,8 +1,5 @@
-import { Repo } from "sourcegraph/api/index";
-
 import Event, { fromEventEmitter } from "vs/base/common/event";
 import { EventEmitter } from "vs/base/common/eventEmitter";
-import { defaultGenerator } from "vs/base/common/idGenerator";
 import { IDisposable, IReference, dispose } from "vs/base/common/lifecycle";
 import { basename, dirname } from "vs/base/common/paths";
 import * as strings from "vs/base/common/strings";
@@ -13,13 +10,10 @@ import { IModel, IPosition, IRange } from "vs/editor/common/editorCommon";
 import { Location } from "vs/editor/common/modes";
 import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/services/resolverService";
 
-import * as flatten from "lodash/flatten";
-
 import { LocationWithCommitInfo, ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
 
 export class OneReference implements IDisposable {
 
-	private _id: string;
 	private _commitInfo: ReferenceCommitInfo;
 	private _preview: FilePreview;
 	private _resolved: boolean;
@@ -29,11 +23,10 @@ export class OneReference implements IDisposable {
 		private _range: IRange,
 		private _eventBus: EventEmitter
 	) {
-		this._id = defaultGenerator.nextId();
 	}
 
 	public get id(): string {
-		return this._id;
+		return `${this._parent.uri.toString()}:${this._range.startLineNumber}:${this._range.startColumn}`;
 	}
 
 	public get model(): FileReferences {
@@ -85,27 +78,23 @@ export class OneReference implements IDisposable {
 		this._commitInfo = value;
 	};
 
-	public async resolve(textModelResolverService: ITextModelResolverService): Promise<OneReference> {
+	public resolve(textModelResolverService: ITextModelResolverService): TPromise<OneReference> {
 		if (this._resolved) {
 			return TPromise.as(this);
 		}
 
-		let modelReference = await textModelResolverService.createModelReference(this.uri);
-		if (!modelReference) {
-			// something went wrong... rutro.
+		return textModelResolverService.createModelReference(this.uri).then(modelReference => {
+			const model = modelReference.object;
+
+			if (!model) {
+				modelReference.dispose();
+				throw new Error(`missing ITextEditorModel for ${this.uri}`);
+			}
+
+			this._preview = new FilePreview(modelReference);
 			this._resolved = true;
 			return this;
-		}
-
-		const model = modelReference.object;
-		if (!model) {
-			modelReference.dispose();
-			throw new Error();
-		}
-
-		this._preview = new FilePreview(modelReference);
-		this._resolved = true;
-		return this;
+		});
 	}
 
 	dispose(): void {
@@ -125,6 +114,10 @@ export class FilePreview implements IDisposable {
 	private get _model(): IModel { return this._modelReference.object.textEditorModel; }
 
 	public preview(range: IRange, n: number = 8): { before: string; inside: string; after: string } {
+		if (!this._model) {
+			// Don't show a preview if the model is disposed.
+			return { before: "", inside: "", after: "" };
+		}
 		const { startLineNumber, startColumn, endColumn } = range;
 		const word = this._model.getWordUntilPosition({ lineNumber: startLineNumber, column: startColumn - n });
 		const beforeRange = new Range(startLineNumber, word.startColumn, startLineNumber, startColumn);
@@ -159,7 +152,7 @@ export class FileReferences implements IDisposable {
 	}
 
 	public get id(): string {
-		return `${this._uri.toString()}:${this._range.startLineNumber}${this._range.startColumn}`;
+		return `${this._uri.toString()}`;
 	}
 
 	public get parent(): ReferencesModel {
@@ -198,34 +191,34 @@ export class FileReferences implements IDisposable {
 		return this._loadFailure;
 	}
 
-	public async resolve(textModelResolverService: ITextModelResolverService): TPromise<FileReferences> {
+	public resolve(textModelResolverService: ITextModelResolverService): TPromise<FileReferences> {
 		if (this._resolved) {
 			return TPromise.as(this);
 		}
 
-		let modelReference = await textModelResolverService.createModelReference(this._uri);
-		if (!modelReference) {
+		return textModelResolverService.createModelReference(this._uri).then(modelReference => {
+			const model = modelReference.object;
+
+			if (!model) {
+				modelReference.dispose();
+				throw new Error(`missing ITextEditorModel for ${this._uri}`);
+			}
+
+			this._preview = new FilePreview(modelReference);
+			this._resolved = true;
+
+			return TPromise.join(this._children.map(oneRef => {
+				return oneRef.resolve(textModelResolverService);
+			}));
+		}, err => {
 			// something wrong here
 			this._children = [];
 			this._resolved = true;
-			this._loadFailure = new Error();
+			this._loadFailure = err;
 			return this;
-		}
-
-		const model = modelReference.object;
-		if (!model) {
-			modelReference.dispose();
-			throw new Error();
-		}
-
-		this._preview = new FilePreview(modelReference);
-		this._resolved = true;
-
-		for (const oneRef of this._children) {
-			await oneRef.resolve(textModelResolverService);
-		}
-
-		return this;
+		}).then(() => {
+			return this;
+		});
 	}
 
 	dispose(): void {
@@ -241,32 +234,13 @@ export class ReferencesModel implements IDisposable {
 	private _groups: FileReferences[] = [];
 	private _references: OneReference[] = [];
 	private _eventBus: EventEmitter = new EventEmitter();
+	private _workspace: URI;
 
 	onDidChangeReferenceRange: Event<OneReference> = fromEventEmitter<OneReference>(this._eventBus, "ref/changed");
 
-	constructor(references: LocationWithCommitInfo[], private _workspace: URI, private _tempFileReferences?: [Repo]) {
-		let newArrayOfLocs: FileReferences[] = [];
-		if (this._tempFileReferences) {
-			newArrayOfLocs = flatten(this._tempFileReferences.map(repository => {
-				let loc: Location = {
-					uri: URI.from({
-						scheme: this._workspace.scheme,
-						authority: this._workspace.authority,
-						path: (repository as any).URI.replace("github.com", ""),
-						fragment: "",
-						query: repository.DefaultBranch,
-					}),
-					range: {
-						startLineNumber: 0,
-						startColumn: 0,
-						endColumn: 0,
-						endLineNumber: 0,
-					},
-				};
-
-				return new FileReferences(this, loc.uri, loc.range);
-			}));
-		}
+	constructor(references: LocationWithCommitInfo[], workspace: URI) {
+		// Workspace URIs should not have a fragment since fragments refer to specific files.
+		this._workspace = workspace.with({ fragment: "" });
 
 		// grouping and sorting
 		references.sort(ReferencesModel._compareReferences);
@@ -277,7 +251,8 @@ export class ReferencesModel implements IDisposable {
 		for (let ref of references) {
 			// We have a new repo! YAY!
 			if (!current || current.uri.path !== ref.uri.path) {
-				let temp = new FileReferences(this, ref.uri, ref.range);
+				const range = { startLineNumber: 0, startColumn: 0, endLineNumber: 0, endColumn: 0 };
+				let temp = new FileReferences(this, ref.uri.with({ fragment: "" }), range);
 				realGroups.push(temp);
 			}
 			// Make the correct file reference and generate a real preview!
@@ -316,8 +291,6 @@ export class ReferencesModel implements IDisposable {
 				this._groups.push(group);
 			}
 		}
-
-		this._groups = this._groups.concat(newArrayOfLocs);
 
 		for (let i = 0; i < references.length; ++i) {
 			const commitInfo = references[i].commitInfo;
@@ -395,9 +368,11 @@ export class ReferencesModel implements IDisposable {
 	}
 
 	private static _compareReferences(a: Location, b: Location): number {
-		if (a.uri.toString() < b.uri.toString()) {
+		const auri = a.uri.toString();
+		const buri = b.uri.toString();
+		if (auri < buri) {
 			return -1;
-		} else if (a.uri.toString() > b.uri.toString()) {
+		} else if (auri > buri) {
 			return 1;
 		} else {
 			return Range.compareRangesUsingStarts(a.range, b.range);

@@ -8,6 +8,7 @@ import (
 	"path"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -16,9 +17,15 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/langserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
+
+var cloneFromGitserver, _ = strconv.ParseBool(env.Get("CLONE_FROM_GITSERVER", "false", "log HTTP requests"))
 
 type keyMutex struct {
 	mu  sync.Mutex
@@ -441,6 +448,13 @@ var NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, erro
 	if cloneURL.Host == "github.com" {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
 		return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
+	}
+
+	// In enterprise deployments, all dependencies are "public", so we can
+	// use gitserver
+	if cloneFromGitserver {
+		repo := cloneURL.Host + cloneURL.Path
+		return vcs.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev), nil
 	}
 
 	// Fall back to a full git clone for non-github.com repos.

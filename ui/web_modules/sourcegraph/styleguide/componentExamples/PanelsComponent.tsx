@@ -1,8 +1,7 @@
 import * as classNames from "classnames";
 import * as React from "react";
-import { Code, Heading, Panel, TabItem, TabPanel, TabPanels, Table, Tabs } from "sourcegraph/components";
+import { Heading, Panel, TabItem, TabPanel, TabPanels, Tabs } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
-import { whitespace } from "sourcegraph/components/utils";
 
 interface State {
 	activeExample: number;
@@ -15,9 +14,7 @@ export class PanelsComponent extends React.Component<{}, State> {
 
 	render(): JSX.Element | null {
 		return (
-			<div className={base.mv4}>
-				<Heading level={3} className={base.mb2}>Panels</Heading>
-
+			<div>
 				<Tabs>
 					<TabItem
 						active={this.state.activeExample === 0}>
@@ -112,48 +109,6 @@ export class PanelsComponent extends React.Component<{}, State> {
 							</code>
 						</TabPanel>
 					</TabPanels>
-				</Panel>
-				<Heading level={6} style={{ marginTop: whitespace[4], marginBottom: whitespace[3] }}>Properties</Heading>
-				<Panel hoverLevel="low" className={base.pa4}>
-					<Table style={{ width: "100%" }}>
-						<thead>
-							<tr>
-								<td>Prop</td>
-								<td>Default value</td>
-								<td>Values</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td><Code>color</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>blue</Code>, <Code>white</Code>, <Code>purple</Code>, <Code>green</Code>, <Code>orange</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>inverse</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>true</Code>, <Code>false</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>hover</Code></td>
-								<td><Code>false</Code></td>
-								<td>
-									<Code>true</Code>, <Code>false</Code>
-								</td>
-							</tr>
-							<tr>
-								<td><Code>hoverLevel</Code></td>
-								<td><Code>null</Code></td>
-								<td>
-									<Code>low</Code>, <Code>high</Code>
-								</td>
-							</tr>
-						</tbody>
-					</Table>
 				</Panel>
 			</div>
 		);

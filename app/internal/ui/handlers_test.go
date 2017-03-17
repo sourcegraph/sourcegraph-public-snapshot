@@ -91,9 +91,8 @@ func metaDiff(a, b meta) string { return strings.Join(pretty.Diff(a, b), "\n") }
 func TestRepo_OK(t *testing.T) {
 	c := newTest()
 
-	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -118,9 +117,6 @@ func TestRepo_OK(t *testing.T) {
 	} else if !reflect.DeepEqual(m, wantMeta) {
 		t.Fatalf("meta mismatch:\n%s", metaDiff(m, wantMeta))
 	}
-	if !*calledReposResolve {
-		t.Error("!calledReposResolve")
-	}
 	if !calledGet {
 		t.Error("!calledGet")
 	}
@@ -134,14 +130,18 @@ func TestRepo_Error_Resolve(t *testing.T) {
 			continue
 		}
 
-		calledReposResolve := backend.Mocks.Repos.MockResolve_NotFound(t, req.repo)
+		var calledGet bool
+		backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
+			calledGet = true
+			return nil, legacyerr.Errorf(legacyerr.NotFound, "not found")
+		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
 			continue
 		}
-		if !*calledReposResolve {
-			t.Errorf("%s: !calledReposResolve", url)
+		if !calledGet {
+			t.Errorf("%s: !calledGet", url)
 		}
 	}
 }
@@ -154,9 +154,8 @@ func TestRepo_Error_Get(t *testing.T) {
 			continue
 		}
 
-		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
 		var calledGet bool
-		backend.Mocks.Repos.Get = func(ctx context.Context, repo *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+		backend.Mocks.Repos.GetByURI = func(ctx context.Context, repo string) (*sourcegraph.Repo, error) {
 			calledGet = true
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
 		}
@@ -164,9 +163,6 @@ func TestRepo_Error_Get(t *testing.T) {
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
 			continue
-		}
-		if !*calledReposResolve {
-			t.Errorf("%s: !calledReposResolve", url)
 		}
 		if !calledGet {
 			t.Errorf("%s: !calledGet", url)
@@ -177,9 +173,8 @@ func TestRepo_Error_Get(t *testing.T) {
 func TestRepoRev_OK(t *testing.T) {
 	c := newTest()
 
-	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -203,9 +198,6 @@ func TestRepoRev_OK(t *testing.T) {
 	} else if !reflect.DeepEqual(m, wantMeta) {
 		t.Fatalf("meta mismatch:\n%s", metaDiff(m, wantMeta))
 	}
-	if !*calledReposResolve {
-		t.Error("!calledReposResolve")
-	}
 	if !calledGet {
 		t.Error("!calledGet")
 	}
@@ -222,8 +214,7 @@ func TestRepoRev_Error(t *testing.T) {
 			continue
 		}
 
-		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := backend.Mocks.Repos.MockGet(t, 1)
+		calledGet := backend.Mocks.Repos.MockGetByURI(t, req.repo, 1)
 		var calledReposResolveRev bool
 		backend.Mocks.Repos.ResolveRev = func(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error) {
 			calledReposResolveRev = true
@@ -233,9 +224,6 @@ func TestRepoRev_Error(t *testing.T) {
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
 			continue
-		}
-		if !*calledReposResolve {
-			t.Errorf("%s: !calledReposResolve", url)
 		}
 		if !*calledGet {
 			t.Errorf("%s: !calledGet", url)
@@ -249,9 +237,8 @@ func TestRepoRev_Error(t *testing.T) {
 func TestBlob_OK(t *testing.T) {
 	c := newTest()
 
-	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -281,9 +268,6 @@ func TestBlob_OK(t *testing.T) {
 	} else if !reflect.DeepEqual(m, wantMeta) {
 		t.Fatalf("meta mismatch:\n%s", metaDiff(m, wantMeta))
 	}
-	if !*calledReposResolve {
-		t.Error("!calledReposResolve")
-	}
 	if !calledGet {
 		t.Error("!calledGet")
 	}
@@ -298,8 +282,7 @@ func TestBlob_OK(t *testing.T) {
 func TestBlob_NotFound_NonFile(t *testing.T) {
 	c := newTest()
 
-	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := backend.Mocks.Repos.MockGet(t, 1)
+	calledGet := backend.Mocks.Repos.MockGetByURI(t, "r", 1)
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
 	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
@@ -310,9 +293,6 @@ func TestBlob_NotFound_NonFile(t *testing.T) {
 
 	if _, err := getForTest(c, "/r@v/-/blob/d", http.StatusNotFound); err != nil {
 		t.Fatal(err)
-	}
-	if !*calledReposResolve {
-		t.Error("!calledReposResolve")
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
@@ -333,8 +313,7 @@ func TestBlob_Error(t *testing.T) {
 			continue
 		}
 
-		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := backend.Mocks.Repos.MockGet(t, 1)
+		calledGet := backend.Mocks.Repos.MockGetByURI(t, req.repo, 1)
 		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
 		var calledRepoTreeGet bool
 		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
@@ -345,9 +324,6 @@ func TestBlob_Error(t *testing.T) {
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
 			continue
-		}
-		if !*calledReposResolve {
-			t.Errorf("%s: !calledReposResolve", url)
 		}
 		if !*calledGet {
 			t.Errorf("%s: !calledGet", url)
@@ -386,9 +362,8 @@ func TestDefRedirect_OK(t *testing.T) {
 func TestTree_OK(t *testing.T) {
 	c := newTest()
 
-	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
 	var calledGet bool
-	backend.Mocks.Repos.Get = func(ctx context.Context, op *sourcegraph.RepoSpec) (*sourcegraph.Repo, error) {
+	backend.Mocks.Repos.GetByURI = func(ctx context.Context, uri string) (*sourcegraph.Repo, error) {
 		calledGet = true
 		return &sourcegraph.Repo{
 			ID:          1,
@@ -418,9 +393,6 @@ func TestTree_OK(t *testing.T) {
 	} else if !reflect.DeepEqual(m, wantMeta) {
 		t.Fatalf("meta mismatch:\n%s", metaDiff(m, wantMeta))
 	}
-	if !*calledReposResolve {
-		t.Error("!calledReposResolve")
-	}
 	if !calledGet {
 		t.Error("!calledGet")
 	}
@@ -435,8 +407,7 @@ func TestTree_OK(t *testing.T) {
 func TestTree_NotFound_NonDir(t *testing.T) {
 	c := newTest()
 
-	calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, "r", 1)
-	calledGet := backend.Mocks.Repos.MockGet(t, 1)
+	calledGet := backend.Mocks.Repos.MockGetByURI(t, "r", 1)
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
 	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
 		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
@@ -447,9 +418,6 @@ func TestTree_NotFound_NonDir(t *testing.T) {
 
 	if _, err := getForTest(c, "/r@v/-/tree/f", http.StatusNotFound); err != nil {
 		t.Fatal(err)
-	}
-	if !*calledReposResolve {
-		t.Error("!calledReposResolve")
 	}
 	if !*calledGet {
 		t.Error("!calledGet")
@@ -470,8 +438,7 @@ func TestTree_Error(t *testing.T) {
 			continue
 		}
 
-		calledReposResolve := backend.Mocks.Repos.MockResolve_Local(t, req.repo, 1)
-		calledGet := backend.Mocks.Repos.MockGet(t, 1)
+		calledGet := backend.Mocks.Repos.MockGetByURI(t, req.repo, 1)
 		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
 		var calledRepoTreeGet bool
 		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
@@ -482,9 +449,6 @@ func TestTree_Error(t *testing.T) {
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
 			t.Errorf("%s: %s", url, err)
 			continue
-		}
-		if !*calledReposResolve {
-			t.Errorf("%s: !calledReposResolve", url)
 		}
 		if !*calledGet {
 			t.Errorf("%s: !calledGet", url)

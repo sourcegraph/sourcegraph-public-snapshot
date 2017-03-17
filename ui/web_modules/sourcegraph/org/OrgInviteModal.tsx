@@ -1,15 +1,13 @@
 import * as React from "react";
 
 import { Org, OrgMember } from "sourcegraph/api";
-import { Router, RouterLocation } from "sourcegraph/app/router";
+import { Router } from "sourcegraph/app/router";
 import { Button, Heading, Table, User } from "sourcegraph/components";
 import { LocationStateModal } from "sourcegraph/components/Modal";
-import * as styles from "sourcegraph/components/styles/modal.css";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
 
 interface Props {
-	location: RouterLocation;
 	org: Org;
 	member: OrgMember | null;
 	onInvite: ([]: Array<Object>) => void;
@@ -17,11 +15,6 @@ interface Props {
 
 interface State { isValidForm: boolean; }
 
-const sx = {
-	maxWidth: "800px",
-	marginLeft: "auto",
-	marginRight: "auto",
-};
 const rowBorderSx = {
 	borderBottomWidth: 1,
 	borderColor: colors.blueGrayL3(0.5),
@@ -100,70 +93,61 @@ export class OrgInviteModal extends React.Component<Props, State>  {
 			return null;
 		}
 
-		return (
-			<div>
-				<LocationStateModal router={this.context.router} modalName="orgInvite" location={this.props.location}>
-					<div style={{ paddingTop: "50px" }}>
-						<div className={styles.modal} style={sx}>
-							<Heading underline="blue" level={3}>Invite Teammate</Heading>
-							<p>Enter a valid email address to invite your teamate to join {org.Login} on Sourcegraph</p>
-							<div style={{ marginTop: whitespace[3], marginBottom: whitespace[3] }}>
-								<Table style={{ width: "100%" }}>
-									<thead>
-										<tr>
-											<td style={rowBorderSx}>
-												<Heading level={6}>
-													Organization member
-												</Heading>
-											</td>
-											<td
-												style={Object.assign({},
-													rowBorderSx,
-													{
-														textAlign: "center",
-														padding: "15px 0",
-														whiteSpace: "nowrap",
-													})
-												}>
-											</td>
-											<td
-												style={Object.assign({},
-													rowBorderSx,
-													{
-														textAlign: "center",
-														padding: "15px 0",
-														whiteSpace: "nowrap",
-													})
-												}>
-											</td>
-										</tr>
-									</thead>
-									<tbody>
-										<tr>
-											<td style={rowBorderSx} width="30%">
-												<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} />
-											</td>
-											<td style={Object.assign({}, rowBorderSx, { textAlign: "left" })} width="50%">
-												<input
-													onChange={this._validateEmail.bind(this)}
-													type="email"
-													required={true}
-													placeholder="Email address"
-													ref={(el) => this.email = el}
-													style={{ boxSizing: "border-box", width: "100%" }}
-													defaultValue={member.Email || ""} />
-											</td>
-											<td style={rowBorderSx} width="20%">
-												<Button onClick={this.onSubmit.bind(this)} disabled={!this.state.isValidForm} style={{ float: "right" }} color="blue">Invite</Button>
-											</td>
-										</tr>
-									</tbody>
-								</Table>
-							</div>
-						</div>
-					</div>
-				</LocationStateModal>
+		return <LocationStateModal modalName="orgInvite" title="Invite teammate" style={{ maxWidth: 800 }}>
+			<p>Enter a valid email address to invite your teamate to join {org.Login} on Sourcegraph</p>
+			<div style={{ marginTop: whitespace[3], marginBottom: whitespace[3] }}>
+				<Table style={{ width: "100%" }}>
+					<thead>
+						<tr>
+							<td style={rowBorderSx}>
+								<Heading level={6}>
+									Organization member
+								</Heading>
+							</td>
+							<td
+								style={Object.assign({},
+									rowBorderSx,
+									{
+										textAlign: "center",
+										padding: "15px 0",
+										whiteSpace: "nowrap",
+									})
+								}>
+							</td>
+							<td
+								style={Object.assign({},
+									rowBorderSx,
+									{
+										textAlign: "center",
+										padding: "15px 0",
+										whiteSpace: "nowrap",
+									})
+								}>
+							</td>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td style={rowBorderSx} width="30%">
+								<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} />
+							</td>
+							<td style={Object.assign({}, rowBorderSx, { textAlign: "left" })} width="50%">
+								<input
+									onChange={this._validateEmail.bind(this)}
+									type="email"
+									required={true}
+									placeholder="Email address"
+									ref={(el) => this.email = el}
+									style={{ boxSizing: "border-box", width: "100%" }}
+									defaultValue={member.Email || ""} />
+							</td>
+							<td style={rowBorderSx} width="20%">
+								<Button onClick={this.onSubmit.bind(this)} disabled={!this.state.isValidForm} style={{ float: "right" }} color="blue">Invite</Button>
+							</td>
+						</tr>
+					</tbody>
+				</Table>
 			</div>
-		);
+		</LocationStateModal>;
 	}
 }

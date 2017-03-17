@@ -39,13 +39,6 @@
 	composes: subheader tc from typography;
 }
 
-/* Repo Main */
-.tree_search_modal {
-	composes: f4 from typography;
-	composes: col_9 from grid;
-	composes: modal from "sourcegraph/components/styles/modal.css";
-}
-
 .outer_container {
 	display: flex;
 	flex-direction: column;

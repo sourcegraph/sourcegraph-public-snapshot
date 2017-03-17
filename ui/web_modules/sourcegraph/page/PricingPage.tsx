@@ -9,26 +9,27 @@ import * as base from "sourcegraph/components/styles/_base.css";
 import { Checkmark } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
 import * as styles from "sourcegraph/page/Page.css";
-import * as AnalyticsConstants from "sourcegraph/util/constants/AnalyticsConstants";
+import { Events, PAGE_PRICING } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 
 export function PricingPage({ location }: { location: RouterLocation }): JSX.Element {
 	const privateScopeRegEx = /(^repo,)|(,repo$)|(,repo,)|(^repo$)/;
 	const hasPrivateAccess = context.gitHubToken ? privateScopeRegEx.test(context.gitHubToken.scope) : false;
 
 	let communityPlanButton: JSX.Element = <LocationStateToggleLink href="/join" modalName="join" location={location}
-		onToggle={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "community", page_name: AnalyticsConstants.PAGE_PRICING })}>
+		onToggle={(v) => Events.PricingCTA_Clicked.logEvent({ plan: "community", page_name: PAGE_PRICING })}>
 		<div style={{ width: "200px", margin: "auto", }}><Button block={true} className={styles.plan_cta || ""} color="orange">Sign up for free</Button></div>
 	</LocationStateToggleLink>;
 	let personalPlanButton: JSX.Element = <LocationStateToggleLink href="/join" modalName="join" location={location}
-		onToggle={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "personal", page_name: AnalyticsConstants.PAGE_PRICING })}>
-		<Button block={true} className={styles.plan_cta || ""} color="purple">Start 14 days free</Button>
+		onToggle={(v) => Events.PricingCTA_Clicked.logEvent({ plan: "personal", page_name: PAGE_PRICING })}>
+		<Button block={true} className={styles.plan_cta || ""} color="purple">Sign up for free</Button>
 	</LocationStateToggleLink>;
 	let organizationPlanButton: JSX.Element = <LocationStateToggleLink href="/join" modalName="join" location={location}
-		onToggle={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "organization", page_name: AnalyticsConstants.PAGE_PRICING })}>
+		onToggle={(v) => Events.PricingCTA_Clicked.logEvent({ plan: "organization", page_name: PAGE_PRICING })}>
 		<Button block={true} className={styles.plan_cta || ""} color="green">Start 14 days free</Button>
 	</LocationStateToggleLink>;
 	let enterprisePlanButton: JSX.Element = <a href="mailto:sales@sourcegraph.com"
-		onClick={(v) => AnalyticsConstants.Events.PricingCTA_Clicked.logEvent({ plan: "enterprise", page_name: AnalyticsConstants.PAGE_PRICING })}>
+		onClick={(v) => Events.PricingCTA_Clicked.logEvent({ plan: "enterprise", page_name: PAGE_PRICING })}>
 		<Button block={true} className={styles.plan_cta || ""} color="blue">Contact us</Button>
 	</a>;
 
@@ -39,6 +40,8 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 			organizationPlanButton = <Button block={true} outline={true} color="green" className={styles.plan_cta_noop || ""}><Checkmark className={styles.icon} /> Full access during trial</Button>;
 		}
 	}
+
+	EventLogger.setUserViewedPricingPage();
 
 	return (
 		<div style={{ flex: 1 }}>
@@ -56,8 +59,8 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 						<div className={styles.plan_box}>
 							<Panel color="purple" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Personal</Heading>
-								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>9</span></Heading>
-								<span className={styles.amount_per}>per month</span>
+								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>free</span></Heading>
+								<span className={styles.amount_per}>free until Feb 1, 2018</span>
 							</Panel>
 							{personalPlanButton}
 						</div>
