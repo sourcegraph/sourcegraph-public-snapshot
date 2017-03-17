@@ -110,7 +110,7 @@ export class SidebarContribution extends Disposables {
 
 	private prepareInfoStore(prepare: boolean, id: string, fileEventProps: FileEventProps): void {
 		if (!prepare && this.globalFetchSubscription) {
-			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
+			// this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
 		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, loadingComplete: true, id, fileEventProps });
 	}
@@ -119,7 +119,7 @@ export class SidebarContribution extends Disposables {
 		if (id === this.currentID) {
 			infoStore.dispatch({ defData, refModel, loadingComplete, id, fileEventProps });
 		} else if (this.globalFetchSubscription) {
-			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
+			// this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
 	}
 
