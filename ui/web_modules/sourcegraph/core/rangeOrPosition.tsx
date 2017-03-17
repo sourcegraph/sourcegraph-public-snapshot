@@ -1,6 +1,7 @@
 import { Position } from "@sourcegraph/vscode-languageserver-types";
 
 import { IPosition, IRange } from "vs/editor/common/editorCommon";
+import { IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 
 // RangeOrPosition represents a range or position.
 export class RangeOrPosition {
@@ -167,12 +168,8 @@ export class RangeOrPosition {
 	}
 }
 
-export interface AbsoluteLocation {
+export interface AbsoluteLocation extends IWorkspaceRevState {
 	repo: string;
-	commitID: string;
 	path: string;
 	selection: IRange | null;
-	zapRev?: string;
-	zapRef?: string;
-	branch?: string;
 }

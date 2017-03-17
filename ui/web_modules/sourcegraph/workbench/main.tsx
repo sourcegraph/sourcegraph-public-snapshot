@@ -25,6 +25,7 @@ import { IModeService } from "vs/editor/common/services/modeService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
+import { IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 import "vs/workbench/electron-browser/main.contribution";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
 import { TextFileEditorModel } from "vs/workbench/services/textfile/common/textFileEditorModel";
@@ -60,7 +61,7 @@ function fullHeightDiv(): HTMLDivElement {
 /**
  * init bootraps workbench creation.
  */
-export function init(resource: URI, zapRev?: string, zapRef?: string, commitID?: string, branch?: string): InitializedWorkbench {
+export function init(resource: URI, revState?: IWorkspaceRevState): InitializedWorkbench {
 	if (initializedWorkbench) {
 		return initializedWorkbench;
 	}
@@ -71,7 +72,7 @@ export function init(resource: URI, zapRev?: string, zapRef?: string, commitID?:
 	const domElement = fullHeightDiv();
 	parent.appendChild(domElement);
 	const workspace = resource.with({ fragment: "" });
-	const services = setupServices(domElement, workspace, zapRev, zapRef, commitID, branch);
+	const services = setupServices(domElement, workspace, revState);
 	configurePreStartup(services);
 	window.localStorage.setItem("enablePreviewSCM", "true"); // TODO: move this.
 
@@ -95,15 +96,15 @@ export function init(resource: URI, zapRev?: string, zapRef?: string, commitID?:
 		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
 	};
 
-	initExtensionHost(workspace, { zapRev, zapRef, commitID, branch });
+	initExtensionHost(workspace, revState);
 
 	configurePostStartup(services);
 	workbenchListeners.forEach(cb => cb(true));
 
 	if (!workbenchStore.isInitialized) {
-		workbenchStore.init({ diffMode: Boolean(zapRef) });
+		workbenchStore.init({ diffMode: Boolean(revState && revState.zapRef) });
 	} else {
-		workbenchStore.dispatch({ diffMode: Boolean(zapRef) });
+		workbenchStore.dispatch({ diffMode: Boolean(revState && revState.zapRef) });
 	}
 
 	initializedWorkbench = {

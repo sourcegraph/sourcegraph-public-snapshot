@@ -1,3 +1,5 @@
+import { IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
+
 import { context } from "sourcegraph/app/context";
 
 /**
@@ -30,11 +32,7 @@ export interface InitializationOptions {
 	/**
 	 * revState is the current revision state at the time of initialization.
 	 */
-	revState?: {
-		zapRef?: string,
-		commitID?: string,
-		branch?: string
-	};
+	revState?: IWorkspaceRevState;
 
 	context: typeof context;
 

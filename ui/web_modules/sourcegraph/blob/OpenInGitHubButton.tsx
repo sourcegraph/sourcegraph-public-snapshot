@@ -2,6 +2,7 @@ import { hover } from "glamor";
 import * as React from "react";
 
 import { IDisposable } from "vs/base/common/lifecycle";
+import { IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { Button } from "sourcegraph/components";
@@ -26,7 +27,7 @@ interface Props {
 }
 
 interface State {
-	revState?: { zapRev?: string, commitID?: string, branch?: string };
+	revState?: IWorkspaceRevState;
 }
 
 export class OpenInGitHubButton extends React.Component<Props, State> {

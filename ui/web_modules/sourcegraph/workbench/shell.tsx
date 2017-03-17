@@ -56,7 +56,7 @@ export class WorkbenchShell extends React.Component<Props, State> {
 
 		const { repo, commitID, path } = this.props;
 		const resource = URIUtils.pathInRepo(repo, commitID, path);
-		const { workbench, services, domElement } = init(resource, this.props.zapRev, this.props.zapRef, this.props.commitID, this.props.branch);
+		const { workbench, services, domElement } = init(resource, this.props);
 		registerEditorCallbacks();
 		this.workbench = workbench;
 		this.services = services;

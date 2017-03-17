@@ -15,7 +15,7 @@ import { IChoiceService, IMessageService } from "vs/platform/message/common/mess
 import "vs/platform/opener/browser/opener.contribution";
 import { ISearchService } from "vs/platform/search/common/search";
 import { IWindowService, IWindowsService } from "vs/platform/windows/common/windows";
-import { IWorkspace, IWorkspaceContextService, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { IWorkspace, IWorkspaceContextService, IWorkspaceRevState, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
 import { ITreeExplorerService } from "vs/workbench/parts/explorers/common/treeExplorerService";
 import { IWorkspaceConfigurationService } from "vs/workbench/services/configuration/common/configuration";
@@ -47,7 +47,7 @@ export let Services: ServicesAccessor;
 // Others, like ThemeService, will probably be implemented someday, so users
 // can customize color themes. When they are implemented, we can either use the
 // VSCode ones and override some methods, or we can write our own from scratch.
-export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRev?: string, zapRef?: string, commitID?: string, branch?: string): ServiceCollection {
+export function setupServices(domElement: HTMLDivElement, workspace: URI, revState?: IWorkspaceRevState): ServiceCollection {
 	const [services, instantiationService] = StaticServices.init({});
 
 	const set = (identifier, impl) => {
@@ -64,7 +64,7 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI, zapRev
 	// service.
 	services.set(IWorkspaceContextService, new WorkspaceContextService({
 		resource: workspace,
-		revState: { zapRev, zapRef, commitID, branch },
+		revState,
 	}));
 
 	set(IUntitledEditorService, UntitledEditorService);
