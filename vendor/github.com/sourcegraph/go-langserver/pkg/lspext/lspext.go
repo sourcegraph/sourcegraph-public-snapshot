@@ -10,10 +10,9 @@ import (
 
 // WorkspaceSymbolParams is the extension workspace/symbol parameter type.
 type WorkspaceSymbolParams struct {
-	Query        string           `json:"query,omitempty"`
-	Limit        int              `json:"limit"`
-	Symbol       SymbolDescriptor `json:"symbol,omitempty"`
-	IncludeHover bool             `json:"includeHover,omitempty"`
+	Query  string           `json:"query,omitempty"`
+	Limit  int              `json:"limit"`
+	Symbol SymbolDescriptor `json:"symbol,omitempty"`
 }
 
 // WorkspaceReferencesParams is parameters for the `workspace/xreferences` extension
@@ -42,15 +41,6 @@ type ReferenceInformation struct {
 
 	// Symbol is metadata information describing the symbol being referenced.
 	Symbol SymbolDescriptor `json:"symbol"`
-}
-
-// Augmented SymbolInformation
-// TODO: add docstring and push this upstream
-type SymbolInformation struct {
-	lsp.SymbolInformation
-
-	// hover info
-	Hover []lsp.MarkedString `json:"hover"`
 }
 
 // SymbolDescriptor represents information about a programming construct like a
