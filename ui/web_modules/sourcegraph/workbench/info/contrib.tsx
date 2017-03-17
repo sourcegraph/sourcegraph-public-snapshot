@@ -149,11 +149,8 @@ export class SidebarContribution extends Disposables {
 		}
 		const editorService = Services.get(IEditorService) as IEditorService;
 		const model = this.editor.getModel();
-		const pos = normalisePosition(model, this.editor.getPosition());
 		const selection = this.editor.getSelection();
-		if (this.isIdentifier(model, pos)) {
-			editorService.openEditor({ resource: model.uri, options: { selection } });
-		}
+		editorService.openEditor({ resource: model.uri, options: { selection } });
 	}
 
 	private mouseUp = (e: IEditorMouseEvent): void => {
