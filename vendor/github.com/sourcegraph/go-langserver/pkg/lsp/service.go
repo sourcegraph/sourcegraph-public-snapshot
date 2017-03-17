@@ -197,7 +197,7 @@ type CompletionList struct {
 
 type Hover struct {
 	Contents []MarkedString `json:"contents,omitempty"`
-	Range    Range          `json:"range"`
+	Range    *Range         `json:"range,omitempty"`
 }
 
 type MarkedString struct {

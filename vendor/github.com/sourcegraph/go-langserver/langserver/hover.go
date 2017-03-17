@@ -39,10 +39,11 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 		comments := packageDoc(pkg.Files, node.Name)
 
 		// Package statement idents don't have an object, so try that separately.
+		r := rangeForNode(fset, node)
 		if pkgName := packageStatementName(fset, pkg.Files, node); pkgName != "" {
 			return &lsp.Hover{
 				Contents: maybeAddComments(comments, []lsp.MarkedString{{Language: "go", Value: "package " + pkgName}}),
-				Range:    rangeForNode(fset, node),
+				Range:    &r,
 			}, nil
 		}
 		return nil, fmt.Errorf("type/object not found at %+v", params.Position)
@@ -122,9 +123,10 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 		contents = append(contents, lsp.MarkedString{Language: "go", Value: extra})
 	}
 
+	r := rangeForNode(fset, node)
 	return &lsp.Hover{
 		Contents: contents,
-		Range:    rangeForNode(fset, node),
+		Range:    &r,
 	}, nil
 }
 
