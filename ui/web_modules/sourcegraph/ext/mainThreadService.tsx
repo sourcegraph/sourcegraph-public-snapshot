@@ -13,7 +13,7 @@ import { IThreadService } from "vs/workbench/services/thread/common/threadServic
 function asLoggingProtocol(protocol: IMessagePassingProtocol): IMessagePassingProtocol {
 
 	protocol.onMessage(msg => {
-		console.log("%c[Extension \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console 
+		console.log("%c[Extension \u2192 Window]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
 	});
 
 	return {
@@ -21,7 +21,7 @@ function asLoggingProtocol(protocol: IMessagePassingProtocol): IMessagePassingPr
 
 		send(msg: any): void {
 			protocol.send(msg);
-			console.log("%c[Window \u2192 Extension]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console 
+			console.log("%c[Window \u2192 Extension]%c[len: " + strings.pad(msg.length, 5, " ") + "]", "color: darkgreen", "color: grey", msg); // tslint:disable-line no-console
 		}
 	};
 }
@@ -154,6 +154,22 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 						}
 				}
 				break;
+
+			case "eExtHostDocumentsAndEditors":
+				switch (path) {
+					case "$acceptDocumentsAndEditorsDelta":
+						const arg = args[0];
+						if (arg.addedDocuments && arg.addedDocuments.length > 0) {
+							// assume the first doucment is for the same workspace as the rest
+							return routeToWorkspaceHost(arg.addedDocuments[0].url as URI);
+						} else if (arg.removedDocuments) {
+							// assume again the first document is for the same workspace as the rest
+							return routeToWorkspaceHost(URI.parse(arg.removedDocuments[0]));
+						} else if (arg.addedEditors) {
+							return routeToWorkspaceHost(arg.addedEditors[0].document as URI);
+						}
+						break;
+				}
 		}
 
 		// Default to routing requests to the current workspace.
