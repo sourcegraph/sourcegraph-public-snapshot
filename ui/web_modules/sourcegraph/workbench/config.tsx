@@ -15,7 +15,6 @@ import { layout } from "sourcegraph/components/utils";
 
 // Set the height of files in the file tree explorer.
 (FileRenderer as any).ITEM_HEIGHT = 30;
-
 // Set the height of the blob title.
 (EditorGroupsControl as any).EDITOR_TITLE_HEIGHT = layout.EDITOR_TITLE_HEIGHT;
 
