@@ -13,7 +13,7 @@ import { RouteProps, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { registerEditorCallbacks, registerQuickopenListeners, setEditorDiffState, syncEditorWithRouterProps, toggleQuickopen as quickopen } from "sourcegraph/editor/config";
+import { registerEditorCallbacks, registerQuickopenListeners, setEditorDiffState, syncEditorWithRouterProps, toggleQuickopen as quickopen, updateEditorArea, updateWorkspace } from "sourcegraph/editor/config";
 import { urlWithRev } from "sourcegraph/repo/routes";
 import { init, unmount, workbenchStore } from "sourcegraph/workbench/main";
 import { Services } from "sourcegraph/workbench/services";
@@ -49,20 +49,25 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		this.disposables.push(workbenchStore.subscribe(e => this.setState(e)));
 	}
 
-	domRef(domElement: HTMLDivElement): void {
-		if (!domElement) {
+	domRef(parent: HTMLDivElement): void {
+		if (!parent) {
 			return;
 		}
 
 		const { repo, commitID, path } = this.props;
 		const resource = URIUtils.pathInRepo(repo, commitID, path);
-		[this.workbench, this.services] = init(domElement, resource, this.props.zapRef, this.props.commitID, this.props.branch);
+		const { workbench, services, domElement } = init(resource, this.props.zapRef, this.props.commitID, this.props.branch);
 		registerEditorCallbacks();
-
-		this.layout();
-		syncEditorWithRouterProps(this.props);
-
+		this.workbench = workbench;
+		this.services = services;
 		this.currWorkspace = (this.services.get(IWorkspaceContextService) as IWorkspaceContextService).getWorkspace();
+		updateWorkspace(this.props).then(() => {
+			parent.appendChild(domElement);
+			updateEditorArea(this.props).then(() => {
+				this.layout();
+			});
+		});
+
 	}
 
 	componentWillMount(): void {
@@ -75,7 +80,7 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		// This can be implemented by vscode, but without knowing all scenarios in which we
 		// want to display an overlay we've left it the Sourcegraph application's responsibility for toggling visibilty.
 		const modalOverlay = document.querySelector(".workbench-modal-overlay") as any;
-		registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay.style.visibility = "hidden");
+		registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay && (modalOverlay.style.visibility = "hidden"));
 
 		const contextService = Services.get(IWorkspaceContextService);
 		contextService.onWorkspaceUpdated(workspace => {

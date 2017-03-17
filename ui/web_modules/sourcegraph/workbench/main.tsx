@@ -43,11 +43,13 @@ export interface WorkbenchState {
 }
 
 export const workbenchStore = new MiniStore<WorkbenchState>();
-let initializedWorkbench: {
-	workbench: Workbench,
-	services: ServiceCollection,
-	parent: HTMLDivElement
-} | null = null;
+
+interface InitializedWorkbench {
+	workbench: Workbench;
+	services: ServiceCollection;
+	domElement: HTMLDivElement;
+}
+let initializedWorkbench: InitializedWorkbench | null = null;
 
 function fullHeightDiv(): HTMLDivElement {
 	const div = document.createElement("div");
@@ -58,17 +60,14 @@ function fullHeightDiv(): HTMLDivElement {
 /**
  * init bootraps workbench creation.
  */
-export function init(reactDomElement: HTMLDivElement, resource: URI, zapRef?: string, commitID?: string, branch?: string): [Workbench, ServiceCollection] {
+export function init(resource: URI, zapRef?: string, commitID?: string, branch?: string): InitializedWorkbench {
 	if (initializedWorkbench) {
-		const { workbench, services, parent } = initializedWorkbench;
-		reactDomElement.appendChild(parent);
-		return [workbench, services];
+		return initializedWorkbench;
 	}
 
 	const parent = fullHeightDiv();
 	parent.style.display = "flex";
 	parent.style.flexDirection = "column";
-	reactDomElement.appendChild(parent);
 	const domElement = fullHeightDiv();
 	parent.appendChild(domElement);
 	const workspace = resource.with({ fragment: "" });
@@ -108,11 +107,11 @@ export function init(reactDomElement: HTMLDivElement, resource: URI, zapRef?: st
 	}
 
 	initializedWorkbench = {
-		parent,
+		domElement: parent,
 		workbench,
 		services,
 	};
-	return [workbench, services];
+	return initializedWorkbench;
 }
 
 const workbenchListeners = new Set<(shown: boolean) => void>();
