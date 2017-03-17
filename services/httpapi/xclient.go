@@ -84,10 +84,10 @@ func (c *xclient) Close() error {
 	return c.Client.Close()
 }
 
-func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInformation, includeHover bool) (map[string][]lspext.SymbolInformation, error) {
+func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInformation, includeHover bool) (map[string][]lsp.SymbolInformation, error) {
 	span := opentracing.SpanFromContext(ctx)
 
-	symInfos := make(map[string][]lspext.SymbolInformation)
+	symInfos := make(map[string][]lsp.SymbolInformation)
 	// For each symbol in the xdefinition-result-derived query, compute the symbol information for that symbol
 	for _, sym := range syms {
 
@@ -142,8 +142,8 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 
 		// Issue a workspace/symbol for each repository that provides a definition for the symbol
 		for _, rootPath := range rootPaths {
-			params := &lspext.WorkspaceSymbolParams{Symbol: sym.Symbol, Limit: 10, IncludeHover: includeHover}
-			var repoSymInfos []lspext.SymbolInformation
+			params := &lspext.WorkspaceSymbolParams{Symbol: sym.Symbol, Limit: 10}
+			var repoSymInfos []lsp.SymbolInformation
 			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, "workspace/symbol", params, &repoSymInfos); err != nil {
 				return nil, errors.Wrap(err, "resolving symbol to location")
 			}
