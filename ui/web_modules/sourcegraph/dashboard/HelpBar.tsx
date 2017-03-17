@@ -1,11 +1,10 @@
 import { $ as glamorSelector, css, lastChild } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
-import { handleIntercomToggle } from "sourcegraph/app/GlobalNav/UserMenu";
 import { BookClosed } from "sourcegraph/components/symbols/Primaries";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
-import { Events, PAGE_LOCATION_DASHBOARD_SIDEBAR } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 const listItemStyle = css(
 	glamorSelector(":hover .inner", { color: colors.white() }),
@@ -61,11 +60,11 @@ const documentationClicked = (event: React.MouseEvent<HTMLAnchorElement>) => {
 	Events.ReposPageDocsButton_Clicked.logEvent();
 };
 
-const videosClicked = (event: React.MouseEvent<HTMLAnchorElement>) => {
-	Events.ReposPageVideoButton_Clicked.logEvent();
-};
+// const videosClicked = (event: React.MouseEvent<HTMLAnchorElement>) => {
+// 	Events.ReposPageVideoButton_Clicked.logEvent();
+// };
 
-const contactClicked = (event: React.MouseEvent<HTMLAnchorElement>) => {
-	Events.ReposPageContactButton_Clicked.logEvent();
-	handleIntercomToggle(PAGE_LOCATION_DASHBOARD_SIDEBAR);
-};
+// const contactClicked = (event: React.MouseEvent<HTMLAnchorElement>) => {
+// 	Events.ReposPageContactButton_Clicked.logEvent();
+// 	handleIntercomToggle(PAGE_LOCATION_DASHBOARD_SIDEBAR);
+// };
