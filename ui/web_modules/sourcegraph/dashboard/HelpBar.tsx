@@ -2,7 +2,7 @@ import { $ as glamorSelector, css, lastChild } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 import { handleIntercomToggle } from "sourcegraph/app/GlobalNav/UserMenu";
-import { BookClosed, Compose, VideoCamera } from "sourcegraph/components/symbols/Primaries";
+import { BookClosed } from "sourcegraph/components/symbols/Primaries";
 import { colors } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
 import { Events, PAGE_LOCATION_DASHBOARD_SIDEBAR } from "sourcegraph/tracking/constants/AnalyticsConstants";
@@ -29,13 +29,13 @@ const svgStyle = {
 };
 
 export function HelpBar(): JSX.Element {
-	const createSvg = <Compose style={svgStyle} width={24} />;
+	// const createSvg = <Compose style={svgStyle} width={24} />;
 	const bookClosed = <BookClosed style={svgStyle} width={24} />;
-	const videoCamera = <VideoCamera style={svgStyle} width={24} />;
+	// const videoCamera = <VideoCamera style={svgStyle} width={24} />;
 	return <ul style={{ margin: "1.5rem", marginRight: 0, listStyle: "none", padding: 0 }}>
 		<HelpBarListItem text="Documentation" href="/docs" onClick={documentationClicked} svg={bookClosed} />
-		<HelpBarListItem text="Videos" href="/videos" onClick={videosClicked} svg={videoCamera} />
-		<HelpBarListItem text="Contact" onClick={contactClicked} svg={createSvg} />
+		{/*<HelpBarListItem text="Videos" href="/videos" onClick={videosClicked} svg={videoCamera} />
+		<HelpBarListItem text="Contact" onClick={contactClicked} svg={createSvg} />*/}
 	</ul>;
 }
 
