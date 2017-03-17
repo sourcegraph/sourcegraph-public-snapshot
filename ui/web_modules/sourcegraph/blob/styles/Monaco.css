@@ -129,9 +129,11 @@
 	background-image: url('data:image/svg+xml, <svg viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path d="M12.5240625,16.27845 C12.2315625,16.571325 11.7568125,16.5717 11.4639375,16.278825 C11.4635625,16.278825 11.4631875,16.278825 11.4631875,16.27845 L5.8366875,10.64895 C5.5396875,10.359825 5.5329375,9.8847 5.8220625,9.5877 C6.1111875,9.291075 6.5863125,9.2847 6.8833125,9.57345 L6.8975625,9.5877 L11.9934375,14.686575 L17.0896875,9.5877 C17.3788125,9.290325 17.8535625,9.28395 18.1509375,9.5727 C18.4483125,9.86145 18.4546875,10.336575 18.1659375,10.633575 C18.1610625,10.638825 18.1561875,10.644075 18.1509375,10.64895 L12.5240625,16.27845 Z" id="Fill" fill="white"></path></svg>');
 }
 
-:global .explorer-folders-view .monaco-tree-row .sub-content {
-	align-items: center !important;
+:global .explorer-folders-view .monaco-tree-row .sub-content::before {
+	flex:none;
 }
+
+
 
 /* Style Code lens */
 
@@ -409,7 +411,7 @@
 /* Status bar */
 
 :global .statusbar-item.left.statusbar-entry > a {
-	padding-top: 5px !important;
+	padding-top: 4px !important;
 }
 
 :global .monaco-workbench > .part.statusbar > .statusbar-item a {
