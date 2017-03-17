@@ -48,6 +48,10 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 		height: 32,
 		margin: whitespace[0],
 	};
+
+	const emails = context.emails && context.emails.EmailAddrs || null;
+	const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
+
 	return (
 		<div>
 			<PageTitle title="Zap beta" />
@@ -111,7 +115,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 				}}>
 					<div style={stepSx}>1</div>
 					<p>To install and run the Zap server, open a terminal and paste:</p>
-					<code style={codeSx}>{`sh <(curl -sSf httcodes://sourcegraph.com/install/zap)`}</code>
+					<code style={codeSx}>{`sh <(curl -sSf https://sourcegraph.com/install/zap${primaryEmail && "?email=" + primaryEmail})`}</code>
 				</div>
 
 				<div style={{
@@ -119,7 +123,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 					marginTop: whitespace[3],
 				}}>
 					<div style={stepSx}>2</div>
-					<p>To authenticate Zap against your Sourcegraph account, type zap auth into the terminal and follow the prompts.</p>
+					<p>To authenticate Zap with your Sourcegraph account, type zap auth into the terminal and follow the prompts.</p>
 					<code style={codeSx}>zap auth</code>
 				</div>
 
@@ -138,10 +142,8 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 					marginTop: whitespace[3],
 				}}>
 					<div style={stepSx}>4</div>
-					<p>To install and run the Zap server, open a terminal and paste:</p>
+					<p>To begin using Zap on a repository, open a terminal and run:</p>
 					<code style={codeSx}>zap init</code>
-					<code style={codeSx}>zap remote set origin wss://sourcegraph.com/.api/zap github.com/your_org/your_repo</code>
-					<code style={codeSx}>zap checkout -upstream origin -overwrite -create your_branch@your_unix_user_name</code>
 				</div>
 
 				<div style={{
@@ -150,7 +152,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 				}}>
 					<div style={stepSx}>5</div>
 					<p>Open Visual Studio Code in your repo's directory.</p>
-					<code style={codeSx}>code.</code>
+					<code style={codeSx}>code .</code>
 				</div>
 
 				<div style={{
