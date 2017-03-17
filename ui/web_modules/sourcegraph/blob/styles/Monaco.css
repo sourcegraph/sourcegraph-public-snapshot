@@ -409,7 +409,7 @@
 /* Status bar */
 
 :global .statusbar-item.left.statusbar-entry > a {
-	padding-top: 5px !important;
+	padding-top: 4px !important;
 }
 
 :global .monaco-workbench > .part.statusbar > .statusbar-item a {
