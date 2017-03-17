@@ -29,16 +29,16 @@ function getPhabricatorUsername() {
 	return null;
 }
 
-var pilotUsers = [
-    "matt",
-    "uforic",
-    "richard",
-    "sourcegraph-test",
-    "uber",
-];
+var pilotUsers = {
+    "matt": true,
+    "uforic": true,
+    "richard": true,
+    "sourcegraph-test": true,
+    "uber": true,
+};
 
 var phabricatorUsername = getPhabricatorUsername();
-if (phabricatorUsername && pilotUsers.find(function(pilotUser) {return pilotUser === phabricatorUsername})) {
+if (phabricatorUsername && pilotUsers[phabricatorUsername]) {
     var script = document.createElement("script");
     script.type = "text/javascript";
     script.defer = true;

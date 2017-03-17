@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -22,7 +23,8 @@ type serverRepo struct {
 	workspaceCancel func()    // tear down workspace
 	config          RepoConfiguration
 
-	refLocks mutexmap.MutexMap
+	refLocks     mutexmap.MutexMap
+	refUpdatedAt map[string]time.Time
 }
 
 // acquireRef acquires an exclusive lock that allows the holder to
@@ -34,6 +36,7 @@ type serverRepo struct {
 //
 //   defer repo.acquireRef(refName)()
 func (s *serverRepo) acquireRef(refName string) (release func()) {
+	CheckRefName(refName)
 	lock := s.refLocks.Get(refName)
 	lock.Lock()
 	return lock.Unlock
@@ -88,9 +91,32 @@ func (s *Server) getRepoIfExists(ctx context.Context, logger log.Logger, repoDir
 	return s.repos[repoDir], nil
 }
 
+// resolveRefShortName resolves a ref fuzzy name to the ref it refers
+// to. For example, a fuzzy name of "foo" would resolve to
+// "branch/foo" (assuming no ref exists whose full name is "foo").
+//
+// Only the "ref/info" method should resolve fuzzy names; other
+// methods should require full ref names to avoid ambiguity.
+func (s *serverRepo) lookupRefByFuzzyName(fuzzy string) *refdb.Ref {
+	ref := s.refdb.Lookup(fuzzy)
+	if ref == nil {
+		ref = s.refdb.Lookup("branch/" + fuzzy)
+		if ref != nil {
+			CheckRefName(ref.Name)
+		}
+	}
+	return ref
+}
+
 func (c *serverConn) handleRepoWatch(ctx context.Context, logger log.Logger, repo *serverRepo, params RepoWatchParams) error {
 	if params.Repo == "" {
 		return &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: "repo is required"}
+	}
+
+	for _, ref := range params.Refspecs {
+		if ref != "*" {
+			CheckRefName(ref)
+		}
 	}
 
 	if err := params.validate(); err != nil {
@@ -193,4 +219,22 @@ func matchAnyRefspec(refspecs []string, ref string) bool {
 		}
 	}
 	return false
+}
+
+var testDoNotSetTime bool // used in tests to avoid needing to mock time.Now()
+
+// setRefUpdatedAt updates the ref's updated-at time.
+//
+// TODO(sqs): these are never deleted; entries should be deleted when
+// the ref is deleted.
+func (s *serverRepo) setRefUpdatedAt(ref string) {
+	if testDoNotSetTime {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.refUpdatedAt == nil {
+		s.refUpdatedAt = map[string]time.Time{}
+	}
+	s.refUpdatedAt[ref] = time.Now()
 }

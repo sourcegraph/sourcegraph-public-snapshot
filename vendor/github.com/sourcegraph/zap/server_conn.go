@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	stdlog "log"
-	"math"
-	"math/rand"
 	"os"
 	"runtime"
 	"sort"
@@ -18,7 +16,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
+	"github.com/sourcegraph/zap/server/refdb"
 )
 
 // isWatching returns whether c is watching the given ref (either via
@@ -55,37 +55,13 @@ const (
 )
 
 var (
-	DebugMu sync.Mutex // guards all vars in this block
+	// Vars in this block are guarded by debugutil.Mu.
 
-	DebugSimulatedLatency, _          = time.ParseDuration(os.Getenv("SIMULATED_LATENCY"))
-	DebugRandomizeSimulatedLatency, _ = strconv.ParseBool(os.Getenv("RANDOMIZE_SIMULATED_LATENCY"))
-
-	// TestSimulateResetAfterErrorInSendToUpstream is used in tests only
-	// and causes SendToUpstream to simulate an error condition that
-	// triggers this server to reset the ref on its upstream.
+	// TestSimulateResetAfterErrorInSendToUpstream is used in tests
+	// only and causes SendToUpstream to simulate an error condition
+	// that triggers this server to reset the ref on its upstream.
 	TestSimulateResetAfterErrorInSendToUpstream bool
 )
-
-func debugSimulateLatency() {
-	DebugMu.Lock()
-	if DebugSimulatedLatency == 0 && !DebugRandomizeSimulatedLatency {
-		DebugMu.Unlock()
-		return
-	}
-	d := DebugSimulatedLatency
-	if DebugRandomizeSimulatedLatency {
-		if d == 0 {
-			d = 10 * time.Millisecond // default
-		}
-		x := math.Abs(rand.NormFloat64()*0.6 + 1)
-		if x < 0.1 || x > 3 {
-			x = 1
-		}
-		d = time.Duration(float64(d) * x)
-	}
-	DebugMu.Unlock()
-	time.Sleep(d)
-}
 
 func newServerConn(ctx context.Context, server *Server, stream jsonrpc2.ObjectStream) *serverConn {
 	c := &serverConn{
@@ -136,7 +112,7 @@ func (c *serverConn) send(ctx context.Context, logger log.Logger, item refUpdate
 	ctx, cancel := context.WithTimeout(ctx, sendTimeout)
 	defer cancel()
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	// No wait for the client to reply (we use Notify not Call). We
 	// are the server and we are the source of truth. If the client
@@ -363,9 +339,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params RefIdentifier
+		var params RefInfoParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
+		}
+		if !params.Fuzzy {
+			CheckRefName(params.Ref)
 		}
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.Repo)
@@ -378,8 +357,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		// user.
 		//
 		// TODO(sqs): make this more robust
-		if strings.HasPrefix(params.Ref, "refs/remotes/") {
-			parts := strings.SplitN(strings.TrimPrefix(params.Ref, "refs/remotes/"), "/", 2)
+		if !params.Fuzzy && IsRemoteRef(params.Ref) { // TODO(sqs): remove "!params.Fuzzy" when we remove the panic-check from IsRemoteRef
+			parts := strings.SplitN(strings.TrimPrefix(params.Ref, "remote/"), "/", 2)
 			remote := parts[0]
 			branch := parts[1]
 			repoConfig, err := repo.getConfig()
@@ -393,7 +372,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 
-		ref := repo.refdb.Lookup(params.Ref)
+		var ref *refdb.Ref
+		if params.Fuzzy {
+			ref = repo.lookupRefByFuzzyName(params.Ref)
+		} else {
+			ref = repo.refdb.Lookup(params.Ref)
+		}
 		if ref == nil {
 			return nil, &jsonrpc2.Error{
 				Code: int64(ErrorCodeRefNotExists),
@@ -403,7 +387,10 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				Message: fmt.Sprintf("ref not found: %s\n\nHINT: Maybe you need to run 'zap auth'?", params.Ref),
 			}
 		}
-		res := RefInfo{Target: ref.Target}
+		res := RefInfo{
+			RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name}, // use resolved (not fuzzy) name
+			Target:        ref.Target,
+		}
 		if ref.IsSymbolic() {
 			ref, err = repo.refdb.Resolve(ref.Name)
 			if err != nil {
@@ -429,6 +416,9 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			if res.State.History == nil {
 				res.State.History = []ot.WorkspaceOp{}
 			}
+			repo.mu.Lock()
+			res.UpdatedAt = repo.refUpdatedAt[ref.Name]
+			repo.mu.Unlock()
 
 			// Extra diagnostics
 			res.Wait = o.ot.Wait
@@ -437,7 +427,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		}
 
 		// Add watchers.
-		if watchers := c.server.watchers(params); len(watchers) > 0 {
+		if watchers := c.server.watchers(params.RefIdentifier); len(watchers) > 0 {
 			res.Watchers = make([]string, len(watchers))
 			for i, wc := range watchers {
 				res.Watchers[i] = wc.init.ID
@@ -455,6 +445,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckRefName(params.RefIdentifier.Ref)
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
 		if err != nil {
@@ -520,6 +511,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckRefName(params.RefIdentifier.Ref)
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
 		if err != nil {
@@ -539,6 +531,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckSymbolicRefName(params.RefIdentifier.Ref)
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
 		if err != nil {
@@ -614,6 +607,9 @@ func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
 				},
 				History: refObj.history(),
 			}
+			repo.mu.Lock()
+			info.UpdatedAt = repo.refUpdatedAt[ref.Name]
+			repo.mu.Unlock()
 			release()
 		}
 
@@ -624,6 +620,10 @@ func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
 		}
 		sort.Strings(info.Watchers)
 
+		CheckRefName(info.RefIdentifier.Ref)
+		if info.Target != "" {
+			CheckRefName(info.Target)
+		}
 		refs = append(refs, info)
 	}
 	return refs

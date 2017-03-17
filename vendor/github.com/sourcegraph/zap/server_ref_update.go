@@ -12,12 +12,15 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
 	"github.com/sourcegraph/zap/ws"
 )
 
 func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, logger log.Logger, params RefUpdateDownstreamParams, endpoint string) error {
+	CheckRefName(params.RefIdentifier.Ref)
+
 	if s.TestBlockHandleRefUpdateFromUpstream != nil {
 		s.TestBlockHandleRefUpdateFromUpstream <- params
 	}
@@ -44,7 +47,7 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, logger log.Log
 
 	// Update the remote tracking branch.
 	remoteTrackingParams := params
-	remoteTrackingParams.Ref = remoteTrackingRef(remote, params.RefIdentifier.Ref)
+	remoteTrackingParams.Ref = remoteTrackingBranchRef(remote, params.RefIdentifier.Ref)
 	remoteTrackingParams.Ack = false
 	if err := s.updateRemoteTrackingRef(ctx, logger, repo, remoteTrackingParams); err != nil {
 		return err
@@ -72,6 +75,8 @@ func (s *Server) handleRefUpdateFromUpstream(ctx context.Context, logger log.Log
 }
 
 func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger, repo *serverRepo, params RefUpdateDownstreamParams) error {
+	CheckRefName(params.RefIdentifier.Ref)
+
 	logger = log.With(logger, "update-remote-tracking-ref", params.RefIdentifier.Ref, "params", params)
 	level.Debug(logger).Log()
 
@@ -84,7 +89,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
 	if params.Ack {
@@ -157,6 +162,7 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 			}
 		}
 
+		repo.setRefUpdatedAt(ref.Name)
 		if err := repo.refdb.Write(*ref, true, oldRef, refdb.RefLogEntry{}); err != nil {
 			return err
 		}
@@ -166,6 +172,8 @@ func (s *Server) updateRemoteTrackingRef(ctx context.Context, logger log.Logger,
 }
 
 func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, logger log.Logger, repo *serverRepo, ref refdb.Ref, params RefUpdateDownstreamParams, refConfig RefConfiguration, acquireRef bool) error {
+	CheckRefName(params.RefIdentifier.Ref)
+
 	logger = log.With(logger, "update-local-tracking-ref", params.RefIdentifier.Ref)
 	level.Info(logger).Log("params", params)
 
@@ -192,7 +200,7 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	if params.Delete {
 		if err := repo.refdb.Delete(params.RefIdentifier.Ref, ref, refdb.RefLogEntry{}); err != nil {
@@ -299,8 +307,9 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 					}
 				}
 			}
-			debugSimulateLatency()
+			debugutil.SimulateLatency()
 		}
+		repo.setRefUpdatedAt(ref.Name)
 		if err := repo.refdb.Write(ref, true, &oldRef, refdb.RefLogEntry{}); err != nil {
 			return err
 		}
@@ -349,6 +358,8 @@ func compareRefBaseInfo(p RefBaseInfo, r serverRef) error {
 }
 
 func (s *Server) handleSymbolicRefUpdate(ctx context.Context, logger log.Logger, sender *serverConn, repo *serverRepo, params RefUpdateSymbolicParams) error {
+	CheckSymbolicRefName(params.RefIdentifier.Ref)
+
 	logger = log.With(logger, "update-symbolic-ref", params.RefIdentifier.Ref, "old", params.OldTarget, "new", params.Target)
 	level.Info(logger).Log()
 
@@ -373,7 +384,7 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, logger log.Logger,
 		}
 	}
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	var old *refdb.Ref
 	if params.OldTarget != "" {
@@ -393,6 +404,8 @@ func (s *Server) handleSymbolicRefUpdate(ctx context.Context, logger log.Logger,
 }
 
 func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.Logger, repo *serverRepo, params RefUpdateUpstreamParams, sender *serverConn, applyLocally, acquireRef bool) error {
+	CheckRefName(params.RefIdentifier.Ref)
+
 	if err := params.validate(); err != nil {
 		return &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidParams,
@@ -400,7 +413,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 		}
 	}
 
-	if strings.HasPrefix(params.RefIdentifier.Ref, "refs/remotes/") {
+	if strings.HasPrefix(params.RefIdentifier.Ref, "remote/") {
 		return &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRefUpdateInvalid),
 			Message: fmt.Sprintf("remote tracking ref %q cannot be updated by a downstream (only by the upstream remote it tracks)", params.RefIdentifier.Ref),
@@ -444,7 +457,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	if params.Delete {
 		// Delete ref.
@@ -466,6 +479,10 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 	} else {
 		// Create or update ref.
 		oldRef := ref
+		if oldRef != nil {
+			tmp := *oldRef
+			oldRef = &tmp
+		}
 		if params.Current == nil {
 			if ref != nil && !params.Force {
 				return &jsonrpc2.Error{
@@ -633,9 +650,10 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 					}
 				}
 			}
-			debugSimulateLatency()
+			debugutil.SimulateLatency()
 		}
 
+		repo.setRefUpdatedAt(ref.Name)
 		if err := repo.refdb.Write(*ref, true, oldRef, refdb.RefLogEntry{}); err != nil {
 			return err
 		}

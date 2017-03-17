@@ -72,6 +72,7 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckRefName(params.RefIdentifier.Ref)
 		if c.refUpdateCallback != nil {
 			c.startRefUpdateLoop.Do(func() {
 				go func() {
@@ -107,6 +108,7 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckSymbolicRefName(params.RefIdentifier.Ref)
 		if c.refUpdateSymbolicCallback != nil {
 			// The order of symbolic refs is not as important as
 			// non-symbolic refs, so we can just process them async.
@@ -187,22 +189,28 @@ func (c *Client) RepoList(ctx context.Context) ([]string, error) {
 
 // RefConfigure sends the "ref/configure" request to the server.
 func (c *Client) RefConfigure(ctx context.Context, params RefConfigureParams) error {
+	CheckRefName(params.RefIdentifier.Ref)
 	return c.c.Call(ctx, "ref/configure", params, nil)
 }
 
 // RefUpdate sends the "ref/update" request to the server.
 func (c *Client) RefUpdate(ctx context.Context, params RefUpdateUpstreamParams) error {
+	CheckRefName(params.RefIdentifier.Ref)
 	return c.c.Call(ctx, "ref/update", params, nil)
 }
 
 // RefUpdateSymbolic sends the "ref/updateSymbolic" request to the
 // server.
 func (c *Client) RefUpdateSymbolic(ctx context.Context, params RefUpdateSymbolicParams) error {
+	CheckSymbolicRefName(params.RefIdentifier.Ref)
 	return c.c.Call(ctx, "ref/updateSymbolic", params, nil)
 }
 
 // RefInfo sends the "ref/info" request to the server.
-func (c *Client) RefInfo(ctx context.Context, params RefIdentifier) (*RefInfo, error) {
+func (c *Client) RefInfo(ctx context.Context, params RefInfoParams) (*RefInfo, error) {
+	if !params.Fuzzy {
+		CheckRefName(params.Ref)
+	}
 	var result *RefInfo
 	err := c.c.Call(ctx, "ref/info", params, &result)
 	return result, err
@@ -235,11 +243,13 @@ func (c *Client) WorkspaceRemove(ctx context.Context, params WorkspaceRemovePara
 
 // WorkspaceCheckout sends the "workspace/checkout" request to the server.
 func (c *Client) WorkspaceCheckout(ctx context.Context, params WorkspaceCheckoutParams) error {
+	CheckRefName(params.Ref)
 	return c.c.Call(ctx, "workspace/checkout", params, nil)
 }
 
 // WorkspaceReset sends the "workspace/reset" request to the server.
 func (c *Client) WorkspaceReset(ctx context.Context, params WorkspaceResetParams) error {
+	CheckRefName(params.Ref)
 	return c.c.Call(ctx, "workspace/reset", params, nil)
 }
 

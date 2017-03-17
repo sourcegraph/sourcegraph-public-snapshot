@@ -87,7 +87,58 @@ func (d *Decoder) Decode(dst interface{}, src map[string][]string) error {
 	if len(errors) > 0 {
 		return errors
 	}
+	return d.checkRequired(t, src, "")
+}
+
+// checkRequired checks whether requred field empty
+//
+// check type t recursively if t has struct fields, and prefix is same as parsePath: in dotted notation
+//
+// src is the source map for decoding, we use it here to see if those required fields are included in src
+func (d *Decoder) checkRequired(t reflect.Type, src map[string][]string, prefix string) error {
+	struc := d.cache.get(t)
+	if struc == nil {
+		// unexpect, cache.get never return nil
+		return errors.New("cache fail")
+	}
+
+	for _, f := range struc.fields {
+		if f.typ.Kind() == reflect.Struct {
+			err := d.checkRequired(f.typ, src, prefix+f.alias+".")
+			if err != nil {
+				if !f.anon {
+					return err
+				}
+				// check embedded parent field.
+				err2 := d.checkRequired(f.typ, src, prefix)
+				if err2 != nil {
+					return err
+				}
+			}
+		}
+		if f.required {
+			key := f.alias
+			if prefix != "" {
+				key = prefix + key
+			}
+			if isEmpty(f.typ, src[key]) {
+				return fmt.Errorf("%v is empty", key)
+			}
+		}
+	}
 	return nil
+}
+
+// isEmpty returns true if value is empty for specific type
+func isEmpty(t reflect.Type, value []string) bool {
+	if len(value) == 0 {
+		return true
+	}
+	switch t.Kind() {
+	case boolType, float32Type, float64Type, intType, int8Type, int32Type, int64Type, stringType, uint8Type, uint16Type, uint32Type, uint64Type:
+		return len(value[0]) == 0
+	}
+	return false
 }
 
 // decode fills a struct field using a parsed path.

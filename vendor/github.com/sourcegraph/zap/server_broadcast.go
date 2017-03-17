@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -20,7 +21,7 @@ func (s *Server) broadcastRefUpdate(ctx context.Context, logger log.Logger, upda
 		panic("ctx == nil")
 	}
 
-	debugSimulateLatency()
+	debugutil.SimulateLatency()
 
 	var repo string
 	if nonSymbolic != nil {

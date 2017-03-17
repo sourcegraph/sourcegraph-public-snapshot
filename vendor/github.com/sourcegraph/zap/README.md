@@ -29,20 +29,8 @@ This assumes you have run `lerna bootstrap` already.
 
 Zap's core concepts are heavily inspired by Git's:
 
-* **workspace:** like a Git tree plus editor state and history: the contents of all files on disk in a directory tree, plus the contents of unsaved files in your editor, cursor positions for each user, and the current Git HEAD
-* **op** (short for "operation"): like a Git commit diff, but capable of representing changes to anything in the workspace (including cursor position and changes to unsaved files)
-* **rev** (short for "revision"): a sequential integer N that refers to a prior state of a ref (after only the first N ops were applied)
-* **ref** (short for "reference"): a name that refers to some version of a workspace (similar to how a Git ref refers to a commit and, indirectly, tree)
-  * **branch:** a ref of the form `refs/heads/branch` (where `branch` can be anything) that points to an active line of work
-  * **user branch:** a ref of the form `refs/heads/branch@user` (where `branch` and `user` can be anything) that by convention mirrors a single user's workspace (and should not be edited by anyone else)
-  * **shared branch:** all other refs of the form `refs/heads/branch` (where `branch` does not contain `@`), which by convention allow multiple clients editing
-* **repository:** like a Git repository, but stores Zap refs and ops instead of Git refs and objects
 
 #### Notes
-
-* `git checkout B` always resets and switches to the Zap branch `B@user`, clobbering any existing workspace state.
-  * If `git checkout B` switched to the shared ref `B`, then we'd have to handle merging the user's worktree with B's workspace state.
-  * It's OK to clobber the `B@user` workspace state because by convention that branch should always mirror the user's workspace, and Zap will immediately update that branch with the user's current workspace.
 
 ## Development notes
 
@@ -93,22 +81,6 @@ We create a snapshot in 2 ways:
 2. By applying an op to the previous snapshot in memory, when we receive an op from the remote server. (Why not just apply the op to the worktree directly and then create a snapshot by using method 1 above? Because there might be other changes made to the worktree while we're applying the op's changes, and our snapshot would then incorporate changes that weren't in the op. This would mean we wouldn't send some of those worktree changes to the server, and our local workspace would diverge erroneously from the server's workspace.)
 
 ### Using alongside Git
-
-Zap is designed to be easy to use for Git repositories.
-
-By convention, Zap branch names correspond to Git branch names:
-
-* When a user `alice` checks out a Git branch `b` (using `git checkout b`), their Zap client automatically checks out the Zap user branch `b@alice`.
-* If two users `alice` and `bob` want to collaboratively edit a Git branch `b` using Zap, they will typically use a Zap shared branch named `b` (which they check out by both running `zap checkout b`).
-
-The Zap client and server implementations also rely on Git:
-
-* The Zap server periodically writes the Zap workspace state for each Zap branch `b` to a Git commit at the Git ref `refs/zap/snaps/b`. TODO(sqs): implement this
-* When a user on a Zap branch `b` creates a Git commit locally, the Zap client automatically pushes it to the upstream's Git ref `refs/zap/b`.
-
-Applications that currently support Git can be gracefully enhanced with Zap support as follows.
-
-* TODO
 
 ### Tests
 

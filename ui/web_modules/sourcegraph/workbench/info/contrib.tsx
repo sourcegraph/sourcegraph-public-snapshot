@@ -110,7 +110,7 @@ export class SidebarContribution extends Disposables {
 
 	private prepareInfoStore(prepare: boolean, id: string, fileEventProps: FileEventProps): void {
 		if (!prepare && this.globalFetchSubscription) {
-			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
+			// this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
 		infoStore.dispatch({ defData: null, prepareData: { open: prepare }, loadingComplete: true, id, fileEventProps });
 	}
@@ -119,7 +119,7 @@ export class SidebarContribution extends Disposables {
 		if (id === this.currentID) {
 			infoStore.dispatch({ defData, refModel, loadingComplete, id, fileEventProps });
 		} else if (this.globalFetchSubscription) {
-			this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
+			// this.globalFetchSubscription.then(sub => sub && sub.unsubscribe());
 		}
 	}
 
@@ -149,11 +149,8 @@ export class SidebarContribution extends Disposables {
 		}
 		const editorService = Services.get(IEditorService) as IEditorService;
 		const model = this.editor.getModel();
-		const pos = normalisePosition(model, this.editor.getPosition());
 		const selection = this.editor.getSelection();
-		if (this.isIdentifier(model, pos)) {
-			editorService.openEditor({ resource: model.uri, options: { selection } });
-		}
+		editorService.openEditor({ resource: model.uri, options: { selection } });
 	}
 
 	private mouseUp = (e: IEditorMouseEvent): void => {

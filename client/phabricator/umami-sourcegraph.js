@@ -29,14 +29,14 @@ function getPhabricatorUsername() {
 	return null;
 }
 
-var pilotUsers = [
+var pilotUsers = {
 	/*
 	 * Fill in users for the Uber pilot here.
 	 */
-];
+};
 
 var phabricatorUsername = getPhabricatorUsername();
-if (phabricatorUsername && pilotUsers.find(function(pilotUser) {return pilotUser === phabricatorUsername})) {
+if (phabricatorUsername && pilotUsers[phabricatorUsername]) {
     var script = document.createElement("script");
     script.type = "text/javascript";
     script.defer = true;

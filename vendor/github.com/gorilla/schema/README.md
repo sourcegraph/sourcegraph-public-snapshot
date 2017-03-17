@@ -1,8 +1,10 @@
 schema
 ======
 [![GoDoc](https://godoc.org/github.com/gorilla/schema?status.svg)](https://godoc.org/github.com/gorilla/schema) [![Build Status](https://travis-ci.org/gorilla/schema.png?branch=master)](https://travis-ci.org/gorilla/schema)
+[![Sourcegraph](https://sourcegraph.com/github.com/gorilla/schema/-/badge.svg)](https://sourcegraph.com/github.com/gorilla/schema?badge)
 
-Package gorilla/schema fills a struct with form values.
+
+Package gorilla/schema converts structs to and from form values.
 
 ## Example
 
@@ -20,23 +22,42 @@ type Person struct {
 
 func MyHandler(w http.ResponseWriter, r *http.Request) {
     err := r.ParseForm()
-
     if err != nil {
         // Handle error
     }
 
-    person := &Person{}
-    decoder := schema.NewDecoder()
-
+    var person Person
+    
     // r.PostForm is a map of our POST form values
-    err := decoder.Decode(person, r.PostForm)
-
+    err := decoder.Decode(&person, r.PostForm)
     if err != nil {
         // Handle error
     }
 
     // Do something with person.Name or person.Phone
 }
+```
+
+Conversely, contents of a struct can be encoded into form values. Here's a variant of the previous example using the Encoder:
+
+```go
+var encoder = schema.NewEncoder()
+
+func MyHttpRequest() {
+    person := Person{"Jane Doe", "555-5555"}
+    form := url.Values{}
+
+    err := encoder.Encode(person, form)
+
+    if err != nil {
+        // Handle error
+    }
+
+    // Use form values, for example, with an http client
+    client := new(http.Client)
+    res, err := client.PostForm("http://my-api.test", form)
+}
+
 ```
 
 To define custom names for fields, use a struct tag "schema". To not populate certain fields, use a dash for the name and it will be ignored:
@@ -49,7 +70,7 @@ type Person struct {
 }
 ```
 
-The supported field types in the destination struct are:
+The supported field types in the struct are:
 
 * bool
 * float variants (float32, float64)

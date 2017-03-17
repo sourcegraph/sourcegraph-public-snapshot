@@ -60,6 +60,7 @@ class BrowserEnvironment implements IEnvironment {
 		this._prevZapRef = this._zapRef;
 		this._zapRef = ref;
 		this.zapRefChangeEmitter.fire(ref);
+		this.zapBranchChangeEmitter.fire(ref ? ref.replace(/^branch\//, "") : ref);
 	}
 
 	get prevZapRef(): string | undefined {
@@ -70,8 +71,14 @@ class BrowserEnvironment implements IEnvironment {
 		this._prevZapRef = ref;
 	}
 
-	get zapBranch(): string | undefined { return this._zapRef; }
-	get onDidChangeZapBranch(): vscode.Event<string | undefined> { return this.zapRefChangeEmitter.event; }
+	// On the web, the Zap branch is ALWAYS the Zap ref stripped of the "branch/" prefix.
+	get zapBranch(): string | undefined {
+		return this._zapRef ? this._zapRef.replace(/^branch\//, "") : this._zapRef;
+	}
+	private zapBranchChangeEmitter: vscode.EventEmitter<string | undefined> = new vscode.EventEmitter<string | undefined>();
+	get onDidChangeZapBranch(): vscode.Event<string | undefined> {
+		return this.zapBranchChangeEmitter.event;
+	}
 
 	asRelativePathInsideWorkspace(uri: vscode.Uri): string | null {
 		if (uri.scheme !== "git") { return null; }

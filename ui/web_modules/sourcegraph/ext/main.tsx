@@ -1,5 +1,5 @@
 import URI from "vs/base/common/uri";
-import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { IWorkspaceContextService, IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 
 import { context } from "sourcegraph/app/context";
@@ -25,7 +25,7 @@ const workspaces = new Set<string>();
  *
  * TODO(john): there is currently no cleanup of unused extension hosts / web workers.
  */
-export function init(workspace: URI, revState?: any): void {
+export function init(workspace: URI, revState?: IWorkspaceRevState): void {
 	registerExtHostContribution();
 	setupWorker(workspace, revState);
 	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w.resource, w.revState ? w.revState : undefined));
@@ -33,9 +33,13 @@ export function init(workspace: URI, revState?: any): void {
 
 let seqId = 0;
 
-export function setupWorker(workspace: URI, revState?: any): void {
+export function setupWorker(workspace: URI, revState?: IWorkspaceRevState): void {
 	if (workspaces.has(workspace.toString())) {
 		return;
+	}
+
+	if (revState && revState.zapRef && !/^branch\//.test(revState.zapRef)) {
+		throw new Error(`invalid Zap ref: ${JSON.stringify(revState.zapRef)} (no 'branch/' prefix)`);
 	}
 
 	workspaces.add(workspace.toString());

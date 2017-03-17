@@ -53,11 +53,11 @@ type Workspace interface {
 	Checkout(ctx context.Context, logger log.Logger, keepLocalChanges bool, ref, gitBase, gitBranch string, history []ot.WorkspaceOp, updateExternal func(ctx context.Context) error) (ot.WorkspaceOp, error)
 
 	// ResetToCurrentState returns a sequence of ops that, when
-	// applied to the base commit, would yield the exact current
+	// applied to the gitBaseCommit, would yield the exact current
 	// workspace state plus the state of buffered files in
 	// bufferFiles. (If bufferFiles is nil, the workspace's existing
 	// known buffer file contents are used.)
-	ResetToCurrentState(ctx context.Context, logger log.Logger, bufferFiles map[string]string) ([]ot.WorkspaceOp, error)
+	ResetToCurrentState(ctx context.Context, logger log.Logger, gitBaseCommit string, bufferFiles map[string]string) ([]ot.WorkspaceOp, error)
 
 	// Configure updates the configuration for the repository and
 	// workspace.
@@ -115,14 +115,14 @@ type Workspace interface {
 // both the branch and the workspace have different changes to the
 // same file.
 type WorkspaceCheckoutConflictError struct {
-	Branch      string         `json:"branch"`      // the name of the branch
+	Ref         string         `json:"ref"`         // the ref name (e.g., "branch/mybranch")
 	GitBase     string         `json:"gitBase"`     // the branch's Git base commit
 	BranchState ot.WorkspaceOp `json:"branchState"` // the composed branch history ops vs. the branch's Git base commit
 	Diff        ot.WorkspaceOp `json:"diff"`        // op describing workspace state vs. the branch state
 }
 
 func (e *WorkspaceCheckoutConflictError) Error() string {
-	return fmt.Sprintf("conflict checking out branch %q to workspace (branch %v and diff %v)", e.Branch, e.BranchState, e.Diff)
+	return fmt.Sprintf("conflict checking out ref %q to workspace (branch %v and diff %v)", e.Ref, e.BranchState, e.Diff)
 }
 
 // WorkspaceResetInfo describes a workspace reset that occurred. A
@@ -499,8 +499,8 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 				return nil, err
 			}
 			config := repoConfig.Refs[params.Ref]
-			trackingRefName := "refs/remotes/" + config.Upstream + "/" + params.Ref
-			trackingRef := repo.refdb.Lookup(trackingRefName)
+			trackingBranchRefName := remoteTrackingBranchRef(config.Upstream, params.Ref)
+			trackingRef := repo.refdb.Lookup(trackingBranchRefName)
 			if trackingRef != nil {
 				if err := ws.parent.reconcileRefWithTrackingRef(ctx, logger, repo, params.WorkspaceIdentifier.Ref("HEAD"), *ref, *trackingRef, config); err != nil {
 					return nil, err
@@ -560,14 +560,16 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 				Message: fmt.Sprintf("invalid ref %q for workspace reset (expected %q, which is the current HEAD)", params.Ref, ref.Name),
 			}
 		}
-		serverRef := ref.Object.(serverRef)
 
 		repo.mu.Lock()
 		workspace := repo.workspace
 		repo.mu.Unlock()
 
+		defer repo.acquireRef(ref.Name)()
+		serverRef := ref.Object.(serverRef)
+
 		// Synthesize a ref/update operation that resets the workspace.
-		resetOps, err := workspace.ResetToCurrentState(ctx, logger, params.BufferFiles)
+		resetOps, err := workspace.ResetToCurrentState(ctx, logger, serverRef.gitBase, params.BufferFiles)
 		if err != nil {
 			return nil, err
 		}
@@ -579,7 +581,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 			RefIdentifier: params.WorkspaceIdentifier.Ref(params.Ref),
 			Force:         true,
 			State:         refState,
-		}, c.parent, false, true); err != nil {
+		}, c.parent, false, false); err != nil {
 			return nil, err
 		}
 		return refState, nil

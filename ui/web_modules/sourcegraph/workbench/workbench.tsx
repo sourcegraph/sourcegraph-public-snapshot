@@ -74,7 +74,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			return <CloningRefresher relay={this.props.relay} />;
 		}
 
-		if (!repository.revState.commit && !repository.revState.zapRef) {
+		if (!repository.revState.commit && !repository.revState.zapRev) {
 			return <Error
 				code="404"
 				desc="Revision not found" />;
@@ -84,7 +84,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			return <Paywall repo={repository} />;
 		}
 
-		const commitID = repository.revState.zapRef ? repository.revState.zapRef.base : repository.revState.commit!.sha1;
+		const commitID = repository.revState.zapRev ? repository.revState.zapRev.base : repository.revState.commit!.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<BlobPageTitle repo={this.props.repo} path={path} />
 			{/* TODO(john): repo main takes the commit state for the 'y' hotkey, assume for now revState can be passed. */}
@@ -98,8 +98,9 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 					repo={repository.uri}
 					rev={this.props.rev}
 					commitID={commitID}
-					zapRef={repository.revState.zapRef ? this.props.rev! : undefined}
-					branch={repository.revState.zapRef ? repository.revState.zapRef.branch : undefined}
+					zapRev={repository.revState.zapRev && this.props.rev ? this.props.rev : undefined}
+					zapRef={repository.revState.zapRev ? repository.revState.zapRev.ref : undefined}
+					branch={repository.revState.zapRev ? repository.revState.zapRev.branch : undefined}
 					path={path}
 					selection={selection} />
 				<InfoPanelLifecycle repo={repository} fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
@@ -146,7 +147,8 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 						defaultBranch
 						expirationDate
 						revState(rev: $rev) {
-							zapRef {
+							zapRev {
+								ref
 								base
 								branch
 							}
@@ -169,7 +171,8 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 					defaultBranch
 					expirationDate
 					revState(rev: $rev) {
-						zapRef {
+						zapRev {
+							ref
 							base
 							branch
 						}

@@ -2,7 +2,7 @@ import { getModes } from "sourcegraph/util/features";
 
 const modes = getModes();
 
-const ignoredExtensions = new Set<string>(["md"]);
+const ignoredExtensions = new Set<string>(["md", "txt", "json", "yml"]);
 const supportedExtensions = new Set<string>(["go", "js", "jsx", "ts", "tsx"]);
 const betaExtensions = new Set<string>([]);
 if (modes.has("java")) {
