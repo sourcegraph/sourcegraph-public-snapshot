@@ -40,13 +40,18 @@ install-ext: install-lang
 install-lang:; cd lang && $(MAKE) install
 
 .PHONY: test
-test: test-main test-lang test-ext test-e2e
+test: test-main test-cmd test-lang test-ext test-e2e
 
 .PHONY: test-main
 test-main:
 	go get -d -t ./...
 	go test -i ./...
 	go list ./... | grep -v internal/e2e | grep -v cmd/zap | xargs go test -timeout 9m -race
+
+.PHONY: test-cmd
+test-cmd:
+	go get -d -t ./cmd/zap
+	go test -i ./cmd/zap
 	go install ./cmd/zap && go test -parallel 1 ./cmd/zap
 
 .PHONY: test-ext
@@ -57,14 +62,18 @@ test-lang:; cd lang && $(MAKE) test
 
 .PHONY: test-e2e
 test-e2e: install-lang install-ext
+	go get -d -t ./internal/e2e
 	go test -timeout 2m -v ./internal/e2e
 
 .PHONY: check
 check:; bash dev/check-generate-all
 
+.PHONY: watch-dep
+watch-dep:; go get sourcegraph.com/sqs/rego github.com/mattn/goreman
+
 .PHONY: watch
-watch:
-	(rego github.com/sourcegraph/zap/cmd/zap version) & (cd lang/js && yarn run watch) & (cd ext/vscode && yarn run watch)
+watch: watch-dep install
+	goreman -basedir $$PWD -f dev/Procfile start
 
 .PHONY: generate
 generate:; cd ot && go generate

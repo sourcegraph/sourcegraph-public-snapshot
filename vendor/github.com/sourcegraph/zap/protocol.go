@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
@@ -199,7 +200,7 @@ func (p RepoWatchParams) validate() error {
 }
 
 // RefIdentifier identifies a Zap ref. (A Zap branch named "B" is
-// equivalent to a Zap ref named "refs/heads/B".)
+// equivalent to a Zap ref named "branch/B".)
 type RefIdentifier struct {
 	Repo string `json:"repo"` // the repo that contains the Zap ref
 	Ref  string `json:"ref"`  // the Zap ref name
@@ -213,6 +214,20 @@ func (r RefIdentifier) String() string {
 		r.Ref = "<no-ref>"
 	}
 	return r.Repo + ":" + r.Ref
+}
+
+// IsRemoteRef reports whether ref refers to a remote ref (starts with
+// "remote/").
+func IsRemoteRef(ref string) bool {
+	CheckRefName(ref)
+	return strings.HasPrefix(ref, "remote/")
+}
+
+// IsBranchRef reports whether ref refers to a branch (starts with
+// "branch/").
+func IsBranchRef(ref string) bool {
+	CheckRefName(ref)
+	return strings.HasPrefix(ref, "branch/")
 }
 
 // RefListParams contains the parameters for the "ref/list" request.
@@ -456,6 +471,16 @@ type RefConfiguration struct {
 	// upstream, the server should clobber the upstream and replace
 	// the upstream with this ref's state.
 	Overwrite bool `json:"overwrite"`
+}
+
+// RefInfoParams contains the parameters for the "ref/info" request.
+type RefInfoParams struct {
+	RefIdentifier
+
+	// Fuzzy is whether (RefInfoParams).RefIdentifier.Ref should be
+	// treated as a fuzzy ref name. Example: A fuzzy ref name "foo" is
+	// resolved to "branch/foo" if no ref named "foo" exists.
+	Fuzzy bool `json:"fuzzy,omitempty"`
 }
 
 // RefInfo is the result from the remote "ref/info" request.

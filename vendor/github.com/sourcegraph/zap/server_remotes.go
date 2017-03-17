@@ -15,7 +15,7 @@ import (
 // server uses to communicate with the upstream remote server.
 type UpstreamClient interface {
 	RepoWatch(context.Context, RepoWatchParams) error
-	RefInfo(context.Context, RefIdentifier) (*RefInfo, error)
+	RefInfo(context.Context, RefInfoParams) (*RefInfo, error)
 	RefUpdate(context.Context, RefUpdateUpstreamParams) error
 	SetRefUpdateCallback(func(context.Context, RefUpdateDownstreamParams) error)
 	SetRefUpdateSymbolicCallback(f func(context.Context, RefUpdateSymbolicParams) error)

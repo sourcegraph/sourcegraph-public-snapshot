@@ -65,6 +65,8 @@ func (r serverRef) history() []ot.WorkspaceOp {
 //
 // The caller MUST hold the repo.acquireRef lock for the given ref.
 func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState, acquireRef bool) error {
+	CheckRefName(refID.Ref)
+
 	oldConfig := oldRepoConfig.Refs[refID.Ref]
 	newConfig := newRepoConfig.Refs[refID.Ref]
 
@@ -127,7 +129,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 				}
 				refObj.ot.UpstreamRevNumber = len(newRefState.History)
 			} else {
-				trackingRefName := "refs/remotes/" + newConfig.Upstream + "/" + refID.Ref
+				trackingRefName := "remote/" + newConfig.Upstream + "/" + refID.Ref
 				trackingRef := repo.refdb.Lookup(trackingRefName)
 				if trackingRef == nil {
 					return &jsonrpc2.Error{
@@ -329,8 +331,12 @@ func isLikelySymbolicRef(name string) bool {
 	return true
 }
 
-func remoteTrackingRef(remote, ref string) string {
-	return "refs/remotes/" + remote + "/" + ref
+// remoteTrackingBranchRef returns the full ref name of a remote
+// tracking branch. The branchRef arg should be of the form
+// "branch/foo" not just "foo".
+func remoteTrackingBranchRef(remote, branchRef string) string {
+	CheckRefName(branchRef)
+	return "remote/" + remote + "/" + branchRef
 }
 
 func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRepo, localRepoName, remoteName string, err error) {

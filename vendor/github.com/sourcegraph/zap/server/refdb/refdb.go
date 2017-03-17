@@ -90,7 +90,7 @@ type RefDB interface {
 //
 // A Ref is immutable.
 type Ref struct {
-	Name string // ref name (e.g., "refs/heads/branch@user")
+	Name string // ref name (e.g., "branch/foo")
 
 	Target string // for symbolic refs, the target ref name
 

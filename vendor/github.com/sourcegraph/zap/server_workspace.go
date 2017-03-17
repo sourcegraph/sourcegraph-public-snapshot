@@ -115,14 +115,14 @@ type Workspace interface {
 // both the branch and the workspace have different changes to the
 // same file.
 type WorkspaceCheckoutConflictError struct {
-	Branch      string         `json:"branch"`      // the name of the branch
+	Ref         string         `json:"ref"`         // the ref name (e.g., "branch/mybranch")
 	GitBase     string         `json:"gitBase"`     // the branch's Git base commit
 	BranchState ot.WorkspaceOp `json:"branchState"` // the composed branch history ops vs. the branch's Git base commit
 	Diff        ot.WorkspaceOp `json:"diff"`        // op describing workspace state vs. the branch state
 }
 
 func (e *WorkspaceCheckoutConflictError) Error() string {
-	return fmt.Sprintf("conflict checking out branch %q to workspace (branch %v and diff %v)", e.Branch, e.BranchState, e.Diff)
+	return fmt.Sprintf("conflict checking out ref %q to workspace (branch %v and diff %v)", e.Ref, e.BranchState, e.Diff)
 }
 
 // WorkspaceResetInfo describes a workspace reset that occurred. A
@@ -499,8 +499,8 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 				return nil, err
 			}
 			config := repoConfig.Refs[params.Ref]
-			trackingRefName := "refs/remotes/" + config.Upstream + "/" + params.Ref
-			trackingRef := repo.refdb.Lookup(trackingRefName)
+			trackingBranchRefName := remoteTrackingBranchRef(config.Upstream, params.Ref)
+			trackingRef := repo.refdb.Lookup(trackingBranchRefName)
 			if trackingRef != nil {
 				if err := ws.parent.reconcileRefWithTrackingRef(ctx, logger, repo, params.WorkspaceIdentifier.Ref("HEAD"), *ref, *trackingRef, config); err != nil {
 					return nil, err
