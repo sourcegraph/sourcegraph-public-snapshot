@@ -314,7 +314,7 @@ export interface HTTPSConfig {
 
 export interface Hover {
 	contents?: any[];
-	range: any;
+	range?: any;
 }
 
 export interface Hunk {
