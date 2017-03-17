@@ -11,7 +11,7 @@ import { IFileService } from "vs/platform/files/common/files";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { IStorageService } from "vs/platform/storage/common/storage";
 import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
-import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
+import { IWorkspaceContextService, IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
 import { ExplorerViewlet as VSExplorerViewlet } from "vscode/src/vs/workbench/parts/files/browser/explorerViewlet";
@@ -121,11 +121,11 @@ insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .mon
 interface TitleProps {
 	repoDisplayName: string;
 	repo: string;
-	revState?: { zapRef?: string, commitID?: string, branch?: string };
+	revState?: IWorkspaceRevState;
 }
 
 interface TitleState {
-	revState?: { zapRef?: string, commitID?: string, branch?: string };
+	revState?: IWorkspaceRevState;
 	diffMode: boolean;
 }
 
@@ -195,7 +195,7 @@ class Title extends React.Component<TitleProps, Partial<TitleState>> {
 					{this.props.repoDisplayName}
 				</Link>
 			</Heading>
-			{this.state.revState && this.state.revState.zapRef &&
+			{this.state.revState && this.state.revState.zapRev &&
 				<Button onClick={() => this.setDiffMode(!this.state.diffMode)} color={this.state.diffMode ? "blue" : "blueGray"}
 					{...hover({ backgroundColor: !this.state.diffMode ? `${colors.blueGrayD2()} !important` : "" }) }
 					style={{

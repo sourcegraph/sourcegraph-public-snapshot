@@ -12,7 +12,7 @@ export class URIUtils {
 	// pathInRepo returns a URI to a file at a specific (optional)
 	// revision in a Git repository. It is a Sourcegraph-specific
 	// convention.
-	static pathInRepo(repo: string, rev: string | null, path: string): URI {
+	static pathInRepo(repo: string, rev: string | null | undefined, path: string): URI {
 		if (!rev) {
 			rev = "HEAD";
 		}

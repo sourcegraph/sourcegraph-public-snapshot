@@ -12,7 +12,19 @@ type WorkspaceIdentifier struct {
 
 // Ref returns a RefIdentifier for the named ref in the workspace.
 func (w WorkspaceIdentifier) Ref(name string) RefIdentifier {
+	CheckRefName(name)
 	return RefIdentifier{Repo: w.Dir, Ref: name}
+}
+
+// TEMPORARY: Remove when we remove the CheckXyz panic helpers.
+func (w WorkspaceIdentifier) RefNoCheck(name string) RefIdentifier {
+	return RefIdentifier{Repo: w.Dir, Ref: name}
+}
+
+// Branch returns a RefIdentifier for the named branch in the workspace.
+func (w WorkspaceIdentifier) Branch(branch string) RefIdentifier {
+	CheckBranchName(branch)
+	return w.Ref("branch/" + branch)
 }
 
 // WorkspaceAddParams contains parameters for the "workspace/add"

@@ -6,7 +6,7 @@ import { IDisposable } from "vs/base/common/lifecycle";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { ToggleButton } from "sourcegraph/components";
 import { layout, typography, whitespace } from "sourcegraph/components/utils";
-import { isOnZapRef } from "sourcegraph/editor/config";
+import { isOnZapRev } from "sourcegraph/editor/config";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { isCodeLensEnabled } from "sourcegraph/workbench/ConfigurationService";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
@@ -19,7 +19,7 @@ interface Props {
 
 interface State {
 	on: boolean;
-	isViewingZapRef: boolean;
+	isViewingZapRev: boolean;
 }
 
 @autobind
@@ -31,13 +31,13 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 		this.disposables = [];
 		this.state = {
 			on: isCodeLensEnabled(),
-			isViewingZapRef: isOnZapRef(),
+			isViewingZapRev: isOnZapRev(),
 		};
 	}
 
 	componentDidMount(): void {
 		this.disposables.push(onWorkspaceUpdated(workspace => this.setState({
-			isViewingZapRef: Boolean(workspace.revState && workspace.revState!.zapRef),
+			isViewingZapRev: Boolean(workspace.revState && workspace.revState!.zapRef),
 		} as State)));
 	}
 
@@ -56,7 +56,7 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 	}
 
 	showAuthorsKeyHandler(event: KeyboardEvent & Event): void {
-		if (isOnZapRef() || this.state.isViewingZapRef) {
+		if (isOnZapRev() || this.state.isViewingZapRev) {
 			return;
 		}
 		// Don't toggle if in an input on textarea
@@ -77,7 +77,7 @@ export class AuthorsToggleButton extends React.Component<Props, State> {
 			position: "relative",
 		}, typography.size[7]);
 
-		return this.state.isViewingZapRef ? null : <div style={{ display: "inline-block", marginLeft: whitespace[2] }} { ...layout.hide.sm}>
+		return this.state.isViewingZapRev ? null : <div style={{ display: "inline-block", marginLeft: whitespace[2] }} { ...layout.hide.sm}>
 			<ToggleButton
 				size="small"
 				on={this.state.on}

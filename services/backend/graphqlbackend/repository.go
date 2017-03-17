@@ -63,9 +63,9 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 }
 
 func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
-	var zapRef *zapRefResolver
+	var zapRev *zapRevResolver
 
-	// TODO(matt,john): remove this hack, this zapRefInfo call was causing a front-end error
+	// TODO(matt,john): remove this hack, this zapRevInfo call was causing a front-end error
 	// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
 	if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
 		// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
@@ -74,10 +74,17 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 			if err != nil {
 				return nil, err
 			}
-			zapRefInfo, _ := cl.RefInfo(ctx, zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev})
+			zapRevInfo, _ := cl.RefInfo(ctx, zap.RefInfoParams{
+				RefIdentifier: zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev},
+				Fuzzy:         true,
+			})
 			// TODO(john): add error-specific handling?
-			if zapRefInfo != nil && zapRefInfo.State != nil {
-				zapRef = &zapRefResolver{zapRef: zapRefSpec{Base: zapRefInfo.State.GitBase, Branch: zapRefInfo.State.GitBranch}}
+			if zapRevInfo != nil && zapRevInfo.State != nil {
+				zapRev = &zapRevResolver{zapRev: zapRevSpec{
+					Ref:    zapRevInfo.RefIdentifier.Ref,
+					Base:   zapRevInfo.State.GitBase,
+					Branch: zapRevInfo.State.GitBranch,
+				}}
 
 				// We want to use the Git revision that the Zap branch was based on,
 				// as all of the Zap operations were originating from that revision.
@@ -85,11 +92,11 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 				// (e.g., the user may be on a revision of the master branch that is
 				// just a few commits behind.)
 				return &commitStateResolver{
-					zapRef: zapRef,
+					zapRev: zapRev,
 					commit: &commitResolver{
 						commit: commitSpec{
 							RepoID:        r.repo.ID,
-							CommitID:      zapRefInfo.State.GitBase,
+							CommitID:      zapRevInfo.State.GitBase,
 							DefaultBranch: r.repo.DefaultBranch,
 						},
 					},
@@ -104,7 +111,7 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 	})
 	if err != nil {
 		if err == vcs.ErrRevisionNotFound {
-			return &commitStateResolver{zapRef: zapRef}, nil
+			return &commitStateResolver{zapRev: zapRev}, nil
 		}
 		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
 			return &commitStateResolver{cloneInProgress: true}, nil
@@ -112,7 +119,7 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 		return nil, err
 	}
 
-	return &commitStateResolver{zapRef: zapRef,
+	return &commitStateResolver{zapRev: zapRev,
 		commit: &commitResolver{
 			commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch},
 			repo:   *r.repo,

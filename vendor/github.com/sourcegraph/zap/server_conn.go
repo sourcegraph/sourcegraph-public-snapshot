@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
+	"github.com/sourcegraph/zap/server/refdb"
 )
 
 // isWatching returns whether c is watching the given ref (either via
@@ -338,9 +339,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params RefIdentifier
+		var params RefInfoParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
+		}
+		if !params.Fuzzy {
+			CheckRefName(params.Ref)
 		}
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.Repo)
@@ -353,8 +357,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		// user.
 		//
 		// TODO(sqs): make this more robust
-		if strings.HasPrefix(params.Ref, "refs/remotes/") {
-			parts := strings.SplitN(strings.TrimPrefix(params.Ref, "refs/remotes/"), "/", 2)
+		if !params.Fuzzy && IsRemoteRef(params.Ref) { // TODO(sqs): remove "!params.Fuzzy" when we remove the panic-check from IsRemoteRef
+			parts := strings.SplitN(strings.TrimPrefix(params.Ref, "remote/"), "/", 2)
 			remote := parts[0]
 			branch := parts[1]
 			repoConfig, err := repo.getConfig()
@@ -368,7 +372,12 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 
-		ref := repo.refdb.Lookup(params.Ref)
+		var ref *refdb.Ref
+		if params.Fuzzy {
+			ref = repo.lookupRefByFuzzyName(params.Ref)
+		} else {
+			ref = repo.refdb.Lookup(params.Ref)
+		}
 		if ref == nil {
 			return nil, &jsonrpc2.Error{
 				Code: int64(ErrorCodeRefNotExists),
@@ -378,7 +387,10 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				Message: fmt.Sprintf("ref not found: %s\n\nHINT: Maybe you need to run 'zap auth'?", params.Ref),
 			}
 		}
-		res := RefInfo{Target: ref.Target}
+		res := RefInfo{
+			RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name}, // use resolved (not fuzzy) name
+			Target:        ref.Target,
+		}
 		if ref.IsSymbolic() {
 			ref, err = repo.refdb.Resolve(ref.Name)
 			if err != nil {
@@ -415,7 +427,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		}
 
 		// Add watchers.
-		if watchers := c.server.watchers(params); len(watchers) > 0 {
+		if watchers := c.server.watchers(params.RefIdentifier); len(watchers) > 0 {
 			res.Watchers = make([]string, len(watchers))
 			for i, wc := range watchers {
 				res.Watchers[i] = wc.init.ID
@@ -433,6 +445,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckRefName(params.RefIdentifier.Ref)
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
 		if err != nil {
@@ -498,6 +511,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckRefName(params.RefIdentifier.Ref)
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
 		if err != nil {
@@ -517,6 +531,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+		CheckSymbolicRefName(params.RefIdentifier.Ref)
 		logger = log.With(logger, "repo", params.Repo, "ref", params.Ref)
 		repo, err := c.server.getRepo(ctx, logger, params.RefIdentifier.Repo)
 		if err != nil {
@@ -605,6 +620,10 @@ func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
 		}
 		sort.Strings(info.Watchers)
 
+		CheckRefName(info.RefIdentifier.Ref)
+		if info.Target != "" {
+			CheckRefName(info.Target)
+		}
 		refs = append(refs, info)
 	}
 	return refs

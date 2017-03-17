@@ -240,7 +240,7 @@ declare namespace GQL {
 	*/
 	interface IRevState {
 		__typename: string;
-		zapRef: IZapRef | null;
+		zapRev: IZapRev | null;
 		commit: ICommit | null;
 		cloneInProgress: boolean;
 	}
@@ -311,8 +311,9 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
-	interface IZapRef {
+	interface IZapRev {
 		__typename: string;
+		ref: string;
 		base: string;
 		branch: string;
 	}

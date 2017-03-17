@@ -109,14 +109,14 @@ export class FileService implements IFileService {
 			resource = zapResource;
 		}
 
-		const isViewingZapRef = Boolean(this.contextService.getWorkspace().revState && this.contextService.getWorkspace().revState!.zapRef);
+		const isViewingZapRev = Boolean(this.contextService.getWorkspace().revState && this.contextService.getWorkspace().revState!.zapRef);
 
 		// contentCache acts like watchFileChanges in that it is set the first time when fetching content from
 		// fetchContentAndResolveRev. It is updated when updateContent is called.
 		// This behavior mimicks watchFileChanges which is used by VSCode to watch for content changes at the filesystem level.
 		// We will need to build on this to handle renaming and moving files so their changes are reflected in the tree.
 		const contents = contentCache.get(resource.toString());
-		if (contents && isViewingZapRef) {
+		if (contents && isViewingZapRev) {
 			return TPromise.wrap({
 				...toBaseStat(resource),
 				value: contents,
@@ -124,7 +124,7 @@ export class FileService implements IFileService {
 			});
 		}
 
-		return TPromise.wrap(fetchContentAndResolveRev(resource, isViewingZapRef)).then(({ content }) => {
+		return TPromise.wrap(fetchContentAndResolveRev(resource, isViewingZapRev)).then(({ content }) => {
 			return {
 				...toBaseStat(resource),
 				value: content,
