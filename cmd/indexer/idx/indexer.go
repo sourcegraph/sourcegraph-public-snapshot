@@ -3,6 +3,7 @@ package idx
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -129,6 +130,7 @@ func index(ctx context.Context, wq *workQueue, repoName string) error {
 		Repo:     repo.ID,
 		CommitID: string(headCommit),
 	})
+
 	if err != nil {
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}
@@ -144,21 +146,23 @@ func index(ctx context.Context, wq *workQueue, repoName string) error {
 	if !repo.Fork {
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
-		err = backend.Defs.RefreshIndex(ctx, repo.URI, string(headCommit))
+		defErr := backend.Defs.RefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
-			return fmt.Errorf("Defs.RefreshIndex failed: %s", err)
+			defErr = fmt.Errorf("Defs.RefreshIndex failed: %s", err)
 		}
 
 		// As part of package indexing, it's fine to index private repositories
 		// because backend.Pkgs.ListPackages is responsible for authentication
 		// checks.
-		err = backend.Pkgs.RefreshIndex(ctx, repo.URI, string(headCommit))
+		pkgErr := backend.Pkgs.RefreshIndex(ctx, repo.URI, string(headCommit))
 		if err != nil {
-			return fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
+			pkgErr = fmt.Errorf("Pkgs.RefreshIndex failed: %s", err)
 		}
 
 		// Spider out to index dependencies
-		if err := enqueueDependencies(ctx, wq, inv.PrimaryProgrammingLanguage(), repo.ID); err != nil {
+		spidErr := enqueueDependencies(ctx, wq, inv.PrimaryProgrammingLanguage(), repo.ID)
+
+		if err := makeMultiErr(defErr, pkgErr, spidErr); err != nil {
 			return err
 		}
 	}
@@ -263,4 +267,33 @@ func resolveDependencies(ctx context.Context, lang string, deps []*sourcegraph.D
 	default:
 		return nil
 	}
+}
+
+type multiError []error
+
+func makeMultiErr(errs ...error) error {
+	if len(errs) == 0 {
+		return nil
+	}
+	var nonnil []error
+	for _, err := range errs {
+		if err != nil {
+			nonnil = append(nonnil, err)
+		}
+	}
+	if len(nonnil) == 0 {
+		return nil
+	}
+	if len(nonnil) == 1 {
+		return nonnil[0]
+	}
+	return multiError(nonnil)
+}
+
+func (e multiError) Error() string {
+	errs := make([]string, len(e))
+	for i := 0; i < len(e); i++ {
+		errs[i] = e[i].Error()
+	}
+	return fmt.Sprintf("multiple errors:\n\t", strings.Join(errs, "\n\t"))
 }
