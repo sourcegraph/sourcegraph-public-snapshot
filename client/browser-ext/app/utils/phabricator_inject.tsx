@@ -3,7 +3,7 @@ import { render } from "react-dom";
 import { PhabDifferentialBlobAnnotator } from "../../app/components/PhabDifferentialBlobAnnotator";
 import { PhabDiffusionBlobAnnotator } from "../../app/components/PhabDiffusionBlobAnnotator";
 import { getFilepathFromFile, getPhabricatorState, tryGetBlobElement } from "../../app/utils/phabricator";
-import { CodeCell, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorMode, PhabUrl } from "../../app/utils/types";
+import { CodeCell, PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorMode, PhabUrl } from "../../app/utils/types";
 
 
 /**
@@ -29,7 +29,7 @@ export function injectPhabricatorBlobAnnotators(): void {
 		file.className = `${file.className} sg-blob-annotated`;
 		const mount = createBlobAnnotatorMount(file, ".phui-header-action-links");
 		render(<PhabDiffusionBlobAnnotator branch={phabDiffusionUrl.branch} path={filePath} repoURI={phabDiffusionUrl.repoURI} blobElement={blob} rev={phabDiffusionUrl.rev} />, mount);
-	} else if (phabURL.mode === PhabricatorMode.Differential || phabURL.mode === PhabricatorMode.Revision) {
+	} else if (phabURL.mode === PhabricatorMode.Differential || phabURL.mode === PhabricatorMode.Revision || phabURL.mode === PhabricatorMode.Change) {
 		const files = document.getElementsByClassName("differential-changeset") as HTMLCollectionOf<HTMLElement>;
 		for (const file of Array.from(files)) {
 			if (file.className.includes("sg-blob-annotated")) {
@@ -48,6 +48,9 @@ export function injectPhabricatorBlobAnnotators(): void {
 			} else if (phabURL.mode === PhabricatorMode.Revision) {
 				const phabRevisionUrl = phabURL as PhabRevisionUrl;
 				render(<PhabDifferentialBlobAnnotator blobElement={file} path={filePath} headRepoURI={phabRevisionUrl.repoUri} headBranch={phabRevisionUrl.childRev} baseRepoURI={phabRevisionUrl.repoUri} baseBranch={phabRevisionUrl.parentRev} />, mount);
+			} else if (phabURL.mode === PhabricatorMode.Change) {
+				const phabChangeUrl = phabURL as PhabChangeUrl;
+				render(<PhabDifferentialBlobAnnotator blobElement={file} path={filePath} headRepoURI={phabChangeUrl.repoURI} headBranch={phabChangeUrl.rev} baseRepoURI={phabChangeUrl.repoURI} baseBranch={phabChangeUrl.prevRev} />, mount);
 			}
 		}
 	}

@@ -28,10 +28,19 @@ export interface PhabRevisionUrl extends PhabUrl {
 	childRev: string;
 }
 
+export interface PhabChangeUrl extends PhabUrl {
+	repoURI: string;
+	branch: string;
+	path: string;
+	rev: string;
+	prevRev: string;
+}
+
 export enum PhabricatorMode {
-	Diffusion = 1, // 
-	Differential, // 
-	Revision, // 
+	Diffusion = 1,
+	Differential,
+	Revision,
+	Change,
 }
 
 export enum Domain {

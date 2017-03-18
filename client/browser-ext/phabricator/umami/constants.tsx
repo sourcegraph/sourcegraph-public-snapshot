@@ -42,7 +42,7 @@ const umamiPhabricatorRepoMap = {
 	"devariant": "code.uber.internal/devexp/variant_documentation_rst",
 	"deubercm": "code.uber.internal/devexp/ubercmd",
 	"degoa": "code.uber.internal/devexp/go-101",
-	"decer": "code.uber.internal/devexp/cerberus.git",
+	"decer": "code.uber.internal/devexp/cerberus",
 	"deche": "code.uber.internal/devexp/cherami-ingestor",
 	"dewebeng": "code.uber.internal/devexp/web-engucation2",
 	"despa": "code.uber.internal/devexp/sp",

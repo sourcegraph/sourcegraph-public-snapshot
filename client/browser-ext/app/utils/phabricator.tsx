@@ -1,5 +1,5 @@
 import { PhabricatorInstance } from "../../app/utils/classes";
-import { CodeCell, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorCodeCell, PhabricatorMode, PhabUrl } from "../../app/utils/types";
+import { CodeCell, PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorCodeCell, PhabricatorMode, PhabUrl } from "../../app/utils/types";
 import { phabricatorInstance } from "./context";
 
 function getRevFromPage(): string | null {
@@ -83,9 +83,11 @@ function getParentFromRevisionPage(): string | null {
 	return null;
 }
 
-const PHAB_DIFFUSION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(source|diffusion)\/([A-Za-z0-9]+)\/browse\/([A-Za-z0-9]+)\/(.*)/i;
+const PHAB_DIFFUSION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(source|diffusion)\/([A-Za-z0-9]+)\/browse\/([\w-]+)\/([^;]+)(;[0-9a-f]{40})?/i;
 const PHAB_DIFFERENTIAL_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(D[0-9]+)/i;
 const PHAB_REVISION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/r([0-9A-z]+)([0-9a-f]{40})/i;
+// http://phabricator.aws.sgdev.org/source/nmux/change/master/mux.go
+const PHAB_CHANGE_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(source|diffusion)\/([A-Za-z0-9]+)\/change\/([\w-]+)\/([^;]+)(;[0-9a-f]{40})?/i;
 
 export function getPhabricatorState(loc: Location): PhabUrl | null {
 	const diffusionMatches = PHAB_DIFFUSION_REGEX.exec(loc.href);
@@ -99,6 +101,7 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			repoUri: diffusionMatches[6],
 			branch: diffusionMatches[7],
 			path: diffusionMatches[8],
+			revInUrl: diffusionMatches[9], // only on previous versions
 		};
 		const sourcegraphUri = phabricatorInstance.getPhabricatorRepoFromMap(match.repoUri);
 		if (!sourcegraphUri) {
@@ -191,6 +194,43 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			childRev: childRev,
 			mode: PhabricatorMode.Revision,
 		} as PhabRevisionUrl;
+	}
+	const changeMatch = PHAB_CHANGE_REGEX.exec(loc.href);
+	if (changeMatch) {
+		const match = {
+			protocol: changeMatch[1],
+			hostname: changeMatch[2],
+			extension: changeMatch[3],
+			port: changeMatch[4],
+			viewType: changeMatch[5],
+			repoUri: changeMatch[6],
+			branch: changeMatch[7],
+			path: changeMatch[8],
+			revInUrl: changeMatch[9], // only on previous versions
+		};
+		const sourcegraphUri = phabricatorInstance.getPhabricatorRepoFromMap(match.repoUri);
+		if (!sourcegraphUri) {
+			console.error(`could not map ${match.repoUri} to a valid git repository location.`);
+			return null;
+		}
+		const phabricatorMode = PhabricatorMode.Change;
+		if (!phabricatorMode) {
+			console.error(`diffusion window.location not recognized.`);
+			return null;
+		}
+		const rev = getRevFromPage();
+		if (!rev) {
+			console.error("cannot determine revision from page.");
+			return null;
+		}
+		return {
+			repoURI: sourcegraphUri,
+			branch: match.branch,
+			path: match.path,
+			mode: phabricatorMode,
+			rev: rev,
+			prevRev: rev.concat("~1"),
+		} as PhabChangeUrl;
 	}
 	return null;
 }
