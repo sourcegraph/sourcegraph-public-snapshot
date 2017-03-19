@@ -2,7 +2,6 @@
 import * as rimraf from 'rimraf';
 import * as temp from 'temp';
 import * as path from 'path';
-import * as os from 'os';
 
 import {
 	TextDocumentPositionParams,
@@ -32,10 +31,6 @@ interface HasURI {
 	uri: string;
 }
 
-const yarnGlobalDir = path.join(os.tmpdir(), "tsjs-yarn-global");
-
-console.error("Using", yarnGlobalDir, "as yarn global directory");
-
 /**
  * BuildHandler implements the LanguageHandler interface, providing
  * handler methods for LSP operations. It wraps a TypeScriptService
@@ -49,6 +44,7 @@ console.error("Using", yarnGlobalDir, "as yarn global directory");
 export class BuildHandler extends TypeScriptService {
 	private remoteFileSystem: FileSystem;
 	private yarndir: string;
+	private yarnGlobalDir: string;
 	private yarnOverlayRoot: string;
 
 	/**
@@ -75,6 +71,7 @@ export class BuildHandler extends TypeScriptService {
 		});
 		this.yarndir = yarndir;
 		this.yarnOverlayRoot = path.join(yarndir, "workspace");
+		this.yarnGlobalDir = path.join(yarndir, "global");
 		// Search for package.json files
 		const uris = await this.remoteFileSystem.getWorkspaceFiles(undefined);
 		const files = uris.map(uri => uri2path(uri));
@@ -162,7 +159,7 @@ export class BuildHandler extends TypeScriptService {
 	private async initManagedModule(dir: string): Promise<void> {
 		let ready = this.managedModuleInit.get(dir);
 		if (!ready) {
-			ready = install(this.remoteFileSystem, dir, yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
+			ready = install(this.remoteFileSystem, dir, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
 				await this.projectManager.refreshFileTree(dir, true);
 				return pathToDep;
 			}, (err) => {
@@ -206,11 +203,11 @@ export class BuildHandler extends TypeScriptService {
 		// fetch the package metadata and extract the git URL from metadata if it exists; otherwise punt
 		let pkginfo;
 		try {
-			pkginfo = await info(cwd, yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
+			pkginfo = await info(cwd, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
 		} catch (e) { }
 		if (!pkginfo) {
 			try {
-				pkginfo = await infoAlt(this.remoteFileSystem, cwd, yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
+				pkginfo = await infoAlt(this.remoteFileSystem, cwd, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
 			} catch (e) {
 				console.error("could not rewrite dependency uri,", uri, ", due to error:", e);
 				return { uri: uri, rewritten: false };
