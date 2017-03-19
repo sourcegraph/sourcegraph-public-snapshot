@@ -3,7 +3,7 @@ import { ContextMenuController } from "vs/editor/contrib/contextmenu/browser/con
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { Registry } from "vs/platform/platform";
-import { IStorageService, StorageScope } from "vs/platform/storage/common/storage";
+import { IStorageService } from "vs/platform/storage/common/storage";
 import { StorageService } from "vs/platform/storage/common/storageService";
 import { EditorGroupsControl } from "vs/workbench/browser/parts/editor/editorGroupsControl";
 import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
@@ -26,9 +26,6 @@ export function configurePreStartup(services: ServiceCollection): void {
 
 	const viewReg = (Registry.as(viewKey.Viewlets) as ViewletRegistry);
 	viewReg.setDefaultViewletId(VIEWLET_ID);
-
-	const key = "workbench.sidebar.width";
-	storageService.store(key, 300, StorageScope.GLOBAL);
 }
 
 // Workbench overwrites a few services, so we add these services after startup.

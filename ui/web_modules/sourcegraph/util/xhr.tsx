@@ -10,20 +10,26 @@ export function combineHeaders(a: Headers, b: Headers): Headers {
 	return headers;
 }
 
+function getHeaders(init?: RequestInit): Headers | undefined {
+	if (!(window as any).Headers) {
+		// Avoid the Headers API if the browser is too hold to support it.
+		return undefined;
+	}
+	let defaultHeaders = new Headers();
+	Object.keys(context.xhrHeaders).forEach((key) => {
+		defaultHeaders.set(key, context.xhrHeaders[key]);
+	});
+	return (init && init.headers) ? combineHeaders(defaultHeaders, new Headers(init.headers)) : defaultHeaders;
+}
 // defaultFetch wraps the fetch API.
 //
 // Note: the caller might wrap this with singleflightFetch.
 export function defaultFetch(url: string | Request, init?: RequestInit): Promise<Response> {
 	if (typeof url !== "string") { throw new Error("url must be a string (complex requests are not yet supported)"); }
 
-	let defaultHeaders = new Headers();
-	Object.keys(context.xhrHeaders).forEach((key) => {
-		defaultHeaders.set(key, context.xhrHeaders[key]);
-	});
-
 	return fetch(url, {
 		method: (init && init.method) || "GET",
-		headers: (init && init.headers) ? combineHeaders(defaultHeaders, new Headers(init.headers)) : defaultHeaders,
+		headers: getHeaders(init),
 		body: init && init.body,
 		mode: (init && init.mode) || "cors",
 		redirect: (init && init.redirect) || "follow",
