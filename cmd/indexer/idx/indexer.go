@@ -295,5 +295,5 @@ func (e multiError) Error() string {
 	for i := 0; i < len(e); i++ {
 		errs[i] = e[i].Error()
 	}
-	return fmt.Sprintf("multiple errors:\n\t", strings.Join(errs, "\n\t"))
+	return fmt.Sprintf("multiple errors:\n\t%s", strings.Join(errs, "\n\t"))
 }
