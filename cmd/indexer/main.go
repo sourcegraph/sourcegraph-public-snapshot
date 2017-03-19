@@ -72,11 +72,12 @@ func main() {
 
 	http.HandleFunc("/refresh", func(resp http.ResponseWriter, req *http.Request) {
 		repo := req.URL.Query().Get("repo")
+		rev := req.URL.Query().Get("rev")
 		if repo == "" {
 			http.Error(resp, "missing repo parameter", http.StatusBadRequest)
 			return
 		}
-		wq.Enqueue(repo)
+		wq.Enqueue(repo, rev)
 		resp.Write([]byte("OK"))
 	})
 

@@ -15,9 +15,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
+type qitem struct {
+	repo string
+	rev  string
+}
+
 type workQueue struct {
-	enqueue chan<- string          // channel of inputs
-	dequeue chan<- (chan<- string) // channel of task executors
+	enqueue chan<- qitem          // channel of inputs
+	dequeue chan<- (chan<- qitem) // channel of task executors
 }
 
 func NewQueue(lengthGauge prometheus.Gauge) *workQueue {
@@ -25,47 +30,47 @@ func NewQueue(lengthGauge prometheus.Gauge) *workQueue {
 	return &workQueue{enqueue: enqueue, dequeue: dequeue}
 }
 
-func (w *workQueue) Enqueue(repo string) {
-	w.enqueue <- repo
+func (w *workQueue) Enqueue(repo string, rev string) {
+	w.enqueue <- qitem{repo: repo, rev: rev}
 }
 
 // queueWithoutDuplicates provides a queue that ignores a new entry if it is already enqueued.
 // Sending to the dequeue channel blocks if no entry is available.
-func queueWithoutDuplicates(lengthGauge prometheus.Gauge) (enqueue chan<- string, dequeue chan<- (chan<- string)) {
-	var queue []string
-	set := make(map[string]struct{})
-	enqueueChan := make(chan string)
-	dequeueChan := make(chan (chan<- string))
+func queueWithoutDuplicates(lengthGauge prometheus.Gauge) (enqueue chan<- qitem, dequeue chan<- (chan<- qitem)) {
+	var queue []qitem
+	set := make(map[qitem]struct{})
+	enqueueChan := make(chan qitem)
+	dequeueChan := make(chan (chan<- qitem))
 
 	go func() {
 		for {
 			if len(queue) == 0 {
-				repo := <-enqueueChan
-				queue = append(queue, repo)
-				set[repo] = struct{}{}
+				repoRev := <-enqueueChan
+				queue = append(queue, repoRev)
+				set[repoRev] = struct{}{}
 				if lengthGauge != nil {
 					lengthGauge.Set(float64(len(queue)))
 				}
 			}
 
 			select {
-			case repo := <-enqueueChan:
-				if _, ok := set[repo]; ok {
+			case repoRev := <-enqueueChan:
+				if _, ok := set[repoRev]; ok {
 					continue // duplicate, discard
 				}
-				queue = append(queue, repo)
-				set[repo] = struct{}{}
+				queue = append(queue, repoRev)
+				set[repoRev] = struct{}{}
 				if lengthGauge != nil {
 					lengthGauge.Set(float64(len(queue)))
 				}
 			case c := <-dequeueChan:
-				repo := queue[0]
+				repoRev := queue[0]
 				queue = queue[1:]
-				delete(set, repo)
+				delete(set, repoRev)
 				if lengthGauge != nil {
 					lengthGauge.Set(float64(len(queue)))
 				}
-				c <- repo
+				c <- repoRev
 			}
 		}
 	}()
@@ -75,55 +80,63 @@ func queueWithoutDuplicates(lengthGauge prometheus.Gauge) (enqueue chan<- string
 
 var (
 	// Global state shared by all work threads
-	currentJobs   = make(map[string]struct{})
+	currentJobs   = make(map[qitem]struct{})
 	currentJobsMu sync.Mutex
 )
 
 func Work(ctx context.Context, w *workQueue) {
 	for {
-		c := make(chan string)
+		c := make(chan qitem)
 		w.dequeue <- c
-		repo := <-c
+		repoRev := <-c
 
 		{
 			currentJobsMu.Lock()
-			if _, ok := currentJobs[repo]; ok {
+			if _, ok := currentJobs[repoRev]; ok {
 				currentJobsMu.Unlock()
 				return // in progress, discard
 			}
-			currentJobs[repo] = struct{}{}
+			currentJobs[repoRev] = struct{}{}
 			currentJobsMu.Unlock()
 		}
 
-		if err := index(ctx, w, repo); err != nil {
-			log15.Error("Indexing failed", "repo", repo, "error", err)
+		if err := index(ctx, w, repoRev.repo, repoRev.rev); err != nil {
+			log15.Error("Indexing failed", "repoRev", repoRev, "error", err)
 		}
 
 		{
 			currentJobsMu.Lock()
-			delete(currentJobs, repo)
+			delete(currentJobs, repoRev)
 			currentJobsMu.Unlock()
 		}
 	}
 }
 
-func index(ctx context.Context, wq *workQueue, repoName string) error {
+func index(ctx context.Context, wq *workQueue, repoName string, rev string) error {
+	if rev == "" {
+		rev = "HEAD"
+	}
 	repo, err := backend.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return fmt.Errorf("Repos.GetByURI failed: %s", err)
 	}
 
-	headCommit, err := ResolveRevision(ctx, repo, "HEAD")
-	if err != nil {
-		// If clone is in progress, re-enqueue after 5 seconds
-		if _, ok := err.(vcs.RepoNotExistError); ok && err.(vcs.RepoNotExistError).CloneInProgress {
-			go func() {
-				time.Sleep(5 * time.Second)
-				wq.Enqueue(repoName)
-			}()
-			return nil
+	var headCommit vcs.CommitID
+	if len(rev) == 40 {
+		headCommit = vcs.CommitID(rev)
+	} else {
+		headCommit, err = ResolveRevision(ctx, repo, rev)
+		if err != nil {
+			// If clone is in progress, re-enqueue after 5 seconds
+			if _, ok := err.(vcs.RepoNotExistError); ok && err.(vcs.RepoNotExistError).CloneInProgress {
+				go func() {
+					time.Sleep(5 * time.Second)
+					wq.Enqueue(repoName, rev)
+				}()
+				return nil
+			}
+			return fmt.Errorf("ResolveRevision failed: %s", err)
 		}
-		return fmt.Errorf("ResolveRevision failed: %s", err)
 	}
 
 	inv, err := backend.Repos.GetInventoryUncached(ctx, &sourcegraph.RepoRevSpec{
@@ -217,7 +230,7 @@ func enqueueDependencies(ctx context.Context, wq *workQueue, lang string, repoID
 			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
 			continue
 		}
-		wq.Enqueue(repo.URI)
+		wq.Enqueue(repo.URI, "")
 		resolvedDepsList = append(resolvedDepsList, repo.URI)
 	}
 	log15.Info("Enqueued dependencies for repo", "repo", repoID, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)
