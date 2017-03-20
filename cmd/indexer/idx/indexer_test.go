@@ -81,7 +81,7 @@ func Test_index_java(t *testing.T) {
 	for i, r := range depRepos {
 		expEnqueuedItems[i] = qitem{repo: r}
 	}
-	sort.Slice(expEnqueuedItems, func(i, j int) bool { return expEnqueuedItems[i].repo < expEnqueuedItems[j].repo })
+	sort.Sort(qitemSlice(expEnqueuedItems))
 
 	wq := NewQueue(nil)
 	ctx := accesscontrol.WithInsecureSkip(context.Background(), true)
@@ -182,8 +182,22 @@ func Test_index_java(t *testing.T) {
 		}
 	}
 
-	sort.Slice(enqueued, func(i, j int) bool { return enqueued[i].repo < enqueued[j].repo })
+	sort.Sort(qitemSlice(enqueued))
 	if !reflect.DeepEqual(expEnqueuedItems, enqueued) {
 		t.Errorf("after one indexing pass, expected queue to contain %+v, but found %+v", expEnqueuedItems, enqueued)
 	}
+}
+
+type qitemSlice []qitem
+
+func (s qitemSlice) Len() int {
+	return len(s)
+}
+
+func (s qitemSlice) Less(i, j int) bool {
+	return s[i].repo < s[j].repo
+}
+
+func (s qitemSlice) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }
