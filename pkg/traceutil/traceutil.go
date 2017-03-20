@@ -49,6 +49,16 @@ func (f *trivialFieldsFilter) RecordSpan(span basictracer.RawSpan) {
 	f.rec.RecordSpan(span)
 }
 
+type tagsAndLogsFilter struct {
+	rec basictracer.SpanRecorder
+}
+
+func (f *tagsAndLogsFilter) RecordSpan(span basictracer.RawSpan) {
+	span.Tags = nil
+	span.Logs = nil
+	f.rec.RecordSpan(span)
+}
+
 type multiRecorder []basictracer.SpanRecorder
 
 func (mr multiRecorder) RecordSpan(span basictracer.RawSpan) {
@@ -66,16 +76,22 @@ func MultiRecorder(recorders ...basictracer.SpanRecorder) basictracer.SpanRecord
 
 var lightstepAccessToken = env.Get("LIGHTSTEP_ACCESS_TOKEN", "", "access token for sending traces to LightStep")
 var lightstepProject = env.Get("LIGHTSTEP_PROJECT", "", "the project id on LightStep, only used for creating links to traces")
+var lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span tags and logs to LightStep"))
 
 func InitTracer() {
 	if lightstepAccessToken != "" {
+		var rec basictracer.SpanRecorder = lightstep.NewRecorder(lightstep.Options{
+			AccessToken: lightstepAccessToken,
+			UseGRPC:     true,
+		})
+		if !lightstepIncludeSensitive {
+			rec = &tagsAndLogsFilter{rec}
+		}
+
 		options := basictracer.DefaultOptions()
 		options.ShouldSample = func(_ uint64) bool { return true }
 		options.Recorder = MultiRecorder(
-			&trivialFieldsFilter{lightstep.NewRecorder(lightstep.Options{
-				AccessToken: lightstepAccessToken,
-				UseGRPC:     true,
-			})},
+			&trivialFieldsFilter{rec},
 			&graphqlFieldRecorder{},
 		)
 		opentracing.InitGlobalTracer(basictracer.NewWithOptions(options))
