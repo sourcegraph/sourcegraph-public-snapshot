@@ -18,6 +18,7 @@ import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorIn
 import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
+import { IPartService, Parts } from "vscode/src/vs/workbench/services/part/common/partService";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
@@ -216,6 +217,12 @@ export function toggleQuickopen(forceHide?: boolean): void {
 }
 
 export async function updateFileTree(resource: URI): Promise<void> {
+	const partService = Services.get(IPartService) as IPartService;
+	const visible = partService.isVisible(Parts.SIDEBAR_PART);
+	if (!visible) {
+		return;
+	}
+
 	const viewletService = Services.get(IViewletService) as IViewletService;
 	let viewlet = viewletService.getActiveViewlet();
 	if (!viewlet) {
