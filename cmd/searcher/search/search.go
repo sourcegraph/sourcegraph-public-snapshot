@@ -22,6 +22,7 @@ import (
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Service is the search service. It is an http.Handler.
@@ -87,6 +88,9 @@ type LineMatch struct {
 
 // ServeHTTP handles HTTP based search requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	running.Inc()
+	defer running.Dec()
+
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "failed to parse form: "+err.Error(), http.StatusBadRequest)
@@ -138,10 +142,17 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
 	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
 	defer func() {
+		code := "200"
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
+			if isBadRequest(err) {
+				code = "400"
+			} else {
+				code = "500"
+			}
 		}
+		requestTotal.WithLabelValues(code).Inc()
 		span.SetTag("matches", len(matches))
 		span.Finish()
 	}()
@@ -189,6 +200,26 @@ func validateParams(p *Params) error {
 		return errors.New("Pattern must be non-empty")
 	}
 	return nil
+}
+
+var (
+	running = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "searcher",
+		Subsystem: "service",
+		Name:      "running",
+		Help:      "Number of running search requests.",
+	})
+	requestTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "searcher",
+		Subsystem: "service",
+		Name:      "request_total",
+		Help:      "Number of returned search requests.",
+	}, []string{"code"})
+)
+
+func init() {
+	prometheus.MustRegister(running)
+	prometheus.MustRegister(requestTotal)
 }
 
 type badRequestError struct{ msg string }
