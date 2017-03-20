@@ -9,8 +9,6 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
 type commitSpec struct {
@@ -124,6 +122,6 @@ func createCommitState(repo sourcegraph.Repo, rev *sourcegraph.ResolvedRev) *com
 	}}
 }
 
-func (r *commitResolver) TextSearch(ctx context.Context, info *gitcmd.PatternInfo) ([]*gitcmd.FileMatch, error) {
-	return (&gitcmd.Repository{Repo: &r.repo}).Grep(ctx, vcs.CommitID(r.commit.CommitID), *info)
+func (r *commitResolver) TextSearch(ctx context.Context, info *patternInfo) ([]*fileMatch, error) {
+	return textSearch(ctx, r.repo.URI, r.commit.CommitID, info)
 }
