@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -68,11 +67,12 @@ main.go:5:func main() {
 `,
 	}
 
-	store, err := newStore(files)
+	store, cleanup, err := newStore(files)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ts := httptest.NewServer(&search.Service{ArchiveStore: store})
+	defer cleanup()
+	ts := httptest.NewServer(&search.Service{Store: store})
 	defer ts.Close()
 
 	for p, want := range cases {
@@ -137,39 +137,34 @@ func doSearch(u string, p *search.Params) ([]search.FileMatch, error) {
 	return matches, err
 }
 
-func newStore(files map[string]string) (*store, error) {
+func newStore(files map[string]string) (*search.Store, func(), error) {
 	buf := new(bytes.Buffer)
 	w := zip.NewWriter(buf)
 	for name, body := range files {
 		f, err := w.Create(name)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		_, err = f.Write([]byte(body))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 	err := w.Close()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &store{buf.Bytes()}, nil
+	d, err := ioutil.TempDir("", "search_test")
+	if err != nil {
+		return nil, nil, err
+	}
+	return &search.Store{
+		FetchZip: func(ctx context.Context, repo, commit string) ([]byte, error) {
+			return buf.Bytes(), nil
+		},
+		Path: d,
+	}, func() { os.RemoveAll(d) }, nil
 }
-
-type store struct {
-	buf []byte
-}
-
-func (s *store) FetchZip(ctx context.Context, repo, commit string) ([]byte, error) {
-	return s.buf, nil
-}
-
-type nopCloser struct {
-	io.Reader
-}
-
-func (nc nopCloser) Close() error { return nil }
 
 func toString(m []search.FileMatch) string {
 	buf := new(bytes.Buffer)

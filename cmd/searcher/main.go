@@ -34,7 +34,10 @@ func main() {
 	}
 
 	service := &search.Service{
-		ArchiveStore: gitserverStore{},
+		Store: &search.Store{
+			FetchZip: fetchZip,
+			Path:     "/tmp/searcher-archive-store",
+		},
 	}
 
 	addr := ":3181"
@@ -63,9 +66,7 @@ func shutdownOnSIGINT(s *http.Server) {
 	// }
 }
 
-type gitserverStore struct{}
-
-func (e gitserverStore) FetchZip(ctx context.Context, repo, commit string) ([]byte, error) {
+func fetchZip(ctx context.Context, repo, commit string) ([]byte, error) {
 	r := gitcmd.Open(&sourcegraph.Repo{URI: repo})
 	b, err := r.Archive(ctx, vcs.CommitID(commit))
 	// Guess if user error

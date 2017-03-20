@@ -1,0 +1,117 @@
+package search
+
+import (
+	"archive/zip"
+	"bytes"
+	"context"
+	"errors"
+	"io/ioutil"
+	"os"
+	"sync/atomic"
+	"testing"
+	"time"
+)
+
+func TestOpenReader(t *testing.T) {
+	s, cleanup := tmpStore(t)
+	defer cleanup()
+
+	wantRepo := "foo"
+	wantCommit := "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+
+	returnFetch := make(chan struct{})
+	var gotRepo, gotCommit string
+	var fetchZipCalled int64
+	s.FetchZip = func(ctx context.Context, repo, commit string) ([]byte, error) {
+		<-returnFetch
+		atomic.AddInt64(&fetchZipCalled, 1)
+		gotRepo = repo
+		gotCommit = commit
+		return emptyZip(t), nil
+	}
+
+	// Fetch same commit in parallel to ensure single-flighting works
+	startOpenReader := make(chan struct{})
+	openReaderErr := make(chan error)
+	for i := 0; i < 10; i++ {
+		go func() {
+			<-startOpenReader
+			_, close, err := s.openReader(context.Background(), wantRepo, wantCommit)
+			if close != nil {
+				close()
+			}
+			openReaderErr <- err
+		}()
+	}
+	close(startOpenReader)
+	close(returnFetch)
+	for i := 0; i < 10; i++ {
+		err := <-openReaderErr
+		if err != nil {
+			t.Fatal("expected openReader to succeed:", err)
+		}
+	}
+
+	if gotCommit != wantCommit {
+		t.Errorf("fetched wrong commit. got=%v want=%v", gotCommit, wantCommit)
+	}
+	if gotRepo != wantRepo {
+		t.Errorf("fetched wrong repo. got=%v want=%v", gotRepo, wantRepo)
+	}
+
+	// Wait for item to appear on disk cache, then test again to ensure we
+	// use the disk cache.
+	onDisk := false
+	for i := 0; i < 500; i++ {
+		files, _ := ioutil.ReadDir(s.Path)
+		if len(files) != 0 {
+			onDisk = true
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !onDisk {
+		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
+	}
+	_, close, err := s.openReader(context.Background(), wantRepo, wantCommit)
+	if err != nil {
+		t.Fatal("expected openReader to succeed:", err)
+		return
+	}
+	close()
+}
+
+func TestOpenReader_fetchZipFail(t *testing.T) {
+	fetchErr := errors.New("test")
+	s, cleanup := tmpStore(t)
+	defer cleanup()
+	s.FetchZip = func(ctx context.Context, repo, commit string) ([]byte, error) {
+		return nil, fetchErr
+	}
+	_, _, err := s.openReader(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	if err != fetchErr {
+		t.Fatalf("expected openReader to fail with %v, failed with %v", fetchErr, err)
+	}
+}
+
+func tmpStore(t *testing.T) (*Store, func()) {
+	d, err := ioutil.TempDir("", "search_test")
+	if err != nil {
+		t.Fatal(err)
+		return nil, nil
+	}
+	return &Store{
+		Path: d,
+	}, func() { os.RemoveAll(d) }
+}
+
+func emptyZip(t *testing.T) []byte {
+	buf := new(bytes.Buffer)
+	w := zip.NewWriter(buf)
+	err := w.Close()
+	if err != nil {
+		t.Fatal(err)
+		return nil
+	}
+	return buf.Bytes()
+}

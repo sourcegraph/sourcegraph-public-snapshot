@@ -12,8 +12,6 @@
 package search
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -23,21 +21,9 @@ import (
 	"github.com/gorilla/schema"
 )
 
-// ArchiveStore is how the service gets the content to search.
-type ArchiveStore interface {
-	// FetchZip returns a []byte to a zip archive. If the error implements
-	// "BadRequest() bool", it will be used to determine if the error is a
-	// bad request (eg invalid repo).
-	//
-	// NOTE: gitcmd.Open.Archive returns the bytes in memory. However, we
-	// only need to be able to stream it in. Update to io.ReadCloser once
-	// we have a nice way to stream in the archive.
-	FetchZip(ctx context.Context, repo, commit string) ([]byte, error)
-}
-
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	ArchiveStore ArchiveStore
+	Store *Store
 }
 
 var decoder = schema.NewDecoder()
@@ -148,10 +134,11 @@ func (s *Service) search(ctx context.Context, p *Params) ([]FileMatch, error) {
 		return nil, badRequestError{err.Error()}
 	}
 
-	r, err := s.openReader(ctx, p.Repo, p.Commit)
+	r, close, err := s.Store.openReader(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, err
 	}
+	defer close()
 
 	var matches []FileMatch
 	for _, f := range r.File {
@@ -172,19 +159,6 @@ func (s *Service) search(ctx context.Context, p *Params) ([]FileMatch, error) {
 		}
 	}
 	return matches, nil
-}
-
-// openReader will open a zip reader to the
-func (s *Service) openReader(ctx context.Context, repo, commit string) (*zip.Reader, error) {
-	// TODO single-flight
-	// TODO disk backed with cache eviction
-	// TODO rewrite zip on disk to be more efficient to access (prune files, etc)
-	b, err := s.ArchiveStore.FetchZip(ctx, repo, commit)
-	if err != nil {
-		return nil, err
-	}
-	rAt := bytes.NewReader(b)
-	return zip.NewReader(rAt, int64(len(b)))
 }
 
 func validateParams(p *Params) error {
