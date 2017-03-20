@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -110,9 +111,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	matches, err := s.search(r.Context(), &p)
 	if err != nil {
-		code := http.StatusInternalServerError
-		if isBadRequest(err) {
-			code = http.StatusBadRequest
+		code := http.StatusBadRequest
+		if !isBadRequest(err) {
+			log.Printf("internal error serving %#+v: %s", p, err)
+			code = http.StatusInternalServerError
 		}
 		http.Error(w, err.Error(), code)
 		return
