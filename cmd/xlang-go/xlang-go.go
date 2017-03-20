@@ -11,12 +11,11 @@ import (
 	"os"
 
 	"github.com/keegancsmith/tmpfriend"
-	lightstep "github.com/lightstep/lightstep-tracer-go"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 )
 
@@ -49,11 +48,7 @@ func main() {
 }
 
 func run() error {
-	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
-		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
-			AccessToken: t,
-		}))
-	}
+	traceutil.InitTracer()
 
 	if *profbind != "" {
 		go debugserver.Start(*profbind)

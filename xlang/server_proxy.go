@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	lightstep "github.com/lightstep/lightstep-tracer-go"
 	basictracer "github.com/opentracing/basictracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -579,9 +578,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// Recording the raw span as-is requires the lower-level impl
 		// types.
 		if o, ok := opentracing.GlobalTracer().(basictracer.Tracer); ok {
-			if r, ok := o.Options().Recorder.(*lightstep.Recorder); ok {
-				r.RecordSpan(rawSpan)
-			}
+			o.Options().Recorder.RecordSpan(rawSpan)
 		}
 		return nil, nil
 

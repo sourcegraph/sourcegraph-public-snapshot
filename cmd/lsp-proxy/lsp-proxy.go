@@ -11,10 +11,9 @@ import (
 	"os"
 
 	"github.com/keegancsmith/tmpfriend"
-	lightstep "github.com/lightstep/lightstep-tracer-go"
-	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 )
 
@@ -35,11 +34,7 @@ func main() {
 }
 
 func run() error {
-	if t := os.Getenv("LIGHTSTEP_ACCESS_TOKEN"); t != "" {
-		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
-			AccessToken: t,
-		}))
-	}
+	traceutil.InitTracer()
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
