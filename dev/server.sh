@@ -31,7 +31,7 @@ export LSP_PROXY_BG=127.0.0.1:4388
 export ZAP_SERVER="ws://$HOME/.sourcegraph/zap"
 
 mkdir -p .bin
-env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,zap,xlang-go,lsp-proxy}
+env GOBIN=$PWD/.bin go install -v sourcegraph.com/sourcegraph/sourcegraph/cmd/{gitserver,indexer,github-proxy,zap,xlang-go,lsp-proxy,searcher}
 
 . dev/langservers.lib.bash
 detect_dev_langservers
