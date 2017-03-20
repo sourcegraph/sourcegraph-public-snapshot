@@ -44,27 +44,28 @@ func init() {
 
 // dbRepo DB-maps a sourcegraph.Repo object.
 type dbRepo struct {
-	ID              int32
-	URI             string
-	Owner           string
-	Name            string
-	Description     string
-	VCS             string
-	HTTPCloneURL    string `db:"http_clone_url"`
-	SSHCloneURL     string `db:"ssh_clone_url"`
-	HomepageURL     string `db:"homepage_url"`
-	DefaultBranch   string `db:"default_branch"`
-	Language        string
-	Blocked         bool
-	Deprecated      bool
-	Fork            bool
-	Mirror          bool
-	Private         bool
-	CreatedAt       time.Time  `db:"created_at"`
-	UpdatedAt       *time.Time `db:"updated_at"`
-	PushedAt        *time.Time `db:"pushed_at"`
-	VCSSyncedAt     *time.Time `db:"vcs_synced_at"`
-	IndexedRevision *string    `db:"indexed_revision"`
+	ID                    int32
+	URI                   string
+	Owner                 string
+	Name                  string
+	Description           string
+	VCS                   string
+	HTTPCloneURL          string `db:"http_clone_url"`
+	SSHCloneURL           string `db:"ssh_clone_url"`
+	HomepageURL           string `db:"homepage_url"`
+	DefaultBranch         string `db:"default_branch"`
+	Language              string
+	Blocked               bool
+	Deprecated            bool
+	Fork                  bool
+	Mirror                bool
+	Private               bool
+	CreatedAt             time.Time  `db:"created_at"`
+	UpdatedAt             *time.Time `db:"updated_at"`
+	PushedAt              *time.Time `db:"pushed_at"`
+	VCSSyncedAt           *time.Time `db:"vcs_synced_at"`
+	IndexedRevision       *string    `db:"indexed_revision"`
+	FreezeIndexedRevision bool       `db:"freeze_indexed_revision"`
 
 	OriginRepoID     *string `db:"origin_repo_id"`
 	OriginService    *int32  `db:"origin_service"` // values from Origin.ServiceType enum
@@ -73,18 +74,19 @@ type dbRepo struct {
 
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
-		ID:              r.ID,
-		URI:             r.URI,
-		Owner:           r.Owner,
-		Name:            r.Name,
-		Description:     r.Description,
-		HomepageURL:     r.HomepageURL,
-		DefaultBranch:   r.DefaultBranch,
-		Language:        r.Language,
-		Blocked:         r.Blocked,
-		Fork:            r.Fork,
-		Private:         r.Private,
-		IndexedRevision: r.IndexedRevision,
+		ID:                    r.ID,
+		URI:                   r.URI,
+		Owner:                 r.Owner,
+		Name:                  r.Name,
+		Description:           r.Description,
+		HomepageURL:           r.HomepageURL,
+		DefaultBranch:         r.DefaultBranch,
+		Language:              r.Language,
+		Blocked:               r.Blocked,
+		Fork:                  r.Fork,
+		Private:               r.Private,
+		IndexedRevision:       r.IndexedRevision,
+		FreezeIndexedRevision: r.FreezeIndexedRevision,
 	}
 
 	r2.CreatedAt = &r.CreatedAt

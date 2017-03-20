@@ -114,6 +114,11 @@ type Repo struct {
 	// by the indexer to determine if reindexing is necessary. Setting it to nil/null will cause
 	// the indexer to reindex the next time it gets triggered for this repository.
 	IndexedRevision *string `json:"IndexedRevision,omitempty"`
+	// FreezeIndexedRevision, when true, tells the indexer not to
+	// update the indexed revision if it is already set. This is a
+	// kludge that lets us freeze the indexed repository revision for
+	// specific deployments
+	FreezeIndexedRevision bool `json:"FreezeIndexedRevision,omitempty"`
 }
 
 // GitHubRepoWithDetails represents a GitHub source code repository with additional context

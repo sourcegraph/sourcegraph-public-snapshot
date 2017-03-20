@@ -148,7 +148,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}
 
-	if repo.IndexedRevision != nil && *repo.IndexedRevision == string(headCommit) {
+	if repo.IndexedRevision != nil && (repo.FreezeIndexedRevision || *repo.IndexedRevision == string(headCommit)) {
 		return nil // index is up-to-date
 	}
 
