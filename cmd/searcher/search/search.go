@@ -17,8 +17,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/schema"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 // Service is the search service. It is an http.Handler.
@@ -124,9 +127,24 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) search(ctx context.Context, p *Params) ([]FileMatch, error) {
+func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, err error) {
 	// TODO use platinum searcher or sift to search
 	// TODO pretty aggressively skip files to search
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Searcher Search")
+	span.SetTag("repo", p.Repo)
+	span.SetTag("commit", p.Commit)
+	span.SetTag("pattern", p.Pattern)
+	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
+	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
+	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.SetTag("matches", len(matches))
+		span.Finish()
+	}()
 
 	matcher, err := compile(p)
 	if err != nil {
@@ -139,7 +157,6 @@ func (s *Service) search(ctx context.Context, p *Params) ([]FileMatch, error) {
 	}
 	defer close()
 
-	var matches []FileMatch
 	for _, f := range r.File {
 		rc, err := f.Open()
 		if err != nil {

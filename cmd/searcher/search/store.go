@@ -12,6 +12,9 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 // Store manages the fetching and storing of git archives. Its main purpose is
@@ -71,7 +74,19 @@ func (r *fetchResult) resolve() (*zip.Reader, func() error, error) {
 
 // openReader will open a zip reader and closer to the archive. It will first
 // consult the local cache, otherwise will fetch from the network.
-func (s *Store) openReader(ctx context.Context, repo, commit string) (*zip.Reader, func() error, error) {
+func (s *Store) openReader(ctx context.Context, repo, commit string) (zr *zip.Reader, closer func() error, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Searcher OpenReader")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		if zr != nil {
+			span.LogKV("numfiles", len(zr.File))
+		}
+		span.Finish()
+	}()
+
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
 	if len(commit) != 40 {
@@ -82,10 +97,12 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (*zip.Reade
 	h := sha256.Sum256([]byte(repo + " " + commit))
 	key := hex.EncodeToString(h[:])
 	path := filepath.Join(s.Path, key+".zip")
+	span.LogKV("key", key)
 
 	// Fast path: check disk without a lock
 	r, err := zip.OpenReader(path)
 	if err == nil {
+		span.SetTag("source", "disk-fast")
 		return &r.Reader, r.Close, nil
 	}
 	if !os.IsNotExist(err) {
@@ -105,7 +122,8 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (*zip.Reade
 	if fetch != nil {
 		// An in flight fetch is occurring
 		s.fetchesMu.Unlock()
-		<-fetch.done
+		span.SetTag("source", "inflight")
+		span.LogEvent("resolve")
 		return fetch.resolve()
 	}
 	// We do not use zip.OpenReader since that does a lot more work (parse
@@ -116,12 +134,14 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (*zip.Reade
 	if err == nil {
 		// Since we last checked the disk, another fetch completed
 		s.fetchesMu.Unlock()
+		span.SetTag("source", "disk-slow")
 		return zipReadCloser(fd)
 	}
 	// Nothing on disk or in-memory, we will now fetch.
 	fetch = &fetchResult{done: make(chan struct{})}
 	s.fetches[key] = fetch
 	s.fetchesMu.Unlock()
+	span.SetTag("source", "fetch")
 
 	go func() {
 		fetch.b, fetch.err = s.FetchZip(ctx, repo, commit)
@@ -136,6 +156,7 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (*zip.Reade
 		}
 	}()
 
+	span.LogEvent("resolve")
 	return fetch.resolve()
 }
 

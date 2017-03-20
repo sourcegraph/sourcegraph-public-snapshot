@@ -9,6 +9,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	opentracing "github.com/opentracing/opentracing-go"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -84,7 +87,14 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 	}
 	req.URL.RawQuery = q.Encode()
 	req = req.WithContext(ctx)
-	resp, err := http.DefaultClient.Do(req)
+
+	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+		nethttp.OperationName("Searcher Client"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
+
+	client := &http.Client{Transport: &nethttp.Transport{}}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

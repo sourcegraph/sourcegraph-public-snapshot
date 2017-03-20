@@ -10,6 +10,9 @@ import (
 	"os/signal"
 	"strings"
 
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	opentracing "github.com/opentracing/opentracing-go"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -39,9 +42,11 @@ func main() {
 			Path:     "/tmp/searcher-archive-store",
 		},
 	}
+	handler := nethttp.Middleware(opentracing.GlobalTracer(), service,
+		nethttp.OperationNameFunc(func(r *http.Request) string { return "Searcher " + r.Method }))
 
 	addr := ":3181"
-	server := &http.Server{Addr: addr, Handler: service}
+	server := &http.Server{Addr: addr, Handler: handler}
 	go shutdownOnSIGINT(server)
 
 	log.Println("listening on :3181")
