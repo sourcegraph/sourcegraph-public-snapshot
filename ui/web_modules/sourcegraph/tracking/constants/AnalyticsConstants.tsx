@@ -296,6 +296,7 @@ export function getModalDismissedEventObject(modalName: string): LoggableEvent {
 		"cancelSubscriptionModal": Events.CancelSubscriptionModal_Dismissed,
 		"trialCompletionModal": Events.CompleteSubscriptionModal_Dismissed,
 		"planChanger": Events.ChangePlanModal_Dismissed,
+		"keyboardShortcuts": Events.ShortcutMenu_Dismissed,
 	};
 	return (modalName && modalName in dismissModalsMap) ? dismissModalsMap[modalName] : null;
 }

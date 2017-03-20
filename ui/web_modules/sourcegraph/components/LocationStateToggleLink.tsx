@@ -7,14 +7,9 @@ function isModifiedEvent(ev: MouseEvent): boolean { return Boolean(ev.metaKey ||
 
 interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 	location: any;
-
 	// modalName is the name of the modal (location.state.modal value) that this
 	// LocationStateToggleLink component toggles.
 	modalName: string;
-
-	// href is the URL used if the user opens the link in
-	// a new tab or copies the link.
-	href?: string;
 
 	// onToggle is called when the link is toggled ON.
 	onToggle?: (v: boolean) => void;
@@ -29,15 +24,13 @@ interface Props extends React.HTMLAttributes<HTMLAnchorElement> {
 // reflected in the URL. Something else will have to read the location state
 // to determine whether to show it.
 export function LocationStateToggleLink(props: Props, { router }: { router: Router }): JSX.Element {
-
-	const { location, children, modalName } = props;
-	const other = Object.assign({}, props);
-	delete other.location;
-	delete other.modalName;
-	delete other.href;
-	delete other.onToggle;
-	delete other.children;
-	const active = location.state && location.state.modal === modalName;
+	let {
+		children,
+		modalName,
+		onToggle,
+		location,
+		...rest,
+	} = props;
 
 	// Copied from react-router Link.js.
 	const handleClick = (ev) => {
@@ -51,20 +44,20 @@ export function LocationStateToggleLink(props: Props, { router }: { router: Rout
 		}
 
 		ev.preventDefault();
-		router.push(Object.assign({}, location, { state: Object.assign({}, location.state, { modal: active ? null : modalName }) }));
+		location = (router as any).getCurrentLocation();
+		router.push({ ...location, state: { modal: modalName } });
 
-		if (props.onToggle) {
-			props.onToggle(!active);
+		if (onToggle) {
+			const state = location.state;
+			const active = state && state.modal === modalName;
+			onToggle(!active);
 		}
 	};
 
-	return (
-		<a {...other}
-			href={props.href}
-			onClick={handleClick}>
-			{children}
-		</a>
-	);
+	return <a {...rest}
+		onClick={handleClick}>
+		{children}
+	</a>;
 }
 
 (LocationStateToggleLink as any).contextTypes = {

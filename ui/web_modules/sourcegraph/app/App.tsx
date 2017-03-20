@@ -41,7 +41,7 @@ export class App extends React.Component<Props, {}> {
 		}
 		return (
 			<div className={className}>
-				<GlobalNav location={this.context.router.location} />
+				<GlobalNav />
 				{this.props.main}
 				{this.props.footer}
 			</div>

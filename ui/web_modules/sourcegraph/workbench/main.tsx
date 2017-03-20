@@ -63,6 +63,7 @@ function fullHeightDiv(): HTMLDivElement {
  */
 export function init(resource: URI, revState?: IWorkspaceRevState): InitializedWorkbench {
 	if (initializedWorkbench) {
+		workbenchListeners.forEach(cb => cb(true));
 		return initializedWorkbench;
 	}
 

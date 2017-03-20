@@ -6,7 +6,6 @@ import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { Key } from "sourcegraph/components/Key";
 import { LocationStateModal, dismissModal, setLocationModalState } from "sourcegraph/components/Modal";
 import { whitespace } from "sourcegraph/components/utils";
-import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface Props {
 	location: RouterLocation;
@@ -27,17 +26,12 @@ export class ShortcutModal extends React.Component<Props, {}> {
 		const SlashKeyCode = 191;
 		if (event.shiftKey && (event.key === "/" || event.keyCode === SlashKeyCode)) {
 			if (location && (location as any).state && (location as any).state.modal === modalName) {
-				this.dismissModal();
+				dismissModal(modalName, this.props.router)();
 			} else {
 				setLocationModalState(router, modalName, true);
 			}
 			event.preventDefault();
 		}
-	}
-
-	dismissModal = (): void => {
-		Events.ShortcutMenu_Dismissed.logEvent();
-		dismissModal(modalName, this.props.router)();
 	}
 
 	render(): JSX.Element {

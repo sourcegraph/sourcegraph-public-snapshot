@@ -5,40 +5,32 @@ import { Link } from "react-router";
 import { IDisposable } from "vs/base/common/lifecycle";
 
 import { context } from "sourcegraph/app/context";
-import "sourcegraph/app/GlobalNav/GlobalNavBackend"; // for side-effects
 import { SearchCTA, ShortcutCTA } from "sourcegraph/app/GlobalNav/GlobalNavCTA";
-import { GlobalNavStore } from "sourcegraph/app/GlobalNav/GlobalNavStore";
 import { ShortcutModal } from "sourcegraph/app/GlobalNav/ShortcutMenu";
 import { SignupOrLogin } from "sourcegraph/app/GlobalNav/SignupOrLogin";
 import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
 import { AfterSignup, BetaSignup } from "sourcegraph/app/modals/index";
 import { abs, isAtRoute } from "sourcegraph/app/routePatterns";
-import { RouterContext, RouterLocation } from "sourcegraph/app/router";
+import { RouterContext } from "sourcegraph/app/router";
 import { FlexContainer, Logo, TabItem, Tabs } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { colors, layout } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/index";
-import { Container } from "sourcegraph/Container";
 import { toggleQuickopen } from "sourcegraph/editor/config";
 import { IntegrationsContainer } from "sourcegraph/home/IntegrationsContainer";
-import { Store } from "sourcegraph/Store";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { LoginModal } from "sourcegraph/user/Login";
 import { SignupModal } from "sourcegraph/user/Signup";
 import { isMobileUserAgent } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
 import { onWorkbenchShown } from "sourcegraph/workbench/main";
 
-interface Props {
-	location: RouterLocation;
-}
-
 interface State {
 	showShortcut: boolean;
 	workbenchShown: boolean;
 }
 
-export class GlobalNav extends Container<Props, State> {
+export class GlobalNav extends React.Component<{}, State> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -46,39 +38,24 @@ export class GlobalNav extends Container<Props, State> {
 	context: RouterContext;
 	workbenchListener: IDisposable;
 
-	constructor(props: Props) {
-		super(props);
-		this.activateSearch = this.activateSearch.bind(this);
-		this.state = { showShortcut: false, workbenchShown: false };
-	}
+	state: State = { showShortcut: false, workbenchShown: false };
 
 	componentDidMount(): void {
-		super.componentDidMount();
 		this.workbenchListener = onWorkbenchShown(shown => this.setState({ workbenchShown: shown } as State));
 	}
 
 	componentWillUnmount(): void {
-		super.componentWillUnmount();
 		if (this.workbenchListener) {
 			this.workbenchListener.dispose();
 		}
 	}
 
-	reconcileState(state: State, props: Props): void {
-		Object.assign(state, props);
-		state.showShortcut = GlobalNavStore.shortcutMenuVisible;
-	}
-
-	stores(): Store<any>[] {
-		return [GlobalNavStore];
-	}
-
-	activateSearch(eventProps?: any): void {
-		Events.Quickopen_Initiated.logEvent(eventProps);
+	activateSearch = (): void => {
+		Events.Quickopen_Initiated.logEvent({ page_location: "SearchCTA" });
 		toggleQuickopen();
 	}
 
-	activateShortcutMenu(): void {
+	activateShortcutMenu = (): void => {
 		Events.ShortcutMenu_Initiated.logEvent();
 	}
 
@@ -89,8 +66,8 @@ export class GlobalNav extends Container<Props, State> {
 			"join",
 		]);
 
-		const location = this.props.location;
 		const router = this.context.router;
+		const location = router.location;
 
 		const isHomeRoute = isAtRoute(router, abs.home);
 		const shouldHide = hiddenNavRoutes.has(location.pathname) || (isHomeRoute && !context.user && context.authEnabled);
@@ -158,7 +135,7 @@ export class GlobalNav extends Container<Props, State> {
 							<ShortcutCTA width={26} />
 						</LocationStateToggleLink>
 					}
-					{this.state.workbenchShown && <a onClick={() => this.activateSearch({ page_location: "SearchCTA" })}><SearchCTA width={18} /></a>}
+					{this.state.workbenchShown && <a onClick={this.activateSearch}><SearchCTA width={18} /></a>}
 					{context.authEnabled &&
 						(context.user
 							? <UserMenu user={context.user} location={location} style={{ flex: "0 0 auto", marginTop: 4 }} />

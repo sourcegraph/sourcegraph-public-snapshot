@@ -80,7 +80,10 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		// This can be implemented by vscode, but without knowing all scenarios in which we
 		// want to display an overlay we've left it the Sourcegraph application's responsibility for toggling visibilty.
 		const modalOverlay = document.querySelector(".workbench-modal-overlay") as any;
-		registerQuickopenListeners(() => modalOverlay.style.visibility = "visible", () => modalOverlay && (modalOverlay.style.visibility = "hidden"));
+		registerQuickopenListeners(
+			() => modalOverlay && (modalOverlay.style.visibility = "visible"),
+			() => modalOverlay && (modalOverlay.style.visibility = "hidden"),
+		);
 
 		const contextService = Services.get(IWorkspaceContextService);
 		contextService.onWorkspaceUpdated(workspace => {
