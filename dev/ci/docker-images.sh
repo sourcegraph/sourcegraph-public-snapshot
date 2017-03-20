@@ -12,6 +12,10 @@ case "$1" in
 	cd cmd/indexer && ./build.sh
 	;;
 
+    searcher)
+	cd cmd/searcher && ./build.sh
+	;;
+
     zap)
 	cd cmd/zap && ./build.sh
 	;;
