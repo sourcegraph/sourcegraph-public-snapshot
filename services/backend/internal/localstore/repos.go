@@ -65,7 +65,7 @@ type dbRepo struct {
 	PushedAt              *time.Time `db:"pushed_at"`
 	VCSSyncedAt           *time.Time `db:"vcs_synced_at"`
 	IndexedRevision       *string    `db:"indexed_revision"`
-	FreezeIndexedRevision bool       `db:"freeze_indexed_revision"`
+	FreezeIndexedRevision *bool      `db:"freeze_indexed_revision"`
 
 	OriginRepoID     *string `db:"origin_repo_id"`
 	OriginService    *int32  `db:"origin_service"` // values from Origin.ServiceType enum
@@ -74,19 +74,22 @@ type dbRepo struct {
 
 func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	r2 := &sourcegraph.Repo{
-		ID:                    r.ID,
-		URI:                   r.URI,
-		Owner:                 r.Owner,
-		Name:                  r.Name,
-		Description:           r.Description,
-		HomepageURL:           r.HomepageURL,
-		DefaultBranch:         r.DefaultBranch,
-		Language:              r.Language,
-		Blocked:               r.Blocked,
-		Fork:                  r.Fork,
-		Private:               r.Private,
-		IndexedRevision:       r.IndexedRevision,
-		FreezeIndexedRevision: r.FreezeIndexedRevision,
+		ID:              r.ID,
+		URI:             r.URI,
+		Owner:           r.Owner,
+		Name:            r.Name,
+		Description:     r.Description,
+		HomepageURL:     r.HomepageURL,
+		DefaultBranch:   r.DefaultBranch,
+		Language:        r.Language,
+		Blocked:         r.Blocked,
+		Fork:            r.Fork,
+		Private:         r.Private,
+		IndexedRevision: r.IndexedRevision,
+	}
+
+	if r.FreezeIndexedRevision != nil && *r.FreezeIndexedRevision {
+		r2.FreezeIndexedRevision = true
 	}
 
 	r2.CreatedAt = &r.CreatedAt
