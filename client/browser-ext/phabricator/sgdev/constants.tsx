@@ -2,6 +2,7 @@ import { PhabricatorInstance } from "../../app/utils/classes";
 
 const sgdevPhabricatorRepoMap = {
 	"nzap": "gitolite.aws.sgdev.org/uber-go/zap.git",
+	"zap": "gitolite.aws.sgdev.org/uber-go/zap.git",
 	"nmux": "gitolite.aws.sgdev.org/mux.git",
 	"nbroke": "gitolite.aws.sgdev.org/sourcegraph/broken-test",
 	"njoda": "gitolite.aws.sgdev.org/JodaOrg/joda-time",

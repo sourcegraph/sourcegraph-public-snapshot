@@ -58,6 +58,7 @@ export interface CodeCell {
 
 export interface PhabricatorCodeCell extends CodeCell {
 	isLeftColumnInSplit: boolean;
+	isUnified: boolean;
 }
 
 export interface GitHubURLData {

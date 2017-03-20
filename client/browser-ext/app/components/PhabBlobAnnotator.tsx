@@ -106,6 +106,8 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 				repoStat = { [repo]: resp };
 			}
 			this.setState({ resolvedRevs: Object.assign({}, this.state.resolvedRevs, { [key]: resp }, repoStat) });
+		}).catch((error) => {
+			// no-op. we only want to print errors once, they are printed during promise creations
 		});
 	}
 

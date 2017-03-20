@@ -2,17 +2,95 @@ import { PhabricatorInstance } from "../../app/utils/classes";
 import { CodeCell, PhabChangeUrl, PhabDifferentialUrl, PhabDiffusionUrl, PhabRevisionUrl, PhabricatorCodeCell, PhabricatorMode, PhabUrl } from "../../app/utils/types";
 import { phabricatorInstance } from "./context";
 
+const REV_SHA_PATTERN = /r([0-9A-z]+)([0-9a-f]{40})/;
+
 function getRevFromPage(): string | null {
-	const shaPattern = /r([0-9A-z]+)([0-9a-f]{40})/;
 	const revElement = document.getElementsByClassName("phui-tag-core").item(0);
 	if (!revElement) {
 		return null;
 	}
-	const shaMatch = shaPattern.exec(revElement.children[0].getAttribute("href") as string);
+	const shaMatch = REV_SHA_PATTERN.exec(revElement.children[0].getAttribute("href") as string);
 	if (!shaMatch) {
 		return null;
 	}
 	return shaMatch[2];
+}
+
+function isDifferentialLanded(): boolean {
+	const closedElement = document.getElementsByClassName("visual-only phui-icon-view phui-font-fa fa-check-square-o");
+	if (closedElement.length === 0) {
+		return false;
+	}
+	return true;
+}
+
+/**
+ * DEPRECATED: there can be more than one commit here, to different branches
+ * 	prefer to get the commit ID to master from the revision contents table,
+ *  in the description of the last diff.
+ */
+function getDifferentialCommitFromPage(): string | null {
+	const possibleRevElements = document.getElementsByClassName("phui-property-list-value");
+	for (const revElement of Array.from(possibleRevElements)) {
+		if (!(revElement && revElement.children && revElement.children[0])) {
+			continue;
+		}
+		const linkHref =  revElement.children[0].getAttribute("href");;
+		if (!linkHref) {
+			continue;
+		}
+		const shaMatch = REV_SHA_PATTERN.exec(linkHref);
+		if (!shaMatch) {
+			continue;
+		}
+		return shaMatch[2];
+	}
+	return null;
+}
+
+const DIFF_LINK = /D[0-9]+\?id=([0-9]+)/i;
+function getMaxDiffFromTabView(): {diffId: number, revDescription: string} | null {
+	// first, find Revision contents table box
+	const headerShells = document.getElementsByClassName("phui-header-header");
+	let revisionContents: Element | null = null;
+	for (const headerShell of Array.from(headerShells)) {
+		if (headerShell.textContent === "Revision Contents") {
+			revisionContents = headerShell;
+		}
+	}
+	if (!revisionContents) {
+		return null;
+	}
+	const parentContainer = revisionContents.parentElement!.parentElement!.parentElement!.parentElement!.parentElement!;
+	const tables = parentContainer.getElementsByClassName("aphront-table-view");
+	for (const table of Array.from(tables)) {
+		const tableRows = (table as HTMLTableElement).rows;
+		const row = tableRows[0];
+		// looking for the history tab of the revision contents table
+		if (row.children[0].textContent !== "Diff") {
+			continue;
+		}
+		const links = table.getElementsByTagName("a");
+		let max: {diffId: number, revDescription: string} | null = null;
+		for (const link of Array.from(links)) {
+			const linkHref = link.getAttribute("href");
+			if (!linkHref) {
+				continue;
+			}
+			const matches = DIFF_LINK.exec(linkHref);
+			if (!matches) {
+				continue;
+			}
+			let revDescription = link.parentNode!.parentNode!.childNodes[3].textContent;
+			const shaMatch = REV_SHA_PATTERN.exec(revDescription!);
+			if (!shaMatch) {
+				continue;
+			}
+			max = max && max.diffId > parseInt(matches[1], 10) ? max : { diffId: parseInt(matches[1], 10), revDescription: shaMatch[2]};
+		}
+		return max;
+	}
+	return null;
 }
 
 function getRepoFromDifferentialPage(): string | null {
@@ -83,11 +161,13 @@ function getParentFromRevisionPage(): string | null {
 	return null;
 }
 
-const PHAB_DIFFUSION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(source|diffusion)\/([A-Za-z0-9]+)\/browse\/([\w-]+)\/([^;]+)(;[0-9a-f]{40})?/i;
-const PHAB_DIFFERENTIAL_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(D[0-9]+)/i;
+const PHAB_DIFFUSION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(source|diffusion)\/([A-Za-z0-9]+)\/browse\/([\w-]+)\/([^;$]+)(;[0-9a-f]{40})?(?:\$[0-9]+)?/i;
+const PHAB_DIFFERENTIAL_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(D[0-9]+)(?:\?(?:(?:id=([0-9]+))|(vs=(?:[0-9]+|on)&id=[0-9]+)))?/i;
 const PHAB_REVISION_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/r([0-9A-z]+)([0-9a-f]{40})/i;
 // http://phabricator.aws.sgdev.org/source/nmux/change/master/mux.go
 const PHAB_CHANGE_REGEX = /^(https?):\/\/([A-Z\d\.-]{2,})\.([A-Z]{2,})(:\d{2,4})?\/(source|diffusion)\/([A-Za-z0-9]+)\/change\/([\w-]+)\/([^;]+)(;[0-9a-f]{40})?/i;
+
+const COMPARISON_REGEX = /^vs=((?:[0-9]+|on))&id=([0-9]+)/i;
 
 export function getPhabricatorState(loc: Location): PhabUrl | null {
 	const diffusionMatches = PHAB_DIFFUSION_REGEX.exec(loc.href);
@@ -137,6 +217,8 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			extension: differentialMatches[3],
 			port: differentialMatches[4],
 			differentialId: differentialMatches[5],
+			diffBeingViewed: differentialMatches[6],
+			comparison: differentialMatches[7],
 		};
 		const differentialId = match.differentialId;
 		const phabURI = getRepoFromDifferentialPage();
@@ -158,11 +240,43 @@ export function getPhabricatorState(loc: Location): PhabUrl | null {
 			console.error(`repository url ${repoUrl} could not be mapped to a Phabricator staging URL, required for differential views.`);
 			return null;
 		}
+		let baseBranch = `phabricator/base/${diffId}`;
+		let headBranch = `phabricator/diff/${diffId}`;
+
+		const maxDiff = getMaxDiffFromTabView();
+		const diffLanded = isDifferentialLanded();
+		if (diffLanded && !maxDiff) {
+			console.error("looking for the final diff id in the revision contents table failed. expected final row to have the commit in the description field.");
+			return null;
+		}
+		if (match.comparison) {
+			// urls that looks like this: http://phabricator.aws.sgdev.org/D3?vs=on&id=8&whitespace=ignore-most#toc
+			// if the first parameter (vs=) is not 'on', not sure how to handle
+			const comparisonMatch = COMPARISON_REGEX.exec(match.comparison)!;
+			const leftId = comparisonMatch[1];
+			if (leftId !== "on") {
+				// haven't figured out how to handle this case yet.
+				return null;
+			}
+			headBranch = `phabricator/diff/${comparisonMatch[2]}`;
+			baseBranch = `phabricator/base/${comparisonMatch[2]}`;
+			if (diffLanded && maxDiff && comparisonMatch[2] === `${maxDiff.diffId}`) {
+				headBranch = maxDiff.revDescription;
+				baseBranch = headBranch.concat("~1");
+			}
+		} else {
+			// check if the diff we are viewing is the max diff. if so,
+			// right is the merged rev into master, and left is master~1
+			if (diffLanded && maxDiff && diffId === `${maxDiff.diffId}`) {
+				headBranch = maxDiff.revDescription;
+				baseBranch = maxDiff.revDescription.concat("~1");
+			}
+		}
 		return {
 			baseRepoURI: stagingUrl,
-			baseBranch: `phabricator/base/${diffId}`,
+			baseBranch: baseBranch,
 			headRepoURI: stagingUrl, // not clear if this should be repoURI or something else
-			headBranch: `phabricator/diff/${diffId}`, // This will be blank on GitHub, but on a manually staged instance should exist
+			headBranch: headBranch, // This will be blank on GitHub, but on a manually staged instance should exist
 			differentialId: differentialId,
 			mode: PhabricatorMode.Differential,
 		} as PhabDifferentialUrl;
@@ -299,6 +413,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 					isAddition: false,
 					isDeletion: false,
 					isLeftColumnInSplit: true,
+					isUnified: false,
 				});
 			}
 			if (!isBase && headLine && headCodeCell) {
@@ -308,6 +423,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 					isAddition: false,
 					isDeletion: false,
 					isLeftColumnInSplit: false,
+					isUnified: false,
 				});
 			}
 		} else {
@@ -321,6 +437,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 					isAddition: false,
 					isDeletion: false,
 					isLeftColumnInSplit: false,
+					isUnified: true,
 				});
 			} else if (!isBase && headLine && codeCell) {
 				if (!codeCell.classList.contains("old") && !codeCell.classList.contains("new")) {
@@ -333,6 +450,7 @@ export function getCodeCellsForDifferentialAnnotations(table: HTMLTableElement, 
 					isAddition: false,
 					isDeletion: false,
 					isLeftColumnInSplit: false,
+					isUnified: true,
 				});
 			}
 		}

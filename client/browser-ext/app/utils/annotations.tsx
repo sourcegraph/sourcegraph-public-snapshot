@@ -42,7 +42,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 		setTimeout(() => {
 			try {
 				let ignoreFirstTextChar = repoRevSpec.isDelta;
-				if ((cell as PhabricatorCodeCell).isLeftColumnInSplit) {
+				if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {
 					ignoreFirstTextChar = false;
 				}
 				const annLine = convertNode(cell.cell, 1, cell.line, ignoreFirstTextChar);
