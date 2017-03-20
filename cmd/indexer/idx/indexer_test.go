@@ -18,24 +18,28 @@ import (
 
 func Test_queueWithoutDuplicates(t *testing.T) {
 	enqueue, dequeue := queueWithoutDuplicates(prometheus.NewGauge(prometheus.GaugeOpts{}))
-	doDequeue := func() string {
-		c := make(chan string)
+	doDequeue := func() qitem {
+		c := make(chan qitem)
 		dequeue <- c
 		return <-c
 	}
 
-	enqueue <- "foo"
-	enqueue <- "bar"
-	enqueue <- "foo"
-	enqueue <- "baz"
+	enqueue <- qitem{repo: "foo"}
+	enqueue <- qitem{repo: "bar"}
+	enqueue <- qitem{repo: "foo"}
+	enqueue <- qitem{repo: "baz"}
 
-	if doDequeue() != "foo" {
+	var q qitem
+	q = qitem{repo: "foo"}
+	if doDequeue() != q {
 		t.Fail()
 	}
-	if doDequeue() != "bar" {
+	q = qitem{repo: "bar"}
+	if doDequeue() != q {
 		t.Fail()
 	}
-	if doDequeue() != "baz" {
+	q = qitem{repo: "baz"}
+	if doDequeue() != q {
 		t.Fail()
 	}
 }
@@ -73,8 +77,11 @@ func Test_index_java(t *testing.T) {
 	}
 
 	// expected output data
-	expEnqueuedRepos := depRepos[:]
-	sort.Strings(expEnqueuedRepos)
+	expEnqueuedItems := make([]qitem, len(depRepos))
+	for i, r := range depRepos {
+		expEnqueuedItems[i] = qitem{repo: r}
+	}
+	sort.Slice(expEnqueuedItems, func(i, j int) bool { return expEnqueuedItems[i].repo < expEnqueuedItems[j].repo })
 
 	wq := NewQueue(nil)
 	ctx := accesscontrol.WithInsecureSkip(context.Background(), true)
@@ -147,7 +154,7 @@ func Test_index_java(t *testing.T) {
 		return rp, nil
 	}
 
-	err := index(ctx, wq, inputRepo)
+	err := index(ctx, wq, inputRepo, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,9 +170,9 @@ func Test_index_java(t *testing.T) {
 	}
 
 	// Collect queue
-	var enqueued []string
-	for range expEnqueuedRepos {
-		c := make(chan string)
+	var enqueued []qitem
+	for range expEnqueuedItems {
+		c := make(chan qitem)
 		wq.dequeue <- c
 		select {
 		case foundRepo := <-c:
@@ -174,8 +181,9 @@ func Test_index_java(t *testing.T) {
 			t.Fatal("timed out waiting for enqueued repository")
 		}
 	}
-	sort.Strings(enqueued)
-	if !reflect.DeepEqual(expEnqueuedRepos, enqueued) {
-		t.Errorf("after one indexing pass, expected queue to contain %+v, but found %+v", expEnqueuedRepos, enqueued)
+
+	sort.Slice(enqueued, func(i, j int) bool { return enqueued[i].repo < enqueued[j].repo })
+	if !reflect.DeepEqual(expEnqueuedItems, enqueued) {
+		t.Errorf("after one indexing pass, expected queue to contain %+v, but found %+v", expEnqueuedItems, enqueued)
 	}
 }
