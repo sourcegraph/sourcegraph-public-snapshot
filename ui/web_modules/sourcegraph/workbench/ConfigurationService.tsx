@@ -82,7 +82,7 @@ const config = {
 		codeLens: codeLensEnabled,
 		glyphMargin: false,
 		hideCursorInOverviewRuler: true,
-		selectionHighlight: false,
+		selectionHighlight: true,
 	},
 	files: {
 		eol: "\n",
