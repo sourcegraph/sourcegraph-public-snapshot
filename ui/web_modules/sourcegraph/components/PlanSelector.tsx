@@ -3,6 +3,7 @@ import * as React from "react";
 import { FlexContainer, Heading, Label, Panel } from "sourcegraph/components";
 import { ChevronRight } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
+import { MONTHLY_SEAT_COST } from "sourcegraph/user/Paywall";
 
 interface Props {
 	select: (plan: PlanType) => () => void;
@@ -41,9 +42,7 @@ export function PersonalPlan({ onClick }: PlanProps): JSX.Element {
 		onClick={onClick}
 		name="Personal"
 		desc="Your personal, private code"
-		label="Sale!"
 		price={0}
-		salePrice={9}
 		unit="per month" />;
 }
 
@@ -53,7 +52,7 @@ export function OrgPlan({ onClick }: PlanProps): JSX.Element {
 		name="Organization"
 		desc="One organizaton's private code"
 		label="Free 14-day trial"
-		price={25}
+		price={MONTHLY_SEAT_COST}
 		unit="per user/mo" />;
 }
 

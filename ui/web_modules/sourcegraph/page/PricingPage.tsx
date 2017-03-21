@@ -11,6 +11,7 @@ import { colors, whitespace } from "sourcegraph/components/utils";
 import * as styles from "sourcegraph/page/Page.css";
 import { Events, PAGE_PRICING } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
+import { MONTHLY_SEAT_COST } from "sourcegraph/user/Paywall";
 
 export function PricingPage({ location }: { location: RouterLocation }): JSX.Element {
 	const privateScopeRegEx = /(^repo,)|(,repo$)|(,repo,)|(^repo$)/;
@@ -76,7 +77,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 						<div className={styles.plan_box}>
 							<Panel color="green" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Organization</Heading>
-								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>10</span></Heading>
+								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>{MONTHLY_SEAT_COST}</span></Heading>
 								<span className={styles.amount_per}>per user, per month</span>
 							</Panel>
 							{organizationPlanButton}

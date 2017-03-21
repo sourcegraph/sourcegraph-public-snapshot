@@ -70,7 +70,8 @@ export function TrialEndingWarning({ layout, repo }: {
 	</Toast>;
 }
 
-const SEAT_COST = 300;
+const SEAT_COST = 120;
+export const MONTHLY_SEAT_COST = SEAT_COST / 12;
 
 interface State {
 	seats: string;
