@@ -28,8 +28,8 @@ var FormNameToHubSpotID = map[string]string{
 // HubSpot Events and IDs are all defined in HubSpot "Events" web console:
 // https://app.hubspot.com/reports/2762526/events
 var EventNameToHubSpotID = map[string]string{
-	// ZapAuthCompletedEventID is an identifier for the "ZapAuthCompleted" event
-	"ZapAuthCompletedEventID": "000001981045",
+	// ZapAuthCompleted is an identifier for the "ZapAuthCompleted" event
+	"ZapAuthCompleted": "000001981045",
 }
 
 var client *hubspot.Client
