@@ -131,6 +131,7 @@
 
 :global .explorer-folders-view .monaco-tree-row .sub-content::before {
 	flex:none;
+	margin-top:4px;
 }
 
 /* Style Code lens */
