@@ -59,6 +59,7 @@ func newRouter() *mux.Router {
 		"security",
 		"styleguide",
 		"customers/twitter",
+		"zap/beta",
 		"terms",
 		"tools",
 		"tools/editor",

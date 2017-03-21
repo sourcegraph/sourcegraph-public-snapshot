@@ -7,38 +7,9 @@ import { FlexContainer, Heading, Hero } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, whitespace } from "sourcegraph/components/utils";
 
+import { ZapBetaInstructions } from "sourcegraph/page/ZapBetaInstructions";
+
 export function ZapBetaPage({ location }: LocationProps): JSX.Element {
-	const codeSx = {
-		display: "block",
-		backgroundColor: `${colors.blueGrayD2()}`,
-		color: `${colors.greenL1()}`,
-		padding: "12px 16px",
-		borderRadius: 4,
-		marginBottom: whitespace[5],
-	};
-	const stepSx = {
-		display: "block",
-		backgroundColor: `${colors.blueGrayL3()}`,
-		color: `${colors.blueGrayL1()}`,
-		borderRadius: whitespace[3],
-		width: 24,
-		height: 24,
-		textAlign: "center",
-		position: "relative",
-		top: "-12px",
-		lineHeight: "23px",
-		margin: "auto",
-	};
-	const keySx = {
-		display: "inline",
-		color: `${colors.blueGray()}`,
-		backgroundColor: `${colors.blueGrayL3()}`,
-		border: `1px solid ${colors.blueGrayL2()}`,
-		boxShadow: "rgba(201, 212, 227, 1) 0px 4px 0px 0px",
-		borderRadius: 4,
-		padding: "12.5px 24px",
-		margin: whitespace[0],
-	};
 	const zigSx = {
 		background: `linear-gradient(-160deg, #FCFCFD 16px, transparent 0) 0 16px, linear-gradient(160deg,  #FCFCFD 16px, ${colors.blueGrayL2()} 0) 0 16px`,
 		backgroundColor: "white",
@@ -48,9 +19,6 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 		height: 32,
 		margin: whitespace[0],
 	};
-
-	const emails = context.emails && context.emails.EmailAddrs || null;
-	const primaryEmail = (emails && emails.filter(e => e.Primary).map(e => e.Email)[0]) || null;
 
 	return (
 		<div>
@@ -78,7 +46,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 			</Hero>
 
 			<Hero color="dark" style={{ paddingTop: whitespace[5], paddingBottom: whitespace[0] }}>
-				<FlexContainer style={{ margin: "auto", maxWidth: 640, paddingTop: whitespace[5], paddingRight: whitespace[3], paddingLeft: whitespace[3], }}>
+				<FlexContainer style={{ margin: "auto", maxWidth: 640, paddingTop: whitespace[5], paddingRight: whitespace[3], paddingLeft: whitespace[3] }}>
 					<Heading level={2} align="center" style={{
 						marginTop: whitespace[6],
 						marginBottom: whitespace[0],
@@ -95,113 +63,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 				}} src={`${context.assetsRoot}/img/zap-lp-illus-1.png`} />
 			</Hero>
 
-			<FlexContainer direction="top-bottom" style={{
-				maxWidth: 640,
-				margin: "auto",
-				paddingTop: whitespace[5],
-				paddingRight: whitespace[3],
-				paddingLeft: whitespace[3],
-			}}>
-				<Heading level={2} align="center" style={{
-					marginTop: whitespace[5],
-					marginBottom: whitespace[5],
-					color: colors.blueGrayD1(),
-				}}>
-					Instructions
-				</Heading>
-
-				<div style={{
-					borderTop: `1px solid ${colors.blueGrayL3()}`,
-				}}>
-					<div style={stepSx}>1</div>
-					<p>To install and run the Zap server, open a terminal and paste:</p>
-					<code style={codeSx}>{`sh <(curl -sSf https://sourcegraph.com/install/zap${primaryEmail && "?email=" + primaryEmail})`}</code>
-				</div>
-
-				<div style={{
-					borderTop: `1px solid ${colors.blueGrayL3()}`,
-					marginTop: whitespace[3],
-				}}>
-					<div style={stepSx}>2</div>
-					<p>To authenticate Zap with your Sourcegraph account, type zap auth into the terminal and follow the prompts.</p>
-					<code style={codeSx}>zap auth</code>
-				</div>
-
-				<div style={{
-					borderTop: `1px solid ${colors.blueGrayL3()}`,
-					marginTop: whitespace[3],
-				}}>
-					<div style={stepSx}>3</div>
-					<p>Before initializing Zap on your repo in the next step, visit the repo you'd like to use on Sourcegraph:</p>
-					<a href="https://sourcegraph.com/" target="_blank" style={{ wordWrap: "break-word" }}>https://sourcegraph.com/github.com/your_org/your_repo</a>
-					<p>This repo should also be cloned and avaliable for editing in your local environment.</p>
-				</div>
-
-				<div style={{
-					borderTop: `1px solid ${colors.blueGrayL3()}`,
-					marginTop: whitespace[3],
-				}}>
-					<div style={stepSx}>4</div>
-					<p>To begin using Zap on a repository, open a terminal and run:</p>
-					<code style={codeSx}>zap init</code>
-				</div>
-
-				<div style={{
-					borderTop: `1px solid ${colors.blueGrayL3()}`,
-					marginTop: whitespace[3],
-				}}>
-					<div style={stepSx}>5</div>
-					<p>Open Visual Studio Code in your repo's directory.</p>
-					<code style={codeSx}>code .</code>
-				</div>
-
-				<div style={{
-					borderTop: `1px solid ${colors.blueGrayL3()}`,
-					marginTop: whitespace[3],
-				}}>
-					<div style={stepSx}>6</div>
-					<p>To install the Visual Studio Code extension, open the command palette (Command+P) and type:</p>
-					<code style={codeSx}>ext install sqs.vscode-zap</code>
-					<p>Click the “Reload” button to reload Visual Studio Code.</p>
-				</div>
-
-				<div style={{
-					borderTop: `1px solid ${colors.blueGrayL3()}`,
-					borderBottom: `1px solid ${colors.blueGrayL3()}`,
-					marginTop: whitespace[3],
-					paddingBottom: whitespace[3],
-					textAlign: "center",
-				}}>
-					<div style={stepSx}>7</div>
-					<p>To jump to Sourcegraph from Visual Studio Code, use the keyboard shortcut:</p>
-					<div style={{
-						display: "block",
-						margin: `${whitespace[5]} 0`,
-					}}>
-						<Heading level={4} style={keySx}>Option</Heading>
-						<span style={{
-							fontSize: 24,
-							lineHeight: whitespace[3],
-							fontWeight: 800,
-							margin: `0 ${whitespace[3]}`,
-							color: colors.blueGray(),
-						}}>+</span>
-						<Heading level={4} style={keySx}>S</Heading>
-					</div>
-					<p>or right-click anywhere in the file and select “Open in Web Browser.”</p>
-				</div>
-
-				<div style={{
-					margin: `${whitespace[3]} 0`,
-					textAlign: "center",
-				}}>
-					<p>
-						Running into problems?&nbsp;
-						<a href="https://slack-files.com/T02FSM7DL-F4BRWRCDC-00bd5b24eb" target="_blank">Check our troubleshooting</a>.
-					</p>
-				</div>
-
-			</FlexContainer>
+			<ZapBetaInstructions />
 
 			<div style={zigSx}></div>
 
