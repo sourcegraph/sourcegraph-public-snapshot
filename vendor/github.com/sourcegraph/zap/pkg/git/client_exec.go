@@ -54,7 +54,7 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 	RemoteForBranchOrZapDefaultRemote(string) (string, error)
 	Fetch(string, string) (bool, error)
 	Reset(string, string) error
-}, fdisk, fbuf FileSystem, snapshot, ref, gitBranch string, op ot.WorkspaceOp) error {
+}, fdisk, fbuf FileSystem, snapshot, gitBranch string, op ot.WorkspaceOp) error {
 	if TestApplyToWorktree != nil {
 		return TestApplyToWorktree(op)
 	}
@@ -160,7 +160,7 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 		}
 	}
 	if op.GitHead != "" {
-		if err := FetchAndCheck(ctx, gitRepo, gitBranch, "refs/zap/"+ref, op.GitHead); err != nil {
+		if err := FetchAndCheck(ctx, gitRepo, gitBranch, "refs/zap/"+op.GitHead, op.GitHead); err != nil {
 			return err
 		}
 
@@ -339,20 +339,20 @@ func DiffOps(old, new []rune) ot.EditOps {
 	return nil
 }
 
-var testPushGitRefToGitUpstream func(headOID, ref, gitBranch string) error
+var testPushGitRefToGitUpstream func(headOID, gitBranch string) error
 
 func PushGitRefToGitUpstream(ctx context.Context, gitRepo interface {
 	RemoteForBranchOrZapDefaultRemote(string) (string, error)
 	Push(string, string, bool) error
-}, headOID, ref, gitBranch string) error {
+}, headOID, gitBranch string) error {
 	if testPushGitRefToGitUpstream != nil {
-		return testPushGitRefToGitUpstream(headOID, ref, gitBranch)
+		return testPushGitRefToGitUpstream(headOID, gitBranch)
 	}
 	return backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
 		gitRemote, err := gitRepo.RemoteForBranchOrZapDefaultRemote(gitBranch)
 		if err != nil {
 			return err
 		}
-		return gitRepo.Push(gitRemote, headOID+":refs/zap/"+ref, true)
+		return gitRepo.Push(gitRemote, headOID+":refs/zap/"+headOID, true)
 	}, GitBackOff(), nil)
 }

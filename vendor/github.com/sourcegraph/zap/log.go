@@ -45,7 +45,7 @@ func (s *Server) baseLogger() log.Logger {
 			}
 			switch lvl.String() {
 			case "debug":
-				return term.FgBgColor{Fg: term.DarkGray}
+				return term.FgBgColor{Fg: term.Blue}
 			case "info":
 				return term.FgBgColor{Fg: term.Gray}
 			case "warn":

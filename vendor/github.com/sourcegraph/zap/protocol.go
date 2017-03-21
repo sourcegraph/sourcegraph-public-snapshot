@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
@@ -214,20 +213,6 @@ func (r RefIdentifier) String() string {
 		r.Ref = "<no-ref>"
 	}
 	return r.Repo + ":" + r.Ref
-}
-
-// IsRemoteRef reports whether ref refers to a remote ref (starts with
-// "remote/").
-func IsRemoteRef(ref string) bool {
-	CheckRefName(ref)
-	return strings.HasPrefix(ref, "remote/")
-}
-
-// IsBranchRef reports whether ref refers to a branch (starts with
-// "branch/").
-func IsBranchRef(ref string) bool {
-	CheckRefName(ref)
-	return strings.HasPrefix(ref, "branch/")
 }
 
 // RefListParams contains the parameters for the "ref/list" request.
