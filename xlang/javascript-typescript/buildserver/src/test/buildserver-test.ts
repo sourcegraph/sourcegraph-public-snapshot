@@ -1,7 +1,13 @@
 
-import { describeTypeScriptService, initializeTypeScriptService, TestContext as TypeScriptServiceTestContext } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
+import { describeTypeScriptService, initializeTypeScriptService, TestContext as TypeScriptServiceTestContext, shutdownTypeScriptService } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
+import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
+import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import { BuildHandler } from "../buildhandler";
 import * as assert from 'assert';
+import rimraf = require('rimraf');
+import * as path from 'path';
+import * as os from 'os';
+import * as fs from 'mz/fs';
 global.Promise = require('bluebird');
 // forcing strict mode
 import * as util from 'javascript-typescript-langserver/lib/util';
@@ -11,14 +17,35 @@ interface TestContext extends TypeScriptServiceTestContext {
 	service: BuildHandler;
 }
 
+const tempDir = path.join(os.tmpdir(), 'tsjs', 'test');
+const createHandler: TypeScriptServiceFactory = (client: LanguageClientHandler, options: TypeScriptServiceOptions) => new BuildHandler(client, { ...options, tempDir });
+
+/**
+ * Shuts the TypeScriptService down (to be used in `afterEach()`) and deletes its temporary directory
+ */
+export async function shutdownBuildHandler(this: TestContext): Promise<void> {
+	await shutdownTypeScriptService.call(this);
+	await new Promise((resolve, reject) => rimraf(tempDir, err => err ? reject(err) : resolve()));
+}
+
 // Run build-handler-specific tests
 describe('BuildHandler', function () {
 	this.timeout(20000);
 
-	describeTypeScriptService(BuildHandler);
+	describeTypeScriptService(createHandler, shutdownBuildHandler);
+
+	describe('shutdown()', () => {
+		beforeEach(<any>initializeTypeScriptService(createHandler, new Map()));
+		it('should delete the temporary directory passed in options', async function (this: TestContext) {
+			assert(await fs.exists(tempDir), `Expected ${tempDir} to be created`);
+			await this.service.shutdown();
+			assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
+		});
+		afterEach(() => new Promise((resolve, reject) => rimraf(tempDir, err => err ? reject(err) : resolve())));
+	});
 
 	describe('Workspace with single package.json at root', function () {
-		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
 				"name": "mypkg",
 				"version": "4.0.2",
@@ -49,6 +76,7 @@ describe('BuildHandler', function () {
 				"",
 			].join('\n')]
 		])));
+		afterEach(<any>shutdownBuildHandler);
 		describe('getDefinition()', <any>function (this: TestContext) {
 			specify('cross-repo definition 1', <any>async function (this: TestContext) {
 				const result = await this.service.getDefinition({
@@ -487,7 +515,7 @@ describe('BuildHandler', function () {
 	});
 
 	describe('Workspace with multiple package.json files', <any>function (this: TestContext) {
-		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
 				"name": "rootpkg",
 				"version": "4.0.2",
@@ -511,6 +539,7 @@ describe('BuildHandler', function () {
 				}
 			})]
 		])));
+		afterEach(<any>shutdownBuildHandler);
 		specify('cross-repo definition 1', <any>async function (this: TestContext) {
 			const result = await this.service.getDefinition({
 				textDocument: {
@@ -562,7 +591,7 @@ describe('BuildHandler', function () {
 	});
 
 	describe('Workspace with vendored dependencies', <any>function (this: TestContext) {
-		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
 				"name": "rootpkg",
 				"version": "4.0.2",
@@ -573,6 +602,7 @@ describe('BuildHandler', function () {
 			['file:///a.ts', "import { x } from 'diff';"],
 			['file:///node_modules/diff/index.d.ts', "export const x = 1;"]
 		])));
+		afterEach(<any>shutdownBuildHandler);
 		specify('cross-repo definition 1', <any>async function (this: TestContext) {
 			const result = await this.service.getDefinition({
 				textDocument: {
@@ -600,7 +630,7 @@ describe('BuildHandler', function () {
 	});
 
 	describe('Dependency installation should not run scripts (javascript-dep-npm\'s scripts will fail)', function () {
-		beforeEach(<any>initializeTypeScriptService(BuildHandler, new Map([
+		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
 				"name": "rootpkg",
 				"version": "4.0.2",
@@ -610,6 +640,7 @@ describe('BuildHandler', function () {
 			})],
 			['file:///a.ts', "import * as xyz from 'javascript-dep-npm';"],
 		])));
+		afterEach(<any>shutdownBuildHandler);
 		specify('cross-repo definition 1', <any>async function (this: TestContext) {
 			const result = await this.service.getDefinition({
 				textDocument: {

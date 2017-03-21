@@ -1,6 +1,5 @@
 
 import * as rimraf from 'rimraf';
-import * as temp from 'temp';
 import * as path from 'path';
 
 import {
@@ -12,7 +11,8 @@ import {
 } from 'vscode-languageserver';
 import { CancellationToken } from 'vscode-jsonrpc';
 
-import { TypeScriptService } from 'javascript-typescript-langserver/lib/typescript-service';
+import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
+import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
 import { install, info, infoAlt, parseGitHubInfo } from './yarnshim';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
@@ -26,9 +26,25 @@ import {
 	ReferenceInformation,
 	InitializeParams
 } from 'javascript-typescript-langserver/lib/request-type';
+import mkdirp = require('mkdirp');
 
 interface HasURI {
 	uri: string;
+}
+
+export type BuildHandlerFactory = (client: LanguageClientHandler, options: BuildHandlerOptions) => BuildHandler;
+
+/**
+ * Options to pass to the BuildHandler constructor
+ */
+export interface BuildHandlerOptions extends TypeScriptServiceOptions {
+	/**
+	 * The temporary directory to use for this specific workspace/connection,
+	 * for example `/tmp/tsjs/worker3/92900ce2-0e47-11e7-93ae-92361f002671`
+	 *
+	 * Gets created with `mkdir -p` on `initialize` and deleted with `rm -rf` on `shutdown`
+	 */
+	tempDir: string;
 }
 
 /**
@@ -43,7 +59,6 @@ interface HasURI {
  */
 export class BuildHandler extends TypeScriptService {
 	private remoteFileSystem: FileSystem;
-	private yarndir: string;
 	private yarnGlobalDir: string;
 	private yarnOverlayRoot: string;
 
@@ -56,22 +71,26 @@ export class BuildHandler extends TypeScriptService {
 	private managedModuleInit = new Map<string, Promise<Map<string, DependencyReference>>>();
 	private puntWorkspaceSymbol = false;
 
+	protected options: BuildHandlerOptions;
+
+	constructor(client: LanguageClientHandler, options: BuildHandlerOptions) {
+		super(client, options);
+	}
+
 	async initialize(params: InitializeParams, token = CancellationToken.None): Promise<InitializeResult> {
 		// Workaround for https://github.com/sourcegraph/sourcegraph/issues/4542
 		if (params.rootPath && params.rootPath.startsWith('file://')) {
 			params.rootPath = uri2path(params.rootPath);
 		}
+		// Create temporary directory
+		await new Promise((resolve, reject) => mkdirp(this.options.tempDir, err => err ? reject(err) : resolve()));
 		return await super.initialize(params, token);
 	}
 
 	private async installDependencies(): Promise<void> {
 		this.remoteFileSystem = this.fileSystem;
-		const yarndir = await new Promise<string>((resolve, reject) => {
-			temp.mkdir("tsjs-yarn", (err: any, dirPath: string) => err ? reject(err) : resolve(dirPath));
-		});
-		this.yarndir = yarndir;
-		this.yarnOverlayRoot = path.join(yarndir, "workspace");
-		this.yarnGlobalDir = path.join(yarndir, "global");
+		this.yarnOverlayRoot = path.join(this.options.tempDir, "workspace");
+		this.yarnGlobalDir = path.join(this.options.tempDir, "global");
 		// Search for package.json files
 		const uris = await this.remoteFileSystem.getWorkspaceFiles(undefined);
 		const files = uris.map(uri => uri2path(uri));
@@ -99,10 +118,9 @@ export class BuildHandler extends TypeScriptService {
 	}
 
 	async shutdown(): Promise<void> {
-		// Delete dependencies folder
-		await new Promise<void>((resolve, reject) => {
-			rimraf(this.yarndir, err => err ? reject(err) : resolve());
-		});
+		// Delete workspace-specific temporary folder with dependencies
+		console.error(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
+		await new Promise((resolve, reject) => rimraf(this.options.tempDir, err => err ? reject(err) : resolve()));
 		await super.shutdown();
 	}
 

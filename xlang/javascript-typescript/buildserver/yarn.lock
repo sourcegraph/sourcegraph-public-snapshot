@@ -18,6 +18,12 @@
   version "2.2.33"
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.33.tgz#d79a0061ec270379f4d9e225f4096fb436669def"
 
+"@types/mz@0.0.30":
+  version "0.0.30"
+  resolved "https://registry.yarnpkg.com/@types/mz/-/mz-0.0.30.tgz#58daa9f35811d607037bab1f9cc7d4a23e6aafae"
+  dependencies:
+    "@types/node" "*"
+
 "@types/node@*":
   version "6.0.63"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-6.0.63.tgz#e08acbbd5946e0e95990b1c76f3ce5b7882a48eb"
@@ -29,6 +35,12 @@
 "@types/temp@0.8.29":
   version "0.8.29"
   resolved "https://registry.yarnpkg.com/@types/temp/-/temp-0.8.29.tgz#c3cdc113e3c138f90e5e970d51e41b0b7f62678d"
+  dependencies:
+    "@types/node" "*"
+
+"@types/uuid@^2.0.29":
+  version "2.0.29"
+  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-2.0.29.tgz#939a198ab73567f811ab84f670d2be9c25addd41"
   dependencies:
     "@types/node" "*"
 
@@ -848,6 +860,10 @@ isstream@~0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
 
+iterare@^0.0.7:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/iterare/-/iterare-0.0.7.tgz#130c4ffb6250a97c2039f7225b5b8d0bcee83a3e"
+
 jade@0.26.3:
   version "0.26.3"
   resolved "https://registry.yarnpkg.com/jade/-/jade-0.26.3.tgz#8f10d7977d8d79f2f6ff862a81b0513ccb25686c"
@@ -855,9 +871,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.5:
-  version "2.0.0-pre.5"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.5.tgz#2fe0d1d426a5676ae84978bcfded1911e8aba2d6"
+javascript-typescript-langserver@^2.0.0-pre.6:
+  version "2.0.0-pre.6"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.6.tgz#4134d1603c3292dce4e8af2f1f5b257e38e472ca"
   dependencies:
     async "^2.1.5"
     bluebird "^3.4.7"
@@ -865,8 +881,10 @@ javascript-typescript-langserver@^2.0.0-pre.5:
     chai-as-promised "^6.0.0"
     commander "^2.9.0"
     glob "^7.1.1"
+    iterare "^0.0.7"
     lodash "^4.17.4"
     mz "^2.6.0"
+    semaphore-async-await "^1.5.1"
     typescript "2.2.1"
     vscode-jsonrpc "^3.1.0"
     vscode-languageserver "^3.1.0"
@@ -1337,10 +1355,6 @@ rimraf@2, rimraf@^2.5.0, rimraf@^2.5.4:
   dependencies:
     glob "^7.0.5"
 
-rimraf@~2.2.6:
-  version "2.2.8"
-  resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.2.8.tgz#e439be2aaee327321952730f99a8929e4fc50582"
-
 roadrunner@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/roadrunner/-/roadrunner-1.1.0.tgz#1180a30d64e1970d8f55dd8cb0da8ffccecad71e"
@@ -1358,6 +1372,10 @@ rx@^4.1.0:
 safe-buffer@^5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.0.1.tgz#d263ca54696cd8a306b5ca6551e92de57918fbe7"
+
+semaphore-async-await@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/semaphore-async-await/-/semaphore-async-await-1.5.1.tgz#857bef5e3644601ca4b9570b87e9df5ca12974fa"
 
 semver-diff@^2.0.0:
   version "2.1.0"
@@ -1513,13 +1531,6 @@ tar@^2.0.0, tar@^2.2.1:
     fstream "^1.0.2"
     inherits "2"
 
-temp@^0.8.3:
-  version "0.8.3"
-  resolved "https://registry.yarnpkg.com/temp/-/temp-0.8.3.tgz#e0c6bc4d26b903124410e4fed81103014dfc1f59"
-  dependencies:
-    os-tmpdir "^1.0.0"
-    rimraf "~2.2.6"
-
 term-size@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/term-size/-/term-size-0.1.1.tgz#87360b96396cab5760963714cda0d0cbeecad9ca"
@@ -1657,7 +1668,7 @@ util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
 
-uuid@^3.0.0:
+uuid@^3.0.0, uuid@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.0.1.tgz#6544bba2dfda8c1cf17e629a3a305e2bb1fee6c1"
 
