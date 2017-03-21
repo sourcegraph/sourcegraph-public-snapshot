@@ -15,6 +15,7 @@ interface TileProps {
 	price: number;
 	salePrice?: number;
 	label?: string;
+	labelColor?: "blue" | "purple" | "orange" | "green" | "yellow" | "red" | "gray";
 	unit: string;
 	onClick?: () => void;
 }
@@ -61,6 +62,8 @@ export function EnterprisePlan({ onClick }: PlanProps): JSX.Element {
 		onClick={onClick}
 		name="Enterprise"
 		desc="Code hosted on premises"
+		label="Contact us"
+		labelColor="gray"
 		price={50}
 		unit="per user/mo" />;
 }
@@ -74,7 +77,7 @@ export function PublicPlan({ onClick }: PlanProps): JSX.Element {
 		unit="forever" />;
 }
 
-function PlanTile({ name, desc, price, salePrice, unit, label, onClick }: TileProps): JSX.Element {
+function PlanTile({ name, desc, price, salePrice, unit, label, labelColor, onClick }: TileProps): JSX.Element {
 
 	const unitSx = { ...{ color: colors.blueGrayL1() }, ...typography.small };
 	const labelSx = { ...{ marginLeft: whitespace[2] }, ...typography.small };
@@ -98,7 +101,7 @@ function PlanTile({ name, desc, price, salePrice, unit, label, onClick }: TilePr
 				<Heading level={6} compact={true} style={{ marginBottom: whitespace[2] }}>
 					{name}
 					{label &&
-						<Label color="green" text={label} style={labelSx} compact={true} />
+						<Label color={labelColor || "green"} text={label} style={labelSx} compact={true} />
 					}
 				</Heading>
 				<span style={descSx}>{desc}</span>
