@@ -111,10 +111,10 @@ module.exports = {
 		symlinks: false,
 		extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
 		alias: {
+			"vs/workbench/browser/parts/compositePart": "sourcegraph/workbench/overrides/compositePart",
 			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
 			"vs/workbench/services/editor/browser/editorService": "sourcegraph/workbench/overrides/editorService",
 			"electron": "sourcegraph/workbench/overrides/electron",
-			"vs/workbench/parts/files/browser/explorerViewlet": "sourcegraph/workbench/overrides/explorerViewlet",
 			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",
 			"vs/workbench/services/files/electron-browser/fileService": "sourcegraph/workbench/overrides/fileService",
 			"vs/workbench/services/textmodelResolver/common/textModelResolverService": "sourcegraph/workbench/overrides/resolverService",
