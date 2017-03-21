@@ -141,7 +141,7 @@ func SetTokenSourceForCustomer(ctx context.Context, token string) error {
 }
 
 // orgPlan is the name of the Stripe plan that new subscribers will use.
-const orgPlan = "orgplan-3/8/2016"
+const orgPlan = "orgplan-3/21/2016"
 
 // SubscribeOrganization subscribes the user to an organization plan, with cost
 // proportional to the number of seats.
