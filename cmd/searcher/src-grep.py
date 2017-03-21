@@ -12,6 +12,7 @@ parser.add_argument('--dev', action='store_true', help='search via localhost rat
 parser.add_argument('-e', '--regexp', action='store_true', help='Interpret PATTERN as a regex rather than a fixed string')
 parser.add_argument('-w', '--word-regexp', action='store_true', help='Only match on word boundaries')
 parser.add_argument('-i', '--ignore-case', action='store_true', help='Ignore case when matching')
+parser.add_argument('-u', '--url', action='store_true', help='Print matches as URLs to sourcegraph.com')
 
 args = parser.parse_args()
 
@@ -50,4 +51,8 @@ sys.stderr.write('X-Trace: ' + r.headers['X-Trace'] + '\n')
 matches = r.json()["data"]["root"]["repository"]["commit"]["commit"]["textSearch"]
 for fm in matches:
     for lm in fm['lineMatches']:
-	print('%s:%d:%s' % (fm['path'], lm['lineNumber'], lm['preview']))
+	if args.url:
+	    repo_path = args.repo if args.rev == 'HEAD' else (args.repo + '@' + args.rev)
+	    print('%s/%s/-/blob/%s#L%d %s' % (domain, repo_path, fm['path'], lm['lineNumber'], lm['preview']))
+	else:
+	    print('%s:%d:%s' % (fm['path'], lm['lineNumber'], lm['preview']))
