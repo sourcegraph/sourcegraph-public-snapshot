@@ -2,7 +2,10 @@ import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
+import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IEditor, IEditorInput, IResourceInput } from "vs/platform/editor/common/editor";
+import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
+import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorService";
 
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
@@ -12,19 +15,45 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { resolveRev } from "sourcegraph/editor/contentLoader";
 import { urlToRepo } from "sourcegraph/repo/routes";
+import { workbenchStore } from "sourcegraph/workbench/main";
+import { Services, getCurrentWorkspace } from "sourcegraph/workbench/services";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 	private _onDidOpenEditor: Emitter<URI> = new Emitter<URI>();
 
+	// TODO(john): this type signature diverges from vscode's.
+	// Really this whole file is a sin...
 	public openEditor(data: IResourceInput, options?: any): TPromise<IEditor>;
 	public openEditor(data: IEditorInput, options?: any): TPromise<IEditor>;
 	public openEditor(data: any, options?: any): TPromise<IEditor> {
 		let resource: URI;
+		let input: any;
 		if (data.resource) {
-			resource = data.resource;
+			const workspace = getCurrentWorkspace();
+			if (workspace.revState && workspace.revState.zapRev && workbenchStore.getState().diffMode) {
+				const resolverService = Services.get(ITextModelResolverService);
+				const leftInput = new ResourceEditorInput("", "", data.resource.with({ query: data.resource.query + "~0" }), resolverService);
+				const rightInput = new ResourceEditorInput("", "", data.resource, resolverService);
+				const diffInput = new DiffEditorInput("", "", leftInput, rightInput);
+				resource = data.resource;
+				input = diffInput;
+			} else {
+				resource = data.resource;
+				input = data;
+			}
 		} else if (data.modifiedInput) {
 			resource = data.modifiedInput.resource;
+			input = data;
+		} else if (data.rightResource) {
+			// Can get here via clicking on a file from "Changes" view or by clicking on file from explorer view
+			// while viewing a zap ref.
+			const resolverService = Services.get(ITextModelResolverService);
+			const leftInput = new ResourceEditorInput("", "", data.leftResource, resolverService);
+			const rightInput = new ResourceEditorInput("", "", data.rightResource, resolverService);
+			const diffInput = new DiffEditorInput("", "", leftInput, rightInput);
+			resource = data.rightResource;
+			input = diffInput;
 		} else {
 			throw new Error(`unknown data: ${data}`);
 		}
@@ -43,7 +72,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 			// in the latter case, we circumvent the vscode path to open an real document
 			// otherwise an empty buffer will be shown instead of the workbench watermark.
 			const url = resource.fragment === "" ? urlToRepo(repo) : urlToBlob(repo, rev, path);
-			const promise = resource.fragment === "" ? TPromise.wrap(this.getActiveEditor()) : this.openEditorWithoutURLChange(resource, data, options);
+			const promise = resource.fragment === "" ? TPromise.wrap(this.getActiveEditor()) : this.openEditorWithoutURLChange(resource, input, options);
 			return promise.then(editor => {
 				router.push({
 					pathname: url,
