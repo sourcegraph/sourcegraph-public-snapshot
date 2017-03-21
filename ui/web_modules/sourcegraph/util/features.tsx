@@ -1,4 +1,3 @@
-import { context, isOnPremInstance } from "sourcegraph/app/context";
 import { experimentManager } from "sourcegraph/util/ExperimentManager";
 import isWebWorker from "sourcegraph/util/isWebWorker";
 
@@ -117,9 +116,9 @@ export function bulkEnable(featureNames: string[]): void {
 	}
 }
 
-export function getModes(): Set<string> {
+export function getModes(onPrem?: boolean): Set<string> {
 	let modes = new Set<string>(["go", "java", "javascript", "typescript"]);
-	if (isOnPremInstance(context.authEnabled)) {
+	if (onPrem) {
 		modes = new Set<string>(["go", "java"]);
 	}
 	if (Features.langCSS.isEnabled()) {

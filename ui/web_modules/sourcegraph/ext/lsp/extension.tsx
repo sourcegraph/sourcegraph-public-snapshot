@@ -1,6 +1,7 @@
 import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/browser";
 import { v4 as uuidV4 } from "uuid";
 
+import { isOnPremInstance } from "sourcegraph/app/context";
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
 import { getModes } from "sourcegraph/util/features";
@@ -15,7 +16,7 @@ export function activate(): void {
 	const initOpts: InitializationOptions = (self as any).extensionHostOptions;
 	const langs = new Set<string>((initOpts.langs || []).map(inventoryLangToMode));
 
-	getModes().forEach(mode => {
+	getModes(isOnPremInstance(initOpts.context.authEnabled)).forEach(mode => {
 		if (!langs.has(mode)) {
 			return;
 		}
