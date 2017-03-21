@@ -44,7 +44,7 @@ export class UserDetailsForm extends React.Component<Props, UserDetails> {
 
 		return <form style={detailsSx} onSubmit={this.submit}>
 			<p style={{ marginTop: 0, marginBottom: whitespace[5], textAlign: "center" }}>
-				Please confirm your details:
+				Please enter your details:
 				</p>
 			<Input label="Full name" block={true} required={true} value={this.state.name} onChange={this.onChange("name")} />
 			<Input label="Email" block={true} required={true} value={this.state.email} onChange={this.onChange("email")} type="email" />
