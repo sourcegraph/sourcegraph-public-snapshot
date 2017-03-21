@@ -36,7 +36,7 @@ func repoURIs(repos []*sourcegraph.Repo) []string {
 func createRepo(ctx context.Context, repo *sourcegraph.Repo) (int32, error) {
 	var r dbRepo
 	r.fromRepo(repo)
-	err := appDBH(ctx).Insert(&r)
+	err := appDBH(ctx).Insert(&r.dbRepoOrig)
 	return r.ID, err
 }
 
