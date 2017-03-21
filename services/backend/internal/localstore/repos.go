@@ -21,7 +21,7 @@ import (
 )
 
 func init() {
-	AppSchema.Map.AddTableWithName(dbRepo{}, "repo").SetKeys(true, "ID")
+	AppSchema.Map.AddTableWithName(dbRepoOrig{}, "repo").SetKeys(true, "ID")
 	AppSchema.CreateSQL = append(AppSchema.CreateSQL,
 		"ALTER TABLE repo ALTER COLUMN uri TYPE citext",
 		"ALTER TABLE repo ALTER COLUMN owner TYPE citext", // migration 2016.9.30
@@ -42,8 +42,27 @@ func init() {
 	)
 }
 
-// dbRepo DB-maps a sourcegraph.Repo object.
+// dbRepo DB-maps a sourcegraph.Repo object. The reason for the split
+// between dbRepo and dbRepoOrig is to support adding new columns to
+// the table without downtime or a heavyweight migration.
+//
+// Fields in dbRepo (i.e., NOT in dbRepoOrig) should be nullable (in
+// both the data structure and the DB) and are not set on new repo
+// creation.
+//
+// Adding new fields to the repo table should follow these steps:
+// - Add the field to dbRepo. Test that it works both with and without
+//   the new field in the database.
+// - Deploy the new code into production.
+// - Add the new column to the repo table in production.
+// - Move the field from dbRepo into dbRepoOrig and post announcement
+//   to other devs of the migration (they now need to run it in dev).
 type dbRepo struct {
+	dbRepoOrig
+	Canonical *bool `db:"canonical"`
+}
+
+type dbRepoOrig struct {
 	ID                    int32
 	URI                   string
 	Owner                 string
@@ -91,6 +110,9 @@ func (r *dbRepo) toRepo() *sourcegraph.Repo {
 	if r.FreezeIndexedRevision != nil && *r.FreezeIndexedRevision {
 		r2.FreezeIndexedRevision = true
 	}
+	if r.Canonical != nil && *r.Canonical {
+		r2.Canonical = true
+	}
 
 	r2.CreatedAt = &r.CreatedAt
 	r2.UpdatedAt = r.UpdatedAt
@@ -116,6 +138,12 @@ func (r *dbRepo) fromRepo(r2 *sourcegraph.Repo) {
 	r.UpdatedAt = r2.UpdatedAt
 	r.PushedAt = r2.PushedAt
 	r.IndexedRevision = r2.IndexedRevision
+
+	var freezeIndexedRevision bool = r2.FreezeIndexedRevision
+	r.FreezeIndexedRevision = &freezeIndexedRevision
+
+	var canonical = r2.Canonical
+	r.Canonical = &canonical
 }
 
 func toRepos(rs []*dbRepo) []*sourcegraph.Repo {
@@ -191,7 +219,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				Private:     ghRepo.Private,
 				CreatedAt:   &ts,
 			})
-			if err := appDBH(ctx).Insert(&r); err != nil {
+			if err := appDBH(ctx).Insert(&r.dbRepoOrig); err != nil {
 				if isPQErrorUniqueViolation(err) {
 					if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
 						log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)

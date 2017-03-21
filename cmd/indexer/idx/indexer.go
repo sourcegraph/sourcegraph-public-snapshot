@@ -156,7 +156,7 @@ func index(ctx context.Context, wq *workQueue, repoName string, rev string) erro
 	defer log15.Info("Indexing finished", "repo", repoName, "headCommit", headCommit)
 
 	// Global refs & packages indexing. Neither index forks.
-	if !repo.Fork {
+	if !repo.Fork || repo.Canonical {
 		// Global refs stores and queries private repository data separately,
 		// so it is fine to index private repositories.
 		defErr := backend.Defs.RefreshIndex(ctx, repo.URI, string(headCommit))

@@ -467,6 +467,7 @@ export interface Repo {
 	PushedAt?: any;
 	IndexedRevision?: string;
 	FreezeIndexedRevision?: boolean;
+	Canonical?: boolean;
 }
 
 export interface RepoList {

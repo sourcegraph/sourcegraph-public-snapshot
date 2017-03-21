@@ -119,6 +119,12 @@ type Repo struct {
 	// kludge that lets us freeze the indexed repository revision for
 	// specific deployments
 	FreezeIndexedRevision bool `json:"FreezeIndexedRevision,omitempty"`
+	// Canonical is true if a repository should be treated as the
+	// canonical instance of source code regardless of the value of
+	// Fork. Sometimes forks become the canonical repository while the
+	// original repository is abandoned. If Canonical is false, then
+	// the repository is canonical if and only if Fork is false.
+	Canonical bool `json:"Canonical,omitempty"`
 }
 
 // GitHubRepoWithDetails represents a GitHub source code repository with additional context
