@@ -9,14 +9,10 @@ var USERNAME_URL_PATTERN = /\/p\/([A-Z0-9-_]+)/i;
  * Scrapes a Phabricator username from the DOM.
  */
 function getPhabricatorUsername() {
-	var coreMenuItems = document.getElementsByClassName("core-menu-item");
+	var coreMenuItems = document.getElementsByClassName("phabricator-core-user-menu");
 	for (var i = 0; i < coreMenuItems.length; i++) {
 		var coreMenuItem = coreMenuItems.item(i);
-		var children = coreMenuItem.children;
-		if (children.length === 0) {
-			continue;
-		}
-		var possiblePersonUrl = children[0].getAttribute("href");
+		var possiblePersonUrl = coreMenuItem.getAttribute("href");
 		if (!possiblePersonUrl) {
 			continue;
 		}
