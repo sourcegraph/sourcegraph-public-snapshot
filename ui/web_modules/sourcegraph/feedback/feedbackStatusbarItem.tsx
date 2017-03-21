@@ -23,7 +23,7 @@ class SlackFeedbackService implements IFeedbackService {
 		// sourcegraph/util/xhr, because we are POSTing cross-domain
 		// and do not want to include our auth headers.
 		const sentimentEmoji = feedback.sentiment === 1 ? ":heart_eyes:" : ":rage:";
-		const user = context.user ? context.user.Login : "Anonymous user";
+		const user = feedback.email ? feedback.email : (context.user ? context.user.Login : "Anonymous user");
 
 		fetch(SlackFeedbackService.WEBHOOK_URL, {
 			method: "POST",

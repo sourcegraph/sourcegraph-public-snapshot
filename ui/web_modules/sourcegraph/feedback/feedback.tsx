@@ -6,9 +6,12 @@ import { IContextViewService } from "vs/platform/contextview/browser/contextView
 import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
 import "vs/workbench/parts/feedback/electron-browser/media/feedback.css";
 
+import { context, isOnPremInstance } from "sourcegraph/app/context";
+
 export interface IFeedback {
 	feedback: string;
 	sentiment: number;
+	email?: string;
 }
 
 export interface IFeedbackService {
@@ -27,6 +30,8 @@ enum FormEvent {
 }
 
 export class FeedbackDropdown extends Dropdown {
+	protected onPrem: boolean;
+
 	protected feedback: string;
 	protected sentiment: number;
 	protected isSendingFeedback: boolean;
@@ -36,6 +41,7 @@ export class FeedbackDropdown extends Dropdown {
 
 	protected feedbackForm: HTMLFormElement | null;
 	protected feedbackDescriptionInput: HTMLTextAreaElement | null;
+	protected emailInput: HTMLTextAreaElement | null;
 	protected smileyInput: Builder | null;
 	protected frownyInput: Builder | null;
 	protected sendButton: Builder | null;
@@ -55,6 +61,8 @@ export class FeedbackDropdown extends Dropdown {
 				return { dispose(): void {/* noop */ } };
 			}
 		});
+
+		this.onPrem = isOnPremInstance(context.authEnabled);
 
 		this.$el.addClass("send-feedback");
 		this.$el.title("Send Feedback");
@@ -130,9 +138,23 @@ export class FeedbackDropdown extends Dropdown {
 			"aria-label": nls.localize("commentsHeader", "Comments")
 		})
 			.on("keyup", () => {
-				this.feedbackDescriptionInput!.value ? this.sendButton!.removeAttribute("disabled") : this.sendButton!.attr("disabled", "");
+				this.shouldEnableSend() ? this.sendButton!.removeAttribute("disabled") : this.sendButton!.attr("disabled", "");
 			})
 			.appendTo($form).domFocus().getHTMLElement() as HTMLTextAreaElement;
+
+		if (this.onPrem) {
+			$("h3").text("Your email:")
+				.appendTo($form);
+
+			this.emailInput = $("textarea.feedback-description").attr({
+				rows: 1,
+				"aria-label": nls.localize("emailHeader", "Email"),
+			})
+				.on("keyup", () => {
+					this.shouldEnableSend() ? this.sendButton!.removeAttribute("disabled") : this.sendButton!.attr("disabled", "");
+				})
+				.appendTo($form).domFocus().getHTMLElement() as HTMLTextAreaElement;
+		}
 
 		const $buttons = $("div.form-buttons").appendTo($form);
 
@@ -151,6 +173,13 @@ export class FeedbackDropdown extends Dropdown {
 				this.frownyInput = null;
 			}
 		};
+	}
+
+	protected shouldEnableSend(): boolean {
+		if (this.onPrem) {
+			return Boolean(this.feedbackDescriptionInput && this.feedbackDescriptionInput.value && this.emailInput && this.emailInput.value);
+		}
+		return Boolean(this.feedbackDescriptionInput && this.feedbackDescriptionInput.value);
 	}
 
 	protected setSentiment(smile: boolean): void {
@@ -205,6 +234,7 @@ export class FeedbackDropdown extends Dropdown {
 
 	protected onSubmit(): void {
 		if ((this.feedbackForm!.checkValidity && !this.feedbackForm!.checkValidity())) {
+			// TODO(john): check validity of email
 			return;
 		}
 
@@ -212,7 +242,8 @@ export class FeedbackDropdown extends Dropdown {
 
 		this.feedbackService.submitFeedback({
 			feedback: this.feedbackDescriptionInput!.value,
-			sentiment: this.sentiment
+			sentiment: this.sentiment,
+			email: this.emailInput ? this.emailInput.value : undefined,
 		});
 
 		this.changeFormStatus(FormEvent.SENT);
@@ -248,6 +279,9 @@ export class FeedbackDropdown extends Dropdown {
 	protected resetForm(): void {
 		if (this.feedbackDescriptionInput) {
 			this.feedbackDescriptionInput.value = "";
+		}
+		if (this.emailInput) {
+			this.emailInput.value = "";
 		}
 		this.sentiment = 1;
 	}
