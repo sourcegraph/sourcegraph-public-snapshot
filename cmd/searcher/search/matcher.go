@@ -29,11 +29,17 @@ func compile(p *Params) (func(reader io.Reader) ([]LineMatch, error), error) {
 
 	return func(reader io.Reader) ([]LineMatch, error) {
 		var matches []LineMatch
-		scanner := bufio.NewScanner(reader)
-		i := 0
-		for scanner.Scan() {
-			i++
-			b := scanner.Bytes()
+		r := bufio.NewReader(reader)
+		for i := 1; ; i++ {
+			// This skips large lines, but this implementation
+			// will be replaced for a more correct one.
+			b, isPrefix, err := r.ReadLine()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				return nil, err
+			}
 			locs := re.FindAllIndex(b, -1)
 			if len(locs) > 0 {
 				offsetAndLengths := make([][]int, len(locs))
@@ -48,9 +54,15 @@ func compile(p *Params) (func(reader io.Reader) ([]LineMatch, error), error) {
 					OffsetAndLengths: offsetAndLengths,
 				})
 			}
-		}
-		if err := scanner.Err(); err != nil {
-			return nil, err
+			for isPrefix && err != nil {
+				_, isPrefix, err = r.ReadLine()
+			}
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				return nil, err
+			}
 		}
 		return matches, nil
 	}, nil
