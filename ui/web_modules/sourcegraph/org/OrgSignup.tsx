@@ -1,7 +1,6 @@
 import * as React from "react";
 
 import { OrganizationCard } from "sourcegraph/components/OrganizationCard";
-import { ChevronRight } from "sourcegraph/components/symbols/Primaries";
 import { whitespace } from "sourcegraph/components/utils";
 
 const scrollerStyle = {
@@ -35,12 +34,5 @@ export function OrgSelection(props: Props): JSX.Element {
 				)}
 			</div>
 		</div>
-		<hr style={{ margin: 0 }} />
-		<a onClick={props.back} style={{
-			display: "inline-block",
-			fontWeight: "bold",
-			paddingBottom: whitespace[3],
-			paddingTop: whitespace[3],
-		}}>Choose a different plan<ChevronRight /></a>
 	</div>;
 }
