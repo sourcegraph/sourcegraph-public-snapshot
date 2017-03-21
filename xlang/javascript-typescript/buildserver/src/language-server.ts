@@ -5,6 +5,7 @@ import { serve, ServeOptions } from 'javascript-typescript-langserver/lib/server
 import { TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import * as util from 'javascript-typescript-langserver/lib/util';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
+import { FileLogger, StderrLogger } from 'javascript-typescript-langserver/lib/logging';
 import * as cluster from 'cluster';
 import * as os from 'os';
 import * as path from 'path';
@@ -29,12 +30,14 @@ util.setStrict(program.strict);
 const lspPort = program.port || defaultLspPort;
 const clusterSize = program.cluster || numCPUs;
 
+const logger = program.logfile ? new FileLogger(program.logfile) : new StderrLogger();
+
 const options: ServeOptions & TypeScriptServiceOptions = {
 	clusterSize: clusterSize,
 	lspPort: lspPort,
 	strict: program.strict,
 	trace: program.trace,
-	logfile: program.logfile
+	logger
 };
 
 // Every LSP connection gets a temporary directory in the form of /tmp/tsjs/worker#/uuid
@@ -51,10 +54,10 @@ if (cluster.isMaster) {
 	// A new worker will get forked by serve()
 	cluster.on('exit', (worker, code, signal) => {
 		const workerTempDir = path.join(baseTempDir, 'worker' + worker.id);
-		console.error(`Cleaning up crashed worker ${worker.id}'s temporary directory ${workerTempDir}`);
+		logger.log(`Cleaning up crashed worker ${worker.id}'s temporary directory ${workerTempDir}`);
 		rimraf(workerTempDir, err => {
 			if (err) {
-				console.error(`Error cleaning up worker tempdir ${workerTempDir}`, err);
+				logger.error(`Error cleaning up worker tempdir ${workerTempDir}`, err);
 			}
 		});
 	});
@@ -66,6 +69,6 @@ serve(options, connection => {
 	// Use a different temporary directory for each connection/workspace that is a subdirectory of the worker tempdir
 	// The BuildHandler will create it on `initialize` and delete it on `shutdown`
 	const tempDir = path.join(processTempDir, uuid.v1());
-	console.error(`Using ${tempDir} as temporary directory`);
+	logger.log(`Using ${tempDir} as temporary directory`);
 	return new BuildHandler(new RemoteLanguageClient(connection), { ...options, tempDir });
 });

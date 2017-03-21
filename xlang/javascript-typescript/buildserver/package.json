@@ -12,7 +12,7 @@
         "bluebird": "^3.4.7",
         "chai": "^3.4.34",
         "commander": "^2.9.0",
-        "javascript-typescript-langserver": "^2.0.0-pre.6",
+        "javascript-typescript-langserver": "^2.0.0-pre.7",
         "lodash": "^4.17.4",
         "mkdirp": "^0.5.1",
         "mz": "^2.6.0",

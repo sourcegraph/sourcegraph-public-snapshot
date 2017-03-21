@@ -119,7 +119,7 @@ export class BuildHandler extends TypeScriptService {
 
 	async shutdown(): Promise<void> {
 		// Delete workspace-specific temporary folder with dependencies
-		console.error(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
+		this.logger.log(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
 		await new Promise((resolve, reject) => rimraf(this.options.tempDir, err => err ? reject(err) : resolve()));
 		await super.shutdown();
 	}
@@ -177,7 +177,7 @@ export class BuildHandler extends TypeScriptService {
 	private async initManagedModule(dir: string): Promise<void> {
 		let ready = this.managedModuleInit.get(dir);
 		if (!ready) {
-			ready = install(this.remoteFileSystem, dir, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, dir)).then(async (pathToDep) => {
+			ready = install(this.remoteFileSystem, dir, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, dir), this.logger).then(async (pathToDep) => {
 				await this.projectManager.refreshFileTree(dir, true);
 				return pathToDep;
 			}, (err) => {
@@ -227,7 +227,7 @@ export class BuildHandler extends TypeScriptService {
 			try {
 				pkginfo = await infoAlt(this.remoteFileSystem, cwd, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
 			} catch (e) {
-				console.error("could not rewrite dependency uri,", uri, ", due to error:", e);
+				this.logger.error("could not rewrite dependency uri,", uri, ", due to error:", e);
 				return { uri: uri, rewritten: false };
 			}
 		}

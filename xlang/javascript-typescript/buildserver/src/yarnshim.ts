@@ -12,6 +12,7 @@ import * as rt from 'javascript-typescript-langserver/lib/request-type';
 
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { path2uri } from 'javascript-typescript-langserver/lib/util';
+import { Logger, NoopLogger } from 'javascript-typescript-langserver/lib/logging';
 
 const EventReporter = require('yarn/lib/reporters').EventReporter;
 const Config = require('yarn/lib/config').default;
@@ -137,7 +138,7 @@ export function parseGitHubInfo(cloneURL: string): Info | null {
  * the directory in remoteFs from which the package.json should be
  * read. Returns a map from local fs path to dependency metadata.
  */
-export async function install(remoteFs: FileSystem, cwd: string, globaldir: string, overlaydir: string): Promise<Map<string, Object>> {
+export async function install(remoteFs: FileSystem, cwd: string, globaldir: string, overlaydir: string, logger: Logger = new NoopLogger): Promise<Map<string, Object>> {
 	await new Promise<void>((resolve, reject) => {
 		mkdirp(overlaydir, (err) => {
 			if (err) {
@@ -205,7 +206,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 			await inst.resolver.find(req);
 			resolvedPatterns.push(req.pattern);
 		} catch (e) {
-			console.error("warning: could not resolve dep: ", req);
+			logger.warn("Could not resolve dependency: ", req);
 		}
 	}));
 
@@ -217,7 +218,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 	const patterns = resolvedPatterns;
 
 	const resolveEnd = new Date().getTime();
-	console.error("resolve", patterns.length, (resolveEnd - resolveStart) / 1000.0);
+	logger.log("yarn resolve", patterns.length, (resolveEnd - resolveStart) / 1000.0 + 's');
 
 	// fetch
 	await runWithLockfile(globalLockfile, async () => {
@@ -225,7 +226,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		inst.markIgnored(ignorePatterns);
 		await inst.fetcher.init();
 		const fetchEnd = new Date().getTime();
-		console.error("fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0);
+		logger.log("yarn fetch", resolvedPatterns.length, (fetchEnd - fetchStart) / 1000.0 + 's');
 	});
 
 	// link
@@ -234,7 +235,7 @@ export async function install(remoteFs: FileSystem, cwd: string, globaldir: stri
 		inst.linker.resolvePeerModules();
 		await inst.linker.copyModules(patterns);
 		const linkEnd = new Date().getTime();
-		console.error("link", patterns.length, (linkEnd - linkStart) / 1000.0);
+		logger.log("yarn link", patterns.length, (linkEnd - linkStart) / 1000.0 + 's');
 	});
 
 	const hoistedTree = await inst.linker.getFlatHoistedTree(patterns);

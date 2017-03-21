@@ -1,5 +1,6 @@
 import { install } from './yarnshim';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
+import { StdioLogger } from 'javascript-typescript-langserver/lib/logging';
 import * as path from 'path';
 import * as cluster from 'cluster';
 import * as process from 'process';
@@ -56,7 +57,7 @@ function rmrf(p: string): Promise<void> {
 async function runInstall(): Promise<void> {
 	const fs = new InMemFileSystem('/');
 	fs.addFile('/package.json', '{ "name": "test", "dependencies": {"tslint": "4.1.1"} }');
-	await install(fs, '/', path.join(yarntestdir, 'global'), path.join(yarntestdir, 'workspace'));
+	await install(fs, '/', path.join(yarntestdir, 'global'), path.join(yarntestdir, 'workspace'), new StdioLogger);
 }
 
 async function main() {
