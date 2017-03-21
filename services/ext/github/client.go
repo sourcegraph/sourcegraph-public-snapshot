@@ -90,7 +90,7 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		statusCode = legacyerr.NotFound
 	}
 
-	return legacyerr.Errorf(statusCode, "%s", op)
+	return legacyerr.Errorf(statusCode, "unexpected error from github: %s: %v", op, err)
 }
 
 // HasAuthedUser reports whether the context has an authenticated
