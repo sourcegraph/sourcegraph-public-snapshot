@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
+	"github.com/sourcegraph/zap/pkg/fpath"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -27,7 +28,7 @@ import (
 //
 // The caller must hold c.mu.
 func (c *serverConn) isWatching(ref RefIdentifier) bool {
-	if refspecs, ok := c.watchingRepos[ref.Repo]; ok {
+	if refspecs, ok := c.watchingRepos[fpath.Key(ref.Repo)]; ok {
 		if matchAnyRefspec(refspecs, ref.Ref) {
 			return true
 		}
@@ -44,7 +45,7 @@ type serverConn struct {
 	mu            sync.Mutex
 	closed        bool
 	init          *InitializeParams
-	watchingRepos map[string][]string // repo -> watch refspecs, for watched repos
+	watchingRepos map[fpath.KeyString][]string // repo -> watch refspecs, for watched repos
 
 	*workspaceServerConn
 }
@@ -325,8 +326,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		c.server.reposMu.Lock()
 		defer c.server.reposMu.Unlock()
 		reposMap := map[string]struct{}{}
-		for repoName := range c.server.repos {
-			reposMap[repoName] = struct{}{}
+		for _, repo := range c.server.repos {
+			reposMap[repo.repoDir] = struct{}{}
 		}
 		repos := make([]string, 0, len(reposMap))
 		for repo := range reposMap {

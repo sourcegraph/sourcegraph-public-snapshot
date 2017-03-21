@@ -9,6 +9,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/internal/pkg/backoff"
+	"github.com/sourcegraph/zap/pkg/fpath"
 )
 
 // UpstreamClient is the subset of the Client interface that the
@@ -124,14 +125,14 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, logger log.Logger, en
 	}
 	level.Debug(logger).Log("reconnect-ok", "")
 
-	reestablishRepo := func(repoName string, repo *serverRepo) error {
+	reestablishRepo := func(repo *serverRepo) error {
 		repoConfig, err := repo.getConfig()
 		if err != nil {
 			return err
 		}
 		for remoteName, remote := range repoConfig.Remotes {
 			if remote.Endpoint == endpoint {
-				level.Debug(logger).Log("reestablish-watch-repo", repoName, "remote", remoteName)
+				level.Debug(logger).Log("reestablish-watch-repo", repo.repoDir, "remote", remoteName)
 				if err := cl.RepoWatch(ctx, RepoWatchParams{Repo: remote.Repo, Refspecs: remote.Refspecs}); err != nil {
 					return err
 				}
@@ -166,13 +167,13 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, logger log.Logger, en
 	// Briefly hold repo lock; no need to wait for the reestablishment
 	// operations to all finish before releasing it.
 	sr.parent.reposMu.Lock()
-	reposCopy := make(map[string]*serverRepo, len(sr.parent.repos))
+	reposCopy := make(map[fpath.KeyString]*serverRepo, len(sr.parent.repos))
 	for repoName, repo := range sr.parent.repos {
 		reposCopy[repoName] = repo
 	}
 	sr.parent.reposMu.Unlock()
-	for repoName, repo := range reposCopy {
-		if err := reestablishRepo(repoName, repo); err != nil {
+	for _, repo := range reposCopy {
+		if err := reestablishRepo(repo); err != nil {
 			return err
 		}
 	}

@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/zap/pkg/errorlist"
+	"github.com/sourcegraph/zap/pkg/fpath"
 )
 
 // MaxFileSize is the maximum file size of files to include when
@@ -51,7 +52,7 @@ func NewWorktree(dir string) (Worktree, error) {
 	if err != nil {
 		return Worktree{}, err
 	}
-	if topLevelDir != dir {
+	if !fpath.Equal(topLevelDir, dir) {
 		return Worktree{}, fmt.Errorf("invalid worktree dir %s: not the root dir (%s)", dir, topLevelDir)
 	}
 	return w, nil

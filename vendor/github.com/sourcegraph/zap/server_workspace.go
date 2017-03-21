@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/config"
 	"github.com/sourcegraph/zap/pkg/errorlist"
+	"github.com/sourcegraph/zap/pkg/fpath"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
@@ -592,12 +593,12 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddParams) error {
 	// Allow upgrading a bare repo to a workspace repo.
 	s.parent.reposMu.Lock()
-	repo, exists := s.parent.repos[params.Dir]
+	repo, exists := s.parent.repos[fpath.Key(params.Dir)]
 	s.parent.reposMu.Unlock()
 	if exists {
 		level.Info(logger).Log("create-workspace-in-existing-repo", "")
 	} else {
-		repo = &serverRepo{refdb: refdb.NewMemoryRefDB()}
+		repo = &serverRepo{repoDir: params.Dir, refdb: refdb.NewMemoryRefDB()}
 		level.Info(logger).Log("create-workspace-in-new-repo", "")
 	}
 
@@ -626,7 +627,7 @@ func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddPar
 	{
 		// Add repo to server.
 		s.parent.reposMu.Lock()
-		if _, exists := s.parent.repos[params.Dir]; exists {
+		if _, exists := s.parent.repos[fpath.Key(params.Dir)]; exists {
 			s.parent.reposMu.Unlock()
 			cancel()
 			return &jsonrpc2.Error{
@@ -634,7 +635,7 @@ func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddPar
 				Message: fmt.Sprintf("during workspace initialization, repo was added by someone else: %v", params.WorkspaceIdentifier),
 			}
 		}
-		s.parent.repos[params.Dir] = repo
+		s.parent.repos[fpath.Key(params.Dir)] = repo
 		s.parent.reposMu.Unlock()
 	}
 
@@ -699,7 +700,7 @@ func (s *workspaceServer) removeWorkspace(logger log.Logger, workspace Workspace
 	level.Info(logger).Log("rm-workspace", workspace.Dir)
 
 	s.parent.reposMu.Lock()
-	delete(s.parent.repos, workspace.Dir)
+	delete(s.parent.repos, fpath.Key(workspace.Dir))
 	s.parent.reposMu.Unlock()
 
 	repo.mu.Lock()
@@ -713,7 +714,7 @@ func (s *workspaceServer) removeWorkspace(logger log.Logger, workspace Workspace
 	return nil
 }
 
-func (s *Server) getWorkspaceForFileURI(uriStr string) (repo *serverRepo, workspace Workspace, repoName, relPath string, err error) {
+func (s *Server) getWorkspaceForFileURI(uriStr string) (repo *serverRepo, workspace Workspace, repoName string, relPath string, err error) {
 	uri, err := url.Parse(uriStr)
 	if uri.Scheme != "file" {
 		return nil, nil, "", "", fmt.Errorf("only file URIs are supported: %q", uriStr)
@@ -723,13 +724,13 @@ func (s *Server) getWorkspaceForFileURI(uriStr string) (repo *serverRepo, worksp
 	}
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
-	for repoName, repo := range s.repos {
-		if strings.HasPrefix(uri.Path, repoName+string(os.PathSeparator)) {
+	for _, repo := range s.repos {
+		if strings.HasPrefix(uri.Path, repo.repoDir+string(os.PathSeparator)) {
 			repo.mu.Lock()
 			workspace := repo.workspace
 			repo.mu.Unlock()
 			if workspace != nil {
-				return repo, workspace, repoName, strings.TrimPrefix(uri.Path, repoName+string(os.PathSeparator)), nil
+				return repo, workspace, repo.repoDir, strings.TrimPrefix(uri.Path, repo.repoDir+string(os.PathSeparator)), nil
 			}
 		}
 	}

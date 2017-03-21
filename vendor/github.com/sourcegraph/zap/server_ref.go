@@ -345,7 +345,7 @@ func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRep
 	defer s.reposMu.Unlock()
 	var matchingLocalRepos []*serverRepo
 	var matchingRemoteNames []string
-	for localRepoName2, localRepo := range s.repos {
+	for _, localRepo := range s.repos {
 		localRepo.mu.Lock()
 		localRepoConfig, err := localRepo.getConfigNoLock()
 		if err != nil {
@@ -355,7 +355,7 @@ func (s *Server) findLocalRepo(remoteRepoName, endpoint string) (repo *serverRep
 			if config.Endpoint == endpoint && config.Repo == remoteRepoName {
 				matchingLocalRepos = append(matchingLocalRepos, localRepo)
 				matchingRemoteNames = append(matchingRemoteNames, remoteName)
-				localRepoName = localRepoName2
+				localRepoName = localRepo.repoDir
 			}
 		}
 		localRepo.mu.Unlock()

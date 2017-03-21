@@ -11,11 +11,13 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/internal/pkg/mutexmap"
+	"github.com/sourcegraph/zap/pkg/fpath"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
 type serverRepo struct {
-	refdb refdb.RefDB // the repo's refdb (safe for concurrent access)
+	repoDir string
+	refdb   refdb.RefDB // the repo's refdb (safe for concurrent access)
 
 	mu sync.Mutex
 	// workspace:
@@ -64,12 +66,13 @@ func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string)
 
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
-	repo, exists := s.repos[repoDir]
+	repo, exists := s.repos[fpath.Key(repoDir)]
 	if !exists {
 		repo = &serverRepo{
-			refdb: refdb.NewMemoryRefDB(),
+			repoDir: repoDir,
+			refdb:   refdb.NewMemoryRefDB(),
 		}
-		s.repos[repoDir] = repo
+		s.repos[fpath.Key(repoDir)] = repo
 	}
 	return repo, nil
 }
@@ -88,7 +91,7 @@ func (s *Server) getRepoIfExists(ctx context.Context, logger log.Logger, repoDir
 
 	s.reposMu.Lock()
 	defer s.reposMu.Unlock()
-	return s.repos[repoDir], nil
+	return s.repos[fpath.Key(repoDir)], nil
 }
 
 // resolveRefShortName resolves a ref fuzzy name to the ref it refers
@@ -126,10 +129,10 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, logger log.Logger, rep
 	{
 		c.mu.Lock()
 		if c.watchingRepos == nil {
-			c.watchingRepos = map[string][]string{}
+			c.watchingRepos = map[fpath.KeyString][]string{}
 		}
-		level.Info(logger).Log("set-watch-refspec", fmt.Sprint(params.Refspecs), "old", fmt.Sprint(c.watchingRepos[params.Repo]))
-		c.watchingRepos[params.Repo] = params.Refspecs
+		level.Info(logger).Log("set-watch-refspec", fmt.Sprint(params.Refspecs), "old", fmt.Sprint(c.watchingRepos[fpath.Key(params.Repo)]))
+		c.watchingRepos[fpath.Key(params.Repo)] = params.Refspecs
 		c.mu.Unlock()
 	}
 

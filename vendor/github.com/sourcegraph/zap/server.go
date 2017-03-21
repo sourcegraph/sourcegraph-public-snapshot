@@ -6,7 +6,9 @@ import (
 	"sync"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/pkg/fpath"
 	"github.com/sourcegraph/zap/ws"
 )
 
@@ -122,7 +124,7 @@ type Server struct {
 	backend ServerBackend
 
 	reposMu sync.Mutex
-	repos   map[string]*serverRepo
+	repos   map[fpath.KeyString]*serverRepo
 
 	connsMu sync.Mutex
 	conns   map[*serverConn]struct{} // open connections to clients
@@ -155,7 +157,7 @@ type Server struct {
 func NewServer(backend ServerBackend) *Server {
 	s := &Server{
 		backend:       backend,
-		repos:         map[string]*serverRepo{},
+		repos:         map[fpath.KeyString]*serverRepo{},
 		readyToAccept: make(chan struct{}),
 	}
 	s.remotes.parent = s
@@ -170,7 +172,7 @@ func (s *Server) Start(ctx context.Context) {
 	s.bgCtx = ctx
 	if s.workspaceServer != nil {
 		if err := s.workspaceServer.loadWorkspacesFromConfig(s.baseLogger()); err != nil {
-			s.baseLogger().Log(err)
+			level.Error(s.baseLogger()).Log("loadWorkspacesFromConfig", err)
 		}
 	}
 	close(s.readyToAccept)
