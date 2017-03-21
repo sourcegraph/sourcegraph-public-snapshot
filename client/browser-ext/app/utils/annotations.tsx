@@ -107,7 +107,7 @@ export function convertNode(currentNode: Node, offset: number, line: number, ign
  * @param fileExtension 
  */
 export function correctForTabs(fileExtension?: string): boolean {
-	return isBrowserExtension() && Boolean(fileExtension) && fileExtension === "go";
+	return !isBrowserExtension() && Boolean(fileExtension) && fileExtension === "go";
 }
 
 // convertTextNode takes a DOM node which should be of NodeType.TEXT_NODE
