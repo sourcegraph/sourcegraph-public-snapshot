@@ -29,7 +29,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 			}}>
 				<FlexContainer direction="top-bottom" style={{ margin: "auto", paddingRight: whitespace[3], paddingLeft: whitespace[3], textAlign: "center" }}>
 					<Heading level={1} color="white">Real-time code collaboration + intelligence</Heading>
-					<Heading level={4} color="white" style={{ marginBottom: whitespace[5] }}>Sourcegraph extends your editor to the web so you can share your code instantly with your team.</Heading>
+					<Heading level={4} color="white" style={{ marginBottom: whitespace[5] }}>Sourcegraph extends your editor to the web so you can share work-in-progress code instantly with teammates.</Heading>
 
 					<video poster={`${context.assetsRoot}/img/zap-vid-placeholder.png`} style={{
 						width: "96%",
@@ -47,12 +47,12 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 
 			<Hero color="dark" style={{ paddingTop: whitespace[5], paddingBottom: whitespace[0] }}>
 				<FlexContainer style={{ margin: "auto", maxWidth: 640, paddingTop: whitespace[5], paddingRight: whitespace[3], paddingLeft: whitespace[3] }}>
-					<Heading level={2} align="center" style={{
+					<Heading level={4} align="center" style={{
 						marginTop: whitespace[6],
 						marginBottom: whitespace[0],
 						color: "white",
 					}}>
-						Collaborate in real-time with teammates, contributors, or customers.
+						This beta feature is currently available for Visual Studio Code on Mac OS X. See below for instructions.
 					</Heading>
 				</FlexContainer>
 
@@ -79,7 +79,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 					}}>
 						“Whoa, this is amazing.”
 						</Heading>
-					<p>Zachary at <a href="http://raise.com/" target="_blank">Raise.com</a></p>
+					<p>Zachary at Raise</p>
 				</FlexContainer>
 			</div>
 		</div>

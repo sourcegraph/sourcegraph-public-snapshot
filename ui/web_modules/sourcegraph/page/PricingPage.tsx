@@ -76,7 +76,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 						<div className={styles.plan_box}>
 							<Panel color="green" hover={false} className={styles.plan_panel || ""}>
 								<Heading level={3} color="white" align="center">Organization</Heading>
-								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>25</span></Heading>
+								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>10</span></Heading>
 								<span className={styles.amount_per}>per user, per month</span>
 							</Panel>
 							{organizationPlanButton}
@@ -106,6 +106,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 							<p>Use Sourcegraph with code hosted on your own servers.</p>
 							<ul className={styles.details_list}>
 								<li>Integrate with GitHub Enterprise, Phabricator, and other tools</li>
+								<li>Global code search</li>
 								<li>Dedicated Customer Success Manager</li>
 							</ul>
 						</div>

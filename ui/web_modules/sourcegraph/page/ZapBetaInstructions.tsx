@@ -42,7 +42,7 @@ export function ZapBetaInstructions(): JSX.Element {
 
 	if (!context.user) {
 		return <Panel hoverLevel="low" style={{ paddingTop: whitespace[9], textAlign: "center" }}>
-			<p>You must sign up to view installation instructions.</p>
+			<p>Sign up to view installation instructions.</p>
 			<SignupForm />
 		</Panel>;
 	}
@@ -53,7 +53,7 @@ export function ZapBetaInstructions(): JSX.Element {
 			<FlexContainer direction="top-bottom" style={{
 				maxWidth: 640,
 				margin: "auto",
-				paddingTop: whitespace[5],
+				paddingTop: whitespace[7],
 				paddingRight: whitespace[3],
 				paddingLeft: whitespace[3],
 			}}>
@@ -69,33 +69,33 @@ export function ZapBetaInstructions(): JSX.Element {
 					borderTop: `1px solid ${colors.blueGrayL3()}`,
 				}}>
 					<div style={stepSx}>1</div>
-					<p>To install and run the Zap server, open a terminal and paste:</p>
+					<p>Install the Zap client:</p>
 					<code style={codeSx}>{`sh <(curl -sSf https://sourcegraph.com/install/zap)`}</code>
 				</div>
 
 				<div style={{ borderTop: `1px solid ${colors.blueGrayL3()}`, marginTop: whitespace[4] }}>
 					<div style={stepSx}>2</div>
-					<p>Before initializing Zap on your repo in the next step, visit the repo you'd like to use on Sourcegraph:</p>
+					<p>Before initializing Zap on your repository in the next step, visit the repository you'd like to use on Sourcegraph:</p>
 					<a href="https://sourcegraph.com/" target="_blank" style={{ wordWrap: "break-word" }}>https://sourcegraph.com/github.com/<strong>org</strong>/<strong>repo</strong></a>
-					<p>This repo should also be cloned and avaliable for editing in your local environment.</p>
+					<p>This repository should also be cloned and avaliable for editing in your local environment.</p>
 				</div>
 
 				<div style={{ borderTop: `1px solid ${colors.blueGrayL3()}`, marginTop: whitespace[4], }}>
 					<div style={stepSx}>3</div>
-					<p>To start watching a repo, go to the repo directory you want to watch, and type:</p>
+					<p>Start watching a repository by going to the repository directory you want to watch, and type:</p>
 					<code style={codeSx}>zap auth</code>
 					<code style={codeSx}>zap init</code>
 				</div>
 
 				<div style={{ borderTop: `1px solid ${colors.blueGrayL3()}`, marginTop: whitespace[4] }}>
 					<div style={stepSx}>4</div>
-					<p>Open Visual Studio Code in your repo's directory:</p>
+					<p>Open Visual Studio Code in your repository's directory:</p>
 					<code style={codeSx}>code .</code>
 				</div>
 
 				<div style={{ borderTop: `1px solid ${colors.blueGrayL3()}`, marginTop: whitespace[4] }}>
 					<div style={stepSx}>5</div>
-					<p>To install the Visual Studio Code extension, open the command palette (Command+P) and type:</p>
+					<p>Install the Visual Studio Code extension, open the command palette (Command+P) and type:</p>
 					<code style={codeSx}>ext install sqs.vscode-zap</code>
 					<p>Click the “Reload” button to reload Visual Studio Code.</p>
 				</div>
@@ -130,8 +130,8 @@ export function ZapBetaInstructions(): JSX.Element {
 					textAlign: "center",
 				}}>
 					<p>
-						Running into problems?&nbsp;
-						<a href="https://slack-files.com/T02FSM7DL-F4BRWRCDC-00bd5b24eb" target="_blank">Check our troubleshooting</a>.
+						Not working?&nbsp;
+						<a href="https://slack-files.com/T02FSM7DL-F4BRWRCDC-00bd5b24eb" target="_blank">Try our troubleshooting steps</a>.
 					</p>
 				</div>
 

@@ -16,7 +16,7 @@ export function AboutPage({ location }: LocationProps): JSX.Element {
 			<PageTitle title="About" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<FlexContainer style={{ margin: "auto", maxWidth: 640 }}>
-					<Heading level={3} color="white">The pace at which humans can write code is the only thing that stands between us and flying cars, a habitat on Mars and a cure for cancer.</Heading>
+					<Heading level={3} color="white">The pace at which humans can write code is the only thing that stands between us and flying cars, a habitat on Mars, and a cure for cancer.</Heading>
 				</FlexContainer>
 			</Hero>
 			<FlexContainer direction="top-bottom" style={{

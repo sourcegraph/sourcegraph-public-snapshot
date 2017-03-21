@@ -15,13 +15,10 @@ export function BetaPage(props: BetaPageProps): JSX.Element {
 			<PageTitle title="Beta" />
 			<Hero pattern="objects" color="blue" className={base.pv5}>
 				<div className={styles.container}>
-					<Heading level={2}>Get the future Sourcegraph sooner</Heading>
+					<Heading level={2}>Sourcegraph beta program</Heading>
 				</div>
 			</Hero>
 			<div className={styles.content}>
-				<p className={styles.p}>Sourcegraph is all about keeping you <em>in flow</em> while you code, no matter what tools or languages you use. By joining the Sourcegraph beta program, you can help us build Sourcegraph for your preferred environment&mdash;and help shape the future of the product.</p>
-
-				<Heading level={3} underline="blue" className={styles.h5}>Sourcegraph beta program</Heading>
 				<p className={styles.p}>As a Sourcegraph beta participant, you'll get early access to future releases, including:</p>
 				<ul>
 					<li className={styles.p}>Support for more programming languages</li>
