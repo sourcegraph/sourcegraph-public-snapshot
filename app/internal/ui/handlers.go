@@ -79,7 +79,11 @@ func handler(h func(w http.ResponseWriter, r *http.Request) (*meta, error)) http
 		if ee, ok := err.(*handlerutil.URLMovedError); ok {
 			return handlerutil.RedirectToNewRepoURI(w, r, ee.NewURL)
 		}
-		return tmplExec(w, r, errcode.HTTP(err), *m)
+		errorcode := errcode.HTTP(err)
+		if errorcode >= 500 {
+			log15.Error("HTTP UI error", "status", errorcode, "err", err.Error())
+		}
+		return tmplExec(w, r, errorcode, *m)
 	})
 }
 
