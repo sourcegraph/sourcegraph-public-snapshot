@@ -1,5 +1,5 @@
 import * as _ from "lodash";
-import { eventLogger } from "../utils/context";
+import { eventLogger, isBrowserExtension } from "../utils/context";
 import * as github from "./github";
 import { fetchJumpURL, getTooltip, prewarmLSP } from "./lsp";
 import * as tooltips from "./tooltips";
@@ -45,7 +45,7 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 				if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {
 					ignoreFirstTextChar = false;
 				}
-				const annLine = convertNode(cell.cell, 1, cell.line, ignoreFirstTextChar);
+				const annLine = convertNode(cell.cell, 1, cell.line, ignoreFirstTextChar, correctForTabs(loggingStruct["language"]));
 				cell.cell.innerHTML = "";
 				cell.cell.appendChild(annLine.resultNode);
 
@@ -62,13 +62,13 @@ interface ConvertNodeResult<T extends Node> {
 	bytesConsumed: number;
 }
 
-function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
+function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Element> {
 	switch (node.nodeType) {
 		case Node.TEXT_NODE:
-			return convertTextNode(node, offset, line, ignoreFirstTextChar);
+			return convertTextNode(node, offset, line, ignoreFirstTextChar, correctForTabs);
 
 		case Node.ELEMENT_NODE:
-			return convertElementNode(node, offset, line, ignoreFirstTextChar);
+			return convertElementNode(node, offset, line, ignoreFirstTextChar, correctForTabs);
 
 		default:
 			throw new Error(`unexpected node type(${node.nodeType})`);
@@ -80,9 +80,9 @@ function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirst
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Node> {
+export function convertNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Node> {
 	let wrapperNode;
-	let c = convertNodeHelper(currentNode, offset, line, ignoreFirstTextChar);
+	let c = convertNodeHelper(currentNode, offset, line, ignoreFirstTextChar, correctForTabs);
 
 	// If this is the top level node for code, return a documentFragment
 	// otherwise copy all the attributes of the original node.
@@ -101,6 +101,14 @@ export function convertNode(currentNode: Node, offset: number, line: number, ign
 		bytesConsumed: c.bytesConsumed,
 	};
 }
+/**
+ * Phabricator auto converts tabs to two spaces. For tabbed langauges
+ * like go, this is a problem. This method checks if we are in a go file in phabrictor.
+ * @param fileExtension 
+ */
+export function correctForTabs(fileExtension?: string): boolean {
+	return isBrowserExtension() && Boolean(fileExtension) && fileExtension === "go";
+}
 
 // convertTextNode takes a DOM node which should be of NodeType.TEXT_NODE
 // (this must be checked by the caller) and returns an object containing the
@@ -109,7 +117,8 @@ export function convertNode(currentNode: Node, offset: number, line: number, ign
 const VARIABLE_TOKENIZER = /(^\w+)/;
 const ASCII_CHARACTER_TOKENIZER = /(^[\x21-\x2F|\x3A-\x40|\x5B-\x60|\x7B-\x7E])/;
 const NONVARIABLE_TOKENIZER = /(^[^\x21-\x7E]+)/;
-export function convertTextNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
+const SPACES = /(^[\x20]+$)/;
+export function convertTextNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Element> {
 	let nodeText;
 	let prevConsumed = 0;
 	let bytesConsumed = 0;
@@ -160,11 +169,14 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 
 	while (nodeText.length > 0) {
 		const token = consumeNext(nodeText);
+		const isAllSpaces = SPACES.test(token);
 
 		wrapperNode.appendChild(createTextNode(token, offset + prevConsumed));
-		prevConsumed += token.length;
-		bytesConsumed += token.length;
-
+		prevConsumed += isAllSpaces && correctForTabs && token.length % 2 === 0 ? token.length / 2 : token.length;
+		bytesConsumed += isAllSpaces && correctForTabs && token.length % 2 === 0 ? token.length / 2 : token.length;
+		// NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
+		// only divide by 2 for initial code indents.
+		correctForTabs = false;
 		nodeText = nodeText.slice(token.length);
 	}
 
@@ -174,7 +186,7 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
+export function convertElementNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Element> {
 	let bytesConsumed = 0;
 	const wrapperNode = document.createElement("SPAN");
 
@@ -183,7 +195,10 @@ export function convertElementNode(currentNode: Node, offset: number, line: numb
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
 	for (let i = 0; i < currentNode.childNodes.length; ++i) {
-		const res = convertNode(currentNode.childNodes[i], offset + bytesConsumed, line, i === 0 && ignoreFirstTextChar);
+		const res = convertNode(currentNode.childNodes[i], offset + bytesConsumed, line, i === 0 && ignoreFirstTextChar, correctForTabs);
+		// NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
+		// only divide by 2 for initial code indents.
+		correctForTabs = false;
 		wrapperNode.appendChild(res.resultNode);
 		bytesConsumed += res.bytesConsumed;
 	}
