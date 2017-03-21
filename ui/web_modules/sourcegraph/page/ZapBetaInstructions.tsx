@@ -90,7 +90,7 @@ export function ZapBetaInstructions(): JSX.Element {
 				<div style={{ borderTop: `1px solid ${colors.blueGrayL3()}`, marginTop: whitespace[4] }}>
 					<div style={stepSx}>4</div>
 					<p>Open Visual Studio Code in your repo's directory:</p>
-					<code style={codeSx}>code.</code>
+					<code style={codeSx}>code .</code>
 				</div>
 
 				<div style={{ borderTop: `1px solid ${colors.blueGrayL3()}`, marginTop: whitespace[4] }}>
