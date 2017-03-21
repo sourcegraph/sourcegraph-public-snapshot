@@ -107,7 +107,7 @@ export function convertNode(currentNode: Node, offset: number, line: number, ign
 //  maybe-linkified version of the node as an HTML string and the number
 // of bytes consumed.
 const VARIABLE_TOKENIZER = /(^\w+)/;
-const ASCII_CHARACTER_TOKENIZER = /(^[\x20-\x7F])/;
+const ASCII_CHARACTER_TOKENIZER = /(^[\x21-\x7F])/;
 const NONVARIABLE_TOKENIZER = /(^\W+)/;
 export function convertTextNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean): ConvertNodeResult<Element> {
 	let nodeText;
