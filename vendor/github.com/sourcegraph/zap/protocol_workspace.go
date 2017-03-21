@@ -22,9 +22,8 @@ func (w WorkspaceIdentifier) RefNoCheck(name string) RefIdentifier {
 }
 
 // Branch returns a RefIdentifier for the named branch in the workspace.
-func (w WorkspaceIdentifier) Branch(branch string) RefIdentifier {
-	CheckBranchName(branch)
-	return w.Ref("branch/" + branch)
+func (w WorkspaceIdentifier) Branch(branch BranchName) RefIdentifier {
+	return w.Ref(branch.Ref())
 }
 
 // WorkspaceAddParams contains parameters for the "workspace/add"

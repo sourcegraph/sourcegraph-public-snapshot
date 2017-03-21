@@ -6,18 +6,18 @@ var tempStrictNameChecks = true
 
 // CheckBranchName is a temporary debugging helper that panics if
 // branch doesn't look like a branch name.
-func CheckBranchName(branch string) {
+func CheckBranchName(branch BranchName) {
 	if branch == "" {
 		panic("suspicious branch name: (empty)")
 	}
-	if strings.HasPrefix(branch, "branch/") || strings.HasPrefix(branch, "remote/") {
-		panic("suspicious branch name: " + branch + " (should not have a branch/ or remote/ prefix)")
+	if strings.HasPrefix(string(branch), "branch/") || strings.HasPrefix(string(branch), "remote/") {
+		panic("suspicious branch name: " + string(branch) + " (should not have a branch/ or remote/ prefix)")
 	}
-	if strings.ToUpper(branch) == branch {
-		panic("suspicious branch name: " + branch + " (should not be ALL UPPERCASE)")
+	if strings.ToUpper(string(branch)) == string(branch) {
+		panic("suspicious branch name: " + string(branch) + " (should not be ALL UPPERCASE)")
 	}
-	if strings.Contains(branch, "HEAD") {
-		panic("suspicious branch name: " + branch + " (should not contain HEAD)")
+	if strings.Contains(string(branch), "HEAD") {
+		panic("suspicious branch name: " + string(branch) + " (should not contain HEAD)")
 	}
 }
 

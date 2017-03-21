@@ -193,10 +193,8 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 	}
 
 	if acquireRef {
-		defer repo.acquireRef(params.RefIdentifier.Ref)() //DL
+		defer repo.acquireRef(params.RefIdentifier.Ref)()
 	}
-
-	checkForRace := func() {}
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
@@ -294,19 +292,6 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 				return err
 			}
 			params.Op = &xop
-
-			{
-				// RACE catcher
-				debugPreRev := ref.Object.(serverRef).rev()
-				preHistory := fmt.Sprint(ref.Object.(serverRef).history())
-				checkForRace = func() {
-					debugPostRev := ref.Object.(serverRef).rev()
-					if debugPostRev != debugPreRev {
-						level.Error(logger).Log("RACE-unsynchronized-ref-upstream-update", "", "pre-rev", debugPreRev, "post-rev", debugPostRev, "pre-history", preHistory, "post-history", fmt.Sprint(ref.Object.(serverRef).history()), "params", params)
-						// panic("RACE: unsynchronized ref updates")
-					}
-				}
-			}
 			debugutil.SimulateLatency()
 		}
 		repo.setRefUpdatedAt(ref.Name)
@@ -318,7 +303,6 @@ func (s *Server) updateLocalTrackingRefAfterUpstreamUpdate(ctx context.Context, 
 	// Don't broadcast acks to clients, since we already immediately
 	// ack clients.
 	if !params.Ack {
-		checkForRace()
 		if err := s.broadcastRefUpdate(ctx, logger, withoutSymbolicRefs(refClosure), nil, &params, nil); err != nil {
 			return err
 		}
@@ -452,8 +436,6 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 			return err
 		}
 	}
-
-	checkForRace := func() {}
 
 	refClosure := repo.refdb.TransitiveClosureRefs(params.RefIdentifier.Ref)
 
@@ -637,19 +619,6 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 					Message: err.Error(),
 				}
 			}
-
-			{
-				// RACE catcher
-				debugPreRev := ref.Object.(serverRef).rev()
-				preHistory := fmt.Sprint(ref.Object.(serverRef).history())
-				checkForRace = func() {
-					debugPostRev := ref.Object.(serverRef).rev()
-					if debugPostRev != debugPreRev {
-						level.Error(logger).Log("RACE-unsynchronized-ref-downstream-update", "", "pre-rev", debugPreRev, "post-rev", debugPostRev, "pre-history", preHistory, "post-history", fmt.Sprint(ref.Object.(serverRef).history()), "params", params)
-						// panic("RACE: unsynchronized ref updates")
-					}
-				}
-			}
 			debugutil.SimulateLatency()
 		}
 
@@ -675,8 +644,6 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 			}
 		}
 	}
-
-	checkForRace()
 
 	toRefBaseInfo := func(p *RefPointer) *RefBaseInfo {
 		if p == nil {
