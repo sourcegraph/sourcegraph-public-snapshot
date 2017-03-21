@@ -6,10 +6,26 @@ import (
 	"regexp"
 )
 
-// TODO modify sift or pt and use that code. Both rely on regexp pkg, but the
-// bottlenecks seem to be around line counting which is currently naive
-// here. sift doesn't support non-regexp expressions, but code is clean enough
-// to easily add support for it (or just use regexp.EscapeMeta)
+// This code is base on reading the techniques detailed in
+// http://blog.burntsushi.net/ripgrep/
+//
+// If all low-hanging fruit has been reached, it likely makes sense to write
+// some glue in rust to make ripgrep search on an archive and shell out to
+// ripgrep.
+//
+// Note: There is still plenty of low-hanging fruit here! Please remove this
+// comment once there isn't! TODO:
+// - [ ] Parallel search
+// - [ ] Specialize searching a fixed string
+// - [ ] Use grep optimized regex engine at github.com/google/codesearch/regexp
+// - [ ] Skip bad files
+// - [ ] Re-use memory buffers as much as possible
+// - [ ] Possibly use cgo + c++ re2 library
+// - [ ] Parse regex to find fixed string to search for
+// - [ ] Limit results returned
+// - [ ] Avoid parsing new lines (most important optimization apparently)
+// - [ ] Only support UTF-8/ASCII
+// - [ ] Avoid parsing files out of tar/zip (like new line trick)
 
 func compile(p *Params) (func(reader io.Reader) ([]LineMatch, error), error) {
 	expr := p.Pattern
