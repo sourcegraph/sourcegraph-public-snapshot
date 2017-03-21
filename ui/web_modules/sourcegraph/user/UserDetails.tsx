@@ -2,7 +2,8 @@ import * as React from "react";
 import { Link } from "react-router";
 
 import { abs } from "sourcegraph/app/routePatterns";
-import { Button, FlexContainer, Input } from "sourcegraph/components";
+import { Button, FlexContainer, Heading } from "sourcegraph/components";
+import { Postcard } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 const detailsSx = {
@@ -17,6 +18,19 @@ export interface UserDetails {
 
 interface Props {
 	next: (userDetails: UserDetails) => void;
+}
+
+export function UserThanks(props: { next: () => void }): JSX.Element {
+	return <div style={{ margin: "auto", maxWidth: 320, textAlign: "center", paddingTop: whitespace[5], paddingBottom: whitespace[8] }}>
+		<Postcard width={64} color={colors.blueGrayL1()} />
+		<Heading level={4}>Thanks!</Heading>
+		<p>
+			Now, it's time to check out Sourcegraph.
+		</p>
+		<Button onClick={props.next} color="blue" style={{ marginTop: whitespace[3] }}>
+			Explore Sourcegraph
+		</Button>
+	</div>;
 }
 
 export class UserDetailsForm extends React.Component<Props, UserDetails> {
