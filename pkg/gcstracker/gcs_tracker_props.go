@@ -71,7 +71,7 @@ type OrgMember struct {
 // These fields are designed to be linked with user events to generate a
 // `users` table
 type UserDetailsContext struct {
-	// ZapDownloadCompleted indicates whether the user in question has downloaded
-	// Zap using the command line shell script
-	ZapDownloadCompleted bool `json:"zap_download_completed,omitempty"`
+	// ZapAuthCompleted indicates whether the user in question has ever authorized
+	// Zap on the command line
+	ZapAuthCompleted bool `json:"zap_auth_completed,omitempty"`
 }

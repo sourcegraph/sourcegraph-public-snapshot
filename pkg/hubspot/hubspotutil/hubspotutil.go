@@ -22,11 +22,15 @@ var FormNameToHubSpotID = map[string]string{
 	"ChangeUserPlan": "198ad76b-a88c-4b79-b026-bf0588bb2f9f",
 }
 
+// EventNameToHubSpotID is a mapping from event names provided by backend
+// or API requests to track HubSpot events
+//
 // HubSpot Events and IDs are all defined in HubSpot "Events" web console:
 // https://app.hubspot.com/reports/2762526/events
-
-// ZapDownloadCompletedEventID is an identifier for the "ZapDownloaded" event
-const ZapDownloadCompletedEventID = "000001971426"
+var EventNameToHubSpotID = map[string]string{
+	// ZapAuthCompletedEventID is an identifier for the "ZapAuthCompleted" event
+	"ZapAuthCompletedEventID": "000001981045",
+}
 
 var client *hubspot.Client
 
