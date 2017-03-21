@@ -13,13 +13,15 @@ const tooltipClassName = style({
 	maxWidth: "500px",
 	maxHeight: "250px",
 	border: "solid 1px #555",
+	borderRadius: "7px",
 	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
-	color: "rgba(213, 229, 242, 1)",
-	fontSize: "12px",
+	color: "rgba(199, 216, 229, 1)",
+	fontSize: "14px",
 	zIndex: 100,
 	position: "absolute",
 	overflow: "auto",
-	padding: "5px 5px",
+	padding: "10px 10px",
+	boxShadow: "2px 2px 1px #888888",
 });
 
 const tooltipTitleStyle = style({
@@ -28,7 +30,6 @@ const tooltipTitleStyle = style({
 });
 
 const tooltipDocStyle = style({
-	borderTop: "1px solid rgba(256, 256, 256, .8)",
 	marginTop: "5px",
 	paddingTop: "10px",
 	fontFamily: `"Helvetica Neue", Helvetica, Arial, sans-serif`,
