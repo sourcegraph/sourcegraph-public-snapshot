@@ -151,6 +151,7 @@ type FileMatch {
 type LineMatch {
 	preview: String!
 	lineNumber: Int!
+	offsetAndLengths: [[Int!]!]!
 }
 
 type DependencyReferences {

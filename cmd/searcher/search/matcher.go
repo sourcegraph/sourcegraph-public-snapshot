@@ -34,12 +34,18 @@ func compile(p *Params) (func(reader io.Reader) ([]LineMatch, error), error) {
 		for scanner.Scan() {
 			i++
 			b := scanner.Bytes()
-			loc := re.FindIndex(b)
-			if loc != nil {
+			locs := re.FindAllIndex(b, -1)
+			if len(locs) > 0 {
+				offsetAndLengths := make([][]int, len(locs))
+				for i, match := range locs {
+					start, end := match[0], match[1]
+					offsetAndLengths[i] = []int{start, end - start}
+				}
 				matches = append(matches, LineMatch{
 					// making a copy of b is intentional, the underlying array of b can be overwritten by scanner.
-					Preview:    string(b),
-					LineNumber: i,
+					Preview:          string(b),
+					LineNumber:       i,
+					OffsetAndLengths: offsetAndLengths,
 				})
 			}
 		}

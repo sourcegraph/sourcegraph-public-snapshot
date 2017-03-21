@@ -77,10 +77,9 @@ type FileMatch struct {
 
 // LineMatch is the struct used by vscode to receive search results for a line
 type LineMatch struct {
-	Preview    string
-	LineNumber int
-	// TODO vscode also wants to know the range of matches on the line.
-	// OffsetAndLengths [][2]int
+	Preview          string
+	LineNumber       int
+	OffsetAndLengths [][]int
 }
 
 // ServeHTTP handles HTTP based search requests

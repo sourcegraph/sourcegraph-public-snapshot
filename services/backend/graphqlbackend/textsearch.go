@@ -43,10 +43,9 @@ func (fm *fileMatch) LineMatches() []*lineMatch {
 
 // LineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
-	JPreview    string `json:"Preview"`
-	JLineNumber int    `json:"LineNumber"`
-	// We do not know the offset and length currently
-	//OffsetAndLengths [][2]int
+	JPreview          string    `json:"Preview"`
+	JLineNumber       int32     `json:"LineNumber"`
+	JOffsetAndLengths [][]int32 `json:"OffsetAndLengths"`
 }
 
 func (lm *lineMatch) Preview() string {
@@ -54,7 +53,11 @@ func (lm *lineMatch) Preview() string {
 }
 
 func (lm *lineMatch) LineNumber() int32 {
-	return int32(lm.JLineNumber)
+	return lm.JLineNumber + 1
+}
+
+func (lm *lineMatch) OffsetAndLengths() [][]int32 {
+	return lm.JOffsetAndLengths
 }
 
 func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fileMatch, error) {

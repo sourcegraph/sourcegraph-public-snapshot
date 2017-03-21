@@ -81,6 +81,7 @@ export class SearchService implements ISearchService {
 									lineMatches {
 										preview
 										lineNumber
+										offsetAndLengths
 									}
 								}
 							}
@@ -93,21 +94,7 @@ export class SearchService implements ISearchService {
 					}
 					let response = data.root.repository.commit.commit.textSearch.map(file => {
 						const resource = workspace.with({ fragment: file.path });
-						const lineMatches = file.lineMatches.map(lineMatch => {
-							if (!query.contentPattern) {
-								throw new Error("Query missing search string.");
-							}
-							let offsetAndLengths: number[][];
-							if (query.contentPattern.isRegExp) {
-								offsetAndLengths = [[]];
-							} else {
-								const offset = lineMatch.preview.indexOf(query.contentPattern.pattern);
-								const len = query.contentPattern.pattern.length;
-								offsetAndLengths = [[offset, offset + len]];
-							}
-							return ({ ...lineMatch, offsetAndLengths });
-						});
-						return { ...file, resource, lineMatches };
+						return { ...file, resource };
 					});
 					complete({
 						results: response,

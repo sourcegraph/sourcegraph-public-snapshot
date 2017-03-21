@@ -110,6 +110,7 @@ declare namespace GQL {
 		__typename: string;
 		preview: string;
 		lineNumber: number;
+		offsetAndLengths: Array<Array<number>>;
 	}
 
 	/*
