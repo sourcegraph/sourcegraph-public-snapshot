@@ -159,35 +159,18 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 		span.Finish()
 	}()
 
-	matcher, err := compile(p)
+	rg, err := compile(p)
 	if err != nil {
 		return nil, badRequestError{err.Error()}
 	}
 
-	r, close, err := s.Store.openReader(ctx, p.Repo, p.Commit)
+	zr, close, err := s.Store.openReader(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, err
 	}
 	defer close()
 
-	for _, f := range r.File {
-		rc, err := f.Open()
-		if err != nil {
-			return nil, err
-		}
-		lm, err := matcher(rc)
-		rc.Close()
-		if err != nil {
-			return nil, err
-		}
-		if lm != nil {
-			matches = append(matches, FileMatch{
-				Path:        f.Name, // TODO name likely needs to be changed
-				LineMatches: lm,
-			})
-		}
-	}
-	return matches, nil
+	return concurrentFind(ctx, rg, zr)
 }
 
 func validateParams(p *Params) error {
