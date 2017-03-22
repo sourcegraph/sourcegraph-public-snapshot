@@ -88,7 +88,6 @@ class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot 
 	};
 
 	paymentClosed = () => {
-		Events.NewPlanPaymentModal_Dismissed.logEvent();
 		this.setState({ ...this.state, showPayment: false });
 	}
 
@@ -97,12 +96,10 @@ class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot 
 		if (seats < 1) {
 			return;
 		}
-		Events.NewPlanPaymentModal_Initiated.logEvent();
 		this.setState({ ...this.state, showPayment: true });
 	}
 
 	onChange = (ev: React.FormEvent<HTMLInputElement>) => {
-		Events.NewPlanPaymentModal_Changed.logEvent();
 		this.setState({ ...this.state, seats: ev.currentTarget.value });
 	}
 
@@ -115,7 +112,6 @@ class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot 
 		if (seats < 1) {
 			return;
 		}
-		Events.NewPlanPaymentModal_Submitted.logEvent();
 		fetchGraphQLQuery(`mutation {
 			subscribeOrg(tokenID: $tokenID, GitHubOrg: $GitHubOrg, seats: $seats)
 		}`, {
