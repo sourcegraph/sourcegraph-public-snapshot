@@ -74,9 +74,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 						marginTop: whitespace[3],
 						marginBottom: whitespace[2],
 					}}>
-						“Whoa, this is amazing.”
-						</Heading>
-					<p>Zachary at Raise</p>
+					</Heading>
 				</FlexContainer>
 			</div>
 		</div>
