@@ -171,6 +171,12 @@ export const Events = {
 	CancelSubscriptionModal_Dismissed: new LoggableEvent("DismissCancelSubscriptionModal", EventCategories.Billing, EventActions.Close),
 	CompleteSubscriptionModal_Dismissed: new LoggableEvent("DismissCompleteSubscriptionModal", EventCategories.Billing, EventActions.Close),
 
+	// Stripe Events
+	NewPlanPaymentModal_Initiated: new LoggableEvent("InitiateNewPlanStripeModal", EventCategories.GTM, EventActions.Click),
+	NewPlanPaymentModal_Dismissed: new LoggableEvent("DismissNewPlanStripeModal", EventCategories.GTM, EventActions.Click),
+	NewPlanPaymentModal_Changed: new LoggableEvent("ChangeNewPlanStripeModalSeats", EventCategories.GTM, EventActions.Click),
+	NewPlanPaymentModal_Submitted: new LoggableEvent("SubmitNewPlanStripeModal", EventCategories.GTM, EventActions.Click),
+
 	// Toast events
 	ToastChromeCTA_Clicked: new LoggableEvent("ChromeToastCTAClicked", EventCategories.Toast, EventActions.Click),
 	ToastChrome_Closed: new LoggableEvent("ChromeToastCloseClicked", EventCategories.Toast, EventActions.Close),
