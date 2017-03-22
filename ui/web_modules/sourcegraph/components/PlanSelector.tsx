@@ -88,7 +88,7 @@ function PlanTile({ name, desc, price, salePrice, unit, label, onClick }: TilePr
 				<Heading level={6} compact={true} style={{ marginBottom: whitespace[2] }}>
 					{name}
 					{label &&
-						<Label color={"green"} text={label} style={labelSx} compact={true} />
+						<Label color="green" text={label} style={labelSx} compact={true} />
 					}
 				</Heading>
 				<span style={descSx}>{desc}</span>
