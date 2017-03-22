@@ -71,6 +71,10 @@ func openGithubArchive(t testing.TB, repo, rev string) *zip.ReadCloser {
 		return zr
 	}
 
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatal(err)
+	}
+
 	url := fmt.Sprintf("https://codeload.%s/zip/%s", repo, rev)
 	t.Log("fetching ", url)
 
@@ -82,21 +86,26 @@ func openGithubArchive(t testing.TB, repo, rev string) *zip.ReadCloser {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	f, err := os.OpenFile(path+".part", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { os.Remove(path + ".part") }()
+	_, err = io.Copy(f, resp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// We write our own version of the zip to disk, since we want to store
 	// it uncompressed.
-	r, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	r, err := zip.OpenReader(path + ".part")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer zr.Close()
+	defer r.Close()
 	buf := new(bytes.Buffer)
 	w := zip.NewWriter(buf)
-	err = storeZip(r, w)
+	err = storeZip(&r.Reader, w)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,9 +114,6 @@ func openGithubArchive(t testing.TB, repo, rev string) *zip.ReadCloser {
 		t.Fatal(err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		t.Fatal(err)
-	}
 	err = ioutil.WriteFile(path, buf.Bytes(), 0600)
 	if err != nil {
 		t.Fatal(err)
