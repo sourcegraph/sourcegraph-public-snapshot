@@ -25,5 +25,12 @@ if [ -d artifacts ]; then
 else
     git clone --depth 1 https://github.com/sourcegraph/java-artifacts artifacts
 fi
+
+if [ -d android-sdk-jars ]; then
+    cd ./android && git fetch origin && git checkout origin/master && cd -
+else
+    git clone --depth 1 https://github.com/sourcegraph/android-sdk-jars
+fi
+
 docker build -t $IMAGE:$TAG .
 gcloud docker -- push $IMAGE:$TAG
