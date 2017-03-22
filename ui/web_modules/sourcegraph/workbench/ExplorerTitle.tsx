@@ -15,6 +15,7 @@ import { Features } from "sourcegraph/util/features";
 import { workbenchStore } from "sourcegraph/workbench/main";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
 import { Services, getCurrentWorkspace } from "sourcegraph/workbench/services";
+import "sourcegraph/workbench/styles/searchViewlet.css";
 import { ICommandService } from "vs/platform/commands/common/commands";
 
 insertGlobal(".composite.title", {
@@ -117,7 +118,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 				</a>
 			</Heading>
 			{Features.textSearch.isEnabled() && <a {...hoverStyle}
-				style={{ marginLeft: 5 }}
+				style={{ marginRight: 5 }}
 				onClick={this.showSearchViewlet}>
 				<Search color={colors.blueGrayL2()} />
 			</a>}

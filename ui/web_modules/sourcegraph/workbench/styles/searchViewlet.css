@@ -1,0 +1,14 @@
+:global .search-viewlet .linematch {
+	line-height: 40px !important;
+}
+
+:global .search-viewlet .sub-content {
+	padding-top: 10px;
+}
+
+:global .search-viewlet .primary-action-bar .actions-container {
+	display: none;
+}
+:global .search-viewlet .monaco-count-badge {
+	display: inline !important;
+}
