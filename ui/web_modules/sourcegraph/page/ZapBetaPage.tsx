@@ -29,26 +29,23 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 			}}>
 				<FlexContainer direction="top-bottom" style={{ margin: "auto", paddingRight: whitespace[3], paddingLeft: whitespace[3], textAlign: "center" }}>
 					<Heading level={1} color="white">Real-time code collaboration + intelligence</Heading>
-					<Heading level={4} color="white" style={{ marginBottom: whitespace[5] }}>Sourcegraph extends your editor to the web so you can share work-in-progress code instantly with teammates.</Heading>
-
-					<video poster={`${context.assetsRoot}/img/zap-vid-placeholder.png`} style={{
-						width: "96%",
-						maxWidth: 640,
-						backgroundColor: colors.blueGrayL3(),
-						borderRadius: 4,
-						margin: "auto",
-						marginBottom: -80,
-						objectFit: "cover",
-					}} controls>
-						<source src={`${context.assetsRoot}/zap-beta-demo.mp4`} type="video/mp4" />
-					</video>
+					<Heading level={4} color="white" style={{ marginBottom: whitespace[1] }}>Sourcegraph extends your editor to the web so you can share work-in-progress code instantly with teammates.</Heading>
+					<div>
+						<iframe style={{
+							position: "relative",
+							top: 20,
+							bottom: -80,
+							marginBottom: -80,
+							maxWidth: 640,
+						}} src={"https://player.vimeo.com/video/209506088" width="640" height="400"></iframe>
+					</div>
 				</FlexContainer>
 			</Hero>
 
-			<Hero color="dark" style={{ paddingTop: whitespace[5], paddingBottom: whitespace[0] }}>
-				<FlexContainer style={{ margin: "auto", maxWidth: 640, paddingTop: whitespace[5], paddingRight: whitespace[3], paddingLeft: whitespace[3] }}>
+			<Hero color="dark" style={{ paddingTop: whitespace[8], paddingBottom: whitespace[0] }}>
+				<FlexContainer style={{ margin: "auto", maxWidth: 640, paddingTop: whitespace[1], paddingRight: whitespace[3], paddingLeft: whitespace[3] }}>
 					<Heading level={4} align="center" style={{
-						marginTop: whitespace[6],
+						marginTop: whitespace[4],
 						marginBottom: whitespace[0],
 						color: "white",
 					}}>
