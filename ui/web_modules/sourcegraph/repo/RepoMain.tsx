@@ -11,7 +11,6 @@ import { urlWithRev } from "sourcegraph/repo/routes";
 import * as styles from "sourcegraph/repo/styles/Repo.css";
 
 interface Props {
-	repository: GQL.IRepository | null;
 	commit: GQL.ICommitState;
 	routes: Route[];
 	params: RouteParams;

@@ -24,7 +24,6 @@ export const REFERENCES_SECTION_ID = "references-section-header";
 const TreeSidebarClassName = "sg-sidebar";
 
 export interface InfoPanelProps {
-	repo: GQL.IRepository;
 	fileEventProps: FileEventProps;
 }
 

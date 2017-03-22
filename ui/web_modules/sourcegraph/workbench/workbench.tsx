@@ -80,17 +80,17 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 				desc="Revision not found" />;
 		}
 
-		if (needsPayment(repository)) {
-			return <Paywall repo={repository} />;
+		if (needsPayment(repository.expirationDate)) {
+			return <Paywall repo={repository.uri} />;
 		}
 
 		const commitID = repository.revState.zapRev ? repository.revState.zapRev.base : repository.revState.commit!.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
 			<BlobPageTitle repo={this.props.repo} path={path} />
 			{/* TODO(john): repo main takes the commit state for the 'y' hotkey, assume for now revState can be passed. */}
-			<RepoMain {...this.props} repository={repository} commit={repository.revState}>
+			<RepoMain {...this.props} commit={repository.revState}>
 				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
-				<TrialEndingWarning layout={() => this.forceUpdate()} repo={repository} />
+				<TrialEndingWarning layout={() => this.forceUpdate()} expirationDate={repository.expirationDate} />
 				<WorkbenchShell
 					location={this.props.location}
 					routes={this.props.routes}
@@ -103,7 +103,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 					branch={repository.revState.zapRev ? repository.revState.zapRev.branch : undefined}
 					path={path}
 					selection={selection} />
-				<InfoPanelLifecycle repo={repository} fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
+				<InfoPanelLifecycle fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
 			</RepoMain>
 		</div>;
 	}
@@ -154,12 +154,6 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 							}
 							commit {
 								sha1
-								languages
-								tree(recursive: true) {
-									files {
-										name
-									}
-								}
 							}
 							cloneInProgress
 						}
@@ -178,12 +172,6 @@ const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
 						}
 						commit {
 							sha1
-							languages
-							tree(recursive: true) {
-								files {
-									name
-								}
-							}
 						}
 						cloneInProgress
 					}

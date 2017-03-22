@@ -17,7 +17,11 @@ import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
 const sales = <a href="mailto:hi@sourcegraph.com">hi@sourcegraph.com</a>;
 
-export function Paywall({ repo }: { repo: GQL.IRepository }): JSX.Element {
+interface Props {
+	repo: string;
+}
+
+export function Paywall(props: Props): JSX.Element {
 	EventLogger.logViewEvent("ViewPaywall", location.pathname, {});
 	return <FlexContainer direction="top-bottom" style={{ flex: "1 1 auto" }}>
 		<Toast isDismissable={false} color="gray" style={{ flex: "0 0 auto" }}>
@@ -26,7 +30,7 @@ export function Paywall({ repo }: { repo: GQL.IRepository }): JSX.Element {
 					<No color={colors.orangeL1()} width={24} style={{ marginRight: whitespace[3] }} />
 					Your trial has ended.
 			</div>
-				<CompleteTrialContainer repo={repo} />
+				<CompleteTrialContainer repo={props.repo} />
 			</div>
 		</Toast>
 		<div style={{
@@ -39,13 +43,13 @@ export function Paywall({ repo }: { repo: GQL.IRepository }): JSX.Element {
 	</FlexContainer>;
 }
 
-export function TrialEndingWarning({ layout, repo }: {
-	layout: () => void, repo: GQL.IRepository
+export function TrialEndingWarning({ layout, expirationDate }: {
+	layout: () => void, expirationDate: number | null,
 }): JSX.Element {
-	if (!repo.expirationDate) {
+	if (!expirationDate) {
 		return <div />;
 	}
-	const time = new Date(repo.expirationDate * 1000);
+	const time = new Date(expirationDate * 1000);
 	const msUntilExpiration = time.getTime() - Date.now();
 	const fiveDays = 1000 * 60 * 60 * 24 * 5;
 	if (msUntilExpiration > fiveDays || msUntilExpiration < 0) {
@@ -124,7 +128,7 @@ class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot 
 
 	getOrg(): GQL.IOrganization | null {
 		const orgs = this.props.root.currentUser!.githubOrgs;
-		const match = this.props.repo.uri.match(/^.*\/(.*)\/.*$/);
+		const match = this.props.repo.match(/^.*\/(.*)\/.*$/);
 		if (!match) {
 			return null;
 		}
@@ -190,17 +194,13 @@ class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot 
 	}
 }
 
-export function needsPayment(repo: GQL.IRepository): boolean {
-	if (!repo.expirationDate) {
+export function needsPayment(expirationDate: number | null): boolean {
+	if (!expirationDate) {
 		return false;
 	}
-	const time = new Date(repo.expirationDate * 1000);
+	const time = new Date(expirationDate * 1000);
 	const msUntilExpiration = time.getTime() - Date.now();
 	return msUntilExpiration < 0;
-}
-
-interface Props {
-	repo: GQL.IRepository;
 }
 
 class CompleteTrialContainer extends React.Component<Props, {}> {
@@ -231,9 +231,7 @@ class CompleteTrialContainer extends React.Component<Props, {}> {
 					query { root }
 				`,
 				},
-				params: {
-					repo: this.props.repo,
-				},
+				params: this.props,
 			}}
 		/>;
 	}
