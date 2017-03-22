@@ -2,13 +2,60 @@ package backend
 
 import (
 	"context"
+	"strings"
 
+	"github.com/sourcegraph/zap"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
+
+var TestSkipZap = false
+
+func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (zapRef *zap.RefInfo, res *sourcegraph.ResolvedRev, err error) {
+	if TestSkipZap {
+		goto nonZap
+	}
+
+	// TODO(matt,john): remove this hack, this zapRevInfo call was causing a front-end error
+	// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
+	if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
+		repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
+		if op.Rev != "" && !strings.HasSuffix(op.Rev, "^{git}") {
+			cl, err := NewZapClient(ctx)
+			if err != nil {
+				return nil, nil, err
+			}
+			zapRevInfo, _ := cl.RefInfo(ctx, zap.RefInfoParams{
+				RefIdentifier: zap.RefIdentifier{Repo: repo.URI, Ref: op.Rev},
+				Fuzzy:         true,
+			})
+			// TODO(john): add error-specific handling?
+			if zapRevInfo != nil && zapRevInfo.State != nil {
+				// We want to use the Git revision that the Zap branch was based on,
+				// as all of the Zap operations were originating from that revision.
+				// Using any other revision of the same branch would be a mistake
+				// (e.g., the user may be on a revision of the master branch that is
+				// just a few commits behind.)
+				return zapRevInfo, &sourcegraph.ResolvedRev{
+					CommitID: zapRevInfo.State.GitBase,
+				}, nil
+			}
+		}
+	}
+
+nonZap:
+	res, err = Repos.ResolveRev(ctx, op)
+	return nil, res, err
+}
 
 func (s *repos) ResolveRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (res *sourcegraph.ResolvedRev, err error) {
 	if Mocks.Repos.ResolveRev != nil {

@@ -2,13 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"strings"
 
 	graphql "github.com/neelance/graphql-go"
 	"github.com/neelance/graphql-go/relay"
-	"github.com/sourcegraph/zap"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
@@ -63,63 +60,34 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 }
 
 func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev string }) (*commitStateResolver, error) {
-	var zapRev *zapRevResolver
-
-	// TODO(matt,john): remove this hack, this zapRevInfo call was causing a front-end error
-	// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
-	if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
-		// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
-		if args.Rev != "" && !strings.HasSuffix(args.Rev, "^{git}") {
-			cl, err := backend.NewZapClient(ctx)
-			if err != nil {
-				return nil, err
-			}
-			zapRevInfo, _ := cl.RefInfo(ctx, zap.RefInfoParams{
-				RefIdentifier: zap.RefIdentifier{Repo: r.repo.URI, Ref: args.Rev},
-				Fuzzy:         true,
-			})
-			// TODO(john): add error-specific handling?
-			if zapRevInfo != nil && zapRevInfo.State != nil {
-				zapRev = &zapRevResolver{zapRev: zapRevSpec{
-					Ref:    zapRevInfo.RefIdentifier.Ref,
-					Base:   zapRevInfo.State.GitBase,
-					Branch: zapRevInfo.State.GitBranch,
-				}}
-
-				// We want to use the Git revision that the Zap branch was based on,
-				// as all of the Zap operations were originating from that revision.
-				// Using any other revision of the same branch would be a mistake
-				// (e.g., the user may be on a revision of the master branch that is
-				// just a few commits behind.)
-				return &commitStateResolver{
-					zapRev: zapRev,
-					commit: &commitResolver{
-						commit: commitSpec{
-							RepoID:        r.repo.ID,
-							CommitID:      zapRevInfo.State.GitBase,
-							DefaultBranch: r.repo.DefaultBranch,
-						},
-					},
-				}, nil
-			}
-		}
-	}
-
-	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
+	zapRevInfo, rev, err := backend.Repos.ResolveZapRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,
 		Rev:  args.Rev,
 	})
 	if err != nil {
-		if err == vcs.ErrRevisionNotFound {
-			return &commitStateResolver{zapRev: zapRev}, nil
-		}
 		if err, ok := err.(vcs.RepoNotExistError); ok && err.CloneInProgress {
 			return &commitStateResolver{cloneInProgress: true}, nil
 		}
 		return nil, err
 	}
+	if zapRevInfo != nil {
+		return &commitStateResolver{
+			zapRev: &zapRevResolver{zapRev: zapRevSpec{
+				Ref:    zapRevInfo.RefIdentifier.Ref,
+				Base:   zapRevInfo.State.GitBase,
+				Branch: zapRevInfo.State.GitBranch,
+			}},
+			commit: &commitResolver{
+				commit: commitSpec{
+					RepoID:        r.repo.ID,
+					CommitID:      zapRevInfo.State.GitBase,
+					DefaultBranch: r.repo.DefaultBranch,
+				},
+			},
+		}, nil
+	}
 
-	return &commitStateResolver{zapRev: zapRev,
+	return &commitStateResolver{
 		commit: &commitResolver{
 			commit: commitSpec{RepoID: r.repo.ID, CommitID: rev.CommitID, DefaultBranch: r.repo.DefaultBranch},
 			repo:   *r.repo,
