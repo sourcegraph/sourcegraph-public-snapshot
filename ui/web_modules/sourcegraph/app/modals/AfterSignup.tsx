@@ -105,7 +105,7 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 		} else if (plan === "organization") {
 			stage = "orgDetails";
 		} else {
-			stage = "finished";
+			stage = "userThanks";
 		}
 		this.setState({ ...this.state, plan, stage });
 	}
@@ -141,7 +141,7 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 		if (this.authedPrivate) {
 			stage = "plan";
 		} else {
-			stage = "finished";
+			stage = "userThanks";
 			// If user did not auth private code, set user prop `plan` to be public
 			EventLogger.setUserPlan("public");
 		}

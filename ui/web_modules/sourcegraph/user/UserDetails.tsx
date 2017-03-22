@@ -2,8 +2,8 @@ import * as React from "react";
 import { Link } from "react-router";
 
 import { abs } from "sourcegraph/app/routePatterns";
-import { Button, FlexContainer, Heading } from "sourcegraph/components";
-import { Postcard } from "sourcegraph/components/symbols/Primaries";
+import { Button, FlexContainer, Heading, Input } from "sourcegraph/components";
+import { Child } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 const detailsSx = {
@@ -22,7 +22,7 @@ interface Props {
 
 export function UserThanks(props: { next: () => void }): JSX.Element {
 	return <div style={{ margin: "auto", maxWidth: 320, textAlign: "center", paddingTop: whitespace[5], paddingBottom: whitespace[8] }}>
-		<Postcard width={64} color={colors.blueGrayL1()} />
+		<Child width={64} color={colors.blueGrayL1()} />
 		<Heading level={4}>Thanks!</Heading>
 		<p>
 			Now, it's time to check out Sourcegraph.
