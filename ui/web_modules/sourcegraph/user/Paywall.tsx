@@ -87,7 +87,7 @@ const modalName = "trialCompletionModal";
 class CompleteTrialButton extends ComponentWithRouter<Props & { root: GQL.IRoot }, State> {
 
 	state: State = {
-		seats: "1",
+		seats: this.context.router.location.query["seats"] || "1",
 		showPayment: false,
 	};
 
