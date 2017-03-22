@@ -10,7 +10,7 @@ import { OrgSelection } from "sourcegraph/org/OrgSignup";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { submitAfterSignupForm } from "sourcegraph/user/SubmitForm";
-import { UserDetails, UserDetailsForm } from "sourcegraph/user/UserDetails";
+import { UserDetails, UserDetailsForm, UserThanks } from "sourcegraph/user/UserDetails";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
 interface Props {
@@ -18,7 +18,7 @@ interface Props {
 	root: GQL.IRoot;
 }
 
-type Stage = "details" | "plan" | "enterpriseDetails" | "orgDetails" | "enterpriseThanks" | "finished";
+type Stage = "details" | "plan" | "enterpriseDetails" | "orgDetails" | "enterpriseThanks" | "userThanks" | "finished";
 
 interface Details {
 	stage: Stage;
@@ -105,7 +105,7 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 		} else if (plan === "organization") {
 			stage = "orgDetails";
 		} else {
-			stage = "finished";
+			stage = "userThanks";
 		}
 		this.setState({ ...this.state, plan, stage });
 	}
@@ -119,7 +119,7 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 			signup: { organization },
 		});
 		EventLogger.setUserPlanOrg(organization);
-		this.setState({ ...this.state, stage: "finished", organization });
+		this.setState({ ...this.state, stage: "userThanks", organization });
 	}
 
 	private onPremComplete = (onPremDetails: OnPremDetails) => {
@@ -137,15 +137,7 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 		if (userInfo.company.length > 0) {
 			EventLogger.setUserCompany(userInfo.company);
 		}
-		let stage;
-		if (this.authedPrivate) {
-			stage = "plan";
-		} else {
-			stage = "finished";
-			// If user did not auth private code, set user prop `plan` to be public
-			EventLogger.setUserPlan("public");
-		}
-		this.setState({ ...this.state, stage, userInfo });
+		this.setState({ ...this.state, stage: "plan", userInfo });
 	}
 
 	private logStage(stage: Stage): void {
@@ -180,6 +172,8 @@ export class AfterSignupForm extends React.Component<Props, Details> {
 				return <EnterpriseDetails next={this.onPremComplete} />;
 			case "orgDetails":
 				return <OrgSelection root={this.props.root} back={this.gotoPlans} select={this.selectOrg} />;
+			case "userThanks":
+				return <UserThanks next={this.submit} />;
 			case "enterpriseThanks":
 				return <EnterpriseThanks next={this.submit} />;
 			default:

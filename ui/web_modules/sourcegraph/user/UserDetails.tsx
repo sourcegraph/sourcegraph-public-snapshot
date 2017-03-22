@@ -2,7 +2,8 @@ import * as React from "react";
 import { Link } from "react-router";
 
 import { abs } from "sourcegraph/app/routePatterns";
-import { Button, FlexContainer, Input } from "sourcegraph/components";
+import { Button, FlexContainer, Heading, Input } from "sourcegraph/components";
+import { Child } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 const detailsSx = {
@@ -17,6 +18,19 @@ export interface UserDetails {
 
 interface Props {
 	next: (userDetails: UserDetails) => void;
+}
+
+export function UserThanks(props: { next: () => void }): JSX.Element {
+	return <div style={{ margin: "auto", maxWidth: 320, textAlign: "center", paddingTop: whitespace[5], paddingBottom: whitespace[8] }}>
+		<Child width={64} color={colors.blueGrayL1()} />
+		<Heading level={4}>Congratulations!</Heading>
+		<p>
+			You have successfully signed up for Sourcegraph. Now, take a moment to check out our features!
+		</p>
+		<Button onClick={props.next} color="blue" style={{ marginTop: whitespace[3] }}>
+			Explore Sourcegraph
+		</Button>
+	</div>;
 }
 
 export class UserDetailsForm extends React.Component<Props, UserDetails> {
@@ -44,7 +58,7 @@ export class UserDetailsForm extends React.Component<Props, UserDetails> {
 
 		return <form style={detailsSx} onSubmit={this.submit}>
 			<p style={{ marginTop: 0, marginBottom: whitespace[5], textAlign: "center" }}>
-				Please confirm your details:
+				Please enter your details:
 				</p>
 			<Input label="Full name" block={true} required={true} value={this.state.name} onChange={this.onChange("name")} />
 			<Input label="Email" block={true} required={true} value={this.state.email} onChange={this.onChange("email")} type="email" />

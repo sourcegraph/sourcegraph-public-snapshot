@@ -19,17 +19,16 @@ interface TileProps {
 	onClick?: () => void;
 }
 
-export type PlanType = "public" | "personal" | "organization" | "enterprise";
+export type PlanType = "personal" | "organization" | "enterprise";
 
 export function PlanSelector({ select }: Props): JSX.Element {
 	return <div style={{ padding: whitespace[4] }}>
 		<p style={{ marginBottom: whitespace[4], textAlign: "center", color: colors.blueGrayD1() }}>Choose your plan:</p>
 		<PersonalPlan onClick={select("personal")} />
 		<OrgPlan onClick={select("organization")} />
-		<EnterprisePlan onClick={select("enterprise")} />
 		<p style={{ marginTop: whitespace[5], textAlign: "center" }}>
-			<a onClick={select("public")}>
-				<strong>Always free for public code <ChevronRight /></strong>
+			<a onClick={select("enterprise")}>
+				<strong>Host Sourcegraph on premises? Contact us <ChevronRight /></strong>
 			</a>
 		</p>
 	</div>;
@@ -41,7 +40,7 @@ export function PersonalPlan({ onClick }: PlanProps): JSX.Element {
 	return <PlanTile
 		onClick={onClick}
 		name="Personal"
-		desc="Your personal, private code"
+		desc="Open source and personal code"
 		price={0}
 		unit="per month" />;
 }
@@ -53,15 +52,6 @@ export function OrgPlan({ onClick }: PlanProps): JSX.Element {
 		desc="One organizaton's private code"
 		label="Free 14-day trial"
 		price={MONTHLY_SEAT_COST}
-		unit="per user/mo" />;
-}
-
-export function EnterprisePlan({ onClick }: PlanProps): JSX.Element {
-	return <PlanTile
-		onClick={onClick}
-		name="Enterprise"
-		desc="Code hosted on premises"
-		price={50}
 		unit="per user/mo" />;
 }
 
