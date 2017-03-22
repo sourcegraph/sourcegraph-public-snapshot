@@ -27,6 +27,22 @@ type Worktree struct {
 	BareFSRepo        // worktree operations are a superset of bare repo operations
 }
 
+// RepoRoot returns the repository root directory for a given file that is
+// located within a git repository.
+func RepoRoot(fileInRepo string) (string, error) {
+	// If fileInRepo is a file and not a directory, grab the parent directory.
+	dir := fileInRepo
+	fi, err := os.Stat(dir)
+	if err != nil {
+		return "", err
+	}
+	if !fi.IsDir() {
+		dir = filepath.Dir(dir)
+	}
+	// Determine the top level dir.
+	return topLevelDir(dir)
+}
+
 // NewWorktree creates a new Worktree that performs operations on the
 // git repository whose worktree is at dir.
 func NewWorktree(dir string) (Worktree, error) {
@@ -64,11 +80,13 @@ func (w Worktree) Bare() BareFSRepo { return w.BareFSRepo }
 
 func (w Worktree) WorktreeDir() string { return w.Dir }
 
-func (w Worktree) TopLevelDir() (string, error) {
-	dir, err := execGitCommand(w.Dir, "rev-parse", "--show-toplevel")
+func topLevelDir(dir string) (string, error) {
+	dir, err := execGitCommand(dir, "rev-parse", "--show-toplevel")
 	dir = filepath.Clean(dir) // windows: git returns unix slashes NOT windows slashes, so clean to convert them to windows
 	return string(dir), err
 }
+
+func (w Worktree) TopLevelDir() (string, error) { return topLevelDir(w.Dir) }
 
 func (w Worktree) Reset(typ, rev string) error {
 	if typ != "hard" && typ != "mixed" && typ != "merge" {
