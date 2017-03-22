@@ -23,9 +23,9 @@ interface Props {
 export function UserThanks(props: { next: () => void }): JSX.Element {
 	return <div style={{ margin: "auto", maxWidth: 320, textAlign: "center", paddingTop: whitespace[5], paddingBottom: whitespace[8] }}>
 		<Child width={64} color={colors.blueGrayL1()} />
-		<Heading level={4}>Thanks!</Heading>
+		<Heading level={4}>Congratulations!</Heading>
 		<p>
-			Now, it's time to check out Sourcegraph.
+			You have successfully signed up for Sourcegraph. Now, take a moment to check out our features!
 		</p>
 		<Button onClick={props.next} color="blue" style={{ marginTop: whitespace[3] }}>
 			Explore Sourcegraph
