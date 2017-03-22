@@ -20,6 +20,7 @@ import (
 )
 
 func newTest() *httptestutil.Client {
+	backend.TestSkipZap = true
 	tmpl.LoadOnce()
 	backend.Mocks = backend.MockServices{}
 	return httptestutil.NewTest(router)

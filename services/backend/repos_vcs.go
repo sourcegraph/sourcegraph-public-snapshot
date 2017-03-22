@@ -13,15 +13,21 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
 )
 
+var TestSkipZap = false
+
 func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (zapRef *zap.RefInfo, res *sourcegraph.ResolvedRev, err error) {
-	repo, err := s.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
-	if err != nil {
-		return nil, nil, err
+	if TestSkipZap {
+		goto nonZap
 	}
 
 	// TODO(matt,john): remove this hack, this zapRevInfo call was causing a front-end error
 	// that looked like Server request for query `Workbench` failed for the following reasons: 1. repository does not exist
 	if conf.AppURL.Host != "sourcegraph.dev.uberinternal.com:30000" && conf.AppURL.Host != "node.aws.sgdev.org:30000" {
+		repo, err := Repos.Get(ctx, &sourcegraph.RepoSpec{ID: op.Repo})
+		if err != nil {
+			return nil, nil, err
+		}
+
 		// If the revision is empty or if it ends in ^{git} then we do not need to query zap.
 		if op.Rev != "" && !strings.HasSuffix(op.Rev, "^{git}") {
 			cl, err := NewZapClient(ctx)
@@ -46,10 +52,8 @@ func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveR
 		}
 	}
 
-	res, err = s.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
-		Repo: repo.ID,
-		Rev:  op.Rev,
-	})
+nonZap:
+	res, err = Repos.ResolveRev(ctx, op)
 	return nil, res, err
 }
 
