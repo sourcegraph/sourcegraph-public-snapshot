@@ -64,7 +64,7 @@ export function PublicPlan({ onClick }: PlanProps): JSX.Element {
 		unit="forever" />;
 }
 
-function PlanTile({ name, desc, price, salePrice, unit, label, labelColor, onClick }: TileProps): JSX.Element {
+function PlanTile({ name, desc, price, salePrice, unit, label, onClick }: TileProps): JSX.Element {
 
 	const unitSx = { ...{ color: colors.blueGrayL1() }, ...typography.small };
 	const labelSx = { ...{ marginLeft: whitespace[2] }, ...typography.small };
