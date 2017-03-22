@@ -2,7 +2,6 @@ package lexer
 
 import (
 	"fmt"
-	"strconv"
 	"text/scanner"
 
 	"github.com/neelance/graphql-go/errors"
@@ -16,6 +15,18 @@ type Lexer struct {
 	descComment string
 }
 
+type Literal struct {
+	Type rune
+	Text string
+}
+
+type Ident struct {
+	Name string
+	Loc  errors.Location
+}
+
+type Variable string
+
 func New(sc *scanner.Scanner) *Lexer {
 	l := &Lexer{sc: sc}
 	l.Consume()
@@ -26,7 +37,8 @@ func (l *Lexer) CatchSyntaxError(f func()) (errRes *errors.QueryError) {
 	defer func() {
 		if err := recover(); err != nil {
 			if err, ok := err.(syntaxError); ok {
-				errRes = errors.ErrorfWithLoc(l.sc.Line, l.sc.Column, "syntax error: %s", err)
+				errRes = errors.Errorf("syntax error: %s", err)
+				errRes.Locations = []errors.Location{l.Location()}
 				return
 			}
 			panic(err)
@@ -69,9 +81,16 @@ func (l *Lexer) Consume() {
 }
 
 func (l *Lexer) ConsumeIdent() string {
-	text := l.sc.TokenText()
+	name := l.sc.TokenText()
 	l.ConsumeToken(scanner.Ident)
-	return text
+	return name
+}
+
+func (l *Lexer) ConsumeIdentWithLoc() Ident {
+	loc := l.Location()
+	name := l.sc.TokenText()
+	l.ConsumeToken(scanner.Ident)
+	return Ident{name, loc}
 }
 
 func (l *Lexer) ConsumeKeyword(keyword string) {
@@ -81,25 +100,18 @@ func (l *Lexer) ConsumeKeyword(keyword string) {
 	l.Consume()
 }
 
-func (l *Lexer) ConsumeInt() int {
-	text := l.sc.TokenText()
-	l.ConsumeToken(scanner.Int)
-	value, _ := strconv.Atoi(text)
-	return value
+func (l *Lexer) ConsumeVariable() Variable {
+	l.ConsumeToken('$')
+	return Variable(l.ConsumeIdent())
 }
 
-func (l *Lexer) ConsumeFloat() float64 {
-	text := l.sc.TokenText()
-	l.ConsumeToken(scanner.Float)
-	value, _ := strconv.ParseFloat(text, 64)
-	return value
-}
-
-func (l *Lexer) ConsumeString() string {
-	text := l.sc.TokenText()
-	l.ConsumeToken(scanner.String)
-	value, _ := strconv.Unquote(text)
-	return value
+func (l *Lexer) ConsumeLiteral() interface{} {
+	lit := &Literal{Type: l.next, Text: l.sc.TokenText()}
+	l.Consume()
+	if lit.Type == scanner.Ident && lit.Text == "null" {
+		return nil
+	}
+	return lit
 }
 
 func (l *Lexer) ConsumeToken(expected rune) {
@@ -115,4 +127,11 @@ func (l *Lexer) DescComment() string {
 
 func (l *Lexer) SyntaxError(message string) {
 	panic(syntaxError(message))
+}
+
+func (l *Lexer) Location() errors.Location {
+	return errors.Location{
+		Line:   l.sc.Line,
+		Column: l.sc.Column,
+	}
 }

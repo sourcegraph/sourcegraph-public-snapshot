@@ -3,22 +3,49 @@ package schema
 var Meta *Schema
 
 func init() {
-	Meta = &Schema{
-		entryPointNames: make(map[string]string),
-		Types: map[string]NamedType{
-			"Int":     &Scalar{"Int", "The `Int` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1."},
-			"Float":   &Scalar{"Float", "The `Float` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point)."},
-			"String":  &Scalar{"String", "The `String` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text."},
-			"Boolean": &Scalar{"Boolean", "The `Boolean` scalar type represents `true` or `false`."},
-			"ID":      &Scalar{"ID", "The `ID` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as `\"4\"`) or integer (such as `4`) input value will be accepted as an ID."},
-		},
-	}
+	Meta = &Schema{} // bootstrap
+	Meta = New()
 	if err := Meta.Parse(metaSrc); err != nil {
 		panic(err)
 	}
 }
 
 var metaSrc = `
+	# The ` + "`" + `Int` + "`" + ` scalar type represents non-fractional signed whole numeric values. Int can represent values between -(2^31) and 2^31 - 1.
+	scalar Int
+
+	# The ` + "`" + `Float` + "`" + ` scalar type represents signed double-precision fractional values as specified by [IEEE 754](http://en.wikipedia.org/wiki/IEEE_floating_point).
+	scalar Float
+
+	# The ` + "`" + `String` + "`" + ` scalar type represents textual data, represented as UTF-8 character sequences. The String type is most often used by GraphQL to represent free-form human-readable text.
+	scalar String
+
+	# The ` + "`" + `Boolean` + "`" + ` scalar type represents ` + "`" + `true` + "`" + ` or ` + "`" + `false` + "`" + `.
+	scalar Boolean
+
+	# The ` + "`" + `ID` + "`" + ` scalar type represents a unique identifier, often used to refetch an object or as key for a cache. The ID type appears in a JSON response as a String; however, it is not intended to be human-readable. When expected as an input type, any string (such as ` + "`" + `"4"` + "`" + `) or integer (such as ` + "`" + `4` + "`" + `) input value will be accepted as an ID.
+	scalar ID
+
+	# Directs the executor to include this field or fragment only when the ` + "`" + `if` + "`" + ` argument is true.
+	directive @include(
+		# Included when true.
+		if: Boolean!
+	) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+	# Directs the executor to skip this field or fragment when the ` + "`" + `if` + "`" + ` argument is true.
+	directive @skip(
+		# Skipped when true.
+		if: Boolean!
+	) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+	# Marks an element of a GraphQL schema as no longer supported.
+	directive @deprecated(
+		# Explains why this element was deprecated, usually also including a suggestion
+		# for how to access supported similar data. Formatted in
+		# [Markdown](https://daringfireball.net/projects/markdown/).
+		reason: String = "No longer supported"
+	) on FIELD_DEFINITION | ENUM_VALUE
+
 	# A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.
 	#
 	# In some cases, you need to provide options to alter GraphQL's execution behavior

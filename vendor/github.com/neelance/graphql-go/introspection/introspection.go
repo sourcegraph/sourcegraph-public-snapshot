@@ -1,10 +1,10 @@
 package introspection
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/neelance/graphql-go/internal/common"
+	"github.com/neelance/graphql-go/internal/lexer"
 	"github.com/neelance/graphql-go/internal/schema"
 )
 
@@ -24,9 +24,23 @@ func (r *Schema) Types() []*Type {
 	}
 	sort.Strings(names)
 
-	var l []*Type
-	for _, name := range names {
-		l = append(l, &Type{r.schema.Types[name]})
+	l := make([]*Type, len(names))
+	for i, name := range names {
+		l[i] = &Type{r.schema.Types[name]}
+	}
+	return l
+}
+
+func (r *Schema) Directives() []*Directive {
+	var names []string
+	for name := range r.schema.Directives {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	l := make([]*Directive, len(names))
+	for i, name := range names {
+		l[i] = &Directive{r.schema.Directives[name]}
 	}
 	return l
 }
@@ -53,35 +67,6 @@ func (r *Schema) SubscriptionType() *Type {
 		return nil
 	}
 	return &Type{t}
-}
-
-func (r *Schema) Directives() []*Directive {
-	return []*Directive{
-		&Directive{
-			name:        "skip",
-			description: "Directs the executor to skip this field or fragment when the `if` argument is true.",
-			locations:   []string{"FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"},
-			args: []*InputValue{
-				&InputValue{&common.InputValue{
-					Name: "if",
-					Desc: "Skipped when true.",
-					Type: &common.NonNull{OfType: r.schema.Types["Boolean"]},
-				}},
-			},
-		},
-		&Directive{
-			name:        "include",
-			description: "Directs the executor to include this field or fragment only when the `if` argument is true.",
-			locations:   []string{"FIELD", "FRAGMENT_SPREAD", "INLINE_FRAGMENT"},
-			args: []*InputValue{
-				&InputValue{&common.InputValue{
-					Name: "if",
-					Desc: "Included when true.",
-					Type: &common.NonNull{OfType: r.schema.Types["Boolean"]},
-				}},
-			},
-		},
-	}
 }
 
 type Type struct {
@@ -117,22 +102,21 @@ func (r *Type) Description() *string {
 }
 
 func (r *Type) Fields(args *struct{ IncludeDeprecated bool }) *[]*Field {
-	var fields map[string]*schema.Field
-	var fieldOrder []string
+	var fields schema.FieldList
 	switch t := r.typ.(type) {
 	case *schema.Object:
 		fields = t.Fields
-		fieldOrder = t.FieldOrder
 	case *schema.Interface:
 		fields = t.Fields
-		fieldOrder = t.FieldOrder
 	default:
 		return nil
 	}
 
-	l := make([]*Field, len(fieldOrder))
-	for i, name := range fieldOrder {
-		l[i] = &Field{fields[name]}
+	var l []*Field
+	for _, f := range fields {
+		if d := f.Directives.Get("deprecated"); d == nil || args.IncludeDeprecated {
+			l = append(l, &Field{f})
+		}
 	}
 	return &l
 }
@@ -174,9 +158,11 @@ func (r *Type) EnumValues(args *struct{ IncludeDeprecated bool }) *[]*EnumValue 
 		return nil
 	}
 
-	l := make([]*EnumValue, len(t.Values))
-	for i, v := range t.Values {
-		l[i] = &EnumValue{v}
+	var l []*EnumValue
+	for _, v := range t.Values {
+		if d := v.Directives.Get("deprecated"); d == nil || args.IncludeDeprecated {
+			l = append(l, &EnumValue{v})
+		}
 	}
 	return &l
 }
@@ -187,9 +173,9 @@ func (r *Type) InputFields() *[]*InputValue {
 		return nil
 	}
 
-	l := make([]*InputValue, len(t.FieldOrder))
-	for i, name := range t.FieldOrder {
-		l[i] = &InputValue{t.Fields[name]}
+	l := make([]*InputValue, len(t.Values))
+	for i, v := range t.Values {
+		l[i] = &InputValue{v}
 	}
 	return &l
 }
@@ -221,9 +207,9 @@ func (r *Field) Description() *string {
 }
 
 func (r *Field) Args() []*InputValue {
-	l := make([]*InputValue, len(r.field.Args.FieldOrder))
-	for i, name := range r.field.Args.FieldOrder {
-		l[i] = &InputValue{r.field.Args.Fields[name]}
+	l := make([]*InputValue, len(r.field.Args))
+	for i, v := range r.field.Args {
+		l[i] = &InputValue{v}
 	}
 	return l
 }
@@ -233,11 +219,16 @@ func (r *Field) Type() *Type {
 }
 
 func (r *Field) IsDeprecated() bool {
-	return false
+	return r.field.Directives.Get("deprecated") != nil
 }
 
 func (r *Field) DeprecationReason() *string {
-	return nil
+	d := r.field.Directives.Get("deprecated")
+	if d == nil {
+		return nil
+	}
+	reason := common.UnmarshalLiteral(d.Args.MustGet("reason").Value.(*lexer.Literal)).(string)
+	return &reason
 }
 
 type InputValue struct {
@@ -245,7 +236,7 @@ type InputValue struct {
 }
 
 func (r *InputValue) Name() string {
-	return r.value.Name
+	return r.value.Name.Name
 }
 
 func (r *InputValue) Description() *string {
@@ -263,7 +254,7 @@ func (r *InputValue) DefaultValue() *string {
 	if r.value.Default == nil {
 		return nil
 	}
-	s := fmt.Sprint(r.value.Default)
+	s := common.Stringify(r.value.Default.Value)
 	return &s
 }
 
@@ -283,32 +274,41 @@ func (r *EnumValue) Description() *string {
 }
 
 func (r *EnumValue) IsDeprecated() bool {
-	return false
+	return r.value.Directives.Get("deprecated") != nil
 }
 
 func (r *EnumValue) DeprecationReason() *string {
-	return nil
+	d := r.value.Directives.Get("deprecated")
+	if d == nil {
+		return nil
+	}
+	reason := common.UnmarshalLiteral(d.Args.MustGet("reason").Value.(*lexer.Literal)).(string)
+	return &reason
 }
 
 type Directive struct {
-	name        string
-	description string
-	locations   []string
-	args        []*InputValue
+	directive *schema.DirectiveDecl
 }
 
 func (r *Directive) Name() string {
-	return r.name
+	return r.directive.Name
 }
 
 func (r *Directive) Description() *string {
-	return &r.description
+	if r.directive.Desc == "" {
+		return nil
+	}
+	return &r.directive.Desc
 }
 
 func (r *Directive) Locations() []string {
-	return r.locations
+	return r.directive.Locs
 }
 
 func (r *Directive) Args() []*InputValue {
-	return r.args
+	l := make([]*InputValue, len(r.directive.Args))
+	for i, v := range r.directive.Args {
+		l[i] = &InputValue{v}
+	}
+	return l
 }

@@ -11,36 +11,62 @@ import (
 )
 
 type Document struct {
-	Operations map[string]*Operation
-	Fragments  map[string]*NamedFragment
+	Operations OperationList
+	Fragments  FragmentList
+}
+
+type OperationList []*Operation
+
+func (l OperationList) Get(name string) *Operation {
+	for _, f := range l {
+		if f.Name.Name == name {
+			return f
+		}
+	}
+	return nil
+}
+
+type FragmentList []*FragmentDecl
+
+func (l FragmentList) Get(name string) *FragmentDecl {
+	for _, f := range l {
+		if f.Name.Name == name {
+			return f
+		}
+	}
+	return nil
 }
 
 type Operation struct {
-	Type   OperationType
-	Name   string
-	Vars   common.InputMap
-	SelSet *SelectionSet
+	Type       OperationType
+	Name       lexer.Ident
+	Vars       common.InputValueList
+	SelSet     *SelectionSet
+	Directives common.DirectiveList
 }
 
-type OperationType int
+type OperationType string
 
 const (
-	Query OperationType = iota
-	Mutation
+	Query        OperationType = "QUERY"
+	Mutation                   = "MUTATION"
+	Subscription               = "SUBSCRIPTION"
 )
 
-type NamedFragment struct {
-	Fragment
-	Name string
+type Fragment struct {
+	On     common.TypeName
+	SelSet *SelectionSet
 }
 
-type Fragment struct {
-	On     string
-	SelSet *SelectionSet
+type FragmentDecl struct {
+	Fragment
+	Name       lexer.Ident
+	Directives common.DirectiveList
 }
 
 type SelectionSet struct {
 	Selections []Selection
+	Loc        errors.Location
 }
 
 type Selection interface {
@@ -48,33 +74,28 @@ type Selection interface {
 }
 
 type Field struct {
-	Alias      string
-	Name       string
-	Arguments  map[string]interface{}
-	Directives map[string]*Directive
+	Alias      lexer.Ident
+	Name       lexer.Ident
+	Arguments  common.ArgumentList
+	Directives common.DirectiveList
 	SelSet     *SelectionSet
-}
-
-type Directive struct {
-	Name      string
-	Arguments map[string]interface{}
-}
-
-type FragmentSpread struct {
-	Name       string
-	Directives map[string]*Directive
 }
 
 type InlineFragment struct {
 	Fragment
-	Directives map[string]*Directive
+	Directives common.DirectiveList
+}
+
+type FragmentSpread struct {
+	Name       lexer.Ident
+	Directives common.DirectiveList
 }
 
 func (Field) isSelection()          {}
-func (FragmentSpread) isSelection() {}
 func (InlineFragment) isSelection() {}
+func (FragmentSpread) isSelection() {}
 
-func Parse(queryString string, resolver common.Resolver) (*Document, *errors.QueryError) {
+func Parse(queryString string) (*Document, *errors.QueryError) {
 	sc := &scanner.Scanner{
 		Mode: scanner.ScanIdents | scanner.ScanInts | scanner.ScanFloats | scanner.ScanStrings,
 	}
@@ -89,42 +110,32 @@ func Parse(queryString string, resolver common.Resolver) (*Document, *errors.Que
 		return nil, err
 	}
 
-	for _, op := range doc.Operations {
-		for _, v := range op.Vars.Fields {
-			t, err := common.ResolveType(v.Type, resolver)
-			if err != nil {
-				return nil, errors.Errorf("%s", err)
-			}
-			v.Type = t
-		}
-	}
-
 	return doc, nil
 }
 
 func parseDocument(l *lexer.Lexer) *Document {
-	d := &Document{
-		Operations: make(map[string]*Operation),
-		Fragments:  make(map[string]*NamedFragment),
-	}
+	d := &Document{}
 	for l.Peek() != scanner.EOF {
 		if l.Peek() == '{' {
-			d.Operations[""] = &Operation{SelSet: parseSelectionSet(l)}
+			op := &Operation{Type: Query}
+			op.Name.Loc = l.Location()
+			op.SelSet = parseSelectionSet(l)
+			d.Operations = append(d.Operations, op)
 			continue
 		}
 
 		switch x := l.ConsumeIdent(); x {
 		case "query":
-			q := parseOperation(l, Query)
-			d.Operations[q.Name] = q
+			d.Operations = append(d.Operations, parseOperation(l, Query))
 
 		case "mutation":
-			q := parseOperation(l, Mutation)
-			d.Operations[q.Name] = q
+			d.Operations = append(d.Operations, parseOperation(l, Mutation))
+
+		case "subscription":
+			d.Operations = append(d.Operations, parseOperation(l, Subscription))
 
 		case "fragment":
-			f := parseFragment(l)
-			d.Fragments[f.Name] = f
+			d.Fragments = append(d.Fragments, parseFragment(l))
 
 		default:
 			l.SyntaxError(fmt.Sprintf(`unexpected %q, expecting "fragment"`, x))
@@ -135,17 +146,16 @@ func parseDocument(l *lexer.Lexer) *Document {
 
 func parseOperation(l *lexer.Lexer, opType OperationType) *Operation {
 	op := &Operation{Type: opType}
+	op.Name.Loc = l.Location()
 	if l.Peek() == scanner.Ident {
-		op.Name = l.ConsumeIdent()
+		op.Name = l.ConsumeIdentWithLoc()
 	}
+	op.Directives = common.ParseDirectives(l)
 	if l.Peek() == '(' {
 		l.ConsumeToken('(')
-		op.Vars.Fields = make(map[string]*common.InputValue)
 		for l.Peek() != ')' {
 			l.ConsumeToken('$')
-			v := common.ParseInputValue(l)
-			op.Vars.Fields[v.Name] = v
-			op.Vars.FieldOrder = append(op.Vars.FieldOrder, v.Name)
+			op.Vars = append(op.Vars, common.ParseInputValue(l))
 		}
 		l.ConsumeToken(')')
 	}
@@ -153,17 +163,19 @@ func parseOperation(l *lexer.Lexer, opType OperationType) *Operation {
 	return op
 }
 
-func parseFragment(l *lexer.Lexer) *NamedFragment {
-	f := &NamedFragment{}
-	f.Name = l.ConsumeIdent()
+func parseFragment(l *lexer.Lexer) *FragmentDecl {
+	f := &FragmentDecl{}
+	f.Name = l.ConsumeIdentWithLoc()
 	l.ConsumeKeyword("on")
-	f.On = l.ConsumeIdent()
+	f.On = common.TypeName{Ident: l.ConsumeIdentWithLoc()}
+	f.Directives = common.ParseDirectives(l)
 	f.SelSet = parseSelectionSet(l)
 	return f
 }
 
 func parseSelectionSet(l *lexer.Lexer) *SelectionSet {
 	sel := &SelectionSet{}
+	sel.Loc = l.Location()
 	l.ConsumeToken('{')
 	for l.Peek() != '}' {
 		sel.Selections = append(sel.Selections, parseSelection(l))
@@ -180,86 +192,41 @@ func parseSelection(l *lexer.Lexer) Selection {
 }
 
 func parseField(l *lexer.Lexer) *Field {
-	f := &Field{
-		Directives: make(map[string]*Directive),
-	}
-	f.Alias = l.ConsumeIdent()
+	f := &Field{}
+	f.Alias = l.ConsumeIdentWithLoc()
 	f.Name = f.Alias
 	if l.Peek() == ':' {
 		l.ConsumeToken(':')
-		f.Name = l.ConsumeIdent()
+		f.Name = l.ConsumeIdentWithLoc()
 	}
 	if l.Peek() == '(' {
-		f.Arguments = parseArguments(l)
+		f.Arguments = common.ParseArguments(l)
 	}
-	for l.Peek() == '@' {
-		d := parseDirective(l)
-		f.Directives[d.Name] = d
-	}
+	f.Directives = common.ParseDirectives(l)
 	if l.Peek() == '{' {
 		f.SelSet = parseSelectionSet(l)
 	}
 	return f
 }
 
-func parseArguments(l *lexer.Lexer) map[string]interface{} {
-	args := make(map[string]interface{})
-	l.ConsumeToken('(')
-	if l.Peek() != ')' {
-		name, value := parseArgument(l)
-		args[name] = value
-		for l.Peek() != ')' {
-			name, value := parseArgument(l)
-			args[name] = value
-		}
-	}
-	l.ConsumeToken(')')
-	return args
-}
-
-func parseDirective(l *lexer.Lexer) *Directive {
-	d := &Directive{}
-	l.ConsumeToken('@')
-	d.Name = l.ConsumeIdent()
-	if l.Peek() == '(' {
-		d.Arguments = parseArguments(l)
-	}
-	return d
-}
-
 func parseSpread(l *lexer.Lexer) Selection {
 	l.ConsumeToken('.')
 	l.ConsumeToken('.')
 	l.ConsumeToken('.')
-	ident := l.ConsumeIdent()
 
-	if ident == "on" {
-		f := &InlineFragment{
-			Directives: make(map[string]*Directive),
+	f := &InlineFragment{}
+	if l.Peek() == scanner.Ident {
+		ident := l.ConsumeIdentWithLoc()
+		if ident.Name != "on" {
+			fs := &FragmentSpread{
+				Name: ident,
+			}
+			fs.Directives = common.ParseDirectives(l)
+			return fs
 		}
-		f.On = l.ConsumeIdent()
-		for l.Peek() == '@' {
-			d := parseDirective(l)
-			f.Directives[d.Name] = d
-		}
-		f.SelSet = parseSelectionSet(l)
-		return f
+		f.On = common.TypeName{Ident: l.ConsumeIdentWithLoc()}
 	}
-
-	fs := &FragmentSpread{
-		Directives: make(map[string]*Directive),
-		Name:       ident,
-	}
-	for l.Peek() == '@' {
-		d := parseDirective(l)
-		fs.Directives[d.Name] = d
-	}
-	return fs
-}
-
-func parseArgument(l *lexer.Lexer) (string, interface{}) {
-	name := l.ConsumeIdent()
-	l.ConsumeToken(':')
-	value := common.ParseValue(l, false)
-	return name, value
+	f.Directives = common.ParseDirectives(l)
+	f.SelSet = parseSelectionSet(l)
+	return f
 }

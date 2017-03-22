@@ -3,9 +3,10 @@ package errors
 import "fmt"
 
 type QueryError struct {
-	Message       string      `json:"message"`
-	Locations     []*Location `json:"locations,omitempty"`
-	ResolverError error       `json:"-"`
+	Message       string     `json:"message"`
+	Locations     []Location `json:"locations,omitempty"`
+	Rule          string     `json:"-"`
+	ResolverError error      `json:"-"`
 }
 
 type Location struct {
@@ -13,19 +14,13 @@ type Location struct {
 	Column int `json:"column"`
 }
 
+func (a Location) Before(b Location) bool {
+	return a.Line < b.Line || (a.Line == b.Line && a.Column < b.Column)
+}
+
 func Errorf(format string, a ...interface{}) *QueryError {
 	return &QueryError{
 		Message: fmt.Sprintf(format, a...),
-	}
-}
-
-func ErrorfWithLoc(line int, column int, format string, a ...interface{}) *QueryError {
-	return &QueryError{
-		Message: fmt.Sprintf(format, a...),
-		Locations: []*Location{{
-			Line:   line,
-			Column: column,
-		}},
 	}
 }
 

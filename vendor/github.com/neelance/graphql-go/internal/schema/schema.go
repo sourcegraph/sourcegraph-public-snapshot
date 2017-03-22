@@ -13,10 +13,12 @@ import (
 type Schema struct {
 	EntryPoints map[string]NamedType
 	Types       map[string]NamedType
+	Directives  map[string]*DirectiveDecl
 
 	entryPointNames map[string]string
 	objects         []*Object
 	unions          []*Union
+	enums           []*Enum
 }
 
 func (s *Schema) Resolve(name string) common.Type {
@@ -37,8 +39,7 @@ type Scalar struct {
 type Object struct {
 	Name       string
 	Interfaces []*Interface
-	Fields     map[string]*Field
-	FieldOrder []string
+	Fields     FieldList
 	Desc       string
 
 	interfaceNames []string
@@ -47,8 +48,7 @@ type Object struct {
 type Interface struct {
 	Name          string
 	PossibleTypes []*Object
-	Fields        map[string]*Field
-	FieldOrder    []string
+	Fields        FieldList
 	Desc          string
 }
 
@@ -67,14 +67,41 @@ type Enum struct {
 }
 
 type EnumValue struct {
-	Name string
-	Desc string
+	Name       string
+	Directives common.DirectiveList
+	Desc       string
 }
 
 type InputObject struct {
+	Name   string
+	Desc   string
+	Values common.InputValueList
+}
+
+type FieldList []*Field
+
+func (l FieldList) Get(name string) *Field {
+	for _, f := range l {
+		if f.Name == name {
+			return f
+		}
+	}
+	return nil
+}
+
+func (l FieldList) Names() []string {
+	names := make([]string, len(l))
+	for i, f := range l {
+		names[i] = f.Name
+	}
+	return names
+}
+
+type DirectiveDecl struct {
 	Name string
 	Desc string
-	common.InputMap
+	Locs []string
+	Args common.InputValueList
 }
 
 func (*Scalar) Kind() string      { return "SCALAR" }
@@ -106,19 +133,24 @@ func (t *Enum) Description() string        { return t.Desc }
 func (t *InputObject) Description() string { return t.Desc }
 
 type Field struct {
-	Name string
-	Args common.InputMap
-	Type common.Type
-	Desc string
+	Name       string
+	Args       common.InputValueList
+	Type       common.Type
+	Directives common.DirectiveList
+	Desc       string
 }
 
 func New() *Schema {
 	s := &Schema{
 		entryPointNames: make(map[string]string),
 		Types:           make(map[string]NamedType),
+		Directives:      make(map[string]*DirectiveDecl),
 	}
 	for n, t := range Meta.Types {
 		s.Types[n] = t
+	}
+	for n, d := range Meta.Directives {
+		s.Directives[n] = d
 	}
 	return s
 }
@@ -140,6 +172,15 @@ func (s *Schema) Parse(schemaString string) error {
 	for _, t := range s.Types {
 		if err := resolveNamedType(s, t); err != nil {
 			return err
+		}
+	}
+	for _, d := range s.Directives {
+		for _, arg := range d.Args {
+			t, err := common.ResolveType(arg.Type, s.Resolve)
+			if err != nil {
+				return err
+			}
+			arg.Type = t
 		}
 	}
 
@@ -185,6 +226,14 @@ func (s *Schema) Parse(schemaString string) error {
 		}
 	}
 
+	for _, enum := range s.enums {
+		for _, value := range enum.Values {
+			if err := resolveDirectives(s, value.Directives); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -203,7 +252,7 @@ func resolveNamedType(s *Schema, t NamedType) error {
 			}
 		}
 	case *InputObject:
-		if err := resolveInputObject(s, &t.InputMap); err != nil {
+		if err := resolveInputObject(s, t.Values); err != nil {
 			return err
 		}
 	}
@@ -216,16 +265,40 @@ func resolveField(s *Schema, f *Field) error {
 		return err
 	}
 	f.Type = t
-	return resolveInputObject(s, &f.Args)
+	if err := resolveDirectives(s, f.Directives); err != nil {
+		return err
+	}
+	return resolveInputObject(s, f.Args)
 }
 
-func resolveInputObject(s *Schema, io *common.InputMap) error {
-	for _, f := range io.Fields {
-		t, err := common.ResolveType(f.Type, s.Resolve)
+func resolveDirectives(s *Schema, directives common.DirectiveList) error {
+	for _, d := range directives {
+		dirName := d.Name.Name
+		dd, ok := s.Directives[dirName]
+		if !ok {
+			return errors.Errorf("directive %q not found", dirName)
+		}
+		for _, arg := range d.Args {
+			if dd.Args.Get(arg.Name.Name) == nil {
+				return errors.Errorf("invalid argument %q for directive %q", arg.Name.Name, dirName)
+			}
+		}
+		for _, arg := range dd.Args {
+			if _, ok := d.Args.Get(arg.Name.Name); !ok {
+				d.Args = append(d.Args, common.Argument{Name: arg.Name, Value: *arg.Default})
+			}
+		}
+	}
+	return nil
+}
+
+func resolveInputObject(s *Schema, values common.InputValueList) error {
+	for _, v := range values {
+		t, err := common.ResolveType(v.Type, s.Resolve)
 		if err != nil {
 			return err
 		}
-		f.Type = t
+		v.Type = t
 	}
 	return nil
 }
@@ -261,6 +334,7 @@ func parseSchema(s *Schema, l *lexer.Lexer) {
 			enum := parseEnumDecl(l)
 			enum.Desc = desc
 			s.Types[enum.Name] = enum
+			s.enums = append(s.enums, enum)
 		case "input":
 			input := parseInputDecl(l)
 			input.Desc = desc
@@ -268,8 +342,12 @@ func parseSchema(s *Schema, l *lexer.Lexer) {
 		case "scalar":
 			name := l.ConsumeIdent()
 			s.Types[name] = &Scalar{Name: name, Desc: desc}
+		case "directive":
+			directive := parseDirectiveDecl(l)
+			directive.Desc = desc
+			s.Directives[directive.Name] = directive
 		default:
-			l.SyntaxError(fmt.Sprintf(`unexpected %q, expecting "schema", "type", "enum", "interface", "union", "input" or "scalar"`, x))
+			l.SyntaxError(fmt.Sprintf(`unexpected %q, expecting "schema", "type", "enum", "interface", "union", "input", "scalar" or "directive"`, x))
 		}
 	}
 }
@@ -287,7 +365,7 @@ func parseObjectDecl(l *lexer.Lexer) *Object {
 		}
 	}
 	l.ConsumeToken('{')
-	o.Fields, o.FieldOrder = parseFields(l)
+	o.Fields = parseFields(l)
 	l.ConsumeToken('}')
 	return o
 }
@@ -296,7 +374,7 @@ func parseInterfaceDecl(l *lexer.Lexer) *Interface {
 	i := &Interface{}
 	i.Name = l.ConsumeIdent()
 	l.ConsumeToken('{')
-	i.Fields, i.FieldOrder = parseFields(l)
+	i.Fields = parseFields(l)
 	l.ConsumeToken('}')
 	return i
 }
@@ -315,13 +393,10 @@ func parseUnionDecl(l *lexer.Lexer) *Union {
 
 func parseInputDecl(l *lexer.Lexer) *InputObject {
 	i := &InputObject{}
-	i.Fields = make(map[string]*common.InputValue)
 	i.Name = l.ConsumeIdent()
 	l.ConsumeToken('{')
 	for l.Peek() != '}' {
-		v := common.ParseInputValue(l)
-		i.Fields[v.Name] = v
-		i.FieldOrder = append(i.FieldOrder, v.Name)
+		i.Values = append(i.Values, common.ParseInputValue(l))
 	}
 	l.ConsumeToken('}')
 	return i
@@ -335,33 +410,54 @@ func parseEnumDecl(l *lexer.Lexer) *Enum {
 		v := &EnumValue{}
 		v.Desc = l.DescComment()
 		v.Name = l.ConsumeIdent()
+		v.Directives = common.ParseDirectives(l)
 		enum.Values = append(enum.Values, v)
 	}
 	l.ConsumeToken('}')
 	return enum
 }
 
-func parseFields(l *lexer.Lexer) (map[string]*Field, []string) {
-	fields := make(map[string]*Field)
-	var fieldOrder []string
+func parseDirectiveDecl(l *lexer.Lexer) *DirectiveDecl {
+	d := &DirectiveDecl{}
+	l.ConsumeToken('@')
+	d.Name = l.ConsumeIdent()
+	if l.Peek() == '(' {
+		l.ConsumeToken('(')
+		for l.Peek() != ')' {
+			v := common.ParseInputValue(l)
+			d.Args = append(d.Args, v)
+		}
+		l.ConsumeToken(')')
+	}
+	l.ConsumeKeyword("on")
+	for {
+		loc := l.ConsumeIdent()
+		d.Locs = append(d.Locs, loc)
+		if l.Peek() != '|' {
+			break
+		}
+		l.ConsumeToken('|')
+	}
+	return d
+}
+
+func parseFields(l *lexer.Lexer) FieldList {
+	var fields FieldList
 	for l.Peek() != '}' {
 		f := &Field{}
 		f.Desc = l.DescComment()
 		f.Name = l.ConsumeIdent()
 		if l.Peek() == '(' {
-			f.Args.Fields = make(map[string]*common.InputValue)
 			l.ConsumeToken('(')
 			for l.Peek() != ')' {
-				v := common.ParseInputValue(l)
-				f.Args.Fields[v.Name] = v
-				f.Args.FieldOrder = append(f.Args.FieldOrder, v.Name)
+				f.Args = append(f.Args, common.ParseInputValue(l))
 			}
 			l.ConsumeToken(')')
 		}
 		l.ConsumeToken(':')
 		f.Type = common.ParseType(l)
-		fields[f.Name] = f
-		fieldOrder = append(fieldOrder, f.Name)
+		f.Directives = common.ParseDirectives(l)
+		fields = append(fields, f)
 	}
-	return fields, fieldOrder
+	return fields
 }

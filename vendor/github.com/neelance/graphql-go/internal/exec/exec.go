@@ -14,6 +14,7 @@ import (
 
 	"github.com/neelance/graphql-go/errors"
 	"github.com/neelance/graphql-go/internal/common"
+	"github.com/neelance/graphql-go/internal/lexer"
 	"github.com/neelance/graphql-go/internal/query"
 	"github.com/neelance/graphql-go/internal/schema"
 )
@@ -107,8 +108,8 @@ func (b *execBuilder) finish() error {
 	for _, p := range b.structPackers {
 		p.defaultStruct = reflect.New(p.structType).Elem()
 		for _, f := range p.fields {
-			if f.field.Default != nil {
-				v, err := f.fieldPacker.pack(nil, f.field.Default)
+			if defaultVal := f.field.Default; defaultVal != nil {
+				v, err := f.fieldPacker.pack(nil, defaultVal.Value)
 				if err != nil {
 					return err
 				}
@@ -160,23 +161,7 @@ func (b *execBuilder) makeExec(t common.Type, resolverType reflect.Type) (iExec,
 
 	switch t := t.(type) {
 	case *schema.Scalar:
-		implementsType := false
-		switch r := reflect.New(resolverType).Interface().(type) {
-		case *int32:
-			implementsType = (t.Name == "Int")
-		case *float64:
-			implementsType = (t.Name == "Float")
-		case *string:
-			implementsType = (t.Name == "String")
-		case *bool:
-			implementsType = (t.Name == "Boolean")
-		case Unmarshaler:
-			implementsType = r.ImplementsGraphQLType(t.Name)
-		}
-		if !implementsType {
-			return nil, fmt.Errorf("can not use %s as %s", resolverType, t.Name)
-		}
-		return &scalarExec{}, nil
+		return makeScalarExec(t, resolverType)
 
 	case *schema.Enum:
 		return &scalarExec{}, nil
@@ -196,7 +181,27 @@ func (b *execBuilder) makeExec(t common.Type, resolverType reflect.Type) (iExec,
 	}
 }
 
-func (b *execBuilder) makeObjectExec(typeName string, fields map[string]*schema.Field, possibleTypes []*schema.Object, nonNull bool, resolverType reflect.Type) (*objectExec, error) {
+func makeScalarExec(t *schema.Scalar, resolverType reflect.Type) (iExec, error) {
+	implementsType := false
+	switch r := reflect.New(resolverType).Interface().(type) {
+	case *int32:
+		implementsType = (t.Name == "Int")
+	case *float64:
+		implementsType = (t.Name == "Float")
+	case *string:
+		implementsType = (t.Name == "String")
+	case *bool:
+		implementsType = (t.Name == "Boolean")
+	case Unmarshaler:
+		implementsType = r.ImplementsGraphQLType(t.Name)
+	}
+	if !implementsType {
+		return nil, fmt.Errorf("can not use %s as %s", resolverType, t.Name)
+	}
+	return &scalarExec{}, nil
+}
+
+func (b *execBuilder) makeObjectExec(typeName string, fields schema.FieldList, possibleTypes []*schema.Object, nonNull bool, resolverType reflect.Type) (*objectExec, error) {
 	if !nonNull {
 		if resolverType.Kind() != reflect.Ptr && resolverType.Kind() != reflect.Interface {
 			return nil, fmt.Errorf("%s is not a pointer or interface", resolverType)
@@ -205,18 +210,22 @@ func (b *execBuilder) makeObjectExec(typeName string, fields map[string]*schema.
 
 	methodHasReceiver := resolverType.Kind() != reflect.Interface
 	fieldExecs := make(map[string]*fieldExec)
-	for name, f := range fields {
-		methodIndex := findMethod(resolverType, name)
+	for _, f := range fields {
+		methodIndex := findMethod(resolverType, f.Name)
 		if methodIndex == -1 {
-			return nil, fmt.Errorf("%s does not resolve %q: missing method for field %q", resolverType, typeName, name)
+			hint := ""
+			if findMethod(reflect.PtrTo(resolverType), f.Name) != -1 {
+				hint = " (hint: the method exists on the pointer type)"
+			}
+			return nil, fmt.Errorf("%s does not resolve %q: missing method for field %q%s", resolverType, typeName, f.Name, hint)
 		}
 
 		m := resolverType.Method(methodIndex)
 		fe, err := b.makeFieldExec(typeName, f, m, methodIndex, methodHasReceiver)
 		if err != nil {
-			return nil, fmt.Errorf("method %q of %s: %s", m.Name, resolverType, err)
+			return nil, fmt.Errorf("%s\n\treturned by (%s).%s", err, resolverType, m.Name)
 		}
-		fieldExecs[name] = fe
+		fieldExecs[f.Name] = fe
 	}
 
 	typeAssertions := make(map[string]*typeAssertExec)
@@ -260,12 +269,12 @@ func (b *execBuilder) makeFieldExec(typeName string, f *schema.Field, m reflect.
 	}
 
 	var argsPacker *structPacker
-	if len(f.Args.Fields) > 0 {
+	if len(f.Args) > 0 {
 		if len(in) == 0 {
 			return nil, fmt.Errorf("must have parameter for field arguments")
 		}
 		var err error
-		argsPacker, err = b.makeStructPacker(&f.Args, in[0])
+		argsPacker, err = b.makeStructPacker(f.Args, in[0])
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +338,7 @@ func (r *request) addError(err *errors.QueryError) {
 
 func (r *request) handlePanic() {
 	if err := recover(); err != nil {
-		execErr := errors.Errorf("graphql: panic occured: %v", err)
+		execErr := errors.Errorf("graphql: panic occurred: %v", err)
 		r.addError(execErr)
 
 		const size = 64 << 10
@@ -340,7 +349,7 @@ func (r *request) handlePanic() {
 }
 
 func (r *request) resolveVar(value interface{}) interface{} {
-	if v, ok := value.(common.Variable); ok {
+	if v, ok := value.(lexer.Variable); ok {
 		value = r.vars[string(v)]
 	}
 	return value
@@ -396,8 +405,8 @@ func getOperation(document *query.Document, operationName string) (*query.Operat
 		}
 	}
 
-	op, ok := document.Operations[operationName]
-	if !ok {
+	op := document.Operations.Get(operationName)
+	if op == nil {
 		return nil, fmt.Errorf("no operation with name %q", operationName)
 	}
 	return op, nil
@@ -486,69 +495,31 @@ func (e *objectExec) execSelectionSet(ctx context.Context, r *request, selSet *q
 
 		switch sel := sel.(type) {
 		case *query.Field:
-			if !skipByDirective(r, sel.Directives) {
-				f := sel
-				execSel(func() {
-					switch f.Name {
-					case "__typename":
-						if len(e.typeAssertions) == 0 {
-							addResult(f.Alias, e.name)
-							return
-						}
-
-						for name, a := range e.typeAssertions {
-							out, err := callWithLimiter(ctx, resolver.Method(a.methodIndex), nil, r)
-							if err != nil {
-								return
-							}
-							if out[1].Bool() {
-								addResult(f.Alias, name)
-								return
-							}
-						}
-
-					case "__schema":
-						addResult(f.Alias, introspectSchema(ctx, r, f.SelSet))
-
-					case "__type":
-						p := valuePacker{valueType: stringType}
-						v, err := p.pack(r, r.resolveVar(f.Arguments["name"]))
-						if err != nil {
-							r.addError(errors.Errorf("%s", err))
-							addResult(f.Alias, nil)
-							return
-						}
-						addResult(f.Alias, introspectType(ctx, r, v.String(), f.SelSet))
-
-					default:
-						fe, ok := e.fields[f.Name]
-						if !ok {
-							panic(fmt.Errorf("%q has no field %q", e.name, f.Name)) // TODO proper error handling
-						}
-						fe.execField(ctx, r, f, resolver, addResult)
-					}
-				})
+			field := sel
+			if skipByDirective(r, field.Directives) {
+				continue
 			}
-
-		case *query.FragmentSpread:
-			if !skipByDirective(r, sel.Directives) {
-				fs := sel
-				execSel(func() {
-					frag, ok := r.doc.Fragments[fs.Name]
-					if !ok {
-						panic(fmt.Errorf("fragment %q not found", fs.Name)) // TODO proper error handling
-					}
-					e.execFragment(ctx, r, &frag.Fragment, resolver, addResult)
-				})
-			}
+			execSel(func() {
+				e.execField(ctx, r, field, resolver, addResult)
+			})
 
 		case *query.InlineFragment:
-			if !skipByDirective(r, sel.Directives) {
-				frag := sel
-				execSel(func() {
-					e.execFragment(ctx, r, &frag.Fragment, resolver, addResult)
-				})
+			frag := sel
+			if skipByDirective(r, frag.Directives) {
+				continue
 			}
+			execSel(func() {
+				e.execFragment(ctx, r, &frag.Fragment, resolver, addResult)
+			})
+
+		case *query.FragmentSpread:
+			spread := sel
+			if skipByDirective(r, spread.Directives) {
+				continue
+			}
+			execSel(func() {
+				e.execFragment(ctx, r, &r.doc.Fragments.Get(spread.Name.Name).Fragment, resolver, addResult)
+			})
 
 		default:
 			panic("invalid type")
@@ -557,9 +528,71 @@ func (e *objectExec) execSelectionSet(ctx context.Context, r *request, selSet *q
 	wg.Wait()
 }
 
+func (e *objectExec) execField(ctx context.Context, r *request, f *query.Field, resolver reflect.Value, addResult addResultFn) {
+	fieldAlias := f.Alias.Name
+	fieldName := f.Name.Name
+	switch fieldName {
+	case "__typename":
+		if len(e.typeAssertions) == 0 {
+			addResult(fieldAlias, e.name)
+			return
+		}
+
+		for name, a := range e.typeAssertions {
+			out, err := callWithLimiter(ctx, resolver.Method(a.methodIndex), nil, r)
+			if err != nil {
+				return
+			}
+			if out[1].Bool() {
+				addResult(fieldAlias, name)
+				return
+			}
+		}
+
+	case "__schema":
+		addResult(fieldAlias, introspectSchema(ctx, r, f.SelSet))
+
+	case "__type":
+		p := valuePacker{valueType: reflect.TypeOf("")}
+		v, err := p.pack(r, r.resolveVar(f.Arguments.MustGet("name").Value))
+		if err != nil {
+			r.addError(errors.Errorf("%s", err))
+			addResult(fieldAlias, nil)
+			return
+		}
+		addResult(fieldAlias, introspectType(ctx, r, v.String(), f.SelSet))
+
+	default:
+		fe := e.fields[fieldName]
+
+		span, spanCtx := opentracing.StartSpanFromContext(ctx, fmt.Sprintf("GraphQL field: %s.%s", fe.typeName, fe.field.Name))
+		defer span.Finish()
+		span.SetTag(OpenTracingTagType, fe.typeName)
+		span.SetTag(OpenTracingTagField, fe.field.Name)
+		if !fe.hasContext && fe.argsPacker == nil && !fe.hasError {
+			span.SetTag(OpenTracingTagTrivial, true)
+		}
+
+		result, err := fe.exec(spanCtx, r, f, resolver, span)
+
+		if err != nil {
+			queryError := errors.Errorf("%s", err)
+			queryError.ResolverError = err
+			r.addError(queryError)
+			addResult(fieldAlias, nil) // TODO handle non-nil
+
+			ext.Error.Set(span, true)
+			span.SetTag(OpenTracingTagError, err)
+			return
+		}
+
+		addResult(fieldAlias, result)
+	}
+}
+
 func (e *objectExec) execFragment(ctx context.Context, r *request, frag *query.Fragment, resolver reflect.Value, addResult addResultFn) {
-	if frag.On != "" && frag.On != e.name {
-		a, ok := e.typeAssertions[frag.On]
+	if frag.On.Name != "" && frag.On.Name != e.name {
+		a, ok := e.typeAssertions[frag.On.Name]
 		if !ok {
 			panic(fmt.Errorf("%q does not implement %q", frag.On, e.name)) // TODO proper error handling
 		}
@@ -586,32 +619,7 @@ type fieldExec struct {
 	valueExec   iExec
 }
 
-func (e *fieldExec) execField(ctx context.Context, r *request, f *query.Field, resolver reflect.Value, addResult addResultFn) {
-	span, spanCtx := opentracing.StartSpanFromContext(ctx, fmt.Sprintf("GraphQL field: %s.%s", e.typeName, e.field.Name))
-	defer span.Finish()
-	span.SetTag(OpenTracingTagType, e.typeName)
-	span.SetTag(OpenTracingTagField, e.field.Name)
-	if !e.hasContext && e.argsPacker == nil && !e.hasError {
-		span.SetTag(OpenTracingTagTrivial, true)
-	}
-
-	result, err := e.execField2(spanCtx, r, f, resolver, span)
-
-	if err != nil {
-		queryError := errors.Errorf("%s", err)
-		queryError.ResolverError = err
-		r.addError(queryError)
-		addResult(f.Alias, nil) // TODO handle non-nil
-
-		ext.Error.Set(span, true)
-		span.SetTag(OpenTracingTagError, err)
-		return
-	}
-
-	addResult(f.Alias, result)
-}
-
-func (e *fieldExec) execField2(ctx context.Context, r *request, f *query.Field, resolver reflect.Value, span opentracing.Span) (interface{}, error) {
+func (e *fieldExec) exec(ctx context.Context, r *request, f *query.Field, resolver reflect.Value, span opentracing.Span) (interface{}, error) {
 	var in []reflect.Value
 
 	if e.hasContext {
@@ -619,10 +627,12 @@ func (e *fieldExec) execField2(ctx context.Context, r *request, f *query.Field, 
 	}
 
 	if e.argsPacker != nil {
-		for name, arg := range f.Arguments {
-			span.SetTag(OpenTracingTagArgsPrefix+name, arg)
+		args := make(map[string]interface{})
+		for _, arg := range f.Arguments {
+			args[arg.Name.Name] = arg.Value.Value
+			span.SetTag(OpenTracingTagArgsPrefix+arg.Name.Name, arg.Value.Value)
 		}
-		packed, err := e.argsPacker.pack(r, f.Arguments)
+		packed, err := e.argsPacker.pack(r, args)
 		if err != nil {
 			return nil, err
 		}
@@ -657,10 +667,10 @@ type typeAssertExec struct {
 	typeExec    iExec
 }
 
-func skipByDirective(r *request, d map[string]*query.Directive) bool {
-	if skip, ok := d["skip"]; ok {
-		p := valuePacker{valueType: boolType}
-		v, err := p.pack(r, r.resolveVar(skip.Arguments["if"]))
+func skipByDirective(r *request, directives common.DirectiveList) bool {
+	if d := directives.Get("skip"); d != nil {
+		p := valuePacker{valueType: reflect.TypeOf(false)}
+		v, err := p.pack(r, r.resolveVar(d.Args.MustGet("if").Value))
 		if err != nil {
 			r.addError(errors.Errorf("%s", err))
 		}
@@ -669,9 +679,9 @@ func skipByDirective(r *request, d map[string]*query.Directive) bool {
 		}
 	}
 
-	if include, ok := d["include"]; ok {
-		p := valuePacker{valueType: boolType}
-		v, err := p.pack(r, r.resolveVar(include.Arguments["if"]))
+	if d := directives.Get("include"); d != nil {
+		p := valuePacker{valueType: reflect.TypeOf(false)}
+		v, err := p.pack(r, r.resolveVar(d.Args.MustGet("if").Value))
 		if err != nil {
 			r.addError(errors.Errorf("%s", err))
 		}

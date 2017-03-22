@@ -8,6 +8,7 @@ import (
 
 	"github.com/neelance/graphql-go/errors"
 	"github.com/neelance/graphql-go/internal/common"
+	"github.com/neelance/graphql-go/internal/lexer"
 	"github.com/neelance/graphql-go/internal/schema"
 )
 
@@ -83,7 +84,7 @@ func (b *execBuilder) makeNonNullPacker(schemaType common.Type, reflectType refl
 		}, nil
 
 	case *schema.InputObject:
-		e, err := b.makeStructPacker(&t.InputMap, reflectType)
+		e, err := b.makeStructPacker(t.Values, reflectType)
 		if err != nil {
 			return nil, err
 		}
@@ -109,27 +110,27 @@ func (b *execBuilder) makeNonNullPacker(schemaType common.Type, reflectType refl
 	}
 }
 
-func (b *execBuilder) makeStructPacker(obj *common.InputMap, typ reflect.Type) (*structPacker, error) {
+func (b *execBuilder) makeStructPacker(values common.InputValueList, typ reflect.Type) (*structPacker, error) {
 	if typ.Kind() != reflect.Ptr || typ.Elem().Kind() != reflect.Struct {
 		return nil, fmt.Errorf("expected pointer to struct, got %s", typ)
 	}
 	structType := typ.Elem()
 
 	var fields []*structPackerField
-	for _, f := range obj.Fields {
-		fe := &structPackerField{field: f}
+	for _, v := range values {
+		fe := &structPackerField{field: v}
 
-		sf, ok := structType.FieldByNameFunc(func(n string) bool { return strings.EqualFold(n, f.Name) })
+		sf, ok := structType.FieldByNameFunc(func(n string) bool { return strings.EqualFold(n, v.Name.Name) })
 		if !ok {
-			return nil, fmt.Errorf("missing argument %q", f.Name)
+			return nil, fmt.Errorf("missing argument %q", v.Name)
 		}
 		if sf.PkgPath != "" {
 			return nil, fmt.Errorf("field %q must be exported", sf.Name)
 		}
 		fe.fieldIndex = sf.Index
 
-		ft := f.Type
-		if f.Default != nil {
+		ft := v.Type
+		if v.Default != nil {
 			ft, _ = unwrapNonNull(ft)
 			ft = &common.NonNull{OfType: ft}
 		}
@@ -170,7 +171,7 @@ func (p *structPacker) pack(r *request, value interface{}) (reflect.Value, error
 	v := reflect.New(p.structType)
 	v.Elem().Set(p.defaultStruct)
 	for _, f := range p.fields {
-		if value, ok := values[f.field.Name]; ok {
+		if value, ok := values[f.field.Name.Name]; ok {
 			packed, err := f.fieldPacker.pack(r, r.resolveVar(value))
 			if err != nil {
 				return reflect.Value{}, err
@@ -237,6 +238,10 @@ func (p *valuePacker) pack(r *request, value interface{}) (reflect.Value, error)
 		return reflect.Value{}, errors.Errorf("got null for non-null")
 	}
 
+	if lit, ok := value.(*lexer.Literal); ok {
+		value = common.UnmarshalLiteral(lit)
+	}
+
 	coerced, err := unmarshalInput(p.valueType, value)
 	if err != nil {
 		return reflect.Value{}, fmt.Errorf("could not unmarshal %#v (%T) into %s: %s", value, value, p.valueType, err)
@@ -253,6 +258,10 @@ func (p *unmarshalerPacker) pack(r *request, value interface{}) (reflect.Value, 
 		return reflect.Value{}, errors.Errorf("got null for non-null")
 	}
 
+	if lit, ok := value.(*lexer.Literal); ok {
+		value = common.UnmarshalLiteral(lit)
+	}
+
 	v := reflect.New(p.valueType)
 	if err := v.Interface().(Unmarshaler).UnmarshalGraphQL(value); err != nil {
 		return reflect.Value{}, err
@@ -265,18 +274,13 @@ type Unmarshaler interface {
 	UnmarshalGraphQL(input interface{}) error
 }
 
-var int32Type = reflect.TypeOf(int32(0))
-var float64Type = reflect.TypeOf(float64(0))
-var stringType = reflect.TypeOf("")
-var boolType = reflect.TypeOf(false)
-
 func unmarshalInput(typ reflect.Type, input interface{}) (interface{}, error) {
 	if reflect.TypeOf(input) == typ {
 		return input, nil
 	}
 
-	switch typ {
-	case int32Type:
+	switch typ.Kind() {
+	case reflect.Int32:
 		switch input := input.(type) {
 		case int:
 			if input < math.MinInt32 || input > math.MaxInt32 {
@@ -291,7 +295,7 @@ func unmarshalInput(typ reflect.Type, input interface{}) (interface{}, error) {
 			return coerced, nil
 		}
 
-	case float64Type:
+	case reflect.Float64:
 		switch input := input.(type) {
 		case int32:
 			return float64(input), nil

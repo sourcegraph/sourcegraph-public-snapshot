@@ -4,27 +4,22 @@
 			{
 				"args": [
 					{
-						"defaultValue": null,
-						"description": "Skipped when true.",
-						"name": "if",
+						"defaultValue": "\"No longer supported\"",
+						"description": "Explains why this element was deprecated, usually also including a suggestion\nfor how to access supported similar data. Formatted in\n[Markdown](https://daringfireball.net/projects/markdown/).",
+						"name": "reason",
 						"type": {
-							"kind": "NON_NULL",
-							"name": null,
-							"ofType": {
-								"kind": "SCALAR",
-								"name": "Boolean",
-								"ofType": null
-							}
+							"kind": "SCALAR",
+							"name": "String",
+							"ofType": null
 						}
 					}
 				],
-				"description": "Directs the executor to skip this field or fragment when the `if` argument is true.",
+				"description": "Marks an element of a GraphQL schema as no longer supported.",
 				"locations": [
-					"FIELD",
-					"FRAGMENT_SPREAD",
-					"INLINE_FRAGMENT"
+					"FIELD_DEFINITION",
+					"ENUM_VALUE"
 				],
-				"name": "skip"
+				"name": "deprecated"
 			},
 			{
 				"args": [
@@ -50,6 +45,31 @@
 					"INLINE_FRAGMENT"
 				],
 				"name": "include"
+			},
+			{
+				"args": [
+					{
+						"defaultValue": null,
+						"description": "Skipped when true.",
+						"name": "if",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"description": "Directs the executor to skip this field or fragment when the `if` argument is true.",
+				"locations": [
+					"FIELD",
+					"FRAGMENT_SPREAD",
+					"INLINE_FRAGMENT"
+				],
+				"name": "skip"
 			}
 		],
 		"mutationType": {
@@ -109,7 +129,7 @@
 					{
 						"args": [
 							{
-								"defaultValue": "",
+								"defaultValue": "\"\"",
 								"description": null,
 								"name": "path",
 								"type": {
@@ -1988,7 +2008,7 @@
 					{
 						"args": [
 							{
-								"defaultValue": "",
+								"defaultValue": "\"\"",
 								"description": null,
 								"name": "query",
 								"type": {

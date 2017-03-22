@@ -211,7 +211,7 @@ export function Workbench(props: { params: any; location: RouterLocation, routes
 			},
 			params: {
 				repo,
-				rev,
+				rev: rev || "",
 				id,
 				mode,
 				isSymbolUrl,
