@@ -37,7 +37,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 							bottom: -80,
 							marginBottom: -80,
 							maxWidth: 640,
-						}} src={"https://player.vimeo.com/video/209506088" width="640" height="400"></iframe>
+						}} src="https://player.vimeo.com/video/209506088" width="640" height="400"></iframe>
 					</div>
 				</FlexContainer>
 			</Hero>
