@@ -28,7 +28,7 @@ export function PlanSelector({ select }: Props): JSX.Element {
 		<OrgPlan onClick={select("organization")} />
 		<p style={{ marginTop: whitespace[5], textAlign: "center" }}>
 			<a onClick={select("enterprise")}>
-				<strong>Host Sourcegraph on premises? Talk to sales <ChevronRight /></strong>
+				<strong>Host Sourcegraph on premises? Contact us <ChevronRight /></strong>
 			</a>
 		</p>
 	</div>;
