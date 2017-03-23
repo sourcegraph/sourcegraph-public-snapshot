@@ -29,6 +29,7 @@ export const EventCategories = {
 	LandingDefInfo: "LandingDefInfo",
 	QuickOpen: "QuickOpen",
 	CodeView: "CodeView",
+	Feedback: "Feedback",
 
 	// Misc other
 	External: "External",
@@ -56,6 +57,7 @@ export const EventActions = {
 	Hover: "Hover",
 	Redirect: "Redirect",
 	Signup: "Signup",
+	Submit: "Submit",
 	Login: "Login",
 	Logout: "Logout",
 };
@@ -249,8 +251,14 @@ export const Events = {
 	Quickopen_Initiated: new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),
 	Quickopen_Dismissed: new LoggableEvent("QuickOpenDismissed", EventCategories.QuickOpen, EventActions.Close),
 
+	// Shortcut menu
 	ShortcutMenu_Initiated: new LoggableEvent("ShorcutMenuInitiated", EventCategories.ShortcutMenu, EventActions.Toggle),
 	ShortcutMenu_Dismissed: new LoggableEvent("ShorcutMenuDismissed", EventCategories.ShortcutMenu, EventActions.Close),
+
+	// Feedback
+	FeedbackModal_Initiated: new LoggableEvent("FeedbackModalInitiated", EventCategories.Feedback, EventActions.Toggle),
+	FeedbackModal_Dismissed: new LoggableEvent("FeedbackModalDismissed", EventCategories.Feedback, EventActions.Close),
+	Feedback_Submitted: new LoggableEvent("FeedbackSubmitted", EventCategories.Feedback, EventActions.Submit),
 
 	// Orgs
 	Org_Selected: new LoggableEvent("SelectedOrg", EventCategories.Orgs, EventActions.Click),

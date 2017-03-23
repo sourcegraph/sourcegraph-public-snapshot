@@ -1,3 +1,4 @@
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { $, Builder } from "vs/base/browser/builder";
 import { Dropdown } from "vs/base/browser/ui/dropdown/dropdown";
 import { IDisposable } from "vs/base/common/lifecycle";
@@ -165,6 +166,8 @@ export class FeedbackDropdown extends Dropdown {
 			this.onSubmit();
 		});
 
+		Events.FeedbackModal_Initiated.logEvent();
+
 		return {
 			dispose: () => {
 				this.feedbackForm = null;
@@ -220,6 +223,8 @@ export class FeedbackDropdown extends Dropdown {
 			this.autoHideTimeout = null;
 		}
 
+		Events.FeedbackModal_Dismissed.logEvent();
+
 		super.hide();
 	}
 
@@ -246,6 +251,7 @@ export class FeedbackDropdown extends Dropdown {
 			email: this.emailInput ? this.emailInput.value : undefined,
 		});
 
+		Events.Feedback_Submitted.logEvent({ feedback: { sentiment: this.sentiment, feedback: this.feedbackDescriptionInput!.value } });
 		this.changeFormStatus(FormEvent.SENT);
 	}
 
