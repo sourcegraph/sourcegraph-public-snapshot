@@ -134,9 +134,8 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, err error) {
-	// TODO use platinum searcher or sift to search
-	// TODO pretty aggressively skip files to search
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Searcher Search")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Search")
+	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
 	span.SetTag("commit", p.Commit)
 	span.SetTag("pattern", p.Pattern)

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -42,33 +43,29 @@ func main() {
 			Path:     "/tmp/searcher-archive-store",
 		},
 	}
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), service,
-		nethttp.OperationNameFunc(func(r *http.Request) string { return "Searcher " + r.Method }))
+	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 
 	addr := ":3181"
 	server := &http.Server{Addr: addr, Handler: handler}
 	go shutdownOnSIGINT(server)
 
 	log.Println("listening on :3181")
-	_ = server.ListenAndServe()
-	// TODO enable when we have go 1.8 on CI
-	// if err != http.ErrServerClosed {
-	// 	log.Fatal(err)
-	// }
+	err := server.ListenAndServe()
+	if err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
 }
 
 func shutdownOnSIGINT(s *http.Server) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
-	os.Exit(0)
-	// TODO enable when we have go 1.8 on CI. Remove os.Exit
-	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	// defer cancel()
-	// err := s.Shutdown(ctx)
-	// if err != nil {
-	// 	log.Fatal("graceful server shutdown failed, will exit:", err)
-	// }
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := s.Shutdown(ctx)
+	if err != nil {
+		log.Fatal("graceful server shutdown failed, will exit:", err)
+	}
 }
 
 func fetchZip(ctx context.Context, repo, commit string) ([]byte, error) {

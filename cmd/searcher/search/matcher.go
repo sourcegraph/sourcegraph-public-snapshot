@@ -7,37 +7,38 @@ import (
 	"io"
 	"regexp"
 	"sync"
-)
 
-// This code is base on reading the techniques detailed in
-// http://blog.burntsushi.net/ripgrep/
-//
-// If all low-hanging fruit has been reached, it likely makes sense to write
-// some glue in rust to make ripgrep search on an archive and shell out to
-// ripgrep.
-//
-// Note: There is still plenty of low-hanging fruit here! Please remove this
-// comment once there isn't! TODO:
-// - [x] Parallel search
-// - [ ] Specialize searching a fixed string
-// - [ ] Use grep optimized regex engine at github.com/google/codesearch/regexp
-// - [ ] Skip bad files
-// - [x] Re-use memory buffers as much as possible
-// - [ ] Possibly use cgo + c++ re2 library
-// - [ ] Parse regex to find fixed string to search for
-// - [ ] Limit results returned
-// - [ ] Avoid parsing new lines (most important optimization apparently)
-// - [ ] Only support UTF-8/ASCII
-// - [ ] Avoid parsing files out of tar/zip (like new line trick)
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+)
 
 const (
 	// maxFileSize is the limit on file size in bytes. Only files smaller
 	// than this are searched.
 	maxFileSize = 1 << 19 // 512KB
+
+	// numWorkers is how many concurrent readerGreps run per
+	// concurrentFind
+	numWorkers = 8
 )
 
 // readerGrep is responsible for finding LineMatches. It is not concurrency
 // safe (it reuses buffers for performance).
+//
+// This code is base on reading the techniques detailed in
+// http://blog.burntsushi.net/ripgrep/
+//
+// The stdlib regexp is pretty powerful and in fact implements many of the
+// features in ripgrep. Our implementation gives high performance via pruning
+// aggressively which files to consider (non-binary under a limit) and
+// optimizing for assuming most lines will not contain a match.
+//
+// If there is no more low-hanging fruit and perf is not acceptable, we could
+// consider an using ripgrep directly (modify it to search zip archives).
+//
+// TODO(keegan) search for candidate lines without parsing lines. (regexp.LiteralPrefix)
+// TODO(keegan) limit result set size
+// TODO(keegan) return search statistics
 type readerGrep struct {
 	// re is the regexp to match
 	re *regexp.Regexp
@@ -134,14 +135,23 @@ func (rg *readerGrep) FindZip(f *zip.File) (FileMatch, error) {
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) ([]FileMatch, error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []FileMatch, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
+	ext.Component.Set(span, "matcher")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	var (
-		files      = make(chan *zip.File)
-		matches    = make(chan FileMatch)
-		numWorkers = 8 // TODO: Needs tuning!
-		wg         sync.WaitGroup
-		wgErrOnce  sync.Once
-		wgErr      error
+		files     = make(chan *zip.File)
+		matches   = make(chan FileMatch)
+		wg        sync.WaitGroup
+		wgErrOnce sync.Once
+		wgErr     error
 	)
 
 	// goroutine responsible for writing to files. It also is the only

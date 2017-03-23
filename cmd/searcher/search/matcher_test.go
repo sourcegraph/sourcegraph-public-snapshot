@@ -76,7 +76,7 @@ func openGithubArchive(t testing.TB, repo, rev string) *zip.ReadCloser {
 	}
 
 	url := fmt.Sprintf("https://codeload.%s/zip/%s", repo, rev)
-	t.Log("fetching ", url)
+	t.Log("fetching", url)
 
 	resp, err := http.Get(url)
 	if err != nil {

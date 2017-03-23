@@ -23,14 +23,8 @@ import (
 // responsible for filtering out files we receive from `git archive` that we
 // do not want to search.
 //
-// TODO:
-// * Remove items from cache.
-// * Experiment with removing file but keep fd open.
-// * Experiment with using tar instead of zip. For fetching a tar is likely
-// more performant. For searching concurrent random access of zips may be more
-// useful.
-// * Experiment with filtering at the git archive layer (current archiving is
-// very simple).
+// TODO(keegan) remove items from cache.
+// TODO(keegan) experiment with streaming and filtering an archive
 type Store struct {
 	// FetchZip returns a []byte to a zip archive. If the error implements
 	// "BadRequest() bool", it will be used to determine if the error is a
@@ -75,7 +69,8 @@ func (r *fetchResult) resolve() (*zip.Reader, func() error, error) {
 // openReader will open a zip reader and closer to the archive. It will first
 // consult the local cache, otherwise will fetch from the network.
 func (s *Store) openReader(ctx context.Context, repo, commit string) (zr *zip.Reader, closer func() error, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Searcher OpenReader")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenReader")
+	ext.Component.Set(span, "store")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
