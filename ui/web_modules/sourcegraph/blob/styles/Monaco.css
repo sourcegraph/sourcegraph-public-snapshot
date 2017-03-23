@@ -134,6 +134,11 @@
 	margin-top:4px;
 }
 
+:global .vs-dark .monaco-list .monaco-list-row.selected {
+	font-weight:bold;
+	background:rgba(0, 145, 234);
+}
+
 /* Style Code lens */
 
 :global div.monaco-editor .codelens-decoration {
