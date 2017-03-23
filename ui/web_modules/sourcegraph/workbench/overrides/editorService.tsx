@@ -10,7 +10,7 @@ import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorServi
 
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
-import { RangeOrPosition } from "sourcegraph/core/rangeorposition";
+import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { resolveRev } from "sourcegraph/editor/contentLoader";
