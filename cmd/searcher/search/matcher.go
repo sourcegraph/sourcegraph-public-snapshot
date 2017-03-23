@@ -98,8 +98,12 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 			}
 			return nil, err
 		}
-		locs := rg.re.FindAllIndex(b, -1)
-		if len(locs) > 0 {
+		// FindAllIndex allocates memory. We can avoid that by just
+		// checking if we have a match first. We expect most lines to
+		// not have a match, so we trade a bit of repeated computation
+		// to avoid unnecessary allocations.
+		if rg.re.Find(b) != nil {
+			locs := rg.re.FindAllIndex(b, -1)
 			offsetAndLengths := make([][]int, len(locs))
 			for i, match := range locs {
 				start, end := match[0], match[1]
