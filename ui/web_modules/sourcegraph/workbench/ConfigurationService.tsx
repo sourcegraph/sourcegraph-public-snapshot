@@ -53,7 +53,7 @@ const config = {
 			enablePreview: false,
 		},
 		activityBar: {
-			visible: Features.zapChanges.isEnabled(),
+			visible: false,
 		},
 		statusBar: {
 			visible: false,

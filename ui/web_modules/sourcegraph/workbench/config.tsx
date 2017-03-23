@@ -1,4 +1,3 @@
-import { Features } from "sourcegraph/util/features";
 import { ContextMenuController } from "vs/editor/contrib/contextmenu/browser/contextmenu";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
@@ -9,7 +8,6 @@ import { EditorGroupsControl } from "vs/workbench/browser/parts/editor/editorGro
 import { Extensions as viewKey, ViewletRegistry } from "vs/workbench/browser/viewlet";
 import { FileRenderer } from "vs/workbench/parts/files/browser/views/explorerViewer";
 import { VIEWLET_ID } from "vs/workbench/parts/files/common/files";
-import { IActivityBarService } from "vs/workbench/services/activity/common/activityBarService";
 
 import { layout } from "sourcegraph/components/utils";
 
@@ -31,9 +29,4 @@ export function configurePreStartup(services: ServiceCollection): void {
 // Workbench overwrites a few services, so we add these services after startup.
 export function configurePostStartup(services: ServiceCollection): void {
 	(ContextMenuController.prototype as any)._onContextMenu = () => { /* */ };
-
-	if (Features.zapChanges.isEnabled()) {
-		const activityBarService = services.get(IActivityBarService) as IActivityBarService;
-		activityBarService.pin("workbench.view.scm");
-	}
 }

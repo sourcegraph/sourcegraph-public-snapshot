@@ -10,6 +10,7 @@ import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderReg
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
 import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
+import { ICommandService } from "vs/platform/commands/common/commands";
 import { IFileService } from "vs/platform/files/common/files";
 import { IQuickOpenService } from "vs/platform/quickOpen/common/quickOpen";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
@@ -93,9 +94,11 @@ function resourceForCurrentEditor(): URI | null {
  * renderEditor opens the editor for a file.
  */
 export function renderFileEditor(resource: URI, selection: IRange | null): void {
+	const commandService = Services.get(ICommandService) as ICommandService;
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
 		updateEditorAfterURLChange(selection);
+		commandService.executeCommand("workbench.view.explorer");
 	});
 }
 
@@ -103,6 +106,7 @@ export function renderFileEditor(resource: URI, selection: IRange | null): void 
  * renderEditor opens a diff editor for two files.
  */
 export function renderDiffEditor(left: URI, right: URI, selection: IRange | null): void {
+	const commandService = Services.get(ICommandService) as ICommandService;
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	const resolverService = Services.get(ITextModelResolverService);
 	TPromise.join([editorService.createInput({ resource: left }), editorService.createInput({ resource: right })]).then(inputs => {
@@ -111,6 +115,7 @@ export function renderDiffEditor(left: URI, right: URI, selection: IRange | null
 		const diff = new DiffEditorInput("", "", leftInput, rightInput);
 		editorService.openEditorWithoutURLChange(right, diff, {}).then(() => {
 			updateEditorAfterURLChange(selection);
+			commandService.executeCommand("workbench.view.scm");
 		});
 	});
 }

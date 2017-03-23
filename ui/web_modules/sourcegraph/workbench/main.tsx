@@ -32,7 +32,6 @@ import { TextFileEditorModel } from "vs/workbench/services/textfile/common/textF
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
 import { init as initExtensionHost } from "sourcegraph/ext/main";
-import { Features } from "sourcegraph/util/features";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 import { setupServices } from "sourcegraph/workbench/services";
@@ -89,9 +88,6 @@ export function init(resource: URI, revState?: IWorkspaceRevState): InitializedW
 	workbench.startup();
 	services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
 	services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
-	if (Features.zapChanges.isEnabled()) {
-		workbench.setActivityBarHidden(false);
-	}
 	// HACK: get URI's filename in fragment, not in URI path component
 	(TextFileEditorModel.prototype as any).getOrCreateMode = function (modeService: IModeService, preferredModeIds: string, firstLineText?: string): TPromise<IMode> {
 		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
