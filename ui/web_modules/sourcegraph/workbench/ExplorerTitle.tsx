@@ -65,8 +65,9 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		if (!workspace) { return ""; }
 		const resource = workspace.resource;
 		let { repo } = URIUtils.repoParams(resource);
+		let repoName = resource.fsPath.split("/");
 		// for the explorer viewlet, we don't want to show the authority (github.com/)
-		return repo.slice(resource.authority.length + 1);
+		return repoName[1] || repo.slice(resource.authority.length + 1);
 	}
 
 	componentDidMount(): void {
@@ -90,7 +91,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		const { workspace } = this.state;
 		return <FlexContainer items="center" justify="between" style={{
 			backgroundColor: colors.blueGrayD1(),
-			//boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
+			boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
 			minHeight: layout.editorToolbarHeight,
 			position: "relative",
 			paddingLeft: whitespace[2],
