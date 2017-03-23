@@ -1,10 +1,7 @@
 import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/browser";
 import { v4 as uuidV4 } from "uuid";
 
-import URI from "vs/base/common/uri";
-
 import { isOnPremInstance } from "sourcegraph/app/context";
-import { URIUtils } from "sourcegraph/core/uri";
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
 import { getModes } from "sourcegraph/util/features";
@@ -29,8 +26,6 @@ export function activate(): void {
 			documentSelector: [mode],
 			initializationOptions: {
 				mode,
-				repo: URIUtils.repoParams(URI.parse(initOpts.workspace)).repo,
-				rev: initOpts.revState!.commitID,
 				session: generateLSPSessionKeyIfNeeded(),
 			},
 		});

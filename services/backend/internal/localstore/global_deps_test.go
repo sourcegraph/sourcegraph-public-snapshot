@@ -141,7 +141,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 		}
 	}
 
-	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, repo, rev, method string, params, results interface{}) error {
+	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/xdependencies":
 			res, ok := results.(*[]lspext.DependencyReference)

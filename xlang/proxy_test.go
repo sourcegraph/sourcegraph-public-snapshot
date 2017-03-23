@@ -40,8 +40,6 @@ func TestProxy(t *testing.T) {
 	tests := map[string]struct {
 		rootPath          string
 		mode              string
-		repo              string
-		rev               string
 		fs                map[string]string
 		wantHover         map[string]string
 		wantDefinition    map[string]string
@@ -55,8 +53,6 @@ func TestProxy(t *testing.T) {
 		"go basic": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": "package p; func A() { A() }",
 				"b.go": "package p; func B() { A() }",
@@ -108,8 +104,6 @@ func TestProxy(t *testing.T) {
 		"go detailed": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": "package p; type T struct { F string }",
 			},
@@ -126,8 +120,6 @@ func TestProxy(t *testing.T) {
 		"exported defs unexported type": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": "package p; type t struct { F string }",
 			},
@@ -138,8 +130,6 @@ func TestProxy(t *testing.T) {
 		"go xtest": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go":      "package p; var A int",
 				"a_test.go": `package p_test; import "test/pkg"; var X = p.A`,
@@ -153,8 +143,6 @@ func TestProxy(t *testing.T) {
 		"go subdirectory in repo": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go":    "package d; func A() { A() }",
 				"d2/b.go": `package d2; import "test/pkg/d"; func B() { d.A(); B() }`,
@@ -240,8 +228,6 @@ func TestProxy(t *testing.T) {
 		"go multiple packages in dir": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": "package p; func A() { A() }",
 				"main.go": `// +build ignore
@@ -278,8 +264,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"goroot": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": `package p; import "fmt"; var _ = fmt.Println; var x int`,
 			},
@@ -311,8 +295,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"gopath": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a/a.go": `package a; func A() {}`,
 				"b/b.go": `package b; import "test/pkg/a"; var _ = a.A`,
@@ -349,8 +331,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go vendored dep": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/v/vendored"; var _ = vendored.V`,
 				"vendor/github.com/v/vendored/v.go": "package vendored; func V() {}",
@@ -378,8 +358,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go vendor symbols with same name": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"z.go": `package pkg; func x() bool { return true }`,
 				"vendor/github.com/a/pkg2/x.go": `package pkg2; func x() bool { return true }`,
@@ -412,8 +390,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go external dep": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep"; var _ = dep.D; var _ = dep.D`,
 			},
@@ -444,8 +420,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"external dep with vendor": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": `package p; import "github.com/d/dep"; var _ = dep.D().F`,
 			},
@@ -465,8 +439,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go external dep at subtree": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep/subp"; var _ = subp.D`,
 			},
@@ -488,8 +460,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go nested external dep": { // a depends on dep1, dep1 depends on dep2
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": `package a; import "github.com/d/dep1"; var _ = dep1.D1().D2`,
 			},
@@ -517,8 +487,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go external dep at vanity import path": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a.go": `package a; import "golang.org/x/text"; var _ = text.F`,
 			},
@@ -553,8 +521,6 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 		"go packages with canonical import path different from its repo": {
 			rootPath: "git://test/foo?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test/pkg",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"a/a.go": `package a // import "other/foo/a"
 
@@ -585,8 +551,6 @@ var (
 		"go symbols": {
 			rootPath: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:     "go",
-			repo:     "test",
-			rev:      "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			fs: map[string]string{
 				"abc.go": `package a
 
@@ -659,7 +623,7 @@ func yza() {}
 			// Prepare the connection.
 			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 				InitializeParams:      lsp.InitializeParams{RootPath: test.rootPath},
-				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode, Repo: test.repo, Rev: test.rev},
+				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}
@@ -818,7 +782,7 @@ func TestProxy_connections(t *testing.T) {
 	// C1 connects to the proxy.
 	initParams := lspext.ClientProxyInitializeParams{
 		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", Capabilities: caps},
-		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test", Repo: "test", Rev: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)
@@ -966,7 +930,7 @@ func TestProxy_propagation(t *testing.T) {
 	// Connect to the proxy.
 	initParams := lspext.ClientProxyInitializeParams{
 		InitializeParams:      lsp.InitializeParams{RootPath: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
-		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test", Repo: "test", Rev: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)

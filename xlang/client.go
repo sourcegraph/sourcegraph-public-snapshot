@@ -153,7 +153,7 @@ func (c *Client) finishWithError(span opentracing.Span, err *error) {
 //
 // SECURITY NOTE this does not check the user has permission to read the
 // repo. Please ensure the user has access to the repo.
-func UnsafeOneShotClientRequest(ctx context.Context, mode, rootPath, repo, rev, method string, params, results interface{}) error {
+func UnsafeOneShotClientRequest(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
 	// Connect to the xlang proxy.
 	c, err := UnsafeNewDefaultClient()
 	if err != nil {
@@ -166,7 +166,7 @@ func UnsafeOneShotClientRequest(ctx context.Context, mode, rootPath, repo, rev, 
 		InitializeParams: lsp.InitializeParams{
 			RootPath: rootPath,
 		},
-		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode, Repo: repo, Rev: rev},
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},
 		Mode: mode,
 	}, nil)
 	if err != nil {

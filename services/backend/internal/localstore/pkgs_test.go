@@ -57,7 +57,7 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 		t.Skip()
 	}
 	ctx := testContext()
-	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, repo, rev, method string, params, results interface{}) error {
+	xlangDone := mockXLang(func(ctx context.Context, mode, rootPath, method string, params, results interface{}) error {
 		switch method {
 		case "workspace/xpackages":
 			res, ok := results.(*[]lspext.PackageInformation)

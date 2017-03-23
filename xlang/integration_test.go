@@ -29,8 +29,6 @@ func TestIntegration(t *testing.T) {
 
 	tests := map[string]struct { // map key is rootPath
 		mode              string
-		repo              string
-		rev               string
 		ciBlacklist       bool
 		pinDepReposToRev  map[string]string // so that file:line:col expectations are stable
 		wantHover         map[string]string
@@ -43,8 +41,6 @@ func TestIntegration(t *testing.T) {
 	}{
 		"git://github.com/gorilla/mux?0a192a193177452756c362c20087ddafcf6829c4": {
 			mode: "go",
-			repo: "github.com/gorilla/mux",
-			rev:  "0a192a193177452756c362c20087ddafcf6829c4",
 			pinDepReposToRev: map[string]string{
 				"https://github.com/gorilla/context": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
 			},
@@ -61,8 +57,6 @@ func TestIntegration(t *testing.T) {
 		},
 		"git://github.com/coreos/fuze?7df4f06041d9daba45e4c68221b9b04203dff1d8": {
 			mode: "go",
-			repo: "github.com/coreos/fuze",
-			rev:  "7df4f06041d9daba45e4c68221b9b04203dff1d8",
 			pinDepReposToRev: map[string]string{
 				"https://github.com/stretchr/testify": "976c720a22c8eb4eb6a0b4348ad85ad12491a506",
 				"https://github.com/go-check/check":   "4f90aeace3a26ad7021961c297b22c42160c7b25",
@@ -84,8 +78,6 @@ func TestIntegration(t *testing.T) {
 		},
 		"git://github.com/golang/lint?c7bacac2b21ca01afa1dee0acf64df3ce047c28f": {
 			mode: "go",
-			repo: "github.com/golang/lint",
-			rev:  "c7bacac2b21ca01afa1dee0acf64df3ce047c28f",
 			pinDepReposToRev: map[string]string{
 				"https://github.com/golang/tools": "73d2e795b859a48cba2d70040c384dd1cea7e113",
 			},
@@ -101,8 +93,6 @@ func TestIntegration(t *testing.T) {
 		},
 		"git://github.com/gorilla/csrf?a8abe8abf66db8f4a9750d76ba95b4021a354757": {
 			mode: "go",
-			repo: "github.com/gorilla/csrf",
-			rev:  "a8abe8abf66db8f4a9750d76ba95b4021a354757",
 			pinDepReposToRev: map[string]string{
 				"https://github.com/gorilla/securecookie": "c13558c2b1c44da35e0eb043053609a5ba3a1f19",
 				"https://github.com/gorilla/context":      "08b5f424b9271eedf6f9f0ce86cb9396ed337a42",
@@ -123,8 +113,6 @@ func TestIntegration(t *testing.T) {
 			// SHA is equivalent to go1.7.1 tag, but make sure we
 			// retain the original rev spec in definition results.
 			mode:        "go",
-			repo:        "github.com/golang/go",
-			rev:         "f75aafdf56dd90eab75cfeac8cf69358f73ba171",
 			ciBlacklist: true, // skip on CI since the repo is large
 			wantHover: map[string]string{
 				"src/encoding/hex/hex.go:70:12":  "func fromHexChar(c byte) (byte, bool)", // func decl
@@ -159,8 +147,6 @@ func TestIntegration(t *testing.T) {
 		},
 		"git://github.com/docker/machine?e1a03348ad83d8e8adb19d696bc7bcfb18ccd770": {
 			mode:        "go",
-			repo:        "github.com/docker/machine",
-			rev:         "e1a03348ad83d8e8adb19d696bc7bcfb18ccd770",
 			ciBlacklist: true, // skip on CI due to large repo size
 			wantHover: map[string]string{
 				"libmachine/provision/provisioner.go:107:50": "func RunSSHCommandFromDriver(...",
@@ -174,8 +160,6 @@ func TestIntegration(t *testing.T) {
 		},
 		"git://github.com/kubernetes/kubernetes?c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33": {
 			mode:        "go",
-			repo:        "github.com/kubernetes/kubernetes",
-			rev:         "c41c24fbf300cd7ba504ea1ac2e052c4a1bbed33",
 			ciBlacklist: true, // skip on CI due to large repo size
 			pinDepReposToRev: map[string]string{
 				"https://github.com/kubernetes/client-go": "5fe6fc56cb38d04ef4af601a03599c984229dea2",
@@ -191,8 +175,6 @@ func TestIntegration(t *testing.T) {
 		},
 		"git://github.com/uber-go/atomic?3b8db5e93c4c02efbc313e17b2e796b0914a01fb": {
 			mode: "go",
-			repo: "github.com/uber-go/atomic",
-			rev:  "3b8db5e93c4c02efbc313e17b2e796b0914a01fb",
 			wantDefinition: map[string]string{
 				// glide.lock specifies testify to something other than HEAD
 				"atomic_test.go:32:12": "git://github.com/stretchr/testify?d77da356e56a7428ad25149ca77381849a6a5232#require/require.go:58:6",
@@ -200,8 +182,6 @@ func TestIntegration(t *testing.T) {
 		},
 		"git://github.com/sgtest/godep-include?d92076664c875c0134dbd475b81f88d97df2bc41": {
 			mode: "go",
-			repo: "github.com/sgtest/godep-include",
-			rev:  "d92076664c875c0134dbd475b81f88d97df2bc41",
 			wantDefinition: map[string]string{
 				// Godeps.json specifies testify to something other than HEAD
 				"foo.go:12:12": "git://github.com/stretchr/testify?d77da356e56a7428ad25149ca77381849a6a5232#require/require.go:58:6",
@@ -256,7 +236,7 @@ func TestIntegration(t *testing.T) {
 			// Prepare the connection.
 			if err := c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
 				InitializeParams:      lsp.InitializeParams{RootPath: rootPath},
-				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode, Repo: test.repo, Rev: test.rev},
+				InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: test.mode},
 			}, nil); err != nil {
 				t.Fatal("initialize:", err)
 			}

@@ -162,8 +162,6 @@ func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
 type contextID struct {
 	rootPath uri.URI // the rootPath in the initialize request (typically the repo clone URL + "?REV")
 	mode     string  // the mode (i.e., "go" or "typescript")
-	repo     string  // the repo path
-	rev      string  // the absolute revision SHA
 
 	// session is the unique ID identifying this session, used when it
 	// shouldn't be shared by all users viewing the same rootPath and
@@ -329,17 +327,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, fmt.Errorf("rootUri field is not yet supported (use rootPath only): got value %q", params.RootURI)
 		}
 
-		// We are moving URI schemes from git://$REPO?$REV#$PATH
-		// to file://$REPO/$PATH on the client. Xlang still requires
-		// git URIs, so transform file to git URI for backcompat.
-		if strings.HasPrefix(params.RootPath, "file://") {
-			newURI, err := ConvertFileToGitURI(params.RootPath, params.InitializationOptions.Repo, params.InitializationOptions.Rev)
-			if err != nil {
-				return nil, err
-			}
-			params.RootPath = newURI
-		}
-
 		rootPathURI, err := uri.Parse(params.RootPath)
 		if err != nil {
 			return nil, fmt.Errorf("invalid rootPath: %s", err)
@@ -347,11 +334,8 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if params.InitializationOptions.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
-		if len(params.InitializationOptions.Repo) == 0 {
-			return nil, fmt.Errorf(`client must send a "repo" in the initialize request to specify the repo path`)
-		}
-		if len(params.InitializationOptions.Rev) != 40 {
-			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q (rev = %s)", rootPathURI, params.InitializationOptions.Rev)
+		if len(rootPathURI.Rev()) != 40 {
+			return nil, fmt.Errorf("absolute commit ID required (40 hex chars) in rootPath %q", rootPathURI)
 		}
 		if repoBlacklist[rootPathURI.Repo()] {
 			return nil, fmt.Errorf("repo is blacklisted")
@@ -367,8 +351,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.init = &params.ClientProxyInitializeParams
 		c.context.rootPath = *rootPathURI
 		c.context.mode = c.init.InitializationOptions.Mode
-		c.context.repo = c.init.InitializationOptions.Repo
-		c.context.rev = c.init.InitializationOptions.Rev
 		c.context.session = c.init.InitializationOptions.Session
 		c.mu.Unlock()
 
@@ -728,18 +710,7 @@ func (c *clientProxyConn) callServer(ctx context.Context, rid jsonrpc2.ID, metho
 	var uris []string
 	lspext.WalkURIFields(params, func(uri string) {
 		uris = append(uris, uri)
-	}, func(uri string) string {
-		if strings.HasPrefix(uri, "file://") {
-			newURI, err := ConvertFileToGitURI(uri, c.init.InitializationOptions.Repo, c.init.InitializationOptions.Rev)
-			if err != nil {
-				// Don't panic, just return the original URI. A error should be returned at another layer.
-				log.Println("error converting file URI", err)
-				return uri
-			}
-			return newURI
-		}
-		return uri
-	})
+	}, nil)
 	if len(uris) != 1 && method != "workspace/symbol" && method != "workspace/xreferences" && method != "workspace/xdependencies" && method != "workspace/xpackages" {
 		return fmt.Errorf("expected exactly 1 document URI (got %d) in LSP params object %s", len(uris), pb)
 	}

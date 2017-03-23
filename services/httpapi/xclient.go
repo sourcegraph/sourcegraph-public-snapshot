@@ -28,8 +28,6 @@ type xclient struct {
 	hasXDefinitionAndXPackages bool
 	hasCrossRepoHover          bool
 	mode                       string
-	repo                       string
-	rev                        string
 }
 
 // Call transparently wraps xlang.Client.Call *except* for `textDocument/definition` if the language
@@ -59,8 +57,6 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 		if err := json.Unmarshal(*params.(*json.RawMessage), &init); err != nil {
 			return err
 		}
-		c.repo = init.InitializationOptions.Repo
-		c.rev = init.InitializationOptions.Rev
 		c.mode = init.InitializationOptions.Mode
 		if c.mode == "" {
 			// DEPRECATED: Use old Mode field if the new one is not set.
@@ -154,7 +150,7 @@ func (c *xclient) xdefQuery(ctx context.Context, syms []lspext.SymbolLocationInf
 		for _, rootPath := range rootPaths {
 			params := &lspext.WorkspaceSymbolParams{Symbol: sym.Symbol, Limit: 10}
 			var repoSymInfos []lsp.SymbolInformation
-			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, c.repo, c.rev, "workspace/symbol", params, &repoSymInfos); err != nil {
+			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, "workspace/symbol", params, &repoSymInfos); err != nil {
 				return nil, errors.Wrap(err, "resolving symbol to location")
 			}
 			symInfos[rootPath] = repoSymInfos
@@ -246,7 +242,7 @@ Outer: // display first hover found
 				Position:     pos,
 			}
 			var xhov lsp.Hover
-			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, c.repo, c.rev, "textDocument/hover", p, &xhov); err != nil {
+			if err := xlang.UnsafeOneShotClientRequest(ctx, c.mode, rootPath, "textDocument/hover", p, &xhov); err != nil {
 				return errors.Wrap(err, "hoverCrossRepo: external textDocument/hover error")
 			}
 			if len(xhov.Contents) > 0 {

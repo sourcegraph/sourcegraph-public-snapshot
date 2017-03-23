@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -191,17 +190,6 @@ func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to j
 			params.RootURI = ""
 			if err := req.SetParams(params); err != nil {
 				return err
-			}
-
-			// We are moving URI schemes from git://$REPO?$REV#$PATH
-			// to file://$REPO/$PATH on the client. Xlang still requires
-			// git URIs, so transform file to git URI for backcompat.
-			if strings.HasPrefix(params.RootPath, "file://") {
-				newURI, err := xlang.ConvertFileToGitURI(params.RootPath, params.InitializationOptions.Repo, params.InitializationOptions.Rev)
-				if err != nil {
-					return err
-				}
-				params.RootPath = newURI
 			}
 
 			rootPathURI, err := uri.Parse(params.RootPath)

@@ -172,8 +172,6 @@ type ClientProxyInitializeParams struct {
 // the LSP client proxy.
 type ClientProxyInitializationOptions struct {
 	Mode string `json:"mode"`
-	Repo string `json:"repo"`
-	Rev  string `json:"rev"`
 
 	// Session, if set, causes this session to be isolated from other
 	// LSP sessions using the same workspace and mode. See
