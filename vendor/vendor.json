@@ -197,6 +197,12 @@
 			"revisionTime": "2017-03-06T20:53:01Z"
 		},
 		{
+			"checksumSHA1": "FIx/LfpCx7fKlsoTrip1V9J+qKs=",
+			"path": "github.com/go-kit/kit/util/conn",
+			"revision": "cdd47ca9228e4bc30bc314e32d07cb1f479567c7",
+			"revisionTime": "2017-03-22T23:21:06Z"
+		},
+		{
 			"checksumSHA1": "KxX/Drph+byPXBFIXaCZaCOAnrU=",
 			"path": "github.com/go-logfmt/logfmt",
 			"revision": "390ab7935ee28ec6b286364bba9b4dd6410cb3d5",
