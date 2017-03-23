@@ -11,23 +11,24 @@ interface Props {
 	defaultValues: string[];
 	className?: string;
 	style?: React.CSSProperties;
+
+	onChange: (list: string[]) => void;
 }
 
 export class CheckboxList extends React.Component<Props, {}> {
-	// TODO(slimsag): this should be 'element' type?
-	_fieldset: any;
+	private fieldset: HTMLFieldSetElement;
 
-	selected(): string[] {
+	selected(): void {
 		let selected: any[] = [];
-		for (let input of this._fieldset.querySelectorAll("input")) {
+		for (const input of Array.from(this.fieldset.querySelectorAll("input"))) {
 			if (input.checked) {
 				selected.push(input.value);
 			}
 		}
-		return selected;
+		this.props.onChange(selected);
 	}
 
-	_isDefaultValue(s: string): boolean {
+	private isDefaultValue(s: string): boolean {
 		return this.props.defaultValues && this.props.defaultValues.indexOf(s) !== -1;
 	}
 
@@ -36,11 +37,11 @@ export class CheckboxList extends React.Component<Props, {}> {
 		let checkboxes: any[] = [];
 		for (let i = 0; i < labels.length; i++) {
 			const value = values ? values[i] : labels[i];
-			checkboxes.push(<span className={styles.checkbox} key={value}><label><input type="checkbox" name={name} defaultValue={value} defaultChecked={this._isDefaultValue(value)} /> {labels[i]}</label></span>);
+			checkboxes.push(<span className={styles.checkbox} key={value}><label><input type="checkbox" name={name} defaultValue={value} defaultChecked={this.isDefaultValue(value)} /> {labels[i]}</label></span>);
 		}
 
 		return (
-			<fieldset ref={(c) => this._fieldset = c} style={style} className={classNames(className, styles.fieldset)}>
+			<fieldset ref={(c) => this.fieldset = c} style={style} className={classNames(className, styles.fieldset)} onChange={this.selected.bind(this)}>
 				<legend>{title}</legend>
 				{checkboxes}
 			</fieldset>

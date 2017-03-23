@@ -1,7 +1,6 @@
 import * as React from "react";
 import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
-import { Component } from "sourcegraph/Component";
 import { Button, CheckboxList, Input, Panel, TextArea } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
@@ -18,70 +17,107 @@ interface Props {
 	style?: React.CSSProperties;
 }
 
+interface FormData {
+	fullName: string;
+	email: string;
+	company: string;
+	editors: string[];
+	languages: string[];
+	message: string;
+}
+
 interface State {
 	formError?: string;
 	resp?: Response;
 	respError?: Error;
+	formData: FormData;
 };
 
-export class BetaInterestForm extends Component<Props, State> {
-	private fullName: HTMLInputElement;
-	private email: HTMLInputElement;
-	private company: HTMLInputElement;
-	private editors: CheckboxList;
-	private languages: CheckboxList;
-	private message: HTMLTextAreaElement;
+export class BetaInterestForm extends React.Component<Props, State> {
+	state: State = { formData: { fullName: "", email: "", company: "", editors: [], languages: [], message: "", } };
 
-	componentDidMount(): void {
-		// Trigger onChange now to save this.props.language if set.
-		if (context.user && this.props.language) {
-			this.onChange();
+	componentWillMount(): void {
+		const formData = this.loadStateFromLocalStorage();
+		if (formData) {
+			this.state.formData = formData;
 		}
 	}
 
-	private onChange = (): void => {
+	componentDidUpdate(): void {
+		this.saveStateToLocalStorage();
+	}
+
+	private saveStateToLocalStorage = (): void => {
+		const formData = this.state.formData;
 		localStorage.setItem("beta-interest-form", JSON.stringify({
-			fullName: this.fullName.value,
-			email: this.email ? this.email.value : "",
-			company: this.company.value,
-			editors: this.editors.selected(),
-			languages: this.languages.selected(),
-			message: this.message.value,
+			fullName: formData.fullName,
+			email: formData.email,
+			company: formData.company,
+			editors: formData.editors,
+			languages: formData.languages,
+			message: formData.message,
 		}));
+	}
+
+	private loadStateFromLocalStorage = (): FormData | null => {
+		const ls = localStorage.getItem("beta-interest-form");
+		if (ls) {
+			const lsParsed = JSON.parse(ls);
+			return {
+				fullName: lsParsed.fullName || "",
+				email: lsParsed.email || "",
+				company: lsParsed.company || "",
+				editors: lsParsed.editors || [],
+				languages: lsParsed.languages || [],
+				message: lsParsed.message || "",
+			};
+		}
+		return null;
+	}
+
+	private onInputChange = (field: keyof FormData) => (ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+		const state = { ...this.state, formData: { ...this.state.formData } };
+		state.formData[field] = ev.currentTarget.value;
+		this.setState(state);
+	}
+
+	private onCheckboxChange = (field: keyof FormData) => (list: string[]) => {
+		const state = { ...this.state, formData: { ...this.state.formData } };
+		state.formData[field] = list;
+		this.setState(state);
 	}
 
 	private sendForm = (ev: any): void => {
 		ev.preventDefault();
-		const name = this.fullName.value;
+		const formData = this.state.formData;
 		let firstName;
 		let lastName;
-		if (name) {
-			const names = name.split(/\s+/);
+		if (formData.fullName) {
+			const names = formData.fullName.split(/\s+/);
 			firstName = names[0];
 			lastName = names.slice(1).join(" ");
 		}
 
-		if (this.editors.selected().length === 0) {
-			this.setState({ formError: "Please select at least one preferred editor." });
+		if (formData.editors.length === 0) {
+			this.setState({ ...this.state, formError: "Please select at least one preferred editor." });
 			return;
 		}
-		if (this.languages.selected().length === 0) {
-			this.setState({ formError: "Please select at least one preferred language." });
+		if (formData.languages.length === 0) {
+			this.setState({ ...this.state, formError: "Please select at least one preferred language." });
 			return;
 		}
-
 		submitBetaSignupForm({
-			email: this.email ? this.email.value.trim() : "",
+			email: formData.email,
 			firstname: firstName || "",
 			lastname: lastName || "",
-			company: this.company.value,
-			languages_used: this.languages.selected(),
-			editors_used: this.editors.selected(),
-			message: this.message.value.trim(),
+			company: formData.company,
+			languages_used: formData.languages,
+			editors_used: formData.editors,
+			message: formData.message.trim(),
 		}).then(resp => {
-			this.setState({ resp });
+			this.setState({ ...this.state, resp });
 		}).catch(respError => {
-			this.setState({ respError });
+			this.setState({ ...this.state, respError });
 		});
 	}
 
@@ -106,27 +142,12 @@ export class BetaInterestForm extends Component<Props, State> {
 
 		let [className, language] = [this.props.className, this.props.language];
 		let betaRegistered = false; // TODO
-		let emails = context.emails && context.emails.EmailAddrs;
 
-		let defaultFullName;
-		let defaultEmail;
-		let defaultCompany;
-		let defaultMessage;
-		let defaultEditors = [];
-		let defaultLanguages: string[] = [];
-		const ls = localStorage.getItem("beta-interest-form");
-		if (ls) {
-			const lsParsed = JSON.parse(ls);
-			defaultFullName = lsParsed.fullName;
-			defaultEmail = lsParsed.email;
-			defaultCompany = lsParsed.company;
-			defaultEditors = lsParsed.editors;
-			defaultLanguages = lsParsed.languages;
-			defaultMessage = lsParsed.message;
-		}
+		let emails = context.emails && context.emails.EmailAddrs;
+		let defaults = this.state.formData;
 
 		if (language) {
-			defaultLanguages.push(langName(language));
+			defaults.languages.push(langName(language));
 		}
 
 		return (
@@ -135,52 +156,52 @@ export class BetaInterestForm extends Component<Props, State> {
 					<p>You've already registered. We'll contact you once a beta matching your interests has begun.</p>
 					<p>Feel free to update your favorite editors / languages using the form below.</p>
 				</span>}
-				<form className={className} onSubmit={this.sendForm} onChange={this.onChange}>
+				<form className={className} onSubmit={this.sendForm}>
 					<Input
-						domRef={c => this.fullName = c}
 						block={true}
 						type="text"
 						name="fullName"
 						placeholder="Name"
 						required={true}
-						defaultValue={defaultFullName} />
+						defaultValue={defaults.fullName}
+						onChange={this.onInputChange("fullName")} />
 					{(!emails || emails.length === 0) &&
 						<Input
-							domRef={c => this.email = c}
 							block={true}
 							type="email"
 							name="email"
 							placeholder="Email address"
-							required={true} defaultValue={defaultEmail} />
+							required={true} defaultValue={defaults.email}
+							onChange={this.onInputChange("email")} />
 					}
 					<Input
-						domRef={c => this.company = c}
 						block={true}
 						type="text"
 						name="company"
 						placeholder="Company / organization"
 						required={true}
-						defaultValue={defaultCompany} />
+						defaultValue={defaults.company}
+						onChange={this.onInputChange("company")} />
 					<CheckboxList
-						ref={c => this.editors = c}
 						title="Preferred editors"
 						name="editors" labels={editors}
-						defaultValues={defaultEditors}
-						style={{ marginBottom: whitespace[3] }} />
+						defaultValues={defaults.editors}
+						style={{ marginBottom: whitespace[3] }}
+						onChange={this.onCheckboxChange("editors")} />
 					<CheckboxList
-						ref={c => this.languages = c}
 						title="Preferred languages"
 						name="languages"
 						labels={languageNames}
 						values={languageIDs}
-						defaultValues={defaultLanguages}
-						style={{ marginBottom: whitespace[3] }} />
+						defaultValues={defaults.languages}
+						style={{ marginBottom: whitespace[3] }}
+						onChange={this.onCheckboxChange("languages")} />
 					<TextArea
 						block={true}
-						domRef={c => this.message = c}
 						name="message"
 						placeholder="Other / comments"
-						defaultValue={defaultMessage}>
+						defaultValue={defaults.message}
+						onChange={this.onInputChange("message")}>
 					</TextArea>
 					<Button block={true} type="submit" color="purple">
 						{betaRegistered ? "Update my interests" : "Participate in the beta"}
