@@ -29,7 +29,7 @@ export class ExtensionEventLogger extends EventLogger {
 		}
 	}
 
-	protected logEventToTelligent(eventAction: string, eventProps: any): void {
+	protected sendEvent(eventAction: string, eventProps: any): void {
 		chrome.runtime.sendMessage({ type: "trackEvent", payload: eventProps });
 	}
 

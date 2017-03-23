@@ -4,7 +4,7 @@ const telligentFunctionName = "telligent";
 
 export class TelligentWrapper {
 	private t: any;
-	constructor(appId: string, platform: string, forceSecure: boolean, installedChromeExtension: boolean) {
+	constructor(appId: string, platform: string, forceSecure: boolean, installedChromeExtension: boolean, url?: string) {
 		// Create the initializing function
 		window[telligentFunctionName] = function (): void {
 			(window[telligentFunctionName].q = window[telligentFunctionName].q || []).push(arguments);
@@ -15,8 +15,13 @@ export class TelligentWrapper {
 
 		this.t = (window as any).telligent;
 
+
+		let telligentUrl = "sourcegraph-logging.telligentdata.com";
+		if (url) {
+			telligentUrl = url;
+		}
 		// Must be called once upon initialization
-		this.t("newTracker", "SourcegraphExtensionTracker", "sourcegraph-logging.telligentdata.com", {
+		this.t("newTracker", "SourcegraphExtensionTracker", telligentUrl, {
 			encodeBase64: false,
 			appId: appId,
 			platform: platform,

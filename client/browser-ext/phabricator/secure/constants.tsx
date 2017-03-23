@@ -5,4 +5,4 @@ const securePhabricatorMap = {
 	"arc": "github.com/phacility/arcanist",
 };
 
-export const securePhabricatorInstance = new PhabricatorInstance(securePhabricatorMap, "");
+export const securePhabricatorInstance = new PhabricatorInstance(securePhabricatorMap, "web_phabricator");

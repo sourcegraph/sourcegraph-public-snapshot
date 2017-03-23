@@ -157,6 +157,5 @@ const umamiPhabricatorRepoMap = {
 };
 
 export const UMAMI_SOURCEGRAPH_URL = "https://sourcegraph.sgpxy.dev.uberinternal.com";
-const PHABRICATOR_STAGING_URI = "phabricator-staging";
 
-export const umamiPhabricatorInstance = new PhabricatorInstance(umamiPhabricatorRepoMap, PHABRICATOR_STAGING_URI);
+export const umamiPhabricatorInstance = new PhabricatorInstance(umamiPhabricatorRepoMap, "uber_phabricator");
