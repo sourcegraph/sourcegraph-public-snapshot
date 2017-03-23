@@ -30,6 +30,12 @@ import (
 // - [ ] Only support UTF-8/ASCII
 // - [ ] Avoid parsing files out of tar/zip (like new line trick)
 
+const (
+	// maxFileSize is the limit on file size in bytes. Only files smaller
+	// than this are searched.
+	maxFileSize = 1 << 19 // 512KB
+)
+
 // readerGrep is responsible for finding LineMatches. It is not concurrency
 // safe (it reuses buffers for performance).
 type readerGrep struct {
@@ -139,6 +145,9 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) ([]File
 	go func() {
 		done := ctx.Done()
 		for _, f := range zr.File {
+			if f.FileHeader.UncompressedSize64 > maxFileSize {
+				continue
+			}
 			select {
 			case files <- f:
 			case <-done:
