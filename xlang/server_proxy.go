@@ -132,18 +132,18 @@ func serverRequestIDFromString(s string) (i serverRequestID) {
 }
 
 var (
-	serverConnsGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+	serverConnsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "open_lsp_server_connections",
 		Help:      "Open connections (initialized + uninitialized) to the LSP servers.",
-	})
-	serverConnsCounter = prometheus.NewCounter(prometheus.CounterOpts{
+	}, []string{"mode"})
+	serverConnsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
 		Name:      "cumu_lsp_server_connections",
 		Help:      "Cumulative number of connections (initialized + uninitialized) to the LSP servers (total of open + previously closed since process startup).",
-	})
+	}, []string{"mode"})
 	serverConnsMethodCalls = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
@@ -270,10 +270,10 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	if ok {
 		delete(p.servers, c)
 	}
-	serverConnsGauge.Set(float64(len(p.servers)))
 	p.mu.Unlock()
 	if ok {
 		stats := c.Stats()
+		serverConnsGauge.WithLabelValues(c.id.mode).Dec()
 		serverConnsTotalMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
 		serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
 		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
@@ -325,8 +325,8 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (*serverProxyCon
 			},
 		}
 		p.servers[c] = struct{}{}
-		serverConnsGauge.Set(float64(len(p.servers)))
-		serverConnsCounter.Inc()
+		serverConnsGauge.WithLabelValues(id.mode).Inc()
+		serverConnsCounter.WithLabelValues(id.mode).Inc()
 		p.mu.Unlock()
 	}
 
