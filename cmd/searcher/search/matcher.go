@@ -3,6 +3,7 @@ package search
 import (
 	"archive/zip"
 	"bufio"
+	"bytes"
 	"context"
 	"io"
 	"regexp"
@@ -83,6 +84,13 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 		rg.reader = r
 	} else {
 		r.Reset(reader)
+	}
+
+	// Heuristic: Assume file is binary if first 256 bytes contain a
+	// 0x00. Best effort, so ignore err
+	b, _ := r.Peek(256)
+	if bytes.IndexByte(b, 0x00) >= 0 {
+		return nil, nil
 	}
 
 	var matches []LineMatch
