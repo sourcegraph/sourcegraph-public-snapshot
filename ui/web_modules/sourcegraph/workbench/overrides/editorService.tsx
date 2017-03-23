@@ -10,6 +10,7 @@ import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorServi
 
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
+import { RangeOrPosition } from "sourcegraph/core/rangeorposition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { resolveRev } from "sourcegraph/editor/contentLoader";
@@ -70,7 +71,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 				router.push({
 					pathname: url,
 					state: options,
-					hash: window.location.hash || undefined,
+					hash: data.options && data.options.selection ? `#L${RangeOrPosition.fromMonacoRange(data.options.selection)}` : window.location.hash || undefined,
 					query: router.location.query,
 				});
 				return editor;
