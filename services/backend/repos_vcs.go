@@ -4,6 +4,9 @@ import (
 	"context"
 	"strings"
 
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
+
 	"github.com/sourcegraph/zap"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
@@ -16,6 +19,18 @@ import (
 var TestSkipZap = false
 
 func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveRevOp) (zapRef *zap.RefInfo, res *sourcegraph.ResolvedRev, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "ResolveZapRev")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.SetTag("result_zap", zapRef)
+		span.SetTag("result_git", res)
+		span.Finish()
+	}()
+	span.SetTag("op", op)
+
 	if TestSkipZap {
 		goto nonZap
 	}
@@ -34,12 +49,21 @@ func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveR
 			if err != nil {
 				return nil, nil, err
 			}
-			zapRevInfo, _ := cl.RefInfo(ctx, zap.RefInfoParams{
+			zapRevInfo, err := cl.RefInfo(ctx, zap.RefInfoParams{
 				RefIdentifier: zap.RefIdentifier{Repo: repo.URI, Ref: op.Rev},
 				Fuzzy:         true,
 			})
-			// TODO(john): add error-specific handling?
+			span.SetTag("zap_refinfo_resp", zapRevInfo)
+			if err != nil {
+				// Do not fatally return; instead gracefully degrade to
+				// gitserver below.
+				//
+				// TODO: distinguish between "ref does not exist" errors and
+				// other errors.
+				span.SetTag("zap_refinfo_err", err)
+			}
 			if zapRevInfo != nil && zapRevInfo.State != nil {
+				span.SetTag("is_zap_rev", true)
 				// We want to use the Git revision that the Zap branch was based on,
 				// as all of the Zap operations were originating from that revision.
 				// Using any other revision of the same branch would be a mistake
@@ -53,6 +77,7 @@ func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveR
 	}
 
 nonZap:
+	span.SetTag("is_zap_rev", false)
 	res, err = Repos.ResolveRev(ctx, op)
 	return nil, res, err
 }
