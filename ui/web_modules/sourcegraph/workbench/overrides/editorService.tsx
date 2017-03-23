@@ -10,7 +10,6 @@ import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorServi
 
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
-import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { updateFileTree } from "sourcegraph/editor/config";
 import { resolveRev } from "sourcegraph/editor/contentLoader";
@@ -62,12 +61,6 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 			rev = prettifyRev(rev);
 			const router = __getRouterForWorkbenchOnly();
 
-			let hash: undefined | string;
-			if (data.options && data.options.selection) {
-				const selection = RangeOrPosition.fromMonacoRange(data.options.selection);
-				hash = `#L${selection}`;
-			}
-
 			// openEditor may be called for a file, or for a workspace root (directory);
 			// in the latter case, we circumvent the vscode path to open an real document
 			// otherwise an empty buffer will be shown instead of the workbench watermark.
@@ -77,7 +70,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 				router.push({
 					pathname: url,
 					state: options,
-					hash,
+					hash: window.location.hash || undefined,
 					query: router.location.query,
 				});
 				return editor;
