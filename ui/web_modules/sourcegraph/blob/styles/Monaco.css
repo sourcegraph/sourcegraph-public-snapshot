@@ -459,3 +459,9 @@
 	line-height: 30px;
 	font-size: 1rem;
 }
+
+/* Shadow Overrides */
+.vs-dark .monaco-workbench .monaco-scrollable-element .shadow.top,
+.monaco-scrollable-element > .shadow.top {
+	box-shadow:none !important;
+}
