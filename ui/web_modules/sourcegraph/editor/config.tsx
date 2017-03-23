@@ -137,7 +137,7 @@ export function setEditorDiffState(state: WorkbenchState, location: AbsoluteLoca
 		const left = uri.with({ query: `${uri.query}~0` });
 		renderDiffEditor(left, uri, location.selection);
 	} else {
-		renderFileEditor(uri, null);
+		renderFileEditor(uri, location.selection);
 	}
 }
 
