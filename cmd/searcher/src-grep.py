@@ -5,9 +5,8 @@ import requests
 import sys
 
 parser = argparse.ArgumentParser(description='Text search via sourcegraph.com')
-parser.add_argument('repo', type=str, metavar='REPO', help='repo to search. eg github.com/sourcegraph/go-langserver')
+parser.add_argument('repo', type=str, metavar='REPO[@REV]', help='repo to search. eg github.com/sourcegraph/go-langserver or github.com/golang/go@go1.8')
 parser.add_argument('pattern', type=str, metavar='PATTERN', help='pattern to search for')
-parser.add_argument('rev', type=str, metavar='REV', nargs='?', default='HEAD', help='the commit to search (default HEAD)')
 parser.add_argument('--dev', action='store_true', help='search via localhost rather than sourcegraph.com')
 parser.add_argument('-e', '--regexp', action='store_true', help='Interpret PATTERN as a regex rather than a fixed string')
 parser.add_argument('-w', '--word-regexp', action='store_true', help='Only match on word boundaries')
@@ -15,6 +14,11 @@ parser.add_argument('-i', '--ignore-case', action='store_true', help='Ignore cas
 parser.add_argument('-u', '--url', action='store_true', help='Print matches as URLs to sourcegraph.com')
 
 args = parser.parse_args()
+
+if '@' in args.repo:
+    args.repo, args.rev = args.repo.split('@', 1)
+else:
+    args.rev = 'HEAD'
 
 graphql = {
     'query': '''
