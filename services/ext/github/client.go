@@ -53,6 +53,11 @@ func OrgsFromContext(ctx context.Context) *github.OrganizationsService {
 	return client(ctx).Organizations
 }
 
+func OrganizationRepos(ctx context.Context, org string, opt *github.RepositoryListByOrgOptions) ([]*github.Repository, error) {
+	repo, _, err := client(ctx).Repositories.ListByOrg(org, opt)
+	return repo, err
+}
+
 func checkResponse(ctx context.Context, resp *github.Response, err error, op string) error {
 	if err == nil {
 		return nil
