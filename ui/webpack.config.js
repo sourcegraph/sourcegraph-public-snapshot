@@ -117,7 +117,6 @@ module.exports = {
 			"electron": "sourcegraph/workbench/overrides/electron",
 			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",
 			"vs/workbench/services/files/electron-browser/fileService": "sourcegraph/workbench/overrides/fileService",
-			"vs/workbench/services/textmodelResolver/common/textModelResolverService": "sourcegraph/workbench/overrides/resolverService",
 			"fs": "sourcegraph/workbench/overrides/fs",
 			"vs/base/browser/ui/iconLabel/iconLabel": "sourcegraph/workbench/overrides/iconLabel",
 			"vs/workbench/browser/labels": "sourcegraph/workbench/overrides/labels",
