@@ -7,7 +7,7 @@ class TelligentWrapper {
 	private DEFAULT_APP_ID: string = "UnknownApp";
 
 	constructor() {
-		if (global && global.window && global.window.telligent && !isOnPremInstance(context.authEnabled)) {
+		if (global && global.window && global.window.telligent) {
 			this.telligent = global.window.telligent;
 		} else {
 			return;
@@ -59,7 +59,11 @@ class TelligentWrapper {
 		if (!this.telligent) {
 			return;
 		}
-		this.telligent("newTracker", "sg", "sourcegraph-logging.telligentdata.com", {
+		let telligentUrl = "sourcegraph-logging.telligentdata.com";
+		if (isOnPremInstance(context.authEnabled)) {
+			telligentUrl = context.appURL.replace("https://", "").replace("http://", "").concat("/.bi-logger");
+		}
+		this.telligent("newTracker", "sg", telligentUrl, {
 			appId: appId,
 			platform: "Web",
 			encodeBase64: false,
