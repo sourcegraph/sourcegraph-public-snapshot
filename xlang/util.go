@@ -2,6 +2,7 @@ package xlang
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -29,4 +30,28 @@ func (e *errorList) error() error {
 	default:
 		return fmt.Errorf("%s [and %d more errors]", e.errors[0], len(e.errors)-1)
 	}
+}
+
+// ConvertFileToGitURI takes a file URI like like `file://repo/path/file/path`
+// and returns a git URI like `git://repo/path?rev#file/path`.
+// This is useful because the client uses file URIs, but xlang
+// currently requires git URIs.
+func ConvertFileToGitURI(uri string, repo string, rev string) (string, error) {
+	if !strings.HasPrefix(uri, "file://") {
+		return "", fmt.Errorf("expected file:// URI, got %s", uri)
+	}
+	if !strings.HasPrefix(strings.TrimPrefix(uri, "file://"), repo) {
+		return "", fmt.Errorf("unexpected URI for repo %s: %s", repo, uri)
+	}
+	if len(rev) != 40 {
+		return "", fmt.Errorf("invalid git revision: %s", rev)
+	}
+	uriParts := strings.Split(uri, "/")
+	repoParts := strings.Split(repo, "/")
+	filePath := strings.Join(uriParts[:(2+len(repoParts))], "/")
+	repoURI := "git://" + repo + "?" + rev
+	if filePath != "" {
+		return repoURI + "#" + filePath, nil
+	}
+	return repoURI, nil
 }

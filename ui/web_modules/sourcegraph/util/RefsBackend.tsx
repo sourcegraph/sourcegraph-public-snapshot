@@ -373,7 +373,7 @@ function createProgressHandler<T>(observer: Subscriber<T>): (values: T[]) => voi
 
 function setupWorkspace(uri: URI, isReady: () => boolean): Promise<void> {
 	log(`setup workspace ${uri}`);
-	setupWorker(uri);
+	setupWorker(uri, { commitID: uri.query });
 	return new Promise<void>(resolve => {
 		const interval = setInterval(() => {
 			if (isReady()) {

@@ -141,7 +141,7 @@ func (s *defs) DependencyReferences(ctx context.Context, op sourcegraph.Dependen
 	// Find the metadata for the definition specified by op, such that we can
 	// perform the DB query using that metadata.
 	var locations []lspext.SymbolLocationInformation
-	err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, "textDocument/xdefinition", lsp.TextDocumentPositionParams{
+	err = xlang.UnsafeOneShotClientRequest(ctx, op.Language, rootPath, repo.URI, op.CommitID, "textDocument/xdefinition", lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: rootPath + "#" + op.File},
 		Position:     lsp.Position{Line: op.Line, Character: op.Character},
 	}, &locations)

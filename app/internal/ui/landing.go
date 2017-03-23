@@ -34,7 +34,7 @@ import (
 var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
 
 // curlRepro returns curl reproduction instructions for an xlang request.
-func curlRepro(mode, rootPath, method string, params interface{}) string {
+func curlRepro(mode, repo, rev, rootPath, method string, params interface{}) string {
 	init := jsonrpc2.Request{
 		ID:     jsonrpc2.ID{Num: 0},
 		Method: "initialize",
@@ -45,6 +45,8 @@ func curlRepro(mode, rootPath, method string, params interface{}) string {
 		},
 		InitializationOptions: lspext.ClientProxyInitializationOptions{
 			Mode: mode,
+			Repo: repo,
+			Rev:  rev,
 		},
 	})
 	req := jsonrpc2.Request{ID: jsonrpc2.ID{Num: 1}, Method: method}
