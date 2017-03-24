@@ -61,7 +61,7 @@ class TelligentWrapper {
 		}
 		let telligentUrl = "sourcegraph-logging.telligentdata.com";
 		if (isOnPremInstance(context.authEnabled)) {
-			telligentUrl = telligentUrl = `${window.location.host}`.concat("/.bi-logger");
+			telligentUrl = `${window.location.host}`.concat("/.bi-logger");
 		}
 		this.telligent("newTracker", "sg", telligentUrl, {
 			appId: appId,
