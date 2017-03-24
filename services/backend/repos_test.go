@@ -13,7 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 

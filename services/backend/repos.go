@@ -19,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 

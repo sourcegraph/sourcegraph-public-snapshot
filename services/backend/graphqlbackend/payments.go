@@ -6,7 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/stripe"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 

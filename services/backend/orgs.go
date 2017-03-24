@@ -13,7 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	store "sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"

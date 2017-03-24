@@ -7,7 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 )
 
 type fileResolver struct {

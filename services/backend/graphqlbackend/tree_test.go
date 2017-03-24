@@ -7,7 +7,7 @@ import (
 	graphql "github.com/neelance/graphql-go"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 )
 
 func TestTree(t *testing.T) {
