@@ -174,8 +174,8 @@ class Driver(object):
             raise E2EError('expected exactly one "%s" option in menu, but found %d' % (option_text, len(peek_items)))
         return peek_items[0]
 
-    def hover_token(self, token_text, lang="go"):
-        ActionChains(self.d).move_to_element(self.find_token(token_text, lang=lang)).perform()
+    def hover_token(self, token_text):
+        ActionChains(self.d).move_to_element(self.find_token(token_text)).perform()
 
     def hover_token_with_retry(self, token_text, condition, **kw):
         def tryOnce():
@@ -186,11 +186,11 @@ class Driver(object):
     def hover_elem(self, elem):
         ActionChains(self.d).move_to_element(elem).perform()
 
-    def find_tokens(self, tok_text, lang="go"):
-        return [e for e in self.d.find_elements_by_css_selector(".token.identifier.%s" % lang) if tok_text in e.text]
+    def find_tokens(self, tok_text):
+        return [e for e in self.d.find_elements_by_css_selector(".mtk1") if tok_text in e.text]
 
-    def find_token(self, tok_text, lang="go", select_any=True):
-        candidates = self.find_tokens(tok_text, lang=lang)
+    def find_token(self, tok_text, select_any=True):
+        candidates = self.find_tokens(tok_text)
         if len(candidates) == 0:
             raise E2EError('no tokens found with "%s"' % tok_text)
         elif len(candidates) > 1 and not select_any:
