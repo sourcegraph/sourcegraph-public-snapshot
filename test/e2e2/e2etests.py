@@ -326,14 +326,11 @@ def test_java_def(dr):
 def test_java_cross_repo(dr):
     wd = dr.d
     # Go to JUnit repo page
-    wd.get(dr.sg_url("/github.com/google/guava/-/blob/guava/src/com/google/common/collect/Maps.java"))
+    wd.get(dr.sg_url("/github.com/google/guava/-/blob/guava/src/com/google/common/collect/MapMakerInternalMap.java"))
     # Wait for page to load
     wait_for(lambda: len(dr.find_tokens("collect")) > 0, max_wait=10, text="wait for page load")
     # Click in editor
     wd.find_elements_by_css_selector(".monaco-editor")[0].click()
-    # Scroll to "AbstractCollection"
-    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
-                    lambda: len(dr.find_tokens("AbstractCollection")) > 0)
     # Click "AbstractCollection" and wait until side panel reloaded
     click_with_retry(lambda: dr.find_token("AbstractCollection"),
                      lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text,
@@ -348,12 +345,9 @@ def test_java_cross_repo(dr):
 def test_java_global_usages(dr):
     wd = dr.d
     # Go to JUnit repo page
-    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/org/junit/Test.java"))
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/test/java/junit/tests/AllTests.java"))
     # Wait for page to load
     wait_for(lambda: len(dr.find_tokens("")) > 0, max_wait=10, text="wait for page load")
-    # Scroll to "Test"
-    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
-                    lambda: len(dr.find_tokens(" Test ")) > 0)
     click_with_retry(lambda: dr.find_token(" Test "),
                      lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text,
                      max_wait=15)
