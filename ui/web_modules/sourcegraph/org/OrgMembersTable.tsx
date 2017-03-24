@@ -1,6 +1,6 @@
 import * as React from "react";
 import { OrgMember } from "sourcegraph/api";
-import { Button, Heading, Table, User } from "sourcegraph/components";
+import { Button, Table, User } from "sourcegraph/components";
 import { colors, whitespace } from "sourcegraph/components/utils";
 
 interface Props {
@@ -24,29 +24,21 @@ export function OrgMembersTable({ members, inviteClicked, sentInvites }: Props):
 
 	const rowSx = {
 		borderBottomWidth: 1,
-		borderColor: colors.blueGrayL3(0.5),
+		borderColor: colors.blueGrayL2(.5),
 		borderBottomStyle: "solid",
-		paddingBottom: whitespace[2],
-		paddingTop: whitespace[2],
+		paddingBottom: whitespace[3],
+		paddingTop: whitespace[3],
 	};
 
-	const memberCellSx = Object.assign({ textAlign: "center" }, rowSx);
+	const memberCellSx = { textAlign: "center", ...rowSx };
 
 	return <div style={{ marginBottom: whitespace[3] }}>
 		<Table style={{ width: "100%" }}>
-			<thead>
-				<tr>
-					<td style={rowSx}>
-						<Heading level={6}>Organization member</Heading>
-					</td>
-					<td style={memberCellSx}></td>
-				</tr>
-			</thead>
 			<tbody>
 				{members.map((member, i) =>
 					<tr key={i}>
 						<td style={rowSx}>
-							<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} />
+							<User avatar={member.AvatarURL} email={member.Email} nickname={member.Login} size="medium" />
 						</td>
 						<td style={memberCellSx} width="20%">
 							{!member.SourcegraphUser && (member.Invite || (sentInvites.indexOf(member.Login) > -1)

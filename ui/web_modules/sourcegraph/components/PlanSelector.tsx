@@ -82,7 +82,7 @@ function PlanTile({ name, desc, price, salePrice, unit, label, onClick }: TilePr
 		...onClick && { cursor: "pointer" },
 	};
 
-	return <Panel onClick={onClick} hoverLevel="low" style={panelSx} className={panelHoverSx}>
+	return <Panel onClick={onClick} hoverLevel="low" style={panelSx} className={onClick && panelHoverSx}>
 		<FlexContainer style={{ marginLeft: whitespace[2], marginRight: whitespace[2] }}>
 			<div style={{ flex: "1 1 auto" }}>
 				<Heading level={6} compact={true} style={{ marginBottom: whitespace[2] }}>

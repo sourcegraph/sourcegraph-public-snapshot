@@ -51,11 +51,11 @@ export class Home extends React.Component<HomeProps, {}> {
 
 				<Nav location={this.props.location} style={{ padding: whitespace[5] }} context={this.context} />
 
-				<div style={layout.container}>
+				<div style={layout.container.lg}>
 
 					<Heading
 						align="center" level={1} style={Object.assign({},
-							layout.container,
+							layout.container.lg,
 							{
 								maxWidth: 680,
 								marginBottom: whitespace[8],
@@ -202,7 +202,7 @@ export class Home extends React.Component<HomeProps, {}> {
 				</div>
 
 				<div style={Object.assign({},
-					layout.container,
+					layout.container.lg,
 					{
 						maxWidth: 600,
 						marginTop: whitespace[8],

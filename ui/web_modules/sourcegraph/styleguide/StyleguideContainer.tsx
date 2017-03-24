@@ -26,7 +26,7 @@ export function StyleguideContainer(props: {}): JSX.Element {
 			</Hero>
 			<FlexContainer className={styles.container_fixed}>
 				<Affix offset={20} style={{ flex: "0 0 240px", order: 9999 }}>
-					<Tabs style={{ marginLeft: whitespace[8] }} direction="vertical">
+					<Tabs style={{ marginLeft: whitespace[7] }} direction="vertical">
 						<MenuItem anchor="#principles" name="Principles" />
 
 						<Heading level={7} style={navHeadingSx}>Brand</Heading>
@@ -59,5 +59,5 @@ export function StyleguideContainer(props: {}): JSX.Element {
 }
 
 function MenuItem({ name, anchor }: { anchor: string, name: string }): JSX.Element {
-	return <TabItem direction="vertical" color="purple"><a href={anchor}>{name}</a></TabItem>;
+	return <TabItem direction="vertical" color="purple" style={{ paddingLeft: whitespace[5] }}><a href={anchor}>{name}</a></TabItem>;
 }
