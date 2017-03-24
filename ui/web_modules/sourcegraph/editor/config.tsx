@@ -98,7 +98,11 @@ export function renderFileEditor(resource: URI, selection: IRange | null): void 
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
 	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
 		updateEditorAfterURLChange(selection);
-		commandService.executeCommand("workbench.view.explorer");
+		const viewletService = Services.get(IViewletService) as IViewletService;
+		const activeViewlet = viewletService.getActiveViewlet();
+		if (activeViewlet && activeViewlet.getId() !== "workbench.view.explorer") {
+			commandService.executeCommand("workbench.view.explorer");
+		}
 	});
 }
 
@@ -115,7 +119,11 @@ export function renderDiffEditor(left: URI, right: URI, selection: IRange | null
 		const diff = new DiffEditorInput("", "", leftInput, rightInput);
 		editorService.openEditorWithoutURLChange(right, diff, {}).then(() => {
 			updateEditorAfterURLChange(selection);
-			commandService.executeCommand("workbench.view.scm");
+			const viewletService = Services.get(IViewletService) as IViewletService;
+			const activeViewlet = viewletService.getActiveViewlet();
+			if (activeViewlet && activeViewlet.getId() !== "workbench.view.scm") {
+				commandService.executeCommand("workbench.view.scm");
+			}
 		});
 	});
 }

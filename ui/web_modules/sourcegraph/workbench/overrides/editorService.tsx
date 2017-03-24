@@ -71,7 +71,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 				router.push({
 					pathname: url,
 					state: options,
-					hash: data.options && data.options.selection ? `#L${RangeOrPosition.fromMonacoRange(data.options.selection)}` : window.location.hash || undefined,
+					hash: data.options && data.options.selection ? `#L${RangeOrPosition.fromMonacoRange(data.options.selection)}` : undefined,
 					query: router.location.query,
 				});
 				return editor;
