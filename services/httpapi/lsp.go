@@ -22,6 +22,7 @@ import (
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -158,7 +159,14 @@ func (p *jsonrpc2Proxy) start() {
 	close(p.ready)
 }
 
-func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from *jsonrpc2.Conn, to jsonrpc2.JSONRPC2, req *jsonrpc2.Request) error {
+// jsonrpc2FromConn defines the subset of jsonrpc2.Conn we use to pass on a
+// response.
+type jsonrpc2FromConn interface {
+	ReplyWithError(context.Context, jsonrpc2.ID, *jsonrpc2.Error) error
+	Reply(context.Context, jsonrpc2.ID, interface{}) error
+}
+
+func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from jsonrpc2FromConn, to jsonrpc2.JSONRPC2, req *jsonrpc2.Request) error {
 	// 🚨 SECURITY: If this is the "initialize" request, we MUST check 🚨
 	// that the current user can access the workspace root's
 	// repository. This is the ONLY PLACE that access is checked; the
@@ -268,12 +276,25 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 	start := time.Now()
 	<-p.ready
 
-	err := p.roundTrip(ctx, conn, p.server, req)
-
+	// We don't need to measure notifications, so just send straight away.
 	if req.Notif {
-		// We don't need to measure notifications
+		p.roundTrip(ctx, conn, p.server, req)
 		return
 	}
+
+	// No parent, otherwise request is associated with all spans in
+	// session. This makes it hard to understand the UI.
+	span := opentracing.GlobalTracer().StartSpan("LSP WebSocket Proxy")
+	ext.Component.Set(span, "httpapi")
+	ext.SpanKindRPCClient.Set(span)
+	span.SetTag("jsonrpc2.id", req.ID.String())
+	span.SetTag("jsonrpc2.method", req.Method)
+	ctx = opentracing.ContextWithSpan(ctx, span)
+	meta := map[string]string{
+		"X-Trace": traceutil.SpanURL(span),
+	}
+
+	err := p.roundTrip(ctx, replyWithMeta{conn, meta}, p.server, req)
 
 	duration := time.Since(start)
 	success := strconv.FormatBool(err == nil)
@@ -285,6 +306,18 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 			mode: "unknown",
 		}
 	}
+
+	// Update span now that we have initParams.
+	if u := initParams.rootPathURI; u != nil {
+		span.SetTag("rootpath", u.String())
+		span.SetTag("repo", u.Repo())
+		span.SetTag("commit", u.Rev())
+	}
+	if err != nil {
+		ext.Error.Set(span, true)
+		span.SetTag("err", err.Error())
+	}
+	span.Finish()
 
 	labels := prometheus.Labels{
 		"success":   success,
@@ -330,6 +363,39 @@ func dialLSPProxy(ctx context.Context) (net.Conn, error) {
 type trackedInitParams struct {
 	mode        string
 	rootPathURI *uri.URI
+}
+
+type replyWithMeta struct {
+	conn *jsonrpc2.Conn
+	meta interface{}
+}
+
+func (r replyWithMeta) ReplyWithError(ctx context.Context, id jsonrpc2.ID, respErr *jsonrpc2.Error) error {
+	meta, err := r.marshalMeta()
+	if err != nil {
+		return err
+	}
+	return r.conn.SendResponse(ctx, &jsonrpc2.Response{ID: id, Meta: meta, Error: respErr})
+}
+
+func (r replyWithMeta) Reply(ctx context.Context, id jsonrpc2.ID, result interface{}) error {
+	meta, err := r.marshalMeta()
+	if err != nil {
+		return err
+	}
+	resp := &jsonrpc2.Response{ID: id, Meta: meta}
+	if err := resp.SetResult(result); err != nil {
+		return err
+	}
+	return r.conn.SendResponse(ctx, resp)
+}
+
+func (r replyWithMeta) marshalMeta() (*json.RawMessage, error) {
+	b, err := json.Marshal(r.meta)
+	if err != nil {
+		return nil, err
+	}
+	return (*json.RawMessage)(&b), nil
 }
 
 var (
