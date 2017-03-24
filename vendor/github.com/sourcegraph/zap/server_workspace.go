@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
@@ -652,9 +653,15 @@ func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddPar
 	// Block until workspace is ready (or fails to become ready).
 	ready := make(chan error)
 	go s.handleWorkspaceTasks(s.parent.bgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
-	if err := <-ready; err != nil {
+	select {
+	case err := <-ready:
+		if err != nil {
+			cancel()
+			return fmt.Errorf("workspace %q failed to become ready: %s", params.Dir, err)
+		}
+	case <-time.After(15 * time.Second):
 		cancel()
-		return fmt.Errorf("workspace %q failed to become ready: %s", params.Dir, err)
+		return fmt.Errorf("workspace %q failed to become ready after 15s", params.Dir)
 	}
 
 	return config.EnsureWorkspaceInGlobalConfig(params.Dir)
