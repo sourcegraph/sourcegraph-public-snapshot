@@ -14,11 +14,12 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -163,11 +164,10 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 		return nil, badRequestError{err.Error()}
 	}
 
-	zr, close, err := s.Store.openReader(ctx, p.Repo, p.Commit)
+	zr, err := s.Store.openReader(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, err
 	}
-	defer close()
 
 	return concurrentFind(ctx, rg, zr)
 }
@@ -178,7 +178,7 @@ func validateParams(p *Params) error {
 	}
 	// Surprisingly this is the same sanity check used in the git source.
 	if len(p.Commit) != 40 {
-		return fmt.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
+		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
 	if p.Pattern == "" {
 		return errors.New("Pattern must be non-empty")
@@ -212,7 +212,7 @@ func (e badRequestError) Error() string    { return e.msg }
 func (e badRequestError) BadRequest() bool { return true }
 
 func isBadRequest(err error) bool {
-	e, ok := err.(interface {
+	e, ok := errors.Cause(err).(interface {
 		BadRequest() bool
 	})
 	return ok && e.BadRequest()

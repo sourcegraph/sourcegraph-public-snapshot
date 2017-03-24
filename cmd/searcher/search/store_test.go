@@ -1,10 +1,11 @@
 package search
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"io/ioutil"
 	"os"
 	"sync/atomic"
@@ -22,12 +23,12 @@ func TestOpenReader(t *testing.T) {
 	returnFetch := make(chan struct{})
 	var gotRepo, gotCommit string
 	var fetchZipCalled int64
-	s.FetchZip = func(ctx context.Context, repo, commit string) ([]byte, error) {
+	s.FetchTar = func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
 		<-returnFetch
 		atomic.AddInt64(&fetchZipCalled, 1)
 		gotRepo = repo
 		gotCommit = commit
-		return emptyZip(t), nil
+		return emptyTar(t), nil
 	}
 
 	// Fetch same commit in parallel to ensure single-flighting works
@@ -36,10 +37,7 @@ func TestOpenReader(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			<-startOpenReader
-			_, close, err := s.openReader(context.Background(), wantRepo, wantCommit)
-			if close != nil {
-				close()
-			}
+			_, err := s.openReader(context.Background(), wantRepo, wantCommit)
 			openReaderErr <- err
 		}()
 	}
@@ -73,22 +71,21 @@ func TestOpenReader(t *testing.T) {
 	if !onDisk {
 		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
 	}
-	_, close, err := s.openReader(context.Background(), wantRepo, wantCommit)
+	_, err := s.openReader(context.Background(), wantRepo, wantCommit)
 	if err != nil {
 		t.Fatal("expected openReader to succeed:", err)
 		return
 	}
-	close()
 }
 
-func TestOpenReader_fetchZipFail(t *testing.T) {
+func TestOpenReader_fetchTarFail(t *testing.T) {
 	fetchErr := errors.New("test")
 	s, cleanup := tmpStore(t)
 	defer cleanup()
-	s.FetchZip = func(ctx context.Context, repo, commit string) ([]byte, error) {
+	s.FetchTar = func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
 		return nil, fetchErr
 	}
-	_, _, err := s.openReader(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, err := s.openReader(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
 	if err != fetchErr {
 		t.Fatalf("expected openReader to fail with %v, failed with %v", fetchErr, err)
 	}
@@ -105,13 +102,13 @@ func tmpStore(t *testing.T) (*Store, func()) {
 	}, func() { os.RemoveAll(d) }
 }
 
-func emptyZip(t *testing.T) []byte {
+func emptyTar(t *testing.T) io.ReadCloser {
 	buf := new(bytes.Buffer)
-	w := zip.NewWriter(buf)
+	w := tar.NewWriter(buf)
 	err := w.Close()
 	if err != nil {
 		t.Fatal(err)
 		return nil
 	}
-	return buf.Bytes()
+	return ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
 }

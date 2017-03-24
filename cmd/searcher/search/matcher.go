@@ -3,7 +3,6 @@ package search
 import (
 	"archive/zip"
 	"bufio"
-	"bytes"
 	"context"
 	"io"
 	"regexp"
@@ -42,7 +41,8 @@ const (
 // The stdlib regexp is pretty powerful and in fact implements many of the
 // features in ripgrep. Our implementation gives high performance via pruning
 // aggressively which files to consider (non-binary under a limit) and
-// optimizing for assuming most lines will not contain a match.
+// optimizing for assuming most lines will not contain a match. The pruning of
+// files is done by the store.
 //
 // If there is no more low-hanging fruit and perf is not acceptable, we could
 // consider an using ripgrep directly (modify it to search zip archives).
@@ -94,13 +94,6 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 		rg.reader = r
 	} else {
 		r.Reset(reader)
-	}
-
-	// Heuristic: Assume file is binary if first 256 bytes contain a
-	// 0x00. Best effort, so ignore err
-	b, _ := r.Peek(256)
-	if bytes.IndexByte(b, 0x00) >= 0 {
-		return nil, nil
 	}
 
 	var matches []LineMatch
@@ -182,9 +175,6 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 	go func() {
 		done := ctx.Done()
 		for _, f := range zr.File {
-			if f.FileHeader.UncompressedSize64 > maxFileSize {
-				continue
-			}
 			select {
 			case files <- f:
 			case <-done:
