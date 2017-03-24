@@ -18,6 +18,16 @@ const (
 	// than this are searched.
 	maxFileSize = 1 << 19 // 512KB
 
+	// maxFileMatches is the limit on number of matching files we return.
+	maxFileMatches = 1000
+
+	// maxLineMatches is the limit on number of matches to return in a
+	// file.
+	maxLineMatches = 100
+
+	// maxOffsets is the limit on number of matches to return on a line.
+	maxOffsets = 10
+
 	// numWorkers is how many concurrent readerGreps run per
 	// concurrentFind
 	numWorkers = 8
@@ -94,7 +104,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 	}
 
 	var matches []LineMatch
-	for i := 1; ; i++ {
+	for i := 1; len(matches) < maxLineMatches; i++ {
 		b, isPrefix, err := r.ReadLine()
 		if isPrefix || err != nil {
 			// We have either found a long line, encountered an
@@ -103,7 +113,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 			// result, so the only case we want to return matches
 			// is if we have reached the end of file.
 			if err == io.EOF {
-				return matches, nil
+				break
 			}
 			return nil, err
 		}
@@ -112,7 +122,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 		// not have a match, so we trade a bit of repeated computation
 		// to avoid unnecessary allocations.
 		if rg.re.Find(b) != nil {
-			locs := rg.re.FindAllIndex(b, -1)
+			locs := rg.re.FindAllIndex(b, maxOffsets)
 			offsetAndLengths := make([][]int, len(locs))
 			for i, match := range locs {
 				start, end := match[0], match[1]
@@ -126,6 +136,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 			})
 		}
 	}
+	return matches, nil
 }
 
 // FindZip is a convenience function to run Find on f.
@@ -153,6 +164,10 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 		}
 		span.Finish()
 	}()
+
+	// If we reach maxFileMatches we use cancel to stop the search
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	var (
 		files     = make(chan *zip.File)
@@ -215,6 +230,12 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 	m := []FileMatch{}
 	for fm := range matches {
 		m = append(m, fm)
+		if len(m) >= maxFileMatches {
+			cancel()
+			// drain matches
+			for range matches {
+			}
+		}
 	}
 	return m, wgErr
 }
