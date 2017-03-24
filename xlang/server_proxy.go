@@ -279,19 +279,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
 		recordClosedServerConn(c.id, stats)
 		if LogServerStats {
-			// Machine parseable to assist post processing
-			msg, _ := json.Marshal(struct {
-				RootPath   string
-				Mode       string
-				PathPrefix string
-				Stats      serverProxyConnStats
-			}{
-				RootPath:   c.id.rootPath.String(),
-				Mode:       c.id.mode,
-				PathPrefix: c.id.pathPrefix,
-				Stats:      stats,
-			})
-			log.Printf("tracked removed serverProxyConn: %s", msg)
+			logInfo("Removed serverProxyConn", c.id.contextID, "stats", stats)
 		}
 	}
 }
@@ -603,7 +591,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if err := json.Unmarshal(*req.Params, &m); err != nil {
 			return nil, err
 		}
-		log.Printf("window/logMessage(%d) %s: %s", m.Type, c.id, m.Message)
+		logWithLevel(formatLSPMessageType(m.Type), "window/logMessage "+m.Message, c.id.contextID, "method", req.Method, "params", req.Params, "id", req.ID)
 		// Log to the span for the server, not for this specific
 		// request.
 		if span := opentracing.SpanFromContext(ctx); span != nil {
@@ -791,4 +779,20 @@ func (c *serverProxyConn) saveDiagnostics(diagnostics lsp.PublishDiagnosticsPara
 		c.diagnostics = map[diagnosticsKey][]lsp.Diagnostic{}
 	}
 	c.diagnostics[diagnosticsKey{serverID: c.id, documentURI: diagnostics.URI}] = diagnostics.Diagnostics
+}
+
+// formatLSPMessageType converts an LSP log MessageType to a log level that logDNA understands
+// https://docs.logdna.com/docs/ingestion#section-level
+func formatLSPMessageType(m lsp.MessageType) string {
+	switch m {
+	case lsp.MTError:
+		return "ERROR"
+	case lsp.MTWarning:
+		return "WARN "
+	case lsp.Info:
+		return "INFO "
+	case lsp.Log:
+		return "DEBUG"
+	}
+	return fmt.Sprintf("UNKNOWN(%d)", int(m))
 }
