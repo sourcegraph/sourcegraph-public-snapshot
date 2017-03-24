@@ -386,22 +386,22 @@ test_repos = [
 ];
 
 all_tests = [
-    # (test_login_logout, "@kingy"),
-    # (test_repo_jump_to, "@john"),
-    # (test_godoc_workflow, "@john"),
-    # (test_direct_link_to_repo, "@nick"),
-    # (test_direct_link_to_directory, "@nick"),
-    # (test_beta_signup, "@kingy"),
-    # (test_first_open_jump_to_line, "@nico"),
-    # (test_browser_extension_app_injection, "@john"),
-    # (test_browser_extension_hover_j2d_blob, "@john"),
-    # (test_browser_extension_hover_j2d_unified_pull_request, "@john"),
-    # (test_browser_extension_hover_j2d_split_pull_request, "@john"),
-    # (test_java_symbol, "@the.other.aaron"),
-    # (test_java_hover, "@the.other.aaron"),
-    # (test_java_def, "@the.other.aaron"),
+    (test_login_logout, "@kingy"),
+    (test_repo_jump_to, "@john"),
+    (test_godoc_workflow, "@john"),
+    (test_direct_link_to_repo, "@nick"),
+    (test_direct_link_to_directory, "@nick"),
+    (test_beta_signup, "@kingy"),
+    (test_first_open_jump_to_line, "@nico"),
+    (test_browser_extension_app_injection, "@john"),
+    (test_browser_extension_hover_j2d_blob, "@john"),
+    (test_browser_extension_hover_j2d_unified_pull_request, "@john"),
+    (test_browser_extension_hover_j2d_split_pull_request, "@john"),
+    (test_java_symbol, "@the.other.aaron"),
+    (test_java_hover, "@the.other.aaron"),
+    (test_java_def, "@the.other.aaron"),
     (test_java_cross_repo, "@the.other.aaron"),
-    # (test_java_global_usages, "@the.other.aaron"),
+    (test_java_global_usages, "@the.other.aaron"),
 ]
 
 global_ref_tests = [{
@@ -413,8 +413,8 @@ global_ref_tests = [{
     "symbol": "Router",
     "global_min": 5,
 }]
-# for test in global_ref_tests:
-#     def test_global_refs_wrap(d):
-# 	return test_global_refs(d, test)
-#     test_global_refs_wrap.func_name = test_global_refs.func_name + '_' + test['symbol'].lower()
-#     all_tests.append((test_global_refs_wrap, '@stephen'))
+for test in global_ref_tests:
+    def test_global_refs_wrap(d):
+	return test_global_refs(d, test)
+    test_global_refs_wrap.func_name = test_global_refs.func_name + '_' + test['symbol'].lower()
+    all_tests.append((test_global_refs_wrap, '@stephen'))
