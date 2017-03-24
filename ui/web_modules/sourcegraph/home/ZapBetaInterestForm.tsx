@@ -1,13 +1,10 @@
 import * as React from "react";
-import { context } from "sourcegraph/app/context";
 import { RouterLocation } from "sourcegraph/app/router";
-import { Button, CheckboxList, Input, Panel, TextArea } from "sourcegraph/components";
+import { Button, CheckboxList, Input, TextArea } from "sourcegraph/components";
 import * as base from "sourcegraph/components/styles/_base.css";
 import { whitespace } from "sourcegraph/components/utils";
-import { editors, languageIDs, languageNames } from "sourcegraph/home/HomeUtils";
-import { langName } from "sourcegraph/Language";
-import { SignupForm } from "sourcegraph/user/Signup";
-import { submitBetaSignupForm } from "sourcegraph/user/SubmitForm";
+import { editors } from "sourcegraph/home/HomeUtils";
+import { submitZapBetaSignupForm } from "sourcegraph/user/SubmitForm";
 
 interface Props {
 	onSubmit?: () => void;
@@ -18,11 +15,11 @@ interface Props {
 }
 
 interface FormData {
-	fullName: string;
+	firstName: string;
+	lastName: string;
 	email: string;
 	company: string;
 	editors: string[];
-	languages: string[];
 	message: string;
 }
 
@@ -33,8 +30,8 @@ interface State {
 	formData: FormData;
 };
 
-export class BetaInterestForm extends React.Component<Props, State> {
-	state: State = { formData: { fullName: "", email: "", company: "", editors: [], languages: [], message: "", } };
+export class ZapBetaInterestForm extends React.Component<Props, State> {
+	state: State = { formData: { firstName: "", lastName: "", email: "", company: "", editors: [], message: "", } };
 
 	componentWillMount(): void {
 		const formData = this.loadStateFromLocalStorage();
@@ -49,27 +46,27 @@ export class BetaInterestForm extends React.Component<Props, State> {
 
 	private saveStateToLocalStorage = (): void => {
 		const formData = this.state.formData;
-		localStorage.setItem("beta-interest-form", JSON.stringify({
-			fullName: formData.fullName,
+		localStorage.setItem("zap-beta-interest-form", JSON.stringify({
+			firstName: formData.firstName,
+			lastName: formData.lastName,
 			email: formData.email,
 			company: formData.company,
 			editors: formData.editors,
-			languages: formData.languages,
 			message: formData.message,
 		}));
 	}
 
 	private loadStateFromLocalStorage = (): FormData | null => {
-		const ls = localStorage.getItem("beta-interest-form");
+		const ls = localStorage.getItem("zap-beta-interest-form");
 		if (ls) {
 			const lsParsed = JSON.parse(ls);
 			return {
-				fullName: lsParsed.fullName || "",
+				firstName: lsParsed.firstName || "",
+				lastName: lsParsed.lastName || "",
 				email: lsParsed.email || "",
 				company: lsParsed.company || "",
 				editors: lsParsed.editors || [],
-				languages: lsParsed.languages || [],
-				message: lsParsed.message || "",
+				message: lsParsed.message.trim() || "",
 			};
 		}
 		return null;
@@ -90,30 +87,19 @@ export class BetaInterestForm extends React.Component<Props, State> {
 	private sendForm = (ev: any): void => {
 		ev.preventDefault();
 		const formData = this.state.formData;
-		let firstName;
-		let lastName;
-		if (formData.fullName) {
-			const names = formData.fullName.split(/\s+/);
-			firstName = names[0];
-			lastName = names.slice(1).join(" ");
-		}
 
 		if (formData.editors.length === 0) {
 			this.setState({ ...this.state, formError: "Please select at least one preferred editor." });
 			return;
 		}
-		if (formData.languages.length === 0) {
-			this.setState({ ...this.state, formError: "Please select at least one preferred language." });
-			return;
-		}
-		submitBetaSignupForm({
+
+		submitZapBetaSignupForm({
 			beta_email: formData.email,
-			firstname: firstName || "",
-			lastname: lastName || "",
+			firstname: formData.firstName,
+			lastname: formData.lastName,
 			company: formData.company,
-			languages_used: formData.languages,
 			editors_used: formData.editors,
-			message: formData.message.trim(),
+			message: formData.message,
 		}).then(resp => {
 			this.setState({ ...this.state, resp });
 		}).catch(respError => {
@@ -125,7 +111,8 @@ export class BetaInterestForm extends React.Component<Props, State> {
 		if (this.state.resp && !this.state.respError) {
 			// Display a "Close" button if there is an onSubmit handler.
 			return (<span>
-				<p>Success! Return to this page any time to update your favorite editors / languages!</p>
+				<hr />
+				<p>Success! Return to this page any time to update your favorite editors!</p>
 				{this.state.resp["EmailAddress"] !== undefined
 					? <p>We'll contact you at <strong>{this.state.resp["EmailAddress"]}</strong> once a beta has begun.</p>
 					: <p>We'll contact you once a beta has begun.</p>}
@@ -133,47 +120,36 @@ export class BetaInterestForm extends React.Component<Props, State> {
 			</span>);
 		}
 
-		if (!context.user) {
-			return <Panel hoverLevel="low" style={{ paddingTop: whitespace[4], textAlign: "center" }}>
-				<p>You must sign up to continue.</p>
-				<SignupForm />
-			</Panel>;
-		}
-
-		let [className, language] = [this.props.className, this.props.language];
-		let betaRegistered = false; // TODO
-
-		let emails = context.emails && context.emails.EmailAddrs;
+		let className = this.props.className;
 		let defaults = this.state.formData;
-
-		if (language) {
-			defaults.languages.push(langName(language));
-		}
 
 		return (
 			<div style={this.props.style}>
-				{betaRegistered && <span>
-					<p>You've already registered. We'll contact you once a beta matching your interests has begun.</p>
-					<p>Feel free to update your favorite editors / languages using the form below.</p>
-				</span>}
 				<form className={className} onSubmit={this.sendForm}>
 					<Input
 						block={true}
 						type="text"
-						name="fullName"
-						placeholder="Name"
+						name="firstName"
+						placeholder="First name"
 						required={true}
-						defaultValue={defaults.fullName}
-						onChange={this.onInputChange("fullName")} />
-					{(!emails || emails.length === 0) &&
-						<Input
-							block={true}
-							type="email"
-							name="email"
-							placeholder="Email address"
-							required={true} defaultValue={defaults.email}
-							onChange={this.onInputChange("email")} />
-					}
+						defaultValue={defaults.firstName}
+						onChange={this.onInputChange("firstName")} />
+					<Input
+						block={true}
+						type="text"
+						name="lastName"
+						placeholder="Last name"
+						required={true}
+						defaultValue={defaults.lastName}
+						onChange={this.onInputChange("lastName")} />
+					<Input
+						block={true}
+						type="email"
+						name="email"
+						placeholder="Email address"
+						required={true}
+						defaultValue={defaults.email}
+						onChange={this.onInputChange("email")} />
 					<Input
 						block={true}
 						type="text"
@@ -188,23 +164,15 @@ export class BetaInterestForm extends React.Component<Props, State> {
 						defaultValues={defaults.editors}
 						style={{ marginBottom: whitespace[3] }}
 						onChange={this.onCheckboxChange("editors")} />
-					<CheckboxList
-						title="Preferred languages"
-						name="languages"
-						labels={languageNames}
-						values={languageIDs}
-						defaultValues={defaults.languages}
-						style={{ marginBottom: whitespace[3] }}
-						onChange={this.onCheckboxChange("languages")} />
 					<TextArea
 						block={true}
 						name="message"
-						placeholder="Other / comments"
+						placeholder="Other editors / comments"
 						defaultValue={defaults.message}
 						onChange={this.onInputChange("message")}>
 					</TextArea>
 					<Button block={true} type="submit" color="purple">
-						{betaRegistered ? "Update my interests" : "Participate in the beta"}
+						Participate in the beta
 					</Button>
 					<div className={base.pb4}>
 						<br />

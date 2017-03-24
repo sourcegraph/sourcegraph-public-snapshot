@@ -41,6 +41,8 @@ func serveSubmitForm(w http.ResponseWriter, r *http.Request) error {
 		form["user_id"] = actor.Login
 	} else if signupEmail := form["signup_email"]; signupEmail != "" {
 		form["email"] = signupEmail
+	} else if betaEmail := form["beta_email"]; betaEmail != "" {
+		form["email"] = betaEmail
 	} else {
 		return errors.New("httpapi.serveSubmitForm: must provide an email address")
 	}

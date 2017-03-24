@@ -6,7 +6,7 @@ import { FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { colors, whitespace } from "sourcegraph/components/utils";
 import { SignupForm } from "sourcegraph/user/Signup";
 
-export function ZapBetaInstructions(): JSX.Element {
+export function ZapInstructions(): JSX.Element {
 
 	const codeSx = {
 		display: "block",

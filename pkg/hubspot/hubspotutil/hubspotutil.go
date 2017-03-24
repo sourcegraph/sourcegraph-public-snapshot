@@ -7,7 +7,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 )
 
-// FormNameToID is a mapping from form names provided by backend or API
+// FormNameToHubSpotID is a mapping from form names provided by backend or API
 // requests to submit HubSpot forms
 //
 // HubSpot IDs are all defined in HubSpot "Forms" web console:
@@ -20,6 +20,8 @@ var FormNameToHubSpotID = map[string]string{
 	"BetaSignupForm": "105a5d66-64e8-4993-bb75-797fb725ab85",
 	// ChangeUserPlan represents the "Change user plan form"
 	"ChangeUserPlan": "198ad76b-a88c-4b79-b026-bf0588bb2f9f",
+	// ZapBetaSignupForm is an identifier for the "Zap Beta Signup" form
+	"ZapBetaSignupForm": "776431cf-bf0d-4318-9275-b14be48805ea",
 }
 
 // EventNameToHubSpotID is a mapping from event names provided by backend

@@ -7,9 +7,9 @@ import { FlexContainer, Heading, Hero } from "sourcegraph/components";
 import { PageTitle } from "sourcegraph/components/PageTitle";
 import { colors, whitespace } from "sourcegraph/components/utils";
 
-import { ZapBetaInstructions } from "sourcegraph/page/ZapBetaInstructions";
+import { ZapInstructions } from "sourcegraph/page/ZapInstructions";
 
-export function ZapBetaPage({ location }: LocationProps): JSX.Element {
+export function ZapPage({ location }: LocationProps): JSX.Element {
 	const zigSx = {
 		background: `linear-gradient(-160deg, #FCFCFD 16px, transparent 0) 0 16px, linear-gradient(160deg,  #FCFCFD 16px, ${colors.blueGrayL2()} 0) 0 16px`,
 		backgroundColor: "white",
@@ -50,6 +50,8 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 						color: "white",
 					}}>
 						This beta feature is currently available for Visual Studio Code on Mac OS X. See below for instructions.
+						< br />
+						<a href="/beta/zap">Sign up</a> for updates on future editor support.
 					</Heading>
 				</FlexContainer>
 
@@ -60,7 +62,7 @@ export function ZapBetaPage({ location }: LocationProps): JSX.Element {
 				}} src={`${context.assetsRoot}/img/zap-lp-illus-1.png`} />
 			</Hero>
 
-			<ZapBetaInstructions />
+			<ZapInstructions />
 
 			<div style={zigSx}></div>
 
