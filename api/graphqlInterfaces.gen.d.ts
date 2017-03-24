@@ -262,6 +262,17 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface ISearchQuery {
+		pattern: string;
+		isRegExp: boolean;
+		isWordMatch: boolean;
+		isCaseSensitive: boolean;
+		maxResults: number;
+	}
+
+	/*
+	  description: null
+	*/
 	interface ISignature {
 		__typename: string;
 		person: IPerson | null;

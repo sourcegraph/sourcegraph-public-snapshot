@@ -71,12 +71,12 @@ export class SearchService implements ISearchService {
 		const workspace = this.contextService.getWorkspace().resource;
 		const { repo, rev } = URIUtils.repoParams(workspace);
 		const search = new PPromise<ISearchComplete, ISearchProgressItem>((complete, error, progress) => {
-			fetchGraphQLQuery(`query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!) {
+			fetchGraphQLQuery(`query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!, $maxResults: Int!) {
 				root {
 					repository(uri: $uri) {
 						commit(rev: $rev) {
 							commit {
-								textSearch(pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive) {
+								textSearch(query: {pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, maxResults: $maxResults}) {
 									path
 									lineMatches {
 										preview
@@ -88,7 +88,7 @@ export class SearchService implements ISearchService {
 						}
 					}
 				}
-			}`, { ...query.contentPattern, rev, uri: repo, }).then(data => {
+			}`, { ...query.contentPattern, rev, uri: repo, maxResults: query.maxResults }).then(data => {
 					if (!data.root.repository || !data.root.repository.commit.commit) {
 						throw new Error("Repository does not exist.");
 					}

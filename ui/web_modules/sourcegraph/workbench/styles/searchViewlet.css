@@ -2,13 +2,48 @@
 	line-height: 40px !important;
 }
 
-:global .search-viewlet .sub-content {
+:global .search-viewlet .sub-content:not(.linematch) {
 	padding-top: 10px;
 }
 
 :global .search-viewlet .primary-action-bar .actions-container {
 	display: none;
 }
+
 :global .search-viewlet .monaco-count-badge {
 	display: inline !important;
+}
+
+:global .search-viewlet .findInFileMatch,
+:global .monaco-editor .findInFileMatch,
+:global .monaco-editor .findMatch {
+	background-color: #5d7eac !important;
+}
+
+:global .search-viewlet .monaco-findInput {
+	--input-bgcolor: #233043 !important;
+	background-color: #233043 !important;
+	padding: 8px;
+	border-radius: 2px;
+}
+
+:global .search-viewlet .monaco-findInput .controls {
+	top: 10px !important;
+}
+
+:global .search-viewlet .monaco-findInput input {
+	font-size: 1rem !important;
+	outline: none;
+}
+
+:global .search-viewlet .search-widget {
+	height: 45px;
+}
+
+:global .search-viewlet .monaco-count-badge {
+	background-color: #233043 !important;
+}
+
+:global .search-viewlet {
+	font-size: 1rem;
 }

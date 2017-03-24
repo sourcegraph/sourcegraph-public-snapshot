@@ -164,44 +164,10 @@
 							{
 								"defaultValue": null,
 								"description": null,
-								"name": "pattern",
+								"name": "query",
 								"type": {
-									"kind": "NON_NULL",
-									"name": null,
-									"ofType": {
-										"kind": "SCALAR",
-										"name": "String",
-										"ofType": null
-									}
-								}
-							},
-							{
-								"defaultValue": "false",
-								"description": null,
-								"name": "isRegExp",
-								"type": {
-									"kind": "SCALAR",
-									"name": "Boolean",
-									"ofType": null
-								}
-							},
-							{
-								"defaultValue": "false",
-								"description": null,
-								"name": "isWordMatch",
-								"type": {
-									"kind": "SCALAR",
-									"name": "Boolean",
-									"ofType": null
-								}
-							},
-							{
-								"defaultValue": "false",
-								"description": null,
-								"name": "isCaseSensitive",
-								"type": {
-									"kind": "SCALAR",
-									"name": "Boolean",
+									"kind": "INPUT_OBJECT",
+									"name": "SearchQuery",
 									"ofType": null
 								}
 							}
@@ -2158,6 +2124,87 @@
 				"interfaces": [],
 				"kind": "OBJECT",
 				"name": "Root",
+				"possibleTypes": null
+			},
+			{
+				"description": null,
+				"enumValues": null,
+				"fields": null,
+				"inputFields": [
+					{
+						"defaultValue": null,
+						"description": null,
+						"name": "pattern",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "String",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"defaultValue": null,
+						"description": null,
+						"name": "isRegExp",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"defaultValue": null,
+						"description": null,
+						"name": "isWordMatch",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"defaultValue": null,
+						"description": null,
+						"name": "isCaseSensitive",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Boolean",
+								"ofType": null
+							}
+						}
+					},
+					{
+						"defaultValue": null,
+						"description": null,
+						"name": "maxResults",
+						"type": {
+							"kind": "NON_NULL",
+							"name": null,
+							"ofType": {
+								"kind": "SCALAR",
+								"name": "Int",
+								"ofType": null
+							}
+						}
+					}
+				],
+				"interfaces": null,
+				"kind": "INPUT_OBJECT",
+				"name": "SearchQuery",
 				"possibleTypes": null
 			},
 			{

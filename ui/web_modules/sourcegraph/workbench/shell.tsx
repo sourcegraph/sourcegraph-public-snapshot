@@ -37,17 +37,11 @@ export class WorkbenchShell extends React.Component<Props, State> {
 	workbench: Workbench;
 	services: ServiceCollection;
 	listener: number;
-	disposables: IDisposable[];
+	disposables: IDisposable[] = [];
 	currWorkspace: IWorkspace;
-
-	constructor(props: Props) {
-		super(props);
-		this.state = {
-			diffMode: Boolean(this.props.zapRef),
-		};
-		this.disposables = [];
-		this.disposables.push(workbenchStore.subscribe(e => this.setState(e)));
-	}
+	state: State = {
+		diffMode: Boolean(this.props.zapRef),
+	};
 
 	domRef(parent: HTMLDivElement): void {
 		if (!parent) {
@@ -73,6 +67,7 @@ export class WorkbenchShell extends React.Component<Props, State> {
 	componentWillMount(): void {
 		window.onresize = debounce(this.layout, 50);
 		document.body.classList.add("monaco-shell", "vs-dark");
+		this.disposables.push(workbenchStore.subscribe(e => this.setState(e)));
 	}
 
 	componentDidMount(): void {
@@ -132,7 +127,7 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		if (window.innerWidth <= 768) {
 			// Mobile device, width less than 768px.
 			this.workbench.setSideBarHidden(true);
-		} else {
+		} else if ((this.workbench as any).sidebarHidden) {
 			this.workbench.setSideBarHidden(false);
 		}
 		this.workbench.layout();

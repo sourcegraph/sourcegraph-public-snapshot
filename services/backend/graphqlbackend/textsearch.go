@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -33,6 +32,7 @@ type patternInfo struct {
 	IsRegExp        bool
 	IsWordMatch     bool
 	IsCaseSensitive bool
+	MaxResults      int32
 	// We do not support IsMultiline
 	//IsMultiline     bool
 }
@@ -63,15 +63,22 @@ func (lm *lineMatch) Preview() string {
 }
 
 func (lm *lineMatch) LineNumber() int32 {
-	return lm.JLineNumber + 1
+	return lm.JLineNumber - 1
 }
 
 func (lm *lineMatch) OffsetAndLengths() [][]int32 {
 	return lm.JOffsetAndLengths
 }
 
-func (r *commitResolver) TextSearch(ctx context.Context, info *patternInfo) ([]*fileMatch, error) {
-	return textSearch(ctx, r.repo.URI, r.commit.CommitID, info)
+func (r *commitResolver) TextSearch(ctx context.Context, args *struct{ Query *patternInfo }) ([]*fileMatch, error) {
+	results, err := textSearch(ctx, r.repo.URI, r.commit.CommitID, args.Query)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) > int(args.Query.MaxResults) {
+		results = results[:args.Query.MaxResults]
+	}
+	return results, nil
 }
 
 func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fileMatch, error) {
@@ -172,7 +179,7 @@ func accumulate(responses <-chan []repoMatch, result chan<- []repoMatch) {
 		if a != b {
 			return a < b
 		}
-		return strings.Compare(flattened[i].uri.Path, flattened[j].uri.Path) < 0
+		return flattened[i].uri.Path < flattened[j].uri.Path
 	})
 	result <- flattened
 }

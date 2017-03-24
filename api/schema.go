@@ -92,11 +92,19 @@ type RevState {
 	cloneInProgress: Boolean!
 }
 
+input SearchQuery {
+	pattern: String!
+	isRegExp: Boolean!
+	isWordMatch: Boolean!
+	isCaseSensitive: Boolean!
+	maxResults: Int!
+}
+
 type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
-	textSearch(pattern: String!, isRegExp: Boolean = false, isWordMatch: Boolean = false, isCaseSensitive: Boolean = false): [FileMatch!]!
+	textSearch(query: SearchQuery): [FileMatch!]!
 	file(path: String!): File
 	languages: [String!]!
 }
