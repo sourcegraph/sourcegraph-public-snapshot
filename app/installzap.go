@@ -59,14 +59,14 @@ main() {
 
 	if [[ "$_os" == "darwin" ]]; then
 		log "Downloading the latest zap binary..."
-		curl "https://storage.googleapis.com/sourcegraph-zap/updates/bin/zap-main-${_os}-${_arch}-latest" -Sf --progress > /tmp/zap
+		curl "https://storage.googleapis.com/sourcegraph-zap/updates/bin/zap-main-${_os}-${_arch}-latest" -Sf --connect-timeout 30 --progress > /tmp/zap
 		must cp /tmp/zap /usr/local/bin/zap
 		must chmod +x /usr/local/bin/zap
 		must rm /tmp/zap
 		log "Successfully installed Zap to /usr/local/bin/zap"
 	elif [[ "$_os" == "linux" ]]; then
 		log "Downloading the latest zap binary..."
-		curl "https://storage.googleapis.com/sourcegraph-zap/updates/bin/zap-main-${_os}-${_arch}-latest" -Sf --progress > /tmp/zap
+		curl "https://storage.googleapis.com/sourcegraph-zap/updates/bin/zap-main-${_os}-${_arch}-latest" -Sf --connect-timeout 30 --progress > /tmp/zap
 		# Linux requires sudo to write into /usr/local/bin
 		sudo_prompt "You will now be prompted for your sudo password (so we can install the binary to /usr/local/bin)"
 		must sudo cp /tmp/zap /usr/local/bin/zap
