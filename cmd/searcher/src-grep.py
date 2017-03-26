@@ -53,13 +53,12 @@ query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isW
 domain = 'http://localhost:3080' if args.dev else 'https://sourcegraph.com'
 r = requests.post(domain + '/.api/graphql', json=graphql)
 sys.stderr.write('X-Trace: ' + r.headers['X-Trace'] + '\n')
-print r.json()
 matches = r.json()["data"]["root"]["repository"]["commit"]["commit"]["textSearch"]
 for fm in matches:
     for lm in fm['lineMatches']:
 	if args.url:
 	    repo_path = args.repo if args.rev == 'HEAD' else (args.repo + '@' + args.rev)
-	    lrange = 'L%d:%d-%d:%d' % (lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0], lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + lm['offsetAndLengths'][0][1])
+	    lrange = 'L%d:%d-%d:%d' % (lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + 1, lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + lm['offsetAndLengths'][0][1] + 1)
 	    print('%s/%s/-/blob/%s#%s %s' % (domain, repo_path, fm['path'], lrange, lm['preview']))
 	else:
 	    print('%s:%d:%s' % (fm['path'], lm['lineNumber'], lm['preview']))
