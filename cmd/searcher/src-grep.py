@@ -59,7 +59,7 @@ for fm in matches:
     for lm in fm['lineMatches']:
 	if args.url:
 	    repo_path = args.repo if args.rev == 'HEAD' else (args.repo + '@' + args.rev)
-	    lrange = 'L%d:%d-%d:%d' % (lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0], lm['lineNumber'] + 1, lm['offsetAndLengths'][0][1])
+	    lrange = 'L%d:%d-%d:%d' % (lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0], lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + lm['offsetAndLengths'][0][1])
 	    print('%s/%s/-/blob/%s#%s %s' % (domain, repo_path, fm['path'], lrange, lm['preview']))
 	else:
 	    print('%s:%d:%s' % (fm['path'], lm['lineNumber'], lm['preview']))
