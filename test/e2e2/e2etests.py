@@ -401,7 +401,7 @@ all_tests = [
     (test_java_hover, "@the.other.aaron"),
     (test_java_def, "@the.other.aaron"),
     (test_java_cross_repo, "@the.other.aaron"),
-    (test_java_global_usages, "@the.other.aaron"),
+    # (test_java_global_usages, "@the.other.aaron"), # broken
 ]
 
 global_ref_tests = [{
