@@ -26,6 +26,7 @@ import (
 )
 
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
+var cacheDir = env.Get("SEARCHER_CACHE_DIR", "/tmp/searcher-archive-store", "directory to store cached archives.")
 
 func main() {
 	env.Lock()
@@ -41,7 +42,7 @@ func main() {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: fetchTar,
-			Path:     "/tmp/searcher-archive-store",
+			Path:     cacheDir,
 		},
 	}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
