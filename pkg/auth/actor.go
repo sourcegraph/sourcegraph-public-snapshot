@@ -75,8 +75,7 @@ func (a *Actor) AuthInfo() *sourcegraph.AuthInfo {
 type key int
 
 const (
-	actorKey   key = iota
-	sessionKey key = iota
+	actorKey key = iota
 )
 
 func ActorFromContext(ctx context.Context) *Actor {
@@ -96,24 +95,4 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 
 func WithoutActor(ctx context.Context) context.Context {
 	return context.WithValue(ctx, actorKey, nil)
-}
-
-// HACK: Zap remote server does auth checks based on the sg-session cookie.
-// This allows it to be forwarded to the zap server from the graphql API.
-//
-// Do not use for anything other than zap, this will be removed.
-func WithSession(ctx context.Context, s string) context.Context {
-	return context.WithValue(ctx, sessionKey, s)
-}
-
-func SessionFromContext(ctx context.Context) string {
-	s, ok := ctx.Value(sessionKey).(string)
-	if !ok {
-		return ""
-	}
-	return s
-}
-
-func WithoutSession(ctx context.Context) context.Context {
-	return context.WithValue(ctx, sessionKey, nil)
 }
