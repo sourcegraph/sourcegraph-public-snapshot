@@ -2,13 +2,11 @@ package zap
 
 import (
 	"context"
-	"sort"
 	"strings"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/zap/internal/debugutil"
-	"github.com/sourcegraph/zap/server/refdb"
 )
 
 // broadcastRefUpdate enqueues a ref update (either to a symbolic ref
@@ -16,47 +14,37 @@ import (
 // sender.
 //
 // Exactly 1 of the nonSymbolic and symbolic parameters must be set.
-func (s *Server) broadcastRefUpdate(ctx context.Context, logger log.Logger, updatedRefs []refdb.Ref, sender *serverConn, nonSymbolic *RefUpdateDownstreamParams, symbolic *RefUpdateSymbolicParams) error {
-	if ctx == nil {
-		panic("ctx == nil")
-	}
-
+func (s *Server) broadcastRefUpdate(ctx context.Context, logger log.Logger, sender *serverConn, nonSymbolic *RefUpdateDownstreamParams, symbolic *RefUpdateSymbolicParams) error {
 	debugutil.SimulateLatency()
 
-	var repo string
+	if (nonSymbolic == nil) == (symbolic == nil) {
+		panic("exactly 1 of nonSymbolic and symbolic must be set")
+	}
+
+	var refID RefIdentifier
 	if nonSymbolic != nil {
-		repo = nonSymbolic.RefIdentifier.Repo
+		refID = nonSymbolic.RefIdentifier
 	} else {
-		repo = symbolic.RefIdentifier.Repo
-	}
-	makeRefUpdateItem := func(ref string, ack bool) refUpdateItem {
-		if nonSymbolic != nil {
-			params := *nonSymbolic // copy
-			params.RefIdentifier.Ref = ref
-			params.Ack = ack
-			return refUpdateItem{nonSymbolic: &params}
-		}
-		params := *symbolic // copy
-		params.RefIdentifier.Ref = ref
-		params.Ack = ack
-		return refUpdateItem{symbolic: &params}
+		refID = symbolic.RefIdentifier
 	}
 
-	sort.Sort(sortableRefs(updatedRefs))
-	for _, ref := range updatedRefs {
-		refID := RefIdentifier{Repo: repo, Ref: ref.Name}
-		if watchers := s.watchers(refID); len(watchers) > 0 {
-			level.Debug(logger).Log("broadcast-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "))
+	if watchers := s.watchers(refID); len(watchers) > 0 {
+		level.Debug(logger).Log("broadcast-ref-update", refID, "watchers", strings.Join(clientIDs(watchers), " "))
 
-			for _, c := range watchers {
-				// Send the update with the ref name that the client
-				// is watching as (e.g., "HEAD" not "master" if they
-				// are only watching HEAD).
-				//
-				// Also set Ack = true if this is being sent to the
-				// original sender.
-				c.send(ctx, logger, makeRefUpdateItem(ref.Name, c == sender))
+		for _, c := range watchers {
+			// Set Ack = true if this is being sent to the
+			// original sender.
+			ack := c == sender
+
+			var item refUpdateItem
+			if nonSymbolic != nil {
+				item.nonSymbolic = nonSymbolic // copy
+				item.nonSymbolic.Ack = ack
+			} else {
+				item.symbolic = symbolic // copy
+				item.symbolic.Ack = ack
 			}
+			c.send(ctx, logger, item)
 		}
 	}
 	return nil

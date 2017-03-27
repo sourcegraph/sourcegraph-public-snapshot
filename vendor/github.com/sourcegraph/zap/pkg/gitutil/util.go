@@ -5,14 +5,6 @@ import (
 	"strings"
 )
 
-// splitLines is like strings.Split(s, "\n"), but if s is empty, it returns nil
-func splitLines(s string) []string {
-	if s == "" {
-		return nil
-	}
-	return strings.Split(s, "\n")
-}
-
 func splitNulls(s string) []string {
 	if s == "" {
 		return nil

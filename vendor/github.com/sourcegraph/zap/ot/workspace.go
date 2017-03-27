@@ -592,12 +592,6 @@ func bufferToFilePath(p string) (string, error) {
 	return "/" + p[1:], nil
 }
 
-func panicIfFileOrBufferPath(path string) {
-	if strings.HasPrefix(path, "#") || strings.HasPrefix(path, "/") {
-		panic(fmt.Sprintf("unexpected file or buffer path %q", path))
-	}
-}
-
 func panicIfNotFileOrBufferPath(path string) {
 	if !strings.HasPrefix(path, "#") && !strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("path %q is not a buffer or file path", path))
@@ -612,20 +606,6 @@ func isBufferPath(path string) bool {
 func isFilePath(path string) bool {
 	panicIfNotFileOrBufferPath(path)
 	return strings.HasPrefix(path, "/")
-}
-
-func stripBufferPath(path string) string {
-	if !strings.HasPrefix(path, "#") {
-		panic(fmt.Sprintf("expected path %q to have '#' prefix", path))
-	}
-	return strings.TrimPrefix(path, "#")
-}
-
-func stripFilePath(path string) string {
-	if !strings.HasPrefix(path, "/") {
-		panic(fmt.Sprintf("expected path %q to have '/' prefix", path))
-	}
-	return strings.TrimPrefix(path, "/")
 }
 
 func stripFileOrBufferPath(path string) string {

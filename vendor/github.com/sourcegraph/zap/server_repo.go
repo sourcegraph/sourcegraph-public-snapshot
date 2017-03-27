@@ -5,43 +5,23 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/zap/internal/pkg/mutexmap"
 	"github.com/sourcegraph/zap/pkg/fpath"
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
 type serverRepo struct {
 	repoDir string
-	refdb   refdb.RefDB // the repo's refdb (safe for concurrent access)
+	refdb   *refdb.SyncRefDB // the repo's refdb (safe for concurrent access)
 
 	mu sync.Mutex
 	// workspace:
 	workspace       Workspace // set for non-bare repos added via workspace/add
 	workspaceCancel func()    // tear down workspace
 	config          RepoConfiguration
-
-	refLocks     mutexmap.MutexMap
-	refUpdatedAt map[string]time.Time
-}
-
-// acquireRef acquires an exclusive lock that allows the holder to
-// perform operations on the named ref. The release func must be
-// called to release the lock.
-//
-// Callers can use the following to hold the lock for the remaining
-// execution of the current function:
-//
-//   defer repo.acquireRef(refName)()
-func (s *serverRepo) acquireRef(refName string) (release func()) {
-	CheckRefName(refName)
-	lock := s.refLocks.Get(refName)
-	lock.Lock()
-	return lock.Unlock
 }
 
 func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string) (*serverRepo, error) {
@@ -57,7 +37,7 @@ func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string)
 	// it. For example, a local server will not desire this because all
 	// repositories should be created via workspace/add (e.g. zap init) not
 	// implicitly.
-	if !s.backend.CanAutoCreate() {
+	if !s.Backend.CanAutoCreate() {
 		return nil, &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRepoNotExists),
 			Message: fmt.Sprintf("repo not found: %s (add it with 'zap init')", repoDir),
@@ -70,7 +50,7 @@ func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string)
 	if !exists {
 		repo = &serverRepo{
 			repoDir: repoDir,
-			refdb:   refdb.NewMemoryRefDB(),
+			refdb:   refdb.Sync(refdb.NewMemoryRefDB()),
 		}
 		s.repos[fpath.Key(repoDir)] = repo
 	}
@@ -78,7 +58,7 @@ func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string)
 }
 
 func (s *Server) getRepoIfExists(ctx context.Context, logger log.Logger, repoDir string) (*serverRepo, error) {
-	ok, err := s.backend.CanAccess(ctx, logger, repoDir)
+	ok, err := s.Backend.CanAccess(ctx, logger, repoDir)
 	if err != nil {
 		return nil, err
 	}
@@ -95,20 +75,31 @@ func (s *Server) getRepoIfExists(ctx context.Context, logger log.Logger, repoDir
 }
 
 // resolveRefShortName resolves a ref fuzzy name to the ref it refers
-// to. For example, a fuzzy name of "foo" would resolve to
-// "branch/foo" (assuming no ref exists whose full name is "foo").
+// to (and if symbolic ref, its target ref as well). For example, a
+// fuzzy name of "foo" would resolve to "branch/foo" (assuming no ref
+// exists whose full name is "foo").
+//
+// The behavior is identical to (*refdb.SyncRefDB).Resolve, except
+// that the primary ref is looked up fuzzily.
 //
 // Only the "ref/info" method should resolve fuzzy names; other
 // methods should require full ref names to avoid ambiguity.
-func (s *serverRepo) lookupRefByFuzzyName(fuzzy string) *refdb.Ref {
-	ref := s.refdb.Lookup(fuzzy)
-	if ref == nil {
+func (s *serverRepo) resolveRefByFuzzyName(fuzzy string) (ref refdb.OwnedRef, target *refdb.OwnedRef) {
+	ref = s.refdb.Lookup(fuzzy)
+	if ref.Ref == nil {
+		ref.Unlock()
 		ref = s.refdb.Lookup("branch/" + fuzzy)
-		if ref != nil {
-			CheckRefName(ref.Name)
+	}
+	if ref.Ref != nil {
+		CheckRefName(ref.Ref.Name)
+
+		// Resolve target.
+		if ref.Ref.Target != "" && ref.Ref.Target != ref.Ref.Name {
+			targetRef := s.refdb.Lookup(ref.Ref.Target)
+			target = &targetRef
 		}
 	}
-	return ref
+	return ref, target
 }
 
 func (c *serverConn) handleRepoWatch(ctx context.Context, logger log.Logger, repo *serverRepo, params RepoWatchParams) error {
@@ -189,17 +180,7 @@ func (c *serverConn) handleRepoWatch(ctx context.Context, logger log.Logger, rep
 	return nil
 }
 
-func excludeSymbolicRefs(refs []refdb.Ref) []refdb.Ref {
-	refs2 := make([]refdb.Ref, 0, len(refs))
-	for _, ref := range refs {
-		if !ref.IsSymbolic() {
-			refs2 = append(refs2, ref)
-		}
-	}
-	return refs2
-}
-
-func refsMatchingRefspecs(db refdb.RefDB, refspecs []string) []refdb.Ref {
+func refsMatchingRefspecs(db *refdb.SyncRefDB, refspecs []string) []refdb.Ref {
 	refs := map[string]refdb.Ref{}
 	for _, refspec := range refspecs {
 		for _, ref := range db.List(refspec) {
@@ -222,22 +203,4 @@ func matchAnyRefspec(refspecs []string, ref string) bool {
 		}
 	}
 	return false
-}
-
-var testDoNotSetTime bool // used in tests to avoid needing to mock time.Now()
-
-// setRefUpdatedAt updates the ref's updated-at time.
-//
-// TODO(sqs): these are never deleted; entries should be deleted when
-// the ref is deleted.
-func (s *serverRepo) setRefUpdatedAt(ref string) {
-	if testDoNotSetTime {
-		return
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.refUpdatedAt == nil {
-		s.refUpdatedAt = map[string]time.Time{}
-	}
-	s.refUpdatedAt[ref] = time.Now()
 }

@@ -51,8 +51,7 @@ type serverConn struct {
 }
 
 const (
-	sendBufferSize = 50
-	sendTimeout    = 20 * time.Second
+	sendTimeout = 20 * time.Second
 )
 
 var (
@@ -373,13 +372,19 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 
-		var ref *refdb.Ref
+		var ref refdb.OwnedRef
+		var target *refdb.OwnedRef
 		if params.Fuzzy {
-			ref = repo.lookupRefByFuzzyName(params.Ref)
+			ref, target = repo.resolveRefByFuzzyName(params.Ref)
 		} else {
-			ref = repo.refdb.Lookup(params.Ref)
+			ref, target = repo.refdb.Resolve(params.Ref)
 		}
-		if ref == nil {
+		defer ref.Unlock()
+		if target != nil {
+			defer target.Unlock()
+		}
+
+		if ref.Ref == nil {
 			return nil, &jsonrpc2.Error{
 				Code: int64(ErrorCodeRefNotExists),
 				// TODO(slimsag): do not use CLI instructions here, instead
@@ -389,27 +394,21 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 		res := RefInfo{
-			RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Name}, // use resolved (not fuzzy) name
-			Target:        ref.Target,
+			RefIdentifier: RefIdentifier{Repo: params.Repo, Ref: ref.Ref.Name}, // use resolved (not fuzzy) name
+			Target:        ref.Ref.Target,
 		}
-		if ref.IsSymbolic() {
-			ref, err = repo.refdb.Resolve(ref.Name)
-			if err != nil {
-				return nil, &jsonrpc2.Error{
-					Code:    int64(ErrorCodeSymbolicRefInvalid),
-					Message: fmt.Sprintf("symbolic ref resolution error: %s", err),
-				}
+		if ref.Ref.IsSymbolic() && (target == nil || target.Ref == nil) {
+			return nil, &jsonrpc2.Error{
+				Code:    int64(ErrorCodeSymbolicRefInvalid),
+				Message: fmt.Sprintf("symbolic ref %q resolution error: target %s", ref.Ref.Name, ref.Ref.Target),
 			}
 		}
 
-		// TODO(sqs): it is slightly racy (in a logical sense, not in
-		// a memory corruption sense) to not hold BOTH the symbolic
-		// ref and its target here (we only lock the target ref). we
-		// might return a state of the target ref that was never in
-		// existence when the symbolic ref pointed to it.
-		defer repo.acquireRef(ref.Name)()
-
-		if o, ok := ref.Object.(serverRef); ok {
+		o, ok := ref.Ref.Object.(serverRef)
+		if !ok && target != nil {
+			o, _ = target.Ref.Object.(serverRef)
+		}
+		if o != (serverRef{}) {
 			res.State = &RefState{
 				RefBaseInfo: RefBaseInfo{GitBase: o.gitBase, GitBranch: o.gitBranch},
 				History:     o.history(),
@@ -417,9 +416,6 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			if res.State.History == nil {
 				res.State.History = []ot.WorkspaceOp{}
 			}
-			repo.mu.Lock()
-			res.UpdatedAt = repo.refUpdatedAt[ref.Name]
-			repo.mu.Unlock()
 
 			// Extra diagnostics
 			res.Wait = o.ot.Wait
@@ -453,7 +449,13 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			return nil, err
 		}
 		ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
-		if ref == nil {
+		unlockedRef := false
+		defer func() {
+			if !unlockedRef {
+				ref.Unlock()
+			}
+		}()
+		if ref.Ref == nil {
 			return nil, &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRefNotExists),
 				Message: fmt.Sprintf("configure called on nonexistent ref: %s", params.RefIdentifier.Ref),
@@ -485,7 +487,7 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			if config.Refs == nil {
 				config.Refs = map[string]RefConfiguration{}
 			}
-			config.Refs[ref.Name] = params.RefConfiguration
+			config.Refs[ref.Ref.Name] = params.RefConfiguration
 			return nil
 		})
 		if err != nil {
@@ -499,6 +501,8 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
+		ref.Unlock() // not ideal we need to do this, but applyRepoConfiguration expects to be able to lock it
+		unlockedRef = true
 		if err := c.server.applyRepoConfiguration(ctx, logger, params.RefIdentifier.Repo, repo, oldConfig, newConfig); err != nil {
 			return nil, err
 		}
@@ -518,7 +522,9 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.handleRefUpdateFromDownstream(ctx, logger, repo, params, c, true, true); err != nil {
+		ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
+		defer ref.Unlock()
+		if err := c.server.handleRefUpdateFromDownstream(ctx, logger, repo, ref, params, c, true); err != nil {
 			level.Error(logger).Log("params", params, "err", err)
 			return nil, err
 		}
@@ -538,7 +544,9 @@ func (c *serverConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			return nil, err
 		}
-		if err := c.server.handleSymbolicRefUpdate(ctx, logger, c, repo, params); err != nil {
+		ref := repo.refdb.Lookup(params.RefIdentifier.Ref)
+		defer ref.Unlock()
+		if err := c.server.handleSymbolicRefUpdate(ctx, logger, c, repo, ref, nil, params); err != nil {
 			return nil, err
 		}
 		return nil, nil
@@ -599,7 +607,9 @@ func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
 		if ref.IsSymbolic() {
 			info.Target = ref.Target
 		} else {
-			release := repo.acquireRef(ref.Name)
+			// Acquire exclusive ref lock so we can safely access its
+			// Object field.
+			ownedRef := repo.refdb.Lookup(ref.Name)
 			refObj := ref.Object.(serverRef)
 			info.State = &RefState{
 				RefBaseInfo: RefBaseInfo{
@@ -608,10 +618,7 @@ func (c *serverConn) refsInRepo(repoName string, repo *serverRepo) []RefInfo {
 				},
 				History: refObj.history(),
 			}
-			repo.mu.Lock()
-			info.UpdatedAt = repo.refUpdatedAt[ref.Name]
-			repo.mu.Unlock()
-			release()
+			ownedRef.Unlock()
 		}
 
 		watchers := c.server.watchers(RefIdentifier{Repo: repoName, Ref: ref.Name})

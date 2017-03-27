@@ -24,14 +24,7 @@ type UpstreamClient interface {
 	Close() error
 }
 
-// ConfigureRemoteClientFunc sets the func that this server calls to
-// connect to upstream servers.
-func (s *Server) ConfigureRemoteClientFunc(newClient func(ctx context.Context, endpoint string) (UpstreamClient, error)) {
-	if s.remotes.newClient != nil {
-		panic("(serverRemotes).newClient is already set")
-	}
-	s.remotes.newClient = newClient
-}
+type NewClientFunc func(ctx context.Context, endpoint string) (UpstreamClient, error)
 
 type serverRemotes struct {
 	parent *Server
@@ -39,18 +32,18 @@ type serverRemotes struct {
 	mu   sync.Mutex
 	conn map[string]UpstreamClient // remote endpoint -> client
 
-	newClient func(ctx context.Context, endpoint string) (UpstreamClient, error)
+	newClient NewClientFunc
 }
 
 func (sr *serverRemotes) getOrCreateClient(ctx context.Context, logger log.Logger, endpoint string) (UpstreamClient, error) {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if sr.newClient == nil {
-		panic("(serverRemotes).newClient must be set with (*Server).ConfigureRemoteClientFunc")
+		panic("(serverRemotes).newClient must be set during initialization")
 	}
 	cl, ok := sr.conn[endpoint]
 	if !ok {
-		ctx := sr.parent.bgCtx // use background context since this isn't tied to a specific request
+		ctx := sr.parent.BgCtx // use background context since this isn't tied to a specific request
 
 		var err error
 		debugutil.SimulateLatency()
@@ -139,11 +132,10 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, logger log.Logger, en
 				for refName, refConfig := range repoConfig.Refs {
 					do := func() error {
 						// Wrap in func so we can defer here.
-						defer repo.acquireRef(refName)()
-
 						ref := repo.refdb.Lookup(refName)
-						if refConfig.Overwrite && refConfig.Upstream == remoteName && ref != nil {
-							o := ref.Object.(serverRef)
+						defer ref.Unlock()
+						if refConfig.Overwrite && refConfig.Upstream == remoteName && ref.Ref != nil {
+							o := ref.Ref.Object.(serverRef)
 							return cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 								RefIdentifier: RefIdentifier{Repo: remote.Repo, Ref: refName},
 								Force:         true,

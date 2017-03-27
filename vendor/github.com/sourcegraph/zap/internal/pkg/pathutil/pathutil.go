@@ -5,12 +5,6 @@ import (
 	"strings"
 )
 
-func panicIfFileOrBufferPath(path string) {
-	if strings.HasPrefix(path, "#") || strings.HasPrefix(path, "/") {
-		panic(fmt.Sprintf("unexpected file or buffer path %q", path))
-	}
-}
-
 func panicIfNotFileOrBufferPath(path string) {
 	if !strings.HasPrefix(path, "#") && !strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("path %q is not a buffer or file path", path))

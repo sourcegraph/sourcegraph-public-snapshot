@@ -127,7 +127,10 @@ func main() {
 	fmt.Fprintln(os.Stderr, "zap: listening on", addr)
 
 	ctx := context.Background()
-	zapServer.Start(ctx)
+	zapServer := zap.NewServer(zap.ServerConfig{
+		BgCtx:   ctx,
+		Backend: zapServerBackend,
+	})
 	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(auth.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -163,7 +166,7 @@ func listen(urlStr string) (string, net.Listener, error) {
 	return "ws://" + lis.Addr().String(), lis, nil
 }
 
-var zapServer = zap.NewServer(zapgit.ServerBackend{
+var zapServerBackend = zapgit.ServerBackend{
 	CanAccessRepo: func(ctx context.Context, log log.Logger, repo string) (ok bool, err error) {
 		logResult := func(ok bool, err error) {
 			actor := auth.ActorFromContext(ctx)
@@ -218,7 +221,7 @@ var zapServer = zap.NewServer(zapgit.ServerBackend{
 		}, nil
 	},
 	CanAutoCreateRepo: func() bool { return true },
-})
+}
 
 type gitserverExecutor struct {
 	repoPath string

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/zap/internal/debugutil"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
-	"github.com/sourcegraph/zap/ws"
 )
 
 // watchers returns a list of connections that are watching this
@@ -33,7 +32,7 @@ func (s *Server) watchers(ref RefIdentifier) (conns []*serverConn) {
 
 type serverRef struct {
 	gitBase, gitBranch string // values given when created via (ServerBackend).Create
-	ot                 *ws.Proxy
+	ot                 *ot.Proxy
 }
 
 // TODO(sqs): make immutable
@@ -46,7 +45,7 @@ func (r serverRef) rev() int {
 
 // TODO(sqs): make immutable
 func (r serverRef) history() []ot.WorkspaceOp {
-	return r.ot.History()
+	return r.ot.History
 }
 
 // doApplyRefUpstreamConfiguration sets up the given ref to track a
@@ -62,21 +61,15 @@ func (r serverRef) history() []ot.WorkspaceOp {
 //
 // If sendCurrentState, the server immediately sends the current state
 // of the ref upstream.
-//
-// The caller MUST hold the repo.acquireRef lock for the given ref.
-func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger, repo *serverRepo, refID RefIdentifier, ref *refdb.Ref, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState, acquireRef bool) error {
+func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger, repo *serverRepo, refID RefIdentifier, ref refdb.OwnedRef, oldRepoConfig, newRepoConfig RepoConfiguration, force, sendCurrentState bool) error {
 	CheckRefName(refID.Ref)
 
 	oldConfig := oldRepoConfig.Refs[refID.Ref]
 	newConfig := newRepoConfig.Refs[refID.Ref]
 
-	if acquireRef {
-		defer repo.acquireRef(refID.Ref)()
-	}
-
 	var refObj *serverRef
-	if ref != nil && ref.Object != nil {
-		v := ref.Object.(serverRef)
+	if ref.Ref != nil && ref.Ref.Object != nil {
+		v := ref.Ref.Object.(serverRef)
 		refObj = &v
 	}
 
@@ -106,7 +99,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 		logger := log.With(logger, "set-upstream", newConfig.Upstream, "overwrite", newConfig.Overwrite)
 		level.Debug(logger).Log()
 
-		upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: ref.Name}
+		upstreamRefID := RefIdentifier{Repo: newRemote.Repo, Ref: ref.Ref.Name}
 		if sendCurrentState {
 			if newConfig.Overwrite {
 				cl, err := s.remotes.getOrCreateClient(ctx, logger, newRemote.Endpoint)
@@ -131,14 +124,15 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 			} else {
 				trackingRefName := "remote/" + newConfig.Upstream + "/" + refID.Ref
 				trackingRef := repo.refdb.Lookup(trackingRefName)
-				if trackingRef == nil {
+				defer trackingRef.Unlock()
+				if trackingRef.Ref == nil {
 					return &jsonrpc2.Error{
 						Code:    int64(ErrorCodeRefNotExists),
 						Message: fmt.Sprintf("unable to set local ref %q to track nonexistent remote tracking branch %q (set overwrite=true on the ref to create it)", refID.Ref, trackingRefName),
 					}
 				}
 
-				if err := s.reconcileRefWithTrackingRef(ctx, logger, repo, refID, *ref, *trackingRef, newConfig); err != nil {
+				if err := s.reconcileRefWithTrackingRef(ctx, logger, repo, refID, ref, *trackingRef.Ref, newConfig); err != nil {
 					return err
 				}
 			}
@@ -189,7 +183,10 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 				if newConfig.Overwrite {
 					// Only force push the history that the upstream already knows about.
 					// If that succeeds, then we will retry applying the op.
-					if ref := repo.refdb.Lookup(refID.Ref); ref != nil {
+					//
+					// We already hold the lock on refID.Ref, so we
+					// must use LookupShared to avoid a deadlock.
+					if ref := repo.refdb.LookupShared(refID.Ref); ref != nil {
 						newHistory := refObj.history()[:upstreamRev]
 						refObj := ref.Object.(serverRef)
 						newRefState := &RefState{
@@ -225,7 +222,7 @@ func (s *Server) doApplyRefConfiguration(ctx context.Context, logger log.Logger,
 	return nil
 }
 
-func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger log.Logger, repoName string, repo *serverRepo, ref string) error {
+func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger log.Logger, repoName string, repo *serverRepo, refName string, ref refdb.OwnedRef) error {
 	config, err := repo.getConfigNoLock()
 	if err != nil {
 		return err
@@ -233,7 +230,7 @@ func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger l
 	if len(config.Remotes) == 0 {
 		return nil // unable to autoconfigure
 	}
-	if _, ok := config.Refs[ref]; ok {
+	if _, ok := config.Refs[refName]; ok {
 		return nil // ref already has configuration; do nothing
 	}
 	upstream, err := config.defaultUpstream()
@@ -244,7 +241,7 @@ func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger l
 		if config.Refs == nil {
 			config.Refs = map[string]RefConfiguration{}
 		}
-		config.Refs[ref] = RefConfiguration{Upstream: upstream, Overwrite: true}
+		config.Refs[refName] = RefConfiguration{Upstream: upstream, Overwrite: true}
 		return nil
 	})
 	if err != nil {
@@ -254,7 +251,7 @@ func (s *Server) automaticallyConfigureRefUpstream(ctx context.Context, logger l
 	if err != nil {
 		return err
 	}
-	return s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldConfig, finalConfig, false, false, false)
+	return s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: refName}, ref, oldConfig, finalConfig, false, false)
 }
 
 // TODO(sqs): hack to "safely" determine a default upstream, until we
@@ -268,22 +265,20 @@ func (c *RepoConfiguration) defaultUpstream() (string, error) {
 	return "", errors.New("unable to determine branch's default upstream: more than 1 remote exists")
 }
 
-func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, logger log.Logger, repo *serverRepo, localRefID RefIdentifier, local, tracking refdb.Ref, refConfig RefConfiguration) error {
-	// Assumes caller holds the repo.refAcquire(ref.Ref) lock.
-
-	localObj := local.Object.(serverRef)
+func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, logger log.Logger, repo *serverRepo, localRefID RefIdentifier, local refdb.OwnedRef, tracking refdb.Ref, refConfig RefConfiguration) error {
+	localObj := local.Ref.Object.(serverRef)
 	trackingObj := tracking.Object.(serverRef)
 	// Check that the localObj tracking ref can be fast-forwarded to the tracking ref.
 	if localObj.gitBase != trackingObj.gitBase {
 		return &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRefConflict),
-			Message: fmt.Sprintf("local ref %s git base %q != remote tracking branch git base %q", local.Name, localObj.gitBase, trackingObj.gitBase),
+			Message: fmt.Sprintf("local ref %s git base %q != remote tracking branch git base %q", local.Ref.Name, localObj.gitBase, trackingObj.gitBase),
 		}
 	}
 	if localObj.gitBranch != trackingObj.gitBranch {
 		return &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRefConflict),
-			Message: fmt.Sprintf("local ref %s git branch %q != remote tracking branch git branch %q", local.Name, localObj.gitBranch, trackingObj.gitBranch),
+			Message: fmt.Sprintf("local ref %s git branch %q != remote tracking branch git branch %q", local.Ref.Name, localObj.gitBranch, trackingObj.gitBranch),
 		}
 	}
 	// TODO(sqs): allow if local tracking ref is strictly behind
@@ -291,7 +286,7 @@ func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, logger log.Log
 	if len(trackingObj.history()) != 0 && localObj.rev() != 0 && !reflect.DeepEqual(trackingObj.history(), localObj.history()) {
 		return &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRefConflict),
-			Message: fmt.Sprintf("local ref %s history conflicts with remote tracking branch's history", local.Name),
+			Message: fmt.Sprintf("local ref %s history conflicts with remote tracking branch's history", local.Ref.Name),
 		}
 	}
 
@@ -311,24 +306,12 @@ func (s *Server) reconcileRefWithTrackingRef(ctx context.Context, logger log.Log
 				State:         newRefState,
 			},
 			refConfig,
-			false,
 		); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-// isLikelySymbolicRef returns true if name is all uppercase ASCII
-// characters.
-func isLikelySymbolicRef(name string) bool {
-	for _, r := range name {
-		if r < 'A' || r > 'Z' {
-			return false
-		}
-	}
-	return true
 }
 
 // remoteTrackingBranchRef returns the full ref name of a remote

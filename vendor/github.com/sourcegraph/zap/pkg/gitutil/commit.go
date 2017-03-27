@@ -1,21 +1,11 @@
 package gitutil
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-func makeCommitFromDir(ctx context.Context, gitRepo Worktree, onlyIfChangedFiles bool) (commitID string, err error) {
-	head, err := gitRepo.HEADOrDevNullTree()
-	if err != nil {
-		return
-	}
-	commitID, _, err = gitRepo.MakeCommit(ctx, head, onlyIfChangedFiles)
-	return
-}
 
 // Tree represents a git tree (i.e., "git ls-tree -r -d").
 type Tree struct {

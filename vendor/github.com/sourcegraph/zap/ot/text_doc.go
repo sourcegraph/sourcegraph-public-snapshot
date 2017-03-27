@@ -131,18 +131,6 @@ func (ops EditOps) Equal(other EditOps) bool {
 	return true
 }
 
-// deepCopy returns a deep copy of ops.
-func (ops EditOps) deepCopy() EditOps {
-	if ops == nil {
-		return nil
-	}
-	ops2 := make(EditOps, len(ops))
-	for i, op := range ops {
-		ops2[i] = op
-	}
-	return ops2
-}
-
 // MergeEditOps attempts to merge consecutive edit operations in place
 // and returns the sequence.
 func MergeEditOps(ops EditOps) EditOps {

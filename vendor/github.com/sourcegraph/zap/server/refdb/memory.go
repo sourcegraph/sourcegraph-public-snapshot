@@ -3,8 +3,12 @@ package refdb
 import "sync"
 
 // memoryRefDB is an in-memory refdb. It implements RefLog.
+//
+// It is not safe to access it from multiple goroutines
+// concurrently. The use of a mutex internally in memoryRefDB and its
+// methods could make concurrent access memory-safe, but that would
+// likely mask application-level raciness in the caller.
 type memoryRefDB struct {
-	mu   sync.Mutex
 	refs map[string]Ref
 
 	reflog memoryRefLog
@@ -23,8 +27,6 @@ func NewMemoryRefDB() RefDB {
 
 // Exists implements RefDB.
 func (db *memoryRefDB) Exists(name string) bool {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	return db.exists(name)
 }
 
@@ -36,15 +38,11 @@ func (db *memoryRefDB) exists(name string) bool {
 
 // Lookup implements RefDB.
 func (db *memoryRefDB) Lookup(name string) *Ref {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	return db.lookup(name)
 }
 
 // Resolve implements RefDB.
 func (db *memoryRefDB) Resolve(name string) (*Ref, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	ref := db.lookup(name)
 	seen := map[string]struct{}{name: struct{}{}}
 	for ref != nil && ref.IsSymbolic() {
@@ -62,8 +60,6 @@ func (db *memoryRefDB) Resolve(name string) (*Ref, error) {
 
 // List implements RefDB.
 func (db *memoryRefDB) List(pattern string) []Ref {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	var matches []Ref
 	for _, ref := range db.refs {
 		if MatchPattern(pattern, ref.Name) {
@@ -83,8 +79,6 @@ func (db *memoryRefDB) lookup(name string) *Ref {
 
 // Write implements RefDB.
 func (db *memoryRefDB) Write(ref Ref, force bool, old *Ref, log RefLogEntry) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	existing := db.lookup(ref.Name)
 	if !force && existing != nil {
 		return &RefExistsError{Op: "write", Name: ref.Name}
@@ -101,8 +95,6 @@ func (db *memoryRefDB) Write(ref Ref, force bool, old *Ref, log RefLogEntry) err
 
 // Rename implements RefDB.
 func (db *memoryRefDB) Rename(oldName, newName string, force bool, log RefLogEntry) (*Ref, error) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	oldRef, newNameExists := db.refs[newName]
 	if !force && newNameExists {
 		return nil, &RefExistsError{Op: "rename", Name: newName}
@@ -127,8 +119,6 @@ func (db *memoryRefDB) Rename(oldName, newName string, force bool, log RefLogEnt
 
 // Delete implements RefDB.
 func (db *memoryRefDB) Delete(name string, old Ref, log RefLogEntry) error {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	existing := db.lookup(name)
 	if existing == nil {
 		return &RefNotExistsError{Op: "delete", Name: name}
@@ -145,8 +135,6 @@ func (db *memoryRefDB) Delete(name string, old Ref, log RefLogEntry) error {
 
 // TransitiveClosureRefs implements RefDB.
 func (db *memoryRefDB) TransitiveClosureRefs(name string) (refs []Ref) {
-	db.mu.Lock()
-	defer db.mu.Unlock()
 	for _, ref := range db.refs {
 		if ref.Name == name {
 			refs = append(refs, ref)
