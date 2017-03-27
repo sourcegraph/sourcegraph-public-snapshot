@@ -8,19 +8,25 @@ import (
 	"github.com/neelance/graphql-go/internal/query"
 	"github.com/neelance/graphql-go/internal/schema"
 	"github.com/neelance/graphql-go/introspection"
+	"github.com/neelance/graphql-go/trace"
 )
 
-var schemaExec iExec
-var typeExec iExec
+var schemaExec *objectExec
+var typeExec *objectExec
 
 func init() {
+	var err error
 	b := newExecBuilder(schema.Meta)
 
-	if err := b.assignExec(&schemaExec, schema.Meta.Types["__Schema"], reflect.TypeOf(&introspection.Schema{})); err != nil {
+	metaSchema := schema.Meta.Types["__Schema"].(*schema.Object)
+	schemaExec, err = b.makeObjectExec(metaSchema.Name, metaSchema.Fields, nil, false, reflect.TypeOf(&introspection.Schema{}))
+	if err != nil {
 		panic(err)
 	}
 
-	if err := b.assignExec(&typeExec, schema.Meta.Types["__Type"], reflect.TypeOf(&introspection.Type{})); err != nil {
+	metaType := schema.Meta.Types["__Type"].(*schema.Object)
+	typeExec, err = b.makeObjectExec(metaType.Name, metaType.Fields, nil, false, reflect.TypeOf(&introspection.Type{}))
+	if err != nil {
 		panic(err)
 	}
 
@@ -29,25 +35,15 @@ func init() {
 	}
 }
 
-func IntrospectSchema(s *schema.Schema) (interface{}, error) {
-	r := &request{
-		schema:  s,
-		doc:     introspectionQuery,
-		limiter: make(semaphore, 10),
+func IntrospectSchema(s *schema.Schema) interface{} {
+	r := &Request{
+		Schema:  s,
+		Doc:     introspectionQuery,
+		Limiter: make(chan struct{}, 10),
+		Tracer:  trace.NoopTracer{},
 	}
-	return introspectSchema(context.Background(), r, introspectionQuery.Operations.Get("IntrospectionQuery").SelSet), nil
-}
-
-func introspectSchema(ctx context.Context, r *request, selSet *query.SelectionSet) interface{} {
-	return schemaExec.exec(ctx, r, selSet, reflect.ValueOf(introspection.WrapSchema(r.schema)), false)
-}
-
-func introspectType(ctx context.Context, r *request, name string, selSet *query.SelectionSet) interface{} {
-	t, ok := r.schema.Types[name]
-	if !ok {
-		return nil
-	}
-	return typeExec.exec(ctx, r, selSet, reflect.ValueOf(introspection.WrapType(t)), false)
+	sels := applySelectionSet(r, schemaExec, introspectionQuery.Operations.Get("IntrospectionQuery").SelSet)
+	return schemaExec.exec(context.Background(), sels, reflect.ValueOf(introspection.WrapSchema(r.Schema)))
 }
 
 var introspectionQuery *query.Document
