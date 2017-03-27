@@ -47,8 +47,7 @@ const (
 // If there is no more low-hanging fruit and perf is not acceptable, we could
 // consider an using ripgrep directly (modify it to search zip archives).
 //
-// TODO(keegan) search for candidate lines without parsing lines. (regexp.LiteralPrefix)
-// TODO(keegan) limit result set size
+// TODO(keegan) search for candidate lines without parsing lines. (regexp.LiteralPrefix + optimize default ignore case)
 // TODO(keegan) return search statistics
 type readerGrep struct {
 	// re is the regexp to match

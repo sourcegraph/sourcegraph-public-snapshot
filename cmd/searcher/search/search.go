@@ -75,6 +75,11 @@ func (p Params) String() string {
 	return fmt.Sprintf("search.Params{%q%s}", p.Pattern, optsS)
 }
 
+// Response represents the response from a Search request.
+type Response struct {
+	Matches []FileMatch
+}
+
 // FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
 	Path        string
@@ -126,7 +131,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(matches)
+	resp := Response{
+		Matches: matches,
+	}
+	err = json.NewEncoder(w).Encode(&resp)
 	if err != nil {
 		// We may have already started writing to w
 		http.Error(w, "failed to encode response: "+err.Error(), http.StatusInternalServerError)

@@ -133,9 +133,12 @@ func doSearch(u string, p *search.Params) ([]search.FileMatch, error) {
 		return nil, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
-	var matches []search.FileMatch
-	err = json.Unmarshal(body, &matches)
-	return matches, err
+	var r search.Response
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return nil, err
+	}
+	return r.Matches, err
 }
 
 func newStore(files map[string]string) (*search.Store, func(), error) {

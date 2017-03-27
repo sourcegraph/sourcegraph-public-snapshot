@@ -125,9 +125,14 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 		return nil, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
-	var matches []*fileMatch
-	err = json.NewDecoder(resp.Body).Decode(&matches)
-	return matches, err
+	r := struct {
+		Matches []*fileMatch
+	}{}
+	err = json.NewDecoder(resp.Body).Decode(&r)
+	if err != nil {
+		return nil, err
+	}
+	return r.Matches, nil
 }
 
 type repoMatch struct {
