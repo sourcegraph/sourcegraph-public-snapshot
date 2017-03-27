@@ -57,11 +57,8 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		this.currWorkspace = (this.services.get(IWorkspaceContextService) as IWorkspaceContextService).getWorkspace();
 		updateWorkspace(this.props).then(() => {
 			parent.appendChild(domElement);
-			updateEditorArea(this.props).then(() => {
-				this.layout();
-			});
+			updateEditorArea(this.props).then(() => this.layout());
 		});
-
 	}
 
 	componentWillMount(): void {
@@ -127,17 +124,10 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		if (window.innerWidth <= 768) {
 			// Mobile device, width less than 768px.
 			this.workbench.setSideBarHidden(true);
-		} else if ((this.workbench as any).sidebarHidden) {
+		} else {
 			this.workbench.setSideBarHidden(false);
 		}
 		this.workbench.layout();
-
-		// HACK: our slightly-larger-than-vscode's status bar needs a re-layout to render
-		// entirely within the window, but the layout has to be async. We should update
-		// vscode CSS to accomodate a taller status bar so this is unnecessary.
-		setTimeout(() => {
-			this.workbench.layout();
-		}, 100);
 	}
 
 	toggleQuickopen(event: KeyboardEvent & { target: Node }): void {
@@ -153,7 +143,6 @@ export class WorkbenchShell extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		this.layout();
 		return <div style={{
 			height: "100%",
 			display: "flex",
