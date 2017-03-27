@@ -63,7 +63,7 @@ func (lm *lineMatch) Preview() string {
 }
 
 func (lm *lineMatch) LineNumber() int32 {
-	return lm.JLineNumber - 1
+	return lm.JLineNumber
 }
 
 func (lm *lineMatch) OffsetAndLengths() [][]int32 {

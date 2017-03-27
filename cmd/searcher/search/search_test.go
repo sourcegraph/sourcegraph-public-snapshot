@@ -179,7 +179,7 @@ func toString(m []search.FileMatch) string {
 		for _, l := range f.LineMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber))
+			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
 			buf.WriteByte(':')
 			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')

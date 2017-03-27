@@ -96,7 +96,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 	}
 
 	var matches []LineMatch
-	for i := 1; len(matches) < maxLineMatches; i++ {
+	for i := 0; len(matches) < maxLineMatches; i++ {
 		b, isPrefix, err := r.ReadLine()
 		if isPrefix || err != nil {
 			// We have either found a long line, encountered an
