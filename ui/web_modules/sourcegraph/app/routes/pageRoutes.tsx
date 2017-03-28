@@ -24,7 +24,6 @@ const pages = {
 	[rel.terms]: TermsPage,
 	[rel.privacy]: PrivacyPage,
 	[rel.docs]: DocsPage,
-	[rel.twittercasestudy]: TwitterCaseStudyPage,
 	[rel.zap]: ZapPage,
 	[rel.zapbeta]: ZapBetaFormPage,
 };
