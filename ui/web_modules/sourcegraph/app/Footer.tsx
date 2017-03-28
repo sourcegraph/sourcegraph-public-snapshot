@@ -17,7 +17,7 @@ export function Footer(): JSX.Element {
 		}}>
 			<div>
 				<Item url="/plan">Master plan</Item>
-				<Item url="/customers/twitter">Case study</Item>
+
 			</div>
 
 			<div>
