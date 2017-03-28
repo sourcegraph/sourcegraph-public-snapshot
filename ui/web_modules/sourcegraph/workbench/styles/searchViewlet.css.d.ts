@@ -2,10 +2,13 @@
 // tslint:disable
 
 export const colors: string;
+export const c_blue: string;
+export const c_dark_blue: string;
 export const c_cool_gray: string;
 export const c_cool_mid_gray: string;
 export const c_cool_dark_gray: string;
 export const c_cool_dark_gray_2: string;
 export const c_cool_pale_gray: string;
 export const input_group_height: string;
+export const results_row_height: string;
 

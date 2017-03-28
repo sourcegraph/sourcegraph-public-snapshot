@@ -1,5 +1,5 @@
 @value colors "sourcegraph/components/styles/_colors.css";
-@value c_blue, c_black_30, c_cool_gray, c_cool_mid_gray, c_cool_dark_gray, c_cool_dark_gray_2, c_cool_pale_gray from colors;
+@value c_blue, c_dark_blue, c_cool_gray, c_cool_mid_gray, c_cool_dark_gray, c_cool_dark_gray_2, c_cool_pale_gray from colors;
 
 @value input_group_height: 72px;
 @value results_row_height: 40px;
@@ -89,7 +89,7 @@
 }
 
 :global .search-viewlet .results .monaco-tree-row.selected .findInFileMatch {
-	background-color: c_black_30 !important;
+	background-color: c_dark_blue !important;
 }
 
 :global .search-viewlet .results .monaco-tree-row:not(.has-children) {
