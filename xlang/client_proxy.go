@@ -397,7 +397,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 					id := serverID{contextID: c.context, pathPrefix: ""}
 					err := c.proxy.shutDownServer(context.Background(), id)
 					if err != nil {
-						logError("Shutting down background server failed: "+err.Error(), c.context, "params", req.Params, "method", req.Method, "id", req.ID)
+						logError("Shutting down background server failed: "+err.Error(), c.context, "method", req.Method, "id", req.ID)
 					}
 				}()
 			}()
@@ -405,7 +405,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 		var respObj interface{}
 		if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, &respObj); err != nil {
-			logError(req.Method+" failed: "+err.Error(), c.context, "method", req.Method, "params", req.Params, "id", req.ID, "error", err.Error())
+			logError(req.Method+" failed: "+err.Error(), c.context, "method", req.Method, "id", req.ID, "error", err.Error())
 			return nil, err
 		}
 		return respObj, nil

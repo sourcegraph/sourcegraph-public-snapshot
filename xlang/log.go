@@ -35,20 +35,20 @@ func logWithLevel(lvl string, msg string, id contextID, extraMeta ...interface{}
 
 // logError logs a message with LSP metadata with loglevel ERROR
 func logError(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("ERROR", msg, id, extraMeta)
+	logWithLevel("ERROR", msg, id, extraMeta...)
 }
 
 // logInfo logs a message with LSP metadata with loglevel INFO
 func logInfo(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("INFO ", msg, id, extraMeta)
+	logWithLevel("INFO ", msg, id, extraMeta...)
 }
 
 // logWarn logs a message with LSP metadata with loglevel WARN
 func logWarn(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("WARN ", msg, id, extraMeta)
+	logWithLevel("WARN ", msg, id, extraMeta...)
 }
 
 // logDebug logs a message with LSP metadata with loglevel DEBUG
 func logDebug(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("DEBUG", msg, id, extraMeta)
+	logWithLevel("DEBUG", msg, id, extraMeta...)
 }
