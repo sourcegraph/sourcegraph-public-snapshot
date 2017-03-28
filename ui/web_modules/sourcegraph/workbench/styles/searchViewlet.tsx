@@ -6,13 +6,13 @@ import { insertGlobal } from "glamor";
 
 insertGlobal(" .search-viewlet .monaco-tree-row", {
 	backgroundColor: "#344966 !important",
-	color: `${colors.blueGrayL2()} !important`,
+	color: `white !important`,
 });
 
 insertGlobal(" .search-viewlet .monaco-tree-row:hover", {
-	backgroundColor: `${colors.blueGray()} !important`,
+	backgroundColor: `${colors.blueGrayD1()} !important`,
 });
 
 insertGlobal(" .search-viewlet .monaco-tree-row .plain", {
-	color: `${colors.blueGrayL2()} !important`,
+	color: `white !important`,
 });
