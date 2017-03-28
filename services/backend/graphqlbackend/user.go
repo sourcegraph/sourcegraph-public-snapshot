@@ -46,7 +46,7 @@ func (o *org) Description() string {
 }
 
 func (r *currentUserResolver) GitHubOrgs(ctx context.Context) ([]*org, error) {
-	ghOrgs, _, err := github.OrgsFromContext(ctx).List("", &gogithub.ListOptions{PerPage: 100})
+	ghOrgs, _, err := github.Client(ctx).Organizations.List("", &gogithub.ListOptions{PerPage: 100})
 	orgs := make([]*org, len(ghOrgs))
 	for i, v := range ghOrgs {
 		orgs[i] = &org{*v}

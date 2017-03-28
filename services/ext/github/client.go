@@ -31,7 +31,7 @@ func init() {
 var MockRoundTripper http.RoundTripper
 
 // client returns the context's GitHub API client.
-func client(ctx context.Context) *github.Client {
+func Client(ctx context.Context) *github.Client {
 	if MockRoundTripper != nil {
 		return github.NewClient(&http.Client{
 			Transport: MockRoundTripper,
@@ -49,12 +49,8 @@ func client(ctx context.Context) *github.Client {
 	return ghConf.UnauthedClient()
 }
 
-func OrgsFromContext(ctx context.Context) *github.OrganizationsService {
-	return client(ctx).Organizations
-}
-
 func OrganizationRepos(ctx context.Context, org string, opt *github.RepositoryListByOrgOptions) ([]*github.Repository, error) {
-	repo, _, err := client(ctx).Repositories.ListByOrg(org, opt)
+	repo, _, err := Client(ctx).Repositories.ListByOrg(org, opt)
 	return repo, err
 }
 
@@ -65,24 +61,27 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 
 	switch err.(type) {
 	case *github.RateLimitError:
-		log15.Debug("exceeded github rate limit", "error", err, "op", op)
-		return legacyerr.Errorf(legacyerr.ResourceExhausted, "exceeded GitHub API rate limit: %s: %v", op, err)
+		log15.Debug("exceeded GitHub rate limit", "error", err, "op", op)
+		return err
 	case *github.AbuseRateLimitError:
 		log15.Debug("triggered GitHub abuse detection mechanism", "error", err, "op", op)
 		abuseDetectionMechanismCounter.Inc()
-		return legacyerr.Errorf(legacyerr.ResourceExhausted, "triggered GitHub abuse detection mechanism: %s: %v", op, err)
+		return err
 	}
 
 	if resp == nil {
-		log15.Debug("no response from github", "error", err)
+		log15.Debug("no response from GitHub", "error", err)
 		return err
 	}
 
 	switch resp.StatusCode {
 	case 401, 404:
 		// Pretty expected, not worth logging.
+	case 451:
+		log15.Debug("unavailable for legal reasons error received from GitHub", "error", err, "op", op)
+		return err
 	default:
-		log15.Debug("unexpected error from github", "error", err, "statusCode", resp.StatusCode, "op", op)
+		log15.Debug("unexpected error from GitHub", "error", err, "statusCode", resp.StatusCode, "op", op)
 	}
 
 	statusCode := errcode.HTTPToCode(resp.StatusCode)
@@ -95,11 +94,20 @@ func checkResponse(ctx context.Context, resp *github.Response, err error, op str
 		statusCode = legacyerr.NotFound
 	}
 
-	return legacyerr.Errorf(statusCode, "unexpected error from github: %s: %v", op, err)
+	return legacyerr.Errorf(statusCode, "unexpected error from GitHub: %s: %v", op, err)
 }
 
 // HasAuthedUser reports whether the context has an authenticated
 // GitHub user's credentials.
 func HasAuthedUser(ctx context.Context) bool {
 	return auth.ActorFromContext(ctx).GitHubToken != ""
+}
+
+func IsRateLimitError(err error) bool {
+	switch err.(type) {
+	case *github.RateLimitError, *github.AbuseRateLimitError:
+		return true
+	default:
+		return false
+	}
 }
