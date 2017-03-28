@@ -1,5 +1,5 @@
 @value colors "sourcegraph/components/styles/_colors.css";
-@value c_cool_gray, c_cool_mid_gray, c_cool_dark_gray, c_cool_dark_gray_2 from colors;
+@value c_cool_gray, c_cool_mid_gray, c_cool_dark_gray, c_cool_dark_gray_2, c_cool_pale_gray from colors;
 
 @value input_group_height: 72px;
 
@@ -23,12 +23,6 @@
 :global .search-viewlet .search-widgets-container {
 	padding: 0;
 	margin: 0;
-}
-
-:global .search-viewlet .findInFileMatch,
-:global .monaco-editor .findInFileMatch,
-:global .monaco-editor .findMatch {
-	background-color: c_cool_dark_gray_2 !important;
 }
 
 :global .search-viewlet .search-widget {
@@ -65,7 +59,7 @@
 
 :global .search-viewlet .results .monaco-tree-row {
 	background-color: transparent !important;
-	color: white !important;
+	color: c_cool_pale_gray !important;
 }
 
 :global .search-viewlet .results .monaco-tree-row:hover {
@@ -73,6 +67,7 @@
 }
 
 :global .search-viewlet .results .monaco-tree-row.has-children {
+	color: white !important;
 	font-weight: bold;
 }
 
@@ -85,7 +80,7 @@
 }
 
 :global .search-viewlet .results .monaco-tree-row .plain {
-	color: white !important;
+	color: c_cool_pale_gray !important;
 }
 
 :global .search-viewlet .results .monaco-tree-row.selected {
@@ -94,6 +89,13 @@
 
 :global .search-viewlet .results .monaco-tree-row:not(.has-children) {
 	padding-left: 58px !important;
+}
+
+:global .search-viewlet .findInFileMatch,
+:global .monaco-editor .findInFileMatch,
+:global .monaco-editor .findMatch {
+	background-color: c_cool_dark_gray_2 !important;
+	color: white;
 }
 
 :global .search-viewlet .results .monaco-count-badge {
