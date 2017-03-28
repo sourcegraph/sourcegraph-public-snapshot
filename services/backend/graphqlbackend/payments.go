@@ -32,7 +32,7 @@ func (p planResolver) Name() string {
 }
 
 func (p planResolver) Organization(ctx context.Context) (*org, error) {
-	organization, _, err := github.Client(ctx).Organizations.Get(p.OrgName)
+	organization, _, err := github.OrgsFromContext(ctx).Get(p.OrgName)
 	if err != nil {
 		return nil, err
 	}

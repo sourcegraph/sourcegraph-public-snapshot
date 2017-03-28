@@ -303,7 +303,6 @@ export interface GitHubRepoWithDetails {
 	CreatedAt?: any;
 	Languages?: GitHubRepoLanguage[];
 	Commits?: any[];
-	error_fetching_details?: boolean;
 }
 
 export interface GitHubReposWithDetailsList {
