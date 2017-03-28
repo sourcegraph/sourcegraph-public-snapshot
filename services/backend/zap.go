@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/gorilla/websocket"
@@ -31,7 +32,7 @@ func parseListenDialURL(urlStr string) (*url.URL, error) {
 	return url.Parse(urlStr)
 }
 
-func dial(urlStr string, auth string) (jsonrpc2.ObjectStream, error) {
+func dial(ctx context.Context, urlStr string) (jsonrpc2.ObjectStream, error) {
 	if urlStr == "" {
 		panic("empty dial URL")
 	}
@@ -69,11 +70,14 @@ func dial(urlStr string, auth string) (jsonrpc2.ObjectStream, error) {
 			}
 			return net.Dial(network, addr)
 		}
-		var headers http.Header
-		if auth != "" {
-			headers = make(http.Header)
-			headers.Set("cookie", "sg-session="+auth)
-		}
+
+		// 🚨 SECURITY: Pass through the actor by overwriting the X-Actor HTTP 🚨
+		// header.
+		//
+		// DO NOT remove this or allow the user to specify an X-Actor header in any
+		// way past this point.
+		headers := make(http.Header)
+		auth.SetActorTrustedHeader(ctx, headers)
 		conn, _, err := dialer.Dial(u.String(), headers)
 		if err != nil {
 			return nil, err
@@ -85,10 +89,14 @@ func dial(urlStr string, auth string) (jsonrpc2.ObjectStream, error) {
 	}
 }
 
-// NewZapClient returns a Zap jsonrpc client.
+// NewZapClient returns a Zap jsonrpc client. The returned client is solely
+// for the actor in the context.
+//
+// SECURITY: Do NOT cache or otherwise share the returned client across
+// different users (actor in ctx).
 func NewZapClient(ctx context.Context) (*zap.Client, error) {
 	var connOpt []jsonrpc2.ConnOpt
-	stream, err := dial(ZapServerURL, "TODO(slimsag): auth!")
+	stream, err := dial(ctx, ZapServerURL)
 	if err != nil {
 		return nil, err
 	}

@@ -131,7 +131,7 @@ func main() {
 		BgCtx:   ctx,
 		Backend: zapServerBackend,
 	})
-	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(auth.CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(auth.TrustedActorMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: Upgrade: %s [client: %s]\n", err, r.RemoteAddr)
