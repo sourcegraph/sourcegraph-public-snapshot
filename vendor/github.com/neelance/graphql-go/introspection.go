@@ -1,63 +1,32 @@
-package exec
+package graphql
 
 import (
 	"context"
-	"reflect"
+	"encoding/json"
 
-	"github.com/neelance/graphql-go/errors"
-	"github.com/neelance/graphql-go/internal/query"
-	"github.com/neelance/graphql-go/internal/schema"
+	"github.com/neelance/graphql-go/internal/exec/resolvable"
 	"github.com/neelance/graphql-go/introspection"
-	"github.com/neelance/graphql-go/trace"
 )
 
-var schemaExec *objectExec
-var typeExec *objectExec
-
-func init() {
-	var err error
-	b := newExecBuilder(schema.Meta)
-
-	metaSchema := schema.Meta.Types["__Schema"].(*schema.Object)
-	schemaExec, err = b.makeObjectExec(metaSchema.Name, metaSchema.Fields, nil, false, reflect.TypeOf(&introspection.Schema{}))
-	if err != nil {
-		panic(err)
-	}
-
-	metaType := schema.Meta.Types["__Type"].(*schema.Object)
-	typeExec, err = b.makeObjectExec(metaType.Name, metaType.Fields, nil, false, reflect.TypeOf(&introspection.Type{}))
-	if err != nil {
-		panic(err)
-	}
-
-	if err := b.finish(); err != nil {
-		panic(err)
-	}
+// Inspect allows inspection of the given schema.
+func (s *Schema) Inspect() *introspection.Schema {
+	return introspection.WrapSchema(s.schema)
 }
 
-func IntrospectSchema(s *schema.Schema) interface{} {
-	r := &Request{
-		Schema:  s,
-		Doc:     introspectionQuery,
-		Limiter: make(chan struct{}, 10),
-		Tracer:  trace.NoopTracer{},
+// ToJSON encodes the schema in a JSON format used by tools like Relay.
+func (s *Schema) ToJSON() ([]byte, error) {
+	result := s.exec(context.Background(), introspectionQuery, "", nil, &resolvable.Schema{
+		Query:  &resolvable.Object{},
+		Schema: *s.schema,
+	})
+	if len(result.Errors) != 0 {
+		panic(result.Errors[0])
 	}
-	sels := applySelectionSet(r, schemaExec, introspectionQuery.Operations.Get("IntrospectionQuery").SelSet)
-	return schemaExec.exec(context.Background(), sels, reflect.ValueOf(introspection.WrapSchema(r.Schema)))
+	return json.MarshalIndent(result.Data, "", "\t")
 }
 
-var introspectionQuery *query.Document
-
-func init() {
-	var err *errors.QueryError
-	introspectionQuery, err = query.Parse(introspectionQuerySrc)
-	if err != nil {
-		panic(err)
-	}
-}
-
-var introspectionQuerySrc = `
-  query IntrospectionQuery {
+var introspectionQuery = `
+  query {
     __schema {
       queryType { name }
       mutationType { name }
