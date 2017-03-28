@@ -5,7 +5,6 @@ import (
 
 	"github.com/neelance/graphql-go/relay"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/graphqlbackend"
 )
 
@@ -17,9 +16,6 @@ func serveGraphQL(w http.ResponseWriter, r *http.Request) (err error) {
 		w.Write(graphiqlPage)
 		return nil
 	}
-
-	// HACK: Forawrd session cookie on context for zap remote server to use.
-	r = r.WithContext(auth.WithSession(r.Context(), auth.SessionCookie(r)))
 	relayHandler.ServeHTTP(w, r)
 	return nil
 }

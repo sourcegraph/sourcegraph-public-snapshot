@@ -9,14 +9,13 @@ import (
 	"os"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/gorilla/websocket"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"github.com/sourcegraph/zap"
-	"github.com/sourcegraph/zap/pkg/config"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 // TODO(john): this file is copypasta from zap, there's much more here than is strictly necessary.
@@ -33,21 +32,7 @@ func parseListenDialURL(urlStr string) (*url.URL, error) {
 	return url.Parse(urlStr)
 }
 
-func readDialAuth() (http.Header, error) {
-	cfg, err := config.ReadGlobalFile()
-	if err != nil {
-		return nil, err
-	}
-	if v := cfg.Section("auth").Option("token"); v != "" {
-		h := make(http.Header)
-		h.Set("cookie", v)
-		return h, nil
-	}
-
-	return nil, nil
-}
-
-func dial(urlStr string, auth string) (jsonrpc2.ObjectStream, error) {
+func dial(ctx context.Context, urlStr string) (jsonrpc2.ObjectStream, error) {
 	if urlStr == "" {
 		panic("empty dial URL")
 	}
@@ -85,16 +70,14 @@ func dial(urlStr string, auth string) (jsonrpc2.ObjectStream, error) {
 			}
 			return net.Dial(network, addr)
 		}
-		var headers http.Header
-		if auth != "" {
-			headers = make(http.Header)
-			headers.Set("cookie", "sg-session="+auth)
-		} else {
-			headers, err = readDialAuth()
-			if err != nil {
-				return nil, err
-			}
-		}
+
+		// 🚨 SECURITY: Pass through the actor by overwriting the X-Actor HTTP 🚨
+		// header.
+		//
+		// DO NOT remove this or allow the user to specify an X-Actor header in any
+		// way past this point.
+		headers := make(http.Header)
+		auth.SetActorTrustedHeader(ctx, headers)
 		conn, _, err := dialer.Dial(u.String(), headers)
 		if err != nil {
 			return nil, err
@@ -106,10 +89,14 @@ func dial(urlStr string, auth string) (jsonrpc2.ObjectStream, error) {
 	}
 }
 
-// NewZapClient returns a Zap jsonrpc client.
+// NewZapClient returns a Zap jsonrpc client. The returned client is solely
+// for the actor in the context.
+//
+// SECURITY: Do NOT cache or otherwise share the returned client across
+// different users (actor in ctx).
 func NewZapClient(ctx context.Context) (*zap.Client, error) {
 	var connOpt []jsonrpc2.ConnOpt
-	stream, err := dial(ZapServerURL, auth.SessionFromContext(ctx))
+	stream, err := dial(ctx, ZapServerURL)
 	if err != nil {
 		return nil, err
 	}

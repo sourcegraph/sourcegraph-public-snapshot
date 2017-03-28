@@ -6,12 +6,13 @@ import (
 	"net/url"
 
 	// Import for side effect of setting SGPATH env var.
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
 	"github.com/gorilla/websocket"
-	"github.com/koding/websocketproxy"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/slimsag/websocketproxy"
 )
 
 func serveZap(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +30,15 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 		return net.Dial(network, addr)
 	}
 	proxy.Dialer = &d
+
+	// SECURITY: Pass through the actor by overwriting the X-Actor HTTP header.
+	//
+	// DO NOT remove this or allow the user to specify an X-Actor header in any
+	// way past this point.
+	proxy.Director = func(incoming *http.Request, out http.Header) {
+		out.Set(auth.ActorHeaderKey, incoming.Header.Get(auth.ActorHeaderKey))
+	}
+	auth.SetActorTrustedHeader(r.Context(), r.Header)
 
 	// Forward to zap server.
 	proxy.ServeHTTP(w, r)

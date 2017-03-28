@@ -27,6 +27,11 @@ var (
 // WebsocketProxy is an HTTP Handler that takes an incoming WebSocket
 // connection and proxies it to another server.
 type WebsocketProxy struct {
+	// Director, if non-nil, is a function that may copy additional request
+	// headers from the incoming WebSocket connection into the output headers
+	// which will be forwarded to another server.
+	Director func(incoming *http.Request, out http.Header)
+
 	// Backend returns the backend URL which the proxy uses to reverse proxy
 	// the incoming WebSocket connection. Request is the initial incoming and
 	// unmodified request.
@@ -116,6 +121,12 @@ func (w *WebsocketProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	requestHeader.Set("X-Forwarded-Proto", "http")
 	if req.TLS != nil {
 		requestHeader.Set("X-Forwarded-Proto", "https")
+	}
+
+	// Enable the director to copy any additional headers it desires for
+	// forwarding to the remote server.
+	if w.Director != nil {
+		w.Director(req, requestHeader)
 	}
 
 	// Connect to the backend URL, also pass the headers we get from the requst
