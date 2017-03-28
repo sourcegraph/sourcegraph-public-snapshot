@@ -517,6 +517,18 @@ func (r *AbuseRateLimitError) Error() string {
 		r.Response.StatusCode, r.Message)
 }
 
+// LegalError occurs when GitHub returns 451 Forbidden response
+type LegalError struct {
+	Response *http.Response // HTTP response that caused this error
+	Message  string         `json:"message"` // error message
+}
+
+func (r *LegalError) Error() string {
+	return fmt.Sprintf("%v %v: %d %v",
+		r.Response.Request.Method, sanitizeURL(r.Response.Request.URL),
+		r.Response.StatusCode, r.Message)
+}
+
 // sanitizeURL redacts the client_secret parameter from the URL which may be
 // exposed to the user, specifically in the ErrorResponse error message.
 func sanitizeURL(uri *url.URL) *url.URL {
@@ -568,7 +580,8 @@ func (e *Error) Error() string {
 // response body will be silently ignored.
 //
 // The error type will be *RateLimitError for rate limit exceeded errors,
-// and *TwoFactorAuthError for two-factor authentication errors.
+// *TwoFactorAuthError for two-factor authentication errors,
+// and *LegalError for legal errors such as DMCA violations
 func CheckResponse(r *http.Response) error {
 	if c := r.StatusCode; 200 <= c && c <= 299 {
 		return nil
@@ -601,6 +614,11 @@ func CheckResponse(r *http.Response) error {
 			abuseRateLimitError.RetryAfter = &retryAfter
 		}
 		return abuseRateLimitError
+	case r.StatusCode == http.StatusUnavailableForLegalReasons:
+		return &LegalError{
+			Response: errorResponse.Response,
+			Message:  errorResponse.Message,
+		}
 	default:
 		return errorResponse
 	}

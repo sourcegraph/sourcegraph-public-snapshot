@@ -157,14 +157,15 @@ func (tos *TrackedObjects) AddReposWithDetailsObjects(rl *sourcegraph.GitHubRepo
 			createdAt = repo.CreatedAt.UTC().Unix()
 		}
 		newRepo := &RepoWithDetailsContext{
-			URI:         repo.URI,
-			Owner:       repo.Owner,
-			Name:        repo.Name,
-			IsFork:      repo.Fork,
-			IsPrivate:   repo.Private,
-			CreatedAt:   createdAt,
-			Languages:   make([]*RepoLanguage, len(repo.Languages)),
-			CommitTimes: make([]int64, len(repo.CommitTimes)),
+			URI:                  repo.URI,
+			Owner:                repo.Owner,
+			Name:                 repo.Name,
+			IsFork:               repo.Fork,
+			IsPrivate:            repo.Private,
+			CreatedAt:            createdAt,
+			Languages:            make([]*RepoLanguage, len(repo.Languages)),
+			CommitTimes:          make([]int64, len(repo.CommitTimes)),
+			ErrorFetchingDetails: repo.ErrorFetchingDetails,
 		}
 		for i, lang := range repo.Languages {
 			newRepo.Languages[i] = &RepoLanguage{

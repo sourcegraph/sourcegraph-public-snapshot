@@ -49,6 +49,10 @@ type RepoWithDetailsContext struct {
 	CreatedAt   int64           `json:"created_at,omitempty"`
 	Languages   []*RepoLanguage `json:"languages,omitempty"`
 	CommitTimes []int64         `json:"latest_commit_tstamps,omitempty"`
+	// ErrorFetchingDetails is provided if tracker code receives error
+	// responses from GitHub while fetching language or commit details from
+	// https://api.github.com/repos/org/name/[languages|commits] URLs
+	ErrorFetchingDetails bool `json:"error_fetching_details,omitempty"`
 }
 
 type RepoLanguage struct {
