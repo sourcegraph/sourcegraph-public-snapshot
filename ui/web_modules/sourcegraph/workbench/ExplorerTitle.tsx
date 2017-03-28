@@ -96,6 +96,8 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		this.disposables.push(onWorkspaceUpdated(workspace => {
 			if (workspace.revState && workspace.revState.zapRef) {
 				this.updateViewlet(SCM_VIEWLET_ID);
+			} else if (this.state.openViewlet === SCM_VIEWLET_ID) {
+				this.updateViewlet(EXPLORER_VIELET_ID);
 			}
 			this.setState({ workspace });
 		}));
