@@ -358,12 +358,6 @@
 			"revisionTime": "2016-11-30T08:01:11Z"
 		},
 		{
-			"checksumSHA1": "SYAsHyJsoKXI9zWa/DTRvMWgGHM=",
-			"path": "github.com/koding/websocketproxy",
-			"revision": "870493fd19c48c3e71eaf5c5e03e07658f73bd26",
-			"revisionTime": "2015-11-28T20:04:38Z"
-		},
-		{
 			"checksumSHA1": "HIsIO4+e5awXjNSj/UJzbSePEZQ=",
 			"path": "github.com/kr/pretty",
 			"revision": "add1dbc86daf0f983cd4a48ceb39deb95c729b67",
@@ -681,6 +675,12 @@
 			"path": "github.com/slimsag/godocmd",
 			"revision": "a1005ad29fe3e4831773a8184ee7ebb3a41d1347",
 			"revisionTime": "2016-10-24T23:08:27Z"
+		},
+		{
+			"checksumSHA1": "3s5C+v97K3W37d1mRz+Lqborpm8=",
+			"path": "github.com/slimsag/websocketproxy",
+			"revision": "88a0ae4d50e528f6e02c7d576ee2d4fafcfbef6c",
+			"revisionTime": "2017-03-28T18:18:58Z"
 		},
 		{
 			"checksumSHA1": "s7NmPab6GppycZnlWfXqtyILmgY=",
