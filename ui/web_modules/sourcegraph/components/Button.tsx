@@ -5,7 +5,9 @@ import { Loader } from "sourcegraph/components/Loader";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 
 export interface ButtonProps extends React.HTMLFactory<HTMLButtonElement> {
+	animation?: boolean;
 	children?: React.ReactNode[];
+	backgroundColor?: String;
 	block?: boolean;
 	disabled?: boolean;
 	outline?: boolean;
@@ -49,6 +51,8 @@ export function Button(props: ButtonProps): JSX.Element {
 		color = "blueGray",
 		children,
 		type = "button",
+		animation = true,
+		backgroundColor = "auto",
 		...transferredProps,
 	} = props;
 
@@ -102,7 +106,7 @@ export function Button(props: ButtonProps): JSX.Element {
 				borderWidth: outline ? 2 : 0,
 				borderStyle: "solid",
 				borderColor: "transparent",
-				backgroundColor: btnColor,
+				backgroundColor: backgroundColor === "auto" ? btnColor : backgroundColor,
 				color: "white",
 				textAlign: "center",
 				fontWeight: "bold",
@@ -111,7 +115,7 @@ export function Button(props: ButtonProps): JSX.Element {
 				paddingRight: whitespace[3],
 				paddingTop: "0.45rem",
 				paddingBottom: "0.42rem",
-				transition: "all 0.4s",
+				transition: animation === true ? "all 0.4s" : "none",
 				borderRadius: 4,
 				boxSizing: "border-box",
 				cursor: "pointer",
