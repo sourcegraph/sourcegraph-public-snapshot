@@ -90,7 +90,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 			return repoParts[1];
 		}
 		//fallthrough		
-		return repo.split(resource.authority.length + 1);
+		return repo.slice(resource.authority.length + 1);
 	}
 
 	componentDidMount(): void {
@@ -143,15 +143,16 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 				</a>
 			</Heading>
 			<div>
-				<Button
-					onClick={this.searchButtonClicked}
-					color={"blue" }
-					{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "transparent" }) }
-					style={buttonSx}
-					backgroundColor={searchMode ? "auto" : "transparent"}
-					animation={false}>
-					<Search style={{ top: 0 }} />
-				</Button>
+				{Features.textSearch.isEnabled ?
+					<Button
+						onClick={this.searchButtonClicked}
+						color={"blue"}
+						{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "transparent" }) }
+						style={buttonSx}
+						backgroundColor={searchMode ? "auto" : "transparent"}
+						animation={false}>
+						<Search style={{ top: 0 }} />
+					</Button> : null}
 				{workspace && workspace.revState && workspace.revState.zapRev &&
 					<Button onClick={this.changesButtonClicked} color={changesMode ? "blue" : "blueGray"}
 						{...hover({ backgroundColor: !changesMode ? `${colors.blueGrayD2()} !important` : "" }) }
