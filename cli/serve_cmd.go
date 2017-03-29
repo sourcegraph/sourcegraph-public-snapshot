@@ -26,7 +26,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/assets"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/app/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -150,10 +149,6 @@ func Main() error {
 	// presenting users with a half-working experience.
 	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
 		return err
-	}
-
-	for _, f := range cli.ServeInit {
-		f()
 	}
 
 	if profBindAddr != "" {
