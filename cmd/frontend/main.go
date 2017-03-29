@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 

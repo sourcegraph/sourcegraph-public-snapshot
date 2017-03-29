@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cli/internal/middleware"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 )
 
 func TestGoImportPath(t *testing.T) {
