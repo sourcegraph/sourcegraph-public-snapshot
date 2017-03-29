@@ -39,6 +39,7 @@ function addAuthorizeButton() {
 	// link container
 	var linkContainer = document.createElement("a");
 	linkContainer.href = "https://sourcegraph.sgpxy.dev.uberinternal.com/";
+	linkContainer.target = "_blank";
 	// button
 	var authorizeSourcegraphButton = document.createElement("span");
 	authorizeSourcegraphButton.innerText = "Authorize Sourcegraph";
@@ -48,7 +49,7 @@ function addAuthorizeButton() {
 	authorizeSourcegraphButton.style.float = "right";
 	authorizeSourcegraphButton.style.marginRight = "40px";
 	authorizeSourcegraphButton.style.color = "yellow";
-	authorizeSourcegraphButton.title = "Click here to authenticate Sourcegraph and enable code intelligence on Phabricator. See console log for more details.";
+	authorizeSourcegraphButton.title = "Click here to authenticate Sourcegraph and enable code intelligence on Phabricator, then refresh this window. See console log for more details.";
 	linkContainer.appendChild(authorizeSourcegraphButton);
 	topMenuBar[0].appendChild(linkContainer);
 }
@@ -56,18 +57,19 @@ function addAuthorizeButton() {
 function onError(error) {
 	console.error("Error loading Sourcegraph Phabricator extension asset from https://sourcegraph.sgpxy.dev.uberinternal.com/.assets/scripts/phabricator.bundle.js.");
 	console.error("Please visit https://sourcegraph.sgpxy.dev.uberinternal.com/, authenticate and log-in, and accept the certificate to enable code intelligence.");
+	console.error("Then, refresh this window.");
 	addAuthorizeButton();
 }
 
 var phabricatorUsername = getPhabricatorUsername();
 if (phabricatorUsername && pilotUsers[phabricatorUsername]) {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.defer = true;
+	var script = document.createElement("script");
+	script.type = "text/javascript";
+	script.defer = true;
 	// this url should point to the sourcegraph instance serving the phabricator tooltips
 	// eventually, this should be umami.bundle.js, but the first version of the script we 
 	// shipped was phabricator.bundle.js
-    script.src = "https://sourcegraph.sgpxy.dev.uberinternal.com/.assets/scripts/phabricator.bundle.js";
+	script.src = "https://sourcegraph.sgpxy.dev.uberinternal.com/.assets/scripts/phabricator.bundle.js";
 	script.onerror = onError;
-    document.getElementsByTagName("head")[0].appendChild(script);
+	document.getElementsByTagName("head")[0].appendChild(script);
 }
