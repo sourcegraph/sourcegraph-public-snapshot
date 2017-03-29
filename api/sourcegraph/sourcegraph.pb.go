@@ -136,12 +136,14 @@ type GitHubRepoWithDetails struct {
 	Fork        bool                  `json:"Fork,omitempty"`
 	Private     bool                  `json:"Private,omitempty"`
 	CreatedAt   *time.Time            `json:"CreatedAt,omitempty"`
+	PushedAt    *time.Time            `json:"PushedAt,omitempty"`
 	Languages   []*GitHubRepoLanguage `json:"Languages,omitempty"`
 	CommitTimes []*time.Time          `json:"Commits,omitempty"`
 	// ErrorFetchingDetails is provided if tracker code receives error
 	// responses from GitHub while fetching language or commit details from
 	// https://api.github.com/repos/org/name/[languages|commits] URLs
 	ErrorFetchingDetails bool `json:"error_fetching_details,omitempty"`
+	Skipped              bool `json:"skipped,omitempty"`
 }
 
 type GitHubRepoLanguage struct {

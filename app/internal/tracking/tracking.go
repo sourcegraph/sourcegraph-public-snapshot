@@ -107,9 +107,9 @@ func TrackUserGitHubData(actor *auth.Actor, event string) error {
 //
 // This method may return an error and a partial list of repositories
 func listAllGitHubReposWithDetails(ctx context.Context, opt *github.RepositoryListOptions) ([]*sourcegraph.GitHubRepoWithDetails, error) {
-	// only pull a maximum of 1,000 repos
+	// only pull a maximum of 500 repos
 	const perPage = 100
-	const maxPage = 10
+	const maxPage = 5
 	op := *opt
 	op.PerPage = perPage
 
@@ -159,6 +159,12 @@ func listGitHubReposWithDetailsPage(ctx context.Context, opt *github.RepositoryL
 	// enough or too many GitHub errors, return a partially completed list
 	repoErrCounter := 0
 	for i, ghRepo := range ghRepos {
+		// If the repo is uninteresting for being old or not having a primary language, skip it
+		if time.Since(ghRepo.PushedAt.Time).Hours() > 24*365 || ghRepo.Language == nil {
+			rwds[i].Skipped = true
+			continue
+		}
+
 		ghLanguages, resp, err := extgithub.Client(ctx).Repositories.ListLanguages(*ghRepo.Owner.Login, *ghRepo.Name)
 		if err != nil {
 			repoErrCounter = repoErrCounter + 1
@@ -222,6 +228,7 @@ func toGitHubRepoWithDetails(ghrepo *github.Repository) *sourcegraph.GitHubRepoW
 		Fork:        repo.Fork,
 		Private:     repo.Private,
 		CreatedAt:   repo.CreatedAt,
+		PushedAt:    repo.PushedAt,
 		Languages:   make([]*sourcegraph.GitHubRepoLanguage, 0),
 		CommitTimes: make([]*time.Time, 0),
 	}

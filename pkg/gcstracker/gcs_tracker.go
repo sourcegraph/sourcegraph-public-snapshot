@@ -119,6 +119,7 @@ func (c *Client) NewTrackedObjects(event string) *TrackedObjects {
 			ServerTstamp: time.Now().UTC().Unix(),
 			Event:        event,
 		},
+		BatchID:  uuid.New().String(),
 		UserInfo: c.userInfo,
 	}
 }
@@ -152,20 +153,22 @@ func (tos *TrackedObjects) AddTrackedObject(objectType string, oc interface{}) e
 // based on a sourcegraph.ReposWithDetailsList
 func (tos *TrackedObjects) AddReposWithDetailsObjects(rl *sourcegraph.GitHubReposWithDetailsList) error {
 	for _, repo := range rl.ReposWithDetails {
-		var createdAt int64
-		if repo.CreatedAt != nil {
-			createdAt = repo.CreatedAt.UTC().Unix()
-		}
 		newRepo := &RepoWithDetailsContext{
 			URI:                  repo.URI,
 			Owner:                repo.Owner,
 			Name:                 repo.Name,
 			IsFork:               repo.Fork,
 			IsPrivate:            repo.Private,
-			CreatedAt:            createdAt,
 			Languages:            make([]*RepoLanguage, len(repo.Languages)),
 			CommitTimes:          make([]int64, len(repo.CommitTimes)),
 			ErrorFetchingDetails: repo.ErrorFetchingDetails,
+			Skipped:              repo.Skipped,
+		}
+		if repo.CreatedAt != nil {
+			newRepo.CreatedAt = repo.CreatedAt.UTC().Unix()
+		}
+		if repo.PushedAt != nil {
+			newRepo.PushedAt = repo.PushedAt.UTC().Unix()
 		}
 		for i, lang := range repo.Languages {
 			newRepo.Languages[i] = &RepoLanguage{

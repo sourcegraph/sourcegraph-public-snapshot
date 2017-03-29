@@ -250,6 +250,9 @@ func ToRepo(ghrepo *github.Repository) *sourcegraph.Repo {
 	if ghrepo.Owner != nil {
 		repo.Owner = strv(ghrepo.Owner.Login)
 	}
+	if ghrepo.CreatedAt != nil {
+		repo.CreatedAt = &ghrepo.CreatedAt.Time
+	}
 	if ghrepo.UpdatedAt != nil {
 		repo.UpdatedAt = &ghrepo.UpdatedAt.Time
 	}
