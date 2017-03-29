@@ -17,7 +17,7 @@ export class FileLabel extends vs.FileLabel {
 export function setFile(
 	instance: { setValue: (value?: string) => void },
 	file: URI, provider: IWorkspaceProvider): void {
-	const path = file.path + "/" + file.fragment;
+	const path = file.path;
 	const dirs = drop(path.split("/"));
 	const base = dirs.pop();
 	instance.setValue(base);

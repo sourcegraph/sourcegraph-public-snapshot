@@ -10,15 +10,14 @@ import { FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { Close, Report } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
-import { URIUtils } from "sourcegraph/core/uri";
 import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
 import { DefinitionDocumentationHeader } from "sourcegraph/workbench/info/documentation";
 import { Preview } from "sourcegraph/workbench/info/preview";
 import { sidebarWidth } from "sourcegraph/workbench/info/preview";
 import { OneReference, ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
-import { Disposables } from "sourcegraph/workbench/utils";
-import { MiniStore } from "sourcegraph/workbench/utils";
+import { } from "sourcegraph/workbench/services";
+import { Disposables, MiniStore, getURIContext } from "sourcegraph/workbench/utils";
 
 export const REFERENCES_SECTION_ID = "references-section-header";
 const TreeSidebarClassName = "sg-sidebar";
@@ -166,8 +165,7 @@ class InfoPanel extends React.Component<Props, State> {
 
 	getEventProps(): FileEventProps {
 		if (this.props.defData && this.props.defData.definition) {
-			const uri = this.props.defData.definition.uri;
-			const { repo, rev, path } = URIUtils.repoParams(uri);
+			const { repo, rev, path } = getURIContext(this.props.defData.definition.uri);
 			return Object.assign({}, this.props.fileEventProps, { defRepo: repo, defRev: rev || "", defPath: path });
 		}
 		return this.props.fileEventProps;
@@ -182,9 +180,9 @@ class InfoPanel extends React.Component<Props, State> {
 
 	private focusResource(loc: OneReference): void {
 		if (loc.isCurrentWorkspace) {
-			Events.InfoPanelLocalRef_Toggled.logEvent(Object.assign({}, this.getEventProps(), { refRepo: `${loc.uri.authority}${loc.uri.path}`, refPath: loc.uri.fragment, refRev: loc.uri.query || "" }));
+			Events.InfoPanelLocalRef_Toggled.logEvent(Object.assign({}, this.getEventProps(), { refRepo: `${loc.uri.authority}${loc.uri.path}`, refPath: getURIContext(loc.uri).path, refRev: loc.uri.query || "" }));
 		} else {
-			Events.InfoPanelExternalRef_Toggled.logEvent(Object.assign({}, this.getEventProps(), { refRepo: `${loc.uri.authority}${loc.uri.path}`, refPath: loc.uri.fragment, refRev: loc.uri.query || "" }));
+			Events.InfoPanelExternalRef_Toggled.logEvent(Object.assign({}, this.getEventProps(), { refRepo: `${loc.uri.authority}${loc.uri.path}`, refPath: getURIContext(loc.uri).path, refRev: loc.uri.query || "" }));
 		}
 		this.setState({
 			previewLocation: loc,

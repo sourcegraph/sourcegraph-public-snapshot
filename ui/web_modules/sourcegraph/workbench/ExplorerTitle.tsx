@@ -10,11 +10,11 @@ import { Button } from "sourcegraph/components/Button";
 import { List } from "sourcegraph/components/symbols/Primaries";
 import { History, Search } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
-import { URIUtils } from "sourcegraph/core/uri";
 import { Features } from "sourcegraph/util/features";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
-import { Services, getCurrentWorkspace } from "sourcegraph/workbench/services";
+import { Services, } from "sourcegraph/workbench/services";
 import "sourcegraph/workbench/styles/searchViewlet";
+import { getCurrentWorkspace, getURIContext } from "sourcegraph/workbench/utils";
 import { ICommandService } from "vs/platform/commands/common/commands";
 import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
@@ -39,7 +39,7 @@ const SCM_VIEWLET_ID = "workbench.view.scm";
 
 const hoverStyle = hover({ color: `${colors.white()} !important` });
 
-interface TitleState {
+interface State {
 	workspace: IWorkspace;
 	openViewlet: string;
 }
@@ -52,15 +52,20 @@ const buttonSx = {
 	marginLeft: 5,
 };
 
-export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
+export class ExplorerTitle extends React.Component<{}, State> {
 
 	disposables: IDisposable[] = [];
 	commandService: ICommandService = Services.get(ICommandService) as ICommandService;
 	viewletService: IViewletService = Services.get(IViewletService) as IViewletService;
-	state: TitleState = {
-		openViewlet: this.viewletService.getDefaultViewletId(),
-		workspace: getCurrentWorkspace(),
-	};
+
+	constructor() {
+		super();
+		const workspace = getCurrentWorkspace();
+		this.state = {
+			workspace,
+			openViewlet: workspace.revState && workspace.revState.zapRef ? SCM_VIEWLET_ID : EXPLORER_VIELET_ID,
+		};
+	}
 
 	private searchButtonClicked = () => {
 		this.updateViewlet(this.state.openViewlet === SEARCH_VIEWLET_ID ? EXPLORER_VIELET_ID : SEARCH_VIEWLET_ID);
@@ -73,9 +78,9 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		this.updateViewlet(EXPLORER_VIELET_ID);
 	}
 
-	private updateViewlet(viewletId: string): void {
-		if (this.state.openViewlet === viewletId) { return; }
-		this.setState({ openViewlet: viewletId }, () => {
+	private updateViewlet(viewletId: string, force?: boolean): void {
+		if (!force && this.state.openViewlet === viewletId) { return; }
+		this.setState({ openViewlet: viewletId } as State, () => {
 			this.commandService.executeCommand(viewletId);
 		});
 	}
@@ -84,22 +89,22 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		const workspace = this.state.workspace;
 		if (!workspace) { return ""; }
 		const resource = workspace.resource;
-		let { repo } = URIUtils.repoParams(resource);
+		let { repo } = getURIContext(resource);
 		// for the explorer viewlet, we don't want to show the authority (github.com/)
 		return repo.slice(resource.authority.length + 1);
 	}
 
 	componentDidMount(): void {
-		this.disposables.push(this.viewletService.onDidViewletOpen(v => {
-			this.setState({ openViewlet: v.getId() });
-		}));
+		// If the initial state is not explorer viewlet, update here.
+		this.updateViewlet(this.state.openViewlet, true);
 		this.disposables.push(onWorkspaceUpdated(workspace => {
 			if (workspace.revState && workspace.revState.zapRef) {
 				this.updateViewlet(SCM_VIEWLET_ID);
 			} else if (this.state.openViewlet === SCM_VIEWLET_ID) {
+				// If the current viewlet is SCM, revert back to EXPLORER.
 				this.updateViewlet(EXPLORER_VIELET_ID);
 			}
-			this.setState({ workspace });
+			this.setState({ workspace } as State);
 		}));
 	}
 

@@ -10,6 +10,8 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 import { AbstractThreadService } from "vs/workbench/services/thread/common/abstractThreadService";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 
+import { getGitBaseResource, getWorkspaceForResource } from "sourcegraph/workbench/utils";
+
 function asLoggingProtocol(protocol: IMessagePassingProtocol): IMessagePassingProtocol {
 
 	protocol.onMessage(msg => {
@@ -70,14 +72,14 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 		remoteCom.setManyHandler(this);
 
 		this.remotes.set(workspace.toString(), remoteCom);
-		this.remotes.set(workspace.with({ query: `${workspace.query}~0` }).toString(), remoteCom);
+		this.remotes.set(getGitBaseResource(workspace).toString(), remoteCom);
 		this.workerEmitter.fire(workspace.toString());
-		this.workerEmitter.fire(workspace.with({ query: `${workspace.query}~0` }).toString());
+		this.workerEmitter.fire(getGitBaseResource(workspace).toString());
 	}
 
 	protected _callOnRemote(proxyId: string, path: string, args: any[]): TPromise<any> {
-		const routeToWorkspaceHost = (uri: URI) => {
-			const workspace = uri.with({ fragment: "" });
+		const routeToWorkspaceHostWithArgs = (uri: URI) => {
+			const workspace = getWorkspaceForResource(uri);
 			let remoteCom = this.remotes.get(workspace.toString());
 			if (remoteCom) {
 				return remoteCom.callOnRemote(proxyId, path, args);
@@ -90,9 +92,8 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 				const timer = setTimeout(() => {
 					timedOut = true;
 					const matchingPaths: string[] = [];
-					const workspacePath = workspace.with({ query: "" }).toString();
 					this.remotes.forEach((value, key) => {
-						if (key.startsWith(workspacePath)) {
+						if (key.startsWith(workspace.toString())) {
 							matchingPaths.push(key);
 						}
 					});
@@ -114,7 +115,8 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 			}));
 		};
 
-		const routeStringURLToWorkspaceHost = (stringURL: string) => routeToWorkspaceHost(URI.parse(stringURL));
+		const routeToWorkspaceHost = (uri: URI) => routeToWorkspaceHostWithArgs(uri);
+		const routeStringURLToWorkspaceHost = (stringURL: string) => routeToWorkspaceHostWithArgs(URI.parse(stringURL));
 
 		switch (proxyId) {
 			case "eExtHostLanguageFeatures":
@@ -164,12 +166,13 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 							return routeToWorkspaceHost(arg.addedDocuments[0].url as URI);
 						} else if (arg.removedDocuments) {
 							// assume again the first document is for the same workspace as the rest
-							return routeToWorkspaceHost(URI.parse(arg.removedDocuments[0]));
+							return routeStringURLToWorkspaceHost(arg.removedDocuments[0]);
 						} else if (arg.addedEditors) {
 							return routeToWorkspaceHost(arg.addedEditors[0].document as URI);
 						}
 						break;
 				}
+				break;
 		}
 
 		// Default to routing requests to the current workspace.

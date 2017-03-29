@@ -5,6 +5,7 @@ import { $ } from "vs/base/browser/builder";
 
 import { ReferenceCard } from "sourcegraph/components";
 import { OneReference } from "sourcegraph/workbench/info/referencesModel";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 export function ReferenceItem(
 	element: OneReference,
@@ -14,7 +15,7 @@ export function ReferenceItem(
 	refWithCommitInfoHeight: number,
 ): void {
 	const preview = element.preview.preview(element.range);
-	const fileName = element.uri.fragment.split("/").pop()!;
+	const fileName = getURIContext(element.uri).path.split("/").pop()!;
 	const line = element.range.startLineNumber;
 	const fnSignature = preview.before.concat(preview.inside, preview.after);
 	const refContainer = $("div");

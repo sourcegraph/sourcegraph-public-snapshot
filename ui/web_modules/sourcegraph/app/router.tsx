@@ -100,7 +100,8 @@ export function revFromRouteParams(params: RouteParams): string | null {
 }
 
 /**
- * pathFromSplat returns the blob path from the "splat" parameter, if defined.
+ * pathFromSplat returns the blob path from the "splat" parameter. By default,
+ * and for empty paths, "/" is returned.
  */
 export function pathFromRouteParams(params: RouteParams): string {
 	const { splat } = params;

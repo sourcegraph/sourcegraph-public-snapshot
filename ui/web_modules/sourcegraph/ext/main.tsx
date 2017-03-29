@@ -1,9 +1,7 @@
-import URI from "vs/base/common/uri";
-import { IWorkspaceContextService, IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
+import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { IThreadService } from "vs/workbench/services/thread/common/threadService";
 
 import { context } from "sourcegraph/app/context";
-import { URIUtils } from "sourcegraph/core/uri";
 import { registerContribution as registerExtHostContribution } from "sourcegraph/ext/extHost.contribution.override";
 import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
@@ -11,6 +9,7 @@ import { makeBlobURL } from "sourcegraph/init/worker";
 import { listEnabled as listEnabledFeatures } from "sourcegraph/util/features";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
 import { Services } from "sourcegraph/workbench/services";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 /**
  * workspaces is a set of URIs for which we have already bootstrapped
@@ -25,26 +24,28 @@ const workspaces = new Set<string>();
  *
  * TODO(john): there is currently no cleanup of unused extension hosts / web workers.
  */
-export function init(workspace: URI, revState?: IWorkspaceRevState): void {
+export function init(workspace: IWorkspace): void {
 	registerExtHostContribution();
-	setupWorker(workspace, revState);
-	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w.resource, w.revState ? w.revState : undefined));
+	setupWorker(workspace);
+	(Services.get(IWorkspaceContextService)).onWorkspaceUpdated(w => setupWorker(w));
 }
 
 let seqId = 0;
 
-export function setupWorker(workspace: URI, revState?: IWorkspaceRevState): void {
-	if (workspaces.has(workspace.toString())) {
+export function setupWorker(workspace: IWorkspace): void {
+	if (workspaces.has(workspace.resource.toString())) {
 		return;
 	}
 
-	if (revState && revState.zapRef && !/^branch\//.test(revState.zapRef)) {
-		throw new Error(`invalid Zap ref: ${JSON.stringify(revState.zapRef)} (no 'branch/' prefix)`);
+	if (workspace.revState && workspace.revState.zapRef && !/^branch\//.test(workspace.revState.zapRef)) {
+		throw new Error(`invalid Zap ref: ${JSON.stringify(workspace.revState.zapRef)} (no 'branch/' prefix)`);
 	}
 
-	workspaces.add(workspace.toString());
+	workspaces.add(workspace.resource.toString());
+	(Services.get(IWorkspaceContextService)).registerWorkspace(workspace);
 
-	const { repo, rev } = URIUtils.repoParams(workspace);
+	const { repo } = getURIContext(workspace.resource);
+	const rev = workspace.revState ? workspace.revState.commitID || "" : "";
 
 	// Try to get repo language inventory before initializing extension host.
 	// These langs are passed as initialization options to the extension host and
@@ -76,9 +77,9 @@ export function setupWorker(workspace: URI, revState?: IWorkspaceRevState): void
 	getInventory.then(langs => {
 		const opts: InitializationOptions = {
 			seqId: ++seqId,
-			workspace: workspace.toString(),
+			workspace: workspace.resource.toString(),
 			features: listEnabledFeatures(),
-			revState,
+			revState: workspace.revState,
 			context,
 			langs,
 		};
@@ -95,7 +96,7 @@ export function setupWorker(workspace: URI, revState?: IWorkspaceRevState): void
 		reader.onload = event => {
 			const resultWithOpts = `self.extensionHostOptions=${JSON.stringify(opts)};${reader.result}`;
 			const worker = new Worker(makeBlobURL(resultWithOpts));
-			(Services.get(IThreadService) as MainThreadService).attachWorker(worker, workspace);
+			(Services.get(IThreadService) as MainThreadService).attachWorker(worker, workspace.resource);
 		};
 		reader.readAsText(blob);
 	});

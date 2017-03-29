@@ -70,7 +70,6 @@ type SyncRefDB struct {
 // (or else there will likely be a deadlock).
 func (db *SyncRefDB) lock(ref string) (unlock func()) {
 	db.nameMu.Lock()
-	defer db.nameMu.Unlock()
 	if db.name == nil {
 		db.name = map[string]*sync.Mutex{}
 	}
@@ -79,6 +78,8 @@ func (db *SyncRefDB) lock(ref string) (unlock func()) {
 		mu = new(sync.Mutex)
 		db.name[ref] = mu
 	}
+	db.nameMu.Unlock()
+
 	mu.Lock()
 	return mu.Unlock
 }

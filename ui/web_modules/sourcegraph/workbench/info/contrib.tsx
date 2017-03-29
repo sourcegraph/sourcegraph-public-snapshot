@@ -14,13 +14,11 @@ import { ContextKeyExpr } from "vs/platform/contextkey/common/contextkey";
 import { IEditorService } from "vs/platform/editor/common/editor";
 import { KeybindingsRegistry } from "vs/platform/keybinding/common/keybindingsRegistry";
 
-import { URIUtils } from "sourcegraph/core/uri";
 import { DefinitionData, LocationWithCommitInfo, provideDefinition, provideGlobalReferencesStreaming, provideReferencesCommitInfo, provideReferencesStreaming } from "sourcegraph/util/RefsBackend";
 import { ReferencesModel } from "sourcegraph/workbench/info/referencesModel";
 import { infoStore } from "sourcegraph/workbench/info/sidebar";
-import { normalisePosition } from "sourcegraph/workbench/utils";
-
 import { Services } from "sourcegraph/workbench/services";
+import { getURIContext, normalisePosition } from "sourcegraph/workbench/utils";
 import { Disposables } from "sourcegraph/workbench/utils";
 
 interface Props {
@@ -54,8 +52,7 @@ export class SidebarContribution extends Disposables {
 			let oldModel = event.oldModelUrl;
 			let newModel = event.newModelUrl;
 			if (!oldModel || (newModel && oldModel.toString() !== newModel.toString())) {
-				const fileEventProps = URIUtils.repoParams(newModel);
-				this.prepareInfoStore(false, "", fileEventProps);
+				this.prepareInfoStore(false, "", getURIContext(newModel));
 			}
 		});
 	}
@@ -66,7 +63,7 @@ export class SidebarContribution extends Disposables {
 
 	private async renderSidePanelForDataStreaming(props: Props): Promise<Subscription | undefined> {
 		const id = this.currentID;
-		const fileEventProps = URIUtils.repoParams(props.editorModel.uri);
+		const fileEventProps = getURIContext(props.editorModel.uri);
 		const def = await provideDefinition(props.editorModel, props.params.position).then(defData => {
 			if (!defData || (!defData.docString && !defData.funcName)) {
 				return null;
@@ -218,10 +215,10 @@ export class SidebarContribution extends Disposables {
 	private logClick(e: IEditorMouseEvent): void {
 		const model = this.editor.getModel();
 
-		const params = URIUtils.repoParams(model.uri);
+		const params = getURIContext(model.uri);
 		if (this.editor instanceof EmbeddedCodeEditorWidget) {
 			const resource = getOuterEditor(Services, {}).getModel().uri;
-			const outerParams = URIUtils.repoParams(resource);
+			const outerParams = getURIContext(resource);
 			Events.CodeToken_Clicked.logEvent({
 				...outerParams,
 				refRepo: params.repo,

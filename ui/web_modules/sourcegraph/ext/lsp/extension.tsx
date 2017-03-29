@@ -1,3 +1,5 @@
+import * as vscode from "vscode";
+
 import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/browser";
 import { v4 as uuidV4 } from "uuid";
 
@@ -26,7 +28,28 @@ export function activate(): void {
 			documentSelector: [mode],
 			initializationOptions: {
 				mode,
+				rev: initOpts.revState!.commitID,
 				session: generateLSPSessionKeyIfNeeded(),
+			},
+			uriConverters: {
+				code2Protocol: (value: vscode.Uri) => {
+					if (value.scheme === "file") {
+						let filePath = value.toString().substr(initOpts.workspace.length + 1); // trim leading "/" after workspace path; possibly empty
+						// TODO(john): if workspace rev state changes, we re-open a LSP connection with the new revision base.
+						return value.with({ scheme: "git", query: initOpts.revState!.commitID, fragment: filePath }).toString();
+					}
+					return value.toString();
+				},
+				protocol2Code: (value: string) => {
+					const uri = vscode.Uri.parse(value);
+					if (uri.scheme === "git") {
+						// convert to file if in the same workspace
+						if (uri.with({ scheme: "file", query: "", fragment: "" }).toString() === initOpts.workspace) {
+							return uri.with({ scheme: "file", query: "", path: uri.path + `${uri.fragment !== "" ? `/${uri.fragment}` : ""}`, fragment: "" });
+						}
+					}
+					return vscode.Uri.parse(value);
+				},
 			},
 		});
 		client.start();

@@ -2,8 +2,6 @@ import { hover, keyframes } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 
-import { IDisposable } from "vs/base/common/lifecycle";
-
 import { context } from "sourcegraph/app/context";
 import { SearchCTA, ShortcutCTA } from "sourcegraph/app/GlobalNav/GlobalNavCTA";
 import { ShortcutModal } from "sourcegraph/app/GlobalNav/ShortcutMenu";
@@ -23,7 +21,6 @@ import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { LoginModal } from "sourcegraph/user/Login";
 import { SignupModal } from "sourcegraph/user/Signup";
 import { isMobileUserAgent } from "sourcegraph/util/shouldPromptToInstallBrowserExtension";
-import { onWorkbenchShown } from "sourcegraph/workbench/main";
 
 interface State {
 	showShortcut: boolean;
@@ -36,19 +33,8 @@ export class GlobalNav extends React.Component<{}, State> {
 	};
 
 	context: RouterContext;
-	workbenchListener: IDisposable;
 
 	state: State = { showShortcut: false, workbenchShown: false };
-
-	componentDidMount(): void {
-		this.workbenchListener = onWorkbenchShown(shown => this.setState({ workbenchShown: shown } as State));
-	}
-
-	componentWillUnmount(): void {
-		if (this.workbenchListener) {
-			this.workbenchListener.dispose();
-		}
-	}
 
 	activateSearch = (): void => {
 		Events.Quickopen_Initiated.logEvent({ page_location: "SearchCTA" });

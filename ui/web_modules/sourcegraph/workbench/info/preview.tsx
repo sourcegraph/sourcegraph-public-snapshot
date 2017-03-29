@@ -10,12 +10,11 @@ import { FlexContainer } from "sourcegraph/components";
 import { Close, PopOut } from "sourcegraph/components/symbols/Primaries";
 import { colors, whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
-import { URIUtils } from "sourcegraph/core/uri";
 import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { REFERENCES_SECTION_ID } from "sourcegraph/workbench/info/sidebar";
 import { getEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
-import { Disposables } from "sourcegraph/workbench/utils";
+import { Disposables, getURIContext } from "sourcegraph/workbench/utils";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 
@@ -74,7 +73,7 @@ export class Preview extends React.Component<Props, {}> {
 const prefix = "github.com/";
 
 function Title({ location, onClickClose, fileEventProps }: { location: Location; onClickClose: () => void; fileEventProps: FileEventProps }): JSX.Element {
-	let { repo, path, rev } = URIUtils.repoParams(location.uri);
+	let { repo, rev, path } = getURIContext(location.uri);
 	const url = urlToBlobRange(repo, rev, path, RangeOrPosition.fromMonacoRange(location.range).toZeroIndexedRange());
 	repo = repo.startsWith(prefix) ? repo.substr(prefix.length) : repo;
 	return <FlexContainer justify="between" items="center" style={{

@@ -8,10 +8,9 @@ import { Button, FlexContainer } from "sourcegraph/components";
 import { ArrowRight, List } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
-import { URIUtils } from "sourcegraph/core/uri";
 import { Events, FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { DefinitionData } from "sourcegraph/util/RefsBackend";
-import { RouterContext, prettifyRev } from "sourcegraph/workbench/utils";
+import { RouterContext, getURIContext, prettifyRev } from "sourcegraph/workbench/utils";
 
 interface Props {
 	defData: DefinitionData;
@@ -42,8 +41,7 @@ export class DefinitionDocumentationHeader extends React.Component<Props, State>
 			showingFullDocString: !this.state.showingFullDocString,
 		});
 		if (this.props.defData.definition) {
-			const uri = this.props.defData.definition.uri;
-			let { repo, rev, path } = URIUtils.repoParams(uri);
+			let { repo, rev, path } = getURIContext(this.props.defData.definition.uri);
 			rev = prettifyRev(rev);
 			Events.InfoPanelComment_Toggled.logEvent({ ...this.props.eventProps, defRepo: repo, defRev: rev || "", defPath: path });
 		} else {
@@ -83,9 +81,8 @@ function Definition({ defData, eventProps }: { defData: DefinitionData, eventPro
 	if (!defData.definition) {
 		return <div></div>;
 	}
-	const uri = defData.definition.uri;
-	let { repo, rev, path } = URIUtils.repoParams(uri);
-	rev = prettifyRev(rev);
+	let { repo, rev, path } = getURIContext(defData.definition.uri);
+	rev = prettifyRev(rev); // TODO(john): get rid of this
 	const url = urlToBlobRange(repo, rev, path, RangeOrPosition.fromMonacoRange(defData.definition.range).toZeroIndexedRange());
 	return <div>
 		<p style={{ color: colors.blueGray(), paddingTop: 0 }}>

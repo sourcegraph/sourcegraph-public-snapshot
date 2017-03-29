@@ -18,6 +18,8 @@ import { IWindowService, IWindowsService } from "vs/platform/windows/common/wind
 import { IWorkspace, IWorkspaceContextService, IWorkspaceRevState, WorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { EditorPart } from "vs/workbench/browser/parts/editor/editorPart";
 import { ITreeExplorerService } from "vs/workbench/parts/explorers/common/treeExplorerService";
+import { IPreferencesService } from "vs/workbench/parts/preferences/common/preferences";
+import { IBackupFileService } from "vs/workbench/services/backup/common/backup";
 import { IWorkspaceConfigurationService } from "vs/workbench/services/configuration/common/configuration";
 import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
 import { MessageService } from "vs/workbench/services/message/electron-browser/messageService";
@@ -33,9 +35,9 @@ import { ExtensionService } from "sourcegraph/workbench/extensionService";
 import { FileService } from "sourcegraph/workbench/overrides/fileService";
 import { SearchService } from "sourcegraph/workbench/searchService";
 import { standaloneServices } from "sourcegraph/workbench/standaloneServices";
-import { NoopDisposer } from "sourcegraph/workbench/utils";
-import { IPreferencesService } from "vs/workbench/parts/preferences/common/preferences";
-import { IBackupFileService } from "vs/workbench/services/backup/common/backup";
+import { setContextService } from "sourcegraph/workbench/utils";
+
+export const NoopDisposer = { dispose: () => {/* */ } };
 
 export let Services: ServicesAccessor;
 
@@ -97,12 +99,9 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI, revSta
 
 	Services = services;
 
-	return services;
-}
+	setContextService(Services.get(IWorkspaceContextService));
 
-export function getCurrentWorkspace(): IWorkspace {
-	const contextService = Services.get(IWorkspaceContextService);
-	return contextService.getWorkspace();
+	return services;
 }
 
 export function setWorkspace(workspace: IWorkspace): void {
@@ -112,6 +111,15 @@ export function setWorkspace(workspace: IWorkspace): void {
 
 	const contextService = Services.get(IWorkspaceContextService);
 	return contextService.setWorkspace(workspace);
+}
+
+export function registerWorkspace(workspace: IWorkspace): void {
+	if (workspace.revState && workspace.revState.zapRef && !/^branch\//.test(workspace.revState.zapRef)) {
+		throw new Error(`invalid Zap ref: ${JSON.stringify(workspace.revState.zapRef)} (no 'branch/' prefix)`);
+	}
+
+	const contextService = Services.get(IWorkspaceContextService);
+	return contextService.registerWorkspace(workspace);
 }
 
 export function onWorkspaceUpdated(listener: ((workspace: IWorkspace) => any)): IDisposable {

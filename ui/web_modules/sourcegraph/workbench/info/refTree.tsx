@@ -22,7 +22,7 @@ import { DataSource } from "sourcegraph/workbench/info/referencesWidget";
 import { RepositoryHeader } from "sourcegraph/workbench/info/repositoryHeader";
 import { getEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 import { Services } from "sourcegraph/workbench/services";
-import { Disposables } from "sourcegraph/workbench/utils";
+import { Disposables, getURIContext, getWorkspaceForResource } from "sourcegraph/workbench/utils";
 
 interface Props {
 	model: ReferencesModel;
@@ -113,7 +113,7 @@ export class RefTree extends React.Component<Props, State> {
 				firstToggleAdded = true;
 			}
 			for (let fileReferences of model.groups) {
-				const workspace = fileReferences.uri.with({ fragment: "" }).toString();
+				const workspace = getWorkspaceForResource(fileReferences.uri).toString();
 				if (userToggledState.has(workspace)) {
 					elementsToExpand.push(fileReferences);
 				}
@@ -260,7 +260,7 @@ class Renderer extends LegacyRenderer {
 				firstToggleAdded,
 				fileRefsHeight,
 				this._contextService,
-				this._editorURI.path,
+				getURIContext(this._editorURI).repo,
 			);
 		} else if (element instanceof OneReference) {
 			ReferenceItem(

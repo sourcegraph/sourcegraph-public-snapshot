@@ -4177,6 +4177,11 @@ declare module 'vscode' {
 		export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
 
 		/**
+		 * An event that is emitted when a [text document](#TextDocument) is changed.
+		 */
+		export const onDidRevertTextDocument: Event<string>;
+
+		/**
 		 * An event that is emitted when a [text document](#TextDocument) will be saved to disk.
 		 *
 		 * *Note 1:* Subscribers can delay saving by registering asynchronous work. For the sake of data integrity the editor

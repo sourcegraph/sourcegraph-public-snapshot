@@ -3,7 +3,6 @@ import * as debounce from "lodash/debounce";
 import * as isEqual from "lodash/isEqual";
 import * as React from "react";
 
-import { IDisposable } from "vs/base/common/lifecycle";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
@@ -13,22 +12,18 @@ import { RouteProps, Router } from "sourcegraph/app/router";
 import { EventListener, isNonMonacoTextArea } from "sourcegraph/Component";
 import { AbsoluteLocation } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
-import { registerEditorCallbacks, registerQuickopenListeners, setEditorDiffState, syncEditorWithRouterProps, toggleQuickopen as quickopen, updateEditorArea, updateWorkspace } from "sourcegraph/editor/config";
+import { registerEditorCallbacks, registerQuickopenListeners, syncEditorWithRouterProps, toggleQuickopen as quickopen, updateEditorArea, updateWorkspace } from "sourcegraph/editor/config";
 import { urlWithRev } from "sourcegraph/repo/routes";
-import { init, unmount, workbenchStore } from "sourcegraph/workbench/main";
+import { init } from "sourcegraph/workbench/main";
 import { Services } from "sourcegraph/workbench/services";
 
 interface Props extends AbsoluteLocation, RouteProps {
 	rev: string | null;
 }
 
-interface State {
-	diffMode: boolean;
-}
-
 // WorkbenchShell loads the workbench and calls init on it.
 @autobind
-export class WorkbenchShell extends React.Component<Props, State> {
+export class WorkbenchShell extends React.Component<Props, {}> {
 	static contextTypes: React.ValidationMap<any> = {
 		router: React.PropTypes.object.isRequired,
 	};
@@ -37,20 +32,15 @@ export class WorkbenchShell extends React.Component<Props, State> {
 	workbench: Workbench;
 	services: ServiceCollection;
 	listener: number;
-	disposables: IDisposable[] = [];
 	currWorkspace: IWorkspace;
-	state: State = {
-		diffMode: Boolean(this.props.zapRef),
-	};
 
 	domRef(parent: HTMLDivElement): void {
 		if (!parent) {
 			return;
 		}
 
-		const { repo, commitID, path } = this.props;
-		const resource = URIUtils.pathInRepo(repo, commitID, path);
-		const { workbench, services, domElement } = init(resource, this.props);
+		const { repo } = this.props;
+		const { workbench, services, domElement } = init(URIUtils.createResourceURI(repo), { zapRev: this.props.zapRev, zapRef: this.props.zapRef, commitID: this.props.commitID, branch: this.props.branch });
 		registerEditorCallbacks();
 		this.workbench = workbench;
 		this.services = services;
@@ -64,7 +54,6 @@ export class WorkbenchShell extends React.Component<Props, State> {
 	componentWillMount(): void {
 		window.onresize = debounce(this.layout, 50);
 		document.body.classList.add("monaco-shell", "vs-dark");
-		this.disposables.push(workbenchStore.subscribe(e => this.setState(e)));
 	}
 
 	componentDidMount(): void {
@@ -81,7 +70,6 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		contextService.onWorkspaceUpdated(workspace => {
 			const revState = workspace.revState;
 			const newRepo = workspace.resource.authority + workspace.resource.path !== this.props.repo;
-			workbenchStore.dispatch({ diffMode: Boolean(revState && revState.zapRef) });
 			if (revState && !newRepo) {
 				if (revState.zapRev && revState.zapRev !== this.props.zapRev) {
 					this.context.router.push(urlWithRev(getRoutePattern(this.context.router.routes), this.context.router.params, revState.zapRev));
@@ -97,24 +85,14 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		});
 	}
 
-	componentWillUpdate(nextProps: Props, nextState: State): void {
-		if (this.state.diffMode !== nextState.diffMode && nextProps.path !== "/") {
-			setEditorDiffState(nextState, nextProps);
+	componentWillUpdate(nextProps: Props): void {
+		if (!isEqual(nextProps, this.props)) {
+			syncEditorWithRouterProps(nextProps);
 		}
 	}
 
 	componentWillUnmount(): void {
 		window.onresize = () => void (0);
-		if (this.disposables) {
-			this.disposables.forEach(disposable => disposable.dispose());
-		}
-		unmount();
-	}
-
-	componentWillReceiveProps(nextProps: AbsoluteLocation): void {
-		if (!isEqual(nextProps, this.props)) {
-			syncEditorWithRouterProps(nextProps);
-		}
 	}
 
 	layout(): void {

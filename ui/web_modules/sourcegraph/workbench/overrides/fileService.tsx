@@ -2,12 +2,11 @@ import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { FileChangesEvent, FileOperationEvent, IBaseStat, IContent, IFileService, IFileStat, IImportResult, IResolveContentOptions, IResolveFileOptions, IStreamContent, IUpdateContentOptions } from "vs/platform/files/common/files";
-
 import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
-import { URIUtils } from "sourcegraph/core/uri";
 import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 /**
  * Both of these caches will last until a hard navigation or refresh. We will
@@ -63,7 +62,7 @@ export class FileService implements IFileService {
 			fileStatCache.set(resource.toString(), result);
 			const key = this.contextService.getWorkspace().resource.toString();
 			let currentFiles = workspaceFiles.get(key) || [];
-			workspaceFiles.set(key, currentFiles.concat(resource.fragment));
+			workspaceFiles.set(key, currentFiles.concat(getURIContext(resource).path));
 			return result;
 		});
 	}
@@ -76,7 +75,7 @@ export class FileService implements IFileService {
 		const key = this.contextService.getWorkspace().resource.toString();
 		let wsFiles = workspaceFiles.get(key);
 		if (wsFiles) {
-			workspaceFiles.set(key, wsFiles.filter(item => item !== resource.fragment));
+			workspaceFiles.set(key, wsFiles.filter(item => item !== getURIContext(resource).path));
 			fileStatCache.delete(resource.toString());
 			contentCache.delete(resource.toString());
 		}
@@ -85,7 +84,8 @@ export class FileService implements IFileService {
 	}
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
-		return getFilesCached(resource).then(files => {
+		const { rev } = getURIContext(resource);
+		return getFilesCached({ resource, revState: { commitID: rev || undefined } }).then(files => {
 			const statCacheHit = fileStatCache.get(resource.toString());
 			if (statCacheHit) {
 				// TODO(john): this may adversely impact zap -- we may want a flag to force re-computation
@@ -103,28 +103,12 @@ export class FileService implements IFileService {
 	}
 
 	resolveContent(resource: URI, options?: IResolveContentOptions): TPromise<IContent> {
-		if (resource.scheme === "zap") {
-			let zapResource = resource.with({ scheme: "git" });
-			this.touchFile(zapResource).then(() => this.refreshTree());
-			resource = zapResource;
-		}
-
-		const isViewingZapRev = Boolean(this.contextService.getWorkspace().revState && this.contextService.getWorkspace().revState!.zapRef);
-
 		// contentCache acts like watchFileChanges in that it is set the first time when fetching content from
 		// fetchContentAndResolveRev. It is updated when updateContent is called.
 		// This behavior mimicks watchFileChanges which is used by VSCode to watch for content changes at the filesystem level.
 		// We will need to build on this to handle renaming and moving files so their changes are reflected in the tree.
-		const contents = contentCache.get(resource.toString());
-		if (contents && isViewingZapRev) {
-			return TPromise.wrap({
-				...toBaseStat(resource),
-				value: contents,
-				encoding: "utf8",
-			});
-		}
 
-		return TPromise.wrap(fetchContentAndResolveRev(resource, isViewingZapRev)).then(({ content }) => {
+		return TPromise.wrap(fetchContentAndResolveRev(resource)).then(({ content }) => {
 			return {
 				...toBaseStat(resource),
 				value: content,
@@ -215,8 +199,8 @@ export class FileService implements IFileService {
 	public dispose(): void { /* noop */ }
 }
 
-export function fetchFilesAndDirs(resource: URI): Promise<GQL.IRoot> {
-	const { repo, rev } = URIUtils.repoParams(resource);
+export function fetchFilesAndDirs(workspace: IWorkspace): Promise<GQL.IRoot> {
+	const { repo } = getURIContext(workspace.resource);
 	return fetchGQL(`query FileTree($repo: String!, $rev: String!) {
 			root {
 				repository(uri: $repo) {
@@ -235,13 +219,13 @@ export function fetchFilesAndDirs(resource: URI): Promise<GQL.IRoot> {
 					}
 				}
 			}
-		}`, { repo, rev }).then(resp => resp.data.root);
+		}`, { repo, rev: workspace.revState!.commitID }).then(resp => resp.data.root);
 }
 
 export function toBaseStat(resource: URI): IBaseStat {
 	return {
 		resource: resource,
-		name: resource.fragment,
+		name: getURIContext(resource).path,
 		mtime: 0,
 		etag: resource.toString(),
 	};
@@ -269,24 +253,24 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 
 	// looking for children of resource
 	for (const candidate of files) {
-		if (candidate === resource.fragment) {
+		const resourcePath = getURIContext(resource).path;
+		if (candidate === resourcePath) {
 			isFile = true;
 			// skip over self
 			continue;
 		}
 
-		const prefix = resource.fragment ? resource.fragment + "/" : "";
+		const prefix = resourcePath ? resourcePath + "/" : "";
 		if (!candidate.startsWith(prefix)) {
-			// candidate is not a subresource of resource
 			continue;
 		}
 
 		const child = candidate.substr(prefix.length);
 		const index = child.indexOf("/");
 		if (index === -1) {
-			childFiles.push(candidate);
+			childFiles.push(child);
 		} else {
-			const dir = prefix + child.substr(0, index);
+			const dir = child.substr(0, index);
 			childDirectories.add(dir);
 			// candidate is in one of resource's subdirectories,
 			// so we forward it as a file candidate in the recursive call.
@@ -295,11 +279,11 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 	}
 
 	for (const childDir of Array.from(childDirectories)) {
-		const fileStat = toFileStat(resource.with({ fragment: childDir }), recursiveFilesByDirectory.get(childDir)!);
+		const fileStat = toFileStat(resource.with({ path: resource.path + `/${childDir}` }), recursiveFilesByDirectory.get(childDir)!);
 		childStats.push(fileStat);
 	}
 	for (const child of childFiles) {
-		const fileStat = toFileStat(resource.with({ fragment: child }), []);
+		const fileStat = toFileStat(resource.with({ path: resource.path + `/${child}` }), []);
 		childStats.push(fileStat);
 	}
 
@@ -316,13 +300,14 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 
 /**
  * Gets and caches a list of all of the files in a workspace.
+ * TODO(john): do we need this now that we have the Apollo caching layer?
  */
-export function getFilesCached(resource: URI): TPromise<string[]> {
-	const key = resource.toString();
+export function getFilesCached(workspace: IWorkspace): TPromise<string[]> {
+	const key = workspace.resource.toString() + "?" + workspace.revState!.commitID;
 	if (workspaceFiles.has(key)) {
 		return TPromise.wrap(workspaceFiles.get(key));
 	}
-	return TPromise.wrap(fetchFilesAndDirs(resource).then(root => {
+	return TPromise.wrap(fetchFilesAndDirs(workspace).then(root => {
 		const files: string[] = root.repository!.commit.commit!.tree!.files.map(file => file.name);
 		workspaceFiles.set(key, files);
 		return files;

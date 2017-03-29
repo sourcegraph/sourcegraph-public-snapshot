@@ -12,5 +12,5 @@ export function activate(): any {
 		return;
 	}
 	const ctx: vscode.ExtensionContext = { subscriptions: [] as vscode.Disposable[] } as any;
-	return activateCommon(browserEnvironment, ctx, initOpts.revState, true);
+	return activateCommon(browserEnvironment, ctx, initOpts, true);
 }

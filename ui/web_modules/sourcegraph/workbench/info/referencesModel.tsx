@@ -11,6 +11,7 @@ import { Location } from "vs/editor/common/modes";
 import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/services/resolverService";
 
 import { LocationWithCommitInfo, ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
+import { getURIContext, getWorkspaceForResource } from "sourcegraph/workbench/utils";
 
 export class OneReference implements IDisposable {
 
@@ -240,19 +241,23 @@ export class ReferencesModel implements IDisposable {
 
 	constructor(references: LocationWithCommitInfo[], workspace: URI) {
 		// Workspace URIs should not have a fragment since fragments refer to specific files.
-		this._workspace = workspace.with({ fragment: "" });
+		this._workspace = getWorkspaceForResource(workspace);
 
 		// grouping and sorting
 		references.sort(ReferencesModel._compareReferences);
 
 		let current: FileReferences | null = null;
+		const isSameRepository = (uri1: URI, uri2: URI) => {
+			return getURIContext(uri1).repo === getURIContext(uri2).repo;
+		};
+
 		// Make the real groups again.
-		let realGroups: FileReferences[] = [];
+		let realGroups: FileReferences[] = []; //  a list of file references, one per repo (but the URI may be a file...)
 		for (let ref of references) {
 			// We have a new repo! YAY!
-			if (!current || current.uri.path !== ref.uri.path) {
+			if ((!current || !isSameRepository(current.uri, ref.uri))) {
 				const range = { startLineNumber: 0, startColumn: 0, endLineNumber: 0, endColumn: 0 };
-				let temp = new FileReferences(this, ref.uri.with({ fragment: "" }), range);
+				let temp = new FileReferences(this, getWorkspaceForResource(ref.uri), range);
 				realGroups.push(temp);
 			}
 			// Make the correct file reference and generate a real preview!
@@ -279,13 +284,13 @@ export class ReferencesModel implements IDisposable {
 		for (let group of realGroups) {
 			let tempGroup: OneReference[] = [];
 			for (let reference of arrayOfChildren) {
-				if (reference.uri.path === group.uri.path) {
+				if (isSameRepository(reference.uri, group.uri)) {
 					tempGroup.push(reference);
 				}
 			}
 
 			group.children = tempGroup;
-			if (this._workspace && group.uri.path === this._workspace.path) {
+			if (this._workspace && isSameRepository(group.uri, this._workspace)) {
 				this._groups.splice(0, 0, group);
 			} else {
 				this._groups.push(group);

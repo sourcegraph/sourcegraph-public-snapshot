@@ -8,7 +8,6 @@ import { EmbeddedCodeEditorWidget } from "vs/editor/browser/widget/embeddedCodeE
 import { CursorChangeReason, ICursorSelectionChangedEvent, IRange } from "vs/editor/common/editorCommon";
 import { DefinitionProviderRegistry, HoverProviderRegistry, ReferenceProviderRegistry } from "vs/editor/common/modes";
 import { ICodeEditorService } from "vs/editor/common/services/codeEditorService";
-import { getCodeEditor } from "vs/editor/common/services/codeEditorService";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IFileService } from "vs/platform/files/common/files";
 import { IQuickOpenService } from "vs/platform/quickOpen/common/quickOpen";
@@ -27,11 +26,10 @@ import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosit
 import { URIUtils } from "sourcegraph/core/uri";
 import { renderDirectoryContent, renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
 import { SidebarContribID, SidebarContribution } from "sourcegraph/workbench/info/contrib";
-import { WorkbenchState, onWorkbenchShown, workbenchStore } from "sourcegraph/workbench/main";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/workbench/overrides/editorService";
 import { WorkbenchEditorService } from "sourcegraph/workbench/overrides/editorService";
-import { Services, getCurrentWorkspace, setWorkspace } from "sourcegraph/workbench/services";
-import { prettifyRev } from "sourcegraph/workbench/utils";
+import { Services, registerWorkspace, setWorkspace } from "sourcegraph/workbench/services";
+import { getCurrentWorkspace, getGitBaseResource, getURIContext, getWorkspaceForResource, prettifyRev } from "sourcegraph/workbench/utils";
 
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
@@ -42,21 +40,20 @@ export async function syncEditorWithRouterProps(location: AbsoluteLocation): Pro
 }
 
 export async function updateWorkspace(location: AbsoluteLocation): Promise<void> {
-	const { repo, commitID, path } = location;
-	const resource = URIUtils.pathInRepo(repo, commitID, path);
-
+	const { repo, path } = location;
+	registerWorkspace({ resource: URIUtils.createResourceURI(repo), revState: location });
+	const resource = URIUtils.createResourceURI(repo, path === "" ? undefined : path);
 	const currWorkspace = getCurrentWorkspace();
-
-	if (resource.with({ fragment: "" }).toString() !== currWorkspace.resource.toString()) {
-		setWorkspace({ resource: resource.with({ fragment: "" }), revState: { zapRev: location.zapRev, zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
+	if (getWorkspaceForResource(resource).toString() !== currWorkspace.resource.toString() || (currWorkspace.revState && currWorkspace.revState.zapRef !== location.zapRef)) {
+		setWorkspace({ resource: getWorkspaceForResource(resource), revState: { zapRev: location.zapRev, zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
 	}
 
 	return updateFileTree(resource);
 }
 
 export async function updateEditorArea(location: AbsoluteLocation): Promise<void> {
-	const { repo, commitID, path, selection } = location;
-	const resource = URIUtils.pathInRepo(repo, commitID, path);
+	const { repo, path, selection } = location;
+	const resource = URIUtils.createResourceURI(repo, path);
 
 	const fileStat = await Services.get(IFileService).resolveFile(resource);
 	if (fileStat.isDirectory) {
@@ -74,19 +71,11 @@ export async function updateEditorArea(location: AbsoluteLocation): Promise<void
 		renderNotFoundError();
 		return;
 	}
-	if (workbenchStore.getState().diffMode) {
-		renderDiffEditor(resource.with({ query: `${resource.query}~0` }), resource, selection);
+	if (location.zapRef) {
+		renderDiffEditor(getGitBaseResource(resource), resource, selection);
 	} else {
 		renderFileEditor(resource, selection);
 	}
-}
-
-function resourceForCurrentEditor(): URI | null {
-	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	const input = editorService.getActiveEditor();
-	const editor = getCodeEditor(input);
-	if (!editor) { return null; }
-	return editor.getModel().uri;
 }
 
 /**
@@ -121,24 +110,6 @@ function renderDiffEditor(left: URI, right: URI, selection: IRange | null): void
 export function isOnZapRev(): boolean {
 	const contextService = Services.get(IWorkspaceContextService) as IWorkspaceContextService;
 	return Boolean(contextService.getWorkspace().revState && contextService.getWorkspace().revState!.zapRef);
-}
-
-/**
- * setEditorDiffState updates the configuration properties for the current editor.
- */
-export function setEditorDiffState(state: WorkbenchState, location: AbsoluteLocation): void {
-	const uri = resourceForCurrentEditor();
-	if (!uri) {
-		return;
-	}
-
-	const revState = getCurrentWorkspace().revState;
-	if (state.diffMode && revState && revState.zapRef) {
-		const left = uri.with({ query: `${uri.query}~0` });
-		renderDiffEditor(left, uri, location.selection);
-	} else {
-		renderFileEditor(uri, location.selection);
-	}
 }
 
 function updateEditorAfterURLChange(sel: IRange | null): void {
@@ -200,7 +171,6 @@ export function registerQuickopenListeners(onShow: () => any, onHide: () => any)
 	const quickOpenService = Services.get(IQuickOpenService) as IQuickOpenService;
 	disposables.push(quickOpenService.onShow(onShow));
 	disposables.push(quickOpenService.onHide(onHide));
-	disposables.push(onWorkbenchShown(shown => !shown && onHide())); // unmounting workbench auto-dismisses quickopen
 	return disposables;
 }
 
@@ -312,7 +282,7 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 		}
 		const uri = editor.getModel().uri;
 		const prettyRev = prettifyRev(uri.query);
-		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, prettyRev || "", uri.fragment, sel.toZeroIndexedRange()));
+		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, prettyRev || "", getURIContext(uri).path, sel.toZeroIndexedRange()));
 	} else {
 		const hash = `#L${sel.toString()}`;
 

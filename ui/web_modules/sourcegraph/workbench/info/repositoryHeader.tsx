@@ -3,7 +3,6 @@ import * as React from "react";
 
 import { $, Builder } from "vs/base/browser/builder";
 import { IDisposable } from "vs/base/common/lifecycle";
-import URI from "vs/base/common/uri";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
 import { FileReferences } from "sourcegraph/workbench/info/referencesModel";
@@ -13,6 +12,7 @@ import { LeftRightWidget } from "sourcegraph/workbench/ui/leftRightWidget";
 
 import { ChevronDown, List } from "sourcegraph/components/symbols/Primaries";
 import { colors, paddingMargin, whitespace } from "sourcegraph/components/utils";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 export function RepositoryHeader(
 	element: FileReferences,
@@ -21,7 +21,7 @@ export function RepositoryHeader(
 	firstToggleAdded: boolean,
 	fileRefsHeight: number,
 	contextService: IWorkspaceContextService,
-	editorUriPath: string,
+	editorRepo: string,
 ): void {
 	const repositoryHeader = $(".refs-repository-title");
 
@@ -52,22 +52,14 @@ export function RepositoryHeader(
 		paddingRight: whitespace[2],
 	}).toString();
 
-	let workspaceURI = URI.from({
-		scheme: element.uri.scheme,
-		authority: element.uri.authority,
-		path: element.uri.path,
-		query: element.uri.query,
-		fragment: element.uri.path,
-	});
-
 	// tslint:disable:no-new
 	const repoHeaderWidget = new LeftRightWidget(repositoryHeader, left => {
-		const repoTitleContent = new FileLabel(left, workspaceURI, contextService);
+		const repoTitleContent = new FileLabel(left, element.uri, contextService);
 		repoTitleContent.setIcon(<List width={18} style={{ marginLeft: -2, opacity: 0.8 }} />);
 		return null as any;
 	}, right => {
 
-		const workspace = workspaceURI.path === editorUriPath ? "Local" : "External";
+		const workspace = getURIContext(element.uri).repo === editorRepo ? "Local" : "External";
 		const badge = new WorkspaceBadge(right, workspace);
 
 		if (element.failure) {

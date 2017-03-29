@@ -9,7 +9,8 @@ import { Button } from "sourcegraph/components";
 import { GitHubLogo } from "sourcegraph/components/symbols";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
-import { getCurrentWorkspace, onWorkspaceUpdated } from "sourcegraph/workbench/services";
+import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
+import { getCurrentWorkspace } from "sourcegraph/workbench/utils";
 
 const openInGitHubKeyCode = 71;
 const openInGitHubKey = "G";

@@ -18,6 +18,7 @@ import { setupWorker } from "sourcegraph/ext/main";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { Features } from "sourcegraph/util/features";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 // TODO(john): consolidate / standardize types.
 
@@ -119,7 +120,10 @@ export function provideReferencesStreaming(model: IReadOnlyModel, pos: IPosition
 	return new Observable<Location>(observer => {
 		const handler = createProgressHandler(observer);
 		getReferences(model, Position.lift(pos), handler, { includeDeclaration: false }).then(locations => {
-			handler(locations);
+			handler(locations.map(loc => {
+				loc.uri = URIUtils.tryConvertGitToFileURI(loc.uri);
+				return loc;
+			}));
 			observer.complete();
 		}, err => observer.error(err));
 	})
@@ -141,8 +145,7 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 	const maxReposToBlame = 6;
 	const maxReferencesToBlamePerRepo = 4;
 	const blameQuota = new Map<string, number>();
-	const shouldBlame = (reference: Location): boolean => {
-		const repo = `${reference.uri.authority}${reference.uri.path}`;
+	const shouldBlame = (reference: Location, repo: string): boolean => {
 		let quotaRemaining = blameQuota.get(repo);
 		if (quotaRemaining === undefined) {
 			if (blameQuota.size === maxReposToBlame) { return false; }
@@ -159,12 +162,14 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 
 	let refModelQuery = "";
 	references.forEach(reference => {
-		if (!shouldBlame(reference)) { return; }
+		const refUri = URIUtils.tryConvertGitToFileURI(reference.uri);
+		const { repo, path } = getURIContext(refUri);
+		if (!shouldBlame(reference, repo)) { return; }
 		refModelQuery = refModelQuery + // TODO(john): name this query
-			`${refKey(reference)}:repository(uri: "${reference.uri.authority}${reference.uri.path}") {
+			`${refKey(reference)}:repository(uri: "${repo}") {
 				commit(rev: "${reference.uri.query}") {
 					commit {
-						file(path: "${reference.uri.fragment}") {
+						file(path: "${path}") {
 							blame(startLine: ${reference.range.startLineNumber}, endLine: ${reference.range.endLineNumber}) {
 								rev
 								startLine
@@ -247,7 +252,17 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 		const cacheHit = globalRefsObservablesStreaming.get(key);
 		if (cacheHit) {
 			log(`cache hit for provideGlobalReferencesStreaming`, depRefs);
-			return cacheHit;
+			// We may have cached global refs from inside a different workspace context.
+			// Always filter "global" refs from the current repo context (since they aren't global)
+			// in this context.
+			//
+			// TODO(john): there's another issue here, if you are in repo A and ask for global refs
+			// from A, then the cached observable won't include results from repo A. If you navigate
+			// to repo B and ask for global refs for the same symbol as from repo A, you will no longer
+			// see A in the global refs list. It might be better to just avoid cacheing altogether, or instead
+			// cache an observable per repo and construct a new aggregate observable from these possibly
+			// cached streams.
+			return cacheHit.filter(loc => getURIContext(loc.uri).repo !== getURIContext(model.uri).repo);
 		}
 
 		// triggerRequest.next() causes a workspace/xreferences request
@@ -311,7 +326,7 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, language: La
 		return Observable.empty();
 	}
 
-	let repoURI = URIUtils.pathInRepo(repo.URI, repo.IndexedRevision, "");
+	let repoURI = URIUtils.createResourceURI(repo.URI);
 
 	// Setting up a workspace is async and there is currently no way for
 	// the main thread to know when the extension is finished registering.
@@ -333,10 +348,13 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, language: La
 	};
 
 	return new Observable<IReferenceInformation>(observer => {
-		setupWorkspace(repoURI, workspaceIsReady).then(() => {
+		setupWorkspace(repoURI, repo.IndexedRevision, workspaceIsReady).then(() => { // TODO(john): rev argument is incorrect
 			const handler = createProgressHandler(observer);
 			provideWorkspaceReferences(language, repoURI, symbol, reference.Hints, handler).then(references => {
-				handler(references);
+				handler(references.map(ref => {
+					ref.reference.uri = URIUtils.tryConvertGitToFileURI(ref.reference.uri);
+					return ref;
+				}));
 				observer.complete();
 			}, err => observer.error(err));
 		});
@@ -373,9 +391,9 @@ function createProgressHandler<T>(observer: Subscriber<T>): (values: T[]) => voi
 	};
 }
 
-function setupWorkspace(uri: URI, isReady: () => boolean): Promise<void> {
+function setupWorkspace(uri: URI, rev: string | undefined, isReady: () => boolean): Promise<void> {
 	log(`setup workspace ${uri}`);
-	setupWorker(uri);
+	setupWorker({ resource: uri, revState: { commitID: rev } });
 	return new Promise<void>(resolve => {
 		const interval = setInterval(() => {
 			if (isReady()) {
@@ -394,11 +412,12 @@ async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition):
 		return null;
 	}
 
+	const { repo, path } = getURIContext(model.uri);
 	let refModelQuery =
-		`repository(uri: "${model.uri.authority}${model.uri.path}") {
+		`repository(uri: "${repo}") {
 			commit(rev: "${model.uri.query}") {
 				commit {
-					file(path: "${model.uri.fragment}") {
+					file(path: "${path}") {
 						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.lineNumber - 1}, Character: ${pos.column - 1}) {
 							data
 						}
@@ -426,8 +445,8 @@ async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition):
 	}
 	let repos = values(object.RepoData);
 
-	let currentRepo = remove(repos, function (repo: any): boolean {
-		return (repo as any).URI === `${model.uri.authority}${model.uri.path}`;
+	let currentRepo = remove(repos, function (r: any): boolean {
+		return (r as any).URI === getURIContext(model.uri).repo;
 	});
 	if (!currentRepo || !currentRepo.length) {
 		return object;

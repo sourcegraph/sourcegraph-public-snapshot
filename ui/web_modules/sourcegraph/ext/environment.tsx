@@ -29,7 +29,6 @@ class BrowserEnvironment implements IEnvironment {
 			this.updateDoc(this.docAtLastSave, doc);
 		});
 		vscode.workspace.onDidSaveTextDocument(doc => this.onDidSaveTextDocument(doc));
-
 	}
 
 	private onDidSaveTextDocument(doc: vscode.TextDocument): void {
@@ -46,7 +45,7 @@ class BrowserEnvironment implements IEnvironment {
 	}
 
 	get repo(): string {
-		return URIUtils.repoParams(this.rootURI as URI).repo;
+		return this.rootURI!.authority + this.rootURI!.path;
 	}
 
 	private zapRefChangeEmitter: vscode.EventEmitter<string | undefined> = new vscode.EventEmitter<string | undefined>();
@@ -81,14 +80,12 @@ class BrowserEnvironment implements IEnvironment {
 	}
 
 	asRelativePathInsideWorkspace(uri: vscode.Uri): string | null {
-		if (uri.scheme !== "git") { return null; }
-		// TODO(sqs): Check that uri is underneath the rootURI.
-		return URIUtils.repoParams(uri as URI).path;
+		const workspace = this.rootURI!.toString();
+		return URIUtils.tryConvertGitToFileURI(uri as URI).toString().substr(workspace.length + 1); // strip leading "/"
 	}
 
 	asAbsoluteURI(fileName: string): vscode.Uri {
-		const { repo, rev } = URIUtils.repoParams(this.rootURI! as URI);
-		return URIUtils.pathInRepo(repo, rev, fileName);
+		return URIUtils.createResourceURI(this.repo, fileName);
 	}
 
 	automaticallyApplyingFileSystemChanges: boolean = false;
@@ -102,27 +99,25 @@ class BrowserEnvironment implements IEnvironment {
 	}
 
 	revertTextDocument(doc: vscode.TextDocument): Thenable<any> {
-		return this.doRevertTextDocument(this.docAtLastSave, doc);
+		// In the web context, documents are reverted via the vscode text document API.
+		// See Controller.revertAllDocuemnts.
+		//
+		// IN the vscode context, there are other codepaths to reset documents that
+		// require this method to have a non-empty implementation.
+		return Promise.resolve();
 	}
 
 	revertTextDocumentToBase(doc: vscode.TextDocument): Thenable<any> {
-		return this.doRevertTextDocument(this.docAtBase, doc);
+		// In the web context, documents are reverted via the vscode text document API.
+		// See Controller.revertAllDocuemnts.
+		//
+		// IN the vscode context, there are other codepaths to reset documents that
+		// require this method to have a non-empty implementation.
+		return Promise.resolve();
 	}
 
 	deleteTextDocument(doc: vscode.TextDocument): Thenable<void> {
 		return doc.delete();
-	}
-
-	private doRevertTextDocument(contents: Map<string, string>, doc: vscode.TextDocument): Thenable<any> {
-		const initialContents = contents.get(doc.uri.toString());
-		if (initialContents === undefined) {
-			throw new Error(`revertTextDocument: unknown initial contents for ${doc.uri.toString()}`);
-		}
-
-		const edit = new vscode.WorkspaceEdit();
-		const entireRange = new vscode.Range(new vscode.Position(0, 0), doc.positionAt(doc.getText().length));
-		edit.replace(doc.uri, entireRange, initialContents);
-		return vscode.workspace.applyEdit(edit).then(() => doc.save());
 	}
 
 	openChannel(id: string): Thenable<MessageStream> {

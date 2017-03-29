@@ -113,6 +113,7 @@ module.exports = {
 		alias: {
 			"vs/workbench/browser/parts/compositePart": "sourcegraph/workbench/overrides/compositePart",
 			"vs/workbench/services/contextview/electron-browser/contextmenuService": "sourcegraph/workbench/overrides/contextmenuService",
+			"vs/workbench/services/textfile/electron-browser/textFileService": "sourcegraph/workbench/textFileService",
 			"vs/workbench/services/editor/browser/editorService": "sourcegraph/workbench/overrides/editorService",
 			"electron": "sourcegraph/workbench/overrides/electron",
 			"vs/workbench/services/files/node/fileService": "sourcegraph/workbench/overrides/fileService",

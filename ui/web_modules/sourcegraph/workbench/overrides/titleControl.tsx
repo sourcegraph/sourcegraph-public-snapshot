@@ -4,8 +4,8 @@ import * as ReactDOM from "react-dom";
 import { TitleControl } from "vs/workbench/browser/parts/editor/titleControl";
 import { toResource } from "vs/workbench/common/editor";
 
-import { URIUtils } from "sourcegraph/core/uri";
 import { EditorTitle } from "sourcegraph/editor/EditorTitle";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 export class NoTabsTitleControl extends TitleControl {
 	domElement: HTMLElement;
@@ -28,8 +28,7 @@ export class NoTabsTitleControl extends TitleControl {
 			// TODO(john): saw this error at extracting .details once when doing a jump-to-repo via quickopen.
 			// This code is super gross and we need a better way...
 			const resource = toResource(editor) || ((editor as any).details && (editor as any).details.resource) || (editor as any).resource;
-			const pathspec = URIUtils.repoParams(resource);
-			const component = <EditorTitle pathspec={pathspec} />;
+			const component = <EditorTitle pathspec={getURIContext(resource)} />;
 			ReactDOM.render(component, this.domElement);
 			this.domElement.style.height = "auto";
 		} catch (e) {

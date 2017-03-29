@@ -976,22 +976,22 @@
 			"revisionTime": "2013-09-12T23:55:21-07:00"
 		},
 		{
-			"checksumSHA1": "GgPUod9GGRdgKhSNh1pVKXSLYsY=",
+			"checksumSHA1": "84BRDkzPfWPXVc3aPXk3FLG64oc=",
 			"path": "github.com/sourcegraph/zap",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "m12Lvb3LlDZ7SphWrY9LwZuNbgA=",
 			"path": "github.com/sourcegraph/zap/internal/debugutil",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "ITvpzEsRzvzYgJ69rzrtc58zi38=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/backoff",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "TiDx71Ctm4B+Iihd0io+giTB6cI=",
@@ -1002,56 +1002,56 @@
 		{
 			"checksumSHA1": "fUpPULYHxQN/JMDF8H3zMI7qgws=",
 			"path": "github.com/sourcegraph/zap/internal/pkg/pathutil",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "26fWaF5t5OfARxKc/ttziQobAos=",
 			"path": "github.com/sourcegraph/zap/ot",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "jOhAaM9hUxa9yGcc4YGXoskuCDY=",
 			"path": "github.com/sourcegraph/zap/pkg/config",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "UDyC+FOsK4HsGB7pbVc4jLqxQOs=",
 			"path": "github.com/sourcegraph/zap/pkg/diff",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "zAwz0FmhoZ8cB3Z+gC71ANiepPk=",
 			"path": "github.com/sourcegraph/zap/pkg/errorlist",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "/adt1CtnBydM/h+5OFzkn4YSC/Y=",
 			"path": "github.com/sourcegraph/zap/pkg/fpath",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "gQBSvQ/HlkpmApJjVD5QP4XdifY=",
 			"path": "github.com/sourcegraph/zap/pkg/git",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "uhjfESyoOZ9Cb8E1gOQBF1L3+jM=",
 			"path": "github.com/sourcegraph/zap/pkg/gitutil",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
-			"checksumSHA1": "RwI1VvN5Z74odJUwIN/Qvc5E6bE=",
+			"checksumSHA1": "Nu1iaq0eOjOC5v7ZP/4Jr5IO99g=",
 			"path": "github.com/sourcegraph/zap/server/refdb",
-			"revision": "e9a60145852c294a66e1b55d10f69c1cbc4e0f69",
-			"revisionTime": "2017-03-28T22:13:13Z"
+			"revision": "abe94284fa41121d68761a1c6734b62cb594f6d9",
+			"revisionTime": "2017-03-30T18:08:42Z"
 		},
 		{
 			"checksumSHA1": "WXc32SXSyKR3J7mZoVpB2xpvRa4=",

@@ -5,10 +5,10 @@ import { IReadOnlyModel } from "vs/editor/common/editorCommon";
 import { Command, ICodeLensSymbol } from "vs/editor/common/modes";
 import * as modes from "vs/editor/common/modes";
 
-import { URIUtils } from "sourcegraph/core/uri";
 import { timeFromNow } from "sourcegraph/util/dateFormatterUtil";
 import { getModes } from "sourcegraph/util/features";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 export class AuthorshipCodeLens implements modes.CodeLensProvider {
 	resolveCodeLens(model: IReadOnlyModel, codeLens: ICodeLensSymbol): ICodeLensSymbol | Thenable<ICodeLensSymbol> {
@@ -42,7 +42,7 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 	}
 
 	private getBlameData(resource: URI): Thenable<GQL.IHunk[]> {
-		const { repo, rev, path } = URIUtils.repoParams(resource);
+		const { repo, rev, path } = getURIContext(resource);
 		return fetchGQL(`query getBlameData($repo: String, $rev: String, $path: String) {
 			root {
 				repository(uri: $repo) {

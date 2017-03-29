@@ -4,14 +4,13 @@ import { RawTextSource } from "vs/editor/common/model/textSource";
 import { IFileService, IResolveContentOptions } from "vs/platform/files/common/files";
 import { ConfirmResult } from "vs/workbench/common/editor";
 import { IRawTextContent, IResult, ISaveOptions, ITextFileEditorModel, ITextFileEditorModelManager, ITextFileOperationResult, SaveReason } from "vs/workbench/services/textfile/common/textfiles";
-import { TextFileService } from "vs/workbench/services/textfile/common/textFileService";
+import { TextFileService as AbstractTextFileService } from "vs/workbench/services/textfile/common/textFileService";
 
 import { IConfigurationService } from "vs/platform/configuration/common/configuration";
 import { IEnvironmentService } from "vs/platform/environment/common/environment";
 import { ILifecycleService } from "vs/platform/lifecycle/common/lifecycle";
 import { ITelemetryService } from "vs/platform/telemetry/common/telemetry";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
-import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
 import { IUntitledEditorService } from "vs/workbench/services/untitled/common/untitledEditorService";
 
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
@@ -20,7 +19,7 @@ import { IWindowsService } from "vs/platform/windows/common/windows";
 import { IBackupFileService } from "vs/workbench/services/backup/common/backup";
 import { IEditorGroupService } from "vs/workbench/services/group/common/groupService";
 
-export class GitTextFileService extends TextFileService {
+export class TextFileService extends AbstractTextFileService {
 	public models: ITextFileEditorModelManager;
 
 	constructor(
@@ -28,7 +27,6 @@ export class GitTextFileService extends TextFileService {
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@ITelemetryService telemetryService: ITelemetryService,
-		@IWorkbenchEditorService editorService: IWorkbenchEditorService,
 		@IFileService fileService: IFileService,
 		@IUntitledEditorService untitledEditorService: IUntitledEditorService,
 		@IInstantiationService instantiationService: IInstantiationService,

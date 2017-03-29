@@ -17,26 +17,16 @@ import "vs/workbench/parts/scm/electron-browser/scm.contribution";
 import "vs/workbench/parts/search/browser/search.contribution";
 import "vs/workbench/parts/search/browser/searchViewlet";
 
-import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 import "vs/workbench/electron-browser/main.contribution";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
-import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
 import { init as initExtensionHost } from "sourcegraph/ext/main";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
 import { setupServices } from "sourcegraph/workbench/services";
-import { GitTextFileService } from "sourcegraph/workbench/textFileService";
-import { MiniStore } from "sourcegraph/workbench/utils";
-
-export interface WorkbenchState {
-	diffMode: boolean;
-}
-
-export const workbenchStore = new MiniStore<WorkbenchState>();
 
 interface InitializedWorkbench {
 	workbench: Workbench;
@@ -54,9 +44,8 @@ function fullHeightDiv(): HTMLDivElement {
 /**
  * init bootraps workbench creation.
  */
-export function init(resource: URI, revState?: IWorkspaceRevState): InitializedWorkbench {
+export function init(workspace: URI, revState?: IWorkspaceRevState): InitializedWorkbench {
 	if (initializedWorkbench) {
-		workbenchListeners.forEach(cb => cb(true));
 		return initializedWorkbench;
 	}
 
@@ -65,7 +54,7 @@ export function init(resource: URI, revState?: IWorkspaceRevState): InitializedW
 	parent.style.flexDirection = "column";
 	const domElement = fullHeightDiv();
 	parent.appendChild(domElement);
-	const workspace = resource.with({ fragment: "" });
+
 	const services = setupServices(domElement, workspace, revState);
 	configurePreStartup(services);
 	window.localStorage.setItem("enablePreviewSCM", "true"); // TODO: move this.
@@ -80,17 +69,9 @@ export function init(resource: URI, revState?: IWorkspaceRevState): InitializedW
 		services,
 	);
 	workbench.startup();
-	services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
-	initExtensionHost(workspace, revState);
+	initExtensionHost({ resource: workspace, revState });
 
 	configurePostStartup(services);
-	workbenchListeners.forEach(cb => cb(true));
-
-	if (!workbenchStore.isInitialized) {
-		workbenchStore.init({ diffMode: Boolean(revState && revState.zapRef) });
-	} else {
-		workbenchStore.dispatch({ diffMode: Boolean(revState && revState.zapRef) });
-	}
 
 	initializedWorkbench = {
 		domElement: parent,
@@ -98,27 +79,4 @@ export function init(resource: URI, revState?: IWorkspaceRevState): InitializedW
 		services,
 	};
 	return initializedWorkbench;
-}
-
-const workbenchListeners = new Set<(shown: boolean) => void>();
-
-/**
- * onWorkbenchShown registers a listener callback that is invoked whenever
- * a new workbench is bootstrapped.
- */
-export function onWorkbenchShown(listener: (shown: boolean) => void): IDisposable {
-	workbenchListeners.add(listener);
-	return {
-		dispose: () => {
-			workbenchListeners.delete(listener);
-		}
-	};
-}
-
-/**
- * unmount disposes registered listeners, and should be called when React unmounts
- * the WorkbenchShell component.
- */
-export function unmount(): void {
-	workbenchListeners.forEach(cb => cb(false));
 }

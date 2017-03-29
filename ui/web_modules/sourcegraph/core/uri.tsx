@@ -1,70 +1,28 @@
-import { FileEventProps } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import URI from "vs/base/common/uri";
 
-// A URI in Sourcegraph refers to a (file) path and revision in a
-// repository. For example:
-//
-//   git://github.com/facebook/react?commitid#file
-//
-// Use pathInRepo to generate this URI, and use repoParams to
-// extract the repo, rev, and path parameters from it.
 export class URIUtils {
-	// pathInRepo returns a URI to a file at a specific (optional)
-	// revision in a Git repository. It is a Sourcegraph-specific
-	// convention.
-	static pathInRepo(repo: string, rev: string | null | undefined, path: string): URI {
-		if (!rev) {
-			rev = "HEAD";
-		}
-		return URI.parse(`git:\/\/${repo}`).with({
-			fragment: path.replace(/^\//, ""),
-			query: rev ? encodeURIComponent(rev) : "",
-		});
-	}
 
-	// repoParams extracts the repo, rev, and path parameters
-	static repoParams(uri: URI): FileEventProps {
+	/**
+	 * tryConvertGitToFileURI converts a git-scheme
+	 * URI to the equivalent file-scheme URI. For non
+	 * git-scheme URIs, it is the identity function.
+	 */
+	static tryConvertGitToFileURI(uri: URI): URI {
 		if (uri.scheme !== "git") {
-			throw new Error(`expected git URI scheme in ${uri.toString()}`);
-		}
-		return {
-			repo: `${uri.authority}${uri.path}`,
-			rev: decodeURIComponent(uri.query),
-			path: uri.fragment.replace(/^\//, ""),
-		};
-	}
-
-	static hasAbsoluteCommitID(uri: URI): boolean {
-		const { rev } = URIUtils.repoParams(uri);
-		return rev ? rev.length === 40 : false;
-	}
-
-	// repoParamsExt mirrors the functionality of repoParams, but is
-	// meant to be called outside of Monaco (or when Monaco has not
-	// loaded).
-	static repoParamsExt(uri: string): FileEventProps {
-		let a = document.createElement("a");
-		uri = uri.replace(/^git/, "http");
-		a.href = uri;
-		return {
-			repo: `${a.hostname}/${a.pathname.replace(/\.git$/, "")}`,
-			rev: decodeURIComponent(a.search.replace(/^\?/, "")),
-			path: a.hash.replace(/^\#/, "").replace(/^\//, ""),
-		};
-	}
-
-	// withoutFilePath returns the URI without the file path (the URL
-	// fragment).
-	static withoutFilePath(uri: URI): URI {
-		if (!uri.fragment) {
 			return uri;
 		}
-		return URI.from({
-			scheme: uri.scheme,
-			authority: uri.authority,
-			path: uri.path,
-			query: uri.query,
-			// Omit the fragment (file path).
-		});
+		return URI.parse(`file://${uri.authority}${uri.path}${uri.fragment ? `/${uri.fragment}` : ""}`);
+	}
+
+	/**
+	 * createResourceURI returns a file-scheme URI for a
+	 * workspace or document. A workspace is identified by a
+	 * repo; a document by a repo *and* path.
+	 */
+	static createResourceURI(repo: string, path?: string): URI {
+		if (path && path !== "/") {
+			return URI.parse(`file://${repo}/${path}`);
+		}
+		return URI.parse(`file://${repo}`);
 	}
 }

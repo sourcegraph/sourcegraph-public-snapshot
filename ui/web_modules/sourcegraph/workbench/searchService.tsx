@@ -14,10 +14,10 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 
 import { RepoList } from "sourcegraph/api";
 import { context, isOnPremInstance } from "sourcegraph/app/context";
-import { URIUtils } from "sourcegraph/core/uri";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
 import { defaultExcludesRegExp } from "sourcegraph/workbench/ConfigurationService";
 import { getFilesCached } from "sourcegraph/workbench/overrides/fileService";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 const reposCache = new Map<string, RepoList>();
 
@@ -69,7 +69,7 @@ export class SearchService implements ISearchService {
 
 	private textSearch(query: ISearchQuery): PPromise<ISearchComplete, ISearchProgressItem> {
 		const workspace = this.contextService.getWorkspace().resource;
-		const { repo, rev } = URIUtils.repoParams(workspace);
+		const { repo, rev } = getURIContext(workspace);
 		const search = new PPromise<ISearchComplete, ISearchProgressItem>((complete, error, progress) => {
 			fetchGQL(`query SearchText($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!, $maxResults: Int!) {
 				root {
@@ -181,7 +181,7 @@ export class SearchService implements ISearchService {
 
 		if (query.type === QueryType.File) {
 			if (logSearchTiming) { console.time("search " + query.filePattern); } // tslint:disable-line no-console
-			return getFilesCached(this.contextService.getWorkspace().resource)
+			return getFilesCached(this.contextService.getWorkspace())
 				.then(fileNames => {
 					let matches: FileMatch[] = [];
 					for (const fileName of fileNames) {
@@ -190,7 +190,8 @@ export class SearchService implements ISearchService {
 							continue;
 						}
 
-						const resource = this.contextService.getWorkspace().resource.with({ fragment: fileName });
+						const workspace = this.contextService.getWorkspace().resource;
+						const resource = workspace.with({ path: workspace.path + `/${fileName}` });
 						if (this.matches(resource, query.filePattern!, query.includePattern!, query.excludePattern!)) {
 							matches.push(new FileMatch(resource));
 						}
@@ -219,15 +220,12 @@ export class SearchService implements ISearchService {
 		// this.contextService.toWorkspaceRelativePath instead of just
 		// the fsPath below.
 
-		// If fragment is empty, it is a repo URI (not a file path).
-		const fsPath = resource.fragment ? URIUtils.repoParams(resource).path : resource.path;
+		// If uriFilePath is empty, it is a repo URI (not a file path).
+		const uriFilePath = getURIContext(resource).path;
+		const fsPath = uriFilePath ? uriFilePath : resource.path;
 
 		// file pattern
 		if (filePattern) {
-			if (resource.scheme !== "git") {
-				return false; // if we match on file pattern, we have to ignore non file resources
-			}
-
 			if (!scorer.matches(fsPath, strings.stripWildcards(filePattern).toLowerCase())) {
 				return false;
 			}
@@ -235,10 +233,6 @@ export class SearchService implements ISearchService {
 
 		// includes
 		if (includePattern) {
-			if (resource.scheme !== "git") {
-				return false; // if we match on file patterns, we have to ignore non file resources
-			}
-
 			if (!glob.match(includePattern, fsPath)) {
 				return false;
 			}
@@ -246,10 +240,6 @@ export class SearchService implements ISearchService {
 
 		// excludes
 		if (excludePattern) {
-			if (resource.scheme !== "git") {
-				return true; // e.g. untitled files can never be excluded with file patterns
-			}
-
 			if (glob.match(excludePattern, fsPath)) {
 				return false;
 			}

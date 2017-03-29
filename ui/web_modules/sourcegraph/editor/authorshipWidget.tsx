@@ -10,15 +10,14 @@ import { ServicesAccessor } from "vs/platform/instantiation/common/instantiation
 import { Heading, Panel, User } from "sourcegraph/components";
 import { Close } from "sourcegraph/components/symbols/Primaries";
 import { colors, typography, whitespace } from "sourcegraph/components/utils";
-import { URIUtils } from "sourcegraph/core/uri";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { getURIContext } from "sourcegraph/workbench/utils";
 
 export const AuthorshipWidgetID = "contentwidget.authorship.widget";
 
 interface Props {
 	blame: GQL.IHunk;
 	repo: string;
-	rev: string;
 	onClose: () => void;
 }
 
@@ -29,7 +28,7 @@ export function CodeLensAuthorWidget(props: Props): JSX.Element {
 
 	const { rev, message } = props.blame;
 	const { gravatarHash, name } = props.blame.author.person;
-	const commitURL = `http://${props.repo}/commit/${props.blame.rev}#diff-${props.rev}`;
+	const commitURL = `http://${props.repo}/commit/${props.blame.rev}#diff-${rev}`;
 
 	return <Panel hoverLevel="low" style={{
 		minWidth: 320,
@@ -117,9 +116,8 @@ function showAuthorshipPopup(accessor: ServicesAccessor, blame: GQL.IHunk): void
 
 	const model = editor.getModel();
 	blame.startByte = model.getLineFirstNonWhitespaceColumn(blame.startLine);
-	const { repo, rev } = URIUtils.repoParams(editor.getModel().uri);
 
-	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={blame} repo={repo} rev={rev || ""} onClose={() => removeWidget(editor)} />;
+	const authorshipCodeLensElement = <CodeLensAuthorWidget blame={blame} repo={getURIContext(editor.getModel().uri).repo} onClose={() => removeWidget(editor)} />;
 	authorWidget = new AuthorshipWidget(blame, authorshipCodeLensElement);
 
 	(editor as any).addContentWidget(authorWidget);
