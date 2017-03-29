@@ -49,7 +49,7 @@ const buttonSx = {
 	padding: whitespace[1],
 	paddingTop: "0.125rem",
 	marginRight: 5,
-	marginLeft: 5,
+	marginLeft: 5
 };
 
 export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
@@ -85,9 +85,12 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		if (!workspace) { return ""; }
 		const resource = workspace.resource;
 		let { repo } = URIUtils.repoParams(resource);
-		let repoName = resource.fsPath.split("/");
-		// for the explorer viewlet, we don't want to show the authority (github.com/)
-		return repoName[1] || repo.slice(resource.authority.length + 1);
+		let repoParts = repo.split("/");
+		if (repoParts.length > 1) {
+			return repoParts[1];
+		}
+		//fallthrough		
+		return repo.split(resource.authority.length + 1);
 	}
 
 	componentDidMount(): void {
@@ -97,8 +100,6 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		this.disposables.push(onWorkspaceUpdated(workspace => {
 			if (workspace.revState && workspace.revState.zapRef) {
 				this.updateViewlet(SCM_VIEWLET_ID);
-			} else if (this.state.openViewlet === SCM_VIEWLET_ID) {
-				this.updateViewlet(EXPLORER_VIELET_ID);
 			}
 			this.setState({ workspace });
 		}));
@@ -124,7 +125,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		}}>
 			<Heading level={6} compact={true} style={{
 				lineHeight: 0,
-				maxWidth: "74%",
+				maxWidth: "85%",
 				whiteSpace: "nowrap",
 			}}>
 				<a onClick={this.repoNameClicked}
@@ -142,9 +143,15 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 				</a>
 			</Heading>
 			<div>
-				{Features.textSearch.isEnabled() && <Button onClick={this.searchButtonClicked} color={searchMode ? "blue" : "blueGray"}
-					{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "" }) }
-					style={buttonSx}><Search style={{ top: 0 }} /></Button>}
+				<Button
+					onClick={this.searchButtonClicked}
+					color={"blue" }
+					{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "transparent" }) }
+					style={buttonSx}
+					backgroundColor={searchMode ? "auto" : "transparent"}
+					animation={false}>
+					<Search style={{ top: 0 }} />
+				</Button>
 				{workspace && workspace.revState && workspace.revState.zapRev &&
 					<Button onClick={this.changesButtonClicked} color={changesMode ? "blue" : "blueGray"}
 						{...hover({ backgroundColor: !changesMode ? `${colors.blueGrayD2()} !important` : "" }) }
