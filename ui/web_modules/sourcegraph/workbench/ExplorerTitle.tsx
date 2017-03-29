@@ -143,7 +143,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 				</a>
 			</Heading>
 			<div>
-				{Features.textSearch.isEnabled ?
+				{Features.textSearch.isEnabled() &&
 					<Button
 						onClick={this.searchButtonClicked}
 						color={"blue"}
@@ -152,7 +152,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 						backgroundColor={searchMode ? "auto" : "transparent"}
 						animation={false}>
 						<Search style={{ top: 0 }} />
-					</Button> : null}
+					</Button>}
 				{workspace && workspace.revState && workspace.revState.zapRev &&
 					<Button onClick={this.changesButtonClicked} color={changesMode ? "blue" : "blueGray"}
 						{...hover({ backgroundColor: !changesMode ? `${colors.blueGrayD2()} !important` : "" }) }
