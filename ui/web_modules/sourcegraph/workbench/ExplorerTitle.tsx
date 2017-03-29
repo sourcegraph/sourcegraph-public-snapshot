@@ -123,7 +123,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		}}>
 			<Heading level={6} compact={true} style={{
 				lineHeight: 0,
-				maxWidth: "85%",
+				maxWidth: "74%",
 				whiteSpace: "nowrap",
 			}}>
 				<a onClick={this.repoNameClicked}
