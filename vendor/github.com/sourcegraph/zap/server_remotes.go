@@ -24,7 +24,14 @@ type UpstreamClient interface {
 	Close() error
 }
 
-type NewClientFunc func(ctx context.Context, endpoint string) (UpstreamClient, error)
+// ConfigureRemoteClientFunc sets the func that this server calls to
+// connect to upstream servers.
+func (s *Server) ConfigureRemoteClientFunc(newClient func(ctx context.Context, endpoint string) (UpstreamClient, error)) {
+	if s.remotes.newClient != nil {
+		panic("(serverRemotes).newClient is already set")
+	}
+	s.remotes.newClient = newClient
+}
 
 type serverRemotes struct {
 	parent *Server
@@ -32,18 +39,18 @@ type serverRemotes struct {
 	mu   sync.Mutex
 	conn map[string]UpstreamClient // remote endpoint -> client
 
-	newClient NewClientFunc
+	newClient func(ctx context.Context, endpoint string) (UpstreamClient, error)
 }
 
 func (sr *serverRemotes) getOrCreateClient(ctx context.Context, logger log.Logger, endpoint string) (UpstreamClient, error) {
 	sr.mu.Lock()
 	defer sr.mu.Unlock()
 	if sr.newClient == nil {
-		panic("(serverRemotes).newClient must be set during initialization")
+		panic("(serverRemotes).newClient must be set with (*Server).ConfigureRemoteClientFunc")
 	}
 	cl, ok := sr.conn[endpoint]
 	if !ok {
-		ctx := sr.parent.BgCtx // use background context since this isn't tied to a specific request
+		ctx := sr.parent.bgCtx // use background context since this isn't tied to a specific request
 
 		var err error
 		debugutil.SimulateLatency()

@@ -512,7 +512,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 					},
 				}
 			} else {
-				otHandler, err = s.Backend.Create(ctx, logger, params.RefIdentifier.Repo, params.State.GitBase)
+				otHandler, err = s.backend.Create(ctx, logger, params.RefIdentifier.Repo, params.State.GitBase)
 				if err != nil {
 					return err
 				}
@@ -530,7 +530,7 @@ func (s *Server) handleRefUpdateFromDownstream(ctx context.Context, logger log.L
 			if prevOT := refObj.ot; prevOT != nil {
 				if otHandler.SendToUpstream != nil {
 					// This should never happen, but just be safe.
-					panic(fmt.Sprintf("new otHandler from backend %T already has SendToUpstream func", s.Backend))
+					panic(fmt.Sprintf("new otHandler from backend %T already has SendToUpstream func", s.backend))
 				}
 				otHandler.SendToUpstream = prevOT.SendToUpstream
 			}

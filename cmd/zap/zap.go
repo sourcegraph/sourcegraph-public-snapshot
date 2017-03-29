@@ -127,10 +127,8 @@ func main() {
 	fmt.Fprintln(os.Stderr, "zap: listening on", addr)
 
 	ctx := context.Background()
-	zapServer := zap.NewServer(zap.ServerConfig{
-		BgCtx:   ctx,
-		Backend: zapServerBackend,
-	})
+	zapServer := zap.NewServer(zapServerBackend)
+	zapServer.Start(ctx)
 	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(auth.TrustedActorMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {

@@ -107,30 +107,6 @@ type ServerBackend interface {
 //     	Upstream server<----------------+
 //
 type Server struct {
-	ServerConfig
-
-	reposMu sync.Mutex
-	repos   map[fpath.KeyString]*serverRepo
-
-	connsMu sync.Mutex
-	conns   map[*serverConn]struct{} // open connections to clients
-
-	// ConnOpt are the connection options used on all connections that are
-	// accepted.
-	ConnOpt []jsonrpc2.ConnOpt
-
-	remotes         serverRemotes
-	workspaceServer *workspaceServer
-
-	// TestBlockHandleRefUpdateFromUpstream is used for testing
-	// only. It lets tests simulate a delay in
-	// (*Server).handleRefUpdateFromUpstream.
-	TestBlockHandleRefUpdateFromUpstream chan<- RefUpdateDownstreamParams
-}
-
-type NewWorkspaceFunc func(ctx context.Context, logger log.Logger, dir string) (Workspace, *RepoConfiguration, error)
-
-type ServerConfig struct {
 	// ID is used to identify this server in log messages. It should not
 	// be assumed to be unique.
 	ID string
@@ -145,43 +121,68 @@ type ServerConfig struct {
 	// operations.
 	IsPrivate bool
 
+	backend ServerBackend
+
+	reposMu sync.Mutex
+	repos   map[fpath.KeyString]*serverRepo
+
+	connsMu sync.Mutex
+	conns   map[*serverConn]struct{} // open connections to clients
+
+	// readyToAccept is closed when the server has been started
+	readyToAccept chan struct{}
+
+	// ConnOpt are the connection options used on all connections that are
+	// accepted.
+	ConnOpt []jsonrpc2.ConnOpt
+
+	remotes         serverRemotes
+	workspaceServer *workspaceServer
+
 	// bgCtx is the context used to start this server. It should be used
 	// as the context for any background operations done by the server (ie
 	// not tied to a request)
-	BgCtx context.Context
+	bgCtx context.Context
 
-	Backend ServerBackend
-
-	// If not nil, initializes a workspace server.
-	NewWorkspace NewWorkspaceFunc
-
-	NewClient NewClientFunc
+	// TestBlockHandleRefUpdateFromUpstream is used for testing
+	// only. It lets tests simulate a delay in
+	// (*Server).handleRefUpdateFromUpstream.
+	TestBlockHandleRefUpdateFromUpstream chan<- RefUpdateDownstreamParams
 }
 
 // NewServer creates a new remote server.
-func NewServer(config ServerConfig) *Server {
+func NewServer(backend ServerBackend) *Server {
 	s := &Server{
-		ServerConfig: config,
-		repos:        map[fpath.KeyString]*serverRepo{},
+		backend:       backend,
+		repos:         map[fpath.KeyString]*serverRepo{},
+		readyToAccept: make(chan struct{}),
 	}
-	s.remotes.newClient = config.NewClient
 	s.remotes.parent = s
-	if config.NewWorkspace != nil {
-		s.workspaceServer = &workspaceServer{
-			parent:       s,
-			newWorkspace: config.NewWorkspace,
-		}
+	return s
+}
+
+// Start starts the remote server.
+func (s *Server) Start(ctx context.Context) {
+	if s.bgCtx != nil {
+		panic("server is already started")
+	}
+	s.bgCtx = ctx
+	if s.workspaceServer != nil {
 		if err := s.workspaceServer.loadWorkspacesFromConfig(s.baseLogger()); err != nil {
 			level.Error(s.baseLogger()).Log("loadWorkspacesFromConfig", err)
 		}
 	}
-	return s
+	close(s.readyToAccept)
 }
 
 // Accept accepts a new connection to the remote server from a
 // client. It returns a channel that is closed when the client
 // disconnects.
+//
+// (Server).Start must be called before any (Server).Accept call will
+// return.
 func (s *Server) Accept(ctx context.Context, stream jsonrpc2.ObjectStream) <-chan struct{} {
+	<-s.readyToAccept
 	sc := newServerConn(ctx, s, stream)
 	s.connsMu.Lock()
 	if s.conns == nil {
@@ -194,7 +195,7 @@ func (s *Server) Accept(ctx context.Context, stream jsonrpc2.ObjectStream) <-cha
 
 // isClosed returns true if the server is closed.
 func (s *Server) isClosed() bool {
-	return s.BgCtx.Err() != nil
+	return s.bgCtx.Err() != nil
 }
 
 func (s *Server) deleteConn(c *serverConn) {

@@ -37,7 +37,7 @@ func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string)
 	// it. For example, a local server will not desire this because all
 	// repositories should be created via workspace/add (e.g. zap init) not
 	// implicitly.
-	if !s.Backend.CanAutoCreate() {
+	if !s.backend.CanAutoCreate() {
 		return nil, &jsonrpc2.Error{
 			Code:    int64(ErrorCodeRepoNotExists),
 			Message: fmt.Sprintf("repo not found: %s (add it with 'zap init')", repoDir),
@@ -58,7 +58,7 @@ func (s *Server) getRepo(ctx context.Context, logger log.Logger, repoDir string)
 }
 
 func (s *Server) getRepoIfExists(ctx context.Context, logger log.Logger, repoDir string) (*serverRepo, error) {
-	ok, err := s.Backend.CanAccess(ctx, logger, repoDir)
+	ok, err := s.backend.CanAccess(ctx, logger, repoDir)
 	if err != nil {
 		return nil, err
 	}

@@ -23,6 +23,15 @@ import (
 	"github.com/sourcegraph/zap/server/refdb"
 )
 
+// InitWorkspaceServer creates a workspace server on this server to
+// handle workspace/* requests.
+func (s *Server) InitWorkspaceServer(newWorkspace func(ctx context.Context, logger log.Logger, dir string) (Workspace, *RepoConfiguration, error)) {
+	s.workspaceServer = &workspaceServer{
+		parent:       s,
+		NewWorkspace: newWorkspace,
+	}
+}
+
 var errNotHandled = errors.New("method not handled by server extension")
 
 // Workspace represents a watched directory tree.
@@ -139,7 +148,7 @@ func (w WorkspaceResetInfo) String() string {
 type workspaceServer struct {
 	parent *Server
 
-	newWorkspace func(ctx context.Context, logger log.Logger, dir string) (Workspace, *RepoConfiguration, error)
+	NewWorkspace func(ctx context.Context, logger log.Logger, dir string) (Workspace, *RepoConfiguration, error)
 }
 
 var mockWorkspaceHandled chan struct{}
@@ -619,8 +628,8 @@ func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddPar
 		level.Info(logger).Log("create-workspace-in-new-repo", "")
 	}
 
-	ctx, cancel := context.WithCancel(s.parent.BgCtx)
-	workspace, cfg, err := s.newWorkspace(ctx, log.With(s.parent.baseLogger(), "workspace", params.Dir), params.Dir)
+	ctx, cancel := context.WithCancel(s.parent.bgCtx)
+	workspace, cfg, err := s.NewWorkspace(ctx, log.With(s.parent.baseLogger(), "workspace", params.Dir), params.Dir)
 	if err != nil {
 		cancel()
 		return err
@@ -668,7 +677,7 @@ func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddPar
 
 	// Block until workspace is ready (or fails to become ready).
 	ready := make(chan error)
-	go s.handleWorkspaceTasks(s.parent.BgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
+	go s.handleWorkspaceTasks(s.parent.bgCtx, repo, params.WorkspaceIdentifier, workspace, ready)
 	select {
 	case err := <-ready:
 		if err != nil {
