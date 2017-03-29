@@ -8,9 +8,7 @@ import * as modes from "vs/editor/common/modes";
 import { URIUtils } from "sourcegraph/core/uri";
 import { timeFromNow } from "sourcegraph/util/dateFormatterUtil";
 import { getModes } from "sourcegraph/util/features";
-import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
-
-const codeLensCache = new Map<string, GQL.IHunk[]>();
+import { fetchGQL } from "sourcegraph/util/gqlClient";
 
 export class AuthorshipCodeLens implements modes.CodeLensProvider {
 	resolveCodeLens(model: IReadOnlyModel, codeLens: ICodeLensSymbol): ICodeLensSymbol | Thenable<ICodeLensSymbol> {
@@ -35,7 +33,7 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 					command: {
 						id: "codelens.authorship.commit",
 						title: `${blameLine.author.person.name} - ${timeSince}`,
-						arguments: [blameLine],
+						arguments: [Object.assign({}, blameLine)], // allow modification
 					} as Command,
 				});
 			}
@@ -44,13 +42,8 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 	}
 
 	private getBlameData(resource: URI): Thenable<GQL.IHunk[]> {
-		const key = resource.toString(true);
 		const { repo, rev, path } = URIUtils.repoParams(resource);
-		let cachedLens = codeLensCache.get(key);
-		if (cachedLens) {
-			return Promise.resolve(cachedLens);
-		}
-		return fetchGraphQLQuery(`query Content($repo: String, $rev: String, $path: String) {
+		return fetchGQL(`query getBlameData($repo: String, $rev: String, $path: String) {
 			root {
 				repository(uri: $repo) {
 					commit(rev: $rev) {
@@ -77,8 +70,9 @@ export class AuthorshipCodeLens implements modes.CodeLensProvider {
 					}
 				}
 			}
-		}`, { repo, rev, path }).then((query) => {
-				const commit = query.root.repository && query.root.repository.commit.commit;
+		}`, { repo, rev, path }).then(query => {
+				const root = query.data.root;
+				const commit = root.repository && root.repository.commit.commit;
 				if (!commit || !commit.file) {
 					return;
 				}

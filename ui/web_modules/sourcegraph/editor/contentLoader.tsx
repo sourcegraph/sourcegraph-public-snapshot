@@ -2,7 +2,7 @@ import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 
 import { URIUtils } from "sourcegraph/core/uri";
-import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+import { fetchGQL } from "sourcegraph/util/gqlClient";
 
 export function fetchContent(resource: URI): TPromise<string> {
 	const resourceKey = resource.toString();
@@ -10,7 +10,7 @@ export function fetchContent(resource: URI): TPromise<string> {
 		return TPromise.wrap(contentCache.get(resource.toString()));
 	}
 	const { repo, rev, path } = URIUtils.repoParams(resource);
-	return TPromise.wrap(fetchGraphQLQuery(`query Content($repo: String, $rev: String, $path: String) {
+	return TPromise.wrap(fetchGQL(`query FileContent($repo: String, $rev: String, $path: String) {
 			root {
 				repository(uri: $repo) {
 					commit(rev: $rev) {
@@ -23,11 +23,12 @@ export function fetchContent(resource: URI): TPromise<string> {
 				}
 			}
 		}`, { repo, rev, path })
-		.then((resp: GQL.IQuery) => {
-			if (!resp.root || !resp.root.repository || !resp.root.repository.commit.commit || !resp.root.repository.commit.commit.file) {
+		.then(resp => {
+			const root = resp.data.root;
+			if (!root || !root.repository || !root.repository.commit.commit || !root.repository.commit.commit.file) {
 				throw new Error("File content not available.");
 			}
-			return resp.root.repository.commit.commit.file.content;
+			return root.repository.commit.commit.file.content;
 		}));
 }
 
@@ -43,7 +44,7 @@ export const contentCache = new Map<string, string>();
  */
 export async function fetchContentAndResolveRev(resource: URI, isViewingZapRev?: boolean): Promise<{ content: string, commit: string }> {
 	const { repo, rev, path } = URIUtils.repoParams(resource);
-	const resp = await fetchGraphQLQuery(`query Content($repo: String, $rev: String, $path: String) {
+	const resp = await fetchGQL(`query FileContentAndRev($repo: String, $rev: String, $path: String) {
 			root {
 				repository(uri: $repo) {
 					commit(rev: $rev) {
@@ -57,20 +58,21 @@ export async function fetchContentAndResolveRev(resource: URI, isViewingZapRev?:
 				}
 			}
 		}`, { repo, rev, path });
-	if (!resp.root || !resp.root.repository || !resp.root.repository.commit.commit) {
+	const root = resp.data.root;
+	if (!root || !root.repository || !root.repository.commit.commit) {
 		throw new Error("File content not available.");
 	}
-	const commit = resp.root.repository.commit.commit.sha1;
+	const commit = root.repository.commit.commit.sha1;
 	const resourceKey = resource.toString();
 	let content: string;
 	if (contentCache.has(resourceKey) && isViewingZapRev) {
 		// only serve cached resources for zap sessions
 		content = contentCache.get(resourceKey)!;
 	} else {
-		if (!resp.root.repository.commit.commit.file) {
+		if (!root.repository.commit.commit.file) {
 			throw new Error("File content not available.");
 		}
-		content = resp.root.repository.commit.commit.file.content;
+		content = root.repository.commit.commit.file.content;
 		contentCache.set(resourceKey, content);
 	}
 	return {
@@ -85,7 +87,7 @@ export async function fetchContentAndResolveRev(resource: URI, isViewingZapRev?:
  */
 export async function resolveRev(resource: URI): Promise<{ commit: string }> {
 	const { repo, rev } = URIUtils.repoParams(resource);
-	const resp = await fetchGraphQLQuery(`query ResolveRev($repo: String, $rev: String) {
+	const resp = await fetchGQL(`query ResolveRev($repo: String, $rev: String) {
 			root {
 				repository(uri: $repo) {
 					commit(rev: $rev) {
@@ -96,10 +98,11 @@ export async function resolveRev(resource: URI): Promise<{ commit: string }> {
 				}
 			}
 		}`, { repo, rev });
-	if (!resp.root || !resp.root.repository || !resp.root.repository.commit.commit) {
+	const root = resp.data.root;
+	if (!root || !root.repository || !root.repository.commit.commit) {
 		throw new Error("Revision not available.");
 	}
-	const commit = resp.root.repository.commit.commit.sha1;
+	const commit = root.repository.commit.commit.sha1;
 	return {
 		commit,
 	};
