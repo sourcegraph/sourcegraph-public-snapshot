@@ -14,11 +14,12 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/pkg/errors"
 
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -74,16 +75,26 @@ func (p Params) String() string {
 	return fmt.Sprintf("search.Params{%q%s}", p.Pattern, optsS)
 }
 
+// Response represents the response from a Search request.
+type Response struct {
+	Matches []FileMatch
+}
+
 // FileMatch is the struct used by vscode to receive search results
 type FileMatch struct {
 	Path        string
 	LineMatches []LineMatch
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line
+// LineMatch is the struct used by vscode to receive search results for a line.
 type LineMatch struct {
-	Preview          string
-	LineNumber       int
+	// Preview is the matched line.
+	Preview string
+	// LineNumber is the 0-based line number. Note: Our editors present
+	// 1-based line numbers, but internally vscode uses 0-based.
+	LineNumber int
+	// OffsetAndLengths is a slice of 2-tuples (Offset, Length)
+	// representing each match on a line.
 	OffsetAndLengths [][]int
 }
 
@@ -125,7 +136,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(matches)
+	resp := Response{
+		Matches: matches,
+	}
+	err = json.NewEncoder(w).Encode(&resp)
 	if err != nil {
 		// We may have already started writing to w
 		http.Error(w, "failed to encode response: "+err.Error(), http.StatusInternalServerError)
@@ -163,11 +177,10 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 		return nil, badRequestError{err.Error()}
 	}
 
-	zr, close, err := s.Store.openReader(ctx, p.Repo, p.Commit)
+	zr, err := s.Store.openReader(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, err
 	}
-	defer close()
 
 	return concurrentFind(ctx, rg, zr)
 }
@@ -178,7 +191,7 @@ func validateParams(p *Params) error {
 	}
 	// Surprisingly this is the same sanity check used in the git source.
 	if len(p.Commit) != 40 {
-		return fmt.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
+		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
 	if p.Pattern == "" {
 		return errors.New("Pattern must be non-empty")
@@ -212,7 +225,7 @@ func (e badRequestError) Error() string    { return e.msg }
 func (e badRequestError) BadRequest() bool { return true }
 
 func isBadRequest(err error) bool {
-	e, ok := err.(interface {
+	e, ok := errors.Cause(err).(interface {
 		BadRequest() bool
 	})
 	return ok && e.BadRequest()

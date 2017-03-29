@@ -88,12 +88,12 @@ export class OrgPanel extends React.Component<Props, State> {
 
 	render(): JSX.Element | null {
 		let { members } = this.props;
-		if (!members) {
-			return <div style={{ padding: whitespace[5] }}><Spinner /> Loading organization members</div>;
-		}
-		return <div>
+		return <div style={{ paddingLeft: whitespace[5] }}>
 			<OrgInviteModal onInvite={this._onInviteUser.bind(this)} member={this.state.selectedMember || null} org={this.props.org} />
-			<div style={{ padding: whitespace[5] }}>{this._orgMembersList(members)}</div>
+			{members ?
+				<div>{this._orgMembersList(members)}</div>
+				: <div style={{ textAlign: "center", padding: whitespace[3] }}><Spinner /></div>
+			}
 		</div>;
 	}
 }

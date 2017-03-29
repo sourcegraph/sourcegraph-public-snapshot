@@ -164,7 +164,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 
 	if Debug && h.init != nil {
 		var b []byte
-		if req.Params != nil {
+		if req.Params != nil && !req.Notif {
 			b = []byte(*req.Params)
 		}
 		log.Printf(">>> %s %s %s %s", h.init.OriginalRootPath, req.ID, req.Method, string(b))

@@ -2,7 +2,6 @@ package git
 
 import (
 	"context"
-	"os"
 
 	"github.com/sourcegraph/zap/pkg/gitutil"
 )
@@ -118,18 +117,4 @@ func (m MockGitRepo) IsIndexLocked() (bool, error) {
 
 func (m MockGitRepo) HEADOrDevNullTree() (string, error) {
 	return m.HEADOrDevNullTree_()
-}
-
-type mockFS struct {
-	FileSystem
-	WriteFile_ func(name string, data []byte, mode os.FileMode) error
-	Stat_      func(name string) (os.FileInfo, error)
-}
-
-func (f mockFS) WriteFile(name string, data []byte, mode os.FileMode) error {
-	return f.WriteFile_(name, data, mode)
-}
-
-func (f mockFS) Stat(name string) (os.FileInfo, error) {
-	return f.Stat_(name)
 }

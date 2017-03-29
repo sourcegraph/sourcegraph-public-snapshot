@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -75,8 +77,7 @@ func (a *Actor) AuthInfo() *sourcegraph.AuthInfo {
 type key int
 
 const (
-	actorKey   key = iota
-	sessionKey key = iota
+	actorKey key = iota
 )
 
 func ActorFromContext(ctx context.Context) *Actor {
@@ -98,22 +99,33 @@ func WithoutActor(ctx context.Context) context.Context {
 	return context.WithValue(ctx, actorKey, nil)
 }
 
-// HACK: Zap remote server does auth checks based on the sg-session cookie.
-// This allows it to be forwarded to the zap server from the graphql API.
-//
-// Do not use for anything other than zap, this will be removed.
-func WithSession(ctx context.Context, s string) context.Context {
-	return context.WithValue(ctx, sessionKey, s)
-}
+const ActorHeaderKey = "X-Actor"
 
-func SessionFromContext(ctx context.Context) string {
-	s, ok := ctx.Value(sessionKey).(string)
-	if !ok {
-		return ""
+// SetActorTrustedHeader overwrites the entire "X-Actor" header with the actor
+// in the context. The actor header may container sensitive information, and as
+// such should NEVER be sent to a foreign service. It should not be sent back
+// to the client.
+func SetActorTrustedHeader(ctx context.Context, h http.Header) {
+	// Remove any existing X-Actor header value that could be provided by an
+	// attacker.
+	h.Del(ActorHeaderKey)
+
+	// Marshal and store our actor in the header.
+	d, err := json.Marshal(ActorFromContext(ctx))
+	if err != nil {
+		panic(err)
 	}
-	return s
+	h.Set(ActorHeaderKey, string(d))
 }
 
-func WithoutSession(ctx context.Context) context.Context {
-	return context.WithValue(ctx, sessionKey, nil)
+// TrustedActorMiddleware is an http.Handler middleware that reads the already
+// authenticated actor directly from the "X-Actor" header and sets it in the
+// context. No authentication is performed, and thus the HTTP handler should
+// NEVER be accessible by a user with control over the "X-Actor" header value.
+func TrustedActorMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var a Actor
+		_ = json.Unmarshal([]byte(r.Header.Get(ActorHeaderKey)), &a)
+		next.ServeHTTP(w, r.WithContext(WithActor(r.Context(), &a)))
+	})
 }

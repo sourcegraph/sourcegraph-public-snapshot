@@ -7,7 +7,7 @@ import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/comm
 
 import { URIUtils } from "sourcegraph/core/uri";
 import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
-import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+import { fetchGQL } from "sourcegraph/util/gqlClient";
 
 /**
  * Both of these caches will last until a hard navigation or refresh. We will
@@ -215,9 +215,9 @@ export class FileService implements IFileService {
 	public dispose(): void { /* noop */ }
 }
 
-export function fetchFilesAndDirs(resource: URI): any {
+export function fetchFilesAndDirs(resource: URI): Promise<GQL.IRoot> {
 	const { repo, rev } = URIUtils.repoParams(resource);
-	return fetchGraphQLQuery(`query Files($repo: String!, $rev: String!) {
+	return fetchGQL(`query FileTree($repo: String!, $rev: String!) {
 			root {
 				repository(uri: $repo) {
 					uri
@@ -235,7 +235,7 @@ export function fetchFilesAndDirs(resource: URI): any {
 					}
 				}
 			}
-		}`, { repo, rev });
+		}`, { repo, rev }).then(resp => resp.data.root);
 }
 
 export function toBaseStat(resource: URI): IBaseStat {
@@ -322,11 +322,11 @@ export function getFilesCached(resource: URI): TPromise<string[]> {
 	if (workspaceFiles.has(key)) {
 		return TPromise.wrap(workspaceFiles.get(key));
 	}
-	return fetchFilesAndDirs(resource).then(({ root }) => {
-		const files: string[] = root.repository.commit.commit.tree.files.map(file => file.name);
+	return TPromise.wrap(fetchFilesAndDirs(resource).then(root => {
+		const files: string[] = root.repository!.commit.commit!.tree!.files.map(file => file.name);
 		workspaceFiles.set(key, files);
 		return files;
-	});
+	}));
 }
 
 export class StatResolver {

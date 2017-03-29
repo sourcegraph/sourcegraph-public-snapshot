@@ -524,13 +524,9 @@ export function metaClickOverride(): void {
 
 const USERNAME_URL_PATTERN = /\/p\/([A-Z0-9-]+)/i;
 export function getPhabricatorUsername(): string | null {
-	const coreMenuItems = document.getElementsByClassName("core-menu-item");
+	const coreMenuItems = document.getElementsByClassName("phabricator-core-user-menu");
 	for (const coreMenuItem of Array.from(coreMenuItems)) {
-		const children = coreMenuItem.children;
-		if (children.length === 0) {
-			continue;
-		}
-		const possiblePersonUrl = children[0].getAttribute("href");
+		const possiblePersonUrl = coreMenuItem.getAttribute("href");
 		if (!possiblePersonUrl) {
 			continue;
 		}

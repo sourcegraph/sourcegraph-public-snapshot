@@ -37,7 +37,7 @@ function submitHubSpotForm(hubSpotFormName: string, body: RawFormPayload, succes
  * Beta form submissions
  */
 interface BetaSignupPayload extends RawFormPayload {
-	email: string;
+	beta_email: string;
 	firstname: string;
 	lastname: string;
 	company: string;
@@ -47,6 +47,20 @@ interface BetaSignupPayload extends RawFormPayload {
 }
 export function submitBetaSignupForm(body: BetaSignupPayload): Promise<Response> {
 	return submitHubSpotForm("BetaSignupForm", body, Events.BetaSubscription_Completed);
+}
+
+/** 
+ * Zap beta form submissions
+ */
+interface ZapBetaSignupPayload extends RawFormPayload {
+	beta_email: string;
+	firstname: string;
+	lastname: string;
+	company: string;
+	editors_used: string[];
+}
+export function submitZapBetaSignupForm(body: ZapBetaSignupPayload): Promise<Response> {
+	return submitHubSpotForm("ZapBetaSignupForm", body, Events.ZapBetaSubscription_Completed);
 }
 
 /** 

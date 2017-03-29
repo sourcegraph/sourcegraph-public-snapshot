@@ -222,14 +222,6 @@ type clientProxyConn struct {
 // language analysis.
 var LogTrackedErrors = true
 
-type trackedError struct {
-	RootPath string
-	Mode     string
-	Method   string
-	Params   interface{}
-	Error    string
-}
-
 // handleFromClient receives requests from the client, modifies them,
 // sends them to the appropriate lang/build server(s), modifies the
 // responses, and returns them to the client.
@@ -405,7 +397,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 					id := serverID{contextID: c.context, pathPrefix: ""}
 					err := c.proxy.shutDownServer(context.Background(), id)
 					if err != nil {
-						log.Printf("error shutting down background server: %s", err)
+						logError("Shutting down background server failed: "+err.Error(), c.context, "method", req.Method, "id", req.ID)
 					}
 				}()
 			}()
@@ -413,17 +405,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 		var respObj interface{}
 		if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, &respObj); err != nil {
-			// Machine parseable to assist us finding most common errors
-			msg, _ := json.Marshal(trackedError{
-				RootPath: c.context.rootPath.String(),
-				Mode:     c.context.mode,
-				Method:   req.Method,
-				Params:   req.Params,
-				Error:    err.Error(),
-			})
-			if LogTrackedErrors {
-				log.Printf("tracked error: %s", string(msg))
-			}
+			logError(req.Method+" failed: "+err.Error(), c.context, "method", req.Method, "id", req.ID, "error", err.Error())
 			return nil, err
 		}
 		return respObj, nil

@@ -141,6 +141,10 @@
 
 /* Style Code lens */
 
+:global .monaco-tree:focus {
+	outline: none;
+}
+
 :global div.monaco-editor .codelens-decoration {
 	border-radius: 3px;
 	margin-top: 0.1rem;

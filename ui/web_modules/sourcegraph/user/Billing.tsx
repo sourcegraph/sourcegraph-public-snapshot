@@ -6,8 +6,8 @@ import { context } from "sourcegraph/app/context";
 import { Button, Heading } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
 import { LocationStateModal } from "sourcegraph/components/Modal";
-import { PageTitle } from "sourcegraph/components/PageTitle";
 import { OrgPlan, PersonalPlan, PublicPlan } from "sourcegraph/components/PlanSelector";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { ChangeBillingInfo } from "sourcegraph/user/BillingInfo";
@@ -18,21 +18,23 @@ interface Props {
 	root: GQL.IRoot;
 }
 
+const SectionTitle = (props: { children?: React.ReactNode[], title: string }) => <div style={{
+	display: "flex",
+	justifyContent: "space-between",
+	marginBottom: whitespace[4],
+}}>
+	<Heading level={6} compact={true}>{props.title}</Heading>
+	{props.children}
+</div>;
+
 class Billing extends React.Component<Props, {}> {
 	render(): JSX.Element {
 		const user = this.props.root.currentUser!;
 		return <div>
-			<div style={{ padding: 40 }}>
-				<PageTitle title="Billing information" />
-				<div style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					marginBottom: 24,
-				}}>
-					<Heading level={6}>Your plan</Heading>
+			<div style={{ padding: whitespace[6] }}>
+				<SectionTitle title="Your plan">
 					<PlanChanger />
-				</div>
+				</SectionTitle>
 				<PlanTile plan={user.paymentPlan} org={user.paymentPlan.organization} />
 			</div>
 			<BillingDetails plan={user.paymentPlan} />
@@ -62,7 +64,7 @@ class CancelSubscription extends ComponentWithRouter<{ plan: GQL.IPlan }, {}> {
 			<LocationStateToggleLink modalName={modalName} location={this.context.router.location} onToggle={v => v && Events.CancelSubscriptionModal_Initiated.logEvent()}>
 				Disable auto-renewal
 			</LocationStateToggleLink>
-			<LocationStateModal style={{ textAlign: "center" }} modalName={modalName} title="Confirm cancelation">
+			<LocationStateModal style={{ textAlign: "center" }} modalName={modalName} title="Confirm cancellation">
 				Are you sure you want to disable auto renewal? Your
 				subscription will end on {date}.
 				<div style={{ marginTop: 32 }}>
@@ -79,28 +81,32 @@ function BillingDetails({ plan }: { plan: GQL.IPlan }): JSX.Element {
 	}
 	const date = formatRenewalDate(new Date(plan.renewalDate! * 1000));
 	return <div>
-		<hr />
-		<div style={{ padding: 40 }}>
-			<div style={{
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "space-between",
-				marginBottom: 24,
-			}}>
-				<Heading level={6}>Billing information</Heading>
+		<hr style={{ margin: 0 }} />
+		<div style={{ padding: whitespace[6] }}>
+			<SectionTitle title="Billing information">
 				<ChangeBillingInfo />
+			</SectionTitle>
+			<div style={{ ...typography.small, }}>
+				Your annual subscription will renew on <strong>{date}</strong> for <strong>${plan.cost! / 100}</strong>.
+				<CancelSubscription plan={plan} />
 			</div>
-			Your annual subscription will renew on {date} for ${plan.cost! / 100}.
-			<CancelSubscription plan={plan} />
 		</div>
 	</div>;
 }
 
 function PlanTile({ plan, org }: { plan: GQL.IPlan, org: GQL.IOrganization | null }): JSX.Element {
+
+	const descSx = {
+		...typography.small,
+		color: colors.blueGray(),
+		marginTop: whitespace[4],
+		textAlign: "center",
+	};
+
 	if (plan.name === "private") {
 		return <div>
 			<PersonalPlan />
-			Your plan allows you to view code hosted under your account on GitHub.
+			<div style={descSx}>Your plan allows you to view code hosted under your account on GitHub.</div>
 		</div>;
 	} else if (plan.name === "organization") {
 		if (!org) {
@@ -108,7 +114,9 @@ function PlanTile({ plan, org }: { plan: GQL.IPlan, org: GQL.IOrganization | nul
 		}
 		return <div>
 			<OrgPlan />
-			Your plan allows {plan.seats} {plan.seats === 1 ? "person" : "people"} to view code from the {org.name} organization.
+			<div style={descSx}>
+				Your plan allows {plan.seats} {plan.seats === 1 ? "person" : "people"} to view code from the {org.name} organization.
+			</div>
 		</div>;
 	}
 	return <PublicPlan />;

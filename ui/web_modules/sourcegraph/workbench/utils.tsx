@@ -37,45 +37,20 @@ export class RouterContext extends React.Component<{}, {}> {
 	}
 }
 
-export class MiniStore<T>{
+export class Dispatcher<T>{
 
 	private listeners: (((payload: T) => void) | null)[] = [];
-	private state: T;
-	private initialized: boolean;
-
-	constructor(initState?: T) {
-		if (initState) {
-			this.state = initState;
-			this.initialized = true;
-		}
-	}
-
-	init(initState: T): void {
-		if (this.initialized) {
-			throw new Error("store has already been initialized");
-		}
-		this.state = initState;
-		this.initialized = true;
-	}
-
-	isInitialized(): boolean {
-		return this.initialized;
-	}
-
-	getState(): T {
-		return Object.assign({}, this.state);
-	}
 
 	dispatch(payload: T): void {
-		this.state = Object.assign({}, this.state, payload);
+		Object.freeze(payload);
 		this.listeners.forEach((listener) => {
 			if (listener) {
-				listener(Object.assign({}, this.state));
+				listener(payload);
 			}
 		});
 	}
 
-	subscribe(callback: (payload: T) => void): Disposable {
+	subscribe(callback: (payload: Readonly<T>) => void): Disposable {
 		const index = this.listeners.length;
 		this.listeners.push(callback);
 		return {
@@ -84,6 +59,41 @@ export class MiniStore<T>{
 			},
 		};
 	}
+
+}
+
+export class MiniStore<T> extends Dispatcher<T> {
+
+	private initialized: boolean;
+	private state: Readonly<T>;
+
+	constructor(initState?: T) {
+		super();
+		this.subscribe(payload => {
+			this.state = payload;
+		});
+		if (initState) {
+			this.dispatch(initState);
+			this.initialized = true;
+		}
+	}
+
+	init(initState: T): void {
+		if (this.initialized) {
+			throw new Error("store has already been initialized");
+		}
+		this.dispatch(initState);
+		this.initialized = true;
+	}
+
+	isInitialized(): boolean {
+		return this.initialized;
+	}
+
+	getState(): Readonly<T> {
+		return this.state;
+	}
+
 }
 
 export interface Disposable {

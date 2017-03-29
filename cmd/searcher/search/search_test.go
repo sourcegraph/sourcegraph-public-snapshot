@@ -1,12 +1,13 @@
 package search_test
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -132,21 +133,27 @@ func doSearch(u string, p *search.Params) ([]search.FileMatch, error) {
 		return nil, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
-	var matches []search.FileMatch
-	err = json.Unmarshal(body, &matches)
-	return matches, err
+	var r search.Response
+	err = json.Unmarshal(body, &r)
+	if err != nil {
+		return nil, err
+	}
+	return r.Matches, err
 }
 
 func newStore(files map[string]string) (*search.Store, func(), error) {
 	buf := new(bytes.Buffer)
-	w := zip.NewWriter(buf)
+	w := tar.NewWriter(buf)
 	for name, body := range files {
-		f, err := w.Create(name)
-		if err != nil {
+		hdr := &tar.Header{
+			Name: name,
+			Mode: 0600,
+			Size: int64(len(body)),
+		}
+		if err := w.WriteHeader(hdr); err != nil {
 			return nil, nil, err
 		}
-		_, err = f.Write([]byte(body))
-		if err != nil {
+		if _, err := w.Write([]byte(body)); err != nil {
 			return nil, nil, err
 		}
 	}
@@ -159,8 +166,8 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 		return nil, nil, err
 	}
 	return &search.Store{
-		FetchZip: func(ctx context.Context, repo, commit string) ([]byte, error) {
-			return buf.Bytes(), nil
+		FetchTar: func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
+			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
 		Path: d,
 	}, func() { os.RemoveAll(d) }, nil
@@ -172,7 +179,7 @@ func toString(m []search.FileMatch) string {
 		for _, l := range f.LineMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber))
+			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
 			buf.WriteByte(':')
 			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')

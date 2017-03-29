@@ -2,29 +2,23 @@ package graphql
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
+	"encoding/json"
+
+	"strconv"
 
 	"github.com/neelance/graphql-go/errors"
+	"github.com/neelance/graphql-go/internal/common"
 	"github.com/neelance/graphql-go/internal/exec"
+	"github.com/neelance/graphql-go/internal/exec/resolvable"
+	"github.com/neelance/graphql-go/internal/exec/selected"
 	"github.com/neelance/graphql-go/internal/query"
 	"github.com/neelance/graphql-go/internal/schema"
 	"github.com/neelance/graphql-go/internal/validation"
 	"github.com/neelance/graphql-go/introspection"
+	"github.com/neelance/graphql-go/trace"
 )
-
-const OpenTracingTagQuery = "graphql.query"
-const OpenTracingTagOperationName = "graphql.operationName"
-const OpenTracingTagVariables = "graphql.variables"
-
-const OpenTracingTagType = "graphql.type"
-const OpenTracingTagField = "graphql.field"
-const OpenTracingTagTrivial = "graphql.trivial"
-const OpenTracingTagArgsPrefix = "graphql.args."
-const OpenTracingTagError = "graphql.error"
 
 // ID represents GraphQL's "ID" type. A custom type may be used instead.
 type ID string
@@ -43,32 +37,41 @@ func (id *ID) UnmarshalGraphQL(input interface{}) error {
 	}
 }
 
+func (id ID) MarshalJSON() ([]byte, error) {
+	return strconv.AppendQuote(nil, string(id)), nil
+}
+
 // ParseSchema parses a GraphQL schema and attaches the given root resolver. It returns an error if
 // the Go type signature of the resolvers does not match the schema. If nil is passed as the
 // resolver, then the schema can not be executed, but it may be inspected (e.g. with ToJSON).
-func ParseSchema(schemaString string, resolver interface{}) (*Schema, error) {
+func ParseSchema(schemaString string, resolver interface{}, opts ...SchemaOpt) (*Schema, error) {
 	s := &Schema{
 		schema:         schema.New(),
-		MaxParallelism: 10,
+		maxParallelism: 10,
+		tracer:         trace.OpenTracingTracer{},
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+
 	if err := s.schema.Parse(schemaString); err != nil {
 		return nil, err
 	}
 
 	if resolver != nil {
-		e, err := exec.Make(s.schema, resolver)
+		r, err := resolvable.ApplyResolver(s.schema, resolver)
 		if err != nil {
 			return nil, err
 		}
-		s.exec = e
+		s.res = r
 	}
 
 	return s, nil
 }
 
 // MustParseSchema calls ParseSchema and panics on error.
-func MustParseSchema(schemaString string, resolver interface{}) *Schema {
-	s, err := ParseSchema(schemaString, resolver)
+func MustParseSchema(schemaString string, resolver interface{}, opts ...SchemaOpt) *Schema {
+	s, err := ParseSchema(schemaString, resolver, opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -78,16 +81,33 @@ func MustParseSchema(schemaString string, resolver interface{}) *Schema {
 // Schema represents a GraphQL schema with an optional resolver.
 type Schema struct {
 	schema *schema.Schema
-	exec   *exec.Exec
+	res    *resolvable.Schema
 
-	// MaxParallelism specifies the maximum number of resolvers per request allowed to run in parallel. The default is 10.
-	MaxParallelism int
+	maxParallelism int
+	tracer         trace.Tracer
+}
+
+// SchemaOpt is an option to pass to ParseSchema or MustParseSchema.
+type SchemaOpt func(*Schema)
+
+// MaxParallelism specifies the maximum number of resolvers per request allowed to run in parallel. The default is 10.
+func MaxParallelism(n int) SchemaOpt {
+	return func(s *Schema) {
+		s.maxParallelism = n
+	}
+}
+
+// Tracer is used to trace queries and fields. It defaults to trace.OpenTracingTracer.
+func Tracer(tracer trace.Tracer) SchemaOpt {
+	return func(s *Schema) {
+		s.tracer = tracer
+	}
 }
 
 // Response represents a typical response of a GraphQL server. It may be encoded to JSON directly or
 // it may be further processed to a custom response type, for example to include custom error data.
 type Response struct {
-	Data       interface{}            `json:"data,omitempty"`
+	Data       json.RawMessage        `json:"data,omitempty"`
 	Errors     []*errors.QueryError   `json:"errors,omitempty"`
 	Extensions map[string]interface{} `json:"extensions,omitempty"`
 }
@@ -96,36 +116,48 @@ type Response struct {
 // without a resolver. If the context get cancelled, no further resolvers will be called and a
 // the context error will be returned as soon as possible (not immediately).
 func (s *Schema) Exec(ctx context.Context, queryString string, operationName string, variables map[string]interface{}) *Response {
-	if s.exec == nil {
+	if s.res == nil {
 		panic("schema created without resolver, can not exec")
 	}
+	return s.exec(ctx, queryString, operationName, variables, s.res)
+}
 
-	document, err := query.Parse(queryString)
+func (s *Schema) exec(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, res *resolvable.Schema) *Response {
+	doc, qErr := query.Parse(queryString)
+	if qErr != nil {
+		return &Response{Errors: []*errors.QueryError{qErr}}
+	}
+
+	errs := validation.Validate(s.schema, doc)
+	if len(errs) != 0 {
+		return &Response{Errors: errs}
+	}
+
+	op, err := getOperation(doc, operationName)
 	if err != nil {
-		return &Response{
-			Errors: []*errors.QueryError{err},
-		}
+		return &Response{Errors: []*errors.QueryError{errors.Errorf("%s", err)}}
 	}
 
-	span, subCtx := opentracing.StartSpanFromContext(ctx, "GraphQL request")
-	span.SetTag(OpenTracingTagQuery, queryString)
-	if operationName != "" {
-		span.SetTag(OpenTracingTagOperationName, operationName)
+	r := &exec.Request{
+		Request: selected.Request{
+			Doc:    doc,
+			Vars:   variables,
+			Schema: s.schema,
+		},
+		Limiter: make(chan struct{}, s.maxParallelism),
+		Tracer:  s.tracer,
 	}
-	if len(variables) != 0 {
-		span.SetTag(OpenTracingTagVariables, variables)
-	}
-	defer span.Finish()
-
-	var data interface{}
-	errs := validation.Validate(s.schema, document)
-	if len(errs) == 0 {
-		data, errs = exec.ExecuteRequest(subCtx, s.exec, document, operationName, variables, s.MaxParallelism)
-		if len(errs) != 0 {
-			ext.Error.Set(span, true)
-			span.SetTag(OpenTracingTagError, errs)
+	varTypes := make(map[string]*introspection.Type)
+	for _, v := range op.Vars {
+		t, err := common.ResolveType(v.Type, s.schema.Resolve)
+		if err != nil {
+			return &Response{Errors: []*errors.QueryError{err}}
 		}
+		varTypes[v.Name.Name] = introspection.WrapType(t)
 	}
+	traceCtx, finish := s.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+	data, errs := r.Execute(traceCtx, res, op)
+	finish(errs)
 
 	return &Response{
 		Data:   data,
@@ -133,16 +165,23 @@ func (s *Schema) Exec(ctx context.Context, queryString string, operationName str
 	}
 }
 
-// Inspect allows inspection of the given schema.
-func (s *Schema) Inspect() *introspection.Schema {
-	return introspection.WrapSchema(s.schema)
-}
-
-// ToJSON encodes the schema in a JSON format used by tools like Relay.
-func (s *Schema) ToJSON() ([]byte, error) {
-	result, err := exec.IntrospectSchema(s.schema)
-	if err != nil {
-		return nil, err
+func getOperation(document *query.Document, operationName string) (*query.Operation, error) {
+	if len(document.Operations) == 0 {
+		return nil, fmt.Errorf("no operations in query document")
 	}
-	return json.MarshalIndent(result, "", "\t")
+
+	if operationName == "" {
+		if len(document.Operations) > 1 {
+			return nil, fmt.Errorf("more than one operation in query document and no operation name given")
+		}
+		for _, op := range document.Operations {
+			return op, nil // return the one and only operation
+		}
+	}
+
+	op := document.Operations.Get(operationName)
+	if op == nil {
+		return nil, fmt.Errorf("no operation with name %q", operationName)
+	}
+	return op, nil
 }

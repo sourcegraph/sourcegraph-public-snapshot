@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
-	graphql "github.com/neelance/graphql-go"
+	"github.com/neelance/graphql-go/gqltesting"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 )
 
 var exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -27,7 +28,7 @@ func TestRepositoryLatestCommit(t *testing.T) {
 		return nil
 	}
 
-	graphql.RunTests(t, []*graphql.Test{
+	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,
 			Query: `

@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
@@ -21,10 +23,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
 
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
+var cacheDir = env.Get("SEARCHER_CACHE_DIR", "/tmp/searcher-archive-store", "directory to store cached archives.")
 
 func main() {
 	env.Lock()
@@ -39,8 +41,8 @@ func main() {
 
 	service := &search.Service{
 		Store: &search.Store{
-			FetchZip: fetchZip,
-			Path:     "/tmp/searcher-archive-store",
+			FetchTar: fetchTar,
+			Path:     cacheDir,
 		},
 	}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
@@ -68,14 +70,37 @@ func shutdownOnSIGINT(s *http.Server) {
 	}
 }
 
-func fetchZip(ctx context.Context, repo, commit string) ([]byte, error) {
-	r := gitcmd.Open(&sourcegraph.Repo{URI: repo})
-	b, err := r.Archive(ctx, vcs.CommitID(commit))
-	// Guess if user error
-	if err != nil && (strings.Contains(err.Error(), "invalid git revision") || vcs.IsRepoNotExist(err) || err == vcs.ErrRevisionNotFound) {
-		return nil, badRequestError{err.Error()}
+func fetchTar(ctx context.Context, repo, commit string) (r io.ReadCloser, err error) {
+	// gitcmd.Repository.Archive returns a zip file read into
+	// memory. However, we do not need to read into memory and we want a
+	// tar, so we directly run the gitserver Command.
+	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenTar")
+	ext.Component.Set(span, "git")
+	span.SetTag("URL", repo)
+	span.SetTag("Commit", commit)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err)
+		}
+		span.Finish()
+	}()
+
+	if strings.HasPrefix(commit, "-") {
+		return nil, badRequestError{("invalid git revision spec (begins with '-')")}
 	}
-	return b, err
+
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=tar", commit)
+	cmd.Repo = &sourcegraph.Repo{URI: repo}
+	cmd.EnsureRevision = commit
+	r, err = gitserver.StdoutReader(ctx, cmd)
+	if err != nil {
+		if vcs.IsRepoNotExist(err) || err == vcs.ErrRevisionNotFound {
+			err = badRequestError{err.Error()}
+		}
+		return nil, err
+	}
+	return r, nil
 }
 
 type badRequestError struct{ msg string }

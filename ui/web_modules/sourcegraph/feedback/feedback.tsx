@@ -21,7 +21,7 @@ export interface IFeedbackService {
 
 export interface IFeedbackDropdownOptions {
 	contextViewProvider: IContextViewService;
-	feedbackService: IFeedbackService;
+	feedbackServices: IFeedbackService[];
 }
 
 enum FormEvent {
@@ -38,7 +38,7 @@ export class FeedbackDropdown extends Dropdown {
 	protected isSendingFeedback: boolean;
 	protected autoHideTimeout: number | null;
 
-	protected feedbackService: IFeedbackService;
+	protected feedbackServices: IFeedbackService[];
 
 	protected feedbackForm: HTMLFormElement | null;
 	protected feedbackDescriptionInput: HTMLTextAreaElement | null;
@@ -68,7 +68,7 @@ export class FeedbackDropdown extends Dropdown {
 		this.$el.addClass("send-feedback");
 		this.$el.title("Send Feedback");
 
-		this.feedbackService = options.feedbackService;
+		this.feedbackServices = options.feedbackServices;
 
 		this.feedback = "";
 		this.sentiment = 1;
@@ -245,11 +245,13 @@ export class FeedbackDropdown extends Dropdown {
 
 		this.changeFormStatus(FormEvent.SENDING);
 
-		this.feedbackService.submitFeedback({
-			feedback: this.feedbackDescriptionInput!.value,
-			sentiment: this.sentiment,
-			email: this.emailInput ? this.emailInput.value : undefined,
-		});
+		for (const service of this.feedbackServices) {
+			service.submitFeedback({
+				feedback: this.feedbackDescriptionInput!.value,
+				sentiment: this.sentiment,
+				email: this.emailInput ? this.emailInput.value : undefined,
+			});
+		}
 
 		Events.Feedback_Submitted.logEvent({ feedback: { sentiment: this.sentiment, feedback: this.feedbackDescriptionInput!.value } });
 		this.changeFormStatus(FormEvent.SENT);

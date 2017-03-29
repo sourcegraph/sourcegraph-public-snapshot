@@ -13,7 +13,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	store "sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	store "sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
@@ -58,6 +58,8 @@ func (s *orgs) ListOrgsPage(ctx context.Context, org *sourcegraph.OrgListOptions
 }
 
 // ListAllOrgs is a convenience wrapper around ListOrgs (since GitHub's API is paginated)
+//
+// This method may return an error and a partial list of organizations
 func (s *orgs) ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
 	// Get a maximum of 1000 organizations per user
 	const perPage = 100
@@ -70,7 +72,10 @@ func (s *orgs) ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) 
 		opts.Page = int32(page)
 		orgs, err := s.ListOrgsPage(ctx, &opts)
 		if err != nil {
-			return nil, err
+			// If an error occurs, return that error, as well as a list of all organizations
+			// collected so far
+			return &sourcegraph.OrgsList{
+				Orgs: allOrgs}, err
 		}
 		allOrgs = append(allOrgs, orgs.Orgs...)
 		if len(orgs.Orgs) < perPage {
@@ -179,6 +184,8 @@ func (s *orgs) ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.Or
 }
 
 // ListAllOrgMembers is a convenience wrapper around ListOrgMembers (since GitHub's API is paginated)
+//
+// This method may return an error and a partial list of organization members
 func (s *orgs) ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOptions) (res []*github.User, err error) {
 	// Get a maximum of 1,000 members per org
 	const perPage = 100
@@ -191,7 +198,9 @@ func (s *orgs) ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOpt
 		opts.Page = int32(page)
 		members, err := s.listOrgMembersPage(ctx, &opts)
 		if err != nil {
-			return nil, err
+			// If an error occurs, return that error, as well as a list of all members
+			// collected so far
+			return allMembers, err
 		}
 		allMembers = append(allMembers, members...)
 		if len(members) < perPage {

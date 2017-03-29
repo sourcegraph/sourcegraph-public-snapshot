@@ -52,13 +52,13 @@ export class RepoMain extends React.Component<Props, {}> {
 }
 
 export class CloningRefresher extends React.Component<{
-	relay: any;
+	refetch: () => void;
 }, {}> {
 	_refreshInterval: number | null = null;
 
 	componentDidMount(): void {
 		if (!this._refreshInterval) {
-			this._refreshInterval = setInterval(this.props.relay.forceFetch, 1000);
+			this._refreshInterval = setInterval(this.props.refetch, 1000);
 		}
 	}
 

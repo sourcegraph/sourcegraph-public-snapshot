@@ -62,12 +62,6 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 			rev = prettifyRev(rev);
 			const router = __getRouterForWorkbenchOnly();
 
-			let hash: undefined | string;
-			if (data.options && data.options.selection) {
-				const selection = RangeOrPosition.fromMonacoRange(data.options.selection);
-				hash = `#L${selection}`;
-			}
-
 			// openEditor may be called for a file, or for a workspace root (directory);
 			// in the latter case, we circumvent the vscode path to open an real document
 			// otherwise an empty buffer will be shown instead of the workbench watermark.
@@ -77,7 +71,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 				router.push({
 					pathname: url,
 					state: options,
-					hash,
+					hash: data.options && data.options.selection ? `#L${RangeOrPosition.fromMonacoRange(data.options.selection)}` : undefined,
 					query: router.location.query,
 				});
 				return editor;

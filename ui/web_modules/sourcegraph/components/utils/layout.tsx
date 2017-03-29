@@ -28,9 +28,10 @@ export const clearFix = merge(
 	})
 );
 
+export const center = { margin: "auto" };
 export const container = {
-	margin: "auto",
-	maxWidth: 1280,
+	lg: { ...center, maxWidth: 1280 },
+	sm: { ...center, maxWidth: 920 },
 };
 
 export const editorToolbarHeight = 45;

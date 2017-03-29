@@ -212,7 +212,8 @@ export const Events = {
 	ChromeExtensionStore_Redirected: new LoggableEvent("ChromeExtensionStoreRedirect", EventCategories.Onboarding, EventActions.Click),
 
 	// ReEngagement
-	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Success),
+	BetaSubscription_Completed: new LoggableEvent("BetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Submit),
+	ZapBetaSubscription_Completed: new LoggableEvent("ZapBetaSubscriptionCompleted", EventCategories.ReEngagement, EventActions.Submit),
 
 	// Billing
 	CancelSubscription_Clicked: new LoggableEvent("CancelSubscriptionClicked", EventCategories.Billing, EventActions.Click),

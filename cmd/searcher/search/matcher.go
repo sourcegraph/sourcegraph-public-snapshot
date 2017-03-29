@@ -3,7 +3,6 @@ package search
 import (
 	"archive/zip"
 	"bufio"
-	"bytes"
 	"context"
 	"io"
 	"regexp"
@@ -17,6 +16,16 @@ const (
 	// maxFileSize is the limit on file size in bytes. Only files smaller
 	// than this are searched.
 	maxFileSize = 1 << 19 // 512KB
+
+	// maxFileMatches is the limit on number of matching files we return.
+	maxFileMatches = 1000
+
+	// maxLineMatches is the limit on number of matches to return in a
+	// file.
+	maxLineMatches = 100
+
+	// maxOffsets is the limit on number of matches to return on a line.
+	maxOffsets = 10
 
 	// numWorkers is how many concurrent readerGreps run per
 	// concurrentFind
@@ -32,13 +41,13 @@ const (
 // The stdlib regexp is pretty powerful and in fact implements many of the
 // features in ripgrep. Our implementation gives high performance via pruning
 // aggressively which files to consider (non-binary under a limit) and
-// optimizing for assuming most lines will not contain a match.
+// optimizing for assuming most lines will not contain a match. The pruning of
+// files is done by the store.
 //
 // If there is no more low-hanging fruit and perf is not acceptable, we could
 // consider an using ripgrep directly (modify it to search zip archives).
 //
-// TODO(keegan) search for candidate lines without parsing lines. (regexp.LiteralPrefix)
-// TODO(keegan) limit result set size
+// TODO(keegan) search for candidate lines without parsing lines. (regexp.LiteralPrefix + optimize default ignore case)
 // TODO(keegan) return search statistics
 type readerGrep struct {
 	// re is the regexp to match
@@ -86,15 +95,8 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 		r.Reset(reader)
 	}
 
-	// Heuristic: Assume file is binary if first 256 bytes contain a
-	// 0x00. Best effort, so ignore err
-	b, _ := r.Peek(256)
-	if bytes.IndexByte(b, 0x00) >= 0 {
-		return nil, nil
-	}
-
 	var matches []LineMatch
-	for i := 1; ; i++ {
+	for i := 0; len(matches) < maxLineMatches; i++ {
 		b, isPrefix, err := r.ReadLine()
 		if isPrefix || err != nil {
 			// We have either found a long line, encountered an
@@ -103,7 +105,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 			// result, so the only case we want to return matches
 			// is if we have reached the end of file.
 			if err == io.EOF {
-				return matches, nil
+				break
 			}
 			return nil, err
 		}
@@ -112,7 +114,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 		// not have a match, so we trade a bit of repeated computation
 		// to avoid unnecessary allocations.
 		if rg.re.Find(b) != nil {
-			locs := rg.re.FindAllIndex(b, -1)
+			locs := rg.re.FindAllIndex(b, maxOffsets)
 			offsetAndLengths := make([][]int, len(locs))
 			for i, match := range locs {
 				start, end := match[0], match[1]
@@ -126,6 +128,7 @@ func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
 			})
 		}
 	}
+	return matches, nil
 }
 
 // FindZip is a convenience function to run Find on f.
@@ -154,6 +157,10 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 		span.Finish()
 	}()
 
+	// If we reach maxFileMatches we use cancel to stop the search
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	var (
 		files     = make(chan *zip.File)
 		matches   = make(chan FileMatch)
@@ -167,9 +174,6 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 	go func() {
 		done := ctx.Done()
 		for _, f := range zr.File {
-			if f.FileHeader.UncompressedSize64 > maxFileSize {
-				continue
-			}
 			select {
 			case files <- f:
 			case <-done:
@@ -215,6 +219,12 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 	m := []FileMatch{}
 	for fm := range matches {
 		m = append(m, fm)
+		if len(m) >= maxFileMatches {
+			cancel()
+			// drain matches
+			for range matches {
+			}
+		}
 	}
 	return m, wgErr
 }

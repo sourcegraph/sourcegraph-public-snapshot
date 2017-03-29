@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap/ot"
@@ -476,10 +475,6 @@ type RefInfo struct {
 	Target string    `json:"target,omitempty"` // the target of the ref (for symbolic refs)
 
 	Watchers []string `json:"watchers"` // names of clients that are watching this ref
-
-	// UpdatedAt is the time of the last update to this ref. It is not
-	// set for symbolic refs.
-	UpdatedAt time.Time `json:"updatedAt"`
 
 	// Extra diagnostics (for use by tests only)
 	Wait, Buf         *ot.WorkspaceOp

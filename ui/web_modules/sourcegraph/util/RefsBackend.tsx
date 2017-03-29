@@ -17,7 +17,7 @@ import { URIUtils } from "sourcegraph/core/uri";
 import { setupWorker } from "sourcegraph/ext/main";
 import { timeFromNowUntil } from "sourcegraph/util/dateFormatterUtil";
 import { Features } from "sourcegraph/util/features";
-import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+import { fetchGQL } from "sourcegraph/util/gqlClient";
 
 // TODO(john): consolidate / standardize types.
 
@@ -160,7 +160,7 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 	let refModelQuery = "";
 	references.forEach(reference => {
 		if (!shouldBlame(reference)) { return; }
-		refModelQuery = refModelQuery +
+		refModelQuery = refModelQuery + // TODO(john): name this query
 			`${refKey(reference)}:repository(uri: "${reference.uri.authority}${reference.uri.path}") {
 				commit(rev: "${reference.uri.query}") {
 					commit {
@@ -194,13 +194,14 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 			}
 		}`;
 
-	let data = await fetchGraphQLQuery(query);
-	if (!data.root) {
+	const resp = await fetchGQL(query);
+	const root = resp.data.root;
+	if (!root) {
 		return references;
 	}
 
 	return references.map(reference => {
-		let dataByRefID = data.root[refKey(reference)];
+		let dataByRefID = root[refKey(reference)];
 		if (!dataByRefID || !dataByRefID.commit) {
 			return reference; // likely means the blame was skipped by shouldBlame; continue without it
 		}
@@ -208,10 +209,11 @@ export async function provideReferencesCommitInfo(references: Location[]): Promi
 		if (!blame || !blame[0]) {
 			return reference;
 		}
-		let hunk: GQL.IHunk = blame[0];
+		let hunk: GQL.IHunk = Object.assign({}, blame[0]); // allow mutation
 		if (!hunk.author || !hunk.author.person) {
 			return reference;
 		}
+		hunk.author = Object.assign({}, hunk.author); // allow mutation
 		hunk.author.date = timeFromNowUntil(hunk.author.date, 14);
 		return { ...reference, commitInfo: { hunk } };
 	});
@@ -412,12 +414,13 @@ async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition):
 			}
 		}`;
 
-	let data = await fetchGraphQLQuery(query);
-	if (!data.root.repository || !data.root.repository.commit.commit || !data.root.repository.commit.commit.file ||
-		!data.root.repository.commit.commit.file.dependencyReferences || !data.root.repository.commit.commit.file.dependencyReferences.data.length) {
+	const resp = await fetchGQL(query);
+	const root = resp.data.root;
+	if (!root.repository || !root.repository.commit.commit || !root.repository.commit.commit.file ||
+		!root.repository.commit.commit.file.dependencyReferences || !root.repository.commit.commit.file.dependencyReferences.data.length) {
 		return null;
 	}
-	let object = JSON.parse(data.root.repository.commit.commit.file.dependencyReferences.data);
+	let object = JSON.parse(root.repository.commit.commit.file.dependencyReferences.data);
 	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 0) {
 		return null;
 	}

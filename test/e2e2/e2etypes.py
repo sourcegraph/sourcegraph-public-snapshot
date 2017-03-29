@@ -72,24 +72,6 @@ def retry(fn, attempts=3, cooldown=0):
                 raise e
         time.sleep(cooldown)
 
-# page_down_until scrolls down (with focus on the specified element)
-# until a condition becomes true.  It will scroll down and recheck the
-# condition up to max_tries times.
-def page_down_until(elemFn, condition, max_tries=10, text=""):
-    for i in xrange(max_tries):
-        try:
-            wait_for(condition, max_wait=0.2, wait_incr=0.1, text="")
-            return
-        except:
-            pass
-        elemFn().send_keys(Keys.PAGE_DOWN)
-    try:
-        if condition():
-            return
-    except:
-        pass
-    raise E2EError("scrolled %d times, but condition was never true (%s)" % (max_tries, text))
-
 # distance returns the L2 pixel distance between two elements
 def distance(e, f):
     dx = e.location['x'] - f.location['x']
@@ -174,8 +156,8 @@ class Driver(object):
             raise E2EError('expected exactly one "%s" option in menu, but found %d' % (option_text, len(peek_items)))
         return peek_items[0]
 
-    def hover_token(self, token_text, lang="go"):
-        ActionChains(self.d).move_to_element(self.find_token(token_text, lang=lang)).perform()
+    def hover_token(self, token_text):
+        ActionChains(self.d).move_to_element(self.find_token(token_text)).perform()
 
     def hover_token_with_retry(self, token_text, condition, **kw):
         def tryOnce():
@@ -186,11 +168,11 @@ class Driver(object):
     def hover_elem(self, elem):
         ActionChains(self.d).move_to_element(elem).perform()
 
-    def find_tokens(self, tok_text, lang="go"):
-        return [e for e in self.d.find_elements_by_css_selector(".token.identifier.%s" % lang) if tok_text in e.text]
+    def find_tokens(self, tok_text):
+        return [e for e in self.d.find_elements_by_css_selector(".mtk1") if tok_text in e.text]
 
-    def find_token(self, tok_text, lang="go", select_any=True):
-        candidates = self.find_tokens(tok_text, lang=lang)
+    def find_token(self, tok_text, select_any=True):
+        candidates = self.find_tokens(tok_text)
         if len(candidates) == 0:
             raise E2EError('no tokens found with "%s"' % tok_text)
         elif len(candidates) > 1 and not select_any:

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
 	"context"
 
@@ -13,7 +12,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -331,42 +330,5 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 				t.Errorf("in test case %q, with input query %q, wanted GitHub query %q, but got %q", testcase, queryPair[0], queryPair[1], lastReceviedGithubQuery)
 			}
 		}
-	}
-}
-
-func TestReposWithDetails_List(t *testing.T) {
-	var s repos
-	ctx := testContext()
-
-	now := time.Now()
-
-	calledGHList := github.MockListGitHubReposWithDetails_Return([]*sourcegraph.GitHubRepoWithDetails{
-		&sourcegraph.GitHubRepoWithDetails{
-			URI:         "github.com/is/accessible",
-			Languages:   []*sourcegraph.GitHubRepoLanguage{&sourcegraph.GitHubRepoLanguage{Language: "Go", Count: 1}},
-			CommitTimes: []*time.Time{&now},
-		},
-	})
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test", GitHubToken: "test"})
-
-	reposWithDetailsList, err := s.ListWithDetails(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	calledRepoList := Mocks.Repos.MockListWithDetails(t, []string{"github.com/is/accessible"}, []string{"Go"}, []*time.Time{&now})
-	want, err := Mocks.Repos.ListWithDetails(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(reposWithDetailsList)
-	if !reflect.DeepEqual(reposWithDetailsList, want) {
-		t.Fatalf("got repos %v, want %v", reposWithDetailsList, want)
-	}
-	if !*calledGHList {
-		t.Error("!calledGHList")
-	}
-	if !*calledRepoList {
-		t.Error("!calledRepoList")
 	}
 }

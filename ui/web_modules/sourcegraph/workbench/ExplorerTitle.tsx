@@ -12,11 +12,11 @@ import { History, Search } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { Features } from "sourcegraph/util/features";
-import { workbenchStore } from "sourcegraph/workbench/main";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
 import { Services, getCurrentWorkspace } from "sourcegraph/workbench/services";
-import "sourcegraph/workbench/styles/searchViewlet.css";
+import "sourcegraph/workbench/styles/searchViewlet";
 import { ICommandService } from "vs/platform/commands/common/commands";
+import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
 
 insertGlobal(".composite.title", {
 	opacity: "1 !important",
@@ -35,29 +35,49 @@ insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .mon
 });
 
 const EXPLORER_VIELET_ID = "workbench.view.explorer";
+const SCM_VIEWLET_ID = "workbench.view.scm";
 
 const hoverStyle = hover({ color: `${colors.white()} !important` });
 
 interface TitleState {
 	workspace: IWorkspace;
-	diffMode: boolean;
+	openViewlet: string;
 }
+
+const buttonSx = {
+	flex: "0 0 auto",
+	padding: whitespace[1],
+	paddingTop: "0.125rem",
+	marginRight: 5,
+	marginLeft: 5,
+};
 
 export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 
 	disposables: IDisposable[] = [];
 	commandService: ICommandService = Services.get(ICommandService) as ICommandService;
+	viewletService: IViewletService = Services.get(IViewletService) as IViewletService;
 	state: TitleState = {
-		...workbenchStore.getState(),
+		openViewlet: this.viewletService.getDefaultViewletId(),
 		workspace: getCurrentWorkspace(),
 	};
 
-	private showSearchViewlet = () => {
-		this.commandService.executeCommand(SEARCH_VIEWLET_ID);
+	private searchButtonClicked = () => {
+		this.updateViewlet(this.state.openViewlet === SEARCH_VIEWLET_ID ? EXPLORER_VIELET_ID : SEARCH_VIEWLET_ID);
 	}
 
-	private showExplorerViewlet = () => {
-		this.commandService.executeCommand(EXPLORER_VIELET_ID);
+	private changesButtonClicked = () => {
+		this.updateViewlet(this.state.openViewlet === SCM_VIEWLET_ID ? EXPLORER_VIELET_ID : SCM_VIEWLET_ID);
+	}
+	private repoNameClicked = () => {
+		this.updateViewlet(EXPLORER_VIELET_ID);
+	}
+
+	private updateViewlet(viewletId: string): void {
+		if (this.state.openViewlet === viewletId) { return; }
+		this.setState({ openViewlet: viewletId }, () => {
+			this.commandService.executeCommand(viewletId);
+		});
 	}
 
 	private repoDisplayName(): string {
@@ -71,10 +91,15 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 	}
 
 	componentDidMount(): void {
-		this.disposables.push(workbenchStore.subscribe(
-			(state) => this.setState({ ...state })
-		));
+		this.disposables.push(this.viewletService.onDidViewletOpen(v => {
+			this.setState({ openViewlet: v.getId() });
+		}));
 		this.disposables.push(onWorkspaceUpdated(workspace => {
+			if (workspace.revState && workspace.revState.zapRef) {
+				this.updateViewlet(SCM_VIEWLET_ID);
+			} else if (this.state.openViewlet === SCM_VIEWLET_ID) {
+				this.updateViewlet(EXPLORER_VIELET_ID);
+			}
 			this.setState({ workspace });
 		}));
 	}
@@ -83,12 +108,10 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		this.disposables.forEach(disposable => disposable.dispose());
 	}
 
-	setDiffMode(diffMode: boolean): void {
-		workbenchStore.dispatch({ diffMode });
-	}
-
 	render(): JSX.Element {
-		const { workspace } = this.state;
+		const { workspace, openViewlet } = this.state;
+		const searchMode = openViewlet === SEARCH_VIEWLET_ID;
+		const changesMode = openViewlet === SCM_VIEWLET_ID;
 		return <FlexContainer items="center" justify="between" style={{
 			backgroundColor: colors.blueGrayD1(),
 			boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
@@ -101,10 +124,10 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		}}>
 			<Heading level={6} compact={true} style={{
 				lineHeight: 0,
-				maxWidth: "85%",
+				maxWidth: "74%",
 				whiteSpace: "nowrap",
 			}}>
-				<a onClick={this.showExplorerViewlet}
+				<a onClick={this.repoNameClicked}
 					{...hoverStyle}
 					style={{
 						color: colors.blueGrayL2(),
@@ -118,20 +141,16 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 					{this.repoDisplayName()}
 				</a>
 			</Heading>
-			{Features.textSearch.isEnabled() && <a {...hoverStyle}
-				style={{ marginRight: 5 }}
-				onClick={this.showSearchViewlet}>
-				<Search color={colors.blueGrayL2()} />
-			</a>}
-			{workspace && workspace.revState && workspace.revState.zapRev &&
-				<Button onClick={() => this.setDiffMode(!this.state.diffMode)} color={this.state.diffMode ? "blue" : "blueGray"}
-					{...hover({ backgroundColor: !this.state.diffMode ? `${colors.blueGrayD2()} !important` : "" }) }
-					style={{
-						flex: "0 0 auto",
-						padding: whitespace[1],
-						paddingTop: "0.125rem",
-					}}><History style={{ top: 0 }} /></Button>
-			}
+			<div>
+				{Features.textSearch.isEnabled() && <Button onClick={this.searchButtonClicked} color={searchMode ? "blue" : "blueGray"}
+					{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "" }) }
+					style={buttonSx}><Search style={{ top: 0 }} /></Button>}
+				{workspace && workspace.revState && workspace.revState.zapRev &&
+					<Button onClick={this.changesButtonClicked} color={changesMode ? "blue" : "blueGray"}
+						{...hover({ backgroundColor: !changesMode ? `${colors.blueGrayD2()} !important` : "" }) }
+						style={buttonSx}><History style={{ top: 0 }} /></Button>
+				}
+			</div>
 		</FlexContainer >;
 	}
 }

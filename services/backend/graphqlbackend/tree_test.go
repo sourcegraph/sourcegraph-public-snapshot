@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
-	graphql "github.com/neelance/graphql-go"
+	"github.com/neelance/graphql-go/gqltesting"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 )
 
 func TestTree(t *testing.T) {
@@ -38,7 +39,7 @@ func TestTree(t *testing.T) {
 		return nil
 	}
 
-	graphql.RunTests(t, []*graphql.Test{
+	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,
 			Query: `

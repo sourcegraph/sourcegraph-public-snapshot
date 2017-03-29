@@ -3,7 +3,6 @@ package backend
 import (
 	"sync"
 	"testing"
-	"time"
 
 	"context"
 
@@ -17,7 +16,6 @@ type MockRepos struct {
 	Get                  func(v0 context.Context, v1 *sourcegraph.RepoSpec) (*sourcegraph.Repo, error)
 	GetByURI             func(v0 context.Context, v1 string) (*sourcegraph.Repo, error)
 	List                 func(v0 context.Context, v1 *sourcegraph.RepoListOptions) (*sourcegraph.RepoList, error)
-	ListWithDetails      func(v0 context.Context) (*sourcegraph.GitHubReposWithDetailsList, error)
 	Update               func(v0 context.Context, v1 *sourcegraph.ReposUpdateOp) error
 	GetCommit            func(v0 context.Context, v1 *sourcegraph.RepoRevSpec) (*vcs.Commit, error)
 	ResolveRev           func(v0 context.Context, v1 *sourcegraph.ReposResolveRevOp) (*sourcegraph.ResolvedRev, error)
@@ -77,23 +75,6 @@ func (s *MockRepos) MockList(t *testing.T, wantRepos ...string) (called *bool) {
 			repos[i] = &sourcegraph.Repo{URI: repo}
 		}
 		return &sourcegraph.RepoList{Repos: repos}, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockListWithDetails(t *testing.T, wantRepos []string, wantRepoLangs []string, wantRepoTimes []*time.Time) (called *bool) {
-	called = new(bool)
-	s.ListWithDetails = func(ctx context.Context) (*sourcegraph.GitHubReposWithDetailsList, error) {
-		*called = true
-		reposWithDetails := make([]*sourcegraph.GitHubRepoWithDetails, len(wantRepos))
-		for i, repo := range wantRepos {
-			reposWithDetails[i] = &sourcegraph.GitHubRepoWithDetails{
-				URI:         repo,
-				Languages:   []*sourcegraph.GitHubRepoLanguage{&sourcegraph.GitHubRepoLanguage{Language: wantRepoLangs[i], Count: 1}},
-				CommitTimes: []*time.Time{wantRepoTimes[i]},
-			}
-		}
-		return &sourcegraph.GitHubReposWithDetailsList{ReposWithDetails: reposWithDetails}, nil
 	}
 	return
 }

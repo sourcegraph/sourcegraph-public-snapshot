@@ -107,7 +107,7 @@ export class BetaInterestForm extends React.Component<Props, State> {
 			return;
 		}
 		submitBetaSignupForm({
-			email: formData.email,
+			beta_email: formData.email,
 			firstname: firstName || "",
 			lastname: lastName || "",
 			company: formData.company,

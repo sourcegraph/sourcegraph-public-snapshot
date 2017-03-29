@@ -19,21 +19,15 @@ import "vs/workbench/parts/search/browser/searchViewlet";
 
 import { IDisposable } from "vs/base/common/lifecycle";
 import URI from "vs/base/common/uri";
-import { TPromise } from "vs/base/common/winjs.base";
-import { IMode } from "vs/editor/common/modes";
-import { IModeService } from "vs/editor/common/services/modeService";
-import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
 import { IInstantiationService } from "vs/platform/instantiation/common/instantiation";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 import "vs/workbench/electron-browser/main.contribution";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
-import { TextFileEditorModel } from "vs/workbench/services/textfile/common/textFileEditorModel";
 import { ITextFileService } from "vs/workbench/services/textfile/common/textfiles";
 
 import { init as initExtensionHost } from "sourcegraph/ext/main";
 import { configurePostStartup, configurePreStartup } from "sourcegraph/workbench/config";
-import { TextModelResolverService } from "sourcegraph/workbench/overrides/resolverService";
 import { setupServices } from "sourcegraph/workbench/services";
 import { GitTextFileService } from "sourcegraph/workbench/textFileService";
 import { MiniStore } from "sourcegraph/workbench/utils";
@@ -87,12 +81,6 @@ export function init(resource: URI, revState?: IWorkspaceRevState): InitializedW
 	);
 	workbench.startup();
 	services.set(ITextFileService, instantiationService.createInstance(GitTextFileService));
-	services.set(ITextModelResolverService, instantiationService.createInstance(TextModelResolverService));
-	// HACK: get URI's filename in fragment, not in URI path component
-	(TextFileEditorModel.prototype as any).getOrCreateMode = function (modeService: IModeService, preferredModeIds: string, firstLineText?: string): TPromise<IMode> {
-		return modeService.getOrCreateModeByFilenameOrFirstLine(this.resource.fragment /* file path */, firstLineText); // tslint:disable-line no-invalid-this
-	};
-
 	initExtensionHost(workspace, revState);
 
 	configurePostStartup(services);

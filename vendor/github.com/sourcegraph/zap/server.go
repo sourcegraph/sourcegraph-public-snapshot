@@ -8,8 +8,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/fpath"
-	"github.com/sourcegraph/zap/ws"
 )
 
 // ServerBackend is how the Server creates server
@@ -17,7 +17,7 @@ import (
 // create workspaces based on a git repository, for example.
 type ServerBackend interface {
 	// Create creates a new workspace.
-	Create(ctx context.Context, logger log.Logger, repo, gitBase string) (*ws.Proxy, error)
+	Create(ctx context.Context, logger log.Logger, repo, gitBase string) (*ot.Proxy, error)
 
 	// CanAccess is called to determine if the client can access the
 	// given repo (and all of its refs).
@@ -143,9 +143,6 @@ type Server struct {
 	// as the context for any background operations done by the server (ie
 	// not tied to a request)
 	bgCtx context.Context
-
-	updateFromDownstreamMu    sync.Mutex
-	updateRemoteTrackingRefMu sync.Mutex
 
 	// TestBlockHandleRefUpdateFromUpstream is used for testing
 	// only. It lets tests simulate a delay in

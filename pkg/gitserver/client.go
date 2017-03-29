@@ -5,6 +5,8 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"strings"
 	"time"
@@ -188,4 +190,84 @@ func (c *Cmd) Output(ctx context.Context) ([]byte, error) {
 func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 	stdout, stderr, err := c.DividedOutput(ctx)
 	return append(stdout, stderr...), err
+}
+
+// StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
+// non-zero return value, Read returns a non io.EOF error. Do not pass in a
+// started command.
+func StdoutReader(ctx context.Context, c *Cmd) (io.ReadCloser, error) {
+	reply, err := c.sendExec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if reply.CloneInProgress {
+		return nil, vcs.RepoNotExistError{CloneInProgress: true}
+	}
+
+	// Ignore stderr
+	go chanrpcutil.Drain(reply.Stderr)
+
+	return &cmdReader{
+		c:     c,
+		reply: reply,
+	}, nil
+}
+
+type cmdReader struct {
+	c     *Cmd
+	reply *execReply
+	err   error
+	// If we read too many bytes, we store the extra bytes here
+	buf []byte
+}
+
+func (c *cmdReader) Read(p []byte) (n int, err error) {
+	if c.err != nil {
+		return 0, c.err
+	}
+
+	// First check if we have already buffered bytes to give
+	n = copy(p, c.buf)
+	if n > 0 {
+		c.buf = c.buf[n:]
+	}
+
+	// Try to fill up p
+	for n < len(p) {
+		var ok bool
+		c.buf, ok = <-c.reply.Stdout
+		if !ok {
+			break
+		}
+		nw := copy(p[n:], c.buf)
+		n += nw
+		c.buf = c.buf[nw:]
+	}
+
+	if n != 0 {
+		return n, nil
+	}
+
+	defer func() { c.err = err }()
+	processResult, ok := <-c.reply.ProcessResult
+	if !ok {
+		return 0, errors.New("connection to gitserver lost")
+	}
+	if processResult.Error != "" {
+		return 0, errors.New(processResult.Error)
+	}
+	if processResult.ExitStatus != 0 {
+		return 0, fmt.Errorf("non-zero exit code: %d", processResult.ExitStatus)
+	}
+	return 0, io.EOF
+}
+
+func (c *cmdReader) Close() error {
+	// Drain
+	go func() {
+		chanrpcutil.Drain(c.reply.Stdout)
+		<-c.reply.ProcessResult
+	}()
+	return nil
 }

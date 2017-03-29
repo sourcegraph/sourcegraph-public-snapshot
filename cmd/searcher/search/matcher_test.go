@@ -1,14 +1,12 @@
 package search
 
 import (
-	"archive/zip"
-	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -48,102 +46,103 @@ func benchConcurrentFind(b *testing.B, p *Params) {
 	}
 
 	ctx := context.Background()
-	zr := openGithubArchive(b, p.Repo, p.Commit)
-	defer zr.Close()
+	zr, err := githubStore.openReader(ctx, p.Repo, p.Commit)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, err := concurrentFind(ctx, rg, &zr.Reader)
+		_, err := concurrentFind(ctx, rg, zr)
 		if err != nil {
 			b.Fatal(err)
 		}
 	}
 }
 
-func openGithubArchive(t testing.TB, repo, rev string) *zip.ReadCloser {
+// githubStore fetches from github and caches across test runs.
+var githubStore = &Store{
+	FetchTar: fetchTarFromGithub,
+	Path:     "/tmp/search_test/store",
+}
+
+func init() {
+	// Clear out store so we pick up changes in our store writing code.
+	os.RemoveAll(githubStore.Path)
+}
+
+func fetchTarFromGithub(ctx context.Context, repo, rev string) (io.ReadCloser, error) {
 	// key is a sha256 hash since we want to use it for the disk name
 	h := sha256.Sum256([]byte(repo + " " + rev))
 	key := hex.EncodeToString(h[:])
-	path := filepath.Join("/tmp/search_test", key+".zip")
-	zr, err := zip.OpenReader(path)
+	path := filepath.Join("/tmp/search_test/codeload/", key+".tar.gz")
+
+	// Check codeload cache first
+	r, err := openGzipReader(path)
 	if err == nil {
-		return zr
+		return r, nil
 	}
 
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 
-	url := fmt.Sprintf("https://codeload.%s/zip/%s", repo, rev)
-	t.Log("fetching", url)
-
+	// Fetch archive to a temporary path
+	tmpPath := path + ".part"
+	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", repo, rev)
+	fmt.Println("fetching", url)
 	resp, err := http.Get(url)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
+		return nil, fmt.Errorf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
 	}
-	f, err := os.OpenFile(path+".part", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
-	defer func() { os.Remove(path + ".part") }()
+	defer func() { os.Remove(tmpPath) }()
 	_, err = io.Copy(f, resp.Body)
+	f.Close()
 	if err != nil {
-		t.Fatal(err)
+		return nil, err
 	}
 
-	// We write our own version of the zip to disk, since we want to store
-	// it uncompressed.
-	r, err := zip.OpenReader(path + ".part")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer r.Close()
-	buf := new(bytes.Buffer)
-	w := zip.NewWriter(buf)
-	err = storeZip(&r.Reader, w)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = w.Close()
-	if err != nil {
-		t.Fatal(err)
+	if err := os.Rename(tmpPath, path); err != nil {
+		return nil, err
 	}
 
-	err = ioutil.WriteFile(path, buf.Bytes(), 0600)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	zr, err = zip.OpenReader(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return zr
+	return openGzipReader(path)
 }
 
-func storeZip(zr *zip.Reader, zw *zip.Writer) error {
-	for _, f := range zr.File {
-		r, err := f.Open()
-		if err != nil {
-			return err
-		}
-		w, err := zw.CreateHeader(&zip.FileHeader{
-			Name:   f.Name,
-			Method: zip.Store,
-		})
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(w, r)
-		if err != nil {
-			return err
-		}
-		r.Close()
+func openGzipReader(name string) (io.ReadCloser, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	r, err := gzip.NewReader(f)
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
+	return &gzipReadCloser{f: f, r: r}, nil
+}
+
+type gzipReadCloser struct {
+	f *os.File
+	r *gzip.Reader
+}
+
+func (z *gzipReadCloser) Read(p []byte) (int, error) {
+	return z.r.Read(p)
+}
+func (z *gzipReadCloser) Close() error {
+	err := z.r.Close()
+	if err1 := z.f.Close(); err == nil {
+		err = err1
+	}
+	return err
 }

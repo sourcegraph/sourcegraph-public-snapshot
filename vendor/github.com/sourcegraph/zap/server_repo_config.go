@@ -163,9 +163,12 @@ func (s *Server) doApplyBulkRepoRemoteConfiguration(ctx context.Context, logger 
 		// we don't need to do anything as that would not change the
 		// desired state on the upstream.
 		if oldRemote.Endpoint != newRemote.Endpoint || oldRemote.Repo != newRemote.Repo {
-			for ref, refConfig := range newRepoConfig.Refs {
+			for refName, refConfig := range newRepoConfig.Refs {
 				if refConfig.Upstream == newName {
-					if err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: ref}, repo.refdb.Lookup(ref), oldRepoConfig, newRepoConfig, true /* force */, true, true); err != nil {
+					ref := repo.refdb.Lookup(refName)
+					err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: refName}, ref, oldRepoConfig, newRepoConfig, true /* force */, true)
+					ref.Unlock()
+					if err != nil {
 						return err
 					}
 				}
@@ -182,14 +185,20 @@ func (s *Server) doApplyBulkRefConfiguration(ctx context.Context, logger log.Log
 	for name := range oldConfig.Refs {
 		// Remove refs that were removed from the config.
 		if _, ok := newConfig.Refs[name]; !ok {
-			if err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true, true); err != nil {
+			ref := repo.refdb.Lookup(name)
+			err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: name}, ref, oldConfig, newConfig, false, true)
+			ref.Unlock()
+			if err != nil {
 				return err
 			}
 		}
 	}
 	for name, newRefConfig := range newConfig.Refs {
 		if oldRefConfig := oldConfig.Refs[name]; oldRefConfig != newRefConfig {
-			if err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: name}, repo.refdb.Lookup(name), oldConfig, newConfig, false, true, true); err != nil {
+			ref := repo.refdb.Lookup(name)
+			err := s.doApplyRefConfiguration(ctx, logger, repo, RefIdentifier{Repo: repoName, Ref: name}, ref, oldConfig, newConfig, false, true)
+			ref.Unlock()
+			if err != nil {
 				return err
 			}
 		}

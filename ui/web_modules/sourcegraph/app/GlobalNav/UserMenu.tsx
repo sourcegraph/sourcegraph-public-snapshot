@@ -1,12 +1,9 @@
-import * as classNames from "classnames";
 import * as React from "react";
 import { Link } from "react-router";
 import { Avatar, FlexContainer, Heading, Menu, Popover } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
-import * as base from "sourcegraph/components/styles/_base.css";
-import * as typography from "sourcegraph/components/styles/_typography.css";
 import { ChevronDown } from "sourcegraph/components/symbols/Primaries";
-import { colors, whitespace } from "sourcegraph/components/utils";
+import { colors, typography, whitespace } from "sourcegraph/components/utils";
 import { Events, PAGE_LOCATION_GLOBAL_NAV } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
 
@@ -19,6 +16,17 @@ export function handleIntercomToggle(locationOnPage: string): void {
 	);
 }
 
+// Events being logged on this page
+const logBetaModal = () => Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV });
+const logSignout = () => Events.Logout_Clicked.logEvent(); EventLogger.logout();
+const logBrowserExt = () => Events.ToolsModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV });
+
+const footLinkSx = {
+	...typography.small,
+	color: colors.blueGray(),
+	paddingRight: whitespace[3],
+};
+
 export const UserMenu = (props): JSX.Element => {
 	return (
 		<div style={{ display: "inline-block", padding: whitespace[2] }}>
@@ -28,35 +36,42 @@ export const UserMenu = (props): JSX.Element => {
 					{props.user.AvatarURL ? <Avatar size="small" img={props.user.AvatarURL} /> : <div>{props.user.Login}</div>}
 					<ChevronDown color={colors.blueGray()} style={{ marginLeft: 8 }} />
 				</FlexContainer>
-				<Menu className={base.pa0} style={{ position: "relative", zIndex: 100, width: "220px" }}>
-					<div className={classNames(base.pa0, base.mb2, base.mt3)}>
-						<Heading level={7} color="gray">Signed in as</Heading>
-					</div>
-					<div>{props.user.Login}</div>
-					<hr role="divider" className={base.mv3} />
-					<Link to="/settings" role="menu_item">Settings</Link>
-					<LocationStateToggleLink href="/integrations" modalName="menuIntegrations" role="menu_item" location={location} onToggle={(v) => v && Events.ToolsModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV })}>
+				<Menu style={{ padding: 0, position: "relative", zIndex: 2, width: 220 }}>
+					<Heading level={7} color="gray" style={{
+						padding: 0,
+						marginBottom: whitespace[2],
+						marginTop: whitespace[3],
+					}}>Signed in as</Heading>
+					<div style={{ marginBottom: whitespace[3] }}>{props.user.Login}</div>
+					<hr role="divider" />
+					<Link to="/settings" role="menu_item">Accounts and billing</Link>
+					<LocationStateToggleLink
+						modalName="menuIntegrations"
+						role="menu_item"
+						location={location}
+						onToggle={logBrowserExt}>
 						Browser extensions
 					</LocationStateToggleLink>
-					<LocationStateToggleLink href="/beta" modalName="menuBeta" role="menu_item" location={location} onToggle={(v) => v && Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_LOCATION_GLOBAL_NAV })}>
+					<LocationStateToggleLink
+						href="/beta"
+						modalName="menuBeta"
+						role="menu_item"
+						location={location}
+						onToggle={logBetaModal}>
 						Beta program
 					</LocationStateToggleLink>
-					<a href="/docs" role="menu_item">
-						Docs
-					</a>
-					<a href="/pricing" role="menu_item">
-						Pricing
-					</a>
+					<a href="/docs" role="menu_item">Docs</a>
+					<a href="/pricing" role="menu_item">Pricing</a>
 					<a onClick={() => handleIntercomToggle(PAGE_LOCATION_GLOBAL_NAV)} role="menu_item">
 						Contact
 					</a>
-					<hr role="divider" className={base.mt3} />
-					<a role="menu_item" href="/-/logout" onClick={(e) => { Events.Logout_Clicked.logEvent(); EventLogger.logout(); }}>Sign out</a>
-					<hr role="divider" className={base.mt2} />
-					<div className={classNames(base.pv1, base.mb1, typography.tc)}>
-						<Link to="/security" className={classNames(typography.f7, typography.link_subtle, base.pr3)}>Security</Link>
-						<Link to="/privacy" className={classNames(typography.f7, typography.link_subtle, base.pr3)}>Privacy</Link>
-						<Link to="/terms" className={classNames(typography.f7, typography.link_subtle)}>Terms</Link>
+					<hr role="divider" />
+					<a role="menu_item" href="/-/logout" onClick={logSignout}>Sign out</a>
+					<hr role="divider" />
+					<div style={{ paddingTop: whitespace[1], paddingBottom: whitespace[3], textAlign: "center" }}>
+						<Link to="/security" style={footLinkSx}>Security</Link>
+						<Link to="/privacy" style={footLinkSx}>Privacy</Link>
+						<Link to="/terms" style={{ ...footLinkSx, padding: 0 }}>Terms</Link>
 					</div>
 				</Menu>
 			</Popover>

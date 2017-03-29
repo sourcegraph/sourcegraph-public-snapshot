@@ -1,5 +1,5 @@
 export class PhabricatorInstance {
-	constructor(private uriToRepoUrlMapping: { [key: string]: string; }, private phabStagingUri: string) { }
+	constructor(private uriToRepoUrlMapping: { [key: string]: string; }, public usernameTrackingPrefix: string) { }
 
 	getPhabricatorRepoFromMap(repoUri: string): string | undefined {
 		repoUri = repoUri.toLowerCase();

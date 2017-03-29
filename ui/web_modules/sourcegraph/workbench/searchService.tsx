@@ -15,7 +15,7 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 import { RepoList } from "sourcegraph/api";
 import { context, isOnPremInstance } from "sourcegraph/app/context";
 import { URIUtils } from "sourcegraph/core/uri";
-import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+import { fetchGQL } from "sourcegraph/util/gqlClient";
 import { defaultExcludesRegExp } from "sourcegraph/workbench/ConfigurationService";
 import { getFilesCached } from "sourcegraph/workbench/overrides/fileService";
 
@@ -71,12 +71,12 @@ export class SearchService implements ISearchService {
 		const workspace = this.contextService.getWorkspace().resource;
 		const { repo, rev } = URIUtils.repoParams(workspace);
 		const search = new PPromise<ISearchComplete, ISearchProgressItem>((complete, error, progress) => {
-			fetchGraphQLQuery(`query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!) {
+			fetchGQL(`query SearchText($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!, $maxResults: Int!) {
 				root {
 					repository(uri: $uri) {
 						commit(rev: $rev) {
 							commit {
-								textSearch(pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive) {
+								textSearch(query: {pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, maxResults: $maxResults}) {
 									path
 									lineMatches {
 										preview
@@ -88,11 +88,12 @@ export class SearchService implements ISearchService {
 						}
 					}
 				}
-			}`, { ...query.contentPattern, rev, uri: repo, }).then(data => {
-					if (!data.root.repository || !data.root.repository.commit.commit) {
+			}`, { ...query.contentPattern, rev, uri: repo, maxResults: query.maxResults }).then(resp => {
+					const root = resp.data.root;
+					if (!root.repository || !root.repository.commit.commit) {
 						throw new Error("Repository does not exist.");
 					}
-					let response = data.root.repository.commit.commit.textSearch.map(file => {
+					let response = root.repository.commit.commit.textSearch.map(file => {
 						const resource = workspace.with({ fragment: file.path });
 						return { ...file, resource };
 					});
@@ -142,7 +143,7 @@ export class SearchService implements ISearchService {
 			// repo search doesn't work for on-premises. the quick and dirty hack is to return all repos,
 			// then allow VSCode to do the filtering on the front-end
 			// TODO(neelance): fix repo search
-			fetchGraphQLQuery(`query {
+			fetchGQL(`query SearchRepos{
 				root {
 					repositories(query: $query) {
 						uri
@@ -154,9 +155,10 @@ export class SearchService implements ISearchService {
 					}
 				}
 			}`, { query: isOnPremInstance(context.authEnabled) ? "" : query.filePattern })
-				.then(data => {
-					reposCache.set(query.filePattern!, data.root.repositories);
-					onComplete({ results: convertResults(data.root.repositories), stats: {} as any });
+				.then(resp => {
+					const root = resp.data.root;
+					reposCache.set(query.filePattern!, root.repositories);
+					onComplete({ results: convertResults(root.repositories), stats: {} as any });
 				});
 		}, () => rawSearchQuery && rawSearchQuery.cancel());
 		return rawSearchQuery;

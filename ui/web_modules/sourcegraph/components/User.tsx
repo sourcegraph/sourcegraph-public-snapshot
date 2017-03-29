@@ -7,14 +7,15 @@ interface Props {
 	email?: string;
 	nickname: string;
 	avatar?: string;
-	style?: React.CSSProperties;
+	size?: "small" | "medium" | "large";
 	simple?: boolean;
+	style?: React.CSSProperties;
 }
 
-const sx = Object.assign(
-	{ color: colors.blueGray() },
-	typography.size[7],
-);
+const sx = {
+	color: colors.blueGray(),
+	...typography.size[7],
+};
 
 export function User(props: Props): JSX.Element {
 	const {
@@ -22,16 +23,17 @@ export function User(props: Props): JSX.Element {
 		email,
 		nickname,
 		simple = false,
+		size = "large",
 		style,
 	} = props;
 
 	return <div style={style}>
 		<FlexContainer items="center">
 			<div style={{ marginRight: simple ? whitespace[2] : whitespace[3], float: "left", lineHeight: 0 }}>
-				<Avatar img={avatar} size={simple ? "tiny" : "large"} style={{ marginRight: 2 }} />
+				<Avatar img={avatar} size={simple ? "tiny" : size} style={{ marginRight: whitespace[1] }} />
 			</div>
 			<div>
-				<div style={{ lineHeight: "19px" }}>{nickname}</div>
+				<div>{nickname}</div>
 				{!simple && <div style={sx}>{email}</div>}
 			</div>
 		</FlexContainer>

@@ -154,9 +154,9 @@ const umamiPhabricatorRepoMap = {
 	"depla": "code.uber.internal/devexp/playground-test",
 	"demen": "code.uber.internal/devexp/mentorship",
 	"deeng": "code.uber.internal/devexp/engucation",
+	"chchu": "code.uber.internal/chunnel/chunnel",
 };
 
 export const UMAMI_SOURCEGRAPH_URL = "https://sourcegraph.sgpxy.dev.uberinternal.com";
-const PHABRICATOR_STAGING_URI = "phabricator-staging";
 
-export const umamiPhabricatorInstance = new PhabricatorInstance(umamiPhabricatorRepoMap, PHABRICATOR_STAGING_URI);
+export const umamiPhabricatorInstance = new PhabricatorInstance(umamiPhabricatorRepoMap, "uber_phabricator");

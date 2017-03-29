@@ -42,7 +42,7 @@ export function TabItem({
 		marginBottom: whitespace[2],
 		marginLeft: -1,
 		padding: whitespace[1],
-		paddingLeft: `calc(${whitespace[5]} - ${borderWidth}px)`,
+		paddingLeft: `calc(${whitespace[3]} - ${borderWidth}px)`,
 		paddingRight: whitespace[3],
 	};
 
@@ -54,9 +54,10 @@ export function TabItem({
 	const sx = merge(
 		{
 			borderWidth: 0,
-			borderColor: active ? colors[color]() : "transparent",
+			borderColor: active ? colors[`${color}L1`]() : "transparent",
 			borderStyle: "solid",
 			fontSize: "inherit",
+			fontWeight: active ? typography.weight[2] : null,
 		},
 
 		direction === "vertical" ? verticalSx : horizontalSx,
@@ -66,7 +67,7 @@ export function TabItem({
 		select(" a",
 			active
 				? { color: inverted ? "white" : colors[color]() }
-				: { color: colors.blueGray() }
+				: { color: inverted ? colors.blueGrayL1() : colors.blueGray() }
 		),
 
 		select(" a:hover",

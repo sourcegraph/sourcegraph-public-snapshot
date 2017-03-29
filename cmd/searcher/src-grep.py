@@ -27,11 +27,12 @@ query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isW
         repository(uri: $uri) {
             commit(rev: $rev) {
                 commit {
-                    textSearch(pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive) {
+                    textSearch(query: {pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, maxResults: 10000}) {
                         path
                         lineMatches {
                             preview
                             lineNumber
+                            offsetAndLengths
                         }
                     }
                 }
@@ -57,6 +58,7 @@ for fm in matches:
     for lm in fm['lineMatches']:
 	if args.url:
 	    repo_path = args.repo if args.rev == 'HEAD' else (args.repo + '@' + args.rev)
-	    print('%s/%s/-/blob/%s#L%d %s' % (domain, repo_path, fm['path'], lm['lineNumber'], lm['preview']))
+	    lrange = 'L%d:%d-%d:%d' % (lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + 1, lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + lm['offsetAndLengths'][0][1] + 1)
+	    print('%s/%s/-/blob/%s#%s %s' % (domain, repo_path, fm['path'], lrange, lm['preview']))
 	else:
 	    print('%s:%d:%s' % (fm['path'], lm['lineNumber'], lm['preview']))

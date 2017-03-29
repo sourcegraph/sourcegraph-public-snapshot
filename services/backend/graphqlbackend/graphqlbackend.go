@@ -4,10 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
 	graphql "github.com/neelance/graphql-go"
+	gqlerrors "github.com/neelance/graphql-go/errors"
 	"github.com/neelance/graphql-go/relay"
+	"github.com/neelance/graphql-go/trace"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
@@ -15,7 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
@@ -24,9 +29,34 @@ import (
 
 var GraphQLSchema *graphql.Schema
 
+var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "graphql",
+	Name:      "field_seconds",
+	Help:      "GraphQL field resolver latencies in seconds.",
+	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+}, []string{"type", "field", "error"})
+
+func init() {
+	prometheus.MustRegister(graphqlFieldHistogram)
+}
+
+type prometheusTracer struct {
+	trace.OpenTracingTracer
+}
+
+func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
+	traceCtx, finish := trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
+	start := time.Now()
+	return traceCtx, func(err *gqlerrors.QueryError) {
+		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+		finish(err)
+	}
+}
+
 func init() {
 	var err error
-	GraphQLSchema, err = graphql.ParseSchema(api.Schema, &schemaResolver{})
+	GraphQLSchema, err = graphql.ParseSchema(api.Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
 	if err != nil {
 		panic(err)
 	}

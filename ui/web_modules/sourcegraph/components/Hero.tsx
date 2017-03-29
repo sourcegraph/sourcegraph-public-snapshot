@@ -14,13 +14,12 @@ interface Props {
 
 export function Hero({ color = "white", className, pattern, children, style }: Props): JSX.Element {
 	return <BGContainer img={pattern ? patterns[pattern] : ""} className={className} style={{
-		...{
-			backgroundColor: bgColors[color],
-			color: color === "white" || color === "transparent" ? "inherit" : colors.white(),
-			textAlign: "center",
-			paddingBottom: whitespace[5],
-			paddingTop: whitespace[5],
-		}, ...style
+		backgroundColor: bgColors[color],
+		color: color === "white" || color === "transparent" ? "inherit" : colors.white(),
+		textAlign: "center",
+		paddingBottom: whitespace[5],
+		paddingTop: whitespace[5],
+		...style
 	}}>{children}</BGContainer>;
 }
 

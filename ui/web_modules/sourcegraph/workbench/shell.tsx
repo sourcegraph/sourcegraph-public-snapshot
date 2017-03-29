@@ -37,17 +37,11 @@ export class WorkbenchShell extends React.Component<Props, State> {
 	workbench: Workbench;
 	services: ServiceCollection;
 	listener: number;
-	disposables: IDisposable[];
+	disposables: IDisposable[] = [];
 	currWorkspace: IWorkspace;
-
-	constructor(props: Props) {
-		super(props);
-		this.state = {
-			diffMode: Boolean(this.props.zapRef),
-		};
-		this.disposables = [];
-		this.disposables.push(workbenchStore.subscribe(e => this.setState(e)));
-	}
+	state: State = {
+		diffMode: Boolean(this.props.zapRef),
+	};
 
 	domRef(parent: HTMLDivElement): void {
 		if (!parent) {
@@ -63,16 +57,14 @@ export class WorkbenchShell extends React.Component<Props, State> {
 		this.currWorkspace = (this.services.get(IWorkspaceContextService) as IWorkspaceContextService).getWorkspace();
 		updateWorkspace(this.props).then(() => {
 			parent.appendChild(domElement);
-			updateEditorArea(this.props).then(() => {
-				this.layout();
-			});
+			updateEditorArea(this.props).then(() => this.layout());
 		});
-
 	}
 
 	componentWillMount(): void {
 		window.onresize = debounce(this.layout, 50);
 		document.body.classList.add("monaco-shell", "vs-dark");
+		this.disposables.push(workbenchStore.subscribe(e => this.setState(e)));
 	}
 
 	componentDidMount(): void {
@@ -136,13 +128,6 @@ export class WorkbenchShell extends React.Component<Props, State> {
 			this.workbench.setSideBarHidden(false);
 		}
 		this.workbench.layout();
-
-		// HACK: our slightly-larger-than-vscode's status bar needs a re-layout to render
-		// entirely within the window, but the layout has to be async. We should update
-		// vscode CSS to accomodate a taller status bar so this is unnecessary.
-		setTimeout(() => {
-			this.workbench.layout();
-		}, 100);
 	}
 
 	toggleQuickopen(event: KeyboardEvent & { target: Node }): void {
@@ -158,7 +143,6 @@ export class WorkbenchShell extends React.Component<Props, State> {
 	}
 
 	render(): JSX.Element {
-		this.layout();
 		return <div style={{
 			height: "100%",
 			display: "flex",

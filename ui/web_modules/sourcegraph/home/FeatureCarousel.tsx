@@ -17,7 +17,7 @@ export class FeatureCarousel extends React.Component<Props, State> {
 	render(): JSX.Element {
 
 		return <FlexContainer wrap={true} style={Object.assign({},
-			layout.container,
+			layout.container.lg,
 			{
 				marginTop: whitespace[8],
 				paddingright: whitespace[8],

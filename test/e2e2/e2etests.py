@@ -11,14 +11,12 @@ from colors import yellow
 
 from e2etypes import *
 
-
 def test_direct_link_to_repo(d):
     wd = d.d
 
     wd.get(d.sg_url("/github.com/gorilla/muxy@65b4fd5d316b4b260db61f66726e4859fd0e4889"))
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 10, 5.0)
-
 
 def test_direct_link_to_directory(d):
     wd = d.d
@@ -27,7 +25,6 @@ def test_direct_link_to_directory(d):
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
     wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-row")) == 11, 5.0)
 
-
 def test_repo_jump_to(d):
     wd = d.d
 
@@ -35,74 +32,11 @@ def test_repo_jump_to(d):
     wait_for(lambda: wd.find_element_by_id("directory_help_message"))
     d.send_keys_like_human("/")
     send_keys_with_retry(d.active_elem, "!golang/go",
-                         lambda: len(d.find_search_modal_results("gogolang", exact_match=True)) > 0,
+                         lambda: len(d.find_search_modal_results("go\ngolang", exact_match=True)) > 0,
                          max_wait=5.0)
-    d.find_search_modal_results("gogolang", exact_match=True)[0].click()
+    d.find_search_modal_results("go\ngolang", exact_match=True)[0].click()
 
     wait_for(lambda: wd.current_url == d.sg_url("/github.com/golang/go"), text=('wd.current_url == "%s"' % d.sg_url("/github.com/gorilla/mux")))
-
-def test_github_private_auth_onboarding(d):
-    wd = d.d
-    username = os.getenv("NEW_USER_GITHUB")
-    password = os.getenv("NEW_USER_GITHUB_PASSWORD", "")
-    if username is None:
-        logf("[%s] skipping test_onboarding because $NEW_USER_GITHUB not set" % yellow("WARN"))
-        return
-
-    # Delete user from Auth0 if currently exists
-    d.delete_user_if_exists(username)
-
-    # Go to home, click "Sign up"
-    wd.get(d.sg_url("/"))
-    retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: wd.find_element_by_id("github-auth-btn").click())
-
-    # Type in GitHub login creds
-    wd.find_element_by_id("login_field").send_keys(username)
-    wd.find_element_by_id("password").send_keys(password)
-    d.send_keys_like_human(Keys.ENTER)
-
-    # Re-authorize application in case GitHub thinks we're a bot (heh heh)
-    if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
-        d.find_button_by_partial_text("Authorize application").click()
-
-    wait_for(lambda: len(d.find_tokens("Checkers")) > 0)
-    wait_for(lambda: wd.find_element_by_id("def-coachmark"), max_wait=4.0)
-
-    # Log out
-    Util.log_out(d)
-
-def test_github_public_auth_onboarding(d):
-    wd = d.d
-    username = os.getenv("NEW_USER_PUBLIC_GITHUB")
-    password = os.getenv("NEW_USER_PUBLIC_GITHUB_PASSWORD", "")
-    if username is None:
-        logf("[%s] skipping test_github_public_auth_onboarding because $NEW_USER_PUBLIC_GITHUB not set" % yellow("WARN"))
-        return
-
-    # Delete user from Auth0 if currently exists
-    d.delete_user_if_exists(username)
-
-    # Go to home, click "Sign up"
-    wd.get(d.sg_url("/"))
-    retry(lambda: wd.find_element_by_link_text("Sign up").click())
-    retry(lambda: wd.find_element_by_link_text("Public code only").click())
-
-    # Type in GitHub login creds
-    wd.find_element_by_id("login_field").send_keys(username)
-    wd.find_element_by_id("password").send_keys(password)
-    d.send_keys_like_human(Keys.ENTER)
-
-    # Re-authorize application in case GitHub thinks we're a bot (heh heh)
-    if len(d.find_buttons_by_partial_text("Authorize application")) > 0:
-        d.find_button_by_partial_text("Authorize application").click()
-
-    wait_for(lambda: len(d.find_tokens("Checkers")) > 0)
-    wait_for(lambda: wd.find_element_by_id("def-coachmark"), max_wait=4.0)
-    wait_for(lambda: wd.find_element_by_id("ref-coachmark"), max_wait=4.0)
-
-    # Log out
-    Util.log_out(d)
 
 def test_login_logout(d):
     wd = d.d
@@ -116,11 +50,11 @@ def test_login_logout(d):
     Util.log_out(d)
     wait_for(lambda: wd.current_url == d.sg_url("/"))
 
-def test_golden_workflow(d):
+def test_godoc_workflow(d):
     wd = d.d
 
     # Get to NewRouter landing page (presumably after
-    # clicking on a Google search result).
+    # clicking on a godoc link or Google search result).
     wd.get(d.sg_url("/go/github.com/gorilla/mux/-/NewRouter"))
 
     # Hover over "NewRouter" token
@@ -155,7 +89,7 @@ def test_golden_workflow(d):
     # Quickopen to "Route"
     retry(lambda: d.send_keys_like_human("/"))
     send_keys_with_retry(d.active_elem, "#Route",
-                         lambda: len(d.find_search_modal_results("Routemux", exact_match=True)) > 0,
+                         lambda: len(d.find_search_modal_results("Route\nmux", exact_match=True)) > 0,
                          max_wait=5.0)
 
     retry(lambda: d.send_keys_like_human(Keys.ENTER))
@@ -348,36 +282,38 @@ def test_java_symbol(dr):
     # Symbol search for "testfailure"
     dr.send_keys_like_human("/")
     send_keys_with_retry(dr.active_elem, "#testfailure",
-                         lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0,
+                         lambda: len(dr.find_search_modal_results("TestFailure\njunit.framework", exact_match=True)) > 0,
                          max_wait=5.0)
-    wait_for(lambda: len(dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)) > 0, 30.0)
+    wait_for(lambda: len(dr.find_search_modal_results("TestFailure\njunit.framework", exact_match=True)) > 0, 30.0)
     # Click on "TestFailure junit.framework"
-    dr.find_search_modal_results("TestFailurejunit.framework", exact_match=True)[0].click()
+    dr.find_search_modal_results("TestFailure\njunit.framework", exact_match=True)[0].click()
     # Wait for URL to change
     wait_for(lambda: "/TestFailure.java#" in wd.current_url, max_wait=10.0, text=('file is TestFailure.java'))
-    # Check if page properly loaded
-    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
+    # Verify info bar is opened
+    wait_for(lambda: len(wd.find_elements_by_id("reference-tree")) == 1, 15)
+    wait_for(lambda: len(wd.find_elements_by_class_name("monaco-tree-rows")) > 1)
+    wait_for(lambda: len(wd.find_elements_by_class_name("left-right-widget_right")) > 0)
 
 def test_java_hover(dr):
     wd = dr.d
     # Go to JUnit repo page
     wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
     # Hover over "TestFailure" token
-    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
-    retry(lambda: dr.hover_token("TestFailure", lang="java"))
-    wait_for(lambda: 'TestFailure' in dr.find_tooltip_near_elem(dr.find_tokens("TestFailure", lang="java")[0])[1].text)
+    wait_for(lambda: len(dr.find_tokens(" TestFailure ")) > 0, 10)
+    retry(lambda: dr.hover_token(" TestFailure"))
+    wait_for(lambda: 'TestFailure' in dr.find_tooltip_near_elem(dr.find_tokens(" TestFailure ")[0])[1].text)
 
 def test_java_def(dr):
     wd = dr.d
     # Go to JUnit repo page
     wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/junit/framework/TestFailure.java"))
     # Click "TestFailure" token and wait until side panel loaded.
-    wait_for(lambda: len(dr.find_tokens("TestFailure", lang="java")) > 0, 10)
-    click_with_retry(lambda: dr.find_token("TestFailure", lang="java"),
+    wait_for(lambda: len(dr.find_tokens(" TestFailure ")) > 0, 10)
+    click_with_retry(lambda: dr.find_token(" TestFailure "),
                      lambda: len(wd.find_elements_by_id("reference-tree")) == 1, max_wait=15)
     # Click "Throwables" token and wait until side panel reloaded.
-    wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
-    click_with_retry(lambda: dr.find_token("Throwables", lang="java"),
+    wait_for(lambda: len(dr.find_tokens("Throwables")) > 0, 10)
+    click_with_retry(lambda: dr.find_token("Throwables"),
                      lambda: 'Throwables' in wd.find_elements_by_id("reference-tree")[0].text,
                      max_wait=15)
     # Click "Jump to definition"
@@ -385,40 +321,34 @@ def test_java_def(dr):
     # Wait for URL to change
     wait_for(lambda: "/Throwables.java#" in wd.current_url, max_wait=10.0, text=('file is Throwables.java'))
     # Check if page properly loaded
-    wait_for(lambda: len(dr.find_tokens("Throwables", lang="java")) > 0, 10)
+    wait_for(lambda: len(dr.find_tokens("Throwables")) > 0, 10)
 
 def test_java_cross_repo(dr):
     wd = dr.d
     # Go to JUnit repo page
-    wd.get(dr.sg_url("/github.com/google/guava/-/blob/guava/src/com/google/common/collect/Maps.java"))
+    wd.get(dr.sg_url("/github.com/google/guava/-/blob/guava/src/com/google/common/collect/RangeGwtSerializationDependencies.java"))
     # Wait for page to load
-    wait_for(lambda: len(dr.find_tokens("collect", lang="java")) > 0, max_wait=10, text="wait for page load")
+    wait_for(lambda: len(dr.find_tokens("collect")) > 0, max_wait=10, text="wait for page load")
     # Click in editor
     wd.find_elements_by_css_selector(".monaco-editor")[0].click()
-    # Scroll to "AbstractCollection"
-    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
-                    lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0)
-    # Click "AbstractCollection" and wait until side panel reloaded
-    click_with_retry(lambda: dr.find_token("AbstractCollection", lang="java"),
-                     lambda: 'AbstractCollection' in wd.find_elements_by_id("reference-tree")[0].text,
+    # Click "Serializable" and wait until side panel reloaded
+    click_with_retry(lambda: dr.find_token("Serializable"),
+                     lambda: 'Serializable' in wd.find_elements_by_id("reference-tree")[0].text,
                      max_wait=15)
     # Click "Jump to definition"
     dr.find_jump_to_definition_button().click()
     # Wait for URL to change
-    wait_for(lambda: "/AbstractCollection.java#" in wd.current_url, max_wait=10.0, text=('file is AbstractCollection.java'))
+    wait_for(lambda: "/Serializable.java#" in wd.current_url, max_wait=10.0, text=('file is Serializable.java'))
     # Check if page properly loaded
-    wait_for(lambda: len(dr.find_tokens("AbstractCollection", lang="java")) > 0, 10)
+    wait_for(lambda: len(dr.find_tokens(" Serializable ")) > 0, 10)
 
 def test_java_global_usages(dr):
     wd = dr.d
     # Go to JUnit repo page
-    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/main/java/org/junit/Test.java"))
+    wd.get(dr.sg_url("/github.com/junit-team/junit4/-/blob/src/test/java/junit/tests/AllTests.java"))
     # Wait for page to load
-    wait_for(lambda: len(dr.find_tokens("", lang="java")) > 0, max_wait=10, text="wait for page load")
-    # Scroll to "Test"
-    page_down_until(lambda: wd.find_elements_by_css_selector(".monaco-editor textarea")[0],
-                    lambda: len(dr.find_tokens("Test", lang="java")) > 0)
-    click_with_retry(lambda: dr.find_token("Test", lang="java"),
+    wait_for(lambda: len(dr.find_tokens("")) > 0, max_wait=10, text="wait for page load")
+    click_with_retry(lambda: dr.find_token(" Test "),
                      lambda: 'Test' in wd.find_elements_by_id("reference-tree")[0].text,
                      max_wait=15)
     # Wait for references to load + un-expand the "Local" references
@@ -456,11 +386,9 @@ test_repos = [
 ];
 
 all_tests = [
-    # (test_github_private_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
-    # (test_github_public_auth_onboarding, "@kingy"), # TODO(king): re-enable after flakiness fixed
     (test_login_logout, "@kingy"),
-    # (test_repo_jump_to, "@nico"), # broken
-    # (test_golden_workflow, "@matt"), broken
+    (test_repo_jump_to, "@john"),
+    (test_godoc_workflow, "@john"),
     (test_direct_link_to_repo, "@nick"),
     (test_direct_link_to_directory, "@nick"),
     (test_beta_signup, "@kingy"),
@@ -469,10 +397,10 @@ all_tests = [
     (test_browser_extension_hover_j2d_blob, "@john"),
     (test_browser_extension_hover_j2d_unified_pull_request, "@john"),
     (test_browser_extension_hover_j2d_split_pull_request, "@john"),
-    # (test_java_symbol, "@the.other.aaron"), # broken
-    # (test_java_hover, "@the.other.aaron"), # broken
-    # (test_java_def, "@the.other.aaron"), # broken
-    # (test_java_cross_repo, "@the.other.aaron"), # broken
+    (test_java_symbol, "@the.other.aaron"),
+    (test_java_hover, "@the.other.aaron"),
+    (test_java_def, "@the.other.aaron"),
+    (test_java_cross_repo, "@the.other.aaron"),
     # (test_java_global_usages, "@the.other.aaron"), # broken
 ]
 

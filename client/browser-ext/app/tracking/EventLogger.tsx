@@ -20,7 +20,7 @@ export abstract class EventLogger {
 		this.logEventForCategory("Auth", "Redirect", "ChromeExtensionAuthButtonClicked", eventProperties);
 	}
 
-	protected abstract logEventToTelligent(eventAction: string, eventProps: any): void;
+	protected abstract sendEvent(eventAction: string, eventProps: any): void;
 
 	private logToConsole(eventAction: string, object: any): void {
 		if (!Features.eventLogDebug.isEnabled()) {
@@ -51,7 +51,7 @@ export abstract class EventLogger {
 		);
 
 		this.logToConsole(eventAction, decoratedEventProps);
-		this.logEventToTelligent(eventAction, decoratedEventProps);
+		this.sendEvent(eventAction, decoratedEventProps);
 	}
 
 }

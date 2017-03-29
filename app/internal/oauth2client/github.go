@@ -5,29 +5,24 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/go-github/github"
-
 	"encoding/base64"
 
 	"golang.org/x/oauth2"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/canonicalurl"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/returnto"
+	"sourcegraph.com/sourcegraph/sourcegraph/app/internal/tracking"
 	"sourcegraph.com/sourcegraph/sourcegraph/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/randstring"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 )
 
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
@@ -235,7 +230,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	// Track user GitHub data in GCS
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go trackUserGitHubData(actor, eventLabel)
+		go tracking.TrackUserGitHubData(actor, eventLabel)
 	}
 
 	if firstTime {
@@ -303,62 +298,4 @@ func mergeScopes(a, b []string) []string {
 	}
 	sort.Strings(merged)
 	return merged
-}
-
-// Track user data in GCS
-func trackUserGitHubData(actor *auth.Actor, event string) error {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Printf("panic in trackUserGitHubData: %s", err)
-		}
-	}()
-
-	gcsClient, err := gcstracker.New(actor)
-	if err != nil {
-		return err
-	}
-	if gcsClient == nil {
-		return nil
-	}
-
-	// Since the newly-authenticated actor (and their GitHubToken) has
-	// not yet been associated with the request's context, we need to
-	// create a temporary Context object that contains that linkage in
-	// order to pull data from the GitHub API
-	tempCtx := auth.WithActor(context.Background(), actor)
-
-	// Fetch orgs and org members data
-	orgs, err := backend.Orgs.ListAllOrgs(tempCtx, &sourcegraph.OrgListOptions{})
-	if err != nil {
-		return err
-	}
-	orgsWithDetails := make(map[string]([]*github.User))
-	for _, org := range orgs.Orgs {
-		members, err := backend.Orgs.ListAllOrgMembers(tempCtx, &sourcegraph.OrgListOptions{OrgName: org.Login})
-		if err != nil {
-			return err
-		}
-		orgsWithDetails[org.Login] = members
-	}
-
-	// Fetch repo data
-	reposWithDetails, err := backend.Repos.ListWithDetails(tempCtx)
-	if err != nil {
-		return err
-	}
-
-	// Add new TrackedObject
-	tos := gcsClient.NewTrackedObjects(event)
-
-	err = tos.AddOrgsWithDetailsObjects(orgsWithDetails)
-	if err != nil {
-		return err
-	}
-	err = tos.AddReposWithDetailsObjects(reposWithDetails)
-	if err != nil {
-		return err
-	}
-
-	gcsClient.Write(tos)
-	return nil
 }

@@ -1,6 +1,6 @@
 import { InPageEventLogger } from "../app/tracking/InPageEventLogger";
 import { getDomainUsername } from "../app/utils";
-import { eventLogger } from "../app/utils/context";
+import { eventLogger, phabricatorInstance } from "../app/utils/context";
 import { injectBackgroundApp } from "../app/utils/injectBackgroundApp";
 import { expanderListen, getPhabricatorUsername, metaClickOverride, setupPageLoadListener } from "../app/utils/phabricator";
 import { injectPhabricatorBlobAnnotators } from "../app/utils/phabricator_inject";
@@ -9,7 +9,7 @@ import { injectPhabricatorBlobAnnotators } from "../app/utils/phabricator_inject
 export function init(): void {
 	const phabricatorUsername = getPhabricatorUsername();
 	if (phabricatorUsername !== null) {
-		(eventLogger as InPageEventLogger).setUserName(getDomainUsername("sgdev_phabricator", phabricatorUsername));
+		(eventLogger as InPageEventLogger).setUserId(getDomainUsername(phabricatorInstance.usernameTrackingPrefix, phabricatorUsername));
 	}
 
     /**

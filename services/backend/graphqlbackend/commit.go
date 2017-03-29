@@ -121,7 +121,3 @@ func createCommitState(repo sourcegraph.Repo, rev *sourcegraph.ResolvedRev) *com
 		},
 	}}
 }
-
-func (r *commitResolver) TextSearch(ctx context.Context, info *patternInfo) ([]*fileMatch, error) {
-	return textSearch(ctx, r.repo.URI, r.commit.CommitID, info)
-}

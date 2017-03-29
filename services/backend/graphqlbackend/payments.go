@@ -6,7 +6,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/stripe"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/internal/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
 )
 
@@ -32,7 +32,7 @@ func (p planResolver) Name() string {
 }
 
 func (p planResolver) Organization(ctx context.Context) (*org, error) {
-	organization, _, err := github.OrgsFromContext(ctx).Get(p.OrgName)
+	organization, _, err := github.Client(ctx).Organizations.Get(p.OrgName)
 	if err != nil {
 		return nil, err
 	}

@@ -9,45 +9,9 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
-	"github.com/neelance/graphql-go"
 	basictracer "github.com/opentracing/basictracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/prometheus/client_golang/prometheus"
 )
-
-var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "field_seconds",
-	Help:      "GraphQL field resolver latencies in seconds.",
-	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error"})
-
-func init() {
-	prometheus.MustRegister(graphqlFieldHistogram)
-}
-
-type graphqlFieldRecorder struct {
-}
-
-func (r *graphqlFieldRecorder) RecordSpan(span basictracer.RawSpan) {
-	if field, _ := span.Tags[graphql.OpenTracingTagField].(string); field != "" {
-		typ, _ := span.Tags[graphql.OpenTracingTagType].(string)
-		err, _ := span.Tags[graphql.OpenTracingTagError].(string)
-		graphqlFieldHistogram.WithLabelValues(typ, field, strconv.FormatBool(err != "")).Observe(span.Duration.Seconds())
-	}
-}
-
-type trivialFieldsFilter struct {
-	rec basictracer.SpanRecorder
-}
-
-func (f *trivialFieldsFilter) RecordSpan(span basictracer.RawSpan) {
-	if b, ok := span.Tags[graphql.OpenTracingTagTrivial].(bool); ok && b {
-		return
-	}
-	f.rec.RecordSpan(span)
-}
 
 type tagsAndLogsFilter struct {
 	rec basictracer.SpanRecorder
@@ -57,21 +21,6 @@ func (f *tagsAndLogsFilter) RecordSpan(span basictracer.RawSpan) {
 	span.Tags = nil
 	span.Logs = nil
 	f.rec.RecordSpan(span)
-}
-
-type multiRecorder []basictracer.SpanRecorder
-
-func (mr multiRecorder) RecordSpan(span basictracer.RawSpan) {
-	for _, r := range mr {
-		r.RecordSpan(span)
-	}
-}
-
-// MultiRecorder creates a recorder that duplicates its writes to all the provided recorders.
-func MultiRecorder(recorders ...basictracer.SpanRecorder) basictracer.SpanRecorder {
-	mr := make(multiRecorder, len(recorders))
-	copy(mr, recorders)
-	return mr
 }
 
 var lightstepAccessToken = env.Get("LIGHTSTEP_ACCESS_TOKEN", "", "access token for sending traces to LightStep")
@@ -90,10 +39,7 @@ func InitTracer() {
 
 		options := basictracer.DefaultOptions()
 		options.ShouldSample = func(_ uint64) bool { return true }
-		options.Recorder = MultiRecorder(
-			&trivialFieldsFilter{rec},
-			&graphqlFieldRecorder{},
-		)
+		options.Recorder = rec
 		opentracing.InitGlobalTracer(basictracer.NewWithOptions(options))
 	}
 }

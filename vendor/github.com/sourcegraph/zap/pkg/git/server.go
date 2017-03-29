@@ -8,7 +8,6 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/gitutil"
-	"github.com/sourcegraph/zap/ws"
 )
 
 // ServerRepo is the minimal repo interface containing only those
@@ -34,7 +33,7 @@ type ServerBackend struct {
 }
 
 // Create implements zap.ServerBackend.Create.
-func (s ServerBackend) Create(ctx context.Context, logger log.Logger, repo, base string) (*ws.Proxy, error) {
+func (s ServerBackend) Create(ctx context.Context, logger log.Logger, repo, base string) (*ot.Proxy, error) {
 	if repo == "" {
 		panic("empty repo")
 	}
@@ -57,7 +56,7 @@ func (s ServerBackend) Create(ctx context.Context, logger log.Logger, repo, base
 
 	var fbuf FileBuffer
 	snapshot := base
-	return &ws.Proxy{
+	return &ot.Proxy{
 		Apply: func(logger log.Logger, op ot.WorkspaceOp) error {
 			prevSnapshot := snapshot
 

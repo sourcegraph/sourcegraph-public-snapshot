@@ -175,7 +175,6 @@ func (w Worktree) DiffIndex(head string) ([]*ChangedFile, error) {
 	var changedFiles []*ChangedFile
 	for i := 0; i < len(sections); {
 		var f ChangedFile
-		changedFiles = append(changedFiles, &f)
 
 		metaParts := strings.Split(sections[i], " ")
 		if len(metaParts) != 5 {
@@ -201,6 +200,24 @@ func (w Worktree) DiffIndex(head string) ([]*ChangedFile, error) {
 			f.DstPath = sections[i]
 			i++
 		}
+
+		s := f.Status[0]
+		if s == 'A' || s == 'C' || s == 'M' || s == 'R' || s == 'T' || s == 'U' {
+			// Skip files that are larger than our max file size.
+			path := f.DstPath
+			if path == "" {
+				path = f.SrcPath
+			}
+			fi, err := os.Stat(filepath.Join(w.WorktreeDir(), path))
+			if err != nil {
+				return nil, fmt.Errorf("unable to determine file size (path %q): %s: ignoring", path, err)
+			} else if fi.Size() > MaxFileSize {
+				log.Printf("skipping large file (%d bytes): %s", fi.Size(), path)
+				continue
+			}
+		}
+
+		changedFiles = append(changedFiles, &f)
 	}
 	return changedFiles, nil
 }

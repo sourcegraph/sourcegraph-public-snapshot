@@ -6,6 +6,7 @@ type TrackedObjects struct {
 	Header     *Header          `json:"header,omitempty"`
 	Objects    []*TrackedObject `json:"objects,omitempty"`
 	UserInfo   *UserInfo        `json:"user_info,omitempty"`
+	BatchID    string           `json:"batch_id,omitempty"`
 }
 
 // Header represents environment-level properties
@@ -47,8 +48,16 @@ type RepoWithDetailsContext struct {
 	IsFork      bool            `json:"is_fork,omitempty"`
 	IsPrivate   bool            `json:"is_private,omitempty"`
 	CreatedAt   int64           `json:"created_at,omitempty"`
+	PushedAt    int64           `json:"pushed_at,omitempty"`
 	Languages   []*RepoLanguage `json:"languages,omitempty"`
 	CommitTimes []int64         `json:"latest_commit_tstamps,omitempty"`
+	// ErrorFetchingDetails is provided if tracker code receives error
+	// responses from GitHub while fetching language or commit details from
+	// https://api.github.com/repos/org/name/[languages|commits] URLs
+	ErrorFetchingDetails bool `json:"error_fetching_details,omitempty"`
+	// Skipped is provided if tracker code skips a repository due to
+	// it being sufficiently old or uninteresting
+	Skipped bool `json:"skipped,omitempty"`
 }
 
 type RepoLanguage struct {

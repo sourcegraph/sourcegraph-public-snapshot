@@ -9,7 +9,7 @@ import { MainThreadService } from "sourcegraph/ext/mainThreadService";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
 import { makeBlobURL } from "sourcegraph/init/worker";
 import { listEnabled as listEnabledFeatures } from "sourcegraph/util/features";
-import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
+import { fetchGQL } from "sourcegraph/util/gqlClient";
 import { Services } from "sourcegraph/workbench/services";
 
 /**
@@ -51,7 +51,8 @@ export function setupWorker(workspace: URI, revState?: IWorkspaceRevState): void
 	// allow the host to short-circuit unnecessary LSP work for unused languages.
 	// If there is an error fetching inventory, the extension host can make no
 	// assumptions about which languages are used in the repository.
-	const getInventory = fetchGraphQLQuery(`query RepoInventory($repo: String, $rev: String) {
+	// TODO(john): check that this works for private code.
+	const getInventory = fetchGQL(`query getInventory($repo: String, $rev: String) {
 		root {
 			repository(uri: $repo) {
 				commit(rev: $rev) {
@@ -62,9 +63,9 @@ export function setupWorker(workspace: URI, revState?: IWorkspaceRevState): void
 			}
 		}
 	}`, { repo, rev })
-		.then(query => {
+		.then(resp => {
 			try {
-				return query.root.repository!.commit.commit!.languages;
+				return resp.data.root.repository!.commit.commit!.languages;
 			} catch (e) {
 				console.warn(e);
 				return undefined;
