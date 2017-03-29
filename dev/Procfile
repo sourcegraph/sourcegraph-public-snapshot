@@ -5,4 +5,4 @@ searcher: .bin/searcher
 github-proxy: .bin/github-proxy
 zap: .bin/zap
 lsp-proxy: .bin/lsp-proxy -prof-http=:6061
-frontend: vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" -extra-watches='app/templates/*' sourcegraph.com/sourcegraph/sourcegraph/cmd/src
+frontend: vendor/.bin/rego -installenv=GOGC=off,GODEBUG=sbrk=1 -tags="${GOTAGS-}" -extra-watches='app/templates/*' sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend

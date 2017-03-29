@@ -19,4 +19,4 @@ cd ..
 go generate ./app/assets ./app/templates
 
 go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize
-godockerize build -t $IMAGE:$TAG --env VERSION=$TAG ./cmd/src
+godockerize build -t $IMAGE:$TAG --env VERSION=$TAG ./cmd/frontend
