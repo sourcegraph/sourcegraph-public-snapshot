@@ -15,7 +15,6 @@ interface Props {
 	repo: string;
 	path: string;
 	rev: string | null;
-	toast: string | null;
 	toggleAuthors: () => void;
 }
 
@@ -26,7 +25,7 @@ function basename(path: string): string {
 
 class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}> {
 	render(): JSX.Element {
-		const { repo, path, toggleAuthors, toast } = this.props;
+		const { repo, path, toggleAuthors } = this.props;
 		let rev = prettifyRev(this.props.rev);
 		if (rev === null) {
 			if (this.props.root.repository) {
@@ -86,8 +85,6 @@ class BlobTitleComponent extends React.Component<Props & { root: GQL.IRoot }, {}
 								{repo.startsWith("github.com") &&
 									<OpenInGitHubButton repo={repo} path={path} rev={rev} />
 								}
-
-								{toast && <div>{toast}</div>}
 							</div>
 						</div>
 					]
