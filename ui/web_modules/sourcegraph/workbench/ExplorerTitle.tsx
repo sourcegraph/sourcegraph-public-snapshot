@@ -48,8 +48,7 @@ const buttonSx = {
 	flex: "0 0 auto",
 	padding: whitespace[1],
 	paddingTop: "0.125rem",
-	marginRight: 5,
-	marginLeft: 5
+	marginRight: 5
 };
 
 export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
@@ -100,6 +99,8 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		this.disposables.push(onWorkspaceUpdated(workspace => {
 			if (workspace.revState && workspace.revState.zapRef) {
 				this.updateViewlet(SCM_VIEWLET_ID);
+			} else if (this.state.openViewlet === SCM_VIEWLET_ID) {
+				this.updateViewlet(EXPLORER_VIELET_ID);
 			}
 			this.setState({ workspace });
 		}));
@@ -125,7 +126,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		}}>
 			<Heading level={6} compact={true} style={{
 				lineHeight: 0,
-				maxWidth: "85%",
+				maxWidth: "74%",
 				whiteSpace: "nowrap",
 			}}>
 				<a onClick={this.repoNameClicked}
@@ -154,9 +155,15 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 						<Search style={{ top: 0 }} />
 					</Button>}
 				{workspace && workspace.revState && workspace.revState.zapRev &&
-					<Button onClick={this.changesButtonClicked} color={changesMode ? "blue" : "blueGray"}
+					<Button
+						onClick={this.changesButtonClicked}
+						color={"blue"}
 						{...hover({ backgroundColor: !changesMode ? `${colors.blueGrayD2()} !important` : "" }) }
-						style={buttonSx}><History style={{ top: 0 }} /></Button>
+						style={buttonSx}
+						backgroundColor={changesMode ? "auto" : "transparent"}
+						animation={false}>
+						<History style={{ top: 0 }} />
+					</Button>
 				}
 			</div>
 		</FlexContainer >;
