@@ -24,7 +24,8 @@ test-app:
 .PHONY: upgrade-zap
 upgrade-zap:
 	cd ui && yarn add libzap vscode-zap
-	govendor update github.com/sourcegraph/zap/...
+	git config url."git@github.com:".insteadOf "https://github.com/"
+	govendor fetch github.com/sourcegraph/zap/...
 
 .PHONY: develop-zap
 develop-zap:
