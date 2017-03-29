@@ -301,8 +301,11 @@ export interface GitHubRepoWithDetails {
 	Fork?: boolean;
 	Private?: boolean;
 	CreatedAt?: any;
+	PushedAt?: any;
 	Languages?: GitHubRepoLanguage[];
 	Commits?: any[];
+	error_fetching_details?: boolean;
+	skipped?: boolean;
 }
 
 export interface GitHubReposWithDetailsList {

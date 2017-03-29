@@ -591,7 +591,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if err := json.Unmarshal(*req.Params, &m); err != nil {
 			return nil, err
 		}
-		logWithLevel(formatLSPMessageType(m.Type), "window/logMessage "+m.Message, c.id.contextID, "method", req.Method, "params", req.Params, "id", req.ID)
+		logWithLevel(formatLSPMessageType(m.Type), "window/logMessage "+m.Message, c.id.contextID, "method", req.Method, "id", req.ID)
 		// Log to the span for the server, not for this specific
 		// request.
 		if span := opentracing.SpanFromContext(ctx); span != nil {

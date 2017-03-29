@@ -53,7 +53,6 @@ const (
 	AlreadyExists
 	PermissionDenied
 	Unauthenticated
-	ResourceExhausted
 	FailedPrecondition
 	Unimplemented
 	Internal

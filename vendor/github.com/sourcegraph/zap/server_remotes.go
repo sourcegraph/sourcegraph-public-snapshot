@@ -139,11 +139,10 @@ func (sr *serverRemotes) tryReconnect(ctx context.Context, logger log.Logger, en
 				for refName, refConfig := range repoConfig.Refs {
 					do := func() error {
 						// Wrap in func so we can defer here.
-						defer repo.acquireRef(refName)()
-
 						ref := repo.refdb.Lookup(refName)
-						if refConfig.Overwrite && refConfig.Upstream == remoteName && ref != nil {
-							o := ref.Object.(serverRef)
+						defer ref.Unlock()
+						if refConfig.Overwrite && refConfig.Upstream == remoteName && ref.Ref != nil {
+							o := ref.Ref.Object.(serverRef)
 							return cl.RefUpdate(ctx, RefUpdateUpstreamParams{
 								RefIdentifier: RefIdentifier{Repo: remote.Repo, Ref: refName},
 								Force:         true,

@@ -15,6 +15,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
@@ -23,8 +24,6 @@ import (
 
 // A light wrapper around the search service. We implement the service here so
 // that we can unmarshal the result directly into graphql resolvers.
-
-var searcherURL = env.Get("SEARCHER_URL", "", "searcher server URL (eg http://localhost:3181)")
 
 // patternInfo is the struct used by vscode pass on search queries.
 type patternInfo struct {
@@ -82,7 +81,7 @@ func (r *commitResolver) TextSearch(ctx context.Context, args *struct{ Query *pa
 }
 
 func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fileMatch, error) {
-	if searcherURL == "" {
+	if searcherURLs == nil {
 		return nil, errors.New("a searcher service has not been configured")
 	}
 	q := url.Values{
@@ -99,6 +98,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 	if p.IsCaseSensitive {
 		q.Set("IsCaseSensitive", "true")
 	}
+	searcherURL := searcherURLs.Get(repo + "@" + commit)
 	req, err := http.NewRequest("GET", searcherURL, nil)
 	if err != nil {
 		return nil, err
@@ -231,4 +231,18 @@ func (r *currentUserResolver) SearchRepos(ctx context.Context, args *repoSearchA
 	}
 	cancel()
 	return <-result, nil
+}
+
+var searcherURLs *endpoint.Map
+
+func init() {
+	searcherURL := env.Get("SEARCHER_URL", "", "searcher server URL (eg http://localhost:3181)")
+	if searcherURL == "" {
+		return
+	}
+	var err error
+	searcherURLs, err = endpoint.New(searcherURL)
+	if err != nil {
+		panic(fmt.Sprintf("could not connect to searcher %s: %s", searcherURL, err))
+	}
 }

@@ -12,7 +12,6 @@ import { History, Search } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { URIUtils } from "sourcegraph/core/uri";
 import { Features } from "sourcegraph/util/features";
-import { workbenchStore } from "sourcegraph/workbench/main";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
 import { Services, getCurrentWorkspace } from "sourcegraph/workbench/services";
 import "sourcegraph/workbench/styles/searchViewlet";
@@ -43,7 +42,6 @@ const hoverStyle = hover({ color: `${colors.white()} !important` });
 interface TitleState {
 	workspace: IWorkspace;
 	openViewlet: string;
-	diffMode: boolean;
 }
 
 const buttonSx = {
@@ -62,19 +60,24 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 	state: TitleState = {
 		openViewlet: this.viewletService.getDefaultViewletId(),
 		workspace: getCurrentWorkspace(),
-		...workbenchStore.getState(),
 	};
 
 	private searchButtonClicked = () => {
-		if (this.state.openViewlet === SEARCH_VIEWLET_ID) {
-			this.commandService.executeCommand(EXPLORER_VIELET_ID);
-		} else {
-			this.commandService.executeCommand(SEARCH_VIEWLET_ID);
-		}
+		this.updateViewlet(this.state.openViewlet === SEARCH_VIEWLET_ID ? EXPLORER_VIELET_ID : SEARCH_VIEWLET_ID);
 	}
 
+	private changesButtonClicked = () => {
+		this.updateViewlet(this.state.openViewlet === SCM_VIEWLET_ID ? EXPLORER_VIELET_ID : SCM_VIEWLET_ID);
+	}
 	private repoNameClicked = () => {
-		this.commandService.executeCommand(EXPLORER_VIELET_ID);
+		this.updateViewlet(EXPLORER_VIELET_ID);
+	}
+
+	private updateViewlet(viewletId: string): void {
+		if (this.state.openViewlet === viewletId) { return; }
+		this.setState({ openViewlet: viewletId }, () => {
+			this.commandService.executeCommand(viewletId);
+		});
 	}
 
 	private repoDisplayName(): string {
@@ -90,10 +93,12 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		this.disposables.push(this.viewletService.onDidViewletOpen(v => {
 			this.setState({ openViewlet: v.getId() });
 		}));
-		this.disposables.push(workbenchStore.subscribe(
-			(state) => this.setState({ ...state })
-		));
 		this.disposables.push(onWorkspaceUpdated(workspace => {
+			if (workspace.revState && workspace.revState.zapRef) {
+				this.updateViewlet(SCM_VIEWLET_ID);
+			} else if (this.state.openViewlet === SCM_VIEWLET_ID) {
+				this.updateViewlet(EXPLORER_VIELET_ID);
+			}
 			this.setState({ workspace });
 		}));
 	}
@@ -102,18 +107,10 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		this.disposables.forEach(disposable => disposable.dispose());
 	}
 
-	setDiffMode(diffMode: boolean): void {
-		if (diffMode && this.state.openViewlet !== SCM_VIEWLET_ID) {
-			this.commandService.executeCommand(SCM_VIEWLET_ID);
-		} else if (!diffMode && this.state.openViewlet === SCM_VIEWLET_ID) {
-			this.commandService.executeCommand(EXPLORER_VIELET_ID);
-		}
-		workbenchStore.dispatch({ diffMode });
-	}
-
 	render(): JSX.Element {
-		const { workspace, openViewlet, diffMode } = this.state;
+		const { workspace, openViewlet } = this.state;
 		const searchMode = openViewlet === SEARCH_VIEWLET_ID;
+		const changesMode = openViewlet === SCM_VIEWLET_ID;
 		return <FlexContainer items="center" justify="between" style={{
 			backgroundColor: colors.blueGrayD1(),
 			boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
@@ -126,7 +123,7 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		}}>
 			<Heading level={6} compact={true} style={{
 				lineHeight: 0,
-				maxWidth: "85%",
+				maxWidth: "74%",
 				whiteSpace: "nowrap",
 			}}>
 				<a onClick={this.repoNameClicked}
@@ -148,8 +145,8 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 					{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "" }) }
 					style={buttonSx}><Search style={{ top: 0 }} /></Button>}
 				{workspace && workspace.revState && workspace.revState.zapRev &&
-					<Button onClick={() => this.setDiffMode(!diffMode)} color={diffMode ? "blue" : "blueGray"}
-						{...hover({ backgroundColor: !diffMode ? `${colors.blueGrayD2()} !important` : "" }) }
+					<Button onClick={this.changesButtonClicked} color={changesMode ? "blue" : "blueGray"}
+						{...hover({ backgroundColor: !changesMode ? `${colors.blueGrayD2()} !important` : "" }) }
 						style={buttonSx}><History style={{ top: 0 }} /></Button>
 				}
 			</div>

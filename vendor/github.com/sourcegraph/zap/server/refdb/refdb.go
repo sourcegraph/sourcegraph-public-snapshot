@@ -10,6 +10,9 @@ import (
 // RefDB is the interface to the Zap refdb. Ref values are immutable
 // (although they may contain pointers to data structures that are not
 // immutable).
+//
+// Consumers needing synchronized access to the refdb should consider
+// using the Sync function to obtain a synchronized refdb.
 type RefDB interface {
 	// Exists queries the refdb and reports whether the named
 	// reference exists.
@@ -71,6 +74,14 @@ type RefDB interface {
 	// returned.
 	Delete(name string, old Ref, log RefLogEntry) error
 
+	// RefLog returns the reflog used by this refdb. Subsequent calls
+	// of this method always return the same value.
+	RefLog() RefLog
+}
+
+// The TransitiveClosurer interface is implemented by refdbs that can
+// find the transitive closure for a ref.
+type TransitiveClosurer interface {
 	// TransitiveClosureRefs queries the refdb and returns the named
 	// reference plus all symbolic references that refer to the named
 	// reference, either directly or indirectly (via other symbolic
@@ -78,10 +89,6 @@ type RefDB interface {
 	//
 	// If no such named ref exists, it returns nil.
 	TransitiveClosureRefs(name string) []Ref
-
-	// RefLog returns the reflog used by this refdb. Subsequent calls
-	// of this method always return the same value.
-	RefLog() RefLog
 }
 
 // Ref represents a Zap ref. A ref is either an object reference (in

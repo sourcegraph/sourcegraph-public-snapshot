@@ -1,11 +1,10 @@
 import * as autobind from "autobind-decorator";
 import * as React from "react";
-import * as Relay from "react-relay";
-import { Route } from "react-router";
+import { gql, graphql } from "react-apollo";
 import { IRange } from "vs/editor/common/editorCommon";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
-import { RouteParams, Router, RouterLocation, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
+import { RouteProps, Router, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import "sourcegraph/blob/styles/Monaco.css";
 import { Heading, PageTitle } from "sourcegraph/components";
 import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
@@ -17,17 +16,16 @@ import { Paywall, TrialEndingWarning, needsPayment } from "sourcegraph/user/Payw
 import { InfoPanelLifecycle } from "sourcegraph/workbench/info/sidebar";
 import { WorkbenchShell } from "sourcegraph/workbench/shell";
 
-interface Props {
+interface Props extends RouteProps {
+	id: string | null; // symbol id, if defined
+	mode: string | null; // mode for symbol, if defined
 	repo: string | null;
 	rev: string | null;
 	isSymbolUrl: boolean;
-	routes: Route[];
-	params: RouteParams;
 	selection: IRange | null;
-	location: RouterLocation;
-
-	relay: any;
-	root: GQL.IRoot;
+	loading?: boolean;
+	refetch?: () => void;
+	root?: GQL.IRoot;
 }
 
 // WorkbenchComponent loads the VSCode workbench shell. To learn about VSCode and the
@@ -44,10 +42,17 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		document.title = "Sourcegraph";
 	}
 
+	shouldComponentUpdate(nextProps: Props): boolean {
+		return !nextProps.loading;
+	}
+
 	render(): JSX.Element | null {
 		let repository: GQL.IRepository;
 		let selection: IRange | null;
 		let path: string;
+		if (this.props.loading || !this.props.root) {
+			return null; // data not yet fetched
+		}
 		if (this.props.isSymbolUrl) {
 			if (!this.props.root.symbols || this.props.root.symbols.length === 0) {
 				return <Error
@@ -71,7 +76,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		}
 
 		if (repository.revState.cloneInProgress) {
-			return <CloningRefresher relay={this.props.relay} />;
+			return <CloningRefresher refetch={this.props.refetch!} />;
 		}
 
 		if (!repository.revState.commit && !repository.revState.zapRev) {
@@ -126,63 +131,7 @@ function BlobPageTitle({ repo, path }: { repo: string | null, path: string }): J
 	return <PageTitle title={title} />;
 }
 
-const WorkbenchContainer = Relay.createContainer(WorkbenchComponent, {
-	initialVariables: {
-		repo: "",
-		rev: "",
-		id: "",
-		mode: "",
-		isSymbolUrl: false
-	},
-	fragments: {
-		root: () => Relay.QL`
-			fragment on Root {
-				symbols(id: $id, mode: $mode) @include(if: $isSymbolUrl) {
-					path
-					line
-					character
-					repository {
-						uri
-						description
-						defaultBranch
-						expirationDate
-						revState(rev: $rev) {
-							zapRev {
-								ref
-								base
-								branch
-							}
-							commit {
-								sha1
-							}
-							cloneInProgress
-						}
-					}
-				}
-				repository(uri: $repo) @skip(if: $isSymbolUrl) {
-					uri
-					description
-					defaultBranch
-					expirationDate
-					revState(rev: $rev) {
-						zapRev {
-							ref
-							base
-							branch
-						}
-						commit {
-							sha1
-						}
-						cloneInProgress
-					}
-				}
-			}
-		`,
-	},
-});
-
-// TODO(john): make this use router context.
-export function Workbench(props: { params: any; location: RouterLocation, routes: Route[] }): JSX.Element {
+function mapRouteProps(props: RouteProps): Props {
 	let rangeOrPosition: RangeOrPosition = RangeOrPosition.fromOneIndexed(1);
 	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
 		rangeOrPosition = RangeOrPosition.parse(props.location.hash.replace(/^#L/, "")) || rangeOrPosition;
@@ -193,33 +142,63 @@ export function Workbench(props: { params: any; location: RouterLocation, routes
 	let repo: string | null = null;
 	let rev: string | null = null;
 	if (isSymbolUrl) {
-		id = props.params.splat;
+		id = props.params.splat as string;
 		mode = "go";
 	} else {
 		const repoRevString = repoRevFromRouteParams(props.params);
 		repo = repoPath(repoRevString);
 		rev = repoRev(repoRevString);
 	}
-	return <Relay.RootContainer
-		Component={WorkbenchContainer}
-		route={{
-			name: "Root",
-			queries: {
-				root: () => Relay.QL`
-					query { root }
-				`,
-			},
-			params: {
-				repo,
-				rev: rev || "",
-				id,
-				mode,
-				isSymbolUrl,
-				routes: props.routes,
-				params: props.params,
-				selection: rangeOrPosition.toMonacoRangeAllowEmpty(),
-				location: props.location,
-			},
-		}}
-	/>;
-};
+
+	return { ...props, id, mode, repo, rev, isSymbolUrl, selection: rangeOrPosition.toMonacoRangeAllowEmpty() };
+}
+
+// TODO(john): use saved graphql queries and fragments.
+const repoFields = `
+	uri
+	description
+	defaultBranch
+	expirationDate
+	revState(rev: $rev) {
+		zapRev {
+			ref
+			base
+			branch
+		}
+		commit {
+			sha1
+		}
+		cloneInProgress
+	}
+`;
+
+export const Workbench = graphql(gql`
+	query Workbench($id: String, $repo: String!, $rev: String, $isSymbolUrl: Boolean) {
+		root {
+			symbols(id: $id, mode: $mode) @include(if: $isSymbolUrl) {
+				path
+				line
+				character
+				repository {
+					${repoFields}
+				}
+			}
+			repository(uri: $repo) @skip(if: $isSymbolUrl) {
+				${repoFields}
+			}
+		}
+	}`, {
+		props: props => ({ ...mapRouteProps(props.ownProps), ...props.data }),
+		options: props => {
+			const mappedProps = mapRouteProps(props);
+			return {
+				variables: {
+					id: mappedProps.id || "",
+					mode: mappedProps.mode || "",
+					repo: mappedProps.repo,
+					rev: mappedProps.rev || "",
+					isSymbolUrl: mappedProps.isSymbolUrl,
+				}
+			};
+		},
+	})(WorkbenchComponent);

@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -158,11 +159,17 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 	logger := log.With(s.parent.baseLogger(), "watching-workspace", w.Dir)
 
 	loop := func() (err error) {
-		defer func() {
-			if e := recover(); e != nil {
-				err = fmt.Errorf("panic: %v", e)
-			}
-		}()
+		if os.Getenv("NO_PANIC_HANDLER") == "" {
+			defer func() {
+				if r := recover(); r != nil {
+					err = fmt.Errorf("unexpected panic: %v", r)
+					const size = 64 << 10 // copied from net/http
+					buf := make([]byte, size)
+					buf = buf[:runtime.Stack(buf, false)]
+					err = fmt.Errorf("panic: %v\n%s", r, buf)
+				}
+			}()
+		}
 
 		for {
 			select {
@@ -177,21 +184,25 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 				logger := log.With(logger, "op", op.String())
 				level.Info(logger).Log()
 
-				ref, err := repo.refdb.Resolve("HEAD")
-				if err != nil {
-					return err
-				}
 				do := func() error {
 					// Wrap in func so we can defer here.
-					defer repo.acquireRef(ref.Name)()
 
-					refObj := ref.Object.(serverRef)
+					head, target := repo.refdb.Resolve("HEAD")
+					if err != nil {
+						return err
+					}
+					defer head.Unlock()
+					if target != nil {
+						defer target.Unlock()
+					}
+
+					refObj := target.Ref.Object.(serverRef)
 					err = refObj.ot.Record(logger, op)
 					if err != nil {
 						return err
 					}
-					if err := s.parent.broadcastRefUpdate(ctx, logger, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
-						RefIdentifier: w.Ref("HEAD"),
+					if err := s.parent.broadcastRefUpdate(ctx, logger, nil, &RefUpdateDownstreamParams{
+						RefIdentifier: w.Ref(target.Ref.Name),
 						Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 						Op:            &op,
 					}, nil); err != nil {
@@ -219,12 +230,14 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 
 				do := func() error {
 					// Wrap in func so we can defer here.
-					defer repo.acquireRef(resetInfo.Ref)()
+					head := repo.refdb.Lookup("HEAD")
+					defer head.Unlock()
 
 					ref := repo.refdb.Lookup(resetInfo.Ref)
+					defer ref.Unlock()
 					var current *RefPointer
-					if ref != nil {
-						refObj := ref.Object.(serverRef)
+					if ref.Ref != nil {
+						refObj := ref.Ref.Object.(serverRef)
 						current = &RefPointer{
 							RefBaseInfo: RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 							Rev:         refObj.rev(),
@@ -239,7 +252,7 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 
 					// Automatically configure new workspace HEADs
 					// with an upstream.
-					if err := s.parent.automaticallyConfigureRefUpstream(ctx, logger, w.Dir, repo, resetInfo.Ref); err != nil {
+					if err := s.parent.automaticallyConfigureRefUpstream(ctx, logger, w.Dir, repo, resetInfo.Ref, ref); err != nil {
 						return err
 					}
 					level.Debug(logger).Log("POST-resetInfo.Overwrite", resetInfo.Overwrite, "config", repo.config)
@@ -247,20 +260,22 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 						newRefState := &RefState{
 							RefBaseInfo: resetInfo.RefBaseInfo,
 						}
-						if err := s.parent.handleRefUpdateFromDownstream(ctx, logger, repo, RefUpdateUpstreamParams{
+						if err := s.parent.handleRefUpdateFromDownstream(ctx, logger, repo, ref, RefUpdateUpstreamParams{
 							RefIdentifier: w.Ref(resetInfo.Ref),
 							Current:       current,
 							State:         newRefState,
-						}, nil, false, false /* do not double-acquire ref */); err != nil {
+						}, nil, false); err != nil {
 							return fmt.Errorf("after workspace reset, updating ref %q (current %v) to %v: %s", resetInfo.Ref, current, newRefState, err)
 						}
 					}
-					if ref == nil {
-						ref := repo.refdb.Lookup(resetInfo.Ref)
-						if ref == nil {
+					if ref.Ref == nil {
+						// We already hold the lock on the ref, so we
+						// need to use LookupShared or we'll deadlock.
+						ref.Ref = repo.refdb.LookupShared(resetInfo.Ref)
+						if ref.Ref == nil {
 							panic("ref was not created: " + resetInfo.Ref)
 						}
-						refObj := ref.Object.(serverRef)
+						refObj := ref.Ref.Object.(serverRef)
 						// if refObj.ot.Apply != nil {
 						// 	panic("Apply func is already set")
 						// }
@@ -268,20 +283,24 @@ func (s *workspaceServer) handleWorkspaceTasks(ctx context.Context, repo *server
 							return workspace.Apply(ctx, logger, op)
 						}
 					}
+					if err := repo.refdb.Write(ref); err != nil {
+						return fmt.Errorf("writing ref after reset: %s", err)
+					}
 
 					var oldTarget string
-					if oldRef := repo.refdb.Lookup("HEAD"); oldRef != nil {
-						oldTarget = oldRef.Target
+					if head.Ref != nil && head.Ref.Target != "" {
+						oldTarget = head.Ref.Target
 					}
-					if resetInfo.Ref == oldTarget {
+					if resetInfo.Ref != oldTarget {
+						if err := s.parent.handleSymbolicRefUpdate(ctx, logger, nil, repo, head, &ref, RefUpdateSymbolicParams{
+							RefIdentifier: w.Ref("HEAD"),
+							Target:        resetInfo.Ref,
+							OldTarget:     oldTarget,
+						}); err != nil {
+							return fmt.Errorf("after workspace reset, updating HEAD from %q to %q: %s", oldTarget, resetInfo.Ref, err)
+						}
+					} else {
 						level.Warn(logger).Log("HEAD-symbolic-ref-already-points-to", resetInfo.Ref)
-					}
-					if err := s.parent.handleSymbolicRefUpdate(ctx, logger, nil, repo, RefUpdateSymbolicParams{
-						RefIdentifier: w.Ref("HEAD"),
-						Target:        resetInfo.Ref,
-						OldTarget:     oldTarget,
-					}); err != nil {
-						return fmt.Errorf("after workspace reset, updating HEAD from %q to %q: %s", oldTarget, resetInfo.Ref, err)
 					}
 
 					if ready != nil {
@@ -439,15 +458,25 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 			return nil, err
 		}
 
-		var oldTarget string
-		if oldRef := repo.refdb.Lookup("HEAD"); oldRef != nil {
-			oldTarget = oldRef.Target
+		head, oldRef := repo.refdb.Resolve("HEAD")
+		defer head.Unlock()
+		if oldRef != nil {
+			defer oldRef.Unlock()
 		}
 
-		defer repo.acquireRef(params.Ref)()
+		var ref refdb.OwnedRef
+		if params.Ref == head.Ref.Target && oldRef != nil {
+			ref = *oldRef
+		} else {
+			ref = repo.refdb.Lookup(params.Ref)
+			defer ref.Unlock()
+		}
 
-		ref := repo.refdb.Lookup(params.Ref)
-		if ref == nil {
+		var oldTarget string
+		if head.Ref != nil {
+			oldTarget = head.Ref.Target
+		}
+		if ref.Ref == nil {
 			return nil, &jsonrpc2.Error{
 				Code:    int64(ErrorCodeRefNotExists),
 				Message: fmt.Sprintf("checkout of nonexistent ref %q", params.Ref),
@@ -456,7 +485,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 		repo.mu.Lock()
 		workspace := repo.workspace
 		repo.mu.Unlock()
-		refObj := ref.Object.(serverRef)
+		refObj := ref.Ref.Object.(serverRef)
 		gitBase := refObj.gitBase
 		gitBranch := refObj.gitBranch
 		history := refObj.history()
@@ -466,7 +495,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 
 		updateExternal := func(ctx context.Context) error {
 			if oldTarget != params.Ref {
-				if err := ws.parent.handleSymbolicRefUpdate(ctx, logger, c, repo, RefUpdateSymbolicParams{
+				if err := ws.parent.handleSymbolicRefUpdate(ctx, logger, c, repo, head, &ref, RefUpdateSymbolicParams{
 					RefIdentifier: params.WorkspaceIdentifier.Ref("HEAD"),
 					Target:        params.Ref,
 					OldTarget:     oldTarget,
@@ -485,7 +514,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 			if err := refObj.ot.Record(logger, recordOp); err != nil {
 				return nil, err
 			}
-			if err := ws.parent.broadcastRefUpdate(ctx, logger, []refdb.Ref{*ref}, nil, &RefUpdateDownstreamParams{
+			if err := ws.parent.broadcastRefUpdate(ctx, logger, nil, &RefUpdateDownstreamParams{
 				RefIdentifier: params.WorkspaceIdentifier.Ref("HEAD"),
 				Current:       &RefBaseInfo{GitBase: refObj.gitBase, GitBranch: refObj.gitBranch},
 				Op:            &recordOp,
@@ -502,9 +531,9 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 			}
 			config := repoConfig.Refs[params.Ref]
 			trackingBranchRefName := remoteTrackingBranchRef(config.Upstream, params.Ref)
-			trackingRef := repo.refdb.Lookup(trackingBranchRefName)
+			trackingRef := repo.refdb.LookupShared(trackingBranchRefName) // racy
 			if trackingRef != nil {
-				if err := ws.parent.reconcileRefWithTrackingRef(ctx, logger, repo, params.WorkspaceIdentifier.Ref("HEAD"), *ref, *trackingRef, config); err != nil {
+				if err := ws.parent.reconcileRefWithTrackingRef(ctx, logger, repo, params.WorkspaceIdentifier.Ref("HEAD"), ref, *trackingRef, config); err != nil {
 					return nil, err
 				}
 			}
@@ -548,18 +577,15 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 			return nil, err
 		}
 
-		ref, err := repo.refdb.Resolve("HEAD")
-		if err != nil {
+		head, target := repo.refdb.Resolve("HEAD")
+		defer head.Unlock()
+		if target != nil {
+			defer target.Unlock()
+		}
+		if head.Ref.IsSymbolic() && (target == nil || target.Ref == nil) {
 			return nil, &jsonrpc2.Error{
 				Code:    int64(ErrorCodeSymbolicRefInvalid),
-				Message: fmt.Sprintf("symbolic ref resolution error: %s", err),
-			}
-		}
-		// Consistency check.
-		if ref.Name != params.Ref {
-			return nil, &jsonrpc2.Error{
-				Code:    int64(ErrorCodeRefConflict),
-				Message: fmt.Sprintf("invalid ref %q for workspace reset (expected %q, which is the current HEAD)", params.Ref, ref.Name),
+				Message: fmt.Sprintf("symbolic ref %q resolution error: target %s", head.Ref.Name, head.Ref.Target),
 			}
 		}
 
@@ -567,8 +593,7 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 		workspace := repo.workspace
 		repo.mu.Unlock()
 
-		defer repo.acquireRef(ref.Name)()
-		serverRef := ref.Object.(serverRef)
+		serverRef := target.Ref.Object.(serverRef)
 
 		// Synthesize a ref/update operation that resets the workspace.
 		resetOps, err := workspace.ResetToCurrentState(ctx, logger, serverRef.gitBase, params.BufferFiles)
@@ -579,11 +604,11 @@ func (c *serverConn) handleWorkspaceServerMethod(ctx context.Context, logger log
 			RefBaseInfo: RefBaseInfo{GitBase: serverRef.gitBase, GitBranch: serverRef.gitBranch},
 			History:     resetOps,
 		}
-		if err := ws.parent.handleRefUpdateFromDownstream(ctx, logger, repo, RefUpdateUpstreamParams{
+		if err := ws.parent.handleRefUpdateFromDownstream(ctx, logger, repo, *target, RefUpdateUpstreamParams{
 			RefIdentifier: params.WorkspaceIdentifier.Ref(params.Ref),
 			Force:         true,
 			State:         refState,
-		}, c.parent, false, false); err != nil {
+		}, c.parent, false); err != nil {
 			return nil, err
 		}
 		return refState, nil
@@ -599,7 +624,7 @@ func (s *workspaceServer) addWorkspace(logger log.Logger, params WorkspaceAddPar
 	if exists {
 		level.Info(logger).Log("create-workspace-in-existing-repo", "")
 	} else {
-		repo = &serverRepo{repoDir: params.Dir, refdb: refdb.NewMemoryRefDB()}
+		repo = &serverRepo{repoDir: params.Dir, refdb: refdb.Sync(refdb.NewMemoryRefDB())}
 		level.Info(logger).Log("create-workspace-in-new-repo", "")
 	}
 

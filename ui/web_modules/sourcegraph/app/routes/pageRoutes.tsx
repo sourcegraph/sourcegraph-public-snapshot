@@ -11,7 +11,6 @@ import { PricingPage } from "sourcegraph/page/PricingPage";
 import { PrivacyPage } from "sourcegraph/page/PrivacyPage";
 import { SecurityPage } from "sourcegraph/page/SecurityPage";
 import { TermsPage } from "sourcegraph/page/TermsPage";
-import { TwitterCaseStudyPage } from "sourcegraph/page/TwitterCaseStudyPage";
 import { ZapBetaFormPage } from "sourcegraph/page/ZapBetaFormPage";
 import { ZapPage } from "sourcegraph/page/ZapPage";
 
@@ -25,7 +24,6 @@ const pages = {
 	[rel.terms]: TermsPage,
 	[rel.privacy]: PrivacyPage,
 	[rel.docs]: DocsPage,
-	[rel.twittercasestudy]: TwitterCaseStudyPage,
 	[rel.zap]: ZapPage,
 	[rel.zapbeta]: ZapBetaFormPage,
 };

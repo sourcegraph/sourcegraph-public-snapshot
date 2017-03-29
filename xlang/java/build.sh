@@ -27,7 +27,7 @@ else
 fi
 
 if [ -d android-sdk-jars ]; then
-    cd ./android && git fetch origin && git checkout origin/master && cd -
+    cd ./android-sdk-jars && git fetch origin && git checkout origin/master && cd -
 else
     git clone --depth 1 https://github.com/sourcegraph/android-sdk-jars
 fi

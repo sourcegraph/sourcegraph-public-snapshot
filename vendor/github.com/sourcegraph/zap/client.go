@@ -12,7 +12,7 @@ import (
 
 // Client is a Zap client.
 type Client struct {
-	c *jsonrpc2.Conn
+	Conn *jsonrpc2.Conn
 
 	refUpdateCallback         func(context.Context, RefUpdateDownstreamParams) error
 	refUpdateSymbolicCallback func(context.Context, RefUpdateSymbolicParams) error
@@ -39,7 +39,7 @@ func NewClient(ctx context.Context, stream jsonrpc2.ObjectStream, opt ...jsonrpc
 	// We use a synchronous jsonrpc2 handler to ensure that our client
 	// callbacks receive messages in the order intended by the server.
 	c.refUpdates = make(chan RefUpdateDownstreamParams, 1000)
-	c.c = jsonrpc2.NewConn(ctx, stream, jsonrpc2.HandlerWithError(c.handle), opt...)
+	c.Conn = jsonrpc2.NewConn(ctx, stream, jsonrpc2.HandlerWithError(c.handle), opt...)
 	return &c
 }
 
@@ -158,30 +158,30 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 
 // Initialize sends the "initialize" request to the server.
 func (c *Client) Initialize(ctx context.Context, params InitializeParams) (res *InitializeResult, err error) {
-	return res, c.c.Call(ctx, "initialize", params, &res)
+	return res, c.Conn.Call(ctx, "initialize", params, &res)
 }
 
 // RepoInfo sends the "repo/info" request to the server.
 func (c *Client) RepoInfo(ctx context.Context, params RepoInfoParams) (info *RepoInfoResult, err error) {
-	err = c.c.Call(ctx, "repo/info", params, &info)
+	err = c.Conn.Call(ctx, "repo/info", params, &info)
 	return
 }
 
 // RepoConfigure sends the "repo/configure" request to the server.
 func (c *Client) RepoConfigure(ctx context.Context, params RepoConfigureParams) (result *RepoConfigureResult, err error) {
-	err = c.c.Call(ctx, "repo/configure", params, &result)
+	err = c.Conn.Call(ctx, "repo/configure", params, &result)
 	return
 }
 
 // RepoWatch sends the "repo/watch" request to the server.
 func (c *Client) RepoWatch(ctx context.Context, params RepoWatchParams) error {
-	return c.c.Call(ctx, "repo/watch", params, nil)
+	return c.Conn.Call(ctx, "repo/watch", params, nil)
 }
 
 // RepoList sends the "repo/list" request to the server.
 func (c *Client) RepoList(ctx context.Context) ([]string, error) {
 	var r []string
-	if err := c.c.Call(ctx, "repo/list", nil, &r); err != nil {
+	if err := c.Conn.Call(ctx, "repo/list", nil, &r); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -190,20 +190,20 @@ func (c *Client) RepoList(ctx context.Context) ([]string, error) {
 // RefConfigure sends the "ref/configure" request to the server.
 func (c *Client) RefConfigure(ctx context.Context, params RefConfigureParams) error {
 	CheckRefName(params.RefIdentifier.Ref)
-	return c.c.Call(ctx, "ref/configure", params, nil)
+	return c.Conn.Call(ctx, "ref/configure", params, nil)
 }
 
 // RefUpdate sends the "ref/update" request to the server.
 func (c *Client) RefUpdate(ctx context.Context, params RefUpdateUpstreamParams) error {
 	CheckRefName(params.RefIdentifier.Ref)
-	return c.c.Call(ctx, "ref/update", params, nil)
+	return c.Conn.Call(ctx, "ref/update", params, nil)
 }
 
 // RefUpdateSymbolic sends the "ref/updateSymbolic" request to the
 // server.
 func (c *Client) RefUpdateSymbolic(ctx context.Context, params RefUpdateSymbolicParams) error {
 	CheckSymbolicRefName(params.RefIdentifier.Ref)
-	return c.c.Call(ctx, "ref/updateSymbolic", params, nil)
+	return c.Conn.Call(ctx, "ref/updateSymbolic", params, nil)
 }
 
 // RefInfo sends the "ref/info" request to the server.
@@ -212,14 +212,14 @@ func (c *Client) RefInfo(ctx context.Context, params RefInfoParams) (*RefInfo, e
 		CheckRefName(params.Ref)
 	}
 	var result *RefInfo
-	err := c.c.Call(ctx, "ref/info", params, &result)
+	err := c.Conn.Call(ctx, "ref/info", params, &result)
 	return result, err
 }
 
 // RefList sends the "ref/list" request to the server.
 func (c *Client) RefList(ctx context.Context, params RefListParams) ([]RefInfo, error) {
 	var r []RefInfo
-	if err := c.c.Call(ctx, "ref/list", params, &r); err != nil {
+	if err := c.Conn.Call(ctx, "ref/list", params, &r); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -227,57 +227,57 @@ func (c *Client) RefList(ctx context.Context, params RefListParams) ([]RefInfo, 
 
 // WorkspaceStatus sends the "workspace/status" request to the server.
 func (c *Client) WorkspaceStatus(ctx context.Context, params WorkspaceStatusParams) (status *ShowStatusParams, err error) {
-	err = c.c.Call(ctx, "workspace/status", params, &status)
+	err = c.Conn.Call(ctx, "workspace/status", params, &status)
 	return
 }
 
 // WorkspaceAdd sends the "workspace/add" request to the server.
 func (c *Client) WorkspaceAdd(ctx context.Context, params WorkspaceAddParams) error {
-	return c.c.Call(ctx, "workspace/add", params, nil)
+	return c.Conn.Call(ctx, "workspace/add", params, nil)
 }
 
 // WorkspaceRemove sends the "workspace/remove" request to the server.
 func (c *Client) WorkspaceRemove(ctx context.Context, params WorkspaceRemoveParams) error {
-	return c.c.Call(ctx, "workspace/remove", params, nil)
+	return c.Conn.Call(ctx, "workspace/remove", params, nil)
 }
 
 // WorkspaceCheckout sends the "workspace/checkout" request to the server.
 func (c *Client) WorkspaceCheckout(ctx context.Context, params WorkspaceCheckoutParams) error {
 	CheckRefName(params.Ref)
-	return c.c.Call(ctx, "workspace/checkout", params, nil)
+	return c.Conn.Call(ctx, "workspace/checkout", params, nil)
 }
 
 // WorkspaceReset sends the "workspace/reset" request to the server.
 func (c *Client) WorkspaceReset(ctx context.Context, params WorkspaceResetParams) error {
 	CheckRefName(params.Ref)
-	return c.c.Call(ctx, "workspace/reset", params, nil)
+	return c.Conn.Call(ctx, "workspace/reset", params, nil)
 }
 
 // WorkspaceWillSaveFile sends the "workspace/willSaveFile" request to
 // the server.
 func (c *Client) WorkspaceWillSaveFile(ctx context.Context, params WorkspaceWillSaveFileParams) error {
-	return c.c.Call(ctx, "workspace/willSaveFile", params, nil)
+	return c.Conn.Call(ctx, "workspace/willSaveFile", params, nil)
 }
 
 // Ping sends the "ping" request to the server.
 func (c *Client) Ping(ctx context.Context) error {
-	return c.c.Call(ctx, "ping", nil, nil)
+	return c.Conn.Call(ctx, "ping", nil, nil)
 }
 
 // DebugLog sends the "debug/log" notification to the server.
 func (c *Client) DebugLog(ctx context.Context, params DebugLogParams) error {
-	return c.c.Call(ctx, "debug/log", params, nil)
+	return c.Conn.Call(ctx, "debug/log", params, nil)
 }
 
 // Wait waits until the underlying connection is closed.
 func (c *Client) Wait() {
-	<-c.c.DisconnectNotify()
+	<-c.Conn.DisconnectNotify()
 }
 
 // DisconnectNotify returns a channel that is closed when the client
 // or its peer disconnects.
 func (c *Client) DisconnectNotify() <-chan struct{} {
-	return c.c.DisconnectNotify()
+	return c.Conn.DisconnectNotify()
 }
 
 // Close closes the client's connection.
@@ -288,5 +288,5 @@ func (c *Client) Close() error {
 		close(c.refUpdates)
 	}
 	c.mu.Unlock()
-	return c.c.Close()
+	return c.Conn.Close()
 }

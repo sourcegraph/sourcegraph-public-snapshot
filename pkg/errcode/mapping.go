@@ -41,5 +41,4 @@ var codeToHTTPMap = map[legacyerr.Code]int{
 	legacyerr.Unauthenticated:    http.StatusUnauthorized,
 	legacyerr.FailedPrecondition: http.StatusPreconditionFailed,
 	legacyerr.Unimplemented:      http.StatusNotImplemented,
-	legacyerr.ResourceExhausted:  http.StatusTooManyRequests,
 }

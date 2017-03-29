@@ -1,5 +1,6 @@
 import "core-js/shim";
 import * as React from "react";
+import { ApolloProvider } from "react-apollo";
 import * as ReactDOM from "react-dom";
 import * as Relay from "react-relay";
 // The following 2 modules must be loaded in this order, because the
@@ -13,8 +14,8 @@ import * as context from "sourcegraph/app/context";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DispatchedEventHandler from "sourcegraph/tracking/DispatchedEventHandler";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
-import "sourcegraph/util/actionLogger";
 import "sourcegraph/util/features";
+import { gqlClient } from "sourcegraph/util/gqlClient";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
 import "sourcegraph/app/router";
@@ -66,7 +67,7 @@ function matchWithRedirectHandling(recursed: boolean): void {
 
 		setTimeout(() => {
 			ReactDOM.render(
-				<Router		{...renderProps} />,
+				<ApolloProvider client={gqlClient}><Router	{...renderProps} /></ApolloProvider>,
 				rootEl,
 			);
 		});

@@ -48,7 +48,6 @@ type FileSystem interface {
 var TestApplyToWorktree func(op ot.WorkspaceOp) error
 
 func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
-	WorktreeDir() string
 	ReadBlob(snapshot, name string) ([]byte, string, string, error)
 	IsValidRev(string) (bool, error)
 	RemoteForBranchOrZapDefaultRemote(string) (string, error)
@@ -348,11 +347,12 @@ func PushGitRefToGitUpstream(ctx context.Context, gitRepo interface {
 	if testPushGitRefToGitUpstream != nil {
 		return testPushGitRefToGitUpstream(headOID, gitBranch)
 	}
+
+	gitRemote, err := gitRepo.RemoteForBranchOrZapDefaultRemote(gitBranch)
+	if err != nil {
+		return err
+	}
 	return backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
-		gitRemote, err := gitRepo.RemoteForBranchOrZapDefaultRemote(gitBranch)
-		if err != nil {
-			return err
-		}
 		return gitRepo.Push(gitRemote, headOID+":refs/zap/"+headOID, true)
 	}, GitBackOff(), nil)
 }
