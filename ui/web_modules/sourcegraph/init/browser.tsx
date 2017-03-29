@@ -13,7 +13,6 @@ import * as context from "sourcegraph/app/context";
 import * as Dispatcher from "sourcegraph/Dispatcher";
 import * as DispatchedEventHandler from "sourcegraph/tracking/DispatchedEventHandler";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
-import "sourcegraph/util/actionLogger";
 import "sourcegraph/util/features";
 
 // mark files that contain only types as being used (for UnusedFilesWebpackPlugin)
