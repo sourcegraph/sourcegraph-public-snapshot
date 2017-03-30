@@ -173,6 +173,13 @@ export class MainThreadService extends AbstractThreadService implements IThreadS
 						break;
 				}
 				break;
+
+			case "eExtHostSCM":
+				switch (path) {
+					case "$getOriginalResource":
+						return routeToWorkspaceHost(args[1]);
+				}
+				break;
 		}
 
 		// Default to routing requests to the current workspace.
