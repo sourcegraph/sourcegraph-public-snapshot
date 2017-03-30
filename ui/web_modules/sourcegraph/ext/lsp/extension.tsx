@@ -22,6 +22,9 @@ export function activate(): void {
 		if (!langs.has(mode)) {
 			return;
 		}
+
+		const workspaceUri = vscode.Uri.parse(initOpts.workspace);
+
 		// We include ?mode= in the url to make it easier to find the correct LSP websocket connection.
 		// It does not affect any behaviour.
 		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`), {
@@ -36,7 +39,7 @@ export function activate(): void {
 					if (value.scheme === "file") {
 						let filePath = value.toString().substr(initOpts.workspace.length + 1); // trim leading "/" after workspace path; possibly empty
 						// TODO(john): if workspace rev state changes, we re-open a LSP connection with the new revision base.
-						return value.with({ scheme: "git", query: initOpts.revState!.commitID, fragment: filePath }).toString();
+						return workspaceUri.with({ scheme: "git", query: initOpts.revState!.commitID, fragment: filePath }).toString();
 					}
 					return value.toString();
 				},
