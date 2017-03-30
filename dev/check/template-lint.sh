@@ -7,4 +7,4 @@ export PATH=$GOBIN:$PATH
 
 go install sourcegraph.com/sourcegraph/sourcegraph/vendor/sourcegraph.com/sourcegraph/go-template-lint
 
-go-template-lint -f app/internal/tmpl/tmpl_funcs.go -t app/internal/tmpl/tmpl.go -td app/templates
+go-template-lint -f cmd/frontend/internal/app/tmpl/tmpl_funcs.go -t cmd/frontend/internal/app/tmpl/tmpl.go -td cmd/frontend/internal/app/templates
