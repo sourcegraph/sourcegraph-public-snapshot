@@ -26,7 +26,7 @@ type apiField struct {
 
 func main() {
 	var conf loader.Config
-	conf.Import(sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api")
+	conf.Import("sourcegraph.com/sourcegraph/sourcegraph/pkg/api")
 	conf.Import("sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/go-langserver/pkg/lsp")
 	prog, err := conf.Load()
 	if err != nil {
@@ -36,7 +36,7 @@ func main() {
 	packages := []string{
 		"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs",
 		"sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/go-langserver/pkg/lsp",
-		sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api",
+		"sourcegraph.com/sourcegraph/sourcegraph/pkg/api",
 	}
 	apiTypes := make(map[string]*apiType)
 	for _, pkg := range packages {
@@ -103,7 +103,7 @@ func tsType(t types.Type) string {
 	case *types.Slice:
 		return tsType(t.Elem()) + "[]"
 	case *types.Named:
-		if _, ok := t.Underlying().(*types.Struct); ok && t.Obj().Pkg().Path() == sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api" {
+		if _, ok := t.Underlying().(*types.Struct); ok && t.Obj().Pkg().Path() == "sourcegraph.com/sourcegraph/sourcegraph/pkg/api" {
 			return t.Obj().Name()
 		}
 	}
