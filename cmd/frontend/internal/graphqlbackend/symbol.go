@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+import sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 
 type symbolResolver struct {
 	path      string

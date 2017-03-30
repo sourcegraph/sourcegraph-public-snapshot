@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/go-github/github"
 	"golang.org/x/net/context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"

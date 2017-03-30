@@ -14,7 +14,7 @@ import (
 	"syscall"
 
 	// Import for side effect of setting SGPATH env var.
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 

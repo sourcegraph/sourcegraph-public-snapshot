@@ -11,7 +11,7 @@ import (
 
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 

@@ -8,7 +8,7 @@ import (
 
 	"context"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"

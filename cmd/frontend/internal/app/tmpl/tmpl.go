@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"sync"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	tmpldata "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"

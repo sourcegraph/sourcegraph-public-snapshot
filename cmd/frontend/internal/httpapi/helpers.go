@@ -11,7 +11,7 @@ import (
 
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 // writeJSON writes a JSON Content-Type header and a JSON-encoded object to the

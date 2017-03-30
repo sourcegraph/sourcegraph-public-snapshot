@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 type MockOrgs struct {

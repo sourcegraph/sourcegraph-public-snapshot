@@ -12,8 +12,8 @@ import (
 	"github.com/lib/pq"
 	"gopkg.in/gorp.v1"
 	"gopkg.in/inconshreveable/log15.v2"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 )
 
 func init() {

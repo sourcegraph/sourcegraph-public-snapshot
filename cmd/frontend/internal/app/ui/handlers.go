@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tmpl"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"

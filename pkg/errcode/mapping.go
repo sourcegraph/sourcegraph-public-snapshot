@@ -3,7 +3,7 @@ package errcode
 import (
 	"net/http"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 )
 
 // codeToHTTP maps error codes to HTTP status codes.

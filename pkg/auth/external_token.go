@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"golang.org/x/oauth2"
-	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 )
 
 var (
