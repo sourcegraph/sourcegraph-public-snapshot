@@ -1,1 +1,1 @@
-/// <reference path="../../../api/graphqlInterfaces.gen.d.ts" />
+/// <reference path="../../../client/graphqlInterfaces.gen.d.ts" />
