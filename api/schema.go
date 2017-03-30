@@ -1,5 +1,3 @@
-// GENERATED from sourcegraph.schema - DO NOT EDIT
-
 package api
 
 var Schema = `schema {
