@@ -142,9 +142,9 @@ func main() {
 		pipeline.AddStep(":docker:",
 			Env("TAG", version),
 			Cmd("./cmd/frontend/build.sh"),
-			Cmd("docker tag us.gcr.io/sourcegraph-dev/sourcegraph:"+version+" us.gcr.io/sourcegraph-dev/sourcegraph:latest"),
-			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:"+version),
-			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:latest"),
+			Cmd("docker tag us.gcr.io/sourcegraph-dev/frontend:"+version+" us.gcr.io/sourcegraph-dev/frontend:latest"),
+			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/frontend:"+version),
+			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/frontend:latest"),
 			Env("VERSION", version),
 			Cmd("./dev/ci/deploy-prod.sh"))
 		pipeline.AddWait()
@@ -160,7 +160,7 @@ func main() {
 		pipeline.AddStep(":docker:",
 			Env("TAG", version),
 			Cmd("./cmd/frontend/build.sh"),
-			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/sourcegraph:"+version))
+			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/frontend:"+version))
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
