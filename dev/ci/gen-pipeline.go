@@ -136,31 +136,46 @@ func main() {
 	buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 
+	addDockerImageStep := func(app string, latest bool) {
+		image := "us.gcr.io/sourcegraph-dev/" + app
+		var cmds []StepOpt
+		if app == "frontend" {
+			cmds = append(cmds,
+				Cmd("cd ui"),
+				Cmd("yarn install"),
+				Cmd("yarn run build"),
+				Cmd("cd .."),
+				Cmd("go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates"),
+			)
+		}
+		cmds = append(cmds,
+			Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize"),
+			Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s sourcegraph.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
+			Cmd(fmt.Sprintf("gcloud docker -- push %s:%s", image, version)),
+		)
+		if latest {
+			cmds = append(cmds,
+				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
+				Cmd(fmt.Sprintf("gcloud docker -- push %s:latest", image)),
+			)
+		}
+		pipeline.AddStep(":docker:", cmds...)
+	}
+
 	switch {
 	case branch == "master":
 		pipeline.AddWait()
-		pipeline.AddStep(":docker:",
-			Env("TAG", version),
-			Cmd("./cmd/frontend/build.sh"),
-			Cmd("docker tag us.gcr.io/sourcegraph-dev/frontend:"+version+" us.gcr.io/sourcegraph-dev/frontend:latest"),
-			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/frontend:"+version),
-			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/frontend:latest"),
-			Env("VERSION", version),
-			Cmd("./dev/ci/deploy-prod.sh"))
+		addDockerImageStep("frontend", true)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
 			Cmd("./dev/ci/deploy-prod.sh"),
 			Cmd("echo $VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build"))
 
-	case strings.HasPrefix(branch,
-		"staging/"):
+	case strings.HasPrefix(branch, "staging/"):
 		stagingName := strings.Replace(strings.TrimPrefix(branch, "staging/"), "/", "-", -1)
 		pipeline.AddWait()
-		pipeline.AddStep(":docker:",
-			Env("TAG", version),
-			Cmd("./cmd/frontend/build.sh"),
-			Cmd("gcloud docker -- push us.gcr.io/sourcegraph-dev/frontend:"+version))
+		addDockerImageStep("frontend", false)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
@@ -181,12 +196,9 @@ func main() {
 			)
 		*/
 
-	case strings.HasPrefix(branch,
-		"docker-images/"):
+	case strings.HasPrefix(branch, "docker-images/"):
 		pipeline.AddWait()
-		pipeline.AddStep(":docker:",
-			Env("TAG", version),
-			Cmd("./dev/ci/docker-images.sh "+branch[14:]))
+		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
