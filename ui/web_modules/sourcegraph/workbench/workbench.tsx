@@ -1,3 +1,4 @@
+import { ApolloError } from "apollo-client";
 import * as autobind from "autobind-decorator";
 import * as React from "react";
 import { gql, graphql } from "react-apollo";
@@ -26,6 +27,7 @@ interface Props extends RouteProps {
 	loading?: boolean;
 	refetch?: () => void;
 	root?: GQL.IRoot;
+	error?: ApolloError;
 }
 
 // WorkbenchComponent loads the VSCode workbench shell. To learn about VSCode and the
@@ -50,6 +52,14 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		let repository: GQL.IRepository;
 		let selection: IRange | null;
 		let path: string;
+		if (this.props.error) {
+			switch (this.props.error.graphQLErrors[0].message) {
+				case "revision not found":
+					return <Error
+						code="404"
+						desc="Revision not found" />;
+			}
+		}
 		if (this.props.loading || !this.props.root) {
 			return null; // data not yet fetched
 		}
@@ -77,12 +87,6 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 
 		if (repository.revState.cloneInProgress) {
 			return <CloningRefresher refetch={this.props.refetch!} />;
-		}
-
-		if (!repository.revState.commit && !repository.revState.zapRev) {
-			return <Error
-				code="404"
-				desc="Revision not found" />;
 		}
 
 		if (needsPayment(repository.expirationDate)) {
