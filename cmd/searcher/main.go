@@ -44,6 +44,7 @@ func main() {
 			FetchTar: fetchTar,
 			Path:     cacheDir,
 		},
+		RequestLog: log.New(os.Stderr, "", 0),
 	}
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 

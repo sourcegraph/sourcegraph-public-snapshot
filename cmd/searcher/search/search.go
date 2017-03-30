@@ -18,6 +18,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -30,6 +31,9 @@ import (
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *Store
+
+	// RequestLog if non-nil will log info per valid search request.
+	RequestLog *log.Logger
 }
 
 var decoder = schema.NewDecoder()
@@ -156,7 +160,7 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
 	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
 	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
-	defer func() {
+	defer func(start time.Time) {
 		code := "200"
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -170,7 +174,14 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 		requestTotal.WithLabelValues(code).Inc()
 		span.SetTag("matches", len(matches))
 		span.Finish()
-	}()
+		if s.RequestLog != nil {
+			errS := ""
+			if err != nil {
+				errS = strconv.Quote(err.Error())
+			}
+			s.RequestLog.Printf("INFO search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v duration=%v error=%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, time.Since(start), errS)
+		}
+	}(time.Now())
 
 	rg, err := compile(p)
 	if err != nil {
