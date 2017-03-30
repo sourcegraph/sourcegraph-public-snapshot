@@ -6,7 +6,7 @@ import (
 
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 type currentUserResolver struct{}

@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
 
 func TestXLang(t *testing.T) {

@@ -8,8 +8,8 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 // ErrRepoNotFound indicates that the repo does not exist or that the user has no access to that

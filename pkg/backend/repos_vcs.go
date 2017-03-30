@@ -13,7 +13,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 var TestSkipZap = false

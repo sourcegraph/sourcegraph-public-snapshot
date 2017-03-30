@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
 
 // NOTE: Keep in sync with services/backend/httpapi/repo_shield.go

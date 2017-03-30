@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
 
 func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {

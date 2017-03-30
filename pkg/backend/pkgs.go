@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 var Pkgs = &pkgs{}

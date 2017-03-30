@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 )
 
 func testContextNoDB() context.Context {

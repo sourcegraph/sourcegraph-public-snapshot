@@ -7,8 +7,8 @@ import (
 	"github.com/neelance/graphql-go/gqltesting"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 var exampleCommitSHA1 = "1234567890123456789012345678901234567890"

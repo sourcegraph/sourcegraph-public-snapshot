@@ -11,7 +11,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
 func TestReposService_resolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {

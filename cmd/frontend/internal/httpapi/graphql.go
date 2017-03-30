@@ -5,7 +5,7 @@ import (
 
 	"github.com/neelance/graphql-go/relay"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/graphqlbackend"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 )
 
 var relayHandler = &relay.Handler{Schema: graphqlbackend.GraphQLSchema}

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
 
 // TODO(slimsag): once https://github.com/badges/shields/pull/828 is merged,

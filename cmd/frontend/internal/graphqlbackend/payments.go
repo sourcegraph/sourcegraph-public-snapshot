@@ -6,8 +6,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/stripe"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 type Plan interface {

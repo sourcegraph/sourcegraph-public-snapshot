@@ -3,7 +3,7 @@ package httpapi
 import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/notif"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
 func init() {

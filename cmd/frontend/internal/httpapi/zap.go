@@ -8,7 +8,7 @@ import (
 	// Import for side effect of setting SGPATH env var.
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 
 	"github.com/gorilla/websocket"
 	"github.com/koding/websocketproxy"

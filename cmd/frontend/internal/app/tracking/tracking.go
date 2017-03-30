@@ -13,8 +13,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
-	extgithub "sourcegraph.com/sourcegraph/sourcegraph/services/ext/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 // Limits to the number of errors we can recieve from external GitHub
