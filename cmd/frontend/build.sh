@@ -16,7 +16,7 @@ yarn install
 yarn run build
 cd ..
 
-go generate ./app/assets ./app/templates
+go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates
 
 go install sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize
 godockerize build -t $IMAGE:$TAG --env VERSION=$TAG ./cmd/frontend

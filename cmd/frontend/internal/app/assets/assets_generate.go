@@ -35,7 +35,7 @@ func getMainBundleFilename(dir string) (string, error) {
 
 func main() {
 	// Find the hashed assets dir.
-	dir := "../../ui/assets/"
+	dir := "../../../../../ui/assets/"
 	mainBundleFilename, err := getMainBundleFilename(dir)
 	if err != nil {
 		log.Fatal(err)
