@@ -281,8 +281,9 @@ function updateURLHash(e: ICursorSelectionChangedEvent): void {
 			return;
 		}
 		const uri = editor.getModel().uri;
-		const prettyRev = prettifyRev(uri.query);
-		router.push(urlToBlobRange(`${uri.authority}/${uri.path}`, prettyRev || "", getURIContext(uri).path, sel.toZeroIndexedRange()));
+		const { repo, rev, path } = getURIContext(uri);
+		const prettyRev = prettifyRev(rev);
+		router.push(urlToBlobRange(repo, prettyRev, path, sel.toZeroIndexedRange()));
 	} else {
 		const hash = `#L${sel.toString()}`;
 
