@@ -17,8 +17,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
-	apirouter "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
+	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
+	apirouter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 )
 
 // NewHandler returns a new API handler that uses the provided API

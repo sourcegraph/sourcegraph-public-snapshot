@@ -14,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
+	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 )
 
 // NewHandler returns a new app handler that uses the provided app

@@ -29,11 +29,11 @@ Note: Go-to-def and hover are implemented for Go only right now. Find Local Refe
 To dig into the code:
 
 1. The Go bit is really 2 "LSP" servers: a Go build server, which wraps (and communicates LSP to/from) a Go language server. Read the Architecture section for more about those. The only deviation from LSP is that the Go build server sends some extra GOPATH, GOROOT, etc., initialize parameters to the Go lang server.
-1. The heavy lifting in the LSP proxy is in xlang/client_proxy.go (which services/httpapi/xlang.go multiplexes web clients onto) and xlang/server_proxy.go (which manages build servers and routes client requests to the right build servers).
+1. The heavy lifting in the LSP proxy is in xlang/client_proxy.go (which frontend/internal/httpapi/xlang.go multiplexes web clients onto) and xlang/server_proxy.go (which manages build servers and routes client requests to the right build servers).
 
 Diagram:
 
-  Web client --> LSP data request in an HTTP POST body --> services/httpapi/xlang.go handler --> xlang/client_proxy.go --> xlang/server_proxy.go --> Go build server --> Go lang server
+  Web client --> LSP data request in an HTTP POST body --> frontend/internal/httpapi/xlang.go handler --> xlang/client_proxy.go --> xlang/server_proxy.go --> Go build server --> Go lang server
 
 # Architecture
 

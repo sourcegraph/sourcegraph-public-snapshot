@@ -20,7 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/stripe"
-	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/auth"
+	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")

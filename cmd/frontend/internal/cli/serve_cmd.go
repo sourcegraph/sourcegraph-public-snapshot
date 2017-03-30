@@ -35,8 +35,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi"
-	"sourcegraph.com/sourcegraph/sourcegraph/services/httpapi/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 )
 
 var (
