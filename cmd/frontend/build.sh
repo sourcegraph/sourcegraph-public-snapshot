@@ -2,7 +2,7 @@
 set -e
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 
-export IMAGE=us.gcr.io/sourcegraph-dev/sourcegraph
+export IMAGE=us.gcr.io/sourcegraph-dev/frontend
 export TAG=${TAG-latest}
 export GOBIN="$PWD/vendor/.bin"
 export PATH="$GOBIN:$PATH"
