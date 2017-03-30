@@ -220,10 +220,6 @@
 	overflow: initial !important;
 }
 
-/*:global #workbench\.parts\.editor {
-	box-shadow: -2px 0 3px 0px rgba(0,0,0,0.1);
-}*/
-
 :global .monaco-menu-container .monaco-menu {
 	background: white;
 	border-radius: 3px;
@@ -467,8 +463,7 @@
 /* Shadow Overrides */
 :global .vs-dark .monaco-workbench .monaco-scrollable-element .shadow.top,
 :global .monaco-scrollable-element > .shadow.top,
-:global .monaco-editor.vs-dark .scroll-decoration,
-:global .monaco-workbench > .part.statusbar {
+:global .monaco-editor.vs-dark .scroll-decoration {
 	box-shadow:none !important;
 }
 
