@@ -6,8 +6,8 @@ import (
 	"github.com/gorilla/mux"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 func serveRepoResolveRev(w http.ResponseWriter, r *http.Request) error {

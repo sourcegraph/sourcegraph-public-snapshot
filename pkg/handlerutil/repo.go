@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/mux"
 	"gopkg.in/inconshreveable/log15.v2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
 )
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's

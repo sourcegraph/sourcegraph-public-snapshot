@@ -5,8 +5,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
+	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 

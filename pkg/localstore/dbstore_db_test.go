@@ -5,9 +5,9 @@ import (
 	"log"
 	"os/exec"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
 )
 
 // testContext constructs a new context that holds a temporary test DB

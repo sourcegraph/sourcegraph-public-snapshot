@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-github/github"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
+	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
