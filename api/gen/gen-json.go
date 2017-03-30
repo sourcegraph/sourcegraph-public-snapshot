@@ -13,7 +13,7 @@ func main() {
 		panic(err)
 	}
 
-	if err := ioutil.WriteFile("schema.json", json, 0666); err != nil {
+	if err := ioutil.WriteFile("../client/schema.json", json, 0666); err != nil {
 		panic(err)
 	}
 }

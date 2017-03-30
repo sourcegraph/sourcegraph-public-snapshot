@@ -24,7 +24,7 @@
         "./web_modules/@types"
     ],
     "jsx": "react",
-    "relaySchema": "../api/schema.json",
+    "relaySchema": "../client/schema.json",
     "sourceMap": true,
     "strictNullChecks": true,
     "experimentalDecorators": true,
