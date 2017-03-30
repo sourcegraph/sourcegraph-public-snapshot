@@ -40,7 +40,7 @@ npm-debug.log
 
 .tmp/*.jar
 
-/api/node_modules
+/cmd/frontend/internal/graphqlbackend/node_modules
 
 /ui/artifacts
 /ui/node_modules

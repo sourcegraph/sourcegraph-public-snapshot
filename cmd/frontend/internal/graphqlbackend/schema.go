@@ -1,4 +1,4 @@
-package api
+package graphqlbackend
 
 var Schema = `schema {
 	query: Query

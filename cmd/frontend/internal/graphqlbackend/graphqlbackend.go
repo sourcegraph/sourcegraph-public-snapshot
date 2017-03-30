@@ -16,12 +16,11 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph"
 	"sourcegraph.com/sourcegraph/sourcegraph/api/sourcegraph/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
@@ -56,7 +55,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 
 func init() {
 	var err error
-	GraphQLSchema, err = graphql.ParseSchema(api.Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
+	GraphQLSchema, err = graphql.ParseSchema(Schema, &schemaResolver{}, graphql.Tracer(prometheusTracer{}))
 	if err != nil {
 		panic(err)
 	}
