@@ -28,6 +28,7 @@ the entire viewport height.
 /* Responsive type scaling */
 
 html {
+	overflow:hidden;
 	color: c_cool_dark_gray;
 	font-size: desktop_base_size;
 	line-height: 1.5;

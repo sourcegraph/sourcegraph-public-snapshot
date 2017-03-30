@@ -48,8 +48,7 @@ const buttonSx = {
 	flex: "0 0 auto",
 	padding: whitespace[1],
 	paddingTop: "0.125rem",
-	marginRight: 5,
-	marginLeft: 5,
+	marginRight: 5
 };
 
 export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
@@ -85,7 +84,11 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 		if (!workspace) { return ""; }
 		const resource = workspace.resource;
 		let { repo } = URIUtils.repoParams(resource);
-		// for the explorer viewlet, we don't want to show the authority (github.com/)
+		let repoParts = repo.split("/");
+		if (repoParts.length > 1) {
+			return repoParts[1];
+		}
+		//fallthrough		
 		return repo.slice(resource.authority.length + 1);
 	}
 
@@ -141,13 +144,26 @@ export class ExplorerTitle extends React.Component<{}, Partial<TitleState>> {
 				</a>
 			</Heading>
 			<div>
-				{Features.textSearch.isEnabled() && <Button onClick={this.searchButtonClicked} color={searchMode ? "blue" : "blueGray"}
-					{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "" }) }
-					style={buttonSx}><Search style={{ top: 0 }} /></Button>}
+				{Features.textSearch.isEnabled() &&
+					<Button
+						onClick={this.searchButtonClicked}
+						color={"blue"}
+						{...hover({ backgroundColor: !searchMode ? `${colors.blueGrayD2()} !important` : "transparent" }) }
+						style={buttonSx}
+						backgroundColor={searchMode ? "auto" : "transparent"}
+						animation={false}>
+						<Search style={{ top: 0 }} />
+					</Button>}
 				{workspace && workspace.revState && workspace.revState.zapRev &&
-					<Button onClick={this.changesButtonClicked} color={changesMode ? "blue" : "blueGray"}
+					<Button
+						onClick={this.changesButtonClicked}
+						color={"blue"}
 						{...hover({ backgroundColor: !changesMode ? `${colors.blueGrayD2()} !important` : "" }) }
-						style={buttonSx}><History style={{ top: 0 }} /></Button>
+						style={buttonSx}
+						backgroundColor={changesMode ? "auto" : "transparent"}
+						animation={false}>
+						<History style={{ top: 0 }} />
+					</Button>
 				}
 			</div>
 		</FlexContainer >;

@@ -134,6 +134,11 @@
 	margin-top:4px;
 }
 
+:global .vs-dark .monaco-list .monaco-list-row.selected {
+	font-weight:bold;
+	background:rgba(0, 145, 234);
+}
+
 /* Style Code lens */
 
 :global .monaco-tree:focus {
@@ -213,10 +218,6 @@
 
 :global .monaco-workbench > .part.editor > .content > .one-editor-silo > .container > .title {
 	overflow: initial !important;
-}
-
-:global #workbench\.parts\.editor {
-	box-shadow: -2px 0 3px 0px rgba(0,0,0,0.1);
 }
 
 :global .monaco-menu-container .monaco-menu {
@@ -458,3 +459,11 @@
 	line-height: 30px;
 	font-size: 1rem;
 }
+
+/* Shadow Overrides */
+:global .vs-dark .monaco-workbench .monaco-scrollable-element .shadow.top,
+:global .monaco-scrollable-element > .shadow.top,
+:global .monaco-editor.vs-dark .scroll-decoration {
+	box-shadow:none !important;
+}
+
