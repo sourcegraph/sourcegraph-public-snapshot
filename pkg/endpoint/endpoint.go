@@ -32,16 +32,16 @@ type Map struct {
 	urls *consistenthash.Map
 }
 
-// New creates a new Map for rawurl. We treat schemes prefixed with k8s:
+// New creates a new Map for rawurl. We treat schemes prefixed with k8s+
 // specially. The expected format of that is
-// k8s:http://service.namespace:port/path. namespace, port and path is
+// k8s+http://service.namespace:port/path. namespace, port and path is
 // optional. URLs of this form will consistently hash amongst the endpoints
 // for the service. The values returned by Get will look like
 // http://endpoint:port/path.
 //
-// Example: rawurl is k8s:http://searcher
+// Example: rawurl is k8s+http://searcher
 func New(rawurl string) (*Map, error) {
-	if !strings.HasPrefix(rawurl, "k8s:") {
+	if !strings.HasPrefix(rawurl, "k8s+") {
 		// Non-k8s urls we return a static map
 		return &Map{
 			urls: newConsistentHashMap([]string{rawurl}),
@@ -160,7 +160,7 @@ func (u *k8sURL) serviceURL() string {
 }
 
 func parseURL(rawurl string) (*k8sURL, error) {
-	u, err := url.Parse(strings.TrimPrefix(rawurl, "k8s:"))
+	u, err := url.Parse(strings.TrimPrefix(rawurl, "k8s+"))
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func parseURL(rawurl string) (*k8sURL, error) {
 	case 2:
 		svc, ns = parts[1], parts[2]
 	default:
-		return nil, fmt.Errorf("invalid k8s url. expected k8s:http://servicename.namespace:port/path, got %s", rawurl)
+		return nil, fmt.Errorf("invalid k8s url. expected k8s+http://service.namespace:port/path, got %s", rawurl)
 	}
 	return &k8sURL{
 		URL:       *u,
