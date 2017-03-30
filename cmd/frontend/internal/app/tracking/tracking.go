@@ -15,6 +15,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
 // Limits to the number of errors we can recieve from external GitHub
@@ -28,15 +30,23 @@ import (
 var maxOrgMemberErrors = 1
 var maxRepoDetailsErrors = 4
 
-// TrackUserGitHubData handles fetching limited information about
-// a user's GitHub profile and sends it to Google Cloud Storage
-// for analytics
-func TrackUserGitHubData(actor *auth.Actor, event string) error {
+// TrackUserGitHubData handles user data logging during auth flows
+//
+// Specifically, fetching limited information about
+// a user's GitHub profile and sending it to Google Cloud Storage
+// for analytics, as well as updating user data properties in HubSpot
+func TrackUserGitHubData(actor *auth.Actor, event string, name string, company string, location string) error {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.TrackUserGitHubData: %s", err)
 		}
 	}()
+
+	// Update or create user contact information in HubSpot
+	err := trackHubSpotContact(actor, event, name, company, location)
+	if err != nil {
+		log15.Warn("trackHubSpotContact: failed to create or update HubSpot contact on auth", "source", "HubSpot", "error", err)
+	}
 
 	gcsClient, err := gcstracker.New(actor)
 	if err != nil {
@@ -232,4 +242,55 @@ func toGitHubRepoWithDetails(ghrepo *github.Repository) *sourcegraph.GitHubRepoW
 		Languages:   make([]*sourcegraph.GitHubRepoLanguage, 0),
 		CommitTimes: make([]*time.Time, 0),
 	}
+}
+
+func trackHubSpotContact(actor *auth.Actor, eventLabel string, name string, company string, location string) error {
+	if actor.Email == "" {
+		return errors.New("User must have a valid email address.")
+	}
+
+	c, err := hubspotutil.Client()
+	if err != nil {
+		return errors.Wrap(err, "hubspotutil.Client")
+	}
+
+	params := &hubspot.ContactProperties{
+		UserID:            actor.Login,
+		UID:               actor.UID,
+		GitHubLink:        "https://github.com/" + actor.Login,
+		LookerLink:        "https://sourcegraph.looker.com/dashboards/9?User%20ID=" + actor.Login,
+		GitHubName:        name,
+		GitHubCompany:     company,
+		GitHubLocation:    location,
+		IsPrivateCodeUser: false,
+	}
+
+	for _, v := range actor.GitHubScopes {
+		if v == "repo" {
+			params.IsPrivateCodeUser = true
+			break
+		}
+	}
+
+	if eventLabel == "SignupCompleted" {
+		today := time.Now().Truncate(24 * time.Hour)
+		// Convert to milliseconds
+		params.RegisteredAt = today.UTC().Unix() * 1000
+	}
+
+	// Create or update the contact
+	err = c.CreateOrUpdateContact(actor.Email, params)
+	if err != nil {
+		return err
+	}
+
+	// Finally, log the event if relevant (in this case, for "SignupCompleted" events)
+	if _, ok := hubspotutil.EventNameToHubSpotID[eventLabel]; ok {
+		err := c.LogEvent(actor.Email, hubspotutil.EventNameToHubSpotID[eventLabel], nil)
+		if err != nil {
+			return errors.Wrap(err, "LogEvent")
+		}
+	}
+
+	return nil
 }

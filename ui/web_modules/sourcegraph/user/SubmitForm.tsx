@@ -76,14 +76,14 @@ export function submitChangeUserPlanForm(body: ChangeUserPlanPayload): Promise<R
 /** 
  * After-signup form submissions 
  */
-interface AfterSignupPayload extends RawFormPayload {
+export interface AfterSignupPayload extends RawFormPayload {
 	firstname: string;
 	lastname: string;
 	company?: string;
 	signupEmail: string;
 	plan: string;
+	planOrgs?: string;
 	isPrivateCodeUser: string;
-	githubOrgs?: string;
 	existingSoftware?: string;
 	versionControlSystem?: string;
 	numberOfDevs?: string;

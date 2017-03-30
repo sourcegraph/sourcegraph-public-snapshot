@@ -4,8 +4,12 @@ import (
 	"errors"
 	"unicode"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 )
+
+// HubSpotHAPIKey is used by some requests to access their respective API endpoints
+var HubSpotHAPIKey = env.Get("HUBSPOT_HAPI_KEY", "", "HubSpot HAPIkey for accessing certain HubSpot endpoints.")
 
 // FormNameToHubSpotID is a mapping from form names provided by backend or API
 // requests to submit HubSpot forms
@@ -30,18 +34,14 @@ var FormNameToHubSpotID = map[string]string{
 // HubSpot Events and IDs are all defined in HubSpot "Events" web console:
 // https://app.hubspot.com/reports/2762526/events
 var EventNameToHubSpotID = map[string]string{
-	// ZapAuthCompleted is an identifier for the "ZapAuthCompleted" event
+	"SignupCompleted":  "000001776813",
 	"ZapAuthCompleted": "000001981045",
 }
 
 var client *hubspot.Client
 
 func init() {
-	// TODO(dan): replace this with an env variable (e.g. see mailchimputil.go)
-	portalID := "2762526"
-	if portalID != "" {
-		client = hubspot.New(portalID)
-	}
+	client = hubspot.New("2762526", HubSpotHAPIKey)
 }
 
 // Client returns a hubspot client, or an error if HUBSPOT_KEY is not set.

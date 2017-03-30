@@ -64,11 +64,6 @@ class EventLoggerClass {
 		googleAnalytics.setTrackerLogin(login);
 		telligent.setUserId(login);
 		intercom.setIntercomProperty("business_user_id", login);
-		hubSpot.setHubSpotProperties({
-			"user_id": login,
-			"github_link": `https://github.com/${login}`,
-			"looker_link": `https://sourcegraph.looker.com/dashboards/9?User%20ID=${login}`
-		});
 		optimizely.setUserAttributes({ "user_id": login });
 
 		// Set UID
@@ -85,42 +80,25 @@ class EventLoggerClass {
 	setUserName(name: string): void {
 		intercom.setIntercomProperty("name", name);
 		telligent.setUserProperty("display_name", name);
-		hubSpot.setHubSpotProperties({ "fullname": name });
 	}
 
 	setUserCompany(company: string): void {
 		telligent.setUserProperty("company", company);
 		intercom.setIntercomProperty("company", company);
-		hubSpot.setHubSpotProperties({ "company": company });
-	}
-
-	setUserGitHubName(githubName: string): void {
-		// No need to set this for telligent — this data is logged with the 
-		// corresponding SignupCompleted or CompletedGitHubOAuth2Flow event
-		hubSpot.setHubSpotProperties({ "github_name": githubName });
-	}
-
-	setUserGitHubCompany(githubCompany: string): void {
-		// No need to set this for telligent — this data is logged with the 
-		// corresponding SignupCompleted or CompletedGitHubOAuth2Flow event
-		hubSpot.setHubSpotProperties({ "github_company": githubCompany });
 	}
 
 	setUserRegisteredAt(registeredAt: any): void {
 		telligent.setUserProperty("registered_at_timestamp", registeredAt);
 		telligent.setUserProperty("registered_at", new Date(registeredAt).toDateString());
 		intercom.setIntercomProperty("created_at", new Date(registeredAt).getTime() / 1000);
-		hubSpot.setHubSpotProperties({ "registered_at": new Date(registeredAt).toDateString() });
 	}
 
 	setUserLocation(location: string): void {
 		telligent.setUserProperty("location", location);
-		hubSpot.setHubSpotProperties({ "location": location });
 	}
 
 	setUserIsPrivateCodeUser(isPrivateCodeUser: string): void {
 		telligent.setUserProperty("is_private_code_user", isPrivateCodeUser);
-		hubSpot.setHubSpotProperties({ "is_private_code_user": isPrivateCodeUser });
 	}
 
 	setUserInstalledChromeExtension(installedChromeExtension: string): void {
@@ -138,7 +116,6 @@ class EventLoggerClass {
 		intercom.setIntercomProperty("email", primaryEmail);
 		optimizely.setUserAttributes({ "email": primaryEmail });
 		hubSpot.setHubSpotProperties({ "email": primaryEmail });
-		hubSpot.setHubSpotProperties({ "emails": emails ? emails.map(email => { return email.Email; }).join(",") : "" });
 	}
 
 	setUserGitHubAuthedLanguages(languages: string[]): void {
@@ -172,18 +149,12 @@ class EventLoggerClass {
 
 	setUserPlan(plan: PlanType): void {
 		telligent.setUserProperty("plan", plan);
-		hubSpot.setHubSpotProperties({ "plan": plan });
 		intercom.setIntercomProperty("plan", plan);
 	}
 
 	setUserPlanOrg(organization: string): void {
 		telligent.setUserProperty("plan_orgs", organization);
-		hubSpot.setHubSpotProperties({ "plan_orgs": organization });
 		intercom.setIntercomProperty("plan_orgs", organization);
-	}
-
-	setUserViewedPricingPage(): void {
-		hubSpot.setHubSpotProperties({ "viewed_pricing_page": "true" });
 	}
 
 	/*
@@ -243,7 +214,6 @@ class EventLoggerClass {
 		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
 
 		experimentManager.logEvent(eventLabel);
-		hubSpot.logHubSpotEvent(eventLabel);
 		googleAnalytics.logEventCategoryComponents(eventCategory, eventAction, eventLabel);
 	}
 

@@ -9,7 +9,7 @@ import { EnterpriseDetails, EnterpriseThanks, OnPremDetails } from "sourcegraph/
 import { OrgSelection } from "sourcegraph/org/OrgSignup";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
-import { submitAfterSignupForm } from "sourcegraph/user/SubmitForm";
+import { AfterSignupPayload, submitAfterSignupForm } from "sourcegraph/user/SubmitForm";
 import { UserDetails, UserDetailsForm, UserThanks } from "sourcegraph/user/UserDetails";
 import { fetchGraphQLQuery } from "sourcegraph/util/GraphQLFetchUtil";
 
@@ -41,7 +41,7 @@ function submitSignupInfo(details: Details): void {
 		lastName = names.slice(1).join(" ");
 	}
 
-	let signupInformation = {
+	let signupInformation: AfterSignupPayload = {
 		firstname: firstName,
 		lastname: lastName,
 		company: details.userInfo.company,

@@ -7,7 +7,7 @@ import "net/url"
 //
 // See http://developers.hubspot.com/docs/methods/forms/submit_form.
 func (c *Client) SubmitForm(formID string, params map[string]string) error {
-	err := c.post("SubmitForm", c.baseFormURL(), formID, params)
+	err := c.postForm("SubmitForm", c.baseFormURL(), formID, params)
 	if err != nil {
 		return err
 	}
