@@ -94,7 +94,7 @@ export class SearchService implements ISearchService {
 						throw new Error("Repository does not exist.");
 					}
 					let response = root.repository.commit.commit.textSearch.map(file => {
-						const resource = workspace.with({ fragment: file.path });
+						const resource = workspace.with({ path: `${workspace.path}/${file.path}` });
 						return { ...file, resource };
 					});
 					complete({
