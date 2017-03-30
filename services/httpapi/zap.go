@@ -11,8 +11,8 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/services/backend"
 
 	"github.com/gorilla/websocket"
+	"github.com/koding/websocketproxy"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/slimsag/websocketproxy"
 )
 
 func serveZap(w http.ResponseWriter, r *http.Request) {

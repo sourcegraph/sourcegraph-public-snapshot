@@ -900,7 +900,7 @@
 		},
 		{
 			"checksumSHA1": "3s5C+v97K3W37d1mRz+Lqborpm8=",
-			"path": "github.com/slimsag/websocketproxy",
+			"path": "github.com/koding/websocketproxy",
 			"revision": "88a0ae4d50e528f6e02c7d576ee2d4fafcfbef6c",
 			"revisionTime": "2017-03-28T18:18:58Z"
 		},
