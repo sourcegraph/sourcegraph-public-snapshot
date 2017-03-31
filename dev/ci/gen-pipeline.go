@@ -166,17 +166,20 @@ func main() {
 			Env("VERSION", version),
 			Cmd("./dev/ci/deploy-staging.sh"))
 		pipeline.AddWait()
-		pipeline.AddStep(":selenium:",
-			Cmd("cd test/e2e2"),
-			Cmd("pip install virtualenv"),
-			Cmd("virtualenv .env"),
-			Env("VERSION", version),
-			Env("STAGING_NAME", stagingName),
-			Cmd("../../dev/ci/wait-for-deploy.sh"),
-			Env("NOVNC", "1"),
-			Env("SOURCEGRAPH_URL", fmt.Sprintf("http://%s.staging.sgdev.org", stagingName)),
-			Cmd("make ci"),
-		)
+		// E2E is disable due to failing https://github.com/sourcegraph/sourcegraph/issues/5155
+		/*
+			pipeline.AddStep(":selenium:",
+				Cmd("cd test/e2e2"),
+				Cmd("pip install virtualenv"),
+				Cmd("virtualenv .env"),
+				Env("VERSION", version),
+				Env("STAGING_NAME", stagingName),
+				Cmd("../../dev/ci/wait-for-deploy.sh"),
+				Env("NOVNC", "1"),
+				Env("SOURCEGRAPH_URL", fmt.Sprintf("http://%s.staging.sgdev.org", stagingName)),
+				Cmd("make ci"),
+			)
+		*/
 
 	case strings.HasPrefix(branch,
 		"docker-images/"):
