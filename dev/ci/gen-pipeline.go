@@ -181,7 +181,7 @@ func main() {
 			Cmd("echo $VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build"))
 
 	case strings.HasPrefix(branch, "staging/"):
-		stagingName := strings.Replace(strings.TrimPrefix(branch, "staging/"), "/", "-", -1)
+		//stagingName := strings.Replace(strings.TrimPrefix(branch, "staging/"), "/", "-", -1)
 		pipeline.AddWait()
 		addDockerImageStep("frontend", false)
 		pipeline.AddWait()
