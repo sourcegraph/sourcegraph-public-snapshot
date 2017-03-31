@@ -2,12 +2,10 @@ import * as React from "react";
 import { gql, graphql } from "react-apollo";
 
 import { AuthorsToggleButton } from "sourcegraph/blob/AuthorsToggleButton";
-import { CommitInfoBar } from "sourcegraph/blob/CommitInfoBar/CommitInfoBar";
 import { OpenInGitHubButton } from "sourcegraph/blob/OpenInGitHubButton";
 import { UnsupportedLanguageAlert } from "sourcegraph/blob/UnsupportedLanguageAlert";
 import { FlexContainer, Heading, PathBreadcrumb } from "sourcegraph/components";
 import { colors, layout, typography, whitespace } from "sourcegraph/components/utils";
-import { Features } from "sourcegraph/util/features";
 import { getPathExtension, isBetaExtension, isIgnoredExtension, isSupportedExtension } from "sourcegraph/util/supportedExtensions";
 import { prettifyRev } from "sourcegraph/workbench/utils";
 
@@ -50,7 +48,7 @@ function BlobTitleComponent(props: Props): JSX.Element {
 		<FlexContainer justify="between" items="center" style={{
 			backgroundColor: colors.blueGrayD2(),
 			boxShadow: `0 2px 6px 0px ${colors.black(0.2)}`,
-			minHeight: layout.editorToolbarHeight,
+			minHeight: layout.EDITOR_TITLE_HEIGHT,
 			padding: `0 ${whitespace[3]}`,
 			position: "relative",
 			width: "100%",
@@ -95,7 +93,6 @@ function BlobTitleComponent(props: Props): JSX.Element {
 				]
 			}
 		</FlexContainer>
-		{Features.commitInfoBar.isEnabled() && <CommitInfoBar repo={repo} rev={rev} path={path} />}
 	</div>;
 };
 

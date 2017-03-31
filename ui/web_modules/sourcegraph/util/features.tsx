@@ -75,12 +75,6 @@ export const Features = {
 	refLogs: new Feature("refLogs"),
 
 	/**
-	 * commitInfoBar shows the horizontal bar above the editor with
-	 * the file's commit log.
-	 */
-	commitInfoBar: new Feature("commitInfoBar"),
-
-	/**
 	 * trace is whether to show trace URLs to LightStep in console log messages.
 	 */
 	trace: new Feature("trace"),

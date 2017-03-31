@@ -1,5 +1,4 @@
 import { after, before, media, merge } from "glamor";
-import { Features } from "sourcegraph/util/features";
 
 export const breakpoints = {
 	notSm: "screen and (min-width: 48em)",
@@ -34,11 +33,7 @@ export const container = {
 	sm: { ...center, maxWidth: 920 },
 };
 
-export const editorToolbarHeight = 45;
-export const editorCommitInfoBarHeight = 38;
-export const EDITOR_TITLE_HEIGHT = Features.commitInfoBar.isEnabled()
-	? editorToolbarHeight + editorCommitInfoBarHeight
-	: editorToolbarHeight;
+export const EDITOR_TITLE_HEIGHT = 45;
 
 export const flexItem = {
 	autoSize: { flex: "1 1 auto" },

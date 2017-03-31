@@ -119,7 +119,7 @@ export class ExplorerTitle extends React.Component<{}, State> {
 		return <FlexContainer items="center" justify="between" style={{
 			backgroundColor: colors.blueGrayD1(),
 			boxShadow: `0 0 8px 1px ${colors.black(0.25)}`,
-			minHeight: layout.editorToolbarHeight,
+			minHeight: layout.EDITOR_TITLE_HEIGHT,
 			position: "relative",
 			paddingLeft: whitespace[2],
 			paddingRight: whitespace[2],
