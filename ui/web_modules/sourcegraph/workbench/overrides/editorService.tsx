@@ -1,9 +1,8 @@
-import Event, { Emitter } from "vs/base/common/event";
 import URI from "vs/base/common/uri";
 import { TPromise } from "vs/base/common/winjs.base";
 import { ICodeEditor } from "vs/editor/browser/editorBrowser";
 import { ITextModelResolverService } from "vs/editor/common/services/resolverService";
-import { IEditor, IEditorInput, IResourceInput } from "vs/platform/editor/common/editor";
+import { IEditor, IEditorInput, IEditorOptions, IResourceDiffInput, IResourceInput, IResourceSideBySideInput } from "vs/platform/editor/common/editor";
 import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
 import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
 import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorService";
@@ -18,102 +17,76 @@ import { Services } from "sourcegraph/workbench/services";
 import { getCurrentWorkspace, getGitBaseResource, getURIContext, prettifyRev } from "sourcegraph/workbench/utils";
 
 export class WorkbenchEditorService extends vs.WorkbenchEditorService {
-	private _onDidOpenEditor: Emitter<URI> = new Emitter<URI>();
+	openEditorWithoutURLChange(resource: URI, input: any, options?: any): TPromise<IEditor> {
+		if (!input) {
+			input = { resource: resource };
+		}
 
-	// TODO(john): this type signature diverges from vscode's.
-	// Really this whole file is a sin...
-	public openEditor(data: IResourceInput, options?: any): TPromise<IEditor>;
-	public openEditor(data: IEditorInput, options?: any): TPromise<IEditor>;
-	public openEditor(data: any, options?: any): TPromise<IEditor> {
+		// Set the resource revision to the commit hash
+		return TPromise.wrap(resolveRev(resource)).then(({ commit }) => {
+			updateFileTree(resource);
+			return super.createInput(input).then(i => super.openEditor(i, options));
+		});
+	}
+
+	openEditor(input: IEditorInput, options?: IEditorOptions): TPromise<IEditor>;
+	openEditor(input: IResourceInput | IResourceDiffInput | IResourceSideBySideInput): TPromise<IEditor>;
+	openEditor(input: any, arg2?: any): TPromise<IEditor> {
 		let resource: URI;
-		let input: any;
-		if (data.resource) {
+		let inputToOpen: any; // we translate the provided input into another, depending on context
+		if (input.resource) {
+			// IResourceInput, e.g. from clicking on a file from the Explorer vielet.
 			const workspace = getCurrentWorkspace();
 			if (workspace.revState && workspace.revState.zapRev) {
+				// Use a diff input, even though a normal input was requested.
 				const resolverService = Services.get(ITextModelResolverService);
-				const leftInput = new ResourceEditorInput("", "", getGitBaseResource(data.resource), resolverService);
-				const rightInput = new ResourceEditorInput("", "", data.resource, resolverService);
+				const leftInput = new ResourceEditorInput("", "", getGitBaseResource(input.resource), resolverService);
+				const rightInput = new ResourceEditorInput("", "", input.resource, resolverService);
 				const diffInput = new DiffEditorInput("", "", leftInput, rightInput);
-				resource = data.resource;
-				input = diffInput;
+				resource = input.resource;
+				inputToOpen = diffInput;
 			} else {
-				resource = data.resource;
-				input = data;
+				resource = input.resource;
+				inputToOpen = input;
 			}
-		} else if (data.modifiedInput) {
-			resource = data.modifiedInput.resource;
-			input = data;
-		} else if (data.rightResource) {
+		} else if (input.rightResource) {
+			// IResourceDiffInput, e.g. from clicking on a file from the SCM viewlet.
 			// Can get here via clicking on a file from "Changes" view or by clicking on file from explorer view
 			// while viewing a zap ref.
 			const resolverService = Services.get(ITextModelResolverService);
-			const leftInput = new ResourceEditorInput("", "", data.leftResource, resolverService);
-			const rightInput = new ResourceEditorInput("", "", data.rightResource, resolverService);
+			const leftInput = new ResourceEditorInput("", "", input.leftResource, resolverService);
+			const rightInput = new ResourceEditorInput("", "", input.rightResource, resolverService);
 			const diffInput = new DiffEditorInput("", "", leftInput, rightInput);
-			resource = data.rightResource;
-			input = diffInput;
+			resource = input.rightResource;
+			inputToOpen = diffInput;
 		} else {
-			throw new Error(`unknown data: ${data}`);
+			throw new Error(`unknown input: ${input}`);
 		}
+
 		if (resource) {
 			let { repo, rev, path } = getURIContext(resource);
 			rev = prettifyRev(rev);
 			const router = __getRouterForWorkbenchOnly();
 
-			// openEditor may be called for a file, or for a workspace root (directory);
-			// in the latter case, we circumvent the vscode path to open an real document
-			// otherwise an empty buffer will be shown instead of the workbench watermark.
+			// openEditor may be called for a file or for a workspace root (directory).
+			// In the latter case, we circumvent the vscode path to open a document.
+			// Otherwise an empty buffer will be shown instead of the workbench watermark.
 			const url = getURIContext(resource).path === "" ? urlToRepo(repo) : urlToBlob(repo, rev, path);
-			const promise = getURIContext(resource).path === "" ? TPromise.wrap(this.getActiveEditor()) : this.openEditorWithoutURLChange(resource, input, options);
+			const promise = getURIContext(resource).path === "" ? TPromise.wrap(this.getActiveEditor()) : this.openEditorWithoutURLChange(resource, inputToOpen, arg2);
 			return promise.then(editor => {
 				router.push({
 					pathname: url,
-					state: options,
-					hash: data.options && data.options.selection ? `#L${RangeOrPosition.fromMonacoRange(data.options.selection)}` : undefined,
+					hash: input.options && input.options.selection ? `#L${RangeOrPosition.fromMonacoRange(input.options.selection)}` : undefined,
 					query: router.location.query,
 				});
 				return editor;
 			});
 		}
-		throw new Error("cannot open editor, missing resource");
+		throw new Error("cannot open editor, unable to determine resource");
 	}
-
-	openEditorWithoutURLChange(mainResource: URI, data: IResourceInput, options?: any): TPromise<IEditor>;
-	openEditorWithoutURLChange(mainResource: URI, data: IEditorInput, options?: any): TPromise<IEditor>;
-	openEditorWithoutURLChange(mainResource: URI, data: null, options?: any): TPromise<IEditor>;
-	openEditorWithoutURLChange(mainResource: URI, data: any, options?: any): TPromise<IEditor> {
-		if (!data) {
-			data = { resource: mainResource };
-		}
-
-		this._onDidOpenEditor.fire(mainResource); // TODO(john): why are we firing this here?
-
-		// calling openEditor with a non-zero position, or options equal to
-		// true opens up another editor to the side.
-		if (typeof options === "boolean") {
-			options = false;
-		}
-
-		// Set the resource revision to the commit hash
-		return TPromise.wrap(resolveRev(mainResource)).then(({ commit }) => {
-			updateFileTree(mainResource);
-			return this.createInput(data).then(input => super.openEditor(input, options, false));
-		});
-	}
-
-	public createInput(data: IResourceInput): TPromise<IEditorInput>;
-	public createInput(data: IEditorInput): TPromise<IEditorInput>;
-	public createInput(data: any): TPromise<IEditorInput> {
-		const resource = data.resource;
-		if (resource && resource instanceof URI && resource.scheme === "git") {
-			return TPromise.as((this as any).createFileInput(resource)); // access superclass's private method
-		}
-		return super.createInput(data);
-	}
-
-	public onDidOpenEditor: Event<URI> = this._onDidOpenEditor.event;
 }
 
+// This export required by InstantiationService
 export const DelegatingWorkbenchEditorService = vs.DelegatingWorkbenchEditorService;
 
 let EditorInstance: ICodeEditor | null = null;
