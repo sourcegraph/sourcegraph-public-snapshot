@@ -4,9 +4,9 @@ import { BrowserLanguageClient } from "@sourcegraph/vscode-languageclient/lib/br
 import { v4 as uuidV4 } from "uuid";
 
 import { isOnPremInstance } from "sourcegraph/app/context";
-import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
+import { MessageTrace, webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
-import { getModes } from "sourcegraph/util/features";
+import { Features, getModes } from "sourcegraph/util/features";
 import { inventoryLangToMode } from "sourcegraph/util/inventory";
 
 export function activate(): void {
@@ -27,7 +27,7 @@ export function activate(): void {
 
 		// We include ?mode= in the url to make it easier to find the correct LSP websocket connection.
 		// It does not affect any behaviour.
-		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`), {
+		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`, getRequestTracer(mode)), {
 			documentSelector: [mode],
 			initializationOptions: {
 				mode,
@@ -83,4 +83,43 @@ function generateLSPSessionKeyIfNeeded(): string | undefined {
 		return uuidV4(); // uses a cryptographic RNG on browsers with window.crypto (all modern browsers)
 	}
 	return undefined;
+}
+
+// tslint:disable: no-console
+
+function getRequestTracer(mode: string): ((trace: MessageTrace) => void) | undefined {
+	if (!Features.trace.isEnabled() || !(global as any).console) {
+		return undefined;
+	}
+	const console = (global as any).console;
+	if (!console.debug || !console.group) {
+		return undefined;
+	}
+	return (trace: MessageTrace) => {
+		console.groupCollapsed(
+			"%c%s%c LSP %s %s %c%sms",
+			`background-color:${trace.response.error ? "red" : "green"};color:white`, trace.response.error ? "ERR" : "OK",
+			`background-color:inherit;color:inherit;`,
+			mode,
+			describeRequest(trace.request.method, trace.request.params),
+			"color:#999;font-weight:normal;font-style:italic",
+			trace.endTime - trace.startTime,
+		);
+		if (trace.response.meta && trace.response.meta["X-Trace"]) {
+			console.debug("Trace: %s", trace.response.meta["X-Trace"]);
+		}
+		console.debug("Request Params: %O", trace.request.params);
+		console.debug("Response: %O", trace.response);
+		console.groupEnd();
+	};
+}
+
+function describeRequest(method: string, params: any): string {
+	if (params.textDocument && params.textDocument.uri && params.position) {
+		return `${method} @ ${params.position.line + 1}:${params.position.character + 1}`;
+	}
+	if (typeof params.query !== "undefined") {
+		return `${method} with query ${JSON.stringify(params.query)}`;
+	}
+	return method;
 }
