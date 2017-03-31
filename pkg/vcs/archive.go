@@ -9,6 +9,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
@@ -60,6 +61,7 @@ func (fs *archiveFS) fetch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
+	gitserverBytes.Add(float64(len(data)))
 
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
@@ -224,4 +226,15 @@ func (fs *fastVFS) ListAllFiles(ctx context.Context) ([]string, error) {
 
 func (fs *fastVFS) String() string {
 	return fmt.Sprintf("FastVFS(%s at commit %s)", fs.archive.repo, fs.archive.treeish)
+}
+
+var gitserverBytes = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "vfs",
+	Name:      "gitserver_bytes_total",
+	Help:      "Total number of bytes read into memory by ArchiveFileSystem.",
+})
+
+func init() {
+	prometheus.MustRegister(gitserverBytes)
 }
