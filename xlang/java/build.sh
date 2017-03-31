@@ -1,11 +1,6 @@
 #!/bin/bash
-set -e
+set -ex
 cd $(dirname "${BASH_SOURCE[0]}")
-
-export IMAGE=us.gcr.io/sourcegraph-dev/xlang-java
-export TAG=${TAG-latest}
-
-set -x
 
 if [ ! -d "java-langserver" ]; then
     git clone git@github.com:sourcegraph/java-langserver.git java-langserver
@@ -33,5 +28,4 @@ else
     git clone --depth 1 https://github.com/sourcegraph/android-sdk-jars
 fi
 
-docker build -t $IMAGE:$TAG .
-gcloud docker -- push $IMAGE:$TAG
+docker build -t ${IMAGE-"xlang-java"} .

@@ -137,20 +137,28 @@ func main() {
 	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 
 	addDockerImageStep := func(app string, latest bool) {
-		image := "us.gcr.io/sourcegraph-dev/" + app
 		var cmds []StepOpt
-		if app == "frontend" {
+
+		preBuildScript := fmt.Sprintf("./cmd/%s/pre-build.sh", app)
+		if _, err := os.Stat(preBuildScript); err == nil {
+			cmds = append(cmds, Cmd(preBuildScript))
+		}
+
+		image := "us.gcr.io/sourcegraph-dev/" + app
+		buildScript := fmt.Sprintf("./cmd/%s/build.sh", app)
+		if _, err := os.Stat(buildScript); err == nil {
 			cmds = append(cmds,
-				Cmd("cd ui"),
-				Cmd("yarn install"),
-				Cmd("yarn run build"),
-				Cmd("cd .."),
-				Cmd("go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates"),
+				Env("IMAGE", image+":"+version),
+				Env("VERSION", version),
+				Cmd(buildScript),
+			)
+		} else {
+			cmds = append(cmds,
+				Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize"),
+				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s sourcegraph.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
 			)
 		}
 		cmds = append(cmds,
-			Cmd("go build sourcegraph.com/sourcegraph/sourcegraph/vendor/github.com/neelance/godockerize"),
-			Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s sourcegraph.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
 			Cmd(fmt.Sprintf("gcloud docker -- push %s:%s", image, version)),
 		)
 		if latest {
