@@ -8,13 +8,20 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
+	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Store manages the fetching and storing of git archives. Its main purpose is
@@ -23,12 +30,19 @@ import (
 // responsible for filtering out files we receive from `git archive` that we
 // do not want to search.
 //
+// We use an LRU to do cache eviction:
+// * When to evict is based on the total size of *.zip on disk.
+// * What to evict uses the LRU algorithm.
+// * To evict we need to wait for ongoing searches on the file to finish. We can
+//   then close the zip and file.
+// * Since we are based on the size of files on disk, we need to add files on disk
+//   which are not yet tracked in-memory. These files can exist due to restarts in
+//   the process/pod.
+//
 // Note: The store fetches tarballs but stores zips. We want to be able to
 // filter which files we cache, so we need a format that supports streaming
 // (tar). We want to be able to support random concurrent access for reading,
 // so we store as a zip.
-//
-// TODO(keegan) remove items from cache.
 type Store struct {
 	// FetchTar returns an io.ReadCloser to a tar archive. If the error
 	// implements "BadRequest() bool", it will be used to determine if the
@@ -38,21 +52,102 @@ type Store struct {
 	// Path is the directory to store the cache
 	Path string
 
+	// MaxCacheSizeBytes is the maximum size of the cache in bytes. Note:
+	// We can temporarily be larger than MaxCacheSizeBytes. When we go
+	// over MaxCacheSizeBytes we trigger delete files until we get below
+	// MaxCacheSizeBytes.
+	MaxCacheSizeBytes int64
+
 	// archives stores all archives in the cache.
 	archivesMu sync.Mutex
-	archives   map[string]*archive
+	archives   *lru.Cache
+
+	// once protects Start
+	once sync.Once
+}
+
+// Start initializes state and starts background goroutines. It can be called
+// more than once. It is optional to call, but starting it earlier avoids a
+// search request paying the cost of initializing.
+func (s *Store) Start() {
+	s.once.Do(func() {
+		s.archives = lru.New(0)
+		s.archives.OnEvicted = func(key lru.Key, value interface{}) {
+			// When we Remove or RemoveOldest we hold the lock, so
+			// safe to read s.archive.
+			cacheSizeLength.Set(float64(s.archives.Len()))
+			evictions.Inc()
+			go value.(*archive).onEvicted()
+		}
+		go func() {
+			err := s.openMissing()
+			if err != nil {
+				log.Println("failed to open pre-existing cached items: ", err)
+			}
+			s.watchAndEvict()
+		}()
+	})
 }
 
 // archive stores the result of fetching an archive.
 type archive struct {
-	reader *zip.Reader
+	reader *zip.ReadCloser
 	err    error
 	done   chan struct{} // closed to signal reader and err are set
+
+	path string         // stored so we can os.Remove when evicted
+	wg   sync.WaitGroup // tracks open readers (ongoing searches)
+}
+
+// open returns a new reader to the underlying zip file. It must be closed so
+// that we can cleanly evict the archive.
+func (a *archive) open() (*archiveReadCloser, error) {
+	<-a.done
+	if a.err != nil {
+		return nil, a.err
+	}
+	a.wg.Add(1)
+	openReaders.Inc()
+	return &archiveReadCloser{
+		archive: a,
+	}, nil
+}
+
+func (a *archive) onEvicted() {
+	<-a.done
+	// Best effort removal. We can remove the file and open readers will
+	// still work.
+	_ = os.Remove(a.path)
+	if a.err != nil {
+		return
+	}
+	a.wg.Wait()
+	a.reader.Close()
+}
+
+// archiveReadCloser exposes an interface like zip.ReadCloser. However, we use
+// our own close logic.
+type archiveReadCloser struct {
+	archive *archive
+	closed  uint32
+}
+
+func (a *archiveReadCloser) Reader() *zip.Reader {
+	return &a.archive.reader.Reader
+}
+
+func (a *archiveReadCloser) Close() error {
+	if !atomic.CompareAndSwapUint32(&a.closed, 0, 1) {
+		return errors.New("already closed")
+	}
+	a.archive.wg.Done()
+	openReaders.Dec()
+	return nil
 }
 
 // openReader will open a zip reader to the archive. It will first consult the
 // local cache, otherwise will fetch from the network.
-func (s *Store) openReader(ctx context.Context, repo, commit string) (zr *zip.Reader, err error) {
+func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiveReadCloser, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenReader")
 	ext.Component.Set(span, "store")
 	defer func() {
@@ -60,11 +155,14 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (zr *zip.Re
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 		}
-		if zr != nil {
-			span.LogKV("numfiles", len(zr.File))
+		if ar != nil {
+			span.LogKV("numfiles", len(ar.Reader().File))
 		}
 		span.Finish()
 	}()
+
+	// Ensure we have initialized
+	s.Start()
 
 	// We already validate commit is absolute in ServeHTTP, but since we
 	// rely on it for caching we check again.
@@ -75,51 +173,55 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (zr *zip.Re
 	// key is a sha256 hash since we want to use it for the disk name
 	h := sha256.Sum256([]byte(repo + " " + commit))
 	key := hex.EncodeToString(h[:])
+	path := filepath.Join(s.Path, key+".zip")
 	span.LogKV("key", key)
 
 	s.archivesMu.Lock()
-	if s.archives == nil {
-		s.archives = make(map[string]*archive)
-	}
-	arch, ok := s.archives[key]
+	value, ok := s.archives.Get(key)
 	if !ok {
-		arch = &archive{done: make(chan struct{})}
-		s.archives[key] = arch
+		value = &archive{
+			path: path,
+			done: make(chan struct{}),
+		}
+		s.archives.Add(key, value)
+		cacheSizeLength.Set(float64(s.archives.Len()))
+		added.Inc()
 	}
 	s.archivesMu.Unlock()
+	arch := value.(*archive)
 
 	// We already have an open reader
 	if ok {
 		span.SetTag("source", "open")
-		<-arch.done
-		return arch.reader, arch.err
+		return arch.open()
 	}
 
 	// We need to fetch the archive and populate s.archives for future
 	// readers.
-	defer func() {
-		arch.reader, arch.err = zr, err
-		close(arch.done)
-		// If we failed, remove from archive cache so we try again in
-		// the future.
-		if err != nil {
-			s.archivesMu.Lock()
-			delete(s.archives, key)
-			s.archivesMu.Unlock()
-		}
-	}()
+	arch.reader, arch.err = s.getArchive(ctx, repo, commit, key)
+	close(arch.done)
+	// If we failed, remove from archive cache so we try again in
+	// the future.
+	if arch.err != nil {
+		s.archivesMu.Lock()
+		s.archives.Remove(key)
+		s.archivesMu.Unlock()
+	}
+	return arch.open()
+}
+
+// getArchive fetches an archive from the network or local cache. It does not
+// populate the in-memory cache. You should probably be calling openReader.
+func (s *Store) getArchive(ctx context.Context, repo, commit, key string) (*zip.ReadCloser, error) {
+	span := opentracing.SpanFromContext(ctx)
 
 	// It may be on disk from a previously running searcher. If we fail to
 	// open, we will just fetch from network.
-	//
-	// Note: We never close the opened file, so we do not store the
-	// closer. That is because currently we keep the file open for the
-	// lifetime of the process.
 	path := filepath.Join(s.Path, key+".zip")
-	zrc, err := zip.OpenReader(path)
+	zr, err := zip.OpenReader(path)
 	if err == nil {
 		span.SetTag("source", "disk")
-		return &zrc.Reader, nil
+		return zr, nil
 	}
 
 	span.SetTag("source", "fetch")
@@ -129,12 +231,15 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (zr *zip.Re
 	}
 	err = populateDiskCache(path, r)
 	r.Close()
+	if err != nil {
+		return nil, err
+	}
 
-	zrc, err = zip.OpenReader(path)
+	zr, err = zip.OpenReader(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open archive after fetching")
 	}
-	return &zrc.Reader, nil
+	return zr, nil
 }
 
 // populateDiskCache puts the item into the disk cache at path atomically.
@@ -228,4 +333,152 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 			return err
 		}
 	}
+}
+
+// watchAndEvict is a loop which periodically checks the size of the cache and
+// evicts/deletes items if the store gets too large.
+func (s *Store) watchAndEvict() {
+	if s.MaxCacheSizeBytes == 0 {
+		return
+	}
+
+	cacheSize := func() int64 {
+		list, err := ioutil.ReadDir(s.Path)
+		if err != nil {
+			log.Printf("failed to ReadDir(%s): %s", s.Path, err)
+			return 0
+		}
+
+		var size int64
+		for _, fi := range list {
+			if !strings.HasSuffix(fi.Name(), ".zip") {
+				continue
+			}
+			size += fi.Size()
+		}
+		cacheSizeBytes.Set(float64(size))
+		return size
+	}
+
+	for {
+		if cacheSize() <= s.MaxCacheSizeBytes {
+			time.Sleep(10 * time.Second)
+			continue
+		}
+
+		s.archivesMu.Lock()
+		s.archives.RemoveOldest()
+		s.archivesMu.Unlock()
+
+		// Give some time to settle
+		time.Sleep(time.Second)
+	}
+}
+
+// openMissing opens all files on disk but not yet in s.archives.
+func (s *Store) openMissing() error {
+	if err := os.MkdirAll(s.Path, 0700); err != nil {
+		return err
+	}
+
+	onDisk, err := ioutil.ReadDir(s.Path)
+	if err != nil {
+		return err
+	}
+
+	var missing []string
+	s.archivesMu.Lock()
+	for _, fi := range onDisk {
+		if !strings.HasSuffix(fi.Name(), ".zip") {
+			continue
+		}
+		key := strings.TrimSuffix(fi.Name(), ".zip")
+		if _, ok := s.archives.Get(key); !ok {
+			missing = append(missing, key)
+		}
+	}
+	s.archivesMu.Unlock()
+
+	for _, key := range missing {
+		path := filepath.Join(s.Path, key+".zip")
+		zr, err := zip.OpenReader(path)
+		if err != nil {
+			// rather not have it in the cache if we can't
+			// open it.
+			if !os.IsNotExist(err) {
+				err = os.Remove(path)
+				if err != nil {
+					log.Printf("failed to remove %s: %s", path, err)
+				}
+			}
+			continue
+		}
+
+		s.archivesMu.Lock()
+		value, ok := s.archives.Get(key)
+		if !ok {
+			value = &archive{
+				path: path,
+				done: make(chan struct{}),
+			}
+			s.archives.Add(key, value)
+			cacheSizeLength.Set(float64(s.archives.Len()))
+			added.Inc()
+		}
+		s.archivesMu.Unlock()
+		arch := value.(*archive)
+
+		// Raced with openReader, so we can ignore our attempt of
+		// adding it.
+		if ok {
+			zr.Close()
+			continue
+		}
+
+		arch.reader = zr
+		close(arch.done)
+	}
+
+	return nil
+}
+
+var (
+	cacheSizeLength = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "cache_size_length",
+		Help:      "The number of items in the cache.",
+	})
+	cacheSizeBytes = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "cache_size_bytes",
+		Help:      "The total size of items in the on disk cache.",
+	})
+	openReaders = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "open_readers",
+		Help:      "The total number of open readers.",
+	})
+	added = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "added",
+		Help:      "The total number of items added to the cache.",
+	})
+	evictions = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "searcher",
+		Subsystem: "store",
+		Name:      "evictions",
+		Help:      "The total number of items evicted from the cache.",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(cacheSizeLength)
+	prometheus.MustRegister(cacheSizeBytes)
+	prometheus.MustRegister(openReaders)
+	prometheus.MustRegister(added)
+	prometheus.MustRegister(evictions)
 }

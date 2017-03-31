@@ -188,12 +188,13 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 		return nil, badRequestError{err.Error()}
 	}
 
-	zr, err := s.Store.openReader(ctx, p.Repo, p.Commit)
+	ar, err := s.Store.openReader(ctx, p.Repo, p.Commit)
 	if err != nil {
 		return nil, err
 	}
+	defer ar.Close()
 
-	return concurrentFind(ctx, rg, zr)
+	return concurrentFind(ctx, rg, ar.Reader())
 }
 
 func validateParams(p *Params) error {

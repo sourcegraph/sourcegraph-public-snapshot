@@ -46,15 +46,16 @@ func benchConcurrentFind(b *testing.B, p *Params) {
 	}
 
 	ctx := context.Background()
-	zr, err := githubStore.openReader(ctx, p.Repo, p.Commit)
+	ar, err := githubStore.openReader(ctx, p.Repo, p.Commit)
 	if err != nil {
 		b.Fatal(err)
 	}
+	defer ar.Close()
 
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, err := concurrentFind(ctx, rg, zr)
+		_, err := concurrentFind(ctx, rg, ar.Reader())
 		if err != nil {
 			b.Fatal(err)
 		}

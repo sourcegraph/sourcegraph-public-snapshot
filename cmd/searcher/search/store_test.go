@@ -37,8 +37,11 @@ func TestOpenReader(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		go func() {
 			<-startOpenReader
-			_, err := s.openReader(context.Background(), wantRepo, wantCommit)
+			ar, err := s.openReader(context.Background(), wantRepo, wantCommit)
 			openReaderErr <- err
+			if err == nil {
+				ar.Close()
+			}
 		}()
 	}
 	close(startOpenReader)
@@ -71,11 +74,12 @@ func TestOpenReader(t *testing.T) {
 	if !onDisk {
 		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
 	}
-	_, err := s.openReader(context.Background(), wantRepo, wantCommit)
+	ar, err := s.openReader(context.Background(), wantRepo, wantCommit)
 	if err != nil {
 		t.Fatal("expected openReader to succeed:", err)
 		return
 	}
+	ar.Close()
 }
 
 func TestOpenReader_fetchTarFail(t *testing.T) {

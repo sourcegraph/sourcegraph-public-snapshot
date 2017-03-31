@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
 var cacheDir = env.Get("SEARCHER_CACHE_DIR", "/tmp/searcher-archive-store", "directory to store cached archives.")
+var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
 
 func main() {
 	env.Lock()
@@ -39,13 +41,22 @@ func main() {
 		go debugserver.Start(profBindAddr)
 	}
 
+	var cacheSizeBytes int64
+	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
+		log.Fatalf("invalid int %q for SEARCHER_CACHE_SIZE_MB: %s", cacheSizeMB, err)
+	} else {
+		cacheSizeBytes = i * 1000 * 1000
+	}
+
 	service := &search.Service{
 		Store: &search.Store{
-			FetchTar: fetchTar,
-			Path:     cacheDir,
+			FetchTar:          fetchTar,
+			Path:              cacheDir,
+			MaxCacheSizeBytes: cacheSizeBytes,
 		},
 		RequestLog: log.New(os.Stderr, "", 0),
 	}
+	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 
 	addr := ":3181"
