@@ -162,7 +162,7 @@ var (
 		Subsystem: "xlang",
 		Name:      "lsp_server_failed_method_calls",
 		Help:      "Total number of failed calls sent to a server proxy before it is shutdown.",
-		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128, 256},
+		Buckets:   []float64{0.1, 1, 2, 4, 8, 16, 32, 64, 128, 256},
 	}, []string{"mode"})
 	serverConnsAliveDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
