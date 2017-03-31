@@ -18,6 +18,7 @@ mvn clean compile assembly:single
 
 cd ..
 mv java-langserver/target/java-language-server.jar docker
+cp java-langserver/add-android-support-libs.sh docker/
 
 cd docker
 if [ -d artifacts ]; then
