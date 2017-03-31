@@ -41,6 +41,11 @@ type Client struct {
 	NoCreds bool
 }
 
+// HasServers returns true if the client is configured with servers to access.
+func (c *Client) HasServers() bool {
+	return len(c.servers) > 0
+}
+
 func (c *Client) connect(addr string) {
 	requestsChan := make(chan *request, 100)
 	c.servers = append(c.servers, requestsChan)
