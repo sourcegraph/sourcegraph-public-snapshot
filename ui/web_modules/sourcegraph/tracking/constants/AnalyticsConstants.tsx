@@ -243,10 +243,6 @@ export const Events = {
 	InfoPanelRefPreview_Closed: new LoggableEvent("InfoPanelRefPreviewClosed", EventCategories.CodeView, EventActions.Close),
 	InfoPanelRefPreviewTitle_Clicked: new LoggableEvent("InfoPanelRefPreviewTitleClicked", EventCategories.CodeView, EventActions.Click),
 	InfoPanelComment_Toggled: new LoggableEvent("InfoPanelCommentToggled", EventCategories.CodeView, EventActions.Toggle),
-	// Code view: CommitInfoBar events
-	CommitInfoItem_Selected: new LoggableEvent("CommitInfoItemSelected", EventCategories.CodeView, EventActions.Click),
-	CommitInfo_Initiated: new LoggableEvent("CommitInfoInitiated", EventCategories.CodeView, EventActions.Toggle),
-	CommitInfo_Dismissed: new LoggableEvent("CommitInfoDismissed", EventCategories.CodeView, EventActions.Close),
 	// Quick open/search
 	QuickopenItem_Selected: new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),
 	Quickopen_Initiated: new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),
