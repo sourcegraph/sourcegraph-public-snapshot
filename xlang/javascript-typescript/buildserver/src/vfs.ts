@@ -1,6 +1,7 @@
 import { FileSystem, LocalFileSystem } from 'javascript-typescript-langserver/lib/fs';
 import * as path from 'path';
 import * as url from 'url';
+import iterate from 'iterare';
 
 // TODO Instead of calling all layers, the class could just check the path for node_modules
 //      and choose whether to ask the client or the file system (like in the PHP LS)
@@ -18,10 +19,10 @@ export class LayeredFileSystem implements FileSystem {
 		}
 	}
 
-	async getWorkspaceFiles(base?: string): Promise<string[]> {
+	async getWorkspaceFiles(base?: string): Promise<Iterable<string>> {
 		// Try all file systems and return the results, if all error reject
 		const errors: any[] = [];
-		let files: string[] = [];
+		let files = iterate([]);
 		// TODO: do in parallel?
 		for (const filesystem of this.filesystems) {
 			try {
@@ -62,8 +63,8 @@ export class LocalRootedFileSystem extends LocalFileSystem {
 		super(rootPath);
 	}
 
-	async getWorkspaceFiles(base?: string): Promise<string[]> {
-		return (await super.getWorkspaceFiles(base)).map(uri => {
+	async getWorkspaceFiles(base?: string): Promise<Iterable<string>> {
+		return iterate(await super.getWorkspaceFiles(base)).map(uri => {
 			// Strip mountPath prefix
 			const parts = url.parse(uri);
 			parts.pathname = path.relative(this.mountPath, parts.pathname);

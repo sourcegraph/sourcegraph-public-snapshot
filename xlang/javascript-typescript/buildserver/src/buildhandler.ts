@@ -1,7 +1,6 @@
 
 import * as rimraf from 'rimraf';
 import * as path from 'path';
-
 import {
 	TextDocumentPositionParams,
 	Location,
@@ -9,16 +8,13 @@ import {
 	SymbolInformation,
 	InitializeResult
 } from 'vscode-languageserver';
-import { CancellationToken } from 'vscode-jsonrpc';
-
 import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
-import { install, info, infoAlt, parseGitHubInfo } from './yarnshim';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
 import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
+import { CancellationToken, isCancelledError } from 'javascript-typescript-langserver/lib/cancellation';
 import {
-	DependencyReference,
 	PackageDescriptor,
 	SymbolLocationInformation,
 	WorkspaceReferenceParams,
@@ -26,10 +22,21 @@ import {
 	ReferenceInformation,
 	InitializeParams
 } from 'javascript-typescript-langserver/lib/request-type';
-import mkdirp = require('mkdirp');
+import iterate from 'iterare';
+import { DependencyManager, PackageJson, getPackageName } from './dependencies';
+import * as url from 'url';
+import { isEmpty } from 'lodash';
+const urlRelative: (from: string, to: string) => string = require('url-relative');
 
-interface HasURI {
+interface HasUri {
 	uri: string;
+}
+
+/**
+ * Returns true if the passed argument is an object with a `uri` property
+ */
+function hasUri(candidate: any): candidate is HasUri {
+	return typeof candidate === 'object' && candidate !== null && typeof candidate.uri === 'string';
 }
 
 export type BuildHandlerFactory = (client: LanguageClientHandler, options: BuildHandlerOptions) => BuildHandler;
@@ -59,19 +66,16 @@ export interface BuildHandlerOptions extends TypeScriptServiceOptions {
  */
 export class BuildHandler extends TypeScriptService {
 	private remoteFileSystem: FileSystem;
-	private yarnGlobalDir: string;
-	private yarnOverlayRoot: string;
 
 	/**
-	 * managedModuleConfig maps from directory to package.json for
-	 * each module managed by the build handler. It excludes modules
-	 * already vendored in the repository.
+	 * The options that were passed to the constructor
 	 */
-	private managedModuleConfig = new Map<string, any>();
-	private managedModuleInit = new Map<string, Promise<Map<string, DependencyReference>>>();
-	private puntWorkspaceSymbol = false;
-
 	protected options: BuildHandlerOptions;
+
+	/**
+	 * Handles installation of dependencies and management of package.jsons in the workspace
+	 */
+	private dependenciesManager: DependencyManager;
 
 	constructor(client: LanguageClientHandler, options: BuildHandlerOptions) {
 		super(client, options);
@@ -82,39 +86,29 @@ export class BuildHandler extends TypeScriptService {
 		if (params.rootPath && params.rootPath.startsWith('file://')) {
 			params.rootPath = uri2path(params.rootPath);
 		}
-		// Create temporary directory
-		await new Promise((resolve, reject) => mkdirp(this.options.tempDir, err => err ? reject(err) : resolve()));
-		return await super.initialize(params, token);
-	}
-
-	private async installDependencies(): Promise<void> {
-		this.remoteFileSystem = this.fileSystem;
-		this.yarnOverlayRoot = path.join(this.options.tempDir, "workspace");
-		this.yarnGlobalDir = path.join(this.options.tempDir, "global");
-		// Search for package.json files
-		const uris = await this.remoteFileSystem.getWorkspaceFiles(undefined);
-		const files = uris.map(uri => uri2path(uri));
-		for (const [i, file] of files.entries()) {
-			if (file.endsWith('package.json')) {
-				const directory = path.dirname(file)
-				// Check that the node_modules directory for the package.json is not vendored
-				const nodeModulesDir = path.join(directory, 'node_modules');
-				if (!files.some(file => file.startsWith(nodeModulesDir))) {
-					// TODO do these in parallel
-					const packageJson = JSON.parse(await this.remoteFileSystem.getTextDocumentContent(uris[i]));
-					if (packageJson.name === 'definitely-typed') {
-						this.puntWorkspaceSymbol = true;
-					}
-					this.managedModuleConfig.set(directory, packageJson);
+		const result = await super.initialize(params, token);
+		this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.logger);
+		// Start installation of dependencies in the background
+		(async () => {
+			try {
+				await this.dependenciesManager.ensureScanned();
+			} catch (err) {
+				if (!isCancelledError(err)) {
+					console.error('Dependency initialization failed: ', err);
 				}
 			}
-		}
-		const overlayFs = new LocalRootedFileSystem(this.root, this.yarnOverlayRoot);
-		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
+		})();
+		return result;
 	}
 
-	protected async beforeProjectInit(): Promise<void> {
-		await this.installDependencies();
+	/**
+	 * Sets up the overlayed file system that includes yarn dependencies
+	 */
+	protected initializeFileSystems(accessDisk: boolean): void {
+		super.initializeFileSystems(accessDisk);
+		this.remoteFileSystem = this.fileSystem;
+		const overlayFs = new LocalRootedFileSystem(this.root, path.join(this.options.tempDir, 'workspace'));
+		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 
 	async shutdown(): Promise<void> {
@@ -122,32 +116,6 @@ export class BuildHandler extends TypeScriptService {
 		this.logger.log(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
 		await new Promise((resolve, reject) => rimraf(this.options.tempDir, err => err ? reject(err) : resolve()));
 		await super.shutdown();
-	}
-
-	private getManagedModuleDir(uri: string): string | null {
-		const p = uri2path(uri);
-		for (let d = p; true; d = path.dirname(d)) {
-			if (this.managedModuleConfig.has(d)) {
-				return d;
-			}
-
-			if (path.dirname(d) === d) {
-				break;
-			}
-		}
-		return null;
-	}
-
-	private async ensureDependenciesForFile(uri: string): Promise<void> {
-		if (!this.managedModuleInit) {
-			throw new Error("build handler is not yet initialized");
-		}
-		const d = this.getManagedModuleDir(uri);
-		if (!d) {
-			return;
-		}
-
-		await this.initManagedModule(d);
 	}
 
 	/**
@@ -161,226 +129,219 @@ export class BuildHandler extends TypeScriptService {
 	 * module directory.
 	 */
 	private async ensureDependency(dependency: PackageDescriptor, dependeeName?: string): Promise<void> {
-		if (!this.managedModuleInit) {
-			throw new Error("build handler is not yet initialized");
-		}
-		await Promise.all(Array.from(this.managedModuleConfig.keys(), (d) => {
-			const config = this.managedModuleConfig.get(d);
-			if (!dependeeName || config['name'] === dependeeName) {
-				return this.initManagedModule(d);
-			} else {
-				return Promise.resolve();
+		await this.dependenciesManager.ensureScanned();
+		await Promise.all(iterate(this.dependenciesManager.packages).map(([uri, packageJson]): any => {
+			if (!dependeeName || packageJson['name'] === dependeeName) {
+				return this.dependenciesManager.ensureForFile(uri);
 			}
 		}));
 	}
 
-	private async initManagedModule(dir: string): Promise<void> {
-		let ready = this.managedModuleInit.get(dir);
-		if (!ready) {
-			ready = install(this.remoteFileSystem, dir, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, dir), this.logger).then(async (pathToDep) => {
-				await this.projectManager.refreshFileTree(dir, true);
-				return pathToDep;
-			}, (err) => {
-				this.managedModuleInit.delete(dir);
-			});
-			this.managedModuleInit.set(dir, ready);
-		}
-		await ready;
-	}
-
-	private async rewriteURI(uri: string): Promise<{ uri: string, rewritten: boolean }> {
-		// if uri is not in a dependency module, return untouched
-		const p = uri2path(uri);
-		const i = p.indexOf('/node_modules/');
-		if (i === -1) {
-			return { uri: uri, rewritten: false };
-		}
-
-		// if the dependency module is not managed by this build handler
-		let cwd = p.substring(0, i);
-		if (cwd === '') {
-			cwd = '/';
-		}
-		if (!this.managedModuleConfig.has(cwd)) {
-			return { uri: uri, rewritten: false };
-		}
-
-		// get the module package name heuristically, otherwise punt
-		const cmp = p.substr(i + '/node_modules/'.length).split('/');
-		const subpath = path.posix.join(...cmp.slice(1));
-		let pkg: string | undefined;
-		if (cmp.length >= 2 && cmp[0] === "@types") {
-			pkg = cmp[0] + "/" + cmp[1];
-		} else if (cmp.length >= 1) {
-			pkg = cmp[0];
-		}
-		if (!pkg) {
-			return { uri: uri, rewritten: false };
-		}
-
-		// fetch the package metadata and extract the git URL from metadata if it exists; otherwise punt
-		let pkginfo;
-		try {
-			pkginfo = await info(cwd, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
-		} catch (e) { }
-		if (!pkginfo) {
-			try {
-				pkginfo = await infoAlt(this.remoteFileSystem, cwd, this.yarnGlobalDir, path.join(this.yarnOverlayRoot, cwd), pkg);
-			} catch (e) {
-				this.logger.error("could not rewrite dependency uri,", uri, ", due to error:", e);
-				return { uri: uri, rewritten: false };
-			}
-		}
-		if (!pkginfo.repository || !pkginfo.repository.url || pkginfo.repository.type !== 'git') {
-			return { uri: uri, rewritten: false };
-		}
-
-		// parse the git URL if possible, otherwise punt
-		const pkgUrlInfo = parseGitHubInfo(pkginfo.repository.url);
-		if (!pkgUrlInfo || !pkgUrlInfo.repository) {
-			return { uri: uri, rewritten: false };
-		}
-
-		return { uri: makeUri(pkgUrlInfo.repository.url, subpath, pkginfo.gitHead), rewritten: true };
-	}
-
-	/*
-	 * rewriteURIs is a kludge until we have textDocument/xdefinition.
+	/**
+	 * Rewrites a given workspace URI to a Sourcegraph `git://repo?rev#path` URI
 	 */
-	private async rewriteURIs(result: any): Promise<void> {
-		if (!result) {
-			return;
+	private async rewriteUri(originalUri: string): Promise<string> {
+		const originalParts = url.parse(originalUri);
+
+		// Is the file part of a package in node_modules?
+		const packageName = getPackageName(originalUri);
+		if (!packageName) {
+			return originalUri;
 		}
 
-		if ((<HasURI>result).uri) {
-			const { uri, rewritten } = await this.rewriteURI(result.uri);
-			if (rewritten) {
-				result.uri = uri;
+		const encodedPackageName = packageName.split('/').map(encodeURIComponent).join('/');
+
+		const packageNameIndex = originalParts.pathname.lastIndexOf('/node_modules/' + encodedPackageName);
+		const packageRootUri = url.format({ ...originalParts, pathname: originalParts.pathname.slice(0, packageNameIndex) + `/node_modules/${encodedPackageName}` });
+		const packageJsonUri = url.format({ ...originalParts, pathname: originalParts.pathname.slice(0, packageNameIndex) + `/node_modules/${encodedPackageName}/package.json` });
+
+		// Get package.json of dependency
+		try {
+			await this.updater.ensure(packageJsonUri);
+		} catch (err) {
+			// Can't rewrite URI if package.json ist not available
+			return originalUri;
+		}
+		const packageJson: PackageJson = JSON.parse(this.inMemoryFileSystem.getContent(packageJsonUri));
+
+		// Can't find out repo if package.json does not have a repository field
+		if (!packageJson.repository) {
+			return originalUri;
+		}
+
+		// Example: git://github.com/user/repo?rev#path
+		// TODO add rev. yarn doesn't write gitHead to package.json: https://github.com/yarnpkg/yarn/issues/2978
+		const sourcegraphUrl: url.Url = {
+			protocol: 'git',
+			slashes: true,
+			host: 'github.com'
+		};
+
+		// Check package.json repository field
+		if (!packageJson.repository) {
+			return originalUri;
+		}
+		if (typeof packageJson.repository === 'string' && /^\w+\/\w+$/.test(packageJson.repository)) {
+			// Parse GitHub shorthand, e.g. npm/npm
+			// Pathname contains the repo slug
+			sourcegraphUrl.pathname = '/' + packageJson.repository;
+		} else {
+			// Parse GitHub URL like https://github.com/npm/npm.git
+			let gitUrl: string;
+			if (typeof packageJson.repository === 'object' && typeof packageJson.repository.url === 'string') {
+				gitUrl = packageJson.repository.url;
+			} else if (typeof packageJson.repository === 'string') {
+				gitUrl = packageJson.repository;
+			} else {
+				return originalUri;
 			}
+			const repositoryParts = url.parse(gitUrl);
+			// Non-GitHub repos are not supported
+			if (!repositoryParts.hostname.endsWith('github.com') || !repositoryParts.pathname) {
+				return originalUri;
+			}
+			// Pathname contains the repo slug, without .git suffix
+			sourcegraphUrl.pathname = repositoryParts.pathname.replace(/.git$/, '');
 		}
 
+		// Hash contains the file path
+		sourcegraphUrl.hash = urlRelative(packageRootUri, originalUri);
+
+		if (packageName.startsWith('@types/')) {
+			// Special case: @types/ packages are in a subfolder of DefinitelyTyped, named after the package name
+			sourcegraphUrl.hash = packageName.substr('@types/'.length) + '/' + sourcegraphUrl.hash;
+		}
+
+		return url.format(sourcegraphUrl);
+	}
+
+	/**
+	 * Rewrites URIs found in a result that refer to a dependency to global Sourcegraph git://repo?rev#path URIs.
+	 *
+	 * TODO not needed anymore with textDocument/xdefinition?
+	 */
+	private async rewriteUris(result: any): Promise<void> {
 		if (Array.isArray(result)) {
-			for (const e of result) {
-				await this.rewriteURIs(e);
-			}
-		} else if (typeof result === "object") {
-			for (const k in result) {
-				await this.rewriteURIs(result[k]);
+			await Promise.all(result.map(element => this.rewriteUris(element)));
+		} else if (typeof result === 'object' && result !== null) {
+			if (hasUri(result)) {
+				result.uri = await this.rewriteUri(result.uri);
+			} else {
+				await Promise.all(Object.keys(result).map(key => this.rewriteUris(result[key])));
 			}
 		}
 	}
 
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
-		let locs: Location[] = [];
+		let locations: Location[];
 		// First, attempt to get definition before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
-			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
-			locs = await super.getDefinition(params);
+			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined); // don't wait, but kickoff background job
+			locations = await super.getDefinition(params);
 		} catch (e) { }
-		if (!locs || locs.length === 0) {
-			await this.ensureDependenciesForFile(params.textDocument.uri);
-			locs = await super.getDefinition(params);
+		if (!locations || locations.length === 0) {
+			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
+			await this.projectManager.createConfigurations();
+			locations = await super.getDefinition(params);
 		}
-		await this.rewriteURIs(locs);
-		return locs;
+		await this.rewriteUris(locations);
+		return locations;
 	}
 
 	async getXdefinition(params: TextDocumentPositionParams): Promise<SymbolLocationInformation[]> {
-		let syms: SymbolLocationInformation[] = [];
-		// First, attempt to get definition before dependencies
-		// fetching is finished. If it fails, wait for dependency
-		// fetching to finish and then retry.
+		let symbolsLocations: SymbolLocationInformation[] = [];
+		// First, attempt to get definition before dependencies fetching is finished.
+		// If it fails, wait for dependency fetching to finish and then retry.
 		try {
-			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
-			syms = await super.getXdefinition(params);
+			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined);
+			symbolsLocations = await super.getXdefinition(params);
 		} catch (e) { }
-		if (!syms || syms.length === 0) {
-			await this.ensureDependenciesForFile(params.textDocument.uri);
-			syms = await super.getXdefinition(params);
+		if (symbolsLocations.length === 0) {
+			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
+			symbolsLocations = await super.getXdefinition(params);
 		}
-
-		// For symbols defined in dependencies, remove the location field and add in dependency package metadata.
-		await Promise.all(syms.map((sym) => this.rewriteSymbol(sym)));
-
-		await this.rewriteURIs(syms);
-		return syms;
-	}
-
-	private async rewriteSymbol(sym: SymbolLocationInformation): Promise<void> {
-		const dep = await this.getDepContainingSymbol(sym);
-		if (!dep) {
-			let moduleDir = this.getManagedModuleDir(sym.location.uri);
-			if (!moduleDir) {
-				return;
+		// Add PackageDescriptors to SymbolDescriptor
+		await Promise.all(symbolsLocations.map(async symbolLocation => {
+			// Get package name of the dependency in which the symbol is defined in, if any
+			const packageName = getPackageName(symbolLocation.location.uri);
+			if (packageName) {
+				// The symbol is part of a dependency in node_modules
+				// Build URI to package.json of the Dependency
+				const encodedPackageName = packageName.split('/').map(encodeURIComponent).join('/');
+				const parts = url.parse(symbolLocation.location.uri);
+				const packageJsonUri = url.format({ ...parts, pathname: parts.pathname.slice(0, parts.pathname.lastIndexOf('/node_modules/' + encodedPackageName)) + `/node_modules/${encodedPackageName}/package.json` });
+				// Make sure we have the package.json of the dependency available by ensuring the dependency is installed
+				await this.dependenciesManager.ensureForFile(packageJsonUri);
+				// Fetch the package.json of the dependency
+				await this.updater.ensure(packageJsonUri);
+				const packageJson: PackageJson = JSON.parse(this.inMemoryFileSystem.getContent(packageJsonUri));
+				const { name, version } = packageJson;
+				if (name) {
+					// Used by the LSP proxy to shortcut database lookup of repo URL for PackageDescriptor
+					let repoURL: string;
+					if (name.startsWith('@types/')) {
+						// if the dependency package is an @types/ package, point the repo to DefinitelyTyped
+						repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
+					} else {
+						// else use repository field from package.json
+						repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
+					}
+					symbolLocation.symbol.package = { name, version, repoURL };
+				}
+			} else {
+				// The symbol is defined in the root package of the workspace, not in a dependency
+				// Get root package.json
+				await this.dependenciesManager.ensureScanned();
+				const packageJson = this.dependenciesManager.getClosestPackageJson(symbolLocation.location.uri);
+				if (!packageJson) {
+					// Workspace has no package.json
+					return;
+				}
+				let { name, version } = packageJson;
+				if (name) {
+					let repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
+					// If the root package is DefinitelyTyped, find out the proper @types package name for each typing
+					if (name === 'definitely-typed') {
+						// Example:
+						// rootUri      file:///
+						// symbol URI   file:///node/v6/index.d.ts
+						// relative URI        /node/v6/index.d.ts
+						// package name         node
+						name = '@types/' + decodeURIComponent(urlRelative(this.rootUri, symbolLocation.location.uri).split('/')[1]);
+						version = undefined;
+						repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
+					}
+					symbolLocation.symbol.package = { name, version, repoURL };
+				}
 			}
-			const pkgJson = JSON.parse(this.projectManager.getFs().readFile(path.join(moduleDir, "package.json")));
-			let name = pkgJson['name'];
-			let version = pkgJson['version'];
-			let repoURL = pkgJson['repository'] ? pkgJson['repository']['url'] : undefined;
-			if (name === 'definitely-typed') { // special case DefinitelyTyped
-				name = "@types/" + uri2path(sym.location.uri).split(path.sep)[1];
-				version = undefined;
-				repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
-			}
-			if (name) {
-				sym.symbol.package = { name, version, repoURL };
-			}
-			return;
-		}
-
-		sym.symbol.package = dep.attributes;
-		const pkgName = sym.symbol.package.name;
-		if (pkgName && pkgName.startsWith('@types/')) {
-			sym.symbol.package.repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
-		}
-		sym.location = undefined;
-	}
-
-	/**
-	 * getDepContainingSymbol returns the dependency that contains the
-	 * symbol or null if the symbol is not defined in a dependency.
-	 */
-	private async getDepContainingSymbol(sym: SymbolLocationInformation): Promise<DependencyReference | null> {
-		const moduledir = this.getManagedModuleDir(sym.location.uri);
-		if (!moduledir) {
-			return null;
-		}
-		const pathToDep = await this.managedModuleInit.get(moduledir);
-		const p = uri2path(sym.location.uri);
-		for (let d = p; true; d = path.dirname(d)) {
-			if (pathToDep.has(d)) {
-				return pathToDep.get(d);
-			}
-
-			if (path.dirname(d) === d) {
-				break;
-			}
-		}
-		return null;
+			// Remove location because ?
+			symbolLocation.location = undefined;
+		}));
+		return symbolsLocations;
 	}
 
 	async getHover(params: TextDocumentPositionParams): Promise<Hover> {
-		let hover: Hover | null = null;
+		let hover: Hover;
 		// First, attempt to get hover info before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
-			this.ensureDependenciesForFile(params.textDocument.uri); // don't wait, but kickoff background job
+			this.dependenciesManager.ensureForFile(params.textDocument.uri); // don't wait, but kickoff background job
 			hover = await super.getHover(params)
 		} catch (e) { }
-		if (!hover) {
-			await this.ensureDependenciesForFile(params.textDocument.uri);
+		if (!hover || isEmpty(hover.contents)) {
+			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
 			hover = await super.getHover(params);
 		}
-		await this.rewriteURIs(hover)
+		await this.rewriteUris(hover)
 		return hover;
 	}
 
 	async getWorkspaceSymbols(params: WorkspaceSymbolParams): Promise<SymbolInformation[]> {
-		if (this.puntWorkspaceSymbol && (!params.symbol || !params.symbol['package'])) {
-			return Promise.reject("workspace/symbol unsupported on this repository");
+		if (this.dependenciesManager.puntWorkspaceSymbol && (!params.symbol || !params.symbol['package'])) {
+			throw new Error("workspace/symbol unsupported on this repository");
 		}
 		return super.getWorkspaceSymbols(params);
 	}
@@ -402,12 +363,4 @@ export class BuildHandler extends TypeScriptService {
 		}
 		return refs;
 	}
-}
-
-function makeUri(repoUri: string, path: string, version?: string): string {
-	const versionPart = version ? "?" + version : "";
-	if (path.startsWith("/")) {
-		path = path.substr(1);
-	}
-	return repoUri + versionPart + "#" + path;
 }

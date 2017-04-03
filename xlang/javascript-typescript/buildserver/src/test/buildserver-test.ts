@@ -32,17 +32,9 @@ export async function shutdownBuildHandler(this: TestContext): Promise<void> {
 describe('BuildHandler', function () {
 	this.timeout(20000);
 
-	describeTypeScriptService(createHandler, shutdownBuildHandler);
+	beforeEach(done => rimraf(tempDir, done));
 
-	describe('shutdown()', () => {
-		beforeEach(<any>initializeTypeScriptService(createHandler, new Map()));
-		it('should delete the temporary directory passed in options', async function (this: TestContext) {
-			assert(await fs.exists(tempDir), `Expected ${tempDir} to be created`);
-			await this.service.shutdown();
-			assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
-		});
-		afterEach(() => new Promise((resolve, reject) => rimraf(tempDir, err => err ? reject(err) : resolve())));
-	});
+	describeTypeScriptService(createHandler, shutdownBuildHandler);
 
 	describe('Workspace with single package.json at root', function () {
 		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
@@ -77,6 +69,23 @@ describe('BuildHandler', function () {
 			].join('\n')]
 		])));
 		afterEach(<any>shutdownBuildHandler);
+		describe('shutdown()', () => {
+			it('should delete the temporary directory passed in options', async function (this: TestContext) {
+				// Do a random request just to trigger dependency installation
+				await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 0,
+						character: 12
+					}
+				});
+				assert(await fs.exists(tempDir), `Expected ${tempDir} to be created`);
+				await this.service.shutdown();
+				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
+			});
+		});
 		describe('getDefinition()', <any>function (this: TestContext) {
 			specify('cross-repo definition 1', <any>async function (this: TestContext) {
 				const result = await this.service.getDefinition({
@@ -419,34 +428,37 @@ describe('BuildHandler', function () {
 						package: {
 							name: "typescript",
 							version: "2.1.1",
+							repoURL: "https://github.com/Microsoft/TypeScript.git"
 						},
 					},
 				}]);
 			});
+			specify('cross-repo xdefinition 7', <any>async function (this: TestContext) {
+				const definitionResult = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 0,
+						character: 12
+					}
+				});
+				assert.deepEqual(definitionResult, [{
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					range: {
+						start: {
+							line: 8,
+							character: 18
+						},
+						end: {
+							line: 8,
+							character: 24
+						}
+					}
+				}]);
+			});
 		});
 		specify('getWorkspaceReference()', <any>async function (this: TestContext) {
-			const definitionResult = await this.service.getDefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 12
-				}
-			});
-			assert.deepEqual(definitionResult, [{
-				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
-				range: {
-					start: {
-						line: 8,
-						character: 18
-					},
-					end: {
-						line: 8,
-						character: 24
-					}
-				}
-			}]);
 			const referencesResult = await this.service.getWorkspaceReference({
 				query: {
 					containerKind: "",
@@ -540,53 +552,105 @@ describe('BuildHandler', function () {
 			})]
 		])));
 		afterEach(<any>shutdownBuildHandler);
-		specify('cross-repo definition 1', <any>async function (this: TestContext) {
-			const result = await this.service.getDefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 12
-				}
-			});
-			assert.deepEqual(result, [{
-				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
-				range: {
-					start: {
-						line: 8,
-						character: 18
+		describe('getDefinition()', () => {
+			it('should return the location of the diff typings on DefinitelyTyped for the first package.json', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
 					},
-					end: {
-						line: 8,
-						character: 24
+					position: {
+						line: 0,
+						character: 12
 					}
-				}
-			}]);
-		});
-		specify('cross-repo definition 2', <any>async function (this: TestContext) {
-			const result = await this.service.getDefinition({
-				textDocument: {
-					uri: 'file:///foo/b.ts'
-				},
-				position: {
-					line: 0,
-					character: 26
-				}
+				});
+				assert.deepEqual(result, [{
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+					range: {
+						start: {
+							line: 8,
+							character: 18
+						},
+						end: {
+							line: 8,
+							character: 24
+						}
+					}
+				}]);
 			});
-			assert.deepEqual(result, [{
-				uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
-				range: {
-					start: {
-						line: 13,
-						character: 0
+			it('should return the location of the resolve typings on DefinitelyTyped for the second package.json', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///foo/b.ts'
 					},
-					end: {
-						line: 100,
-						character: 0
+					position: {
+						line: 0,
+						character: 26
 					}
-				}
-			}]);
+				});
+				assert.deepEqual(result, [{
+					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
+					range: {
+						start: {
+							line: 13,
+							character: 0
+						},
+						end: {
+							line: 100,
+							character: 0
+						}
+					}
+				}]);
+			});
+			it('should return both locations when requested concurrently', <any>async function (this: TestContext) {
+				const results = await Promise.all([
+					this.service.getDefinition({
+						textDocument: {
+							uri: 'file:///a.ts'
+						},
+						position: {
+							line: 0,
+							character: 12
+						}
+					}),
+					this.service.getDefinition({
+						textDocument: {
+							uri: 'file:///foo/b.ts'
+						},
+						position: {
+							line: 0,
+							character: 26
+						}
+					})
+				]);
+				assert.deepEqual(results, [
+					[{
+						uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
+						range: {
+							start: {
+								line: 8,
+								character: 18
+							},
+							end: {
+								line: 8,
+								character: 24
+							}
+						}
+					}],
+					[{
+						uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#resolve/index.d.ts',
+						range: {
+							start: {
+								line: 13,
+								character: 0
+							},
+							end: {
+								line: 100,
+								character: 0
+							}
+						}
+					}]
+				]);
+			});
 		});
 	});
 
@@ -603,33 +667,35 @@ describe('BuildHandler', function () {
 			['file:///node_modules/diff/index.d.ts', "export const x = 1;"]
 		])));
 		afterEach(<any>shutdownBuildHandler);
-		specify('cross-repo definition 1', <any>async function (this: TestContext) {
-			const result = await this.service.getDefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 9
-				}
-			});
-			assert.deepEqual(result, [{
-				uri: 'file:///node_modules/diff/index.d.ts',
-				range: {
-					start: {
-						line: 0,
-						character: 13
+		describe('getDefinition()', () => {
+			it('should return the location of the diff index.d.ts in node_modules', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
 					},
-					end: {
+					position: {
 						line: 0,
-						character: 14
+						character: 9
 					}
-				}
-			}]);
+				});
+				assert.deepEqual(result, [{
+					uri: 'file:///node_modules/diff/index.d.ts',
+					range: {
+						start: {
+							line: 0,
+							character: 13
+						},
+						end: {
+							line: 0,
+							character: 14
+						}
+					}
+				}]);
+			});
 		});
 	});
 
-	describe('Dependency installation should not run scripts (javascript-dep-npm\'s scripts will fail)', function () {
+	describe('Workspace with dependencies with package.json scripts', function () {
 		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
 				"name": "rootpkg",
@@ -641,53 +707,55 @@ describe('BuildHandler', function () {
 			['file:///a.ts', "import * as xyz from 'javascript-dep-npm';"],
 		])));
 		afterEach(<any>shutdownBuildHandler);
-		specify('cross-repo definition 1', <any>async function (this: TestContext) {
-			const result = await this.service.getDefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 12
-				}
-			});
-			assert.deepEqual(result, [{
-				uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
-				range: {
-					start: {
-						line: 0,
-						character: 0
+		describe('getDefinition()', () => {
+			it('should not run the scripts when getting definition of a symbol', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
 					},
-					end: {
-						line: 1,
-						character: 0
-					}
-				}
-			}]);
-		});
-		specify('cross-repo definition 2', <any>async function (this: TestContext) {
-			const result = await this.service.getDefinition({
-				textDocument: {
-					uri: 'file:///a.ts'
-				},
-				position: {
-					line: 0,
-					character: 24
-				}
-			});
-			assert.deepEqual(result, [{
-				uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
-				range: {
-					start: {
+					position: {
 						line: 0,
-						character: 0
-					},
-					end: {
-						line: 1,
-						character: 0
+						character: 12
 					}
-				}
-			}]);
+				});
+				assert.deepEqual(result, [{
+					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
+					range: {
+						start: {
+							line: 0,
+							character: 0
+						},
+						end: {
+							line: 1,
+							character: 0
+						}
+					}
+				}]);
+			});
+			it('should not run the scripts when getting definition of the module identifier', <any>async function (this: TestContext) {
+				const result = await this.service.getDefinition({
+					textDocument: {
+						uri: 'file:///a.ts'
+					},
+					position: {
+						line: 0,
+						character: 24
+					}
+				});
+				assert.deepEqual(result, [{
+					uri: 'git://github.com/sgtest/javascript-dep-npm#index.d.ts',
+					range: {
+						start: {
+							line: 0,
+							character: 0
+						},
+						end: {
+							line: 1,
+							character: 0
+						}
+					}
+				}]);
+			});
 		});
 	});
 });

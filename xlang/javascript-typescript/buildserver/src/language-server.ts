@@ -1,11 +1,11 @@
 
 global.Promise = require('bluebird');
 import { BuildHandler } from './buildhandler';
-import { serve, ServeOptions } from 'javascript-typescript-langserver/lib/server';
+import { serve, ServeOptions, createClusterLogger } from 'javascript-typescript-langserver/lib/server';
 import { TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import * as util from 'javascript-typescript-langserver/lib/util';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
-import { FileLogger, StderrLogger } from 'javascript-typescript-langserver/lib/logging';
+import { FileLogger } from 'javascript-typescript-langserver/lib/logging';
 import * as cluster from 'cluster';
 import * as os from 'os';
 import * as path from 'path';
@@ -24,13 +24,15 @@ program
 	.option('-c, --cluster [num]', 'number of concurrent cluster workers (defaults to number of CPUs, ' + numCPUs + ')', parseInt)
 	.option('-t, --trace', 'print all requests and responses')
 	.option('-l, --logfile [file]', 'also log to this file (in addition to stderr)')
+	.option('--color', 'force colored output in logs')
+	.option('--no-color', 'disable colored output in logs')
 	.parse(process.argv);
 
 util.setStrict(program.strict);
 const lspPort = program.port || defaultLspPort;
 const clusterSize = program.cluster || numCPUs;
 
-const logger = program.logfile ? new FileLogger(program.logfile) : new StderrLogger();
+const logger = createClusterLogger(program.logfile && new FileLogger(program.logfile));
 
 const options: ServeOptions & TypeScriptServiceOptions = {
 	clusterSize: clusterSize,

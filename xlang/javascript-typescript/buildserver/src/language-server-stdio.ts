@@ -18,6 +18,8 @@ program
 	.option('-s, --strict', 'enables strict mode')
 	.option('-t, --trace', 'print all requests and responses')
 	.option('-l, --logfile [file]', 'log to this file')
+	.option('--color', 'force colored output in logs')
+	.option('--no-color', 'disable colored output in logs')
 	.parse(process.argv);
 
 const logger = program.logfile ? new FileLogger(program.logfile) : new StderrLogger();
