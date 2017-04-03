@@ -1,8 +1,10 @@
 # Docker image for JavaScript/TypeScript lang/build server
 
-FROM node:6.9-slim
+FROM node:7-alpine
 
-ADD buildserver/src /buildserver/src
+# Add git, needed for yarn
+RUN apk add --no-cache bash git openssh
+
 ADD buildserver/lib /buildserver/lib
 ADD buildserver/node_modules /buildserver/node_modules
 ADD buildserver/package.json /buildserver/package.json
