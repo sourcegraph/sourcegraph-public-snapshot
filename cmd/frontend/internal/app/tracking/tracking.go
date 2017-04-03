@@ -286,7 +286,7 @@ func trackHubSpotContact(actor *auth.Actor, eventLabel string, name string, comp
 
 	// Finally, log the event if relevant (in this case, for "SignupCompleted" events)
 	if _, ok := hubspotutil.EventNameToHubSpotID[eventLabel]; ok {
-		err := c.LogEvent(actor.Email, hubspotutil.EventNameToHubSpotID[eventLabel], nil)
+		err := c.LogEvent(actor.Email, hubspotutil.EventNameToHubSpotID[eventLabel], map[string]string{})
 		if err != nil {
 			return errors.Wrap(err, "LogEvent")
 		}
