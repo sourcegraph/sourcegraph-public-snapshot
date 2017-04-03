@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -27,7 +28,7 @@ import (
 )
 
 var profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-var cacheDir = env.Get("SEARCHER_CACHE_DIR", "/tmp/searcher-archive-store", "directory to store cached archives.")
+var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
 var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
 
 func main() {
@@ -51,7 +52,7 @@ func main() {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar:          fetchTar,
-			Path:              cacheDir,
+			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
 		},
 		RequestLog: log.New(os.Stderr, "", 0),
