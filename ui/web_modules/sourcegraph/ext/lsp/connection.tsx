@@ -18,10 +18,7 @@ export function webSocketStreamOpener(url: string, requestTracer?: (trace: Messa
 				if (requestTracer) {
 					traceJSONRPCRequests(requestTracer, reader, writer);
 				}
-				resolve({
-					reader: reader,
-					writer: writer,
-				});
+				resolve({ reader, writer });
 			};
 			socket.onclose = (ev: CloseEvent) => {
 				if (ev.code !== 1000 /* Close code: Normal */) {
@@ -40,7 +37,7 @@ export function webSocketStreamOpener(url: string, requestTracer?: (trace: Messa
  */
 class WebSocketMessageReader extends AbstractMessageReader implements MessageReader {
 	private socket: WebSocket;
-	private callbacks: Array<DataCallback> = [];
+	private callbacks: DataCallback[] = [];
 
 	constructor(socket: WebSocket) {
 		super();
@@ -53,7 +50,9 @@ class WebSocketMessageReader extends AbstractMessageReader implements MessageRea
 			}
 			try {
 				const data = JSON.parse(ev.data);
-				this.callbacks.forEach(callback => callback(data));
+				for (const callback of this.callbacks) {
+					callback(data);
+				}
 			} catch (error) {
 				this.fireError(error);
 			}
@@ -72,7 +71,7 @@ class WebSocketMessageWriter extends AbstractMessageWriter implements MessageWri
 	private socket: WebSocket;
 	private socketClosed: boolean;
 	private errorCount: number;
-	private callbacks: Array<DataCallback> = [];
+	private callbacks: DataCallback[] = [];
 
 	constructor(socket: WebSocket) {
 		super();
@@ -96,7 +95,9 @@ class WebSocketMessageWriter extends AbstractMessageWriter implements MessageWri
 			return;
 		}
 		this.errorCount = 0;
-		this.callbacks.forEach(callback => callback(msg));
+		for (const callback of this.callbacks) {
+			callback(msg);
+		}
 		this.socket.send(JSON.stringify(msg));
 	}
 
@@ -126,7 +127,7 @@ interface Listener {
 }
 
 function traceJSONRPCRequests(tracer: (trace: MessageTrace) => void, reader: Listener, writer: Listener): void {
-	const inflight: Map<string | number, [RequestMessage, number]> = new Map();
+	const inflight = new Map<string | number, [RequestMessage, number]>();
 	writer.listen((data: Message) => {
 		const msg = data as RequestMessage;
 		if (msg.id !== undefined) {
@@ -134,16 +135,17 @@ function traceJSONRPCRequests(tracer: (trace: MessageTrace) => void, reader: Lis
 		}
 	});
 	reader.listen((data: Message) => {
-		const resp = data as ResponseMessage;
-		if (resp.id !== undefined) {
-			const req = inflight.get(resp.id);
-			if (req !== undefined) {
-				inflight.delete(req[0].id);
+		const response = data as ResponseMessage;
+		if (response.id !== undefined) {
+			const msg = inflight.get(response.id);
+			if (msg !== undefined) {
+				inflight.delete(response.id);
+				const [request, startTime] = msg;
 				tracer({
-					startTime: req[1],
+					startTime,
 					endTime: Date.now(),
-					request: req[0],
-					response: resp,
+					request,
+					response,
 				});
 			}
 		}

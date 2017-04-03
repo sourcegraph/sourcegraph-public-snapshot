@@ -27,7 +27,7 @@ export function activate(): void {
 
 		// We include ?mode= in the url to make it easier to find the correct LSP websocket connection.
 		// It does not affect any behaviour.
-		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`, getRequestTracer(mode)), {
+		const client = new BrowserLanguageClient("lsp-" + mode, "lsp-" + mode, webSocketStreamOpener(`${wsOrigin}/.api/lsp?mode=${mode}`, createRequestTracer(mode)), {
 			documentSelector: [mode],
 			initializationOptions: {
 				mode,
@@ -87,12 +87,12 @@ function generateLSPSessionKeyIfNeeded(): string | undefined {
 
 // tslint:disable: no-console
 
-function getRequestTracer(mode: string): ((trace: MessageTrace) => void) | undefined {
+function createRequestTracer(mode: string): ((trace: MessageTrace) => void) | undefined {
 	if (!Features.trace.isEnabled() || !(global as any).console) {
 		return undefined;
 	}
 	const console = (global as any).console;
-	if (!console.debug || !console.group) {
+	if (!console.log || !console.group) {
 		return undefined;
 	}
 	return (trace: MessageTrace) => {
@@ -106,10 +106,10 @@ function getRequestTracer(mode: string): ((trace: MessageTrace) => void) | undef
 			trace.endTime - trace.startTime,
 		);
 		if (trace.response.meta && trace.response.meta["X-Trace"]) {
-			console.debug("Trace: %s", trace.response.meta["X-Trace"]);
+			console.log("Trace:", trace.response.meta["X-Trace"]);
 		}
-		console.debug("Request Params: %O", trace.request.params);
-		console.debug("Response: %O", trace.response);
+		console.log("Request Params:", trace.request.params);
+		console.log("Response:", trace.response);
 		console.groupEnd();
 	};
 }
