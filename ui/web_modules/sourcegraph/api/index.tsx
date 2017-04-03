@@ -1,5 +1,8 @@
 // GENERATED CODE - DO NOT EDIT!
 
+export interface ArchiveFS {
+}
+
 export interface AuthInfo {
 	UID?: string;
 	Login?: string;

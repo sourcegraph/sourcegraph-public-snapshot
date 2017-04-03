@@ -18,7 +18,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
@@ -70,7 +69,7 @@ type serverProxyConn struct {
 	initErr  error // only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
 
 	mu          sync.Mutex
-	rootFS      ctxvfs.FileSystem // the workspace's file system
+	rootFS      FileSystem // the workspace's file system
 	stats       serverProxyConnStats
 	diagnostics map[diagnosticsKey][]lsp.Diagnostic // saved diagnostics
 }

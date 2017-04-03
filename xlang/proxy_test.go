@@ -583,13 +583,8 @@ func yza() {}
 		t.Run(label, func(t *testing.T) {
 			// Mock repo and dep fetching to use test fixtures.
 			{
-				orig := xlang.NewRemoteRepoVFS
-				xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
-					return mapFS(test.fs), nil
-				}
-				defer func() {
-					xlang.NewRemoteRepoVFS = orig
-				}()
+				cleanup := useMapFS(test.fs)
+				defer cleanup()
 			}
 			{
 				orig := gobuildserver.NewDepRepoVFS
@@ -686,13 +681,8 @@ func dialProxy(t testing.TB, addr string, recvDiags chan<- lsp.PublishDiagnostic
 func TestProxy_connections(t *testing.T) {
 	ctx := context.Background()
 
-	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
-		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
-	}
-	defer func() {
-		xlang.NewRemoteRepoVFS = orig
-	}()
+	cleanup := useMapFS(map[string]string{"f": "x"})
+	defer cleanup()
 
 	// Store data sent/received for checking.
 	var (
@@ -881,13 +871,8 @@ func TestProxy_connections(t *testing.T) {
 func TestProxy_propagation(t *testing.T) {
 	ctx := context.Background()
 
-	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
-		return ctxvfs.Map(map[string][]byte{"f": []byte("x")}), nil
-	}
-	defer func() {
-		xlang.NewRemoteRepoVFS = orig
-	}()
+	cleanup := useMapFS(map[string]string{"f": "x"})
+	defer cleanup()
 
 	proxy := xlang.NewProxy()
 	addr, done := startProxy(t, proxy)

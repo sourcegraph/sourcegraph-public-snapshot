@@ -60,8 +60,7 @@ func (c *serverProxyConn) handleWorkspaceFilesExt(ctx context.Context, req *json
 	}
 
 	// TODO(keegancsmith): Filter based on lspext.FilesParams.Base
-	l := c.rootFS.(AllFilesLister)
-	filenames, err := l.ListAllFiles(ctx)
+	filenames, err := c.rootFS.ListAllFiles(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -502,12 +504,34 @@ func (v testRequests) Less(i, j int) bool {
 	return string(ii) < string(jj)
 }
 
+func useMapFS(m map[string]string) func() {
+	orig := xlang.NewRemoteRepoVFS
+	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (xlang.FileSystem, error) {
+		return mapFS(m), nil
+	}
+	return func() { xlang.NewRemoteRepoVFS = orig }
+}
+
 // mapFS lets us easily instantiate a VFS with a map[string]string
 // (which is less noisy than map[string][]byte in test fixtures).
-func mapFS(m map[string]string) ctxvfs.FileSystem {
+func mapFS(m map[string]string) *stringMapFS {
 	m2 := make(map[string][]byte, len(m))
+	filenames := make([]string, 0, len(m))
 	for k, v := range m {
 		m2[k] = []byte(v)
+		filenames = append(filenames, k)
 	}
-	return ctxvfs.Map(m2)
+	return &stringMapFS{
+		FileSystem: ctxvfs.Map(m2),
+		filenames:  filenames,
+	}
+}
+
+type stringMapFS struct {
+	ctxvfs.FileSystem
+	filenames []string
+}
+
+func (fs *stringMapFS) ListAllFiles(ctx context.Context) ([]string, error) {
+	return fs.filenames, nil
 }

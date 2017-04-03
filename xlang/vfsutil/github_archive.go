@@ -32,7 +32,7 @@ import (
 // If saveOnFS is set, then the zip files will be cached on the local
 // file system. You need to take care that there is sufficient disk
 // space.
-func NewGitHubRepoVFS(repo, rev, subtree string, saveOnFS bool) (ctxvfs.FileSystem, error) {
+func NewGitHubRepoVFS(repo, rev, subtree string, saveOnFS bool) (*GitHubRepoVFS, error) {
 	if !githubRepoRx.MatchString(repo) {
 		return nil, fmt.Errorf(`invalid GitHub repo %q: must be "github.com/user/repo"`, repo)
 	}
@@ -66,7 +66,8 @@ type GitHubRepoVFS struct {
 	once sync.Once
 	err  error // the error encountered during the fetch
 	fs   vfs.FileSystem
-	c    io.Closer // closes the zip file if it was read from disk
+	file []*zip.File // used by ListAllFiles. From zip.Reader.File
+	c    io.Closer   // closes the zip file if it was read from disk
 
 	save bool // save to the local file system for reuse
 }
@@ -165,6 +166,7 @@ func (fs *GitHubRepoVFS) fetch(ctx context.Context) (err error) {
 	} else {
 		return errors.New("zip archive has no files")
 	}
+	fs.file = zr.File
 	ns := vfs.NameSpace{}
 	ns.Bind("/", zipfs.New(zr, fs.repo), path.Join("/"+prefix, fs.subtree), vfs.BindReplace)
 	fs.fs = ns
@@ -197,6 +199,30 @@ func (fs *GitHubRepoVFS) ReadDir(ctx context.Context, path string) ([]os.FileInf
 		return nil, err
 	}
 	return fs.fs.ReadDir(path)
+}
+
+func (fs *GitHubRepoVFS) ListAllFiles(ctx context.Context) ([]string, error) {
+	if err := fs.fetchOrWait(ctx); err != nil {
+		return nil, err
+	}
+
+	// GitHub zip files have a top-level dir "{repobasename}-{sha}/",
+	// so we need to remove that. The repobasename is in the canonical
+	// casing, which may be different from fs.repo.
+	var prefix string
+	if name := fs.file[0].Name; strings.Contains(name, "/") {
+		prefix = path.Dir(name)
+	} else {
+		prefix = name
+	}
+
+	filenames := make([]string, 0, len(fs.file))
+	for _, f := range fs.file {
+		if f.Mode().IsRegular() {
+			filenames = append(filenames, strings.TrimPrefix(f.Name, prefix))
+		}
+	}
+	return filenames, nil
 }
 
 // Close closes the .zip file on disk. If it is buffered in memory,
