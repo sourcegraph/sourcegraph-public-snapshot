@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 set -ex
+cd $(dirname "${BASH_SOURCE[0]}")
 
 cd ui
 yarn install
