@@ -77,11 +77,14 @@ export class SearchService implements ISearchService {
 						commit(rev: $rev) {
 							commit {
 								textSearch(query: {pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, maxResults: $maxResults}) {
-									path
-									lineMatches {
-										preview
-										lineNumber
-										offsetAndLengths
+									hasNextPage
+									results {
+										path
+										lineMatches {
+											preview
+											lineNumber
+											offsetAndLengths
+										}
 									}
 								}
 							}
@@ -93,12 +96,14 @@ export class SearchService implements ISearchService {
 					if (!root.repository || !root.repository.commit.commit) {
 						throw new Error("Repository does not exist.");
 					}
-					let response = root.repository.commit.commit.textSearch.map(file => {
+					let searchResults = root.repository.commit.commit.textSearch;
+					let results = searchResults.results.map(file => {
 						const resource = workspace.with({ path: `${workspace.path}/${file.path}` });
 						return { ...file, resource };
 					});
 					complete({
-						results: response,
+						results,
+						limitHit: searchResults.hasNextPage,
 						stats: {} as any,
 					});
 				});

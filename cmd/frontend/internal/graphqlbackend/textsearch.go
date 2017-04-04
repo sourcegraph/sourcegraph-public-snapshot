@@ -19,7 +19,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // A light wrapper around the search service. We implement the service here so
@@ -36,7 +35,19 @@ type patternInfo struct {
 	//IsMultiline     bool
 }
 
-// FileMatch is the struct used by vscode to receive search results
+type searchResults struct {
+	results     []*fileMatch
+	hasNextPage bool
+}
+
+func (sr *searchResults) Results() []*fileMatch {
+	return sr.results
+}
+
+func (sr *searchResults) HasNextPage() bool {
+	return sr.hasNextPage
+}
+
 type fileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
@@ -69,15 +80,40 @@ func (lm *lineMatch) OffsetAndLengths() [][]int32 {
 	return lm.JOffsetAndLengths
 }
 
-func (r *commitResolver) TextSearch(ctx context.Context, args *struct{ Query *patternInfo }) ([]*fileMatch, error) {
+// truncateMatches returns a copy of results with at most `limit` matches, and
+// whether there was more than `limit` matches in the input slice.
+func truncateMatches(results []*fileMatch, limit int) ([]*fileMatch, bool) {
+	count := 0
+	for i, fm := range results {
+		for j, lm := range fm.JLineMatches {
+			count += len(lm.JOffsetAndLengths)
+			if count > limit {
+				lMatch := *lm
+				lMatch.JOffsetAndLengths = lMatch.JOffsetAndLengths[:len(lMatch.JOffsetAndLengths)-(count-limit)]
+				lineMatches := make([]*lineMatch, j)
+				copy(lineMatches, fm.JLineMatches)
+				lineMatches = append(lineMatches, &lMatch)
+
+				fMatch := *fm
+				fMatch.JLineMatches = lineMatches
+
+				fileMatches := make([]*fileMatch, i)
+				copy(fileMatches, results)
+				fileMatches = append(fileMatches, &fMatch)
+				return fileMatches, true
+			}
+		}
+	}
+	return results, false
+}
+
+func (r *commitResolver) TextSearch(ctx context.Context, args *struct{ Query *patternInfo }) (*searchResults, error) {
 	results, err := textSearch(ctx, r.repo.URI, r.commit.CommitID, args.Query)
 	if err != nil {
 		return nil, err
 	}
-	if len(results) > int(args.Query.MaxResults) {
-		results = results[:args.Query.MaxResults]
-	}
-	return results, nil
+	results, limitHit := truncateMatches(results, int(args.Query.MaxResults))
+	return &searchResults{results, limitHit}, nil
 }
 
 func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fileMatch, error) {
@@ -136,7 +172,7 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 }
 
 type repoMatch struct {
-	uri         uri.URI
+	uri         string
 	lineMatches []*lineMatch
 }
 
@@ -145,7 +181,7 @@ func (rm *repoMatch) LineMatches() []*lineMatch {
 }
 
 func (rm *repoMatch) URI() string {
-	return rm.uri.String()
+	return rm.uri
 }
 
 func searchRepo(ctx context.Context, repoName string, info *patternInfo) ([]repoMatch, error) {
@@ -163,11 +199,7 @@ func searchRepo(ctx context.Context, repoName string, info *patternInfo) ([]repo
 	repoMatches := make([]repoMatch, len(fileMatches))
 	for i, fm := range fileMatches {
 		repoMatches[i].lineMatches = fm.JLineMatches
-		uri, err := uri.Parse(repoName + "?" + commit.CommitID + "#" + fm.JPath)
-		if err != nil {
-			return nil, err
-		}
-		repoMatches[i].uri = *uri
+		repoMatches[i].uri = repoName + "?" + commit.CommitID + "#" + fm.JPath
 	}
 	return repoMatches, nil
 }
@@ -184,7 +216,7 @@ func accumulate(responses <-chan []repoMatch, result chan<- []repoMatch) {
 		if a != b {
 			return a < b
 		}
-		return flattened[i].uri.Path < flattened[j].uri.Path
+		return flattened[i].uri < flattened[j].uri
 	})
 	result <- flattened
 }

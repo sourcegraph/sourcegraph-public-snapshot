@@ -102,7 +102,7 @@ type Commit implements Node {
 	id: ID!
 	sha1: String!
 	tree(path: String = "", recursive: Boolean = false): Tree
-	textSearch(query: SearchQuery): [FileMatch!]!
+	textSearch(query: SearchQuery): SearchResults!
 	file(path: String!): File
 	languages: [String!]!
 }
@@ -147,6 +147,11 @@ type File {
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
+}
+
+type SearchResults {
+	hasNextPage: Boolean!
+	results: [FileMatch!]!
 }
 
 type FileMatch {

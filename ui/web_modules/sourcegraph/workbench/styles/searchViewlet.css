@@ -138,3 +138,7 @@
 :global .search-viewlet .message p {
 	padding: 12px 0 !important;
 }
+
+:global .vs-dark .monaco-inputbox-container .monaco-inputbox-message.warning {
+	color: white !important;
+}

@@ -26,7 +26,7 @@ declare namespace GQL {
 		id: string;
 		sha1: string;
 		tree: ITree | null;
-		textSearch: Array<IFileMatch>;
+		textSearch: ISearchResults;
 		file: IFile | null;
 		languages: Array<string>;
 	}
@@ -268,6 +268,15 @@ declare namespace GQL {
 		isWordMatch: boolean;
 		isCaseSensitive: boolean;
 		maxResults: number;
+	}
+
+	/*
+	  description: null
+	*/
+	interface ISearchResults {
+		__typename: string;
+		hasNextPage: boolean;
+		results: Array<IFileMatch>;
 	}
 
 	/*
