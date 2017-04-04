@@ -83,7 +83,7 @@ export async function updateEditorArea(location: AbsoluteLocation): Promise<void
  */
 function renderFileEditor(resource: URI, selection: IRange | null): void {
 	const editorService = Services.get(IWorkbenchEditorService) as WorkbenchEditorService;
-	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false }).then(() => {
+	editorService.openEditorWithoutURLChange(resource, null, { readOnly: false, preserveFocus: true }).then(() => {
 		updateEditorAfterURLChange(selection);
 	});
 }

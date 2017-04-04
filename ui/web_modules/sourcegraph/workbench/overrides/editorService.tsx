@@ -31,7 +31,7 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 
 	openEditor(input: IEditorInput, options?: IEditorOptions): TPromise<IEditor>;
 	openEditor(input: IResourceInput | IResourceDiffInput | IResourceSideBySideInput): TPromise<IEditor>;
-	openEditor(input: any, arg2?: any): TPromise<IEditor> {
+	openEditor(input: any, options?: any): TPromise<IEditor> {
 		let resource: URI;
 		let inputToOpen: any; // we translate the provided input into another, depending on context
 		if (input.resource) {
@@ -72,7 +72,9 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 			// In the latter case, we circumvent the vscode path to open a document.
 			// Otherwise an empty buffer will be shown instead of the workbench watermark.
 			const url = getURIContext(resource).path === "" ? urlToRepo(repo) : urlToBlob(repo, rev, path);
-			const promise = getURIContext(resource).path === "" ? TPromise.wrap(this.getActiveEditor()) : this.openEditorWithoutURLChange(resource, inputToOpen, arg2);
+			const promise = getURIContext(resource).path === "" ?
+				TPromise.wrap(this.getActiveEditor()) :
+				this.openEditorWithoutURLChange(resource, inputToOpen, { ...options, ...input.options });
 			return promise.then(editor => {
 				router.push({
 					pathname: url,
