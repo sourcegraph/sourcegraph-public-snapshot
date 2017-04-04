@@ -283,13 +283,13 @@ export function getURIContext(uri: URI): { repo: string, path: string, rev: stri
 			return {
 				repo: uri.authority + uri.path,
 				rev: uri.query,
-				path: uri.fragment
+				path: decodeURIComponent(uri.fragment)
 			};
 		case "file":
 			const repo = getWorkspaceRepoForResource(uri);
 			return {
 				repo,
-				path: uri.toString().substr(`file://${repo}/`.length),
+				path: decodeURIComponent(uri.toString().substr(`file://${repo}/`.length)),
 				rev: getWorkspaceRevForResource(uri),
 			};
 	}
