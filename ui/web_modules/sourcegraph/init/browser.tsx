@@ -11,8 +11,6 @@ import "vs/base/worker/defaultWorkerFactory";
 import { Router, browserHistory as history, match } from "react-router";
 import { rootRoute } from "sourcegraph/app/App";
 import * as context from "sourcegraph/app/context";
-import * as Dispatcher from "sourcegraph/Dispatcher";
-import * as DispatchedEventHandler from "sourcegraph/tracking/DispatchedEventHandler";
 import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import "sourcegraph/util/features";
 import { gqlClient } from "sourcegraph/util/gqlClient";
@@ -29,9 +27,6 @@ import "sourcegraph/init/Sentry";
 import "autotrack/lib/plugins/url-change-tracker";
 
 EventLogger.init();
-
-// Register event logging for dispatched actions
-Dispatcher.Stores.register(DispatchedEventHandler.__onDispatch);
 
 Relay.injectNetworkLayer(new Relay.DefaultNetworkLayer("/.api/graphql", {
 	headers: context.context.xhrHeaders,

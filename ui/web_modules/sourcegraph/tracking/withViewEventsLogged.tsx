@@ -70,6 +70,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				}
 
 				if (this.props.location.query["_githubAuthed"]) {
+					EventLogger.updateUser();
 					EventLogger.setUserIsGitHubAuthed(this.props.location.query["_githubAuthed"]);
 					if (eventName === Events.Signup_Completed.label) {
 						Events.Signup_Completed.logEvent(eventProperties);

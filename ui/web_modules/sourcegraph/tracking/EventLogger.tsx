@@ -118,23 +118,8 @@ class EventLoggerClass {
 		hubSpot.setHubSpotProperties({ "email": primaryEmail });
 	}
 
-	setUserGitHubAuthedLanguages(languages: string[]): void {
-		telligent.setUserProperty("authed_languages_github", languages);
-	}
-
 	setUserNumRepos(numRepos: number): void {
 		telligent.setUserProperty("num_repos_github", numRepos);
-	}
-
-	setUserGitHubAuthedOrgs(orgNames: string[]): void {
-		telligent.setUserProperty("authed_orgs_github", orgNames);
-		intercom.setIntercomProperty("authed_orgs_github", orgNames);
-		hubSpot.setHubSpotProperties({ "authed_orgs_github": orgNames.join(",") });
-	}
-
-	setUserIsEmployee(isEmployee: boolean): void {
-		telligent.setUserProperty("is_employee", isEmployee);
-		optimizely.setUserAttributes({ "is_employee": isEmployee });
 	}
 
 	setUserIsGitHubAuthed(isGitHubAuthed: string): void {
