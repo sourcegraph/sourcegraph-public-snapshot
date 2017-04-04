@@ -2,6 +2,8 @@ package vfsutil
 
 import (
 	"context"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -38,6 +40,23 @@ func testVFS(t *testing.T, fs ctxvfs.FileSystem, want map[string]string) {
 	for file := range tree {
 		if _, ok := want[file]; !ok {
 			t.Errorf("extra file %s", file)
+		}
+	}
+	if fsLister, ok := fs.(interface {
+		ListAllFiles(context.Context) ([]string, error)
+	}); ok {
+		got, err := fsLister.ListAllFiles(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantList := make([]string, 0, len(want))
+		for file := range want {
+			wantList = append(wantList, strings.TrimPrefix(file, "/"))
+		}
+		sort.Strings(got)
+		sort.Strings(wantList)
+		if !reflect.DeepEqual(got, wantList) {
+			t.Fatalf("ListAllFiles does not match want:\ngot:  %v\nwant: %v", got, wantList)
 		}
 	}
 }

@@ -1,11 +1,16 @@
-package vcs
+package vfsutil
 
 import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
+	"io"
 	"os"
+	"strings"
 	"sync"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
@@ -17,7 +22,7 @@ import (
 // itself at a given commit ID.
 type Archiver interface {
 	// Archive returns a .zip archive of the repo at the given commit ID.
-	Archive(context.Context, CommitID) ([]byte, error)
+	Archive(context.Context, vcs.CommitID) ([]byte, error)
 }
 
 // ArchiveFileSystem returns a virtual file system backed by a .zip
@@ -32,43 +37,74 @@ type Archiver interface {
 // initially and then can satisfy FS operations nearly instantly in
 // memory.
 func ArchiveFileSystem(repo Archiver, treeish string) *ArchiveFS {
-	return &ArchiveFS{repo: repo, treeish: treeish}
+	fetch := func(ctx context.Context) (*archiveReader, error) {
+		data, err := repo.Archive(ctx, vcs.CommitID(treeish))
+		if err != nil {
+			return nil, err
+		}
+		gitserverBytes.Add(float64(len(data)))
+
+		zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+		if err != nil {
+			return nil, err
+		}
+		return &archiveReader{
+			Reader: zr,
+		}, nil
+	}
+	return &ArchiveFS{fetch: fetch}
+}
+
+// archiveReader is like zip.ReadCloser, but it allows us to use a custom
+// closer.
+type archiveReader struct {
+	*zip.Reader
+	io.Closer
+
+	// Prefix is the path prefix to strip. For example a GitHub archive
+	// has a top-level dir "{repobasename}-{sha}/".
+	Prefix string
 }
 
 // ArchiveFS is a ctxvfs.FileSystem backed by an Archiver.
 type ArchiveFS struct {
-	repo    Archiver
-	treeish string
+	fetch func(context.Context) (*archiveReader, error)
 
 	once sync.Once
-	err  error // the error encountered during the Archive call (if any)
-	zr   *zip.Reader
+	err  error // the error encountered during the fetch call (if any)
+	ar   *archiveReader
 	fs   vfs.FileSystem // the zipfs virtual file system
+
+	// We have a mutex for closed to prevent Close and fetch racing.
+	closedMu sync.Mutex
+	closed   bool
 }
 
 // fetchOrWait initiates the fetch if it has not yet
 // started. Otherwise it waits for it to finish.
 func (fs *ArchiveFS) fetchOrWait(ctx context.Context) error {
 	fs.once.Do(func() {
-		fs.err = fs.fetch(ctx)
+		// If we have already closed, do not open new resources. If we
+		// haven't closed, prevent closing while fetching by holding
+		// the lock.
+		fs.closedMu.Lock()
+		defer fs.closedMu.Unlock()
+		if fs.closed {
+			fs.err = errors.New("closed")
+			return
+		}
+
+		fs.ar, fs.err = fs.fetch(ctx)
+		if fs.err == nil {
+			fs.fs = zipfs.New(&zip.ReadCloser{Reader: *fs.ar.Reader}, "")
+			if fs.ar.Prefix != "" {
+				ns := vfs.NameSpace{}
+				ns.Bind("/", fs.fs, "/"+fs.ar.Prefix, vfs.BindReplace)
+				fs.fs = ns
+			}
+		}
 	})
 	return fs.err
-}
-
-func (fs *ArchiveFS) fetch(ctx context.Context) (err error) {
-	data, err := fs.repo.Archive(ctx, CommitID(fs.treeish))
-	if err != nil {
-		return err
-	}
-	gitserverBytes.Add(float64(len(data)))
-
-	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-	if err != nil {
-		return err
-	}
-	fs.zr = zr
-	fs.fs = zipfs.New(&zip.ReadCloser{Reader: *zr}, "")
-	return nil
 }
 
 func (fs *ArchiveFS) Open(ctx context.Context, name string) (ctxvfs.ReadSeekCloser, error) {
@@ -104,13 +140,27 @@ func (fs *ArchiveFS) ListAllFiles(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	filenames := make([]string, 0, len(fs.zr.File))
-	for _, f := range fs.zr.File {
+	filenames := make([]string, 0, len(fs.ar.File))
+	for _, f := range fs.ar.File {
 		if f.Mode().IsRegular() {
-			filenames = append(filenames, f.Name)
+			filenames = append(filenames, strings.TrimPrefix(f.Name, fs.ar.Prefix))
 		}
 	}
 	return filenames, nil
+}
+
+func (fs *ArchiveFS) Close() error {
+	fs.closedMu.Lock()
+	defer fs.closedMu.Unlock()
+	if fs.closed {
+		return errors.New("already closed")
+	}
+
+	fs.closed = true
+	if fs.ar != nil && fs.ar.Closer != nil {
+		return fs.ar.Close()
+	}
+	return nil
 }
 
 func (fs *ArchiveFS) String() string { return "ArchiveFS(" + fs.fs.String() + ")" }

@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
@@ -35,5 +34,5 @@ func remoteFS(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI string) (ct
 	if u.Rev() == "" {
 		return nil, errors.Errorf("rev is required in uri: %s", workspaceURI)
 	}
-	return vcs.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: u.Repo()}), u.Rev()), nil
+	return vfsutil.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: u.Repo()}), u.Rev()), nil
 }

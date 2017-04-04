@@ -20,7 +20,6 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httputil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -447,14 +446,14 @@ var NewDepRepoVFS = func(cloneURL *url.URL, rev string) (ctxvfs.FileSystem, erro
 	// GitHub's repo .zip archive download endpoint.
 	if cloneURL.Host == "github.com" {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
-		return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
+		return vfsutil.NewGitHubRepoVFS(fullName, rev)
 	}
 
 	// In enterprise deployments, all dependencies are "public", so we can
 	// use gitserver
 	if cloneFromGitserver {
 		repo := cloneURL.Host + cloneURL.Path
-		return vcs.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev), nil
+		return vfsutil.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev), nil
 	}
 
 	// Fall back to a full git clone for non-github.com repos.

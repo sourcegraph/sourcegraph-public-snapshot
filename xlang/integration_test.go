@@ -264,7 +264,7 @@ func useGithubForVFS() func() {
 	orig := xlang.NewRemoteRepoVFS
 	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (xlang.FileSystem, error) {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
-		return vfsutil.NewGitHubRepoVFS(fullName, rev, "", true)
+		return vfsutil.NewGitHubRepoVFS(fullName, rev)
 	}
 	return func() {
 		xlang.NewRemoteRepoVFS = orig

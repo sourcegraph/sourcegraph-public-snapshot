@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 // NewRemoteRepoVFS returns a virtual file system interface for
@@ -33,7 +33,7 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) 
 		fs = &sharedFS{
 			// ArchiveFileSystem and gitcmd.Open do not block, so
 			// we can create them while holding the lock.
-			FileSystem: vcs.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev),
+			FileSystem: vfsutil.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev),
 			key:        key,
 		}
 		openSharedFS[key] = fs
