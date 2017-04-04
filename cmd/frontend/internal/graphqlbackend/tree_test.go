@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/neelance/graphql-go/gqltesting"
@@ -9,6 +10,9 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
 func TestTree(t *testing.T) {
@@ -22,21 +26,19 @@ func TestTree(t *testing.T) {
 			CommitID: exampleCommitSHA1,
 		}, nil
 	}
-	backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
-		if op.Entry.RepoRev.Repo != 2 || op.Entry.RepoRev.CommitID != exampleCommitSHA1 || op.Entry.Path != "/foo" {
+
+	mockRepo := vcstest.MockRepository{}
+	mockRepo.ReadDir_ = func(ctx context.Context, commit vcs.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
+		if string(commit) != exampleCommitSHA1 || name != "/foo" {
 			t.Error("wrong arguments to RepoTree.Get")
 		}
-		return &sourcegraph.TreeEntry{
-			BasicTreeEntry: &sourcegraph.BasicTreeEntry{
-				Entries: []*sourcegraph.BasicTreeEntry{
-					&sourcegraph.BasicTreeEntry{Name: "testDirectory", Type: sourcegraph.DirEntry},
-					&sourcegraph.BasicTreeEntry{Name: "testFile", Type: sourcegraph.FileEntry},
-				},
-			},
+		return []os.FileInfo{
+			&util.FileInfo{Name_: "testDirectory", Mode_: os.ModeDir},
+			&util.FileInfo{Name_: "testFile", Mode_: 0},
 		}, nil
 	}
-	backend.Mocks.Repos.RefreshIndex = func(ctx context.Context, repo string) error {
-		return nil
+	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		return mockRepo, nil
 	}
 
 	gqltesting.RunTests(t, []*gqltesting.Test{

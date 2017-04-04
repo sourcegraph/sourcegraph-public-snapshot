@@ -10,14 +10,6 @@ export interface AuthInfo {
 	Admin?: boolean;
 }
 
-export interface BasicTreeEntry {
-	Name?: string;
-	Type?: any;
-	CommitID?: string;
-	Contents?: number[];
-	Entries?: BasicTreeEntry[];
-}
-
 export interface BehindAhead {
 	Behind?: number;
 	Ahead?: number;
@@ -260,36 +252,10 @@ export interface FileEvent {
 	type: number;
 }
 
-export interface FileRange {
-	StartLine?: number;
-	EndLine?: number;
-	StartByte?: number;
-	EndByte?: number;
-}
-
-export interface FileWithRange {
-	StartLine?: number;
-	EndLine?: number;
-	StartByte?: number;
-	EndByte?: number;
-}
-
 export interface FormattingOptions {
 	tabSize: number;
 	insertSpaces: boolean;
 	key: string;
-}
-
-export interface GetFileOptions {
-	StartLine?: number;
-	EndLine?: number;
-	StartByte?: number;
-	EndByte?: number;
-	EntireFile?: boolean;
-	ExpandContextLines?: number;
-	FullLines?: boolean;
-	Recursive?: boolean;
-	RecurseSingleSubfolderLimit?: number;
 }
 
 export interface GitHubRepoLanguage {
@@ -520,32 +486,6 @@ export interface RepoSpec {
 	ID?: number;
 }
 
-export interface RepoTreeGetOp {
-	Entry: TreeEntrySpec;
-	Opt?: RepoTreeGetOptions;
-}
-
-export interface RepoTreeGetOptions {
-	ContentsAsString?: boolean;
-	StartLine?: number;
-	EndLine?: number;
-	StartByte?: number;
-	EndByte?: number;
-	EntireFile?: boolean;
-	ExpandContextLines?: number;
-	FullLines?: boolean;
-	Recursive?: boolean;
-	RecurseSingleSubfolderLimit?: number;
-}
-
-export interface RepoTreeListOp {
-	Rev: RepoRevSpec;
-}
-
-export interface RepoTreeListResult {
-	Files?: string[];
-}
-
 export interface RepoWebhookOptions {
 	URI?: string;
 }
@@ -723,15 +663,6 @@ export interface TextEdit {
 	newText: string;
 }
 
-export interface TreeEntry {
-	ContentsString?: string;
-}
-
-export interface TreeEntrySpec {
-	RepoRev: RepoRevSpec;
-	Path?: string;
-}
-
 export interface URIList {
 	URIs?: string[];
 }
@@ -789,11 +720,6 @@ export interface UserList {
 
 export interface UserSpec {
 	UID?: string;
-}
-
-export interface VCSSearchResultList {
-	SearchResults?: any[];
-	Total?: number;
 }
 
 export interface VersionedTextDocumentIdentifier {

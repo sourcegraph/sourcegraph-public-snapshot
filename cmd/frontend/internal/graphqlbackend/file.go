@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -21,19 +22,20 @@ func (r *fileResolver) Name() string {
 }
 
 func (r *fileResolver) Content(ctx context.Context) (string, error) {
-	file, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{
-				Repo:     r.commit.RepoID,
-				CommitID: r.commit.CommitID,
-			},
-			Path: r.path,
-		},
-	})
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
 	if err != nil {
 		return "", err
 	}
-	return string(file.Contents), nil
+
+	contents, err := vcsrepo.ReadFile(ctx, vcs.CommitID(r.commit.CommitID), r.path)
+	if err != nil {
+		return "", err
+	}
+
+	return string(contents), nil
 }
 
 func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, error) {

@@ -1,24 +1,26 @@
 package ui
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"os"
+	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"context"
 
 	"github.com/gorilla/mux"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tmpl"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func init() {
@@ -90,35 +92,27 @@ func handler(h func(w http.ResponseWriter, r *http.Request) (*meta, error)) http
 // These handlers return the proper HTTP status code but otherwise do
 // not pass data to the JavaScript UI code.
 
-func repoTreeGet(ctx context.Context, routeVars map[string]string) (*sourcegraph.TreeEntry, *sourcegraph.Repo, *sourcegraph.RepoRevSpec, error) {
-	repo, repoRev, err := handlerutil.GetRepoAndRev(ctx, routeVars)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	entry := routevar.ToTreeEntry(routeVars)
-	e, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{RepoRev: repoRev, Path: entry.Path},
-		Opt:   nil,
-	})
-	return e, repo, &repoRev, err
-}
-
 func serveBlob(w http.ResponseWriter, r *http.Request) (*meta, error) {
 	q := r.URL.Query()
-	entry, repo, repoRev, err := repoTreeGet(r.Context(), mux.Vars(r))
-	if err != nil && !(err.Error() == "file does not exist" && q.Get("tmpZapRef") != "") { // TODO proper error value
+
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
+	if err != nil {
 		return nil, err
 	}
-	if entry != nil && entry.Type != sourcegraph.FileEntry {
+
+	info, err := stat(r.Context(), repoRev, routevar.ToTreeEntry(mux.Vars(r)).Path)
+	if err != nil && !(err.Error() == "file does not exist" && r.URL.Query().Get("tmpZapRef") != "") { // TODO proper error value
+		return nil, err
+	}
+	if info != nil && !info.Mode().IsRegular() {
 		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a file")}
 	}
 
 	var m *meta
-	if entry == nil && q.Get("tmpZapRef") != "" {
+	if info == nil && q.Get("tmpZapRef") != "" {
 		m = treeOrBlobMeta("", repo)
 	} else {
-		m = treeOrBlobMeta(entry.Name, repo)
+		m = treeOrBlobMeta(info.Name(), repo)
 	}
 	m.CanonicalURL = canonicalRepoURL(
 		conf.AppURL,
@@ -196,15 +190,20 @@ func serveRepo(w http.ResponseWriter, r *http.Request) (*meta, error) {
 }
 
 func serveTree(w http.ResponseWriter, r *http.Request) (*meta, error) {
-	entry, repo, repoRev, err := repoTreeGet(r.Context(), mux.Vars(r))
+	repo, repoRev, err := handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
 	if err != nil {
 		return nil, err
 	}
-	if entry.Type != sourcegraph.DirEntry {
+
+	info, err := stat(r.Context(), repoRev, routevar.ToTreeEntry(mux.Vars(r)).Path)
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsDir() {
 		return nil, &errcode.HTTPErr{Status: http.StatusNotFound, Err: errors.New("tree entry is not a dir")}
 	}
 
-	m := treeOrBlobMeta(entry.Name, repo)
+	m := treeOrBlobMeta(info.Name(), repo)
 	m.CanonicalURL = canonicalRepoURL(
 		conf.AppURL,
 		getRouteName(r),
@@ -237,4 +236,18 @@ func getRouteName(r *http.Request) string {
 		return route.GetName()
 	}
 	return ""
+}
+
+func stat(ctx context.Context, repoRev sourcegraph.RepoRevSpec, path string) (os.FileInfo, error) {
+	// Cap operation to some reasonable time.
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, repoRev.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	commit := vcs.CommitID(repoRev.CommitID)
+	return vcsrepo.Lstat(ctx, commit, path)
 }

@@ -3,60 +3,34 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"os"
 	"path"
+	"time"
 
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 type treeResolver struct {
-	commit commitSpec
-	path   string
-	tree   *sourcegraph.TreeEntry
+	commit  commitSpec
+	path    string
+	entries []os.FileInfo
 }
 
 func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recursive bool) (*treeResolver, error) {
-	if recursive {
-		if path != "" {
-			return nil, errors.New("not implemented")
-		}
-		list, err := backend.RepoTree.List(ctx, &sourcegraph.RepoTreeListOp{ // TODO merge with RepoTree.Get
-			Rev: sourcegraph.RepoRevSpec{
-				Repo:     commit.RepoID,
-				CommitID: commit.CommitID,
-			},
-		})
-		if err != nil {
-			if err.Error() == "file does not exist" { // TODO proper error value
-				return nil, nil
-			}
-			return nil, err
-		}
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
-		entries := make([]*sourcegraph.BasicTreeEntry, len(list.Files))
-		for i, name := range list.Files {
-			entries[i] = &sourcegraph.BasicTreeEntry{Name: name, Type: sourcegraph.FileEntry}
-		}
-		return &treeResolver{
-			commit: commit,
-			path:   path,
-			tree: &sourcegraph.TreeEntry{
-				BasicTreeEntry: &sourcegraph.BasicTreeEntry{
-					Entries: entries,
-				},
-			},
-		}, nil
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, commit.RepoID)
+	if err != nil {
+		return nil, err
 	}
 
-	tree, err := backend.RepoTree.Get(ctx, &sourcegraph.RepoTreeGetOp{
-		Entry: sourcegraph.TreeEntrySpec{
-			RepoRev: sourcegraph.RepoRevSpec{
-				Repo:     commit.RepoID,
-				CommitID: commit.CommitID,
-			},
-			Path: path,
-		},
-	})
+	if recursive && path != "" {
+		return nil, errors.New("not implemented")
+	}
+
+	entries, err := vcsrepo.ReadDir(ctx, vcs.CommitID(commit.CommitID), path, recursive)
 	if err != nil {
 		if err.Error() == "file does not exist" { // TODO proper error value
 			return nil, nil
@@ -64,21 +38,30 @@ func makeTreeResolver(ctx context.Context, commit commitSpec, path string, recur
 		return nil, err
 	}
 
+	if recursive {
+		var files []os.FileInfo
+		for _, info := range entries {
+			if !info.Mode().IsDir() {
+				files = append(files, info)
+			}
+		}
+		entries = files
+	}
 	return &treeResolver{
-		commit: commit,
-		path:   path,
-		tree:   tree,
+		commit:  commit,
+		path:    path,
+		entries: entries,
 	}, nil
 }
 
 func (r *treeResolver) Directories() []*fileResolver {
 	var l []*fileResolver
-	for _, entry := range r.tree.Entries {
-		if entry.Type == sourcegraph.DirEntry {
+	for _, entry := range r.entries {
+		if entry.Mode().IsDir() {
 			l = append(l, &fileResolver{
 				commit: r.commit,
-				name:   entry.Name,
-				path:   path.Join(r.path, entry.Name),
+				name:   entry.Name(),
+				path:   path.Join(r.path, entry.Name()),
 			})
 		}
 	}
@@ -87,12 +70,12 @@ func (r *treeResolver) Directories() []*fileResolver {
 
 func (r *treeResolver) Files() []*fileResolver {
 	var l []*fileResolver
-	for _, entry := range r.tree.Entries {
-		if entry.Type != sourcegraph.DirEntry {
+	for _, entry := range r.entries {
+		if !entry.Mode().IsDir() {
 			l = append(l, &fileResolver{
 				commit: r.commit,
-				name:   entry.Name,
-				path:   path.Join(r.path, entry.Name),
+				name:   entry.Name(),
+				path:   path.Join(r.path, entry.Name()),
 			})
 		}
 	}

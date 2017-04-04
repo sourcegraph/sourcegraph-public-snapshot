@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -17,6 +18,10 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptestutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
+	vcstest "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
 func newTest() *httptestutil.Client {
@@ -248,12 +253,14 @@ func TestBlob_OK(t *testing.T) {
 		}, nil
 	}
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
-	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
-		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
-			Name: "f",
-			Type: sourcegraph.FileEntry,
-		},
-	})
+
+	mockRepo := vcstest.MockRepository{}
+	mockRepo.Lstat_ = func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error) {
+		return &util.FileInfo{Name_: "f"}, nil
+	}
+	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		return mockRepo, nil
+	}
 
 	wantMeta := meta{
 		Title:        "f · r · Sourcegraph",
@@ -275,9 +282,6 @@ func TestBlob_OK(t *testing.T) {
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
 	}
-	if !*calledRepoTreeGet {
-		t.Error("!calledRepoTreeGet")
-	}
 }
 
 func TestBlob_NotFound_NonFile(t *testing.T) {
@@ -285,12 +289,14 @@ func TestBlob_NotFound_NonFile(t *testing.T) {
 
 	calledGet := backend.Mocks.Repos.MockGetByURI(t, "r", 1)
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
-	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
-		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
-			Name: "d",
-			Type: sourcegraph.DirEntry,
-		},
-	})
+
+	mockRepo := vcstest.MockRepository{}
+	mockRepo.Lstat_ = func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error) {
+		return &util.FileInfo{Name_: "d", Mode_: os.ModeDir}, nil
+	}
+	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		return mockRepo, nil
+	}
 
 	if _, err := getForTest(c, "/r@v/-/blob/d", http.StatusNotFound); err != nil {
 		t.Fatal(err)
@@ -300,9 +306,6 @@ func TestBlob_NotFound_NonFile(t *testing.T) {
 	}
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
-	}
-	if !*calledRepoTreeGet {
-		t.Error("!calledRepoTreeGet")
 	}
 }
 
@@ -316,10 +319,13 @@ func TestBlob_Error(t *testing.T) {
 
 		calledGet := backend.Mocks.Repos.MockGetByURI(t, req.repo, 1)
 		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
-		var calledRepoTreeGet bool
-		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
-			calledRepoTreeGet = true
+
+		mockRepo := vcstest.MockRepository{}
+		mockRepo.Lstat_ = func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error) {
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
+		}
+		localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+			return mockRepo, nil
 		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
@@ -331,9 +337,6 @@ func TestBlob_Error(t *testing.T) {
 		}
 		if !*calledReposResolveRev {
 			t.Errorf("%s: !calledReposResolveRev", url)
-		}
-		if !calledRepoTreeGet {
-			t.Errorf("%s: !calledRepoTreeGet", url)
 		}
 	}
 }
@@ -373,12 +376,14 @@ func TestTree_OK(t *testing.T) {
 		}, nil
 	}
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "c")
-	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
-		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
-			Name: "d",
-			Type: sourcegraph.DirEntry,
-		},
-	})
+
+	mockRepo := vcstest.MockRepository{}
+	mockRepo.Lstat_ = func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error) {
+		return &util.FileInfo{Name_: "d", Mode_: os.ModeDir}, nil
+	}
+	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		return mockRepo, nil
+	}
 
 	wantMeta := meta{
 		Title:        "d · r · Sourcegraph",
@@ -400,9 +405,6 @@ func TestTree_OK(t *testing.T) {
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
 	}
-	if !*calledRepoTreeGet {
-		t.Error("!calledRepoTreeGet")
-	}
 }
 
 func TestTree_NotFound_NonDir(t *testing.T) {
@@ -410,12 +412,14 @@ func TestTree_NotFound_NonDir(t *testing.T) {
 
 	calledGet := backend.Mocks.Repos.MockGetByURI(t, "r", 1)
 	calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
-	calledRepoTreeGet := backend.Mocks.RepoTree.MockGet_Return_NoCheck(t, &sourcegraph.TreeEntry{
-		BasicTreeEntry: &sourcegraph.BasicTreeEntry{
-			Name: "f",
-			Type: sourcegraph.FileEntry,
-		},
-	})
+
+	mockRepo := vcstest.MockRepository{}
+	mockRepo.Lstat_ = func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error) {
+		return &util.FileInfo{Name_: "f"}, nil
+	}
+	localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+		return mockRepo, nil
+	}
 
 	if _, err := getForTest(c, "/r@v/-/tree/f", http.StatusNotFound); err != nil {
 		t.Fatal(err)
@@ -425,9 +429,6 @@ func TestTree_NotFound_NonDir(t *testing.T) {
 	}
 	if !*calledReposResolveRev {
 		t.Error("!calledReposResolveRev")
-	}
-	if !*calledRepoTreeGet {
-		t.Error("!calledRepoTreeGet")
 	}
 }
 
@@ -441,10 +442,13 @@ func TestTree_Error(t *testing.T) {
 
 		calledGet := backend.Mocks.Repos.MockGetByURI(t, req.repo, 1)
 		calledReposResolveRev := backend.Mocks.Repos.MockResolveRev_NoCheck(t, "v")
-		var calledRepoTreeGet bool
-		backend.Mocks.RepoTree.Get = func(ctx context.Context, op *sourcegraph.RepoTreeGetOp) (*sourcegraph.TreeEntry, error) {
-			calledRepoTreeGet = true
+
+		mockRepo := vcstest.MockRepository{}
+		mockRepo.Lstat_ = func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error) {
 			return nil, legacyerr.Errorf(legacyerr.NotFound, "")
+		}
+		localstore.Mocks.RepoVCS.Open = func(ctx context.Context, repo int32) (vcs.Repository, error) {
+			return mockRepo, nil
 		}
 
 		if _, err := getForTest(c, url, http.StatusNotFound); err != nil {
@@ -456,9 +460,6 @@ func TestTree_Error(t *testing.T) {
 		}
 		if !*calledReposResolveRev {
 			t.Errorf("%s: !calledReposResolveRev", url)
-		}
-		if !calledRepoTreeGet {
-			t.Errorf("%s: !calledRepoTreeGet", url)
 		}
 	}
 }

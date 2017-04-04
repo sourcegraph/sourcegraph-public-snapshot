@@ -28,15 +28,3 @@ type FileData struct {
 	// Raw data.
 	Raw []byte
 }
-
-// FileWithRange is returned by GetFileWithOptions and includes the
-// returned file's BasicTreeEntry as well as the actual range of lines and
-// bytes returned (based on the GetFileOptions parameters). That is,
-// if Start/EndLine are set in GetFileOptions, this struct's
-// Start/EndByte will be set to the actual start and end bytes of
-// those specified lines, and so on for the other fields in
-// GetFileOptions.
-type FileWithRange struct {
-	*BasicTreeEntry
-	FileRange // range of actual returned tree entry contents within file
-}

@@ -17,8 +17,7 @@ type RepoRev struct {
 }
 
 // A TreeEntry specifies a tree/blob by path in a repo at a
-// revision. It is analogous to sourcegraph.TreeEntrySpec, but like
-// RepoRev, it allows for a non-absolute commit ID.
+// revision. It allows for a non-absolute commit ID.
 type TreeEntry struct {
 	RepoRev
 	Path string // path to the VCS tree/blob
