@@ -120,7 +120,7 @@ func main() {
 		Cmd("cd xlang/javascript-typescript/buildserver"),
 		Cmd("yarn install"),
 		Cmd("yarn run build"),
-		Cmd("yarn run fmt-check"),
+		Cmd("yarn run lint"),
 		Cmd("yarn test"))
 
 	for _, pkg := range pkgs {

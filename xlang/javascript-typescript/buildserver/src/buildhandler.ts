@@ -1,31 +1,31 @@
 
-import * as rimraf from 'rimraf';
-import * as path from 'path';
-import {
-	TextDocumentPositionParams,
-	Location,
-	Hover,
-	SymbolInformation,
-	InitializeResult
-} from 'vscode-languageserver';
-import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
-import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
-import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
-import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
-import { uri2path } from 'javascript-typescript-langserver/lib/util';
+import iterate from 'iterare';
 import { CancellationToken, isCancelledError } from 'javascript-typescript-langserver/lib/cancellation';
+import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
+import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
 import {
+	InitializeParams,
 	PackageDescriptor,
+	ReferenceInformation,
 	SymbolLocationInformation,
 	WorkspaceReferenceParams,
-	WorkspaceSymbolParams,
-	ReferenceInformation,
-	InitializeParams
+	WorkspaceSymbolParams
 } from 'javascript-typescript-langserver/lib/request-type';
-import iterate from 'iterare';
-import { DependencyManager, PackageJson, getPackageName } from './dependencies';
-import * as url from 'url';
+import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
+import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import { isEmpty } from 'lodash';
+import * as path from 'path';
+import * as rimraf from 'rimraf';
+import * as url from 'url';
+import {
+	Hover,
+	InitializeResult,
+	Location,
+	SymbolInformation,
+	TextDocumentPositionParams
+} from 'vscode-languageserver';
+import { DependencyManager, getPackageName, PackageJson } from './dependencies';
+import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
 const urlRelative: (from: string, to: string) => string = require('url-relative');
 
 interface HasUri {
@@ -94,7 +94,7 @@ export class BuildHandler extends TypeScriptService {
 				await this.dependenciesManager.ensureScanned();
 			} catch (err) {
 				if (!isCancelledError(err)) {
-					console.error('Dependency initialization failed: ', err);
+					this.logger.error('Dependency initialization failed: ', err);
 				}
 			}
 		})();
@@ -131,7 +131,7 @@ export class BuildHandler extends TypeScriptService {
 	private async ensureDependency(dependency: PackageDescriptor, dependeeName?: string): Promise<void> {
 		await this.dependenciesManager.ensureScanned();
 		await Promise.all(iterate(this.dependenciesManager.packages).map(([uri, packageJson]): any => {
-			if (!dependeeName || packageJson['name'] === dependeeName) {
+			if (!dependeeName || packageJson.name === dependeeName) {
 				return this.dependenciesManager.ensureForFile(uri);
 			}
 		}));
@@ -142,6 +142,10 @@ export class BuildHandler extends TypeScriptService {
 	 */
 	private async rewriteUri(originalUri: string): Promise<string> {
 		const originalParts = url.parse(originalUri);
+
+		if (!originalParts.pathname) {
+			return originalUri;
+		}
 
 		// Is the file part of a package in node_modules?
 		const packageName = getPackageName(originalUri);
@@ -197,7 +201,7 @@ export class BuildHandler extends TypeScriptService {
 			}
 			const repositoryParts = url.parse(gitUrl);
 			// Non-GitHub repos are not supported
-			if (!repositoryParts.hostname.endsWith('github.com') || !repositoryParts.pathname) {
+			if (!repositoryParts.hostname || !repositoryParts.hostname.endsWith('github.com') || !repositoryParts.pathname) {
 				return originalUri;
 			}
 			// Pathname contains the repo slug, without .git suffix
@@ -233,15 +237,17 @@ export class BuildHandler extends TypeScriptService {
 	}
 
 	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
-		let locations: Location[];
+		let locations: Location[] = [];
 		// First, attempt to get definition before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
 			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined); // don't wait, but kickoff background job
 			locations = await super.getDefinition(params);
-		} catch (e) { }
-		if (!locations || locations.length === 0) {
+		} catch (e) {
+			// Ignore
+		}
+		if (locations.length === 0) {
 			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
 			await this.projectManager.createConfigurations();
 			locations = await super.getDefinition(params);
@@ -257,13 +263,18 @@ export class BuildHandler extends TypeScriptService {
 		try {
 			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined);
 			symbolsLocations = await super.getXdefinition(params);
-		} catch (e) { }
+		} catch (e) {
+			// Ignore
+		}
 		if (symbolsLocations.length === 0) {
 			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
 			symbolsLocations = await super.getXdefinition(params);
 		}
 		// Add PackageDescriptors to SymbolDescriptor
 		await Promise.all(symbolsLocations.map(async symbolLocation => {
+			if (!symbolLocation.location) {
+				return;
+			}
 			// Get package name of the dependency in which the symbol is defined in, if any
 			const packageName = getPackageName(symbolLocation.location.uri);
 			if (packageName) {
@@ -271,7 +282,7 @@ export class BuildHandler extends TypeScriptService {
 				// Build URI to package.json of the Dependency
 				const encodedPackageName = packageName.split('/').map(encodeURIComponent).join('/');
 				const parts = url.parse(symbolLocation.location.uri);
-				const packageJsonUri = url.format({ ...parts, pathname: parts.pathname.slice(0, parts.pathname.lastIndexOf('/node_modules/' + encodedPackageName)) + `/node_modules/${encodedPackageName}/package.json` });
+				const packageJsonUri = url.format({ ...parts, pathname: parts.pathname!.slice(0, parts.pathname!.lastIndexOf('/node_modules/' + encodedPackageName)) + `/node_modules/${encodedPackageName}/package.json` });
 				// Make sure we have the package.json of the dependency available by ensuring the dependency is installed
 				await this.dependenciesManager.ensureForFile(packageJsonUri);
 				// Fetch the package.json of the dependency
@@ -280,7 +291,7 @@ export class BuildHandler extends TypeScriptService {
 				const { name, version } = packageJson;
 				if (name) {
 					// Used by the LSP proxy to shortcut database lookup of repo URL for PackageDescriptor
-					let repoURL: string;
+					let repoURL: string | undefined;
 					if (name.startsWith('@types/')) {
 						// if the dependency package is an @types/ package, point the repo to DefinitelyTyped
 						repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
@@ -323,32 +334,36 @@ export class BuildHandler extends TypeScriptService {
 	}
 
 	async getHover(params: TextDocumentPositionParams): Promise<Hover> {
-		let hover: Hover;
+		let hover: Hover = { contents: [] };
 		// First, attempt to get hover info before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
 			this.dependenciesManager.ensureForFile(params.textDocument.uri); // don't wait, but kickoff background job
-			hover = await super.getHover(params)
-		} catch (e) { }
-		if (!hover || isEmpty(hover.contents)) {
+			hover = await super.getHover(params);
+		} catch (e) {
+			// Ignore
+		}
+		if (isEmpty(hover.contents)) {
 			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
 			hover = await super.getHover(params);
 		}
-		await this.rewriteUris(hover)
+		await this.rewriteUris(hover);
 		return hover;
 	}
 
 	async getWorkspaceSymbols(params: WorkspaceSymbolParams): Promise<SymbolInformation[]> {
-		if (this.dependenciesManager.puntWorkspaceSymbol && (!params.symbol || !params.symbol['package'])) {
-			throw new Error("workspace/symbol unsupported on this repository");
+		if (this.dependenciesManager.puntWorkspaceSymbol && (!params.symbol || !params.symbol.package)) {
+			throw new Error('workspace/symbol unsupported on this repository');
 		}
 		return super.getWorkspaceSymbols(params);
 	}
 
 	async getWorkspaceReference(params: WorkspaceReferenceParams): Promise<ReferenceInformation[]> {
 		const dependeePackageName = params.hints ? params.hints.dependeePackageName : undefined;
-		await this.ensureDependency(params.query.package, dependeePackageName);
+		if (params.query.package) {
+			await this.ensureDependency(params.query.package, dependeePackageName);
+		}
 
 		// strip the `package` field, because this was not added by the language server
 		const pkgData = params.query.package;

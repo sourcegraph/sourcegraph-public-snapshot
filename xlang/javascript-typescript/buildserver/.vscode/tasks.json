@@ -1,0 +1,40 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "0.1.0",
+  "command": "npm",
+  "args": [
+    "--silent",
+    "run"
+  ],
+  "tasks": [
+    {
+      "taskName": "build",
+      "isBuildCommand": true,
+      "problemMatcher": "$tsc"
+    },
+    {
+      "taskName": "watch",
+      "isBackground": true,
+      "problemMatcher": "$tsc-watch"
+    },
+    {
+      "taskName": "lint",
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^(.+)\\((\\d+),(\\d+)\\): (\\w+) (.+)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "owner": "tslint",
+        "fileLocation": [
+          "relative",
+          "${workspaceRoot}"
+        ]
+      }
+    }
+  ]
+}

@@ -1,20 +1,22 @@
 {
-	"compilerOptions": {
-		"target": "es2016",
-		"lib": [
-			"es2016"
-		],
-		"module": "commonjs",
-		"moduleResolution": "node",
-		"sourceMap": true,
-		"outDir": "lib",
-		"allowUnreachableCode": false,
-		"allowUnusedLabels": false,
-		"noImplicitReturns": true,
-		"noUnusedLocals": true,
-		"noImplicitAny": true
-	},
-	"include": [
-		"src/**/*.ts"
-	]
+  "compilerOptions": {
+    "target": "es2016",
+    "lib": [
+      "es2016"
+    ],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "outDir": "lib",
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
 }

@@ -2,16 +2,16 @@
 
 import { newConnection, registerLanguageHandler } from 'javascript-typescript-langserver/lib/connection';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
-import { StderrLogger, FileLogger } from 'javascript-typescript-langserver/lib/logging';
+import { FileLogger, StderrLogger } from 'javascript-typescript-langserver/lib/logging';
 import * as util from 'javascript-typescript-langserver/lib/util';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
 import * as uuid from 'uuid';
 
 import { BuildHandler } from './buildhandler';
 
 const packageJson = require('../package.json');
-var program = require('commander');
+const program = require('commander');
 
 program
 	.version(packageJson.version)

@@ -1,13 +1,14 @@
 
-import { describeTypeScriptService, initializeTypeScriptService, TestContext as TypeScriptServiceTestContext, shutdownTypeScriptService } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
-import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
-import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
-import { BuildHandler } from "../buildhandler";
 import * as assert from 'assert';
+import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
+import { describeTypeScriptService, initializeTypeScriptService, shutdownTypeScriptService, TestContext as TypeScriptServiceTestContext } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
+import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
+import { IContextDefinition } from 'mocha';
+import { BuildHandler } from '../buildhandler';
 import rimraf = require('rimraf');
-import * as path from 'path';
-import * as os from 'os';
 import * as fs from 'mz/fs';
+import * as os from 'os';
+import * as path from 'path';
 global.Promise = require('bluebird');
 // forcing strict mode
 import * as util from 'javascript-typescript-langserver/lib/util';
@@ -29,46 +30,46 @@ export async function shutdownBuildHandler(this: TestContext): Promise<void> {
 }
 
 // Run build-handler-specific tests
-describe('BuildHandler', function () {
+describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 	this.timeout(20000);
 
 	beforeEach(done => rimraf(tempDir, done));
 
 	describeTypeScriptService(createHandler, shutdownBuildHandler);
 
-	describe('Workspace with single package.json at root', function () {
-		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
+	describe('Workspace with single package.json at root', function (this: TestContext) {
+		beforeEach(initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
-				"name": "mypkg",
-				"version": "4.0.2",
-				"scripts": {
-					"preinstall": "echo preinstall should not run && exit 1",
-					"postinstall": "echo postinstall should not run && exit 1",
-					"install": "echo install should not run && exit 1"
+				name: 'mypkg',
+				version: '4.0.2',
+				scripts: {
+					preinstall: 'echo preinstall should not run && exit 1',
+					postinstall: 'echo postinstall should not run && exit 1',
+					install: 'echo install should not run && exit 1'
 				},
-				"dependencies": {
-					"typescript": "2.1.1",
-					"diff": "3.0.1"
+				dependencies: {
+					typescript: '2.1.1',
+					diff: '3.0.1'
 				},
-				"devDependencies": {
-					"@types/diff": "0.0.31"
+				devDependencies: {
+					'@types/diff': '0.0.31'
 				}
 			})],
 			['file:///a.ts', [
 				"import * as diff from 'diff';",
 				"import { diffChars, IDiffResult } from 'diff'",
-				"",
+				'',
 				"diffChars('foo', 'bar')"
 			].join('\n')],
 			['file:///b.ts', [
 				"import * as ts from 'typescript';",
-				"",
-				"var s ts.SyntaxKind;",
-				"var t = s;",
-				"",
+				'',
+				'var s ts.SyntaxKind;',
+				'var t = s;',
+				''
 			].join('\n')]
-		])));
-		afterEach(<any>shutdownBuildHandler);
+		])) as any);
+		afterEach(shutdownBuildHandler as any);
 		describe('shutdown()', () => {
 			it('should delete the temporary directory passed in options', async function (this: TestContext) {
 				// Do a random request just to trigger dependency installation
@@ -86,8 +87,8 @@ describe('BuildHandler', function () {
 				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
 			});
 		});
-		describe('getDefinition()', <any>function (this: TestContext) {
-			specify('cross-repo definition 1', <any>async function (this: TestContext) {
+		describe('getDefinition()', function (this: TestContext) {
+			specify('cross-repo definition 1', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -110,8 +111,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-			specify('cross-repo definition 2', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo definition 2', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -134,8 +135,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-			specify('cross-repo definition 3', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo definition 3', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -170,8 +171,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-			specify('cross-repo definition 4', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo definition 4', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -194,8 +195,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			})
-			specify('cross-repo definition 5', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo definition 5', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -218,8 +219,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-			specify('cross-repo definition 6', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo definition 6', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -242,10 +243,10 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-		});
-		describe('getXdefinition()', <any>function (this: TestContext) {
-			specify('cross-repo xdefinition 1', <any>async function (this: TestContext) {
+			} as any);
+		} as any);
+		describe('getXdefinition()', function (this: TestContext) {
+			specify('cross-repo xdefinition 1', async function (this: TestContext) {
 				const result = await this.service.getXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -258,19 +259,19 @@ describe('BuildHandler', function () {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "",
-						kind: "module",
-						name: "JsDiff",
+						containerKind: '',
+						containerName: '',
+						kind: 'module',
+						name: 'JsDiff',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31',
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
+						}
+					}
 				}]);
-			});
-			specify('cross-repo xdefinition 2', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo xdefinition 2', async function (this: TestContext) {
 				const result = await this.service.getXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -283,19 +284,19 @@ describe('BuildHandler', function () {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "",
-						kind: "module",
-						name: "/node_modules/@types/diff/index",
+						containerKind: '',
+						containerName: '',
+						kind: 'module',
+						name: '/node_modules/@types/diff/index',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31',
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
+						}
+					}
 				}]);
-			});
-			specify('cross-repo xdefinition 3', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo xdefinition 3', async function (this: TestContext) {
 				const result = await this.service.getXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -308,32 +309,32 @@ describe('BuildHandler', function () {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "diff",
-						kind: "function",
-						name: "diffChars",
+						containerKind: '',
+						containerName: 'diff',
+						kind: 'function',
+						name: 'diffChars',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31',
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
+						}
+					}
 				}, {
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "diff",
-						kind: "function",
-						name: "diffChars",
+						containerKind: '',
+						containerName: 'diff',
+						kind: 'function',
+						name: 'diffChars',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31',
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
+						}
+					}
 				}]);
-			});
-			specify('cross-repo xdefinition 4', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo xdefinition 4', async function (this: TestContext) {
 				const result = await this.service.getXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -346,19 +347,19 @@ describe('BuildHandler', function () {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "diff",
-						kind: "interface",
-						name: "IDiffResult",
+						containerKind: '',
+						containerName: 'diff',
+						kind: 'interface',
+						name: 'IDiffResult',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31',
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
+						}
+					}
 				}]);
-			});
-			specify('cross-repo xdefinition 5', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo xdefinition 5', async function (this: TestContext) {
 				const result = await this.service.getXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -371,19 +372,19 @@ describe('BuildHandler', function () {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "",
-						kind: "module",
-						name: "/node_modules/@types/diff/index",
+						containerKind: '',
+						containerName: '',
+						kind: 'module',
+						name: '/node_modules/@types/diff/index',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31',
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
+						}
+					}
 				}]);
-			});
-			specify('cross-repo xdefinition 6', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo xdefinition 6', async function (this: TestContext) {
 				const result = await this.service.getXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -396,19 +397,19 @@ describe('BuildHandler', function () {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "JsDiff",
-						kind: "function",
-						name: "diffChars",
+						containerKind: '',
+						containerName: 'JsDiff',
+						kind: 'function',
+						name: 'diffChars',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped',
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31',
+							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
+						}
+					}
 				}]);
-			})
-			specify('cross-repo xdefinition to non-DefinitelyTyped package', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo xdefinition to non-DefinitelyTyped package', async function (this: TestContext) {
 				const result = await this.service.getXdefinition({
 					textDocument: {
 						uri: 'file:///b.ts'
@@ -421,19 +422,19 @@ describe('BuildHandler', function () {
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
-						containerKind: "",
-						containerName: "ts",
-						kind: "enum",
-						name: "SyntaxKind",
+						containerKind: '',
+						containerName: 'ts',
+						kind: 'enum',
+						name: 'SyntaxKind',
 						package: {
-							name: "typescript",
-							version: "2.1.1",
-							repoURL: "https://github.com/Microsoft/TypeScript.git"
-						},
-					},
+							name: 'typescript',
+							version: '2.1.1',
+							repoURL: 'https://github.com/Microsoft/TypeScript.git'
+						}
+					}
 				}]);
-			});
-			specify('cross-repo xdefinition 7', <any>async function (this: TestContext) {
+			} as any);
+			specify('cross-repo xdefinition 7', async function (this: TestContext) {
 				const definitionResult = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -456,19 +457,19 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-		});
-		specify('getWorkspaceReference()', <any>async function (this: TestContext) {
+			} as any);
+		} as any);
+		specify('getWorkspaceReference()', async function (this: TestContext) {
 			const referencesResult = await this.service.getWorkspaceReference({
 				query: {
-					containerKind: "",
-					containerName: "diff",
-					kind: "function",
-					name: "diffChars",
+					containerKind: '',
+					containerName: 'diff',
+					kind: 'function',
+					name: 'diffChars',
 					package: {
-						name: "@types/diff",
-						version: "0.0.31",
-					},
+						name: '@types/diff',
+						version: '0.0.31'
+					}
 				}
 			});
 			assert.deepEqual(referencesResult, [
@@ -477,83 +478,83 @@ describe('BuildHandler', function () {
 						range: {
 							end: {
 								character: 18,
-								line: 1,
+								line: 1
 							},
 							start: {
 								character: 8,
-								line: 1,
-							},
+								line: 1
+							}
 						},
-						uri: "file:///a.ts",
+						uri: 'file:///a.ts'
 					},
 					symbol: {
-						containerKind: "",
-						containerName: "diff",
-						kind: "function",
-						name: "diffChars",
+						containerKind: '',
+						containerName: 'diff',
+						kind: 'function',
+						name: 'diffChars',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31'
+						}
+					}
 				},
 				{
 					reference: {
 						range: {
 							end: {
 								character: 18,
-								line: 1,
+								line: 1
 							},
 							start: {
 								character: 8,
-								line: 1,
-							},
+								line: 1
+							}
 						},
-						uri: "file:///a.ts",
+						uri: 'file:///a.ts'
 					},
 					symbol: {
-						containerKind: "",
-						containerName: "diff",
-						kind: "function",
-						name: "diffChars",
+						containerKind: '',
+						containerName: 'diff',
+						kind: 'function',
+						name: 'diffChars',
 						package: {
-							name: "@types/diff",
-							version: "0.0.31",
-						},
-					},
+							name: '@types/diff',
+							version: '0.0.31'
+						}
+					}
 				}
 			]);
-		});
+		} as any);
 	});
 
-	describe('Workspace with multiple package.json files', <any>function (this: TestContext) {
-		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
+	describe('Workspace with multiple package.json files', function (this: TestContext) {
+		beforeEach(initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
-				"name": "rootpkg",
-				"version": "4.0.2",
-				"dependencies": {
-					"diff": "3.0.1"
+				name: 'rootpkg',
+				version: '4.0.2',
+				dependencies: {
+					diff: '3.0.1'
 				},
-				"devDependencies": {
-					"@types/diff": "0.0.31"
+				devDependencies: {
+					'@types/diff': '0.0.31'
 				}
 			})],
 			['file:///a.ts', "import * as diff from 'diff';"],
 			['file:///foo/b.ts', "import * as resolve from 'resolve';"],
 			['file:///foo/package.json', JSON.stringify({
-				"name": "foopkg",
-				"version": "1.0.3",
-				"dependencies": {
-					"resolve": "1.1.7"
+				name: 'foopkg',
+				version: '1.0.3',
+				dependencies: {
+					resolve: '1.1.7'
 				},
-				"devDependencies": {
-					"@types/resolve": "0.0.4"
+				devDependencies: {
+					'@types/resolve': '0.0.4'
 				}
 			})]
-		])));
-		afterEach(<any>shutdownBuildHandler);
+		])) as any);
+		afterEach(shutdownBuildHandler as any);
 		describe('getDefinition()', () => {
-			it('should return the location of the diff typings on DefinitelyTyped for the first package.json', <any>async function (this: TestContext) {
+			it('should return the location of the diff typings on DefinitelyTyped for the first package.json', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -576,8 +577,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-			it('should return the location of the resolve typings on DefinitelyTyped for the second package.json', <any>async function (this: TestContext) {
+			} as any);
+			it('should return the location of the resolve typings on DefinitelyTyped for the second package.json', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///foo/b.ts'
@@ -600,8 +601,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-			it('should return both locations when requested concurrently', <any>async function (this: TestContext) {
+			} as any);
+			it('should return both locations when requested concurrently', async function (this: TestContext) {
 				const results = await Promise.all([
 					this.service.getDefinition({
 						textDocument: {
@@ -650,25 +651,25 @@ describe('BuildHandler', function () {
 						}
 					}]
 				]);
-			});
+			} as any);
 		});
-	});
+	} as any);
 
-	describe('Workspace with vendored dependencies', <any>function (this: TestContext) {
-		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
+	describe('Workspace with vendored dependencies', function (this: TestContext) {
+		beforeEach(initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
-				"name": "rootpkg",
-				"version": "4.0.2",
-				"dependencies": {
-					"diff": "1.0.1"
+				name: 'rootpkg',
+				version: '4.0.2',
+				dependencies: {
+					diff: '1.0.1'
 				}
 			})],
 			['file:///a.ts', "import { x } from 'diff';"],
-			['file:///node_modules/diff/index.d.ts', "export const x = 1;"]
-		])));
-		afterEach(<any>shutdownBuildHandler);
+			['file:///node_modules/diff/index.d.ts', 'export const x = 1;']
+		])) as any);
+		afterEach(shutdownBuildHandler as any);
 		describe('getDefinition()', () => {
-			it('should return the location of the diff index.d.ts in node_modules', <any>async function (this: TestContext) {
+			it('should return the location of the diff index.d.ts in node_modules', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -691,24 +692,24 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
+			} as any);
 		});
-	});
+	} as any);
 
-	describe('Workspace with dependencies with package.json scripts', function () {
-		beforeEach(<any>initializeTypeScriptService(createHandler, new Map([
+	describe('Workspace with dependencies with package.json scripts', function (this: TestContext & IContextDefinition) {
+		beforeEach(initializeTypeScriptService(createHandler, new Map([
 			['file:///package.json', JSON.stringify({
-				"name": "rootpkg",
-				"version": "4.0.2",
-				"dependencies": {
-					"javascript-dep-npm": "https://github.com/sgtest/javascript-dep-npm"
+				name: 'rootpkg',
+				version: '4.0.2',
+				dependencies: {
+					'javascript-dep-npm': 'https://github.com/sgtest/javascript-dep-npm'
 				}
 			})],
-			['file:///a.ts', "import * as xyz from 'javascript-dep-npm';"],
-		])));
-		afterEach(<any>shutdownBuildHandler);
+			['file:///a.ts', "import * as xyz from 'javascript-dep-npm';"]
+		])) as any);
+		afterEach(shutdownBuildHandler as any);
 		describe('getDefinition()', () => {
-			it('should not run the scripts when getting definition of a symbol', <any>async function (this: TestContext) {
+			it('should not run the scripts when getting definition of a symbol', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -731,8 +732,8 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
-			it('should not run the scripts when getting definition of the module identifier', <any>async function (this: TestContext) {
+			} as any);
+			it('should not run the scripts when getting definition of the module identifier', async function (this: TestContext) {
 				const result = await this.service.getDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -755,7 +756,7 @@ describe('BuildHandler', function () {
 						}
 					}
 				}]);
-			});
+			} as any);
 		});
 	});
 });

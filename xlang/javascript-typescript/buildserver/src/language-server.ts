@@ -1,15 +1,15 @@
 
 global.Promise = require('bluebird');
-import { BuildHandler } from './buildhandler';
-import { serve, ServeOptions, createClusterLogger } from 'javascript-typescript-langserver/lib/server';
-import { TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
-import * as util from 'javascript-typescript-langserver/lib/util';
+import * as cluster from 'cluster';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { FileLogger } from 'javascript-typescript-langserver/lib/logging';
-import * as cluster from 'cluster';
+import { createClusterLogger, serve, ServeOptions } from 'javascript-typescript-langserver/lib/server';
+import { TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
+import * as util from 'javascript-typescript-langserver/lib/util';
 import * as os from 'os';
 import * as path from 'path';
 import * as uuid from 'uuid';
+import { BuildHandler } from './buildhandler';
 import rimraf = require('rimraf');
 const program = require('commander');
 const packageJson = require('../package.json');
@@ -35,8 +35,8 @@ const clusterSize = program.cluster || numCPUs;
 const logger = createClusterLogger(program.logfile && new FileLogger(program.logfile));
 
 const options: ServeOptions & TypeScriptServiceOptions = {
-	clusterSize: clusterSize,
-	lspPort: lspPort,
+	clusterSize,
+	lspPort,
 	strict: program.strict,
 	trace: program.trace,
 	logger

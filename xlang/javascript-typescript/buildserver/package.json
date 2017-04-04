@@ -1,41 +1,41 @@
 {
-    "version": "0.0.1",
-    "name": "javascript-typescript-buildserver",
-    "scripts": {
-        "build": "tsc -p . && chmod +x lib/language-server-stdio.js lib/language-server.js",
-        "fmt-check": "tsfmt --verify",
-        "fmt": "tsfmt -r",
-        "test": "mocha lib/test/**/*.js"
-    },
-    "dependencies": {
-        "bluebird": "^3.4.7",
-        "chai": "^3.4.34",
-        "commander": "^2.9.0",
-        "iterare": "^0.0.7",
-        "javascript-typescript-langserver": "^2.0.0-pre.8",
-        "lodash": "^4.17.4",
-        "mkdirp": "^0.5.1",
-        "mz": "^2.6.0",
-        "rimraf": "^2.5.4",
-        "semver": "^5.3.0",
-        "typescript": "2.2.1",
-        "url-relative": "^1.0.0",
-        "uuid": "^3.0.1",
-        "vscode-languageserver": "^3.1.0",
-        "yarn": "^0.22.0"
-    },
-    "devDependencies": {
-        "@types/chai": "3.4.34",
-        "@types/lodash": "4.14.53",
-        "@types/mkdirp": "0.3.29",
-        "@types/mocha": "2.2.33",
-        "@types/mz": "0.0.30",
-        "@types/rimraf": "0.0.28",
-        "@types/temp": "0.8.29",
-        "@types/uuid": "2.0.29",
-        "mocha": "^2.2.33",
-        "source-map-support": "^0.4.11",
-        "tslint": "^4.5.1",
-        "typescript-formatter": "^4.0.1"
-    }
+  "version": "0.0.1",
+  "name": "javascript-typescript-buildserver",
+  "scripts": {
+    "build": "tsc -p . && chmod +x lib/language-server-stdio.js lib/language-server.js",
+    "watch": "tsc -w -p .",
+    "test": "mocha --require source-map-support/register --timeout 20000 --slow 0 'lib/test/**/*.js'",
+    "lint": "tslint -t msbuild -c tslint.json 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "bluebird": "^3.4.7",
+    "chai": "^3.4.34",
+    "commander": "^2.9.0",
+    "iterare": "^0.0.7",
+    "javascript-typescript-langserver": "^2.0.0-pre.8",
+    "lodash": "^4.17.4",
+    "mkdirp": "^0.5.1",
+    "mz": "^2.6.0",
+    "rimraf": "^2.5.4",
+    "semver": "^5.3.0",
+    "typescript": "2.2.1",
+    "url-relative": "^1.0.0",
+    "uuid": "^3.0.1",
+    "vscode-languageserver": "^3.1.0",
+    "yarn": "^0.22.0"
+  },
+  "devDependencies": {
+    "@types/chai": "3.4.34",
+    "@types/lodash": "4.14.53",
+    "@types/mkdirp": "0.3.29",
+    "@types/mocha": "2.2.33",
+    "@types/mz": "0.0.30",
+    "@types/rimraf": "0.0.28",
+    "@types/temp": "0.8.29",
+    "@types/uuid": "2.0.29",
+    "mocha": "^2.2.33",
+    "source-map-support": "^0.4.11",
+    "tslint": "^5.0.0",
+    "typescript-formatter": "^4.0.1"
+  }
 }

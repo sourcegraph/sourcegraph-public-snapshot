@@ -1,0 +1,32 @@
+{
+  "extends": "tslint:recommended",
+  "rules": {
+    "semicolon": [true, "always"],
+    "indent": [true, "tabs"],
+    "eofline": true,
+    "max-line-length": [false],
+    "linebreak-style": [true, "LF"],
+    "quotemark": [true, "single", "avoid-escape"],
+    "array-type": [true, "array"],
+    "arrow-parens": [true, "ban-single-arg-parens"],
+    "comment-format": [true, "check-space"],
+    "interface-over-type-literal": true,
+    "prefer-for-of": true,
+    "no-consecutive-blank-lines": [true],
+    "object-literal-shorthand": true,
+    "one-variable-per-declaration": [true, "ignore-for-loop"],
+    "prefer-method-signature": true,
+    "space-before-function-paren": [true, {"anonymous": "always", "named": "never", "asyncArrow": "always"}],
+    "switch-default": false,
+    "interface-name": [true, "never-prefix"],
+    "no-var-requires": false,
+    "no-namespace": [false],
+    "member-access": [false],
+    "max-classes-per-file": [false],
+    "object-literal-sort-keys": false,
+    "no-shadowed-variable": false,
+    "member-ordering": [false],
+    "trailing-comma": [true, {"singleline": "never", "multiline": "never"}],
+    "no-console": [true, "log", "info", "warn", "error", "trace", "time", "timeEnd", "assert", "count", "dir", "table"]
+  }
+}

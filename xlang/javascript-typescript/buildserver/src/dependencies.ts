@@ -1,10 +1,10 @@
 
-import { Logger, NoopLogger, PrefixedLogger } from 'javascript-typescript-langserver/lib/logging';
-import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import { FileSystemUpdater } from 'javascript-typescript-langserver/lib/fs';
+import { Logger, NoopLogger, PrefixedLogger } from 'javascript-typescript-langserver/lib/logging';
 import { InMemoryFileSystem, ProjectManager } from 'javascript-typescript-langserver/lib/project-manager';
-import * as url from 'url';
+import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as path from 'path';
+import * as url from 'url';
 import mkdirp = require('mkdirp');
 import { spawn } from 'child_process';
 import iterate from 'iterare';
@@ -12,7 +12,7 @@ import * as fs from 'mz/fs';
 
 export interface PackageJson {
 	name: string;
-	version: string;
+	version?: string;
 	repository?: string | { type: string, url: string };
 	dependencies?: {
 		[packageName: string]: string;
@@ -25,7 +25,7 @@ export interface PackageJson {
 	};
 	optionalDependencies?: {
 		[packageName: string]: string;
-	}
+	};
 }
 
 /**
@@ -42,9 +42,8 @@ const PACKAGE_NAME_REGEXP = /.*\/node_modules\/((?:@[^\/]+\/)?[^\/]+)\/.*$/;
  */
 export function getPackageName(uri: string): string | undefined {
 	const match = decodeURIComponent(url.parse(uri).pathname || '').match(PACKAGE_NAME_REGEXP);
-	return match && match[1];
+	return match && match[1] || undefined;
 }
-
 
 export class DependencyManager {
 
@@ -90,6 +89,9 @@ export class DependencyManager {
 				const packageJsons = new Set<string>();
 				for (const uri of this.inMemoryFileSystem.uris()) {
 					const parts = url.parse(uri);
+					if (!parts.pathname) {
+						continue;
+					}
 					// Search for package.json files _not_ inside node_modules
 					if (parts.pathname.endsWith('/package.json') && !parts.pathname.includes('/node_modules/')) {
 						packageJsons.add(uri);
@@ -97,7 +99,7 @@ export class DependencyManager {
 					// Collect vendored node_modules folders found to filter package.jsons
 					const nodeModulesIndex = parts.pathname.indexOf('/node_modules/');
 					if (nodeModulesIndex !== -1) {
-						vendoredPackageJsons.add(url.format({ ...parts, pathname: uri.slice(0, nodeModulesIndex) + '/package.json' }))
+						vendoredPackageJsons.add(url.format({ ...parts, pathname: uri.slice(0, nodeModulesIndex) + '/package.json' }));
 					}
 				}
 				// Filter package.jsons with vendored node_modules
@@ -188,7 +190,7 @@ export class DependencyManager {
 			try {
 				const logger = new PrefixedLogger(this.logger, `Dependency installation ${packageJsonUri}`);
 				const parts = url.parse(packageJsonUri);
-				const directory: url.Url = { ...parts, pathname: path.posix.dirname(parts.pathname) };
+				const directory: url.Url = { ...parts, pathname: path.posix.dirname(parts.pathname!) };
 				// The directory that yarn will be spawned in
 				const cwd = path.join(this.tempDir, 'workspace', uri2path(url.format(directory)));
 				const globalDir = path.join(this.tempDir, 'global', uri2path(url.format(directory)));
@@ -227,10 +229,10 @@ export class DependencyManager {
 					let stderr = '';
 					yarn.stderr.on('data', chunk => {
 						try {
-							const str = chunk + ''
+							const str = chunk + '';
 							stderr += str;
 							if (str.startsWith('warning')) {
-								logger.warn(str.trim())
+								logger.warn(str.trim());
 							} else {
 								logger.error(str.trim());
 							}
