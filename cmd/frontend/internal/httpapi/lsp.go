@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -109,7 +108,7 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 		ready:   make(chan struct{}),
 	}
 
-	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleClientRequest)))
+	proxy.client = jsonrpc2.NewConn(ctx, websocketjsonrpc2.NewObjectStream(conn), jsonrpc2HandlerFunc(proxy.handleClientRequest))
 	proxy.server = &xclient{Client: &xlang.Client{
 		Conn: jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(serverNetConn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2HandlerFunc(proxy.handleServerRequest))),
 	}}
@@ -150,7 +149,7 @@ type jsonrpc2Proxy struct {
 	httpCtx    context.Context
 	client     *jsonrpc2.Conn // connection to the browser
 	server     *xclient       // connection to lsp proxy. We use a wrapped xlang.Client since it injects opentracing metadata
-	initParams atomic.Value
+	initParams *trackedInitParams
 	builder    *libhoney.Builder
 	ready      chan struct{}
 }
@@ -167,64 +166,6 @@ type jsonrpc2FromConn interface {
 }
 
 func (p *jsonrpc2Proxy) roundTrip(ctx context.Context, from jsonrpc2FromConn, to jsonrpc2.JSONRPC2, req *jsonrpc2.Request) error {
-	// 🚨 SECURITY: If this is the "initialize" request, we MUST check 🚨
-	// that the current user can access the workspace root's
-	// repository. This is the ONLY PLACE that access is checked; the
-	// LSP proxy does not perform any access checking.
-	//
-	// This assumes that the LSP proxy only allows access to the
-	// repository specified in the "initialize" request. (I.e., you
-	// can't send an "initialize" with a repository of
-	// "github.com/foo/bar" then a "textDocument/hover" for a file in
-	// "github.com/qux/other".)
-	if req.Method == "initialize" {
-		checkAccess := func() error {
-			if req.Params == nil {
-				return &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
-			}
-
-			var params struct {
-				lspext.ClientProxyInitializeParams
-				RootURI string `json:"rootUri"`
-			}
-			if err := json.Unmarshal(*req.Params, &params); err != nil {
-				return err
-			}
-
-			// 🚨 SECURITY: LSP recently introduced a rootUri field on 🚨
-			// InitializeParams and deprecated rootPath. Until we
-			// support rootUri in the LSP proxy, unset rootUri so we
-			// guarantee only rootPath can specify the workspace.
-			params.RootURI = ""
-			if err := req.SetParams(params); err != nil {
-				return err
-			}
-
-			rootPathURI, err := uri.Parse(params.RootPath)
-			if err != nil {
-				return err
-			}
-
-			p.initParams.Store(&trackedInitParams{
-				mode:        params.InitializationOptions.Mode,
-				rootPathURI: rootPathURI,
-			})
-
-			// 🚨 SECURITY: Check that the the user can access the repo. 🚨
-			if _, err := backend.Repos.GetByURI(p.httpCtx, rootPathURI.Repo()); err != nil {
-				proxyFailed.WithLabelValues("auth").Inc()
-				return err
-			}
-			return nil
-		}
-		if accessErr := checkAccess(); accessErr != nil {
-			if err := from.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{Message: accessErr.Error()}); err != nil {
-				proxyFailed.WithLabelValues("reply-auth").Inc()
-			}
-			return accessErr // 🚨 SECURITY: Do not pass on unauthorized request to server. 🚨
-		}
-	}
-
 	if req.Notif {
 		if err := to.Notify(ctx, req.Method, req.Params); err != nil {
 			if _, userError := err.(*jsonrpc2.Error); !userError {
@@ -276,76 +217,144 @@ func (p *jsonrpc2Proxy) handleClientRequest(ctx context.Context, conn *jsonrpc2.
 	start := time.Now()
 	<-p.ready
 
-	// We don't need to measure notifications, so just send straight away.
-	if req.Notif {
-		p.roundTrip(ctx, conn, p.server, req)
+	// 🚨 SECURITY: If this is the "initialize" request, we MUST check 🚨
+	// that the current user can access the workspace root's
+	// repository. This is the ONLY PLACE that access is checked; the
+	// LSP proxy does not perform any access checking.
+	//
+	// This assumes that the LSP proxy only allows access to the
+	// repository specified in the "initialize" request. (I.e., you
+	// can't send an "initialize" with a repository of
+	// "github.com/foo/bar" then a "textDocument/hover" for a file in
+	// "github.com/qux/other".)
+	if req.Method == "initialize" {
+		initParams, accessErr := authorizeInitialize(p.httpCtx, req)
+		if accessErr != nil {
+			p.initParams = nil
+			proxyFailed.WithLabelValues("auth").Inc()
+			if err := conn.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{Message: accessErr.Error()}); err != nil {
+				proxyFailed.WithLabelValues("reply-auth").Inc()
+			}
+			return // 🚨 SECURITY: Do not pass on unauthorized request to server. 🚨
+		}
+		p.initParams = initParams
+	}
+	initParams := p.initParams
+	if initParams == nil {
+		if !req.Notif {
+			if err := conn.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{Message: "connection not initialized"}); err != nil {
+				proxyFailed.WithLabelValues("reply-init").Inc()
+			}
+		}
 		return
 	}
 
-	// No parent, otherwise request is associated with all spans in
-	// session. This makes it hard to understand the UI.
-	span := opentracing.GlobalTracer().StartSpan("LSP WebSocket Proxy")
-	ext.Component.Set(span, "httpapi")
-	ext.SpanKindRPCClient.Set(span)
-	span.SetTag("jsonrpc2.id", req.ID.String())
-	span.SetTag("jsonrpc2.method", req.Method)
-	ctx = opentracing.ContextWithSpan(ctx, span)
-	meta := map[string]string{
-		"X-Trace": traceutil.SpanURL(span),
+	// We don't need to measure notifications, so just send straight away.
+	if req.Notif {
+		go p.roundTrip(ctx, conn, p.server, req)
+		return
 	}
 
-	err := p.roundTrip(ctx, replyWithMeta{conn, meta}, p.server, req)
-
-	duration := time.Since(start)
-	success := strconv.FormatBool(err == nil)
-
-	// If we have processed the initialize request, initParams should be non-nil
-	initParams, _ := p.initParams.Load().(*trackedInitParams)
-	if initParams == nil {
-		initParams = &trackedInitParams{
-			mode: "unknown",
+	go func() {
+		// No parent, otherwise request is associated with all spans in
+		// session. This makes it hard to understand the UI.
+		span := opentracing.GlobalTracer().StartSpan("LSP WebSocket Proxy")
+		ext.Component.Set(span, "httpapi")
+		ext.SpanKindRPCClient.Set(span)
+		span.SetTag("jsonrpc2.id", req.ID.String())
+		span.SetTag("jsonrpc2.method", req.Method)
+		ctx = opentracing.ContextWithSpan(ctx, span)
+		meta := map[string]string{
+			"X-Trace": traceutil.SpanURL(span),
 		}
-	}
 
-	// Update span now that we have initParams.
-	if u := initParams.rootPathURI; u != nil {
-		span.SetTag("rootpath", u.String())
-		span.SetTag("repo", u.Repo())
-		span.SetTag("commit", u.Rev())
-	}
-	if err != nil {
-		ext.Error.Set(span, true)
-		span.SetTag("err", err.Error())
-	}
-	span.Finish()
+		err := p.roundTrip(ctx, replyWithMeta{conn, meta}, p.server, req)
 
-	labels := prometheus.Labels{
-		"success":   success,
-		"method":    req.Method,
-		"mode":      initParams.mode,
-		"transport": "ws",
-	}
-	xlangRequestDuration.With(labels).Observe(duration.Seconds())
+		duration := time.Since(start)
+		success := strconv.FormatBool(err == nil)
 
-	if honey.Enabled() {
-		ev := p.builder.NewEvent()
-		ev.AddField("success", success)
-		ev.AddField("method", req.Method)
-		ev.AddField("mode", initParams.mode)
-		ev.AddField("duration_ms", duration.Seconds()*1000)
-		if initParams.rootPathURI != nil {
-			addRootPathFields(ev, initParams.rootPathURI)
+		// Update span now that we have initParams.
+		if u := initParams.rootPathURI; u != nil {
+			span.SetTag("rootpath", u.String())
+			span.SetTag("repo", u.Repo())
+			span.SetTag("commit", u.Rev())
 		}
 		if err != nil {
-			ev.AddField("error", err.Error())
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
 		}
-		ev.Send()
-	}
+		span.Finish()
+
+		labels := prometheus.Labels{
+			"success":   success,
+			"method":    req.Method,
+			"mode":      initParams.mode,
+			"transport": "ws",
+		}
+		xlangRequestDuration.With(labels).Observe(duration.Seconds())
+
+		if honey.Enabled() {
+			ev := p.builder.NewEvent()
+			ev.AddField("success", success)
+			ev.AddField("method", req.Method)
+			ev.AddField("mode", initParams.mode)
+			ev.AddField("duration_ms", duration.Seconds()*1000)
+			if initParams.rootPathURI != nil {
+				addRootPathFields(ev, initParams.rootPathURI)
+			}
+			if err != nil {
+				ev.AddField("error", err.Error())
+			}
+			ev.Send()
+		}
+	}()
 }
 
 func (p *jsonrpc2Proxy) handleServerRequest(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	<-p.ready
 	p.roundTrip(ctx, conn, p.client, req)
+}
+
+func authorizeInitialize(ctx context.Context, req *jsonrpc2.Request) (*trackedInitParams, error) {
+	if req.Method != "initialize" {
+		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+	}
+	if req.Params == nil {
+		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
+	}
+
+	var params struct {
+		lspext.ClientProxyInitializeParams
+		RootURI string `json:"rootUri"`
+	}
+	if err := json.Unmarshal(*req.Params, &params); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: LSP recently introduced a rootUri field on 🚨
+	// InitializeParams and deprecated rootPath. Until we
+	// support rootUri in the LSP proxy, unset rootUri so we
+	// guarantee only rootPath can specify the workspace.
+	params.RootURI = ""
+	if err := req.SetParams(params); err != nil {
+		return nil, err
+	}
+
+	rootPathURI, err := uri.Parse(params.RootPath)
+	if err != nil {
+		return nil, err
+	}
+
+	t := &trackedInitParams{
+		mode:        params.InitializationOptions.Mode,
+		rootPathURI: rootPathURI,
+	}
+
+	// 🚨 SECURITY: Check that the the user can access the repo. 🚨
+	if _, err := backend.Repos.GetByURI(ctx, rootPathURI.Repo()); err != nil {
+		return t, err
+	}
+	return t, nil
 }
 
 func dialLSPProxy(ctx context.Context) (net.Conn, error) {
