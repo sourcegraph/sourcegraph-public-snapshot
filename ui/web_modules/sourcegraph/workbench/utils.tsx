@@ -279,6 +279,7 @@ export function isInCurrentWorkspace(uri: URI): boolean {
  */
 export function getURIContext(uri: URI): { repo: string, path: string, rev: string | null } {
 	switch (uri.scheme) {
+		case "zap":
 		case "git":
 			return {
 				repo: uri.authority + uri.path,
@@ -293,5 +294,5 @@ export function getURIContext(uri: URI): { repo: string, path: string, rev: stri
 				rev: getWorkspaceRevForResource(uri),
 			};
 	}
-	throw new Error(`invalid uri scheme, expected 'git' or 'file': ${uri}`);
+	throw new Error(`invalid uri scheme, expected 'git', 'zap' or 'file': ${uri}`);
 }

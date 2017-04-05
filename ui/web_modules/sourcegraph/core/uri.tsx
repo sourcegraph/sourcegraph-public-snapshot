@@ -3,12 +3,12 @@ import URI from "vs/base/common/uri";
 export class URIUtils {
 
 	/**
-	 * tryConvertGitToFileURI converts a git-scheme
-	 * URI to the equivalent file-scheme URI. For non
-	 * git-scheme URIs, it is the identity function.
+	 * tryConvertGitToFileURI converts a git-scheme or zap-scheme
+	 * URI to the equivalent file-scheme URI. For non git/zap-scheme
+	 * URIs, it is the identity function.
 	 */
 	static tryConvertGitToFileURI(uri: URI): URI {
-		if (uri.scheme !== "git") {
+		if (uri.scheme !== "git" && uri.scheme !== "zap") {
 			return uri;
 		}
 		return URI.parse(`file://${uri.authority}${uri.path}${uri.fragment ? `/${uri.fragment}` : ""}`);

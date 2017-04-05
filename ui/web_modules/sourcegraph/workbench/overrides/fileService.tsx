@@ -4,6 +4,7 @@ import { TPromise } from "vs/base/common/winjs.base";
 import { FileChangesEvent, FileOperationEvent, IBaseStat, IContent, IFileService, IFileStat, IImportResult, IResolveContentOptions, IResolveFileOptions, IStreamContent, IUpdateContentOptions } from "vs/platform/files/common/files";
 import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 
+import { URIUtils } from "sourcegraph/core/uri";
 import { contentCache, fetchContentAndResolveRev } from "sourcegraph/editor/contentLoader";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
 import { getURIContext } from "sourcegraph/workbench/utils";
@@ -26,6 +27,16 @@ const fileStatCache: Map<string, IFileStat> = new Map();
  * doing multiple round trips to fetch the contents of the same directory.
  */
 const workspaceFiles: Map<string, string[]> = new Map();
+
+/**
+ * createdFiles keeps track of which files have been created within in the workspace.
+ */
+const createdFiles = new Set<string>();
+
+/**
+ * deletedFiles keeps track of which files have been created within in the workspace.
+ */
+const deletedFiles = new Set<string>();
 
 // FileService provides files from Sourcegraph's API instead of a normal file
 // system. It is used to find the files in a Workspace, but not for retrieving
@@ -58,6 +69,7 @@ export class FileService implements IFileService {
 
 	createFile(resource: URI, content: string = ""): TPromise<IFileStat> {
 		contentCache.set(resource.toString(), content);
+		createdFiles.add(resource.toString());
 		return this.updateContent(resource, content).then(result => {
 			fileStatCache.set(resource.toString(), result);
 			const key = this.contextService.getWorkspace().resource.toString();
@@ -72,14 +84,17 @@ export class FileService implements IFileService {
 	}
 
 	public del(resource: URI): TPromise<void> {
+		resource = URIUtils.tryConvertGitToFileURI(resource);
+
 		const key = this.contextService.getWorkspace().resource.toString();
 		let wsFiles = workspaceFiles.get(key);
 		if (wsFiles) {
 			workspaceFiles.set(key, wsFiles.filter(item => item !== getURIContext(resource).path));
 			fileStatCache.delete(resource.toString());
 			contentCache.delete(resource.toString());
+			createdFiles.delete(resource.toString());
+			deletedFiles.add(resource.toString());
 		}
-		this.refreshTree();
 		return TPromise.as(void 0);
 	}
 
@@ -103,10 +118,43 @@ export class FileService implements IFileService {
 	}
 
 	resolveContent(resource: URI, options?: IResolveContentOptions): TPromise<IContent> {
+		let originalResource = resource;
+		if (resource.scheme === "zap") {
+			resource = URIUtils.tryConvertGitToFileURI(resource);
+			// The zap URI scheme indicates we need to intialize a file that has been created on a zap ref
+			// before attempting to resolve the contents.
+			this.touchFile(resource);
+		}
+
+		const isViewingZapRev = Boolean(this.contextService.getWorkspace().revState && this.contextService.getWorkspace().revState!.zapRef);
+
 		// contentCache acts like watchFileChanges in that it is set the first time when fetching content from
 		// fetchContentAndResolveRev. It is updated when updateContent is called.
 		// This behavior mimicks watchFileChanges which is used by VSCode to watch for content changes at the filesystem level.
 		// We will need to build on this to handle renaming and moving files so their changes are reflected in the tree.
+		let contents = contentCache.get(resource.toString());
+		if (isViewingZapRev && resource.scheme === "git") {
+			// Check to see if this was a file that was created after the workspace was initialized. If so,
+			// this needs to be converted to the canonial file URI to retrieve the original contents since
+			// the created file can't be fetched from the backend.
+			const asFileURI = URIUtils.tryConvertGitToFileURI(resource);
+			if (createdFiles.has(asFileURI.toString())) {
+				contents = contentCache.get(asFileURI.toString());
+			}
+			if (deletedFiles.has(asFileURI.toString())) {
+				// TODO: Ideally the UI should show the contents of the file before it was deleted but diff'd
+				// in red. We would need to instead return the original contents of the file here for the left side 
+				// of the diff editor have the diff view opener pass in the empty string as the right side.
+				contents = "";
+			}
+		}
+		if ((contents !== undefined && isViewingZapRev) || originalResource.scheme === "zap") {
+			return TPromise.wrap({
+				...toBaseStat(resource),
+				value: contents || "",
+				encoding: "utf8",
+			});
+		}
 
 		return TPromise.wrap(fetchContentAndResolveRev(resource)).then(({ content }) => {
 			return {
@@ -189,11 +237,6 @@ export class FileService implements IFileService {
 			contentCache.set(resource.toString(), value);
 			return fileStat;
 		});
-	}
-
-	public refreshTree(): void {
-		// Use this event to trigger the refresh of the file tree in ExplorerView.
-		this._onFileChanges.fire(new FileChangesEvent([]));
 	}
 
 	public dispose(): void { /* noop */ }

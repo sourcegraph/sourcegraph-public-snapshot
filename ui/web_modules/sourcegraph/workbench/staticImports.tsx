@@ -22,6 +22,7 @@ const staticImports = {
 	"vs/workbench/parts/search/browser/openAnythingHandler": require("vs/workbench/parts/search/browser/openAnythingHandler"),
 	"vs/workbench/parts/quickopen/browser/gotoLineHandler": require("vs/workbench/parts/quickopen/browser/gotoLineHandler"),
 	"vs/workbench/parts/files/browser/editors/textFileEditor": require("vs/workbench/parts/files/browser/editors/textFileEditor"),
+	"vs/workbench/browser/parts/editor/textResourceEditor": require("vs/workbench/browser/parts/editor/textResourceEditor"),
 	"vs/workbench/parts/files/common/editors/fileEditorInput": require("vs/workbench/parts/files/common/editors/fileEditorInput"),
 };
 
