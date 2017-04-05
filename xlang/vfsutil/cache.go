@@ -18,10 +18,31 @@ import (
 // configurable so that in production we can point it into CACHE_DIR.
 var ArchiveCacheDir = "/tmp/xlang-archive-cache"
 
+// Evicter implements Evict
+type Evicter interface {
+	// Evict evicts an item from a cache.
+	Evict()
+}
+
+type cachedFile struct {
+	// File is an open FD to the fetched data
+	File *os.File
+
+	// path is the disk path for File
+	path string
+}
+
+// Evict will remove the file from the cache. It does not close File. It also
+// does not protect against other open readers or concurrent fetches.
+func (f *cachedFile) Evict() {
+	// Best-effort. Ignore error
+	_ = os.Remove(f.path)
+}
+
 // cachedFetch will open a file from the local cache with key. If missing,
 // fetcher will fill the cache first. cachedFetch also performs
 // single-flighting.
-func cachedFetch(ctx context.Context, component, key string, fetcher func(context.Context) (io.ReadCloser, error)) (f *os.File, err error) {
+func cachedFetch(ctx context.Context, component, key string, fetcher func(context.Context) (io.ReadCloser, error)) (ff *cachedFile, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Cached Fetch")
 	ext.Component.Set(span, component)
 	defer func() {
@@ -39,10 +60,13 @@ func cachedFetch(ctx context.Context, component, key string, fetcher func(contex
 	span.LogKV("key", key, "path", path)
 
 	// First do a fast-path, assume already on disk
-	f, err = os.Open(path)
+	f, err := os.Open(path)
 	if err == nil {
 		span.SetTag("source", "fast")
-		return f, nil
+		return &cachedFile{
+			File: f,
+			path: path,
+		}, nil
 	}
 
 	// We have to grab the lock for this key, so we can fetch or wait for
@@ -57,7 +81,10 @@ func cachedFetch(ctx context.Context, component, key string, fetcher func(contex
 	f, err = os.Open(path)
 	if err == nil {
 		span.SetTag("source", "other")
-		return f, nil
+		return &cachedFile{
+			File: f,
+			path: path,
+		}, nil
 	}
 	// Just in case we failed due to something bad on the FS, remove
 	_ = os.Remove(path)
@@ -94,7 +121,14 @@ func cachedFetch(ctx context.Context, component, key string, fetcher func(contex
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to put cache item in place")
 	}
-	return os.Open(path)
+	f, err = os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	return &cachedFile{
+		File: f,
+		path: path,
+	}, nil
 }
 
 func copyAndClose(dst io.WriteCloser, src io.ReadCloser) error {

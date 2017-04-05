@@ -15,11 +15,7 @@ import (
 
 // NewGitServer returns a VFS to repo at commit. It is backed by an archive
 // fetched from gitserver.
-func NewGitServer(repo, commit string) (*ArchiveFS, error) {
-	if strings.HasPrefix(commit, "-") {
-		return nil, errors.New("invalid git revision spec (begins with '-')")
-	}
-
+func NewGitServer(repo, commit string) *ArchiveFS {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
 		span, ctx := opentracing.StartSpanFromContext(ctx, "Archive Fetch")
 		ext.Component.Set(span, "gitserver")
@@ -33,7 +29,11 @@ func NewGitServer(repo, commit string) (*ArchiveFS, error) {
 			span.Finish()
 		}()
 
-		f, err := cachedFetch(ctx, "gitserver", repo+"@"+commit, func(ctx context.Context) (io.ReadCloser, error) {
+		if strings.HasPrefix(commit, "-") {
+			return nil, errors.New("invalid git revision spec (begins with '-')")
+		}
+
+		ff, err := cachedFetch(ctx, "gitserver", repo+"@"+commit, func(ctx context.Context) (io.ReadCloser, error) {
 			gitserverFetchTotal.Inc()
 			return gitserverFetch(ctx, repo, commit)
 		})
@@ -41,6 +41,7 @@ func NewGitServer(repo, commit string) (*ArchiveFS, error) {
 			gitserverFetchFailedTotal.Inc()
 			return nil, err
 		}
+		f := ff.File
 
 		zr, err := zipNewFileReader(f)
 		if err != nil {
@@ -49,11 +50,12 @@ func NewGitServer(repo, commit string) (*ArchiveFS, error) {
 		}
 
 		return &archiveReader{
-			Reader: zr,
-			Closer: f,
+			Reader:  zr,
+			Closer:  f,
+			Evicter: ff,
 		}, nil
 	}
-	return &ArchiveFS{fetch: fetch}, nil
+	return &ArchiveFS{fetch: fetch}
 }
 
 // gitserverFetch returns a reader of a zip archive of repo at commit.

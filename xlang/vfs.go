@@ -2,6 +2,7 @@ package xlang
 
 import (
 	"context"
+	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -31,13 +32,6 @@ func init() {
 var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (FileSystem, error) {
 	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
 
-	if onDiskExperiment {
-		// Do not need sharedFS since the archive will be shared via
-		// underlying file. However, in future will need it for cache
-		// invalidation. This is fine for the experiment.
-		return vfsutil.NewGitServer(repo, rev)
-	}
-
 	key := sharedFSKey{repo: repo, rev: rev}
 
 	// Share an open archive amongst clients. It is common to open a repo
@@ -46,10 +40,21 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) 
 	defer openSharedFSMu.Unlock()
 	fs, ok := openSharedFS[key]
 	if !ok {
-		fs = &sharedFS{
+		var archiveFS *vfsutil.ArchiveFS
+		if onDiskExperiment {
+			// Since we are wrapped by sharedFS, we will only call
+			// Close when all readers are done. When that happens
+			// we likely won't open the archive again soon, so we
+			// can reclaim the disk space it uses.
+			archiveFS = vfsutil.NewGitServer(repo, rev)
+			archiveFS.EvictOnClose = true
+		} else {
 			// ArchiveFileSystem and gitcmd.Open do not block, so
 			// we can create them while holding the lock.
-			FileSystem: vfsutil.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev),
+			archiveFS = vfsutil.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev)
+		}
+		fs = &sharedFS{
+			FileSystem: archiveFS,
 			key:        key,
 		}
 		openSharedFS[key] = fs
@@ -85,11 +90,18 @@ type sharedFS struct {
 }
 
 func (fs *sharedFS) Close() error {
+	close := false
 	openSharedFSMu.Lock()
 	fs.numReaders--
 	if fs.numReaders == 0 {
+		close = true
 		delete(openSharedFS, fs.key)
 	}
 	openSharedFSMu.Unlock()
+	if close {
+		if closer, ok := fs.FileSystem.(io.Closer); ok {
+			return closer.Close()
+		}
+	}
 	return nil
 }

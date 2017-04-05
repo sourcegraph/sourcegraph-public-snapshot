@@ -60,6 +60,7 @@ func ArchiveFileSystem(repo Archiver, treeish string) *ArchiveFS {
 type archiveReader struct {
 	*zip.Reader
 	io.Closer
+	Evicter
 
 	// Prefix is the path prefix to strip. For example a GitHub archive
 	// has a top-level dir "{repobasename}-{sha}/".
@@ -69,6 +70,10 @@ type archiveReader struct {
 // ArchiveFS is a ctxvfs.FileSystem backed by an Archiver.
 type ArchiveFS struct {
 	fetch func(context.Context) (*archiveReader, error)
+
+	// EvictOnClose when true will evict the underlying archive from the
+	// archive cache when closed.
+	EvictOnClose bool
 
 	once sync.Once
 	err  error // the error encountered during the fetch call (if any)
@@ -158,7 +163,13 @@ func (fs *ArchiveFS) Close() error {
 
 	fs.closed = true
 	if fs.ar != nil && fs.ar.Closer != nil {
-		return fs.ar.Close()
+		err := fs.ar.Close()
+		if err != nil {
+			return err
+		}
+		if fs.EvictOnClose && fs.ar.Evicter != nil {
+			fs.ar.Evict()
+		}
 	}
 	return nil
 }
