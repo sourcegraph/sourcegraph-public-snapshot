@@ -24,6 +24,7 @@ import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { urlToBlobRange } from "sourcegraph/blob/routes";
 import { AbsoluteLocation, RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
+import { updateConfiguration } from "sourcegraph/workbench/ConfigurationService";
 import { renderDirectoryContent, renderNotFoundError } from "sourcegraph/workbench/DirectoryContent";
 import { SidebarContribID, SidebarContribution } from "sourcegraph/workbench/info/contrib";
 import { getEditorInstance, updateEditorInstance } from "sourcegraph/workbench/overrides/editorService";
@@ -52,7 +53,17 @@ export async function updateWorkspace(location: AbsoluteLocation): Promise<void>
 }
 
 export async function updateEditorArea(location: AbsoluteLocation): Promise<void> {
+	// If the status bar is not visible update the configuration to show it.
+	// The status bar is set to false on pages that do not render an editor.
+	updateConfiguration((config: any) => {
+		if (!config.workbench.statusBar.visible) {
+			config.workbench.statusBar.visible = true;
+		}
+	});
 	const { repo, path, selection } = location;
+	if (!repo) {
+		return;
+	}
 	const resource = URIUtils.createResourceURI(repo, path);
 
 	const fileStat = await Services.get(IFileService).resolveFile(resource);

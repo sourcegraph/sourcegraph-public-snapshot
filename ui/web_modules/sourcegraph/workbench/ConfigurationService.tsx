@@ -92,7 +92,8 @@ const config = {
 		exclude: defaultExcludesNoGlobs,
 	},
 	window: {
-		title: "${activeEditorShort} - ${rootName} - Sourcegraph",
+		title: "",
+		titleBarStyle: "custom",
 	},
 	zenMode: {},
 };
@@ -140,7 +141,7 @@ export class ConfigurationService implements IConfigurationService {
 		};
 	}
 
-	keys(): IConfigurationKeys { return { default: ["zap.enable", "zap.overwrite"], user: [] as string[] }; }
+	keys(): IConfigurationKeys { return { default: ["zap.enable", "zap.overwrite", "workbench.statusBar.visible"], user: [] as string[] }; }
 
 	reloadConfiguration<T>(section?: string): TPromise<T> { return TPromise.as({} as T); }
 

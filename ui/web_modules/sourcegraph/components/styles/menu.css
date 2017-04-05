@@ -9,6 +9,8 @@
 	overflow: auto;
 	min-width: 12rem;
 	max-height: 800px;
+	font-size: 16px;
+	color: black;
 	z-index: 100;
 }
 
