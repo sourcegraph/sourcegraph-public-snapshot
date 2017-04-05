@@ -6,9 +6,11 @@
 
 /* Hide unused elements */
 :global .search-viewlet .primary-action-bar .actions-container,
-:global .search-viewlet .monaco-findInput .controls,
 :global .search-viewlet .query-details {
 	display: none;
+}
+:global .search-viewlet .monaco-findInput .controls {
+	padding: 8px 8px 0 0;
 }
 
 /* Container
@@ -139,6 +141,6 @@
 	padding: 12px 0 !important;
 }
 
-:global .vs-dark .monaco-inputbox-container .monaco-inputbox-message.warning {
+:global .vs-dark .monaco-inputbox-container .monaco-inputbox-message {
 	color: white !important;
 }
