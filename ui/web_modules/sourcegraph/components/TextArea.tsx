@@ -1,6 +1,6 @@
 import * as React from "react";
 import { FormElement } from "sourcegraph/components/FormElement";
-import { colors, forms, whitespace } from "sourcegraph/components/utils";
+import { forms, whitespace } from "sourcegraph/components/utils";
 
 interface Props extends React.HTMLAttributes<HTMLTextAreaElement> {
 	block?: boolean;
@@ -43,7 +43,6 @@ export function TextArea(props: Props): JSX.Element {
 		padding: `${whitespace[2]} ${whitespace[3]}`,
 		width: block && "100%",
 		boxShadow: error && forms.error,
-		background: colors.white(),
 		...style,
 	};
 

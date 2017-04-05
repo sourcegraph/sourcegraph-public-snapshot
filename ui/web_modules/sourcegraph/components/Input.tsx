@@ -52,7 +52,6 @@ export function Input(props: Props): JSX.Element {
 		paddingRight: icon && iconPosition ? "2.5rem" : whitespace[3],
 		width: block && "100%",
 		boxShadow: error && forms.error,
-		background: colors.white(),
 		...style,
 		...compact ? typography.size[7] : {},
 	};

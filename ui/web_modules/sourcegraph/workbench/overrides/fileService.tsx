@@ -242,11 +242,8 @@ export class FileService implements IFileService {
 	public dispose(): void { /* noop */ }
 }
 
-export function fetchFilesAndDirs(workspace: IWorkspace): Promise<GQL.IRoot | null> {
+export function fetchFilesAndDirs(workspace: IWorkspace): Promise<GQL.IRoot> {
 	const { repo } = getURIContext(workspace.resource);
-	if (!repo) {
-		return Promise.resolve(null);
-	}
 	return fetchGQL(`query FileTree($repo: String!, $rev: String!) {
 			root {
 				repository(uri: $repo) {
@@ -353,11 +350,7 @@ export function getFilesCached(workspace: IWorkspace): TPromise<string[]> {
 	if (workspaceFiles.has(key)) {
 		return TPromise.wrap(workspaceFiles.get(key));
 	}
-
 	return TPromise.wrap(fetchFilesAndDirs(workspace).then(root => {
-		if (!root || !root.repository) {
-			return [];
-		}
 		const files: string[] = root.repository!.commit.commit!.tree!.files.map(file => file.name);
 		workspaceFiles.set(key, files);
 		return files;

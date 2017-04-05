@@ -22,8 +22,6 @@
 	composes: containerFixed from layout;
 	composes: col_12_ns col_11 from grid;
 	composes: ph4 from base;
-	font-size: 16px;
-	line-height: 1.5;
 	max-width: 640px;
 }
 .container_wide {

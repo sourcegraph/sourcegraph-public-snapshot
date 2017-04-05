@@ -75,7 +75,6 @@ plugins.push(new UnusedFilesWebpackPlugin({
 			"**/*.go",
 			"web_modules/sourcegraph/api/index.tsx",
 			"web_modules/sourcegraph/util/experiments.tsx",
-			"web_modules/sourcegraph/page/zap-beta-demo.mp4",
 		],
 	},
 }));

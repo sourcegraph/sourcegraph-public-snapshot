@@ -128,9 +128,6 @@ export class SearchService implements ISearchService {
 	 */
 	public searchRepo(query: ISearchQuery): PPromise<ISearchComplete, ISearchProgressItem> {
 		this.extendQuery(query);
-		if (!query.filePattern || query.filePattern === "") {
-			return PPromise.as({});
-		}
 
 		const convertResults = repoList => {
 			const results: any[] = [];

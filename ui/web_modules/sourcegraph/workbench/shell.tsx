@@ -2,9 +2,7 @@ import * as autobind from "autobind-decorator";
 import * as debounce from "lodash/debounce";
 import * as isEqual from "lodash/isEqual";
 import * as React from "react";
-import URI from "vs/base/common/uri";
 
-import { setZoomFactor } from "vs/base/browser/browser";
 import { ServiceCollection } from "vs/platform/instantiation/common/serviceCollection";
 import { IWorkspace, IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { Workbench } from "vs/workbench/electron-browser/workbench";
@@ -21,7 +19,6 @@ import { Services } from "sourcegraph/workbench/services";
 
 interface Props extends AbsoluteLocation, RouteProps {
 	rev: string | null;
-	componentCallback?: () => void;
 }
 
 // WorkbenchShell loads the workbench and calls init on it.
@@ -43,14 +40,10 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 		}
 
 		const { repo } = this.props;
-		const uri = repo ? URIUtils.createResourceURI(repo) : URI.parse("file://");
-		const { workbench, services, domElement } = init(uri, { zapRev: this.props.zapRev, zapRef: this.props.zapRef, commitID: this.props.commitID, branch: this.props.branch });
+		const { workbench, services, domElement } = init(URIUtils.createResourceURI(repo), { zapRev: this.props.zapRev, zapRef: this.props.zapRef, commitID: this.props.commitID, branch: this.props.branch });
 		registerEditorCallbacks();
 		this.workbench = workbench;
 		this.services = services;
-		if (this.props.componentCallback) {
-			this.props.componentCallback();
-		}
 		this.currWorkspace = (this.services.get(IWorkspaceContextService) as IWorkspaceContextService).getWorkspace();
 		updateWorkspace(this.props).then(() => {
 			parent.appendChild(domElement);
@@ -98,19 +91,14 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 		}
 	}
 
-	componentWillReceiveProps(nextProps: Props): void {
-		if (!isEqual(nextProps, this.props)) {
-			if (nextProps.componentCallback) {
-				nextProps.componentCallback();
-			}
-		}
+	componentWillUnmount(): void {
+		window.onresize = () => void (0);
 	}
 
 	layout(): void {
 		if (!this.workbench) {
 			return;
 		}
-		setZoomFactor(1);
 		if (window.innerWidth <= 768) {
 			// Mobile device, width less than 768px.
 			this.workbench.setSideBarHidden(true);

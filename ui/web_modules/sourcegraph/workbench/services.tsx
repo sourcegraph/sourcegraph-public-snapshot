@@ -149,21 +149,6 @@ class WindowService {
 		return 1;
 	}
 
-	getRecentlyOpen(): TPromise<{ files: string[], folders: string[] }> {
-		return TPromise.as({ files: [], folders: [] });
-	}
-
-	isMaximized(): TPromise<boolean> {
-		return TPromise.as(false);
-	}
-
-	maximizeWindow(): TPromise<void> {
-		return TPromise.as(void 0);
-	}
-
-	unmaximizeWindow(): TPromise<void> {
-		return TPromise.as(void 0);
-	}
 }
 
 class IntegrityService {

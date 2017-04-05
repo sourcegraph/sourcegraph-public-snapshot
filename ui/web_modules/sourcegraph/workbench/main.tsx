@@ -8,7 +8,6 @@ import "sourcegraph/workbench/staticImports";
 
 import "vs/editor/common/editorCommon";
 import "vs/editor/contrib/codelens/browser/codelens";
-import "vs/workbench/browser/actions/toggleStatusbarVisibility";
 import "vs/workbench/parts/files/browser/explorerViewlet";
 import "vs/workbench/parts/files/browser/files.contribution";
 import "vs/workbench/parts/git/electron-browser/git.contribution";

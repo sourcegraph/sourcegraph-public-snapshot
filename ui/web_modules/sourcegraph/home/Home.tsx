@@ -144,7 +144,7 @@ export class Home extends React.Component<HomeProps, {}> {
 
 					</FlexContainer>
 
-					<LocationStateToggleLink href="/beta" modalName="menuBeta" location={this.props.location} onToggle={(v) => v && Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_DASHBOARD })}>
+					<LocationStateToggleLink href="/beta" modalName="beta" location={this.props.location} onToggle={(v) => v && Events.BetaModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: PAGE_DASHBOARD })}>
 						<div style={{ marginTop: whitespace[3] }}>
 							<strong>
 								Join the beta list

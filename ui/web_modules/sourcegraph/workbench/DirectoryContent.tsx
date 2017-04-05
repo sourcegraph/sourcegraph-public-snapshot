@@ -43,7 +43,6 @@ function renderRootContent(message: JSX.Element): void {
 	if (!el) {
 		throw new Error("Expected workbench.parts.editor element to exist.");
 	}
-
 	const container = el.firstChild;
 	if (!container) {
 		throw new Error("Expected workbench.parts.editor to have a child.");
