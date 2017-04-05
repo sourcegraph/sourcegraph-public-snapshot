@@ -3,10 +3,8 @@ package exec
 import (
 	"bytes"
 	"context"
-	"log"
+	"encoding/json"
 	"reflect"
-	"runtime"
-	"strconv"
 	"sync"
 
 	"github.com/neelance/graphql-go/errors"
@@ -15,6 +13,7 @@ import (
 	"github.com/neelance/graphql-go/internal/exec/selected"
 	"github.com/neelance/graphql-go/internal/query"
 	"github.com/neelance/graphql-go/internal/schema"
+	"github.com/neelance/graphql-go/log"
 	"github.com/neelance/graphql-go/trace"
 )
 
@@ -22,6 +21,7 @@ type Request struct {
 	selected.Request
 	Limiter chan struct{}
 	Tracer  trace.Tracer
+	Logger  log.Logger
 }
 
 type fieldResult struct {
@@ -29,25 +29,21 @@ type fieldResult struct {
 	value []byte
 }
 
-func (r *Request) handlePanic() {
-	if err := recover(); err != nil {
-		r.AddError(makePanicError(err))
+func (r *Request) handlePanic(ctx context.Context) {
+	if value := recover(); value != nil {
+		r.Logger.LogPanic(ctx, value)
+		r.AddError(makePanicError(value))
 	}
 }
 
 func makePanicError(value interface{}) *errors.QueryError {
-	err := errors.Errorf("graphql: panic occurred: %v", value)
-	const size = 64 << 10
-	buf := make([]byte, size)
-	buf = buf[:runtime.Stack(buf, false)]
-	log.Printf("%s\n%s", err, buf)
-	return err
+	return errors.Errorf("graphql: panic occurred: %v", value)
 }
 
 func (r *Request) Execute(ctx context.Context, s *resolvable.Schema, op *query.Operation) ([]byte, []*errors.QueryError) {
 	var out bytes.Buffer
 	func() {
-		defer r.handlePanic()
+		defer r.handlePanic(ctx)
 		sels := selected.ApplyOperation(&r.Request, s, op)
 		r.execSelections(ctx, sels, s.Resolver, &out, op.Type == query.Mutation)
 	}()
@@ -76,7 +72,7 @@ func (r *Request) execSelections(ctx context.Context, sels []selected.Selection,
 		wg.Add(len(fields))
 		for _, f := range fields {
 			go func(f *fieldWithResolver) {
-				defer r.handlePanic()
+				defer r.handlePanic(ctx)
 				r.execFieldSelection(ctx, f.field, f.resolver, &f.out, false)
 				wg.Done()
 			}(f)
@@ -158,6 +154,7 @@ func (r *Request) execFieldSelection(ctx context.Context, field *selected.Schema
 	err = func() (err *errors.QueryError) {
 		defer func() {
 			if panicValue := recover(); panicValue != nil {
+				r.Logger.LogPanic(ctx, panicValue)
 				err = makePanicError(panicValue)
 			}
 		}()
@@ -236,7 +233,7 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 			entryouts := make([]bytes.Buffer, l)
 			for i := 0; i < l; i++ {
 				go func(i int) {
-					defer r.handlePanic()
+					defer r.handlePanic(ctx)
 					r.execSelectionSet(ctx, sels, t.OfType, resolver.Index(i), &entryouts[i])
 					wg.Done()
 				}(i)
@@ -264,24 +261,12 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 		out.WriteByte(']')
 
 	case *schema.Scalar:
-		var b []byte // TODO use scratch
-		switch t.Name {
-		case "Int":
-			out.Write(strconv.AppendInt(b, resolver.Int(), 10))
-		case "Float":
-			out.Write(strconv.AppendFloat(b, resolver.Float(), 'f', -1, 64))
-		case "String":
-			out.Write(strconv.AppendQuote(b, resolver.String()))
-		case "Boolean":
-			out.Write(strconv.AppendBool(b, resolver.Bool()))
-		default:
-			v := resolver.Interface().(marshaler)
-			data, err := v.MarshalJSON()
-			if err != nil {
-				panic(errors.Errorf("could not marshal %v", v))
-			}
-			out.Write(data)
+		v := resolver.Interface()
+		data, err := json.Marshal(v)
+		if err != nil {
+			panic(errors.Errorf("could not marshal %v", v))
 		}
+		out.Write(data)
 
 	case *schema.Enum:
 		out.WriteByte('"')
