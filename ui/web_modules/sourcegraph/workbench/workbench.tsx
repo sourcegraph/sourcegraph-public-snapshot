@@ -65,6 +65,23 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		if (this.props.loading) {
 			return null; // data not yet fetched
 		}
+		if (!this.props.isSymbolUrl && !this.props.isRepoUrl) {
+			return <div style={{ display: "flex", height: "100%" }}>
+				<WorkbenchShell
+					location={this.props.location}
+					routes={this.props.routes}
+					params={this.props.params}
+					repo={""}
+					rev={""}
+					commitID={""}
+					zapRev={undefined}
+					zapRef={undefined}
+					branch={undefined}
+					path={""}
+					selection={null}
+					componentCallback={this.props.injectedComponentCallback} />
+			</div>;
+		}
 		if (this.props.isSymbolUrl && this.props.root) {
 			if (!this.props.root.symbols || this.props.root.symbols.length === 0) {
 				return <Error
@@ -76,13 +93,13 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			repository = symbol.repository;
 			path = symbol.path;
 			selection = RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty();
-		} else if (this.props.isRepoUrl && this.props.root) {
-			if (!this.props.root.repository) {
+		} else {
+			if (!this.props.root!.repository) {
 				return <Error
 					code="404"
 					desc="Repository not found" />;
 			}
-			repository = this.props.root.repository;
+			repository = this.props.root!.repository!;
 			selection = this.props.selection;
 			path = pathFromRouteParams(this.props.params);
 
@@ -93,45 +110,29 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			if (needsPayment(repository.expirationDate)) {
 				return <Paywall repo={repository.uri} />;
 			}
-
-			const commitID = repository.revState.zapRev ? repository.revState.zapRev.base : repository.revState.commit!.sha1;
-			return <div style={{ display: "flex", height: "100%" }}>
-				<BlobPageTitle repo={this.props.repo} path={path} />
-				{/* TODO(john): repo main takes the commit state for the 'y' hotkey, assume for now revState can be passed. */}
-				<RepoMain {...this.props} commit={repository.revState}>
-					<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
-					<TrialEndingWarning layout={() => this.forceUpdate()} expirationDate={repository.expirationDate} />
-					<WorkbenchShell
-						location={this.props.location}
-						routes={this.props.routes}
-						params={this.props.params}
-						repo={repository.uri}
-						rev={this.props.rev}
-						commitID={commitID}
-						zapRev={repository.revState.zapRev && this.props.rev ? this.props.rev : undefined}
-						zapRef={repository.revState.zapRev ? repository.revState.zapRev.ref : undefined}
-						branch={repository.revState.zapRev ? repository.revState.zapRev.branch : undefined}
-						path={path}
-						selection={selection} />
-					<InfoPanelLifecycle fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
-				</RepoMain>
-			</div>;
 		}
 
+		const commitID = repository.revState.zapRev ? repository.revState.zapRev.base : repository.revState.commit!.sha1;
 		return <div style={{ display: "flex", height: "100%" }}>
-			<WorkbenchShell
-				location={this.props.location}
-				routes={this.props.routes}
-				params={this.props.params}
-				repo={""}
-				rev={""}
-				commitID={""}
-				zapRev={undefined}
-				zapRef={undefined}
-				branch={undefined}
-				path={""}
-				selection={null}
-				componentCallback={this.props.injectedComponentCallback} />
+			<BlobPageTitle repo={this.props.repo} path={path} />
+			{/* TODO(john): repo main takes the commit state for the 'y' hotkey, assume for now revState can be passed. */}
+			<RepoMain {...this.props} commit={repository.revState}>
+				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
+				<TrialEndingWarning layout={() => this.forceUpdate()} expirationDate={repository.expirationDate} />
+				<WorkbenchShell
+					location={this.props.location}
+					routes={this.props.routes}
+					params={this.props.params}
+					repo={repository.uri}
+					rev={this.props.rev}
+					commitID={commitID}
+					zapRev={repository.revState.zapRev && this.props.rev ? this.props.rev : undefined}
+					zapRef={repository.revState.zapRev ? repository.revState.zapRev.ref : undefined}
+					branch={repository.revState.zapRev ? repository.revState.zapRev.branch : undefined}
+					path={path}
+					selection={selection} />
+				<InfoPanelLifecycle fileEventProps={{ repo: repository.uri, rev: commitID, path: path }} />
+			</RepoMain>
 		</div>;
 	}
 }
@@ -228,6 +229,6 @@ export const Workbench = graphql(gql`
 			};
 		},
 		skip: (ownProps) => {
-			return !Boolean(mapRouteProps(ownProps).isRepoUrl);
+			return !Boolean(mapRouteProps(ownProps).isRepoUrl) && !Boolean(mapRouteProps(ownProps).isSymbolUrl);
 		},
 	})(WorkbenchComponent);
