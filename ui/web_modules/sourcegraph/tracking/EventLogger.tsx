@@ -164,6 +164,8 @@ class EventLoggerClass {
 			return null;
 		}
 
+		this.setUserInstalledChromeExtension("true");
+
 		const idProps = { detail: { deviceId: this._getTelligentDuid(), userId: context.user && context.user.Login } };
 		if (googleAnalytics.gaClientID) {
 			idProps.detail["gaClientId"] = googleAnalytics.gaClientID;
