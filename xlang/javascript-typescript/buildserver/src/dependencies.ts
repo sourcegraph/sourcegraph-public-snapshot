@@ -87,6 +87,8 @@ export class DependencyManager {
 				await this.updater.ensureStructure();
 				const vendoredPackageJsons = new Set<string>();
 				const packageJsons = new Set<string>();
+				let rootPackageJson: string | undefined;
+				let rootPackageJsonLevel = Infinity;
 				for (const uri of this.inMemoryFileSystem.uris()) {
 					const parts = url.parse(uri);
 					if (!parts.pathname) {
@@ -95,6 +97,12 @@ export class DependencyManager {
 					// Search for package.json files _not_ inside node_modules
 					if (parts.pathname.endsWith('/package.json') && !parts.pathname.includes('/node_modules/')) {
 						packageJsons.add(uri);
+						// If the current root package.json is further nested than this one, replace it
+						const level = parts.pathname.split('/').length;
+						if (level < rootPackageJsonLevel) {
+							rootPackageJson = uri;
+							rootPackageJsonLevel = level;
+						}
 					}
 					// Collect vendored node_modules folders found to filter package.jsons
 					const nodeModulesIndex = parts.pathname.indexOf('/node_modules/');
@@ -102,6 +110,8 @@ export class DependencyManager {
 						vendoredPackageJsons.add(url.format({ ...parts, pathname: uri.slice(0, nodeModulesIndex) + '/package.json' }));
 					}
 				}
+				this.logger.log(`Found ${packageJsons.size} package.json in workspace, ${vendoredPackageJsons.size} vendored node_modules`);
+				this.logger.log(`Root package.json: ${rootPackageJson}`);
 				// Filter package.jsons with vendored node_modules
 				await Promise.all(
 					iterate(packageJsons)
@@ -116,8 +126,10 @@ export class DependencyManager {
 								this.puntWorkspaceSymbol = true;
 							}
 							this.packages.set(uri, parsedPackageJson);
-							// Start installation in the background
-							this.ensureForFile(uri).catch(err => undefined);
+							// Start installation for the top-level package.json in the background
+							if (uri === rootPackageJson) {
+								this.ensureForFile(uri).catch(err => undefined);
+							}
 						})
 				);
 			} catch (err) {
