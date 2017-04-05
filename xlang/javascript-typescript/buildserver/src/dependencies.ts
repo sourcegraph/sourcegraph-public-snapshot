@@ -194,9 +194,11 @@ export class DependencyManager {
 				// The directory that yarn will be spawned in
 				const cwd = path.join(this.tempDir, 'workspace', uri2path(url.format(directory)));
 				const globalDir = path.join(this.tempDir, 'global', uri2path(url.format(directory)));
+				const cacheDir = path.join(this.tempDir, 'cache', uri2path(url.format(directory)));
 				// Create temporary directory
 				await new Promise((resolve, reject) => mkdirp(cwd, err => err ? reject(err) : resolve()));
 				await new Promise((resolve, reject) => mkdirp(globalDir, err => err ? reject(err) : resolve()));
+				await new Promise((resolve, reject) => mkdirp(cacheDir, err => err ? reject(err) : resolve()));
 				// Fetch package.json content
 				await this.updater.ensure(packageJsonUri);
 				// Write package.json into temporary directory
@@ -215,7 +217,11 @@ export class DependencyManager {
 						'--non-interactive', // Don't ask for any user input
 						'--no-progress',     // Don't output a progress bar
 						// '--link-duplicates', // Use hardlinks instead of copying, not working reliably because of https://github.com/yarnpkg/yarn/issues/2734
-						'--global-folder', globalDir // Use a workspace-specific global cache folder that we can clean up afterwards
+
+						// Use a separate global and cache folders per package.json
+						// that we can clean up afterwards and don't interfere with concurrent installations
+						'--global-folder', globalDir,
+						'--cache-folder', cacheDir
 					], { cwd });
 					// Forward all output to logger
 					yarn.stdout.on('data', chunk => {
