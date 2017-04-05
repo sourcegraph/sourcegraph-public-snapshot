@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/neelance/depprof"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -28,7 +27,6 @@ func Start(addr string, extra ...Endpoint) {
 		w.Write([]byte(`
 				<a href="/vars">Vars</a><br>
 				<a href="/debug/pprof">PProf</a><br>
-				<a href="/depprof">DepProf</a><br>
 				<a href="/metrics">Metrics</a><br>
 			`))
 		for _, e := range extra {
@@ -50,7 +48,6 @@ func Start(addr string, extra ...Endpoint) {
 	pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 	pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 	pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-	pp.Handle("/depprof", depprof.NewHandler("sourcegraph.com/sourcegraph/sourcegraph"))
 	pp.Handle("/metrics", prometheus.Handler())
 	for _, e := range extra {
 		pp.Handle(e.Path, e.Handler)

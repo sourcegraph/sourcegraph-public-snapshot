@@ -676,12 +676,6 @@
 			"revisionTime": "2016-03-29T13:10:07Z"
 		},
 		{
-			"checksumSHA1": "dOZUSF5us7fCNH1a82DkyzCFsGA=",
-			"path": "github.com/neelance/depprof",
-			"revision": "fc4ad4ce8cf49e318f11a2f68d2b53db4b1f426a",
-			"revisionTime": "2016-07-07T22:02:19Z"
-		},
-		{
 			"checksumSHA1": "O4B/dkRgXSvH/iflRKmBukpQPjw=",
 			"path": "github.com/neelance/godockerize",
 			"revision": "4f3abea0c46a578650e12ad4c4918c3e488768ac",

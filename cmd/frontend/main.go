@@ -1,7 +1,5 @@
 package main
 
-//docker:install graphviz
-
 import (
 	"os"
 
