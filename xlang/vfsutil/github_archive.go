@@ -1,20 +1,15 @@
 package vfsutil
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -29,68 +24,39 @@ func NewGitHubRepoVFS(repo, rev string) (*ArchiveFS, error) {
 	}
 
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
-		span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS fetch")
+		span, ctx := opentracing.StartSpanFromContext(ctx, "Archive Fetch")
+		ext.Component.Set(span, "githubvfs")
+		span.SetTag("repo", repo)
+		span.SetTag("commit", rev)
 		defer func() {
 			if err != nil {
 				ext.Error.Set(span, true)
-				span.LogEvent(fmt.Sprintf("error: %v", err))
+				span.SetTag("err", err)
 			}
 			span.Finish()
 		}()
 
-		url := fmt.Sprintf("https://codeload.%s/zip/%s", repo, rev)
-		span.SetTag("repo", repo)
-		span.SetTag("commit", rev)
-
-		urlMu := urlMu(url)
-		urlMu.Lock()
-		defer urlMu.Unlock()
-		span.LogEvent("urlMu acquired")
-
-		var zr *zip.Reader
-		var closer io.Closer
-		fsPath := filepath.Join("/tmp/xlang-github-cache", repo, rev+".zip")
-		var zrc *zip.ReadCloser
-		zrc, err = zip.OpenReader(fsPath)
-		if err == nil {
-			span.LogEvent("read from " + fsPath)
-			zr = &zrc.Reader
-			closer = zrc
-		}
-		if os.IsNotExist(err) {
-			// https://github.com/a/b/archive/master.zip redirects to
-			// codeload.github.com, so let's just use the latter directly and
-			// save a roundtrip.
-			span.LogEvent("fetching " + url)
+		f, err := cachedFetch(ctx, "githubvfs", repo+"@"+rev, func(ctx context.Context) (io.ReadCloser, error) {
+			ghFetch.Inc()
+			url := fmt.Sprintf("https://codeload.%s/zip/%s", repo, rev)
 			resp, err := http.Get(url)
 			if err != nil {
 				return nil, err
 			}
-			defer resp.Body.Close()
 			if resp.StatusCode != http.StatusOK {
-				return nil, fmt.Errorf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
+				resp.Body.Close()
+				return nil, errors.Errorf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
 			}
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			span.LogEvent("fetched " + url)
-			ghBytes.Add(float64(len(body)))
+			return resp.Body, nil
+		})
+		if err != nil {
+			ghFetchFailed.Inc()
+			return nil, err
+		}
 
-			// Cache on the file system.
-			if err := os.MkdirAll(filepath.Dir(fsPath), 0700); err != nil {
-				return nil, err
-			}
-			if err := ioutil.WriteFile(fsPath, body, 0600); err != nil {
-				return nil, err
-			}
-			span.LogEvent("cached to " + fsPath)
-
-			zr, err = zip.NewReader(bytes.NewReader(body), int64(len(body)))
-			if err != nil {
-				return nil, err
-			}
-		} else if err != nil {
+		zr, err := zipNewFileReader(f)
+		if err != nil {
+			f.Close()
 			return nil, err
 		}
 
@@ -98,6 +64,7 @@ func NewGitHubRepoVFS(repo, rev string) (*ArchiveFS, error) {
 		// so we need to remove that. The repobasename is in the canonical
 		// casing, which may be different from fs.repo.
 		if len(zr.File) == 0 {
+			f.Close()
 			return nil, errors.New("zip archive has no files")
 		}
 		prefix := zr.File[0].Name
@@ -107,7 +74,7 @@ func NewGitHubRepoVFS(repo, rev string) (*ArchiveFS, error) {
 
 		return &archiveReader{
 			Reader: zr,
-			Closer: closer,
+			Closer: f,
 			Prefix: prefix + "/",
 		}, nil
 	}
@@ -116,13 +83,20 @@ func NewGitHubRepoVFS(repo, rev string) (*ArchiveFS, error) {
 
 var githubRepoRx = regexp.MustCompile(`^github\.com/[\w.-]{1,100}/[\w.-]{1,100}$`)
 
-var ghBytes = prometheus.NewCounter(prometheus.CounterOpts{
+var ghFetch = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "xlang",
 	Subsystem: "vfs",
-	Name:      "github_bytes_total",
-	Help:      "Total number of bytes read into memory by GitHubRepoVFS.",
+	Name:      "github_fetch_total",
+	Help:      "Total number of fetches by GitHubRepoVFS.",
+})
+var ghFetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "xlang",
+	Subsystem: "vfs",
+	Name:      "github_fetch_failed_total",
+	Help:      "Total number of fetches by GitHubRepoVFS that failed.",
 })
 
 func init() {
-	prometheus.MustRegister(ghBytes)
+	prometheus.MustRegister(ghFetch)
+	prometheus.MustRegister(ghFetchFailed)
 }

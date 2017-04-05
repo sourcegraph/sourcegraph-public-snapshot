@@ -3,14 +3,22 @@ package xlang
 import (
 	"context"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/sourcegraph/ctxvfs"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
+
+var onDiskExperiment bool
+
+func init() {
+	onDiskExperiment, _ = strconv.ParseBool(env.Get("XLANG_DISK_EXPERIMENT", "false", "Use on disk cache instead of in-memory for archives"))
+}
 
 // NewRemoteRepoVFS returns a virtual file system interface for
 // accessing the files in the specified repo at the given commit.
@@ -22,6 +30,14 @@ import (
 // It is a var so that it can be mocked in tests.
 var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (FileSystem, error) {
 	repo := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git")
+
+	if onDiskExperiment {
+		// Do not need sharedFS since the archive will be shared via
+		// underlying file. However, in future will need it for cache
+		// invalidation. This is fine for the experiment.
+		return vfsutil.NewGitServer(repo, rev)
+	}
+
 	key := sharedFSKey{repo: repo, rev: rev}
 
 	// Share an open archive amongst clients. It is common to open a repo

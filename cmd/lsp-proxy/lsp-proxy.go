@@ -9,13 +9,22 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/keegancsmith/tmpfriend"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
+
+func init() {
+	// If CACHE_DIR is specified, use that
+	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "xlang-archive-cache")
+}
 
 var (
 	addr     = flag.String("addr", ":4388", "proxy server TCP listen address")
