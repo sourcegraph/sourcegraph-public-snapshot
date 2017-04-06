@@ -301,6 +301,8 @@ export class BuildHandler extends TypeScriptService {
 					}
 					symbolLocation.symbol.package = { name, version, repoURL };
 				}
+				// Remove location because it points to node_modules instead of the external repo
+				symbolLocation.location = undefined;
 			} else {
 				// The symbol is defined in the root package of the workspace, not in a dependency
 				// Get root package.json
@@ -327,8 +329,6 @@ export class BuildHandler extends TypeScriptService {
 					symbolLocation.symbol.package = { name, version, repoURL };
 				}
 			}
-			// Remove location because ?
-			symbolLocation.location = undefined;
 		}));
 		return symbolsLocations;
 	}
