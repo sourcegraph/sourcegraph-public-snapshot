@@ -14,7 +14,10 @@ import { IQuickOpenService } from "vs/platform/quickOpen/common/quickOpen";
 import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace";
 import { DiffEditorInput } from "vs/workbench/common/editor/diffEditorInput";
 import { ResourceEditorInput } from "vs/workbench/common/editor/resourceEditorInput";
+import { ExplorerView } from "vs/workbench/parts/files/browser/views/explorerView";
 import { IWorkbenchEditorService } from "vs/workbench/services/editor/common/editorService";
+import { IViewletService } from "vs/workbench/services/viewlet/browser/viewlet";
+import { IPartService, Parts } from "vscode/src/vs/workbench/services/part/common/partService";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
@@ -31,12 +34,12 @@ import { getCurrentWorkspace, getGitBaseResource, getURIContext, getWorkspaceFor
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
-export function syncEditorWithRouterProps(location: AbsoluteLocation): void {
+export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
 	updateWorkspace(location);
 	updateEditorArea(location);
 }
 
-export function updateWorkspace(location: AbsoluteLocation): void {
+export async function updateWorkspace(location: AbsoluteLocation): Promise<void> {
 	const { repo, path } = location;
 	registerWorkspace({ resource: URIUtils.createResourceURI(repo), revState: location });
 	const resource = URIUtils.createResourceURI(repo, path === "" ? undefined : path);
@@ -44,6 +47,8 @@ export function updateWorkspace(location: AbsoluteLocation): void {
 	if (getWorkspaceForResource(resource).toString() !== currWorkspace.resource.toString() || (currWorkspace.revState && currWorkspace.revState.zapRef !== location.zapRef)) {
 		setWorkspace({ resource: getWorkspaceForResource(resource), revState: { zapRev: location.zapRev, zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
 	}
+
+	return updateFileTree(resource);
 }
 
 export async function updateEditorArea(location: AbsoluteLocation): Promise<void> {
@@ -178,6 +183,72 @@ export function toggleQuickopen(forceHide?: boolean): void {
 		quickopen.close();
 	} else {
 		quickopen.show();
+	}
+}
+
+export async function updateFileTree(resource: URI): Promise<void> {
+	const partService = Services.get(IPartService) as IPartService;
+	const visible = partService.isVisible(Parts.SIDEBAR_PART);
+	if (!visible) {
+		return;
+	}
+
+	const viewletService = Services.get(IViewletService) as IViewletService;
+	let viewlet = viewletService.getActiveViewlet();
+	if (!viewlet) {
+		viewlet = await new Promise(resolve => {
+			viewletService.onDidViewletOpen(resolve);
+		}) as any;
+	}
+
+	const view = viewlet["explorerView"];
+	if (view instanceof ExplorerView) {
+		await view.refresh(true);
+
+		const privateView = view as any;
+		let root = privateView.root;
+		if (!root) {
+			await view.refresh();
+			root = privateView.root;
+		}
+		const fileStat = root.find(resource);
+		const treeModel = privateView.tree.model;
+		const chain = await treeModel.resolveUnknownParentChain(fileStat);
+		chain.forEach((item) => {
+			treeModel.expand(item);
+		});
+		treeModel.expand(fileStat);
+
+		const oldSelection = privateView.tree.getSelection();
+		await view.select(resource);
+		const scrollPos = privateView.tree.getRelativeTop(fileStat);
+		if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
+			// Item is scrolled off screen
+			await view.select(resource, true);
+			await view.refresh(true);
+
+			const privateView = view as any;
+			let root = privateView.root;
+			if (!root) {
+				await view.refresh();
+				root = privateView.root;
+			}
+			const fileStat = root.find(resource);
+			const treeModel = privateView.tree.model;
+			const chain = await treeModel.resolveUnknownParentChain(fileStat);
+			chain.forEach((item) => {
+				treeModel.expand(item);
+			});
+			treeModel.expand(fileStat);
+
+			const oldSelection = privateView.tree.getSelection();
+			await view.select(resource);
+			const scrollPos = privateView.tree.getRelativeTop(fileStat);
+			if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
+				// Item is scrolled off screen
+				await view.select(resource, true);
+			}
+		}
 	}
 }
 
