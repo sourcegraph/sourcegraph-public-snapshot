@@ -9,6 +9,7 @@ import mkdirp = require('mkdirp');
 import { spawn } from 'child_process';
 import iterate from 'iterare';
 import * as fs from 'mz/fs';
+import { Span } from 'opentracing';
 
 export interface PackageJson {
 	name: string;
@@ -79,12 +80,15 @@ export class DependencyManager {
 	/**
 	 * Scans the workspace to find all packages _defined_ in the workspace, saves the content in `packages`
 	 * For each found package, installation is started in the background and tracked in `installations`
+	 *
+	 * @param childOf OpenTracing parent span for tracing
 	 */
-	private async scan(): Promise<void> {
+	private async scan(childOf = new Span()): Promise<void> {
 		const promise = (async () => {
+			const span = childOf.tracer().startSpan('Scan dependencies', { childOf });
 			try {
 				// Find locations of package.json and node_modules folders
-				await this.updater.ensureStructure();
+				await this.updater.ensureStructure(span);
 				const vendoredPackageJsons = new Set<string>();
 				const packageJsons = new Set<string>();
 				let rootPackageJson: string | undefined;
@@ -118,7 +122,7 @@ export class DependencyManager {
 						.filter(uri => !vendoredPackageJsons.has(uri))
 						.map(async uri => {
 							// Fetch package.json content
-							await this.updater.ensure(uri);
+							await this.updater.ensure(uri, span);
 							const packageJson = this.inMemoryFileSystem.getContent(uri);
 							const parsedPackageJson: PackageJson = JSON.parse(packageJson);
 							// Don't do a workspace/symbol search for DefinitelyTyped
@@ -143,12 +147,20 @@ export class DependencyManager {
 
 	/**
 	 * Ensures all package.json have been detected, loaded and installations kicked off
+	 *
+	 * @param childOf OpenTracing parent span for tracing
 	 */
-	async ensureScanned(): Promise<void> {
-		if (this.scanned) {
-			return this.scanned;
+	async ensureScanned(childOf = new Span()): Promise<void> {
+		const span = childOf.tracer().startSpan('Ensure scanned dependencies', { childOf });
+		try {
+			await (this.scanned || this.scan(span));
+		} catch (err) {
+			span.setTag('error', true);
+			span.log({ 'event': 'error', 'error.object': err });
+			throw err;
+		} finally {
+			span.finish();
 		}
-		return this.scan();
 	}
 
 	/**
@@ -188,17 +200,20 @@ export class DependencyManager {
 	}
 
 	/**
-	 * Installs dependencies for the given file and refetches structure under that directory.
+	 * Installs dependencies for the given file or directory and refetches structure under that directory.
 	 * Does not depend on a call to `ensureScanned()`
 	 *
-	 * @param dir URI to a file
+	 * @param uri URI to a file or directory
+	 * @param childOf OpenTracing parent span for tracing
 	 */
-	private async installForFile(file: string): Promise<void> {
-		const packageJsonUri = this.getClosestPackageJsonUri(file);
+	private async installForFile(uri: string, childOf = new Span()): Promise<void> {
+		const packageJsonUri = this.getClosestPackageJsonUri(uri);
 		if (!packageJsonUri) {
 			return Promise.resolve();
 		}
 		const promise = (async () => {
+			const span = childOf.tracer().startSpan('Dependency installation', { childOf });
+			span.addTags({ uri, packageJsonUri });
 			try {
 				const logger = new PrefixedLogger(this.logger, `Dependency installation ${packageJsonUri}`);
 				const parts = url.parse(packageJsonUri);
@@ -212,7 +227,7 @@ export class DependencyManager {
 				await new Promise((resolve, reject) => mkdirp(globalDir, err => err ? reject(err) : resolve()));
 				await new Promise((resolve, reject) => mkdirp(cacheDir, err => err ? reject(err) : resolve()));
 				// Fetch package.json content
-				await this.updater.ensure(packageJsonUri);
+				await this.updater.ensure(packageJsonUri, span);
 				// Write package.json into temporary directory
 				await fs.writeFile(path.join(cwd, 'package.json'), this.inMemoryFileSystem.getContent(packageJsonUri));
 				await new Promise((resolve, reject) => {
@@ -275,7 +290,11 @@ export class DependencyManager {
 				this.projectManager.ensuredModuleStructure = undefined;
 			} catch (err) {
 				this.installations.delete(packageJsonUri);
+				span.setTag('error', true);
+				span.log({ 'event': 'error', 'error.object': err });
 				throw err;
+			} finally {
+				span.finish();
 			}
 		})();
 		this.installations.set(packageJsonUri, promise);
@@ -283,15 +302,26 @@ export class DependencyManager {
 	}
 
 	/**
-	 * Ensures dependencies for the given subfolder in the workspace have been installed (at least once)
+	 * Ensures dependencies for the given file or subfolder in the workspace have been installed (at least once)
 	 *
-	 * @param dir URI to subdirectory
+	 * @param uri URI to a file or directory
+	 * @param childOf OpenTracing parent span for tracing
 	 */
-	ensureForFile(file: string): Promise<void> {
-		const packageJsonUri = this.getClosestPackageJsonUri(file);
+	async ensureForFile(uri: string, childOf = new Span()): Promise<void> {
+		const packageJsonUri = this.getClosestPackageJsonUri(uri);
 		if (!packageJsonUri) {
-			return Promise.resolve();
+			return;
 		}
-		return this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri);
+		const span = childOf.tracer().startSpan('Ensure dependency installation', { childOf });
+		span.addTags({ uri, packageJsonUri });
+		try {
+			await (this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri, span));
+		} catch (err) {
+			span.setTag('error', true);
+			span.log({ 'event': 'error', 'error.object': err });
+			throw err;
+		} finally {
+			span.finish();
+		}
 	}
 }

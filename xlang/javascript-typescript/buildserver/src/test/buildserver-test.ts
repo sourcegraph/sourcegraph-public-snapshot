@@ -1,6 +1,6 @@
 
 import * as assert from 'assert';
-import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
+import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { describeTypeScriptService, initializeTypeScriptService, shutdownTypeScriptService, TestContext as TypeScriptServiceTestContext } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
 import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import { IContextDefinition } from 'mocha';
@@ -19,7 +19,7 @@ interface TestContext extends TypeScriptServiceTestContext {
 }
 
 const tempDir = path.join(os.tmpdir(), 'tsjs', 'test');
-const createHandler: TypeScriptServiceFactory = (client: LanguageClientHandler, options: TypeScriptServiceOptions) => new BuildHandler(client, { ...options, tempDir });
+const createHandler: TypeScriptServiceFactory = (client: RemoteLanguageClient, options: TypeScriptServiceOptions) => new BuildHandler(client, { ...options, tempDir });
 
 /**
  * Shuts the TypeScriptService down (to be used in `afterEach()`) and deletes its temporary directory
@@ -73,7 +73,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 		describe('shutdown()', () => {
 			it('should delete the temporary directory passed in options', async function (this: TestContext) {
 				// Do a random request just to trigger dependency installation
-				await this.service.getDefinition({
+				await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -87,9 +87,9 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
 			});
 		});
-		describe('getDefinition()', function (this: TestContext) {
+		describe('textDocumentDefinition()', function (this: TestContext) {
 			specify('cross-repo definition 1', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -113,7 +113,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo definition 2', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -137,7 +137,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo definition 3', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -173,7 +173,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo definition 4', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -197,7 +197,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo definition 5', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -221,7 +221,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo definition 6', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -245,9 +245,9 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 		} as any);
-		describe('getXdefinition()', function (this: TestContext) {
+		describe('textDocumentXdefinition()', function (this: TestContext) {
 			specify('cross-repo xdefinition 1', async function (this: TestContext) {
-				const result = await this.service.getXdefinition({
+				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -272,7 +272,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo xdefinition 2', async function (this: TestContext) {
-				const result = await this.service.getXdefinition({
+				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -297,7 +297,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo xdefinition 3', async function (this: TestContext) {
-				const result = await this.service.getXdefinition({
+				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -335,7 +335,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo xdefinition 4', async function (this: TestContext) {
-				const result = await this.service.getXdefinition({
+				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -360,7 +360,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo xdefinition 5', async function (this: TestContext) {
-				const result = await this.service.getXdefinition({
+				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -385,7 +385,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo xdefinition 6', async function (this: TestContext) {
-				const result = await this.service.getXdefinition({
+				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -410,7 +410,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo xdefinition to non-DefinitelyTyped package', async function (this: TestContext) {
-				const result = await this.service.getXdefinition({
+				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///b.ts'
 					},
@@ -435,7 +435,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			specify('cross-repo xdefinition 7', async function (this: TestContext) {
-				const definitionResult = await this.service.getDefinition({
+				const definitionResult = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -459,8 +459,8 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 		} as any);
-		specify('getWorkspaceReference()', async function (this: TestContext) {
-			const referencesResult = await this.service.getWorkspaceReference({
+		specify('workspaceXreferences()', async function (this: TestContext) {
+			const referencesResult = await this.service.workspaceXreferences({
 				query: {
 					containerKind: '',
 					containerName: 'diff',
@@ -553,9 +553,9 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			})]
 		])) as any);
 		afterEach(shutdownBuildHandler as any);
-		describe('getDefinition()', () => {
+		describe('textDocumentDefinition()', () => {
 			it('should return the location of the diff typings on DefinitelyTyped for the first package.json', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -579,7 +579,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			it('should return the location of the resolve typings on DefinitelyTyped for the second package.json', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///foo/b.ts'
 					},
@@ -604,7 +604,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			} as any);
 			it('should return both locations when requested concurrently', async function (this: TestContext) {
 				const results = await Promise.all([
-					this.service.getDefinition({
+					this.service.textDocumentDefinition({
 						textDocument: {
 							uri: 'file:///a.ts'
 						},
@@ -613,7 +613,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							character: 12
 						}
 					}),
-					this.service.getDefinition({
+					this.service.textDocumentDefinition({
 						textDocument: {
 							uri: 'file:///foo/b.ts'
 						},
@@ -668,9 +668,9 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			['file:///node_modules/diff/index.d.ts', 'export const x = 1;']
 		])) as any);
 		afterEach(shutdownBuildHandler as any);
-		describe('getDefinition()', () => {
+		describe('textDocumentDefinition()', () => {
 			it('should return the location of the diff index.d.ts in node_modules', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -708,9 +708,9 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			['file:///a.ts', "import * as xyz from 'javascript-dep-npm';"]
 		])) as any);
 		afterEach(shutdownBuildHandler as any);
-		describe('getDefinition()', () => {
+		describe('textDocumentDefinition()', () => {
 			it('should not run the scripts when getting definition of a symbol', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},
@@ -734,7 +734,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				}]);
 			} as any);
 			it('should not run the scripts when getting definition of the module identifier', async function (this: TestContext) {
-				const result = await this.service.getDefinition({
+				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
 					},

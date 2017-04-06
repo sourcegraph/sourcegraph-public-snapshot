@@ -1,8 +1,8 @@
 
 import iterate from 'iterare';
-import { CancellationToken, isCancelledError } from 'javascript-typescript-langserver/lib/cancellation';
+import { isCancelledError } from 'javascript-typescript-langserver/lib/cancellation';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
-import { LanguageClientHandler } from 'javascript-typescript-langserver/lib/lang-handler';
+import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import {
 	InitializeParams,
 	PackageDescriptor,
@@ -14,6 +14,7 @@ import {
 import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import { isEmpty } from 'lodash';
+import { Span } from 'opentracing';
 import * as path from 'path';
 import * as rimraf from 'rimraf';
 import * as url from 'url';
@@ -39,7 +40,7 @@ function hasUri(candidate: any): candidate is HasUri {
 	return typeof candidate === 'object' && candidate !== null && typeof candidate.uri === 'string';
 }
 
-export type BuildHandlerFactory = (client: LanguageClientHandler, options: BuildHandlerOptions) => BuildHandler;
+export type BuildHandlerFactory = (client: RemoteLanguageClient, options: BuildHandlerOptions) => BuildHandler;
 
 /**
  * Options to pass to the BuildHandler constructor
@@ -77,21 +78,21 @@ export class BuildHandler extends TypeScriptService {
 	 */
 	private dependenciesManager: DependencyManager;
 
-	constructor(client: LanguageClientHandler, options: BuildHandlerOptions) {
+	constructor(client: RemoteLanguageClient, options: BuildHandlerOptions) {
 		super(client, options);
 	}
 
-	async initialize(params: InitializeParams, token = CancellationToken.None): Promise<InitializeResult> {
+	async initialize(params: InitializeParams, span = new Span()): Promise<InitializeResult> {
 		// Workaround for https://github.com/sourcegraph/sourcegraph/issues/4542
 		if (params.rootPath && params.rootPath.startsWith('file://')) {
 			params.rootPath = uri2path(params.rootPath);
 		}
-		const result = await super.initialize(params, token);
+		const result = await super.initialize(params, span);
 		this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.logger);
 		// Start installation of dependencies in the background
 		(async () => {
 			try {
-				await this.dependenciesManager.ensureScanned();
+				await this.dependenciesManager.ensureScanned(span);
 			} catch (err) {
 				if (!isCancelledError(err)) {
 					this.logger.error('Dependency initialization failed: ', err);
@@ -104,18 +105,18 @@ export class BuildHandler extends TypeScriptService {
 	/**
 	 * Sets up the overlayed file system that includes yarn dependencies
 	 */
-	protected initializeFileSystems(accessDisk: boolean): void {
-		super.initializeFileSystems(accessDisk);
+	protected _initializeFileSystems(accessDisk: boolean): void {
+		super._initializeFileSystems(accessDisk);
 		this.remoteFileSystem = this.fileSystem;
 		const overlayFs = new LocalRootedFileSystem(this.root, path.join(this.options.tempDir, 'workspace'));
 		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 
-	async shutdown(): Promise<void> {
+	async shutdown(params = {}, span = new Span()): Promise<void> {
 		// Delete workspace-specific temporary folder with dependencies
 		this.logger.log(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
 		await new Promise((resolve, reject) => rimraf(this.options.tempDir, err => err ? reject(err) : resolve()));
-		await super.shutdown();
+		await super.shutdown(params, span);
 	}
 
 	/**
@@ -128,11 +129,11 @@ export class BuildHandler extends TypeScriptService {
 	 * even more to install just that dependency in a given managed
 	 * module directory.
 	 */
-	private async ensureDependency(dependency: PackageDescriptor, dependeeName?: string): Promise<void> {
+	private async _ensureDependency(dependency: PackageDescriptor, dependeeName?: string, span = new Span()): Promise<void> {
 		await this.dependenciesManager.ensureScanned();
 		await Promise.all(iterate(this.dependenciesManager.packages).map(([uri, packageJson]): any => {
 			if (!dependeeName || packageJson.name === dependeeName) {
-				return this.dependenciesManager.ensureForFile(uri);
+				return this.dependenciesManager.ensureForFile(uri, span);
 			}
 		}));
 	}
@@ -140,7 +141,7 @@ export class BuildHandler extends TypeScriptService {
 	/**
 	 * Rewrites a given workspace URI to a Sourcegraph `git://repo?rev#path` URI
 	 */
-	private async rewriteUri(originalUri: string): Promise<string> {
+	private async _rewriteUri(originalUri: string): Promise<string> {
 		const originalParts = url.parse(originalUri);
 
 		if (!originalParts.pathname) {
@@ -224,51 +225,51 @@ export class BuildHandler extends TypeScriptService {
 	 *
 	 * TODO not needed anymore with textDocument/xdefinition?
 	 */
-	private async rewriteUris(result: any): Promise<void> {
+	private async _rewriteUris(result: any): Promise<void> {
 		if (Array.isArray(result)) {
-			await Promise.all(result.map(element => this.rewriteUris(element)));
+			await Promise.all(result.map(element => this._rewriteUris(element)));
 		} else if (typeof result === 'object' && result !== null) {
 			if (hasUri(result)) {
-				result.uri = await this.rewriteUri(result.uri);
+				result.uri = await this._rewriteUri(result.uri);
 			} else {
-				await Promise.all(Object.keys(result).map(key => this.rewriteUris(result[key])));
+				await Promise.all(Object.keys(result).map(key => this._rewriteUris(result[key])));
 			}
 		}
 	}
 
-	async getDefinition(params: TextDocumentPositionParams): Promise<Location[]> {
+	async textDocumentDefinition(params: TextDocumentPositionParams, span = new Span()): Promise<Location[]> {
 		let locations: Location[] = [];
 		// First, attempt to get definition before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
 			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined); // don't wait, but kickoff background job
-			locations = await super.getDefinition(params);
+			locations = await super.textDocumentDefinition(params, span);
 		} catch (e) {
 			// Ignore
 		}
 		if (locations.length === 0) {
-			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
+			await this.dependenciesManager.ensureForFile(params.textDocument.uri, span);
 			await this.projectManager.createConfigurations();
-			locations = await super.getDefinition(params);
+			locations = await super.textDocumentDefinition(params, span);
 		}
-		await this.rewriteUris(locations);
+		await this._rewriteUris(locations);
 		return locations;
 	}
 
-	async getXdefinition(params: TextDocumentPositionParams): Promise<SymbolLocationInformation[]> {
+	async textDocumentXdefinition(params: TextDocumentPositionParams, span = new Span()): Promise<SymbolLocationInformation[]> {
 		let symbolsLocations: SymbolLocationInformation[] = [];
 		// First, attempt to get definition before dependencies fetching is finished.
 		// If it fails, wait for dependency fetching to finish and then retry.
 		try {
 			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined);
-			symbolsLocations = await super.getXdefinition(params);
+			symbolsLocations = await super.textDocumentXdefinition(params, span);
 		} catch (e) {
 			// Ignore
 		}
 		if (symbolsLocations.length === 0) {
-			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
-			symbolsLocations = await super.getXdefinition(params);
+			await this.dependenciesManager.ensureForFile(params.textDocument.uri, span);
+			symbolsLocations = await super.textDocumentXdefinition(params, span);
 		}
 		// Add PackageDescriptors to SymbolDescriptor
 		await Promise.all(symbolsLocations.map(async symbolLocation => {
@@ -333,43 +334,43 @@ export class BuildHandler extends TypeScriptService {
 		return symbolsLocations;
 	}
 
-	async getHover(params: TextDocumentPositionParams): Promise<Hover> {
+	async textDocumentHover(params: TextDocumentPositionParams, span = new Span()): Promise<Hover> {
 		let hover: Hover = { contents: [] };
 		// First, attempt to get hover info before dependencies
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
 			this.dependenciesManager.ensureForFile(params.textDocument.uri); // don't wait, but kickoff background job
-			hover = await super.getHover(params);
+			hover = await super.textDocumentHover(params, span);
 		} catch (e) {
 			// Ignore
 		}
 		if (isEmpty(hover.contents)) {
-			await this.dependenciesManager.ensureForFile(params.textDocument.uri);
-			hover = await super.getHover(params);
+			await this.dependenciesManager.ensureForFile(params.textDocument.uri, span);
+			hover = await super.textDocumentHover(params, span);
 		}
-		await this.rewriteUris(hover);
+		await this._rewriteUris(hover);
 		return hover;
 	}
 
-	async getWorkspaceSymbols(params: WorkspaceSymbolParams): Promise<SymbolInformation[]> {
+	async workspaceSymbol(params: WorkspaceSymbolParams, span = new Span()): Promise<SymbolInformation[]> {
 		if (this.dependenciesManager.puntWorkspaceSymbol && (!params.symbol || !params.symbol.package)) {
 			throw new Error('workspace/symbol unsupported on this repository');
 		}
-		return super.getWorkspaceSymbols(params);
+		return super.workspaceSymbol(params, span);
 	}
 
-	async getWorkspaceReference(params: WorkspaceReferenceParams): Promise<ReferenceInformation[]> {
+	async workspaceXreferences(params: WorkspaceReferenceParams, span = new Span()): Promise<ReferenceInformation[]> {
 		const dependeePackageName = params.hints ? params.hints.dependeePackageName : undefined;
 		if (params.query.package) {
-			await this.ensureDependency(params.query.package, dependeePackageName);
+			await this._ensureDependency(params.query.package, dependeePackageName, span);
 		}
 
 		// strip the `package` field, because this was not added by the language server
 		const pkgData = params.query.package;
 		params.query.package = undefined;
 
-		const refs = await super.getWorkspaceReference(params);
+		const refs = await super.workspaceXreferences(params, span);
 
 		if (pkgData) {
 			for (const ref of refs) {

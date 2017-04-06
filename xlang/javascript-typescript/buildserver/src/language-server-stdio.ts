@@ -1,26 +1,35 @@
 #!/usr/bin/env node
 
-import { newConnection, registerLanguageHandler } from 'javascript-typescript-langserver/lib/connection';
+import { MessageEmitter, registerLanguageHandler } from 'javascript-typescript-langserver/lib/connection';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { FileLogger, StderrLogger } from 'javascript-typescript-langserver/lib/logging';
 import * as util from 'javascript-typescript-langserver/lib/util';
 import * as os from 'os';
 import * as path from 'path';
 import * as uuid from 'uuid';
-
+import { StreamMessageWriter } from 'vscode-jsonrpc';
+import { isNotificationMessage } from 'vscode-jsonrpc/lib/messages';
 import { BuildHandler } from './buildhandler';
-
-const packageJson = require('../package.json');
+const { Tracer } = require('lightstep-tracer');
 const program = require('commander');
 
 program
-	.version(packageJson.version)
+	.version(require('../package.json').version)
 	.option('-s, --strict', 'enables strict mode')
 	.option('-t, --trace', 'print all requests and responses')
 	.option('-l, --logfile [file]', 'log to this file')
 	.option('--color', 'force colored output in logs')
 	.option('--no-color', 'disable colored output in logs')
 	.parse(process.argv);
+
+util.setStrict(program.strict);
+
+// Create Tracer if LightStep environment variables are set
+const tracer = process.env.LIGHTSTEP_ACCESS_TOKEN && new Tracer({
+	access_token: process.env.LIGHTSTEP_ACCESS_TOKEN,
+	component_name: 'xlang-typescript',
+	verbosity: 0
+});
 
 const logger = program.logfile ? new FileLogger(program.logfile) : new StderrLogger();
 
@@ -29,13 +38,25 @@ const logger = program.logfile ? new FileLogger(program.logfile) : new StderrLog
 const tempDir = path.join(os.tmpdir(), 'tsjs', 'stdio', uuid.v1());
 logger.log(`Using ${tempDir} as temporary directory`);
 
-util.setStrict(program.strict);
+const options = {
+	tempDir,
+	tracer,
+	logger,
+	logMessages: program.trace,
+	strict: program.strict
+};
 
-const connection = newConnection(process.stdin, process.stdout, {
-	trace: program.trace,
-	logger
+const messageEmitter = new MessageEmitter(process.stdin);
+const messageWriter = new StreamMessageWriter(process.stdout);
+const remoteClient = new RemoteLanguageClient(messageEmitter, messageWriter, options);
+const handler = new BuildHandler(remoteClient, options);
+
+// Add an exit notification handler to kill the process
+messageEmitter.on('message', message => {
+	if (isNotificationMessage(message) && message.method === 'exit') {
+		logger.log(`Exit notification`);
+		process.exit(0);
+	}
 });
 
-registerLanguageHandler(connection, new BuildHandler(new RemoteLanguageClient(connection), { strict: program.strict, tempDir }));
-
-connection.listen();
+registerLanguageHandler(messageEmitter, messageWriter, handler,	options);
