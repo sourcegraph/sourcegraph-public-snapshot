@@ -25,7 +25,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 
 		componentDidMount(): void {
 			this.logViewAsync(this.props.routes, this.props.location);
-			this._checkEventQuery();
+			this.checkEventQuery();
 		}
 
 		componentWillReceiveProps(nextProps: P): void {
@@ -41,10 +41,10 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				EventLogger.updateTrackerWithIdentificationProps();
 			}
 
-			this._checkEventQuery();
+			this.checkEventQuery();
 		}
 
-		camelCaseToUnderscore(input: string): string {
+		private camelCaseToUnderscore(input: string): string {
 			if (input.charAt(0) === "_") {
 				input = input.substring(1);
 			}
@@ -52,7 +52,7 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 			return input.replace(/([A-Z])/g, ($1) => `_${$1.toLowerCase()}`);
 		}
 
-		_checkEventQuery(): void {
+		private checkEventQuery(): void {
 			// Allow tracking events that occurred externally and resulted in a redirect
 			// back to Sourcegraph. Pull the event name out of the URL.
 			const eventName = this.props.location.query["_event"];
@@ -92,26 +92,38 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				// from being called 2x before the setTimeout block runs.
 				delete this.props.location.query["_event"];
 				delete this.props.location.query["_githubAuthed"];
-				delete this.props.location.query["_org_invite"];
-				delete this.props.location.query["_invited_by_user"];
-				delete this.props.location.query["_def_info_def"];
-				delete this.props.location.query["_repo"];
-				delete this.props.location.query["_rev"];
-				delete this.props.location.query["_path"];
-				delete this.props.location.query["_source"];
 				delete this.props.location.query["_githubCompany"];
-				delete this.props.location.query["_githubName"];
 				delete this.props.location.query["_githubLocation"];
-				delete this.props.location.query["_signupChannel"];
+				delete this.props.location.query["_githubName"];
+				delete this.props.location.query["_invited_by_user"];
 				delete this.props.location.query["_onboarding"];
+				delete this.props.location.query["_org_invite"];
+				delete this.props.location.query["_signupChannel"];
+				delete this.props.location.query["_source"];
 				delete this.props.location.query["badge"];
 
-				// Remove _event from the URL to canonicalize the URL and make it
+				// Remove params from the URL to canonicalize it and make it
 				// less ugly.
-				const locWithoutEvent = Object.assign({}, this.props.location, {
-					query: Object.assign({}, this.props.location.query, { _event: undefined, _signupChannel: undefined, _onboarding: undefined, _githubAuthed: undefined, _invited_by_user: undefined, _org_invite: undefined, _def_info_def: undefined, _repo: undefined, _rev: undefined, _path: undefined, _source: undefined, _githubCompany: undefined, _githubName: undefined, _githubLocation: undefined, badge: undefined }),
-					state: Object.assign({}, this.props.location.state, { _onboarding: this.props.location.query["_onboarding"] }),
-				});
+				const locWithoutEvent = {
+					...this.props.location,
+					query: {
+						...this.props.location.query,
+						_event: undefined,
+						_githubAuthed: undefined,
+						_githubCompany: undefined,
+						_githubLocation: undefined,
+						_githubName: undefined,
+						_invited_by_user: undefined,
+						_org_invite: undefined,
+						_signupChannel: undefined,
+						_source: undefined,
+						badge: undefined
+					},
+					state: {
+						...this.props.location.state,
+						_onboarding: this.props.location.query["_onboarding"]
+					}
+				};
 
 				(this.context as any).router.replace(locWithoutEvent);
 			}
@@ -131,15 +143,15 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 				language?: string;
 				utm_campaign?: string;
 				utm_source?: string;
-			};
+			} = {
+					url: location.pathname,
+				};
 
 			if (location.query && (location.query["utm_campaign"] || location.query["utm_source"])) {
-				eventProps = Object.assign({}, { url: location.pathname },
-					location.query["utm_campaign"] ? { utm_campaign: location.query["utm_campaign"] } : {},
-					location.query["utm_source"] ? { utm_source: location.query["utm_source"] } : {});
-			} else {
 				eventProps = {
-					url: location.pathname,
+					...eventProps,
+					...(location.query["utm_campaign"] ? { utm_campaign: location.query["utm_campaign"] } : {}),
+					...(location.query["utm_source"] ? { utm_source: location.query["utm_source"] } : {}),
 				};
 			}
 
@@ -152,9 +164,9 @@ export function withViewEventsLogged<P extends WithViewEventsLoggedProps>(compon
 					const lang = getLanguageExtensionForPath(filePath);
 					if (lang) { eventProps.language = lang; }
 				}
-				EventLogger.logViewEvent(viewName, location.pathname, Object.assign({}, eventProps, { pattern: getRoutePattern(routes) }));
+				EventLogger.logViewEvent(viewName, location.pathname, { ...eventProps, pattern: getRoutePattern(routes) });
 			} else {
-				EventLogger.logViewEvent("UnmatchedRoute", location.pathname, Object.assign({}, eventProps, { pattern: getRoutePattern(routes) }));
+				EventLogger.logViewEvent("UnmatchedRoute", location.pathname, { ...eventProps, pattern: getRoutePattern(routes) });
 			}
 		}
 

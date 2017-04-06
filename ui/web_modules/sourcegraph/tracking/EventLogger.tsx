@@ -103,7 +103,6 @@ class EventLoggerClass {
 
 	setUserInstalledChromeExtension(installedChromeExtension: string): void {
 		telligent.setUserProperty("installed_chrome_extension", installedChromeExtension);
-		hubSpot.setHubSpotProperties({ "installed_chrome_extension": installedChromeExtension });
 	}
 
 	setUserIsGitHubOrgAuthed(isGitHubOrgAuthed: string): void {
@@ -147,7 +146,7 @@ class EventLoggerClass {
 	*
 	* @return string or bool The ID string if the cookie exists or false if the cookie has not been set yet
 	*/
-	_getTelligentDuid(): string | null {
+	private getTelligentDuid(): string | null {
 		let cookieName = "_te_";
 		let matcher = new RegExp(cookieName + "id\\.[a-f0-9]+=([^;]+);?");
 		let match = document.cookie.match(matcher);
@@ -166,7 +165,7 @@ class EventLoggerClass {
 
 		this.setUserInstalledChromeExtension("true");
 
-		const idProps = { detail: { deviceId: this._getTelligentDuid(), userId: context.user && context.user.Login } };
+		const idProps = { detail: { deviceId: this.getTelligentDuid(), userId: context.user && context.user.Login } };
 		if (googleAnalytics.gaClientID) {
 			idProps.detail["gaClientId"] = googleAnalytics.gaClientID;
 			telligent.addStaticMetadataObject({ deviceInfo: { GAClientId: googleAnalytics.gaClientID } });
@@ -183,9 +182,9 @@ class EventLoggerClass {
 			return;
 		}
 
-		this._logToConsole(title, Object.assign({}, this._decorateEventProperties(eventProperties), { page_name: page, page_title: title }));
-
-		telligent.track("view", Object.assign({}, this._decorateEventProperties(eventProperties), { page_name: page, page_title: title }));
+		const decoratedProps = { ...this.decorateEventProperties(eventProperties), page_name: page, page_title: title };
+		telligent.track("view", decoratedProps);
+		this.logToConsole(title, decoratedProps);
 	}
 
 	// Tracking call to all of our analytics servies.
@@ -196,9 +195,10 @@ class EventLoggerClass {
 		if (context.userAgentIsBot || !eventLabel) {
 			return;
 		}
-		telligent.track(eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
 
-		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
+		const decoratedProps = { ...this.decorateEventProperties(eventProperties), eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction };
+		telligent.track(eventAction, decoratedProps);
+		this.logToConsole(eventAction, decoratedProps);
 
 		experimentManager.logEvent(eventLabel);
 		googleAnalytics.logEventCategoryComponents(eventCategory, eventAction, eventLabel);
@@ -212,26 +212,26 @@ class EventLoggerClass {
 			return;
 		}
 
-		telligent.track(eventAction, Object.assign({}, this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction }));
-		googleAnalytics.logEventCategoryComponents(eventCategory, eventAction, eventLabel, true);
+		const decoratedProps = { ...this.decorateEventProperties(eventProperties), eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction };
+		telligent.track(eventAction, decoratedProps);
+		this.logToConsole(eventAction, { ...decoratedProps, nonInteraction: true });
 
-		this._logToConsole(eventAction, Object.assign(this._decorateEventProperties(eventProperties), { eventLabel: eventLabel, eventCategory: eventCategory, eventAction: eventAction, nonInteraction: true }));
+		googleAnalytics.logEventCategoryComponents(eventCategory, eventAction, eventLabel, true);
 	}
 
-	_logToConsole(eventAction: string, object?: any): void {
+	private logToConsole(eventAction: string, object?: any): void {
 		if (Features.eventLogDebug.isEnabled()) {
 			console.debug("%cEVENT %s", "color: #aaa", eventAction, object); // tslint:disable-line
 		}
 	}
 
-	_decorateEventProperties(platformProperties: any): any {
-		const optimizelyMetadata = optimizely.getOptimizelyMetadata();
-		const addtlPlatformProperties = {
-			Platform: this.PLATFORM,
+	private decorateEventProperties(platformProperties: any): any {
+		return {
+			...platformProperties, ...optimizely.getOptimizelyMetadata(),
+			platform: this.PLATFORM,
 			is_authed: context.user ? "true" : "false",
-			path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : ""
+			path_name: global.window && global.window.location && global.window.location.pathname ? global.window.location.pathname.slice(1) : "",
 		};
-		return Object.assign({}, platformProperties, addtlPlatformProperties, optimizelyMetadata);
 	}
 }
 
