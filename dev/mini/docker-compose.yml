@@ -1,23 +1,23 @@
-version: "2"
+version: "2.1"
 services:
   frontend:
     image: "docker.sourcegraph.com/frontend:latest"
     environment:
-     - AUTH_ENABLED=false
-     - GITHUB_BASE_URL=http://github-proxy:3180
-     - LSP_PROXY=lsp-proxy:4388
-     - PGHOST=postgres
-     - PGSSLMODE=disable
-     - PGUSER=sg
-     - REDIS_MASTER_ENDPOINT=redis:6379
-     - SRC_APP_DISABLE_SUPPORT_SERVICES=true
-     - SRC_APP_URL=${APP_URL}
-     - SRC_GIT_SERVERS=gitserver-1:3178
-     - SRC_INDEXER=indexer:3179
-     - SRC_SESSION_STORE_REDIS=redis:6379
+      AUTH_ENABLED: "false"
+      GITHUB_BASE_URL: http://github-proxy:3180
+      LSP_PROXY: lsp-proxy:4388
+      PGHOST: postgres
+      PGSSLMODE: disable
+      PGUSER: sg
+      REDIS_MASTER_ENDPOINT: redis:6379
+      SRC_APP_DISABLE_SUPPORT_SERVICES: "true"
+      SRC_APP_URL: ${SRC_APP_URL:-http://localhost:3080}
+      SRC_GIT_SERVERS: gitserver-1:3178
+      SRC_INDEXER: indexer:3179
+      SRC_SESSION_STORE_REDIS: redis:6379
     restart: "always"
     ports:
-     - "3080:3080"
+     - "${SRC_APP_PORT:-3080}:3080"
     depends_on:
      - "redis"
      - "postgres"
@@ -31,46 +31,48 @@ services:
   gitserver-1:
     image: "docker.sourcegraph.com/gitserver:latest"
     volumes:
-      - ${GIT_DIRECTORY}:/data
-      - ${SSH_KEYPAIR_FOLDER}:/root/.ssh
+      - ${GIT_DIRECTORY:-.}:/data/local
+      - .data/gitserver-1-data:/data/repos
+      - ${SSH_KEYPAIR_FOLDER:-.ssh}:/root/.ssh
     environment:
-      - SRC_ADDR=3178
-      - ORIGIN_MAP=${ORIGIN_MAP}
-      - SRC_REPOS_DIR=/root/.sourcegraph/repos
+       SRC_ADDR: 3178
+       ORIGIN_MAP: ${ORIGIN_MAP}
+       SRC_REPOS_DIR: /data/repos
   indexer:
     image: "docker.sourcegraph.com/indexer:latest"
     environment:
-      - LSP_PROXY=lsp-proxy:4388
-      - PGHOST=postgres
-      - PGSSLMODE=disable
-      - PGUSER=sg
-      - REDIS_MASTER_ENDPOINT=redis-cache:6379
-      - SRC_GIT_SERVERS=gitserver-1:3178
-      - SRC_PROF_HTTP=:6060
+       LSP_PROXY: lsp-proxy:4388
+       PGHOST: postgres
+       PGSSLMODE: disable
+       PGUSER: sg
+       REDIS_MASTER_ENDPOINT: redis-cache:6379
+       SRC_GIT_SERVERS: gitserver-1:3178
+       SRC_PROF_HTTP: :6060
   lsp-proxy:
     image: "docker.sourcegraph.com/lsp-proxy:latest"
     environment:
-      - LANGSERVER_GO=tcp://xlang-go:4389
-      - LANGSERVER_JAVA=tcp://xlang-java:2088
-      - REDIS_MASTER_ENDPOINT=redis:6379
-      - SRC_GIT_SERVERS=gitserver-1:3178
+       LANGSERVER_GO: tcp://xlang-go:4389
+       LANGSERVER_JAVA: tcp://xlang-java:2088
+       REDIS_MASTER_ENDPOINT: redis:6379
+       SRC_GIT_SERVERS: gitserver-1:3178
   searcher:
     image: "docker.sourcegraph.com/searcher:latest"
     environment:
-      - SRC_GIT_SERVERS=gitserver-1:3178
+       SRC_GIT_SERVERS: gitserver-1:3178
   xlang-go:
     image: "docker.sourcegraph.com/xlang-go:latest"
     entrypoint: /usr/local/bin/xlang-go -mode=tcp -addr=:4389
     environment:
-      - CLONE_FROM_GITSERVER=true
-      - REDIS_MASTER_ENDPOINT=redis:6379
-      - SRC_GIT_SERVERS=gitserver-1:3178
-  bi-logger:
-    image: "docker.sourcegraph.com/oklog:latest"
+       CLONE_FROM_GITSERVER: "true"
+       REDIS_MASTER_ENDPOINT: redis:6379
+       SRC_GIT_SERVERS: gitserver-1:3178
   redis:
     image: "redis:alpine"
   postgres:
     image: "postgres:alpine"
+    volumes: 
+       - "./.data/postgres-data:/data"
     environment:
+      PGDATA: /data
       POSTGRES_USER: sg
       POSTGRES_PASSWORD:
