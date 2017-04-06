@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -158,6 +159,9 @@ func (b FileBuffer) Remove(name string) error {
 
 // Copy implements FileSystemCopier.
 func (b FileBuffer) Copy() FileSystem {
+	if b == nil {
+		return FileBuffer(nil)
+	}
 	b2 := make(FileBuffer, len(b))
 	for name, data := range b {
 		tmp := make([]byte, len(data))
@@ -165,6 +169,26 @@ func (b FileBuffer) Copy() FileSystem {
 		b2[name] = tmp
 	}
 	return b2
+}
+
+func (b FileBuffer) String() string {
+	if b == nil {
+		return "<nil>"
+	}
+	var buf bytes.Buffer
+	i := 0
+	for name, data := range b {
+		if i != 0 {
+			fmt.Fprint(&buf, " ")
+		}
+		var extra string
+		if max := 7; len(data) > max {
+			data = data[:max]
+			extra = fmt.Sprintf("+%d", len(data)-max)
+		}
+		fmt.Fprintf(&buf, "%s:%q%s", name, data, extra)
+	}
+	return buf.String()
 }
 
 // A FileSystemCopier is a file system that can produce a deep copy of

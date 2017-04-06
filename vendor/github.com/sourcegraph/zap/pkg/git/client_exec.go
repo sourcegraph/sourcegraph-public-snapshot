@@ -45,18 +45,27 @@ type FileSystem interface {
 	Exists(name string) error
 }
 
-var TestApplyToWorktree func(op ot.WorkspaceOp) error
+var TestApplyToWorktree func(op ot.WorkspaceOp) (unapplied ot.WorkspaceOp, err error)
 
+// ApplyToWorktree applies an op to the workspace. It may modify files
+// on the file system. If an error occurs, it returns the unapplied
+// remainder of the op. For example, if the op creates 3 files (f1,
+// f2, and f3, in that order), and creating f2 fails, then it returns
+// an op that creates f2 and f3 (because that part of the op was not
+// successfully applied). Callers can use this to iteratively apply
+// until there are no more changes in the op.
 func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 	ReadBlob(snapshot, name string) ([]byte, string, string, error)
 	IsValidRev(string) (bool, error)
 	RemoteForBranchOrZapDefaultRemote(string) (string, error)
 	Fetch(string, string) (bool, error)
 	Reset(string, string) error
-}, fdisk, fbuf FileSystem, snapshot, gitBranch string, op ot.WorkspaceOp) error {
+}, fdisk, fbuf FileSystem, snapshot, gitBranch string, op ot.WorkspaceOp) (unapplied ot.WorkspaceOp, err error) {
 	if TestApplyToWorktree != nil {
 		return TestApplyToWorktree(op)
 	}
+
+	unapplied = op.DeepCopy()
 
 	fsForPath := func(path string) FileSystem {
 		if isBufferPath(path) {
@@ -85,57 +94,63 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 	for _, f := range op.Save {
 		data, err := fbuf.ReadFile(stripBufferPath(f))
 		if err != nil {
-			return err
+			return unapplied, err
 		}
 		if err := fbuf.Remove(stripBufferPath(f)); err != nil {
-			return err
+			return unapplied, err
 		}
 		if err := fdisk.WriteFile(stripBufferPath(f), data, 0666); err != nil {
-			return err
+			return unapplied, err
 		}
+		unapplied.Save = unapplied.Save[1:]
 	}
 	for dst, src := range op.Copy {
 		data, err := readFile(src)
 		if err != nil {
-			return err
+			return unapplied, err
 		}
 		if err := writeFile(dst, data); err != nil {
-			return err
+			return unapplied, err
 		}
+		delete(unapplied.Copy, dst)
 	}
 	for src, dst := range op.Rename {
 		if err := checkRemotePath(src); err != nil {
-			return err
+			return unapplied, err
 		}
 		if err := checkRemotePath(dst); err != nil {
-			return err
+			return unapplied, err
 		}
 		if isBufferPath(src) || isBufferPath(dst) {
 			panic(fmt.Sprintf("rename of buffer files not supported: %q -> %q", src, dst))
 		}
 		if err := fdisk.Rename(stripFilePath(src), stripFilePath(dst)); err != nil {
-			return err
+			return unapplied, err
 		}
+		delete(unapplied.Rename, src)
 	}
 	created := make(map[string]struct{}, len(op.Create))
 	for _, f := range op.Create {
 		created[f] = struct{}{}
 		if err := fsForPath(f).Exists(stripFileOrBufferPath(f)); !os.IsNotExist(err) {
-			return &os.PathError{Op: "Create", Path: f, Err: os.ErrExist}
+			return unapplied, &os.PathError{Op: "Create", Path: f, Err: os.ErrExist}
 		}
 		if err := writeFile(f, nil); err != nil {
-			return err
+			return unapplied, err
 		}
+		unapplied.Create = unapplied.Create[1:]
 	}
 	for _, f := range op.Delete {
 		if err := fsForPath(f).Remove(stripFileOrBufferPath(f)); err != nil {
-			return err
+			return unapplied, err
 		}
+		unapplied.Delete = unapplied.Delete[1:]
 	}
 	for _, f := range op.Truncate {
 		if err := writeFile(f, nil); err != nil {
-			return err
+			return unapplied, err
 		}
+		unapplied.Truncate = unapplied.Truncate[1:]
 	}
 	for f, edits := range op.Edit {
 		if len(edits) == 0 {
@@ -146,21 +161,22 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 			var err error
 			prevData, err = readFile(f)
 			if err != nil {
-				return err
+				return unapplied, err
 			}
 		}
 		doc := ot.Doc(string(prevData))
 
 		if err := doc.Apply(edits); err != nil {
-			return &os.PathError{Op: "Edit", Path: f, Err: err}
+			return unapplied, &os.PathError{Op: "Edit", Path: f, Err: err}
 		}
 		if err := writeFile(f, []byte(string(doc))); err != nil {
-			return err
+			return unapplied, err
 		}
+		delete(unapplied.Edit, f)
 	}
 	if op.GitHead != "" {
 		if err := FetchAndCheck(ctx, gitRepo, gitBranch, "refs/zap/"+op.GitHead, op.GitHead); err != nil {
-			return err
+			return unapplied, err
 		}
 
 		// This acquires a lock and might conflict with other things
@@ -169,10 +185,16 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 		if err := backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
 			return gitRepo.Reset("mixed", op.GitHead)
 		}, GitBackOff(), nil); err != nil {
-			return err
+			return unapplied, err
 		}
+		unapplied.GitHead = ""
 	}
-	return nil
+	if !unapplied.Noop() {
+		// TODO(sqs9): add back this check
+		//
+		// panic("after successful apply, unapplied op should be noop but is " + unapplied.String())
+	}
+	return ot.WorkspaceOp{}, nil
 }
 
 var TestFetchAndCheck func(remoteOfBranch, refspec, desiredRev string) error

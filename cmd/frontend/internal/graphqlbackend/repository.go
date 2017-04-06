@@ -74,13 +74,13 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 		return &commitStateResolver{
 			zapRev: &zapRevResolver{zapRev: zapRevSpec{
 				Ref:    zapRevInfo.RefIdentifier.Ref,
-				Base:   zapRevInfo.State.GitBase,
-				Branch: zapRevInfo.State.GitBranch,
+				Base:   zapRevInfo.Data.GitBase,
+				Branch: zapRevInfo.Data.GitBranch,
 			}},
 			commit: &commitResolver{
 				commit: commitSpec{
 					RepoID:        r.repo.ID,
-					CommitID:      zapRevInfo.State.GitBase,
+					CommitID:      zapRevInfo.Data.GitBase,
 					DefaultBranch: r.repo.DefaultBranch,
 				},
 			},

@@ -1,16 +1,39 @@
 import { isOnPremInstance } from "sourcegraph/app/context";
 import * as vscode from "vscode";
 
-import browserEnvironment from "sourcegraph/ext/environment";
+import { BrowserEnvironment } from "sourcegraph/ext/environment";
 import { activate as activateCommon } from "vscode-zap/out/src/extension.common";
 
+import { NewRef, Ref } from "libzap/lib/ref";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
 
-export function activate(): any {
+export function activate(): void {
 	const initOpts: InitializationOptions = (self as any).extensionHostOptions;
 	if (isOnPremInstance(initOpts.context.authEnabled)) {
 		return;
 	}
-	const ctx: vscode.ExtensionContext = { subscriptions: [] as vscode.Disposable[] } as any;
-	return activateCommon(browserEnvironment, ctx, initOpts, true);
+
+	if (initOpts && initOpts.revState) {
+		const ctx: vscode.ExtensionContext = { subscriptions: [] as vscode.Disposable[] } as any;
+		const env = new BrowserEnvironment(initOpts.revState);
+
+		// Synthesize initial work ref.
+		const workRef: Ref | NewRef = ({ name: "head/local" } as any);
+		if (initOpts.revState.zapRef) {
+			workRef.state = { target: initOpts.revState.zapRef };
+		} else if (initOpts.revState.commitID && initOpts.revState.branch) {
+			workRef.state = {
+				data: {
+					gitBase: initOpts.revState.commitID,
+					gitBranch: initOpts.revState.branch,
+					history: [],
+				},
+			};
+		} else {
+			// Unable to initialize Zap because there is not enough
+			// information about the current resource.
+		}
+
+		activateCommon(env, ctx, workRef, initOpts, true);
+	}
 }

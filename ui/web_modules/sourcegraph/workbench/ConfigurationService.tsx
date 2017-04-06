@@ -136,7 +136,7 @@ export class ConfigurationService implements IConfigurationService {
 		};
 	}
 
-	keys(): IConfigurationKeys { return { default: ["zap.enable", "zap.overwrite"], user: [] as string[] }; }
+	keys(): IConfigurationKeys { return { default: [], user: [] as string[] }; }
 
 	reloadConfiguration<T>(section?: string): TPromise<T> { return TPromise.as({} as T); }
 

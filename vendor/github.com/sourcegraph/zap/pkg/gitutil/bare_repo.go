@@ -478,3 +478,73 @@ func (r BareRepo) RefLog(ref string, skip, maxCount uint) ([]ReflogEntry, error)
 	}
 	return entries, nil
 }
+
+func (r BareRepo) DiffTreeRecursive(base, head string) ([]*ChangedFile, error) {
+	if err := checkArgSafety(base); err != nil {
+		return nil, err
+	}
+	if err := checkArgSafety(head); err != nil {
+		return nil, err
+	}
+
+	out, err := r.Exec(nil, "diff-tree", "-z", "-r", base, head)
+	if err != nil {
+		return nil, err
+	}
+
+	// No need to filter out large files, since we already probably
+	// excluded large files from the head tree.
+	return parseDiffOutput(string(out))
+}
+
+// parseDiffOutput parses output from "git diff-index -z", "git
+// diff-tree -z", etc. See `git diff --help` RAW OUTPUT FORMAT
+// section.
+func parseDiffOutput(out string) ([]*ChangedFile, error) {
+	// "git diff-index -z" output actually has two NULs on a "line"
+	// for some reason. See "git diff-index --help" RAW OUTPUT FORMAT
+	// section.
+	sections := splitNulls(out)
+	var changedFiles []*ChangedFile
+	for i := 0; i < len(sections); {
+		var f ChangedFile
+
+		metaParts := strings.Split(sections[i], " ")
+		if len(metaParts) != 5 {
+			return nil, fmt.Errorf("bad diff raw output meta section (before first NUL): %q", sections[i])
+		}
+		f.SrcMode = strings.TrimPrefix(metaParts[0], ":")
+		f.DstMode = metaParts[1]
+		f.SrcSHA = metaParts[2]
+		f.DstSHA = metaParts[3]
+		f.Status = metaParts[4]
+
+		if i+1 >= len(sections) {
+			return nil, fmt.Errorf("no diff raw output src path section for meta section %q", sections[i])
+		}
+		f.SrcPath = sections[i+1]
+		i += 2
+
+		switch f.Status[0] {
+		case 'C', 'R':
+			if i >= len(sections) {
+				return nil, fmt.Errorf("no diff raw output dst path section for src path %q", f.SrcPath)
+			}
+			f.DstPath = sections[i]
+			i++
+		}
+
+		s := f.Status[0]
+		if s == 'A' || s == 'C' || s == 'M' || s == 'R' || s == 'T' || s == 'U' {
+			// Skip files that are larger than our max file size.
+			path := f.DstPath
+			if path == "" {
+				path = f.SrcPath
+			}
+		}
+
+		changedFiles = append(changedFiles, &f)
+	}
+
+	return changedFiles, nil
+}

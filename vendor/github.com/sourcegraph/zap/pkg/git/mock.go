@@ -17,6 +17,7 @@ type MockGitRepo struct {
 	UpdateSymbolicRef_                             func(name, ref string) error
 	ReadSymbolicRef_                               func(name string) (string, error)
 	CheckoutDetachedHEAD_                          func(ref string) error
+	CheckoutBranch_                                func(branch string) error
 	ReadBlob_                                      func(rev, name string) ([]byte, string, string, error)
 	MakeCommit_                                    func(parent string, onlyIfChangedFiles bool) (string, []*gitutil.ChangedFile, error)
 	ListTreeFull_                                  func(rev string) (*gitutil.Tree, error)
@@ -29,6 +30,8 @@ type MockGitRepo struct {
 	HEADHasNoCommitsAndNextCommitWillBeRootCommit_ func() (bool, error)
 	HEADOrDevNullTree_                             func() (string, error)
 	IsIndexLocked_                                 func() (bool, error)
+	DirtyWorktree_                                 func() (bool, error)
+	DiffTreeRecursive_                             func(base, head string) ([]*gitutil.ChangedFile, error)
 }
 
 func (m MockGitRepo) GitDir() string { return ".git" }
@@ -69,6 +72,10 @@ func (m MockGitRepo) ReadSymbolicRef(name string) (string, error) {
 
 func (m MockGitRepo) CheckoutDetachedHEAD(ref string) error {
 	return m.CheckoutDetachedHEAD_(ref)
+}
+
+func (m MockGitRepo) CheckoutBranch(branch string) error {
+	return m.CheckoutBranch_(branch)
 }
 
 func (m MockGitRepo) ReadBlob(rev, name string) ([]byte, string, string, error) {
@@ -115,6 +122,14 @@ func (m MockGitRepo) IsIndexLocked() (bool, error) {
 	return m.IsIndexLocked_()
 }
 
+func (m MockGitRepo) DirtyWorktree() (bool, error) {
+	return m.DirtyWorktree_()
+}
+
 func (m MockGitRepo) HEADOrDevNullTree() (string, error) {
 	return m.HEADOrDevNullTree_()
+}
+
+func (m MockGitRepo) DiffTreeRecursive(base, head string) ([]*gitutil.ChangedFile, error) {
+	return m.DiffTreeRecursive_(base, head)
 }

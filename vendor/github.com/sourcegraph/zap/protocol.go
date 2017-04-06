@@ -134,17 +134,6 @@ type RepoConfigureParams struct {
 	Remotes map[string]RepoRemoteConfiguration `json:"remotes"`
 }
 
-// RepoConfigureResult is the result of a successful "repo/configure"
-// request.
-type RepoConfigureResult struct {
-	// UpstreamConfigurationRemovedFromRefs is a list of refs
-	// (provided as information to the client, to notify the user)
-	// whose upstreams resided on remotes that were removed in this
-	// "repo/configure" call. The server automatically removed the
-	// upstream configuration from each of these refs.
-	UpstreamConfigurationRemovedFromRefs []string `json:"upstreamConfigurationRemovedFromRefs,omitempty"`
-}
-
 // RepoRemoteConfiguration describes the configuration of a repository
 // remote.
 type RepoRemoteConfiguration struct {
@@ -186,7 +175,7 @@ type RepoWatchParams struct {
 	Refspecs []string `json:"refspecs"`
 }
 
-func (p RepoWatchParams) validate() error {
+func (p RepoWatchParams) Validate() error {
 	seen := map[string]struct{}{}
 	for _, refspec := range p.Refspecs {
 		if _, seen := seen[refspec]; seen {
@@ -219,31 +208,91 @@ type RefListParams struct {
 	Repo string `json:"repo"` // the repo to watch
 }
 
-// RefBaseInfo describes what a ref is based on.
-type RefBaseInfo struct {
-	// GitBase is the git commit ID that all subsequent ops are based
-	// on.
-	GitBase string `json:"gitBase"`
-
-	// GitBranch is the git branch (HEAD symbolic ref) that the ref is
-	// associated with.
-	GitBranch string `json:"gitBranch"`
+// RefState represents the state of a ref (either symbolic or
+// non-symbolic).
+type RefState struct {
+	Data   *RefData `json:"data,omitempty"`   // ref data (for non-symbolic refs only)
+	Target string   `json:"target,omitempty"` // name of target ref (for symbolic refs only)
 }
 
-// RefState describes the state of a ref.
-type RefState struct {
-	// RefBaseInfo is the base information used when the ref was created.
-	RefBaseInfo
+// DeepCopy makes a deep copy of r.
+func (r RefState) DeepCopy() RefState {
+	r2 := RefState{
+		Target: r.Target,
+	}
+	if r.Data != nil {
+		tmp := r.Data.DeepCopy()
+		r2.Data = &tmp
+	}
+	return r2
+}
 
-	// History is all ops that have been applied to this ref (on top
-	// of the RefBaseInfo). These ops must be applied to the client's
-	// local workspace before the client applies any future ops
-	// streamed from the server.
+func (r RefState) panicIfInvalid() {
+	if (r.Target != "") == (r.Data != nil) {
+		panic("RefState: exactly 1 of Target and Data must be set")
+	}
+}
+
+// IsSymbolic reports whether r represents a symbolic ref.
+func (r RefState) IsSymbolic() bool {
+	r.panicIfInvalid()
+	return r.Target != ""
+}
+
+func (r RefState) String() string {
+	switch {
+	case r.Target != "":
+		return fmt.Sprintf("target(%s)", r.Target)
+	case r.Data != nil:
+		return fmt.Sprintf("git(%s:%s) history(%v)", r.Data.GitBranch, abbrevOID(r.Data.GitBase), r.Data.History)
+	default:
+		return "invalid"
+	}
+}
+
+func abbrevOID(oid string) string {
+	if len(oid) == 40 {
+		return oid[:6]
+	}
+	return oid
+}
+
+// RefData describes the state of a non-symbolic ref.
+type RefData struct {
+	RefBase
+
+	// History is the op sequence applied on top of RefBase to modify
+	// this ref's state.
 	History []ot.WorkspaceOp `json:"history"`
 }
 
-func (s RefState) String() string {
-	return fmt.Sprintf("git(%s:%s) history(%v)", s.GitBranch, abbrevGitOID(s.GitBase), s.History)
+// DeepCopy makes a deep copy of r.
+func (r RefData) DeepCopy() RefData {
+	r2 := RefData{
+		RefBase: r.RefBase,
+	}
+	if r.History != nil {
+		r2.History = make([]ot.WorkspaceOp, len(r.History))
+		for i, op := range r.History {
+			r2.History[i] = op.DeepCopy()
+		}
+	}
+	return r2
+}
+
+// RefBase describes the base Git revision and branch that the ref is
+// derived from.
+type RefBase struct {
+	GitBase   string `json:"gitBase"`   // the 40-char SHA of the Git commit that this ref is derived from
+	GitBranch string `json:"gitBranch"` // the name of the Git branch that this ref is derived from
+}
+
+func (p *RefBase) deepCopy() *RefBase {
+	if p == nil {
+		return nil
+	}
+	tmp := *p
+	return &tmp
 }
 
 // RefUpdateUpstreamParams contains parameters for the "ref/update"
@@ -253,8 +302,22 @@ type RefUpdateUpstreamParams struct {
 
 	// Current is the current state of the ref, as seen by the client
 	// (sender). It must be provided in all cases except when creating
-	// a ref.
-	Current *RefPointer `json:"current"`
+	// a ref when there is no existing ref by the same name, or when
+	// Force is true.
+	//
+	// If (RefUpdateUpstreamParams).Op != nil (op update), then
+	// Current.Rev must be set. See the docstring on that field for
+	// more information.
+	//
+	// The upstream server uses it to: (1) determine at what revision
+	// an op should be inserted, or (2) determine if the downstream's
+	// state is stale (in which case the upstream would reject the
+	// update).
+	//
+	// If the downstream doesn't know a valid RefPointer value to send
+	// to the upstream, it can send a RefUpdateUpstreamParams with
+	// Force == true instead of providing the RefPointer.
+	Current *RefPointer `json:"current,omitempty"`
 
 	// Force, if set, causes the downstream's ref state to be update
 	// to the value in the State field, regardless of whether Current
@@ -263,7 +326,7 @@ type RefUpdateUpstreamParams struct {
 	// It is used when the upstream does not know the current ref
 	// state on the downstream and wants to clobber it, replacing it
 	// with a new value.
-	Force bool `json:"force,omitempt"`
+	Force bool `json:"force,omitempty"`
 
 	// State indicates that a new ref should be created with the given
 	// state (or, if Current is non-nil, the ref's state should be
@@ -271,8 +334,16 @@ type RefUpdateUpstreamParams struct {
 	State *RefState `json:"state,omitempty"`
 
 	// Op indicates that the given operation should be applied to the
-	// ref. The client's revision number is given in Current.Rev.
+	// ref. The client's revision number must given in Rev.
 	Op *ot.WorkspaceOp `json:"op,omitempty"`
+
+	// Rev is the revision number of the server's last-acked revision,
+	// from the POV of the downstream client that is sending this
+	// value.
+	//
+	// It only needs to be set when RefUpdateUpstreamParams.Op !=
+	// nil. (It is ignored for other types of updates.)
+	Rev uint `json:"rev"`
 
 	// Delete indicates that the ref should be deleted.
 	Delete bool `json:"delete,omitempty"`
@@ -290,10 +361,14 @@ func (p RefUpdateUpstreamParams) String() string {
 		} else {
 			verb = "reset"
 		}
-		fmt.Fprintf(&buf, "%s(%v)", verb, p.State)
+		fmt.Fprintf(&buf, "%s(", verb)
+		if p.State != nil {
+			fmt.Fprint(&buf, p.State)
+		}
+		fmt.Fprint(&buf, ")")
 	}
 	if p.Op != nil {
-		fmt.Fprintf(&buf, "op@%d(%v)", p.Current.Rev, p.Op)
+		fmt.Fprintf(&buf, "op@%d(%v)", p.Rev, p.Op)
 	}
 	if p.Delete {
 		fmt.Fprintf(&buf, "delete")
@@ -301,18 +376,18 @@ func (p RefUpdateUpstreamParams) String() string {
 	return buf.String()
 }
 
-func (p RefUpdateUpstreamParams) validate() error {
+func (p RefUpdateUpstreamParams) Validate() error {
 	if p.RefIdentifier == (RefIdentifier{}) {
 		return errors.New("repo and ref must both be set")
 	}
 	if p.Force && p.Current != nil {
 		return errors.New("force update ignores current, but current is set")
 	}
-	if isCreate := p.Current == nil; isCreate {
+	if isCreate := p.Current == nil && !p.Delete; isCreate {
 		if p.State == nil {
 			return errors.New("ref initial state must be set when creating a ref")
 		}
-		if p.Op != nil || p.Delete {
+		if p.Op != nil {
 			return errors.New("only the ref initial state can be set when creating a ref")
 		}
 		return nil
@@ -323,10 +398,70 @@ func (p RefUpdateUpstreamParams) validate() error {
 	return nil
 }
 
-// RefPointer points to a specific revision number within a ref.
+// DeepCopy creates a deep copy of p.
+func (p RefUpdateUpstreamParams) DeepCopy() RefUpdateUpstreamParams {
+	p2 := p
+	p2.Current = p.Current.deepCopy()
+	if p.State != nil {
+		tmp := p.State.DeepCopy()
+		p2.State = &tmp
+	}
+	if p.Op != nil {
+		tmp := p.Op.DeepCopy()
+		p2.Op = &tmp
+	}
+	return p2
+}
+
+// RefPointer describes the expected prior state of an
+// ref from the peer's POV.
+//
+// When the upstream receives a RefUpdateUpstreamParams, it checks the
+// Current field (which is a *RefPointer) to ensure the downstream's
+// update pertains to the same type of ref. And vice-versa for when
+// the downstream receives an update.
+//
+// It is only used inside RefUpdateDownstreamParams and
+// RefUpdateUpstreamParams.
 type RefPointer struct {
-	RefBaseInfo
-	Rev int `json:"rev"` // the client's revision number
+	Base   *RefBase `json:"base,omitempty"`   // if the upstream ref is a non-symbolic ref
+	Target string   `json:"target,omitempty"` // if the upstream ref is a symbolic-ref
+}
+
+func (p *RefPointer) deepCopy() *RefPointer {
+	if p == nil {
+		return nil
+	}
+	return &RefPointer{
+		Base:   p.Base.deepCopy(),
+		Target: p.Target,
+	}
+}
+
+func (p RefPointer) String() string {
+	switch {
+	case p.Base != nil:
+		return fmt.Sprintf("base(%s)", p.Base)
+	case p.Target != "":
+		return fmt.Sprintf("target(%s)", p.Target)
+	default:
+		return "<empty>"
+	}
+}
+
+// RefPointerFrom is a helper function that creates a *RefPointer
+// derived from the provided state.
+func RefPointerFrom(state RefState) *RefPointer {
+	var p RefPointer
+	switch {
+	case state.Target != "":
+		p.Target = state.Target
+	case state.Data != nil:
+		p.Base = &state.Data.RefBase
+	default:
+		panic("invalid state (Target == \"\" && Data == nil)")
+	}
+	return &p
 }
 
 // RefUpdateDownstreamParams contains parameters for the "ref/update"
@@ -334,11 +469,6 @@ type RefPointer struct {
 // downstream).
 type RefUpdateDownstreamParams struct {
 	RefIdentifier // the upstream (server) ref this update applies to
-
-	// Current is the current state of the ref, as seen by the server
-	// (upstream). It must be provided in all cases except when a ref
-	// is created.
-	Current *RefBaseInfo `json:"current,omitempty"`
 
 	// State indicates that a new ref was created with the given state
 	// (or, if Current is non-nil, the ref's state was reset to the
@@ -356,6 +486,11 @@ type RefUpdateDownstreamParams struct {
 	Delete bool `json:"delete,omitempty"`
 }
 
+// IsFastForward reports whether p is a fast-forward update.
+func (p RefUpdateDownstreamParams) IsFastForward() bool {
+	return p.Op != nil
+}
+
 func (p RefUpdateDownstreamParams) String() string {
 	return p.string(false)
 }
@@ -369,13 +504,7 @@ func (p RefUpdateDownstreamParams) string(includeRefIdentifier bool) string {
 		fmt.Fprint(&buf, "ack:")
 	}
 	if p.State != nil {
-		var verb string
-		if p.Current == nil {
-			verb = "create"
-		} else {
-			verb = "reset"
-		}
-		fmt.Fprintf(&buf, "%s(%v)", verb, p.State)
+		fmt.Fprintf(&buf, "state(%v)", p.State)
 	}
 	if p.Op != nil {
 		fmt.Fprintf(&buf, "op(%v)", p.Op)
@@ -386,75 +515,14 @@ func (p RefUpdateDownstreamParams) string(includeRefIdentifier bool) string {
 	return buf.String()
 }
 
-func (p RefUpdateDownstreamParams) validate() error {
+func (p RefUpdateDownstreamParams) Validate() error {
 	if p.RefIdentifier == (RefIdentifier{}) {
 		return errors.New("repo and ref must both be set")
-	}
-	if isCreate := p.Current == nil; isCreate {
-		if p.State == nil {
-			return errors.New("ref initial state must be set when creating a ref")
-		}
-		if p.Op != nil || p.Delete {
-			return errors.New("only the ref initial state can be set when creating a ref")
-		}
-		return nil
 	}
 	if (p.State != nil && p.Op != nil) || (p.State != nil && p.Delete) || (p.Op != nil && p.Delete) {
 		return errors.New("exactly 1 of (state,op,delete) must be set when updating a ref")
 	}
 	return nil
-}
-
-// RefUpdateSymbolicParams contains the parameters for the
-// "ref/updateSymbolic" request/notification.
-type RefUpdateSymbolicParams struct {
-	RefIdentifier        // the symbolic ref to update
-	Target        string `json:"target"`              // the new target
-	OldTarget     string `json:"oldTarget,omitempty"` // for consistency, the old target (if any)
-
-	Ack bool `json:"ack,omitempty"` // if this is a server ack of the client's update
-}
-
-func (p RefUpdateSymbolicParams) String() string {
-	return p.string(false)
-}
-
-func (p RefUpdateSymbolicParams) string(includeRefIdentifier bool) string {
-	var buf bytes.Buffer
-	if includeRefIdentifier {
-		fmt.Fprintf(&buf, "%s: ", p.RefIdentifier)
-	}
-	if p.Ack {
-		fmt.Fprint(&buf, "ack:")
-	}
-	if p.OldTarget != "" {
-		fmt.Fprintf(&buf, "%s🡒%s", p.OldTarget, p.Target)
-	} else {
-		fmt.Fprintf(&buf, "↦%s", p.Target)
-	}
-	return buf.String()
-}
-
-// RefConfigureParams contains the parameters for the "ref/configure"
-// request.
-type RefConfigureParams struct {
-	// RefIdentifier specifies the ref to configure.
-	RefIdentifier
-
-	RefConfiguration
-}
-
-// RefConfiguration describes the configuration for a ref.
-type RefConfiguration struct {
-	// Upstream, if set, indicates that the ref should track the ref
-	// with the same name on the given remote (which must have already
-	// been configured with repo/configure).
-	Upstream string `json:"upstream"`
-
-	// Overwrite, if set, indicates that if this ref diverges from its
-	// upstream, the server should clobber the upstream and replace
-	// the upstream with this ref's state.
-	Overwrite bool `json:"overwrite"`
 }
 
 // RefInfoParams contains the parameters for the "ref/info" request.
@@ -469,16 +537,9 @@ type RefInfoParams struct {
 
 // RefInfo is the result from the remote "ref/info" request.
 type RefInfo struct {
-	RefIdentifier // the repo and ref name (omitted by functions that return only a single RefInfo)
-
-	State  *RefState `json:"state,omitempty"`  // the state of the ref (symbolic refs are NOT resolved)
-	Target string    `json:"target,omitempty"` // the target of the ref (for symbolic refs)
-
-	Watchers []string `json:"watchers"` // names of clients that are watching this ref
-
-	// Extra diagnostics (for use by tests only)
-	Wait, Buf         *ot.WorkspaceOp
-	UpstreamRevNumber int
+	RefIdentifier          // the repo and ref name (omitted by API method that return only a single RefInfo)
+	RefState               // the state of the ref
+	Watchers      []string `json:"watchers"` // names of clients that are watching this ref
 }
 
 // IsSymbolic reports whether r is a symbolic ref.
@@ -512,6 +573,8 @@ const (
 	ErrorCodeWorkspaceNotExists                    // workspace does not exist
 	ErrorCodeWorkspaceExists                       // workspace has already been added
 	ErrorCodeWorkspaceIdentifierRequired           // workspace identifier is required in params
+	ErrorCodeWorkspaceStateConflict                // workspace state does not match Zap branch's initial state
+	ErrorCodeWorkspaceAlreadyOnBranch              // workspace is already on a branch
 	ErrorCodeRefUpdateInvalid                      // an invalid ref update (e.g., trying to update a remote tracking ref)
 	ErrorCodeInvalidOp                             // an invalid operation (e.g., edit with incorrect base length)
 )
@@ -523,4 +586,13 @@ func Code(err error) ErrorCode {
 		return ErrorCode(e.Code)
 	}
 	return 0
+}
+
+// Errorf formats an error message according to a format specifier and
+// returns a Zap error with the given code.
+func Errorf(code ErrorCode, format string, a ...interface{}) error {
+	return &jsonrpc2.Error{
+		Code:    int64(code),
+		Message: fmt.Sprintf(format, a...),
+	}
 }

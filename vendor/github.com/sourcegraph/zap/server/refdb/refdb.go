@@ -98,19 +98,26 @@ type TransitiveClosurer interface {
 // A Ref is immutable.
 type Ref struct {
 	Name string // ref name (e.g., "branch/foo")
-
-	Target string // for symbolic refs, the target ref name
-
-	Object interface{} // a pointer to a long-lived object
-	Rev    uint        // the revision in Object's history that this reference refers to
+	Data        // the ref's data (MUST always be non-nil)
 }
 
-// IsSymbolic reports whether this ref is a symbolic reference.
-func (r Ref) IsSymbolic() bool {
-	if r.Target != "" && (r.Object != nil || r.Rev != 0) {
-		panic(fmt.Sprintf("invalid ref %q: exactly one of target or object/rev must be set", r.Name))
+func (r Ref) panicIfInvalid() {
+	if r.Data == nil {
+		panic(fmt.Sprintf("refdb: ref %q: Data == nil", r.Name))
 	}
-	return r.Target != ""
+}
+
+// The Data interface is the interface that exposes the necessary
+// information about a ref to the refdb so it can perform its work.
+type Data interface {
+	// Target returns the ref's target ref (or "" if the ref is
+	// non-symbolic).
+	Target() string
+
+	// IsSymbolic reports whether ref is a symbolic ref. It is always
+	// equivalent to Target() != "" and it exists here for
+	// convenience.
+	IsSymbolic() bool
 }
 
 // RefExistsError indicates that a reference unexpectedly exists at a
@@ -142,6 +149,12 @@ func (e *RefNotExistsError) Error() string {
 // checkOldValue returns whether expected is the correct old value for
 // actual.
 func checkOldValue(actual, expected *Ref) (reasons []string, ok bool) {
+	if actual != nil {
+		actual.panicIfInvalid()
+	}
+	if expected != nil {
+		expected.panicIfInvalid()
+	}
 	if actual == expected {
 		return nil, true // same pointers or both nil
 	}
@@ -152,22 +165,19 @@ func checkOldValue(actual, expected *Ref) (reasons []string, ok bool) {
 		return []string{"actual != nil && expected == nil"}, false
 	}
 	if actual.IsSymbolic() && !expected.IsSymbolic() {
-		reasons = append(reasons, fmt.Sprintf("type: symbolic ref (%s) != object ref", actual.Target))
+		reasons = append(reasons, fmt.Sprintf("type: symbolic ref (%s) != object ref", actual.Target()))
 	} else if !actual.IsSymbolic() && expected.IsSymbolic() {
-		reasons = append(reasons, fmt.Sprintf("type: object ref != symbolic ref (%s)", expected.Target))
+		reasons = append(reasons, fmt.Sprintf("type: object ref != symbolic ref (%s)", expected.Target()))
 	} else {
 		// Refs are of the same type.
-		if actual.Target != expected.Target {
-			reasons = append(reasons, fmt.Sprintf("target: %q != %q", actual.Target, expected.Target))
+		if actual.Target() != expected.Target() {
+			reasons = append(reasons, fmt.Sprintf("target: %q != %q", actual.Target(), expected.Target()))
 		}
 		if actual.Name != expected.Name {
 			reasons = append(reasons, fmt.Sprintf("name: %q != %q", actual.Name, expected.Name))
 		}
-		if actual.Rev != expected.Rev {
-			reasons = append(reasons, fmt.Sprintf("rev: %d != %d", actual.Rev, expected.Rev))
-		}
-		if actual.Object != expected.Object {
-			reasons = append(reasons, fmt.Sprintf("object: %T@%p != %T@%p", actual.Object, actual.Object, expected.Object, expected.Object))
+		if actual.Data != expected.Data {
+			reasons = append(reasons, fmt.Sprintf("object: %T@%p != %T@%p", actual.Data, actual.Data, expected.Data, expected.Data))
 		}
 	}
 	return reasons, len(reasons) == 0

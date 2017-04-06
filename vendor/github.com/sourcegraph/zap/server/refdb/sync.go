@@ -79,7 +79,6 @@ func (db *SyncRefDB) lock(ref string) (unlock func()) {
 		db.name[ref] = mu
 	}
 	db.nameMu.Unlock()
-
 	mu.Lock()
 	return mu.Unlock
 }
@@ -153,8 +152,8 @@ func (db *SyncRefDB) List(pattern string) []Ref {
 //   }
 func (db *SyncRefDB) Resolve(name string) (ref OwnedRef, target *OwnedRef) {
 	ref = db.Lookup(name)
-	if ref.Ref != nil && ref.Ref.Target != "" && ref.Ref.Target != name {
-		targetRef := db.Lookup(ref.Ref.Target)
+	if ref.Ref != nil && ref.Ref.Target() != "" && ref.Ref.Target() != name {
+		targetRef := db.Lookup(ref.Ref.Target())
 		target = &targetRef
 	}
 	return ref, target

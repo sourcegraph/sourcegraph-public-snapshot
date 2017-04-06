@@ -62,7 +62,7 @@ func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveR
 				// other errors.
 				span.SetTag("zap_refinfo_err", err)
 			}
-			if zapRevInfo != nil && zapRevInfo.State != nil {
+			if zapRevInfo != nil && zapRevInfo.Data != nil {
 				span.SetTag("is_zap_rev", true)
 				// We want to use the Git revision that the Zap branch was based on,
 				// as all of the Zap operations were originating from that revision.
@@ -70,7 +70,7 @@ func (s *repos) ResolveZapRev(ctx context.Context, op *sourcegraph.ReposResolveR
 				// (e.g., the user may be on a revision of the master branch that is
 				// just a few commits behind.)
 				return zapRevInfo, &sourcegraph.ResolvedRev{
-					CommitID: zapRevInfo.State.GitBase,
+					CommitID: zapRevInfo.Data.GitBase,
 				}, nil
 			}
 		}

@@ -12,3 +12,10 @@ func GitBackOff() backoff.BackOff {
 	p.MaxElapsedTime = 3 * time.Second
 	return p
 }
+
+func AbbrevOID(oid string) string {
+	if len(oid) == 40 {
+		return oid[:6]
+	}
+	return oid
+}

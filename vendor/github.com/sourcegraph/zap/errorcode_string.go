@@ -4,9 +4,9 @@ package zap
 
 import "fmt"
 
-const _ErrorCode_name = "errorCodeInvalidErrorCodeNotInitializedErrorCodeAlreadyInitializedErrorCodeRepoNotExistsErrorCodeRepoExistsErrorCodeRefNotExistsErrorCodeRefExistsErrorCodeRefConflictErrorCodeRemoteNotExistsErrorCodeInvalidConfigErrorCodeSymbolicRefInvalidErrorCodeWorkspaceNotExistsErrorCodeWorkspaceExistsErrorCodeWorkspaceIdentifierRequiredErrorCodeRefUpdateInvalidErrorCodeInvalidOp"
+const _ErrorCode_name = "errorCodeInvalidErrorCodeNotInitializedErrorCodeAlreadyInitializedErrorCodeRepoNotExistsErrorCodeRepoExistsErrorCodeRefNotExistsErrorCodeRefExistsErrorCodeRefConflictErrorCodeRemoteNotExistsErrorCodeInvalidConfigErrorCodeSymbolicRefInvalidErrorCodeWorkspaceNotExistsErrorCodeWorkspaceExistsErrorCodeWorkspaceIdentifierRequiredErrorCodeWorkspaceStateConflictErrorCodeWorkspaceAlreadyOnBranchErrorCodeRefUpdateInvalidErrorCodeInvalidOp"
 
-var _ErrorCode_index = [...]uint16{0, 16, 39, 66, 88, 107, 128, 146, 166, 190, 212, 239, 266, 290, 326, 351, 369}
+var _ErrorCode_index = [...]uint16{0, 16, 39, 66, 88, 107, 128, 146, 166, 190, 212, 239, 266, 290, 326, 357, 390, 415, 433}
 
 func (i ErrorCode) String() string {
 	if i < 0 || i >= ErrorCode(len(_ErrorCode_index)-1) {

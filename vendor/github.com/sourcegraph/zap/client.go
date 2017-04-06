@@ -14,8 +14,7 @@ import (
 type Client struct {
 	Conn *jsonrpc2.Conn
 
-	refUpdateCallback         func(context.Context, RefUpdateDownstreamParams) error
-	refUpdateSymbolicCallback func(context.Context, RefUpdateSymbolicParams) error
+	RefUpdateCallback func(context.Context, RefUpdateDownstreamParams)
 
 	// ShowStatus, if provided, is called synchronously when the
 	// status of the zap client changes. It can indicate that the
@@ -45,21 +44,11 @@ func NewClient(ctx context.Context, stream jsonrpc2.ObjectStream, opt ...jsonrpc
 
 // SetRefUpdateCallback sets the function that is called synchronously
 // when the client receives a "ref/update" request from the server.
-func (c *Client) SetRefUpdateCallback(f func(context.Context, RefUpdateDownstreamParams) error) {
-	if c.refUpdateCallback != nil {
-		panic("refUpdateCallback is already set")
+func (c *Client) SetRefUpdateCallback(f func(context.Context, RefUpdateDownstreamParams)) {
+	if c.RefUpdateCallback != nil {
+		panic("RefUpdateCallback is already set")
 	}
-	c.refUpdateCallback = f
-}
-
-// SetRefUpdateSymbolicCallback sets the function that is called
-// synchronously when the client receives a "ref/updateSymbolic"
-// request from the server.
-func (c *Client) SetRefUpdateSymbolicCallback(f func(context.Context, RefUpdateSymbolicParams) error) {
-	if c.refUpdateSymbolicCallback != nil {
-		panic("refUpdateSymbolicCallback is already set")
-	}
-	c.refUpdateSymbolicCallback = f
+	c.RefUpdateCallback = f
 }
 
 func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
@@ -73,7 +62,7 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 			return nil, err
 		}
 		CheckRefName(params.RefIdentifier.Ref)
-		if c.refUpdateCallback != nil {
+		if c.RefUpdateCallback != nil {
 			c.startRefUpdateLoop.Do(func() {
 				go func() {
 					for {
@@ -83,9 +72,7 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 								log.Println("info: ref/update loop is shutting down")
 								return
 							}
-							if err := c.refUpdateCallback(context.Background(), params); err != nil {
-								log.Println("warning: client ref/update callback returned error:", err)
-							}
+							c.RefUpdateCallback(context.Background(), params)
 						}
 					}
 				}()
@@ -98,28 +85,6 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 			return nil, nil
 		}
 		log.Printf("warning: client received ref/update from server, but no callback is set: %v", params.string(true))
-		return nil, nil
-
-	case "ref/updateSymbolic":
-		if req.Params == nil {
-			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
-		}
-		var params RefUpdateSymbolicParams
-		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			return nil, err
-		}
-		CheckSymbolicRefName(params.RefIdentifier.Ref)
-		if c.refUpdateSymbolicCallback != nil {
-			// The order of symbolic refs is not as important as
-			// non-symbolic refs, so we can just process them async.
-			go func() {
-				if err := c.refUpdateSymbolicCallback(ctx, params); err != nil {
-					log.Println("warning: client ref/updateSymbolic callback returned error:", err)
-				}
-			}()
-			return nil, nil
-		}
-		log.Printf("warning: client received ref/updateSymbolic from server, but no callback is set: %v", params.string(true))
 		return nil, nil
 
 	case "window/showStatus":
@@ -156,6 +121,16 @@ func (c *Client) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.
 	}
 }
 
+// AuthGet sends the "auth/get" request to the server.
+func (c *Client) AuthGet(ctx context.Context) (auth *AuthGetResult, err error) {
+	return auth, c.Conn.Call(ctx, "auth/get", nil, &auth)
+}
+
+// AuthSet sends the "auth/set" request to the server.
+func (c *Client) AuthSet(ctx context.Context, params AuthSetParams) error {
+	return c.Conn.Call(ctx, "auth/set", params, nil)
+}
+
 // Initialize sends the "initialize" request to the server.
 func (c *Client) Initialize(ctx context.Context, params InitializeParams) (res *InitializeResult, err error) {
 	return res, c.Conn.Call(ctx, "initialize", params, &res)
@@ -168,9 +143,8 @@ func (c *Client) RepoInfo(ctx context.Context, params RepoInfoParams) (info *Rep
 }
 
 // RepoConfigure sends the "repo/configure" request to the server.
-func (c *Client) RepoConfigure(ctx context.Context, params RepoConfigureParams) (result *RepoConfigureResult, err error) {
-	err = c.Conn.Call(ctx, "repo/configure", params, &result)
-	return
+func (c *Client) RepoConfigure(ctx context.Context, params RepoConfigureParams) error {
+	return c.Conn.Call(ctx, "repo/configure", params, nil)
 }
 
 // RepoWatch sends the "repo/watch" request to the server.
@@ -187,23 +161,9 @@ func (c *Client) RepoList(ctx context.Context) ([]string, error) {
 	return r, nil
 }
 
-// RefConfigure sends the "ref/configure" request to the server.
-func (c *Client) RefConfigure(ctx context.Context, params RefConfigureParams) error {
-	CheckRefName(params.RefIdentifier.Ref)
-	return c.Conn.Call(ctx, "ref/configure", params, nil)
-}
-
 // RefUpdate sends the "ref/update" request to the server.
 func (c *Client) RefUpdate(ctx context.Context, params RefUpdateUpstreamParams) error {
-	CheckRefName(params.RefIdentifier.Ref)
 	return c.Conn.Call(ctx, "ref/update", params, nil)
-}
-
-// RefUpdateSymbolic sends the "ref/updateSymbolic" request to the
-// server.
-func (c *Client) RefUpdateSymbolic(ctx context.Context, params RefUpdateSymbolicParams) error {
-	CheckSymbolicRefName(params.RefIdentifier.Ref)
-	return c.Conn.Call(ctx, "ref/updateSymbolic", params, nil)
 }
 
 // RefInfo sends the "ref/info" request to the server.
@@ -226,7 +186,7 @@ func (c *Client) RefList(ctx context.Context, params RefListParams) ([]RefInfo, 
 }
 
 // WorkspaceStatus sends the "workspace/status" request to the server.
-func (c *Client) WorkspaceStatus(ctx context.Context, params WorkspaceStatusParams) (status *ShowStatusParams, err error) {
+func (c *Client) WorkspaceStatus(ctx context.Context, params WorkspaceStatusParams) (status *WorkspaceStatusResult, err error) {
 	err = c.Conn.Call(ctx, "workspace/status", params, &status)
 	return
 }
@@ -241,16 +201,24 @@ func (c *Client) WorkspaceRemove(ctx context.Context, params WorkspaceRemovePara
 	return c.Conn.Call(ctx, "workspace/remove", params, nil)
 }
 
-// WorkspaceCheckout sends the "workspace/checkout" request to the server.
-func (c *Client) WorkspaceCheckout(ctx context.Context, params WorkspaceCheckoutParams) error {
-	CheckRefName(params.Ref)
-	return c.Conn.Call(ctx, "workspace/checkout", params, nil)
+// WorkspaceBranchCreate sends the "workspace/branch/create" request
+// to the server.
+func (c *Client) WorkspaceBranchCreate(ctx context.Context, params WorkspaceBranchCreateParams) (*WorkspaceBranchCreateResult, error) {
+	var res *WorkspaceBranchCreateResult
+	err := c.Conn.Call(ctx, "workspace/branch/create", params, &res)
+	return res, err
 }
 
-// WorkspaceReset sends the "workspace/reset" request to the server.
-func (c *Client) WorkspaceReset(ctx context.Context, params WorkspaceResetParams) error {
-	CheckRefName(params.Ref)
-	return c.Conn.Call(ctx, "workspace/reset", params, nil)
+// WorkspaceBranchSet sends the "workspace/branch/set" request to the server.
+func (c *Client) WorkspaceBranchSet(ctx context.Context, params WorkspaceBranchSetParams) (*WorkspaceBranchSetResult, error) {
+	var res *WorkspaceBranchSetResult
+	err := c.Conn.Call(ctx, "workspace/branch/set", params, &res)
+	return res, err
+}
+
+// WorkspaceBranchClose sends the "workspace/branch/close" request to the server.
+func (c *Client) WorkspaceBranchClose(ctx context.Context, params WorkspaceBranchCloseParams) error {
+	return c.Conn.Call(ctx, "workspace/branch/close", params, nil)
 }
 
 // WorkspaceWillSaveFile sends the "workspace/willSaveFile" request to
@@ -267,6 +235,12 @@ func (c *Client) Ping(ctx context.Context) error {
 // DebugLog sends the "debug/log" notification to the server.
 func (c *Client) DebugLog(ctx context.Context, params DebugLogParams) error {
 	return c.Conn.Call(ctx, "debug/log", params, nil)
+}
+
+// DebugWorkspaceSync sends the "debug/workspace/sync" notification to
+// the server.
+func (c *Client) DebugWorkspaceSync(ctx context.Context, params WorkspaceIdentifier) error {
+	return c.Conn.Call(ctx, "debug/workspace/sync", params, nil)
 }
 
 // Wait waits until the underlying connection is closed.

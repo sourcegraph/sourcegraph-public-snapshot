@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 
 	// Import for side effect of setting SGPATH env var.
@@ -21,9 +22,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/websocket"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
-	"github.com/sourcegraph/zap"
 	zapgit "github.com/sourcegraph/zap/pkg/git"
-	zapgitutil "github.com/sourcegraph/zap/pkg/gitutil"
+	"github.com/sourcegraph/zap/server"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
@@ -127,8 +127,10 @@ func main() {
 	fmt.Fprintln(os.Stderr, "zap: listening on", addr)
 
 	ctx := context.Background()
-	zapServer := zap.NewServer(zapServerBackend)
-	zapServer.Start(ctx)
+	zapServer := server.New(zapServerBackend)
+	if err := zapServer.Start(ctx); err != nil {
+		stdlog.Fatal(err)
+	}
 	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(auth.TrustedActorMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -136,7 +138,7 @@ func main() {
 			http.Error(w, "WebSocket upgrade error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		<-zapServer.Accept(r.Context(), websocketjsonrpc2.NewObjectStream(c))
+		<-zapServer.Accept(withCanAccessRepos(r.Context()), websocketjsonrpc2.NewObjectStream(c))
 	})))))
 	select {}
 }
@@ -164,8 +166,50 @@ func listen(urlStr string) (string, net.Listener, error) {
 	return "ws://" + lis.Addr().String(), lis, nil
 }
 
+// canAccessRepos is stored in a JSON-RPC connection's parent context
+// and remembers repos that (ServerBackend).CanAccessRepo has
+// succeeded on.
+type canAccessRepos struct {
+	sync.Mutex
+	// Repos is the set of repos that yielded a "true" result from
+	// (ServerBackend).CanAccessRepo during this connection.
+	repos map[string]struct{}
+}
+
+type contextKey int
+
+const canAccessReposContextKey contextKey = iota
+
+// withCanAccessRepos augments this context with the ability to store
+// repos that a (ServerBackend).CanAccessRepo check has succeeded on.
+func withCanAccessRepos(ctx context.Context) context.Context {
+	return context.WithValue(ctx, canAccessReposContextKey, &canAccessRepos{repos: map[string]struct{}{}})
+}
+
+func cachedCanAccessRepo(ctx context.Context, repo string) bool {
+	v := ctx.Value(canAccessReposContextKey).(*canAccessRepos)
+	v.Lock()
+	defer v.Unlock()
+	_, ok := v.repos[repo]
+	return ok
+}
+
+func cacheSetCanAccessRepo(ctx context.Context, repo string, ok bool) {
+	if !ok {
+		panic("per-connection CanAccessRepo caching only supports positive results")
+	}
+	v := ctx.Value(canAccessReposContextKey).(*canAccessRepos)
+	v.Lock()
+	defer v.Unlock()
+	v.repos[repo] = struct{}{}
+}
+
 var zapServerBackend = zapgit.ServerBackend{
 	CanAccessRepo: func(ctx context.Context, log log.Logger, repo string) (ok bool, err error) {
+		if cachedCanAccessRepo(ctx, repo) {
+			return true, nil
+		}
+
 		logResult := func(ok bool, err error) {
 			actor := auth.ActorFromContext(ctx)
 			var f func(string, ...interface{})
@@ -189,36 +233,13 @@ var zapServerBackend = zapgit.ServerBackend{
 		// anyone with read access to also have write access to Zap
 		// repos. Currently we have no way to allow Zap reads but not
 		// writes.
-		sRepo, err := backend.Repos.GetByURI(ctx, repo)
-		if err != nil {
+		if _, err := backend.Repos.GetByURI(ctx, repo); err != nil {
 			return false, err
 		}
-
-		// Dogfooding: Do a quick git command just to ensure we have
-		// the repo cloned. Remove before launch.
-		go func() {
-			cmd := dogfoodGitClient.Command("git", "rev-parse", "--show-toplevel")
-			cmd.Repo = sRepo
-			cmd.Run(ctx)
-		}()
-
-		return true, nil
+		ok = true
+		cacheSetCanAccessRepo(ctx, repo, ok)
+		return ok, nil
 	},
-	OpenBareRepo: func(ctx context.Context, log log.Logger, repo string) (zapgit.ServerRepo, error) {
-		actor := auth.ActorFromContext(ctx)
-		log15.Info("Zap: OpenRepo", "repo", repo, "login", actor.Login, "uid", actor.UID)
-
-		_, err := backend.Repos.GetByURI(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
-		return zapgitutil.BareRepo{
-			GitExecutor: gitserverExecutor{
-				repoPath: repo,
-			},
-		}, nil
-	},
-	CanAutoCreateRepo: func() bool { return true },
 }
 
 type gitserverExecutor struct {

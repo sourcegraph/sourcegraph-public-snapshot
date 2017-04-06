@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/zap/pkg/errorlist"
@@ -117,6 +116,14 @@ func (w Worktree) CheckoutDetachedHEAD(commit string) error {
 	return err
 }
 
+func (w Worktree) CheckoutBranch(branch string) error {
+	if err := checkArgSafety(branch); err != nil {
+		return err
+	}
+	_, err := execGitCommand(w.Dir, "checkout", branch, "--")
+	return err
+}
+
 const IndexLockFile = "index.lock"
 
 func (w Worktree) IsIndexLocked() (bool, error) {
@@ -158,6 +165,14 @@ func (w Worktree) ListUntrackedFiles() ([]*ChangedFile, error) {
 	return changes, nil
 }
 
+func (w Worktree) DirtyWorktree() (bool, error) {
+	out, err := execGitCommand(w.Dir, "status", "--porcelain")
+	if err != nil {
+		return false, err
+	}
+	return out != "", nil
+}
+
 func (w Worktree) DiffIndex(head string) ([]*ChangedFile, error) {
 	if err := checkArgSafety(head); err != nil {
 		return nil, err
@@ -168,58 +183,32 @@ func (w Worktree) DiffIndex(head string) ([]*ChangedFile, error) {
 		return nil, err
 	}
 
-	// "git diff-index -z" output actually has two NULs on a "line"
-	// for some reason. See "git diff-index --help" RAW OUTPUT FORMAT
-	// section.
-	sections := splitNulls(out)
-	var changedFiles []*ChangedFile
-	for i := 0; i < len(sections); {
-		var f ChangedFile
-
-		metaParts := strings.Split(sections[i], " ")
-		if len(metaParts) != 5 {
-			return nil, fmt.Errorf("bad diff-index meta section (before first NUL): %q", sections[i])
-		}
-		f.SrcMode = strings.TrimPrefix(metaParts[0], ":")
-		f.DstMode = metaParts[1]
-		f.SrcSHA = metaParts[2]
-		f.DstSHA = metaParts[3]
-		f.Status = metaParts[4]
-
-		if i+1 >= len(sections) {
-			return nil, fmt.Errorf("no diff-index src path section for meta section %q", sections[i])
-		}
-		f.SrcPath = sections[i+1]
-		i += 2
-
-		switch f.Status[0] {
-		case 'C', 'R':
-			if i >= len(sections) {
-				return nil, fmt.Errorf("no diff-index dst path section for src path %q", f.SrcPath)
-			}
-			f.DstPath = sections[i]
-			i++
-		}
-
-		s := f.Status[0]
-		if s == 'A' || s == 'C' || s == 'M' || s == 'R' || s == 'T' || s == 'U' {
-			// Skip files that are larger than our max file size.
-			path := f.DstPath
-			if path == "" {
-				path = f.SrcPath
-			}
-			fi, err := os.Stat(filepath.Join(w.WorktreeDir(), path))
-			if err != nil {
-				return nil, fmt.Errorf("unable to determine file size (path %q): %s: ignoring", path, err)
-			} else if fi.Size() > MaxFileSize {
-				log.Printf("skipping large file (%d bytes): %s", fi.Size(), path)
-				continue
-			}
-		}
-
-		changedFiles = append(changedFiles, &f)
+	changes, err := parseDiffOutput(out)
+	if err != nil {
+		return nil, err
 	}
-	return changedFiles, nil
+
+	// Filter out large files.
+	x := changes[:0]
+	for _, f := range changes {
+		path := f.DstPath
+		if path == "" {
+			path = f.SrcPath
+		}
+		fi, err := os.Stat(filepath.Join(w.WorktreeDir(), path))
+		if err != nil && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("unable to determine file size (path %q): %s", path, err)
+		}
+		// A nonexistent (removed) file obviously can't be large, so
+		// treat those as OK.
+		if fi != nil && fi.Size() > MaxFileSize {
+			continue
+		}
+		x = append(x, f)
+	}
+	changes = x
+
+	return changes, nil
 }
 
 func (w Worktree) DiffIndexAndWorkingTree(ctx context.Context, head string) ([]*ChangedFile, error) {

@@ -37,10 +37,6 @@ export function setupWorker(workspace: IWorkspace): void {
 		return;
 	}
 
-	if (workspace.revState && workspace.revState.zapRef && !/^branch\//.test(workspace.revState.zapRef)) {
-		throw new Error(`invalid Zap ref: ${JSON.stringify(workspace.revState.zapRef)} (no 'branch/' prefix)`);
-	}
-
 	workspaces.add(workspace.resource.toString());
 	(Services.get(IWorkspaceContextService)).registerWorkspace(workspace);
 

@@ -1,7 +1,9 @@
 import * as vscode from "vscode";
 
 import URI from "vs/base/common/uri";
+import { IWorkspaceRevState } from "vs/platform/workspace/common/workspace";
 
+import { WorkRef, abbrevRef } from "libzap/lib/ref";
 import { MessageStream } from "libzap/lib/remote/client";
 import { URIUtils } from "sourcegraph/core/uri";
 import { webSocketStreamOpener } from "sourcegraph/ext/lsp/connection";
@@ -12,14 +14,13 @@ import { context } from "sourcegraph/app/context";
 // VSCodeEnvironment is an implementation of IEnvironment used when
 // running in the browser. It is backed by the vscode extension API
 // and has access to browser APIs.
-class BrowserEnvironment implements IEnvironment {
+export class BrowserEnvironment implements IEnvironment {
 	private docAtLastSave: Map<string, string> = new Map<string, string>();
 	private docAtBase: Map<string, string> = new Map<string, string>(); // simulated doc at base commit (before ops)
-	private _prevZapRef: string | undefined;
-	private _zapRef: string | undefined;
-	private _isRunning: boolean;
 
-	constructor() {
+	private toDispose: vscode.Disposable[] = [];
+
+	constructor(private revState: IWorkspaceRevState) {
 		// Track the initial contents of documents so we can revert.
 		vscode.workspace.onDidOpenTextDocument((doc: vscode.TextDocument) => {
 			if (doc.isDirty) {
@@ -27,8 +28,20 @@ class BrowserEnvironment implements IEnvironment {
 			}
 			this.updateDoc(this.docAtBase, doc);
 			this.updateDoc(this.docAtLastSave, doc);
-		});
-		vscode.workspace.onDidSaveTextDocument(doc => this.onDidSaveTextDocument(doc));
+		}, null, this.toDispose);
+		vscode.workspace.onDidSaveTextDocument(doc => this.onDidSaveTextDocument(doc), null, this.toDispose);
+		vscode.workspace.onDidUpdateWorkspace(update => {
+			// Save the last non-Zap rev, so that we can go back to a
+			// sensible URL when Zap is turned off.
+			if (update.revState) {
+				this.revState = update.revState;
+			}
+		}, null, this.toDispose);
+	}
+
+	dispose(): void {
+		this.toDispose.forEach(disposable => disposable.dispose());
+		this.workRefResetEmitter.dispose();
 	}
 
 	private onDidSaveTextDocument(doc: vscode.TextDocument): void {
@@ -48,35 +61,20 @@ class BrowserEnvironment implements IEnvironment {
 		return this.rootURI!.authority + this.rootURI!.path;
 	}
 
-	private zapRefChangeEmitter: vscode.EventEmitter<string | undefined> = new vscode.EventEmitter<string | undefined>();
-	get onDidChangeZapRef(): vscode.Event<string | undefined> { return this.zapRefChangeEmitter.event; }
+	private workRefResetEmitter: vscode.EventEmitter<WorkRef | undefined> = new vscode.EventEmitter<WorkRef | undefined>();
+	private _workRef: WorkRef | undefined;
+	get onWorkRefReset(): vscode.Event<WorkRef | undefined> { return this.workRefResetEmitter.event; }
+	public get workRef(): WorkRef | undefined { return this._workRef; }
+	public setWorkRef(ref: WorkRef | undefined): void {
+		const name = ref ? (ref.target || ref.name) : undefined;
+		vscode.workspace.setWorkspace(this.rootURI!, {
+			...this.revState,
+			zapRef: name,
+			zapRev: name ? abbrevRef(name) : undefined,
+		} as any /* TODO(sqs8): add zapRev field to the type sig, not sure why it isnt there */);
 
-	get zapRef(): string | undefined {
-		return this._zapRef;
-	}
-
-	set zapRef(ref: string | undefined) {
-		this._prevZapRef = this._zapRef;
-		this._zapRef = ref;
-		this.zapRefChangeEmitter.fire(ref);
-		this.zapBranchChangeEmitter.fire(ref ? ref.replace(/^branch\//, "") : ref);
-	}
-
-	get prevZapRef(): string | undefined {
-		return this._prevZapRef;
-	}
-
-	set prevZapRef(ref: string | undefined) {
-		this._prevZapRef = ref;
-	}
-
-	// On the web, the Zap branch is ALWAYS the Zap ref stripped of the "branch/" prefix.
-	get zapBranch(): string | undefined {
-		return this._zapRef ? this._zapRef.replace(/^branch\//, "") : this._zapRef;
-	}
-	private zapBranchChangeEmitter: vscode.EventEmitter<string | undefined> = new vscode.EventEmitter<string | undefined>();
-	get onDidChangeZapBranch(): vscode.Event<string | undefined> {
-		return this.zapBranchChangeEmitter.event;
+		this._workRef = ref;
+		this.workRefResetEmitter.fire(ref);
 	}
 
 	asRelativePathInsideWorkspace(uri: vscode.Uri): string | null {
@@ -107,13 +105,38 @@ class BrowserEnvironment implements IEnvironment {
 		return Promise.resolve();
 	}
 
-	revertTextDocumentToBase(doc: vscode.TextDocument): Thenable<any> {
-		// In the web context, documents are reverted via the vscode text document API.
-		// See Controller.revertAllDocuemnts.
-		//
-		// IN the vscode context, there are other codepaths to reset documents that
-		// require this method to have a non-empty implementation.
-		return Promise.resolve();
+	revertAllTextDocuments(): Thenable<any> {
+		return new Promise(async (resolve) => {
+			const docsToRevert = new Set<string>(vscode.workspace.textDocuments.map(doc => {
+				// Only revert mutable docs (not `git://github.com/gorilla/mux?sha#file/path` documents).
+				// Only revert docs if a .revert() method exists on the vscode text document
+				if ((doc as any).revert && doc.uri.query === "") {
+					return doc.uri.toString();
+				}
+				return "";
+			}).filter(doc => doc !== ""));
+
+			// The zap extension has a race condition for reverting documents and applying
+			// new ops. If a user switches from zap ref A to B, we must revert all documents
+			// before applying ops for B. Therefore, the zap extension must wait to be notified
+			// from the main thread that documents have actually been reverted.
+			let disposable: vscode.Disposable | undefined;
+			if ((vscode.workspace as any).onDidRevertTextDocument) {
+				disposable = (vscode.workspace as any).onDidRevertTextDocument((docUri: string) => {
+					docsToRevert.delete(docUri);
+					if (docsToRevert.size === 0) {
+						if (disposable) {
+							disposable.dispose();
+						}
+						resolve(); // all documents have been reverted, this function has completed
+					}
+				});
+			}
+
+			await Promise.all(vscode.workspace.textDocuments
+				.filter(doc => docsToRevert.has(doc.uri.toString()))
+				.map(doc => (doc as any).revert()));
+		});
 	}
 
 	deleteTextDocument(doc: vscode.TextDocument): Thenable<void> {
@@ -137,14 +160,4 @@ class BrowserEnvironment implements IEnvironment {
 		const user = ctx && ctx.user ? ctx.user.Login : "anonymous";
 		return `${user}@web`;
 	}
-
-	set isRunning(status: boolean) {
-		this._isRunning = status;
-	}
-
-	get isRunning(): boolean {
-		return this._isRunning;
-	}
 }
-
-export default new BrowserEnvironment(); // tslint:disable-line no-default-export

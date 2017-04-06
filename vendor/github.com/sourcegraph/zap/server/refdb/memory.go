@@ -38,7 +38,11 @@ func (db *memoryRefDB) exists(name string) bool {
 
 // Lookup implements RefDB.
 func (db *memoryRefDB) Lookup(name string) *Ref {
-	return db.lookup(name)
+	ref := db.lookup(name)
+	if ref != nil {
+		ref.panicIfInvalid()
+	}
+	return ref
 }
 
 // Resolve implements RefDB.
@@ -46,10 +50,10 @@ func (db *memoryRefDB) Resolve(name string) (*Ref, error) {
 	ref := db.lookup(name)
 	seen := map[string]struct{}{name: struct{}{}}
 	for ref != nil && ref.IsSymbolic() {
-		if _, seen := seen[ref.Target]; seen {
-			return nil, &CircularSymbolicReferenceError{Op: "resolve", Name: ref.Target}
+		if _, seen := seen[ref.Target()]; seen {
+			return nil, &CircularSymbolicReferenceError{Op: "resolve", Name: ref.Target()}
 		}
-		name = ref.Target
+		name = ref.Target()
 		ref = db.lookup(name)
 	}
 	if ref == nil {
@@ -63,6 +67,7 @@ func (db *memoryRefDB) List(pattern string) []Ref {
 	var matches []Ref
 	for _, ref := range db.refs {
 		if MatchPattern(pattern, ref.Name) {
+			ref.panicIfInvalid()
 			matches = append(matches, ref)
 		}
 	}
@@ -72,6 +77,7 @@ func (db *memoryRefDB) List(pattern string) []Ref {
 // lookup assumes the caller holds db.mu.
 func (db *memoryRefDB) lookup(name string) *Ref {
 	if ref, ok := db.refs[name]; ok {
+		ref.panicIfInvalid()
 		return &ref
 	}
 	return nil
@@ -79,6 +85,7 @@ func (db *memoryRefDB) lookup(name string) *Ref {
 
 // Write implements RefDB.
 func (db *memoryRefDB) Write(ref Ref, force bool, old *Ref, log RefLogEntry) error {
+	ref.panicIfInvalid()
 	existing := db.lookup(ref.Name)
 	if !force && existing != nil {
 		return &RefExistsError{Op: "write", Name: ref.Name}
@@ -136,6 +143,7 @@ func (db *memoryRefDB) Delete(name string, old Ref, log RefLogEntry) error {
 // TransitiveClosureRefs implements RefDB.
 func (db *memoryRefDB) TransitiveClosureRefs(name string) (refs []Ref) {
 	for _, ref := range db.refs {
+		ref.panicIfInvalid()
 		if ref.Name == name {
 			refs = append(refs, ref)
 			continue
@@ -151,7 +159,7 @@ func (db *memoryRefDB) TransitiveClosureRefs(name string) (refs []Ref) {
 				}
 				seen[ref.Name] = struct{}{}
 
-				next, exists := db.refs[ref.Target]
+				next, exists := db.refs[ref.Target()]
 				if !exists {
 					break
 				}
@@ -161,6 +169,7 @@ func (db *memoryRefDB) TransitiveClosureRefs(name string) (refs []Ref) {
 				}
 
 				ref = next
+				ref.panicIfInvalid()
 			}
 		}
 	}

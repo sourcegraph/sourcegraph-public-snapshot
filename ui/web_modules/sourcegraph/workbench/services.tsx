@@ -105,19 +105,11 @@ export function setupServices(domElement: HTMLDivElement, workspace: URI, revSta
 }
 
 export function setWorkspace(workspace: IWorkspace): void {
-	if (workspace.revState && workspace.revState.zapRef && !/^branch\//.test(workspace.revState.zapRef)) {
-		throw new Error(`invalid Zap ref: ${JSON.stringify(workspace.revState.zapRef)} (no 'branch/' prefix)`);
-	}
-
 	const contextService = Services.get(IWorkspaceContextService);
 	return contextService.setWorkspace(workspace);
 }
 
 export function registerWorkspace(workspace: IWorkspace): void {
-	if (workspace.revState && workspace.revState.zapRef && !/^branch\//.test(workspace.revState.zapRef)) {
-		throw new Error(`invalid Zap ref: ${JSON.stringify(workspace.revState.zapRef)} (no 'branch/' prefix)`);
-	}
-
 	const contextService = Services.get(IWorkspaceContextService);
 	return contextService.registerWorkspace(workspace);
 }
