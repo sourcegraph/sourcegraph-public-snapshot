@@ -34,27 +34,6 @@ func UnsafeNewDefaultClient() (*Client, error) {
 	return dialClient(addr)
 }
 
-// UnsafeNewShortLivedWorkspaceClient returns a new one-shot connection to
-// the LSP proxy for short lived workspaces. This proxy is different to the
-// usual UnsafeNewDefaultClient since the proxy and LS are tuned for
-// workspaces which exist for a very short amount of time, rather than needing
-// to exist for a user session.
-//
-// If no short lived workspace is configured, this function will return nil,
-// nil. In such a case, you should use UnsafeNewDefaultClient with the vanilla
-// mode string.
-//
-// SECURITY NOTE this does not check the user has permission to read the repo
-// of any operation done on the Client. Please ensure the user has access to
-// the repo.
-func UnsafeNewShortLivedWorkspaceClient() (*Client, error) {
-	addr := os.Getenv("LSP_PROXY_BG")
-	if addr == "" {
-		return nil, nil
-	}
-	return dialClient(addr)
-}
-
 func dialClient(addr string) (*Client, error) {
 	dialCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
