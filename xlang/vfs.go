@@ -4,22 +4,12 @@ import (
 	"context"
 	"io"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/sourcegraph/ctxvfs"
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
-
-var onDiskExperiment bool
-
-func init() {
-	onDiskExperiment, _ = strconv.ParseBool(env.Get("XLANG_DISK_EXPERIMENT", "false", "Use on disk cache instead of in-memory for archives"))
-}
 
 // NewRemoteRepoVFS returns a virtual file system interface for
 // accessing the files in the specified repo at the given commit.
@@ -40,19 +30,12 @@ var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) 
 	defer openSharedFSMu.Unlock()
 	fs, ok := openSharedFS[key]
 	if !ok {
-		var archiveFS *vfsutil.ArchiveFS
-		if onDiskExperiment {
-			// Since we are wrapped by sharedFS, we will only call
-			// Close when all readers are done. When that happens
-			// we likely won't open the archive again soon, so we
-			// can reclaim the disk space it uses.
-			archiveFS = vfsutil.NewGitServer(repo, rev)
-			archiveFS.EvictOnClose = true
-		} else {
-			// ArchiveFileSystem and gitcmd.Open do not block, so
-			// we can create them while holding the lock.
-			archiveFS = vfsutil.ArchiveFileSystem(gitcmd.Open(&sourcegraph.Repo{URI: repo}), rev)
-		}
+		// Since we are wrapped by sharedFS, we will only call
+		// Close when all readers are done. When that happens
+		// we likely won't open the archive again soon, so we
+		// can reclaim the disk space it uses.
+		archiveFS := vfsutil.NewGitServer(repo, rev)
+		archiveFS.EvictOnClose = true
 		fs = &sharedFS{
 			FileSystem: archiveFS,
 			key:        key,
