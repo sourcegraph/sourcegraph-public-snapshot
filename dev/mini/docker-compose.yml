@@ -33,7 +33,7 @@ services:
     volumes:
       - ${GIT_DIRECTORY:-.}:/data/local
       - .data/gitserver-1-data:/data/repos
-      - ${SSH_KEYPAIR_FOLDER:-.ssh}:/root/.ssh
+      - ${SSH_KEYPAIR_FOLDER:-~/.ssh}:/root/.ssh
     environment:
        SRC_ADDR: 3178
        ORIGIN_MAP: ${ORIGIN_MAP}
