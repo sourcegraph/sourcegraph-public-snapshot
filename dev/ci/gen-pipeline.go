@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go/build"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -137,7 +138,9 @@ func main() {
 	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 
 	addDockerImageStep := func(app string, latest bool) {
-		var cmds []StepOpt
+		cmds := []StepOpt{
+			Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+		}
 
 		preBuildScript := fmt.Sprintf("./cmd/%s/pre-build.sh", app)
 		if _, err := os.Stat(preBuildScript); err == nil {
@@ -183,7 +186,16 @@ func main() {
 	case strings.HasPrefix(branch, "staging/"):
 		//stagingName := strings.Replace(strings.TrimPrefix(branch, "staging/"), "/", "-", -1)
 		pipeline.AddWait()
-		addDockerImageStep("frontend", false)
+		cmds, err := ioutil.ReadDir("./cmd")
+		if err != nil {
+			panic(err)
+		}
+		for _, cmd := range cmds {
+			if cmd.Name() == "xlang-java" {
+				continue // xlang-java currently does not build successfully on CI
+			}
+			addDockerImageStep(cmd.Name(), false)
+		}
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
 			Env("VERSION", version),
