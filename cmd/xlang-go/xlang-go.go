@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,7 +16,14 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
+
+func init() {
+	// If CACHE_DIR is specified, use that
+	cacheDir := env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	vfsutil.ArchiveCacheDir = filepath.Join(cacheDir, "xlang-archive-cache")
+}
 
 var (
 	mode     = flag.String("mode", "stdio", "communication mode (stdio|tcp)")
