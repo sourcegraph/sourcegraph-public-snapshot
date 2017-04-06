@@ -44,7 +44,7 @@
 	border-radius: 2px;
 	margin: 1rem;
 	padding: 0.5rem;
-	width: 268px !important;
+	width: calc(100% - 32px) !important;
 }
 
 :global .search-viewlet .search-widget .monaco-findInput input {

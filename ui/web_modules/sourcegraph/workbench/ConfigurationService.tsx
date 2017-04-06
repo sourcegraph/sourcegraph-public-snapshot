@@ -6,7 +6,6 @@ import { IConfigurationKeys, IConfigurationOptions, IConfigurationService, IConf
 import { IWorkspaceConfigurationKeys, IWorkspaceConfigurationService, IWorkspaceConfigurationValue, IWorkspaceConfigurationValues } from "vs/workbench/services/configuration/common/configuration";
 
 import { Features } from "sourcegraph/util/features";
-import { OpenSearchViewletAction } from "vscode/src/vs/workbench/parts/search/browser/searchActions";
 
 const _onDidUpdateConfiguration = new Emitter<IConfigurationServiceEvent>();
 export const onDidUpdateConfiguration = _onDidUpdateConfiguration.event;
@@ -97,10 +96,6 @@ const config = {
 	},
 	zenMode: {},
 };
-
-if (!Features.textSearch.isEnabled()) {
-	OpenSearchViewletAction.prototype.run = () => TPromise.wrap(void 0);
-}
 
 DefaultConfig.editor.readOnly = config.editor.readOnly;
 

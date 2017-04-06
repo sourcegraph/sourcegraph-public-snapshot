@@ -53,7 +53,7 @@ export class Toast extends React.Component<Props, State> {
 			maxHeight: this.state.isVisible ? "200px" : "0",
 			transition: "max-height 500ms ease-in-out",
 		}, style)}>
-			<div style={{ padding: whitespace[3], flex: "2 2 auto" }}>
+			<div style={{ padding: whitespace[3], flex: "2 2 auto", textAlign: "center" }}>
 				<span {...linkSx}>{children}</span>
 			</div>
 			{isDismissable && <a onClick={() => this.dismiss()} style={{ flex: "0 0 56px" }} {...closeLinkSx}>

@@ -87,7 +87,6 @@ export const Features = {
 	experimentLogDebug: new Feature("experiment-log-debug").disableBeta(),
 	zapSelections: new Feature("zapSelections").disableBeta(),
 	zapChanges: new Feature("zapChanges").disableBeta(),
-	textSearch: new Feature("text-search"),
 
 	experimentManager,
 	listEnabled,

@@ -134,6 +134,11 @@
 	margin-top:4px;
 }
 
+:global .vs-dark .monaco-list .monaco-list-row.selected {
+	font-weight:bold;
+	background:rgba(0, 145, 234);
+}
+
 /* Style Code lens */
 
 :global .monaco-tree:focus {
@@ -457,4 +462,11 @@
 :global .scm-status .monaco-list-row {
 	line-height: 30px;
 	font-size: 1rem;
+}
+
+/* Shadow Overrides */
+:global .vs-dark .monaco-workbench .monaco-scrollable-element .shadow.top,
+:global .monaco-scrollable-element > .shadow.top,
+:global .monaco-editor.vs-dark .scroll-decoration {
+	box-shadow:none !important;
 }
