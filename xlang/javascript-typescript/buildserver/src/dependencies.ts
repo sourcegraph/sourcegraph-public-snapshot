@@ -6,10 +6,10 @@ import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as path from 'path';
 import * as url from 'url';
 import mkdirp = require('mkdirp');
-import { spawn } from 'child_process';
 import iterate from 'iterare';
 import * as fs from 'mz/fs';
 import { Span } from 'opentracing';
+import * as yarn from './yarn';
 
 export interface PackageJson {
 	name: string;
@@ -132,7 +132,7 @@ export class DependencyManager {
 							this.packages.set(uri, parsedPackageJson);
 							// Start installation for the top-level package.json in the background
 							if (uri === rootPackageJson) {
-								this.ensureForFile(uri).catch(err => undefined);
+								this.ensureForFile(uri, span).catch(err => undefined);
 							}
 						})
 				);
@@ -215,71 +215,27 @@ export class DependencyManager {
 			const span = childOf.tracer().startSpan('Dependency installation', { childOf });
 			span.addTags({ uri, packageJsonUri });
 			try {
-				const logger = new PrefixedLogger(this.logger, `Dependency installation ${packageJsonUri}`);
 				const parts = url.parse(packageJsonUri);
+				const logger = new PrefixedLogger(this.logger, `inst ${parts.pathname}`);
 				const directory: url.Url = { ...parts, pathname: path.posix.dirname(parts.pathname!) };
 				// The directory that yarn will be spawned in
 				const cwd = path.join(this.tempDir, 'workspace', uri2path(url.format(directory)));
-				const globalDir = path.join(this.tempDir, 'global', uri2path(url.format(directory)));
-				const cacheDir = path.join(this.tempDir, 'cache', uri2path(url.format(directory)));
+				const globalFolder = path.join(this.tempDir, 'global', uri2path(url.format(directory)));
+				const cacheFolder = path.join(this.tempDir, 'cache', uri2path(url.format(directory)));
 				// Create temporary directory
 				await new Promise((resolve, reject) => mkdirp(cwd, err => err ? reject(err) : resolve()));
-				await new Promise((resolve, reject) => mkdirp(globalDir, err => err ? reject(err) : resolve()));
-				await new Promise((resolve, reject) => mkdirp(cacheDir, err => err ? reject(err) : resolve()));
+				await new Promise((resolve, reject) => mkdirp(globalFolder, err => err ? reject(err) : resolve()));
+				await new Promise((resolve, reject) => mkdirp(cacheFolder, err => err ? reject(err) : resolve()));
 				// Fetch package.json content
 				await this.updater.ensure(packageJsonUri, span);
 				// Write package.json into temporary directory
 				await fs.writeFile(path.join(cwd, 'package.json'), this.inMemoryFileSystem.getContent(packageJsonUri));
+				// Spawn yarn process
+				// TODO return Observable instead of converting to Promise
 				await new Promise((resolve, reject) => {
-					// Spawn yarn process
-					const yarn = spawn(process.execPath, [
-						path.resolve(__dirname, '..', 'node_modules', 'yarn', 'bin', 'yarn.js'),
-						'install',
-						'--ignore-scripts',  // Don't run package.json scripts
-						'--ignore-platform', // Don't error on failing platform checks
-						'--ignore-engines',  // Don't check package.json engines field
-						'--no-bin-links',    // Don't create bin symlinks
-						'--no-lockfile',     // Don't read or create a lockfile
-						'--no-emoji',        // Don't use emojis in output
-						'--non-interactive', // Don't ask for any user input
-						'--no-progress',     // Don't output a progress bar
-						// '--link-duplicates', // Use hardlinks instead of copying, not working reliably because of https://github.com/yarnpkg/yarn/issues/2734
-
-						// Use a separate global and cache folders per package.json
-						// that we can clean up afterwards and don't interfere with concurrent installations
-						'--global-folder', globalDir,
-						'--cache-folder', cacheDir
-					], { cwd });
-					// Forward all output to logger
-					yarn.stdout.on('data', chunk => {
-						try {
-							logger.log((chunk + '').trim());
-						} catch (err) {
-							reject(err);
-						}
-					});
-					// Capture STDERR output in case of an error
-					let stderr = '';
-					yarn.stderr.on('data', chunk => {
-						try {
-							const str = chunk + '';
-							stderr += str;
-							if (str.startsWith('warning')) {
-								logger.warn(str.trim());
-							} else {
-								logger.error(str.trim());
-							}
-						} catch (err) {
-							reject(err);
-						}
-					});
-					yarn.on('exit', code => {
-						if (code === 0) {
-							resolve();
-						} else {
-							reject(Object.assign(new Error(`yarn install failed with exit code ${code}: ${stderr}`), { stderr }));
-						}
-					});
+					yarn.install({ cwd, globalFolder, cacheFolder, logger }, span)
+						.once('success', resolve)
+						.once('error', reject);
 				});
 				// Refetch file structure under node_modules directory
 				this.updater.invalidateStructure();

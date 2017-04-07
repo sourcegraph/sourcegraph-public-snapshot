@@ -130,7 +130,7 @@ export class BuildHandler extends TypeScriptService {
 	 * module directory.
 	 */
 	private async _ensureDependency(dependency: PackageDescriptor, dependeeName?: string, span = new Span()): Promise<void> {
-		await this.dependenciesManager.ensureScanned();
+		await this.dependenciesManager.ensureScanned(span);
 		await Promise.all(iterate(this.dependenciesManager.packages).map(([uri, packageJson]): any => {
 			if (!dependeeName || packageJson.name === dependeeName) {
 				return this.dependenciesManager.ensureForFile(uri, span);
@@ -243,7 +243,7 @@ export class BuildHandler extends TypeScriptService {
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
-			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined); // don't wait, but kickoff background job
+			this.dependenciesManager.ensureForFile(params.textDocument.uri, span).catch(err => undefined); // don't wait, but kickoff background job
 			locations = await super.textDocumentDefinition(params, span);
 		} catch (e) {
 			// Ignore
@@ -262,7 +262,7 @@ export class BuildHandler extends TypeScriptService {
 		// First, attempt to get definition before dependencies fetching is finished.
 		// If it fails, wait for dependency fetching to finish and then retry.
 		try {
-			this.dependenciesManager.ensureForFile(params.textDocument.uri).catch(err => undefined);
+			this.dependenciesManager.ensureForFile(params.textDocument.uri, span).catch(err => undefined);
 			symbolsLocations = await super.textDocumentXdefinition(params, span);
 		} catch (e) {
 			// Ignore
@@ -285,7 +285,7 @@ export class BuildHandler extends TypeScriptService {
 				const parts = url.parse(symbolLocation.location.uri);
 				const packageJsonUri = url.format({ ...parts, pathname: parts.pathname!.slice(0, parts.pathname!.lastIndexOf('/node_modules/' + encodedPackageName)) + `/node_modules/${encodedPackageName}/package.json` });
 				// Make sure we have the package.json of the dependency available by ensuring the dependency is installed
-				await this.dependenciesManager.ensureForFile(packageJsonUri);
+				await this.dependenciesManager.ensureForFile(packageJsonUri, span);
 				// Fetch the package.json of the dependency
 				await this.updater.ensure(packageJsonUri);
 				const packageJson: PackageJson = JSON.parse(this.inMemoryFileSystem.getContent(packageJsonUri));
@@ -307,7 +307,7 @@ export class BuildHandler extends TypeScriptService {
 			} else {
 				// The symbol is defined in the root package of the workspace, not in a dependency
 				// Get root package.json
-				await this.dependenciesManager.ensureScanned();
+				await this.dependenciesManager.ensureScanned(span);
 				const packageJson = this.dependenciesManager.getClosestPackageJson(symbolLocation.location.uri);
 				if (!packageJson) {
 					// Workspace has no package.json
@@ -340,7 +340,7 @@ export class BuildHandler extends TypeScriptService {
 		// fetching is finished. If it fails, wait for dependency
 		// fetching to finish and then retry.
 		try {
-			this.dependenciesManager.ensureForFile(params.textDocument.uri); // don't wait, but kickoff background job
+			this.dependenciesManager.ensureForFile(params.textDocument.uri, span); // don't wait, but kickoff background job
 			hover = await super.textDocumentHover(params, span);
 		} catch (e) {
 			// Ignore

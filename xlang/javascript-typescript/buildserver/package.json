@@ -24,7 +24,7 @@
     "url-relative": "^1.0.0",
     "uuid": "^3.0.1",
     "vscode-languageserver": "^3.1.0",
-    "yarn": "^0.22.0"
+    "yarn": "0.23.1"
   },
   "devDependencies": {
     "@types/chai": "3.4.34",
@@ -33,9 +33,11 @@
     "@types/mocha": "2.2.33",
     "@types/mz": "0.0.30",
     "@types/rimraf": "0.0.28",
+    "@types/sinon": "2.1.2",
     "@types/temp": "0.8.29",
     "@types/uuid": "2.0.29",
     "mocha": "^2.2.33",
+    "sinon": "^2.1.0",
     "source-map-support": "^0.4.11",
     "tslint": "^5.0.0",
     "typescript-formatter": "^4.0.1"
