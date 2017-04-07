@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 )
 
 func serveOrgs(w http.ResponseWriter, r *http.Request) error {
@@ -16,7 +16,7 @@ func serveOrgs(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	orgs, err := backend.Orgs.ListOrgsPage(r.Context(), &o)
+	orgs, err := orgs.ListOrgsPage(r.Context(), &o)
 	if err != nil {
 		return err
 	}
@@ -30,7 +30,7 @@ func serveOrgInvites(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	resp, err := backend.Orgs.InviteUser(r.Context(), &i)
+	resp, err := orgs.InviteUser(r.Context(), &i)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func serveOrgMembers(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	members, err := backend.Orgs.ListOrgMembersForInvites(r.Context(), &m)
+	members, err := orgs.ListOrgMembersForInvites(r.Context(), &m)
 	if err != nil {
 		return err
 	}

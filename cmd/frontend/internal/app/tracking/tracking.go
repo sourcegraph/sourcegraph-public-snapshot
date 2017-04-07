@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/go-github/github"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
@@ -64,15 +64,15 @@ func TrackUserGitHubData(actor *auth.Actor, event string, name string, company s
 
 	// Fetch orgs and org members data
 	// ListAllOrgs may return partial results
-	orgs, err := backend.Orgs.ListAllOrgs(tempCtx, &sourcegraph.OrgListOptions{})
+	orgList, err := orgs.ListAllOrgs(tempCtx, &sourcegraph.OrgListOptions{})
 	if err != nil {
-		log15.Warn("backend.Orgs.ListAllOrgs: failed to fetch some user organizations", "source", "GitHub", "error", err)
+		log15.Warn("orgs.ListAllOrgs: failed to fetch some user organizations", "source", "GitHub", "error", err)
 	}
 
 	orgMembersErrCounter := 0
 	owd := make(map[string]([]*github.User))
-	for _, org := range orgs.Orgs {
-		members, err := backend.Orgs.ListAllOrgMembers(tempCtx, &sourcegraph.OrgListOptions{OrgName: org.Login})
+	for _, org := range orgList.Orgs {
+		members, err := orgs.ListAllOrgMembers(tempCtx, &sourcegraph.OrgListOptions{OrgName: org.Login})
 		if err != nil {
 			// ListAllOrgMembers may return partial results
 			// Don't give up unless maxOrgMemberErrors errors are caught

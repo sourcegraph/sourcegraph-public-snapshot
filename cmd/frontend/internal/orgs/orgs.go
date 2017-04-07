@@ -1,4 +1,4 @@
-package backend
+package orgs
 
 import (
 	"errors"
@@ -19,18 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
-var Orgs = &orgs{}
-
-type orgs struct{}
-
-func (s *orgs) ListOrgsPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
-	if Mocks.Orgs.ListOrgs != nil {
-		return Mocks.Orgs.ListOrgs(ctx, org)
-	}
-
-	ctx, done := trace(ctx, "Orgs", "ListOrgs", org, &err)
-	defer done()
-
+func ListOrgsPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
 	client, err := authedGitHubClientC(ctx)
 	if err != nil {
 		return nil, err
@@ -60,7 +49,7 @@ func (s *orgs) ListOrgsPage(ctx context.Context, org *sourcegraph.OrgListOptions
 // ListAllOrgs is a convenience wrapper around ListOrgs (since GitHub's API is paginated)
 //
 // This method may return an error and a partial list of organizations
-func (s *orgs) ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
+func ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
 	// Get a maximum of 1000 organizations per user
 	const perPage = 100
 	const maxPage = 10
@@ -70,7 +59,7 @@ func (s *orgs) ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) 
 	var allOrgs []*sourcegraph.Org
 	for page := 1; page <= maxPage; page++ {
 		opts.Page = int32(page)
-		orgs, err := s.ListOrgsPage(ctx, &opts)
+		orgs, err := ListOrgsPage(ctx, &opts)
 		if err != nil {
 			// If an error occurs, return that error, as well as a list of all organizations
 			// collected so far
@@ -86,14 +75,7 @@ func (s *orgs) ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) 
 		Orgs: allOrgs}, nil
 }
 
-func (s *orgs) listOrgMembersPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res []*github.User, err error) {
-	if Mocks.Orgs.ListOrgMembers != nil {
-		return Mocks.Orgs.ListOrgMembers(ctx, org)
-	}
-
-	ctx, done := trace(ctx, "Orgs", "ListOrgMembers", org, &err)
-	defer done()
-
+func listOrgMembersPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res []*github.User, err error) {
 	client, err := authedGitHubClientC(ctx)
 	if err != nil {
 		return nil, err
@@ -117,14 +99,7 @@ func (s *orgs) listOrgMembersPage(ctx context.Context, org *sourcegraph.OrgListO
 	return members, nil
 }
 
-func (s *orgs) ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgMembersList, err error) {
-	if Mocks.Orgs.ListOrgMembersForInvites != nil {
-		return Mocks.Orgs.ListOrgMembersForInvites(ctx, org)
-	}
-
-	ctx, done := trace(ctx, "Orgs", "ListOrgMembersForInvites", org, &err)
-	defer done()
-
+func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgMembersList, err error) {
 	client, err := authedGitHubClientC(ctx)
 	if err != nil {
 		return nil, err
@@ -133,7 +108,7 @@ func (s *orgs) ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.Or
 		return &sourcegraph.OrgMembersList{}, nil
 	}
 
-	members, err := s.listOrgMembersPage(ctx, org)
+	members, err := listOrgMembersPage(ctx, org)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +161,7 @@ func (s *orgs) ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.Or
 // ListAllOrgMembers is a convenience wrapper around ListOrgMembers (since GitHub's API is paginated)
 //
 // This method may return an error and a partial list of organization members
-func (s *orgs) ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOptions) (res []*github.User, err error) {
+func ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOptions) (res []*github.User, err error) {
 	// Get a maximum of 1,000 members per org
 	const perPage = 100
 	const maxPage = 10
@@ -196,7 +171,7 @@ func (s *orgs) ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOpt
 	var allMembers []*github.User
 	for page := 1; page <= maxPage; page++ {
 		opts.Page = int32(page)
-		members, err := s.listOrgMembersPage(ctx, &opts)
+		members, err := listOrgMembersPage(ctx, &opts)
 		if err != nil {
 			// If an error occurs, return that error, as well as a list of all members
 			// collected so far
@@ -210,10 +185,7 @@ func (s *orgs) ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOpt
 	return allMembers, nil
 }
 
-func (s *orgs) IsOrgMember(ctx context.Context, org *sourcegraph.OrgListOptions) (res bool, err error) {
-
-	ctx, done := trace(ctx, "Orgs", "IsOrgMember", org, &err)
-	defer done()
+func IsOrgMember(ctx context.Context, org *sourcegraph.OrgListOptions) (res bool, err error) {
 
 	client, err := authedGitHubClientC(ctx)
 	if err != nil {
@@ -239,13 +211,13 @@ var sendEmail = func(template, name, email, subject string, templateContent []go
 	return nil, errors.New("email client is not configured")
 }
 
-func (s *orgs) InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*sourcegraph.UserInviteResponse, error) {
+func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*sourcegraph.UserInviteResponse, error) {
 	user := authpkg.ActorFromContext(ctx).User()
 	inviterOrgOptions := &sourcegraph.OrgListOptions{
 		OrgName:  opt.OrgName,
 		Username: user.Login,
 	}
-	isInviterMember, err := Orgs.IsOrgMember(ctx, inviterOrgOptions)
+	isInviterMember, err := IsOrgMember(ctx, inviterOrgOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +228,7 @@ func (s *orgs) InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*so
 		OrgName:  opt.OrgName,
 		Username: opt.UserID,
 	}
-	isInviteeMember, err := Orgs.IsOrgMember(ctx, inviteeOrgOptions)
+	isInviteeMember, err := IsOrgMember(ctx, inviteeOrgOptions)
 	if err != nil {
 		return nil, err
 	}
