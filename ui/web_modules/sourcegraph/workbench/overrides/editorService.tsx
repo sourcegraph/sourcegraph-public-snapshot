@@ -10,6 +10,7 @@ import * as vs from "vscode/src/vs/workbench/services/editor/browser/editorServi
 import { __getRouterForWorkbenchOnly } from "sourcegraph/app/router";
 import { urlToBlob } from "sourcegraph/blob/routes";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
+import { updateFileTree } from "sourcegraph/editor/config";
 import { resolveRev } from "sourcegraph/editor/contentLoader";
 import { urlToRepo } from "sourcegraph/repo/routes";
 import { Services } from "sourcegraph/workbench/services";
@@ -22,9 +23,10 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		}
 
 		// Set the resource revision to the commit hash
-		return TPromise.wrap(resolveRev(resource)).then(({ commit }) =>
-			super.createInput(input).then(i => super.openEditor(i, options))
-		);
+		return TPromise.wrap(resolveRev(resource)).then(({ commit }) => {
+			updateFileTree(resource);
+			return super.createInput(input).then(i => super.openEditor(i, options));
+		});
 	}
 
 	openEditor(input: IEditorInput, options?: IEditorOptions): TPromise<IEditor>;

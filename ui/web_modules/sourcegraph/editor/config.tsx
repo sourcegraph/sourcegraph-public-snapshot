@@ -34,12 +34,12 @@ import { getCurrentWorkspace, getGitBaseResource, getURIContext, getWorkspaceFor
 /**
  * syncEditorWithRouterProps forces the editor model to match current URL blob properties.
  */
-export function syncEditorWithRouterProps(location: AbsoluteLocation): void {
+export async function syncEditorWithRouterProps(location: AbsoluteLocation): Promise<void> {
 	updateWorkspace(location);
 	updateEditorArea(location);
 }
 
-export function updateWorkspace(location: AbsoluteLocation): void {
+export async function updateWorkspace(location: AbsoluteLocation): Promise<void> {
 	const { repo, path } = location;
 	registerWorkspace({ resource: URIUtils.createResourceURI(repo), revState: location });
 	const resource = URIUtils.createResourceURI(repo, path === "" ? undefined : path);
@@ -47,6 +47,8 @@ export function updateWorkspace(location: AbsoluteLocation): void {
 	if (getWorkspaceForResource(resource).toString() !== currWorkspace.resource.toString() || (currWorkspace.revState && currWorkspace.revState.zapRef !== location.zapRef)) {
 		setWorkspace({ resource: getWorkspaceForResource(resource), revState: { zapRev: location.zapRev, zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
 	}
+
+	return updateFileTree(resource);
 }
 
 export async function updateEditorArea(location: AbsoluteLocation): Promise<void> {
@@ -56,7 +58,6 @@ export async function updateEditorArea(location: AbsoluteLocation): Promise<void
 	const fileStat = await Services.get(IFileService).resolveFile(resource);
 	if (fileStat.isDirectory) {
 		renderDirectoryContent();
-		updateFileTree(resource);
 		return;
 	}
 

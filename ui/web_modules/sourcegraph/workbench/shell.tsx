@@ -45,9 +45,10 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 		this.workbench = workbench;
 		this.services = services;
 		this.currWorkspace = (this.services.get(IWorkspaceContextService) as IWorkspaceContextService).getWorkspace();
-		updateWorkspace(this.props);
-		parent.appendChild(domElement);
-		updateEditorArea(this.props).then(() => this.layout());
+		updateWorkspace(this.props).then(() => {
+			parent.appendChild(domElement);
+			updateEditorArea(this.props).then(() => this.layout());
+		});
 	}
 
 	componentWillMount(): void {

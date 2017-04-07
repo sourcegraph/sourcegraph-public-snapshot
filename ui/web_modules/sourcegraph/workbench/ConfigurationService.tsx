@@ -62,7 +62,6 @@ const config = {
 		openEditors: {
 			visible: 0,
 		},
-		autoReveal: true,
 	},
 	zap: {
 		enable: true,
