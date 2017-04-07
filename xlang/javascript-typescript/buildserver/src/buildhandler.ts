@@ -112,11 +112,11 @@ export class BuildHandler extends TypeScriptService {
 		this.fileSystem = new LayeredFileSystem([overlayFs, this.remoteFileSystem]);
 	}
 
-	async shutdown(params = {}, span = new Span()): Promise<void> {
+	async shutdown(params = {}, span = new Span()): Promise<null> {
 		// Delete workspace-specific temporary folder with dependencies
 		this.logger.log(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
 		await new Promise((resolve, reject) => rimraf(this.options.tempDir, err => err ? reject(err) : resolve()));
-		await super.shutdown(params, span);
+		return await super.shutdown(params, span);
 	}
 
 	/**
