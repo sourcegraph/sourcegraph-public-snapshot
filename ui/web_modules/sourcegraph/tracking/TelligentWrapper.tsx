@@ -63,6 +63,7 @@ class TelligentWrapper {
 				platform: eventProps.platform,
 				repo: eventProps.repo,
 				path_name: eventProps.path_name,
+				page_title: eventProps.page_title,
 			};
 			this.telligent("track", eventAction, limitedEventProps);
 			return;
