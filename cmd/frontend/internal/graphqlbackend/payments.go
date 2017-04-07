@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/stripe"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/stripe"
 )
 
 type Plan interface {
