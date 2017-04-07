@@ -13,20 +13,17 @@ import (
 
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/notif"
 )
 
 func ListOrgsPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgsList, err error) {
-	client, err := authedGitHubClientC(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if client == nil {
+	if !extgithub.HasAuthedUser(ctx) {
 		return &sourcegraph.OrgsList{}, nil
 	}
+	client := extgithub.Client(ctx)
 
 	opts := &github.ListOptions{
 		Page:    int(org.Page),
@@ -76,13 +73,10 @@ func ListAllOrgs(ctx context.Context, op *sourcegraph.OrgListOptions) (res *sour
 }
 
 func listOrgMembersPage(ctx context.Context, org *sourcegraph.OrgListOptions) (res []*github.User, err error) {
-	client, err := authedGitHubClientC(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if client == nil {
+	if !extgithub.HasAuthedUser(ctx) {
 		return []*github.User{}, nil
 	}
+	client := extgithub.Client(ctx)
 
 	opts := &github.ListMembersOptions{
 		ListOptions: github.ListOptions{
@@ -100,13 +94,10 @@ func listOrgMembersPage(ctx context.Context, org *sourcegraph.OrgListOptions) (r
 }
 
 func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptions) (res *sourcegraph.OrgMembersList, err error) {
-	client, err := authedGitHubClientC(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if client == nil {
+	if !extgithub.HasAuthedUser(ctx) {
 		return &sourcegraph.OrgMembersList{}, nil
 	}
+	client := extgithub.Client(ctx)
 
 	members, err := listOrgMembersPage(ctx, org)
 	if err != nil {
@@ -186,14 +177,10 @@ func ListAllOrgMembers(ctx context.Context, op *sourcegraph.OrgListOptions) (res
 }
 
 func IsOrgMember(ctx context.Context, org *sourcegraph.OrgListOptions) (res bool, err error) {
-
-	client, err := authedGitHubClientC(ctx)
-	if err != nil {
-		return false, err
-	}
-	if client == nil {
+	if !extgithub.HasAuthedUser(ctx) {
 		return false, nil
 	}
+	client := extgithub.Client(ctx)
 
 	isMember, _, err := client.Organizations.IsMember(org.OrgName, org.Username)
 	if err != nil {
@@ -264,22 +251,6 @@ func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*sourcegraph.
 		OrgName: opt.OrgName,
 		OrgID:   opt.OrgID,
 	}, nil
-}
-
-// authedGitHubClient returns a new GitHub client that is authenticated using the credentials of the
-// context's actor, or nil client if there is no actor (or if the actor has no stored GitHub credentials).
-// It returns an error if there was an unexpected error.
-func authedGitHubClientC(ctx context.Context) (*github.Client, error) {
-	a := authpkg.ActorFromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, nil
-	}
-	if a.GitHubToken == "" {
-		return nil, nil
-	}
-	ghConf := *githubutil.Default
-	ghConf.Context = ctx
-	return ghConf.AuthedClient(a.GitHubToken), nil
 }
 
 func toOrg(ghOrg *github.Organization) *sourcegraph.Org {
