@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/returnto"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
@@ -29,7 +30,7 @@ import (
 var githubNonceCookiePath = router.Rel.URLTo(router.GitHubOAuth2Receive).Path
 
 func auth0GitHubConfigWithRedirectURL(redirectURL string) *oauth2.Config {
-	config := *auth.Auth0Config
+	config := *auth0.Config
 	// RedirectURL is checked by Auth0 against a whitelist so it can't be spoofed.
 	config.RedirectURL = redirectURL
 	return &config
@@ -180,9 +181,9 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	if info.AppMetadata.GitHubAccessTokenOverride == "" {
-		githubToken, err := auth.FetchGitHubToken(r.Context(), info.UID)
+		githubToken, err := auth0.FetchGitHubToken(r.Context(), info.UID)
 		if err != nil {
-			return fmt.Errorf("auth.FetchGitHubToken: %v", err)
+			return fmt.Errorf("auth0.FetchGitHubToken: %v", err)
 		}
 
 		scopeOfToken := strings.Split(githubToken.Scope, ",")
@@ -207,7 +208,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		}
 		if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
 			// Wohoo, we got more permissions. Remember in user database.
-			if err := auth.SetAppMetadata(r.Context(), info.UID, "github_scope", scopeOfToken); err != nil {
+			if err := auth0.SetAppMetadata(r.Context(), info.UID, "github_scope", scopeOfToken); err != nil {
 				return err
 			}
 		}
@@ -276,7 +277,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 // fetchAuth0UserInfo fetches Auth0 user info for token into v.
 func fetchAuth0UserInfo(ctx context.Context, token *oauth2.Token, v interface{}) error {
 	auth0Client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(token))
-	resp, err := auth0Client.Get("https://" + auth.Auth0Domain + "/userinfo")
+	resp, err := auth0Client.Get("https://" + auth0.Domain + "/userinfo")
 	if err != nil {
 		return err
 	}

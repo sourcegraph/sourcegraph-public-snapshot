@@ -11,6 +11,7 @@ import (
 
 	"context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
@@ -111,7 +112,7 @@ func ListOrgMembersForInvites(ctx context.Context, org *sourcegraph.OrgListOptio
 	}
 
 	// Fetch members of org to see who is on Sourcegraph.
-	rUsers, err := authpkg.ListUsersByGitHubID(ctx, ghIDs)
+	rUsers, err := auth0.ListUsersByGitHubID(ctx, ghIDs)
 	if err != nil {
 		return nil, err
 	}

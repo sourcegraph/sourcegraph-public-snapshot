@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
@@ -30,7 +31,7 @@ const stripeOrgNameKey = "github_organization_name"
 
 // getCustomerID retrieves the user's Stripe customerID from Auth0.
 func getCustomerID(ctx context.Context) (*string, error) {
-	appMeta, err := auth.GetAppMetadata(ctx)
+	appMeta, err := auth0.GetAppMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func getCustomerID(ctx context.Context) (*string, error) {
 // setCustomerID saves the Stripe customerID in Auth0 metadata.
 func setCustomerID(ctx context.Context, customerID string) error {
 	actor := auth.ActorFromContext(ctx)
-	return auth.SetAppMetadata(ctx, actor.UID, stripeMetaDataKey, customerID)
+	return auth0.SetAppMetadata(ctx, actor.UID, stripeMetaDataKey, customerID)
 }
 
 // getStripeSubscription retrieves the user's subscription. For now, a user can

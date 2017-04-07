@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/stripe"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -94,7 +94,7 @@ func (*schemaResolver) CancelSubscription(ctx context.Context) (bool, error) {
 }
 
 func AuthedPrivate(ctx context.Context) (bool, error) {
-	appMeta, err := auth.GetAppMetadata(ctx)
+	appMeta, err := auth0.GetAppMetadata(ctx)
 	if err != nil {
 		return false, err
 	}

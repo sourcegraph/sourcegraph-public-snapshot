@@ -1,4 +1,4 @@
-package auth
+package auth0
 
 import (
 	"context"
@@ -8,12 +8,6 @@ import (
 
 	"golang.org/x/oauth2"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-)
-
-var (
-	// ErrNoExternalAuthToken occurs when no external auth token exists
-	// for a given user and host.
-	ErrNoExternalAuthToken = errors.New("no external auth token found for user and host")
 )
 
 func FetchGitHubToken(ctx context.Context, uid string) (*sourcegraph.ExternalToken, error) {
@@ -62,7 +56,7 @@ func (ts *auth0TokenSource) Token() (*oauth2.Token, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users/" + ts.uid)
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users/" + ts.uid)
 	if err != nil {
 		return nil, err
 	}
@@ -89,5 +83,5 @@ func (ts *auth0TokenSource) Token() (*oauth2.Token, error) {
 		}
 	}
 
-	return nil, ErrNoExternalAuthToken
+	return nil, errors.New("no github token found")
 }

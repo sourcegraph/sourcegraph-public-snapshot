@@ -1,4 +1,4 @@
-package auth
+package auth0
 
 import (
 	"bytes"
@@ -9,29 +9,30 @@ import (
 	"net/url"
 	"strings"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-var Auth0Domain = env.Get("AUTH0_DOMAIN", "", "domain of the Auth0 account")
+var Domain = env.Get("AUTH0_DOMAIN", "", "domain of the Auth0 account")
 
-var Auth0Config = &oauth2.Config{
+var Config = &oauth2.Config{
 	ClientID:     env.Get("AUTH0_CLIENT_ID", "", "OAuth client ID for Auth0"),
 	ClientSecret: env.Get("AUTH0_CLIENT_SECRET", "", "OAuth client secret for Auth0"),
 	Endpoint: oauth2.Endpoint{
-		AuthURL:  "https://" + Auth0Domain + "/authorize",
-		TokenURL: "https://" + Auth0Domain + "/oauth/token",
+		AuthURL:  "https://" + Domain + "/authorize",
+		TokenURL: "https://" + Domain + "/oauth/token",
 	},
 }
 
 var auth0ManagementTokenSource = (&clientcredentials.Config{
-	ClientID:     Auth0Config.ClientID,
-	ClientSecret: Auth0Config.ClientSecret,
-	TokenURL:     "https://" + Auth0Domain + "/oauth/token",
+	ClientID:     Config.ClientID,
+	ClientSecret: Config.ClientSecret,
+	TokenURL:     "https://" + Domain + "/oauth/token",
 	EndpointParams: url.Values{
-		"audience": []string{"https://" + Auth0Domain + "/api/v2/"},
+		"audience": []string{"https://" + Domain + "/api/v2/"},
 	},
 }).TokenSource(context.Background())
 
@@ -45,7 +46,7 @@ func SetAppMetadata(ctx context.Context, uid string, key string, value interface
 		return err
 	}
 
-	req, err := http.NewRequest("PATCH", "https://"+Auth0Domain+"/api/v2/users/"+uid, bytes.NewReader(body))
+	req, err := http.NewRequest("PATCH", "https://"+Domain+"/api/v2/users/"+uid, bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -68,9 +69,9 @@ type AppMetadata struct {
 }
 
 func GetAppMetadata(ctx context.Context) (map[string]interface{}, error) {
-	actor := ActorFromContext(ctx)
+	actor := auth.ActorFromContext(ctx)
 	uid := actor.AuthInfo().UID
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users/" + uid)
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users/" + uid)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func ListUsersByGitHubID(ctx context.Context, ghIDs []string) (map[string]User, 
 		return nil, errors.New("Array of GitHub IDs is required")
 	}
 
-	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Auth0Domain + "/api/v2/users?q=identities.user_id%3A(" + url.QueryEscape(strings.Join(ghIDs, " ")) + ")")
+	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users?q=identities.user_id%3A(" + url.QueryEscape(strings.Join(ghIDs, " ")) + ")")
 	if err != nil {
 		return nil, err
 	}

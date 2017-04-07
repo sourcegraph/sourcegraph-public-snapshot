@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
 	"github.com/gorilla/schema"
@@ -31,8 +30,6 @@ func HTTP(err error) int {
 	switch err {
 	case vcs.ErrRevisionNotFound:
 		return http.StatusNotFound
-	case auth.ErrNoExternalAuthToken:
-		return http.StatusUnauthorized
 	case context.DeadlineExceeded:
 		return http.StatusRequestTimeout
 	}
