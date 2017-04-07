@@ -109,8 +109,8 @@ func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []strin
 
 func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error) {
 	cookie := &oauthCookie{
-		Nonce:       "", // the empty default value is not accepted unless impersonating
-		RedirectURL: "",
+		Nonce:       "",                   // the empty default value is not accepted unless impersonating
+		RedirectURL: conf.AppURL.String(), // impersonation does not allow this to be empty
 		ReturnTo:    "/",
 		ReturnToNew: "/",
 	}
