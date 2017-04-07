@@ -15,6 +15,7 @@ services:
       SRC_GIT_SERVERS: gitserver-1:3178
       SRC_INDEXER: indexer:3179
       SRC_SESSION_STORE_REDIS: redis:6379
+      TRACKING_APP_ID:
     restart: "always"
     ports:
      - "${SRC_APP_PORT:-3080}:3080"
@@ -31,7 +32,7 @@ services:
   gitserver-1:
     image: "docker.sourcegraph.com/gitserver:latest"
     volumes:
-      - ${GIT_DIRECTORY:-.}:/data/local
+      - ${GIT_DIRECTORY:-.}:/local
       - .data/gitserver-1-data:/data/repos
       - ${SSH_KEYPAIR_FOLDER:-~/.ssh}:/root/.ssh
     environment:
@@ -66,6 +67,8 @@ services:
        CLONE_FROM_GITSERVER: "true"
        REDIS_MASTER_ENDPOINT: redis:6379
        SRC_GIT_SERVERS: gitserver-1:3178
+  xlang-java:
+    image: "docker.sourcegraph.com/xlang-java:LATEST-SKINNY"
   redis:
     image: "redis:alpine"
   postgres:

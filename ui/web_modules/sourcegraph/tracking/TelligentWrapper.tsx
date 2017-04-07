@@ -52,6 +52,21 @@ class TelligentWrapper {
 		if (!this.telligent) {
 			return;
 		}
+		// for an on-prem trial, we only want to collect high level usage information
+		// if we are keeping data onsite anyways (like Umami), we can collect all info
+		if (isOnPremInstance(context.authEnabled) && context.trackingAppID !== "UmamiWeb") {
+			const limitedEventProps = {
+				event_action: eventProps.event_action,
+				event_category: eventProps.event_category,
+				event_label: eventProps.event_label,
+				language: eventProps.language,
+				platform: eventProps.platform,
+				repo: eventProps.repo,
+				path_name: eventProps.path_name,
+			};
+			this.telligent("track", eventAction, limitedEventProps);
+			return;
+		}
 		this.telligent("track", eventAction, eventProps);
 	}
 
@@ -60,7 +75,9 @@ class TelligentWrapper {
 			return;
 		}
 		let telligentUrl = "sourcegraph-logging.telligentdata.com";
-		if (isOnPremInstance(context.authEnabled)) {
+		// for an on-prem trial, we want to send information directly telligent.
+		// for clients like umami, we use a bi-logger
+		if (isOnPremInstance(context.authEnabled) && context.trackingAppID === "UmamiWeb") {
 			telligentUrl = `${window.location.host}`.concat("/.bi-logger");
 		}
 		this.telligent("newTracker", "sg", telligentUrl, {
