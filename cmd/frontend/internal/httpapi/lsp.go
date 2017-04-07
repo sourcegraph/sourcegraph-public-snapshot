@@ -19,7 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -46,7 +46,7 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	builder := honey.Builder("xlang")
 	builder.AddField("client", "ws")
 	builder.AddField("user_agent", r.UserAgent())
-	if actor := auth.ActorFromContext(ctx); actor != nil {
+	if actor := actor.FromContext(ctx); actor != nil {
 		builder.AddField("uid", actor.UID)
 		builder.AddField("login", actor.Login)
 		builder.AddField("email", actor.Email)

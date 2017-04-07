@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/stripe/stripe-go"
@@ -44,7 +44,7 @@ func getCustomerID(ctx context.Context) (*string, error) {
 
 // setCustomerID saves the Stripe customerID in Auth0 metadata.
 func setCustomerID(ctx context.Context, customerID string) error {
-	actor := auth.ActorFromContext(ctx)
+	actor := actor.FromContext(ctx)
 	return auth0.SetAppMetadata(ctx, actor.UID, stripeMetaDataKey, customerID)
 }
 
@@ -100,7 +100,7 @@ func getOrCreateCustomer(ctx context.Context) (*string, error) {
 	if err != nil && err != ErrNotCustomer {
 		return nil, err
 	}
-	actor := auth.ActorFromContext(ctx)
+	actor := actor.FromContext(ctx)
 
 	// Create the customer
 	customer, err := customer.New(&stripe.CustomerParams{

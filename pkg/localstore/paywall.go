@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 const (
@@ -41,7 +41,7 @@ type Payment struct {
 }
 
 func (p *payments) paymentPlanForRepo(ctx context.Context, repo sourcegraph.Repo) (*Payment, error) {
-	actor := auth.ActorFromContext(ctx)
+	actor := actor.FromContext(ctx)
 	if actor.Login == "" {
 		return nil, errors.New("user must have a login to access private repos")
 	}

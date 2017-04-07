@@ -1,4 +1,4 @@
-package auth
+package actor
 
 import (
 	"context"
@@ -80,7 +80,7 @@ const (
 	actorKey key = iota
 )
 
-func ActorFromContext(ctx context.Context) *Actor {
+func FromContext(ctx context.Context) *Actor {
 	a, ok := ctx.Value(actorKey).(*Actor)
 	if !ok {
 		return &Actor{}
@@ -99,23 +99,23 @@ func WithoutActor(ctx context.Context) context.Context {
 	return context.WithValue(ctx, actorKey, nil)
 }
 
-const ActorHeaderKey = "X-Actor"
+const HeaderKey = "X-Actor"
 
-// SetActorTrustedHeader overwrites the entire "X-Actor" header with the actor
+// SetTrustedHeader overwrites the entire "X-Actor" header with the actor
 // in the context. The actor header may container sensitive information, and as
 // such should NEVER be sent to a foreign service. It should not be sent back
 // to the client.
-func SetActorTrustedHeader(ctx context.Context, h http.Header) {
+func SetTrustedHeader(ctx context.Context, h http.Header) {
 	// Remove any existing X-Actor header value that could be provided by an
 	// attacker.
-	h.Del(ActorHeaderKey)
+	h.Del(HeaderKey)
 
 	// Marshal and store our actor in the header.
-	d, err := json.Marshal(ActorFromContext(ctx))
+	d, err := json.Marshal(FromContext(ctx))
 	if err != nil {
 		panic(err)
 	}
-	h.Set(ActorHeaderKey, string(d))
+	h.Set(HeaderKey, string(d))
 }
 
 // TrustedActorMiddleware is an http.Handler middleware that reads the already
@@ -125,7 +125,7 @@ func SetActorTrustedHeader(ctx context.Context, h http.Header) {
 func TrustedActorMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var a Actor
-		_ = json.Unmarshal([]byte(r.Header.Get(ActorHeaderKey)), &a)
+		_ = json.Unmarshal([]byte(r.Header.Get(HeaderKey)), &a)
 		next.ServeHTTP(w, r.WithContext(WithActor(r.Context(), &a)))
 	})
 }

@@ -7,8 +7,8 @@ import (
 
 	"fmt"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
@@ -35,7 +35,7 @@ func serveSubmitForm(w http.ResponseWriter, r *http.Request) error {
 
 	// Use the registered GitHub user's email address and user ID, if available
 	// If not, try the email address provided in the submitted form (i.e., signup_email)
-	actor := auth.ActorFromContext(r.Context())
+	actor := actor.FromContext(r.Context())
 	if len(actor.Email) > 0 {
 		form["email"] = actor.Email
 		form["user_id"] = actor.Login

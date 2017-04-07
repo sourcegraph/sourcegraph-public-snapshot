@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	// Import for side effect of setting SGPATH env var.
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
 
@@ -36,9 +36,9 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 	// DO NOT remove this or allow the user to specify an X-Actor header in any
 	// way past this point.
 	proxy.Director = func(incoming *http.Request, out http.Header) {
-		out.Set(auth.ActorHeaderKey, incoming.Header.Get(auth.ActorHeaderKey))
+		out.Set(actor.HeaderKey, incoming.Header.Get(actor.HeaderKey))
 	}
-	auth.SetActorTrustedHeader(r.Context(), r.Header)
+	actor.SetTrustedHeader(r.Context(), r.Header)
 
 	// Forward to zap server.
 	proxy.ServeHTTP(w, r)

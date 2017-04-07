@@ -12,8 +12,8 @@ import (
 	"context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth0"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	store "sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 
@@ -200,7 +200,7 @@ var sendEmail = func(template, name, email, subject string, templateContent []go
 }
 
 func InviteUser(ctx context.Context, opt *sourcegraph.UserInvite) (*sourcegraph.UserInviteResponse, error) {
-	user := authpkg.ActorFromContext(ctx).User()
+	user := actor.FromContext(ctx).User()
 	inviterOrgOptions := &sourcegraph.OrgListOptions{
 		OrgName:  opt.OrgName,
 		Username: user.Login,

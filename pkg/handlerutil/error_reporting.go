@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
@@ -71,7 +71,7 @@ func reportError(r *http.Request, status int, err error, panicked bool) {
 	addTag("trace", traceutil.SpanURL(opentracing.SpanFromContext(r.Context())))
 
 	// Add request context tags.
-	if actor := auth.ActorFromContext(r.Context()); actor.UID != "" {
+	if actor := actor.FromContext(r.Context()); actor.UID != "" {
 		addTag("Authed", "yes")
 		addTag("Authed UID", actor.UID)
 		addTag("Authed user", actor.Login)

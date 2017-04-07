@@ -6,8 +6,8 @@ import (
 
 	"context"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 )
 
 /*
@@ -68,7 +68,7 @@ func TestUserInvites_List(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = auth.WithActor(ctx, &auth.Actor{})
+	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	s := userInvites{}
 
@@ -92,7 +92,7 @@ func TestUserInvites_List_URIs(t *testing.T) {
 
 	ctx := testContext()
 
-	ctx = auth.WithActor(ctx, &auth.Actor{})
+	ctx = actor.WithActor(ctx, &actor.Actor{})
 
 	s := userInvites{}
 

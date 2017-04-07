@@ -6,7 +6,7 @@ import (
 	"os/exec"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/dbutil2"
 )
 
@@ -15,7 +15,7 @@ import (
 func testContext() (ctx context.Context) {
 	ctx = context.Background()
 
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 
 	Mocks = MockStores{}

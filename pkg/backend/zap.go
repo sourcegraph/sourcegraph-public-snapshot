@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"github.com/gorilla/websocket"
@@ -77,7 +77,7 @@ func dial(ctx context.Context, urlStr string) (jsonrpc2.ObjectStream, error) {
 		// DO NOT remove this or allow the user to specify an X-Actor header in any
 		// way past this point.
 		headers := make(http.Header)
-		auth.SetActorTrustedHeader(ctx, headers)
+		actor.SetTrustedHeader(ctx, headers)
 		conn, _, err := dialer.Dial(u.String(), headers)
 		if err != nil {
 			return nil, err

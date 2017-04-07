@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	"golang.org/x/oauth2"
@@ -69,7 +69,7 @@ type AppMetadata struct {
 }
 
 func GetAppMetadata(ctx context.Context) (map[string]interface{}, error) {
-	actor := auth.ActorFromContext(ctx)
+	actor := actor.FromContext(ctx)
 	uid := actor.AuthInfo().UID
 	resp, err := oauth2.NewClient(ctx, auth0ManagementTokenSource).Get("https://" + Domain + "/api/v2/users/" + uid)
 	if err != nil {

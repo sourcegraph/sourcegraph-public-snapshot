@@ -10,7 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
@@ -61,7 +61,7 @@ func trace(ctx context.Context, server, method string, arg interface{}, err *err
 		requestDuration.With(labels).Observe(elapsed.Seconds())
 		requestGauge.WithLabelValues(name).Dec()
 
-		uid := authpkg.ActorFromContext(ctx).UID
+		uid := actor.FromContext(ctx).UID
 		errStr := ""
 		if err != nil && *err != nil {
 			errStr = (*err).Error()

@@ -5,14 +5,14 @@ import (
 	"errors"
 
 	gogithub "github.com/sourcegraph/go-github/github"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 type currentUserResolver struct{}
 
 func currentUser(ctx context.Context) (*currentUserResolver, error) {
-	actor := auth.ActorFromContext(ctx)
+	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}

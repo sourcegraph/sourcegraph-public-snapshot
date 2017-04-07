@@ -12,9 +12,9 @@ import (
 	gogithub "github.com/sourcegraph/go-github/github"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -119,7 +119,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 
 	// Augment with external results if user is authenticated,
 	// RemoteSearch is true, and Query is non-empty.
-	if authpkg.ActorFromContext(ctx).IsAuthenticated() && opt.RemoteSearch {
+	if actor.FromContext(ctx).IsAuthenticated() && opt.RemoteSearch {
 		ghquery := opt.Query
 		if matches := ghRepoQueryMatcher.FindStringSubmatch(opt.Query); matches != nil {
 			// Apply query transformation to make GitHub results better.

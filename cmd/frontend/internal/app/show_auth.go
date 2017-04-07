@@ -9,7 +9,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
@@ -29,7 +29,7 @@ func serveShowAuth(w http.ResponseWriter, r *http.Request) error {
 		return oauth2client.GitHubOAuth2Initiate(w, r, nil, redirectURL.String(), returnTo.String(), returnTo.String())
 	}
 
-	trackZapAuth(auth.ActorFromContext(r.Context()))
+	trackZapAuth(actor.FromContext(r.Context()))
 
 	// sessionCookie is the value of the user's cookie. If an attacker
 	// can set the user's cookie to an arbitrary value, then they
@@ -45,7 +45,7 @@ func serveShowAuth(w http.ResponseWriter, r *http.Request) error {
 }
 
 // Zap authorization metrics.
-func trackZapAuth(actor *auth.Actor) error {
+func trackZapAuth(actor *actor.Actor) error {
 	if actor.Email != "" {
 		hubspotclient, err := hubspotutil.Client()
 		if err != nil {

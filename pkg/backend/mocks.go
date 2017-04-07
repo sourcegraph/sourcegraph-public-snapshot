@@ -6,7 +6,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
 
@@ -24,7 +24,7 @@ func testContext() context.Context {
 	Mocks = MockServices{}
 
 	ctx := context.Background()
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test"})
 	ctx = accesscontrol.WithInsecureSkip(ctx, true)
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 

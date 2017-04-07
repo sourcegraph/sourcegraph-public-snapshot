@@ -15,8 +15,8 @@ import (
 	"golang.org/x/net/context"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -37,8 +37,8 @@ type Client struct {
 }
 
 // New returns a new GCS Tracker client using the given API key
-// based on a provided auth.Actor
-func New(user *auth.Actor) (*Client, error) {
+// based on a provided actor.Actor
+func New(user *actor.Actor) (*Client, error) {
 	return NewFromUserInfo(generateUserInfo(user))
 }
 
@@ -124,7 +124,7 @@ func (c *Client) NewTrackedObjects(event string) *TrackedObjects {
 	}
 }
 
-func generateUserInfo(user *auth.Actor) *UserInfo {
+func generateUserInfo(user *actor.Actor) *UserInfo {
 	isPrivateCodeUser := false
 	for _, v := range user.GitHubScopes {
 		if v == "repo" {

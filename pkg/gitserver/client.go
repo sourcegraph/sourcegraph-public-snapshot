@@ -16,8 +16,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -85,7 +85,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 	// is to avoid fetching private commits while our access checks still assume that the repository
 	// is public. In that case better fail fetching those commits until the DB got updated.
 	if strings.HasPrefix(repoURI, "github.com/") && !c.client.NoCreds && c.Repo.Private {
-		actor := auth.ActorFromContext(ctx)
+		actor := actor.FromContext(ctx)
 		if actor.GitHubToken != "" {
 			opt.HTTPS = &vcs.HTTPSConfig{
 				User: "x-oauth-token", // User is unused by GitHub, but provide a non-empty value to satisfy git.

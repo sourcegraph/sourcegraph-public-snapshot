@@ -8,16 +8,16 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 )
 
 // authTestContext with mock stubs for GitHubRepoGetter
 func authTestContext() context.Context {
 	ctx := context.Background()
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test", GitHubToken: "test"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
 	return ctx
 }

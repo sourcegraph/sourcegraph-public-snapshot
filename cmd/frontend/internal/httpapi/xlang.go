@@ -18,7 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
@@ -105,7 +105,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 			if err != nil {
 				ev.AddField("error", err.Error())
 			}
-			if actor := auth.ActorFromContext(r.Context()); actor != nil {
+			if actor := actor.FromContext(r.Context()); actor != nil {
 				ev.AddField("uid", actor.UID)
 				ev.AddField("login", actor.Login)
 				ev.AddField("email", actor.Email)

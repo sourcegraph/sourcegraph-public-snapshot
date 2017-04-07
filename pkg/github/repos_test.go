@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/go-github/github"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
@@ -157,7 +157,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 
 	// An unauthed user won't be able to see the repo
 	MockRoundTripper = mockGetMissing
-	ctx := auth.WithActor(context.Background(), &auth.Actor{})
+	ctx := actor.WithActor(context.Background(), &actor.Actor{})
 	if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
@@ -177,7 +177,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	// Now if we call as an authed user, we will hit the cache but not use
 	// it since the repo may not 404 for us
 	MockRoundTripper = mockGetPrivate
-	ctx = auth.WithActor(context.Background(), &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
+	ctx = actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 	repo, err := GetRepo(ctx, privateRepo)
 	if err != nil {
 		t.Fatal(err)
@@ -189,7 +189,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	// Ensure the repo is still missing for unauthed users
 	calledGetMissing = false
 	MockRoundTripper = mockGetMissing
-	ctx = auth.WithActor(context.Background(), &auth.Actor{})
+	ctx = actor.WithActor(context.Background(), &actor.Actor{})
 	if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 		t.Fatal(err)
 	}
@@ -202,7 +202,7 @@ func TestRepos_Get_publicnotfound(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		calledGetMissing = false
 		MockRoundTripper = mockGetMissing // Pretend that privateRepo is deleted now, so even authed user can't see it. Do this to ensure cached 404 value isn't used by authed user.
-		ctx = auth.WithActor(context.Background(), &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
+		ctx = actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 		if _, err := GetRepo(ctx, privateRepo); legacyerr.ErrCode(err) != legacyerr.NotFound {
 			t.Fatal(err)
 		}
@@ -241,7 +241,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 
 	authedGet := func() bool {
 		calledGet = false
-		ctx := auth.WithActor(context.Background(), &auth.Actor{UID: "1", Login: "test", GitHubToken: "test"})
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 		_, err := GetRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
@@ -250,7 +250,7 @@ func TestRepos_Get_authednocache(t *testing.T) {
 	}
 	unauthedGet := func() bool {
 		calledGet = false
-		ctx := auth.WithActor(context.Background(), &auth.Actor{})
+		ctx := actor.WithActor(context.Background(), &actor.Actor{})
 		_, err := GetRepo(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
@@ -300,7 +300,7 @@ func Test_getFromGit(t *testing.T) {
 			Private:       false,
 		},
 	}}
-	ctx := auth.WithActor(context.Background(), &auth.Actor{})
+	ctx := actor.WithActor(context.Background(), &actor.Actor{})
 
 	for _, test := range tests {
 		repo, err := getFromGit(ctx, test.owner, test.repoName)

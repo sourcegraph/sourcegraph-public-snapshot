@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/neelance/chanrpc/chanrpcutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -30,7 +30,7 @@ func TestExec(t *testing.T) {
 			expectedErr: vcs.RepoNotExistError{},
 		},
 		{
-			context:        auth.WithActor(context.Background(), &auth.Actor{GitHubToken: "token"}),
+			context:        actor.WithActor(context.Background(), &actor.Actor{GitHubToken: "token"}),
 			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
 			reply:          &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
@@ -38,7 +38,7 @@ func TestExec(t *testing.T) {
 			expectedPass:   "", // no pass, repo not private
 		},
 		{
-			context:        auth.WithActor(context.Background(), &auth.Actor{GitHubToken: "token"}),
+			context:        actor.WithActor(context.Background(), &actor.Actor{GitHubToken: "token"}),
 			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux", Private: true},
 			reply:          &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),

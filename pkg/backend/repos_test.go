@@ -9,9 +9,9 @@ import (
 
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
-	authpkg "sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 )
@@ -87,7 +87,7 @@ func TestReposService_Get_UnauthedUpdateMeta(t *testing.T) {
 	ctx := testContext()
 
 	// Remove auth from testContext
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{})
+	ctx = actor.WithActor(ctx, &actor.Actor{})
 	ctx = accesscontrol.WithInsecureSkip(ctx, false)
 
 	wantRepo := &sourcegraph.Repo{
@@ -190,7 +190,7 @@ func TestRepos_List_remoteOnly(t *testing.T) {
 		&sourcegraph.Repo{URI: "github.com/is/accessible"},
 	})
 	calledReposStoreList := localstore.Mocks.Repos.MockList(t, "a/b", "github.com/is/accessible", "github.com/not/accessible")
-	ctx = authpkg.WithActor(ctx, &authpkg.Actor{UID: "1", Login: "test", GitHubToken: "test"})
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: "1", Login: "test", GitHubToken: "test"})
 
 	repoList, err := s.List(ctx, &sourcegraph.RepoListOptions{RemoteOnly: true})
 	if err != nil {
@@ -237,7 +237,7 @@ func TestRepos_List_remoteSearch(t *testing.T) {
 
 	{
 		testcase := "no auth'd user"
-		ctx := authpkg.WithoutActor(ctx) // unauth'd context
+		ctx := actor.WithoutActor(ctx) // unauth'd context
 		calledGHSearch := github.MockSearch_Return([]*sourcegraph.Repo{{URI: "remote1"}})
 		calledReposList := localstore.Mocks.Repos.MockList(t, "local1")
 

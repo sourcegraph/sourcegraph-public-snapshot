@@ -12,8 +12,8 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
@@ -35,7 +35,7 @@ var maxRepoDetailsErrors = 4
 // Specifically, fetching limited information about
 // a user's GitHub profile and sending it to Google Cloud Storage
 // for analytics, as well as updating user data properties in HubSpot
-func TrackUserGitHubData(actor *auth.Actor, event string, name string, company string, location string) error {
+func TrackUserGitHubData(a *actor.Actor, event string, name string, company string, location string) error {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.TrackUserGitHubData: %s", err)
@@ -43,12 +43,12 @@ func TrackUserGitHubData(actor *auth.Actor, event string, name string, company s
 	}()
 
 	// Update or create user contact information in HubSpot
-	err := trackHubSpotContact(actor, event, name, company, location)
+	err := trackHubSpotContact(a, event, name, company, location)
 	if err != nil {
 		log15.Warn("trackHubSpotContact: failed to create or update HubSpot contact on auth", "source", "HubSpot", "error", err)
 	}
 
-	gcsClient, err := gcstracker.New(actor)
+	gcsClient, err := gcstracker.New(a)
 	if err != nil {
 		return errors.Wrap(err, "gcstracker.New")
 	}
@@ -60,7 +60,7 @@ func TrackUserGitHubData(actor *auth.Actor, event string, name string, company s
 	// not yet been associated with the request's context, we need to
 	// create a temporary Context object that contains that linkage in
 	// order to pull data from the GitHub API
-	tempCtx := auth.WithActor(context.Background(), actor)
+	tempCtx := actor.WithActor(context.Background(), a)
 
 	// Fetch orgs and org members data
 	// ListAllOrgs may return partial results
@@ -244,7 +244,7 @@ func toGitHubRepoWithDetails(ghrepo *github.Repository) *sourcegraph.GitHubRepoW
 	}
 }
 
-func trackHubSpotContact(actor *auth.Actor, eventLabel string, name string, company string, location string) error {
+func trackHubSpotContact(actor *actor.Actor, eventLabel string, name string, company string, location string) error {
 	if actor.Email == "" {
 		return errors.New("User must have a valid email address.")
 	}
