@@ -27,7 +27,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -106,7 +105,6 @@ func main() {
 	env.HandleHelpFlag()
 	traceutil.InitTracer()
 	gitserver.DefaultClient.NoCreds = true
-	auth.InitSessionStore(conf.AppURL.Scheme == "https")
 
 	go func() {
 		c := make(chan os.Signal, 1)

@@ -8,6 +8,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/oauth2client"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/gcstracker"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
@@ -18,7 +19,7 @@ import (
 // http://sourcegraph.com/-/show-auth to let the user obtain their own
 // auth cookie.
 func serveShowAuth(w http.ResponseWriter, r *http.Request) error {
-	sessionCookie := auth.SessionCookie(r)
+	sessionCookie := session.SessionCookie(r)
 
 	// If the user isn't logged in, redirect them to log in and come
 	// back here.

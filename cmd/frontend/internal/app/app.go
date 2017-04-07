@@ -10,7 +10,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
@@ -20,7 +20,7 @@ import (
 // NewHandler returns a new app handler that uses the provided app
 // router.
 func NewHandler(r *router.Router) http.Handler {
-	auth.InitSessionStore(conf.AppURL.Scheme == "https")
+	session.InitSessionStore(conf.AppURL.Scheme == "https")
 
 	m := http.NewServeMux()
 
@@ -58,14 +58,14 @@ func NewHandler(r *router.Router) http.Handler {
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)
 	h = eventsutil.AgentMiddleware(h)
-	h = auth.CookieMiddleware(h)
+	h = session.CookieMiddleware(h)
 	h = httpapiauth.AuthorizationMiddleware(h)
 
 	return h
 }
 
 func serveLogout(w http.ResponseWriter, r *http.Request) error {
-	auth.DeleteSession(w, r)
+	session.DeleteSession(w, r)
 	http.Redirect(w, r, "/", http.StatusFound)
 	return nil
 }

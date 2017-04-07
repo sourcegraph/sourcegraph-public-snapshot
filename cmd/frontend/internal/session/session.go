@@ -1,10 +1,11 @@
-package auth
+package session
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -32,7 +33,7 @@ func InitSessionStore(secureCookie bool) {
 }
 
 // StartNewSession starts a new session with authentication for the given uid.
-func StartNewSession(w http.ResponseWriter, r *http.Request, actor *Actor) error {
+func StartNewSession(w http.ResponseWriter, r *http.Request, actor *auth.Actor) error {
 	DeleteSession(w, r)
 
 	session, err := sessionStore.New(&http.Request{}, "sg-session") // workaround: not passing the request forces a new session
@@ -94,13 +95,13 @@ func authenticateByCookie(r *http.Request) context.Context {
 	}
 
 	if actorJSON, ok := session.Values["actor"]; ok {
-		var actor Actor
+		var actor auth.Actor
 		if err := json.Unmarshal(actorJSON.([]byte), &actor); err != nil {
 			log15.Error("error unmarshalling actor", "error", err)
 			return r.Context()
 		}
 
-		return WithActor(r.Context(), &actor)
+		return auth.WithActor(r.Context(), &actor)
 	}
 
 	return r.Context()

@@ -14,6 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/stripe"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
@@ -59,7 +60,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = conf.AppURL.String()
-	sessionCookie := auth.SessionCookie(req)
+	sessionCookie := session.SessionCookie(req)
 	if sessionCookie != "" {
 		headers["Authorization"] = httpapiauth.AuthorizationHeaderWithSessionCookie(sessionCookie)
 	}

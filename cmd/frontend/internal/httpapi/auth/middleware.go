@@ -3,9 +3,9 @@ package auth
 import (
 	"net/http"
 
-	"strings"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"strings"
 )
 
 // AuthorizationMiddleware authenticates the user based on the "Authorization" header.
@@ -21,7 +21,7 @@ func AuthorizationMiddleware(next http.Handler) http.Handler {
 
 		switch strings.ToLower(parts[0]) {
 		case "session":
-			r = r.WithContext(auth.AuthenticateBySession(r.Context(), parts[1]))
+			r = r.WithContext(session.AuthenticateBySession(r.Context(), parts[1]))
 		}
 
 		next.ServeHTTP(w, r)

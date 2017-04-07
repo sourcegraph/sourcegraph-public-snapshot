@@ -14,7 +14,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/auth"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
@@ -55,8 +55,8 @@ func NewHandler(m *mux.Router) http.Handler {
 	//
 	// You can read more about this security issue here:
 	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	m.Get(apirouter.Zap).Handler(httptrace.TraceRoute(auth.CookieMiddleware(http.HandlerFunc(serveZap))))
-	m.Get(apirouter.LSP).Handler(httptrace.TraceRoute(auth.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
+	m.Get(apirouter.Zap).Handler(httptrace.TraceRoute(session.CookieMiddleware(http.HandlerFunc(serveZap))))
+	m.Get(apirouter.LSP).Handler(httptrace.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
 
 	m.Get(apirouter.GraphQL).Handler(httptrace.TraceRoute(handler(serveGraphQL)))
 
