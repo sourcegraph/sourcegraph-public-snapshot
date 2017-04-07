@@ -138,17 +138,22 @@ func main() {
 	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 
 	addDockerImageStep := func(app string, latest bool) {
+		cmdDir := "./cmd/" + app
+		if _, err := os.Stat(cmdDir); err != nil {
+			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
+			os.Exit(1)
+		}
 		cmds := []StepOpt{
 			Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 		}
 
-		preBuildScript := fmt.Sprintf("./cmd/%s/pre-build.sh", app)
+		preBuildScript := cmdDir + "/pre-build.sh"
 		if _, err := os.Stat(preBuildScript); err == nil {
 			cmds = append(cmds, Cmd(preBuildScript))
 		}
 
 		image := "us.gcr.io/sourcegraph-dev/" + app
-		buildScript := fmt.Sprintf("./cmd/%s/build.sh", app)
+		buildScript := cmdDir + "/build.sh"
 		if _, err := os.Stat(buildScript); err == nil {
 			cmds = append(cmds,
 				Env("IMAGE", image+":"+version),
