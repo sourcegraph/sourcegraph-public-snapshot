@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
-import { MessageEmitter, registerLanguageHandler } from 'javascript-typescript-langserver/lib/connection';
+import { MessageEmitter, MessageLogOptions, MessageWriter, registerLanguageHandler, RegisterLanguageHandlerOptions } from 'javascript-typescript-langserver/lib/connection';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { FileLogger, StderrLogger } from 'javascript-typescript-langserver/lib/logging';
 import * as util from 'javascript-typescript-langserver/lib/util';
 import * as os from 'os';
 import * as path from 'path';
 import * as uuid from 'uuid';
-import { StreamMessageWriter } from 'vscode-jsonrpc';
 import { isNotificationMessage } from 'vscode-jsonrpc/lib/messages';
-import { BuildHandler } from './buildhandler';
+import { BuildHandler, BuildHandlerOptions } from './buildhandler';
 const { Tracer } = require('lightstep-tracer');
 const program = require('commander');
 
@@ -38,7 +37,7 @@ const logger = program.logfile ? new FileLogger(program.logfile) : new StderrLog
 const tempDir = path.join(os.tmpdir(), 'tsjs', 'stdio', uuid.v1());
 logger.log(`Using ${tempDir} as temporary directory`);
 
-const options = {
+const options: BuildHandlerOptions & MessageLogOptions & RegisterLanguageHandlerOptions = {
 	tempDir,
 	tracer,
 	logger,
@@ -46,9 +45,9 @@ const options = {
 	strict: program.strict
 };
 
-const messageEmitter = new MessageEmitter(process.stdin);
-const messageWriter = new StreamMessageWriter(process.stdout);
-const remoteClient = new RemoteLanguageClient(messageEmitter, messageWriter, options);
+const messageEmitter = new MessageEmitter(process.stdin, options);
+const messageWriter = new MessageWriter(process.stdout, options);
+const remoteClient = new RemoteLanguageClient(messageEmitter, messageWriter);
 const handler = new BuildHandler(remoteClient, options);
 
 // Add an exit notification handler to kill the process
