@@ -34,11 +34,14 @@ Once the process completes, try visiting the Sourcegraph application URL specifi
 ## Stop
 To stop Sourcegraph, `cd` into the mini directory, and run `docker-compose down`.
 
+## Update
+To update to the latest Sourcegraph images, run `docker-compose pull`.
+
 ## Reset
 Sourcegraph mini persists PostgreSQL and git data in the mini/.data directory. To reset Sourcegraph mini, stop Sourcegraph mini, delete this directory, and start Sourcegraph mini. The directory will be recreated.
 
 ## Privacy
-Sourcegraph collects usage data for Sourcegraph mini to ensure customers are having success with the product. Sourcegraph mini DOES NOT collect data or metadata about a user's code, except for the what language mode is being used. This data is sent from the user's browser, and consists of the following fields:
+Sourcegraph collects usage data via JavaScript loaded on the web UI for Sourcegraph mini to ensure customers are having success with the product. The JavaScript usage tracker DOES NOT collect user code, _just_ repository names and file names. This data is sent from the user's browser, and consists of the following fields:
 ```
 {
     event_action: i.e. CLICK,
@@ -47,11 +50,15 @@ Sourcegraph collects usage data for Sourcegraph mini to ensure customers are hav
     language: i.e. go,
     platform: Web,
     repo: i.e. github.com/gorilla/mux,
+    page_title: i.e. HomePage
     path_name: i.e. github.com/gorilla/mux/mux.go,
 }
 ```
-To see what data is sent to Sourcegraph, open up your JavaScript console, and type `features.eventLogDebug.enable();`. Contact Sourcegraph if this will be a problem for your organization to trial Sourcegraph.
+To see what data is sent to Sourcegraph, open up your JavaScript console, and view network traffic to the `production` endpoint.
 
 ## Packaging this directory (for Sourcegraph employees)
 The following command will download a copy of this directory from `master`. The first time you issue this command, you will need to generate a [GitHub Personal Access Token](https://github.com/settings/tokens). After entering it the first time, it will be saved to your ~/.subversion repository.
 `svn export https://github.com/sourcegraph/sourcegraph/trunk/dev/mini mini/ && sed -ie 's/TRACKING_APP_ID:/TRACKING_APP_ID: OnPremInstance/g' mini/docker-compose.yml && zip -r mini.zip mini/ && rm -rf mini/`
+
+## Troubleshooting
+Please contact support@sourcegraph.com with questions about Sourcegraph mini. Include the output of `docker-compose ps`, a copy of your `.env` file, and any logs that might be relevant.

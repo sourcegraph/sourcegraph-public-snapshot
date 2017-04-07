@@ -1,0 +1,7 @@
+github.com/gorilla/mux
+# repositories mounted from a local disk should be listed as such
+local/mux 
+# repositories listed remotely should look like:
+gitolite.internal.domain.com/repoName
+# or
+gitolite.internal.domain.com/orgName/repoName
