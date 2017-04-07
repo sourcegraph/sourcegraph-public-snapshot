@@ -10,7 +10,7 @@ import * as sinon from 'sinon';
 import { install } from '../yarn';
 const { MODULE_CACHE_DIRECTORY } = require('yarn/lib/constants');
 
-describe.only('yarn.ts', () => {
+describe('yarn.ts', () => {
 	describe('install()', () => {
 		const tempDir = path.join(os.tmpdir(), uuid.v1());
 		const cwd = path.join(tempDir, 'cwd');

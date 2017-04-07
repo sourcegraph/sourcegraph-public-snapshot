@@ -72,7 +72,7 @@ export function install(options: InstallOptions, childOf = new Span()): YarnProc
 	const logger = options.logger || new NoopLogger();
 	const span = childOf.tracer().startSpan('yarn install', { childOf });
 	const args = [
-		path.resolve(__dirname, '..', 'node_modules', 'yarn', 'bin', 'yarn.js'),
+		path.resolve(__dirname, '..', 'node_modules', 'yarn', 'lib', 'cli', 'index.js'),
 		'--ignore-scripts',  // Don't run package.json scripts
 		'--ignore-platform', // Don't error on failing platform checks
 		'--ignore-engines',  // Don't check package.json engines field
