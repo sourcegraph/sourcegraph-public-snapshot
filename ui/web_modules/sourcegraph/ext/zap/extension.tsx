@@ -6,8 +6,12 @@ import { activate as activateCommon } from "vscode-zap/out/src/extension.common"
 
 import { NewRef, Ref } from "libzap/lib/ref";
 import { InitializationOptions } from "sourcegraph/ext/protocol";
+import { Features } from "sourcegraph/util/features";
 
 export function activate(): void {
+	if (!Features.zap.isEnabled()) {
+		return;
+	}
 	const initOpts: InitializationOptions = (self as any).extensionHostOptions;
 	if (isOnPremInstance(initOpts.context.authEnabled)) {
 		return;
