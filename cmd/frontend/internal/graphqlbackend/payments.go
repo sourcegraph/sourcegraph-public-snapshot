@@ -13,7 +13,7 @@ import (
 type Plan interface {
 	Name() string
 	Seats() *int32
-	Organization(ctx context.Context) (*org, error)
+	Organization(ctx context.Context) (*orgResolver, error)
 	Cost() int32
 	RenewalDate() *int32
 }
@@ -31,12 +31,12 @@ func (p planResolver) Name() string {
 	return "organization"
 }
 
-func (p planResolver) Organization(ctx context.Context) (*org, error) {
+func (p planResolver) Organization(ctx context.Context) (*orgResolver, error) {
 	organization, _, err := github.Client(ctx).Organizations.Get(p.OrgName)
 	if err != nil {
 		return nil, err
 	}
-	return &org{*organization}, nil
+	return &orgResolver{*organization}, nil
 }
 
 func (p planResolver) Cost() int32 {
@@ -60,7 +60,7 @@ func (f fakePlan) Name() string {
 	return f.name
 }
 
-func (f fakePlan) Organization(ctx context.Context) (*org, error) {
+func (f fakePlan) Organization(ctx context.Context) (*orgResolver, error) {
 	return nil, nil
 }
 
