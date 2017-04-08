@@ -114,8 +114,9 @@ func main() {
 		Cmd("yarn install"),
 		Cmd("yarn run build"))
 
-	pipeline.AddStep(":php:",
-		Cmd("./xlang/php/test.sh"))
+	// disabled because flaky: https://github.com/sourcegraph/sourcegraph/issues/5260
+	// pipeline.AddStep(":php:",
+	// 	Cmd("./xlang/php/test.sh"))
 
 	pipeline.AddStep(":typescript:",
 		Cmd("cd xlang/javascript-typescript/buildserver"),
