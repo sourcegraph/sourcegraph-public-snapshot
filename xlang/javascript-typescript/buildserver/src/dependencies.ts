@@ -1,7 +1,8 @@
 
 import { FileSystemUpdater } from 'javascript-typescript-langserver/lib/fs';
 import { Logger, NoopLogger, PrefixedLogger } from 'javascript-typescript-langserver/lib/logging';
-import { InMemoryFileSystem, ProjectManager } from 'javascript-typescript-langserver/lib/project-manager';
+import { InMemoryFileSystem } from 'javascript-typescript-langserver/lib/memfs';
+import { ProjectManager } from 'javascript-typescript-langserver/lib/project-manager';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as path from 'path';
 import * as url from 'url';
