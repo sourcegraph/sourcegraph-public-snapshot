@@ -37,7 +37,7 @@ var xlangRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "xlang",
 	Name:      "request_duration_seconds",
 	Help:      "The xlang request latencies in seconds.",
-	// Buckets are similar to statsutil.UserLatencyBuckets, but with more granularity for apdex measurements.
+	// Buckets are similar to traceutil.UserLatencyBuckets, but with more granularity for apdex measurements.
 	Buckets: []float64{0.1, 0.2, 0.5, 0.8, 1, 1.5, 2, 5, 10, 15, 20, 30},
 }, []string{"success", "method", "mode", "transport"})
 

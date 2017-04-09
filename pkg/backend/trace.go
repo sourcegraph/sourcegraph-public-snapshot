@@ -11,7 +11,6 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -21,7 +20,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "backend",
 	Name:      "client_request_duration_seconds",
 	Help:      "Total time spent on backend endpoints.",
-	Buckets:   statsutil.UserLatencyBuckets,
+	Buckets:   traceutil.UserLatencyBuckets,
 }, metricLabels)
 var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",

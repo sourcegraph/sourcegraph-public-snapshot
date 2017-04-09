@@ -1,6 +1,6 @@
-package statsutil
+package traceutil
 
-// BucketsUserLatencySeconds is a recommended list of buckets for use in prometheus
+// UserLatencyBuckets is a recommended list of buckets for use in prometheus
 // histograms when measuring latency to users.
 // Motivation: longer than 30s we don't care about. 2 is a general SLA we
 // have. Otherwise rest is somewhat evenly spreadout to get good data

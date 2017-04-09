@@ -15,7 +15,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
 )
 
 type key int
@@ -31,7 +30,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "http",
 	Name:      "request_duration_seconds",
 	Help:      "The HTTP request latencies in seconds.",
-	Buckets:   statsutil.UserLatencyBuckets,
+	Buckets:   UserLatencyBuckets,
 }, metricLabels)
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",

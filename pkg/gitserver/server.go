@@ -19,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -252,7 +252,7 @@ var execDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Subsystem: "gitserver",
 	Name:      "exec_duration_seconds",
 	Help:      "gitserver.Command latencies in seconds.",
-	Buckets:   statsutil.UserLatencyBuckets,
+	Buckets:   traceutil.UserLatencyBuckets,
 }, []string{"cmd", "repo", "status"})
 
 func init() {
