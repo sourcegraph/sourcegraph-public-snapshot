@@ -1,4 +1,4 @@
-package gitserver
+package server
 
 import (
 	"log"
@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/inconshreveable/log15.v2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/honey"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
@@ -75,13 +76,13 @@ func (s *Server) Serve(l net.Listener) error {
 	s.repoUpdateLocks = make(map[string]*sync.Mutex)
 
 	s.registerMetrics()
-	requests := make(chan *request, 100)
+	requests := make(chan *protocol.Request, 100)
 	go s.processRequests(requests)
 	srv := &chanrpc.Server{RequestChan: requests}
 	return srv.Serve(l)
 }
 
-func (s *Server) processRequests(requests <-chan *request) {
+func (s *Server) processRequests(requests <-chan *protocol.Request) {
 	for req := range requests {
 		if req.Exec != nil {
 			go s.handleExecRequest(req.Exec)
@@ -90,7 +91,7 @@ func (s *Server) processRequests(requests <-chan *request) {
 }
 
 // handleExecRequest handles a exec request.
-func (s *Server) handleExecRequest(req *execRequest) {
+func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 	start := time.Now()
 	exitStatus := -10810 // sentinel value to indicate not set
 	var stdoutN, stderrN int64
@@ -100,12 +101,12 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
-	req.Repo = normalizeRepo(req.Repo)
+	req.Repo = protocol.NormalizeRepo(req.Repo)
 
 	// This is a repo that we use for testing the cloning state of the UI
 	if req.Repo == "github.com/sourcegraphtest/alwayscloningtest" {
 		chanrpcutil.Drain(req.Stdin)
-		req.ReplyChan <- &execReply{CloneInProgress: true}
+		req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
 		return
 	}
 
@@ -145,7 +146,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	if cloneInProgress {
 		s.cloningMu.Unlock()
 		chanrpcutil.Drain(req.Stdin)
-		req.ReplyChan <- &execReply{CloneInProgress: true}
+		req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
 		status = "clone-in-progress"
 		return
 	}
@@ -176,14 +177,14 @@ func (s *Server) handleExecRequest(req *execRequest) {
 			}()
 
 			chanrpcutil.Drain(req.Stdin)
-			req.ReplyChan <- &execReply{CloneInProgress: true}
+			req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
 			status = "clone-in-progress"
 			return
 		}
 
 		s.cloningMu.Unlock()
 		chanrpcutil.Drain(req.Stdin)
-		req.ReplyChan <- &execReply{RepoNotFound: true}
+		req.ReplyChan <- &protocol.ExecReply{RepoNotFound: true}
 		status = "repo-not-found"
 		return
 	}
@@ -209,8 +210,8 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
-	processResultChan := make(chan *processResult, 1)
-	req.ReplyChan <- &execReply{
+	processResultChan := make(chan *protocol.ProcessResult, 1)
+	req.ReplyChan <- &protocol.ExecReply{
 		Stdout:        stdoutC,
 		Stderr:        stderrC,
 		ProcessResult: processResultChan,
@@ -227,7 +228,7 @@ func (s *Server) handleExecRequest(req *execRequest) {
 	stdoutW.Close()
 	stderrW.Close()
 
-	processResultChan <- &processResult{
+	processResultChan <- &protocol.ProcessResult{
 		Error:      errStr,
 		ExitStatus: exitStatus,
 	}

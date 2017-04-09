@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
@@ -17,7 +18,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("listen failed: %s", err)
 	}
-	go (&gitserver.Server{InsecureSkipCheckVerifySSH: true}).Serve(l)
+	go (&server.Server{InsecureSkipCheckVerifySSH: true}).Serve(l)
 
 	gitserver.DefaultClient = gitserver.NewClient([]string{l.Addr().String()})
 

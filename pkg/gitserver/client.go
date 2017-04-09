@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -37,7 +38,7 @@ func NewClient(addrs []string) *Client {
 
 // Client is a gitserver client.
 type Client struct {
-	servers [](chan<- *request)
+	servers [](chan<- *protocol.Request)
 	NoCreds bool
 }
 
@@ -47,7 +48,7 @@ func (c *Client) HasServers() bool {
 }
 
 func (c *Client) connect(addr string) {
-	requestsChan := make(chan *request, 100)
+	requestsChan := make(chan *protocol.Request, 100)
 	c.servers = append(c.servers, requestsChan)
 
 	go func() {
@@ -59,8 +60,8 @@ func (c *Client) connect(addr string) {
 	}()
 }
 
-func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
-	repoURI := normalizeRepo(c.Repo.URI)
+func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.ExecReply, errRes error) {
+	repoURI := protocol.NormalizeRepo(c.Repo.URI)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
 	defer func() {
@@ -96,8 +97,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *execReply, errRes error) {
 
 	sum := md5.Sum([]byte(repoURI))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.servers))
-	replyChan := make(chan *execReply, 1)
-	c.client.servers[serverIndex] <- &request{Exec: &execRequest{
+	replyChan := make(chan *protocol.ExecReply, 1)
+	c.client.servers[serverIndex] <- &protocol.Request{Exec: &protocol.ExecRequest{
 		Repo:           repoURI,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
@@ -221,7 +222,7 @@ func StdoutReader(ctx context.Context, c *Cmd) (io.ReadCloser, error) {
 
 type cmdReader struct {
 	c     *Cmd
-	reply *execReply
+	reply *protocol.ExecReply
 	err   error
 	// If we read too many bytes, we store the extra bytes here
 	buf []byte

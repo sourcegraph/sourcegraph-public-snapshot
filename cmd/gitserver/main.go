@@ -12,9 +12,9 @@ import (
 	"os"
 	"os/signal"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 var reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
@@ -34,7 +34,7 @@ func main() {
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
-	gitserver := gitserver.Server{ReposDir: reposDir}
+	gitserver := server.Server{ReposDir: reposDir}
 
 	if profBindAddr != "" {
 		go debugserver.Start(profBindAddr)

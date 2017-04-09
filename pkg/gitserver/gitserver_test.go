@@ -8,6 +8,7 @@ import (
 	"github.com/neelance/chanrpc/chanrpcutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -15,7 +16,7 @@ func TestExec(t *testing.T) {
 	type execTest struct {
 		context        context.Context
 		repo           *sourcegraph.Repo
-		reply          *execReply
+		reply          *protocol.ExecReply
 		expectedErr    error
 		expectedStdout []byte
 		expectedStderr []byte
@@ -26,13 +27,13 @@ func TestExec(t *testing.T) {
 		{
 			context:     context.Background(),
 			repo:        &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
-			reply:       &execReply{RepoNotFound: true},
+			reply:       &protocol.ExecReply{RepoNotFound: true},
 			expectedErr: vcs.RepoNotExistError{},
 		},
 		{
 			context:        actor.WithActor(context.Background(), &actor.Actor{GitHubToken: "token"}),
 			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
-			reply:          &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
+			reply:          &protocol.ExecReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 			expectedPass:   "", // no pass, repo not private
@@ -40,7 +41,7 @@ func TestExec(t *testing.T) {
 		{
 			context:        actor.WithActor(context.Background(), &actor.Actor{GitHubToken: "token"}),
 			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux", Private: true},
-			reply:          &execReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
+			reply:          &protocol.ExecReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 			expectedPass:   "token",
@@ -53,14 +54,14 @@ func TestExec(t *testing.T) {
 		{
 			context:     context.Background(),
 			repo:        &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
-			reply:       &execReply{CloneInProgress: true},
+			reply:       &protocol.ExecReply{CloneInProgress: true},
 			expectedErr: vcs.RepoNotExistError{CloneInProgress: true},
 		},
 	}
 
 	for _, test := range tests {
-		server := make(chan *request)
-		client := &Client{servers: [](chan<- *request){server}}
+		server := make(chan *protocol.Request)
+		client := &Client{servers: [](chan<- *protocol.Request){server}}
 
 		go func(test *execTest) {
 			req := <-server
@@ -93,8 +94,8 @@ func TestExec(t *testing.T) {
 	}
 }
 
-func emptyProcessResult() <-chan *processResult {
-	processResultChan := make(chan *processResult, 1)
-	processResultChan <- &processResult{}
+func emptyProcessResult() <-chan *protocol.ProcessResult {
+	processResultChan := make(chan *protocol.ProcessResult, 1)
+	processResultChan <- &protocol.ProcessResult{}
 	return processResultChan
 }

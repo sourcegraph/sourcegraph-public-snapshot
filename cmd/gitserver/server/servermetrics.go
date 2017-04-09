@@ -1,4 +1,4 @@
-package gitserver
+package server
 
 import (
 	"os/exec"

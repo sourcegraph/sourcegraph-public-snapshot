@@ -1,8 +1,8 @@
-package gitserver
+package protocol
 
 import "strings"
 
-func normalizeRepo(repo string) string {
+func NormalizeRepo(repo string) string {
 	repo = strings.TrimSuffix(repo, ".git")
 
 	slash := strings.IndexByte(repo, '/')
