@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -31,18 +30,18 @@ func NewHandler(m *mux.Router) http.Handler {
 	m.StrictSlash(true)
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoCreate).Handler(httptrace.TraceRoute(handler(serveRepoCreate)))
-	m.Get(apirouter.RepoEnsure).Handler(httptrace.TraceRoute(handler(serveRepoEnsure)))
-	m.Get(apirouter.RepoRefresh).Handler(httptrace.TraceRoute(handler(func(w http.ResponseWriter, r *http.Request) error { return nil }))) // legacy
-	m.Get(apirouter.RepoResolveRev).Handler(httptrace.TraceRoute(handler(serveRepoResolveRev)))
-	m.Get(apirouter.RepoShield).Handler(httptrace.TraceRoute(handler(serveRepoShield)))
+	m.Get(apirouter.RepoCreate).Handler(traceutil.TraceRoute(handler(serveRepoCreate)))
+	m.Get(apirouter.RepoEnsure).Handler(traceutil.TraceRoute(handler(serveRepoEnsure)))
+	m.Get(apirouter.RepoRefresh).Handler(traceutil.TraceRoute(handler(func(w http.ResponseWriter, r *http.Request) error { return nil }))) // legacy
+	m.Get(apirouter.RepoResolveRev).Handler(traceutil.TraceRoute(handler(serveRepoResolveRev)))
+	m.Get(apirouter.RepoShield).Handler(traceutil.TraceRoute(handler(serveRepoShield)))
 
-	m.Get(apirouter.Orgs).Handler(httptrace.TraceRoute(handler(serveOrgs)))
-	m.Get(apirouter.OrgMembers).Handler(httptrace.TraceRoute(handler(serveOrgMembers)))
-	m.Get(apirouter.OrgInvites).Handler(httptrace.TraceRoute(handler(serveOrgInvites)))
-	m.Get(apirouter.SubmitForm).Handler(httptrace.TraceRoute(handler(serveSubmitForm)))
+	m.Get(apirouter.Orgs).Handler(traceutil.TraceRoute(handler(serveOrgs)))
+	m.Get(apirouter.OrgMembers).Handler(traceutil.TraceRoute(handler(serveOrgMembers)))
+	m.Get(apirouter.OrgInvites).Handler(traceutil.TraceRoute(handler(serveOrgInvites)))
+	m.Get(apirouter.SubmitForm).Handler(traceutil.TraceRoute(handler(serveSubmitForm)))
 
-	m.Get(apirouter.XLang).Handler(httptrace.TraceRoute(handler(serveXLang)))
+	m.Get(apirouter.XLang).Handler(traceutil.TraceRoute(handler(serveXLang)))
 
 	// 🚨 SECURITY: The Zap and LSP endpoints specifically allows cookie 🚨
 	// authorization because the JavaScript WebSocket API does not allow us to
@@ -55,10 +54,10 @@ func NewHandler(m *mux.Router) http.Handler {
 	//
 	// You can read more about this security issue here:
 	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	m.Get(apirouter.Zap).Handler(httptrace.TraceRoute(session.CookieMiddleware(http.HandlerFunc(serveZap))))
-	m.Get(apirouter.LSP).Handler(httptrace.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
+	m.Get(apirouter.Zap).Handler(traceutil.TraceRoute(session.CookieMiddleware(http.HandlerFunc(serveZap))))
+	m.Get(apirouter.LSP).Handler(traceutil.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
 
-	m.Get(apirouter.GraphQL).Handler(httptrace.TraceRoute(handler(serveGraphQL)))
+	m.Get(apirouter.GraphQL).Handler(traceutil.TraceRoute(handler(serveGraphQL)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

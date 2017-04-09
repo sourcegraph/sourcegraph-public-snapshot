@@ -29,7 +29,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -129,7 +128,7 @@ func main() {
 	if err := zapServer.Start(ctx); err != nil {
 		stdlog.Fatal(err)
 	}
-	go stdlog.Fatal(http.Serve(lis, httptrace.TraceRoute(actor.TrustedActorMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	go stdlog.Fatal(http.Serve(lis, traceutil.TraceRoute(actor.TrustedActorMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := websocketUpgrader.Upgrade(w, r, nil)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: Upgrade: %s [client: %s]\n", err, r.RemoteAddr)

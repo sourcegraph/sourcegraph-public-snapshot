@@ -14,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 // NewHandler returns a new app handler that uses the provided app
@@ -30,30 +30,30 @@ func NewHandler(r *router.Router) http.Handler {
 		fmt.Fprintf(w, env.Version)
 	}))
 
-	r.Get(router.RobotsTxt).Handler(httptrace.TraceRoute(http.HandlerFunc(robotsTxt)))
-	r.Get(router.Favicon).Handler(httptrace.TraceRoute(http.HandlerFunc(favicon)))
+	r.Get(router.RobotsTxt).Handler(traceutil.TraceRoute(http.HandlerFunc(robotsTxt)))
+	r.Get(router.Favicon).Handler(traceutil.TraceRoute(http.HandlerFunc(favicon)))
 
-	r.Get(router.SitemapIndex).Handler(httptrace.TraceRoute(errorutil.Handler(serveSitemapIndex)))
-	r.Get(router.RepoSitemap).Handler(httptrace.TraceRoute(errorutil.Handler(serveRepoSitemap)))
-	r.Get(router.RepoBadge).Handler(httptrace.TraceRoute(errorutil.Handler(serveRepoBadge)))
+	r.Get(router.SitemapIndex).Handler(traceutil.TraceRoute(errorutil.Handler(serveSitemapIndex)))
+	r.Get(router.RepoSitemap).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoSitemap)))
+	r.Get(router.RepoBadge).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoBadge)))
 
-	r.Get(router.Logout).Handler(httptrace.TraceRoute(errorutil.Handler(serveLogout)))
+	r.Get(router.Logout).Handler(traceutil.TraceRoute(errorutil.Handler(serveLogout)))
 
 	// Redirects
-	r.Get(router.OldToolsRedirect).Handler(httptrace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Get(router.OldToolsRedirect).Handler(traceutil.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/beta", 301)
 	})))
 
 	r.Get(router.UI).Handler(ui.Router())
 
-	r.Get(router.GitHubOAuth2Initiate).Handler(httptrace.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate)))
-	r.Get(router.GitHubOAuth2Receive).Handler(httptrace.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))
+	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate)))
+	r.Get(router.GitHubOAuth2Receive).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Receive)))
 
-	r.Get(router.InstallZap).Handler(httptrace.TraceRoute(errorutil.Handler(serveInstallZap)))
+	r.Get(router.InstallZap).Handler(traceutil.TraceRoute(errorutil.Handler(serveInstallZap)))
 
-	r.Get(router.GDDORefs).Handler(httptrace.TraceRoute(errorutil.Handler(serveGDDORefs)))
+	r.Get(router.GDDORefs).Handler(traceutil.TraceRoute(errorutil.Handler(serveGDDORefs)))
 
-	r.Get(router.ShowAuth).Handler(httptrace.TraceRoute(errorutil.Handler(serveShowAuth)))
+	r.Get(router.ShowAuth).Handler(traceutil.TraceRoute(errorutil.Handler(serveShowAuth)))
 
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)

@@ -17,9 +17,9 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/errcode"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/routevar"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -27,7 +27,7 @@ func init() {
 	router.Get(routeJobs).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://boards.greenhouse.io/sourcegraph", http.StatusFound)
 	}))
-	router.Get(routePlan).Handler(httptrace.TraceRoute(handler(servePlan)))
+	router.Get(routePlan).Handler(traceutil.TraceRoute(handler(servePlan)))
 
 	// Redirect from old /land/ def landing URLs to new /info/ URLs
 	router.Get(oldRouteDefLanding).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -49,18 +49,18 @@ func init() {
 		http.Redirect(w, r, infoURL.String(), http.StatusMovedPermanently)
 	}))
 
-	router.Get(routeReposIndex).Handler(httptrace.TraceRoute(errorutil.Handler(serveRepoIndex)))
-	router.Get(routeLangsIndex).Handler(httptrace.TraceRoute(errorutil.Handler(serveRepoIndex)))
-	router.Get(routeBlob).Handler(httptrace.TraceRoute(handler(serveBlob)))
-	router.Get(routeDefRedirectToDefLanding).Handler(httptrace.TraceRoute(http.HandlerFunc(serveDefRedirectToDefLanding)))
-	router.Get(routeDefLanding).Handler(httptrace.TraceRoute(errorutil.Handler(serveDefLanding)))
-	router.Get(routeRepo).Handler(httptrace.TraceRoute(handler(serveRepo)))
-	router.Get(routeRepoLanding).Handler(httptrace.TraceRoute(errorutil.Handler(serveRepoLanding)))
-	router.Get(routeTree).Handler(httptrace.TraceRoute(handler(serveTree)))
-	router.Get(routeTopLevel).Handler(httptrace.TraceRoute(errorutil.Handler(serveAny)))
-	router.Get(routeHomePage).Handler(httptrace.TraceRoute(errorutil.Handler(serveAny)))
-	router.PathPrefix("/").Methods("GET").Handler(httptrace.TraceRouteFallback("app.serve-any", errorutil.Handler(serveAny)))
-	router.NotFoundHandler = httptrace.TraceRouteFallback("app.serve-any-404", errorutil.Handler(serveAny))
+	router.Get(routeReposIndex).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoIndex)))
+	router.Get(routeLangsIndex).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoIndex)))
+	router.Get(routeBlob).Handler(traceutil.TraceRoute(handler(serveBlob)))
+	router.Get(routeDefRedirectToDefLanding).Handler(traceutil.TraceRoute(http.HandlerFunc(serveDefRedirectToDefLanding)))
+	router.Get(routeDefLanding).Handler(traceutil.TraceRoute(errorutil.Handler(serveDefLanding)))
+	router.Get(routeRepo).Handler(traceutil.TraceRoute(handler(serveRepo)))
+	router.Get(routeRepoLanding).Handler(traceutil.TraceRoute(errorutil.Handler(serveRepoLanding)))
+	router.Get(routeTree).Handler(traceutil.TraceRoute(handler(serveTree)))
+	router.Get(routeTopLevel).Handler(traceutil.TraceRoute(errorutil.Handler(serveAny)))
+	router.Get(routeHomePage).Handler(traceutil.TraceRoute(errorutil.Handler(serveAny)))
+	router.PathPrefix("/").Methods("GET").Handler(traceutil.TraceRouteFallback("app.serve-any", errorutil.Handler(serveAny)))
+	router.NotFoundHandler = traceutil.TraceRouteFallback("app.serve-any-404", errorutil.Handler(serveAny))
 }
 
 func Router() *mux.Router {

@@ -34,7 +34,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/httptrace"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
@@ -203,7 +202,7 @@ func Main() error {
 	var h http.Handler = sm
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
-	h = httptrace.Middleware(h)
+	h = traceutil.Middleware(h)
 	h = (func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// headers for security

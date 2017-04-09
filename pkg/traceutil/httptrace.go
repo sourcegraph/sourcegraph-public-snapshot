@@ -1,4 +1,4 @@
-package httptrace
+package traceutil
 
 import (
 	"context"
@@ -16,7 +16,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/statsutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
 type key int
@@ -64,7 +63,7 @@ func Middleware(next http.Handler) http.Handler {
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
-		rw.Header().Set("X-Trace", traceutil.SpanURL(span))
+		rw.Header().Set("X-Trace", SpanURL(span))
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
 		routeName := "unknown"
@@ -93,7 +92,7 @@ func Middleware(next http.Handler) http.Handler {
 			"method", r.Method,
 			"url", r.URL.String(),
 			"routename", routeName,
-			"trace", traceutil.SpanURL(span),
+			"trace", SpanURL(span),
 			"userAgent", r.UserAgent(),
 			"user", user,
 			"xForwardedFor", r.Header.Get("X-Forwarded-For"),
