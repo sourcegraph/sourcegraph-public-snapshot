@@ -94,6 +94,9 @@ export function install(options: InstallOptions, childOf = new Span()): YarnProc
 	}
 	const yarn: YarnProcess = spawn(process.execPath, args, { cwd: options.cwd });
 
+	/** Emitted error messages by yarn */
+	const errors: string[] = [];
+
 	function parseStream(stream: Readable) {
 		let buffer = '';
 		stream.on('data', chunk => {
@@ -105,8 +108,9 @@ export function install(options: InstallOptions, childOf = new Span()): YarnProc
 					const event = JSON.parse(line);
 					switch (event.type) {
 						case 'error':
-							// Special-case error events to convert them to Error instances
-							yarn.emit('error', new Error('yarn: ' + event.data));
+							// Only emit error event if non-zero exit code
+							logger.error('yarn: ', event.data);
+							errors.push(event.data);
 							break;
 						case 'step':
 						case 'verbose':
@@ -129,7 +133,9 @@ export function install(options: InstallOptions, childOf = new Span()): YarnProc
 		if (code === 0) {
 			yarn.emit('success');
 		} else if (!signal) {
-			yarn.emit('error', new Error(`yarn install failed with exit code ${code}`));
+			const error = Object.assign(new Error(`yarn failed with exit code ${code}: ${errors.join(' ')}`), { code, errors });
+			logger.error(error);
+			yarn.emit('error', error);
 		}
 		span.finish();
 	});
@@ -142,9 +148,8 @@ export function install(options: InstallOptions, childOf = new Span()): YarnProc
 
 	// Trace errors
 	yarn.on('error', err => {
-		logger.error(err);
 		span.setTag('error', true);
-		span.log({ 'error': true, 'error.object': err });
+		span.log({ 'event': 'error', 'error.object': err });
 	});
 
 	return yarn;

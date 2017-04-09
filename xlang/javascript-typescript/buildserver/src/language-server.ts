@@ -33,6 +33,11 @@ const clusterSize = program.cluster || numCPUs;
 
 const logger = createClusterLogger(program.logfile ? new FileLogger(program.logfile) : undefined);
 
+// Log unhandled rejections
+process.on('unhandledRejection', (err: any) => {
+	logger.error(err);
+});
+
 // Create Tracer if LightStep environment variables are set
 const tracer = process.env.LIGHTSTEP_ACCESS_TOKEN && new Tracer({
 	access_token: process.env.LIGHTSTEP_ACCESS_TOKEN,

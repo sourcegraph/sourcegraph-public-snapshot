@@ -12,6 +12,11 @@ import { BuildHandler, BuildHandlerOptions } from './buildhandler';
 const { Tracer } = require('lightstep-tracer');
 const program = require('commander');
 
+// Log unhandled rejections
+process.on('unhandledRejection', (err: any) => {
+	logger.error(err);
+});
+
 program
 	.version(require('../package.json').version)
 	.option('-s, --strict', 'enables strict mode')
