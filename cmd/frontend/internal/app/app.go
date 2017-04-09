@@ -13,7 +13,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -57,7 +56,6 @@ func NewHandler(r *router.Router) http.Handler {
 
 	var h http.Handler = m
 	h = redirects.RedirectsMiddleware(h)
-	h = eventsutil.AgentMiddleware(h)
 	h = session.CookieMiddleware(h)
 	h = httpapiauth.AuthorizationMiddleware(h)
 

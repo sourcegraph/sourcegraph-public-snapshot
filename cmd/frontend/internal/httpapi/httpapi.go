@@ -15,7 +15,6 @@ import (
 	httpapiauth "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/auth"
 	apirouter "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
@@ -68,7 +67,6 @@ func NewHandler(m *mux.Router) http.Handler {
 	// authentication. Doing so would open it up to CSRF
 	// attacks.
 	var h http.Handler = m
-	h = eventsutil.AgentMiddleware(h)
 	h = httpapiauth.AuthorizationMiddleware(h)
 
 	return h

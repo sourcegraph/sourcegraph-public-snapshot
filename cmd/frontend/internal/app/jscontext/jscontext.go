@@ -21,7 +21,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/feature"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/eventsutil"
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
@@ -100,7 +99,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
 		CSRFToken:         csrfToken,
-		UserAgentIsBot:    isBot(eventsutil.UserAgentFromContext(req.Context())),
+		UserAgentIsBot:    isBot(req.UserAgent()),
 		AssetsRoot:        assets.URL("/").String(),
 		Version:           env.Version,
 		Features:          feature.Features,
