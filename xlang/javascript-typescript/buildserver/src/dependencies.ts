@@ -55,6 +55,11 @@ export class DependencyManager {
 	private installations = new Map<string, Promise<void>>();
 
 	/**
+	 * Set of running yarn process to kill on dispose
+	 */
+	private yarnProcesses = new Set<yarn.YarnProcess>();
+
+	/**
 	 * Fulfilled when the workspace was scanned for package.json files, they were fetched and parsed and installations kicked off
 	 */
 	private scanned?: Promise<void>;
@@ -77,6 +82,20 @@ export class DependencyManager {
 		private projectManager: ProjectManager,
 		private logger: Logger = new NoopLogger()
 	) { }
+
+	/**
+	 * Disposes the DependencyManager and kills all running yarn processes
+	 */
+	async killRunningProcesses(): Promise<void> {
+		this.logger.log(`Killing ${this.yarnProcesses.size} running yarn processes on dispose`);
+		await Promise.all(
+			iterate(this.yarnProcesses)
+				.map(async yarnProcess => new Promise(resolve => {
+					yarnProcess.once('exit', resolve);
+					yarnProcess.kill('SIGKILL');
+				})
+		));
+	}
 
 	/**
 	 * Scans the workspace to find all packages _defined_ in the workspace, saves the content in `packages`
@@ -234,9 +253,11 @@ export class DependencyManager {
 				// Spawn yarn process
 				// TODO return Observable instead of converting to Promise
 				await new Promise((resolve, reject) => {
-					yarn.install({ cwd, globalFolder, cacheFolder, logger }, span)
-						.once('success', resolve)
-						.once('error', reject);
+					const yarnProcess = yarn.install({ cwd, globalFolder, cacheFolder, logger }, span);
+					this.yarnProcesses.add(yarnProcess);
+					yarnProcess.once('success', resolve);
+					yarnProcess.once('error', reject);
+					yarnProcess.once('exit', () => this.yarnProcesses.delete(yarnProcess));
 				});
 				// Refetch file structure under node_modules directory
 				this.updater.invalidateStructure();

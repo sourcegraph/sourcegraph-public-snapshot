@@ -113,6 +113,8 @@ export class BuildHandler extends TypeScriptService {
 	}
 
 	async shutdown(params = {}, span = new Span()): Promise<null> {
+		// Make sure yarn processes do not keep running and recreate the temporary directory
+		await this.dependenciesManager.killRunningProcesses();
 		// Delete workspace-specific temporary folder with dependencies
 		this.logger.log(`Cleaning up temporary folder ${this.options.tempDir} on shutdown`);
 		await new Promise((resolve, reject) => rimraf(this.options.tempDir, err => err ? reject(err) : resolve()));
