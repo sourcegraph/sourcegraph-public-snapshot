@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { Org, OrgMember } from "sourcegraph/api";
 import { context } from "sourcegraph/app/context";
+import { Router } from "sourcegraph/app/router";
 import { setLocationModalState } from "sourcegraph/components/Modal";
 import { Spinner } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils/whitespace";
@@ -22,6 +23,12 @@ interface State {
 }
 
 export class OrgPanel extends React.Component<Props, State> {
+	static contextTypes: React.ValidationMap<any> = {
+		router: React.PropTypes.object.isRequired,
+	};
+
+	context: { router: Router };
+
 	constructor(props: Props) {
 		super(props);
 		this.state = {

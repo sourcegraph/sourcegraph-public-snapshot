@@ -138,6 +138,8 @@ export class LocationStateModal extends React.Component<LocationStateModalProps,
 			if (this.props.onDismiss) {
 				this.props.onDismiss(e);
 			}
+			// TODO: @Kingy - Remove force update for react-router v4 update.
+			this.forceUpdate();
 		};
 
 		return <RenderedModal onDismiss={onDismiss} location={location} router={this.context.router}>
