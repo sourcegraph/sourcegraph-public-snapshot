@@ -86,28 +86,6 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				await this.service.shutdown();
 				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
 			});
-			it('should not recreate the temporary directory after shutdown', async function (this: TestContext) {
-				// Do a random request just to trigger dependency installation
-				// This should spawn a yarn process
-				this.service.textDocumentDefinition({
-					textDocument: {
-						uri: 'file:///a.ts'
-					},
-					position: {
-						line: 0,
-						character: 12
-					}
-				});
-				// Wait a bit so yarn process is running, but not finished yet
-				await new Promise(resolve => setTimeout(resolve, 500));
-				assert(await fs.exists(tempDir), `Expected ${tempDir} to be created`);
-				// Shutting down service must kill all yarn processes and delete the directory
-				await this.service.shutdown();
-				// Wait a bit so not-killed yarn processes get a chance to recreate the directory
-				await new Promise(resolve => setTimeout(resolve, 2000));
-				// Assert no yarn process recreated the directory
-				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
-			});
 		});
 		describe('textDocumentDefinition()', function (this: TestContext) {
 			specify('cross-repo definition 1', async function (this: TestContext) {
