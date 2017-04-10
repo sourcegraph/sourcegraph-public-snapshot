@@ -3,7 +3,7 @@ import * as assert from 'assert';
 import { RemoteLanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { describeTypeScriptService, initializeTypeScriptService, shutdownTypeScriptService, TestContext as TypeScriptServiceTestContext } from 'javascript-typescript-langserver/lib/test/typescript-service-helpers';
 import { TypeScriptServiceFactory, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
-import { IContextDefinition } from 'mocha';
+import { IContextDefinition, ITestDefinition } from 'mocha';
 import { BuildHandler } from '../buildhandler';
 import rimraf = require('rimraf');
 import * as fs from 'mz/fs';
@@ -64,7 +64,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			['file:///b.ts', [
 				"import * as ts from 'typescript';",
 				'',
-				'var s ts.SyntaxKind;',
+				'var s: ts.SyntaxKind;',
 				'var t = s;',
 				''
 			].join('\n')]
@@ -409,14 +409,15 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo xdefinition to non-DefinitelyTyped package', async function (this: TestContext) {
+			it('should return SymbolDescriptor with PackageDescriptor of typescript package on ts.SyntaxKind', async function (this: TestContext & ITestDefinition) {
+				this.timeout(60000);
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///b.ts'
 					},
 					position: {
 						line: 2,
-						character: 9
+						character: 10
 					}
 				});
 				assert.deepEqual(result, [{
