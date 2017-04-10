@@ -293,8 +293,9 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		span.Finish()
 	}()
 
-	// Enforce rate limiter
-	if c.limiter.TakeAvailable(1) != 1 {
+	// Enforce rate limiter only for requests. We can send a large amount
+	// of notifications in normal operation.
+	if !req.Notif && c.limiter.TakeAvailable(1) != 1 {
 		clientRateLimited.Inc()
 		// This client is misbehaving rate limit wise, so we fail the request.
 		return nil, &jsonrpc2.Error{
