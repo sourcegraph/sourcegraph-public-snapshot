@@ -37,9 +37,14 @@ export class PlanChanger extends ComponentWithRouter<{}, State> {
 		this.setState({ ...this.state, submitted: false, contents: "" });
 	}
 
+	showModal(): void {
+		Events.ChangePlanModal_Initiated.logEvent();
+		this.forceUpdate();
+	}
+
 	render(): JSX.Element {
 		return <div>
-			<LocationStateToggleLink location={this.context.router.location} modalName={modalName} onToggle={v => v && Events.ChangePlanModal_Initiated.logEvent()}>
+			<LocationStateToggleLink location={this.context.router.location} modalName={modalName} onToggle={v => v && this.showModal()}>
 				Change your plan
 			</LocationStateToggleLink>
 			<LocationStateModal title="Change your plan" modalName={modalName} onDismiss={this.modalDismissed}>

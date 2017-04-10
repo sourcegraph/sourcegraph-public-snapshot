@@ -14,6 +14,8 @@ import { TermsPage } from "sourcegraph/page/TermsPage";
 import { ZapBetaFormPage } from "sourcegraph/page/ZapBetaFormPage";
 import { ZapPage } from "sourcegraph/page/ZapPage";
 
+import { Workbench } from "sourcegraph/workbench/workbench";
+
 const pages = {
 	[rel.about]: AboutPage,
 	[rel.plan]: MasterPlanPage,
@@ -32,7 +34,8 @@ export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
 	path: key,
 	getComponents: (location, callback) => {
 		callback(null, {
-			main: pages[key],
+			main: Workbench,
+			injectedComponent: pages[key],
 			footer: Footer,
 		});
 	},

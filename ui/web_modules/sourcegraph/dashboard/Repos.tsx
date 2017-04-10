@@ -6,6 +6,7 @@ import { RouterLocation } from "sourcegraph/app/router";
 import { FlexContainer, GitHubAuthButton, Heading, Input, Panel, RepositoryCard } from "sourcegraph/components";
 import { Spinner } from "sourcegraph/components/symbols";
 import { whitespace } from "sourcegraph/components/utils";
+import * as colors from "sourcegraph/components/utils/colors";
 import { RepositoryTabs } from "sourcegraph/dashboard";
 
 interface Props {
@@ -116,7 +117,7 @@ export class Repos extends React.Component<Props, {}> {
 					spellCheck={false}
 					onChange={this._handleFilter}
 					compact={true}
-					style={{ marginTop: whitespace[1], minWidth: 225 }} />
+					style={{ marginTop: whitespace[1], minWidth: 225, backgroundColor: colors.white() }} />
 			</FlexContainer>
 			<div>
 				{filteredRepos.length > 0 && filteredRepos.map((repo, i) => {

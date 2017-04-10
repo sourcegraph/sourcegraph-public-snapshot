@@ -40,6 +40,22 @@ export function setupWorker(workspace: IWorkspace): void {
 	workspaces.add(workspace.resource.toString());
 	(Services.get(IWorkspaceContextService)).registerWorkspace(workspace);
 
+	// Skip fetching contents if the resource only contains the scheme. (matches "file://")
+	if (workspace.resource.toString() === "file://") {
+		const opts: InitializationOptions = {
+			seqId: ++seqId,
+			workspace: workspace.toString(),
+			features: listEnabledFeatures(),
+			revState: undefined,
+			context,
+			langs: undefined,
+		};
+		const reader = new FileReader();
+		const resultWithOpts = `self.extensionHostOptions=${JSON.stringify(opts)};${reader.result}`;
+		const worker = new Worker(makeBlobURL(resultWithOpts));
+		(Services.get(IThreadService) as MainThreadService).attachWorker(worker, workspace.resource);
+		return;
+	}
 	const { repo } = getURIContext(workspace.resource);
 	const rev = workspace.revState ? workspace.revState.commitID || "" : "";
 

@@ -11,7 +11,7 @@ interface Props {
 	style?: React.CSSProperties;
 }
 
-type Color = "blue" | "purple" | "white" | "orange" | "green" | "gray";
+type Color = "blue" | "purple" | "white" | "orange" | "green" | "gray" | "black";
 
 export const Heading = (props: Props): any => {
 	const headingColors = {
@@ -21,6 +21,7 @@ export const Heading = (props: Props): any => {
 		orange: colors.orange(),
 		green: colors.green(),
 		gray: colors.blueGray(),
+		black: colors.black(),
 	};
 
 	const sx = Object.assign(

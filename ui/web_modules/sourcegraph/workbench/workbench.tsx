@@ -23,11 +23,13 @@ interface Props extends RouteProps {
 	repo: string | null;
 	rev: string | null;
 	isSymbolUrl: boolean;
+	isRepoUrl: boolean;
 	selection: IRange | null;
 	loading?: boolean;
 	refetch?: () => void;
 	root?: GQL.IRoot;
 	error?: ApolloError;
+	injectedComponentCallback?: (element?: JSX.Element) => void;
 }
 
 // WorkbenchComponent loads the VSCode workbench shell. To learn about VSCode and the
@@ -45,7 +47,53 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 	}
 
 	shouldComponentUpdate(nextProps: Props): boolean {
-		return !nextProps.loading;
+		return !nextProps.loading || (this.props.injectedComponentCallback !== nextProps.injectedComponentCallback);
+	}
+
+	renderRepositoryNotFoundCallback(): void {
+		if (this.props.injectedComponentCallback) {
+			this.props.injectedComponentCallback(<Error
+				code="404"
+				desc="Repository not found" />);
+		}
+	}
+
+	renderSymbolNotFoundCallback(): void {
+		if (this.props.injectedComponentCallback) {
+			this.props.injectedComponentCallback(<Error
+				code="404"
+				desc="Symbol not found" />);
+		}
+	}
+
+	renderCloningRepositoryCallback(): void {
+		if (this.props.injectedComponentCallback) {
+			this.props.injectedComponentCallback(<CloningRefresher refetch={this.props.refetch!} />);
+		}
+	}
+
+	renderPaywallCallback(uri: string): void {
+		if (this.props.injectedComponentCallback) {
+			this.props.injectedComponentCallback(<Paywall repo={uri} />);
+		}
+	}
+
+	renderEmptyWorkbenchShell(renderElementCallBack?: () => void): JSX.Element {
+		return <div style={{ display: "flex", height: "100%" }}>
+			<WorkbenchShell
+				location={this.props.location}
+				routes={this.props.routes}
+				params={this.props.params}
+				repo={""}
+				rev={""}
+				commitID={""}
+				zapRev={undefined}
+				zapRef={undefined}
+				branch={undefined}
+				path={""}
+				selection={null}
+				componentCallback={renderElementCallBack} />
+		</div>;
 	}
 
 	render(): JSX.Element | null {
@@ -60,14 +108,29 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 						desc="Revision not found" />;
 			}
 		}
-		if (this.props.loading || !this.props.root) {
-			return null; // data not yet fetched
+		if (this.props.loading) {
+			return this.renderEmptyWorkbenchShell(); // data not yet fetched
 		}
-		if (this.props.isSymbolUrl) {
+		if (!this.props.isSymbolUrl && !this.props.isRepoUrl) {
+			return <div style={{ display: "flex", height: "100%" }}>
+				<WorkbenchShell
+					location={this.props.location}
+					routes={this.props.routes}
+					params={this.props.params}
+					repo={""}
+					rev={""}
+					commitID={""}
+					zapRev={undefined}
+					zapRef={undefined}
+					branch={undefined}
+					path={""}
+					selection={null}
+					componentCallback={this.props.injectedComponentCallback} />
+			</div>;
+		}
+		if (this.props.isSymbolUrl && this.props.root) {
 			if (!this.props.root.symbols || this.props.root.symbols.length === 0) {
-				return <Error
-					code="404"
-					desc="Symbol not found" />;
+				return this.renderEmptyWorkbenchShell(this.renderSymbolNotFoundCallback);
 			}
 			// Assume that there is only one symbol for now
 			const symbol = this.props.root.symbols[0];
@@ -75,21 +138,20 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			path = symbol.path;
 			selection = RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty();
 		} else {
-			if (!this.props.root.repository) {
-				return <Error
-					code="404"
-					desc="Repository not found" />;
+			if (!this.props.root || !this.props.root.repository) {
+				return this.renderEmptyWorkbenchShell(this.renderRepositoryNotFoundCallback);
 			}
 			repository = this.props.root!.repository!;
 			selection = this.props.selection;
 			path = pathFromRouteParams(this.props.params);
-		}
-		if (repository.revState.cloneInProgress) {
-			return <CloningRefresher refetch={this.props.refetch!} />;
-		}
 
-		if (needsPayment(repository.expirationDate)) {
-			return <Paywall repo={repository.uri} />;
+			if (repository.revState.cloneInProgress) {
+				return this.renderEmptyWorkbenchShell(this.renderCloningRepositoryCallback);
+			}
+
+			if (needsPayment(repository.expirationDate)) {
+				return this.renderEmptyWorkbenchShell(this.renderPaywallCallback.bind(this, repository.uri));
+			}
 		}
 
 		const commitID = repository.revState.zapRev ? repository.revState.zapRev.base : repository.revState.commit!.sha1;
@@ -139,21 +201,25 @@ function mapRouteProps(props: RouteProps): Props {
 	if (props.location && props.location.hash && props.location.hash.startsWith("#L")) {
 		rangeOrPosition = RangeOrPosition.parse(props.location.hash.replace(/^#L/, "")) || rangeOrPosition;
 	}
-	const isSymbolUrl = getRoutePattern(props.routes) === abs.goSymbol;
+	const routePattern = getRoutePattern(props.routes);
+	const isSymbolUrl = routePattern === abs.goSymbol;
 	let id: string | null = null;
 	let mode: string | null = null;
 	let repo: string | null = null;
 	let rev: string | null = null;
+	const isRepoUrl = isSymbolUrl || routePattern.startsWith(abs.repo);
 	if (isSymbolUrl) {
 		id = props.params.splat as string;
 		mode = "go";
-	} else {
-		const repoRevString = repoRevFromRouteParams(props.params);
+	}
+
+	const repoRevString = repoRevFromRouteParams(props.params);
+	if (repoRevString) {
 		repo = repoPath(repoRevString);
 		rev = repoRev(repoRevString);
 	}
 
-	return { ...props, id, mode, repo, rev, isSymbolUrl, selection: rangeOrPosition.toMonacoRangeAllowEmpty() };
+	return { ...props, id, mode, repo, rev, isSymbolUrl, selection: rangeOrPosition.toMonacoRangeAllowEmpty(), isRepoUrl };
 }
 
 // TODO(john): use saved graphql queries and fragments.
@@ -201,7 +267,11 @@ export const Workbench = graphql(gql`
 					repo: mappedProps.repo,
 					rev: mappedProps.rev || "",
 					isSymbolUrl: mappedProps.isSymbolUrl,
+					isRepoUrl: mappedProps.isRepoUrl,
 				}
 			};
+		},
+		skip: (ownProps) => {
+			return !Boolean(mapRouteProps(ownProps).isRepoUrl) && !Boolean(mapRouteProps(ownProps).isSymbolUrl);
 		},
 	})(WorkbenchComponent);
