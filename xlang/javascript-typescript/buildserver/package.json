@@ -4,7 +4,7 @@
   "scripts": {
     "build": "tsc -p . && chmod +x lib/language-server-stdio.js lib/language-server.js",
     "watch": "tsc -w -p .",
-    "test": "mocha --require source-map-support/register --timeout 20000 --slow 0 'lib/test/**/*.js'",
+    "test": "mocha --require source-map-support/register --timeout 30000 --slow 0 'lib/test/**/*.js'",
     "lint": "tslint -t msbuild -c tslint.json 'src/**/*.ts'"
   },
   "dependencies": {
