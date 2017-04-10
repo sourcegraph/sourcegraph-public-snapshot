@@ -103,7 +103,7 @@ export class DependencyManager {
 	 *
 	 * @param childOf OpenTracing parent span for tracing
 	 */
-	private async scan(childOf = new Span()): Promise<void> {
+	private scan(childOf = new Span()): Promise<void> {
 		const promise = (async () => {
 			const span = childOf.tracer().startSpan('Scan dependencies', { childOf });
 			try {
@@ -185,6 +185,7 @@ export class DependencyManager {
 
 	/**
 	 * Gets the content of the closest package.json known to to the DependencyManager in the ancestors of a URI
+	 * Call `ensureScanned()` before.
 	 */
 	getClosestPackageJson(uri: string): PackageJson | undefined {
 		const packageJsonUri = this.getClosestPackageJsonUri(uri);
@@ -209,7 +210,7 @@ export class DependencyManager {
 				return undefined;
 			}
 			const packageJsonUri = url.format({ ...parts, pathname: path.posix.join(parts.pathname, 'package.json') });
-			if (this.inMemoryFileSystem.has(packageJsonUri)) {
+			if (this.packages.has(packageJsonUri)) {
 				return packageJsonUri;
 			}
 			if (parts.pathname === '/') {
@@ -221,15 +222,15 @@ export class DependencyManager {
 
 	/**
 	 * Installs dependencies for the given file or directory and refetches structure under that directory.
+	 * Call `ensureScanned()` before.
 	 *
 	 * @param uri URI to a file or directory
 	 * @param childOf OpenTracing parent span for tracing
 	 */
-	private async installForFile(uri: string, childOf = new Span()): Promise<void> {
-		await this.updater.ensureStructure();
+	private installForFile(uri: string, childOf = new Span()): Promise<void> {
 		const packageJsonUri = this.getClosestPackageJsonUri(uri);
 		if (!packageJsonUri) {
-			return;
+			return Promise.resolve();
 		}
 		const promise = (async () => {
 			const span = childOf.tracer().startSpan('Dependency installation', { childOf });
@@ -275,7 +276,7 @@ export class DependencyManager {
 			}
 		})();
 		this.installations.set(packageJsonUri, promise);
-		await promise;
+		return promise;
 	}
 
 	/**
@@ -288,7 +289,9 @@ export class DependencyManager {
 		const span = childOf.tracer().startSpan('Ensure dependency installation', { childOf });
 		span.addTags({ uri });
 		try {
-			await this.updater.ensureStructure();
+			// Ensure all own package.jsons in the workspace are available under this.packages
+			await this.ensureScanned(span);
+			// Find the closest one in parent directories
 			const packageJsonUri = this.getClosestPackageJsonUri(uri);
 			span.addTags({ packageJsonUri });
 			if (!packageJsonUri) {
