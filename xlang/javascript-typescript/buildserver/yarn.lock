@@ -1178,6 +1178,10 @@ iterare@^0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/iterare/-/iterare-0.0.7.tgz#130c4ffb6250a97c2039f7225b5b8d0bcee83a3e"
 
+iterare@^0.0.8:
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/iterare/-/iterare-0.0.8.tgz#a969a80a1fbff6b78f28776594d7bc2bdfab6aad"
+
 jade@0.26.3:
   version "0.26.3"
   resolved "https://registry.yarnpkg.com/jade/-/jade-0.26.3.tgz#8f10d7977d8d79f2f6ff862a81b0513ccb25686c"
@@ -1185,9 +1189,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.16:
-  version "2.0.0-pre.16"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.16.tgz#230089145e7fa4badb6e4f9e20de204e130b0109"
+javascript-typescript-langserver@^2.0.0-pre.17:
+  version "2.0.0-pre.17"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.17.tgz#e78e1bc2d912996d04ccaa188623eac8ae2a4d1f"
   dependencies:
     "@reactivex/rxjs" "^5.3.0"
     async "^2.1.5"
@@ -1197,12 +1201,12 @@ javascript-typescript-langserver@^2.0.0-pre.16:
     chalk "^1.1.3"
     commander "^2.9.0"
     glob "^7.1.1"
-    iterare "^0.0.7"
+    iterare "^0.0.8"
     lodash "^4.17.4"
     mz "^2.6.0"
     opentracing felixfbecker/opentracing-javascript#d42e8ac50e3555ca1a9a006bee0fd5856a838a47
     semaphore-async-await "^1.5.1"
-    typescript "2.2.1"
+    typescript "2.2.2"
     vscode-jsonrpc "^3.1.0"
     vscode-languageserver "^3.1.0"
     vscode-languageserver-types "^3.0.3"
@@ -2361,6 +2365,10 @@ typescript-formatter@^4.0.1:
 typescript@2.2.1:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.2.1.tgz#4862b662b988a4c8ff691cc7969622d24db76ae9"
+
+typescript@2.2.2:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.2.2.tgz#606022508479b55ffa368b58fee963a03dfd7b0c"
 
 uglify-js@^2.6:
   version "2.8.21"

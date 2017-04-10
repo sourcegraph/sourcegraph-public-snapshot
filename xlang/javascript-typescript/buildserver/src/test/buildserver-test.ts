@@ -31,7 +31,7 @@ export async function shutdownBuildHandler(this: TestContext): Promise<void> {
 
 // Run build-handler-specific tests
 describe('BuildHandler', function (this: TestContext & IContextDefinition) {
-	this.timeout(20000);
+	this.timeout(30000);
 
 	beforeEach(done => rimraf(tempDir, done));
 
@@ -88,7 +88,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			});
 		});
 		describe('textDocumentDefinition()', function (this: TestContext) {
-			specify('cross-repo definition 1', async function (this: TestContext) {
+			it('should return location of module declaration in DefinitelyTyped on module alias', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'

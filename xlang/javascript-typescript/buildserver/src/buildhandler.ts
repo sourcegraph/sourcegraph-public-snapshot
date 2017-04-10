@@ -252,7 +252,6 @@ export class BuildHandler extends TypeScriptService {
 		}
 		if (locations.length === 0) {
 			await this.dependenciesManager.ensureForFile(params.textDocument.uri, span);
-			await this.projectManager.createConfigurations();
 			locations = await super.textDocumentDefinition(params, span);
 		}
 		await this._rewriteUris(locations);

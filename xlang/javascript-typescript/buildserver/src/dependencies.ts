@@ -195,7 +195,7 @@ export class DependencyManager {
 	}
 
 	/**
-	 * Walks the parent directories of a given URI to find the first package.json that is know to the DependencyManager
+	 * Walks the parent directories of a given URI to find the first package.json that is known to the InMemoryFileSystem
 	 *
 	 * TODO return multiple nested package.jsons https://github.com/sourcegraph/sourcegraph/issues/5038
 	 *
@@ -208,9 +208,9 @@ export class DependencyManager {
 			if (!parts.pathname) {
 				return undefined;
 			}
-			const packageJson = url.format({ ...parts, pathname: path.posix.join(parts.pathname, 'package.json') });
-			if (this.packages.has(packageJson)) {
-				return packageJson;
+			const packageJsonUri = url.format({ ...parts, pathname: path.posix.join(parts.pathname, 'package.json') });
+			if (this.inMemoryFileSystem.has(packageJsonUri)) {
+				return packageJsonUri;
 			}
 			if (parts.pathname === '/') {
 				return undefined;
@@ -221,15 +221,15 @@ export class DependencyManager {
 
 	/**
 	 * Installs dependencies for the given file or directory and refetches structure under that directory.
-	 * Does not depend on a call to `ensureScanned()`
 	 *
 	 * @param uri URI to a file or directory
 	 * @param childOf OpenTracing parent span for tracing
 	 */
 	private async installForFile(uri: string, childOf = new Span()): Promise<void> {
+		await this.updater.ensureStructure();
 		const packageJsonUri = this.getClosestPackageJsonUri(uri);
 		if (!packageJsonUri) {
-			return Promise.resolve();
+			return;
 		}
 		const promise = (async () => {
 			const span = childOf.tracer().startSpan('Dependency installation', { childOf });
@@ -262,10 +262,9 @@ export class DependencyManager {
 				// Refetch file structure under node_modules directory
 				this.updater.invalidateStructure();
 				this.updater.fetchStructure().catch(err => undefined);
-				// Require re-fetching of file imports
-				this.projectManager.ensuredFilesForHoverAndDefinition.clear();
-				// Require re-fetching of module structure
-				this.projectManager.ensuredModuleStructure = undefined;
+				// Require a refresh of module structure
+				this.projectManager.invalidateModuleStructure();
+				this.projectManager.ensureModuleStructure().catch(err => undefined);
 			} catch (err) {
 				this.installations.delete(packageJsonUri);
 				span.setTag('error', true);
@@ -276,7 +275,7 @@ export class DependencyManager {
 			}
 		})();
 		this.installations.set(packageJsonUri, promise);
-		return promise;
+		await promise;
 	}
 
 	/**
@@ -286,13 +285,15 @@ export class DependencyManager {
 	 * @param childOf OpenTracing parent span for tracing
 	 */
 	async ensureForFile(uri: string, childOf = new Span()): Promise<void> {
-		const packageJsonUri = this.getClosestPackageJsonUri(uri);
-		if (!packageJsonUri) {
-			return;
-		}
 		const span = childOf.tracer().startSpan('Ensure dependency installation', { childOf });
-		span.addTags({ uri, packageJsonUri });
+		span.addTags({ uri });
 		try {
+			await this.updater.ensureStructure();
+			const packageJsonUri = this.getClosestPackageJsonUri(uri);
+			span.addTags({ packageJsonUri });
+			if (!packageJsonUri) {
+				return;
+			}
 			await (this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri, span));
 		} catch (err) {
 			span.setTag('error', true);
