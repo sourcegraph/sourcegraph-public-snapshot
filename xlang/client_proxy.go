@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -16,6 +17,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/juju/ratelimit"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -36,6 +38,11 @@ var repoBlacklist = make(map[string]bool)
 // workspace/xreferences. It is set via the environment variable REPO_BLACKLIST_XREFERENCES.
 var repoBlacklistXReferences = make(map[string]bool)
 
+var (
+	clientLimitReqSec      float64
+	clientLimitReqSecBurst int64
+)
+
 func init() {
 	repos := strings.Fields(env.Get("REPO_BLACKLIST", "", "repos which we should not serve requests for. Seperated by whitespace"))
 	for _, r := range repos {
@@ -45,6 +52,16 @@ func init() {
 	repos = strings.Fields(env.Get("REPO_BLACKLIST_XREFERENCES", "", "repos which we should not serve workspace/xreferences requests for. Seperated by whitespace"))
 	for _, r := range repos {
 		repoBlacklistXReferences[r] = true
+	}
+
+	var err error
+	clientLimitReqSec, err = strconv.ParseFloat(env.Get("CLIENT_LIMIT_REQ_SEC", "2", "The allowed requests a second before rate limiting. float"), 64)
+	if err != nil {
+		log.Fatal("badly formatted CLIENT_LIMIT_REQ_SEC", err)
+	}
+	clientLimitReqSecBurst, err = strconv.ParseInt(env.Get("CLIENT_LIMIT_REQ_SEC_BURST", "50", "The maximum requests a second before rate limiting. int"), 10, 64)
+	if err != nil {
+		log.Fatal("badly formatted CLIENT_LIMIT_REQ_SEC_BURST", err)
 	}
 }
 
@@ -58,6 +75,8 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 		proxy: p,
 		last:  time.Now(),
 		id:    nextClientID(),
+
+		limiter: ratelimit.NewBucketWithRate(clientLimitReqSec, clientLimitReqSecBurst),
 	}
 	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
@@ -92,6 +111,12 @@ var (
 		Name:      "cumu_client_proxy_connections",
 		Help:      "Cumulative number of connections to the xlang client proxy (total of open + previously closed since process startup).",
 	})
+	clientRateLimited = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "xlang",
+		Name:      "client_rate_limited",
+		Help:      "The number of times a client request was rate limited.",
+	})
 	proxyRetryCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "xlang",
@@ -109,6 +134,7 @@ var (
 func init() {
 	prometheus.MustRegister(clientConnsGauge)
 	prometheus.MustRegister(clientConnsCounter)
+	prometheus.MustRegister(clientRateLimited)
 	prometheus.MustRegister(proxyRetryCounter)
 	prometheus.MustRegister(proxyRetryFailedCounter)
 }
@@ -211,6 +237,9 @@ type clientProxyConn struct {
 	conn  *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the client
 	id    clientID       // unique id for this connection
 
+	// limiter is used to rate limit a client.
+	limiter *ratelimit.Bucket
+
 	mu       sync.Mutex
 	context  contextID
 	init     *lspext.ClientProxyInitializeParams
@@ -264,10 +293,21 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		span.Finish()
 	}()
 
+	// Enforce rate limiter
+	if c.limiter.TakeAvailable(1) != 1 {
+		clientRateLimited.Inc()
+		// This client is misbehaving rate limit wise, so we fail the request.
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidRequest,
+			Message: "rate limit for client exceeded",
+		}
+	}
+
 	c.mu.Lock()
 	shutdown := c.shutdown
 	c.mu.Unlock()
-	if shutdown && req.Method != "exit" {
+	if shutdown && !(req.Method == "exit" || req.Method == "shutdown") {
+		// vscode may retry a shutdown request. So we ignore it sending shutdown twice.
 		return nil, &jsonrpc2.Error{
 			Code:    jsonrpc2.CodeInvalidRequest,
 			Message: fmt.Sprintf("invalid LSP request %q received while client proxy is shutting down (only \"exit\" is allowed)", req.Method),
