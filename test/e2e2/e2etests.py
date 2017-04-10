@@ -47,7 +47,7 @@ def test_login_logout(d):
         return
     wd.get(d.sg_url("/"))
     Util.log_in(d, username, password)
-    # Util.log_out(d) - Kingy: TODO Fix for workbench migration. 4/7/2017.
+    Util.log_out(d)
     wait_for(lambda: wd.current_url == d.sg_url("/"))
 
 def test_godoc_workflow(d):

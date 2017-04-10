@@ -467,8 +467,9 @@
 :global .vs-dark .monaco-workbench > .part.titlebar {
 	width: 100%;
 	padding: 0px !important;
-	height: 45px;
+	height: 45px !important;
 	z-index: 2000;
+	top: 0px;
 	display: flex;
 	background-color: white !important;
 	position: relative;
