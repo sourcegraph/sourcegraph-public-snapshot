@@ -60,8 +60,13 @@ type Server struct {
 	cloning   map[string]struct{}
 
 	updateRepo        chan<- updateRepoRequest
-	repoUpdateLocksMu sync.Mutex
-	repoUpdateLocks   map[string]*sync.Mutex
+	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
+	repoUpdateLocks   map[string]*locks
+}
+
+type locks struct {
+	once *sync.Once  // consolidates multiple waiting updates
+	mu   *sync.Mutex // prevents updates running in parallel
 }
 
 type updateRepoRequest struct {
@@ -73,7 +78,7 @@ type updateRepoRequest struct {
 func (s *Server) Serve(l net.Listener) error {
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
-	s.repoUpdateLocks = make(map[string]*sync.Mutex)
+	s.repoUpdateLocks = make(map[string]*locks)
 
 	s.registerMetrics()
 	requests := make(chan *protocol.Request, 100)
@@ -285,14 +290,29 @@ func (s *Server) doRepoUpdate(repo string, opt *vcs.RemoteOpts) {
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
 	if !ok {
-		l = new(sync.Mutex)
+		l = &locks{
+			once: new(sync.Once),
+			mu:   new(sync.Mutex),
+		}
 		s.repoUpdateLocks[repo] = l
 	}
+	once := l.once
+	mu := l.mu
 	s.repoUpdateLocksMu.Unlock()
 
-	l.Lock() // Prevent multiple updates in parallel. It works fine, but it wastes resources.
-	defer l.Unlock()
+	once.Do(func() {
+		mu.Lock() // Prevent multiple updates in parallel. It works fine, but it wastes resources.
+		defer mu.Unlock()
 
+		s.repoUpdateLocksMu.Lock()
+		l.once = new(sync.Once) // Make new requests wait for next update.
+		s.repoUpdateLocksMu.Unlock()
+
+		s.doRepoUpdate2(repo, opt)
+	})
+}
+
+func (s *Server) doRepoUpdate2(repo string, opt *vcs.RemoteOpts) {
 	cmd := exec.Command("git", "remote", "update", "--prune")
 	cmd.Dir = path.Join(s.ReposDir, repo)
 	if output, err := s.runWithRemoteOpts(cmd, opt); err != nil {
