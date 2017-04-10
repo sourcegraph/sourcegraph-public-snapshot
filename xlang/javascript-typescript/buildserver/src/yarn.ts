@@ -149,7 +149,7 @@ export function install(options: InstallOptions, childOf = new Span()): YarnProc
 	// Trace errors
 	yarn.on('error', err => {
 		span.setTag('error', true);
-		span.log({ 'event': 'error', 'error.object': err });
+		span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
 	});
 
 	return yarn;

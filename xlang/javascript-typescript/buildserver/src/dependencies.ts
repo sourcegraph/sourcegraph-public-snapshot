@@ -176,7 +176,7 @@ export class DependencyManager {
 			await (this.scanned || this.scan(span));
 		} catch (err) {
 			span.setTag('error', true);
-			span.log({ 'event': 'error', 'error.object': err });
+			span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
 			throw err;
 		} finally {
 			span.finish();
@@ -268,7 +268,7 @@ export class DependencyManager {
 			} catch (err) {
 				this.installations.delete(packageJsonUri);
 				span.setTag('error', true);
-				span.log({ 'event': 'error', 'error.object': err });
+				span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
 				throw err;
 			} finally {
 				span.finish();
@@ -297,7 +297,7 @@ export class DependencyManager {
 			await (this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri, span));
 		} catch (err) {
 			span.setTag('error', true);
-			span.log({ 'event': 'error', 'error.object': err });
+			span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
 			throw err;
 		} finally {
 			span.finish();
