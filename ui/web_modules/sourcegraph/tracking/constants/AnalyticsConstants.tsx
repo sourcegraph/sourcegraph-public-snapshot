@@ -30,6 +30,7 @@ export const EventCategories = {
 	QuickOpen: "QuickOpen",
 	CodeView: "CodeView",
 	Feedback: "Feedback",
+	InRepoSearch: "InRepoSearch",
 
 	// Misc other
 	External: "External",
@@ -229,8 +230,12 @@ export const Events = {
 	OpenInCodeHost_Clicked: new LoggableEvent("OpenInCodeHostClicked", EventCategories.CodeView, EventActions.Click),
 	OpenInEditor_Clicked: new LoggableEvent("OpenInEditorClicked", EventCategories.CodeView, EventActions.Click),
 	AuthorsToggle: new LoggableEvent("AuthorshipToggled", EventCategories.CodeView, EventActions.Toggle),
+
 	// Code view: FileTree events
 	FileTree_Navigated: new LoggableEvent("FileTreeActivated", EventCategories.CodeView, EventActions.Click),
+	FileTreeViewlet_Toggled: new LoggableEvent("FileTreeViewletToggled", EventCategories.CodeView, EventActions.Toggle),
+	ChangesViewlet_Toggled: new LoggableEvent("ChangesViewletToggled", EventCategories.CodeView, EventActions.Toggle),
+
 	// Code view: CodeLens events
 	CodeLensCommit_Clicked: new LoggableEvent("ClickedCodeLensCommit", EventCategories.CodeView, EventActions.Click),
 	CodeLensCommitRedirect_Clicked: new LoggableEvent("ClickedCodeLensCommitRedirect", EventCategories.CodeView, EventActions.Click),
@@ -243,10 +248,15 @@ export const Events = {
 	InfoPanelRefPreview_Closed: new LoggableEvent("InfoPanelRefPreviewClosed", EventCategories.CodeView, EventActions.Close),
 	InfoPanelRefPreviewTitle_Clicked: new LoggableEvent("InfoPanelRefPreviewTitleClicked", EventCategories.CodeView, EventActions.Click),
 	InfoPanelComment_Toggled: new LoggableEvent("InfoPanelCommentToggled", EventCategories.CodeView, EventActions.Toggle),
-	// Quick open/search
+	// Quick open
 	QuickopenItem_Selected: new LoggableEvent("QuickOpenItemSelected", EventCategories.QuickOpen, EventActions.Click),
 	Quickopen_Initiated: new LoggableEvent("QuickOpenInitiated", EventCategories.QuickOpen, EventActions.Toggle),
 	Quickopen_Dismissed: new LoggableEvent("QuickOpenDismissed", EventCategories.QuickOpen, EventActions.Close),
+
+	// In repo search (from viewlet)
+	InRepoSearch_Initiated: new LoggableEvent("InRepoSearchInitiated", EventCategories.InRepoSearch, EventActions.Fetch),
+	InRepoSearchViewlet_Toggled: new LoggableEvent("InRepoSearchViewletToggled", EventCategories.InRepoSearch, EventActions.Toggle),
+	InRepoSearchResulted_Selected: new LoggableEvent("InRepoSearchResultSelected", EventCategories.InRepoSearch, EventActions.Click),
 
 	// Shortcut menu
 	ShortcutMenu_Initiated: new LoggableEvent("ShorcutMenuInitiated", EventCategories.ShortcutMenu, EventActions.Toggle),

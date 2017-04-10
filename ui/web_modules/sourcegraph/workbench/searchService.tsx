@@ -14,6 +14,7 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 
 import { RepoList } from "sourcegraph/api";
 import { context, isOnPremInstance } from "sourcegraph/app/context";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
 import { defaultExcludesRegExp } from "sourcegraph/workbench/ConfigurationService";
 import { getFilesCached } from "sourcegraph/workbench/overrides/fileService";
@@ -70,6 +71,7 @@ export class SearchService implements ISearchService {
 	private textSearch(query: ISearchQuery): PPromise<ISearchComplete, ISearchProgressItem> {
 		const workspace = this.contextService.getWorkspace().resource;
 		const { repo, rev } = getURIContext(workspace);
+		Events.InRepoSearch_Initiated.logEvent({ repo, rev, search: query });
 		const search = new PPromise<ISearchComplete, ISearchProgressItem>((complete, error, progress) => {
 			fetchGQL(`query SearchText($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isWordMatch: Boolean!, $isCaseSensitive: Boolean!, $maxResults: Int!) {
 				root {

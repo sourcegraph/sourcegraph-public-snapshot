@@ -10,6 +10,7 @@ import { Button } from "sourcegraph/components/Button";
 import { List } from "sourcegraph/components/symbols/Primaries";
 import { History, Search } from "sourcegraph/components/symbols/Primaries";
 import { colors, layout, whitespace } from "sourcegraph/components/utils";
+import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { onWorkspaceUpdated } from "sourcegraph/workbench/services";
 import { Services, } from "sourcegraph/workbench/services";
 import "sourcegraph/workbench/styles/searchViewlet";
@@ -77,6 +78,18 @@ export class ExplorerTitle extends React.Component<{}, State> {
 	}
 
 	private updateViewlet(viewletId: string, force?: boolean): void {
+		switch (viewletId) {
+			case EXPLORER_VIELET_ID:
+				Events.FileTreeViewlet_Toggled.logEvent();
+				break;
+			case SEARCH_VIEWLET_ID:
+				Events.InRepoSearchViewlet_Toggled.logEvent();
+				break;
+			case SCM_VIEWLET_ID:
+				Events.ChangesViewlet_Toggled.logEvent();
+				break;
+		}
+
 		if (!force && this.state.openViewlet === viewletId) { return; }
 		this.setState({ openViewlet: viewletId } as State, () => {
 			this.commandService.executeCommand(viewletId);
