@@ -21,6 +21,7 @@ type Root {
 	remoteStarredRepositories: [RemoteRepository!]!
 	symbols(id: String!, mode: String!): [Symbol!]!
 	currentUser: User
+	searchRepos(query: SearchQuery!, repositories: [String!]!): SearchResults!
 }
 
 type RefFields {
@@ -155,7 +156,7 @@ type SearchResults {
 }
 
 type FileMatch {
-	path: String!
+	resource: String!
 	lineMatches: [LineMatch!]!
 }
 

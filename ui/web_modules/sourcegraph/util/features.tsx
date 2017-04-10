@@ -82,6 +82,8 @@ export const Features = {
 	zap: new Feature("zap").disableBeta(),
 	zap2Way: new Feature("zap-2-way").disableBeta(),
 
+	orgSearch: new Feature("org-search"),
+
 	beta: new Feature("beta").disableBeta(),
 	eventLogDebug: new Feature("event-log-debug").disableBeta(),
 	actionLogDebug: new Feature("action-log-debug").disableBeta(),

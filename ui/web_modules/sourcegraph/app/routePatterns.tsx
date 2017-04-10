@@ -23,6 +23,7 @@ export const rel = {
 	orgSettings: "settings/organization",
 	login: "login",
 	signup: "join",
+	search: "search",
 
 	symbolId: "*", // matches everything past $APP_URL/:mode/
 
@@ -52,6 +53,7 @@ export const abs = {
 	settings: rel.settings,
 	login: rel.login,
 	signup: rel.signup,
+	search: rel.search,
 
 	orgSettings: rel.orgSettings,
 	goSymbol: `go/${rel.symbolId}`,

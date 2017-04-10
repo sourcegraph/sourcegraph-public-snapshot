@@ -14,6 +14,7 @@ import { IWorkspaceContextService } from "vs/platform/workspace/common/workspace
 
 import { RepoList } from "sourcegraph/api";
 import { context, isOnPremInstance } from "sourcegraph/app/context";
+import { URIUtils } from "sourcegraph/core/uri";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { fetchGQL } from "sourcegraph/util/gqlClient";
 import { defaultExcludesRegExp } from "sourcegraph/workbench/ConfigurationService";
@@ -81,7 +82,7 @@ export class SearchService implements ISearchService {
 								textSearch(query: {pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, maxResults: $maxResults}) {
 									hasNextPage
 									results {
-										path
+										resource
 										lineMatches {
 											preview
 											lineNumber
@@ -100,7 +101,7 @@ export class SearchService implements ISearchService {
 					}
 					let searchResults = root.repository.commit.commit.textSearch;
 					let results = searchResults.results.map(file => {
-						const resource = workspace.with({ path: `${workspace.path}/${file.path}` });
+						const resource = URIUtils.tryConvertGitToFileURI(URI.parse(file.resource));
 						return { ...file, resource };
 					});
 					complete({

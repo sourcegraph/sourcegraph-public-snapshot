@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"sync"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -51,10 +50,11 @@ func (sr *searchResults) HasNextPage() bool {
 type fileMatch struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
+	uri          string
 }
 
-func (fm *fileMatch) Path() string {
-	return fm.JPath
+func (fm *fileMatch) Resource() string {
+	return fm.uri
 }
 
 func (fm *fileMatch) LineMatches() []*lineMatch {
@@ -168,101 +168,56 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 	if err != nil {
 		return nil, err
 	}
+	workspace := "git://" + repo + "?" + commit + "#"
+	for _, fm := range r.Matches {
+		fm.uri = workspace + fm.JPath
+	}
 	return r.Matches, nil
 }
 
-type repoMatch struct {
-	uri         string
-	lineMatches []*lineMatch
-}
-
-func (rm *repoMatch) LineMatches() []*lineMatch {
-	return rm.lineMatches
-}
-
-func (rm *repoMatch) URI() string {
-	return rm.uri
-}
-
-func searchRepo(ctx context.Context, repoName string, info *patternInfo) ([]repoMatch, error) {
+func searchRepo(ctx context.Context, repoName string, info *patternInfo) ([]*fileMatch, error) {
 	repo, err := localstore.Repos.GetByURI(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
+	// 🚨 SECURITY: DO NOT REMOVE THIS CHECK! ResolveRev is responsible for ensuring 🚨
+	// the user has permissions to access the repository.
 	commit, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: repo.ID,
 	})
-	fileMatches, err := textSearch(ctx, repoName, commit.CommitID, info)
 	if err != nil {
 		return nil, err
 	}
-	repoMatches := make([]repoMatch, len(fileMatches))
-	for i, fm := range fileMatches {
-		repoMatches[i].lineMatches = fm.JLineMatches
-		repoMatches[i].uri = repoName + "?" + commit.CommitID + "#" + fm.JPath
-	}
-	return repoMatches, nil
+	return textSearch(ctx, repoName, commit.CommitID, info)
 }
 
-// accumulate aggregates the results of a cross-repo search and sorts them by
-// file, according to 1. the number of matches and 2. the repo/path.
-func accumulate(responses <-chan []repoMatch, result chan<- []repoMatch) {
-	var flattened []repoMatch
-	for response := range responses {
+type repoSearchArgs struct {
+	Query        *patternInfo
+	Repositories []string
+}
+
+// SearchRepos searches a set of repos for a pattern.
+func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults, error) {
+	r, err := ParMap(func(repo string) ([]*fileMatch, error) {
+		return searchRepo(ctx, repo, args.Query)
+	}, args.Repositories)
+	if err != nil {
+		return nil, err
+	}
+	results := r.([][]*fileMatch)
+	var flattened []*fileMatch
+	for _, response := range results {
 		flattened = append(flattened, response...)
 	}
 	sort.Slice(flattened, func(i, j int) bool {
-		a, b := len(flattened[i].lineMatches), len(flattened[j].lineMatches)
+		a, b := len(flattened[i].JLineMatches), len(flattened[j].JLineMatches)
 		if a != b {
 			return a < b
 		}
 		return flattened[i].uri < flattened[j].uri
 	})
-	result <- flattened
-}
-
-type repoSearchArgs struct {
-	Info  patternInfo
-	Repos []string
-}
-
-// SearchRepos searches a set of repos for a pattern.
-func (r *currentUserResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) ([]repoMatch, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	responses := make(chan []repoMatch)
-	result := make(chan []repoMatch)
-	repositories := make(chan string)
-	wg := sync.WaitGroup{}
-	go accumulate(responses, result)
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for repo := range repositories {
-				if _, ok := <-ctx.Done(); ok {
-					return
-				}
-				rm, err := searchRepo(ctx, repo, &args.Info)
-				if err != nil {
-					cancel()
-					return
-				}
-				responses <- rm
-			}
-		}()
-	}
-	for _, repo := range args.Repos {
-		repositories <- repo
-	}
-	close(repositories)
-	wg.Wait()
-	close(responses)
-	if err := ctx.Err(); err != nil {
-		cancel()
-		return nil, err
-	}
-	cancel()
-	return <-result, nil
+	flattened, truncated := truncateMatches(flattened, int(args.Query.MaxResults))
+	return &searchResults{flattened, truncated}, nil
 }
 
 var searcherURLs *endpoint.Map

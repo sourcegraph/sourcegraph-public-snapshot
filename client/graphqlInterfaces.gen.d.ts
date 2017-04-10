@@ -85,7 +85,7 @@ declare namespace GQL {
 	*/
 	interface IFileMatch {
 		__typename: string;
-		path: string;
+		resource: string;
 		lineMatches: Array<ILineMatch>;
 	}
 
@@ -257,6 +257,7 @@ declare namespace GQL {
 		remoteStarredRepositories: Array<IRemoteRepository>;
 		symbols: Array<ISymbol>;
 		currentUser: IUser | null;
+		searchRepos: ISearchResults;
 	}
 
 	/*

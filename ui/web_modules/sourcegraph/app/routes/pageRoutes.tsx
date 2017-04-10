@@ -13,6 +13,8 @@ import { SecurityPage } from "sourcegraph/page/SecurityPage";
 import { TermsPage } from "sourcegraph/page/TermsPage";
 import { ZapBetaFormPage } from "sourcegraph/page/ZapBetaFormPage";
 import { ZapPage } from "sourcegraph/page/ZapPage";
+import { SearchPage } from "sourcegraph/search/SearchPage";
+import { Features } from "sourcegraph/util/features";
 
 import { Workbench } from "sourcegraph/workbench/workbench";
 
@@ -28,6 +30,7 @@ const pages = {
 	[rel.docs]: DocsPage,
 	[rel.zap]: ZapPage,
 	[rel.zapbeta]: ZapBetaFormPage,
+	...Features.orgSearch.isEnabled() ? { [rel.search]: SearchPage } : {},
 };
 
 export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
