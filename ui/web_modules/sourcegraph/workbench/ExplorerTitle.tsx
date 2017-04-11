@@ -34,7 +34,7 @@ insertGlobal(".explorer-viewlet .monaco-tree-row.focused, .explorer-viewlet .mon
 	fontWeight: "bold",
 });
 
-const EXPLORER_VIELET_ID = "workbench.view.explorer";
+const EXPLORER_VIEWLET_ID = "workbench.view.explorer";
 const SCM_VIEWLET_ID = "workbench.view.scm";
 
 const hoverStyle = hover({ color: `${colors.white()} !important` });
@@ -62,35 +62,36 @@ export class ExplorerTitle extends React.Component<{}, State> {
 		const workspace = getCurrentWorkspace();
 		this.state = {
 			workspace,
-			openViewlet: workspace.revState && workspace.revState.zapRef ? SCM_VIEWLET_ID : EXPLORER_VIELET_ID,
+			openViewlet: workspace.revState && workspace.revState.zapRef ? SCM_VIEWLET_ID : EXPLORER_VIEWLET_ID,
 		};
 	}
 
 	private searchButtonClicked = () => {
-		this.updateViewlet(this.state.openViewlet === SEARCH_VIEWLET_ID ? EXPLORER_VIELET_ID : SEARCH_VIEWLET_ID);
+		this.updateViewlet(this.state.openViewlet === SEARCH_VIEWLET_ID ? EXPLORER_VIEWLET_ID : SEARCH_VIEWLET_ID);
 	}
 
 	private changesButtonClicked = () => {
-		this.updateViewlet(this.state.openViewlet === SCM_VIEWLET_ID ? EXPLORER_VIELET_ID : SCM_VIEWLET_ID);
+		this.updateViewlet(this.state.openViewlet === SCM_VIEWLET_ID ? EXPLORER_VIEWLET_ID : SCM_VIEWLET_ID);
 	}
 	private repoNameClicked = () => {
-		this.updateViewlet(EXPLORER_VIELET_ID);
+		this.updateViewlet(EXPLORER_VIEWLET_ID);
 	}
 
 	private updateViewlet(viewletId: string, force?: boolean): void {
-		switch (viewletId) {
-			case EXPLORER_VIELET_ID:
-				Events.FileTreeViewlet_Toggled.logEvent();
-				break;
-			case SEARCH_VIEWLET_ID:
-				Events.InRepoSearchViewlet_Toggled.logEvent();
-				break;
-			case SCM_VIEWLET_ID:
-				Events.ChangesViewlet_Toggled.logEvent();
-				break;
-		}
-
 		if (!force && this.state.openViewlet === viewletId) { return; }
+		if (this.state.openViewlet !== viewletId) {
+			switch (viewletId) {
+				case EXPLORER_VIEWLET_ID:
+					Events.FileTreeViewlet_Toggled.logEvent();
+					break;
+				case SEARCH_VIEWLET_ID:
+					Events.InRepoSearchViewlet_Toggled.logEvent();
+					break;
+				case SCM_VIEWLET_ID:
+					Events.ChangesViewlet_Toggled.logEvent();
+					break;
+			}
+		}
 		this.setState({ openViewlet: viewletId } as State, () => {
 			this.commandService.executeCommand(viewletId);
 		});
@@ -113,7 +114,7 @@ export class ExplorerTitle extends React.Component<{}, State> {
 				this.updateViewlet(SCM_VIEWLET_ID);
 			} else if (this.state.openViewlet === SCM_VIEWLET_ID) {
 				// If the current viewlet is SCM, revert back to EXPLORER.
-				this.updateViewlet(EXPLORER_VIELET_ID);
+				this.updateViewlet(EXPLORER_VIEWLET_ID);
 			}
 			this.setState({ workspace } as State);
 		}));
