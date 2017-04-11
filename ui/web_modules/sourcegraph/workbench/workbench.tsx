@@ -61,9 +61,17 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		}
 	}
 
+	refetchDataForCloning(): void {
+		if (this.props.root && !this.props.root.repository!.revState.cloneInProgress && this.props.injectedComponentCallback) {
+			this.props.injectedComponentCallback();
+			return;
+		}
+		this.props.refetch!();
+	}
+
 	renderCloningRepositoryCallback(): void {
 		if (this.props.injectedComponentCallback) {
-			this.props.injectedComponentCallback(<CloningRefresher refetch={this.props.refetch!} />);
+			this.props.injectedComponentCallback(<CloningRefresher refetch={this.refetchDataForCloning.bind(this)} />);
 		}
 	}
 

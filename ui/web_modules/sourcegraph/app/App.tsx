@@ -91,22 +91,27 @@ export class App extends React.Component<Props, {}> {
 		this.renderedContainer.style.overflowY = "scroll";
 	}
 
-	renderInjectedComponent(injectedComponent: JSX.Element): void {
+	/**
+	 * Renders the component into workbench. Passing a null element will remove the currently mounted element from workbench.
+	 */
+	renderInjectedComponent(injectedComponent?: JSX.Element): void {
 		updateConfiguration((config: any) => {
 			config.workbench.statusBar.visible = false;
 		});
 		this.disposeInjectedComponent();
-		const instantiationService = Services.get(IInstantiationService) as IInstantiationService;
-		this.overlay = instantiationService.createInstance(DynamicOverlay);
-		ReactDOM.render(<RouterContext><div style={{ height: "100%", display: "flex", flex: "1", flexDirection: "column" }}>{injectedComponent}{this.props.footer}</div></RouterContext>, this.renderedContainer);
+		if (injectedComponent) {
+			const instantiationService = Services.get(IInstantiationService) as IInstantiationService;
+			this.overlay = instantiationService.createInstance(DynamicOverlay);
+			ReactDOM.render(<RouterContext><div style={{ height: "100%", display: "flex", flex: "1", flexDirection: "column" }}>{injectedComponent}{this.props.footer}</div></RouterContext>, this.renderedContainer);
 
-		// Adjust render for if the nav bar is going to be visible.
-		const isHomeRoute = isAtRoute(this.context.router, abs.home);
-		const shouldHide = hiddenNavRoutes.has(location.pathname) || (isHomeRoute && !context.user && context.authEnabled);
-		const height = shouldHide ? 0 : 45;
+			// Adjust render for if the nav bar is going to be visible.
+			const isHomeRoute = isAtRoute(this.context.router, abs.home);
+			const shouldHide = hiddenNavRoutes.has(location.pathname) || (isHomeRoute && !context.user && context.authEnabled);
+			const height = shouldHide ? 0 : 45;
 
-		this.overlay.create($(this.renderedContainer), Object.assign({}, this.overlay.getDefaultOverlayStyles(), { height: `calc(100% - ${height}px)`, top: 0 }));
-		this.overlay.show("flex");
+			this.overlay.create($(this.renderedContainer), Object.assign({}, this.overlay.getDefaultOverlayStyles(), { height: `calc(100% - ${height}px)`, top: 0 }));
+			this.overlay.show("flex");
+		}
 	}
 
 	render(): JSX.Element {

@@ -58,7 +58,7 @@ export class CloningRefresher extends React.Component<{
 
 	componentDidMount(): void {
 		if (!this._refreshInterval) {
-			this._refreshInterval = setInterval(this.props.refetch, 1000);
+			this._refreshInterval = setInterval(this.props.refetch, 2500);
 		}
 	}
 
