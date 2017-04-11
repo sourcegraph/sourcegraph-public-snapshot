@@ -45,10 +45,6 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		document.title = "Sourcegraph";
 	}
 
-	shouldComponentUpdate(nextProps: Props): boolean {
-		return !nextProps.loading;
-	}
-
 	renderRepositoryNotFoundCallback(): void {
 		if (this.props.injectedComponentCallback) {
 			this.props.injectedComponentCallback(<Error
