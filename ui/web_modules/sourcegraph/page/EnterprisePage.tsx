@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { Link } from "react-router";
 import { context } from "sourcegraph/app/context";
-import { Footer } from "sourcegraph/app/footer";
+import { Footer } from "sourcegraph/app/Footer";
 import { LocationProps, Router } from "sourcegraph/app/router";
 import { BGContainer, Button, FlexContainer, Heading, Panel } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
