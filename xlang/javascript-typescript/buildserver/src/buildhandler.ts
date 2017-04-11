@@ -90,15 +90,11 @@ export class BuildHandler extends TypeScriptService {
 		const result = await super.initialize(params, span);
 		this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.logger);
 		// Start installation of dependencies in the background
-		(async () => {
-			try {
-				await this.dependenciesManager.ensureScanned(span);
-			} catch (err) {
-				if (!isCancelledError(err)) {
-					this.logger.error('Dependency initialization failed: ', err);
-				}
+		this.dependenciesManager.ensureScanned(span).catch(err => {
+			if (!isCancelledError(err)) {
+				this.logger.error('Dependency initialization failed: ', err);
 			}
-		})();
+		});
 		return result;
 	}
 
