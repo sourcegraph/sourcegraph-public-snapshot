@@ -80,7 +80,6 @@ export function githubAuthAction(router: Router, privateCode: boolean): ActionFo
 		...router.location,
 		pathname: defaultOnboardingPath,
 		query: {
-			tour: "signup",
 			private: privateCode,
 			modal: "afterSignup",
 		},

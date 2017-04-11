@@ -62,7 +62,7 @@ export class UserDetailsForm extends React.Component<Props, UserDetails> {
 				</p>
 			<Input label="Full name" block={true} required={true} value={this.state.name} onChange={this.onChange("name")} />
 			<Input label="Email" block={true} required={true} value={this.state.email} onChange={this.onChange("email")} type="email" />
-			<Input block={true} label="Company" required={false} optionalText="Optional" value={this.state.company} onChange={this.onChange("company")} />
+			<Input label="Company" block={true} required={true} value={this.state.company} onChange={this.onChange("company")} />
 
 			<FlexContainer style={{ marginBottom: whitespace[3], marginTop: whitespace[5] }}>
 				<div style={{ color: colors.blueGray(), ...typography.small }}>

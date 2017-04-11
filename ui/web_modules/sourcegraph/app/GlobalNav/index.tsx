@@ -9,7 +9,6 @@ import { UserMenu } from "sourcegraph/app/GlobalNav/UserMenu";
 import { RouterContext } from "sourcegraph/app/router";
 import { FlexContainer, Logo } from "sourcegraph/components";
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
-import { TourOverlay } from "sourcegraph/components/TourOverlay";
 import { colors, layout } from "sourcegraph/components/utils";
 import { whitespace } from "sourcegraph/components/utils/index";
 import { toggleQuickopen } from "sourcegraph/editor/config";
@@ -77,7 +76,6 @@ export class GlobalNav extends React.Component<{}, State> {
 						</div>
 					</Link>
 				</FlexContainer>
-				{location.query["tour"] && <TourOverlay location={location} />}
 				<FlexContainer items="center" style={{ paddingRight: "0.5rem" }}>
 					{/* Only show the shortcut and search actions in the navbar when on a workbench view. */}
 					{!isMobileUserAgent(navigator.userAgent) &&

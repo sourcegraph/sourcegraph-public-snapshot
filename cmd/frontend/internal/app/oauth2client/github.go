@@ -241,7 +241,6 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 			return err
 		}
 		q := returnToNewURL.Query()
-		q.Set("tour", "signup")
 		q.Set("_event", eventLabel)
 		q.Set("_signupChannel", "GitHubOAuth")
 		q.Set("_githubAuthed", "true")
