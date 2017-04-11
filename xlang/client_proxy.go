@@ -307,12 +307,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	c.mu.Lock()
 	shutdown := c.shutdown
 	c.mu.Unlock()
-	if shutdown && !(req.Method == "exit" || req.Method == "shutdown") {
-		// vscode may retry a shutdown request. So we ignore it sending shutdown twice.
-		return nil, &jsonrpc2.Error{
-			Code:    jsonrpc2.CodeInvalidRequest,
-			Message: fmt.Sprintf("invalid LSP request %q received while client proxy is shutting down (only \"exit\" is allowed)", req.Method),
-		}
+	if shutdown && req.Method != "exit" {
+		// Badly behaving client, vscode seems to do this. We ignore
+		// the request and treat it like an exit to force the cleanup.
+		req.Method = "exit"
 	}
 
 	// ensureInitialized should be used below methods that require the
