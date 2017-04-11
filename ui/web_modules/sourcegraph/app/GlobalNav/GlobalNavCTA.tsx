@@ -9,6 +9,7 @@ export const globalNavCtaStyle = merge(
 		display: "inline-block",
 		color: colors.blueGray(),
 		padding: whitespace[2],
+		paddingTop: 10,
 		marginRight: whitespace[2],
 	},
 	$(":hover", { color: colors.blue() }),

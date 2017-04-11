@@ -474,6 +474,7 @@
 	background-color: white !important;
 	position: relative;
 	overflow: visible !important;
+	font-size: 16px;
 }
 
 :global .vs-dark .monaco-workbench {

@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { LocationStateToggleLink } from "sourcegraph/components/LocationStateToggleLink";
+import { colors } from "sourcegraph/components/utils";
 
 import * as base from "sourcegraph/components/styles/_base.css";
 import { Events, PAGE_LOCATION_GLOBAL_NAV } from "sourcegraph/tracking/constants/AnalyticsConstants";
@@ -12,6 +13,7 @@ export const SignupOrLogin = (props): JSX.Element => {
 			textAlign: "center",
 			display: "inline-block",
 			lineHeight: "calc(100% - 1px)",
+			color: colors.blueGrayL1(),
 		},
 		props.style
 	);
