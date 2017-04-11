@@ -4209,7 +4209,7 @@ declare module 'vscode' {
 		/**
 		 * A method used to set workspace state.
 		 */
-		export function setWorkspaceState(state?: { zapRef?: string, branch?: string, commitID?: string }): void;
+		export function setWorkspaceState(workspace: Uri, state?: { zapRef?: string, branch?: string, commitID?: string }): void;
 
 		/**
 		 * An event that is emitted when the active workspace is updated.

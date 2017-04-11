@@ -67,11 +67,11 @@ export class BrowserEnvironment implements IEnvironment {
 	public get workRef(): WorkRef | undefined { return this._workRef; }
 	public setWorkRef(ref: WorkRef | undefined): void {
 		const name = ref ? (ref.target || ref.name) : undefined;
-		vscode.workspace.setWorkspace(this.rootURI!, {
+		vscode.workspace.setWorkspaceState(this.rootURI!, {
 			...this.revState,
 			zapRef: name,
 			zapRev: name ? abbrevRef(name) : undefined,
-		} as any /* TODO(sqs8): add zapRev field to the type sig, not sure why it isnt there */);
+		});
 
 		this._workRef = ref;
 		this.workRefResetEmitter.fire(ref);

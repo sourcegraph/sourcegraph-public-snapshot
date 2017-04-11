@@ -11,7 +11,7 @@ import { Location } from "vs/editor/common/modes";
 import { ITextEditorModel, ITextModelResolverService } from "vs/editor/common/services/resolverService";
 
 import { LocationWithCommitInfo, ReferenceCommitInfo } from "sourcegraph/util/RefsBackend";
-import { getURIContext, getWorkspaceForResource } from "sourcegraph/workbench/utils";
+import { getCurrentWorkspace, getURIContext, getWorkspaceForResource } from "sourcegraph/workbench/utils";
 
 export class OneReference implements IDisposable {
 
@@ -51,7 +51,9 @@ export class OneReference implements IDisposable {
 	}
 
 	public get isCurrentWorkspace(): boolean {
-		return this._parent.parent.workspace.path === this._parent.uri.path;
+		const resourceWorkspace = getWorkspaceForResource(this.uri);
+		const currentWorkspace = getCurrentWorkspace().resource;
+		return currentWorkspace.toString() === resourceWorkspace.toString();
 	}
 
 	public get name(): string {
