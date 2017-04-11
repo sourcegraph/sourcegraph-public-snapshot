@@ -122,7 +122,7 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 
 			<BGContainer img={`${context.assetsRoot}/img/enterprise/sg-ent-bg-2.svg`} position="top" size="cover" repeat="no-repeat" style={{ padding: whitespace[6], backgroundColor: "#637fa6" }}>
 				<Heading color="white" level={4} align="center" style={{ fontWeight: "bold", maxWidth: "680px", margin: "auto" }}>Security</Heading>
-				<Heading color="white" level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Securty is core to everything w do. Learn more at <Link style={{ color: "#74bef6" }} to="/security">sourcegraph.com/security</Link>.</Heading>
+				<Heading color="white" level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Securty is core to everything we do. Learn more at <Link style={{ color: "#74bef6" }} to="/security">sourcegraph.com/security</Link>.</Heading>
 			</BGContainer>
 
 			<BGContainer img={`${context.assetsRoot}/img/enterprise/sg-ent-bg-3.svg`} position="center top" repeat="no-repeat" style={{ padding: whitespace[6], backgroundColor: "#445876" }}>
