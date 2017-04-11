@@ -8,7 +8,6 @@ import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
 import { RouteProps, Router, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import "sourcegraph/blob/styles/Monaco.css";
 import { Heading, PageTitle } from "sourcegraph/components";
-import { ChromeExtensionToast } from "sourcegraph/components/ChromeExtensionToast";
 import { whitespace } from "sourcegraph/components/utils";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { repoPath, repoRev } from "sourcegraph/repo";
@@ -47,7 +46,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 	}
 
 	shouldComponentUpdate(nextProps: Props): boolean {
-		return !nextProps.loading || (this.props.injectedComponentCallback !== nextProps.injectedComponentCallback);
+		return !nextProps.loading;
 	}
 
 	renderRepositoryNotFoundCallback(): void {
@@ -109,7 +108,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			}
 		}
 		if (this.props.loading) {
-			return this.renderEmptyWorkbenchShell(); // data not yet fetched
+			return null;
 		}
 		if (!this.props.isSymbolUrl && !this.props.isRepoUrl) {
 			return <div style={{ display: "flex", height: "100%" }}>
@@ -159,7 +158,6 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			<BlobPageTitle repo={this.props.repo} path={path} />
 			{/* TODO(john): repo main takes the commit state for the 'y' hotkey, assume for now revState can be passed. */}
 			<RepoMain {...this.props} commit={repository.revState}>
-				<ChromeExtensionToast location={this.props.location} layout={() => this.forceUpdate()} />
 				<TrialEndingWarning layout={() => this.forceUpdate()} expirationDate={repository.expirationDate} />
 				<WorkbenchShell
 					location={this.props.location}
