@@ -7,6 +7,7 @@ import { colors } from "sourcegraph/components/utils";
 import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
 import { QueryBar } from "sourcegraph/search/QueryBar";
 import { ResultsView } from "sourcegraph/search/ResultsView";
+import "sourcegraph/search/SearchPage.css";
 import { Query } from "sourcegraph/search/types";
 import { gqlClient } from "sourcegraph/util/gqlClient";
 import { Services } from "sourcegraph/workbench/services";
@@ -20,10 +21,16 @@ interface S {
 	results?: GQL.ISearchResults;
 }
 
-const pageSx = {
+const contentSx = {
 	margin: "0 auto",
 	maxWidth: "90%",
 	width: 800,
+};
+
+const pageSx = {
+	backgroundColor: colors.blueGrayL3(),
+	height: "100%",
+	overflow: "overlay",
 };
 
 export class SearchPage extends ComponentWithRouter<P, S> {
@@ -74,6 +81,7 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 		// TODO(nicot) this preloads some common languages, to improve perceived search speed.
 		const modeService = Services.get(IModeService) as IModeService;
 		["go", "java", "javascript", "typescript", "python"].map(mode => modeService.getOrCreateMode(mode));
+		if (!this.initialQuery) { return; }
 		setTimeout(() => {
 			this.doSearch({
 				query: {
@@ -103,6 +111,9 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 		this.setState({ ...this.state, loading: true });
 		const key = hash(query);
 		this.currentSearch = key;
+		if (query.query.pattern === "") {
+			return this.searchFinished(key, undefined);
+		}
 		const response = await gqlClient.query<GQL.IQuery>({
 			query: this.GQLQuery,
 			variables: {
@@ -125,10 +136,9 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 			},
 		});
 		this.doSearch(query);
-
 	}
 
-	private searchFinished(queryHash: string, response: GQL.ISearchResults): void {
+	private searchFinished(queryHash: string, response?: GQL.ISearchResults): void {
 		if (queryHash !== this.currentSearch) {
 			return;
 		}
@@ -139,8 +149,8 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 	}
 
 	render(): JSX.Element {
-		return <div style={{ backgroundColor: colors.blueGrayL3() }}>
-			<div style={pageSx}>
+		return <div className="search-page" style={pageSx}>
+			<div style={contentSx}>
 				<QueryBar initialQuery={this.initialQuery} dispatcher={this.dispatcher} />
 				<ResultsView loading={this.state.loading} results={this.state.results} />
 			</div>

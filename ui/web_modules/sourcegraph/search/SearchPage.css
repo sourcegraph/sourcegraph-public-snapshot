@@ -1,0 +1,31 @@
+:global .search-page .monaco-findInput .input {
+	background-color: white !important;
+	font-size: 1rem;
+	border-radius: 2px;
+	outline: none;
+}
+
+:global .search-page .controls div {
+	background-color: white !important;
+}
+
+:global .search-page .mtk1 {
+	color: #5d7eac !important;
+}
+
+:global .search-page .mtk2 {
+	color: #fc6d8c !important;
+}
+
+:global .search-page .mtk4 {
+	color: #17b494 !important;
+}
+
+:global .search-page .monaco-findInput .controls {
+	padding: 8px 8px 0 0;
+}
+
+:global .search-page .monaco-findInput {
+	background-color: white !important;
+	padding: .5rem;
+}

@@ -34,7 +34,7 @@ require.extensions[".css"] = function(module, filename) {
 
 Module.prototype.require = function(modulePath) {
 	// avoid dependencies on vscode
-	if (modulePath.startsWith("sourcegraph/editor/") || modulePath === "sourcegraph/blob/BlobMain" || modulePath.startsWith("sourcegraph/workbench/") || modulePath.startsWith("vs/base/browser/builder")) {
+	if (modulePath.startsWith("sourcegraph/editor/") || modulePath.startsWith("sourcegraph/workbench/") || modulePath.startsWith("vs/")) {
 		return null;
 	}
 

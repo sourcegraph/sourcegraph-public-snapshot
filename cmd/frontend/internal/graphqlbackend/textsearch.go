@@ -216,7 +216,7 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 		}
 		return flattened[i].uri > flattened[j].uri
 	})
-	maxLinesPerFile := 5
+	maxLinesPerFile := 6
 	for _, lm := range flattened {
 		if len(lm.JLineMatches) > maxLinesPerFile {
 			lm.JLineMatches = lm.JLineMatches[:maxLinesPerFile]

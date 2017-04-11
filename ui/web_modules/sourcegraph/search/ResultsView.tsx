@@ -6,6 +6,7 @@ import { tokenizeToString } from "vs/editor/common/modes/textToHtmlTokenizer";
 import { IModeService } from "vs/editor/common/services/modeService";
 
 import { urlToBlob } from "sourcegraph/blob/routes";
+import { ChevronRight } from "sourcegraph/components/symbols/Primaries";
 import { colors } from "sourcegraph/components/utils";
 import { Services } from "sourcegraph/workbench/services";
 import { getURIContext } from "sourcegraph/workbench/utils";
@@ -33,7 +34,7 @@ export function ResultsView(props: Props): JSX.Element {
 			No results found.
 		</div>;
 	}
-	const truncated = props.results.results.length > 100;
+	const truncated = props.results.results.length > 100 || props.results.hasNextPage;
 	const results = take(props.results.results, 100);
 	return <div style={resultsSx}>
 		{results.map(FileResult)}
@@ -51,8 +52,8 @@ const codeSx = {
 	backgroundColor: "white",
 	borderRadius: 2,
 	display: "flex",
-	marginBottom: 20,
-	marginTop: 5,
+	overflow: "scroll",
+	maxWidth: "100%",
 };
 
 const nuSx = {
@@ -61,24 +62,38 @@ const nuSx = {
 	padding: "0 5px",
 	borderRadius: "2px 0 0 2px",
 	marginRight: 10,
+	textAlign: "right",
 };
 
-const lineSx = {
-	margin: 0,
+const fileMatchSx = {
+	marginBottom: 20,
+	marginTop: 5,
 };
 
 function FileResult(fileMatch: GQL.IFileMatch, key: number): JSX.Element {
-	return <div key={key}>
+	const truncated = fileMatch.lineMatches.length > 5;
+	const matches = take(fileMatch.lineMatches, 5);
+	return <div style={fileMatchSx} key={key}>
 		<File resource={fileMatch.resource} />
 		<div style={codeSx} >
 			<pre style={nuSx}>
-				{fileMatch.lineMatches.map(LineNumber)}
+				{matches.map(LineNumber)}
 			</pre>
-			<pre style={lineSx}>
-				{fileMatch.lineMatches.map((line, i) => LineMatch(fileMatch.resource, line, i))}
+			<pre style={{ margin: 0 }}>
+				{matches.map((line, i) => LineMatch(fileMatch.resource, line, i))}
 			</pre>
 		</div>
+		{truncated && <MoreResults resource={fileMatch.resource} />}
 	</div>;
+}
+
+function MoreResults(props: { resource: string }): JSX.Element {
+	const { repo, rev, path } = getURIContext(URI.parse(props.resource));
+	return <Link to={urlToBlob(repo, rev, path)}>
+		<div style={{ marginTop: 5, textAlign: "center" }}>
+			More results in this file <ChevronRight />
+		</div>
+	</Link>;
 }
 
 function File(props: { resource: string }): JSX.Element {

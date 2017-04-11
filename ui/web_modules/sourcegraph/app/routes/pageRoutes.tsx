@@ -30,7 +30,6 @@ const pages = {
 	[rel.docs]: DocsPage,
 	[rel.zap]: ZapPage,
 	[rel.zapbeta]: ZapBetaFormPage,
-	...Features.orgSearch.isEnabled() ? { [rel.search]: SearchPage } : {},
 };
 
 export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
@@ -43,3 +42,15 @@ export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
 		});
 	},
 }));
+
+if (Features.orgSearch.isEnabled) {
+	pageRoutes.push({
+		path: rel.search,
+		getComponents: (location, callback) => {
+			callback(null, {
+				main: Workbench,
+				injectedComponent: SearchPage,
+			});
+		},
+	});
+}
