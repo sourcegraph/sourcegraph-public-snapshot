@@ -5,7 +5,7 @@ import { context } from "sourcegraph/app/context";
 
 export const gqlClient = new ApolloClient({
 	networkInterface: createNetworkInterface({
-		uri: `${context.appURL}/.api/graphql`,
+		uri: `/.api/graphql`,
 		opts: {
 			headers: context.xhrHeaders,
 			credentials: "include",
