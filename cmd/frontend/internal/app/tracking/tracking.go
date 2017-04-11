@@ -2,6 +2,7 @@ package tracking
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/orgs"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	extgithub "sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
@@ -42,8 +44,31 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 		}
 	}()
 
+	// If the user is in a dev environment, don't do any data pulls from GitHub, or any tracking
+	if env.Version == "dev" {
+		return nil
+	}
+
+	// Generate a single set of user parameters for HubSpot and Slack exports
+	contactParams := &hubspot.ContactProperties{
+		UserID:            a.Login,
+		UID:               a.UID,
+		GitHubLink:        "https://github.com/" + a.Login,
+		LookerLink:        "https://sourcegraph.looker.com/dashboards/9?User%20ID=" + a.Login,
+		GitHubName:        name,
+		GitHubCompany:     company,
+		GitHubLocation:    location,
+		IsPrivateCodeUser: false,
+	}
+	for _, v := range a.GitHubScopes {
+		if v == "repo" {
+			contactParams.IsPrivateCodeUser = true
+			break
+		}
+	}
+
 	// Update or create user contact information in HubSpot
-	err := trackHubSpotContact(a, event, name, company, location)
+	hsResponse, err := trackHubSpotContact(a.Email, event, contactParams)
 	if err != nil {
 		log15.Warn("trackHubSpotContact: failed to create or update HubSpot contact on auth", "source", "HubSpot", "error", err)
 	}
@@ -108,6 +133,12 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 	}
 
 	gcsClient.Write(tos)
+
+	// Finally, post signup notification to Slack
+	if event == "SignupCompleted" {
+		return notifySlackOnSignup(a, contactParams, hsResponse, tos)
+	}
+
 	return nil
 }
 
@@ -244,32 +275,14 @@ func toGitHubRepoWithDetails(ghrepo *github.Repository) *sourcegraph.GitHubRepoW
 	}
 }
 
-func trackHubSpotContact(actor *actor.Actor, eventLabel string, name string, company string, location string) error {
-	if actor.Email == "" {
-		return errors.New("User must have a valid email address.")
+func trackHubSpotContact(email string, eventLabel string, params *hubspot.ContactProperties) (*hubspot.ContactResponse, error) {
+	if email == "" {
+		return nil, errors.New("User must have a valid email address.")
 	}
 
 	c, err := hubspotutil.Client()
 	if err != nil {
-		return errors.Wrap(err, "hubspotutil.Client")
-	}
-
-	params := &hubspot.ContactProperties{
-		UserID:            actor.Login,
-		UID:               actor.UID,
-		GitHubLink:        "https://github.com/" + actor.Login,
-		LookerLink:        "https://sourcegraph.looker.com/dashboards/9?User%20ID=" + actor.Login,
-		GitHubName:        name,
-		GitHubCompany:     company,
-		GitHubLocation:    location,
-		IsPrivateCodeUser: false,
-	}
-
-	for _, v := range actor.GitHubScopes {
-		if v == "repo" {
-			params.IsPrivateCodeUser = true
-			break
-		}
+		return nil, errors.Wrap(err, "hubspotutil.Client")
 	}
 
 	if eventLabel == "SignupCompleted" {
@@ -279,18 +292,25 @@ func trackHubSpotContact(actor *actor.Actor, eventLabel string, name string, com
 	}
 
 	// Create or update the contact
-	err = c.CreateOrUpdateContact(actor.Email, params)
+	resp, err := c.CreateOrUpdateContact(email, params)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Finally, log the event if relevant (in this case, for "SignupCompleted" events)
+	// Log the event if relevant (in this case, for "SignupCompleted" events)
 	if _, ok := hubspotutil.EventNameToHubSpotID[eventLabel]; ok {
-		err := c.LogEvent(actor.Email, hubspotutil.EventNameToHubSpotID[eventLabel], map[string]string{})
+		err := c.LogEvent(email, hubspotutil.EventNameToHubSpotID[eventLabel], map[string]string{})
 		if err != nil {
-			return errors.Wrap(err, "LogEvent")
+			return nil, errors.Wrap(err, "LogEvent")
 		}
 	}
 
-	return nil
+	// Parse response
+	hsResponse := &hubspot.ContactResponse{}
+	err = json.Unmarshal(resp, hsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return hsResponse, nil
 }

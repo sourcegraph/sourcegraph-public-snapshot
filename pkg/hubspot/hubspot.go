@@ -3,6 +3,7 @@ package hubspot
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -66,26 +67,26 @@ func (c *Client) postForm(methodName string, baseURL *url.URL, suffix string, bo
 
 // Send a POST request with JSON data to HubSpot APIs that accept JSON
 // (e.g. the Contacts, Lists, etc APIs)
-func (c *Client) postJSON(methodName string, baseURL *url.URL, suffix string, payloadJSON string) error {
+func (c *Client) postJSON(methodName string, baseURL *url.URL, suffix string, payloadJSON string) ([]byte, error) {
 	baseURL.Path = path.Join(baseURL.Path, suffix)
 	req, err := http.NewRequest("POST", baseURL.String(), strings.NewReader(payloadJSON))
 	if err != nil {
-		return wrapError(methodName, err)
+		return nil, wrapError(methodName, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return wrapError(methodName, err)
+		return nil, wrapError(methodName, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		buf := new(bytes.Buffer)
 		_, _ = buf.ReadFrom(resp.Body)
-		return wrapError(methodName, fmt.Errorf("Code %v: %s", resp.StatusCode, buf.String()))
+		return nil, wrapError(methodName, fmt.Errorf("Code %v: %s", resp.StatusCode, buf.String()))
 	}
 
-	return nil
+	return ioutil.ReadAll(resp.Body)
 }
 
 // Send a GET request to HubSpot APIs that accept JSON in a querystring

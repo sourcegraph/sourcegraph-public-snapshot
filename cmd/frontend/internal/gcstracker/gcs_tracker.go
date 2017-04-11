@@ -17,7 +17,6 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 var gcstrackerVersion = "v0.0.1"
@@ -49,11 +48,6 @@ func NewFromUserInfo(info *UserInfo) (*Client, error) {
 	gcsClient, err := storage.NewClient(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	// If the user is in a dev environment, don't do any data pulls from GitHub, or any tracking
-	if env.Version == "dev" {
-		return nil, nil
 	}
 
 	return &Client{

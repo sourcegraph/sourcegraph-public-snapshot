@@ -14,10 +14,10 @@ import (
 // that is already taken
 //
 // http://developers.hubspot.com/docs/methods/contacts/create_or_update
-func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) error {
+func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) ([]byte, error) {
 	payload, err := json.Marshal(newAPIValues(params))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), "", string(payload))
 }
@@ -48,6 +48,13 @@ type ContactProperties struct {
 	// http://developers.hubspot.com/docs/faq/how-should-timestamps-be-formatted-for-hubspots-apis
 	RegisteredAt      int64 `json:"registered_at"`
 	IsPrivateCodeUser bool  `json:"is_private_code_user"`
+}
+
+// ContactResponse represents HubSpot user properties returned
+// after a CreateOrUpdate API call
+type ContactResponse struct {
+	VID   int32 `json:"vid"`
+	IsNew bool  `json:"isNew"`
 }
 
 // newAPIValues converts a ContactProperties struct to a HubSpot API-compliant
