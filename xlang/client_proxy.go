@@ -76,7 +76,14 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 		last:  time.Now(),
 		id:    nextClientID(),
 
-		limiter: ratelimit.NewBucketWithRate(clientLimitReqSec, clientLimitReqSecBurst),
+		// requestLimiter rate is adjustable since reasonable values
+		// will likely change as our traffic patterns change.
+		requestLimiter: ratelimit.NewBucketWithRate(clientLimitReqSec, clientLimitReqSecBurst),
+
+		// didOpenHoverLimiter is set at 1req/s. This should be more
+		// than enough for actual interactive document opens (and
+		// protect against non-interactive didOpen requests).
+		didOpenHoverLimiter: ratelimit.NewBucketWithRate(1, 1),
 	}
 	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
@@ -237,8 +244,10 @@ type clientProxyConn struct {
 	conn  *jsonrpc2.Conn // the LSP JSON-RPC 2.0 connection to the client
 	id    clientID       // unique id for this connection
 
-	// limiter is used to rate limit a client.
-	limiter *ratelimit.Bucket
+	// requestLimiter is used to rate limit requests
+	requestLimiter *ratelimit.Bucket
+	// didOpenHoverLimiter is used rate limit didOpens being converted to hovers.
+	didOpenHoverLimiter *ratelimit.Bucket
 
 	mu       sync.Mutex
 	context  contextID
@@ -295,7 +304,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 	// Enforce rate limiter only for requests. We can send a large amount
 	// of notifications in normal operation.
-	if !req.Notif && c.limiter.TakeAvailable(1) != 1 {
+	if !req.Notif && c.requestLimiter.TakeAvailable(1) != 1 {
 		clientRateLimited.Inc()
 		// This client is misbehaving rate limit wise, so we fail the request.
 		return nil, &jsonrpc2.Error{
@@ -500,6 +509,14 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// language servers are smart about immutable didOpen, but
 		// others may trigger overlay code / cache invalidation in the
 		// language server.
+		if c.didOpenHoverLimiter.TakeAvailable(1) != 1 {
+			// vscode sends didOpen for every result in a
+			// references result. If we send a fake hover for
+			// every didOpen it would overwhelm the LS. So we rate
+			// limit it to keep the normal perf benefit for
+			// interactive use.
+			return nil, nil
+		}
 		var params lsp.DidOpenTextDocumentParams
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
