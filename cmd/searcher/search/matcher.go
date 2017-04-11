@@ -6,8 +6,9 @@ import (
 	"context"
 	"io"
 	"regexp"
-	"strings"
+	"regexp/syntax"
 	"sync"
+	"unicode"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -84,9 +85,12 @@ func compile(p *Params) (*readerGrep, error) {
 		// We don't just use (?i) because regexp library doesn't seem
 		// to contain good optimizations for case insensitive
 		// search. Instead we lowercase the input and pattern.
-		// TODO(keegan) Lowercasing the pattern naively with just
-		// strings.ToLower mangles valid regex's tokens such as \S
-		expr = strings.ToLower(expr)
+		re, err := syntax.Parse(expr, syntax.Perl)
+		if err != nil {
+			return nil, err
+		}
+		lowerRegexpASCII(re)
+		expr = re.String()
 		ignoreCase = true
 	}
 	re, err := regexp.Compile(expr)
@@ -269,6 +273,67 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 		}
 	}
 	return m, wgErr
+}
+
+// lowerRegexpASCII lowers rune literals and expands char classes to include
+// lowercase. It does it inplace. We can't just use strings.ToLower since it
+// will change the meaning of regex shorthands like \S or \B.
+func lowerRegexpASCII(re *syntax.Regexp) {
+	for _, c := range re.Sub {
+		if c != nil {
+			lowerRegexpASCII(c)
+		}
+	}
+	switch re.Op {
+	case syntax.OpLiteral:
+		// For literal strings we can simplify lower each character.
+		for i := range re.Rune {
+			re.Rune[i] = unicode.ToLower(re.Rune[i])
+		}
+	case syntax.OpCharClass:
+		l := len(re.Rune)
+		for i := 0; i < l; i += 2 {
+			// We found a char class that includes a-z. No need to
+			// modify.
+			if re.Rune[i] <= 'a' && re.Rune[i+1] >= 'z' {
+				return
+			}
+		}
+		for i := 0; i < l; i += 2 {
+			a, b := re.Rune[i], re.Rune[i+1]
+			// This range doesn't include A-Z, so skip
+			if a > 'Z' || b < 'A' {
+				continue
+			}
+			simple := true
+			if a < 'A' {
+				simple = false
+				a = 'A'
+			}
+			if b > 'Z' {
+				simple = false
+				b = 'Z'
+			}
+			a, b = unicode.ToLower(a), unicode.ToLower(b)
+			if simple {
+				// The char range is within A-Z, so we can
+				// just modify it to be the equivalent in a-z.
+				re.Rune[i], re.Rune[i+1] = a, b
+			} else {
+				// The char range includes characters outside
+				// of A-Z. To be safe we just append a new
+				// lowered range which is the intersection
+				// with A-Z.
+				re.Rune = append(re.Rune, a, b)
+			}
+		}
+	default:
+		return
+	}
+	// Copy to small storage if necessary
+	for i := 0; i < 2 && i < len(re.Rune); i++ {
+		re.Rune0[i] = re.Rune[i]
+	}
 }
 
 // python to generate ', '.join(hex(ord(chr(i).lower())) for i in range(256))

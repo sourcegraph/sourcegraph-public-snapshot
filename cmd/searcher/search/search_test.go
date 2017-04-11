@@ -66,6 +66,12 @@ main.go:5:func main() {
 main.go:1:package main
 main.go:5:func main() {
 `,
+
+		// Ensure we handle CaseInsensitive regexp searches with
+		// special uppercase chars in pattern.
+		search.Params{Pattern: `printL\B`, IsRegExp: true}: `
+main.go:6:	fmt.Println("Hello world")
+`,
 	}
 
 	store, cleanup, err := newStore(files)

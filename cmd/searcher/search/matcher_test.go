@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp/syntax"
 	"testing"
 )
 
@@ -86,6 +87,34 @@ func benchConcurrentFind(b *testing.B, p *Params) {
 		_, err := concurrentFind(ctx, rg, ar.Reader())
 		if err != nil {
 			b.Fatal(err)
+		}
+	}
+}
+
+func TestLowerRegexp(t *testing.T) {
+	// The expected values are a bit volatile, since they come from
+	// syntex.Regexp.String. So they may change between go versions. Just
+	// ensure they make sense.
+	cases := map[string]string{
+		"foo":           "foo",
+		"FoO":           "foo",
+		"[A-Z]":         "[a-z]",
+		"[^A-Z]":        "[^A-Z]", // before we matched lowercase, and still after
+		"[Z]":           "z",
+		"[abB-Z]":       "[b-za-b]",
+		"([abB-Z]|FoO)": "([b-za-b]|foo)",
+		`\S`:            `[^\t-\n\f-\r ]`, // \S is shorthand for the expected
+	}
+
+	for expr, want := range cases {
+		re, err := syntax.Parse(expr, syntax.Perl)
+		if err != nil {
+			t.Fatal(expr, err)
+		}
+		lowerRegexpASCII(re)
+		got := re.String()
+		if want != got {
+			t.Errorf("lowerRegexp(%q) == %q != %q", expr, got, want)
 		}
 	}
 }
