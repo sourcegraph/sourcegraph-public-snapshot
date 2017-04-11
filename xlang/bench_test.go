@@ -152,7 +152,7 @@ func BenchmarkIntegration(b *testing.B) {
 						// iterations will test the performance when it's
 						// already cached, which is not what we want.
 						b.StopTimer()
-						proxy.ShutDownIdleServers(ctx, 0)
+						proxy.ShutdownServers(ctx)
 						if !reflect.DeepEqual(loc, test.wantDefinitions) {
 							b.Fatalf("got %v, want %v", loc, test.wantDefinitions)
 						}
@@ -194,7 +194,7 @@ func BenchmarkIntegration(b *testing.B) {
 						// iterations will test the performance when it's
 						// already cached, which is not what we want.
 						b.StopTimer()
-						proxy.ShutDownIdleServers(ctx, 0)
+						proxy.ShutdownServers(ctx)
 						if !reflect.DeepEqual(syms, test.wantSymbols) {
 							b.Fatalf("got %v, want %v", syms, test.wantSymbols)
 						}
@@ -305,7 +305,7 @@ func BenchmarkIntegrationShared(b *testing.B) {
 				do(c, test.rootPath)
 				b.StopTimer()
 
-				proxy.ShutDownIdleServers(ctx, 0)
+				proxy.ShutdownServers(ctx)
 				done()
 			}
 		})

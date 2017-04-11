@@ -829,7 +829,7 @@ func TestProxy_connections(t *testing.T) {
 
 	// Kill the server to simulate either an idle shutdown by the
 	// proxy, or an unexpected failure on the server.
-	if err := proxy.ShutDownIdleServers(context.Background(), 0 /* 0 means kill all */); err != nil {
+	if err := proxy.ShutdownServers(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if want := 1; calledConnectToTestServer != want {

@@ -155,7 +155,7 @@ func BenchmarkStress(b *testing.B) {
 				// iterations will test the performance when it's
 				// already cached, which is not what we want.
 				b.StopTimer()
-				proxy.ShutDownIdleServers(ctx, 0)
+				proxy.ShutdownServers(ctx)
 				b.StartTimer()
 			}
 			b.StopTimer() // don't include server teardown

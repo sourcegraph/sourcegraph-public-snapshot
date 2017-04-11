@@ -15,8 +15,9 @@ import (
 // NewProxy creates a new LSP proxy.
 func NewProxy() *Proxy {
 	return &Proxy{
-		MaxClientIdle: 120 * time.Second,
-		MaxServerIdle: 300 * time.Second,
+		MaxClientIdle:   120 * time.Second,
+		MaxServerIdle:   300 * time.Second,
+		MaxServerUnused: 30 * time.Second,
 
 		closed: make(chan struct{}),
 
@@ -29,8 +30,9 @@ func NewProxy() *Proxy {
 // client (typically a user's browser, via our HTTP API) and
 // lang/build servers.
 type Proxy struct {
-	MaxClientIdle time.Duration // disconnect idle clients after this duration
-	MaxServerIdle time.Duration // shut down idle servers after this duration
+	MaxClientIdle   time.Duration // disconnect idle clients after this duration
+	MaxServerIdle   time.Duration // shut down idle servers after this duration
+	MaxServerUnused time.Duration // shut down unused servers after this duration
 
 	Trace bool // print traces of all requests/responses between proxy and client
 
@@ -66,12 +68,29 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 	}()
 	go func() {
 		for {
+			d := p.MaxServerIdle
+			if p.MaxServerUnused < d {
+				d = p.MaxServerUnused
+			}
 			select {
 			case <-done:
 				return // stop when the listener is closed
-			case <-time.After(p.MaxServerIdle / 2):
-				ctx, cancel := context.WithTimeout(context.Background(), p.MaxServerIdle/2)
-				if err := p.ShutDownIdleServers(ctx, p.MaxServerIdle); err != nil {
+			case <-time.After(d / 2):
+				ctx, cancel := context.WithTimeout(context.Background(), d)
+				idleCutoff := time.Now().Add(-1 * p.MaxServerIdle)
+				unusedCutoff := time.Now().Add(-1 * p.MaxServerUnused)
+				filter := func(s *serverProxyConn) bool {
+					s.mu.Lock()
+					last := s.stats.Last
+					unused := s.stats.TotalCount == 0
+					// If the only request has been for workspace/xreference,
+					// expire now. If workspace/xreferences is present it is
+					// usually the only request done to a server.
+					isShortLived := s.stats.TotalCount == 1 && s.stats.TotalFinishedCount == 1 && s.stats.Counts["workspace/xreferences"] == 1
+					s.mu.Unlock()
+					return last.Before(idleCutoff) || isShortLived || (unused && last.Before(unusedCutoff))
+				}
+				if err := p.shutdownServers(ctx, filter); err != nil {
 					log.Printf("LSP proxy: shutting down idle servers: %s", err)
 				}
 				cancel()
@@ -123,7 +142,7 @@ func (p *Proxy) Close(ctx context.Context) error {
 	}
 
 	// Set to nil so that calls to DisconnectIdleClients and
-	// ShutDownIdleServers that are blocked on p.mu (which we hold) do
+	// shutdownIdleServers that are blocked on p.mu (which we hold) do
 	// not attempt to double-close any client/server conns (thereby
 	// causing a panic).
 	p.clients = nil

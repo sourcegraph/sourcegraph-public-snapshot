@@ -172,49 +172,46 @@ func init() {
 	prometheus.MustRegister(serverConnsAliveDuration)
 }
 
-// ShutDownIdleServers shuts down servers whose last communication
-// with the proxy (either a request or a response) was longer than
-// maxIdle ago. The Proxy runs ShutDownIdleServers periodically based
-// on p.MaxServerIdle.
-func (p *Proxy) ShutDownIdleServers(ctx context.Context, maxIdle time.Duration) error {
-	cutoff := time.Now().Add(-1 * maxIdle)
-	errs := &errorList{}
-	var wg sync.WaitGroup
+// ShutdownServers shuts down all open servers. This is exported to be used by
+// tests so they do not need to wait for MaxServerIdle to be reached.
+func (p *Proxy) ShutdownServers(ctx context.Context) error {
+	return p.shutdownServers(ctx, func(*serverProxyConn) bool { return true })
+}
+
+// shutdownServers shuts down servers whose filter function returns
+// true. Note: Proxy.mu is held when filter is called.
+func (p *Proxy) shutdownServers(ctx context.Context, filter func(*serverProxyConn) bool) error {
+	var shutdown []*serverProxyConn
 	p.mu.Lock()
 	for s := range p.servers {
-		s.mu.Lock()
-		// If last is before cutoff we should expire
-		last := s.stats.Last
-		// If the only request has been for workspace/xreference,
-		// expire now. If workspace/xreferences is present it is
-		// usually the only request done to a server.
-		isShortLived := s.stats.TotalCount == 1 && s.stats.TotalFinishedCount == 1 && s.stats.Counts["workspace/xreferences"] == 1
-		s.mu.Unlock()
-
-		if last.Before(cutoff) || isShortLived {
-			wg.Add(1)
-			go func(s *serverProxyConn) {
-				defer wg.Done()
-				// removeServerConn attempts to acquire p.mu,
-				// take care not to deadlock with our for loop
-				// which also holds p.mu
-				p.removeServerConn(s)
-				shutdownOK := true
-				if err := s.shutdownAndExit(ctx); err != nil {
-					errs.add(err)
-					shutdownOK = false
-				}
-				if err := s.conn.Close(); err != nil && shutdownOK {
-					errs.add(err)
-				}
-			}(s)
+		if filter(s) {
+			shutdown = append(shutdown, s)
+			delete(p.servers, s)
 		}
 	}
-	// Only hold lock during fast loop iter, not while waiting to
-	// shutdown and exit each idle connection (otherwise we could
-	// block everything for a long time).
 	p.mu.Unlock()
 
+	if len(shutdown) == 0 {
+		return nil
+	}
+
+	errs := &errorList{}
+	var wg sync.WaitGroup
+	for _, s := range shutdown {
+		wg.Add(1)
+		go func(s *serverProxyConn) {
+			defer wg.Done()
+			s.didRemove()
+			shutdownOK := true
+			if err := s.shutdownAndExit(ctx); err != nil {
+				errs.add(err)
+				shutdownOK = false
+			}
+			if err := s.conn.Close(); err != nil && shutdownOK {
+				errs.add(err)
+			}
+		}(s)
+	}
 	wg.Wait()
 	return errs.error()
 }
@@ -262,15 +259,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 	}
 	p.mu.Unlock()
 	if ok {
-		stats := c.Stats()
-		serverConnsGauge.WithLabelValues(c.id.mode).Dec()
-		serverConnsTotalMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
-		serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
-		serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
-		recordClosedServerConn(c.id, stats)
-		if LogServerStats {
-			logInfo("Removed serverProxyConn", c.id.contextID, "stats", stats)
-		}
+		c.didRemove()
 	}
 }
 
@@ -665,6 +654,20 @@ func isFSMethod(method string) bool {
 // are not useful to log.
 func isInfraMethod(method string) bool {
 	return method == "telemetry/event" || method == "window/logMessage" || method == "textDocument/publishDiagnostics"
+}
+
+// didRemove records statistics when shutting down server. It should only be
+// called (once) when the server is being shutdown.
+func (c *serverProxyConn) didRemove() {
+	stats := c.Stats()
+	serverConnsGauge.WithLabelValues(c.id.mode).Dec()
+	serverConnsTotalMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalCount))
+	serverConnsFailedMethodCalls.WithLabelValues(c.id.mode).Observe(float64(stats.TotalErrorCount))
+	serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
+	recordClosedServerConn(c.id, stats)
+	if LogServerStats {
+		logInfo("Removed serverProxyConn", c.id.contextID, "stats", stats)
+	}
 }
 
 func (c *serverProxyConn) updateLastTime() {
