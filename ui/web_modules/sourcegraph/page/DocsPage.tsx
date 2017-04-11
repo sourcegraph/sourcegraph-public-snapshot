@@ -141,7 +141,7 @@ export function DocsPage(): JSX.Element {
 				<p className={styles.p}>Sourcegraph supports:</p>
 				<ul>
 					<li className={styles.p}>Go</li>
-					<li className={styles.p}>Java (Maven)</li>
+					<li className={styles.p}>Java (Maven, Gradle, Android)</li>
 					<li className={styles.p}>TypeScript (alpha)</li>
 					<li className={styles.p}>JavaScript (alpha)</li>
 				</ul>

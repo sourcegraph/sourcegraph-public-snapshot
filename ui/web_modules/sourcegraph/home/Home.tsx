@@ -71,7 +71,7 @@ export class Home extends React.Component<HomeProps, {}> {
 								paddingLeft: whitespace[3],
 								paddingRight: whitespace[3],
 							}}>
-								Sign up for free
+								Sign up
 							</Button>
 						</LocationStateToggleLink> or
 						<Link to="/plan" style={{ margin: whitespace[2] }}><strong>learn more</strong></Link>
@@ -81,7 +81,7 @@ export class Home extends React.Component<HomeProps, {}> {
 
 			<div style={{ marginBottom: whitespace[8], marginTop: whitespace[9] }}>
 				<Heading level={3} align="center" style={{ fontWeight: "normal" }}>
-					Read code smarter and faster. Get more done.
+					Code Intelligence for public and private code.
 				</Heading>
 				<FeatureCarousel assetsURL={context.assetsRoot} />
 			</div>
@@ -123,7 +123,19 @@ export class Home extends React.Component<HomeProps, {}> {
 							borderRadius: 20,
 							marginRight: whitespace[3],
 						}}>
-							<div>Java (Maven)</div>
+							<div>Java</div>
+						</Heading>
+						<Heading level={5} style={{
+							paddingTop: whitespace[1],
+							paddingRight: whitespace[3],
+							paddingBottom: whitespace[1],
+							paddingLeft: whitespace[3],
+							backgroundColor: colors.purpleL2(),
+							color: colors.purpleD1(),
+							borderRadius: 20,
+							marginRight: whitespace[3],
+						}}>
+							<div>Android</div>
 						</Heading>
 						<Heading level={5} style={{
 							paddingTop: whitespace[1],
@@ -218,7 +230,7 @@ export class Home extends React.Component<HomeProps, {}> {
 						fontWeight: "normal",
 						marginTop: whitespace[3],
 					}}>
-						Free for public and open-source code
+						Get started for free
 					</Heading>
 
 					<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Footer" })}>
