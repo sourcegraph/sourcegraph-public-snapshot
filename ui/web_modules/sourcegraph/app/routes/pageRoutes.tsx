@@ -6,6 +6,7 @@ import { AboutPage } from "sourcegraph/page/AboutPage";
 import { BetaPage } from "sourcegraph/page/BetaPage";
 import { ContactPage } from "sourcegraph/page/ContactPage";
 import { DocsPage } from "sourcegraph/page/DocsPage";
+import { EnterprisePage } from "sourcegraph/page/EnterprisePage";
 import { MasterPlanPage } from "sourcegraph/page/MasterPlanPage";
 import { PricingPage } from "sourcegraph/page/PricingPage";
 import { PrivacyPage } from "sourcegraph/page/PrivacyPage";
@@ -30,6 +31,8 @@ const pages = {
 	[rel.docs]: DocsPage,
 	[rel.zap]: ZapPage,
 	[rel.zapbeta]: ZapBetaFormPage,
+	[rel.enterprise]: EnterprisePage,
+	...Features.orgSearch.isEnabled() ? { [rel.search]: SearchPage } : {},
 };
 
 export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
@@ -38,7 +41,7 @@ export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
 		callback(null, {
 			main: Workbench,
 			injectedComponent: pages[key],
-			footer: Footer,
+			footer: key !== rel.enterprise ? Footer : undefined,
 		});
 	},
 }));

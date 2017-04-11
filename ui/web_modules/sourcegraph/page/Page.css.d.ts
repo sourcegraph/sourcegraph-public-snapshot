@@ -31,6 +31,7 @@ export const sprinkle_blue: string;
 export const sprinkle_purple: string;
 export const sprinkle_orange: string;
 export const plan_panel: string;
+export const pricing_panel: string;
 export const currency: string;
 export const amount: string;
 export const amount_per: string;

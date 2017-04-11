@@ -153,8 +153,12 @@
 	}
 }
 .plan_panel {
-	composes: pt3 pb3 ph3 mb2 br3 from base;
+	composes: pt3 pb3 ph3 br3 from base;
 	composes: tc from typography;
+}
+.pricing_panel {
+	composes: plan_panel;
+	composes: mb2 from base;
 }
 .currency {
 	composes: f3 from typography;

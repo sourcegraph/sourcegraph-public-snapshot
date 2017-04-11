@@ -22,6 +22,7 @@ interface State {
 
 export const hiddenNavRoutes = new Set([
 	"/styleguide",
+	"/enterprise",
 	"login",
 	"join",
 ]);

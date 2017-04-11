@@ -55,7 +55,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 				<div className={styles.plans}>
 					<div className={styles.plan}>
 						<div className={styles.plan_box}>
-							<Panel color="purple" hover={false} className={styles.plan_panel || ""}>
+							<Panel color="purple" hover={false} className={styles.pricing_panel || ""}>
 								<Heading level={3} color="white" align="center">Personal</Heading>
 								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>free</span></Heading>
 								<span className={styles.amount_per}>free until Feb 1, 2018</span>
@@ -72,7 +72,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 
 					<div className={styles.plan}>
 						<div className={styles.plan_box}>
-							<Panel color="green" hover={false} className={styles.plan_panel || ""}>
+							<Panel color="green" hover={false} className={styles.pricing_panel || ""}>
 								<Heading level={3} color="white" align="center">Organization</Heading>
 								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>{MONTHLY_SEAT_COST}</span></Heading>
 								<span className={styles.amount_per}>per user, per month</span>
@@ -93,7 +93,7 @@ export function PricingPage({ location }: { location: RouterLocation }): JSX.Ele
 
 					<div className={styles.plan}>
 						<div className={styles.plan_box}>
-							<Panel color="blue" hover={false} className={styles.plan_panel || ""}>
+							<Panel color="blue" hover={false} className={styles.pricing_panel || ""}>
 								<Heading level={3} color="white" align="center">Enterprise</Heading>
 								<Heading level={1} color="white" align="center" style={{}}><span className={styles.currency}>$</span><span className={styles.amount}>50</span></Heading>
 								<span className={styles.amount_per}>per user, per month</span>

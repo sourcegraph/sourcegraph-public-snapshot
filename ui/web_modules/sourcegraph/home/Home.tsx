@@ -213,6 +213,52 @@ export class Home extends React.Component<HomeProps, {}> {
 					</Panel>
 				</div>
 
+				<Heading level={4} align="center" style={{ fontWeight: "normal", marginTop: whitespace[5] }}>
+					On-premises or Sourcegraph.com
+				</Heading>
+
+				<div style={{
+					margin: "auto",
+					marginBottom: whitespace[2],
+					marginTop: whitespace[3],
+					textAlign: "center",
+				}}>
+
+					<FlexContainer justify="center" wrap={true}>
+						<Heading level={6} style={{ fontWeight: "normal", lineHeight: 1.25, maxWidth: "680px", margin: "auto" }}>Code Intelligence for public and private code hosted on GitHub available at Sourcegraph.com. Get Sourcegraph for code hosted on your own servers with Sourcegraph Enterprise.</Heading>
+					</FlexContainer>
+
+					<FlexContainer justify="center" items="center" wrap={true} style={{ padding: whitespace[4] }}>
+						<div {...layout.hide.sm} style={{ flex: 1 }} />
+						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2], }}>
+							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-gh-e-logo.svg`} />
+						</div>
+						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
+							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-bb-logo.svg`} />
+						</div>
+						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
+							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-gl-logo.svg`} />
+						</div>
+						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
+							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-phab-logo.svg`} />
+						</div>
+						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
+							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-git-logo.svg`} />
+						</div>
+						<div {...layout.hide.sm} style={{ flex: 1 }} />
+					</FlexContainer>
+
+					<Link to="/enterprise">
+						<div style={{ marginTop: whitespace[3] }}>
+							<strong>
+								Learn about Sourcegraph Enterprise
+								<ChevronRight width={16} />
+							</strong>
+						</div>
+					</Link>
+
+				</div>
+
 				<div style={Object.assign({},
 					layout.container.lg,
 					{
