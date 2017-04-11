@@ -212,10 +212,16 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 	sort.Slice(flattened, func(i, j int) bool {
 		a, b := len(flattened[i].JLineMatches), len(flattened[j].JLineMatches)
 		if a != b {
-			return a < b
+			return a > b
 		}
-		return flattened[i].uri < flattened[j].uri
+		return flattened[i].uri > flattened[j].uri
 	})
+	maxLinesPerFile := 5
+	for _, lm := range flattened {
+		if len(lm.JLineMatches) > maxLinesPerFile {
+			lm.JLineMatches = lm.JLineMatches[:maxLinesPerFile]
+		}
+	}
 	flattened, truncated := truncateMatches(flattened, int(args.Query.MaxResults))
 	return &searchResults{flattened, truncated}, nil
 }

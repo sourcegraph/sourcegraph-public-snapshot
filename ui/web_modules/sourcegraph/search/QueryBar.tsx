@@ -5,6 +5,7 @@ import { Dispatcher } from "sourcegraph/workbench/utils";
 
 interface P {
 	dispatcher: Dispatcher<Query>;
+	initialQuery: string;
 }
 
 interface S extends SearchQuery {
@@ -16,16 +17,17 @@ const sx = {
 };
 
 export class QueryBar extends React.Component<P, S> {
+	state: S = {
+		pattern: this.props.initialQuery,
+	};
+
 	private onChange = (e: React.FormEvent<HTMLInputElement>) => {
 		this.setState({
 			pattern: (e.target as any).value,
 		});
 	}
 
-	private onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key !== "Enter") {
-			return;
-		}
+	private triggerSearch(): void {
 		this.props.dispatcher.dispatch({
 			query: {
 				pattern: this.state.pattern,
@@ -37,8 +39,18 @@ export class QueryBar extends React.Component<P, S> {
 		});
 	}
 
+	private onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (e.key !== "Enter") {
+			return;
+		}
+		this.triggerSearch();
+	}
+
 	render(): JSX.Element {
-		return <input onKeyDown={this.onKeyDown} onChange={this.onChange} style={sx}>
-		</input>;
+		return <input
+			onKeyDown={this.onKeyDown}
+			value={this.state.pattern}
+			onChange={this.onChange}
+			style={sx} />;
 	}
 }

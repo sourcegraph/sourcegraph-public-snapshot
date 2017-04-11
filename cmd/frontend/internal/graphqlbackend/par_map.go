@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"math"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -40,7 +39,7 @@ func ParMap(f, values interface{}) (interface{}, error) {
 				v := fV.Call([]reflect.Value{a})
 				if !v[1].IsNil() {
 					atomicErr.Store(v[1].Interface())
-					atomic.SwapUint64(&n, math.MaxUint64)
+					atomic.SwapUint64(&n, uint64(l))
 				}
 				ret.Index(index).Set(v[0])
 			}
