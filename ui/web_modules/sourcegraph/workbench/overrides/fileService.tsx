@@ -100,17 +100,7 @@ export class FileService implements IFileService {
 
 	resolveFile(resource: URI, options?: IResolveFileOptions): TPromise<IFileStat> {
 		const { rev } = getURIContext(resource);
-		return getFilesCached({ resource, revState: { commitID: rev || undefined } }).then(files => {
-			const statCacheHit = fileStatCache.get(resource.toString());
-			if (statCacheHit) {
-				// TODO(john): this may adversely impact zap -- we may want a flag to force re-computation
-				// of the IFileStat object.
-				return statCacheHit;
-			}
-			const fileStat = toFileStat(resource, files);
-			fileStatCache.set(resource.toString(true), fileStat);
-			return fileStat;
-		});
+		return getFilesCached({ resource, revState: { commitID: rev || undefined } }).then(files => toFileStat(resource, files));
 	}
 
 	public resolveContents(resources: URI[]): TPromise<IContent[]> {
@@ -143,7 +133,7 @@ export class FileService implements IFileService {
 			}
 			if (deletedFiles.has(asFileURI.toString())) {
 				// TODO: Ideally the UI should show the contents of the file before it was deleted but diff'd
-				// in red. We would need to instead return the original contents of the file here for the left side 
+				// in red. We would need to instead return the original contents of the file here for the left side
 				// of the diff editor have the diff view opener pass in the empty string as the right side.
 				contents = "";
 			}
@@ -282,10 +272,18 @@ export function toBaseStat(resource: URI): IBaseStat {
  * The files parameter is all available files in the repository.
  */
 export function toFileStat(resource: URI, files: string[]): IFileStat {
+	const statCacheHit = fileStatCache.get(resource.toString());
+	if (statCacheHit) {
+		// TODO(john): this may adversely impact zap -- we may want a flag to force re-computation
+		// of the IFileStat object.
+		return statCacheHit;
+	}
+
 	const childStats: IFileStat[] = [];
 	const childDirectories = new Set<string>();
 	const childFiles: string[] = [];
-	let isFile = false;
+
+	const resourcePath = getURIContext(resource).path;
 
 	// When we recursively call toFileStat, don't forward files that aren't a transitive child of resource.
 	// This is a noticible performance optimization for large repos.
@@ -299,9 +297,7 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 
 	// looking for children of resource
 	for (const candidate of files) {
-		const resourcePath = getURIContext(resource).path;
 		if (candidate === resourcePath) {
-			isFile = true;
 			// skip over self
 			continue;
 		}
@@ -335,13 +331,15 @@ export function toFileStat(resource: URI, files: string[]): IFileStat {
 
 	const isDir = childStats.length > 0;
 
-	return {
+	const stat = {
 		...toBaseStat(resource),
 		hasChildren: isDir,
 		isDirectory: isDir,
 		children: childStats,
-		exists: isDir || isFile,
+		exists: true,
 	};
+	fileStatCache.set(resource.toString(), stat);
+	return stat;
 }
 
 /**

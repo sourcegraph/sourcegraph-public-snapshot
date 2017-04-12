@@ -45,11 +45,13 @@ export async function updateWorkspace(location: AbsoluteLocation): Promise<void>
 	registerWorkspace({ resource: URIUtils.createResourceURI(repo), revState: location });
 	const resource = URIUtils.createResourceURI(repo, path === "" ? undefined : path);
 	const currWorkspace = getCurrentWorkspace();
+	let workspaceUpdated = false;
 	if (getWorkspaceForResource(resource).toString() !== currWorkspace.resource.toString() || (currWorkspace.revState && currWorkspace.revState.zapRef !== location.zapRef)) {
+		workspaceUpdated = true;
 		setWorkspace({ resource: getWorkspaceForResource(resource), revState: { zapRev: location.zapRev, zapRef: location.zapRef, commitID: location.commitID, branch: location.branch } });
 	}
 
-	return updateFileTree(resource);
+	return updateFileTree(resource, workspaceUpdated);
 }
 
 export async function updateEditorArea(location: AbsoluteLocation): Promise<void> {
@@ -197,7 +199,7 @@ export function toggleQuickopen(forceHide?: boolean): void {
 	}
 }
 
-export async function updateFileTree(resource: URI): Promise<void> {
+export async function updateFileTree(resource: URI, workspaceUpdated?: boolean): Promise<void> {
 	const partService = Services.get(IPartService) as IPartService;
 	const visible = partService.isVisible(Parts.SIDEBAR_PART);
 	if (!visible) {
@@ -214,12 +216,13 @@ export async function updateFileTree(resource: URI): Promise<void> {
 
 	const view = viewlet["explorerView"];
 	if (view instanceof ExplorerView) {
-		await view.refresh(true);
+		if (workspaceUpdated) {
+			await view.refresh(Boolean(workspaceUpdated));
+		}
 
 		const privateView = view as any;
 		let root = privateView.root;
 		if (!root) {
-			await view.refresh();
 			root = privateView.root;
 		}
 		const fileStat = root.find(resource);
@@ -236,12 +239,10 @@ export async function updateFileTree(resource: URI): Promise<void> {
 		if (scrollPos > 1 || scrollPos < 0 || oldSelection.length === 0) {
 			// Item is scrolled off screen
 			await view.select(resource, true);
-			await view.refresh(true);
 
 			const privateView = view as any;
 			let root = privateView.root;
 			if (!root) {
-				await view.refresh();
 				root = privateView.root;
 			}
 			const fileStat = root.find(resource);
