@@ -15,7 +15,7 @@ import (
 // New creates a new LSP proxy.
 func New() *Proxy {
 	return &Proxy{
-		MaxClientIdle:   120 * time.Second,
+		MaxClientIdle:   30 * time.Minute,
 		MaxServerIdle:   300 * time.Second,
 		MaxServerUnused: 30 * time.Second,
 
