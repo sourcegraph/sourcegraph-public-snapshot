@@ -56,9 +56,9 @@ class TelligentWrapper {
 		// if we are keeping data onsite anyways (like Umami), we can collect all info
 		if (isOnPremInstance(context.authEnabled) && context.trackingAppID !== "UmamiWeb") {
 			const limitedEventProps = {
-				event_action: eventProps.event_action,
-				event_category: eventProps.event_category,
-				event_label: eventProps.event_label,
+				event_action: eventProps.eventAction,
+				event_category: eventProps.eventCategory,
+				event_label: eventProps.eventLabel,
 				language: eventProps.language,
 				platform: eventProps.platform,
 				repo: eventProps.repo,
