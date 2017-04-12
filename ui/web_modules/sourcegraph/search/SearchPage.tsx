@@ -3,6 +3,7 @@ import * as hash from "object-hash";
 import * as React from "react";
 import { IModeService } from "vs/editor/common/services/modeService";
 
+import { context, isOnPremInstance } from "sourcegraph/app/context";
 import { colors } from "sourcegraph/components/utils";
 import { ComponentWithRouter } from "sourcegraph/core/ComponentWithRouter";
 import { QueryBar } from "sourcegraph/search/QueryBar";
@@ -32,6 +33,30 @@ const pageSx = {
 	height: "100%",
 	overflow: "overlay",
 };
+
+export async function getRepositories(): Promise<GQL.IRepository[]> {
+	const query = gql`
+			query{ 
+				root {
+					repositories {
+						uri
+						language
+					}
+				}
+			}
+		`;
+	const response = await gqlClient.query<GQL.IQuery>({
+		query: query,
+		variables: {
+			...query.query,
+			maxResults: 500,
+		},
+	});
+	if (!response.data.root) {
+		return [];
+	}
+	return response.data.root.repositories;
+}
 
 export class SearchPage extends ComponentWithRouter<P, S> {
 	dispatcher: Dispatcher<Query> = new Dispatcher<Query>();
@@ -75,6 +100,12 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 	/** The hashed value of the query that we currently want to display. */
 	currentSearch: string;
 
+	constructor(props: P, context: any) {
+		super(props, context);
+		// make sure query is run once on init
+		getRepositories();
+	}
+
 	async componentDidMount(): Promise<void> {
 		this.toDispose.add(this.dispatcher.subscribe(this.searchTriggered));
 
@@ -99,10 +130,17 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 		this.toDispose.dispose();
 	}
 
-	private repositoriesToSearch(): string[] {
+	private async repositoriesToSearch(): Promise<string[]> {
 		// TODO this should read from the filters.
 		if (localStorage.repositoriesToSearch) {
 			return JSON.parse(localStorage.repositoriesToSearch);
+		}
+		// if on-prem, and not overridden by localstorage, use set of repos visibile to user on dashboard page
+		if (isOnPremInstance(context.authEnabled)) {
+			const regexFilter = context.repoHomeRegexFilter ? RegExp(context.repoHomeRegexFilter) : null;
+			return getRepositories().then(repos => {
+				return repos.map(repo => repo.uri).filter(repo => regexFilter ? regexFilter.test(repo) : true);
+			});
 		}
 		return ["github.com/gorilla/mux", "github.com/gorilla/schema"];
 	}
@@ -114,11 +152,12 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 		if (query.query.pattern === "") {
 			return this.searchFinished(key, undefined);
 		}
+		const reposToSearch = await this.repositoriesToSearch();
 		const response = await gqlClient.query<GQL.IQuery>({
 			query: this.GQLQuery,
 			variables: {
 				...query.query,
-				repositories: this.repositoriesToSearch(),
+				repositories: reposToSearch,
 				maxResults: 500,
 			},
 		});
