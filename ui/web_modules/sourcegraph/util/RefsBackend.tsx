@@ -412,10 +412,10 @@ async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition):
 		return null;
 	}
 
-	const { repo, path } = getURIContext(model.uri);
+	const { repo, rev, path } = getURIContext(model.uri);
 	let refModelQuery =
 		`repository(uri: "${repo}") {
-			commit(rev: "${model.uri.query}") {
+			commit(rev: "${rev}") {
 				commit {
 					file(path: "${path}") {
 						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.lineNumber - 1}, Character: ${pos.column - 1}) {
