@@ -65,8 +65,8 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 			</BGContainer>
 
 			<div style={{ paddingTop: "20px", paddingBottom: "20px" }}>
-				<Heading level={4} align="center" style={{ fontWeight: "bold", maxWidth: 680, margin: "auto" }}>Integration</Heading>
-				<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: 680, margin: "auto" }}>Sourcegraph integrates with most version control systems, and can provide code intelligence for code review tools.</Heading>
+				<Heading level={4} align="center" style={{ fontWeight: "bold", maxWidth: 680, margin: "auto" }}>Integrations</Heading>
+				<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: 680, margin: "auto" }}>Sourcegraph integrates with most enterprise code hosts and review systems, including:</Heading>
 
 				<FlexContainer justify="center" items="center" wrap={true} style={{ padding: whitespace[4] }}>
 					<div {...layout.hide.sm} style={{ flex: 1 }} />
@@ -98,12 +98,12 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 				}}>
 
 					<Heading level={4} align="center" style={{ fontWeight: "bold", maxWidth: "680px", margin: "auto" }}>Code intelligence</Heading>
-					<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Part of <Link to="/plan">our mission</Link> is to make basic code intelligence ubiquitous, in every editor and every language.</Heading>
+					<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Part of <Link to="/plan">our mission</Link> is to make code intelligence ubiquitous, in every editor and every language.</Heading>
 
 					<FlexContainer justify="center" style={{ marginTop: "20px" }}>
-						<div style={{ padding: whitespace[1] }}>Learn a new codebase, library, or project, easily and efficiently.</div>
-						<div style={{ padding: whitespace[1] }}>Search for code across large and complex codebases.</div>
-						<div style={{ padding: whitespace[1] }}>Understand and reuse existing code.</div>
+						<div style={{ padding: whitespace[1] }}>Find and reuse existing code, from your enterprise or from open source.</div>
+						<div style={{ padding: whitespace[1] }}>Search for code enterprise-wide, instantly.</div>
+						<div style={{ padding: whitespace[1] }}>Explore a code with full context and history.</div>
 						<div style={{ padding: whitespace[1] }}>Find and answer questions in code without interrupting flow.</div>
 					</FlexContainer>
 				</div>
@@ -117,7 +117,7 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 			<BGContainer img={`${context.assetsRoot}/img/enterprise/sg-ent-bg-1.svg`} position="top right" repeat="no-repeat" style={{ padding: whitespace[6], backgroundColor: "#97a9c4" }}>
 				<Heading level={4} align="center" style={{ fontWeight: "bold", maxWidth: "680px", margin: "auto" }}>Scalable</Heading>
 				<Heading level={2} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>1,999,999,999 functions (and growing) on the public code graph</Heading>
-				<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Sourcegraph Enterprise is the exact same codebase and architecture as Sourcegraph.com, which means it is horizontally scalable and highly available for your development team.</Heading>
+				<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Sourcegraph Enterprise is the exact same codebase and architecture as Sourcegraph.com, which scales to hundreds of thousands of repositories and terabytes of code.</Heading>
 			</BGContainer>
 
 			<BGContainer img={`${context.assetsRoot}/img/enterprise/sg-ent-bg-2.svg`} position="top" size="cover" repeat="no-repeat" style={{ padding: whitespace[6], backgroundColor: "#637fa6" }}>
@@ -138,8 +138,8 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 						</Panel>
 						<div style={{ flex: 3, backgroundColor: "#2f72b0", color: "white" }}>
 							<ul style={{ display: "flex", flexDirection: "column" }}>
-								<li style={{ flex: 1, padding: whitespace[2] }}>Integrate with GitHub Enterprise, Phabricator, and other tools</li>
-								<li style={{ flex: 1, padding: whitespace[2] }}>Global code search</li>
+								<li style={{ flex: 1, padding: whitespace[2] }}>Enterprise integrations: GitHub Enterprise, Phabricator, and other tools</li>
+								<li style={{ flex: 1, padding: whitespace[2] }}>Instant, global code search and code intelligence</li>
 								<li style={{ flex: 1, padding: whitespace[2] }}>Dedicated Customer Success Manager</li>
 							</ul>
 						</div>
