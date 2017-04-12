@@ -48,7 +48,7 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 								marginTop: whitespace[3],
 								padding: whitespace[3],
 							}
-						)}>Enterprise code intelligence<div style={{ fontSize: "24px" }}>Semantic code search and cross-reference engine for your code.</div></Heading>
+						)}>Enterprise code intelligence<div style={{ fontSize: "24px" }}>Scalable code search and intelligence engine, for building better software faster.</div></Heading>
 
 					<p style={{ textAlign: "center" }}>
 						<LocationStateToggleLink href="/join" modalName="join" location={this.props.location} onToggle={(v) => v && Events.JoinModal_Initiated.logEvent({ page_name: location.pathname, location_on_page: "Header" })}>
@@ -97,14 +97,13 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 					textAlign: "center",
 				}}>
 
-					<Heading level={4} align="center" style={{ fontWeight: "bold", maxWidth: "680px", margin: "auto" }}>Code intelligence</Heading>
-					<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Part of <Link to="/plan">our mission</Link> is to make code intelligence ubiquitous, in every editor and every language.</Heading>
+					<Heading level={4} align="center" style={{ fontWeight: "bold", maxWidth: "680px", margin: "auto" }}>Building software is key to your business.</Heading>
+					<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Sourcegraph gives your development teams the power to build better software faster.</Heading>
 
 					<FlexContainer justify="center" style={{ marginTop: "20px" }}>
-						<div style={{ padding: whitespace[1] }}>Find and reuse existing code, from your enterprise or from open source.</div>
+						<div style={{ padding: whitespace[1] }}>Find and reuse existing code, within your enterprise or from open source.</div>
 						<div style={{ padding: whitespace[1] }}>Search for code enterprise-wide, instantly.</div>
-						<div style={{ padding: whitespace[1] }}>Explore a code with full context and history.</div>
-						<div style={{ padding: whitespace[1] }}>Find and answer questions in code without interrupting flow.</div>
+						<div style={{ padding: whitespace[1] }}>Explore code with full context and history.</div>
 					</FlexContainer>
 				</div>
 
@@ -116,8 +115,8 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 
 			<BGContainer img={`${context.assetsRoot}/img/enterprise/sg-ent-bg-1.svg`} position="top right" repeat="no-repeat" style={{ padding: whitespace[6], backgroundColor: "#97a9c4" }}>
 				<Heading level={4} align="center" style={{ fontWeight: "bold", maxWidth: "680px", margin: "auto" }}>Scalable</Heading>
-				<Heading level={2} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>1,999,999,999 functions (and growing) on the public code graph</Heading>
-				<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Sourcegraph Enterprise is the exact same codebase and architecture as Sourcegraph.com, which scales to hundreds of thousands of repositories and terabytes of code.</Heading>
+				<Heading level={2} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>2,000,000,000+ functions &bull; 300,000+ repositories &bull; 25+ terabytes of code</Heading>
+				<Heading level={4} align="center" style={{ fontWeight: "normal", maxWidth: "680px", margin: "auto" }}>Sourcegraph Enterprise uses the same scalable architecture as Sourcegraph.com, so it will scale to meet the needs of the largest enterprises.</Heading>
 			</BGContainer>
 
 			<BGContainer img={`${context.assetsRoot}/img/enterprise/sg-ent-bg-2.svg`} position="top" size="cover" repeat="no-repeat" style={{ padding: whitespace[6], backgroundColor: "#637fa6" }}>
