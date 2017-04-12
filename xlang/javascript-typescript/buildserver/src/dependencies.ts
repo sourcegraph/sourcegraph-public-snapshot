@@ -1,5 +1,6 @@
 
 import { FileSystemUpdater } from 'javascript-typescript-langserver/lib/fs';
+import { LanguageClient } from 'javascript-typescript-langserver/lib/lang-handler';
 import { Logger, NoopLogger, PrefixedLogger } from 'javascript-typescript-langserver/lib/logging';
 import { InMemoryFileSystem } from 'javascript-typescript-langserver/lib/memfs';
 import { ProjectManager } from 'javascript-typescript-langserver/lib/project-manager';
@@ -80,6 +81,7 @@ export class DependencyManager {
 		private updater: FileSystemUpdater,
 		private inMemoryFileSystem: InMemoryFileSystem,
 		private projectManager: ProjectManager,
+		private client: LanguageClient,
 		private logger: Logger = new NoopLogger()
 	) { }
 
@@ -250,9 +252,32 @@ export class DependencyManager {
 				// Fetch package.json content
 				await this.updater.ensure(packageJsonUri, span);
 				// Write package.json into temporary directory
-				await fs.writeFile(path.join(cwd, 'package.json'), this.inMemoryFileSystem.getContent(packageJsonUri));
+				const packageJsonContent = this.inMemoryFileSystem.getContent(packageJsonUri);
+				await fs.writeFile(path.join(cwd, 'package.json'), packageJsonContent);
+				// If exists, write yarn.lock into temporary directory to cut down resolve time
+				const yarnLockUri = url.format({ ...directory, pathname: path.posix.join(directory.pathname, 'yarn.lock') });
+				const packageJson: PackageJson = JSON.parse(packageJsonContent);
+				const cacheKey = packageJson.name + '@' + packageJson.version + ':yarn.lock';
+				span.addTags({ cacheKey });
+				let yarnLock: string;
+				if (this.inMemoryFileSystem.has(yarnLockUri)) {
+					// yarn.lock is available in the repo
+					span.setTag('yarn.lock', 'repo');
+					this.logger.log(`${yarnLockUri} in repo`);
+					await this.updater.ensure(yarnLockUri, span);
+					yarnLock = this.inMemoryFileSystem.getContent(yarnLockUri);
+				} else {
+					// yarn.lock might be in the cache
+					yarnLock = await this.client.xcacheGet({ key: cacheKey }, span);
+					if (yarnLock) {
+						span.setTag('yarn.lock', 'cache');
+						this.logger.log(`${cacheKey} cache hit`);
+					}
+				}
+				if (yarnLock) {
+					await fs.writeFile(path.join(cwd, 'yarn.lock'), yarnLock);
+				}
 				// Spawn yarn process
-				// TODO return Observable instead of converting to Promise
 				await new Promise((resolve, reject) => {
 					const yarnProcess = yarn.install({ cwd, globalFolder, cacheFolder, logger }, span);
 					this.yarnProcesses.add(yarnProcess);
@@ -260,6 +285,18 @@ export class DependencyManager {
 					yarnProcess.once('error', reject);
 					yarnProcess.once('exit', () => this.yarnProcesses.delete(yarnProcess));
 				});
+				// If no yarn.lock commited, save newly generated yarn.lock to cache
+				if (!yarnLock) {
+					(async () => {
+						try {
+							await this.updater.ensure(yarnLockUri);
+							yarnLock = this.inMemoryFileSystem.getContent(yarnLockUri);
+							this.client.xcacheSet({ key: cacheKey, value: yarnLock });
+						} catch (err) {
+							this.logger.error(err);
+						}
+					})();
+				}
 				// Refetch file structure under node_modules directory
 				this.updater.invalidateStructure();
 				this.updater.fetchStructure().catch(err => undefined);

@@ -77,7 +77,6 @@ export function install(options: InstallOptions, childOf = new Span()): YarnProc
 		'--ignore-platform', // Don't error on failing platform checks
 		'--ignore-engines',  // Don't check package.json engines field
 		'--no-bin-links',    // Don't create bin symlinks
-		'--no-lockfile',     // Don't read or create a lockfile
 		'--no-emoji',        // Don't use emojis in output
 		'--non-interactive', // Don't ask for any user input
 		'--no-progress',     // Don't report progress events

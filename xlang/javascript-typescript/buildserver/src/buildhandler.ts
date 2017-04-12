@@ -88,7 +88,7 @@ export class BuildHandler extends TypeScriptService {
 			params.rootPath = uri2path(params.rootPath);
 		}
 		const result = await super.initialize(params, span);
-		this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.logger);
+		this.dependenciesManager = new DependencyManager(this.options.tempDir, this.updater, this.inMemoryFileSystem, this.projectManager, this.client, this.logger);
 		// Start installation of dependencies in the background
 		this.dependenciesManager.ensureScanned(span).catch(err => {
 			if (!isCancelledError(err)) {
