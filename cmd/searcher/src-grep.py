@@ -3,6 +3,7 @@
 import argparse
 import requests
 import sys
+import urlparse
 
 parser = argparse.ArgumentParser(description='Text search via sourcegraph.com')
 parser.add_argument('repo', type=str, metavar='REPO[@REV]', help='repo to search. eg github.com/sourcegraph/go-langserver or github.com/golang/go@go1.8')
@@ -28,12 +29,14 @@ query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isW
             commit(rev: $rev) {
                 commit {
                     textSearch(query: {pattern: $pattern, isRegExp: $isRegExp, isWordMatch: $isWordMatch, isCaseSensitive: $isCaseSensitive, maxResults: 10000}) {
-                        path
-                        lineMatches {
-                            preview
-                            lineNumber
-                            offsetAndLengths
-                        }
+                        results {
+                          resource
+                          lineMatches {
+                              preview
+                              lineNumber
+                              offsetAndLengths
+                          }
+                      }
                     }
                 }
             }
@@ -53,12 +56,20 @@ query($uri: String!, $pattern: String!, $rev: String!, $isRegExp: Boolean!, $isW
 domain = 'http://localhost:3080' if args.dev else 'https://sourcegraph.com'
 r = requests.post(domain + '/.api/graphql', json=graphql)
 sys.stderr.write('X-Trace: ' + r.headers['X-Trace'] + '\n')
-matches = r.json()["data"]["root"]["repository"]["commit"]["commit"]["textSearch"]
+if 'errors' in r.json():
+    import pprint
+    pprint.pprint(r.json()['errors'])
+    exit(1)
+matches = r.json()["data"]["root"]["repository"]["commit"]["commit"]["textSearch"]["results"]
 for fm in matches:
+    u = urlparse.urlparse(fm['resource'])
+    path = u.fragment
+    repo = u.netloc + u.path
+    if args.rev != 'HEAD':
+	repo = repo + '@' + u.query
     for lm in fm['lineMatches']:
 	if args.url:
-	    repo_path = args.repo if args.rev == 'HEAD' else (args.repo + '@' + args.rev)
 	    lrange = 'L%d:%d-%d:%d' % (lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + 1, lm['lineNumber'] + 1, lm['offsetAndLengths'][0][0] + lm['offsetAndLengths'][0][1] + 1)
-	    print('%s/%s/-/blob/%s#%s %s' % (domain, repo_path, fm['path'], lrange, lm['preview']))
+	    print('%s/%s/-/blob/%s#%s %s' % (domain, repo, path, lrange, lm['preview']))
 	else:
-	    print('%s:%d:%s' % (fm['path'], lm['lineNumber'], lm['preview']))
+	    print('%s:%d:%s' % (path, lm['lineNumber'], lm['preview']))
