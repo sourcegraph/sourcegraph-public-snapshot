@@ -57,7 +57,7 @@ const options: ServeOptions & TypeScriptServiceOptions = {
 // Every LSP connection gets a temporary directory in the form of /tmp/tsjs/worker#/uuid
 
 /** Base directory for all processes */
-const baseTempDir = path.join(os.tmpdir(), 'tsjs');
+const baseTempDir = process.env.CACHE_DIR || path.join(os.tmpdir(), 'tsjs');
 
 /** Base directory for the current process (worker or master) */
 let processTempDir: string;

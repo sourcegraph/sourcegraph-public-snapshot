@@ -39,7 +39,7 @@ const logger = program.logfile ? new FileLogger(program.logfile) : new StderrLog
 
 // The LSP connection gets a temporary directory in the form of /tmp/tsjs/stdio/uuid
 // The BuildHandler will create it on `initialize` and delete it on `shutdown`
-const tempDir = path.join(os.tmpdir(), 'tsjs', 'stdio', uuid.v1());
+const tempDir = path.join(process.env.CACHE_DIR || path.join(os.tmpdir(), 'tsjs', 'stdio'), uuid.v1());
 logger.log(`Using ${tempDir} as temporary directory`);
 
 const options: BuildHandlerOptions & MessageLogOptions & RegisterLanguageHandlerOptions = {
