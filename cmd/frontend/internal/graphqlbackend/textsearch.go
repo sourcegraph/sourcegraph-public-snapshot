@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
+	"sync"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -198,16 +199,33 @@ type repoSearchArgs struct {
 
 // SearchRepos searches a set of repos for a pattern.
 func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*searchResults, error) {
-	r, err := ParMap(func(repo string) ([]*fileMatch, error) {
-		return searchRepo(ctx, repo, args.Query)
-	}, args.Repositories)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	var (
+		wg        sync.WaitGroup
+		mu        sync.Mutex
+		err       error
+		flattened []*fileMatch
+	)
+	for _, repo := range args.Repositories {
+		wg.Add(1)
+		go func(repo string) {
+			defer wg.Done()
+			matches, searchErr := searchRepo(ctx, repo, args.Query)
+			mu.Lock()
+			if searchErr != nil && err == nil {
+				err = searchErr
+				cancel()
+			}
+			if len(matches) > 0 {
+				flattened = append(flattened, matches...)
+			}
+			mu.Unlock()
+		}(repo)
+	}
+	wg.Wait()
 	if err != nil {
 		return nil, err
-	}
-	results := r.([][]*fileMatch)
-	var flattened []*fileMatch
-	for _, response := range results {
-		flattened = append(flattened, response...)
 	}
 	sort.Slice(flattened, func(i, j int) bool {
 		a, b := len(flattened[i].JLineMatches), len(flattened[j].JLineMatches)
