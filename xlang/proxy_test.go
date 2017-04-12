@@ -23,14 +23,15 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 func init() {
 	// Use in-process Go language server for tests.
-	xlang.ServersByMode["go"] = func() (io.ReadWriteCloser, error) {
+	proxy.ServersByMode["go"] = func() (io.ReadWriteCloser, error) {
 		// Run in-process for easy development (no recompiles, etc.).
-		a, b := xlang.InMemoryPeerConns()
+		a, b := proxy.InMemoryPeerConns()
 		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
 		return b, nil
 	}
@@ -601,12 +602,12 @@ func yza() {}
 			}
 
 			ctx := context.Background()
-			proxy := xlang.NewProxy()
+			p := proxy.New()
 			if test.rootPath == "" {
 				t.Fatal("no rootPath set in test fixture")
 			}
 
-			addr, done := startProxy(t, proxy)
+			addr, done := startProxy(t, p)
 			defer done()
 			c := dialProxy(t, addr, nil)
 
@@ -628,8 +629,8 @@ func yza() {}
 	}
 }
 
-func startProxy(t testing.TB, proxy *xlang.Proxy) (addr string, done func()) {
-	xlang.LogServerStats = false
+func startProxy(t testing.TB, p *proxy.Proxy) (addr string, done func()) {
+	proxy.LogServerStats = false
 	bindAddr := ":0"
 	if os.Getenv("CI") != "" {
 		// CircleCI has issues with IPv6 (e.g., "dial tcp [::]:39984:
@@ -640,10 +641,10 @@ func startProxy(t testing.TB, proxy *xlang.Proxy) (addr string, done func()) {
 	if err != nil {
 		t.Fatal("Listen:", err)
 	}
-	go proxy.Serve(context.Background(), l)
+	go p.Serve(context.Background(), l)
 	return l.Addr().String(), func() {
 		l.Close()
-		if err := proxy.Close(context.Background()); err != nil && err.Error() != "jsonrpc2: connection is closed" {
+		if err := p.Close(context.Background()); err != nil && err.Error() != "jsonrpc2: connection is closed" {
 			t.Fatal("proxy.Close:", err)
 		}
 	}
@@ -739,11 +740,11 @@ func TestProxy_connections(t *testing.T) {
 
 	// Start test build/lang server S1.
 	calledConnectToTestServer := 0 // track the times we need to open a new server connection
-	xlang.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
+	proxy.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
 		mu.Lock()
 		calledConnectToTestServer++
 		mu.Unlock()
-		a, b := xlang.InMemoryPeerConns()
+		a, b := proxy.InMemoryPeerConns()
 		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			addReq(req)
 			return nil, nil
@@ -751,10 +752,10 @@ func TestProxy_connections(t *testing.T) {
 		return b, nil
 	}
 	defer func() {
-		delete(xlang.ServersByMode, "test")
+		delete(proxy.ServersByMode, "test")
 	}()
 
-	proxy := xlang.NewProxy()
+	proxy := proxy.New()
 	addr, done := startProxy(t, proxy)
 	defer done()
 
@@ -874,14 +875,14 @@ func TestProxy_propagation(t *testing.T) {
 	cleanup := useMapFS(map[string]string{"f": "x"})
 	defer cleanup()
 
-	proxy := xlang.NewProxy()
-	addr, done := startProxy(t, proxy)
+	p := proxy.New()
+	addr, done := startProxy(t, p)
 	defer done()
 
 	// Start test build/lang server that sends diagnostics about any
 	// file that we call textDocument/definition on.
-	xlang.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
-		a, b := xlang.InMemoryPeerConns()
+	proxy.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
+		a, b := proxy.InMemoryPeerConns()
 		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			if req.Method == "textDocument/definition" {
 				var params lsp.TextDocumentPositionParams
@@ -906,7 +907,7 @@ func TestProxy_propagation(t *testing.T) {
 		return b, nil
 	}
 	defer func() {
-		delete(xlang.ServersByMode, "test")
+		delete(proxy.ServersByMode, "test")
 	}()
 
 	recvDiags := make(chan lsp.PublishDiagnosticsParams)

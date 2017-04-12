@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -228,7 +228,7 @@ func TestIntegration(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			proxy := xlang.NewProxy()
+			proxy := proxy.New()
 			addr, done := startProxy(t, proxy)
 			defer done()
 			c := dialProxy(t, addr, nil)
@@ -261,12 +261,12 @@ func TestIntegration(t *testing.T) {
 // benefit of fast tests here outweighs the benefits of a coarser integration
 // test.
 func useGithubForVFS() func() {
-	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (xlang.FileSystem, error) {
+	orig := proxy.NewRemoteRepoVFS
+	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (proxy.FileSystem, error) {
 		fullName := cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git") // of the form "github.com/foo/bar"
 		return vfsutil.NewGitHubRepoVFS(fullName, rev)
 	}
 	return func() {
-		xlang.NewRemoteRepoVFS = orig
+		proxy.NewRemoteRepoVFS = orig
 	}
 }

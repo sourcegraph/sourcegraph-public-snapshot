@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -32,10 +32,10 @@ func BenchmarkStress(b *testing.B) {
 		b.Skip("skip long integration test")
 	}
 
-	defer func(b bool) { xlang.LogServerStats = b }(xlang.LogServerStats)
-	defer func(b bool) { xlang.LogTrackedErrors = b }(xlang.LogTrackedErrors)
-	xlang.LogServerStats = false
-	xlang.LogTrackedErrors = false
+	defer func(b bool) { proxy.LogServerStats = b }(proxy.LogServerStats)
+	defer func(b bool) { proxy.LogTrackedErrors = b }(proxy.LogTrackedErrors)
+	proxy.LogServerStats = false
+	proxy.LogTrackedErrors = false
 
 	cleanup := useGithubForVFS()
 	defer cleanup()
@@ -65,7 +65,7 @@ func BenchmarkStress(b *testing.B) {
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := xlang.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
+			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -116,7 +116,7 @@ func BenchmarkStress(b *testing.B) {
 			}
 
 			ctx := context.Background()
-			proxy := xlang.NewProxy()
+			proxy := proxy.New()
 			addr, done := startProxy(b, proxy)
 			defer done()
 

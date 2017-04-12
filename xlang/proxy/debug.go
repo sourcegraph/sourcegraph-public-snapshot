@@ -1,4 +1,4 @@
-package xlang
+package proxy
 
 import (
 	"container/ring"

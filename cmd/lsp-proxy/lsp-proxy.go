@@ -14,7 +14,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -46,7 +46,7 @@ func run() error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
-	if err := xlang.RegisterServersFromEnv(); err != nil {
+	if err := proxy.RegisterServersFromEnv(); err != nil {
 		return err
 	}
 
@@ -55,13 +55,13 @@ func run() error {
 		return err
 	}
 	fmt.Fprintln(os.Stderr, "lsp-proxy: listening on", lis.Addr())
-	p := xlang.NewProxy()
+	p := proxy.New()
 	p.Trace = *trace
 	if *profbind != "" {
 		e := debugserver.Endpoint{
 			Name:    "LSP-Proxy Connections",
 			Path:    "/lsp-conns",
-			Handler: &xlang.DebugHandler{Proxy: p},
+			Handler: &proxy.DebugHandler{Proxy: p},
 		}
 		go debugserver.Start(*profbind, e)
 	}

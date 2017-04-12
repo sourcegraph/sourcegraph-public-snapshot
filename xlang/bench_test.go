@@ -8,8 +8,8 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -112,7 +112,7 @@ func BenchmarkIntegration(b *testing.B) {
 		label := strings.Replace(root.Host+root.Path, "/", "-", -1)
 
 		b.Run(label, func(b *testing.B) {
-			fs, err := xlang.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
+			fs, err := proxy.NewRemoteRepoVFS(context.Background(), root.CloneURL(), root.Rev())
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -122,7 +122,7 @@ func BenchmarkIntegration(b *testing.B) {
 				test.definitionParams.TextDocument.URI = rootPath + "#" + test.definitionParams.TextDocument.URI
 				b.Run("definition", func(b *testing.B) {
 					ctx := context.Background()
-					proxy := xlang.NewProxy()
+					proxy := proxy.New()
 					addr, done := startProxy(b, proxy)
 					defer done()
 
@@ -165,7 +165,7 @@ func BenchmarkIntegration(b *testing.B) {
 			if test.symbolParams != nil {
 				b.Run("symbols", func(b *testing.B) {
 					ctx := context.Background()
-					proxy := xlang.NewProxy()
+					proxy := proxy.New()
 					addr, done := startProxy(b, proxy)
 					defer done()
 
@@ -211,7 +211,7 @@ func BenchmarkIntegration(b *testing.B) {
 // previously computed artifacts.
 //
 // go test -c
-// ./xlang.test -test.bench=IntegrationShared -test.v -test.run='^$
+// ./proxy.test -test.bench=IntegrationShared -test.v -test.run='^$
 func BenchmarkIntegrationShared(b *testing.B) {
 	if testing.Short() {
 		b.Skip("skip long integration test")
@@ -255,11 +255,11 @@ func BenchmarkIntegrationShared(b *testing.B) {
 				b.Fatal(err)
 			}
 
-			oldfs, err := xlang.NewRemoteRepoVFS(ctx, old.CloneURL(), old.Rev())
+			oldfs, err := proxy.NewRemoteRepoVFS(ctx, old.CloneURL(), old.Rev())
 			if err != nil {
 				b.Fatal(err)
 			}
-			fs, err := xlang.NewRemoteRepoVFS(ctx, root.CloneURL(), root.Rev())
+			fs, err := proxy.NewRemoteRepoVFS(ctx, root.CloneURL(), root.Rev())
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -293,7 +293,7 @@ func BenchmarkIntegrationShared(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 
-				proxy := xlang.NewProxy()
+				proxy := proxy.New()
 				addr, done := startProxy(b, proxy)
 				defer done() // TODO ensure we close between each loop
 

@@ -23,8 +23,8 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"sourcegraph.com/sourcegraph/sourcegraph/xlang"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/lspext"
+	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -505,11 +505,11 @@ func (v testRequests) Less(i, j int) bool {
 }
 
 func useMapFS(m map[string]string) func() {
-	orig := xlang.NewRemoteRepoVFS
-	xlang.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (xlang.FileSystem, error) {
+	orig := proxy.NewRemoteRepoVFS
+	proxy.NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (proxy.FileSystem, error) {
 		return mapFS(m), nil
 	}
-	return func() { xlang.NewRemoteRepoVFS = orig }
+	return func() { proxy.NewRemoteRepoVFS = orig }
 }
 
 // mapFS lets us easily instantiate a VFS with a map[string]string

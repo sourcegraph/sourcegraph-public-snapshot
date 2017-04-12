@@ -1,4 +1,4 @@
-package xlang
+package proxy
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
-// NewProxy creates a new LSP proxy.
-func NewProxy() *Proxy {
+// New creates a new LSP proxy.
+func New() *Proxy {
 	return &Proxy{
 		MaxClientIdle:   120 * time.Second,
 		MaxServerIdle:   300 * time.Second,
