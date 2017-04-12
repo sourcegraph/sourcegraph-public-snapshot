@@ -26,4 +26,4 @@ COPY ./java-language-server.jar /usr/bin
 
 RUN apt-get -qy remove git maven
 
-CMD java $JVM_OPT -jar /usr/bin/java-language-server.jar
+CMD java $JVM_OPT -jar /usr/bin/java-language-server.jar $LS_OPT
