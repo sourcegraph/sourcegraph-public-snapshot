@@ -10,19 +10,21 @@ Sourcegraph should have provided you with a username and password for our docker
 
 ```docker login -u <username> -p <password> docker.sourcegraph.com```
 
+Try skipping to the "Run" section, and verifying that everything is working, before configuring further.
+
 ## Setup
 First, try running Sourcegraph using the default settings (see Run section below). By default, Sourcegraph can be tested on public and private GitHub.com repositories (it uses your computer's ~/.ssh folder to try and clone repos).
 
 Sourcegraph mini can be configured to read repositories from your local filesystem or from a remote git server.
 
 ### Local filesystem
-Define the `GIT_DIRECTORY` environment argument in your `.env` file. You may need to copy `env.example` to `.env`. Next, uncomment out the `ORIGIN_MAP` argument. This argument let's Sourcegraph know that <URL>/local/repo_name can be found in the folder mounted on the docker image (the folder is mounted to /local/).
+Define the `GIT_DIRECTORY` environment argument in your `.env` file. You may need to copy `env.example` to `.env`. Next, uncomment out the `ORIGIN_MAP` argument. This argument let's Sourcegraph know that <SOURCEGRAPH_URL>/local/repo_name can be found in the folder mounted on the git-server docker image (the folder is mounted to /local/). Skip to "Set up repositories".
 
 ### Remote git server
-Define the `ORIGIN_MAP` argument, which instructs Sourcegraph how to clone repositories beginning with a given URL prefix. For instance, if your git server is located at gitserver.companyintranet.com, then your `ORIGIN_MAP` could look like `gitserver.companyintranet.com/!git@gitserver.companyintranet.com:%`
+Define the `ORIGIN_MAP` argument, which instructs Sourcegraph how to clone repositories beginning with a given URL prefix. For instance, if your git server is located at gitserver.companyintranet.com, then your `ORIGIN_MAP` could look like `gitserver.companyintranet.com/!git@gitserver.companyintranet.com:%`. In general, this is harder to do than local filesystem, so recommended to start with local filesystem. After this step, skip to "Set up repositories".
 
 ### Set up repositories
-Edit the text file `repos.txt`. Add any repositories you would like Sourcegraph to clone, using full repository paths. For local filesystem repositories, this would look like `local/repo_name`, whereas for remote git server repositories, this would look like gitserver.company.com/repo_name . Next, run `./setup.sh path/to/repos.txt`, and SQL rows will be inserted into the docker container for each repository. Refresh the Sourcegraph home page, and you should see the repositories you've added.
+Edit the text file `repos.txt`. Add any repositories you would like Sourcegraph to clone, using full repository paths. For local filesystem repositories, this would look like `local/any_dirs/repo_name`, whereas for remote git server repositories, this would look like gitserver.company.com/any_dirs/repo_name . Make sure that Sourcegraph is running (see the Run section), and next run `./setup.sh path/to/repos.txt`, and SQL rows will be inserted into the docker container for each repository. Refresh the Sourcegraph home page, and you should see the repositories you've added.
 
 ## Run
 To start Sourcegraph, `cd` into the mini directory, and run `docker-compose up`.
@@ -59,6 +61,16 @@ To see what data is sent to Sourcegraph, open up your JavaScript console, and vi
 ## Packaging this directory (for Sourcegraph employees)
 The following command will download a copy of this directory from `master`. The first time you issue this command, you will need to generate a [GitHub Personal Access Token](https://github.com/settings/tokens). After entering it the first time, it will be saved to your ~/.subversion repository.
 `svn export https://github.com/sourcegraph/sourcegraph/trunk/dev/mini mini/ && sed -ie 's/TRACKING_APP_ID:/TRACKING_APP_ID: OnPremInstance/g' mini/docker-compose.yml && zip -r mini.zip mini/ && rm -rf mini/`
+
+## FAQs
+
+### Unable to clone repositories from GitHub.com
+
+Sourcegraph requires access to GitHub.com via the git-server container for open-source dependency resolution. By default, the ~/.ssh directory is mounted to the git-server ~/.ssh directory. If your SSH keys are not located in .ssh, or are not set up to be used with your GitHub.com account, then cloning repositories from GitHub may fail.
+
+### Running setup.sh fails with message "No container found for postgres_1"
+
+Make sure that Sourcegraph is up by following the instructions in "Run" before running `setup.sh`.
 
 ## Troubleshooting
 Please contact support@sourcegraph.com with questions about Sourcegraph mini. Include the output of `docker-compose ps`, a copy of your `.env` file, and any logs that might be relevant.

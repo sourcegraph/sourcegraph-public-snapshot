@@ -32,7 +32,7 @@ services:
   gitserver-1:
     image: "docker.sourcegraph.com/gitserver:latest"
     volumes:
-      - ${GIT_DIRECTORY:-.}:/local
+      - ${GIT_PARENT_DIRECTORY:-.}:/local
       - .data/gitserver-1-data:/data/repos
       - ${SSH_KEYPAIR_FOLDER:-~/.ssh}:/root/.ssh
     environment:
