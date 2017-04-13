@@ -59,10 +59,17 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string) (vcs.Comm
 	if spec == "" {
 		spec = "HEAD"
 	}
+	if spec != "HEAD" {
+		// "git rev-parse HEAD^0" is slower than "git rev-parse HEAD"
+		// since it checks that the resolved git object exists. We can
+		// assume it exists for HEAD, but for other commits we should
+		// check.
+		spec = spec + "^0"
+	}
 
-	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec+"^0")
+	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec)
 	cmd.Repo = r.Repo
-	cmd.EnsureRevision = string(spec + "^0")
+	cmd.EnsureRevision = string(spec)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
