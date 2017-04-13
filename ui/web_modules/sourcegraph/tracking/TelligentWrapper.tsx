@@ -56,7 +56,7 @@ class TelligentWrapper {
 		// if we are keeping data onsite anyways (like Umami), we can collect all info
 		if (isOnPremInstance(context.authEnabled) && context.trackingAppID !== "UmamiWeb") {
 			// if a user using teensy-Sourcegraph specifies no tracking ID, we won't log either.
-			if (context.trackingAppID === this.DEFAULT_APP_ID) {
+			if (!context.trackingAppID) {
 				return;
 			}
 			const limitedEventProps = {
