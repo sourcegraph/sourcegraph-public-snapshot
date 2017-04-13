@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	stdlog "log"
 	"net"
@@ -15,7 +14,7 @@ import (
 	"syscall"
 
 	// Import for side effect of setting SGPATH env var.
-	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
+
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
@@ -238,26 +237,4 @@ var zapServerBackend = zapgit.ServerBackend{
 		cacheSetCanAccessRepo(ctx, repo, ok)
 		return ok, nil
 	},
-}
-
-type gitserverExecutor struct {
-	repoPath string
-}
-
-func (e gitserverExecutor) Exec(input []byte, args ...string) ([]byte, error) {
-	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = &sourcegraph.Repo{URI: e.repoPath}
-	cmd.Input = input
-	stdout, stderr, err := cmd.DividedOutput(context.Background())
-	if err != nil {
-		return nil, gitError(args, err, stderr)
-	}
-	if len(stderr) != 0 {
-		return nil, gitError(args, errors.New("unexpected output on stderr"), stderr)
-	}
-	return stdout, nil
-}
-
-func gitError(args []string, err error, stderr []byte) error {
-	return fmt.Errorf("command failed: git %s: %s\n%s", strings.Join(args, " "), err, stderr)
 }

@@ -104,7 +104,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.ExecReply, errRes error
 		Args:           c.Args[1:],
 		Opt:            opt,
 		NoAutoUpdate:   c.Repo.Private && c.client.NoCreds,
-		Stdin:          chanrpcutil.ToChunks(c.Input),
+		Stdin:          chanrpcutil.ToChunks(nil),
 		ReplyChan:      replyChan,
 	}}
 	reply, ok := <-replyChan
@@ -139,7 +139,6 @@ type Cmd struct {
 	Args           []string
 	Repo           *sourcegraph.Repo
 	EnsureRevision string
-	Input          []byte
 	ExitStatus     int
 }
 

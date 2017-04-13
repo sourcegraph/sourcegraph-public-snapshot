@@ -12,7 +12,7 @@ type ExecRequest struct {
 	EnsureRevision string
 	Args           []string
 	Opt            *vcs.RemoteOpts
-	Stdin          <-chan []byte
+	Stdin          <-chan []byte // deprecated
 	ReplyChan      chan<- *ExecReply
 
 	// NoAutoUpdate is whether to prevent gitserver from auto-updating or cloning a repository if it

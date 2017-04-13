@@ -103,11 +103,14 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 	defer recoverAndLog()
 	defer close(req.ReplyChan)
 
+	if req.Stdin != nil {
+		go chanrpcutil.Drain(req.Stdin) // deprecated
+	}
+
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 
 	// This is a repo that we use for testing the cloning state of the UI
 	if req.Repo == "github.com/sourcegraphtest/alwayscloningtest" {
-		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
 		return
 	}
@@ -147,7 +150,6 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 	_, cloneInProgress := s.cloning[dir]
 	if cloneInProgress {
 		s.cloningMu.Unlock()
-		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
 		status = "clone-in-progress"
 		return
@@ -174,14 +176,12 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 				}
 			}()
 
-			chanrpcutil.Drain(req.Stdin)
 			req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
 			status = "clone-in-progress"
 			return
 		}
 
 		s.cloningMu.Unlock()
-		chanrpcutil.Drain(req.Stdin)
 		req.ReplyChan <- &protocol.ExecReply{RepoNotFound: true}
 		status = "repo-not-found"
 		return
@@ -204,7 +204,6 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 
 	cmd := exec.CommandContext(ctx, "git", req.Args...)
 	cmd.Dir = dir
-	cmd.Stdin = chanrpcutil.NewReader(req.Stdin)
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
@@ -222,7 +221,6 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 
-	chanrpcutil.Drain(req.Stdin)
 	stdoutW.Close()
 	stderrW.Close()
 
