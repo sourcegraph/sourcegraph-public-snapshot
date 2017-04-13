@@ -64,12 +64,10 @@ func trackZapAuth(actor *actor.Actor) error {
 			return nil
 		}
 		tos := gcsclient.NewTrackedObjects("ZapAuthCompleted")
-		if err := tos.AddUserDetailsObject(&gcstracker.UserDetailsContext{
+		tos.AddUserDetailsObject(&gcstracker.UserDetailsContext{
 			ZapAuthCompleted: true,
-		}); err != nil {
-			return err
-		}
-		gcsclient.Write(tos)
+		})
+		return gcsclient.Write(tos)
 	}
 	return nil
 }

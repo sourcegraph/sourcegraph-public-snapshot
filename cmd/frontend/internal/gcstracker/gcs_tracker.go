@@ -134,18 +134,17 @@ func generateUserInfo(user *actor.Actor) *UserInfo {
 }
 
 // AddTrackedObject appends a new object to a TrackedObjects struct
-func (tos *TrackedObjects) AddTrackedObject(objectType string, oc interface{}) error {
+func (tos *TrackedObjects) AddTrackedObject(objectType string, oc interface{}) {
 	tos.Objects = append(tos.Objects, &TrackedObject{
 		ObjectID: uuid.New().String(),
 		Type:     objectType,
 		Ctx:      oc,
 	})
-	return nil
 }
 
 // AddReposWithDetailsObjects adds a series of RepoDetails objects to a TrackedObjects struct
 // based on a sourcegraph.ReposWithDetailsList
-func (tos *TrackedObjects) AddReposWithDetailsObjects(rl *sourcegraph.GitHubReposWithDetailsList) error {
+func (tos *TrackedObjects) AddReposWithDetailsObjects(rl *sourcegraph.GitHubReposWithDetailsList) {
 	for _, repo := range rl.ReposWithDetails {
 		newRepo := &RepoWithDetailsContext{
 			URI:                  repo.URI,
@@ -177,13 +176,11 @@ func (tos *TrackedObjects) AddReposWithDetailsObjects(rl *sourcegraph.GitHubRepo
 		}
 		tos.AddTrackedObject("RepoDetails", newRepo)
 	}
-
-	return nil
 }
 
 // AddOrgsWithDetailsObjects adds a series of OrgDetails objects to a TrackedObjects struct
 // based on a map from org name => a sourcegraph.OrgMembersList
-func (tos *TrackedObjects) AddOrgsWithDetailsObjects(ml map[string]([]*github.User)) error {
+func (tos *TrackedObjects) AddOrgsWithDetailsObjects(ml map[string]([]*github.User)) {
 	for orgName, orgMembers := range ml {
 		newOrg := &OrgWithDetailsContext{
 			OrgName: orgName,
@@ -196,17 +193,11 @@ func (tos *TrackedObjects) AddOrgsWithDetailsObjects(ml map[string]([]*github.Us
 		}
 		tos.AddTrackedObject("OrgDetails", newOrg)
 	}
-
-	return nil
 }
 
 // AddUserDetailsObject adds a UserDetailsContext object to a TrackedObjects struct
 // This provides us with the ability to set user-level properties based on information
 // that may not be available from frontend events
-func (tos *TrackedObjects) AddUserDetailsObject(ud *UserDetailsContext) error {
-	err := tos.AddTrackedObject("UserDetails", ud)
-	if err != nil {
-		return err
-	}
-	return nil
+func (tos *TrackedObjects) AddUserDetailsObject(ud *UserDetailsContext) {
+	tos.AddTrackedObject("UserDetails", ud)
 }

@@ -37,7 +37,7 @@ var maxRepoDetailsErrors = 4
 // Specifically, fetching limited information about
 // a user's GitHub profile and sending it to Google Cloud Storage
 // for analytics, as well as updating user data properties in HubSpot
-func TrackUserGitHubData(a *actor.Actor, event string, name string, company string, location string) error {
+func TrackUserGitHubData(a *actor.Actor, event string, name string, company string, location string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.TrackUserGitHubData: %s", err)
@@ -46,7 +46,7 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 
 	// If the user is in a dev environment, don't do any data pulls from GitHub, or any tracking
 	if env.Version == "dev" {
-		return nil
+		return
 	}
 
 	// Generate a single set of user parameters for HubSpot and Slack exports
@@ -75,10 +75,8 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 
 	gcsClient, err := gcstracker.New(a)
 	if err != nil {
-		return errors.Wrap(err, "gcstracker.New")
-	}
-	if gcsClient == nil {
-		return nil
+		log15.Error("Error creating a new GCS client", "error", err)
+		return
 	}
 
 	// Since the newly-authenticated actor (and their GitHubToken) has
@@ -123,23 +121,22 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 	// Add new TrackedObject
 	tos := gcsClient.NewTrackedObjects(event)
 
-	err = tos.AddOrgsWithDetailsObjects(owd)
+	tos.AddOrgsWithDetailsObjects(owd)
+	tos.AddReposWithDetailsObjects(rwd)
+	err = gcsClient.Write(tos)
 	if err != nil {
-		return errors.Wrap(err, "gcstracker.AddOrgsWithDetailsObjects")
+		log15.Error("Error writing to GCS", "error", err)
+		return
 	}
-	err = tos.AddReposWithDetailsObjects(rwd)
-	if err != nil {
-		return errors.Wrap(err, "gcstracker.AddReposWithDetailsObjects")
-	}
-
-	gcsClient.Write(tos)
 
 	// Finally, post signup notification to Slack
 	if event == "SignupCompleted" {
-		return notifySlackOnSignup(a, contactParams, hsResponse, tos)
+		err = notifySlackOnSignup(a, contactParams, hsResponse, tos)
+		if err != nil {
+			log15.Error("Error sending new signup details to Slack", "error", err)
+			return
+		}
 	}
-
-	return nil
 }
 
 // listAllGitHubReposWithDetails is a convenience wrapper around
