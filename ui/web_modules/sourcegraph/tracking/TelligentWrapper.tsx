@@ -54,8 +54,11 @@ class TelligentWrapper {
 		}
 		// for an on-prem trial, we only want to collect high level usage information
 		// if we are keeping data onsite anyways (like Umami), we can collect all info
-		// if a user using teensy-Sourcegraph specifies no tracking ID, we won't log either.
-		if (isOnPremInstance(context.authEnabled) && context.trackingAppID !== "UmamiWeb" && context.trackingAppID !== this.DEFAULT_APP_ID) {
+		if (isOnPremInstance(context.authEnabled) && context.trackingAppID !== "UmamiWeb") {
+			// if a user using teensy-Sourcegraph specifies no tracking ID, we won't log either.
+			if (context.trackingAppID === this.DEFAULT_APP_ID) {
+				return;
+			}
 			const limitedEventProps = {
 				event_action: eventProps.eventAction,
 				event_category: eventProps.eventCategory,
