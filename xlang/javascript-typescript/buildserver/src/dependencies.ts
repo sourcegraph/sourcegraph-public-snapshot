@@ -8,14 +8,19 @@ import { uri2path } from 'javascript-typescript-langserver/lib/util';
 import * as path from 'path';
 import * as url from 'url';
 import mkdirp = require('mkdirp');
+import { Observable } from '@reactivex/rxjs';
 import iterate from 'iterare';
+import { fromPairs, toPairs } from 'lodash';
 import * as fs from 'mz/fs';
 import { Span } from 'opentracing';
+import * as semver from 'semver';
 import * as yarn from './yarn';
+const fetchPackageJson: (packageName: string, options?: { version?: string, fullMetadata?: boolean }) => Promise<PackageJson> = require('package-json');
 
 export interface PackageJson {
 	name: string;
 	version?: string;
+	typings?: string;
 	repository?: string | { type: string, url: string };
 	dependencies?: {
 		[packageName: string]: string;
@@ -239,8 +244,40 @@ export class DependencyManager {
 			span.addTags({ uri, packageJsonUri });
 			try {
 				const parts = url.parse(packageJsonUri);
-				const logger = new PrefixedLogger(this.logger, `inst ${parts.pathname}`);
 				const directory: url.Url = { ...parts, pathname: path.posix.dirname(parts.pathname!) };
+				const logger = new PrefixedLogger(this.logger, `inst ${parts.pathname}`);
+
+				// Fetch package.json content
+				await this.updater.ensure(packageJsonUri, span);
+				const packageJsonContent = this.inMemoryFileSystem.getContent(packageJsonUri);
+				const packageJson: PackageJson = JSON.parse(packageJsonContent);
+
+				// Cache key for this package
+				const cacheKey = `${packageJson.name}@${packageJson.version}`;
+				const neededDependenciesCacheKey = `${cacheKey}:needed_dependencies`;
+				const yarnLockCacheKey = `${cacheKey}:yarn.lock`;
+				span.addTags({ cacheKey });
+
+				// Before writing package.json to disk, filter out all packages we don't need
+				// The only packages we need to install are @types/ packages and packages with a typings field
+				// Try to get the filtered dependencies from the cache
+				let neededDependencies: { [name: string]: string } | null = await this.client.xcacheGet({ key: neededDependenciesCacheKey });
+				span.log({ event: `cache ${neededDependencies ? 'hit' : 'miss'}` });
+				if (!neededDependencies) {
+					// Else figure it out with NPM registry requests
+					neededDependencies = fromPairs(await this.filterDependencies(packageJson, span).toArray().toPromise());
+					// Then save it to the cache
+					this.client.xcacheSet({ key: neededDependenciesCacheKey, value: neededDependencies });
+				}
+
+				span.log({ event: 'needed dependencies', needed: neededDependencies });
+
+				// Rewrite package.json dependencies field to only the packages we need
+				packageJson.dependencies = neededDependencies;
+				packageJson.devDependencies = undefined;
+				packageJson.peerDependencies = undefined;
+				packageJson.optionalDependencies = undefined;
+
 				// The directory that yarn will be spawned in
 				const cwd = path.join(this.tempDir, 'workspace', uri2path(url.format(directory)));
 				const globalFolder = path.join(this.tempDir, 'global', uri2path(url.format(directory)));
@@ -249,34 +286,27 @@ export class DependencyManager {
 				await new Promise((resolve, reject) => mkdirp(cwd, err => err ? reject(err) : resolve()));
 				await new Promise((resolve, reject) => mkdirp(globalFolder, err => err ? reject(err) : resolve()));
 				await new Promise((resolve, reject) => mkdirp(cacheFolder, err => err ? reject(err) : resolve()));
-				// Fetch package.json content
-				await this.updater.ensure(packageJsonUri, span);
+
 				// Write package.json into temporary directory
-				const packageJsonContent = this.inMemoryFileSystem.getContent(packageJsonUri);
-				await fs.writeFile(path.join(cwd, 'package.json'), packageJsonContent);
+				await fs.writeFile(path.join(cwd, 'package.json'), JSON.stringify(packageJson));
+
 				// If exists, write yarn.lock into temporary directory to cut down resolve time
 				const yarnLockUri = url.format({ ...directory, pathname: path.posix.join(directory.pathname, 'yarn.lock') });
-				const packageJson: PackageJson = JSON.parse(packageJsonContent);
-				const cacheKey = packageJson.name + '@' + packageJson.version + ':yarn.lock';
-				span.addTags({ cacheKey });
-				let yarnLock: string;
-				if (this.inMemoryFileSystem.has(yarnLockUri)) {
-					// yarn.lock is available in the repo
-					span.setTag('yarn.lock', 'repo');
-					this.logger.log(`${yarnLockUri} in repo`);
+
+				// First check the cache for (filtered) yarn.lock
+				let yarnLock: string | null = await this.client.xcacheGet({ key: cacheKey });
+
+				// If cache miss, check if available in the repo
+				if (!yarnLock && this.inMemoryFileSystem.has(yarnLockUri)) {
 					await this.updater.ensure(yarnLockUri, span);
 					yarnLock = this.inMemoryFileSystem.getContent(yarnLockUri);
-				} else {
-					// yarn.lock might be in the cache
-					yarnLock = await this.client.xcacheGet({ key: cacheKey }, span);
-					if (yarnLock) {
-						span.setTag('yarn.lock', 'cache');
-						this.logger.log(`${cacheKey} cache hit`);
-					}
 				}
+
+				// Write yarn.lock from cache or repo to temporary folder
 				if (yarnLock) {
 					await fs.writeFile(path.join(cwd, 'yarn.lock'), yarnLock);
 				}
+
 				// Spawn yarn process
 				await new Promise((resolve, reject) => {
 					const yarnProcess = yarn.install({ cwd, globalFolder, cacheFolder, logger }, span);
@@ -285,18 +315,21 @@ export class DependencyManager {
 					yarnProcess.once('error', reject);
 					yarnProcess.once('exit', () => this.yarnProcesses.delete(yarnProcess));
 				});
-				// If no yarn.lock commited, save newly generated yarn.lock to cache
-				if (!yarnLock) {
-					(async () => {
-						try {
-							await this.updater.ensure(yarnLockUri);
-							yarnLock = this.inMemoryFileSystem.getContent(yarnLockUri);
-							this.client.xcacheSet({ key: cacheKey, value: yarnLock });
-						} catch (err) {
-							this.logger.error(err);
-						}
-					})();
-				}
+
+				// Invalidate the yarn.lock in memory
+				this.updater.invalidate(yarnLockUri);
+
+				// Always save the new yarn.lock to the cache
+				(async () => {
+					try {
+						await this.updater.ensure(yarnLockUri);
+						yarnLock = this.inMemoryFileSystem.getContent(yarnLockUri);
+						this.client.xcacheSet({ key: yarnLockCacheKey, value: yarnLock });
+					} catch (err) {
+						this.logger.error('Failed to update yarn.lock in cache:', err);
+					}
+				})();
+
 				// Refetch file structure under node_modules directory
 				this.updater.invalidateStructure();
 				this.updater.fetchStructure().catch(err => undefined);
@@ -314,6 +347,54 @@ export class DependencyManager {
 		})();
 		this.installations.set(packageJsonUri, promise);
 		return promise;
+	}
+
+	/**
+	 * Reads all dependencies from a package.json file and returns those that contain `.d.ts`
+	 * definitions. `@types/` packages are always installed, for all other packages an NPM registry
+	 * request is done to find out whether the package.json has a `typings` field.
+	 *
+	 * @param packageJson Parsed content of a package.json
+	 * @param childOf Parent Span for tracing
+	 * @return Observable that emits pairs of [package name, version] of packages that need to be installed
+	 */
+	private filterDependencies(packageJson: PackageJson, childOf = new Span()): Observable<[string, string]> {
+		const span = childOf.tracer().startSpan('Filter dependencies', { childOf });
+		return Observable.of<keyof PackageJson>('dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies')
+			// Get a stream of package name, version pairs
+			.mergeMap(key => toPairs(packageJson[key]) as [string, string][])
+			// Remove duplicate packages, if people have them for whatever reason
+			.distinct(([name, version]) => name)
+			// Filter to only include either @types/ packages or packages with a typings field
+			.mergeMap(([name, version]) =>
+				(name.startsWith('@types/')
+					// @types packages are always needed
+					? Observable.of(true)
+					// Otherwise only packages with a typings field
+					// If the version is not a valid semver range (e.g. GitHub URL), use latest version
+					: Observable.from(fetchPackageJson(name, { version: semver.validRange(version) || 'latest', fullMetadata: true }))
+						.map(packageJson => !!packageJson.typings)
+						// Catch errors and always install packages we failed to fetch the package.json for (e.g. git dependency)
+						.catch(err => {
+							span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
+							this.logger.error(`Failed to fetch package.json of ${name}@${version} for ${packageJson.name}`, err);
+							return [true];
+						}))
+					.do(needed => {
+						span.log({ event: needed ? 'needed' : 'not needed', name, version });
+					})
+					// Emit the name version pair if it is needed
+					.filter(needed => needed)
+					.mapTo([name, version])
+			)
+			.catch(err => {
+				span.setTag('error', true);
+				span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
+				throw err;
+			})
+			.finally(() => {
+				span.finish();
+			});
 	}
 
 	/**

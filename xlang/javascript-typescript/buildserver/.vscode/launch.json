@@ -20,6 +20,7 @@
         "4"
       ],
       "env": {
+        "BLUEBIRD_W_FORGOTTEN_RETURN": "0",
         "BLUEBIRD_LONG_STACK_TRACES": "1",
         "NODE_ENV": "development"
       },
@@ -53,6 +54,7 @@
         "1"
       ],
       "env": {
+        "BLUEBIRD_W_FORGOTTEN_RETURN": "0",
         "BLUEBIRD_LONG_STACK_TRACES": "1",
         "NODE_ENV": "development"
       },
