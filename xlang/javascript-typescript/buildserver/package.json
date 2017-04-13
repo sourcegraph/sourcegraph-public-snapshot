@@ -25,7 +25,7 @@
     "url-relative": "^1.0.0",
     "uuid": "^3.0.1",
     "vscode-languageserver": "^3.1.0",
-    "yarn": "0.23.1"
+    "yarn": "0.23.2"
   },
   "devDependencies": {
     "@types/chai": "3.4.34",
