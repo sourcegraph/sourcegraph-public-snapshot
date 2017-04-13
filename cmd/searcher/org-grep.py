@@ -16,9 +16,27 @@ parser.add_argument('-u', '--url', action='store_true', help='Print matches as U
 
 args = parser.parse_args()
 
+domain = 'http://localhost:3080' if args.dev else 'https://sourcegraph.com'
+
 repos = []
 for r in args.repos:
-    if r.count('/') == 1:
+    if r.startswith('all:'):
+	repo_filter = r.split(':')[1]
+	graphql = {
+	    'query': '''
+query {
+  root {
+    repositories {
+      uri
+    }
+  }
+}
+	    ''',
+	    'variables': { 'maxResults': 500 },
+	}
+	r = requests.post(domain + '/.api/graphql', json=graphql)
+	repos.extend(x['uri'] for x in r.json()['data']['root']['repositories'] if repo_filter in x['uri'])
+    elif r.count('/') == 1:
 	org = r[len('github.com/'):]
 	for d in requests.get('https://api.github.com/orgs/' + org + '/repos').json():
 	    repos.append('github.com/' + d['full_name'])
@@ -66,7 +84,6 @@ query SearchText(
 	 'maxResults': 1000,
 }}
 
-domain = 'http://localhost:3080' if args.dev else 'https://sourcegraph.com'
 r = requests.post(domain + '/.api/graphql', json=graphql)
 sys.stderr.write('X-Trace: ' + r.headers['X-Trace'] + '\n')
 matches = r.json()["data"]["root"]["searchRepos"]["results"]
