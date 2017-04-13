@@ -179,7 +179,7 @@ func (s *Service) search(ctx context.Context, p *Params) (matches []FileMatch, e
 			if err != nil {
 				errS = " error=" + strconv.Quote(err.Error())
 			}
-			s.RequestLog.Printf("search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v duration=%v%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, time.Since(start), errS)
+			s.RequestLog.Printf("search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v matches=%d duration=%v%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, len(matches), time.Since(start), errS)
 		}
 	}(time.Now())
 
