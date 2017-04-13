@@ -467,6 +467,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 
 	callOpts := []jsonrpc2.CallOption{addTraceMeta(ctx)}
 	if notif {
+		span.LogKV("event", "sending notification")
 		return c.conn.Notify(ctx, method, params, callOpts...)
 	}
 	if !requestOriginatedFromProxy {
@@ -476,6 +477,7 @@ func (p *Proxy) callServer(ctx context.Context, crid clientRequestID, sid server
 		// client.
 		callOpts = append(callOpts, jsonrpc2.PickID(c.nextID(crid)))
 	}
+	span.LogKV("event", "sending request")
 	return c.conn.Call(ctx, method, params, result, callOpts...)
 }
 
