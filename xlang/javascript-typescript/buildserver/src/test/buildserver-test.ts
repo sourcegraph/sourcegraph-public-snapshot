@@ -86,7 +86,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				await this.service.shutdown();
 				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
 			});
-		});
+			});
 		describe('textDocumentDefinition()', function (this: TestContext) {
 			it('should return location of module declaration in DefinitelyTyped on module alias', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
@@ -255,7 +255,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 12
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -280,7 +280,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 0,
 						character: 23
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -305,7 +305,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 10
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -343,7 +343,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 21
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -368,7 +368,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 1,
 						character: 40
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -393,7 +393,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 3,
 						character: 0
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -419,7 +419,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						line: 2,
 						character: 10
 					}
-				});
+				}).toPromise();
 				assert.deepEqual(result, [{
 					location: undefined,
 					symbol: {
@@ -472,7 +472,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 						version: '0.0.31'
 					}
 				}
-			});
+			}).toPromise();
 			assert.deepEqual(referencesResult, [
 				{
 					reference: {

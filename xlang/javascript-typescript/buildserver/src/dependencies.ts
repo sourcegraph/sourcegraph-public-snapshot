@@ -388,24 +388,14 @@ export class DependencyManager {
 	 * @param childOf OpenTracing parent span for tracing
 	 */
 	async ensureForFile(uri: string, childOf = new Span()): Promise<void> {
-		const span = childOf.tracer().startSpan('Ensure dependency installation', { childOf });
-		span.addTags({ uri });
-		try {
-			// Ensure all own package.jsons in the workspace are available under this.packages
-			await this.ensureScanned(span);
-			// Find the closest one in parent directories
-			const packageJsonUri = this.getClosestPackageJsonUri(uri);
-			span.addTags({ packageJsonUri });
-			if (!packageJsonUri) {
-				return;
-			}
-			await (this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri, span));
-		} catch (err) {
-			span.setTag('error', true);
-			span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
-			throw err;
-		} finally {
-			span.finish();
+		// Ensure all own package.jsons in the workspace are available under this.packages
+		await this.ensureScanned(childOf);
+		// Find the closest one in parent directories
+		const packageJsonUri = this.getClosestPackageJsonUri(uri);
+		childOf.addTags({ packageJsonUri });
+		if (!packageJsonUri) {
+			return;
 		}
+		await (this.installations.get(packageJsonUri) || this.installForFile(packageJsonUri, childOf));
 	}
 }

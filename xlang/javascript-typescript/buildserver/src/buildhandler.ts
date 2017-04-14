@@ -1,4 +1,5 @@
 
+import { Observable } from '@reactivex/rxjs';
 import iterate from 'iterare';
 import { isCancelledError } from 'javascript-typescript-langserver/lib/cancellation';
 import { FileSystem } from 'javascript-typescript-langserver/lib/fs';
@@ -259,80 +260,97 @@ export class BuildHandler extends TypeScriptService {
 		return locations;
 	}
 
-	async textDocumentXdefinition(params: TextDocumentPositionParams, span = new Span()): Promise<SymbolLocationInformation[]> {
-		let symbolsLocations: SymbolLocationInformation[] = [];
+	/**
+	 * This method is the same as textDocument/definition, except that:
+	 *
+	 * - The method returns metadata about the definition (the same metadata that
+	 * workspace/xreferences searches for).
+	 * - The concrete location to the definition (location field)
+	 * is optional. This is useful because the language server might not be able to resolve a goto
+	 * definition request to a concrete location (e.g. due to lack of dependencies) but still may
+	 * know some information about it.
+	 */
+	textDocumentXdefinition(params: TextDocumentPositionParams, span = new Span()): Observable<SymbolLocationInformation[]> {
 		// First, attempt to get definition before dependencies fetching is finished.
-		// If it fails, wait for dependency fetching to finish and then retry.
-		try {
-			this.dependenciesManager.ensureForFile(params.textDocument.uri, span).catch(err => undefined);
-			symbolsLocations = await super.textDocumentXdefinition(params, span);
-		} catch (e) {
-			// Ignore
-		}
-		if (symbolsLocations.length === 0) {
-			await this.dependenciesManager.ensureForFile(params.textDocument.uri, span);
-			symbolsLocations = await super.textDocumentXdefinition(params, span);
-		}
-		// Add PackageDescriptors to SymbolDescriptor
-		await Promise.all(symbolsLocations.map(async symbolLocation => {
-			if (!symbolLocation.location) {
-				return;
-			}
-			// Get package name of the dependency in which the symbol is defined in, if any
-			const packageName = getPackageName(symbolLocation.location.uri);
-			if (packageName) {
-				// The symbol is part of a dependency in node_modules
-				// Build URI to package.json of the Dependency
-				const encodedPackageName = packageName.split('/').map(encodeURIComponent).join('/');
-				const parts = url.parse(symbolLocation.location.uri);
-				const packageJsonUri = url.format({ ...parts, pathname: parts.pathname!.slice(0, parts.pathname!.lastIndexOf('/node_modules/' + encodedPackageName)) + `/node_modules/${encodedPackageName}/package.json` });
-				// Make sure we have the package.json of the dependency available by ensuring the dependency is installed
-				await this.dependenciesManager.ensureForFile(packageJsonUri, span);
-				// Fetch the package.json of the dependency
-				await this.updater.ensure(packageJsonUri);
-				const packageJson: PackageJson = JSON.parse(this.inMemoryFileSystem.getContent(packageJsonUri));
-				const { name, version } = packageJson;
-				if (name) {
-					// Used by the LSP proxy to shortcut database lookup of repo URL for PackageDescriptor
-					let repoURL: string | undefined;
-					if (name.startsWith('@types/')) {
-						// if the dependency package is an @types/ package, point the repo to DefinitelyTyped
-						repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
-					} else {
-						// else use repository field from package.json
-						repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
-					}
-					symbolLocation.symbol.package = { name, version, repoURL };
+		this.dependenciesManager.ensureForFile(params.textDocument.uri, span).catch(err => undefined);
+		return (super.textDocumentXdefinition(params, span)
+			.catch(err => [[]])
+			// If no result, wait for dependency installation and retry
+			.mergeMap((symbolLocations): Observable<SymbolLocationInformation[]> =>
+				symbolLocations.length > 0
+					? Observable.of(symbolLocations)
+					: Observable.from(this.dependenciesManager.ensureForFile(params.textDocument.uri, span))
+						.mergeMap(() => super.textDocumentXdefinition(params, span))
+			)
+			.mergeAll<any>() as Observable<SymbolLocationInformation>)
+			// Add PackageDescriptors to SymbolDescriptor
+			.mergeMap((symbolLocation: SymbolLocationInformation) => {
+				// If no location is defined, return SymbolLocationInformation unchanged
+				if (!symbolLocation.location) {
+					return [symbolLocation];
 				}
-				// Remove location because it points to node_modules instead of the external repo
-				symbolLocation.location = undefined;
-			} else {
-				// The symbol is defined in the root package of the workspace, not in a dependency
-				// Get root package.json
-				const packageJson = await this.dependenciesManager.getClosestPackageJson(symbolLocation.location.uri, span);
-				if (!packageJson) {
-					// Workspace has no package.json
-					return;
+				// Get package name of the dependency in which the symbol is defined in, if any
+				const packageName = getPackageName(symbolLocation.location.uri);
+				if (packageName) {
+					// The symbol is part of a dependency in node_modules
+					// Build URI to package.json of the Dependency
+					const encodedPackageName = packageName.split('/').map(encodeURIComponent).join('/');
+					const parts = url.parse(symbolLocation.location.uri);
+					const packageJsonUri = url.format({ ...parts, pathname: parts.pathname!.slice(0, parts.pathname!.lastIndexOf('/node_modules/' + encodedPackageName)) + `/node_modules/${encodedPackageName}/package.json` });
+					// Make sure we have the package.json of the dependency available by ensuring the dependency is installed
+					return Observable.from(this.dependenciesManager.ensureForFile(packageJsonUri, span))
+						// Fetch the package.json of the dependency
+						.mergeMap(() => this.updater.ensure(packageJsonUri))
+						.map(() => {
+							const packageJson: PackageJson = JSON.parse(this.inMemoryFileSystem.getContent(packageJsonUri));
+							const { name, version } = packageJson;
+							if (name) {
+								// Used by the LSP proxy to shortcut database lookup of repo URL for PackageDescriptor
+								let repoURL: string | undefined;
+								if (name.startsWith('@types/')) {
+									// if the dependency package is an @types/ package, point the repo to DefinitelyTyped
+									repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
+								} else {
+									// else use repository field from package.json
+									repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
+								}
+								symbolLocation.symbol.package = { name, version, repoURL };
+							}
+							// Remove location because it points to node_modules instead of the external repo
+							symbolLocation.location = undefined;
+							return symbolLocation;
+						});
+				} else {
+					// The symbol is defined in the root package of the workspace, not in a dependency
+					// Get root package.json
+					return Observable.from(this.dependenciesManager.ensureScanned(span))
+						.mergeMap(() => this.dependenciesManager.getClosestPackageJson(symbolLocation.location!.uri))
+						.map(packageJson => {
+							if (!packageJson) {
+								// Workspace has no package.json
+								return symbolLocation;
+							}
+							let { name, version } = packageJson;
+							if (name) {
+								let repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
+								// If the root package is DefinitelyTyped, find out the proper @types package name for each typing
+								if (name === 'definitely-typed') {
+									// Example:
+									// rootUri      file:///
+									// symbol URI   file:///node/v6/index.d.ts
+									// relative URI        /node/v6/index.d.ts
+									// package name         node
+									name = '@types/' + decodeURIComponent(urlRelative(this.rootUri, symbolLocation.location!.uri).split('/')[1]);
+									version = undefined;
+									repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
+								}
+								symbolLocation.symbol.package = { name, version, repoURL };
+							}
+							return symbolLocation;
+						});
 				}
-				let { name, version } = packageJson;
-				if (name) {
-					let repoURL = typeof packageJson.repository === 'object' ? packageJson.repository.url : undefined;
-					// If the root package is DefinitelyTyped, find out the proper @types package name for each typing
-					if (name === 'definitely-typed') {
-						// Example:
-						// rootUri      file:///
-						// symbol URI   file:///node/v6/index.d.ts
-						// relative URI        /node/v6/index.d.ts
-						// package name         node
-						name = '@types/' + decodeURIComponent(urlRelative(this.rootUri, symbolLocation.location.uri).split('/')[1]);
-						version = undefined;
-						repoURL = 'https://github.com/DefinitelyTyped/DefinitelyTyped';
-					}
-					symbolLocation.symbol.package = { name, version, repoURL };
-				}
-			}
-		}));
-		return symbolsLocations;
+			})
+			.toArray();
 	}
 
 	async textDocumentHover(params: TextDocumentPositionParams, span = new Span()): Promise<Hover> {
@@ -361,23 +379,27 @@ export class BuildHandler extends TypeScriptService {
 		return super.workspaceSymbol(params, span);
 	}
 
-	async workspaceXreferences(params: WorkspaceReferenceParams, span = new Span()): Promise<ReferenceInformation[]> {
+	/**
+	 * The workspace references request is sent from the client to the server to locate project-wide
+	 * references to a symbol given its description / metadata.
+	 */
+	workspaceXreferences(params: WorkspaceReferenceParams, span = new Span()): Observable<ReferenceInformation[]> {
 		const dependeePackageName = params.hints ? params.hints.dependeePackageName : undefined;
-		if (params.query.package) {
-			await this._ensureDependency(params.query.package, dependeePackageName, span);
-		}
-
-		// strip the `package` field, because this was not added by the language server
-		const pkgData = params.query.package;
-		params.query.package = undefined;
-
-		const refs = await super.workspaceXreferences(params, span);
-
-		if (pkgData) {
-			for (const ref of refs) {
-				ref.symbol.package = pkgData;
-			}
-		}
-		return refs;
+		const packageDescriptor = params.query.package;
+		return ((packageDescriptor ? Observable.from(this._ensureDependency(packageDescriptor, dependeePackageName, span)) : Observable.of(null))
+			.mergeMap(() => {
+				// Strip the `package` field, because this was not added by the language server
+				// TODO is this needed?
+				params.query.package = undefined;
+				return super.workspaceXreferences(params, span);
+			})
+			.mergeAll<any>() as Observable<ReferenceInformation>)
+			// Add back PackageDescriptors
+			.do((referenceInformation: ReferenceInformation) => {
+				if (packageDescriptor) {
+					referenceInformation.symbol.package = packageDescriptor;
+				}
+			})
+			.toArray();
 	}
 }
