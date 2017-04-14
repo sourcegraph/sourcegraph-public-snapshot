@@ -70,7 +70,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 	case method == "textDocument/definition":
 		span.SetTag("LocationAbsent", "true")
 		return c.jumpToDefCrossRepo(ctx, params, result, opt...)
-	case method == "textDocument/hover":
+	case method == "textDocument/hover" && c.hasCrossRepoHover:
 		return c.hoverCrossRepo(ctx, params, result, opt...)
 	}
 	return c.Client.Call(ctx, method, params, result, opt...)
