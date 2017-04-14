@@ -5,7 +5,7 @@ FROM node:7-alpine
 # Allow to mount a custom yarn config
 RUN mkdir /yarn-config \
 	&& touch /yarn-config/.yarnrc \
-	&& ln -s /yarn-config/.yarnrc ~/.yarnrc
+	&& ln -s /yarn-config/.yarnrc /usr/local/share/.yarnrc
 
 # Add git, needed for yarn
 RUN apk add --no-cache bash git openssh
