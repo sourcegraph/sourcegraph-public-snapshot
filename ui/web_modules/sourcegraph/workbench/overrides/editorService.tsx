@@ -25,7 +25,15 @@ export class WorkbenchEditorService extends vs.WorkbenchEditorService {
 		// Set the resource revision to the commit hash
 		return TPromise.wrap(resolveRev(resource)).then(({ commit }) => {
 			updateFileTree(resource);
-			return super.createInput(input).then(i => super.openEditor(i, options));
+			return super.createInput(input).then(i => {
+				return super.openEditor(i, options).then((editor) => {
+					// Resolve the editor contents again since the contents may have changed.
+					// When contents change without triggering a refresh then already open editors
+					// will have outdated content.
+					i.resolve(true);
+					return editor;
+				});
+			});
 		});
 	}
 

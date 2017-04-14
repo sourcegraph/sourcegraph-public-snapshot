@@ -5,7 +5,7 @@ import { gql, graphql } from "react-apollo";
 import { IRange } from "vs/editor/common/editorCommon";
 
 import { abs, getRoutePattern } from "sourcegraph/app/routePatterns";
-import { RouteProps, Router, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
+import { RouteProps, Router, getSelectionFromRouter, pathFromRouteParams, repoRevFromRouteParams } from "sourcegraph/app/router";
 import "sourcegraph/blob/styles/Monaco.css";
 import { Heading, PageTitle } from "sourcegraph/components";
 import { whitespace } from "sourcegraph/components/utils";
@@ -43,6 +43,13 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 
 	componentWillMount(): void {
 		document.title = "Sourcegraph";
+	}
+
+	shouldComponentUpdate(nextProps: Props): boolean {
+		if (this.props.isRepoUrl || this.props.isSymbolUrl) {
+			return !nextProps.loading;
+		}
+		return true;
 	}
 
 	renderRepositoryNotFoundCallback(): void {
@@ -84,7 +91,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 	renderEmptyWorkbenchShell(renderElementCallBack?: () => void): JSX.Element {
 		return <div style={{ display: "flex", height: "100%" }}>
 			<WorkbenchShell
-				location={this.props.location}
+				location={this.context.router.location}
 				routes={this.props.routes}
 				params={this.props.params}
 				repo={""}
@@ -117,7 +124,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 		if (!this.props.isSymbolUrl && !this.props.isRepoUrl) {
 			return <div style={{ display: "flex", height: "100%" }}>
 				<WorkbenchShell
-					location={this.props.location}
+					location={this.context.router.location}
 					routes={this.props.routes}
 					params={this.props.params}
 					repo={""}
@@ -139,13 +146,13 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			const symbol = this.props.root.symbols[0];
 			repository = symbol.repository;
 			path = symbol.path;
-			selection = RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty();
+			selection = getSelectionFromRouter(this.context.router) || RangeOrPosition.fromLSPPosition(symbol).toMonacoRangeAllowEmpty();
 		} else {
 			if (!this.props.root || !this.props.root.repository) {
 				return this.renderEmptyWorkbenchShell(this.renderRepositoryNotFoundCallback);
 			}
 			repository = this.props.root!.repository!;
-			selection = this.props.selection;
+			selection = getSelectionFromRouter(this.context.router) || this.props.selection;
 			path = pathFromRouteParams(this.props.params);
 
 			if (repository.revState.cloneInProgress) {
@@ -164,7 +171,7 @@ class WorkbenchComponent extends React.Component<Props, {}> {
 			<RepoMain {...this.props} commit={repository.revState}>
 				<TrialEndingWarning layout={() => this.forceUpdate()} expirationDate={repository.expirationDate} />
 				<WorkbenchShell
-					location={this.props.location}
+					location={this.context.router.location}
 					routes={this.props.routes}
 					params={this.props.params}
 					repo={repository.uri}

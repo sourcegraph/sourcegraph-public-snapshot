@@ -92,14 +92,9 @@ export class WorkbenchShell extends React.Component<Props, {}> {
 		});
 	}
 
-	componentWillUpdate(nextProps: Props): void {
-		if (!isEqual(nextProps, this.props)) {
-			syncEditorWithRouterProps(nextProps);
-		}
-	}
-
 	componentWillReceiveProps(nextProps: Props): void {
 		if (!isEqual(nextProps, this.props)) {
+			syncEditorWithRouterProps(nextProps);
 			if (nextProps.componentCallback) {
 				nextProps.componentCallback();
 			}
