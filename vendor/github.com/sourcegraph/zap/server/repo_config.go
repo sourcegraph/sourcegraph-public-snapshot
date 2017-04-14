@@ -84,6 +84,11 @@ func (s *Server) ApplyRepoConfiguration(ctx context.Context, logger log.Logger, 
 		logger := log.With(logger, "add-or-update-remote", newName)
 		level.Debug(logger).Log("new", newRemote, "old", oldConfig.Remotes[newName])
 
+		if newRemote.Endpoint == "" {
+			level.Debug(logger).Log("remote-with-empty-endpoint", "")
+			continue
+		}
+
 		if refs := repo.RefDB.List("*"); len(refs) > 1 || (len(refs) == 1 && (repo.WorkspaceRef == "" || refs[0].Name != repo.WorkspaceRef)) {
 			// Disallow adding a remote to a repo that already has
 			// refs locally. This is because we don't yet want to have
