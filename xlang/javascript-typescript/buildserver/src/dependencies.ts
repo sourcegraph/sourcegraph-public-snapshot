@@ -68,13 +68,13 @@ export class DependencyManager {
 	/**
 	 * Fulfilled when the workspace was scanned for package.json files, they were fetched and parsed and installations kicked off
 	 */
-	private scanned?: Promise<void>;
+	private scanned = false;
 
 	/**
-	 * Map from package.json URI to package.json content of packages _defined_ in the workspace.
+	 * Set of package.json URIs _defined_ in the workspace.
 	 * This does not include package.jsons of dependencies and also not package.jsons that node_modules are vendored for
 	 */
-	packages = new Map<string, PackageJson>();
+	private packages = new Set<string>();
 
 	/**
 	 * Whether we should refuse a `workspace/symbol` request because we found that we are in DefinitelyTyped
@@ -89,6 +89,13 @@ export class DependencyManager {
 		private client: LanguageClient,
 		private logger: Logger = new NoopLogger()
 	) { }
+
+	/**
+	 * Returns an Iterable for all package.jsons in the workspace
+	 */
+	packageJsonUris(): IterableIterator<string> {
+		return this.packages.values();
+	}
 
 	/**
 	 * Disposes the DependencyManager and kills all running yarn processes
@@ -108,85 +115,61 @@ export class DependencyManager {
 	 * Scans the workspace to find all packages _defined_ in the workspace, saves the content in `packages`
 	 * For each found package, installation is started in the background and tracked in `installations`
 	 *
-	 * @param childOf OpenTracing parent span for tracing
+	 * @param span OpenTracing span for tracing
 	 */
-	private scan(childOf = new Span()): Promise<void> {
-		const promise = (async () => {
-			const span = childOf.tracer().startSpan('Scan dependencies', { childOf });
-			try {
-				// Find locations of package.json and node_modules folders
-				await this.updater.ensureStructure(span);
-				const vendoredPackageJsons = new Set<string>();
-				const packageJsons = new Set<string>();
-				let rootPackageJson: string | undefined;
-				let rootPackageJsonLevel = Infinity;
-				for (const uri of this.inMemoryFileSystem.uris()) {
-					const parts = url.parse(uri);
-					if (!parts.pathname) {
-						continue;
-					}
-					// Search for package.json files _not_ inside node_modules
-					if (parts.pathname.endsWith('/package.json') && !parts.pathname.includes('/node_modules/')) {
-						packageJsons.add(uri);
-						// If the current root package.json is further nested than this one, replace it
-						const level = parts.pathname.split('/').length;
-						if (level < rootPackageJsonLevel) {
-							rootPackageJson = uri;
-							rootPackageJsonLevel = level;
-						}
-					}
-					// Collect vendored node_modules folders found to filter package.jsons
-					const nodeModulesIndex = parts.pathname.indexOf('/node_modules/');
-					if (nodeModulesIndex !== -1) {
-						vendoredPackageJsons.add(url.format({ ...parts, pathname: uri.slice(0, nodeModulesIndex) + '/package.json' }));
-					}
-				}
-				this.logger.log(`Found ${packageJsons.size} package.json in workspace, ${vendoredPackageJsons.size} vendored node_modules`);
-				this.logger.log(`Root package.json: ${rootPackageJson}`);
-				// Filter package.jsons with vendored node_modules
-				await Promise.all(
-					iterate(packageJsons)
-						.filter(uri => !vendoredPackageJsons.has(uri))
-						.map(async uri => {
-							// Fetch package.json content
-							await this.updater.ensure(uri, span);
-							const packageJson = this.inMemoryFileSystem.getContent(uri);
-							const parsedPackageJson: PackageJson = JSON.parse(packageJson);
-							// Don't do a workspace/symbol search for DefinitelyTyped
-							if (parsedPackageJson.name === 'definitely-typed') {
-								this.puntWorkspaceSymbol = true;
-							}
-							this.packages.set(uri, parsedPackageJson);
-							// Start installation for the top-level package.json in the background
-							if (uri === rootPackageJson) {
-								this.ensureForFile(uri, span).catch(err => undefined);
-							}
-						})
-				);
-			} catch (err) {
-				this.scanned = undefined;
-				throw err;
+	private scan(span = new Span()): void {
+		// Find locations of package.json and node_modules folders
+		const vendoredPackageJsons = new Set<string>();
+		const packageJsons = new Set<string>();
+		let rootPackageJson: string | undefined;
+		let rootPackageJsonLevel = Infinity;
+		for (const uri of this.inMemoryFileSystem.uris()) {
+			const parts = url.parse(uri);
+			if (!parts.pathname) {
+				continue;
 			}
-		})();
-		this.scanned = promise;
-		return promise;
+			// Search for package.json files _not_ inside node_modules
+			if (parts.pathname.endsWith('/package.json') && !parts.pathname.includes('/node_modules/')) {
+				packageJsons.add(uri);
+				// If the current root package.json is further nested than this one, replace it
+				const level = parts.pathname.split('/').length;
+				if (level < rootPackageJsonLevel) {
+					rootPackageJson = uri;
+					rootPackageJsonLevel = level;
+				}
+			}
+			// Collect vendored node_modules folders found to filter package.jsons
+			const nodeModulesIndex = parts.pathname.indexOf('/node_modules/');
+			if (nodeModulesIndex !== -1) {
+				vendoredPackageJsons.add(url.format({ ...parts, pathname: uri.slice(0, nodeModulesIndex) + '/package.json' }));
+			}
+		}
+		this.logger.log(`Found ${packageJsons.size} package.json in workspace, ${vendoredPackageJsons.size} vendored node_modules`);
+		this.logger.log(`Root package.json: ${rootPackageJson}`);
+		this.packages.clear();
+		for (const uri of packageJsons) {
+			// Filter package.jsons with vendored node_modules
+			if (vendoredPackageJsons.has(uri)) {
+				continue;
+			}
+			// Start installation for the top-level package.json in the background
+			if (uri === rootPackageJson) {
+				this.ensureForFile(uri, span).catch(err => undefined);
+			}
+			this.packages.add(uri);
+		}
+		this.scanned = true;
 	}
 
 	/**
 	 * Ensures all package.json have been detected, loaded and installations kicked off
 	 *
-	 * @param childOf OpenTracing parent span for tracing
+	 * @param span OpenTracing span for tracing
 	 */
-	async ensureScanned(childOf = new Span()): Promise<void> {
-		const span = childOf.tracer().startSpan('Ensure scanned dependencies', { childOf });
-		try {
-			await (this.scanned || this.scan(span));
-		} catch (err) {
-			span.setTag('error', true);
-			span.log({ 'event': 'error', 'error.object': err, 'message': err.message, 'stack': err.stack });
-			throw err;
-		} finally {
-			span.finish();
+	async ensureScanned(span = new Span()): Promise<void> {
+		await this.updater.ensureStructure(span);
+		if (!this.scanned) {
+			this.scan(span);
 		}
 	}
 
@@ -194,12 +177,13 @@ export class DependencyManager {
 	 * Gets the content of the closest package.json known to to the DependencyManager in the ancestors of a URI
 	 * Call `ensureScanned()` before.
 	 */
-	getClosestPackageJson(uri: string): PackageJson | undefined {
+	async getClosestPackageJson(uri: string, span = new Span()): Promise<PackageJson | undefined> {
 		const packageJsonUri = this.getClosestPackageJsonUri(uri);
 		if (!packageJsonUri) {
 			return undefined;
 		}
-		return this.packages.get(packageJsonUri);
+		this.updater.ensure(packageJsonUri, span);
+		return JSON.parse(await this.inMemoryFileSystem.getContent(packageJsonUri));
 	}
 
 	/**

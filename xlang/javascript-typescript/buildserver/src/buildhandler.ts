@@ -118,22 +118,27 @@ export class BuildHandler extends TypeScriptService {
 	}
 
 	/**
-	 * ensureDependenciesToPackage ensures that dependencies have been
-	 * installed for all managed module directories that have a
-	 * dependency that matches the properties in `pkg`. It does so by
-	 * ensuring all dependencies anywhere have been installed. In the
-	 * future, this could be optimized by selectively installing
-	 * dependencies only for necessary module directories or optimized
-	 * even more to install just that dependency in a given managed
-	 * module directory.
+	 * Ensures that dependencies have been installed for all package.jsons that have a dependency to
+	 * the package described by the passed PackageDescriptor.
+	 *
+	 * TODO Install just the passed dependency for the package.json
 	 */
 	private async _ensureDependency(dependency: PackageDescriptor, dependeeName?: string, span = new Span()): Promise<void> {
 		await this.dependenciesManager.ensureScanned(span);
-		await Promise.all(iterate(this.dependenciesManager.packages).map(([uri, packageJson]): any => {
-			if (!dependeeName || packageJson.name === dependeeName) {
-				return this.dependenciesManager.ensureForFile(uri, span);
-			}
-		}));
+		await Promise.all(
+			iterate(this.dependenciesManager.packageJsonUris()).map(async uri => {
+				try {
+					await this.updater.ensure(uri, span);
+					const packageJson = JSON.parse(this.inMemoryFileSystem.getContent(uri));
+					if (!dependeeName || packageJson.name === dependeeName) {
+						await this.dependenciesManager.ensureForFile(uri, span);
+					}
+				} catch (err) {
+					// Continue on error
+					this.logger.error('Ensuring dependency', dependency, dependeeName, err);
+				}
+			})
+		);
 	}
 
 	/**
@@ -304,8 +309,7 @@ export class BuildHandler extends TypeScriptService {
 			} else {
 				// The symbol is defined in the root package of the workspace, not in a dependency
 				// Get root package.json
-				await this.dependenciesManager.ensureScanned(span);
-				const packageJson = this.dependenciesManager.getClosestPackageJson(symbolLocation.location.uri);
+				const packageJson = await this.dependenciesManager.getClosestPackageJson(symbolLocation.location.uri, span);
 				if (!packageJson) {
 					// Workspace has no package.json
 					return;
