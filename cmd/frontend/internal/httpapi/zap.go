@@ -16,16 +16,6 @@ import (
 )
 
 func serveZap(w http.ResponseWriter, r *http.Request) {
-	// Websocket connections made to sourcegraph.com should be redirected to
-	// direct.sourcegraph.com because CloudFlare times out WebSocket
-	// connections after 100s.
-	if r.Host == "sourcegraph.com" {
-		r.URL.Scheme = "https"
-		r.URL.Host = "direct.sourcegraph.com"
-		http.Redirect(w, r, r.URL.String(), http.StatusSeeOther)
-		return
-	}
-
 	span, _ := opentracing.StartSpanFromContext(r.Context(), "Zap session")
 	defer span.Finish()
 
