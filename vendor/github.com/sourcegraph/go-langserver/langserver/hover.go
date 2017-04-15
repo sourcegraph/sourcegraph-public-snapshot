@@ -81,6 +81,10 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 	}
 
 	findComments := func(o types.Object) string {
+		if o == nil {
+			return ""
+		}
+
 		// Package names must be resolved specially, so do this now to avoid
 		// additional overhead.
 		if v, ok := o.(*types.PkgName); ok {
@@ -149,10 +153,7 @@ func maybeAddComments(comments string, contents []lsp.MarkedString) []lsp.Marked
 	}
 	var b bytes.Buffer
 	doc.ToMarkdown(&b, comments, nil)
-	return append(contents, lsp.MarkedString{
-		Language: "markdown",
-		Value:    b.String(),
-	})
+	return append(contents, lsp.RawMarkedString(b.String()))
 }
 
 // packageDoc finds the documentation for the named package from its files or

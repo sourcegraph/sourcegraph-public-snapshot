@@ -221,7 +221,7 @@ func (m *MarkedString) UnmarshalJSON(data []byte) error {
 		m.isRawString = true
 		return nil
 	}
-	// Markdown
+	// Language string
 	ms := (*markedString)(m)
 	return json.Unmarshal(data, ms)
 }
@@ -231,6 +231,12 @@ func (m MarkedString) MarshalJSON() ([]byte, error) {
 		return json.Marshal(m.Value)
 	}
 	return json.Marshal((markedString)(m))
+}
+
+// RawMarkedString returns a MarkedString consisting of only a raw
+// string (i.e., "foo" instead of {"value":"foo", "language":"bar"}).
+func RawMarkedString(s string) MarkedString {
+	return MarkedString{Value: s, isRawString: true}
 }
 
 type SignatureHelp struct {
