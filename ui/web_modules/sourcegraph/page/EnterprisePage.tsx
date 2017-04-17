@@ -180,7 +180,7 @@ export class EnterprisePage extends React.Component<LocationProps, {}> {
 							borderBottomRightRadius: 4,
 						}}>
 							<li>Enterprise integrations: GitHub Enterprise, Phabricator, and other tools</li>
-							<li>Instant, global code search and code intelligence</li>
+							<li>Instant code search and code intelligence</li>
 							<li>Dedicated Customer Success Manager</li>
 						</ul>
 					</FlexContainer>
