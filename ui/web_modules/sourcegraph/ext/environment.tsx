@@ -152,6 +152,9 @@ export class BrowserEnvironment implements IEnvironment {
 		let wsOrigin = self.location.origin.replace(/^https?:\/\//, (match) => {
 			return match === "http://" ? "ws://" : "wss://";
 		});
+		if (wsOrigin === "wss://sourcegraph.com") {
+			wsOrigin = "wss://ws.sourcegraph.com";
+		}
 		return webSocketStreamOpener(`${wsOrigin}/.api/zap`)();
 	}
 

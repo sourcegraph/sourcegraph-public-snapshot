@@ -71,7 +71,7 @@ LIFECYCLE OF A ZAP OPERATION
 1. User opens a file "f" containing "abc".
 2. User types "x" in the file in their editor.
 3. Their editor's Zap editor extension notices the change and sends op {edit: {f: [3, "x"]}} to their Zap local server (running on their machine).
-4. Their Zap local server sends the op to the server specified by its ZAP_SERVER env var, which points to Sourcegraph's HTTP/WebSocket https://sourcegraph.com/.api/zap endpoint.
+4. Their Zap local server sends the op to the server specified by its ZAP_SERVER env var, which points to Sourcegraph's HTTP/WebSocket https://ws.sourcegraph.com/.api/zap endpoint.
 5. If the Zap local server isn't already in an active WebSocket connection with Sourcegraph: The /.api/zap HTTP endpoint forwards the connection to this Zap remote server (in this file), which performs the WebSocket upgrade with the user's Zap local server.
 6. The Zap remote server applies the op in-memory and stores a snapshot on the gitserver.
 7. The Zap remote server broadcasts the op to other connected clients and sends an ack to the original user's Zap local server.
