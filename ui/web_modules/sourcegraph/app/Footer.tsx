@@ -1,49 +1,31 @@
-import { hover, style } from "glamor";
+import { hover, media, style } from "glamor";
 import * as React from "react";
 import { Link } from "react-router";
 
 import { context } from "sourcegraph/app/context";
 import { FlexContainer } from "sourcegraph/components";
 import { GitHub, LinkedIn, Twitter } from "sourcegraph/components/symbols/Material";
-import { colors, whitespace } from "sourcegraph/components/utils";
+import { colors, layout, whitespace } from "sourcegraph/components/utils";
 
 export function Footer(): JSX.Element {
 	return <div style={{ backgroundColor: "#f0f5fb" }}>
-		<FlexContainer justify="between" style={{
+		<FlexContainer wrap={true} style={{
 			padding: whitespace[3],
 			paddingBottom: whitespace[5],
 			maxWidth: 960,
 			margin: "auto",
 		}}>
-			<div>
-				<Item url="/plan">Master plan</Item>
-
-			</div>
-
-			<div>
-				<Item url="/docs">Docs</Item>
-				<Item url="https://text.sourcegraph.com" anchor>Blog</Item>
-			</div>
-
-			<div>
-				<Item url="/pricing">Pricing</Item>
-				<Item url="/terms">Terms</Item>
-			</div>
-
-			<div>
-				<Item url="/security">Security</Item>
-				<Item url="/privacy">Privacy</Item>
-			</div>
-
-			<div>
-				<Item target="_blank" url="/beta" anchor>Beta program</Item>
-				<Item target="_blank" url="/jobs" anchor>Careers</Item>
-			</div>
-
-			<div>
-				<Item url="/about">About</Item>
-				<Item url="/contact">Contact</Item>
-			</div>
+			<Item url="/plan">Master plan</Item>
+			<Item url="/docs">Docs</Item>
+			<Item url="https://text.sourcegraph.com" anchor>Blog</Item>
+			<Item url="/pricing">Pricing</Item>
+			<Item url="/terms">Terms</Item>
+			<Item url="/security">Security</Item>
+			<Item url="/privacy">Privacy</Item>
+			<Item target="_blank" url="/beta" anchor>Beta program</Item>
+			<Item target="_blank" url="/jobs" anchor>Careers</Item>
+			<Item url="/about">About</Item>
+			<Item url="/contact">Contact</Item>
 		</FlexContainer>
 
 		<FlexContainer justify="between" style={{
@@ -93,16 +75,17 @@ interface ItemProps {
 
 function Item({ anchor, url, children, target }: ItemProps): JSX.Element {
 	const sx = style({
+		flex: "0 0 15%",
 		display: "block",
 		color: colors.blueGray(),
 		paddingTop: whitespace[2],
 		paddingBottom: whitespace[2],
 	});
 
+	const mediaSx = media(layout.breakpoints.sm, { flex: "0 0 48% !important" });
 	const hoverSx = hover({ color: colors.blueGrayD1() });
 
-	if (anchor) {
-		return <a target={target} href={url} {...sx} {...hoverSx}>{children}</a>;
-	}
-	return <Link to={url} {...sx} {...hoverSx}>{children}</Link>;
+	return anchor
+		? <a target={target} href={url} {...sx} {...hoverSx} {...mediaSx}>{children}</a>
+		: <Link to={url} {...sx} {...hoverSx} {...mediaSx}>{children}</Link>;
 };

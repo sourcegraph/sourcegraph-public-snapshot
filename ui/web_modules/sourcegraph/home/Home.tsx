@@ -13,6 +13,7 @@ import { colors, layout, whitespace } from "sourcegraph/components/utils";
 import { BetaInterestForm } from "sourcegraph/home/BetaInterestForm";
 import { FeatureCarousel } from "sourcegraph/home/FeatureCarousel";
 import { Nav } from "sourcegraph/home/Nav";
+import { EnterpriseLogos } from "sourcegraph/page/EnterprisePage";
 import { Events, PAGE_DASHBOARD } from "sourcegraph/tracking/constants/AnalyticsConstants";
 
 interface HomeProps { location: RouterLocation; }
@@ -213,7 +214,7 @@ export class Home extends React.Component<HomeProps, {}> {
 					</Panel>
 				</div>
 
-				<Heading level={4} align="center" style={{ fontWeight: "normal", marginTop: whitespace[5] }}>
+				<Heading level={4} align="center" style={{ marginTop: whitespace[5] }}>
 					On-premises or Sourcegraph.com
 				</Heading>
 
@@ -224,29 +225,11 @@ export class Home extends React.Component<HomeProps, {}> {
 					textAlign: "center",
 				}}>
 
-					<FlexContainer justify="center" wrap={true}>
-						<Heading level={6} style={{ fontWeight: "normal", lineHeight: 1.25, maxWidth: "680px", margin: "auto" }}>Code Intelligence for public and private code hosted on GitHub available at Sourcegraph.com. Get Sourcegraph for code hosted on your own servers with Sourcegraph Enterprise.</Heading>
-					</FlexContainer>
+					<p style={{ maxWidth: "680px", margin: "auto" }}>
+						Code Intelligence for public and private code hosted on GitHub available at Sourcegraph.com. Get Sourcegraph for code hosted on your own servers with Sourcegraph Enterprise.
+					</p>
 
-					<FlexContainer justify="center" items="center" wrap={true} style={{ padding: whitespace[4] }}>
-						<div {...layout.hide.sm} style={{ flex: 1 }} />
-						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2], }}>
-							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-gh-e-logo.svg`} />
-						</div>
-						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
-							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-bb-logo.svg`} />
-						</div>
-						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
-							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-gl-logo.svg`} />
-						</div>
-						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
-							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-phab-logo.svg`} />
-						</div>
-						<div style={{ display: "flex", justifyContent: "center", flex: 1, padding: whitespace[2] }}>
-							<img src={`${context.assetsRoot}/img/enterprise/sg-ent-git-logo.svg`} />
-						</div>
-						<div {...layout.hide.sm} style={{ flex: 1 }} />
-					</FlexContainer>
+					<EnterpriseLogos />
 
 					<Link to="/enterprise">
 						<div style={{ marginTop: whitespace[3] }}>
