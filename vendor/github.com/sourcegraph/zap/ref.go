@@ -1,6 +1,7 @@
 package zap
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -8,6 +9,7 @@ import (
 // IsBranchRef reports whether ref refers to a branch (starts with
 // "branch/").
 func IsBranchRef(ref string) bool {
+	CheckRefName(ref)
 	return strings.HasPrefix(ref, "branch/") && ref != "branch/"
 }
 
@@ -36,7 +38,10 @@ func (b BranchName) RemoteTrackingRef(remote string) string {
 // BranchNameFromRef parses the branch name from a branch ref. If ref
 // is not a branch ref, an error is returned.
 func BranchNameFromRef(ref string) (BranchName, error) {
-	if !IsBranchRef(ref) {
+	if ref == "" {
+		return "", errors.New("invalid empty branch ref")
+	}
+	if !strings.HasPrefix(ref, "branch/") {
 		return "", fmt.Errorf("not a branch ref: %s", ref)
 	}
 	return BranchName(strings.TrimPrefix(ref, "branch/")), nil

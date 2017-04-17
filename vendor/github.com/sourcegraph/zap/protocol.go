@@ -7,7 +7,7 @@ import (
 	"reflect"
 
 	"github.com/sourcegraph/jsonrpc2"
-	ot2 "github.com/sourcegraph/zap/op"
+	"github.com/sourcegraph/zap/ot"
 )
 
 // InitializeParams holds parameters for the "initialize" request.
@@ -263,7 +263,7 @@ type RefData struct {
 
 	// History is the op sequence applied on top of RefBase to modify
 	// this ref's state.
-	History []ot2.Ops `json:"history"`
+	History []ot.WorkspaceOp `json:"history"`
 }
 
 // DeepCopy makes a deep copy of r.
@@ -272,7 +272,7 @@ func (r RefData) DeepCopy() RefData {
 		RefBase: r.RefBase,
 	}
 	if r.History != nil {
-		r2.History = make([]ot2.Ops, len(r.History))
+		r2.History = make([]ot.WorkspaceOp, len(r.History))
 		for i, op := range r.History {
 			r2.History[i] = op.DeepCopy()
 		}
@@ -333,9 +333,9 @@ type RefUpdateUpstreamParams struct {
 	// reset to the given state).
 	State *RefState `json:"state,omitempty"`
 
-	// Ops indicates that the given operations should be applied to the
-	// ref. The client's revision number is given in Rev.
-	Ops ot2.Ops `json:"ops,omitempty"`
+	// Op indicates that the given operation should be applied to the
+	// ref. The client's revision number must given in Rev.
+	Op *ot.WorkspaceOp `json:"op,omitempty"`
 
 	// Rev is the revision number of the server's last-acked revision,
 	// from the POV of the downstream client that is sending this
@@ -367,8 +367,8 @@ func (p RefUpdateUpstreamParams) String() string {
 		}
 		fmt.Fprint(&buf, ")")
 	}
-	if p.Ops != nil {
-		fmt.Fprintf(&buf, "op@%d(%v)", p.Rev, p.Ops)
+	if p.Op != nil {
+		fmt.Fprintf(&buf, "op@%d(%v)", p.Rev, p.Op)
 	}
 	if p.Delete {
 		fmt.Fprintf(&buf, "delete")
@@ -387,13 +387,13 @@ func (p RefUpdateUpstreamParams) Validate() error {
 		if p.State == nil {
 			return errors.New("ref initial state must be set when creating a ref")
 		}
-		if p.Ops != nil {
+		if p.Op != nil {
 			return errors.New("only the ref initial state can be set when creating a ref")
 		}
 		return nil
 	}
-	if (p.State != nil && p.Ops != nil) || (p.State != nil && p.Delete) || (p.Ops != nil && p.Delete) || (p.State == nil && p.Ops == nil && !p.Delete) {
-		return errors.New("exactly 1 of (state,ops,delete) must be set when updating a ref")
+	if (p.State != nil && p.Op != nil) || (p.State != nil && p.Delete) || (p.Op != nil && p.Delete) || (p.State == nil && p.Op == nil && !p.Delete) {
+		return errors.New("exactly 1 of (state,op,delete) must be set when updating a ref")
 	}
 	return nil
 }
@@ -406,9 +406,9 @@ func (p RefUpdateUpstreamParams) DeepCopy() RefUpdateUpstreamParams {
 		tmp := p.State.DeepCopy()
 		p2.State = &tmp
 	}
-	if p.Ops != nil {
-		tmp := p.Ops.DeepCopy()
-		p2.Ops = tmp
+	if p.Op != nil {
+		tmp := p.Op.DeepCopy()
+		p2.Op = &tmp
 	}
 	return p2
 }
@@ -476,7 +476,7 @@ type RefUpdateDownstreamParams struct {
 	State *RefState `json:"state,omitempty"`
 
 	// Op indicates that the given operation was applied to the ref.
-	Ops ot2.Ops `json:"ops,omitempty"`
+	Op *ot.WorkspaceOp `json:"op,omitempty"`
 
 	// Ack indicates that the server received and acknowledges the
 	// last op sent by the client that receives this request.
@@ -488,7 +488,7 @@ type RefUpdateDownstreamParams struct {
 
 // IsFastForward reports whether p is a fast-forward update.
 func (p RefUpdateDownstreamParams) IsFastForward() bool {
-	return p.Ops != nil
+	return p.Op != nil
 }
 
 func (p RefUpdateDownstreamParams) String() string {
@@ -506,8 +506,8 @@ func (p RefUpdateDownstreamParams) string(includeRefIdentifier bool) string {
 	if p.State != nil {
 		fmt.Fprintf(&buf, "state(%v)", p.State)
 	}
-	if p.Ops != nil {
-		fmt.Fprintf(&buf, "op(%v)", p.Ops)
+	if p.Op != nil {
+		fmt.Fprintf(&buf, "op(%v)", p.Op)
 	}
 	if p.Delete {
 		fmt.Fprintf(&buf, "delete")
@@ -519,8 +519,8 @@ func (p RefUpdateDownstreamParams) Validate() error {
 	if p.RefIdentifier == (RefIdentifier{}) {
 		return errors.New("repo and ref must both be set")
 	}
-	if (p.State != nil && p.Ops != nil) || (p.State != nil && p.Delete) || (p.Ops != nil && p.Delete) {
-		return errors.New("exactly 1 of (state,ops,delete) must be set when updating a ref")
+	if (p.State != nil && p.Op != nil) || (p.State != nil && p.Delete) || (p.Op != nil && p.Delete) {
+		return errors.New("exactly 1 of (state,op,delete) must be set when updating a ref")
 	}
 	return nil
 }

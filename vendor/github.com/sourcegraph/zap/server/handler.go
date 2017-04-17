@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/zap"
 	"github.com/sourcegraph/zap/internal/debugutil"
-	ot2 "github.com/sourcegraph/zap/op"
+	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/pkg/fpath"
 	"github.com/sourcegraph/zap/server/refdb"
 	"github.com/sourcegraph/zap/server/refstate"
@@ -344,7 +344,7 @@ func (c *Conn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Re
 			RefState:      ref.Ref.Data.(refstate.RefState).RefState,
 		}
 		if res.Data != nil && res.Data.History == nil {
-			res.Data.History = []ot2.Ops{}
+			res.Data.History = []ot.WorkspaceOp{}
 		}
 
 		// Add watchers.

@@ -7,7 +7,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/sourcegraph/zap"
-	ot2 "github.com/sourcegraph/zap/op"
+	"github.com/sourcegraph/zap/ot"
 	"github.com/sourcegraph/zap/server/refdb"
 	"github.com/sourcegraph/zap/server/repodb"
 )
@@ -38,7 +38,7 @@ type RefUpdate struct {
 	Force   bool            `json:"force,omitempty"`
 	Current *zap.RefPointer `json:"current,omitempty"`
 	State   *zap.RefState   `json:"state,omitempty"`
-	Ops     ot2.Ops         `json:"op,omitempty"`
+	Op      *ot.WorkspaceOp `json:"op,omitempty"`
 	Rev     uint            `json:"rev"`
 	Ack     bool            `json:"ack,omitempty"`
 	Delete  bool            `json:"delete,omitempty"`
@@ -59,12 +59,12 @@ func (u RefUpdate) String() string {
 	if u.State != nil {
 		fmt.Fprintf(&buf, " state(%s)", u.State)
 	}
-	if u.Ops != nil {
+	if u.Op != nil {
 		var rev string // only Source==FromDownstream updates have a rev
 		if u.Source == FromDownstream {
 			rev = fmt.Sprintf("@%d", u.Rev)
 		}
-		fmt.Fprintf(&buf, " op%s(%s)", rev, u.Ops)
+		fmt.Fprintf(&buf, " op%s(%s)", rev, u.Op)
 	}
 	if u.Delete {
 		fmt.Fprint(&buf, " delete")
@@ -77,7 +77,7 @@ func (u RefUpdate) String() string {
 // like ot.WorkspaceOp{}. The update being a noop means we should
 // pretend like we never received this update at all.
 func (u RefUpdate) Noop() bool {
-	return u.State == nil && u.Ops == nil && !u.Delete
+	return u.State == nil && u.Op == nil && !u.Delete
 }
 
 // FromUpdateUpstream clears u and sets its fields from the given
@@ -89,7 +89,7 @@ func (u *RefUpdate) FromUpdateUpstream(o zap.RefUpdateUpstreamParams) {
 		Current:       o.Current,
 		Force:         o.Force,
 		State:         o.State,
-		Ops:           o.Ops,
+		Op:            o.Op,
 		Rev:           o.Rev,
 		Delete:        o.Delete,
 	}
@@ -102,7 +102,7 @@ func (u *RefUpdate) FromUpdateDownstream(o zap.RefUpdateDownstreamParams) {
 		Source:        FromUpstream, // confusing, but a downstream update is an update from upstream -> downstream
 		RefIdentifier: o.RefIdentifier,
 		State:         o.State,
-		Ops:           o.Ops,
+		Op:            o.Op,
 		Ack:           o.Ack,
 		Delete:        o.Delete,
 	}
@@ -114,7 +114,7 @@ func (u RefUpdate) ToUpdateDownstream() zap.RefUpdateDownstreamParams {
 	return zap.RefUpdateDownstreamParams{
 		RefIdentifier: u.RefIdentifier,
 		State:         u.State,
-		Ops:           u.Ops,
+		Op:            u.Op,
 		Ack:           u.Ack,
 		Delete:        u.Delete,
 	}
@@ -127,7 +127,7 @@ func (u RefUpdate) ToUpdateUpstream() zap.RefUpdateUpstreamParams {
 		Current:       u.Current,
 		Force:         u.Force,
 		State:         u.State,
-		Ops:           u.Ops,
+		Op:            u.Op,
 		Rev:           u.Rev,
 		Delete:        u.Delete,
 	}
@@ -136,7 +136,7 @@ func (u RefUpdate) ToUpdateUpstream() zap.RefUpdateUpstreamParams {
 // Update receives a ref update (either upstream or downstream),
 // recording and applying it to the ref's state.
 //
-// It may modify params (e.g., if params.Ops needs to be transformed to
+// It may modify params (e.g., if params.Op needs to be transformed to
 // be consecutive to the ref's history).
 //
 // It should be kept in sync with libzap's refState.update func.
@@ -182,7 +182,7 @@ func Update(logger log.Logger, repo *repodb.OwnedRepo, ref *refdb.OwnedRef, para
 		}
 	} else {
 		// Validate.
-		if params.Force && params.Ops != nil {
+		if params.Force && params.Op != nil {
 			return zap.Errorf(zap.ErrorCodeRefUpdateInvalid, "update ref %v: force is incompatible with op updates", params.RefIdentifier)
 		}
 
@@ -225,7 +225,7 @@ func Update(logger log.Logger, repo *repodb.OwnedRepo, ref *refdb.OwnedRef, para
 				}
 			}
 
-		case params.Ops != nil:
+		case params.Op != nil:
 			if refState.IsSymbolic() {
 				return zap.Errorf(zap.ErrorCodeRefConflict, "update symbolic ref %v: can't recv op updates directly (use a non-symbolic ref)", params.RefIdentifier)
 			}
@@ -243,7 +243,7 @@ func Update(logger log.Logger, repo *repodb.OwnedRepo, ref *refdb.OwnedRef, para
 				}
 				var err error
 				for _, other := range data.History[rev:] {
-					if params.Ops, _, err = ot2.Transform(logger, params.Ops, other); err != nil {
+					if *params.Op, _, err = ot.TransformWorkspaceOps(*params.Op, other); err != nil {
 						return err
 					}
 				}
@@ -265,7 +265,7 @@ func Update(logger log.Logger, repo *repodb.OwnedRepo, ref *refdb.OwnedRef, para
 			// Persist the op. (Unless the update became a noop after
 			// being transformed with our history.)
 			if !params.Noop() {
-				data.History = append(data.History, params.Ops)
+				data.History = append(data.History, *params.Op)
 			}
 		}
 
