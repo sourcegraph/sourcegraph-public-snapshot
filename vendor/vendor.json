@@ -971,10 +971,10 @@
 			"revisionTime": "2016-09-28T03:47:51Z"
 		},
 		{
-			"checksumSHA1": "GcVMupsaq2I9Gv3sisfIyehcRKE=",
+			"checksumSHA1": "LmIIcjPJxN+jy2Qz4XpljyTzu10=",
 			"path": "github.com/sourcegraph/go-langserver/langserver",
-			"revision": "6a57c7a8220ccb8a9b377c62fc54ac1dd765690b",
-			"revisionTime": "2017-04-15T20:12:21Z"
+			"revision": "43b0eee5b5f9fa08af4d9deafaf08203b1d7a440",
+			"revisionTime": "2017-04-18T07:41:55Z"
 		},
 		{
 			"checksumSHA1": "/1pmXgjVX/cUJyh3iJskHbANOeA=",

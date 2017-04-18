@@ -251,11 +251,6 @@ func score(q Query, s symbolPair) (scor int) {
 // toSym returns a SymbolInformation value derived from values we get
 // from the Go parser and doc packages.
 func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) symbolPair {
-	container := recv
-	if container == "" {
-		container = filepath.Base(bpkg.ImportPath)
-	}
-
 	var id string
 	if recv == "" {
 		id = fmt.Sprintf("%s/-/%s", path.Clean(bpkg.ImportPath), name)
@@ -268,7 +263,7 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 			Name:          name,
 			Kind:          kind,
 			Location:      goRangeToLSPLocation(fs, pos, pos+token.Pos(len(name))),
-			ContainerName: container,
+			ContainerName: recv,
 		},
 		// NOTE: fields must be kept in sync with workspace_refs.go:defSymbolDescriptor
 		desc: symbolDescriptor{
