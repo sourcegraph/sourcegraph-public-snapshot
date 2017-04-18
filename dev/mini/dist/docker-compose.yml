@@ -11,7 +11,7 @@ services:
       PGUSER: sg
       REDIS_MASTER_ENDPOINT: redis:6379
       SRC_APP_DISABLE_SUPPORT_SERVICES: "true"
-      SRC_APP_URL: ${SRC_APP_URL:-http://localhost:3080}
+      SRC_APP_URL: ${SRC_APP_HOST:-http://localhost}:${SRC_APP_PORT:-3080}
       SRC_GIT_SERVERS: gitserver-1:3178
       SRC_INDEXER: indexer:3179
       SRC_SESSION_STORE_REDIS: redis:6379
