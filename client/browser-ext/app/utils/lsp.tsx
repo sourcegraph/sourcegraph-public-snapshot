@@ -79,10 +79,12 @@ export function getTooltip(target: HTMLElement, path: string, line: number, repo
 			if (json[1].result && json[1].result.contents && json[1].result.contents.length > 0) {
 				const title = json[1].result.contents[0].value;
 				let doc;
-				// TODO(uforic): apparently you are only interested in one result, so use array.find() What about the case of a plain string
-				json[1].result.contents.filter((markedString) => markedString.language === "markdown").forEach((content) => {
-					// TODO(john): what if there is more than 1?
-					doc = content.value;
+				json[1].result.contents.forEach(markedString => {
+					if (typeof markedString === "string") {
+						doc = markedString;
+					} else if (markedString.language === "markdown") {
+						doc = markedString.value;
+					}
 				});
 				tooltipCache[cacheKey] = { title, doc };
 			} else {
