@@ -51,6 +51,23 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 
 	u, _ := url.Parse(backend.ZapServerURL)
 	proxy := websocketproxy.NewProxy(u)
+	proxy.Upgrader = &websocket.Upgrader{
+		ReadBufferSize:  1024, // default used by websocketproxy
+		WriteBufferSize: 1024, // default used by websocketproxy
+		CheckOrigin: func(r *http.Request) bool {
+			// Same as the default used by websocketproxy, except it allows
+			// ws.sourcegraph.com too.
+			origin := r.Header["Origin"]
+			if len(origin) == 0 {
+				return true
+			}
+			u, err := url.Parse(origin[0])
+			if err != nil {
+				return false
+			}
+			return u.Host == r.Host || u.Host == "ws.sourcegraph.com"
+		},
+	}
 	d := *websocket.DefaultDialer
 	d.NetDial = func(network, addr string) (net.Conn, error) {
 		if u.Host == "" {
