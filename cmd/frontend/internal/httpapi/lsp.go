@@ -30,6 +30,14 @@ import (
 
 var websocketUpgrader = websocket.Upgrader{}
 
+func init() {
+	if v, _ := strconv.ParseBool(os.Getenv("WEBSOCKET_INSECURE_SKIP_ORIGIN_CHECK")); v {
+		websocketUpgrader.CheckOrigin = func(r *http.Request) bool {
+			return true
+		}
+	}
+}
+
 func serveLSP(w http.ResponseWriter, r *http.Request) {
 	var err error
 	ctx := r.Context()
