@@ -381,9 +381,16 @@ func callSymbols(ctx context.Context, c *jsonrpc2.Conn, query string) ([]string,
 	}
 	syms := make([]string, len(symbols))
 	for i, s := range symbols {
-		syms[i] = fmt.Sprintf("%s:%s:%s.%s:%d:%d", s.Location.URI, symbolKindName[s.Kind], s.ContainerName, s.Name, s.Location.Range.Start.Line, s.Location.Range.Start.Character)
+		syms[i] = fmt.Sprintf("%s:%s:%s:%d:%d", s.Location.URI, symbolKindName[s.Kind], qualifiedName(s), s.Location.Range.Start.Line, s.Location.Range.Start.Character)
 	}
 	return syms, nil
+}
+
+func qualifiedName(s lsp.SymbolInformation) string {
+	if s.ContainerName != "" {
+		return s.ContainerName + "." + s.Name
+	}
+	return s.Name
 }
 
 type markedStrings []lsp.MarkedString

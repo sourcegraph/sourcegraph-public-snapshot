@@ -96,10 +96,10 @@ func TestProxy(t *testing.T) {
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:pkg.B:0:16"},
-				"A":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16"},
-				"B":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:pkg.B:0:16"},
-				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:pkg.B:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:B:0:16"},
+				"A":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16"},
+				"B":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:B:0:16"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b.go:function:B:0:16"},
 			},
 		},
 		"go detailed": {
@@ -112,10 +112,10 @@ func TestProxy(t *testing.T) {
 			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:pkg.T:0:16"},
-				"T":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:pkg.T:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16"},
+				"T":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16"},
 				"F":           []string{}, // we don't return fields for now
-				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:pkg.T:0:16"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16"},
 			},
 		},
 		"exported defs unexported type": {
@@ -170,8 +170,8 @@ func TestProxy(t *testing.T) {
 				"d2/b.go:1:52": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:1:39 id:test/pkg/d/d2/-/B name:B package:test/pkg/d/d2 packageName:d2 recv: vendor:false",
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:function:d.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:function:d2.B:0:38"},
-				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:function:d.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:function:d2.B:0:38"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:function:B:0:38"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#d/d2/b.go:function:B:0:38"},
 			},
 			wantXReferences: map[*lsext.WorkspaceReferencesParams][]string{
 				// Non-matching name query.
@@ -258,8 +258,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				"a.go:1:23": "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:1:17 id:test/pkg/-/A name:A package:test/pkg packageName:p recv: vendor:false",
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16"},
-				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:pkg.A:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:function:A:0:16"},
 			},
 		},
 		"goroot": {
@@ -287,8 +287,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantSymbols: map[string][]string{
 				"": []string{
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:pkg._:0:25",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:pkg.x:0:46",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:_:0:25",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:x:0:46",
 				},
 				"is:exported": []string{},
 			},
@@ -325,8 +325,8 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:a.A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:variable:b._:0:32"},
-				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:a.A:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:variable:_:0:32"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:A:0:16"},
 			},
 		},
 		"go vendored dep": {
@@ -352,7 +352,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:pkg._:0:43", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:function:vendored.V:0:23"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:_:0:43", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:function:V:0:23"},
 				"is:exported": []string{},
 			},
 		},
@@ -366,24 +366,24 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			},
 			wantSymbols: map[string][]string{
 				"": []string{
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:x:0:19",
 				},
 				"x": []string{
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:x:0:19",
 				},
 				"pkg2.x": []string{
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:x:0:19",
 				},
 				"pkg3.x": []string{
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:pkg3.x:0:19",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:pkg.x:0:18",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:pkg2.x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#z.go:function:x:0:18",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/x/pkg3/x.go:function:x:0:19",
+					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/a/pkg2/x.go:function:x:0:19",
 				},
 				"is:exported": []string{},
 			},
@@ -571,12 +571,12 @@ func yza() {}
 `,
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:pkg.yza:2:5"},
-				"xyz":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:pkg.yza:2:5"},
-				"yza":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:pkg.yza:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13"},
-				"abc":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5"},
-				"bcd":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5"},
-				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:pkg.XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:pkg.YZA:2:5"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:YZA:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:yza:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13"},
+				"xyz":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:yza:2:5"},
+				"yza":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:YZA:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#xyz.go:function:yza:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13"},
+				"abc":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:XYZ:2:5"},
+				"bcd":         []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:YZA:2:5"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:class:XYZ:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:class:YZA:2:5", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#abc.go:method:XYZ.ABC:4:13", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#bcd.go:method:YZA.BCD:4:13"},
 			},
 		},
 	}
