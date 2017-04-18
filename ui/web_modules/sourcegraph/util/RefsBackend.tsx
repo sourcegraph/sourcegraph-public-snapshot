@@ -405,7 +405,7 @@ function setupWorkspace(uri: URI, rev: string | undefined, isReady: () => boolea
 	});
 }
 
-const globalRefLangs = new Set(["go", "java"]);
+const globalRefLangs = new Set(["go", "java", "typescript", "javascript"]);
 async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition): Promise<DepRefsData | null> {
 	// Only fetch global refs for certain languages.
 	if (!globalRefLangs.has(model.getModeId())) {
