@@ -1,17 +1,15 @@
-# Sourcegraph Self-Hosted
+# Sourcegraph local installer
 
-Sourcegraph Self-Hosted is a downloadable distribution of Sourcegraph that can be run on any machine. It is designed to scale up to 10 repositories and 10 users. For larger teams, Sourcegraph Self-Hosted can be used for evaluation purposes.
+This README walks you through how to run an instance of Sourcegraph on your local machine.
 
 ## System requirements
 
-Sourcegraph Self-Hosted should run on any OS where Docker can be installed (includes most modern macOS, Linux, and Windows systems).
-
-* Install [Docker Compose](https://docs.docker.com/compose/install/).
-* If you did not install Docker while installing Docker Compose, [install Docker](https://docs.docker.com/engine/installation/), as well.
+* Install [Docker](https://www.docker.com/community-edition) version 1.12.0 or later (run `docker version` to check).
+* Install [Docker Compose](https://docs.docker.com/compose/install/). (On macOS and Windows, this is automatically installed with Docker.)
 
 ## Credentials
 
-Sourcegraph Self-Hosted is currently available to a restricted set of users. If you are part of this set, you should have received a username and password to the Sourcegraph Self-Hosted Docker container registry. Before starting, run the following command to authorize your Docker client to fetch from this registry:
+Sourcegraph is currently available to a restricted set of users. If you are part of this set, you should have received a username and password to the Sourcegraph Docker container registry. Before starting, run the following command to authorize your Docker client to fetch from this registry:
 
 ```
 docker login -u <username> -p <password> docker.sourcegraph.com
@@ -19,32 +17,57 @@ docker login -u <username> -p <password> docker.sourcegraph.com
 
 ## Install
 
-1. `cd` into the directory containing this README and run `docker-compose up`.<br>
-*Note: you may see some messages in the Sourcegraph frontend logs about connecting to PostgreSQL or Redis on startup. These are usually innocuous.*
-1. Visit http://localhost:3080/github.com/gorilla/mux. This adds a small open-source repository to your Sourcegraph Self-Hosted instance. You should see a message indicating the repository is cloning, followed by a file browser after the repository is cloned.
-1. That's it—you can start exploring the code. For example, open [`mux.go`](http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go) and try clicking on some function names or search for symbols using the '/#' hotkey combination.<br>
+1. `cd` into the directory containing this README and run `docker-compose pull && docker-compose up`.
+1. Visit http://localhost:3080/github.com/gorilla/mux.
+1. **That's it**—you can start exploring code on your local instance of Sourcegraph.
+
+For example, open [`mux.go`](http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go) and try clicking on some function names or search for symbols using the '/#' hotkey combination.<br>
 *Note: you may have to wait about 60 seconds the very first time for jump-to-definition and tooltips to work.*
 
-Now, let's add your private repositories:
+### Add your private repositories
+
+Before adding your private repositories, please note the "Privacy" section of this README.
 
 1. Stop the Sourcegraph instance with `Ctrl-C` in the terminal running `docker-compose up`.
 1. Run `cp env.example .env`<br>
    (The ".env" file sets default values for environment variables when running Docker Compose.)
-1. Uncomment the `GIT_PARENT_DIRECTORY` line in `.env` and set it to the local parent directory containing your private repositories.
+1. Uncomment the `GIT_PARENT_DIRECTORY` line in `.env` and set it to a parent directory containing your private repositories.
 1. Run `docker-compose up`
-1. Visit `http://localhost:3080/local/<repository-id>`. The \<repository-id\> is the relative path from `GIT_PARENT_DIRECTORY` to the repository root directory on local disk.
+1. Visit `http://localhost:3080`. You should now see your local repositories listed on that page.
+
+### Share it with your team
+
+The real value of Sourcegraph is using it to ground technical discussions and share knowledge among your team. To share your instance of Sourcegraph with others,
+
+1. Run `ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+1. One of the IPs listed will be your machine's local IP. Sourcegraph will be accessible to teammates in your local network at URLs of the form `http://<local-ip>:3080`.
+1. If you decide to deploy Sourcegraph at a domain name, update the `SRC_APP_HOST` value in `.env` to reflect the user-visible domain and restart Sourcegraph.
+
+If you run into any issues with installation, please email support@sourcegraph.com. We typically respond withint 24 hours.
 
 ## Restarting, resetting, and updates
 
-To stop Sourcegraph, `Ctrl-C` the terminal that is running `docker-compose up`. Alternatively, you can `cd` into the directory and run `docker-compose down`.
+To stop Sourcegraph, `Ctrl-C` the terminal that is running `docker-compose up`. Alternatively, you can `cd` into the Sourcegraph directory (the one that contains `docker-compose.yml` and this README) and run `docker-compose down`. You can restart Sourcegraph with `docker-compose restart`.
 
-To update Sourcegraph run `docker-compose pull` in that directory.
+Sourcegraph persists data to the `.data` directory. To reset Sourcegraph, stop your Sourcegraph instance, delete the `.data` directory, and start Sourcegraph back up.
 
-Sourcegraph Self-Hosted persists data to the `.data` directory. To reset Sourcegraph Self-Hosted, stop your Sourcegraph Self-Hosted instance, delete the `.data` directory, and restart the Sourcegraph Self-Hosted instance.
+To update Sourcegraph run `docker-compose pull` in the Sourcegraph directory.
+
+## Customization
+
+### Remote repository host
+
+Sourcegraph can index repositories stored on a remote Git host (e.g., GitHub Enterprise, Bitbucket Server, Gitlab, Gitolite, raw Git). We highly recommend you run through the installation instructions on local repositories above before running through the following steps to index remote Git repositories.
+
+To index remote repositories:
+
+1. Uncomment the appropriate lines in your `.env` file to define `SSH_KEYPAIR_FOLDER`, `ORIGIN_MAP`, and `ENSURE_REPOS_REMOTE`.
+1. Run `docker-compose restart` in your Sourcegraph directory.
+1. Visit `http://localhost:3080`. You should now see your remote repositories listed.
 
 ## Privacy
 
-Sourcegraph Self-Hosted collects usage data in the web UI and transmits this over HTTPS to a server controlled by Sourcegraph. This data is similar to what is collected by many web applications and lets our team identify bugs and prioritize product improvements. This data DOES NOT include private source code, but *does* include the following data:
+By default, Sourcegraph collects usage data at the JavaScript layer and transmits this over HTTPS to a server controlled by Sourcegraph (the company). This data is similar to what is collected by many web applications and lets our team identify bugs and prioritize product improvements. This data DOES NOT include the contents of private source code files, but *does* include user actions like the following snippet:
 ```
 {
     event_action: CLICK,
@@ -57,15 +80,19 @@ Sourcegraph Self-Hosted collects usage data in the web UI and transmits this ove
     path_name: github.com/gorilla/mux/mux.go,
 }
 ```
-To see exactly what data is sent to Sourcegraph, open the JavaScript console in your browser, and view network traffic to the `production` endpoint.
+Note that the above includes repository names and file names viewed in Sourcegraph. To see exactly what data is sent to Sourcegraph, open the JavaScript console in your browser and view network traffic to the `production` endpoint.
 
-To disable all tracking, contact Sourcegraph support (support@sourcegraph.com) and we will send simple instructions to do so.
+To disable all tracking, contact Sourcegraph support (support@sourcegraph.com).
 
 ## FAQ
 
-### Unable to clone repositories from GitHub.com
+### Why am I unable to view repositories from GitHub.com?
 
-Sourcegraph Self-Hosted indexes repositories from GitHub.com on demand, in response to user actions. By default, it uses the credentials in your `$HOME/.ssh` directory. If your GitHub SSH key is not in `$HOME/.ssh`, then auto-indexing GitHub.com repositories may fail.
+Sourcegraph indexes repositories from GitHub.com on demand, in response to user actions. By default, it uses the credentials in your `$HOME/.ssh` directory. If your GitHub SSH key is not in `$HOME/.ssh`, then auto-indexing GitHub.com repositories may fail.
+
+### Why doesn't Sourcegraph auto-clone repositories from X code host?
+
+Sourcegraph currently auto-clones only GitHub.com repositories. Repositories hosted elsewhere (including your local machine) are added via a separate code path. Local repositories are automatically added based on the local file path you specify to the containing directory (`GIT_PARENT_DIRECTORY` in your `.env` file). Remote repositories are specified by the `ENSURE_REPOS_REMOTE` variable in your `.env`.
 
 ## Troubleshooting
 

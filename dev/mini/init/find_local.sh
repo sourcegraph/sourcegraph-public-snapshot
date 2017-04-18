@@ -13,6 +13,7 @@ function normalize() {
         echo "local/${x#$GIT_PARENT_DIRECTORY/}"
     done
 }
-export -f normalize
 
-cat /tmp/git_repos | xargs bash -c 'normalize "${@:0}"'
+for r in $(cat /tmp/git_repos); do
+    normalize "$r";
+done

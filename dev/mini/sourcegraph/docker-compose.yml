@@ -106,6 +106,7 @@ services:
       - ${GIT_PARENT_DIRECTORY:-.}:/local
     environment:
       GIT_PARENT_DIRECTORY: /local
+      ENSURE_REPOS_REMOTE: ${ENSURE_REPOS_REMOTE}
       AUTH_ENABLED: "false"
       GITHUB_BASE_URL: http://github-proxy:3180
       LSP_PROXY: lsp-proxy:4388
@@ -120,3 +121,4 @@ services:
       SRC_SESSION_STORE_REDIS: redis:6379
     depends_on:
       - "frontend"
+    command: ["./wait_for_it.sh", "-t", "0", "postgres:5432", "--", "./init.sh"]
