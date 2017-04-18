@@ -469,7 +469,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 								line: 1
 							},
 							start: {
-								character: 8,
+								character: 9,
 								line: 1
 							}
 						},
@@ -494,7 +494,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 								line: 1
 							},
 							start: {
-								character: 8,
+								character: 9,
 								line: 1
 							}
 						},

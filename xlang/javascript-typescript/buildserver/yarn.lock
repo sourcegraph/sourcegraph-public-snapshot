@@ -1235,9 +1235,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.22:
-  version "2.0.0-pre.22"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.22.tgz#5dd26f6d8214ac319abf9ffbba31295ffd394518"
+javascript-typescript-langserver@^2.0.0-pre.23:
+  version "2.0.0-pre.23"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.23.tgz#99d527bf724941051e0d475a2423526ba8d96245"
   dependencies:
     "@reactivex/rxjs" "^5.3.0"
     bluebird "^3.4.7"
@@ -1251,7 +1251,7 @@ javascript-typescript-langserver@^2.0.0-pre.22:
     mz "^2.6.0"
     opentracing felixfbecker/opentracing-javascript#d42e8ac50e3555ca1a9a006bee0fd5856a838a47
     semaphore-async-await "^1.5.1"
-    typescript "2.2.2"
+    typescript "2.3.0"
     vscode-jsonrpc "^3.1.0"
     vscode-languageserver "^3.1.0"
     vscode-languageserver-types "^3.0.3"
@@ -2453,13 +2453,9 @@ typescript-formatter@^4.0.1:
     editorconfig "^0.13.2"
     glob-expand "^0.2.1"
 
-typescript@2.2.1:
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.2.1.tgz#4862b662b988a4c8ff691cc7969622d24db76ae9"
-
-typescript@2.2.2:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.2.2.tgz#606022508479b55ffa368b58fee963a03dfd7b0c"
+typescript@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.3.0.tgz#2e63e09284392bc8158a2444c33e2093795c0418"
 
 uglify-js@^2.6:
   version "2.8.21"
