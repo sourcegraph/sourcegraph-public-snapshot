@@ -4,7 +4,7 @@ Sourcegraph Origin is a downloadable distribution of Sourcegraph that can be run
 
 ## System requirements
 
-Sourcegraph Origin runs on any OS with Docker installed.
+Sourcegraph Origin should run on any OS where Docker can be installed (includes most modern macOS, Linux, and Windows systems).
 
 * Install [Docker Compose](https://docs.docker.com/compose/install/).
 * If you did not install Docker while installing Docker Compose, [install Docker](https://docs.docker.com/engine/installation/), as well.
