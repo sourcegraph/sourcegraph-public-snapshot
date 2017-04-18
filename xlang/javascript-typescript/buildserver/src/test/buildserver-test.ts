@@ -319,19 +319,6 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
 						}
 					}
-				}, {
-					location: undefined,
-					symbol: {
-						containerKind: '',
-						containerName: 'diff',
-						kind: 'function',
-						name: 'diffChars',
-						package: {
-							name: '@types/diff',
-							version: '0.0.31',
-							repoURL: 'https://github.com/DefinitelyTyped/DefinitelyTyped'
-						}
-					}
 				}]);
 			} as any);
 			specify('cross-repo xdefinition 4', async function (this: TestContext) {

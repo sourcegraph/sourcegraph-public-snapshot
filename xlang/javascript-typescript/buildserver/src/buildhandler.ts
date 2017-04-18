@@ -28,6 +28,7 @@ import {
 } from 'vscode-languageserver';
 import { DependencyManager, getPackageName, PackageJson } from './dependencies';
 import { LayeredFileSystem, LocalRootedFileSystem } from './vfs';
+import hashObject = require('object-hash');
 const urlRelative: (from: string, to: string) => string = require('url-relative');
 
 interface HasUri {
@@ -350,6 +351,11 @@ export class BuildHandler extends TypeScriptService {
 						});
 				}
 			})
+			// Remove duplicates
+			// These can happen if a repository defines the same symbol in multiple locations with
+			// interface merging, because we remove the location field
+			// See https://github.com/sourcegraph/sourcegraph/issues/5365#issuecomment-294431395
+			.distinct(symbolLocation => hashObject(symbolLocation, { respectType: false } as any))
 			.toArray();
 	}
 
