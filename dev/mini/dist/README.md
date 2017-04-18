@@ -1,10 +1,10 @@
 # Sourcegraph Origin
 
-Sourcegraph Origin is a downloadable distribution of Sourcegraph that can be run on any machine. It is intended for users who store their code on premises (or anywhere inaccessible from the Internet). Sourcegraph Origin is designed to scale up to dozens of repositories and users. For larger teams, Sourcegraph Origin can be used for evaluation purposes before investing the time to spin up a more scalable solution.
+Sourcegraph Origin is a downloadable distribution of Sourcegraph that can be run on any machine. It is designed to scale up to 10 repositories and 10 users. For larger teams, Sourcegraph Origin can be used for evaluation purposes.
 
-Sourcegraph Origin can run on macOS or Linux as long as Docker is installed. Installation on Windows may work, but is not officially supported at this time.
+## System requirements
 
-## Prerequisities
+Sourcegraph Origin runs on any OS with Docker installed.
 
 * Install [Docker Compose](https://docs.docker.com/compose/install/).
 * If you did not install Docker while installing Docker Compose, [install Docker](https://docs.docker.com/engine/installation/), as well.
@@ -16,6 +16,30 @@ Sourcegraph Origin is currently available to a restricted set of users. If you a
 ```
 docker login -u <username> -p <password> docker.sourcegraph.com
 ```
+
+## Install
+
+1. `cd` into the directory containing this README and run `docker-compose up`.<br>
+*Note: you may see some messages in the Sourcegraph frontend logs about connecting to PostgreSQL or Redis on startup. These are usually innocuous.*
+1. Visit http://localhost:3080/github.com/gorilla/mux. This adds a small open-source repository to your Sourcegraph Origin instance. You should see a message indicating the repository is cloning, followed by a file browser after the repository is cloned.
+1. That's it—you can start exploring the code. For example, open [`mux.go`](http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go) and try clicking on some function names or search for symbols using the '/#' hotkey combination.
+
+Now, let's add your private repositories:
+
+1. Stop the Sourcegraph instance with `Ctrl-C` in the terminal running `docker-compose up`.
+1. Run `cp env.example .env`<br>
+   (The ".env" file sets default values for environment variables when running Docker Compose.)
+1. Uncomment the `GIT_PARENT_DIRECTORY` line in `.env` and set it to the local parent directory containing your private repositories.
+1. Run `docker-compose up`
+1. Visit `http://localhost:3080/local/\<repository-id\>`. The \<repository-id\> is the relative path from `GIT_PARENT_DIRECTORY` to the repository root directory on local disk.
+
+## Restarting, resetting, and updates
+
+To stop Sourcegraph, `Ctrl-C` the terminal that is running `docker-compose up`. Alternatively, you can `cd` into the directory and run `docker-compose down`.
+
+To update Sourcegraph run `docker-compose pull` in that directory.
+
+Sourcegraph Origin persists data to the `.data` directory. To reset Sourcegraph Origin, stop your Sourcegraph Origin instance, delete the `.data` directory, and restart the Sourcegraph Origin instance.
 
 ## Privacy
 
@@ -36,36 +60,11 @@ To see exactly what data is sent to Sourcegraph, open the JavaScript console in 
 
 To disable all tracking, contact Sourcegraph support (support@sourcegraph.com) and we will send simple instructions to do so.
 
-## Install
-
-1. `cd` into the directory containing this README and run `docker-compose up`.<br>
-*Note: you may see some messages in the Sourcegraph frontend logs about connecting to PostgreSQL or Redis on startup. These are usually innocuous.*
-1. Visit http://localhost:3080/github.com/gorilla/mux. This adds a small open-source repository to your Sourcegraph Origin instance. You should a message indicating the repository is cloning that eventually transitions to a file browser.
-1. That's it! Once the repository is cloned, you can start exploring the code with full Code Intelligence. For example, you can open [mux.go](http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go) and try clicking on some function names or search for symbols using the '/#' hotkey combination.
-
-Now, let's add your private repositories:
-
-1. Kill the Sourcegraph instance with `Ctrl-C` in the terminal running `docker-compose up`.
-1. Run `cp env.example .env`<br>
-   (The ".env" file sets default values for environment variables when running Docker Compose.)
-1. Uncomment the `GIT_PARENT_DIRECTORY` line in `.env` and set it to the parent directory containing your private repositories.
-1. Run `docker-compose up`
-1. Visit http://localhost:3080/local/\<repository-id\>. The \<repository-id\> is the relative path from `GIT_PARENT_DIRECTORY` to the repository root directory.
-
-## Restarting, resetting, and updates
-
-To stop Sourcegraph, `Ctrl-C` the terminal that is running `docker-compose up`. Alternatively, you can `cd` into the directory and run `docker-compose down`.
-
-To update Sourcegraph run `docker-compose pull` in that directory.
-
-Sourcegraph Origin persists data to the `.data` directory. To reset Sourcegraph Origin, stop your Sourcegraph Origin instance (`Ctrl-C` or `docker-compose down`), delete the `.data` directory, and restart the Sourcegraph Origin instance (`docker-compose up`).
-
-
 ## FAQ
 
 ### Unable to clone repositories from GitHub.com
 
-Sourcegraph Origin indexes repositories from GitHub.com on demand in response to user actions. By default, it uses the credentials in your `$HOME/.ssh` directory. If your GitHub SSH key is not in `$HOME/.ssh`, then auto-indexing GitHub.com repositories may fail.
+Sourcegraph Origin indexes repositories from GitHub.com on demand, in response to user actions. By default, it uses the credentials in your `$HOME/.ssh` directory. If your GitHub SSH key is not in `$HOME/.ssh`, then auto-indexing GitHub.com repositories may fail.
 
 ## Troubleshooting
 
