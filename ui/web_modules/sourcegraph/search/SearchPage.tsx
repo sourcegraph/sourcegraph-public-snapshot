@@ -36,7 +36,7 @@ const pageSx = {
 
 export async function getRepositories(): Promise<GQL.IRepository[]> {
 	const query = gql`
-			query{ 
+			query {
 				root {
 					repositories {
 						uri

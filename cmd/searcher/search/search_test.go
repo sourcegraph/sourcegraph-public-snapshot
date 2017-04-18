@@ -72,6 +72,14 @@ main.go:5:func main() {
 		search.Params{Pattern: `printL\B`, IsRegExp: true}: `
 main.go:6:	fmt.Println("Hello world")
 `,
+
+		search.Params{Pattern: "world", ExcludePattern: "README.md"}: `
+main.go:6:	fmt.Println("Hello world")
+`,
+		search.Params{Pattern: "world", IncludePattern: "*.md"}: `
+README.md:1:# Hello World
+README.md:3:Hello world example in go
+`,
 	}
 
 	store, cleanup, err := newStore(files)
@@ -113,9 +121,11 @@ main.go:6:	fmt.Println("Hello world")
 
 func doSearch(u string, p *search.Params) ([]search.FileMatch, error) {
 	form := url.Values{
-		"Repo":    []string{p.Repo},
-		"Commit":  []string{p.Commit},
-		"Pattern": []string{p.Pattern},
+		"Repo":           []string{p.Repo},
+		"Commit":         []string{p.Commit},
+		"Pattern":        []string{p.Pattern},
+		"IncludePattern": []string{p.IncludePattern},
+		"ExcludePattern": []string{p.ExcludePattern},
 	}
 	if p.IsRegExp {
 		form.Set("IsRegExp", "true")

@@ -269,6 +269,8 @@ declare namespace GQL {
 		isWordMatch: boolean;
 		isCaseSensitive: boolean;
 		maxResults: number;
+		includePattern?: string;
+		excludePattern?: string;
 	}
 
 	/*

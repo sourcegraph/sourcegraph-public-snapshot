@@ -94,7 +94,11 @@ export class SearchService implements ISearchService {
 						}
 					}
 				}
-			}`, { ...query.contentPattern, rev, uri: repo, maxResults: query.maxResults }).then(resp => {
+			}`, {
+					...query.contentPattern,
+					rev, uri: repo,
+					maxResults: query.maxResults,
+				}).then(resp => {
 					const root = resp.data.root;
 					if (!root.repository || !root.repository.commit.commit) {
 						throw new Error("Repository does not exist.");

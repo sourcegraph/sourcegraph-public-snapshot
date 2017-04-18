@@ -33,6 +33,8 @@ type patternInfo struct {
 	MaxResults      int32
 	// We do not support IsMultiline
 	//IsMultiline     bool
+	IncludePattern *string
+	ExcludePattern *string
 }
 
 type searchResults struct {
@@ -121,10 +123,19 @@ func textSearch(ctx context.Context, repo, commit string, p *patternInfo) ([]*fi
 	if searcherURLs == nil {
 		return nil, errors.New("a searcher service has not been configured")
 	}
+	var s string
+	if p.IncludePattern == nil {
+		p.IncludePattern = &s
+	}
+	if p.ExcludePattern == nil {
+		p.ExcludePattern = &s
+	}
 	q := url.Values{
-		"Repo":    []string{repo},
-		"Commit":  []string{commit},
-		"Pattern": []string{p.Pattern},
+		"Repo":           []string{repo},
+		"Commit":         []string{commit},
+		"Pattern":        []string{p.Pattern},
+		"ExcludePattern": []string{*p.ExcludePattern},
+		"IncludePattern": []string{*p.IncludePattern},
 	}
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")

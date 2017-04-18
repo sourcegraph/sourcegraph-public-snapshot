@@ -97,6 +97,8 @@ input SearchQuery {
 	isWordMatch: Boolean!
 	isCaseSensitive: Boolean!
 	maxResults: Int!
+	includePattern: String
+	excludePattern: String
 }
 
 type Commit implements Node {

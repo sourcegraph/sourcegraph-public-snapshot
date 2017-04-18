@@ -57,6 +57,12 @@ type Params struct {
 	// IsCaseSensitive if false will ignore the case of text and pattern
 	// when finding matches.
 	IsCaseSensitive bool
+	// ExcludePattern is a glob pattern that should not match the returned files.
+	// eg '**/node_modules'
+	ExcludePattern string
+	// Include pattern is a glob pattern that should match the returned files.
+	// eg '**/*.go' to search go files.
+	IncludePattern string
 }
 
 func (p Params) String() string {

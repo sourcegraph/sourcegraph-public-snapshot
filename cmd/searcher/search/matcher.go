@@ -10,6 +10,7 @@ import (
 	"sync"
 	"unicode"
 
+	"github.com/gobwas/glob"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
@@ -67,6 +68,12 @@ type readerGrep struct {
 	// before matching. For example we lower case the input in the case of
 	// ignoreCase.
 	transformBuf []byte
+
+	// include is a glob pattern that must match the file path.
+	include glob.Glob
+
+	// exclude is a glob pattern that must not match the file path.
+	exclude glob.Glob
 }
 
 // compile returns a readerGrep for matching p.
@@ -93,6 +100,20 @@ func compile(p *Params) (*readerGrep, error) {
 		expr = re.String()
 		ignoreCase = true
 	}
+
+	var include, exclude glob.Glob
+	var err error
+	if p.IncludePattern != "" {
+		if include, err = glob.Compile(p.IncludePattern); err != nil {
+			return nil, badRequestError{err.Error()}
+		}
+	}
+	if p.ExcludePattern != "" {
+		if exclude, err = glob.Compile(p.ExcludePattern); err != nil {
+			return nil, badRequestError{err.Error()}
+		}
+	}
+
 	re, err := regexp.Compile(expr)
 	if err != nil {
 		return nil, err
@@ -100,6 +121,8 @@ func compile(p *Params) (*readerGrep, error) {
 	return &readerGrep{
 		re:         re,
 		ignoreCase: ignoreCase,
+		include:    include,
+		exclude:    exclude,
 	}, nil
 }
 
@@ -220,6 +243,10 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zr *zip.Reader) (fm []F
 	go func() {
 		done := ctx.Done()
 		for _, f := range zr.File {
+			if (rg.include != nil && !rg.include.Match(f.Name)) ||
+				(rg.exclude != nil && rg.exclude.Match(f.Name)) {
+				continue
+			}
 			select {
 			case files <- f:
 			case <-done:
