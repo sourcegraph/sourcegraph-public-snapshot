@@ -56,7 +56,7 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 		WriteBufferSize: 1024, // default used by websocketproxy
 		CheckOrigin: func(r *http.Request) bool {
 			// Same as the default used by websocketproxy, except it allows
-			// ws.sourcegraph.com too.
+			// sourcegraph.com too (when Host=ws.sourcegraph.com but Origin=sourcegraph.com).
 			origin := r.Header["Origin"]
 			if len(origin) == 0 {
 				return true
@@ -65,7 +65,7 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return false
 			}
-			return u.Host == r.Host || u.Host == "ws.sourcegraph.com"
+			return u.Host == r.Host || u.Host == "sourcegraph.com"
 		},
 	}
 	d := *websocket.DefaultDialer
