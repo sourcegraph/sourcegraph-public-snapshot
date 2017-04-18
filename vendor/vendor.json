@@ -673,14 +673,18 @@
 			"revisionTime": "2015-07-15T10:31:50-07:00"
 		},
 		{
+			"checksumSHA1": "MrqRXuqj5suGXqcRUUwi+YA7PmE=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
 			"path": "github.com/mattn/go-colorable",
-			"revision": "9cbef7c35391cca05f15f8181dc0b18bc9736dbb",
-			"revisionTime": "2016-02-20T16:59:35+09:00"
+			"revision": "9131ab34cf20d2f6d83fdc67168a5430d1c7dc23",
+			"revisionTime": "2017-03-07T19:28:53Z"
 		},
 		{
+			"checksumSHA1": "MOYUEW/pVKoVWW0E5+XwIZAoRlk=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
 			"path": "github.com/mattn/go-isatty",
-			"revision": "7fcbc72f853b92b5720db4a6b8482be612daef24",
-			"revisionTime": "2015-08-14T09:26:29+09:00"
+			"revision": "9131ab34cf20d2f6d83fdc67168a5430d1c7dc23",
+			"revisionTime": "2017-03-07T19:28:53Z"
 		},
 		{
 			"checksumSHA1": "vasCAI7NJuwAgnM1qGNebsswvTo=",

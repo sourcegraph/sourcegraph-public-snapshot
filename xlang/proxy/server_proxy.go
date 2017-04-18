@@ -578,7 +578,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if err := json.Unmarshal(*req.Params, &m); err != nil {
 			return nil, err
 		}
-		logWithLevel(formatLSPMessageType(m.Type), "window/logMessage "+m.Message, c.id.contextID, "method", req.Method, "id", req.ID)
+		logWithLevel(int(m.Type), "window/logMessage "+m.Message, c.id.contextID, "method", req.Method, "id", req.ID)
 		// Log to the span for the server, not for this specific
 		// request.
 		if span := opentracing.SpanFromContext(ctx); span != nil {
@@ -780,20 +780,4 @@ func (c *serverProxyConn) saveDiagnostics(diagnostics lsp.PublishDiagnosticsPara
 		c.diagnostics = map[diagnosticsKey][]lsp.Diagnostic{}
 	}
 	c.diagnostics[diagnosticsKey{serverID: c.id, documentURI: diagnostics.URI}] = diagnostics.Diagnostics
-}
-
-// formatLSPMessageType converts an LSP log MessageType to a log level that logDNA understands
-// https://docs.logdna.com/docs/ingestion#section-level
-func formatLSPMessageType(m lsp.MessageType) string {
-	switch m {
-	case lsp.MTError:
-		return "ERROR"
-	case lsp.MTWarning:
-		return "WARN "
-	case lsp.Info:
-		return "INFO "
-	case lsp.Log:
-		return "DEBUG"
-	}
-	return fmt.Sprintf("UNKNOWN(%d)", int(m))
 }

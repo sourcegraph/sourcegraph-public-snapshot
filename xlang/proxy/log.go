@@ -3,10 +3,19 @@ package proxy
 import (
 	"encoding/json"
 	"log"
+
+	"github.com/fatih/color"
 )
 
-// logWithLevel logs a message with LSP metadata with a passed loglevel
-func logWithLevel(lvl string, msg string, id contextID, extraMeta ...interface{}) {
+const (
+	err   = 1
+	warn  = 2
+	info  = 3
+	debug = 4
+)
+
+// metaToStr converts log metadata to a JSON string
+func metaToStr(id contextID, extraMeta ...interface{}) string {
 	meta := map[string]interface{}{
 		"mode":    id.mode,
 		"session": id.session,
@@ -14,41 +23,61 @@ func logWithLevel(lvl string, msg string, id contextID, extraMeta ...interface{}
 		"rev":     id.rootPath.Rev(),
 	}
 	if len(extraMeta)%2 != 0 {
-		log.Printf("%s %s [invalid meta]", lvl, msg)
-		return
+		return "[invalid meta]"
 	}
 	for i := 0; i < len(extraMeta); i += 2 {
 		key, ok := extraMeta[i].(string)
 		if !ok {
-			log.Printf("%s %s [invalid meta]", lvl, msg)
-			return
+			return "[invalid meta]"
 		}
 		meta[key] = extraMeta[i+1]
 	}
 	metaBuf, err := json.Marshal(meta)
 	if err != nil {
-		log.Printf("%s %s [error parsing meta: %s]", lvl, msg, err)
-		return
+		return "[error parsing meta: %s]"
 	}
-	log.Printf("%s %s %s", lvl, msg, string(metaBuf))
+	return string(metaBuf)
+}
+
+// logWithLevel logs a message with LSP metadata with a passed loglevel
+func logWithLevel(lvl int, msg string, id contextID, extraMeta ...interface{}) {
+	switch lvl {
+	case err:
+		msg = color.New(color.BgRed).Sprint("ERROR") + " " + msg
+		break
+	case warn:
+		msg = color.New(color.BgYellow).Sprint("WARN") + "  " + msg
+		break
+	case info:
+		msg = color.New(color.BgCyan).Sprint("INFO") + "  " + msg
+		break
+	case debug:
+		msg = "DEBUG " + msg
+		break
+	default:
+		msg = color.New(color.Faint).Sprint("VERB" + string(lvl) + " " + msg)
+		break
+	}
+	msg += " " + color.New(color.Faint).Sprint(metaToStr(id, extraMeta...))
+	log.Println(msg)
 }
 
 // logError logs a message with LSP metadata with loglevel ERROR
 func logError(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("ERROR", msg, id, extraMeta...)
+	logWithLevel(err, msg, id, extraMeta...)
 }
 
 // logInfo logs a message with LSP metadata with loglevel INFO
 func logInfo(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("INFO ", msg, id, extraMeta...)
+	logWithLevel(info, msg, id, extraMeta...)
 }
 
 // logWarn logs a message with LSP metadata with loglevel WARN
 func logWarn(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("WARN ", msg, id, extraMeta...)
+	logWithLevel(warn, msg, id, extraMeta...)
 }
 
 // logDebug logs a message with LSP metadata with loglevel DEBUG
 func logDebug(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel("DEBUG", msg, id, extraMeta...)
+	logWithLevel(debug, msg, id, extraMeta...)
 }

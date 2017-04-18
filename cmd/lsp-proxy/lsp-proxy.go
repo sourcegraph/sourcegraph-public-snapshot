@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/fatih/color"
 	"github.com/keegancsmith/tmpfriend"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
@@ -33,6 +34,9 @@ var (
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
+
+	// Enable colors by default
+	color.NoColor = env.Get("COLOR", "true", "Whether to output colors") == "false"
 
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
