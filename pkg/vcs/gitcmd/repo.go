@@ -465,6 +465,43 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 	return diff, nil
 }
 
+func (r *Repository) BlameFileRaw(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
+	span.SetTag(path, opt)
+	defer span.Finish()
+
+	if opt == nil {
+		opt = &vcs.BlameOptions{}
+	}
+	if opt.OldestCommit != "" {
+		return "", fmt.Errorf("OldestCommit not implemented")
+	}
+	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+		return "", err
+	}
+	if err := checkSpecArgSafety(string(opt.OldestCommit)); err != nil {
+		return "", err
+	}
+
+	args := []string{"blame", "--root", "--incremental"}
+	if opt.StartLine != 0 || opt.EndLine != 0 {
+		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	}
+	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
+
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = r.Repo
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return "", fmt.Errorf("exec `git blame` failed: %s. Output was:\n\n%s", err, out)
+	}
+	if len(out) == 0 {
+		return "", nil
+	}
+
+	return string(out[:]), nil
+}
+
 func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag(path, opt)

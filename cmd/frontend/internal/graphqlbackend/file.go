@@ -79,6 +79,26 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*commitInfoResolver, erro
 	return commitsResolver, nil
 }
 
+func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
+	StartLine int32
+	EndLine   int32
+}) (string, error) {
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.commit.RepoID)
+	if err != nil {
+		return "", err
+	}
+
+	rawBlame, err := vcsrepo.BlameFileRaw(ctx, r.path, &vcs.BlameOptions{
+		NewestCommit: vcs.CommitID(r.commit.CommitID),
+		StartLine:    int(args.StartLine),
+		EndLine:      int(args.EndLine),
+	})
+	if err != nil {
+		return "", err
+	}
+	return rawBlame, nil
+}
+
 func (r *fileResolver) Blame(ctx context.Context,
 	args *struct {
 		StartLine int32

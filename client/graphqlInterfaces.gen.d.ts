@@ -78,6 +78,7 @@ declare namespace GQL {
 		blame: Array<IHunk>;
 		commits: Array<ICommitInfo>;
 		dependencyReferences: IDependencyReferences;
+		blameRaw: string;
 	}
 
 	/*

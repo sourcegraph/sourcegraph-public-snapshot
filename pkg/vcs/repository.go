@@ -78,6 +78,9 @@ type Repository interface {
 
 	BlameFile(ctx context.Context, path string, opt *BlameOptions) ([]*Hunk, error)
 
+	// Blames a file for the extension API returning GitBlame data as a raw string.
+	BlameFileRaw(ctx context.Context, path string, opt *BlameOptions) (string, error)
+
 	// Diff shows changes between two commits. If base or head do not
 	// exist, an error is returned.
 	Diff(ctx context.Context, base, head CommitID, opt *DiffOptions) (*Diff, error)

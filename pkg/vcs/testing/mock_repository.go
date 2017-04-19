@@ -18,7 +18,8 @@ type MockRepository struct {
 	GetCommit_ func(context.Context, vcs.CommitID) (*vcs.Commit, error)
 	Commits_   func(context.Context, vcs.CommitsOptions) ([]*vcs.Commit, uint, error)
 
-	BlameFile_ func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error)
+	BlameFile_    func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error)
+	BlameFileRaw_ func(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error)
 
 	Lstat_    func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error)
 	Stat_     func(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error)
@@ -61,6 +62,10 @@ func (r MockRepository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]
 
 func (r MockRepository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 	return r.BlameFile_(ctx, path, opt)
+}
+
+func (r MockRepository) BlameFileRaw(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error) {
+	return r.BlameFileRaw_(ctx, path, opt)
 }
 
 func (r MockRepository) Lstat(ctx context.Context, commit vcs.CommitID, name string) (os.FileInfo, error) {

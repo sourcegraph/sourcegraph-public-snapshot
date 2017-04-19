@@ -150,6 +150,7 @@ type File {
 	blame(startLine: Int!, endLine: Int!): [Hunk!]!
 	commits: [CommitInfo!]!
 	dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
+	blameRaw(startLine: Int!, endLine: Int!): String!
 }
 
 type SearchResults {
