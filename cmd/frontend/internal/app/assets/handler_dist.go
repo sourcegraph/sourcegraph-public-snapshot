@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/gzipfileserver"
+	"github.com/shurcooL/httpgzip"
 )
 
 // Mount mounts the static asset handler.
 func Mount(mux *http.ServeMux) {
 	const urlPathPrefix = "/.assets"
-	fs := gzipfileserver.New(Assets)
+	fs := httpgzip.FileServer(Assets, httpgzip.FileServerOptions{})
 	mux.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Kludge to set proper MIME type. Automatic MIME detection somehow detects text/xml under
 		// circumstances that couldn't be reproduced

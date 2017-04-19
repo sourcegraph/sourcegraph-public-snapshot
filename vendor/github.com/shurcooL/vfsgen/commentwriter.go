@@ -2,38 +2,44 @@ package vfsgen
 
 import "io"
 
-// commentWriter writes given input to underlying io.Writer as a Go comment,
-// using line comments (//).
+// commentWriter writes a Go comment to the underlying io.Writer,
+// using line comment form (//).
 type commentWriter struct {
-	io.Writer
-
-	wroteComment bool
+	W            io.Writer
+	wroteSlashes bool // Wrote "//" at the beginning of the current line.
 }
 
-func (cw *commentWriter) Write(p []byte) (n int, err error) {
+func (c *commentWriter) Write(p []byte) (int, error) {
+	var n int
 	for i, b := range p {
-		if b == '\n' {
-			if !cw.wroteComment {
-				_, err = cw.Writer.Write([]byte("//"))
-				if err != nil {
-					return n, err
-				}
+		if !c.wroteSlashes {
+			s := "//"
+			if b != '\n' {
+				s = "// "
 			}
-			cw.wroteComment = false
-		} else {
-			if !cw.wroteComment {
-				_, err = cw.Writer.Write([]byte("// "))
-				if err != nil {
-					return n, err
-				}
-				cw.wroteComment = true
+			if _, err := io.WriteString(c.W, s); err != nil {
+				return n, err
 			}
+			c.wroteSlashes = true
 		}
-		_, err = cw.Writer.Write(p[i : i+1])
+		n0, err := c.W.Write(p[i : i+1])
+		n += n0
 		if err != nil {
 			return n, err
 		}
-		n++
+		if b == '\n' {
+			c.wroteSlashes = false
+		}
 	}
 	return len(p), nil
+}
+
+func (c *commentWriter) Close() error {
+	if !c.wroteSlashes {
+		if _, err := io.WriteString(c.W, "//"); err != nil {
+			return err
+		}
+		c.wroteSlashes = true
+	}
+	return nil
 }

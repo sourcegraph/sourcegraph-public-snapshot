@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Options specifies options for vfsgen code generation.
+// Options for vfsgen code generation.
 type Options struct {
 	// Filename of the generated Go code output (including extension).
 	// If left empty, it defaults to "{{toLower .VariableName}}_vfsdata.go".

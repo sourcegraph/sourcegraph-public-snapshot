@@ -1,4 +1,7 @@
-# vfsgen [![Build Status](https://travis-ci.org/shurcooL/vfsgen.svg?branch=master)](https://travis-ci.org/shurcooL/vfsgen) [![GoDoc](https://godoc.org/github.com/shurcooL/vfsgen?status.svg)](https://godoc.org/github.com/shurcooL/vfsgen)
+vfsgen
+======
+
+[![Build Status](https://travis-ci.org/shurcooL/vfsgen.svg?branch=master)](https://travis-ci.org/shurcooL/vfsgen) [![GoDoc](https://godoc.org/github.com/shurcooL/vfsgen?status.svg)](https://godoc.org/github.com/shurcooL/vfsgen)
 
 Package vfsgen takes an http.FileSystem (likely at `go generate` time) and
 generates Go code that statically implements the provided http.FileSystem.
@@ -113,20 +116,25 @@ vfsgendev accesses the source variable using "dev" build tag, and generates an o
 
 ### Additional Embedded Information
 
-All compressed files implement this interface for efficient direct access to the internal compressed bytes:
+All compressed files implement [`httpgzip.GzipByter` interface](https://godoc.org/github.com/shurcooL/httpgzip#GzipByter) for efficient direct access to the internal compressed bytes:
 
 ```Go
-interface {
+// GzipByter is implemented by compressed files for
+// efficient direct access to the internal compressed bytes.
+type GzipByter interface {
 	// GzipBytes returns gzip compressed contents of the file.
 	GzipBytes() []byte
 }
 ```
 
-Files that have been determined to not be worth gzip compressing (their compressed size is larger than original) implement this interface:
+Files that have been determined to not be worth gzip compressing (their compressed size is larger than original) implement [`httpgzip.NotWorthGzipCompressing` interface](https://godoc.org/github.com/shurcooL/httpgzip#NotWorthGzipCompressing):
 
 ```Go
-interface {
-	// NotWorthGzipCompressing indicates the file is not worth gzip compressing.
+// NotWorthGzipCompressing is implemented by files that were determined
+// not to be worth gzip compressing (the file size did not decrease as a result).
+type NotWorthGzipCompressing interface {
+	// NotWorthGzipCompressing is a noop. It's implemented in order to indicate
+	// the file is not worth gzip compressing.
 	NotWorthGzipCompressing()
 }
 ```
@@ -149,6 +157,9 @@ It strives to be the best in its class in terms of code quality and efficiency o
 -	[`becky`](https://github.com/tv42/becky) - Embeds assets as string literals in Go source.
 -	[`statik`](https://github.com/rakyll/statik) - Embeds a directory of static files to be accessed via `http.FileSystem` interface (sounds very similar to vfsgen); implementation sourced from [camlistore](https://camlistore.org).
 -	[`go.rice`](https://github.com/GeertJohan/go.rice) - Makes working with resources such as HTML, JS, CSS, images and templates very easy.
+-	[`esc`](https://github.com/mjibson/esc) - Embeds files into Go programs and provides `http.FileSystem` interfaces to them.
+-	[`staticfiles`](https://github.com/bouk/staticfiles) - Allows you to embed a directory of files into your Go binary.
+-	[`togo`](https://github.com/flazz/togo) - Generates a Go source file with a `[]byte` var containing the given file's contents.
 
 Attribution
 -----------
@@ -158,4 +169,4 @@ This package was originally based on the excellent work by [@jteeuwen](https://g
 License
 -------
 
--	[MIT License](http://opensource.org/licenses/mit-license.php)
+-	[MIT License](https://opensource.org/licenses/mit-license.php)

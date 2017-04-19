@@ -987,10 +987,16 @@
 			"revisionTime": "2016-05-24T09:02:50Z"
 		},
 		{
-			"checksumSHA1": "XDYAcMOVIRZ3cmXCCljPKuzm2ho=",
+			"checksumSHA1": "2IIHygwyX3jq3onQ9Qhk7KPfe0Y=",
+			"path": "github.com/shurcooL/httpgzip",
+			"revision": "cda3a378aec1d07808838579df61bb0dd2aa7873",
+			"revisionTime": "2017-04-01T05:11:53Z"
+		},
+		{
+			"checksumSHA1": "iCRIJg/fLItl9VQMNyoQJZdTQRs=",
 			"path": "github.com/shurcooL/vfsgen",
-			"revision": "70437b7b1abe3ed98330207eba732bf484ab274c",
-			"revisionTime": "2016-05-25T05:16:44Z"
+			"revision": "47fc2dca6b1893fc933dd7476c615a3fda08e3b9",
+			"revisionTime": "2017-03-20T18:55:37Z"
 		},
 		{
 			"checksumSHA1": "JgxRUMf8zhs8CNS2PMBY/KHCAH8=",

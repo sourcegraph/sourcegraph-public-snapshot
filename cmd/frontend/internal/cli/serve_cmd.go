@@ -164,7 +164,7 @@ func Main() error {
 
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
-	sm.Handle("/", gziphandler.GzipHandler(handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New()))))
+	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New())))
 	assets.Mount(sm)
 
 	if biLoggerAddr != "" {
