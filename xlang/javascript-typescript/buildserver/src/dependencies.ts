@@ -76,11 +76,6 @@ export class DependencyManager {
 	 */
 	private packages = new Set<string>();
 
-	/**
-	 * Whether we should refuse a `workspace/symbol` request because we found that we are in DefinitelyTyped
-	 */
-	puntWorkspaceSymbol = false;
-
 	constructor(
 		private tempDir: string,
 		private updater: FileSystemUpdater,

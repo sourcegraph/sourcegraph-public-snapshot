@@ -9,8 +9,7 @@ import {
 	PackageDescriptor,
 	ReferenceInformation,
 	SymbolLocationInformation,
-	WorkspaceReferenceParams,
-	WorkspaceSymbolParams
+	WorkspaceReferenceParams
 } from 'javascript-typescript-langserver/lib/request-type';
 import { TypeScriptService, TypeScriptServiceOptions } from 'javascript-typescript-langserver/lib/typescript-service';
 import { uri2path } from 'javascript-typescript-langserver/lib/util';
@@ -23,7 +22,6 @@ import {
 	Hover,
 	InitializeResult,
 	Location,
-	SymbolInformation,
 	TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { DependencyManager, getPackageName, PackageJson } from './dependencies';
@@ -376,13 +374,6 @@ export class BuildHandler extends TypeScriptService {
 		}
 		await this._rewriteUris(hover);
 		return hover;
-	}
-
-	async workspaceSymbol(params: WorkspaceSymbolParams, span = new Span()): Promise<SymbolInformation[]> {
-		if (this.dependenciesManager.puntWorkspaceSymbol && (!params.symbol || !params.symbol.package)) {
-			throw new Error('workspace/symbol unsupported on this repository');
-		}
-		return super.workspaceSymbol(params, span);
 	}
 
 	/**
