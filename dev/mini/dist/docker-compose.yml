@@ -53,7 +53,9 @@ services:
     image: "docker.sourcegraph.com/lsp-proxy:latest"
     environment:
        LANGSERVER_GO: tcp://xlang-go:4389
+       LANGSERVER_GO_BG: tcp://xlang-go:4389
        LANGSERVER_JAVA: tcp://xlang-java:2088
+       LANGSERVER_JAVA_BG: tcp://xlang-java:2088
        REDIS_MASTER_ENDPOINT: redis:6379
        SRC_GIT_SERVERS: gitserver-1:3178
   searcher:
@@ -79,3 +81,23 @@ services:
       PGDATA: /data
       POSTGRES_USER: sg
       POSTGRES_PASSWORD:
+  initializer:
+    image: "docker.sourcegraph.com/initializer:latest"
+    volumes:
+      - ${GIT_PARENT_DIRECTORY:-.}:/local
+    environment:
+      GIT_PARENT_DIRECTORY: /local
+      AUTH_ENABLED: "false"
+      GITHUB_BASE_URL: http://github-proxy:3180
+      LSP_PROXY: lsp-proxy:4388
+      PGHOST: postgres
+      PGSSLMODE: disable
+      PGUSER: sg
+      REDIS_MASTER_ENDPOINT: redis:6379
+      SRC_APP_DISABLE_SUPPORT_SERVICES: "true"
+      SRC_APP_URL: ${SRC_APP_HOST:-http://localhost}:${SRC_APP_PORT:-3080}
+      SRC_GIT_SERVERS: gitserver-1:3178
+      SRC_INDEXER: indexer:3179
+      SRC_SESSION_STORE_REDIS: redis:6379
+    depends_on:
+      - "frontend"

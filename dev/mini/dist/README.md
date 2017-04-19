@@ -22,7 +22,8 @@ docker login -u <username> -p <password> docker.sourcegraph.com
 1. `cd` into the directory containing this README and run `docker-compose up`.<br>
 *Note: you may see some messages in the Sourcegraph frontend logs about connecting to PostgreSQL or Redis on startup. These are usually innocuous.*
 1. Visit http://localhost:3080/github.com/gorilla/mux. This adds a small open-source repository to your Sourcegraph Origin instance. You should see a message indicating the repository is cloning, followed by a file browser after the repository is cloned.
-1. That's it—you can start exploring the code. For example, open [`mux.go`](http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go) and try clicking on some function names or search for symbols using the '/#' hotkey combination.
+1. That's it—you can start exploring the code. For example, open [`mux.go`](http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go) and try clicking on some function names or search for symbols using the '/#' hotkey combination.<br>
+*Note: you may have to wait about 60 seconds the very first time for jump-to-definition and tooltips to work.*
 
 Now, let's add your private repositories:
 
@@ -31,7 +32,7 @@ Now, let's add your private repositories:
    (The ".env" file sets default values for environment variables when running Docker Compose.)
 1. Uncomment the `GIT_PARENT_DIRECTORY` line in `.env` and set it to the local parent directory containing your private repositories.
 1. Run `docker-compose up`
-1. Visit `http://localhost:3080/local/\<repository-id\>`. The \<repository-id\> is the relative path from `GIT_PARENT_DIRECTORY` to the repository root directory on local disk.
+1. Visit `http://localhost:3080/local/<repository-id>`. The \<repository-id\> is the relative path from `GIT_PARENT_DIRECTORY` to the repository root directory on local disk.
 
 ## Restarting, resetting, and updates
 
