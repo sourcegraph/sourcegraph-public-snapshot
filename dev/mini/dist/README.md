@@ -1,17 +1,17 @@
-# Sourcegraph Origin
+# Sourcegraph Self-Hosted
 
-Sourcegraph Origin is a downloadable distribution of Sourcegraph that can be run on any machine. It is designed to scale up to 10 repositories and 10 users. For larger teams, Sourcegraph Origin can be used for evaluation purposes.
+Sourcegraph Self-Hosted is a downloadable distribution of Sourcegraph that can be run on any machine. It is designed to scale up to 10 repositories and 10 users. For larger teams, Sourcegraph Self-Hosted can be used for evaluation purposes.
 
 ## System requirements
 
-Sourcegraph Origin should run on any OS where Docker can be installed (includes most modern macOS, Linux, and Windows systems).
+Sourcegraph Self-Hosted should run on any OS where Docker can be installed (includes most modern macOS, Linux, and Windows systems).
 
 * Install [Docker Compose](https://docs.docker.com/compose/install/).
 * If you did not install Docker while installing Docker Compose, [install Docker](https://docs.docker.com/engine/installation/), as well.
 
 ## Credentials
 
-Sourcegraph Origin is currently available to a restricted set of users. If you are part of this set, you should have received a username and password to the Sourcegraph Origin Docker container registry. Before starting, run the following command to authorize your Docker client to fetch from this registry:
+Sourcegraph Self-Hosted is currently available to a restricted set of users. If you are part of this set, you should have received a username and password to the Sourcegraph Self-Hosted Docker container registry. Before starting, run the following command to authorize your Docker client to fetch from this registry:
 
 ```
 docker login -u <username> -p <password> docker.sourcegraph.com
@@ -21,7 +21,7 @@ docker login -u <username> -p <password> docker.sourcegraph.com
 
 1. `cd` into the directory containing this README and run `docker-compose up`.<br>
 *Note: you may see some messages in the Sourcegraph frontend logs about connecting to PostgreSQL or Redis on startup. These are usually innocuous.*
-1. Visit http://localhost:3080/github.com/gorilla/mux. This adds a small open-source repository to your Sourcegraph Origin instance. You should see a message indicating the repository is cloning, followed by a file browser after the repository is cloned.
+1. Visit http://localhost:3080/github.com/gorilla/mux. This adds a small open-source repository to your Sourcegraph Self-Hosted instance. You should see a message indicating the repository is cloning, followed by a file browser after the repository is cloned.
 1. That's it—you can start exploring the code. For example, open [`mux.go`](http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go) and try clicking on some function names or search for symbols using the '/#' hotkey combination.<br>
 *Note: you may have to wait about 60 seconds the very first time for jump-to-definition and tooltips to work.*
 
@@ -40,11 +40,11 @@ To stop Sourcegraph, `Ctrl-C` the terminal that is running `docker-compose up`. 
 
 To update Sourcegraph run `docker-compose pull` in that directory.
 
-Sourcegraph Origin persists data to the `.data` directory. To reset Sourcegraph Origin, stop your Sourcegraph Origin instance, delete the `.data` directory, and restart the Sourcegraph Origin instance.
+Sourcegraph Self-Hosted persists data to the `.data` directory. To reset Sourcegraph Self-Hosted, stop your Sourcegraph Self-Hosted instance, delete the `.data` directory, and restart the Sourcegraph Self-Hosted instance.
 
 ## Privacy
 
-Sourcegraph Origin collects usage data in the web UI and transmits this over HTTPS to a server controlled by Sourcegraph. This data is similar to what is collected by many web applications and lets our team identify bugs and prioritize product improvements. This data DOES NOT include private source code, but *does* include the following data:
+Sourcegraph Self-Hosted collects usage data in the web UI and transmits this over HTTPS to a server controlled by Sourcegraph. This data is similar to what is collected by many web applications and lets our team identify bugs and prioritize product improvements. This data DOES NOT include private source code, but *does* include the following data:
 ```
 {
     event_action: CLICK,
@@ -65,7 +65,7 @@ To disable all tracking, contact Sourcegraph support (support@sourcegraph.com) a
 
 ### Unable to clone repositories from GitHub.com
 
-Sourcegraph Origin indexes repositories from GitHub.com on demand, in response to user actions. By default, it uses the credentials in your `$HOME/.ssh` directory. If your GitHub SSH key is not in `$HOME/.ssh`, then auto-indexing GitHub.com repositories may fail.
+Sourcegraph Self-Hosted indexes repositories from GitHub.com on demand, in response to user actions. By default, it uses the credentials in your `$HOME/.ssh` directory. If your GitHub SSH key is not in `$HOME/.ssh`, then auto-indexing GitHub.com repositories may fail.
 
 ## Troubleshooting
 

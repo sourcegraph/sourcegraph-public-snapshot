@@ -1,4 +1,4 @@
-# Dockerfile to run additional initailization after Sourcegraph Origin starts up.
+# Dockerfile to run additional initailization after Sourcegraph Self-Hosted starts up.
 #
 # Environment expectations:
 # - expects local repositories to be mounted at $GIT_PARENT_DIRECTORY
