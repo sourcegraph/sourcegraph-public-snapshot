@@ -6,3 +6,5 @@
 // interface, which is also exposed for users interested in a more low-level
 // API.
 package httpsnoop
+
+//go:generate go run codegen/main.go

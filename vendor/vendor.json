@@ -27,10 +27,10 @@
 			"revisionTime": "2017-02-28T22:50:37Z"
 		},
 		{
-			"checksumSHA1": "XeG94RjA9o/0wo9Fuw6NSRGYnjk=",
+			"checksumSHA1": "p04JPQsK07AUDAYJuAWwifJRISU=",
 			"path": "github.com/NYTimes/gziphandler",
-			"revision": "fb3533722e14198abe471546c9798fd556531451",
-			"revisionTime": "2017-03-07T16:06:19Z"
+			"revision": "22d4470af89e09998fc16b35029df973932df4ae",
+			"revisionTime": "2017-04-03T15:28:07Z"
 		},
 		{
 			"checksumSHA1": "9Ob5JNGzi/pGXYMuHclig69IHPk=",
@@ -268,10 +268,10 @@
 			"revisionTime": "2017-03-07T19:28:53Z"
 		},
 		{
-			"checksumSHA1": "pVFtdo7/2C9WPUpTyyUHs5/GRWE=",
+			"checksumSHA1": "Id1cft33TUg6PuCo7RmCgb3BPgA=",
 			"path": "github.com/felixge/httpsnoop",
-			"revision": "287b56e9e314227d3113c7c6b434d31aec68089d",
-			"revisionTime": "2016-11-25T08:56:00Z"
+			"revision": "63873eeb89343025d24fa0a863d49fc425d576cf",
+			"revisionTime": "2017-03-18T14:10:32Z"
 		},
 		{
 			"checksumSHA1": "nmc2qcdbg17Ny8tHeEDQuphV6jA=",
@@ -491,10 +491,10 @@
 			"revisionTime": "2016-07-21T04:36:29Z"
 		},
 		{
-			"checksumSHA1": "flNRZk3oyHmsux8UsGbj7ziYtUo=",
+			"checksumSHA1": "+/oy2SsS8YvHVvQGcWUDbaajeXQ=",
 			"path": "github.com/gorilla/handlers",
-			"revision": "66e6c6f01d8da976ee113437745ca029c2b585a6",
-			"revisionTime": "2016-04-10T18:53:17Z"
+			"revision": "13d73096a474cac93275c679c7b8a2dc17ddba82",
+			"revisionTime": "2017-02-24T19:39:55Z"
 		},
 		{
 			"checksumSHA1": "oDsOWp1nBMGpQ9gCFnczGADwZTE=",
