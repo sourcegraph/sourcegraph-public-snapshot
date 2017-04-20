@@ -4,6 +4,7 @@
   "scripts": {
     "build": "tsc -p . && chmod +x lib/language-server-stdio.js lib/language-server.js",
     "watch": "tsc -w -p .",
+    "cover": "nyc --silent --all --require source-map-support/register mocha --timeout 30000 --slow 0 lib/test/**/*.js && nyc report --reporter=lcov",
     "test": "mocha --require source-map-support/register --timeout 30000 --slow 0 'lib/test/**/*.js'",
     "lint": "tslint -t msbuild -c tslint.json 'src/**/*.ts'"
   },
@@ -41,9 +42,18 @@
     "@types/temp": "0.8.29",
     "@types/uuid": "2.0.29",
     "mocha": "^2.2.33",
+    "nyc": "^10.2.0",
     "sinon": "^2.1.0",
     "source-map-support": "^0.4.11",
     "tslint": "^5.0.0",
     "typescript-formatter": "^4.0.1"
+  },
+  "nyc": {
+    "include": [
+      "lib/**/*.js"
+    ],
+    "exclude": [
+      "lib/test/**/*.js"
+    ]
   }
 }

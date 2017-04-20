@@ -129,7 +129,8 @@ func main() {
 		Cmd("yarn install"),
 		Cmd("yarn run build"),
 		Cmd("yarn run lint"),
-		Cmd("yarn test"))
+		Cmd("yarn run cover"),
+		ArtifactPaths("xlang/javascript-typescript/buildserver/coverage/lcov.info"))
 
 	for _, path := range pkgs {
 		coverageFile := path + "/coverage.txt"
@@ -143,8 +144,8 @@ func main() {
 
 	pipeline.AddStep(":codecov:",
 		Cmd("buildkite-agent artifact download '*/coverage.txt' ."),
-		Cmd("find . -name coverage.txt"),
-		Cmd("bash <(curl -s https://codecov.io/bash) -f '*/coverage.txt' -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
+		Cmd("buildkite-agent artifact download '*/lcov.info' ."),
+		Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	commit := os.Getenv("BUILDKITE_COMMIT")
