@@ -14,8 +14,6 @@ import (
 	"testing"
 )
 
-// go test -bench=. -benchtime=10s -run=^$ ./cmd/searcher/search
-
 func BenchmarkBytesToLowerASCII(b *testing.B) {
 	src := []byte("\tThe Quick Brown Fox juMPs over the LAZY dog!?")
 	dst := make([]byte, len(src))
@@ -41,6 +39,25 @@ func BenchmarkConcurrentFind_large_fixed_casesensitive(b *testing.B) {
 	})
 }
 
+func BenchmarkConcurrentFind_large_re_dotstar(b *testing.B) {
+	benchConcurrentFind(b, &Params{
+		Repo:     "github.com/golang/go",
+		Commit:   "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		Pattern:  ".*",
+		IsRegExp: true,
+	})
+}
+
+func BenchmarkConcurrentFind_large_re_common(b *testing.B) {
+	benchConcurrentFind(b, &Params{
+		Repo:            "github.com/golang/go",
+		Commit:          "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		Pattern:         "^func +[A-Z]",
+		IsRegExp:        true,
+		IsCaseSensitive: true,
+	})
+}
+
 func BenchmarkConcurrentFind_small_fixed(b *testing.B) {
 	benchConcurrentFind(b, &Params{
 		Repo:    "github.com/sourcegraph/go-langserver",
@@ -54,6 +71,25 @@ func BenchmarkConcurrentFind_small_fixed_casesensitive(b *testing.B) {
 		Repo:            "github.com/sourcegraph/go-langserver",
 		Commit:          "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		Pattern:         "object not found",
+		IsCaseSensitive: true,
+	})
+}
+
+func BenchmarkConcurrentFind_small_re_dotstar(b *testing.B) {
+	benchConcurrentFind(b, &Params{
+		Repo:     "github.com/sourcegraph/go-langserver",
+		Commit:   "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		Pattern:  ".*",
+		IsRegExp: true,
+	})
+}
+
+func BenchmarkConcurrentFind_small_re_common(b *testing.B) {
+	benchConcurrentFind(b, &Params{
+		Repo:            "github.com/sourcegraph/go-langserver",
+		Commit:          "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		Pattern:         "^func +[A-Z]",
+		IsRegExp:        true,
 		IsCaseSensitive: true,
 	})
 }
