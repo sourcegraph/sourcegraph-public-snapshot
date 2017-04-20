@@ -133,7 +133,7 @@ export function fetchJumpURL(col: string, path: string, line: number, repoRevSpe
 				lineAndCharEnding = `#L${startLine}`;
 			}
 
-			j2dCache[cacheKey] = `${sourcegraphUrl}/${repoUri}@${frevUri}/-/blob/${pathUri}${lineAndCharEnding}`;
+			j2dCache[cacheKey] = `${sourcegraphUrl}/${repoUri}@${frevUri}/-/blob/${pathUri}?utm_source=${utils.getPlatformName()}${lineAndCharEnding}`;
 			return j2dCache[cacheKey];
 		});
 }

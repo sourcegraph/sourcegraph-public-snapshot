@@ -153,5 +153,5 @@ export function getDomainUsername(domain: string, username: string): string {
 
 export function getSourcegraphBlobUrl(sourcegraphUrl: string, repoUri: string, path: string, commitId?: string): string {
 	const commitString = commitId ? `@${commitId}` : "";
-	return `${sourcegraphUrl}/${repoUri}${commitString}/-/blob/${path}`;
+	return `${sourcegraphUrl}/${repoUri}${commitString}/-/blob/${path}?utm_source=${getPlatformName()}`;
 }

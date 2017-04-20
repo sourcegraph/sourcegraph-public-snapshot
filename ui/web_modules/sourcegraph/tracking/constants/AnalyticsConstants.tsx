@@ -138,7 +138,7 @@ export function LogUnknownEvent(eventLabel: string): void {
 }
 // TODO (dadlerj): confirm props doesn't contain any type-unsafe entries
 export function LogUnknownRedirectEvent(eventLabel: string, props?: any): void {
-	EventLogger.logEventWithComponents(EventCategories.Unknown, EventActions.Fetch, eventLabel, props);
+	EventLogger.logEventWithComponents(EventCategories.External, EventActions.Redirect, eventLabel, props);
 }
 
 // List of all possible events, paired with their unique labels, categories, and user actions

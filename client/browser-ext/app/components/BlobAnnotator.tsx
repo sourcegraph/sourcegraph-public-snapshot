@@ -246,7 +246,7 @@ function getSourcegraphButton(isFileSupported: boolean, cantFindPrivateRepo: boo
 		</div>);
 	} else if (cantFindPrivateRepo) {
 		// Not signed in or not auth'd for private repos
-		return (<a href={`${sourcegraphUrl}/login?private=true`}
+		return (<a href={`${sourcegraphUrl}/login?private=true&utm_source=${utils.getPlatformName()}`}
 			style={{ textDecoration: "none", color: "inherit" }} onClick={authCallback}>
 			<div style={buttonStyle} className={className} aria-label={`Authorize Sourcegraph`}>
 				<SourcegraphIcon style={Object.assign({ WebkitFilter: "grayscale(100%)" }, iconStyle)} />
