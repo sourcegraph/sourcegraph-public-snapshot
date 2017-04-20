@@ -42,10 +42,10 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.XLang).Handler(traceutil.TraceRoute(handler(serveXLang)))
 
-	// 🚨 SECURITY: The Zap and LSP endpoints specifically allows cookie 🚨
-	// authorization because the JavaScript WebSocket API does not allow us to
-	// set custom headers. It is possible to send a basic authorization header,
-	// but hacking it to send our auth cookie doesn't seem worth the complexity.
+	// 🚨 SECURITY: The LSP endpoints specifically allows cookie authorization 🚨
+	// because the JavaScript WebSocket API does not allow us to set custom
+	// headers. It is possible to send a basic authorization header, but hacking
+	// it to send our auth cookie doesn't seem worth the complexity.
 	//
 	// This does not introduce a CSRF vulnerability (mentioned in the security comment below), because
 	// gorilla/websocket verifies the origin of the HTTP request before upgrading it to a web socket:
@@ -53,7 +53,7 @@ func NewHandler(m *mux.Router) http.Handler {
 	//
 	// You can read more about this security issue here:
 	// https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
-	m.Get(apirouter.Zap).Handler(traceutil.TraceRoute(session.CookieMiddleware(http.HandlerFunc(serveZap))))
+	m.Get(apirouter.Zap).Handler(traceutil.TraceRoute(http.HandlerFunc(serveZap)))
 	m.Get(apirouter.LSP).Handler(traceutil.TraceRoute(session.CookieMiddleware(httpapiauth.AuthorizationMiddleware(http.HandlerFunc(serveLSP)))))
 
 	m.Get(apirouter.GraphQL).Handler(traceutil.TraceRoute(handler(serveGraphQL)))
