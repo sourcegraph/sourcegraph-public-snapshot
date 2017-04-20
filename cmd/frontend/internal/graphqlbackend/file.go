@@ -147,27 +147,60 @@ func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	refMap := make(map[int32]interface{}, len(depRefs.References))
+	var referenceResolver []*dependencyReferenceResolver
+	var repos []*repositoryResolver
+	var repoIDs []int32
 	for _, ref := range depRefs.References {
+		if ref.RepoID == r.commit.RepoID {
+			continue
+		}
+
 		repo, err := localstore.Repos.Get(ctx, ref.RepoID)
 		if err != nil {
 			return nil, err
 		}
-		refMap[ref.RepoID] = repo
+
+		repos = append(repos, &repositoryResolver{repo: repo})
+		repoIDs = append(repoIDs, repo.ID)
+
+		depData, err := json.Marshal(ref.DepData)
+		if err != nil {
+			return nil, err
+		}
+
+		hints, err := json.Marshal(ref.Hints)
+		if err != nil {
+			return nil, err
+		}
+
+		referenceResolver = append(referenceResolver, &dependencyReferenceResolver{
+			dependencyData: string(depData[:]),
+			repoID:         ref.RepoID,
+			hints:          string(hints)[:],
+		})
 	}
 
-	slcB, err := json.Marshal(struct {
-		Data     *sourcegraph.DependencyReferences
-		RepoData map[int32]interface{}
-	}{
-		Data:     depRefs,
-		RepoData: refMap,
-	})
+	loc, err := json.Marshal(depRefs.Location.Location)
+	if err != nil {
+		return nil, err
+	}
+
+	symbol, err := json.Marshal(depRefs.Location.Symbol)
 	if err != nil {
 		return nil, err
 	}
 
 	return &dependencyReferencesResolver{
-		data: string(slcB),
+		dependencyReferenceData: &dependencyReferencesDataResolver{
+			references: referenceResolver,
+			location: &dependencyLocationResolver{
+				location: string(loc[:]),
+				symbol:   string(symbol[:]),
+			},
+		},
+		repoData: &repoDataMapResolver{
+			repos:   repos,
+			repoIDs: repoIDs,
+		},
 	}, nil
 }

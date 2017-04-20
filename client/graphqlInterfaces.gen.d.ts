@@ -54,9 +54,38 @@ declare namespace GQL {
 	/*
 	  description: null
 	*/
+	interface IDepLocation {
+		__typename: string;
+		location: string;
+		symbol: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IDependencyReference {
+		__typename: string;
+		dependencyData: string;
+		repoId: number;
+		hints: string;
+	}
+
+	/*
+	  description: null
+	*/
 	interface IDependencyReferences {
 		__typename: string;
-		data: string;
+		dependencyReferenceData: IDependencyReferencesData;
+		repoData: IRepoDataMap;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IDependencyReferencesData {
+		__typename: string;
+		references: Array<IDependencyReference>;
+		location: IDepLocation;
 	}
 
 	/*
@@ -212,6 +241,15 @@ declare namespace GQL {
 		private: boolean;
 		createdAt: string;
 		pushedAt: string;
+	}
+
+	/*
+	  description: null
+	*/
+	interface IRepoDataMap {
+		__typename: string;
+		repos: Array<IRepository>;
+		repoIds: Array<number>;
 	}
 
 	/*

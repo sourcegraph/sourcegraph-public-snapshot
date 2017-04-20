@@ -1,5 +1,4 @@
-import * as remove from "lodash/remove";
-import * as values from "lodash/values";
+import * as zipObject from "lodash/zipObject";
 import * as hash from "object-hash";
 import { Observable, Subject, Subscriber } from "rxjs";
 
@@ -11,7 +10,6 @@ import { getDefinitionsAtPosition } from "vs/editor/contrib/goToDeclaration/comm
 import { getHover } from "vs/editor/contrib/hover/common/hover";
 import { provideReferences as getReferences, provideWorkspaceReferences } from "vs/editor/contrib/referenceSearch/common/referenceSearch";
 
-import { Repo } from "sourcegraph/api/index";
 import { RangeOrPosition } from "sourcegraph/core/rangeOrPosition";
 import { URIUtils } from "sourcegraph/core/uri";
 import { setupWorker } from "sourcegraph/ext/main";
@@ -22,21 +20,6 @@ import { getURIContext } from "sourcegraph/workbench/utils";
 
 // TODO(john): consolidate / standardize types.
 
-interface LSPPosition {
-	line: number;
-	character: number;
-}
-
-interface LSPRange {
-	start: LSPPosition;
-	end: LSPPosition;
-}
-
-interface LSPLocation {
-	uri: string;
-	range: LSPRange;
-}
-
 export interface DefinitionData {
 	definition?: {
 		uri: URI;
@@ -44,25 +27,6 @@ export interface DefinitionData {
 	};
 	docString: string;
 	funcName: string;
-}
-
-export interface DepRefsData {
-	Data: {
-		Location: {
-			location: LSPLocation,
-			symbol: any,
-		};
-		References: DepReference[];
-	};
-	RepoData: { [id: number]: Repo };
-}
-
-interface DepReference {
-	DepData: any;
-	Hints: {
-		dirs: string[];
-	};
-	RepoID: number;
 }
 
 export interface ReferenceCommitInfo {
@@ -247,7 +211,14 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 			return Observable.empty();
 		}
 
-		const symbol = depRefs.Data.Location.symbol;
+		const repos = depRefs.repoData!.repos;
+		const repoIDs = depRefs.repoData!.repoIds;
+		if (!repos || !repoIDs) {
+			return Observable.empty();
+		}
+
+		const repoMap = zipObject(repoIDs, repos);
+		const symbol = depRefs.dependencyReferenceData!.location!.symbol!;
 		const key = hash(symbol); // key is the encoded data about the symbol, which will be the same across different locations of the symbol
 		const cacheHit = globalRefsObservablesStreaming.get(key);
 		if (cacheHit) {
@@ -277,26 +248,26 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 
 		// When a repo returns results, we will process those results.
 		// When a repo does not have results, we will trigger another request (until we run out).
-		const result = Observable.from(depRefs.Data.References)
+		const result = Observable.from(depRefs.dependencyReferenceData!.references)
 			// Throttle the emission of references by calls to .next() on triggerRequest.
 			.zip(initialRequests, ref => ref)
 
 			// Merge the observables from each request into a single observable.
 			.flatMap(depRef => {
-				const repo = depRefs.RepoData[depRef.RepoID];
+				const depRepo = repoMap[depRef.repoId];
 				let hasResults = false;
 
 				// Make the actual request to get global references.
-				log(`starting request ${repo.URI}`);
-				return fetchGlobalReferencesForDependentRepoStreaming(repo, model.getLanguageIdentifier(), symbol, depRef)
+				log(`starting request ${depRepo.uri}`);
+				return fetchGlobalReferencesForDependentRepoStreaming(depRepo, model.getLanguageIdentifier(), JSON.parse(symbol), depRef)
 					.take(MAX_REFS_PER_REPO)
 					.do(location => {
-						log(`progress ${repo.URI}`);
+						log(`progress ${depRepo.uri}`);
 						// If this repo has results, we don't want to trigger another request after it finishes.
 						hasResults = true;
 					})
 					.finally(() => {
-						log(`finished ${repo.URI} hasResults=${hasResults}`);
+						log(`finished ${depRepo.uri} hasResults=${hasResults}`);
 						if (!hasResults) {
 							// If this repo didn't have any global references, we want to trigger another request.
 							triggerRequest.next();
@@ -321,12 +292,12 @@ export function provideGlobalReferencesStreaming(model: IReadOnlyModel, pos: IPo
 	});
 }
 
-function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, language: LanguageIdentifier, symbol: any, reference: DepReference): Observable<Location> {
-	if (!repo.URI || !repo.IndexedRevision) {
+function fetchGlobalReferencesForDependentRepoStreaming(repo: GQL.IRepository, language: LanguageIdentifier, symbol: any, reference: GQL.IDependencyReference): Observable<Location> {
+	if (!repo.uri || !repo.lastIndexedRevOrLatest) {
 		return Observable.empty();
 	}
 
-	let repoURI = URIUtils.createResourceURI(repo.URI);
+	let repoURI = URIUtils.createResourceURI(repo.uri);
 
 	// Setting up a workspace is async and there is currently no way for
 	// the main thread to know when the extension is finished registering.
@@ -348,9 +319,9 @@ function fetchGlobalReferencesForDependentRepoStreaming(repo: Repo, language: La
 	};
 
 	return new Observable<IReferenceInformation>(observer => {
-		setupWorkspace(repoURI, repo.IndexedRevision, workspaceIsReady).then(() => { // TODO(john): rev argument is incorrect
+		setupWorkspace(repoURI, repo.lastIndexedRevOrLatest.commit!.sha1, workspaceIsReady).then(() => { // TODO(john): rev argument is incorrect
 			const handler = createProgressHandler(observer);
-			provideWorkspaceReferences(language, repoURI, symbol, reference.Hints, handler).then(references => {
+			provideWorkspaceReferences(language, repoURI, symbol, JSON.parse(reference.hints), handler).then(references => {
 				handler(references.map(ref => {
 					ref.reference.uri = URIUtils.tryConvertGitToFileURI(ref.reference.uri);
 					return ref;
@@ -406,7 +377,7 @@ function setupWorkspace(uri: URI, rev: string | undefined, isReady: () => boolea
 }
 
 const globalRefLangs = new Set(["go", "java", "typescript", "javascript"]);
-async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition): Promise<DepRefsData | null> {
+async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition): Promise<GQL.IDependencyReferences | null> {
 	// Only fetch global refs for certain languages.
 	if (!globalRefLangs.has(model.getModeId())) {
 		return null;
@@ -419,7 +390,29 @@ async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition):
 				commit {
 					file(path: "${path}") {
 						dependencyReferences(Language: "${model.getModeId()}", Line: ${pos.lineNumber - 1}, Character: ${pos.column - 1}) {
-							data
+							dependencyReferenceData {
+								references {
+									dependencyData
+									repoId
+									hints
+								}
+								location {
+									location
+									symbol
+								}
+							}
+							repoData {
+								repos {
+									id
+									uri
+									lastIndexedRevOrLatest {
+										commit {
+											sha1
+										}
+									}
+								}
+								repoIds
+							}
 						}
 					}
 				}
@@ -436,26 +429,8 @@ async function fetchDependencyReferences(model: IReadOnlyModel, pos: IPosition):
 	const resp = await fetchGQL(query);
 	const root = resp.data.root;
 	if (!root.repository || !root.repository.commit.commit || !root.repository.commit.commit.file ||
-		!root.repository.commit.commit.file.dependencyReferences || !root.repository.commit.commit.file.dependencyReferences.data.length) {
+		!root.repository.commit.commit.file.dependencyReferences.repoData || !root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData || !root.repository.commit.commit.file.dependencyReferences.dependencyReferenceData.references.length) {
 		return null;
 	}
-	let object = JSON.parse(root.repository.commit.commit.file.dependencyReferences.data);
-	if (!object.RepoData || !object.Data || !object.Data.References || object.Data.References.length === 0) {
-		return null;
-	}
-	let repos = values(object.RepoData);
-
-	let currentRepo = remove(repos, function (r: any): boolean {
-		return (r as any).URI === getURIContext(model.uri).repo;
-	});
-	if (!currentRepo || !currentRepo.length) {
-		return object;
-	}
-
-	remove(object.Data.References, function (reference: any): boolean {
-		return reference.RepoID === currentRepo[0].ID;
-	});
-	delete object.RepoData[currentRepo[0].ID];
-
-	return object;
+	return root.repository.commit.commit.file.dependencyReferences;
 }

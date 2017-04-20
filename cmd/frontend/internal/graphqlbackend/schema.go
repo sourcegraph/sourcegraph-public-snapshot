@@ -170,7 +170,29 @@ type LineMatch {
 }
 
 type DependencyReferences {
-	data: String!
+	dependencyReferenceData: DependencyReferencesData!
+	repoData: RepoDataMap!
+}
+
+type RepoDataMap {
+	repos: [Repository!]!
+	repoIds: [Int!]!
+}
+
+type DependencyReferencesData {
+	references: [DependencyReference!]!
+	location: DepLocation!
+}
+
+type DependencyReference {
+	dependencyData: String!
+	repoId: Int!
+	hints: String!
+}
+
+type DepLocation {
+	location: String!
+	symbol: String!
 }
 
 type Hunk {
