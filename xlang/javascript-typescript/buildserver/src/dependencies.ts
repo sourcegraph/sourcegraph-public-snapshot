@@ -342,6 +342,8 @@ export class DependencyManager {
 		return Observable.of<keyof PackageJson>('dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies')
 			// Get a stream of package name, version pairs
 			.mergeMap(key => toPairs(packageJson[key]) as [string, string][])
+			// Exclude file: URI
+			.filter(([name, version]) => !version.startsWith('file:'))
 			// Remove duplicate packages, if people have them for whatever reason
 			.distinct(([name, version]) => name)
 			// Filter to only include either @types/ packages or packages with a typings field
