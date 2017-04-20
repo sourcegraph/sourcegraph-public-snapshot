@@ -7,3 +7,5 @@ yarn install
 yarn run build
 cd ..
 go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates
+
+cmd/frontend/internal/app/bundle/fetch-and-generate.bash

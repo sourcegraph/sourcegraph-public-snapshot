@@ -25,6 +25,7 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/bundle"
 	app_router "sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
@@ -165,6 +166,7 @@ func Main() error {
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
 	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New())))
+	sm.Handle("/main/", http.StripPrefix("/main", bundle.Handler))
 	assets.Mount(sm)
 
 	if biLoggerAddr != "" {
