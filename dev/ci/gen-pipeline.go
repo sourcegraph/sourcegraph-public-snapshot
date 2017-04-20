@@ -18,10 +18,11 @@ type Pipeline struct {
 }
 
 type Step struct {
-	Label   string                 `json:"label"`
-	Command string                 `json:"command"`
-	Env     map[string]string      `json:"env"`
-	Plugins map[string]interface{} `json:"plugins"`
+	Label         string                 `json:"label"`
+	Command       string                 `json:"command"`
+	Env           map[string]string      `json:"env"`
+	Plugins       map[string]interface{} `json:"plugins"`
+	ArtifactPaths string                 `json:"artifact_paths,omitempty"`
 }
 
 func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
@@ -50,6 +51,12 @@ func Env(name, value string) StepOpt {
 	}
 }
 
+func ArtifactPaths(paths string) StepOpt {
+	return func(step *Step) {
+		step.ArtifactPaths = paths
+	}
+}
+
 func (p *Pipeline) AddWait() {
 	p.Steps = append(p.Steps, "wait")
 }
@@ -61,8 +68,7 @@ var golangPlugin = map[string]interface{}{
 }
 
 func main() {
-	xlang := "sourcegraph.com/sourcegraph/sourcegraph/xlang"
-	pkgs := []string{xlang} // put slow xlang test first
+	pkgs := []string{"xlang"} // put slow xlang test first
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			panic(err)
@@ -70,16 +76,16 @@ func main() {
 		if path == "." || !info.IsDir() {
 			return nil
 		}
-		if path == ".git" || path == "ui" || path == "vendor" {
+		switch path {
+		case ".git", "dev", "ui", "vendor":
 			return filepath.SkipDir
 		}
 
-		importPath := "sourcegraph.com/sourcegraph/sourcegraph/" + path
-		if importPath == xlang {
+		if path == "xlang" {
 			return nil // already first entry
 		}
 
-		pkg, err := build.Import(importPath, "", 0)
+		pkg, err := build.Import("sourcegraph.com/sourcegraph/sourcegraph/"+path, "", 0)
 		if err != nil {
 			if _, ok := err.(*build.NoGoError); ok {
 				return nil
@@ -88,11 +94,11 @@ func main() {
 		}
 
 		if len(pkg.TestGoFiles) == 0 && len(pkg.XTestGoFiles) == 0 {
-			return nil
+			fmt.Fprintf(os.Stderr, "error: package %s has no tests\n", pkg.ImportPath)
+			os.Exit(1)
 		}
 
-		pkgs = append(pkgs, importPath)
-
+		pkgs = append(pkgs, path)
 		return nil
 	})
 	if err != nil {
@@ -125,10 +131,20 @@ func main() {
 		Cmd("yarn run lint"),
 		Cmd("yarn test"))
 
-	for _, pkg := range pkgs {
+	for _, path := range pkgs {
+		coverageFile := path + "/coverage.txt"
 		pipeline.AddStep(":go:",
-			Cmd("go test -race -v "+pkg))
+			Cmd("go test ./"+path+" -v -race -i"),
+			Cmd("go test ./"+path+" -v -race -coverprofile="+coverageFile+" -covermode=atomic"),
+			ArtifactPaths(coverageFile))
 	}
+
+	pipeline.AddWait()
+
+	pipeline.AddStep(":codecov:",
+		Cmd("buildkite-agent artifact download '*/coverage.txt' ."),
+		Cmd("find . -name coverage.txt"),
+		Cmd("bash <(curl -s https://codecov.io/bash) -f '*/coverage.txt' -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 	commit := os.Getenv("BUILDKITE_COMMIT")
@@ -181,7 +197,6 @@ func main() {
 
 	switch {
 	case branch == "master":
-		pipeline.AddWait()
 		addDockerImageStep("frontend", true)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
@@ -190,7 +205,6 @@ func main() {
 			Cmd("echo $VERSION | gsutil cp - gs://sourcegraph-metadata/latest-successful-build"))
 
 	case strings.HasPrefix(branch, "staging/"):
-		pipeline.AddWait()
 		cmds, err := ioutil.ReadDir("./cmd")
 		if err != nil {
 			panic(err)
@@ -208,7 +222,6 @@ func main() {
 		pipeline.AddWait()
 
 	case strings.HasPrefix(branch, "docker-images/"):
-		pipeline.AddWait()
 		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
 		pipeline.AddStep(":rocket:",
