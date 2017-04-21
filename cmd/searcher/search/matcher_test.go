@@ -1,6 +1,7 @@
 package search
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
@@ -152,6 +153,43 @@ func TestLowerRegexp(t *testing.T) {
 		if want != got {
 			t.Errorf("lowerRegexp(%q) == %q != %q", expr, got, want)
 		}
+	}
+}
+
+func TestReadAll(t *testing.T) {
+	input := []byte("Hello World")
+
+	// If we are the same size as input, it should work
+	b := make([]byte, len(input))
+	n, err := readAll(bytes.NewReader(input), b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != len(input) {
+		t.Fatalf("want to read in %d bytes, read %d", len(input), n)
+	}
+	if string(b[:n]) != string(input) {
+		t.Fatalf("got %s, want %s", string(b[:n]), string(input))
+	}
+
+	// If we are larger then it should work
+	b = make([]byte, len(input)*2)
+	n, err = readAll(bytes.NewReader(input), b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != len(input) {
+		t.Fatalf("want to read in %d bytes, read %d", len(input), n)
+	}
+	if string(b[:n]) != string(input) {
+		t.Fatalf("got %s, want %s", string(b[:n]), string(input))
+	}
+
+	// If we are too small it should fail
+	b = make([]byte, 1)
+	n, err = readAll(bytes.NewReader(input), b)
+	if err == nil {
+		t.Fatal("expected to fail on small buffer")
 	}
 }
 

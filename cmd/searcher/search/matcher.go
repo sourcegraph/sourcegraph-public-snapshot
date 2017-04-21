@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"regexp"
 	"regexp/syntax"
@@ -59,9 +60,9 @@ type readerGrep struct {
 	// ignoreCase if true means we need to do case insensitive matching.
 	ignoreCase bool
 
-	// reader is reused between file searches to avoid re-allocating the
-	// underlying buffer.
-	reader *bufio.Reader
+	// buf is reused between file searches to avoid re-allocating. It
+	// holds an entire file.
+	buf []byte
 
 	// transformBuf is reused between file searches to avoid
 	// re-allocating. It is only used if we need to transform the input
@@ -139,44 +140,64 @@ func (rg *readerGrep) Copy() *readerGrep {
 //
 // NOTE: This is not safe to use concurrently.
 func (rg *readerGrep) Find(reader io.Reader) ([]LineMatch, error) {
-	r := rg.reader
-	if r == nil {
-		r = bufio.NewReader(reader)
-		rg.reader = r
+	if rg.buf == nil {
+		// reader should always have maxFileSize bytes or less.
+		rg.buf = make([]byte, maxFileSize)
 		if rg.ignoreCase {
-			rg.transformBuf = make([]byte, 0, 4096) // 4096 is the size of bufio.NewReader
+			rg.transformBuf = make([]byte, maxFileSize)
 		}
-	} else {
-		r.Reset(reader)
+	}
+
+	// Read the file into memory. We have a relatively low maxFileSize, so
+	// we can simplify and avoid needing to stream the lines.
+	n, err := readAll(reader, rg.buf)
+	if err != nil {
+		return nil, err
+	}
+	// fileMatchBuf is what we run match on, fileBuf is the original
+	// data (for Preview).
+	fileBuf := rg.buf[:n]
+	fileMatchBuf := fileBuf
+
+	// If we are ignoring case, we transform the input instead of
+	// relying on the regular expression engine which can be
+	// slow. compile has already lowercased the pattern. We also
+	// trade some correctness for perf by using a non-utf8 aware
+	// lowercase function.
+	if rg.ignoreCase {
+		fileMatchBuf = rg.transformBuf[:len(fileBuf)]
+		bytesToLowerASCII(fileMatchBuf, fileBuf)
+	}
+
+	// Most files will not have a match and we bound the number of matched
+	// files we return. So we can avoid the overhead of parsing out new
+	// lines and repeatedly running the regex engine by running a single
+	// match over the whole file. This does mean we duplicate work when
+	// actually searching for results. We use the same approach when we
+	// search per-line.
+	if rg.re.Find(fileMatchBuf) == nil {
+		return nil, nil
 	}
 
 	var matches []LineMatch
 	for i := 0; len(matches) < maxLineMatches; i++ {
-		lineBuf, isPrefix, err := r.ReadLine()
-		if isPrefix || err != nil {
-			// We have either found a long line, encountered an
-			// error or reached EOF. We skip files with long lines
-			// since the user is unlikely interested in the
-			// result, so the only case we want to return matches
-			// is if we have reached the end of file.
-			if err == io.EOF {
-				break
-			}
+		advance, lineBuf, err := bufio.ScanLines(fileBuf, true)
+		if err != nil {
+			// ScanLines should never return an err
 			return nil, err
 		}
-		// matchBuf is what we run match on, lineBuf is the original
-		// line (for Preview).
-		matchBuf := lineBuf
-
-		// If we are ignoring case, we transform the input instead of
-		// relying on the regular expression engine which can be
-		// slow. compile has already lowercased the pattern. We also
-		// trade some correctness for perf by using a non-utf8 aware
-		// lowercase function.
-		if rg.ignoreCase {
-			matchBuf = rg.transformBuf[:len(lineBuf)]
-			bytesToLowerASCII(matchBuf, lineBuf)
+		if advance == 0 { // EOF
+			break
 		}
+
+		// matchBuf is what we actually match on. We have already done
+		// the transform of fileBuf in fileMatchBuf. lineBuf is a
+		// prefix of fileBuf, so matchBuf is the corresponding prefix.
+		matchBuf := fileMatchBuf[:len(lineBuf)]
+
+		// Advance file bufs in sync
+		fileBuf = fileBuf[advance:]
+		fileMatchBuf = fileMatchBuf[advance:]
 
 		// FindAllIndex allocates memory. We can avoid that by just
 		// checking if we have a match first. We expect most lines to
@@ -389,5 +410,35 @@ func bytesToLowerASCII(dst, src []byte) {
 	dst = dst[:len(src)]
 	for i := range src {
 		dst[i] = lowerTable[src[i]]
+	}
+}
+
+// readAll will read r until EOF into b. It returns the number of bytes
+// read. If we do not reach EOF, an error is returned.
+func readAll(r io.Reader, b []byte) (int, error) {
+	n := 0
+	for {
+		if len(b) == 0 {
+			// We may be at EOF, but it hasn't returned that
+			// yet. Technically r.Read is allowed to return 0,
+			// nil, but it is strongly discouraged. If they do, we
+			// will just return an err.
+			scratch := []byte{'1'}
+			_, err := r.Read(scratch)
+			if err == io.EOF {
+				return n, nil
+			}
+			return n, errors.New("reader is too large")
+		}
+
+		m, err := r.Read(b)
+		n += m
+		b = b[n:]
+		if err != nil {
+			if err == io.EOF { // done
+				return n, nil
+			}
+			return n, err
+		}
 	}
 }
