@@ -48,7 +48,7 @@ func filename(p string) string {
 func (fs mapFS) Open(ctx context.Context, p string) (ReadSeekCloser, error) {
 	b, ok := fs[filename(p)]
 	if !ok {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "Open", Path: p, Err: os.ErrNotExist}
 	}
 	return nopCloser{bytes.NewReader(b)}, nil
 }
@@ -77,7 +77,7 @@ func (fs mapFS) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
 			return dirInfo(path.Base(p)), nil
 		}
 	}
-	return nil, os.ErrNotExist
+	return nil, &os.PathError{Op: "Lstat", Path: p, Err: os.ErrNotExist}
 }
 
 func (fs mapFS) Stat(ctx context.Context, p string) (os.FileInfo, error) {
@@ -137,7 +137,7 @@ func (fs mapFS) ReadDir(ctx context.Context, p string) ([]os.FileInfo, error) {
 		}
 	}
 	if len(ents) == 0 {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "ReadDir", Path: p, Err: os.ErrNotExist}
 	}
 
 	sort.Strings(ents)

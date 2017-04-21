@@ -1017,10 +1017,10 @@
 			"revisionTime": "2017-03-13T17:21:28Z"
 		},
 		{
-			"checksumSHA1": "s7NmPab6GppycZnlWfXqtyILmgY=",
+			"checksumSHA1": "B6rrsV32b9zQXUslJTGwtV35abI=",
 			"path": "github.com/sourcegraph/ctxvfs",
-			"revision": "8e2bd62a565a647defd704af3d81fce05c5f190c",
-			"revisionTime": "2016-10-13T09:33:44Z"
+			"revision": "8de691b1d0d2eafd764a63aef324fc0a6a8f4da7",
+			"revisionTime": "2017-04-21T11:34:29Z"
 		},
 		{
 			"checksumSHA1": "bOxJoQEBxI70CzZgvfHEMftHtmE=",
