@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp/syntax"
 	"testing"
+	"testing/iotest"
 )
 
 func BenchmarkBytesToLowerASCII(b *testing.B) {
@@ -175,6 +176,20 @@ func TestReadAll(t *testing.T) {
 	// If we are larger then it should work
 	b = make([]byte, len(input)*2)
 	n, err = readAll(bytes.NewReader(input), b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != len(input) {
+		t.Fatalf("want to read in %d bytes, read %d", len(input), n)
+	}
+	if string(b[:n]) != string(input) {
+		t.Fatalf("got %s, want %s", string(b[:n]), string(input))
+	}
+
+	// Same size, but modify reader to return 1 byte per call to ensure
+	// our loop works.
+	b = make([]byte, len(input))
+	n, err = readAll(iotest.OneByteReader(bytes.NewReader(input)), b)
 	if err != nil {
 		t.Fatal(err)
 	}

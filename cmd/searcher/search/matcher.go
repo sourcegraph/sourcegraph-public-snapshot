@@ -433,7 +433,7 @@ func readAll(r io.Reader, b []byte) (int, error) {
 
 		m, err := r.Read(b)
 		n += m
-		b = b[n:]
+		b = b[m:]
 		if err != nil {
 			if err == io.EOF { // done
 				return n, nil
