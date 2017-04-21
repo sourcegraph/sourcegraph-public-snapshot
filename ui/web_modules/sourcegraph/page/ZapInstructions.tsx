@@ -84,7 +84,7 @@ export function ZapInstructions(): JSX.Element {
 					<div style={stepSx}>3</div>
 					<p>Start watching a repository by going to the repository directory you want to watch, and type:</p>
 					<code style={codeSx}>zap auth</code>
-					<code style={codeSx}>zap init</code>
+					<code style={codeSx}>zap on</code>
 				</div>
 
 				<div style={{ borderTop: `1px solid ${colors.blueGrayL3()}`, marginTop: whitespace[4] }}>

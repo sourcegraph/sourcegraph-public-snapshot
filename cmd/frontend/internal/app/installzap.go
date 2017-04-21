@@ -99,7 +99,7 @@ main() {
 	echo ""
 	echo " - check for updates: use 'zap version'"
 	echo " - manage the server: use 'zap server [restart|start|stop]'"
-	echo " - ⚡️  watch a repository: use 'zap init'"
+	echo " - ⚡️  watch a repository: use 'zap on'"
 	echo ""
 }
 
