@@ -30,6 +30,10 @@ func (h *LangHandler) typecheck(ctx context.Context, conn jsonrpc2.JSONRPC2, fil
 	ctx = opentracing.ContextWithSpan(ctx, span)
 	defer span.Finish()
 
+	if !isFileURI(fileURI) {
+		return nil, nil, nil, nil, nil, nil, fmt.Errorf("typechecking of out-of-workspace URI (%q) is not yet supported", fileURI)
+	}
+
 	filename := h.FilePath(fileURI)
 
 	contents, err := h.readFile(ctx, fileURI)

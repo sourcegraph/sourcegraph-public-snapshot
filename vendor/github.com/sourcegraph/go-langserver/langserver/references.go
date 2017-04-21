@@ -29,6 +29,13 @@ import (
 var streamExperiment = len(os.Getenv("STREAM_EXPERIMENT")) > 0
 
 func (h *LangHandler) handleTextDocumentReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.ReferenceParams) ([]lsp.Location, error) {
+	if !isFileURI(params.TextDocument.URI) {
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidParams,
+			Message: fmt.Sprintf("textDocument/references not yet supported for out-of-workspace URI (%q)", params.TextDocument.URI),
+		}
+	}
+
 	// Begin computing the reverse import graph immediately, as this
 	// occurs in the background and is IO-bound.
 	reverseImportGraphC := h.reverseImportGraph(ctx, conn)

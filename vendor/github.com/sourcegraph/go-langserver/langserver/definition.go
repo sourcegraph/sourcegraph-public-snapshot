@@ -3,6 +3,7 @@ package langserver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"go/ast"
 	"log"
 
@@ -24,6 +25,13 @@ func (h *LangHandler) handleDefinition(ctx context.Context, conn jsonrpc2.JSONRP
 }
 
 func (h *LangHandler) handleXDefinition(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.TextDocumentPositionParams) ([]symbolLocationInformation, error) {
+	if !isFileURI(params.TextDocument.URI) {
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidParams,
+			Message: fmt.Sprintf("%s not yet supported for out-of-workspace URI (%q)", req.Method, params.TextDocument.URI),
+		}
+	}
+
 	rootPath := h.FilePath(h.init.RootPath)
 	bctx := h.BuildContext(ctx)
 

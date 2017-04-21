@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -37,6 +38,11 @@ func (h *HandlerShared) handleFileSystemRequest(ctx context.Context, req *jsonrp
 	do := func(uri string, op func() error) (string, bool, error) {
 		span.SetTag("uri", uri)
 		before, beforeErr := h.readFile(ctx, uri)
+		if beforeErr != nil && !os.IsNotExist(beforeErr) {
+			// There is no op that could succeed in this case. (Most
+			// commonly occurs when uri refers to a dir, not a file.)
+			return uri, false, beforeErr
+		}
 		err := op()
 		after, afterErr := h.readFile(ctx, uri)
 		if os.IsNotExist(beforeErr) && os.IsNotExist(afterErr) {
@@ -161,8 +167,8 @@ func (h *overlay) didClose(params *lsp.DidCloseTextDocumentParams) {
 }
 
 func uriToOverlayPath(uri string) string {
-	if isURI(uri) {
-		return strings.TrimPrefix(uriToPath(uri), "/")
+	if isFileURI(uri) {
+		return strings.TrimPrefix(uriToFilePath(uri), "/")
 	}
 	return uri
 }
@@ -199,7 +205,7 @@ func (h *overlay) del(uri string) {
 }
 
 func (h *HandlerShared) FilePath(uri string) string {
-	path := uriToPath(uri)
+	path := uriToFilePath(uri)
 	if !strings.HasPrefix(path, "/") {
 		panic(fmt.Sprintf("bad uri %q (path %q MUST have leading slash; it can't be relative)", uri, path))
 	}
@@ -207,6 +213,9 @@ func (h *HandlerShared) FilePath(uri string) string {
 }
 
 func (h *HandlerShared) readFile(ctx context.Context, uri string) ([]byte, error) {
+	if !isFileURI(uri) {
+		return nil, &os.PathError{Op: "Open", Path: uri, Err: errors.New("unable to read out-of-workspace resource from virtual file system")}
+	}
 	h.Mu.Lock()
 	fs := h.FS
 	h.Mu.Unlock()

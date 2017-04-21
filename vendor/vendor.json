@@ -1017,10 +1017,10 @@
 			"revisionTime": "2017-03-13T17:21:28Z"
 		},
 		{
-			"checksumSHA1": "s7NmPab6GppycZnlWfXqtyILmgY=",
+			"checksumSHA1": "B6rrsV32b9zQXUslJTGwtV35abI=",
 			"path": "github.com/sourcegraph/ctxvfs",
-			"revision": "8e2bd62a565a647defd704af3d81fce05c5f190c",
-			"revisionTime": "2016-10-13T09:33:44Z"
+			"revision": "8de691b1d0d2eafd764a63aef324fc0a6a8f4da7",
+			"revisionTime": "2017-04-21T11:34:29Z"
 		},
 		{
 			"checksumSHA1": "bOxJoQEBxI70CzZgvfHEMftHtmE=",
@@ -1029,34 +1029,34 @@
 			"revisionTime": "2016-09-28T03:47:51Z"
 		},
 		{
-			"checksumSHA1": "LmIIcjPJxN+jy2Qz4XpljyTzu10=",
+			"checksumSHA1": "Oef7WGWREFjgmTwSYBJd7dnB5tg=",
 			"path": "github.com/sourcegraph/go-langserver/langserver",
-			"revision": "43b0eee5b5f9fa08af4d9deafaf08203b1d7a440",
-			"revisionTime": "2017-04-18T07:41:55Z"
+			"revision": "fc8334903be717f4dfe6bcc7cb8518eec152edbf",
+			"revisionTime": "2017-04-21T10:56:40Z"
 		},
 		{
 			"checksumSHA1": "/1pmXgjVX/cUJyh3iJskHbANOeA=",
 			"path": "github.com/sourcegraph/go-langserver/langserver/internal/refs",
-			"revision": "6a57c7a8220ccb8a9b377c62fc54ac1dd765690b",
-			"revisionTime": "2017-04-15T20:12:21Z"
+			"revision": "fc8334903be717f4dfe6bcc7cb8518eec152edbf",
+			"revisionTime": "2017-04-21T10:56:40Z"
 		},
 		{
 			"checksumSHA1": "OkokvIWcSi8Wk6Ig5mhD5H6MHEI=",
 			"path": "github.com/sourcegraph/go-langserver/langserver/internal/tools",
-			"revision": "6a57c7a8220ccb8a9b377c62fc54ac1dd765690b",
-			"revisionTime": "2017-04-15T20:12:21Z"
+			"revision": "fc8334903be717f4dfe6bcc7cb8518eec152edbf",
+			"revisionTime": "2017-04-21T10:56:40Z"
 		},
 		{
 			"checksumSHA1": "4hEpm3vg87EoYRlyGS6xAHc+mPE=",
 			"path": "github.com/sourcegraph/go-langserver/pkg/lsp",
-			"revision": "6a57c7a8220ccb8a9b377c62fc54ac1dd765690b",
-			"revisionTime": "2017-04-15T20:12:21Z"
+			"revision": "fc8334903be717f4dfe6bcc7cb8518eec152edbf",
+			"revisionTime": "2017-04-21T10:56:40Z"
 		},
 		{
 			"checksumSHA1": "a2IMJmVBUZJb8XDQZN2UGUe/Ee4=",
 			"path": "github.com/sourcegraph/go-langserver/pkg/lspext",
-			"revision": "6a57c7a8220ccb8a9b377c62fc54ac1dd765690b",
-			"revisionTime": "2017-04-15T20:12:21Z"
+			"revision": "fc8334903be717f4dfe6bcc7cb8518eec152edbf",
+			"revisionTime": "2017-04-21T10:56:40Z"
 		},
 		{
 			"checksumSHA1": "m7vjBiKUAdwtdqi0uiuDvoq6WRs=",

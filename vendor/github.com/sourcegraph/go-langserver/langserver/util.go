@@ -35,8 +35,8 @@ func IsVendorDir(dir string) bool {
 	return strings.HasPrefix(dir, "vendor/") || strings.Contains(dir, "/vendor/")
 }
 
-// isURI tells if s denotes an URI
-func isURI(s string) bool {
+// isFileURI tells if s denotes an absolute file URI.
+func isFileURI(s string) bool {
 	return strings.HasPrefix(s, "file:///")
 }
 
@@ -45,8 +45,12 @@ func pathToURI(path string) string {
 	return "file://" + path
 }
 
-// uriToPath converts given file URI to path
-func uriToPath(uri string) string {
+// uriToFilePath converts given absolute file URI to path. It panics if
+// uri does not begin with "file:///".
+func uriToFilePath(uri string) string {
+	if !isFileURI(uri) {
+		panic("not an absolute file URI: " + uri)
+	}
 	return strings.TrimPrefix(uri, "file://")
 }
 

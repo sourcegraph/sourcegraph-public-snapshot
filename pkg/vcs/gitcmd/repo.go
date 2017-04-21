@@ -835,7 +835,7 @@ func (r *Repository) lsTree(ctx context.Context, commit vcs.CommitID, path strin
 	}
 
 	if len(out) == 0 {
-		return nil, os.ErrNotExist
+		return nil, &os.PathError{Op: "git ls-tree", Path: path, Err: os.ErrNotExist}
 	}
 
 	prefixLen := strings.LastIndexByte(strings.TrimPrefix(path, "./"), '/') + 1
