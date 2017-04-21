@@ -101,6 +101,11 @@ func compile(p *Params) (*readerGrep, error) {
 		expr = re.String()
 		ignoreCase = true
 	}
+	if p.IsRegExp {
+		// We don't do the search line by line, therefore we want the
+		// regex engine to consider newlines for anchors (^$).
+		expr = "(?m:" + expr + ")"
+	}
 
 	var include, exclude glob.Glob
 	var err error

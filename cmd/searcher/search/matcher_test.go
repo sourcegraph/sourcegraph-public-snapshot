@@ -54,6 +54,22 @@ func BenchmarkConcurrentFind_large_re_common(b *testing.B) {
 	benchConcurrentFind(b, &Params{
 		Repo:            "github.com/golang/go",
 		Commit:          "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		Pattern:         "func +[A-Z]",
+		IsRegExp:        true,
+		IsCaseSensitive: true,
+	})
+}
+
+func BenchmarkConcurrentFind_large_re_anchor(b *testing.B) {
+	// TODO(keegan) PERF regex engine performs poorly since LiteralPrefix
+	// is empty when ^. We can improve this by:
+	// * Transforming the regex we use to prune a file to be more
+	// performant/permissive.
+	// * Searching for any literal (Rabin-Karp aka bytes.Index) or group
+	// of literals (Aho-Corasick).
+	benchConcurrentFind(b, &Params{
+		Repo:            "github.com/golang/go",
+		Commit:          "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		Pattern:         "^func +[A-Z]",
 		IsRegExp:        true,
 		IsCaseSensitive: true,
@@ -87,6 +103,16 @@ func BenchmarkConcurrentFind_small_re_dotstar(b *testing.B) {
 }
 
 func BenchmarkConcurrentFind_small_re_common(b *testing.B) {
+	benchConcurrentFind(b, &Params{
+		Repo:            "github.com/sourcegraph/go-langserver",
+		Commit:          "4193810334683f87b8ed5d896aa4753f0dfcdf20",
+		Pattern:         "func +[A-Z]",
+		IsRegExp:        true,
+		IsCaseSensitive: true,
+	})
+}
+
+func BenchmarkConcurrentFind_small_re_anchor(b *testing.B) {
 	benchConcurrentFind(b, &Params{
 		Repo:            "github.com/sourcegraph/go-langserver",
 		Commit:          "4193810334683f87b8ed5d896aa4753f0dfcdf20",
