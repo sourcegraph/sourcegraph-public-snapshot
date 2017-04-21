@@ -1,4 +1,4 @@
-# Sourcegraph mini
+# Sourcgraph mini
 Sourcegraph can be packaged in a small format intended for self-service pilots and demonstration purposes on-premises within a customer network.
 
 ## Prerequisities
