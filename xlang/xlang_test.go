@@ -98,7 +98,7 @@ func hoverTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.UR
 	if err != nil {
 		t.Fatal(err)
 	}
-	hover, err := callHover(ctx, c, root.WithFilePath(file).String(), line, char)
+	hover, err := callHover(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func definitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	if err != nil {
 		t.Fatal(err)
 	}
-	definition, err := callDefinition(ctx, c, root.WithFilePath(file).String(), line, char)
+	definition, err := callDefinition(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +134,7 @@ func xdefinitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *
 	if err != nil {
 		t.Fatal(err)
 	}
-	xdefinition, err := callXDefinition(ctx, c, root.WithFilePath(file).String(), line, char)
+	xdefinition, err := callXDefinition(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func referencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	if err != nil {
 		t.Fatal(err)
 	}
-	references, err := callReferences(ctx, c, root.WithFilePath(file).String(), line, char)
+	references, err := callReferences(ctx, c, root.WithFilePath(filepath.Join(root.FilePath(), file)).String(), line, char)
 	if err != nil {
 		t.Fatal(err)
 	}

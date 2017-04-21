@@ -3,6 +3,7 @@ package langserver
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/printer"
@@ -16,6 +17,13 @@ import (
 )
 
 func (h *LangHandler) handleTextDocumentFormatting(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.DocumentFormattingParams) ([]lsp.TextEdit, error) {
+	if !isFileURI(params.TextDocument.URI) {
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidParams,
+			Message: fmt.Sprintf("%s not yet supported for out-of-workspace URI (%q)", req.Method, params.TextDocument.URI),
+		}
+	}
+
 	filename := h.FilePath(params.TextDocument.URI)
 	bctx := h.BuildContext(ctx)
 	fset := token.NewFileSet()

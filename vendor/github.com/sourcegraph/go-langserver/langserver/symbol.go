@@ -195,7 +195,11 @@ func score(q Query, s symbolPair) (scor int) {
 		return -1
 	}
 	name, container := strings.ToLower(s.Name), strings.ToLower(s.ContainerName)
-	filename := uriToPath(s.Location.URI)
+	if !isFileURI(s.Location.URI) {
+		log.Printf("unexpectedly saw symbol defined at a non-file URI: %q", s.Location.URI)
+		return 0
+	}
+	filename := uriToFilePath(s.Location.URI)
 	isVendor := strings.HasPrefix(filename, "vendor/") || strings.Contains(filename, "/vendor/")
 	if q.Filter == FilterExported && isVendor {
 		// is:exported excludes vendor symbols always.
@@ -280,7 +284,13 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 // handleTextDocumentSymbol handles `textDocument/documentSymbol` requests for
 // the Go language server.
 func (h *LangHandler) handleTextDocumentSymbol(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lsp.DocumentSymbolParams) ([]lsp.SymbolInformation, error) {
-	f := uriToPath(params.TextDocument.URI)
+	if !isFileURI(params.TextDocument.URI) {
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidParams,
+			Message: fmt.Sprintf("textDocument/documentSymbol not yet supported for out-of-workspace URI (%q)", params.TextDocument.URI),
+		}
+	}
+	f := uriToFilePath(params.TextDocument.URI)
 	return h.handleSymbol(ctx, conn, req, Query{File: f}, 0)
 }
 
