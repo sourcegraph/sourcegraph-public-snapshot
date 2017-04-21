@@ -546,16 +546,11 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
-		// didClose is harmless to pass along, it does not mutate
-		// anything.
-		//
-		// TODO(john): I noticed while debugging https://github.com/sourcegraph/sourcegraph/issues/4616
-		// that this statement is not true. Toggling the diff editor sends a didClose event for the
-		// "left" document URI (like this https://cl.ly/1y3M3r1j0W1i) which does seem to have some reverting
-		// effect on the langserver.
-		// if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
-		// 	return nil, err
-		// }
+		if c.allowTextDocumentSync() {
+			if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
+				return nil, err
+			}
+		}
 		return nil, nil
 
 	case "textDocument/didChange", "textDocument/didSave":
