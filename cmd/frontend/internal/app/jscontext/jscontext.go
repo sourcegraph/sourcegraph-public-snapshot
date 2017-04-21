@@ -34,7 +34,7 @@ var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute 
 // "sourcegraph/app/context" module.
 type JSContext struct {
 	AppURL              string                     `json:"appURL"`
-	LegacyAccessToken   string                     `json:"accessToken"` // Legacy support for Chrome extension.
+	AccessToken         string                     `json:"accessToken"`
 	XHRHeaders          map[string]string          `json:"xhrHeaders"`
 	CSRFToken           string                     `json:"csrfToken"`
 	UserAgentIsBot      bool                       `json:"userAgentIsBot"`
@@ -95,15 +95,15 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 	}
 
 	return JSContext{
-		AppURL:            conf.AppURL.String(),
-		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
-		XHRHeaders:        headers,
-		CSRFToken:         csrfToken,
-		UserAgentIsBot:    isBot(req.UserAgent()),
-		AssetsRoot:        assets.URL("/").String(),
-		Version:           env.Version,
-		Features:          feature.Features,
-		User:              actor.User(),
+		AppURL:         conf.AppURL.String(),
+		AccessToken:    sessionCookie,
+		XHRHeaders:     headers,
+		CSRFToken:      csrfToken,
+		UserAgentIsBot: isBot(req.UserAgent()),
+		AssetsRoot:     assets.URL("/").String(),
+		Version:        env.Version,
+		Features:       feature.Features,
+		User:           actor.User(),
 		Emails: &sourcegraph.EmailAddrList{
 			EmailAddrs: []*sourcegraph.EmailAddr{{Email: actor.Email, Primary: true}},
 		},
