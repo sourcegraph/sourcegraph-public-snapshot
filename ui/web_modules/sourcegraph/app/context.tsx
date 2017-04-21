@@ -12,7 +12,6 @@ class Context {
 	sentryDSN: string;
 	intercomHash: string;
 
-	accessToken: string;
 	appURL: string; // base URL for app (e.g., https://sourcegraph.com or http://localhost:3080)
 	assetsRoot: string; // URL path to image/font/etc. assets on server
 	version: string;

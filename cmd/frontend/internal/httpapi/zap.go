@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 
 	// Import for side effect of setting SGPATH env var.
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -100,7 +101,7 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 		// Handle jsonrpc2 requests from our client.
 		clientHandler := jsonrpc2HandlerFunc(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 			// First, we look for the initialize request. This has the information
-			// needed to authenticate the user context in the zap.InitializeParams.Authorization
+			// needed to authenticate the user context in the zap.InitializeParams.Meta
 			// field.
 			if req.Method == "initialize" {
 				if req.Params == nil {
@@ -116,9 +117,9 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// 🚨 SECURITY: Authenticate via the session cookie if present in 🚨
-				// params.Authorization.
-				if params.Authorization != "" {
-					ctx = session.AuthenticateBySession(ctx, params.Authorization)
+				// params.Meta.
+				if params.Meta["Authorization"] != "" {
+					ctx = session.AuthenticateBySession(ctx, strings.TrimPrefix(params.Meta["Authorization"], "session "))
 				}
 
 				// 🚨 SECURITY: Pass through the actor by overwriting the X-Actor HTTP header. 🚨
@@ -173,7 +174,7 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 
 // roundTrip performs a roundtrip of a Zap request. The request is made to the
 // specified 'to' connection and the response is sent to the 'from' connection.
-func roundTrip(ctx context.Context, from, to jsonrpc2.JSONRPC2, req *jsonrpc2.Request) {
+func roundTrip(ctx context.Context, from, to *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	if req.Notif {
 		to.Notify(ctx, req.Method, req.Params)
 		return

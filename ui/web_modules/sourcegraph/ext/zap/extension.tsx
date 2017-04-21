@@ -37,6 +37,6 @@ export function activate(): void {
 			// Unable to initialize Zap because there is not enough
 			// information about the current resource.
 		}
-		activateCommon(env, ctx, workRef, initOpts, true, context.accessToken);
+		activateCommon(env, ctx, workRef, initOpts, true, context.xhrHeaders);
 	}
 }
