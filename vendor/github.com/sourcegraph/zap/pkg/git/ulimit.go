@@ -22,7 +22,7 @@ func init() {
 	}
 	rlimit.Cur = rlimit.Max
 	if err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rlimit); err != nil {
-		// fmt.Fprintln(os.Stderr, "# warning: failed to increase open file limit:", err)
+		fmt.Fprintln(os.Stderr, "# warning: failed to increase open file limit:", err)
 	}
 
 	// Confirm that the increase succeeded.

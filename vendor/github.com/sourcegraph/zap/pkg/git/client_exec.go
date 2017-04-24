@@ -189,11 +189,11 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 		}
 		unapplied.GitHead = ""
 	}
-	if !unapplied.Noop() {
-		// TODO(sqs9): add back this check
-		//
-		// panic("after successful apply, unapplied op should be noop but is " + unapplied.String())
-	}
+	// if !unapplied.Noop() {
+	// TODO(sqs9): add back this check
+	//
+	// panic("after successful apply, unapplied op should be noop but is " + unapplied.String())
+	// }
 	return ot.WorkspaceOp{}, nil
 }
 

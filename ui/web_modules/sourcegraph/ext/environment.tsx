@@ -159,8 +159,7 @@ export class BrowserEnvironment implements IEnvironment {
 	}
 
 	get userID(): string {
-		const ctx: typeof context = self["sourcegraphContext"];
-		const user = ctx && ctx.user ? ctx.user.Login : "anonymous";
+		const user = context && context.user ? context.user.Login : "anonymous";
 		return `${user}@web`;
 	}
 }

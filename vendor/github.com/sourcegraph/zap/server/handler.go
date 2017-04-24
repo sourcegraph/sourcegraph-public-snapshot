@@ -223,10 +223,7 @@ func (c *Conn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Re
 		defer repo.Unlock()
 
 		oldConfig, newConfig, err := c.Server.updateRepoConfiguration(ctx, *repo, func(config *zap.RepoConfiguration) error {
-			if len(params.Remotes) > 1 {
-				return fmt.Errorf("a repository may have at most 1 remote (got %+v)", params.Remotes)
-			}
-			config.Remotes = params.Remotes
+			config.Remote = params.Remote
 			return nil
 		})
 		if err != nil {

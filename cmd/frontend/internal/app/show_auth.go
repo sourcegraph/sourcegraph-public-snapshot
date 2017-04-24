@@ -40,7 +40,7 @@ func serveShowAuth(w http.ResponseWriter, r *http.Request) error {
 	// cookie, they could probably do much more damage than anything
 	// this endpoint would allow.
 	w.Header().Set("content-type", "text/plain; charset=utf-8")
-	fmt.Fprintf(w, "To authenticate with Sourcegraph enter your auth token in the 'zap auth' prompt:\n\n sg-session=%s", html.EscapeString(sessionCookie))
+	fmt.Fprintf(w, "To authenticate with Sourcegraph enter your auth token in the 'zap auth' prompt:\n\n%s", html.EscapeString(sessionCookie))
 	return nil
 }
 

@@ -190,7 +190,6 @@ func (db *RepoDB) Delete(repo OwnedRepo) error {
 // canAccess checks that the current context is authorized to access
 // the repo by calling the backend's CanAccess method.
 func (db *RepoDB) canAccess(ctx context.Context, logger log.Logger, path string) error {
-	fmt.Println("can-access-check")
 	ok, err := db.Backend.CanAccess(ctx, logger, path)
 	if err != nil {
 		return err

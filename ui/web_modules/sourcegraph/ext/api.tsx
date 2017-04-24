@@ -18,7 +18,7 @@ const initOpts: InitializationOptions = (self as any).extensionHostOptions; // r
 bulkEnableFeatures(initOpts.features);
 
 // TODO(sqs): pass through the zap ref
-self["sourcegraphContext"] = initOpts.context;
+self["__sourcegraphJSContext"] = initOpts.context;
 
 /**
  * createExtensionAPI returns an extension API factory, which creates

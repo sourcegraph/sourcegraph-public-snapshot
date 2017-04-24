@@ -579,7 +579,6 @@ func isValidFilePath(p string) bool {
 
 func fileToBufferPath(p string) (string, error) {
 	if !isValidFilePath(p) {
-		panic("invalid file path: " + p)
 		return "", fmt.Errorf("invalid file path %s", p)
 	}
 	return "#" + p[1:], nil
