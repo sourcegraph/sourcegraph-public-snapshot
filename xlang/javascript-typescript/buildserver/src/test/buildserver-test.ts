@@ -88,7 +88,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			});
 			});
 		describe('textDocumentDefinition()', function (this: TestContext) {
-			it('should return location of module declaration in DefinitelyTyped on module alias', async function (this: TestContext) {
+			it('should return the location of the namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -112,7 +112,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo definition 2', async function (this: TestContext) {
+			it('should return the location of the module export in DefinitelyTyped on the module name', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -136,7 +136,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo definition 3', async function (this: TestContext) {
+			it('should return the location of the function declaration on a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -172,7 +172,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo definition 4', async function (this: TestContext) {
+			it('should return the location of the interface on a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -196,7 +196,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo definition 5', async function (this: TestContext) {
+			it('should return the location of the module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -220,7 +220,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo definition 6', async function (this: TestContext) {
+			it('should return the location of the function definition in DefinitelyTyped on function call', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
