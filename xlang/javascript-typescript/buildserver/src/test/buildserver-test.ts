@@ -86,9 +86,9 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 				await this.service.shutdown();
 				assert(!await fs.exists(tempDir), `Expected ${tempDir} to be deleted`);
 			});
-			});
+		});
 		describe('textDocumentDefinition()', function (this: TestContext) {
-			it('should return the location of the namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext) {
+			it('should return the location of the `JsDiff` namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -112,7 +112,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			it('should return the location of the module export in DefinitelyTyped on the module name', async function (this: TestContext) {
+			it('should return the location of the `diff` module export in DefinitelyTyped on the module name', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -136,7 +136,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			it('should return the location of the function declaration on a named import', async function (this: TestContext) {
+			it('should return the location of the `diffChars` function declaration on a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -172,7 +172,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			it('should return the location of the interface on a named import', async function (this: TestContext) {
+			it('should return the location of the `IDiffResult` interface on a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -196,7 +196,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			it('should return the location of the module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext) {
+			it('should return the location of the `diff` module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -220,7 +220,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			it('should return the location of the function definition in DefinitelyTyped on function call', async function (this: TestContext) {
+			it('should return the location of the `diffChars` function definition in DefinitelyTyped on a function call', async function (this: TestContext) {
 				const result = await this.service.textDocumentDefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -246,7 +246,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 			} as any);
 		} as any);
 		describe('textDocumentXdefinition()', function (this: TestContext) {
-			specify('cross-repo xdefinition 1', async function (this: TestContext) {
+			it('should return the SymbolDescriptor of the `JsDiff` namespace declaration in DefinitelyTyped on the module alias', async function (this: TestContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -271,7 +271,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo xdefinition 2', async function (this: TestContext) {
+			it('should return the SymbolDescriptor of the `diff` module export in DefinitelyTyped on the module name', async function (this: TestContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -296,7 +296,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo xdefinition 3', async function (this: TestContext) {
+			it('should return the SymbolDescriptor of the `diffChars` function declaration on a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -321,7 +321,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo xdefinition 4', async function (this: TestContext) {
+			it('should return the SymbolDescriptor of the `IDiffResult` interface on a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -346,7 +346,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo xdefinition 5', async function (this: TestContext) {
+			it('should return the SymbolDescriptor of the `diff` module export in DefinitelyTyped on the module name of a named import', async function (this: TestContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -371,7 +371,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo xdefinition 6', async function (this: TestContext) {
+			it('should return the SymbolDescriptor of the `diffChars` function definition in DefinitelyTyped on function call', async function (this: TestContext) {
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
 						uri: 'file:///a.ts'
@@ -396,7 +396,7 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			it('should return SymbolDescriptor with PackageDescriptor of typescript package on ts.SyntaxKind', async function (this: TestContext & ITestDefinition) {
+			it('should return the SymbolDescriptor with PackageDescriptor of typescript package on `ts.SyntaxKind`', async function (this: TestContext & ITestDefinition) {
 				this.timeout(60000);
 				const result = await this.service.textDocumentXdefinition({
 					textDocument: {
@@ -422,97 +422,75 @@ describe('BuildHandler', function (this: TestContext & IContextDefinition) {
 					}
 				}]);
 			} as any);
-			specify('cross-repo xdefinition 7', async function (this: TestContext) {
-				const definitionResult = await this.service.textDocumentDefinition({
-					textDocument: {
-						uri: 'file:///a.ts'
-					},
-					position: {
-						line: 0,
-						character: 12
-					}
-				});
-				assert.deepEqual(definitionResult, [{
-					uri: 'git://github.com/DefinitelyTyped/DefinitelyTyped#diff/index.d.ts',
-					range: {
-						start: {
-							line: 8,
-							character: 18
-						},
-						end: {
-							line: 8,
-							character: 24
+		} as any);
+		describe('workspaceXreferences()', async function (this: TestContext) {
+			it('should return all references to the diffChars function', async function (this: TestContext) {
+				const referencesResult = await this.service.workspaceXreferences({
+					query: {
+						containerKind: '',
+						containerName: 'diff',
+						kind: 'function',
+						name: 'diffChars',
+						package: {
+							name: '@types/diff',
+							version: '0.0.31'
 						}
 					}
-				}]);
+				}).toPromise();
+				assert.deepEqual(referencesResult, [
+					{
+						reference: {
+							range: {
+								end: {
+									character: 18,
+									line: 1
+								},
+								start: {
+									character: 9,
+									line: 1
+								}
+							},
+							uri: 'file:///a.ts'
+						},
+						symbol: {
+							containerKind: '',
+							containerName: 'diff',
+							kind: 'function',
+							name: 'diffChars',
+							package: {
+								name: '@types/diff',
+								version: '0.0.31'
+							}
+						}
+					},
+					{
+						reference: {
+							range: {
+								end: {
+									character: 18,
+									line: 1
+								},
+								start: {
+									character: 9,
+									line: 1
+								}
+							},
+							uri: 'file:///a.ts'
+						},
+						symbol: {
+							containerKind: '',
+							containerName: 'diff',
+							kind: 'function',
+							name: 'diffChars',
+							package: {
+								name: '@types/diff',
+								version: '0.0.31'
+							}
+						}
+					}
+				]);
 			} as any);
-		} as any);
-		specify('workspaceXreferences()', async function (this: TestContext) {
-			const referencesResult = await this.service.workspaceXreferences({
-				query: {
-					containerKind: '',
-					containerName: 'diff',
-					kind: 'function',
-					name: 'diffChars',
-					package: {
-						name: '@types/diff',
-						version: '0.0.31'
-					}
-				}
-			}).toPromise();
-			assert.deepEqual(referencesResult, [
-				{
-					reference: {
-						range: {
-							end: {
-								character: 18,
-								line: 1
-							},
-							start: {
-								character: 9,
-								line: 1
-							}
-						},
-						uri: 'file:///a.ts'
-					},
-					symbol: {
-						containerKind: '',
-						containerName: 'diff',
-						kind: 'function',
-						name: 'diffChars',
-						package: {
-							name: '@types/diff',
-							version: '0.0.31'
-						}
-					}
-				},
-				{
-					reference: {
-						range: {
-							end: {
-								character: 18,
-								line: 1
-							},
-							start: {
-								character: 9,
-								line: 1
-							}
-						},
-						uri: 'file:///a.ts'
-					},
-					symbol: {
-						containerKind: '',
-						containerName: 'diff',
-						kind: 'function',
-						name: 'diffChars',
-						package: {
-							name: '@types/diff',
-							version: '0.0.31'
-						}
-					}
-				}
-			]);
-		} as any);
+		});
 	});
 
 	describe('Workspace with multiple package.json files', function (this: TestContext) {
