@@ -406,6 +406,20 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
+		// TODO(keegancsmith) Create a whitelist based on the response
+		// from the server. For now though, we hardcode the response
+		// for python.
+		if c.context.mode == "python" {
+			kind := lsp.TDSKNone
+			return lsp.InitializeResult{
+				Capabilities: lsp.ServerCapabilities{
+					TextDocumentSync:        lsp.TextDocumentSyncOptionsOrKind{Kind: &kind},
+					DocumentSymbolProvider:  true,
+					WorkspaceSymbolProvider: true,
+				},
+			}, nil
+		}
+
 		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
