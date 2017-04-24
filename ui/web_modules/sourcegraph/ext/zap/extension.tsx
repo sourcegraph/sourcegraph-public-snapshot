@@ -1,4 +1,4 @@
-import { context, isOnPremInstance } from "sourcegraph/app/context";
+import { isOnPremInstance } from "sourcegraph/app/context";
 import * as vscode from "vscode";
 
 import { BrowserEnvironment } from "sourcegraph/ext/environment";
@@ -37,6 +37,7 @@ export function activate(): void {
 			// Unable to initialize Zap because there is not enough
 			// information about the current resource.
 		}
-		activateCommon(env, ctx, workRef, initOpts, true, context.xhrHeaders);
+
+		activateCommon(env, ctx, workRef, initOpts, true);
 	}
 }

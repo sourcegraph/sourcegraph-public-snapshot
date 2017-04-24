@@ -96,7 +96,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 
 	return JSContext{
 		AppURL:            conf.AppURL.String(),
-		LegacyAccessToken: sessionCookie,
+		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
 		CSRFToken:         csrfToken,
 		UserAgentIsBot:    isBot(req.UserAgent()),

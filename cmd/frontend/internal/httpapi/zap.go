@@ -22,6 +22,7 @@ import (
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"github.com/sourcegraph/websocketproxy"
 	"github.com/sourcegraph/zap"
+	"github.com/sourcegraph/zap/pkg/sgutil"
 )
 
 func serveZap(w http.ResponseWriter, r *http.Request) {
@@ -101,8 +102,7 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 		// Handle jsonrpc2 requests from our client.
 		clientHandler := jsonrpc2HandlerFunc(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 			// First, we look for the initialize request. This has the information
-			// needed to authenticate the user context in the zap.InitializeParams.Meta
-			// field.
+			// needed to authenticate the user context in the zap.InitializeParams.InitializationOptions.
 			if req.Method == "initialize" {
 				if req.Params == nil {
 					conn.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams})
@@ -117,9 +117,9 @@ func serveZap(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// 🚨 SECURITY: Authenticate via the session cookie if present in 🚨
-				// params.Meta.
-				if params.Meta["Authorization"] != "" {
-					ctx = session.AuthenticateBySession(ctx, strings.TrimPrefix(params.Meta["Authorization"], "session "))
+				// params.InitializationOptions.
+				if auth := sgutil.AuthFromInitializationOptions(params.InitializationOptions); auth != "" {
+					ctx = session.AuthenticateBySession(ctx, strings.TrimPrefix(auth, "session "))
 				}
 
 				// 🚨 SECURITY: Pass through the actor by overwriting the X-Actor HTTP header. 🚨
