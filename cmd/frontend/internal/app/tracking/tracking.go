@@ -37,7 +37,7 @@ var maxRepoDetailsErrors = 4
 // Specifically, fetching limited information about
 // a user's GitHub profile and sending it to Google Cloud Storage
 // for analytics, as well as updating user data properties in HubSpot
-func TrackUserGitHubData(a *actor.Actor, event string, name string, company string, location string) {
+func TrackUserGitHubData(a *actor.Actor, event string, name string, company string, location string, webSessionID string) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.TrackUserGitHubData: %s", err)
@@ -73,7 +73,7 @@ func TrackUserGitHubData(a *actor.Actor, event string, name string, company stri
 		log15.Warn("trackHubSpotContact: failed to create or update HubSpot contact on auth", "source", "HubSpot", "error", err)
 	}
 
-	gcsClient, err := gcstracker.New(a)
+	gcsClient, err := gcstracker.New(a, webSessionID)
 	if err != nil {
 		log15.Error("Error creating a new GCS client", "error", err)
 		return

@@ -3,8 +3,8 @@ import * as React from "react";
 
 import { context } from "sourcegraph/app/context";
 import { Router, RouterLocation } from "sourcegraph/app/router";
-import { LoggableEvent } from "sourcegraph/tracking/constants/AnalyticsConstants";
 import { Events } from "sourcegraph/tracking/constants/AnalyticsConstants";
+import { EventLogger } from "sourcegraph/tracking/EventLogger";
 import { oauthProvider, urlToOAuth } from "sourcegraph/util/urlTo";
 
 export interface PartialRouterLocation {
@@ -35,13 +35,11 @@ interface ActionForm {
 }
 
 export interface AuthProps {
-	eventObject: LoggableEvent;
-	pageName?: string;
-
 	provider: oauthProvider;
 	scopes: string;
-	returnTo?: string | RouterLocation;
-	newUserReturnTo?: string | RouterLocation;
+	returnTo: string | RouterLocation;
+	newUserReturnTo: string | RouterLocation;
+	trackerSessionId: string;
 }
 
 /**
@@ -51,13 +49,14 @@ function getAuthAction(props: AuthProps): ActionForm {
 	let url = urlToOAuth(
 		props.provider,
 		props.scopes,
-		props.returnTo || null,
-		props.newUserReturnTo || null,
+		props.returnTo,
+		props.newUserReturnTo,
+		props.trackerSessionId,
 	);
 
 	let authForm: HTMLFormElement | null = null;
 	const submitAuthForm = () => {
-		props.eventObject.logEvent({ page_name: props.pageName || "" });
+		Events.OAuth2FlowGitHub_Initiated.logEvent();
 		if (authForm) {
 			authForm.submit();
 		}
@@ -86,10 +85,10 @@ export function githubAuthAction(router: Router, privateCode: boolean): ActionFo
 		hash: "#L153"
 	};
 	return getAuthAction({
-		eventObject: Events.OAuth2FlowGitHub_Initiated,
 		provider: "github",
 		scopes: privateCode ? "read:org,user:email,repo" : "read:org,user:email",
 		returnTo: router.location,
 		newUserReturnTo,
+		trackerSessionId: EventLogger.getTelligentSessionId() || "",
 	});
 }

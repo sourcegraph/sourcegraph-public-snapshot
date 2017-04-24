@@ -64,6 +64,8 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 		scopes = strings.Split(s, ",")
 	}
 
+	webSessionID := r.URL.Query().Get("web-session-id")
+
 	base := conf.AppURL
 	// use X-App-Url header as base if available to make reverse proxies work
 	if h := r.Header.Get("X-App-Url"); h != "" {
@@ -73,23 +75,25 @@ func ServeGitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request) error {
 	}
 	redirectURL := base.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive))
 
-	return GitHubOAuth2Initiate(w, r, scopes, redirectURL.String(), returnTo.String(), returnToNew.String())
+	return GitHubOAuth2Initiate(w, r, scopes, redirectURL.String(), returnTo.String(), returnToNew.String(), webSessionID)
 }
 
 type oauthCookie struct {
-	Nonce       string
-	RedirectURL string
-	ReturnTo    string
-	ReturnToNew string
+	Nonce        string
+	RedirectURL  string
+	ReturnTo     string
+	ReturnToNew  string
+	WebSessionID string
 }
 
-func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, redirectURL, returnTo, returnToNew string) error {
+func GitHubOAuth2Initiate(w http.ResponseWriter, r *http.Request, scopes []string, redirectURL, returnTo, returnToNew, webSessionID string) error {
 	nonce := randstring.NewLen(32)
 	cookie, err := json.Marshal(&oauthCookie{
-		Nonce:       nonce,
-		RedirectURL: redirectURL,
-		ReturnTo:    returnTo,
-		ReturnToNew: returnToNew,
+		Nonce:        nonce,
+		RedirectURL:  redirectURL,
+		ReturnTo:     returnTo,
+		ReturnToNew:  returnToNew,
+		WebSessionID: webSessionID,
 	})
 	if err != nil {
 		return err
@@ -204,7 +208,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 		if len(scopeOfToken) < len(mergedScope) {
 			// The user has once granted us more permissions than we got with this token. Run oauth flow
 			// again to fetch token with all permissions. This should be non-interactive.
-			return GitHubOAuth2Initiate(w, r, mergedScope, cookie.RedirectURL, cookie.ReturnTo, cookie.ReturnToNew)
+			return GitHubOAuth2Initiate(w, r, mergedScope, cookie.RedirectURL, cookie.ReturnTo, cookie.ReturnToNew, cookie.WebSessionID)
 		}
 		if len(scopeOfToken) > len(info.AppMetadata.GitHubScope) {
 			// Wohoo, we got more permissions. Remember in user database.
@@ -232,7 +236,7 @@ func ServeGitHubOAuth2Receive(w http.ResponseWriter, r *http.Request) (err error
 
 	// Track user GitHub data in GCS
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUserGitHubData(actor, eventLabel, info.Name, info.Company, info.Location)
+		go tracking.TrackUserGitHubData(actor, eventLabel, info.Name, info.Company, info.Location, cookie.WebSessionID)
 	}
 
 	if firstTime {

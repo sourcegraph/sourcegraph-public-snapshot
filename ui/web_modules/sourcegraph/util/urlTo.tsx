@@ -24,20 +24,14 @@ function createHrefWithHash(loc: RouterLocation | string): string {
 }
 
 // urlToOAuth returns an OAuth initiate URL for given provider, scopes, returnTo.
-export function urlToOAuth(provider: oauthProvider, scopes: string | null, returnTo: string | RouterLocation | null, newUserReturnTo: string | RouterLocation | null): string {
-	scopes = scopes ? `scopes=${encodeURIComponent(scopes)}` : null;
-	const returnToStr = returnTo ? `return-to=${encodeURIComponent(createHrefWithHash(returnTo))}` : null;
-	const newUserReturnToStr = newUserReturnTo ? `new-user-return-to=${encodeURIComponent(createHrefWithHash(newUserReturnTo))}` : null;
-
-	let q;
-	if (scopes && returnTo && newUserReturnTo) {
-		q = `${scopes}&${returnToStr}&${newUserReturnToStr}`;
-	} else if (scopes && returnTo) {
-		q = `${scopes}&${returnToStr}`;
-	} else if (scopes) {
-		q = scopes;
-	} else if (returnTo) {
-		q = returnTo;
+export function urlToOAuth(provider: oauthProvider, scopes: string, returnTo: string | RouterLocation, newUserReturnTo: string | RouterLocation, webSessionId?: string): string {
+	const q = [
+		`scopes=${encodeURIComponent(scopes)}`,
+		`return-to=${encodeURIComponent(createHrefWithHash(returnTo))}`,
+		`new-user-return-to=${encodeURIComponent(createHrefWithHash(newUserReturnTo))}`
+	];
+	if (webSessionId) {
+		q.push(`web-session-id=${encodeURIComponent(webSessionId)}`);
 	}
-	return `/-/${provider}-oauth/initiate${q ? `?${q}` : ""}`;
+	return `/-/${provider}-oauth/initiate?${q.join("&")}`;
 }

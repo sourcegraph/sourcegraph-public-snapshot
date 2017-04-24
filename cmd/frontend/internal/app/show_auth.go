@@ -26,7 +26,7 @@ func serveShowAuth(w http.ResponseWriter, r *http.Request) error {
 	if sessionCookie == "" {
 		redirectURL := conf.AppURL.ResolveReference(router.Rel.URLTo(router.GitHubOAuth2Receive))
 		returnTo := router.Rel.URLTo(router.ShowAuth)
-		return oauth2client.GitHubOAuth2Initiate(w, r, nil, redirectURL.String(), returnTo.String(), returnTo.String())
+		return oauth2client.GitHubOAuth2Initiate(w, r, nil, redirectURL.String(), returnTo.String(), returnTo.String(), "")
 	}
 
 	trackZapAuth(actor.FromContext(r.Context()))
@@ -56,7 +56,7 @@ func trackZapAuth(actor *actor.Actor) error {
 		gcsclient, err := gcstracker.NewFromUserInfo(&gcstracker.UserInfo{
 			Email:          actor.Email,
 			BusinessUserID: actor.Login,
-		})
+		}, "")
 		if err != nil {
 			return err
 		}

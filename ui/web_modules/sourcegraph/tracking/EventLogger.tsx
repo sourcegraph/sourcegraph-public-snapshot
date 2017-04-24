@@ -147,11 +147,26 @@ class EventLoggerClass {
 	* @return string or bool The ID string if the cookie exists or false if the cookie has not been set yet
 	*/
 	private getTelligentDuid(): string | null {
+		let cookieProps = this.inspectTelligentCookie();
+		return cookieProps ? cookieProps[0] : null;
+	}
+
+	/*
+	* Function to extract the Telligent session ID from the first-party cookie set by the Telligent JavaScript Tracker
+	*
+	* @return string or bool The session ID string if the cookie exists or false if the cookie has not been set yet
+	*/
+	getTelligentSessionId(): string | null {
+		let cookieProps = this.inspectTelligentCookie();
+		return cookieProps ? cookieProps[5] : null;
+	}
+
+	private inspectTelligentCookie(): string[] | null {
 		let cookieName = "_te_";
 		let matcher = new RegExp(cookieName + "id\\.[a-f0-9]+=([^;]+);?");
 		let match = document.cookie.match(matcher);
 		if (match && match[1]) {
-			return match[1].split(".")[0];
+			return match[1].split(".");
 		} else {
 			return null;
 		}

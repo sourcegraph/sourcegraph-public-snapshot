@@ -37,12 +37,12 @@ type Client struct {
 
 // New returns a new GCS Tracker client using the given API key
 // based on a provided actor.Actor
-func New(user *actor.Actor) (*Client, error) {
-	return NewFromUserInfo(generateUserInfo(user))
+func New(user *actor.Actor, webSessionID string) (*Client, error) {
+	return NewFromUserInfo(generateUserInfo(user), webSessionID)
 }
 
 // NewFromUserInfo returns a new GCS Tracker client using the given API key
-func NewFromUserInfo(info *UserInfo) (*Client, error) {
+func NewFromUserInfo(info *UserInfo, webSessionID string) (*Client, error) {
 	ctx := context.Background()
 
 	gcsClient, err := storage.NewClient(ctx)
@@ -51,10 +51,9 @@ func NewFromUserInfo(info *UserInfo) (*Client, error) {
 	}
 
 	return &Client{
-		appID: jscontext.TrackingAppID,
-		env:   prodEnv,
-		// TODO (Dan): see if we can send the Telligent cookie session ID back with the request from the frontend
-		sessionID: "",
+		appID:     jscontext.TrackingAppID,
+		env:       prodEnv,
+		sessionID: webSessionID,
 		userInfo:  info,
 		gcsClient: gcsClient,
 		ctx:       ctx,
