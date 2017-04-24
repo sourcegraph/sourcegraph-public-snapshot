@@ -238,7 +238,7 @@ func Update(logger log.Logger, repo *repodb.OwnedRepo, ref *refdb.OwnedRef, para
 			case FromDownstream, Internal:
 				// Transform it so it can be appended to our view of the
 				// history. The op will be modified.
-				if rev < 0 || uint(len(data.History)) < rev {
+				if uint(len(data.History)) < rev {
 					return zap.Errorf(zap.ErrorCodeRefUpdateInvalid, "ref update %v: revision %d not in history", params.RefIdentifier, rev)
 				}
 				var err error
@@ -337,7 +337,7 @@ func prepareRefToUpdate(logger log.Logger, repo repodb.OwnedRepo, ref *refdb.Own
 		// Set up upstream state, if there is an upstream.
 		if repo.Repo.SendRefUpdateUpstream != nil {
 			level.Debug(logger).Log("send-ref-update-upstream", "true")
-			remoteRepo := repo.Config.DefaultRemote().Repo
+			remoteRepo := repo.Config.Remote.Repo
 			if remoteRepo == "" {
 				remoteRepo = repo.Path
 			}

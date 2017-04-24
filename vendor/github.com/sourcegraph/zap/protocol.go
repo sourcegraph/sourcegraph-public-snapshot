@@ -129,9 +129,8 @@ type RepoInfoResult struct {
 type RepoConfigureParams struct {
 	Repo string `json:"repo"` // the repo to configure
 
-	// Remotes contains the configuration for repository remotes. The
-	// map keys are the names of the remotes.
-	Remotes map[string]RepoRemoteConfiguration `json:"remotes"`
+	// Remote contains the configuration for repository remote.
+	Remote RepoRemoteConfiguration `json:"remote"`
 }
 
 // RepoRemoteConfiguration describes the configuration of a repository

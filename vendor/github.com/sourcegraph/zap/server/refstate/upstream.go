@@ -84,6 +84,10 @@ func (u *Upstream) recvFromUpstream(params *RefUpdate) error {
 
 	switch {
 	case params.State != nil:
+		if params.State.Data == nil && params.State.Target == "" {
+			return errors.New("invalid RefState received from upstream (contains neither Data nor Target)")
+		}
+
 		// The upstream's reset will win over anything we have in wait
 		// or buf.
 		u.Wait = nil

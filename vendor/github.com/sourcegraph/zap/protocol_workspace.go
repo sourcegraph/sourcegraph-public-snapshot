@@ -2,7 +2,6 @@ package zap
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 )
 
@@ -47,53 +46,16 @@ type WorkspaceRemoveParams struct {
 // request.
 type WorkspaceRemoveResult struct{}
 
-// WorkspaceConfigureParams contains parameters for the
-// "workspace/configure" request.
-type WorkspaceConfigureParams struct {
-	WorkspaceIdentifier
-	WorkspaceConfiguration
-}
-
-// WorkspaceConfiguration holds configuration settings for a
-// workspace.
-// TODO(nick): delete
-type WorkspaceConfiguration struct {
-}
-
 // RepoConfiguration describes the configuration for a repository.
 type RepoConfiguration struct {
-	// TODO(nick): delete
-	Workspace *WorkspaceConfiguration `json:"workspace"`
-
-	// Remotes contains the remote repositories that this server is
-	// derived from. Currently only 1 remote is allowed, and it must
-	// be named "default".
-	Remotes map[string]RepoRemoteConfiguration `json:"remotes"`
-}
-
-func (c RepoConfiguration) DefaultRemote() *RepoRemoteConfiguration {
-	if len(c.Remotes) > 1 {
-		panic("expected only one remote")
-	}
-	for _, value := range c.Remotes {
-		return &value
-	}
-	return nil
-}
-
-// TODO(sqs): hack to "safely" determine a default upstream, until we
-// have a full config for this.
-func (c *RepoConfiguration) DefaultUpstream() (string, error) {
-	if len(c.Remotes) == 1 {
-		for k := range c.Remotes {
-			return k, nil
-		}
-	}
-	return "", errors.New("unable to determine branch's default upstream: more than 1 remote exists")
+	// The single remote for the Repo.
+	// In the future, we may want to support multiple remotes
+	// and this could be a map.
+	Remote RepoRemoteConfiguration `json:"remote"`
 }
 
 func (c RepoConfiguration) String() string {
-	return fmt.Sprintf("workspace(%+v) remotes(%+v)", c.Workspace, c.Remotes)
+	return fmt.Sprintf("remote(%+v)", c.Remote)
 }
 
 // DeepCopy returns a deep copy of c.
@@ -123,10 +85,6 @@ type AuthGetResult struct {
 	// The auth token.
 	Token string `json:"token"`
 }
-
-// WorkspaceConfigureResult is the result from the
-// "workspace/configure" request.
-type WorkspaceConfigureResult struct{}
 
 // WorkspaceServerCapabilities describes the capabilities provided by
 // a Zap workspace server (which is intended to run on a user's

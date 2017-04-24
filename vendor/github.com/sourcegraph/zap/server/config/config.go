@@ -1,7 +1,9 @@
 package config
 
 import (
+	"log"
 	"os"
+	"strings"
 	"sync"
 
 	gitconfig "github.com/src-d/go-git/plumbing/format/config"
@@ -84,6 +86,12 @@ func readServerConfig(file *File) (*ServerConfig, error) {
 		AuthToken:  gc.Section("auth").Option("token"),
 		Workspaces: map[string]struct{}{},
 	}
+
+	// TODO(slimsag): After 5/21/2017 remove this.
+	if strings.HasPrefix(config.AuthToken, "sg-session=") {
+		log.Fatal("error: auth token is invalid, please run 'zap auth' to fix")
+	}
+
 	for _, opt := range gc.Section("workspaces").Options {
 		if opt.IsKey("workspace") {
 			config.Workspaces[opt.Value] = struct{}{}
@@ -115,7 +123,7 @@ func WriteServerConfig(file *File, edit func(config *ServerConfig)) error {
 // RepoConfig contains Zap configuration for a specific repo.
 type RepoConfig struct {
 	// The URL of the Zap upstream.
-	// (e.g. https://sourcegraph.com/.api/zap)
+	// (e.g. https://ws.sourcegraph.com/.api/zap)
 	UpstreamURL string
 
 	// The name of the repo on the upstream

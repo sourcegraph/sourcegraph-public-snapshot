@@ -23,20 +23,18 @@ func (s *Server) watchers(ref zap.RefIdentifier) (conns []*Conn) {
 	return conns
 }
 
-func (s *Server) findLocalRepo(ctx context.Context, logger log.Logger, remoteRepoPath, endpoint string) (repo *repodb.OwnedRepo, localRepoPath, remoteName string, err error) {
+func (s *Server) findLocalRepo(ctx context.Context, logger log.Logger, remoteRepoPath, endpoint string) (repo *repodb.OwnedRepo, localRepoPath string, err error) {
 	// TODO(sqs) HACK: this is indicative of a design flaw
 	for _, localRepoPath := range s.Repos.List() {
 		localRepo, err := s.Repos.Get(ctx, logger, localRepoPath)
 		if err != nil {
-			return nil, "", "", err
+			return nil, "", err
 		}
-		localRepoConfig := localRepo.Config
-		for remoteName, config := range localRepoConfig.Remotes {
-			if config.Endpoint == endpoint && config.Repo == remoteRepoPath {
-				return localRepo, localRepoPath, remoteName, nil
-			}
+		config := localRepo.Config.Remote
+		if config.Endpoint == endpoint && config.Repo == remoteRepoPath {
+			return localRepo, localRepoPath, nil
 		}
 		localRepo.Unlock()
 	}
-	return nil, "", "", zap.Errorf(zap.ErrorCodeRepoExists, "no local repo found for remote endpoint %s repo %s", endpoint, remoteRepoPath)
+	return nil, "", zap.Errorf(zap.ErrorCodeRepoExists, "no local repo found for remote endpoint %s repo %s", endpoint, remoteRepoPath)
 }

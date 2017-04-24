@@ -104,7 +104,7 @@ func (sr *serverRemotes) getOrCreateClient(logger log.Logger, endpoint string) (
 				return
 			}
 
-			repo, localRepoName, _, err := sr.parent.findLocalRepo(ctx, logger, params.RefIdentifier.Repo, endpoint)
+			repo, localRepoName, err := sr.parent.findLocalRepo(ctx, logger, params.RefIdentifier.Repo, endpoint)
 			if err != nil {
 				level.Error(logger).Log("findLocalRepo", err)
 				return
@@ -142,8 +142,6 @@ func (sr *serverRemotes) getOrCreateClient(logger log.Logger, endpoint string) (
 			logger := log.With(sr.parent.BaseLogger(), "send-upstream", endpoint)
 			for {
 				select {
-				case <-cl.DisconnectNotify():
-				// TODO(nick): how to quit?
 				case params, ok := <-refUpdates:
 					if !ok {
 						return
@@ -173,7 +171,10 @@ func (sr *serverRemotes) closeAndRemoveClient(endpoint string) error {
 	defer sr.mu.Unlock()
 	cl, ok := sr.conn[endpoint]
 	if !ok {
-		panic("no remote client for endpoint " + endpoint)
+		// No connection to close.
+		// The endpoint may have never had a connection to begin with
+		// (e.g. endpoint is "").
+		return nil
 	}
 	delete(sr.conn, endpoint)
 	return cl.Close()

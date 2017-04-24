@@ -24,6 +24,14 @@ ifndef GOBIN
 	endif
 endif
 
+.PHONY: lint
+lint: lint-main
+
+.PHONY: lint-main
+lint-main:
+	go get -d -t ./...
+	./dev/go-lint.sh
+
 .PHONY: install
 install: install-main install-ext install-lang
 
@@ -69,7 +77,7 @@ test-e2e: install-lang install-ext
 check:; bash dev/check-generate-all
 
 .PHONY: watch-dep
-watch-dep:; go get sourcegraph.com/sqs/rego github.com/mattn/goreman
+watch-dep:; go get -u sourcegraph.com/sqs/rego github.com/mattn/goreman
 
 .PHONY: watch
 watch: watch-dep install
