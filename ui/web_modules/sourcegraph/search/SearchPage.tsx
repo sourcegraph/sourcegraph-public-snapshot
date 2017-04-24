@@ -168,12 +168,9 @@ export class SearchPage extends ComponentWithRouter<P, S> {
 	}
 
 	private searchTriggered = (query: Query) => {
-		this.context.router.push({
-			...this.context.router.location,
-			query: {
-				q: query.query.pattern,
-			},
-		});
+		const loc = new URL(location.toString());
+		loc.search = query.query.pattern;
+		history.pushState({}, "Search", loc.toString());
 		this.doSearch(query);
 	}
 
