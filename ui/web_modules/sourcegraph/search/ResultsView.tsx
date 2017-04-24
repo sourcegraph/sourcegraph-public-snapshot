@@ -43,7 +43,7 @@ export function ResultsView(props: Props): JSX.Element {
 }
 
 function Truncated(): JSX.Element {
-	return <div style={{ textAlign: "center", marginTop: 30 }}>
+	return <div style={{ textAlign: "center", marginTop: 30, marginBottom: 100 }}>
 		Results truncated. Refine your search to view other results.
 	</div>;
 }

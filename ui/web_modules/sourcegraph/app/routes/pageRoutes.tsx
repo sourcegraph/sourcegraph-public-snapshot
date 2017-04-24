@@ -32,7 +32,6 @@ const pages = {
 	[rel.zap]: ZapPage,
 	[rel.zapbeta]: ZapBetaFormPage,
 	[rel.enterprise]: EnterprisePage,
-	...Features.orgSearch.isEnabled() ? { [rel.search]: SearchPage } : {},
 };
 
 export const pageRoutes: PlainRoute[] = Object.keys(pages).map(key => ({
