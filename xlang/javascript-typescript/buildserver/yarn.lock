@@ -1235,9 +1235,9 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.24:
-  version "2.0.0-pre.24"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.24.tgz#06efbdf6825c15d6af73aba88f7a4dc5e231a03b"
+javascript-typescript-langserver@^2.0.0-pre.25:
+  version "2.0.0-pre.25"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.25.tgz#0cba902f9aa5e132d2d9f160627badb9272e53f5"
   dependencies:
     "@reactivex/rxjs" "^5.3.0"
     bluebird "^3.4.7"
@@ -1249,6 +1249,7 @@ javascript-typescript-langserver@^2.0.0-pre.24:
     iterare "^0.0.8"
     lodash "^4.17.4"
     mz "^2.6.0"
+    object-hash "^1.1.8"
     opentracing felixfbecker/opentracing-javascript#d42e8ac50e3555ca1a9a006bee0fd5856a838a47
     semaphore-async-await "^1.5.1"
     typescript "2.3.0"
