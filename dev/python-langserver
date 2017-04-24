@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+
+. dev/langservers.lib.bash
+LS_DIR="${LS_ROOT}/python-langserver"
+if [[ ! -d "${LS_DIR}/venv" ]]; then
+  echo 'run `dev/install-langserver.sh python-langserver`' 1>&2
+  exit 1
+fi
+
+cd "${LS_DIR}"
+. venv/bin/activate
+exec python python-langserver.py "$@"

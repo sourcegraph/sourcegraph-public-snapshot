@@ -35,7 +35,7 @@ detect_dev_langservers() {
 	# Python
 	PY_LS_DIR="${LS_ROOT}/python-langserver"
 	if [[ -d "$PY_LS_DIR" ]]; then
-		export LANGSERVER_PYTHON=${LANGSERVER_PYTHON-"$PY_LS_DIR"/bin/python-langserver}
+		export LANGSERVER_PYTHON=${LANGSERVER_PYTHON-$(dirname "${BASH_SOURCE[0]}")/python-langserver}
 	else
 		echo '# To add Python language support, run `dev/install-langserver.sh python-langserver` or symlink '"$PY_LS_DIR"' to a local clone of python-langserver.'
 	fi
@@ -86,7 +86,11 @@ install_langserver() (
 			;;
 		python-langserver)
 			clone_repo
-			(cd "$LS_DIR" && pip3 install -r requirements.txt)
+			(
+			    cd "$LS_DIR"
+			    test -d venv || python3 -m venv venv
+			    venv/bin/pip install -r requirements.txt
+			)
 			;;
 		*)
 			echo '# Do not know how to install '"$LS_NAME"'. See dev/langservers.lib.bash for a list of known language servers that can be installed using this method.'
