@@ -71,7 +71,7 @@ export function isOnPremInstance(authEnabled: boolean): boolean {
 
 const SOURCEGRAPH_CLOUD_URL_PATTERN = /^https?:\/\/sourcegraph.com/i;
 
-export const context = new Context(global.sourcegraphContext ? global.sourcegraphContext : global.__sourcegraphJSContext);
+export const context = new Context(global.__sourcegraphJSContext);
 
 export function mockUser(user: User | null, f: () => void): void {
 	testOnly();
