@@ -106,7 +106,7 @@ export interface BitbucketUrl {
 }
 
 export enum BitbucketMode {
-	Browse = 1, // 
+	Browse = 1,
 }
 
 export interface BitbucketBrowseUrl extends BitbucketUrl {
