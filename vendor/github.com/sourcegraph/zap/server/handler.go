@@ -341,7 +341,7 @@ func (c *Conn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Re
 			RefState:      ref.Ref.Data.(refstate.RefState).RefState,
 		}
 		if res.Data != nil && res.Data.History == nil {
-			res.Data.History = []ot.WorkspaceOp{}
+			res.Data.History = []ot.Ops{}
 		}
 
 		// Add watchers.

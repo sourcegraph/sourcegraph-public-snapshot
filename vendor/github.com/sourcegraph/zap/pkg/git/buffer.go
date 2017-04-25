@@ -63,45 +63,32 @@ func stripFileOrBufferPath(path string) string {
 //
 //   FromDiskPaths({Edit: {"foo": ["x"]}}) -> {Edit: {"/foo": ["x"]}}
 //
-func FromDiskPaths(op ot.WorkspaceOp) ot.WorkspaceOp {
+func FromDiskPaths(ops ot.Ops) ot.Ops {
 	fromDiskPath := func(path string) string {
 		return "/" + path
 	}
 
-	var op2 ot.WorkspaceOp
-
-	op2.Copy = make(map[string]string, len(op.Copy))
-	for dst, src := range op.Copy {
-		op2.Copy[fromDiskPath(dst)] = fromDiskPath(src)
+	op2 := ot.Ops{}
+	for _, iop := range ops {
+		switch op := iop.(type) {
+		case ot.FileCopy:
+			op2 = append(op2, ot.FileCopy{Src: fromDiskPath(op.Src), Dst: fromDiskPath(op.Dst)})
+		case ot.FileRename:
+			op2 = append(op2, ot.FileRename{Src: fromDiskPath(op.Src), Dst: fromDiskPath(op.Dst)})
+		case ot.FileCreate:
+			op2 = append(op2, ot.FileCreate{File: fromDiskPath(op.File)})
+		case ot.FileDelete:
+			op2 = append(op2, ot.FileDelete{File: fromDiskPath(op.File)})
+		case ot.FileTruncate:
+			op2 = append(op2, ot.FileTruncate{File: fromDiskPath(op.File)})
+		case ot.FileEdit:
+			op2 = append(op2, ot.FileEdit{File: fromDiskPath(op.File), Edits: op.Edits})
+		case ot.GitHead:
+			op2 = append(op2, op)
+		}
 	}
 
-	for src, dst := range op.Rename {
-		op2.Rename[fromDiskPath(src)] = fromDiskPath(dst)
-	}
-
-	op2.Create = make([]string, len(op.Create))
-	for i, f := range op.Create {
-		op2.Create[i] = fromDiskPath(f)
-	}
-
-	op2.Delete = make([]string, len(op.Delete))
-	for i, f := range op.Delete {
-		op2.Delete[i] = fromDiskPath(f)
-	}
-
-	op2.Truncate = make([]string, len(op.Truncate))
-	for i, f := range op.Truncate {
-		op2.Truncate[i] = fromDiskPath(f)
-	}
-
-	op2.Edit = make(map[string]ot.EditOps, len(op.Edit))
-	for f, edits := range op.Edit {
-		op2.Edit[fromDiskPath(f)] = edits
-	}
-
-	op2.GitHead = op.GitHead
-
-	return ot.NormalizeWorkspaceOp(op2)
+	return op2
 }
 
 // A FileBuffer is an in-memory file system for storing buffered

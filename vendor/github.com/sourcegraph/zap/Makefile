@@ -73,9 +73,6 @@ test-e2e: install-lang install-ext
 	go get -d -t ./internal/e2e
 	go test -timeout 2m -v ./internal/e2e
 
-.PHONY: check
-check:; bash dev/check-generate-all
-
 .PHONY: watch-dep
 watch-dep:; go get -u sourcegraph.com/sqs/rego github.com/mattn/goreman
 

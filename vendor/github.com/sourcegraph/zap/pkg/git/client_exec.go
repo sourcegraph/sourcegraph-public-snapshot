@@ -45,7 +45,7 @@ type FileSystem interface {
 	Exists(name string) error
 }
 
-var TestApplyToWorktree func(op ot.WorkspaceOp) (unapplied ot.WorkspaceOp, err error)
+var TestApplyToWorktree func(ops ot.Ops) (unapplied ot.Ops, err error)
 
 // ApplyToWorktree applies an op to the workspace. It may modify files
 // on the file system. If an error occurs, it returns the unapplied
@@ -60,12 +60,13 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 	RemoteForBranchOrZapDefaultRemote(string) (string, error)
 	Fetch(string, string) (bool, error)
 	Reset(string, string) error
-}, fdisk, fbuf FileSystem, snapshot, gitBranch string, op ot.WorkspaceOp) (unapplied ot.WorkspaceOp, err error) {
+}, fdisk, fbuf FileSystem, snapshot, gitBranch string, ops ot.Ops) (unapplied ot.Ops, err error) {
 	if TestApplyToWorktree != nil {
-		return TestApplyToWorktree(op)
+		return TestApplyToWorktree(ops)
 	}
 
-	unapplied = op.DeepCopy()
+	// OT_TODO: Do we need this check?
+	// unapplied = ops.DeepCopy()
 
 	fsForPath := func(path string) FileSystem {
 		if isBufferPath(path) {
@@ -91,110 +92,89 @@ func ApplyToWorktree(ctx context.Context, logger log.Logger, gitRepo interface {
 		return fsForPath(name).WriteFile(stripFileOrBufferPath(name), data, 0666)
 	}
 
-	for _, f := range op.Save {
-		data, err := fbuf.ReadFile(stripBufferPath(f))
-		if err != nil {
-			return unapplied, err
-		}
-		if err := fbuf.Remove(stripBufferPath(f)); err != nil {
-			return unapplied, err
-		}
-		if err := fdisk.WriteFile(stripBufferPath(f), data, 0666); err != nil {
-			return unapplied, err
-		}
-		unapplied.Save = unapplied.Save[1:]
-	}
-	for dst, src := range op.Copy {
-		data, err := readFile(src)
-		if err != nil {
-			return unapplied, err
-		}
-		if err := writeFile(dst, data); err != nil {
-			return unapplied, err
-		}
-		delete(unapplied.Copy, dst)
-	}
-	for src, dst := range op.Rename {
-		if err := checkRemotePath(src); err != nil {
-			return unapplied, err
-		}
-		if err := checkRemotePath(dst); err != nil {
-			return unapplied, err
-		}
-		if isBufferPath(src) || isBufferPath(dst) {
-			panic(fmt.Sprintf("rename of buffer files not supported: %q -> %q", src, dst))
-		}
-		if err := fdisk.Rename(stripFilePath(src), stripFilePath(dst)); err != nil {
-			return unapplied, err
-		}
-		delete(unapplied.Rename, src)
-	}
-	created := make(map[string]struct{}, len(op.Create))
-	for _, f := range op.Create {
-		created[f] = struct{}{}
-		if err := fsForPath(f).Exists(stripFileOrBufferPath(f)); !os.IsNotExist(err) {
-			return unapplied, &os.PathError{Op: "Create", Path: f, Err: os.ErrExist}
-		}
-		if err := writeFile(f, nil); err != nil {
-			return unapplied, err
-		}
-		unapplied.Create = unapplied.Create[1:]
-	}
-	for _, f := range op.Delete {
-		if err := fsForPath(f).Remove(stripFileOrBufferPath(f)); err != nil {
-			return unapplied, err
-		}
-		unapplied.Delete = unapplied.Delete[1:]
-	}
-	for _, f := range op.Truncate {
-		if err := writeFile(f, nil); err != nil {
-			return unapplied, err
-		}
-		unapplied.Truncate = unapplied.Truncate[1:]
-	}
-	for f, edits := range op.Edit {
-		if len(edits) == 0 {
-			continue
-		}
-		var prevData []byte
-		if _, justCreated := created[f]; !justCreated {
-			var err error
-			prevData, err = readFile(f)
+	created := make(map[string]struct{})
+	for i, iop := range ops {
+		unapplied = ops[i:]
+		switch op := iop.(type) {
+		case ot.FileCopy:
+			src, dst := op.Src, op.Dst
+			data, err := readFile(src)
 			if err != nil {
 				return unapplied, err
 			}
-		}
-		doc := ot.Doc(string(prevData))
+			if err := writeFile(dst, data); err != nil {
+				return unapplied, err
+			}
+		case ot.FileRename:
+			src, dst := op.Src, op.Dst
+			if err := checkRemotePath(src); err != nil {
+				return unapplied, err
+			}
+			if err := checkRemotePath(dst); err != nil {
+				return unapplied, err
+			}
+			if isBufferPath(src) || isBufferPath(dst) {
+				return unapplied, fmt.Errorf("rename of buffer files not supported: %q -> %q", src, dst)
+			}
+			if err := fdisk.Rename(stripFilePath(src), stripFilePath(dst)); err != nil {
+				return unapplied, err
+			}
+		case ot.FileCreate:
+			f := op.File
+			created[f] = struct{}{}
+			if err := fsForPath(f).Exists(stripFileOrBufferPath(f)); !os.IsNotExist(err) {
+				return unapplied, &os.PathError{Op: "Create", Path: f, Err: os.ErrExist}
+			}
+			if err := writeFile(f, nil); err != nil {
+				return unapplied, err
+			}
+		case ot.FileDelete:
+			f := op.File
+			if err := fsForPath(f).Remove(stripFileOrBufferPath(f)); err != nil {
+				return unapplied, err
+			}
+		case ot.FileTruncate:
+			f := op.File
+			if err := writeFile(f, nil); err != nil {
+				return unapplied, err
+			}
+		case ot.FileEdit:
+			f, edits := op.File, op.Edits
+			if len(edits) == 0 {
+				continue
+			}
+			var prevData []byte
+			if _, justCreated := created[f]; !justCreated {
+				var err error
+				prevData, err = readFile(f)
+				if err != nil {
+					return unapplied, err
+				}
+			}
+			doc := ot.Doc(string(prevData))
 
-		if err := doc.Apply(edits); err != nil {
-			return unapplied, &os.PathError{Op: "Edit", Path: f, Err: err}
-		}
-		if err := writeFile(f, []byte(string(doc))); err != nil {
-			return unapplied, err
-		}
-		delete(unapplied.Edit, f)
-	}
-	if op.GitHead != "" {
-		if err := FetchAndCheck(ctx, gitRepo, gitBranch, "refs/zap/"+op.GitHead, op.GitHead); err != nil {
-			return unapplied, err
-		}
+			if err := doc.Apply(edits); err != nil {
+				return unapplied, &os.PathError{Op: "Edit", Path: f, Err: err}
+			}
+			if err := writeFile(f, []byte(string(doc))); err != nil {
+				return unapplied, err
+			}
+		case ot.GitHead:
+			if err := FetchAndCheck(ctx, gitRepo, gitBranch, "refs/zap/"+op.Commit, op.Commit); err != nil {
+				return unapplied, err
+			}
 
-		// This acquires a lock and might conflict with other things
-		// (error message of the form "... /index.lock"), like the
-		// user running `git status`. Retry if it fails at first.
-		if err := backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
-			return gitRepo.Reset("mixed", op.GitHead)
-		}, GitBackOff(), nil); err != nil {
-			return unapplied, err
+			// This acquires a lock and might conflict with other things
+			// (error message of the form "... /index.lock"), like the
+			// user running `git status`. Retry if it fails at first.
+			if err := backoff.RetryNotifyWithContext(ctx, func(ctx context.Context) error {
+				return gitRepo.Reset("mixed", op.Commit)
+			}, GitBackOff(), nil); err != nil {
+				return unapplied, err
+			}
 		}
-		unapplied.GitHead = ""
 	}
-	// if !unapplied.Noop() {
-	// TODO(sqs9): add back this check
-	//
-	// panic("after successful apply, unapplied op should be noop but is " + unapplied.String())
-	// }
-	return ot.WorkspaceOp{}, nil
+	return ot.Ops{}, nil
 }
 
 var TestFetchAndCheck func(remoteOfBranch, refspec, desiredRev string) error
@@ -248,14 +228,14 @@ func checkRemotePath(path string) error {
 
 type ReadFileFunc func(name string) ([]byte, error)
 
-var TestWorkspaceOpForChanges func(changes []*gitutil.ChangedFile, readFileA, readFileB ReadFileFunc) (ot.WorkspaceOp, error)
+var TestWorkspaceOpForChanges func(changes []*gitutil.ChangedFile, readFileA, readFileB ReadFileFunc) (ot.Ops, error)
 
-func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB ReadFileFunc) (ot.WorkspaceOp, error) {
+func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB ReadFileFunc) (ot.Ops, error) {
 	if TestWorkspaceOpForChanges != nil {
 		return TestWorkspaceOpForChanges(changes, readFileA, readFileB)
 	}
 
-	var op ot.WorkspaceOp
+	var ops ot.Ops
 	for _, c := range changes {
 		// TODO(sqs): sanitize/clean these paths
 		srcPath := c.SrcPath
@@ -270,26 +250,23 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 
 		switch c.Status[0] {
 		case 'R':
-			if op.Rename == nil {
-				op.Rename = map[string]string{}
-			}
-			op.Rename[srcPath] = dstPath
+			ops = append(ops, ot.FileRename{Src: srcPath, Dst: dstPath})
 
 			// Apply the "edit" part of a rename-edit, if any.
 			prevData, err := readFileA(srcPath)
 			if err != nil {
-				return ot.WorkspaceOp{}, err
+				return ot.Ops{}, err
 			}
 			data, err := readFileB(dstPath)
 			if err != nil {
-				return ot.WorkspaceOp{}, err
+				return ot.Ops{}, err
 			}
 			if edits := DiffOps([]rune(string(prevData)), []rune(string(data))); len(edits) > 0 {
-				op.Edit = map[string]ot.EditOps{dstPath: edits}
+				ops = append(ops, ot.FileEdit{File: dstPath, Edits: edits})
 			}
 
 		case 'D':
-			op.Delete = append(op.Delete, c.SrcPath)
+			ops = append(ops, ot.FileDelete{File: c.SrcPath})
 
 		case 'A', 'C', 'M':
 			if dstPath == "" {
@@ -298,12 +275,9 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 
 			switch c.Status[0] {
 			case 'A':
-				op.Create = append(op.Create, srcPath)
+				ops = append(ops, ot.FileCreate{File: srcPath})
 			case 'C':
-				if op.Copy == nil {
-					op.Copy = map[string]string{}
-				}
-				op.Copy[dstPath] = srcPath
+				ops = append(ops, ot.FileCopy{Src: srcPath, Dst: dstPath})
 			}
 
 			var prevData []byte
@@ -311,22 +285,19 @@ func WorkspaceOpForChanges(changes []*gitutil.ChangedFile, readFileA, readFileB 
 				var err error
 				prevData, err = readFileA(srcPath)
 				if err != nil {
-					return ot.WorkspaceOp{}, err
+					return ot.Ops{}, err
 				}
 			}
 			data, err := readFileB(dstPath)
 			if err != nil {
-				return ot.WorkspaceOp{}, err
+				return ot.Ops{}, err
 			}
 			if edits := DiffOps([]rune(string(prevData)), []rune(string(data))); len(edits) > 0 {
-				if op.Edit == nil {
-					op.Edit = map[string]ot.EditOps{}
-				}
-				op.Edit[dstPath] = edits
+				ops = append(ops, ot.FileEdit{File: dstPath, Edits: edits})
 			}
 		}
 	}
-	return op, nil
+	return ops, nil
 }
 
 // DiffOps returns the diff between old and new as OT edit ops.

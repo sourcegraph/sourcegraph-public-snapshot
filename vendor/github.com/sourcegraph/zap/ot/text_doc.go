@@ -76,7 +76,7 @@ func (op *EditOp) UnmarshalJSON(raw []byte) error {
 
 func (op EditOp) String() string {
 	switch {
-	case op.N > 0:
+	case op.N >= 0 && op.S == "":
 		return fmt.Sprintf("ret(%d)", op.N)
 	case op.N < 0:
 		return fmt.Sprintf("del(%d)", -1*op.N)
@@ -116,6 +116,16 @@ func (ops EditOps) Count() (ret, del, ins int) {
 		}
 	}
 	return
+}
+
+// Retain returns the number of retained bytes.
+func (ops EditOps) Retain() (ret int) {
+	for _, op := range ops {
+		if op.N > 0 {
+			ret += op.N
+		}
+	}
+	return ret
 }
 
 // Equal returns if other equals ops.
