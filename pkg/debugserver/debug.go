@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Endpoint is a handler for the debug server. It will be displayed on the
@@ -48,7 +48,7 @@ func Start(addr string, extra ...Endpoint) {
 	pp.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 	pp.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 	pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-	pp.Handle("/metrics", prometheus.Handler())
+	pp.Handle("/metrics", promhttp.Handler())
 	for _, e := range extra {
 		pp.Handle(e.Path, e.Handler)
 	}
