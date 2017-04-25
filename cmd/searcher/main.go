@@ -23,7 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -35,7 +35,7 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)
-	traceutil.InitTracer()
+	tracer.Init()
 	gitserver.DefaultClient.NoCreds = true
 
 	if profBindAddr != "" {

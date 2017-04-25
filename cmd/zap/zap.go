@@ -18,6 +18,7 @@ import (
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	_ "sourcegraph.com/sourcegraph/sourcegraph/pkg/conf/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/websocket"
@@ -102,7 +103,7 @@ var dogfoodGitClient = gitserver.NewClient(strings.Fields(os.Getenv("SRC_GIT_SER
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	traceutil.InitTracer()
+	tracer.Init()
 	gitserver.DefaultClient.NoCreds = true
 
 	go func() {

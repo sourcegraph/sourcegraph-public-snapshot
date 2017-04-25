@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -54,7 +54,7 @@ func main() {
 }
 
 func run() error {
-	traceutil.InitTracer()
+	tracer.Init()
 
 	if *profbind != "" {
 		go debugserver.Start(*profbind)

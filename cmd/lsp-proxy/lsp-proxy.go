@@ -14,7 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/proxy"
 	"sourcegraph.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -45,7 +45,7 @@ func main() {
 }
 
 func run() error {
-	traceutil.InitTracer()
+	tracer.Init()
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()

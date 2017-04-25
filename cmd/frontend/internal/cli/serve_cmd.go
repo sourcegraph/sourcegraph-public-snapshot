@@ -36,6 +36,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/handlerutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/sysreq"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 )
 
@@ -143,7 +144,7 @@ func Main() error {
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
 
-	traceutil.InitTracer()
+	tracer.Init()
 
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.

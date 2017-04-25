@@ -19,7 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 )
 
 var numWorkers = env.Get("NUM_WORKERS", "4", "The maximum number of indexing done in parallel.")
@@ -40,7 +40,7 @@ func init() {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	traceutil.InitTracer()
+	tracer.Init()
 	gitserver.DefaultClient.NoCreds = true
 	if err := idx.Google.SetAPIKey(googleAPIKey); err != nil {
 		fmt.Fprintf(os.Stderr, "Could not initialize Google API client: %s\n", err)

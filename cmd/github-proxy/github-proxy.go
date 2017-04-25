@@ -14,7 +14,7 @@ import (
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
-	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/tracer"
 
 	"github.com/gorilla/handlers"
 	"github.com/prometheus/client_golang/prometheus"
@@ -43,7 +43,7 @@ func init() {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	traceutil.InitTracer()
+	tracer.Init()
 
 	go func() {
 		c := make(chan os.Signal, 1)
