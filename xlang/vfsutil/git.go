@@ -45,6 +45,8 @@ func (fs *GitRepoVFS) fetchOrWait(ctx context.Context) error {
 	return fs.err
 }
 
+var gitArchiveBasePath = "/tmp/xlang-git-clone-cache"
+
 func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "GitRepoVFS fetch")
 	defer func() {
@@ -60,10 +62,9 @@ func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
 	defer urlMu.Unlock()
 	span.LogEvent("urlMu acquired")
 
-	const basePath = "/tmp/xlang-git-clone-cache"
 	h := sha256.Sum256([]byte(fs.CloneURL))
 	urlHash := hex.EncodeToString(h[:])
-	repoDir := filepath.Join(basePath, urlHash+".git")
+	repoDir := filepath.Join(gitArchiveBasePath, urlHash+".git")
 
 	// Make sure the rev arg can't be misinterpreted as a command-line
 	// flag.
@@ -72,7 +73,7 @@ func (fs *GitRepoVFS) fetch(ctx context.Context) (err error) {
 	}
 
 	// Try resolving the revision immediately. If we can resolve it, no need to clone or update.
-	commitID, err := gitObjectNameSHA(repoDir, fs.Rev)
+	commitID, err := gitObjectNameSHA(repoDir+"^0", fs.Rev)
 	if err != nil {
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 		defer cancel()
