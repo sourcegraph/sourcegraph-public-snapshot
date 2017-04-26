@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -80,6 +81,45 @@ func TestOpenReader(t *testing.T) {
 		return
 	}
 	ar.Close()
+
+	// The rest of this test is about how Store behaves when there are
+	// existing archives in the cache (we use the ones placed here
+	// previously).
+
+	// Place some files that the store should delete on startup
+	shouldDelete := []string{"unrelated", "corrupt.zip", "partial.zip.part"}
+	for _, name := range shouldDelete {
+		path := filepath.Join(s.Path, name)
+		if err := ioutil.WriteFile(path, []byte("Hello World\n"), 0600); err != nil {
+			t.Fatal("Failed to write bad cache item", name, err)
+		}
+	}
+
+	var calledFetchTar bool
+	s = &Store{
+		Path: s.Path,
+		FetchTar: func(ctx context.Context, repo, commit string) (io.ReadCloser, error) {
+			calledFetchTar = true
+			return nil, errors.New("should not be called")
+		},
+	}
+
+	ar, err = s.openReader(context.Background(), wantRepo, wantCommit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ar.Close()
+
+	if calledFetchTar {
+		t.Fatal("Did not use on-disk cache")
+	}
+
+	for _, name := range shouldDelete {
+		path := filepath.Join(s.Path, name)
+		if _, err := os.Stat(path); err == nil {
+			t.Fatal("did not delete bad cache item", name)
+		}
+	}
 }
 
 func TestOpenReader_fetchTarFail(t *testing.T) {

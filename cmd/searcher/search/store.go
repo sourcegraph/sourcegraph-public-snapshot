@@ -79,13 +79,11 @@ func (s *Store) Start() {
 			evictions.Inc()
 			go value.(*archive).onEvicted()
 		}
-		go func() {
-			err := s.openMissing()
-			if err != nil {
-				log.Println("failed to open pre-existing cached items: ", err)
-			}
-			s.watchAndEvict()
-		}()
+		err := s.openOnDisk()
+		if err != nil {
+			log.Println("failed to open pre-existing cached items: ", err)
+		}
+		go s.watchAndEvict()
 	})
 }
 
@@ -198,7 +196,8 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 
 	// We need to fetch the archive and populate s.archives for future
 	// readers.
-	arch.reader, arch.err = s.getArchive(ctx, repo, commit, key)
+	span.SetTag("source", "fetch")
+	arch.reader, arch.err = s.getArchive(ctx, repo, commit, path)
 	close(arch.done)
 	// If we failed, remove from archive cache so we try again in
 	// the future.
@@ -210,21 +209,10 @@ func (s *Store) openReader(ctx context.Context, repo, commit string) (ar *archiv
 	return arch.open()
 }
 
-// getArchive fetches an archive from the network or local cache. It does not
-// populate the in-memory cache. You should probably be calling openReader.
-func (s *Store) getArchive(ctx context.Context, repo, commit, key string) (*zip.ReadCloser, error) {
-	span := opentracing.SpanFromContext(ctx)
-
-	// It may be on disk from a previously running searcher. If we fail to
-	// open, we will just fetch from network.
-	path := filepath.Join(s.Path, key+".zip")
-	zr, err := zip.OpenReader(path)
-	if err == nil {
-		span.SetTag("source", "disk")
-		return zr, nil
-	}
-
-	span.SetTag("source", "fetch")
+// getArchive fetches an archive from the network and stores it on disk. It
+// does not populate the in-memory cache. You should probably be calling
+// openReader.
+func (s *Store) getArchive(ctx context.Context, repo, commit, path string) (*zip.ReadCloser, error) {
 	r, err := s.FetchTar(ctx, repo, commit)
 	if err != nil {
 		return nil, err
@@ -234,8 +222,7 @@ func (s *Store) getArchive(ctx context.Context, repo, commit, key string) (*zip.
 	if err != nil {
 		return nil, err
 	}
-
-	zr, err = zip.OpenReader(path)
+	zr, err := zip.OpenReader(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open archive after fetching")
 	}
@@ -375,8 +362,12 @@ func (s *Store) watchAndEvict() {
 	}
 }
 
-// openMissing opens all files on disk but not yet in s.archives.
-func (s *Store) openMissing() error {
+// openOnDisk opens all files on disk but not yet in s.archives.
+func (s *Store) openOnDisk() error {
+	// We are initializing s.archives
+	s.archivesMu.Lock()
+	defer s.archivesMu.Unlock()
+
 	if err := os.MkdirAll(s.Path, 0700); err != nil {
 		return err
 	}
@@ -386,21 +377,17 @@ func (s *Store) openMissing() error {
 		return err
 	}
 
-	var missing []string
-	s.archivesMu.Lock()
 	for _, fi := range onDisk {
+		path := filepath.Join(s.Path, fi.Name())
 		if !strings.HasSuffix(fi.Name(), ".zip") {
-			continue
+			// We should only have cache items in path. Most
+			// common non-cache item is .zip.part files
+			err = os.Remove(path)
+			if err != nil {
+				log.Printf("failed to remove %s: %s", path, err)
+			}
 		}
-		key := strings.TrimSuffix(fi.Name(), ".zip")
-		if _, ok := s.archives.Get(key); !ok {
-			missing = append(missing, key)
-		}
-	}
-	s.archivesMu.Unlock()
 
-	for _, key := range missing {
-		path := filepath.Join(s.Path, key+".zip")
 		zr, err := zip.OpenReader(path)
 		if err != nil {
 			// rather not have it in the cache if we can't
@@ -414,29 +401,16 @@ func (s *Store) openMissing() error {
 			continue
 		}
 
-		s.archivesMu.Lock()
-		value, ok := s.archives.Get(key)
-		if !ok {
-			value = &archive{
-				path: path,
-				done: make(chan struct{}),
-			}
-			s.archives.Add(key, value)
-			cacheSizeLength.Set(float64(s.archives.Len()))
-			added.Inc()
+		key := strings.TrimSuffix(fi.Name(), ".zip")
+		arch := &archive{
+			path:   path,
+			reader: zr,
+			done:   make(chan struct{}),
 		}
-		s.archivesMu.Unlock()
-		arch := value.(*archive)
-
-		// Raced with openReader, so we can ignore our attempt of
-		// adding it.
-		if ok {
-			zr.Close()
-			continue
-		}
-
-		arch.reader = zr
 		close(arch.done)
+		s.archives.Add(key, arch)
+		cacheSizeLength.Set(float64(s.archives.Len()))
+		added.Inc()
 	}
 
 	return nil
