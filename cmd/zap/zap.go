@@ -98,7 +98,7 @@ var websocketUpgrader = websocket.Upgrader{
 // use it in the access check to ensure we have cloned the repo onto
 // gitserver-zap. We can't use DefaultClient, since that has NoCreds set to
 // true.
-var dogfoodGitClient = gitserver.NewClient(strings.Fields(os.Getenv("SRC_GIT_SERVERS")))
+var dogfoodGitClient = &gitserver.Client{Addrs: strings.Fields(os.Getenv("SRC_GIT_SERVERS"))}
 
 func main() {
 	env.Lock()

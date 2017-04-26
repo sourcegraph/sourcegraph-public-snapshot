@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/neelance/chanrpc"
@@ -26,20 +27,14 @@ import (
 var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = NewClient(strings.Fields(gitservers))
-
-func NewClient(addrs []string) *Client {
-	client := &Client{}
-	for _, addr := range addrs {
-		client.connect(addr)
-	}
-	return client
-}
+var DefaultClient = &Client{Addrs: strings.Fields(gitservers)}
 
 // Client is a gitserver client.
 type Client struct {
-	servers [](chan<- *protocol.Request)
-	NoCreds bool
+	Addrs       []string
+	NoCreds     bool
+	servers     [](chan<- *protocol.Request)
+	connectOnce sync.Once
 }
 
 // HasServers returns true if the client is configured with servers to access.
@@ -47,20 +42,24 @@ func (c *Client) HasServers() bool {
 	return len(c.servers) > 0
 }
 
-func (c *Client) connect(addr string) {
-	requestsChan := make(chan *protocol.Request, 100)
-	c.servers = append(c.servers, requestsChan)
+func (c *Client) connect() {
+	for _, addr := range c.Addrs {
+		requestsChan := make(chan *protocol.Request, 100)
+		c.servers = append(c.servers, requestsChan)
 
-	go func() {
-		for {
-			err := chanrpc.DialAndDeliver(addr, requestsChan)
-			log.Printf("gitserver: DialAndDeliver error: %v", err)
-			time.Sleep(time.Second)
-		}
-	}()
+		go func(addr string) {
+			for {
+				err := chanrpc.DialAndDeliver(addr, requestsChan)
+				log.Printf("gitserver: DialAndDeliver error: %v", err)
+				time.Sleep(time.Second)
+			}
+		}(addr)
+	}
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.ExecReply, errRes error) {
+	c.client.connectOnce.Do(c.client.connect)
+
 	repoURI := protocol.NormalizeRepo(c.Repo.URI)
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.sendExec")
