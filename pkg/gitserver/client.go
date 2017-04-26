@@ -23,7 +23,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-var gitservers = env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers; a local gitserver process is used by default")
+var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = NewClient(strings.Fields(gitservers))

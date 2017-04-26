@@ -358,7 +358,7 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repoRev *sourcegraph.R
 	return inventory.Get(ctx, files)
 }
 
-var indexerAddr = env.Get("SRC_INDEXER", "127.0.0.1:3179", "The address of the indexer service.")
+var indexerAddr = env.Get("SRC_INDEXER", "indexer:3179", "The address of the indexer service.")
 
 func (s *repos) RefreshIndex(ctx context.Context, repo string) (err error) {
 	if Mocks.Repos.RefreshIndex != nil {

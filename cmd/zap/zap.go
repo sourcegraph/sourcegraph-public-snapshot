@@ -82,7 +82,7 @@ LIFECYCLE OF A ZAP OPERATION
 
 var (
 	profBindAddr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
-	listenURLStr = os.ExpandEnv(env.Get("ZAP_SERVER_LISTEN", "ws://${SGPATH}/zap", "zap server listen URL (ws:///abspath or ws://host:port)"))
+	listenURLStr = os.ExpandEnv(env.Get("ZAP_SERVER_LISTEN", "ws://:8433", "zap server listen URL (ws:///abspath or ws://host:port)"))
 )
 
 var websocketUpgrader = websocket.Upgrader{

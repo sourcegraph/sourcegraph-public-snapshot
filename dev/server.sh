@@ -29,6 +29,10 @@ export SRC_APP_DISABLE_SUPPORT_SERVICES=true
 export SRC_GIT_SERVERS=127.0.0.1:3178
 export SEARCHER_URL=http://127.0.0.1:3181
 export LSP_PROXY=127.0.0.1:4388
+export REDIS_MASTER_ENDPOINT=127.0.0.1:6379
+export SRC_SESSION_STORE_REDIS=127.0.0.1:6379
+export SRC_INDEXER=127.0.0.1:3179
+export ZAP_SERVER_LISTEN="ws://$HOME/.sourcegraph/zap"
 export ZAP_SERVER="ws://$HOME/.sourcegraph/zap"
 
 mkdir -p .bin

@@ -258,7 +258,7 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 var searcherURLs *endpoint.Map
 
 func init() {
-	searcherURL := env.Get("SEARCHER_URL", "", "searcher server URL (eg http://localhost:3181)")
+	searcherURL := env.Get("SEARCHER_URL", "http://searcher:3181", "searcher server URL")
 	if searcherURL == "" {
 		return
 	}

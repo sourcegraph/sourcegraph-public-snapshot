@@ -14,7 +14,7 @@ import (
 )
 
 var sessionStore *redistore.RediStore
-var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "", "redis used for storing sessions")
+var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "redis-store:6379", "redis used for storing sessions")
 var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 
 // InitSessionStore initializes the session store.

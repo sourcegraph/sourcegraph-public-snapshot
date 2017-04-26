@@ -21,7 +21,7 @@ import (
 // TODO(john): this file is copypasta from zap, there's much more here than is strictly necessary.
 
 var (
-	ZapServerURL = os.ExpandEnv(env.Get("ZAP_SERVER", "ws://${SGPATH}/zap", "zap server URL (ws:///abspath or ws://host:port)"))
+	ZapServerURL = os.ExpandEnv(env.Get("ZAP_SERVER", "ws://zap:8433", "zap server URL (ws:///abspath or ws://host:port)"))
 )
 
 func parseListenDialURL(urlStr string) (*url.URL, error) {

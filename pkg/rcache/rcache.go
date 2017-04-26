@@ -115,7 +115,7 @@ var (
 	globalPrefix string
 )
 
-var redisMasterEndpoint = env.Get("REDIS_MASTER_ENDPOINT", ":6379", "redis used for caches")
+var redisMasterEndpoint = env.Get("REDIS_MASTER_ENDPOINT", "redis-cache:6379", "redis used for caches")
 
 func init() {
 	globalPrefix = dataVersion
