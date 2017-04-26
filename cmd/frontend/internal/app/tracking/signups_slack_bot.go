@@ -47,6 +47,13 @@ func notifySlackOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProper
 		color = "danger"
 	}
 
+	links := ""
+	if response != nil {
+		links = fmt.Sprintf("<%s|View on GitHub>, <%s|View on Looker>, <%s|View on HubSpot>", hubSpotProps.GitHubLink, hubSpotProps.LookerLink, fmt.Sprintf("https://app.hubspot.com/contacts/2762526/contact/%v", response.VID))
+	} else {
+		links = fmt.Sprintf("<%s|View on GitHub>, <%s|View on Looker>", hubSpotProps.GitHubLink, hubSpotProps.LookerLink)
+	}
+
 	payload := &slackPayload{
 		Attachments: []*slackAttachment{
 			&slackAttachment{
@@ -87,7 +94,7 @@ func notifySlackOnSignup(actor *actor.Actor, hubSpotProps *hubspot.ContactProper
 					},
 					&slackField{
 						Title: "User profile links",
-						Value: fmt.Sprintf("<%s|View on GitHub>, <%s|View on Looker>, <%s|View on HubSpot>", hubSpotProps.GitHubLink, hubSpotProps.LookerLink, fmt.Sprintf("https://app.hubspot.com/contacts/2762526/contact/%v", response.VID)),
+						Value: links,
 						Short: false,
 					},
 				},
