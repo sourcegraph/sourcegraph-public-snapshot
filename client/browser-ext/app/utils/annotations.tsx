@@ -21,8 +21,7 @@ export interface RepoRevSpec {
  * datakeys are stored as properites on el, and the code shortcuts if the datakey
  * is detected.
  */
-export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: CodeCell[]): void {
-
+export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: CodeCell[], spacesToTab: number): void {
 	cells.forEach((cell) => {
 		const dataKey = `data-${cell.line}-${repoRevSpec.rev}`;
 		// If the line has already been annotated,
@@ -36,16 +35,17 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 			}
 			return;
 		}
-		// el.setAttribute(dataKey, "true");
 
 		// parse, annotate and replace the node asynchronously.
 		setTimeout(() => {
 			try {
 				let ignoreFirstTextChar = repoRevSpec.isDelta;
+
 				if ((cell as PhabricatorCodeCell).isLeftColumnInSplit || (cell as PhabricatorCodeCell).isUnified) {
 					ignoreFirstTextChar = false;
 				}
-				const annLine = convertNode(cell.cell, 1, cell.line, ignoreFirstTextChar, correctForTabs(loggingStruct["language"]));
+
+				const annLine = convertNode(cell.cell, 1, cell.line, ignoreFirstTextChar, spacesToTab);
 				cell.cell.innerHTML = "";
 				cell.cell.appendChild(annLine.resultNode);
 
@@ -60,15 +60,16 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 interface ConvertNodeResult<T extends Node> {
 	resultNode: T;
 	bytesConsumed: number;
+	isAllSpaces: boolean;
 }
 
-function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Element> {
+function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirstTextChar: boolean, spacesToTab: number): ConvertNodeResult<Element> {
 	switch (node.nodeType) {
 		case Node.TEXT_NODE:
-			return convertTextNode(node, offset, line, ignoreFirstTextChar, correctForTabs);
+			return convertTextNode(node, offset, line, ignoreFirstTextChar, spacesToTab);
 
 		case Node.ELEMENT_NODE:
-			return convertElementNode(node, offset, line, ignoreFirstTextChar, correctForTabs);
+			return convertElementNode(node, offset, line, ignoreFirstTextChar, spacesToTab);
 
 		default:
 			throw new Error(`unexpected node type(${node.nodeType})`);
@@ -80,9 +81,9 @@ function convertNodeHelper(node: Node, offset: number, line: number, ignoreFirst
 // It is the entry point for converting a <td> "cell" representing a line of code.
 // It may also be called recursively for children (which are assumed to be <span>
 // code highlighting annotations from GitHub).
-export function convertNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Node> {
+export function convertNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, spacesToTab: number): ConvertNodeResult<Node> {
 	let wrapperNode;
-	let c = convertNodeHelper(currentNode, offset, line, ignoreFirstTextChar, correctForTabs);
+	let c = convertNodeHelper(currentNode, offset, line, ignoreFirstTextChar, spacesToTab);
 
 	// If this is the top level node for code, return a documentFragment
 	// otherwise copy all the attributes of the original node.
@@ -99,15 +100,8 @@ export function convertNode(currentNode: Node, offset: number, line: number, ign
 	return {
 		resultNode: wrapperNode,
 		bytesConsumed: c.bytesConsumed,
+		isAllSpaces: c.isAllSpaces,
 	};
-}
-/**
- * Phabricator auto converts tabs to two spaces. For tabbed langauges
- * like go, this is a problem. This method checks if we are in a go file in phabrictor.
- * @param fileExtension 
- */
-export function correctForTabs(fileExtension?: string): boolean {
-	return !isBrowserExtension() && Boolean(fileExtension) && fileExtension === "go";
 }
 
 // convertTextNode takes a DOM node which should be of NodeType.TEXT_NODE
@@ -117,8 +111,8 @@ export function correctForTabs(fileExtension?: string): boolean {
 const VARIABLE_TOKENIZER = /(^\w+)/;
 const ASCII_CHARACTER_TOKENIZER = /(^[\x21-\x2F|\x3A-\x40|\x5B-\x60|\x7B-\x7E])/;
 const NONVARIABLE_TOKENIZER = /(^[^\x21-\x7E]+)/;
-const SPACES = /(^[\x20]+$)/;
-export function convertTextNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Element> {
+const SPACES = /(^[\x20]*$)/;
+export function convertTextNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, spacesToTab: number): ConvertNodeResult<Element> {
 	let nodeText;
 	let prevConsumed = 0;
 	let bytesConsumed = 0;
@@ -167,26 +161,30 @@ export function convertTextNode(currentNode: Node, offset: number, line: number,
 		return txt[0];
 	}
 
+	var allSpaces = true;
 	while (nodeText.length > 0) {
 		const token = consumeNext(nodeText);
 		const isAllSpaces = SPACES.test(token);
+		allSpaces = isAllSpaces && allSpaces;
 
 		wrapperNode.appendChild(createTextNode(token, offset + prevConsumed));
-		prevConsumed += isAllSpaces && correctForTabs && token.length % 2 === 0 ? token.length / 2 : token.length;
-		bytesConsumed += isAllSpaces && correctForTabs && token.length % 2 === 0 ? token.length / 2 : token.length;
-		// NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
-		// only divide by 2 for initial code indents.
-		correctForTabs = false;
+		prevConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
+		bytesConsumed += isAllSpaces && spacesToTab > 0 && token.length % spacesToTab === 0 ? token.length / spacesToTab : token.length;
+		if (!allSpaces && spacesToTab > 0) {
+			// NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
+			// only divide by 2 for initial code indents.
+			spacesToTab = 0;
+		}
 		nodeText = nodeText.slice(token.length);
 	}
 
-	return { resultNode: wrapperNode, bytesConsumed };
+	return { resultNode: wrapperNode, bytesConsumed, isAllSpaces: allSpaces };
 }
 
 // convertElementNode takes a DOM node which should be of NodeType.ELEMENT_NODE
 // (this must be checked by the caller) and returns an object containing the
 //  maybe-linkified version of the node as an HTML string as well as the number of bytes consumed.
-export function convertElementNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, correctForTabs: boolean): ConvertNodeResult<Element> {
+export function convertElementNode(currentNode: Node, offset: number, line: number, ignoreFirstTextChar: boolean, spacesToTab: number): ConvertNodeResult<Element> {
 	let bytesConsumed = 0;
 	const wrapperNode = document.createElement("SPAN");
 
@@ -194,16 +192,20 @@ export function convertElementNode(currentNode: Node, offset: number, line: numb
 
 	// The logic here is to simply recurse on each of the child nodes; everything is eventually
 	// just a text node or the special-cased "quoted string node" (see below).
+	var isAllSpaces = true;
 	for (let i = 0; i < currentNode.childNodes.length; ++i) {
-		const res = convertNode(currentNode.childNodes[i], offset + bytesConsumed, line, i === 0 && ignoreFirstTextChar, correctForTabs);
+		const res = convertNode(currentNode.childNodes[i], offset + bytesConsumed, line, i === 0 && ignoreFirstTextChar, spacesToTab);
+		isAllSpaces = isAllSpaces && res.isAllSpaces;
 		// NOTE: this makes it so that if there are further spaces, they don't get divided by 2 for their byte offset.
 		// only divide by 2 for initial code indents.
-		correctForTabs = false;
+		if (!isAllSpaces && spacesToTab > 0) {
+			spacesToTab = 0;
+		}
 		wrapperNode.appendChild(res.resultNode);
 		bytesConsumed += res.bytesConsumed;
 	}
 
-	return { resultNode: wrapperNode, bytesConsumed };
+	return { resultNode: wrapperNode, bytesConsumed, isAllSpaces: isAllSpaces };
 }
 
 let activeTarget;
@@ -212,9 +214,10 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 		// Not hovering over any token in particular.
 		return;
 	}
-	while (t && t.tagName !== "TD" && !t.getAttribute("data-byteoffset")) {
+	while (t && t.tagName && t.tagName !== "TD" && !t.getAttribute("data-byteoffset")) {
 		t = (t.parentNode as HTMLElement);
 	}
+
 	if (t && t.tagName === "SPAN" && t.getAttribute("data-byteoffset")) {
 		return t;
 	}
@@ -256,6 +259,7 @@ function addEventListeners(el: HTMLElement, path: string, repoRevSpec: RepoRevSp
 		activeTarget = t;
 		tooltips.setContext(t, loggingStruct);
 		tooltips.queueLoading();
+
 		getTooltip(activeTarget, path, line, repoRevSpec).then((data) => tooltips.setTooltip(data, activeTarget)).catch((err) => tooltips.setTooltip(null, activeTarget));
 	};
 }

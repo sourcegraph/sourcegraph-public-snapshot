@@ -182,7 +182,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 			if (resolvedRev && resolvedRev.commitID) {
 				const repoRevSpec = { repoURI: uri, rev: resolvedRev.commitID, isDelta: this.isDelta || false, isBase: Boolean(isBase) };
 				const cells = this.getCodeCells(this.isSplitDiff || false, repoRevSpec, blobElement);
-				addAnnotations(path, repoRevSpec, blobElement, this.getEventLoggerProps(), cells);
+				addAnnotations(path, repoRevSpec, blobElement, this.getEventLoggerProps(), cells, 0);
 			}
 		};
 

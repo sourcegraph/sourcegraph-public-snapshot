@@ -34,12 +34,15 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		};
 		this.fileExtension = utils.getPathExtension(props.path);
 		this.callResolveRevs();
+
 		// I noticed that on 1/5 of page loads, even though the annotations code was
 		// successfully annotating elements, due to a timing thing the code elements on the page
 		// were different than the ones the code had annotated (they'd been re-laid out or something).
 		// As a quick fix, I re-call addAnnotations 2 seconds after page load.
 		this.addAnnotations();
-		setInterval(() => this.addAnnotations(), 2000);
+		setTimeout(() => {
+			this.addAnnotations();
+		}, 2000);
 	}
 
 	componentDidMount(): void {
@@ -105,9 +108,11 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		// switching file views blows away the table, and on differential views we take advantage of this by noticing the dropped class
 		table.classList.add("sg-table-annotated");
 		const resolvedRev = this.state.resolvedRevs[backend.cacheKey(uri, rev)];
+		const ext = utils.getPathExtension(this.props.path);
+		const spacesToTab = Boolean(ext) && ext === "go" ? 4 : 0;
 		if (resolvedRev && resolvedRev.commitID) {
 			const cells = this.getCodeCells(isBase);
-			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: true, isBase: isBase }, table, this.getEventLoggerProps(), cells);
+			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: false, isBase: isBase }, table, this.getEventLoggerProps(), cells, spacesToTab);
 		}
 	}
 
@@ -167,7 +172,13 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
 	const cells: CodeCell[] = [];
 	// tslint:disable-next-line:prefer-for-of
 	let count = 1;
-	for (const row of Array.from(code.children)) {
+
+	const children = Array.from(code.children);
+	if (children && children.length > 0 && children[0].getElementsByClassName("line-number")[0]) {
+		count = parseInt(children[0].getElementsByClassName("line-number")[0].innerText, 10);
+	}
+
+	for (const row of children) {
 		const element = row.getElementsByClassName("CodeMirror-line")[0];
 		cells.push({
 			cell: element as HTMLElement,
@@ -175,28 +186,7 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
 			isAddition: false,
 			isDeletion: false,
 		});
-		count++;
-		// let line: number; // line number of the current line
-		// let codeCell: HTMLTableDataCellElement; // the actual cell that has code inside; each row contains multiple columns
-		// let isAddition: boolean | undefined;
-		// let isDeletion: boolean | undefined;
-		// let isBlameEnabled = false;
-		// if (row.cells[0].classList.contains("diffusion-blame-link")) {
-		// 	isBlameEnabled = true;
-		// }
-		// line = parseInt(row.cells[isBlameEnabled ? 2 : 0].children[0].textContent as string, 10);
-		// codeCell = row.cells[isBlameEnabled ? 3 : 1];
-		// if (!codeCell) {
-		// 	continue;
-		// }
-
-		// const innerCode = codeCell.querySelector(".blob-code-inner"); // ignore extraneous inner elements, like "comment" button on diff views
-		// cells.push({
-		// 	cell: (innerCode || codeCell) as HTMLElement,
-		// 	line,
-		// 	isAddition,
-		// 	isDeletion,
-		// });
+		count++
 	}
 	return cells;
 }

@@ -125,9 +125,11 @@ export abstract class PhabBlobAnnotator<P extends Props> extends React.Component
 		// switching file views blows away the table, and on differential views we take advantage of this by noticing the dropped class
 		table.classList.add("sg-table-annotated");
 		const resolvedRev = this.state.resolvedRevs[backend.cacheKey(uri, rev)];
+		const ext = utils.getPathExtension(this.props.path);
+		const spacesToTab = Boolean(ext) && ext === "go" ? 2 : 0;
 		if (resolvedRev && resolvedRev.commitID) {
 			const cells = this.getCodeCells(isBase);
-			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: true, isBase: isBase }, table, this.getEventLoggerProps(), cells);
+			addAnnotations(this.props.path, { repoURI: uri, rev: resolvedRev.commitID, isDelta: true, isBase: isBase }, table, this.getEventLoggerProps(), cells, spacesToTab);
 		}
 	}
 

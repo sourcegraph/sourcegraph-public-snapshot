@@ -29,7 +29,7 @@ function getBitbucketState(location: Location): BitbucketUrl | null {
 			repo: browseMatch[7],
 			path: browseMatch[8],
 		};
-		return  {
+		return {
 			mode: BitbucketMode.Browse,
 			projectCode: match.projectCode,
 			repo: match.repo,
@@ -56,7 +56,7 @@ function injectBitbucketBlobAnnotators(): void {
 		}
 		fileContent.classList.add("sg-blob-annotated");
 		const mount = createBlobAnnotatorMount(fileContent, ".file-toolbar");
-		render(<BitbucketBlobAnnotator path={browseUrl.path} repo={"github.com/gorilla/mux"} projectCode={browseUrl.projectCode} blobElement={fileContent} rev={browseUrl.rev}/>, mount);
+		render(<BitbucketBlobAnnotator path={browseUrl.path} repo={"github.com/gorilla/mux"} projectCode={browseUrl.projectCode} blobElement={fileContent} rev={browseUrl.rev} />, mount);
 	}
 }
 
