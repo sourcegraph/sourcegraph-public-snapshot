@@ -10,7 +10,7 @@ import { BitbucketBlobAnnotator } from "../app/components/BitbucketBlobAnnotator
 function setupDOM(url: string): (done: any) => void {
 	return (done) => jsdom.env(url, (err, window) => {
 		if (err) {
-			done(err);
+			done(new Error("Could not build DOM from URL. Is there a Bitbucket Server running at " + url + "?\n" + err));
 		}
 		global.window = window;
 		global.document = window.document;
