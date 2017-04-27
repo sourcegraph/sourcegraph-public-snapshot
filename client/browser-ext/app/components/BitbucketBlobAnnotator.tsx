@@ -33,7 +33,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 			resolvedRevs: {},
 		};
 		this.fileExtension = utils.getPathExtension(props.path);
-		this.callResolveRevs();
+		this.resolveRevs(this.props.repo, this.props.rev);
 
 		// I noticed that on 1/5 of page loads, even though the annotations code was
 		// successfully annotating elements, due to a timing thing the code elements on the page
@@ -49,7 +49,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		// Set a timer to re-check revision data every 5 seconds, for repos that haven't been
 		// cloned and revs that haven't been sync'd to Sourcegraph.com.
 		// Single-flighted requests / caching prevents spamming the API.
-		this.revisionChecker = setInterval(() => this.callResolveRevs(), 3000);
+		this.revisionChecker = setInterval(() => this.resolveRevs(this.props.repo, this.props.rev), 3000);
 		document.addEventListener("scroll", this.scrollCallback);
 	}
 
@@ -134,10 +134,6 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 			path: this.props.path,
 			language: this.fileExtension,
 		};
-	}
-
-	callResolveRevs(): void {
-		this.resolveRevs(this.props.repo, this.props.rev);
 	}
 
 	getCodeCells(isBase: boolean): CodeCell[] {
