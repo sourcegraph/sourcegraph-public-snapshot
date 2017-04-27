@@ -16,7 +16,7 @@ func TestExec(t *testing.T) {
 	type execTest struct {
 		context        context.Context
 		repo           *sourcegraph.Repo
-		reply          *protocol.ExecReply
+		reply          *protocol.LegacyExecReply
 		expectedErr    error
 		expectedStdout []byte
 		expectedStderr []byte
@@ -27,13 +27,13 @@ func TestExec(t *testing.T) {
 		{
 			context:     context.Background(),
 			repo:        &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
-			reply:       &protocol.ExecReply{RepoNotFound: true},
+			reply:       &protocol.LegacyExecReply{RepoNotFound: true},
 			expectedErr: vcs.RepoNotExistError{},
 		},
 		{
 			context:        actor.WithActor(context.Background(), &actor.Actor{GitHubToken: "token"}),
 			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
-			reply:          &protocol.ExecReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
+			reply:          &protocol.LegacyExecReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 			expectedPass:   "", // no pass, repo not private
@@ -41,7 +41,7 @@ func TestExec(t *testing.T) {
 		{
 			context:        actor.WithActor(context.Background(), &actor.Actor{GitHubToken: "token"}),
 			repo:           &sourcegraph.Repo{URI: "github.com/gorilla/mux", Private: true},
-			reply:          &protocol.ExecReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
+			reply:          &protocol.LegacyExecReply{Stdout: chanrpcutil.ToChunks([]byte("out")), Stderr: chanrpcutil.ToChunks([]byte("err")), ProcessResult: emptyProcessResult()},
 			expectedStdout: []byte("out"),
 			expectedStderr: []byte("err"),
 			expectedPass:   "token",
@@ -54,14 +54,14 @@ func TestExec(t *testing.T) {
 		{
 			context:     context.Background(),
 			repo:        &sourcegraph.Repo{URI: "github.com/gorilla/mux"},
-			reply:       &protocol.ExecReply{CloneInProgress: true},
+			reply:       &protocol.LegacyExecReply{CloneInProgress: true},
 			expectedErr: vcs.RepoNotExistError{CloneInProgress: true},
 		},
 	}
 
 	for _, test := range tests {
-		server := make(chan *protocol.Request)
-		client := &Client{servers: [](chan<- *protocol.Request){server}}
+		server := make(chan *protocol.LegacyRequest)
+		client := &Client{servers: [](chan<- *protocol.LegacyRequest){server}}
 
 		go func(test *execTest) {
 			req := <-server

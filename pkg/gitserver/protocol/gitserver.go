@@ -2,18 +2,18 @@ package protocol
 
 import "sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 
-type Request struct {
-	Exec *ExecRequest
+type LegacyRequest struct {
+	Exec *LegacyExecRequest
 }
 
-// ExecRequest is a request to execute a command inside a git repository.
-type ExecRequest struct {
+// LegacyExecRequest is a request to execute a command inside a git repository.
+type LegacyExecRequest struct {
 	Repo           string
 	EnsureRevision string
 	Args           []string
 	Opt            *vcs.RemoteOpts
 	Stdin          <-chan []byte // deprecated
-	ReplyChan      chan<- *ExecReply
+	ReplyChan      chan<- *LegacyExecReply
 
 	// NoAutoUpdate is whether to prevent gitserver from auto-updating or cloning a repository if it
 	// does not yet exist. This should be set to true if the following conditions hold:
@@ -32,7 +32,7 @@ type ExecRequest struct {
 	NoAutoUpdate bool
 }
 
-type ExecReply struct {
+type LegacyExecReply struct {
 	RepoNotFound    bool // If true, exec returned with noop because repo is not found.
 	CloneInProgress bool // If true, exec returned with noop because clone is in progress.
 	Stdout          <-chan []byte

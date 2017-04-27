@@ -34,7 +34,7 @@ var DefaultClient = &Client{Addrs: strings.Fields(gitservers)}
 type Client struct {
 	Addrs       []string
 	NoCreds     bool
-	servers     [](chan<- *protocol.Request)
+	servers     [](chan<- *protocol.LegacyRequest)
 	connectOnce sync.Once
 }
 
@@ -45,7 +45,7 @@ func (c *Client) HasServers() bool {
 
 func (c *Client) connect() {
 	for _, addr := range c.Addrs {
-		requestsChan := make(chan *protocol.Request, 100)
+		requestsChan := make(chan *protocol.LegacyRequest, 100)
 		c.servers = append(c.servers, requestsChan)
 
 		go func(addr string) {
@@ -58,7 +58,7 @@ func (c *Client) connect() {
 	}
 }
 
-func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.ExecReply, errRes error) {
+func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.LegacyExecReply, errRes error) {
 	c.client.connectOnce.Do(c.client.connect)
 
 	repoURI := protocol.NormalizeRepo(c.Repo.URI)
@@ -97,8 +97,8 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.ExecReply, errRes error
 
 	sum := md5.Sum([]byte(repoURI))
 	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.client.servers))
-	replyChan := make(chan *protocol.ExecReply, 1)
-	c.client.servers[serverIndex] <- &protocol.Request{Exec: &protocol.ExecRequest{
+	replyChan := make(chan *protocol.LegacyExecReply, 1)
+	c.client.servers[serverIndex] <- &protocol.LegacyRequest{Exec: &protocol.LegacyExecRequest{
 		Repo:           repoURI,
 		EnsureRevision: c.EnsureRevision,
 		Args:           c.Args[1:],
@@ -221,7 +221,7 @@ func StdoutReader(ctx context.Context, c *Cmd) (io.ReadCloser, error) {
 
 type cmdReader struct {
 	c     *Cmd
-	reply *protocol.ExecReply
+	reply *protocol.LegacyExecReply
 	err   error
 	// If we read too many bytes, we store the extra bytes here
 	buf []byte

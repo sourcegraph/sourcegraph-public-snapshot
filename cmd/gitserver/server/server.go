@@ -67,13 +67,13 @@ func (s *Server) Serve(l net.Listener) error {
 	s.repoUpdateLocks = make(map[string]*locks)
 
 	s.registerMetrics()
-	requests := make(chan *protocol.Request, 100)
+	requests := make(chan *protocol.LegacyRequest, 100)
 	go s.processRequests(requests)
 	srv := &chanrpc.Server{RequestChan: requests}
 	return srv.Serve(l)
 }
 
-func (s *Server) processRequests(requests <-chan *protocol.Request) {
+func (s *Server) processRequests(requests <-chan *protocol.LegacyRequest) {
 	for req := range requests {
 		if req.Exec != nil {
 			go s.handleExecRequest(req.Exec)
@@ -90,7 +90,7 @@ var shortGitCommandTimeout = time.Minute
 var longGitCommandTimeout = time.Hour
 
 // handleExecRequest handles a exec request.
-func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
+func (s *Server) handleExecRequest(req *protocol.LegacyExecRequest) {
 	ctx, cancel := context.WithTimeout(context.Background(), shortGitCommandTimeout)
 	defer cancel()
 
@@ -111,7 +111,7 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 
 	// This is a repo that we use for testing the cloning state of the UI
 	if req.Repo == "github.com/sourcegraphtest/alwayscloningtest" {
-		req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
+		req.ReplyChan <- &protocol.LegacyExecReply{CloneInProgress: true}
 		return
 	}
 
@@ -150,7 +150,7 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 	_, cloneInProgress := s.cloning[dir]
 	if cloneInProgress {
 		s.cloningMu.Unlock()
-		req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
+		req.ReplyChan <- &protocol.LegacyExecReply{CloneInProgress: true}
 		status = "clone-in-progress"
 		return
 	}
@@ -176,13 +176,13 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 				}
 			}()
 
-			req.ReplyChan <- &protocol.ExecReply{CloneInProgress: true}
+			req.ReplyChan <- &protocol.LegacyExecReply{CloneInProgress: true}
 			status = "clone-in-progress"
 			return
 		}
 
 		s.cloningMu.Unlock()
-		req.ReplyChan <- &protocol.ExecReply{RepoNotFound: true}
+		req.ReplyChan <- &protocol.LegacyExecReply{RepoNotFound: true}
 		status = "repo-not-found"
 		return
 	}
@@ -208,7 +208,7 @@ func (s *Server) handleExecRequest(req *protocol.ExecRequest) {
 	cmd.Stderr = stderrW
 
 	processResultChan := make(chan *protocol.ProcessResult, 1)
-	req.ReplyChan <- &protocol.ExecReply{
+	req.ReplyChan <- &protocol.LegacyExecReply{
 		Stdout:        stdoutC,
 		Stderr:        stderrC,
 		ProcessResult: processResultChan,
