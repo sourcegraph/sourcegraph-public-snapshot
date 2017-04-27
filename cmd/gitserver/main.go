@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"syscall"
 
 	"os"
@@ -41,10 +42,15 @@ func main() {
 		log.Printf("Profiler available on %s/pprof", profBindAddr)
 	}
 
-	l, err := net.Listen("tcp", ":3178")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("git-server: listening on %s\n", l.Addr())
-	log.Fatal(gitserver.Serve(l))
+	go func() {
+		l, err := net.Listen("tcp", ":3178")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Fatal(gitserver.ServeLegacy(l))
+	}()
+
+	fmt.Println("git-server: listening on :3278 and :3178 (legacy)")
+	srv := &http.Server{Addr: ":3278", Handler: gitserver.Handler()}
+	log.Fatal(srv.ListenAndServe())
 }

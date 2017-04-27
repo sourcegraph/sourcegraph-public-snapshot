@@ -1,9 +1,13 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os/exec"
 	"path"
 	"regexp"
@@ -24,6 +28,16 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/traceutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
+
+var runCommand = func(cmd *exec.Cmd) (error, int) { // mocked by tests
+	err := cmd.Run()
+	exitStatus := -10810
+	if cmd.ProcessState != nil { // is nil if process failed to start
+		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	}
+	return err, exitStatus
+}
+var noUpdates = false // set by tests
 
 // Server is a gitserver server.
 type Server struct {
@@ -56,17 +70,47 @@ type updateRepoRequest struct {
 	opt  *vcs.RemoteOpts
 }
 
-// Serve serves incoming gitserver requests on listener l.
-func (s *Server) Serve(l net.Listener) error {
-	if err := initializeSSH(); err != nil {
-		log.Printf("SSH initialization error: %s", err)
-	}
-
+// Serve serves incoming http requests on listener l.
+func (s *Server) Handler() http.Handler {
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[string]*locks)
 
+	if err := initializeSSH(); err != nil {
+		log.Printf("SSH initialization error: %s", err)
+	}
+
 	s.registerMetrics()
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/exec", func(w http.ResponseWriter, r *http.Request) {
+		var req protocol.ExecRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		stdout, err := s.handleExecRequest(&req)
+		if err != nil {
+			w.WriteHeader(http.StatusConflict)
+			if err := json.NewEncoder(w).Encode(err); err != nil {
+				log.Print(err)
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		io.Copy(w, stdout)
+	})
+	return mux
+}
+
+// ServeLegacy serves incoming legacy gitserver requests on listener l.
+func (s *Server) ServeLegacy(l net.Listener) error {
+	s.cloning = make(map[string]struct{})
+	s.updateRepo = s.repoUpdateLoop()
+	s.repoUpdateLocks = make(map[string]*locks)
+
 	requests := make(chan *protocol.LegacyRequest, 100)
 	go s.processRequests(requests)
 	srv := &chanrpc.Server{RequestChan: requests}
@@ -76,9 +120,62 @@ func (s *Server) Serve(l net.Listener) error {
 func (s *Server) processRequests(requests <-chan *protocol.LegacyRequest) {
 	for req := range requests {
 		if req.Exec != nil {
-			go s.handleExecRequest(req.Exec)
+			go s.handleLegacyExecRequest(req.Exec)
 		}
 	}
+}
+
+func (s *Server) handleExecRequest(req *protocol.ExecRequest) (io.Reader, *protocol.ExecError) {
+	replyChan := make(chan *protocol.LegacyExecReply, 1)
+	s.handleLegacyExecRequest(&protocol.LegacyExecRequest{
+		Repo:           req.Repo,
+		EnsureRevision: req.EnsureRevision,
+		Args:           req.Args,
+		Opt:            req.Opt,
+		NoAutoUpdate:   req.NoAutoUpdate,
+		ReplyChan:      replyChan,
+	})
+	reply := <-replyChan
+	if reply.RepoNotFound || reply.CloneInProgress {
+		return nil, &protocol.ExecError{
+			RepoNotFound:    reply.RepoNotFound,
+			CloneInProgress: reply.CloneInProgress,
+		}
+	}
+
+	for b := range reply.Stdout {
+		if len(b) == 0 {
+			continue
+		}
+
+		// got first output, assume no error and stream stdout to reader
+		go func() { <-reply.ProcessResult }() // discard process result
+		go chanrpcutil.Drain(reply.Stderr)    // discard stderr
+
+		stdout := make(chan []byte, 10)
+		stdout <- b
+		go func() {
+			for b := range reply.Stdout {
+				stdout <- b
+			}
+			close(stdout)
+		}()
+		return chanrpcutil.NewReader(stdout), nil
+	}
+
+	// stdout closed without any output, check for errors
+	result := <-reply.ProcessResult
+	if result.Error != "" || result.ExitStatus != 0 {
+		return nil, &protocol.ExecError{
+			Error:      result.Error,
+			ExitStatus: result.ExitStatus,
+			Stderr:     string(<-chanrpcutil.ReadAll(reply.Stderr)),
+		}
+	}
+
+	// no output and no error
+	chanrpcutil.Drain(reply.Stderr)
+	return bytes.NewReader(nil), nil
 }
 
 // This is a timeout for git commands that should not take a long time.
@@ -90,7 +187,7 @@ var shortGitCommandTimeout = time.Minute
 var longGitCommandTimeout = time.Hour
 
 // handleExecRequest handles a exec request.
-func (s *Server) handleExecRequest(req *protocol.LegacyExecRequest) {
+func (s *Server) handleLegacyExecRequest(req *protocol.LegacyExecRequest) {
 	ctx, cancel := context.WithTimeout(context.Background(), shortGitCommandTimeout)
 	defer cancel()
 
@@ -155,7 +252,7 @@ func (s *Server) handleExecRequest(req *protocol.LegacyExecRequest) {
 		return
 	}
 	if !repoExists(dir) {
-		if origin := originmap.Map(req.Repo); origin != "" && !req.NoAutoUpdate {
+		if origin := originmap.Map(req.Repo); origin != "" && !req.NoAutoUpdate && !noUpdates {
 			s.cloning[dir] = struct{}{} // Mark this repo as currently being cloned.
 			s.cloningMu.Unlock()
 
@@ -214,11 +311,10 @@ func (s *Server) handleExecRequest(req *protocol.LegacyExecRequest) {
 		ProcessResult: processResultChan,
 	}
 
-	if err := cmd.Run(); err != nil {
+	var err error
+	err, exitStatus = runCommand(cmd)
+	if err != nil {
 		errStr = err.Error()
-	}
-	if cmd.ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 
 	stdoutW.Close()
@@ -233,7 +329,7 @@ func (s *Server) handleExecRequest(req *protocol.LegacyExecRequest) {
 	stdoutN = stdoutW.n
 	stderrN = stderrW.n
 
-	if !req.NoAutoUpdate {
+	if !req.NoAutoUpdate && !noUpdates {
 		s.updateRepo <- updateRepoRequest{req.Repo, req.Opt}
 	}
 }

@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("listen failed: %s", err)
 	}
-	go (&server.Server{InsecureSkipCheckVerifySSH: true}).Serve(l)
+	go (&server.Server{InsecureSkipCheckVerifySSH: true}).ServeLegacy(l)
 
 	gitserver.DefaultClient = &gitserver.Client{Addrs: []string{l.Addr().String()}}
 

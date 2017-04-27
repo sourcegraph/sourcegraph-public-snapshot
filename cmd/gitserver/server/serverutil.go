@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -53,7 +54,11 @@ func (s *Server) runWithRemoteOpts(cmd *exec.Cmd, opt *vcs.RemoteOpts) ([]byte, 
 		cmd.Args = append(cmd.Args[:1], append([]string{"-c", "credential.helper="}, cmd.Args[1:]...)...)
 	}
 
-	return cmd.CombinedOutput()
+	var b bytes.Buffer
+	cmd.Stdout = &b
+	cmd.Stderr = &b
+	err, _ := runCommand(cmd)
+	return b.Bytes(), err
 }
 
 // makeGitSSHWrapper writes a GIT_SSH wrapper that runs ssh with the
@@ -154,7 +159,7 @@ func makeGitPassHelper(user, pass string) (gitPassHelperDir string, err error) {
 }
 
 // repoExists checks if dir is a valid GIT_DIR.
-func repoExists(dir string) bool {
+var repoExists = func(dir string) bool {
 	_, err := os.Stat(filepath.Join(dir, "HEAD"))
 	return !os.IsNotExist(err)
 }
