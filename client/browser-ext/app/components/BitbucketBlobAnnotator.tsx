@@ -22,9 +22,14 @@ interface State {
 }
 
 export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps, State> {
-	revisionChecker: NodeJS.Timer;
+
 	fileExtension: string;
-	expandListenerAdded: boolean = false;
+
+	// revisionChecker is a timer used to sync the current repo/revision to this component
+	revisionChecker: NodeJS.Timer;
+
+	// scrollTimer is a timer used to add additional annotations (after a debounce period) on user
+	// scroll. This is necessary, because Bitbucket Server lazily loads the code view.
 	scrollTimer: NodeJS.Timer | null;
 
 	constructor(props: BitbucketBrowseProps) {
@@ -49,7 +54,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		// Set a timer to re-check revision data every 5 seconds, for repos that haven't been
 		// cloned and revs that haven't been sync'd to Sourcegraph.com.
 		// Single-flighted requests / caching prevents spamming the API.
-		this.revisionChecker = setInterval(() => this.resolveRevs(this.props.repo, this.props.rev), 3000);
+		this.revisionChecker = setInterval(() => this.resolveRevs(this.props.repo, this.props.rev), 5000);
 		document.addEventListener("scroll", this.scrollCallback);
 	}
 
@@ -74,6 +79,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		this.addAnnotations();
 	}
 
+	// resolveRevs resolves the specified revision of the repository and then sets both on the component state.
 	resolveRevs(repo: string, rev: string): void {
 		const key = backend.cacheKey(repo, rev);
 		if (this.state.resolvedRevs[key] && this.state.resolvedRevs[key].notFound) {
@@ -94,7 +100,10 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		});
 	}
 
-	applyAnnotationsIfResolvedRev(uri: string, isBase: boolean, rev?: string): void {
+	// addAnnotationsIfResolvedRev adds annotations to the DOM if the revision has been properly resolved.
+	// It is idempotent, so it can be called multiple times, and for Bitbucket Server, it should be called
+	// multiple times as the DOM changes as the user scrolls.
+	addAnnotationsIfResolvedRev(uri: string, isBase: boolean, rev?: string): void {
 		if (!utils.supportedExtensions.has(this.fileExtension)) {
 			return; // Don't annotate unsupported languages
 		}
@@ -125,7 +134,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 	}
 
 	addAnnotations = (): void => {
-		this.applyAnnotationsIfResolvedRev(this.props.repo, false, this.props.rev);
+		this.addAnnotationsIfResolvedRev(this.props.repo, false, this.props.rev);
 	}
 
 	getEventLoggerProps(): Object {

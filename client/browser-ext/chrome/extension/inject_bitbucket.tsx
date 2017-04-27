@@ -5,7 +5,6 @@ import { injectBackgroundApp } from "../../app/utils/injectBackgroundApp";
 import { BitbucketBrowseUrl, BitbucketMode, BitbucketUrl } from "../../app/utils/types";
 import * as bitbucket from "../../app/utils/bitbucket";
 
-
 export function injectBitbucketApplication(): void {
 	window.addEventListener("load", () => {
 		injectModules();
