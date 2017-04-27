@@ -11,6 +11,5 @@ const sgdevPhabricatorRepoMap = {
 };
 
 export const SGDEV_SOURCEGRAPH_URL = "http://node.aws.sgdev.org:30000";
-const PHABRICATOR_STAGING_URI = "phabricator-staging";
 
 export const sgDevPhabricatorInstance = new PhabricatorInstance(sgdevPhabricatorRepoMap, "sgdev_phabricator");
