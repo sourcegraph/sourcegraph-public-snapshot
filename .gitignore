@@ -83,3 +83,6 @@ eb-bundle.zip
 cmd/src/debug
 cmd/gitserver/debug
 cmd/indexer/debug
+
+/dev/local-installer/sourcegraph/.env
+/dev/local-installer/sourcegraph/.data
