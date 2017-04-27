@@ -36,9 +36,9 @@
   version "2.0.34"
   resolved "https://registry.yarnpkg.com/@types/jquery/-/jquery-2.0.34.tgz#27615b369f30e572336126514e74672dda6e3d04"
 
-"@types/jsdom":
-  version "2.0.29"
-  resolved "https://registry.yarnpkg.com/@types/jsdom/-/jsdom-2.0.29.tgz#b4efaa56b24b8b14a5f435a4badc6770bd0f8755"
+"@types/jsdom@^2.0.30":
+  version "2.0.30"
+  resolved "https://registry.yarnpkg.com/@types/jsdom/-/jsdom-2.0.30.tgz#37f8aae61a33742da062fa2b9f8c7b90016725ac"
   dependencies:
     "@types/jquery" "*"
     "@types/node" "*"

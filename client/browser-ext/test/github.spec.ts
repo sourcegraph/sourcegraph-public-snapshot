@@ -25,11 +25,9 @@ describe("GitHub DOM", () => {
 		before(setupDOM(url));
 
 		it("should parse branch name from button", () => {
-			setTimeout(() => {
-				const gitHubState = github.getGitHubState(global.window.location.href);
-				expect(gitHubState).to.not.be.null;
-				expect((gitHubState as GitHubBlobUrl).rev).to.equal("master");
-			}, 0);
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("master");
 		});
 
 	});
@@ -38,11 +36,9 @@ describe("GitHub DOM", () => {
 		before(setupDOM(url));
 
 		it("should parse branch name from button", () => {
-			setTimeout(() => {
-				const gitHubState = github.getGitHubState(global.window.location.href);
-				expect(gitHubState).to.not.be.null;
-				expect((gitHubState as GitHubBlobUrl).rev).to.equal("uforic/wip");
-			}, 0);
+			const gitHubState = github.getGitHubState(global.window.location.href);
+			expect(gitHubState).to.not.be.null;
+			expect((gitHubState as GitHubBlobUrl).rev).to.equal("uforic/wip");
 		});
 
 	});
@@ -183,13 +179,11 @@ describe("GitHub DOM", () => {
 		});
 
 		it("should parse deltaInfo", () => {
-			setTimeout(() => {
-				const deltaInfo = github.getDeltaInfo();
-				expect(deltaInfo).to.have.property("baseBranch", "master");
-				expect(deltaInfo).to.have.property("headBranch", "master");
-				expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
-				expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
-			}, 0);
+			const deltaInfo = github.getDeltaInfo();
+			expect(deltaInfo).to.have.property("baseBranch", "master");
+			expect(deltaInfo).to.have.property("headBranch", "master");
+			expect(deltaInfo).to.have.property("baseURI", "github.com/gorilla/mux");
+			expect(deltaInfo).to.have.property("headURI", "github.com/gorilla/mux");
 		});
 
 		it("should parse url", () => {
