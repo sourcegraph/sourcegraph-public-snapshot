@@ -81,6 +81,8 @@ main.go:6:	fmt.Println("Hello world")
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `,
+
+		search.Params{Pattern: "doesnotmatch"}: "",
 	}
 
 	store, cleanup, err := newStore(files)
