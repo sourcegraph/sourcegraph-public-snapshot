@@ -5,7 +5,7 @@ if [ -z "$GIT_PARENT_DIRECTORY" ]; then
     exit 1
 fi
 
-comm -12 <(find "$GIT_PARENT_DIRECTORY" -name 'config' | xargs dirname | sort) <(find "$GIT_PARENT_DIRECTORY" -name 'HEAD' | xargs dirname | sort) > /tmp/git_repos
+comm -12 <(find "$GIT_PARENT_DIRECTORY" -name 'config' -not -path '*/.data/*' | xargs dirname | sort) <(find "$GIT_PARENT_DIRECTORY" -name 'HEAD' -not -path '*/.data/*' | xargs dirname | sort) > /tmp/git_repos
 
 function normalize() {
     for a in "$@"; do
