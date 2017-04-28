@@ -24,7 +24,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path"
+	"strconv"
 
 	"github.com/shurcooL/httpgzip"
 )
@@ -72,6 +74,8 @@ var pushResources = []string{
 	"out/browser_modules/lsp.js",
 }
 
+var devMode, _ = strconv.ParseBool(os.Getenv("VSCODE_DEV"))
+
 // Handler handles HTTP requests for files in the bundle.
 func Handler() http.Handler {
 	if Data == nil {
@@ -84,7 +88,11 @@ func Handler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// TODO(sqs): implement Cache-Control: immutable, and add a
 		// version identifier to the URL path.
-		w.Header().Set("Cache-Control", "public, max-age=300")
+		if devMode {
+			w.Header().Set("Cache-Control", "public, must-revalidate")
+		} else {
+			w.Header().Set("Cache-Control", "public, max-age=300")
+		}
 		if pusher, ok := w.(http.Pusher); ok {
 			if path.Base(r.URL.Path) == "index.html" {
 				opt := &http.PushOptions{
