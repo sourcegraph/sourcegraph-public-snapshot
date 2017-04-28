@@ -1,6 +1,7 @@
 package search
 
 import (
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"context"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp/syntax"
+	"strconv"
 	"testing"
 	"testing/iotest"
 )
@@ -231,6 +233,58 @@ func TestReadAll(t *testing.T) {
 	n, err = readAll(bytes.NewReader(input), b)
 	if err == nil {
 		t.Fatal("expected to fail on small buffer")
+	}
+}
+
+func TestMaxMatches(t *testing.T) {
+	pattern := "foo"
+
+	// Create a zip archive which contains our limits + 1
+	buf := new(bytes.Buffer)
+	zw := zip.NewWriter(buf)
+	for i := 0; i < maxFileMatches+1; i++ {
+		w, err := zw.CreateHeader(&zip.FileHeader{
+			Name:   strconv.Itoa(i),
+			Method: zip.Store,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for j := 0; j < maxLineMatches+1; j++ {
+			for k := 0; k < maxOffsets+1; k++ {
+				w.Write([]byte(pattern))
+				w.Write([]byte{' '})
+			}
+			w.Write([]byte{'\n'})
+		}
+	}
+	err := zw.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rg, err := compile(&Params{Pattern: pattern})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fileMatches, err := concurrentFind(context.Background(), rg, zr)
+
+	if len(fileMatches) != maxFileMatches {
+		t.Fatalf("expected %d file matches, got %d", maxFileMatches, len(fileMatches))
+	}
+	for _, fm := range fileMatches {
+		if len(fm.LineMatches) != maxLineMatches {
+			t.Fatalf("expected %d line matches, got %d", maxLineMatches, len(fm.LineMatches))
+		}
+		for _, lm := range fm.LineMatches {
+			if len(lm.OffsetAndLengths) != maxOffsets {
+				t.Fatalf("expected %d offsets, got %d", maxOffsets, len(lm.OffsetAndLengths))
+			}
+		}
 	}
 }
 
