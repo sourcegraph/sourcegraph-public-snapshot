@@ -106,10 +106,7 @@ func Exec(req *http.Request, resp http.ResponseWriter, name string, status int, 
 		field := reflect.ValueOf(data).Elem().FieldByName("Common")
 		existingCommon := field.Interface().(Common)
 
-		jsctx, err := jscontext.NewJSContextFromRequest(req)
-		if err != nil {
-			return err
-		}
+		jsctx := jscontext.NewJSContextFromRequest(req)
 
 		field.Set(reflect.ValueOf(Common{
 			AuthInfo:     actor.FromContext(req.Context()).AuthInfo(),

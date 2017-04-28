@@ -31,6 +31,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/conf"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -167,7 +168,7 @@ func Main() error {
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", gziphandler.GzipHandler(httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))))
 	sm.Handle("/", handlerutil.NewHandlerWithCSRFProtection(app.NewHandler(app_router.New())))
-	sm.Handle("/main/", http.StripPrefix("/main", bundle.Handler()))
+	sm.Handle("/main/", handlerutil.NewHandlerWithCSRFProtection(session.CookieMiddleware(http.StripPrefix("/main", bundle.Handler()))))
 	assets.Mount(sm)
 
 	if biLoggerAddr != "" {

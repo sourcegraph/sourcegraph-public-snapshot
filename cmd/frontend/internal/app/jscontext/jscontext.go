@@ -54,7 +54,7 @@ type JSContext struct {
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
+func NewJSContextFromRequest(req *http.Request) JSContext {
 	actor := actor.FromContext(req.Context())
 
 	headers := make(map[string]string)
@@ -114,7 +114,7 @@ func NewJSContextFromRequest(req *http.Request) (JSContext, error) {
 		TrackingAppID:       TrackingAppID,
 		RepoHomeRegexFilter: repoHomeRegexFilter,
 		StripePublicKey:     stripe.StripePublicKey,
-	}, nil
+	}
 }
 
 var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)

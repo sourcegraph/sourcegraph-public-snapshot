@@ -21,7 +21,10 @@
 package bundle
 
 import (
+	"encoding/json"
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -29,6 +32,8 @@ import (
 	"strconv"
 
 	"github.com/shurcooL/httpgzip"
+
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 )
 
 // This list should be periodically updated to be in sync with the
@@ -74,6 +79,8 @@ var pushResources = []string{
 	"out/browser_modules/lsp.js",
 }
 
+const rootPath = "/out/vs/launcher/browser/bootstrap/index.html"
+
 var devMode, _ = strconv.ParseBool(os.Getenv("VSCODE_DEV"))
 
 // Handler handles HTTP requests for files in the bundle.
@@ -85,6 +92,22 @@ func Handler() http.Handler {
 	}
 
 	fs := httpgzip.FileServer(Data, httpgzip.FileServerOptions{})
+	file, err := Data.Open(rootPath)
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	tmplBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+	template, err := template.New("root").Parse(string(tmplBytes))
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// TODO(sqs): implement Cache-Control: immutable, and add a
 		// version identifier to the URL path.
@@ -113,11 +136,25 @@ func Handler() http.Handler {
 			}
 		}
 
-		if r.URL.Path == "/out/vs/workbench/browser/bootstrap/index.html" {
+		if r.URL.Path == rootPath {
 			// The UI uses iframes, so we need to allow iframes.
-			w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+			jsctx := jscontext.NewJSContextFromRequest(r)
+			JSContext, err := json.Marshal(jsctx)
+			if err != nil {
+				log.Print(err)
+			}
+			err = template.Execute(w, struct {
+				JSContext string
+			}{
+				JSContext: string(JSContext),
+			})
+			if err != nil {
+				log.Print(err)
+			}
+			return
 		}
 
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 		fs.ServeHTTP(w, r)
 	})
 }

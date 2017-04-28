@@ -19,6 +19,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/localstore"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // A light wrapper around the search service. We implement the service here so
@@ -224,6 +225,11 @@ func (*rootResolver) SearchRepos(ctx context.Context, args *repoSearchArgs) (*se
 			defer wg.Done()
 			matches, searchErr := searchRepo(ctx, repo, args.Query)
 			mu.Lock()
+			if err, isNotFound := searchErr.(vcs.RepoNotExistError); isNotFound && err.CloneInProgress {
+				// No need to abort the entire search if one of the repos is cloning.
+				mu.Unlock()
+				return
+			}
 			if searchErr != nil && err == nil {
 				err = searchErr
 				cancel()
