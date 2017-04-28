@@ -169,6 +169,7 @@ func TestLowerRegexp(t *testing.T) {
 		"[Z]":           "z",
 		"[abB-Z]":       "[b-za-b]",
 		"([abB-Z]|FoO)": "([b-za-b]|foo)",
+		`[@-\[]`:        `[@-\[a-z]`,      // original range includes A-Z but excludes a-z
 		`\S`:            `[^\t-\n\f-\r ]`, // \S is shorthand for the expected
 	}
 
