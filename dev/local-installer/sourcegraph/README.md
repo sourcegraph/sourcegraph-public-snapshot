@@ -29,8 +29,10 @@ For example, open [`mux.go`](http://localhost:3080/github.com/gorilla/mux/-/blob
 Before adding your private repositories, please note the "Privacy" section of this README.
 
 1. Stop the Sourcegraph instance with `Ctrl-C` in the terminal running `docker-compose up`.
-1. Run `cp env.example .env`<br>
+1. Run `cp env.example .env`
+
    (The ".env" file sets default values for environment variables when running Docker Compose.)
+
 1. Uncomment the `GIT_PARENT_DIRECTORY` line in `.env` and set it to a parent directory containing your private repositories.
 1. Run `docker-compose up`
 1. Visit `http://localhost:3080`. You should now see your local repositories listed on that page.
@@ -43,7 +45,7 @@ The real value of Sourcegraph is using it to ground technical discussions and sh
 1. One of the IPs listed will be your machine's local IP. Sourcegraph will be accessible to teammates in your local network at URLs of the form `http://<local-ip>:3080`.
 1. If you decide to deploy Sourcegraph at a domain name, update the `SRC_APP_HOST` value in `.env` to reflect the user-visible domain and restart Sourcegraph.
 
-If you run into any issues with installation, please email support@sourcegraph.com. We typically respond withint 24 hours.
+If you run into any issues with installation, please email support@sourcegraph.com. We typically respond within 24 hours.
 
 ## Restarting, resetting, and updates
 
