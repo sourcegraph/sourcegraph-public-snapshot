@@ -111,12 +111,12 @@ func compile(p *Params) (*readerGrep, error) {
 	var err error
 	if p.IncludePattern != "" {
 		if include, err = glob.Compile(p.IncludePattern); err != nil {
-			return nil, badRequestError{err.Error()}
+			return nil, err
 		}
 	}
 	if p.ExcludePattern != "" {
 		if exclude, err = glob.Compile(p.ExcludePattern); err != nil {
-			return nil, badRequestError{err.Error()}
+			return nil, err
 		}
 	}
 

@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 	"testing"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/searcher/search"
@@ -115,6 +116,77 @@ README.md:3:Hello world example in go
 				t.Fatal(err)
 			}
 			t.Errorf("%v unexpected response:\n%s", p, d)
+		}
+	}
+}
+
+func TestSearch_badrequest(t *testing.T) {
+	cases := []search.Params{
+		// Empty pattern
+		{
+			Repo:   "foo",
+			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		},
+
+		// Bad regexp
+		{
+			Repo:     "foo",
+			Commit:   "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Pattern:  `\F`,
+			IsRegExp: true,
+		},
+
+		// No repo
+		{
+			Commit:  "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Pattern: "test",
+		},
+
+		// No commit
+		{
+			Repo:    "foo",
+			Pattern: "test",
+		},
+
+		// Non-absolute commit
+		{
+			Repo:    "foo",
+			Commit:  "HEAD",
+			Pattern: "test",
+		},
+
+		// Bad include glob
+		{
+			Repo:           "foo",
+			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Pattern:        "test",
+			IncludePattern: "[c-a]",
+		},
+
+		// Bad exclude glob
+		{
+			Repo:           "foo",
+			Commit:         "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Pattern:        "test",
+			ExcludePattern: "[c-a]",
+		},
+	}
+
+	store, cleanup, err := newStore(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+	ts := httptest.NewServer(&search.Service{Store: store})
+	defer ts.Close()
+
+	for _, p := range cases {
+		_, err := doSearch(ts.URL, &p)
+		if err == nil {
+			t.Fatalf("%v expected to fail", p)
+		}
+		if !strings.HasPrefix(err.Error(), "non-200 response: code=400 ") {
+			t.Fatalf("%v expected to have HTTP 400 response. Got %s", p, err)
 		}
 	}
 }

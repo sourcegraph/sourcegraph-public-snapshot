@@ -14,7 +14,6 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -63,26 +62,6 @@ type Params struct {
 	// Include pattern is a glob pattern that should match the returned files.
 	// eg '**/*.go' to search go files.
 	IncludePattern string
-}
-
-func (p Params) String() string {
-	opts := make([]byte, 1, 4)
-	opts[0] = ' '
-	if p.IsRegExp {
-		opts = append(opts, 'r')
-	}
-	if p.IsWordMatch {
-		opts = append(opts, 'w')
-	}
-	if p.IsCaseSensitive {
-		opts = append(opts, 'c')
-	}
-	var optsS string
-	if len(opts) > 1 {
-		optsS = string(opts)
-	}
-
-	return fmt.Sprintf("search.Params{%q%s}", p.Pattern, optsS)
 }
 
 // Response represents the response from a Search request.
