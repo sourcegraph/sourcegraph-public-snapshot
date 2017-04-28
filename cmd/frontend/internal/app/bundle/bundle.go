@@ -36,6 +36,8 @@ import (
 // TODO(sqs): It would be nice but might not be worth the effort to
 // generate this list automatically.
 var pushResources = []string{
+	"out/vs/launcher/browser/bootstrap/index.js",
+
 	"out/vs/workbench/browser/bootstrap/config.js",
 	"out/vs/workbench/browser/bootstrap/index.js",
 	"out/vs/loader.js",
@@ -71,7 +73,7 @@ var pushResources = []string{
 }
 
 // Handler handles HTTP requests for files in the bundle.
-var Handler = func() http.Handler {
+func Handler() http.Handler {
 	if Data == nil {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "vscode app is not enabled on this server")
@@ -102,6 +104,12 @@ var Handler = func() http.Handler {
 				}
 			}
 		}
+
+		if r.URL.Path == "/out/vs/workbench/browser/bootstrap/index.html" {
+			// The UI uses iframes, so we need to allow iframes.
+			w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+		}
+
 		fs.ServeHTTP(w, r)
 	})
-}()
+}
