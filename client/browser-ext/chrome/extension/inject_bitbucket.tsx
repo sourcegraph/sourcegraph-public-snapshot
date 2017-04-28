@@ -32,7 +32,12 @@ function injectBitbucketBlobAnnotators(): void {
 		}
 		fileContent.classList.add("sg-blob-annotated");
 		const mount = createBlobAnnotatorMount(fileContent, ".file-toolbar");
-		render(<BitbucketBlobAnnotator path={browseUrl.path} repo={browseUrl.repo} projectCode={browseUrl.projectCode} blobElement={fileContent} rev={browseUrl.rev} />, mount);
+
+		// Note: this assumes the user has configured the Sourcegraph instance to map repo URLs of the form
+		// `bitbucket/${project}/${repo}` to `http(s)://${bitbucket_server_host}/scm/${project}/${repo}.git`
+		const repoId = `bitbucket/${browseUrl.projectCode}/${browseUrl.repo}`;
+
+		render(<BitbucketBlobAnnotator path={browseUrl.path} repo={repoId} projectCode={browseUrl.projectCode} blobElement={fileContent} rev={browseUrl.rev} />, mount);
 	}
 }
 
