@@ -21,9 +21,9 @@
 package bundle
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -97,12 +97,7 @@ func Handler() http.Handler {
 		log.Fatal(err)
 		return nil
 	}
-	tmplBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Fatal(err)
-		return nil
-	}
-	template, err := template.New("root").Parse(string(tmplBytes))
+	rootData, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Fatal(err)
 		return nil
@@ -136,25 +131,26 @@ func Handler() http.Handler {
 			}
 		}
 
+		// The UI uses iframes, so we need to allow iframes.
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+
 		if r.URL.Path == rootPath {
-			// The UI uses iframes, so we need to allow iframes.
-			jsctx := jscontext.NewJSContextFromRequest(r)
-			JSContext, err := json.Marshal(jsctx)
-			if err != nil {
-				log.Print(err)
-			}
-			err = template.Execute(w, struct {
-				JSContext string
-			}{
-				JSContext: string(JSContext),
-			})
-			if err != nil {
-				log.Print(err)
+			// Inject the user's JSContext.
+			jsctx, err := json.Marshal(jscontext.NewJSContextFromRequest(r))
+			if err == nil {
+				// This is safe because Go's json.Marshal escapes '<'
+				// and '>' so that if jsctx contains "</script>"
+				// substrings or similar, the browser won't interpret
+				// them as HTML closing tags.
+				inject := `<script type="text/javascript">window.__sourcegraphJSContext = ` + string(jsctx) + ";</script>"
+				data := bytes.Replace(rootData, []byte("<!-- INSERT SOURCEGRAPH CONTEXT -->"), []byte(inject), 1)
+				_, _ = w.Write(data)
+			} else {
+				log.Println(err)
 			}
 			return
 		}
 
-		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 		fs.ServeHTTP(w, r)
 	})
 }
