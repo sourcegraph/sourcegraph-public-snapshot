@@ -35,6 +35,8 @@ const (
 
 	ShowAuth = "show-auth"
 
+	GoSymbolURL = "go-symbol-url"
+
 	UI = "ui"
 )
 
@@ -73,6 +75,8 @@ func New() *Router {
 	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
 
 	base.Path("/install/zap").Methods("GET").Name(InstallZap)
+
+	base.PathPrefix("/go/").Methods("GET").Name(GoSymbolURL)
 
 	repoPath := `/` + routevar.Repo
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()

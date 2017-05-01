@@ -43,6 +43,8 @@ func NewHandler(r *router.Router) http.Handler {
 		http.Redirect(w, r, "/beta", 301)
 	})))
 
+	r.Get(router.GoSymbolURL).Handler(traceutil.TraceRoute(errorutil.Handler(serveGoSymbolURL)))
+
 	r.Get(router.UI).Handler(ui.Router())
 
 	r.Get(router.GitHubOAuth2Initiate).Handler(traceutil.TraceRoute(errorutil.Handler(oauth2client.ServeGitHubOAuth2Initiate)))
