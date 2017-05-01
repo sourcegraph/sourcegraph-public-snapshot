@@ -5,6 +5,7 @@ import { addAnnotations } from "../utils/annotations";
 import { eventLogger } from "../utils/context";
 import { CodeCell } from "../utils/types";
 import { SourcegraphIcon } from "./Icons";
+import * as _ from "lodash";
 
 interface Props {
 	blobElement: HTMLElement;
@@ -28,9 +29,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 	// revisionChecker is a timer used to sync the current repo/revision to this component
 	revisionChecker: NodeJS.Timer;
 
-	// scrollTimer is a timer used to add additional annotations (after a debounce period) on user
-	// scroll. This is necessary, because Bitbucket Server lazily loads the code view.
-	scrollTimer: NodeJS.Timer | null;
+	scrollCallback?: () => void;
 
 	constructor(props: BitbucketBrowseProps) {
 		super(props);
@@ -55,22 +54,19 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		// cloned and revs that haven't been sync'd to Sourcegraph.com.
 		// Single-flighted requests / caching prevents spamming the API.
 		this.revisionChecker = setInterval(() => this.resolveRevs(this.props.repo, this.props.rev), 5000);
+
+		// scrollCallback
+		this.scrollCallback = _.debounce(() => this.addAnnotations(), 500, { leading: true });
 		document.addEventListener("scroll", this.scrollCallback);
 	}
 
-	scrollCallback = (): void => {
-		if (this.scrollTimer) {
-			clearTimeout(this.scrollTimer);
-		}
-		this.scrollTimer = setTimeout(this.addAnnotations, 500);
-	}
-
 	componentWillUnmount(): void {
+		if (this.scrollCallback) {
+			document.removeEventListener("scroll", this.scrollCallback);
+			this.scrollCallback = undefined;
+		}
 		if (this.revisionChecker) {
 			clearInterval(this.revisionChecker);
-		}
-		if (this.scrollTimer) {
-			clearInterval(this.scrollTimer);
 		}
 	}
 
