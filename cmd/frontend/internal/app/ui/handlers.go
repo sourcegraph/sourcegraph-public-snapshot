@@ -223,7 +223,7 @@ func serveAny(w http.ResponseWriter, r *http.Request) error {
 	return tmplExec(w, r, http.StatusOK, meta{Index: true, Follow: true})
 }
 
-var useVSCodeUI, _ = strconv.ParseBool(os.Getenv("USE_VSCODE_UI"))
+var alwaysUseVSCodeUI, _ = strconv.ParseBool(os.Getenv("USE_VSCODE_UI"))
 
 func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) error {
 	data := &struct {
@@ -232,6 +232,15 @@ func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) er
 	}{
 		Meta: m,
 	}
+
+	// Use the new vscode UI if USE_VSCODE_UI is set *or* if a cookie
+	// is set (`document.cookie='vscodeui=true'` in the JS console).
+	useVSCodeUI := alwaysUseVSCodeUI
+	if !useVSCodeUI {
+		_, err := r.Cookie("vscodeui")
+		useVSCodeUI = err != http.ErrNoCookie
+	}
+
 	if useVSCodeUI {
 		return bundle.RenderEntrypoint(w, r, statusCode, nil, data)
 	}
