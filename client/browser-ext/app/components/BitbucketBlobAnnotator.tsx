@@ -125,10 +125,6 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		return this.props.blobElement.querySelector(".CodeMirror-lines") as HTMLTableElement | null;
 	}
 
-	protected getFileOpenCallback = (): void => {
-		eventLogger.logOpenFile(this.getEventLoggerProps());
-	}
-
 	addAnnotations = (): void => {
 		this.addAnnotationsIfResolvedRev(this.props.repo, false, this.props.rev);
 	}
@@ -150,18 +146,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 	}
 
 	render(): JSX.Element | null {
-		if (!this.state.resolvedRevs[backend.cacheKey(this.props.repo, this.props.rev)]) {
-			return null;
-		}
-		return SourcegraphButton(
-			utils.supportedExtensions.has(this.fileExtension),
-			this.state.resolvedRevs[this.props.repo].cloneInProgress as boolean,
-			"http://node.aws.sgdev.org:30000/github.com/gorilla/mux/-/blob/mux.go",
-			this.props.repo,
-			utils.upcomingExtensions.has(this.fileExtension),
-			"",
-			this.getFileOpenCallback,
-		);
+		return null;
 	}
 }
 
@@ -190,28 +175,4 @@ export function getCodeCellsForAnnotation(table: HTMLTableElement): CodeCell[] {
 		count++
 	}
 	return cells;
-}
-
-const iconStyle = { marginTop: "-1px", paddingRight: "4px", fontSize: "18px", height: ".8em", width: ".8em" };
-const disabledStyle = { cursor: "default", opacity: 0.6 };
-export function SourcegraphButton(isFileSupported: boolean, isLoading: boolean, blobUrl: string, repoName: string, comingSoon: boolean, classNames: string, eventHandler: () => void): JSX.Element {
-	if (!isFileSupported) {
-		const tooltipLabel = !comingSoon ? "File not supported" : "Language support coming soon!";
-		return (<a className={classNames} title={tooltipLabel} style={disabledStyle}>
-			<SourcegraphIcon style={iconStyle} />
-			Sourcegraph
-			</a>);
-
-	} else if (isLoading) {
-		return (<a className={classNames} title={`Sourcegraph is analyzing ${repoName}`} style={disabledStyle}>
-			<SourcegraphIcon style={iconStyle} />
-			Loading...
-			</a>);
-	} else {
-		return (
-			<a title="View in Sourcegraph" className={classNames} href={blobUrl} onClick={() => eventHandler()}><SourcegraphIcon style={iconStyle} />
-				<span className="sg-clickable">Sourcegraph</span>
-			</a>
-		);
-	}
 }

@@ -49,7 +49,7 @@ function createBlobAnnotatorMount(fileContainer: HTMLElement, buttonClass: strin
 	}
 
 	const mountEl = document.createElement("div");
-	mountEl.style.display = "inline-block";
+	mountEl.style.display = "inline";
 	mountEl.className = "sourcegraph-app-annotator";
 
 	const actionLinks = fileContainer.querySelector(buttonClass);
