@@ -5,12 +5,14 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 
+	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/bundle"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"sourcegraph.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tmpl"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
@@ -221,13 +223,19 @@ func serveAny(w http.ResponseWriter, r *http.Request) error {
 	return tmplExec(w, r, http.StatusOK, meta{Index: true, Follow: true})
 }
 
+var useVSCodeUI, _ = strconv.ParseBool(os.Getenv("USE_VSCODE_UI"))
+
 func tmplExec(w http.ResponseWriter, r *http.Request, statusCode int, m meta) error {
-	return tmpl.Exec(r, w, "ui.html", statusCode, nil, &struct {
+	data := &struct {
 		tmpl.Common
 		Meta meta
 	}{
 		Meta: m,
-	})
+	}
+	if useVSCodeUI {
+		return bundle.RenderEntrypoint(w, r, statusCode, nil, data)
+	}
+	return tmpl.Exec(r, w, "ui.html", statusCode, nil, data)
 }
 
 func getRouteName(r *http.Request) string {
