@@ -64,9 +64,10 @@ func NewHandler(m *mux.Router) http.Handler {
 	})
 
 	// SECURITY NOTE: The HTTP API should not accept cookies as
-	// authentication. Doing so would open it up to CSRF
-	// attacks.
+	// authentication (except with CookieMiddlewareIfHeader). Doing so
+	// would open it up to CSRF attacks.
 	var h http.Handler = m
+	h = session.CookieMiddlewareIfHeader(h, "X-Requested-By")
 	h = httpapiauth.AuthorizationMiddleware(h)
 
 	return h
