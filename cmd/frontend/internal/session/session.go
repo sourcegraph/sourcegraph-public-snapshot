@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/textproto"
 
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
@@ -69,6 +70,20 @@ func DeleteSession(w http.ResponseWriter, r *http.Request) {
 func CookieMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r)))
+	})
+}
+
+// CookieMiddlewareIfHeader is an http.Handler middleware that
+// authenticates future HTTP requests via cookie, *only if* a specific
+// header is present. Typically X-Requested-By is used as the header
+// name. This protects against CSRF (see
+// https://security.stackexchange.com/questions/23371/csrf-protection-with-custom-headers-and-without-validating-token).
+func CookieMiddlewareIfHeader(next http.Handler, headerName string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := r.Header[textproto.CanonicalMIMEHeaderKey(headerName)]; ok {
+			r = r.WithContext(authenticateByCookie(r))
+		}
+		next.ServeHTTP(w, r)
 	})
 }
 
