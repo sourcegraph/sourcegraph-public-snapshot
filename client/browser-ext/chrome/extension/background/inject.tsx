@@ -13,11 +13,11 @@ function loadScript(name: string, tabId: number, cb: () => void): Promise<void> 
 	}
 }
 
-const arrowURLs = ["^https://github\\.com", "^https://www\\.github\\.com", "^https://sourcegraph\\.com", "^https://www\\.sourcegraph\\.com", "^http://phabricator\\.aws\\.sgdev\\.org", "^http://localhost\\:7990" /* <-- Bitbucket Server */];
+const arrowURLs = [/^https\:\/\/github\.com/, /^https\:\/\/www\.github\.com/, /^https\:\/\/sourcegraph\.com/, /^https\:\/\/www\.sourcegraph\.com/, /^http\:\/\/phabricator\.aws\.sgdev\.org/, /^http\:\/\/localhost\:7990/ /* <-- Bitbucket Server */];
 
 if (process.env.NODE_ENV !== "production") {
 	chrome.tabs.onUpdated.addListener((tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
-		if (changeInfo.status !== "loading" || (tab.url && !tab.url.match(arrowURLs.join("|")))) {
+		if (changeInfo.status !== "loading" || (tab.url && !tab.url.match(arrowURLs.map(u => u.source).join("|")))) {
 			return Promise.resolve();
 		}
 
