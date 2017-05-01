@@ -20,6 +20,13 @@ export interface RepoRevSpec {
  * el should be an element that changes when the dom significantly changes.
  * datakeys are stored as properites on el, and the code shortcuts if the datakey
  * is detected.
+ *
+ * spacesToTab, if nonzero, converts leading whitespace on each line to be converted
+ * into tabs (some repository hosts like Bitbucket Server and Phabricator auto-convert
+ * tabs into spaces in their code browrsers). The spacesToTab mechanism of reversing
+ * this conversion works well enough for now, but is flawed. For BBS, a better
+ * mechanism would be to take use the `cm-tab` DOM attribute. For Phabricator, no
+ * better mechanism is known at this time (see https://secure.phabricator.com/T2495).
  */
 export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLElement, loggingStruct: Object, cells: CodeCell[], spacesToTab: number): void {
 	cells.forEach((cell) => {
@@ -60,6 +67,9 @@ export function addAnnotations(path: string, repoRevSpec: RepoRevSpec, el: HTMLE
 interface ConvertNodeResult<T extends Node> {
 	resultNode: T;
 	bytesConsumed: number;
+
+	// keeps track of whether the Node converted was all spaces. We do this, because we only want to treat leading
+	// whitespace as candidates for conversion back to tabs (this is a heuristic).
 	isAllSpaces: boolean;
 }
 
@@ -214,7 +224,7 @@ function getTarget(t: HTMLElement): HTMLElement | undefined {
 		// Not hovering over any token in particular.
 		return;
 	}
-	while (t && t.tagName && t.tagName !== "TD" && !t.getAttribute("data-byteoffset")) {
+	while (t && t.tagName !== "TD" && !t.getAttribute("data-byteoffset")) {
 		t = (t.parentNode as HTMLElement);
 	}
 

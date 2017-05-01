@@ -26,7 +26,9 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 
 	fileExtension: string;
 
-	// revisionChecker is a timer used to sync the current repo/revision to this component
+	/**
+	 * revisionChecker is a timer used to sync the current repo/revision to this component
+	 */
 	revisionChecker: NodeJS.Timer;
 
 	scrollCallback?: () => void;
@@ -75,7 +77,9 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		this.addAnnotations();
 	}
 
-	// resolveRevs resolves the specified revision of the repository and then sets both on the component state.
+	/**
+	 * resolveRevs resolves the specified revision of the repository and then sets both on the component state.
+	 */
 	resolveRevs(repo: string, rev: string): void {
 		const key = backend.cacheKey(repo, rev);
 		if (this.state.resolvedRevs[key] && this.state.resolvedRevs[key].notFound) {
@@ -86,7 +90,7 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 			return; // nothing to do, because repo has already been resolved.
 		}
 		backend.resolveRev(repo, rev).then((resp) => {
-			let repoStat;
+			let repoStat: any;
 			if (rev) {
 				// Empty rev is checked to determine if the user has access to the repo.
 				// Non-empty is checked to determine if Sourcegraph.com is sync'd.
@@ -96,9 +100,11 @@ export class BitbucketBlobAnnotator extends React.Component<BitbucketBrowseProps
 		});
 	}
 
-	// addAnnotationsIfResolvedRev adds annotations to the DOM if the revision has been properly resolved.
-	// It is idempotent, so it can be called multiple times, and for Bitbucket Server, it should be called
-	// multiple times as the DOM changes as the user scrolls.
+	/**
+	 * addAnnotationsIfResolvedRev adds annotations to the DOM if the revision has been properly resolved.
+	 * It is idempotent, so it can be called multiple times, and for Bitbucket Server, it should be called
+	 * multiple times as the DOM changes as the user scrolls.
+	 */
 	addAnnotationsIfResolvedRev(uri: string, isBase: boolean, rev?: string): void {
 		if (!utils.supportedExtensions.has(this.fileExtension)) {
 			return; // Don't annotate unsupported languages
