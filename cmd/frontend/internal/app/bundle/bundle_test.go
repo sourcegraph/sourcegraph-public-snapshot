@@ -7,7 +7,7 @@ import (
 )
 
 func TestHandler(t *testing.T) {
-	r := httptest.NewRequest("GET", rootPath, nil)
+	r := httptest.NewRequest("GET", entrypointPath, nil)
 	w := httptest.NewRecorder()
 	Handler().ServeHTTP(w, r)
 	body := string(w.Body.Bytes())

@@ -24,16 +24,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"path"
-	"strconv"
 
 	"github.com/shurcooL/httpgzip"
 )
 
 var (
-	devMode, _ = strconv.ParseBool(os.Getenv("VSCODE_DEV"))
-	errNoApp   = errors.New("vscode app is not enabled on this server")
+	noCache  bool
+	errNoApp = errors.New("vscode app is not enabled on this server")
 )
 
 // Handler handles HTTP requests for files in the bundle.
@@ -47,10 +45,8 @@ func Handler() http.Handler {
 	fs := httpgzip.FileServer(Data, httpgzip.FileServerOptions{})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO(sqs): implement Cache-Control: immutable, and add a
-		// version identifier to the URL path.
-		if devMode {
-			w.Header().Set("Cache-Control", "public, must-revalidate")
+		if noCache {
+			w.Header().Set("Cache-Control", "no-cache")
 		} else {
 			w.Header().Set("Cache-Control", "public, max-age=300")
 		}
