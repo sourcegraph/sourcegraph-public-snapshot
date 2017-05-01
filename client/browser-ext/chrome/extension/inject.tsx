@@ -14,6 +14,8 @@ import { injectPhabricatorApplication } from "./inject_phabricator";
 
 import { SGDEV_SOURCEGRAPH_URL, sgDevPhabricatorInstance } from "../../phabricator/sgdev/constants";
 
+const SGDEV_SOURCEGRAPH_URL_BITBUCKET = "http://localhost:3080";
+
 /**
  * Main entry point into browser extension.
  *
@@ -35,7 +37,7 @@ function injectApplication(loc: Location): void {
 			injectSourcergaphCloudApplication();
 			break;
 		case Domain.SGDEV_BITBUCKET:
-			setSourcegraphUrl(SGDEV_SOURCEGRAPH_URL);
+			setSourcegraphUrl(SGDEV_SOURCEGRAPH_URL_BITBUCKET);
 			injectBitbucketApplication();
 			break;
 		default:
