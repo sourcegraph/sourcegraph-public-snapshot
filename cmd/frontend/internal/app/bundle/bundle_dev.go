@@ -5,6 +5,8 @@ package bundle
 import (
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // BaseDir is the path to the VSCode-browser or VSCode-browser-min
@@ -25,4 +27,8 @@ func init() {
 	if BaseDir != "" {
 		Data = http.Dir(BaseDir)
 	}
+
+	// Cache when vscode is built; if serving from $VSCODE/out, do not
+	// cache.
+	noCache = !strings.HasPrefix(filepath.Base(BaseDir), "VSCode-browser")
 }

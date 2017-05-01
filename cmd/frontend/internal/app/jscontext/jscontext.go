@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -34,6 +35,7 @@ var TrackingAppID = env.Get("TRACKING_APP_ID", "", "application id to attribute 
 // "sourcegraph/app/context" module.
 type JSContext struct {
 	AppURL              string                     `json:"appURL"`
+	AppRoot             string                     `json:"appRoot,omitempty"`
 	LegacyAccessToken   string                     `json:"accessToken"` // Legacy support for Chrome extension.
 	XHRHeaders          map[string]string          `json:"xhrHeaders"`
 	CSRFToken           string                     `json:"csrfToken"`
@@ -96,6 +98,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	return JSContext{
 		AppURL:            conf.AppURL.String(),
+		AppRoot:           conf.AppURL.ResolveReference(&url.URL{Path: "/main"}).String(),
 		LegacyAccessToken: sessionCookie, // Legacy support for Chrome extension.
 		XHRHeaders:        headers,
 		CSRFToken:         csrfToken,
