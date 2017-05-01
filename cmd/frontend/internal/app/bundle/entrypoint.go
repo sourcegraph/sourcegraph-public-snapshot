@@ -52,8 +52,6 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 	// (which makes it hard to detect failures in tests).
 	var bw httputil.ResponseBuffer
 
-	// The UI uses iframes, so we need to allow iframes.
-	bw.Header().Set("X-Frame-Options", "SAMEORIGIN")
 	for k, v := range header {
 		bw.Header()[k] = v
 	}
