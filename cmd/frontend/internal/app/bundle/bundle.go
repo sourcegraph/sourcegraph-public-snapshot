@@ -51,7 +51,7 @@ func Handler() http.Handler {
 			w.Header().Set("Cache-Control", "public, max-age=300")
 		}
 
-		if path.Base(r.URL.Path) == "index.html" {
+		if name := path.Base(r.URL.Path); name == "index.html" || name == "webview.html" {
 			// The UI uses iframes, so we need to allow iframes.
 			w.Header().Set("X-Frame-Options", "SAMEORIGIN")
 		}
