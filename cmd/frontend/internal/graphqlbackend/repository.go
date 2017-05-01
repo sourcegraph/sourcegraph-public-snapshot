@@ -95,6 +95,18 @@ func (r *repositoryResolver) RevState(ctx context.Context, args *struct{ Rev str
 	}, nil
 }
 
+// GitCmdRaw executes whitelisted git cmds from the gitserver.
+func (r *repositoryResolver) GitCmdRaw(ctx context.Context, args *struct {
+	Params []string
+}) (string, error) {
+	vcsrepo, err := localstore.RepoVCS.Open(ctx, r.repo.ID)
+	if err != nil {
+		return "", err
+	}
+
+	return vcsrepo.GitCmdRaw(ctx, args.Params)
+}
+
 func (r *repositoryResolver) Latest(ctx context.Context) (*commitStateResolver, error) {
 	rev, err := backend.Repos.ResolveRev(ctx, &sourcegraph.ReposResolveRevOp{
 		Repo: r.repo.ID,

@@ -273,6 +273,7 @@ declare namespace GQL {
 		branches: Array<string>;
 		tags: Array<string>;
 		expirationDate: number | null;
+		gitCmdRaw: string;
 	}
 
 	/*

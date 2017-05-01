@@ -25,6 +25,11 @@ var (
 	// logEntryPattern is the regexp pattern that matches entries in the output of
 	// the `git shortlog -sne` command.
 	logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+([A-Za-z]+(?:\s[A-Za-z]+)*)\s+<([A-Za-z@.]+)>\s*$`)
+	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling GitCmdRaw.
+	gitCmdWhitelist = map[string][]string{
+		"log":  []string{"--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep"},
+		"show": []string{},
+	}
 )
 
 type Repository struct {
@@ -463,6 +468,57 @@ func (r *Repository) Diff(ctx context.Context, base, head vcs.CommitID, opt *vcs
 	}
 	diff := &vcs.Diff{Raw: string(out)}
 	return diff, nil
+}
+
+// isWhitelistedGitArg checks if the arg is whitelisted.
+func isWhitelistedGitArg(whitelistedArgs []string, arg string) bool {
+	// Split the arg at the first equal sign and check the LHS against the whitelist args.
+	splitArg := strings.Split(arg, "=")[0]
+	for _, whiteListedArg := range whitelistedArgs {
+		if splitArg == whiteListedArg {
+			return true
+		}
+	}
+	return false
+}
+
+// isWhitelistedGitCmd checks if the cmd and arguments are whitelisted.
+func isWhitelistedGitCmd(args []string) bool {
+	// check if the supplied command is a whitelisted cmd
+	if len(gitCmdWhitelist) == 0 {
+		return false
+	}
+	whiteListedArgs, ok := gitCmdWhitelist[args[0]]
+	if !ok {
+		// Command not whitelisted
+		return false
+	}
+	for _, arg := range args[1:] {
+		if strings.HasPrefix(arg, "-") {
+			if !isWhitelistedGitArg(whiteListedArgs, arg) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExtensionGitCmd")
+	defer span.Finish()
+
+	if !isWhitelistedGitCmd(params) {
+		return "", fmt.Errorf("command failed: %s is not a whitelisted git command", strings.Join(params, ""))
+	}
+
+	cmd := gitserver.DefaultClient.Command("git", params...)
+	cmd.Repo = r.Repo
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return "", fmt.Errorf("exec `git cmd from vscode extension` failed: %s. Command was:\n\n%s Output was:\n\n%s", err, strings.Join(params, ""), out)
+	}
+
+	return string(out), nil
 }
 
 func (r *Repository) BlameFileRaw(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error) {
