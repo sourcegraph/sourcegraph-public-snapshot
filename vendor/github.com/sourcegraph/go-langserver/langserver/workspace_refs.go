@@ -28,7 +28,7 @@ import (
 
 // workspaceReferencesTimeout is the timeout used for workspace/xreferences
 // calls.
-const workspaceReferencesTimeout = 15 * time.Second
+const workspaceReferencesTimeout = time.Minute
 
 func (h *LangHandler) handleWorkspaceReferences(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request, params lspext.WorkspaceReferencesParams) ([]referenceInformation, error) {
 	// TODO: Add support for the cancelRequest LSP method instead of using
