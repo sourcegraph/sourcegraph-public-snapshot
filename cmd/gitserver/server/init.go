@@ -18,6 +18,8 @@ var (
 func init() {
 	if u, err := user.Current(); err == nil {
 		currentUser = u.Username
+	} else {
+		currentUser = "root"
 	}
 }
 
