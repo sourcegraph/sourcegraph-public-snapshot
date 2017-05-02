@@ -45,10 +45,10 @@ func Handler() http.Handler {
 	fs := httpgzip.FileServer(Data, httpgzip.FileServerOptions{})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if noCache {
+		if noCache && false {
 			w.Header().Set("Cache-Control", "no-cache")
 		} else {
-			w.Header().Set("Cache-Control", "public, max-age=300")
+			w.Header().Set("Cache-Control", "immutable")
 		}
 
 		if name := path.Base(r.URL.Path); name == "index.html" || name == "webview.html" {
