@@ -11,12 +11,6 @@ fi
 REPO_LIST=$1
 
 for repo in $(cat $REPO_LIST); do
-    if [[ $repo == github* ]];
-    then
-	echo "Skipping $repo, because it's from github."
-	continue
-    fi
-
     set +e
     psql -U sg -c "\
 INSERT INTO repo (uri, owner, name, description, vcs, http_clone_url, ssh_clone_url, homepage_url, default_branch, language, blocked, deprecated, fork, mirror, private, created_at, updated_at, pushed_at, vcs_synced_at, indexed_revision, freeze_indexed_revision, origin_repo_id, origin_service, origin_api_base_url) \
