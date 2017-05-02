@@ -35,11 +35,13 @@ services:
     volumes:
       - ${GIT_PARENT_DIRECTORY:-.}:/local
       - .data/gitserver-1-data:/data/repos
-      - ${SSH_KEYPAIR_FOLDER:-~/.ssh}:/root/.ssh
+      - ${SSH_KEYPAIR_FOLDER:-~/.ssh}:/root/.ssh_init
     environment:
        SRC_ADDR: 3178
        ORIGIN_MAP: ${ORIGIN_MAP}
        SRC_REPOS_DIR: /data/repos
+       SSH_INIT_DIR: /root/.ssh_init
+       SSH_DIR: /root/.ssh
   indexer:
     image: "docker.sourcegraph.com/indexer:latest"
     environment:
