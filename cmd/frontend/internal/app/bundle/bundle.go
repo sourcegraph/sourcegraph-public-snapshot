@@ -45,7 +45,7 @@ func Handler() http.Handler {
 	fs := httpgzip.FileServer(Data, httpgzip.FileServerOptions{})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if noCache && false {
+		if noCache {
 			w.Header().Set("Cache-Control", "no-cache")
 		} else {
 			w.Header().Set("Cache-Control", "immutable")
