@@ -76,6 +76,10 @@ type updateRepoRequest struct {
 
 // Serve serves incoming gitserver requests on listener l.
 func (s *Server) Serve(l net.Listener) error {
+	if err := initializeSSH(); err != nil {
+		log.Printf("SSH initialization error: %s", err)
+	}
+
 	s.cloning = make(map[string]struct{})
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[string]*locks)
