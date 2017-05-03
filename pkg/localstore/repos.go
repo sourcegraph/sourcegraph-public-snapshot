@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -234,7 +233,6 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 
 		return nil, err
 	}
-	log.Printf("# repos.GetByURI returning: %v", repo)
 	return repo, nil
 }
 

@@ -49,7 +49,7 @@ var (
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
 	prometheus.MustRegister(reposGitHubRequestsCounter)
-	if noGitHubAPI, err := strconv.ParseBool(os.Getenv("NO_GITHUB_API")); err == nil && noGitHubAPI {
+	if noGitHubAPI, err := strconv.ParseBool(os.Getenv("NO_GITHUB_API")); err == nil {
 		log.Printf("detected NO_GITHUB_API=%v", noGitHubAPI)
 		NoGitHubAPI = noGitHubAPI
 	}
@@ -351,8 +351,8 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 	return allRepos, nil
 }
 
-// Returns true if we can infer from the repository URI that the
-// repository is hosted on github.com AND NoGitHubAPI is false.
+// IsGitHubRepo returns true if we can infer from the repository URI that the
+// repository is hosted on github.com (and NoGitHubAPI is false).
 func IsGitHubRepo(uri string) bool {
 	return strings.HasPrefix(strings.ToLower(uri), "github.com/") && !NoGitHubAPI
 }

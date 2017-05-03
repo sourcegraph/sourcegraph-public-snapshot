@@ -67,6 +67,8 @@ To index remote repositories:
 1. Run `docker-compose restart` in your Sourcegraph directory.
 1. Visit `http://localhost:3080`. You should now see your remote repositories listed.
 
+Note: you should only use Sourcegraph to index code that you trust. Do not index any repositories with untrusted code.
+
 #### GitHub.com
 
 Sourcegraph can index many repository hosts, including GitHub.com. If you would like your local Sourcegraph instance to index your organization's repositories on GitHub.com:
