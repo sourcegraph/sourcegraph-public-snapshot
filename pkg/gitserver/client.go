@@ -20,6 +20,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/actor"
 	sourcegraph "sourcegraph.com/sourcegraph/sourcegraph/pkg/api"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/env"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -84,7 +85,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.ExecReply, errRes error
 	// 🚨 SECURITY: Only send credentials to gitserver if we know that the repository is private. This 🚨
 	// is to avoid fetching private commits while our access checks still assume that the repository
 	// is public. In that case better fail fetching those commits until the DB got updated.
-	if strings.HasPrefix(repoURI, "github.com/") && !c.client.NoCreds && c.Repo.Private {
+	if github.IsGitHubRepo(repoURI) && !c.client.NoCreds && c.Repo.Private {
 		actor := actor.FromContext(ctx)
 		if actor.GitHubToken != "" {
 			opt.HTTPS = &vcs.HTTPSConfig{

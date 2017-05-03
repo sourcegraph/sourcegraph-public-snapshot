@@ -3,8 +3,12 @@ package github
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
+	"strings"
 
 	"context"
 
@@ -38,11 +42,17 @@ var (
 		Name:      "github_unauthed_api_requests",
 		Help:      "Counts uncached requests to the GitHub API, and information on their origin if available.",
 	}, []string{"source"})
+
+	NoGitHubAPI bool
 )
 
 func init() {
 	prometheus.MustRegister(reposGithubPublicCacheCounter)
 	prometheus.MustRegister(reposGitHubRequestsCounter)
+	if noGitHubAPI, err := strconv.ParseBool(os.Getenv("NO_GITHUB_API")); err == nil && noGitHubAPI {
+		log.Printf("detected NO_GITHUB_API=%v", noGitHubAPI)
+		NoGitHubAPI = noGitHubAPI
+	}
 }
 
 type cachedRepo struct {
@@ -339,4 +349,10 @@ func ListAllGitHubRepos(ctx context.Context, op_ *gogithub.RepositoryListOptions
 		}
 	}
 	return allRepos, nil
+}
+
+// Returns true if we can infer from the repository URI that the
+// repository is hosted on github.com AND NoGitHubAPI is false.
+func IsGitHubRepo(uri string) bool {
+	return strings.HasPrefix(strings.ToLower(uri), "github.com/") && !NoGitHubAPI
 }

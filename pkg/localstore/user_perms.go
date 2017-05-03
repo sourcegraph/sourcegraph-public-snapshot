@@ -3,7 +3,6 @@ package localstore
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	gogithub "github.com/sourcegraph/go-github/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/accesscontrol"
@@ -25,7 +24,7 @@ func verifyUserHasRepoURIAccess(ctx context.Context, repoURI string) bool {
 	}
 
 	switch {
-	case strings.HasPrefix(strings.ToLower(repoURI), "github.com/"):
+	case github.IsGitHubRepo(repoURI):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
 		if _, err := github.GetRepo(ctx, repoURI); err == nil {
 			return true
