@@ -43,6 +43,9 @@ var (
 		Help:      "Counts uncached requests to the GitHub API, and information on their origin if available.",
 	}, []string{"source"})
 
+	// NoGitHubAPI, if true, eliminates most (but not necessarily all) calls to the GitHub API.
+	// WARNING: this will also disable permissions checks that depend on the GitHub API.
+	// This should only be set to true in the local installer case.
 	NoGitHubAPI bool
 )
 
