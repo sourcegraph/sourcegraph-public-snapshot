@@ -18,6 +18,7 @@ import (
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/api/legacyerr"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/github"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/githubutil"
+	"sourcegraph.com/sourcegraph/sourcegraph/pkg/originmap"
 )
 
 func init() {
@@ -208,9 +209,7 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 			// metadata, because it'll get stale, and fetching online from
 			// GitHub is quite easy and (with HTTP caching) performant.
 			ts := time.Now()
-
-			var r dbRepo
-			r.fromRepo(&sourcegraph.Repo{
+			return s.tryInsertNew(ctx, &sourcegraph.Repo{
 				Owner:       ghRepo.Owner,
 				Name:        ghRepo.Name,
 				URI:         ghRepoURI,
@@ -219,18 +218,14 @@ func (s *repos) GetByURI(ctx context.Context, uri string) (*sourcegraph.Repo, er
 				Private:     ghRepo.Private,
 				CreatedAt:   &ts,
 			})
-			if err := appDBH(ctx).Insert(&r.dbRepoOrig); err != nil {
-				if isPQErrorUniqueViolation(err) {
-					if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
-						log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
-					}
-					return s.getByURI(ctx, ghRepoURI) // might be race condition, try to read
-				}
-				return nil, err
-			}
-			return r.toRepo(), nil
+		} else if inferredOrigin := originmap.Map(uri); inferredOrigin != "" {
+			ts := time.Now()
+			return s.tryInsertNew(ctx, &sourcegraph.Repo{
+				Name:      uri,
+				URI:       uri,
+				CreatedAt: &ts,
+			})
 		}
-
 		return nil, err
 	}
 	return repo, nil
@@ -509,4 +504,21 @@ func (s *repos) Update(ctx context.Context, op RepoUpdate) error {
 		return err
 	}
 	return nil
+}
+
+// tryInsertNew attempts to insert the repository rp into the db. On
+// success, it returns the repository that was actually inserted.
+func (s *repos) tryInsertNew(ctx context.Context, rp *sourcegraph.Repo) (*sourcegraph.Repo, error) {
+	var r dbRepo
+	r.fromRepo(rp)
+	if err := appDBH(ctx).Insert(&r.dbRepoOrig); err != nil {
+		if isPQErrorUniqueViolation(err) {
+			if c := err.(*pq.Error).Constraint; c != "repo_uri_unique" {
+				log15.Warn("Expected unique_violation of repo_uri_unique constraint, but it was something else; did it change?", "constraint", c, "err", err)
+			}
+			return s.getByURI(ctx, rp.URI) // might be race condition, try to read
+		}
+		return nil, err
+	}
+	return r.toRepo(), nil
 }
