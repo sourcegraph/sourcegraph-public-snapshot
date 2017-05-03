@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"os/user"
 	"runtime"
 )
 
@@ -16,9 +15,11 @@ var (
 )
 
 func init() {
-	if u, err := user.Current(); err == nil {
-		currentUser = u.Username
-	} else {
+	currentUser = os.Getenv("USER")
+	if currentUser == "" {
+		currentUser = os.Getenv("USERNAME")
+	}
+	if currentUser == "" {
 		currentUser = "root"
 	}
 }
