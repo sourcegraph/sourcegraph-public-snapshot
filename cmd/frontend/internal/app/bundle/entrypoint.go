@@ -38,6 +38,7 @@ func RenderEntrypoint(w http.ResponseWriter, r *http.Request, statusCode int, he
 		if t := jsctx.GitHubToken; t != nil {
 			t.Token = ""
 		}
+		jsctx.XHRHeaders = nil
 
 		field.Set(reflect.ValueOf(tmpl.Common{
 			AuthInfo: actor.FromContext(r.Context()).AuthInfo(),
