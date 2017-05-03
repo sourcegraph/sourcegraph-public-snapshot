@@ -34,13 +34,15 @@ var originMap = []*originMapEntry{
 }
 
 func init() {
+	var providedOriginMap []*originMapEntry
 	for _, e := range strings.Fields(env.Get("ORIGIN_MAP", "", `space separated list of mappings from repo name prefix to origin url, for example "github.com/!https://github.com/%.git"`)) {
 		p := strings.Split(e, "!")
 		if len(p) != 2 {
 			log.Fatalf("invalid ORIGIN_MAP entry: %s", e)
 		}
-		originMap = append(originMap, &originMapEntry{Prefix: p[0], Origin: p[1]})
+		providedOriginMap = append(providedOriginMap, &originMapEntry{Prefix: p[0], Origin: p[1]})
 	}
+	originMap = append(providedOriginMap, originMap...)
 }
 
 // Server is a gitserver server.
