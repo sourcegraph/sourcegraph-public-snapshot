@@ -157,7 +157,7 @@ func (s *repos) List(ctx context.Context, opt *sourcegraph.RepoListOptions) (res
 // setRepoFieldsFromRemote sets the fields of the repository from the
 // remote (e.g., GitHub) and updates the repository in the store layer.
 func (s *repos) setRepoFieldsFromRemote(ctx context.Context, repo *sourcegraph.Repo) error {
-	if github.IsGitHubRepo(repo.URI) {
+	if github.IsRepoAndShouldCheckPermissions(repo.URI) {
 		// Fetch latest metadata from GitHub
 		ghrepo, err := github.GetRepo(ctx, repo.URI)
 		if err != nil {

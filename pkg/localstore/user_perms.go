@@ -24,7 +24,7 @@ func verifyUserHasRepoURIAccess(ctx context.Context, repoURI string) bool {
 	}
 
 	switch {
-	case github.IsGitHubRepo(repoURI):
+	case github.IsRepoAndShouldCheckPermissions(repoURI):
 		// Perform GitHub repository authorization check by delegating to GitHub API.
 		if _, err := github.GetRepo(ctx, repoURI); err == nil {
 			return true

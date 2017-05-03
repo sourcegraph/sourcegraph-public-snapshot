@@ -85,7 +85,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ *protocol.ExecReply, errRes error
 	// 🚨 SECURITY: Only send credentials to gitserver if we know that the repository is private. This 🚨
 	// is to avoid fetching private commits while our access checks still assume that the repository
 	// is public. In that case better fail fetching those commits until the DB got updated.
-	if github.IsGitHubRepo(repoURI) && !c.client.NoCreds && c.Repo.Private {
+	if github.IsRepoAndShouldCheckPermissions(repoURI) && !c.client.NoCreds && c.Repo.Private {
 		actor := actor.FromContext(ctx)
 		if actor.GitHubToken != "" {
 			opt.HTTPS = &vcs.HTTPSConfig{
