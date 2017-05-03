@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"path"
 
 	"github.com/shurcooL/httpgzip"
@@ -45,11 +46,12 @@ func Handler() http.Handler {
 	fs := httpgzip.FileServer(Data, httpgzip.FileServerOptions{})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if noCache {
+		if noCache && os.Getenv("VSCODE_CACHE") == "" {
 			w.Header().Set("Cache-Control", "no-cache")
 		} else {
-			w.Header().Set("Cache-Control", "immutable")
+			w.Header().Set("Cache-Control", "max-age=300")
 		}
+		w.Header().Set("Vary", "Accept-Encoding")
 
 		if name := path.Base(r.URL.Path); name == "index.html" || name == "webview.html" {
 			// The UI uses iframes, so we need to allow iframes.
