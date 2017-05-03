@@ -67,6 +67,17 @@ To index remote repositories:
 1. Run `docker-compose restart` in your Sourcegraph directory.
 1. Visit `http://localhost:3080`. You should now see your remote repositories listed.
 
+#### GitHub.com
+
+Sourcegraph can index many repository hosts, including GitHub.com. If you would like your local Sourcegraph instance to index your organization's repositories on GitHub.com:
+
+1. Follow the [instructions here](https://github.com/blog/1509-personal-api-tokens) to create a personal GitHub API token.
+1. Replace `${GITHUB_USERNAME}`, `${GITHUB_PERSONAL_ACCESS_TOKEN}`, `${YOUR_ORG_NAME}` in the following bash command and run it.
+   ```
+   curl -u ${GITHUB_USERNAME}:${GITHUB_PERSONAL_ACCESS_TOKEN} "https://api.github.com/orgs/${YOUR_ORG_NAME}/repos?page=1&per_page=100" | grep "full_name" | awk -F '[": ]+' '{ print "github.com/"$3 }' | xargs echo
+   ```
+1. Set `ENSURE_REPOS_REMOTE` in your `.env` file to be the value of the output.
+
 ## Privacy
 
 By default, Sourcegraph collects usage data at the JavaScript layer and transmits this over HTTPS to a server controlled by Sourcegraph (the company). This data is similar to what is collected by many web applications and lets our team identify bugs and prioritize product improvements. This data DOES NOT include the contents of private source code files, but *does* include user actions like the following snippet:
