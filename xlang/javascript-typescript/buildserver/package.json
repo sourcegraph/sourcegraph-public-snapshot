@@ -14,7 +14,7 @@
     "commander": "^2.9.0",
     "iterare": "^0.0.7",
     "javascript-typescript-langserver": "^2.0.0-pre.27",
-    "lightstep-tracer": "^0.20.2",
+    "lightstep-tracer": "^0.20.3",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
     "mz": "^2.6.0",

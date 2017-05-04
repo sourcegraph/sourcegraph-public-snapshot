@@ -166,7 +166,11 @@ assertion-error@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/assertion-error/-/assertion-error-1.0.2.tgz#13ca515d86206da0bac66e834dd397d87581094c"
 
-async@^1.4.0, async@^1.5.0:
+async@1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/async/-/async-1.5.0.tgz#2796642723573859565633fc6274444bee2f8ce3"
+
+async@^1.4.0:
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/async/-/async-1.5.2.tgz#ec6a61ae56480c0c3cb241c95618e20892f9672a"
 
@@ -421,10 +425,6 @@ cliui@^3.2.0:
     strip-ansi "^3.0.1"
     wrap-ansi "^2.0.0"
 
-clone@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.2.tgz#260b7a99ebb1edfe247538175f783243cb19d149"
-
 cmd-shim@^2.0.1:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/cmd-shim/-/cmd-shim-2.0.2.tgz#6fcbda99483a8fd15d7d30a196ca69d688a2efdb"
@@ -575,12 +575,6 @@ default-require-extensions@^1.0.0:
   dependencies:
     strip-bom "^2.0.0"
 
-defaults@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/defaults/-/defaults-1.0.3.tgz#c656051e9817d9ff08ed881477f3fe4019f3ef7d"
-  dependencies:
-    clone "^1.0.2"
-
 delayed-stream@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
@@ -658,9 +652,9 @@ esutils@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/esutils/-/esutils-2.0.2.tgz#0abf4f1caa5bcb1f7a9d8acc6dea4faaa04bac9b"
 
-eventemitter3@^1.1.1:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-1.2.0.tgz#1c86991d816ad1e504750e73874224ecf3bec508"
+eventemitter3@1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-1.1.1.tgz#47786bdaa087caf7b1b75e73abc5c7d540158cd0"
 
 events-to-array@^1.0.1:
   version "1.0.2"
@@ -1235,12 +1229,11 @@ jade@0.26.3:
     commander "0.6.1"
     mkdirp "0.3.0"
 
-javascript-typescript-langserver@^2.0.0-pre.26:
-  version "2.0.0-pre.26"
-  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.26.tgz#a2c9cec74b03e5197b79c47c2c7cdb355edc86fa"
+javascript-typescript-langserver@^2.0.0-pre.27:
+  version "2.0.0-pre.27"
+  resolved "https://registry.yarnpkg.com/javascript-typescript-langserver/-/javascript-typescript-langserver-2.0.0-pre.27.tgz#edad1842c7f945e3b0b1116b10a4670181a80b25"
   dependencies:
     "@reactivex/rxjs" "^5.3.0"
-    bluebird "^3.4.7"
     chai "^3.4.34"
     chai-as-promised "^6.0.0"
     chalk "^1.1.3"
@@ -1250,13 +1243,12 @@ javascript-typescript-langserver@^2.0.0-pre.26:
     lodash "^4.17.4"
     mz "^2.6.0"
     object-hash "^1.1.8"
-    opentracing felixfbecker/opentracing-javascript#d42e8ac50e3555ca1a9a006bee0fd5856a838a47
+    opentracing "^0.14.0"
     semaphore-async-await "^1.5.1"
-    typescript "2.3.0"
+    typescript "2.3.2"
     vscode-jsonrpc "^3.1.0"
     vscode-languageserver "^3.1.0"
     vscode-languageserver-types "^3.0.3"
-    yarn "^0.21.3"
 
 jodid25519@^1.0.0:
   version "1.0.2"
@@ -1345,13 +1337,13 @@ leven@^2.0.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/leven/-/leven-2.1.0.tgz#c2e7a9f772094dee9d34202ae8acce4687875580"
 
-lightstep-tracer@^0.20.2:
-  version "0.20.2"
-  resolved "https://registry.yarnpkg.com/lightstep-tracer/-/lightstep-tracer-0.20.2.tgz#32af2a8d22fee2b56c833c4abe1fefbb32b58356"
+lightstep-tracer@^0.20.3:
+  version "0.20.3"
+  resolved "https://registry.yarnpkg.com/lightstep-tracer/-/lightstep-tracer-0.20.3.tgz#fe3a3388efb7e345771782fa0176e704603e0934"
   dependencies:
-    async "^1.5.0"
-    eventemitter3 "^1.1.1"
-    source-map-support "^0.3.3"
+    async "1.5.0"
+    eventemitter3 "1.1.1"
+    source-map-support "0.3.3"
     thrift "0.9.2"
 
 load-json-file@^1.0.0:
@@ -1685,10 +1677,6 @@ opentracing@^0.14.0:
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/opentracing/-/opentracing-0.14.0.tgz#229e9c0bfa15cf10a13f69bdf3b3abdb02c03596"
 
-opentracing@felixfbecker/opentracing-javascript#d42e8ac50e3555ca1a9a006bee0fd5856a838a47:
-  version "0.13.1"
-  resolved "https://codeload.github.com/felixfbecker/opentracing-javascript/tar.gz/d42e8ac50e3555ca1a9a006bee0fd5856a838a47"
-
 optimist@^0.6.1, optimist@~0.6.0:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/optimist/-/optimist-0.6.1.tgz#da3ea74686fa21a19a111c326e90eb15a0196686"
@@ -1941,11 +1929,11 @@ repeating@^2.0.0:
   dependencies:
     is-finite "^1.0.0"
 
-request-capture-har@^1.1.4, request-capture-har@^1.2.2:
+request-capture-har@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/request-capture-har/-/request-capture-har-1.2.2.tgz#cd692cfb2cc744fd84a3358aac6ee51528cf720d"
 
-request@2, request@^2.75.0, request@^2.81.0:
+request@2, request@^2.81.0:
   version "2.81.0"
   resolved "https://registry.yarnpkg.com/request/-/request-2.81.0.tgz#c6928946a0e06c5f8d6f8a9333469ffda46298a0"
   dependencies:
@@ -2107,7 +2095,7 @@ sntp@1.x.x:
   dependencies:
     hoek "2.x.x"
 
-source-map-support@^0.3.3:
+source-map-support@0.3.3:
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.3.3.tgz#34900977d5ba3f07c7757ee72e73bb1a9b53754f"
   dependencies:
@@ -2324,7 +2312,7 @@ tar-stream@^1.1.2, tar-stream@^1.5.2:
     readable-stream "^2.0.0"
     xtend "^4.0.0"
 
-tar@^2.0.0, tar@^2.2.1:
+tar@^2.0.0:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/tar/-/tar-2.2.1.tgz#8e4d2a256c0e2185c6b18ad694aec968b83cb1d1"
   dependencies:
@@ -2461,6 +2449,10 @@ typescript-formatter@^4.0.1:
 typescript@2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.3.0.tgz#2e63e09284392bc8158a2444c33e2093795c0418"
+
+typescript@2.3.2:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.3.2.tgz#f0f045e196f69a72f06b25fd3bd39d01c3ce9984"
 
 uglify-js@^2.6:
   version "2.8.21"
@@ -2674,42 +2666,4 @@ yarn@0.23.2:
     tar-fs "^1.15.1"
     tar-stream "^1.5.2"
     v8-compile-cache "^1.1.0"
-    validate-npm-package-license "^3.0.1"
-
-yarn@^0.21.3:
-  version "0.21.3"
-  resolved "https://registry.yarnpkg.com/yarn/-/yarn-0.21.3.tgz#8dda3a63c798b383cfa577452c2b3cb3e4aa87e0"
-  dependencies:
-    babel-runtime "^6.0.0"
-    bytes "^2.4.0"
-    camelcase "^3.0.0"
-    chalk "^1.1.1"
-    cmd-shim "^2.0.1"
-    commander "^2.9.0"
-    death "^1.0.0"
-    debug "^2.2.0"
-    defaults "^1.0.3"
-    detect-indent "^5.0.0"
-    ini "^1.3.4"
-    inquirer "^3.0.1"
-    invariant "^2.2.0"
-    is-builtin-module "^1.0.0"
-    is-ci "^1.0.10"
-    leven "^2.0.0"
-    loud-rejection "^1.2.0"
-    minimatch "^3.0.3"
-    mkdirp "^0.5.1"
-    node-emoji "^1.0.4"
-    node-gyp "^3.2.1"
-    object-path "^0.11.2"
-    proper-lockfile "^2.0.0"
-    read "^1.0.7"
-    request "^2.75.0"
-    request-capture-har "^1.1.4"
-    rimraf "^2.5.0"
-    roadrunner "^1.1.0"
-    semver "^5.1.0"
-    strip-bom "^3.0.0"
-    tar "^2.2.1"
-    tar-stream "^1.5.2"
     validate-npm-package-license "^3.0.1"
