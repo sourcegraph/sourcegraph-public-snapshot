@@ -1,0 +1,44 @@
+<idea-plugin>
+  <id>com.sourcegraph.jetbrains</id>
+  <name>Sourcegraph</name>
+  <version>1.0.2</version>
+  <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
+
+  <description><![CDATA[
+      Sourcegraph for JetBrains IDEs (IntelliJ, PyCharm, Goglang, etc.)<br>
+    ]]></description>
+
+  <change-notes><![CDATA[
+    <ul>
+      <li>v1.0.0 - Initial Release
+        <ul>
+          <li>Basic Open File & Search functionality.</li>
+        </ul>
+      </li>
+    </ul>
+    ]]>
+  </change-notes>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="145.0"/>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.lang</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- Add your extensions here -->
+  </extensions>
+
+  <actions>
+    <action id="sourcegraph.open" class="Open" text="Sourcegraph: Open" description="Open selection in Sourcegraph">
+      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+      <keyboard-shortcut first-keystroke="alt A" keymap="$default"/>
+    </action>
+    <action id="sourcegraph.search" class="Search" text="Sourcegraph: Search" description="Search selection on Sourcegraph">
+      <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+      <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
+    </action>
+  </actions>
+
+</idea-plugin>
