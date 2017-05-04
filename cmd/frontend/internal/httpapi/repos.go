@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/schema"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/backend"
 	"sourcegraph.com/sourcegraph/sourcegraph/pkg/vcs/gitcmd"
 )
@@ -27,6 +31,12 @@ func serveRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	w.Write([]byte("OK"))
 	return nil
 }
+
+type ensureOpt struct {
+	Index bool `schema:"index"`
+}
+
+var decoder = schema.NewDecoder()
 
 // serveRepoEnsure ensures the repositories specified in the request
 // body. If they don't yet exist, they are added and cloned, but this
@@ -54,6 +64,12 @@ func serveRepoEnsure(w http.ResponseWriter, r *http.Request) error {
 	if notfound == nil {
 		fmt.Fprintln(w, "[]")
 		return nil
+	}
+
+	for _, uri := range repoURIs {
+		if err := backend.Repos.RefreshIndex(ctx, uri); err != nil {
+			log15.Warn("index refresh failed on repo ensure", "uri", uri, "err", err)
+		}
 	}
 
 	return json.NewEncoder(w).Encode(notfound)
