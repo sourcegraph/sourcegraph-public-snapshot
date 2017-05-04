@@ -12,7 +12,7 @@ set -e
 
 rm -rf ./.tmp
 mkdir -p ./.tmp
-cp -r ./sourcegraph ./.tmp/sourcegraph
+rsync -avz --exclude=".*" ./sourcegraph ./.tmp/
 if [ ! -z "$1" ]; then
     sed -i -e "s/TRACKING_APP_ID:/TRACKING_APP_ID: $1/g" ./.tmp/sourcegraph/docker-compose.yml
 fi
