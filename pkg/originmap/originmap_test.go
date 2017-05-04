@@ -52,7 +52,7 @@ func TestMap(t *testing.T) {
 	for _, test := range tests {
 		actual, err := parse(test.in)
 		if err != nil {
-			t.Errorf("on input %q, unexpected err: %v", err)
+			t.Errorf("on input %q, unexpected err: %v", test.in, err)
 			continue
 		}
 		if !reflect.DeepEqual(test.exp, actual) {
