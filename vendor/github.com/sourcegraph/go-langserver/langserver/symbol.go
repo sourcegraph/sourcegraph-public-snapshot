@@ -313,6 +313,12 @@ func (h *LangHandler) handleWorkspaceSymbol(ctx context.Context, conn jsonrpc2.J
 		}
 		q.Filter = FilterDir
 	}
+	if params.Limit == 0 {
+		// If no limit is specified, default to a reasonable number
+		// for a user to look at. If they want more, they should
+		// refine the query.
+		params.Limit = 50
+	}
 	return h.handleSymbol(ctx, conn, req, q, params.Limit)
 }
 
